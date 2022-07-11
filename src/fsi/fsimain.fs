@@ -411,8 +411,10 @@ let MainMain argv =
          || x = "/shadowcopyreferences+"
          || x = "--shadowcopyreferences+")
 
-    if AppDomain.CurrentDomain.IsDefaultAppDomain()
-       && argv |> Array.exists isShadowCopy then
+    if
+        AppDomain.CurrentDomain.IsDefaultAppDomain()
+        && argv |> Array.exists isShadowCopy
+    then
         let setupInformation = AppDomain.CurrentDomain.SetupInformation
         setupInformation.ShadowCopyFiles <- "true"
         let helper = AppDomain.CreateDomain("FSI_Domain", null, setupInformation)

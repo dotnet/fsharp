@@ -6,28 +6,28 @@
 namespace FSharp.Compiler.Diagnostics
 
 [<RequireQualifiedAccess>]
-type FSharpDiagnosticSeverity = 
+type FSharpDiagnosticSeverity =
     | Hidden
     | Info
-    | Warning 
+    | Warning
     | Error
 
 type FSharpDiagnosticOptions =
     {
-      WarnLevel: int
-      GlobalWarnAsError: bool
-      WarnOff: int list
-      WarnOn: int list
-      WarnAsError: int list
-      WarnAsWarn: int list
+        WarnLevel: int
+        GlobalWarnAsError: bool
+        WarnOff: int list
+        WarnOn: int list
+        WarnAsError: int list
+        WarnAsWarn: int list
     }
+
     static member Default =
         {
-          WarnLevel = 3
-          GlobalWarnAsError = false
-          WarnOff = []
-          WarnOn = []
-          WarnAsError = []
-          WarnAsWarn = []
+            WarnLevel = 3
+            GlobalWarnAsError = false
+            WarnOff = []
+            WarnOn = []
+            WarnAsError = []
+            WarnAsWarn = []
         }
-

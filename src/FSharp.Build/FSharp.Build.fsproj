@@ -4,15 +4,14 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework Condition="'$(Configuration)' != 'Proto'">netstandard2.0</TargetFramework>
-    <TargetFrameworks Condition="'$(Configuration)' == 'Proto'">netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Build</AssemblyName>
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);LOCALIZATION_FSBUILD</DefineConstants>
     <NoWarn>NU1701;FS0075</NoWarn>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <LangVersion>5.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
+    <LangVersion>6.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -58,7 +57,7 @@
         The FSharp.Build built here may be loaded directly into a shipped Visual Studio, to that end, we cannot 
         rely on new API's just being added to FSharp.Core.
     -->
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)"/>
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" IncludeAssets="compile" ExcludeAssets="all" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup  Condition="'$(Configuration)' != 'Proto'">

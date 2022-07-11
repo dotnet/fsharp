@@ -89,7 +89,7 @@ module DispatchSlotChecking =
     val GetObjectExprOverrideInfo:
         g: TcGlobals ->
         amap: ImportMap ->
-        implty: TType *
+        implTy: TType *
         id: Ident *
         memberFlags: SynMemberFlags *
         ty: TType *

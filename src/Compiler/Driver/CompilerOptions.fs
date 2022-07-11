@@ -288,9 +288,11 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
     let getSwitchOpt (opt: string) =
         // if opt is a switch, strip the  '+' or '-'
-        if opt <> "--"
-           && opt.Length > 1
-           && (opt.EndsWithOrdinal("+") || opt.EndsWithOrdinal("-")) then
+        if
+            opt <> "--"
+            && opt.Length > 1
+            && (opt.EndsWithOrdinal("+") || opt.EndsWithOrdinal("-"))
+        then
             opt[0 .. opt.Length - 2]
         else
             opt
@@ -368,7 +370,10 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                 | CompilerOption (s, _, OptionString f, d, _) as compilerOption :: _ when optToken = s ->
                     reportDeprecatedOption d
                     let oa = getOptionArg compilerOption argString
-                    if oa <> "" then f (getOptionArg compilerOption oa)
+
+                    if oa <> "" then
+                        f (getOptionArg compilerOption oa)
+
                     t
                 | CompilerOption (s, _, OptionInt f, d, _) as compilerOption :: _ when optToken = s ->
                     reportDeprecatedOption d
@@ -1234,13 +1239,25 @@ let noFrameworkFlag isFsc tcConfigB =
         tagNone,
         OptionUnit(fun () ->
             tcConfigB.implicitlyReferenceDotNetAssemblies <- false
-            if isFsc then tcConfigB.implicitlyResolveAssemblies <- false),
+
+            if isFsc then
+                tcConfigB.implicitlyResolveAssemblies <- false),
         None,
         Some(FSComp.SR.optsNoframework ())
     )
 
 let advancedFlagsFsi tcConfigB =
-    advancedFlagsBoth tcConfigB @ [ noFrameworkFlag false tcConfigB ]
+    advancedFlagsBoth tcConfigB
+    @ [
+        CompilerOption(
+            "clearResultsCache",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.clearResultsCache <- true),
+            None,
+            Some(FSComp.SR.optsClearResultsCache ())
+        )
+        noFrameworkFlag false tcConfigB
+    ]
 
 let advancedFlagsFsc tcConfigB =
     advancedFlagsBoth tcConfigB
@@ -1384,29 +1401,51 @@ let editorSpecificFlags (tcConfigB: TcConfigBuilder) =
 
 let internalFlags (tcConfigB: TcConfigBuilder) =
     [
-        CompilerOption("stamps", tagNone, OptionUnit ignore, Some(InternalCommandLineOption("--stamps", rangeCmdArgs)), None)
-
         CompilerOption(
-            "ranges",
-            tagNone,
-            OptionSet DebugPrint.layoutRanges,
-            Some(InternalCommandLineOption("--ranges", rangeCmdArgs)),
-            None
-        )
-
-        CompilerOption(
-            "terms",
+            "typedtree",
             tagNone,
             OptionUnit(fun () -> tcConfigB.showTerms <- true),
-            Some(InternalCommandLineOption("--terms", rangeCmdArgs)),
+            Some(InternalCommandLineOption("--typedtree", rangeCmdArgs)),
             None
         )
 
         CompilerOption(
-            "termsfile",
+            "typedtreefile",
             tagNone,
             OptionUnit(fun () -> tcConfigB.writeTermsToFiles <- true),
-            Some(InternalCommandLineOption("--termsfile", rangeCmdArgs)),
+            Some(InternalCommandLineOption("--typedtreefile", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
+            "typedtreestamps",
+            tagNone,
+            OptionUnit(fun () -> DebugPrint.layoutStamps <- true),
+            Some(InternalCommandLineOption("--typedtreestamps", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
+            "typedtreeranges",
+            tagNone,
+            OptionUnit(fun () -> DebugPrint.layoutRanges <- true),
+            Some(InternalCommandLineOption("--typedtreeranges", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
+            "typedtreetypes",
+            tagNone,
+            OptionUnit(fun () -> DebugPrint.layoutTypes <- true),
+            Some(InternalCommandLineOption("--typedtreetypes", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
+            "typedtreevalreprinfo",
+            tagNone,
+            OptionUnit(fun () -> DebugPrint.layoutValReprInfo <- true),
+            Some(InternalCommandLineOption("--typedtreevalreprinfo", rangeCmdArgs)),
             None
         )
 
@@ -2202,7 +2241,7 @@ let ApplyCommandLineArgs (tcConfigB: TcConfigBuilder, sourceFiles: string list, 
 
 let mutable showTermFileCount = 0
 
-let PrintWholeAssemblyImplementation g (tcConfig: TcConfig) outfile header expr =
+let PrintWholeAssemblyImplementation (tcConfig: TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then
             let fileName = outfile + ".terms"
@@ -2213,10 +2252,10 @@ let PrintWholeAssemblyImplementation g (tcConfig: TcConfig) outfile header expr 
                     .GetWriter()
 
             showTermFileCount <- showTermFileCount + 1
-            LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL g expr))
+            LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL expr))
         else
             dprintf "\n------------------\nshowTerm: %s:\n" header
-            LayoutRender.outL stderr (Display.squashTo 192 (DebugPrint.implFilesL g expr))
+            LayoutRender.outL stderr (Display.squashTo 192 (DebugPrint.implFilesL expr))
             dprintf "\n------------------\n"
 
 //----------------------------------------------------------------------------

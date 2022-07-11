@@ -29,6 +29,8 @@ module ValReprInfo =
 
     val emptyValData: ValReprInfo
 
+    val IsEmpty: ValReprInfo -> bool
+
     val InferTyparInfo: tps: Typar list -> TyparReprInfo list
 
     val InferArgReprInfo: v: Val -> ArgReprInfo
@@ -45,6 +47,8 @@ val nameOfVal: v: Val -> string
 
 val arityOfVal: v: Val -> ValReprInfo
 
+val arityOfValForDisplay: v: Val -> ValReprInfo
+
 val tupInfoRef: TupInfo
 
 val tupInfoStruct: TupInfo
@@ -57,19 +61,19 @@ val mkRawRefTupleTy: tys: TTypes -> TType
 
 val mkRawStructTupleTy: tys: TTypes -> TType
 
-val typarEq: lv1: Typar -> lv2: Typar -> bool
+val typarEq: tp1: Typar -> tp2: Typar -> bool
 
 /// Equality on type variables, implemented as reference equality. This should be equivalent to using typarEq.
 val typarRefEq: tp1: Typar -> tp2: Typar -> bool
 
 /// Equality on value specs, implemented as reference equality
-val valEq: lv1: Val -> lv2: Val -> bool
+val valEq: v1: Val -> v2: Val -> bool
 
 /// Equality on CCU references, implemented as reference equality except when unresolved
-val ccuEq: mv1: CcuThunk -> mv2: CcuThunk -> bool
+val ccuEq: ccu1: CcuThunk -> ccu2: CcuThunk -> bool
 
 /// For dereferencing in the middle of a pattern
-val (|ValDeref|): vr: ValRef -> Val
+val (|ValDeref|): vref: ValRef -> Val
 
 val mkRecdFieldRef: tcref: TyconRef -> f: string -> RecdFieldRef
 

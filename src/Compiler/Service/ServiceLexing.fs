@@ -24,15 +24,20 @@ open FSharp.Compiler.Text.Range
 module FSharpTokenTag =
 
     let Identifier = tagOfToken (IDENT "a")
-    let String = tagOfToken (STRING ("a", SynStringKind.Regular, LexCont.Default))
+    let String = tagOfToken (STRING("a", SynStringKind.Regular, LexCont.Default))
 
     let IDENT = tagOfToken (IDENT "a")
     let HASH_IDENT = tagOfToken (HASH_IDENT "a")
     let STRING = String
-    let INTERP_STRING_BEGIN_END = tagOfToken (INTERP_STRING_BEGIN_END ("a", SynStringKind.Regular, LexCont.Default))
-    let INTERP_STRING_BEGIN_PART = tagOfToken (INTERP_STRING_BEGIN_PART ("a", SynStringKind.Regular, LexCont.Default))
-    let INTERP_STRING_PART = tagOfToken (INTERP_STRING_PART ("a", LexCont.Default))
-    let INTERP_STRING_END = tagOfToken (INTERP_STRING_END ("a", LexCont.Default))
+
+    let INTERP_STRING_BEGIN_END =
+        tagOfToken (INTERP_STRING_BEGIN_END("a", SynStringKind.Regular, LexCont.Default))
+
+    let INTERP_STRING_BEGIN_PART =
+        tagOfToken (INTERP_STRING_BEGIN_PART("a", SynStringKind.Regular, LexCont.Default))
+
+    let INTERP_STRING_PART = tagOfToken (INTERP_STRING_PART("a", LexCont.Default))
+    let INTERP_STRING_END = tagOfToken (INTERP_STRING_END("a", LexCont.Default))
     let LPAREN = tagOfToken LPAREN
     let RPAREN = tagOfToken RPAREN
     let LBRACK = tagOfToken LBRACK
@@ -90,7 +95,6 @@ module FSharpTokenTag =
     let WITH = tagOfToken WITH
     let OWITH = tagOfToken OWITH
 
-
 /// This corresponds to a token categorization originally used in Visual Studio 2003.
 ///
 /// NOTE: This corresponds to a token categorization originally used in Visual Studio 2003 and the original Babel source code.
@@ -116,15 +120,14 @@ type FSharpTokenColorKind =
 /// It is not clear it is a primary logical classification that should be being used in the
 /// more recent language service work.
 type FSharpTokenTriggerClass =
-    | None         = 0x00000000
+    | None = 0x00000000
     | MemberSelect = 0x00000001
-    | MatchBraces  = 0x00000002
+    | MatchBraces = 0x00000002
     | ChoiceSelect = 0x00000004
-    | MethodTip    = 0x000000F0
-    | ParamStart   = 0x00000010
-    | ParamNext    = 0x00000020
-    | ParamEnd     = 0x00000040
-
+    | MethodTip = 0x000000F0
+    | ParamStart = 0x00000010
+    | ParamNext = 0x00000020
+    | ParamEnd = 0x00000040
 
 /// This corresponds to a token categorization originally used in Visual Studio 2003.
 ///
@@ -132,29 +135,30 @@ type FSharpTokenTriggerClass =
 /// It is not clear it is a primary logical classification that should be being used in the
 /// more recent language service work.
 type FSharpTokenCharKind =
-    | Default     = 0x00000000
-    | Text        = 0x00000000
-    | Keyword     = 0x00000001
-    | Identifier  = 0x00000002
-    | String      = 0x00000003
-    | Literal     = 0x00000004
-    | Operator    = 0x00000005
-    | Delimiter   = 0x00000006
-    | WhiteSpace  = 0x00000008
+    | Default = 0x00000000
+    | Text = 0x00000000
+    | Keyword = 0x00000001
+    | Identifier = 0x00000002
+    | String = 0x00000003
+    | Literal = 0x00000004
+    | Operator = 0x00000005
+    | Delimiter = 0x00000006
+    | WhiteSpace = 0x00000008
     | LineComment = 0x00000009
-    | Comment     = 0x0000000A
-
+    | Comment = 0x0000000A
 
 /// Information about a particular token from the tokenizer
-type FSharpTokenInfo = {
-    LeftColumn: int
-    RightColumn: int
-    ColorClass: FSharpTokenColorKind
-    CharClass: FSharpTokenCharKind
-    FSharpTokenTriggerClass: FSharpTokenTriggerClass
-    Tag: int
-    TokenName: string
-    FullMatchedLength: int }
+type FSharpTokenInfo =
+    {
+        LeftColumn: int
+        RightColumn: int
+        ColorClass: FSharpTokenColorKind
+        CharClass: FSharpTokenCharKind
+        FSharpTokenTriggerClass: FSharpTokenTriggerClass
+        Tag: int
+        TokenName: string
+        FullMatchedLength: int
+    }
 
 //----------------------------------------------------------------------------
 // Babel flags
@@ -174,37 +178,61 @@ module internal TokenClassifications =
                 System.Diagnostics.Debug.Assert(false, "BUG: Received zero length IDENT token.")
                 // This is related to 4783. Recover by treating as lower case identifier.
                 (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
+            else if Char.ToUpperInvariant s[0] = s[0] then
+                (FSharpTokenColorKind.UpperIdentifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
             else
-                if Char.ToUpperInvariant s[0] = s[0] then
-                    (FSharpTokenColorKind.UpperIdentifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
-                else
-                    (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
+                (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
 
         // 'in' when used in a 'join' in a query expression
-        | JOIN_IN ->
-            (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
+        | JOIN_IN -> (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
         | DECIMAL _
-        | BIGNUM _ | INT8 _  | UINT8 _ | INT16 _  | UINT16 _ | INT32 _ | UINT32 _ | INT64 _ | UINT64 _
-        | UNATIVEINT _ | NATIVEINT _ | IEEE32 _ |  IEEE64 _ ->
-            (FSharpTokenColorKind.Number, FSharpTokenCharKind.Literal, FSharpTokenTriggerClass.None)
+        | BIGNUM _
+        | INT8 _
+        | UINT8 _
+        | INT16 _
+        | UINT16 _
+        | INT32 _
+        | UINT32 _
+        | INT64 _
+        | UINT64 _
+        | UNATIVEINT _
+        | NATIVEINT _
+        | IEEE32 _
+        | IEEE64 _ -> (FSharpTokenColorKind.Number, FSharpTokenCharKind.Literal, FSharpTokenTriggerClass.None)
 
         | INT32_DOT_DOT _ ->
-          // This will color the whole "1.." expression in a 'number' color
-          // (this isn't entirely correct, but it'll work for now - see bug 3727)
+            // This will color the whole "1.." expression in a 'number' color
+            // (this isn't entirely correct, but it'll work for now - see bug 3727)
             (FSharpTokenColorKind.Number, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.None)
 
-        | INFIX_STAR_DIV_MOD_OP ("mod"  | "land" |  "lor" | "lxor")
-        | INFIX_STAR_STAR_OP ("lsl" | "lsr" | "asr") ->
-            (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
+        | INFIX_STAR_DIV_MOD_OP ("mod"
+        | "land"
+        | "lor"
+        | "lxor")
+        | INFIX_STAR_STAR_OP ("lsl"
+        | "lsr"
+        | "asr") -> (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
 
         | LPAREN_STAR_RPAREN
-        | DOLLAR | COLON_GREATER  | COLON_COLON
-        | PERCENT_OP _ | PLUS_MINUS_OP _ | PREFIX_OP _ | COLON_QMARK_GREATER
-        | AMP   | AMP_AMP  | BAR_BAR  | QMARK | QMARK_QMARK | COLON_QMARK
+        | DOLLAR
+        | COLON_GREATER
+        | COLON_COLON
+        | PERCENT_OP _
+        | PLUS_MINUS_OP _
+        | PREFIX_OP _
+        | COLON_QMARK_GREATER
+        | AMP
+        | AMP_AMP
+        | BAR_BAR
+        | QMARK
+        | QMARK_QMARK
+        | COLON_QMARK
         | HIGH_PRECEDENCE_TYAPP
-        | COLON_EQUALS   | EQUALS | RQUOTE_DOT _
-        | MINUS | ADJACENT_PREFIX_OP _ ->
-            (FSharpTokenColorKind.Operator, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.None)
+        | COLON_EQUALS
+        | EQUALS
+        | RQUOTE_DOT _
+        | MINUS
+        | ADJACENT_PREFIX_OP _ -> (FSharpTokenColorKind.Operator, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.None)
 
         | INFIX_COMPARE_OP _ // This is a whole family: .< .> .= .!= .$
         | FUNKY_OPERATOR_NAME _ // This is another whole family, including: .[] and .()
@@ -213,115 +241,204 @@ module internal TokenClassifications =
         | INFIX_AMP_OP _
         | INFIX_BAR_OP _
         | INFIX_STAR_DIV_MOD_OP _
-        | INFIX_AMP_OP _ ->
-                (FSharpTokenColorKind.Operator, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.None)
+        | INFIX_AMP_OP _ -> (FSharpTokenColorKind.Operator, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.None)
 
-        | DOT_DOT | DOT_DOT_HAT ->
-            (FSharpTokenColorKind.Operator, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.MemberSelect)
+        | DOT_DOT
+        | DOT_DOT_HAT -> (FSharpTokenColorKind.Operator, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.MemberSelect)
 
-        | COMMA ->
-            (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamNext)
+        | COMMA -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamNext)
 
-        | DOT ->
-            (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MemberSelect)
+        | DOT -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MemberSelect)
 
         | BAR ->
-            (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.None (* FSharpTokenTriggerClass.ChoiceSelect *))
+            (FSharpTokenColorKind.Punctuation,
+             FSharpTokenCharKind.Delimiter,
+             FSharpTokenTriggerClass.None (* FSharpTokenTriggerClass.ChoiceSelect *) )
 
-        | HASH | STAR | SEMICOLON  | SEMICOLON_SEMICOLON | COLON ->
-            (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.None)
+        | HASH
+        | STAR
+        | SEMICOLON
+        | SEMICOLON_SEMICOLON
+        | COLON -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.None)
 
-        | QUOTE | UNDERSCORE
-        | INFIX_AT_HAT_OP _ ->
-            (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
+        | QUOTE
+        | UNDERSCORE
+        | INFIX_AT_HAT_OP _ -> (FSharpTokenColorKind.Identifier, FSharpTokenCharKind.Identifier, FSharpTokenTriggerClass.None)
 
-        | LESS  _ ->
-            (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.ParamStart)  // for type provider static arguments
+        | LESS _ -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.ParamStart) // for type provider static arguments
 
-        | GREATER _ ->
-            (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.ParamEnd)    // for type provider static arguments
+        | GREATER _ -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.ParamEnd) // for type provider static arguments
 
         | LPAREN ->
             // We need 'ParamStart' to trigger the 'GetDeclarations' method to show param info automatically
             // this is needed even if we don't use MPF for determining information about params
-            (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamStart ||| FSharpTokenTriggerClass.MatchBraces)
+            (FSharpTokenColorKind.Punctuation,
+             FSharpTokenCharKind.Delimiter,
+             FSharpTokenTriggerClass.ParamStart ||| FSharpTokenTriggerClass.MatchBraces)
 
-        | RPAREN | RPAREN_COMING_SOON | RPAREN_IS_HERE ->
-            (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamEnd ||| FSharpTokenTriggerClass.MatchBraces)
+        | RPAREN
+        | RPAREN_COMING_SOON
+        | RPAREN_IS_HERE ->
+            (FSharpTokenColorKind.Punctuation,
+             FSharpTokenCharKind.Delimiter,
+             FSharpTokenTriggerClass.ParamEnd ||| FSharpTokenTriggerClass.MatchBraces)
 
-        | LBRACK_LESS ->
-            (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.None )
+        | LBRACK_LESS -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.None)
 
-        | LQUOTE _  | LBRACK  | LBRACE _ | LBRACK_BAR | LBRACE_BAR ->
-            (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces )
+        | LQUOTE _
+        | LBRACK
+        | LBRACE _
+        | LBRACK_BAR
+        | LBRACE_BAR -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces)
 
-        | GREATER_RBRACK  | GREATER_BAR_RBRACK ->
-            (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.None )
+        | GREATER_RBRACK
+        | GREATER_BAR_RBRACK -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.None)
 
-        | RQUOTE _  | RBRACK  | RBRACE _ | RBRACE_COMING_SOON | RBRACE_IS_HERE | BAR_RBRACK | BAR_RBRACE ->
-            (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces )
+        | RQUOTE _
+        | RBRACK
+        | RBRACE _
+        | RBRACE_COMING_SOON
+        | RBRACE_IS_HERE
+        | BAR_RBRACK
+        | BAR_RBRACE -> (FSharpTokenColorKind.Punctuation, FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces)
 
-        | PUBLIC | PRIVATE | INTERNAL | BASE | GLOBAL
-        | CONSTRAINT | INSTANCE | DELEGATE | INHERIT|CONSTRUCTOR|DEFAULT|OVERRIDE|ABSTRACT|CLASS
-        | MEMBER | STATIC | NAMESPACE
-        | OASSERT | OLAZY | ODECLEND | OBLOCKSEP | OEND | OBLOCKBEGIN | ORIGHT_BLOCK_END
-        | OBLOCKEND | OBLOCKEND_COMING_SOON | OBLOCKEND_IS_HERE | OTHEN | OELSE | OLET _
-        | OBINDER _ | OAND_BANG _ | BINDER _ | ODO | OWITH | OFUNCTION | OFUN | ORESET | ODUMMY _ | DO_BANG
-        | ODO_BANG | YIELD _ | YIELD_BANG  _ | OINTERFACE_MEMBER
-        | ELIF | RARROW | LARROW | SIG | STRUCT
-        | UPCAST   | DOWNCAST   | NULL   | RESERVED    | MODULE    | AND    | AS   | ASSERT   | ASR
-        | DOWNTO   | EXCEPTION   | FALSE   | FOR   | FUN   | FUNCTION
-        | FINALLY   | LAZY   | MATCH  | MATCH_BANG  | MUTABLE   | NEW   | OF    | OPEN   | OR | VOID | EXTERN
-        | INTERFACE | REC   | TO   | TRUE   | TRY   | TYPE   |  VAL   | INLINE   | WHEN  | WHILE   | WITH
-        | IF | THEN  | ELSE | DO | DONE | LET _ | AND_BANG _ | IN | CONST
-        | HIGH_PRECEDENCE_PAREN_APP | FIXED
+        | PUBLIC
+        | PRIVATE
+        | INTERNAL
+        | BASE
+        | GLOBAL
+        | CONSTRAINT
+        | INSTANCE
+        | DELEGATE
+        | INHERIT
+        | CONSTRUCTOR
+        | DEFAULT
+        | OVERRIDE
+        | ABSTRACT
+        | CLASS
+        | MEMBER
+        | STATIC
+        | NAMESPACE
+        | OASSERT
+        | OLAZY
+        | ODECLEND
+        | OBLOCKSEP
+        | OEND
+        | OBLOCKBEGIN
+        | ORIGHT_BLOCK_END
+        | OBLOCKEND
+        | OBLOCKEND_COMING_SOON
+        | OBLOCKEND_IS_HERE
+        | OTHEN
+        | OELSE
+        | OLET _
+        | OBINDER _
+        | OAND_BANG _
+        | BINDER _
+        | ODO
+        | OWITH
+        | OFUNCTION
+        | OFUN
+        | ORESET
+        | ODUMMY _
+        | DO_BANG
+        | ODO_BANG
+        | YIELD _
+        | YIELD_BANG _
+        | OINTERFACE_MEMBER
+        | ELIF
+        | RARROW
+        | LARROW
+        | SIG
+        | STRUCT
+        | UPCAST
+        | DOWNCAST
+        | NULL
+        | RESERVED
+        | MODULE
+        | AND
+        | AS
+        | ASSERT
+        | ASR
+        | DOWNTO
+        | EXCEPTION
+        | FALSE
+        | FOR
+        | FUN
+        | FUNCTION
+        | FINALLY
+        | LAZY
+        | MATCH
+        | MATCH_BANG
+        | MUTABLE
+        | NEW
+        | OF
+        | OPEN
+        | OR
+        | VOID
+        | EXTERN
+        | INTERFACE
+        | REC
+        | TO
+        | TRUE
+        | TRY
+        | TYPE
+        | VAL
+        | INLINE
+        | WHEN
+        | WHILE
+        | WITH
+        | IF
+        | THEN
+        | ELSE
+        | DO
+        | DONE
+        | LET _
+        | AND_BANG _
+        | IN
+        | CONST
+        | HIGH_PRECEDENCE_PAREN_APP
+        | FIXED
         | HIGH_PRECEDENCE_BRACK_APP
-        | TYPE_COMING_SOON | TYPE_IS_HERE | MODULE_COMING_SOON | MODULE_IS_HERE ->
-            (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
+        | TYPE_COMING_SOON
+        | TYPE_IS_HERE
+        | MODULE_COMING_SOON
+        | MODULE_IS_HERE -> (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
 
-        | BEGIN ->
-            (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
+        | BEGIN -> (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
 
-        | END ->
-            (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
+        | END -> (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
 
         | HASH_LIGHT _
         | HASH_LINE _
         | HASH_IF _
         | HASH_ELSE _
-        | HASH_ENDIF _ ->
-            (FSharpTokenColorKind.PreprocessorKeyword, FSharpTokenCharKind.WhiteSpace, FSharpTokenTriggerClass.None)
+        | HASH_ENDIF _ -> (FSharpTokenColorKind.PreprocessorKeyword, FSharpTokenCharKind.WhiteSpace, FSharpTokenTriggerClass.None)
 
-        | INACTIVECODE _ ->
-            (FSharpTokenColorKind.InactiveCode, FSharpTokenCharKind.WhiteSpace, FSharpTokenTriggerClass.None)
-
+        | INACTIVECODE _ -> (FSharpTokenColorKind.InactiveCode, FSharpTokenCharKind.WhiteSpace, FSharpTokenTriggerClass.None)
 
         | LEX_FAILURE _
-        | WHITESPACE _ ->
-            (FSharpTokenColorKind.Default, FSharpTokenCharKind.WhiteSpace, FSharpTokenTriggerClass.None)
+        | WHITESPACE _ -> (FSharpTokenColorKind.Default, FSharpTokenCharKind.WhiteSpace, FSharpTokenTriggerClass.None)
 
-        | COMMENT _ ->
-            (FSharpTokenColorKind.Comment, FSharpTokenCharKind.Comment, FSharpTokenTriggerClass.None)
+        | COMMENT _ -> (FSharpTokenColorKind.Comment, FSharpTokenCharKind.Comment, FSharpTokenTriggerClass.None)
 
-        | LINE_COMMENT _ ->
-            (FSharpTokenColorKind.Comment, FSharpTokenCharKind.LineComment, FSharpTokenTriggerClass.None)
+        | LINE_COMMENT _ -> (FSharpTokenColorKind.Comment, FSharpTokenCharKind.LineComment, FSharpTokenTriggerClass.None)
 
-        | KEYWORD_STRING _ ->
-           (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
+        | KEYWORD_STRING _ -> (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
 
         | STRING_TEXT _
         | INTERP_STRING_BEGIN_END _
         | INTERP_STRING_BEGIN_PART _
         | INTERP_STRING_PART _
         | INTERP_STRING_END _
-        | BYTEARRAY _ | STRING  _
-        | CHAR _ ->
-            (FSharpTokenColorKind.String, FSharpTokenCharKind.String, FSharpTokenTriggerClass.None)
+        | BYTEARRAY _
+        | STRING _
+        | CHAR _ -> (FSharpTokenColorKind.String, FSharpTokenCharKind.String, FSharpTokenTriggerClass.None)
 
         | EOF _ -> failwith "tokenInfo"
 
 module internal TestExpose =
-  let TokenInfo tok = TokenClassifications.tokenInfo tok
+    let TokenInfo tok = TokenClassifications.tokenInfo tok
 
 /// Lexer states are encoded to/from integers. Typically one lexer state is
 /// keep at the end of each line in an IDE service. IDE services are sometimes highly limited in the
@@ -332,22 +449,22 @@ module internal TestExpose =
 /// or accurate error messages from lexing for mismtached #if are not supported.
 [<Struct; CustomEquality; NoComparison>]
 type FSharpTokenizerLexState =
-    { PosBits: int64
-      OtherBits: int64 }
+    {
+        PosBits: int64
+        OtherBits: int64
+    }
 
     static member Initial = { PosBits = 0L; OtherBits = 0L }
 
-    member this.Equals (other: FSharpTokenizerLexState) =
-        (this.PosBits = other.PosBits) &&
-        (this.OtherBits = other.OtherBits)
+    member this.Equals(other: FSharpTokenizerLexState) =
+        (this.PosBits = other.PosBits) && (this.OtherBits = other.OtherBits)
 
-    override this.Equals (obj: obj) =
+    override this.Equals(obj: obj) =
         match obj with
         | :? FSharpTokenizerLexState as other -> this.Equals other
         | _ -> false
 
-    override this.GetHashCode () =
-        hash this.PosBits + hash this.OtherBits
+    override this.GetHashCode() = hash this.PosBits + hash this.OtherBits
 
 type FSharpTokenizerColorState =
     | Token = 1
@@ -365,31 +482,30 @@ type FSharpTokenizerColorState =
     | TripleQuoteStringInComment = 14
     | InitialState = 0
 
-
 module internal LexerStateEncoding =
 
     let computeNextLexState token (prevLexcont: LexerContinuation) =
-      match token with
-      | HASH_LINE cont
-      | HASH_LIGHT cont
-      | HASH_IF(_, _, cont)
-      | HASH_ELSE(_, _, cont)
-      | HASH_ENDIF(_, _, cont)
-      | INACTIVECODE cont
-      | WHITESPACE cont
-      | COMMENT cont
-      | LINE_COMMENT cont
-      | STRING_TEXT cont
-      | EOF cont
-      | INTERP_STRING_BEGIN_PART (_, _, cont)
-      | INTERP_STRING_PART (_, cont)
-      | INTERP_STRING_BEGIN_END (_, _, cont)
-      | INTERP_STRING_END (_, cont)
-      | LBRACE cont
-      | RBRACE cont
-      | BYTEARRAY (_, _, cont)
-      | STRING (_, _, cont) -> cont
-      | _ -> prevLexcont
+        match token with
+        | HASH_LINE cont
+        | HASH_LIGHT cont
+        | HASH_IF (_, _, cont)
+        | HASH_ELSE (_, _, cont)
+        | HASH_ENDIF (_, _, cont)
+        | INACTIVECODE cont
+        | WHITESPACE cont
+        | COMMENT cont
+        | LINE_COMMENT cont
+        | STRING_TEXT cont
+        | EOF cont
+        | INTERP_STRING_BEGIN_PART (_, _, cont)
+        | INTERP_STRING_PART (_, cont)
+        | INTERP_STRING_BEGIN_END (_, _, cont)
+        | INTERP_STRING_END (_, cont)
+        | LBRACE cont
+        | RBRACE cont
+        | BYTEARRAY (_, _, cont)
+        | STRING (_, _, cont) -> cont
+        | _ -> prevLexcont
 
     // Note that this will discard all lexcont state, including the ifdefStack.
     let revertToDefaultLexCont = LexCont.Default
@@ -398,32 +514,51 @@ module internal LexerStateEncoding =
     let ncommentsNumBits = 4
     let hardwhiteNumBits = 1
     let ifdefstackCountNumBits = 8
-    let ifdefstackNumBits = 24           // 0 means if, 1 means else
+    let ifdefstackNumBits = 24 // 0 means if, 1 means else
     let stringKindBits = 3
     let nestingBits = 12
-    let _ = assert (lexstateNumBits
-                    + ncommentsNumBits
-                    + hardwhiteNumBits
-                    + ifdefstackCountNumBits
-                    + ifdefstackNumBits
-                    + stringKindBits
-                    + nestingBits <= 64)
 
-    let lexstateStart         = 0
-    let ncommentsStart        = lexstateNumBits
-    let hardwhitePosStart     = lexstateNumBits+ncommentsNumBits
-    let ifdefstackCountStart  = lexstateNumBits+ncommentsNumBits+hardwhiteNumBits
-    let ifdefstackStart       = lexstateNumBits+ncommentsNumBits+hardwhiteNumBits+ifdefstackCountNumBits
-    let stringKindStart       = lexstateNumBits+ncommentsNumBits+hardwhiteNumBits+ifdefstackCountNumBits+ifdefstackNumBits
-    let nestingStart          = lexstateNumBits+ncommentsNumBits+hardwhiteNumBits+ifdefstackCountNumBits+ifdefstackNumBits+stringKindBits
+    let _ =
+        assert
+            (lexstateNumBits
+             + ncommentsNumBits
+             + hardwhiteNumBits
+             + ifdefstackCountNumBits
+             + ifdefstackNumBits
+             + stringKindBits
+             + nestingBits
+             <= 64)
 
-    let lexstateMask          = Bits.mask64 lexstateStart lexstateNumBits
-    let ncommentsMask         = Bits.mask64 ncommentsStart ncommentsNumBits
-    let hardwhitePosMask      = Bits.mask64 hardwhitePosStart hardwhiteNumBits
-    let ifdefstackCountMask   = Bits.mask64 ifdefstackCountStart ifdefstackCountNumBits
-    let ifdefstackMask        = Bits.mask64 ifdefstackStart ifdefstackNumBits
-    let stringKindMask        = Bits.mask64 stringKindStart stringKindBits
-    let nestingMask           = Bits.mask64 nestingStart nestingBits
+    let lexstateStart = 0
+    let ncommentsStart = lexstateNumBits
+    let hardwhitePosStart = lexstateNumBits + ncommentsNumBits
+    let ifdefstackCountStart = lexstateNumBits + ncommentsNumBits + hardwhiteNumBits
+
+    let ifdefstackStart =
+        lexstateNumBits + ncommentsNumBits + hardwhiteNumBits + ifdefstackCountNumBits
+
+    let stringKindStart =
+        lexstateNumBits
+        + ncommentsNumBits
+        + hardwhiteNumBits
+        + ifdefstackCountNumBits
+        + ifdefstackNumBits
+
+    let nestingStart =
+        lexstateNumBits
+        + ncommentsNumBits
+        + hardwhiteNumBits
+        + ifdefstackCountNumBits
+        + ifdefstackNumBits
+        + stringKindBits
+
+    let lexstateMask = Bits.mask64 lexstateStart lexstateNumBits
+    let ncommentsMask = Bits.mask64 ncommentsStart ncommentsNumBits
+    let hardwhitePosMask = Bits.mask64 hardwhitePosStart hardwhiteNumBits
+    let ifdefstackCountMask = Bits.mask64 ifdefstackCountStart ifdefstackCountNumBits
+    let ifdefstackMask = Bits.mask64 ifdefstackStart ifdefstackNumBits
+    let stringKindMask = Bits.mask64 stringKindStart stringKindBits
+    let nestingMask = Bits.mask64 nestingStart nestingBits
 
     let bitOfBool b = if b then 1 else 0
     let boolOfBit n = (n = 1L)
@@ -445,38 +580,52 @@ module internal LexerStateEncoding =
         | 0 -> LexerStringStyle.SingleQuote
         | 1 -> LexerStringStyle.Verbatim
         | 2 -> LexerStringStyle.TripleQuote
-        | _ -> assert false; LexerStringStyle.SingleQuote
+        | _ ->
+            assert false
+            LexerStringStyle.SingleQuote
 
-    let encodeLexCont (colorState: FSharpTokenizerColorState, numComments, b: pos, ifdefStack, light, stringKind: LexerStringKind, stringNest) =
+    let encodeLexCont
+        (
+            colorState: FSharpTokenizerColorState,
+            numComments,
+            b: pos,
+            ifdefStack,
+            light,
+            stringKind: LexerStringKind,
+            stringNest
+        ) =
         let mutable ifdefStackCount = 0
         let mutable ifdefStackBits = 0
+
         for ifOrElse in ifdefStack do
             match ifOrElse with
             | IfDefIf, _ -> ()
-            | IfDefElse, _ ->
-                ifdefStackBits <- (ifdefStackBits ||| (1 <<< ifdefStackCount))
+            | IfDefElse, _ -> ifdefStackBits <- (ifdefStackBits ||| (1 <<< ifdefStackCount))
+
             ifdefStackCount <- ifdefStackCount + 1
 
         let stringKindValue =
-            (if stringKind.IsByteString then 0b100 else 0) |||
-            (if stringKind.IsInterpolated then 0b010 else 0) |||
-            (if stringKind.IsInterpolatedFirst then 0b001 else 0)
+            (if stringKind.IsByteString then 0b100 else 0)
+            ||| (if stringKind.IsInterpolated then 0b010 else 0)
+            ||| (if stringKind.IsInterpolatedFirst then 0b001 else 0)
 
         let nestingValue =
             let tag1, i1, kind1, rest =
                 match stringNest with
                 | [] -> false, 0, 0, []
-                | (i1, kind1, _)::rest -> true, i1, encodeStringStyle kind1, rest
+                | (i1, kind1, _) :: rest -> true, i1, encodeStringStyle kind1, rest
+
             let tag2, i2, kind2 =
                 match rest with
                 | [] -> false, 0, 0
-                | (i2, kind2, _)::_ -> true, i2, encodeStringStyle kind2
-            (if tag1 then      0b100000000000 else 0) |||
-            (if tag2 then      0b010000000000 else 0) |||
-            ((i1 <<< 7)    &&& 0b001110000000) |||
-            ((i2 <<< 4)    &&& 0b000001110000) |||
-            ((kind1 <<< 2) &&& 0b000000001100) |||
-            ((kind2 <<< 0) &&& 0b000000000011)
+                | (i2, kind2, _) :: _ -> true, i2, encodeStringStyle kind2
+
+            (if tag1 then 0b100000000000 else 0)
+            ||| (if tag2 then 0b010000000000 else 0)
+            ||| ((i1 <<< 7) &&& 0b001110000000)
+            ||| ((i2 <<< 4) &&& 0b000001110000)
+            ||| ((kind1 <<< 2) &&& 0b000000001100)
+            ||| ((kind2 <<< 0) &&& 0b000000000011)
 
         let bits =
             lexStateOfColorState colorState
@@ -487,9 +636,10 @@ module internal LexerStateEncoding =
             ||| ((int64 stringKindValue <<< stringKindStart) &&& stringKindMask)
             ||| ((int64 nestingValue <<< nestingStart) &&& nestingMask)
 
-        { PosBits = b.Encoding
-          OtherBits = bits }
-
+        {
+            PosBits = b.Encoding
+            OtherBits = bits
+        }
 
     let decodeLexCont (state: FSharpTokenizerLexState) =
         let mutable ifDefs = []
@@ -499,35 +649,44 @@ module internal LexerStateEncoding =
         let ncomments = int32 ((bits &&& ncommentsMask) >>> ncommentsStart)
         let pos = pos.Decode state.PosBits
 
-        let ifdefStackCount = int32 ((bits &&& ifdefstackCountMask) >>> ifdefstackCountStart)
-        if ifdefStackCount>0 then
+        let ifdefStackCount =
+            int32 ((bits &&& ifdefstackCountMask) >>> ifdefstackCountStart)
+
+        if ifdefStackCount > 0 then
             let ifdefStack = int32 ((bits &&& ifdefstackMask) >>> ifdefstackStart)
+
             for i in 1..ifdefStackCount do
-                let bit = ifdefStackCount-i
+                let bit = ifdefStackCount - i
                 let mask = 1 <<< bit
                 let ifDef = (if ifdefStack &&& mask = 0 then IfDefIf else IfDefElse)
                 ifDefs <- (ifDef, range0) :: ifDefs
 
         let stringKindValue = int32 ((bits &&& stringKindMask) >>> stringKindStart)
-        let stringKind : LexerStringKind =
-            { IsByteString = ((stringKindValue &&& 0b100) = 0b100)
-              IsInterpolated = ((stringKindValue &&& 0b010) = 0b010)
-              IsInterpolatedFirst = ((stringKindValue &&& 0b001) = 0b001) }
+
+        let stringKind: LexerStringKind =
+            {
+                IsByteString = ((stringKindValue &&& 0b100) = 0b100)
+                IsInterpolated = ((stringKindValue &&& 0b010) = 0b010)
+                IsInterpolatedFirst = ((stringKindValue &&& 0b001) = 0b001)
+            }
 
         let hardwhite = boolOfBit ((bits &&& hardwhitePosMask) >>> hardwhitePosStart)
 
         let nestingValue = int32 ((bits &&& nestingMask) >>> nestingStart)
-        let stringNest : LexerInterpolatedStringNesting =
-            let tag1  = ((nestingValue &&& 0b100000000000) =  0b100000000000)
-            let tag2  = ((nestingValue &&& 0b010000000000) =  0b010000000000)
-            let i1    = ((nestingValue &&& 0b001110000000) >>> 7)
-            let i2    = ((nestingValue &&& 0b000001110000) >>> 4)
+
+        let stringNest: LexerInterpolatedStringNesting =
+            let tag1 = ((nestingValue &&& 0b100000000000) = 0b100000000000)
+            let tag2 = ((nestingValue &&& 0b010000000000) = 0b010000000000)
+            let i1 = ((nestingValue &&& 0b001110000000) >>> 7)
+            let i2 = ((nestingValue &&& 0b000001110000) >>> 4)
             let kind1 = ((nestingValue &&& 0b000000001100) >>> 2)
             let kind2 = ((nestingValue &&& 0b000000000011) >>> 0)
-            [ if tag1 then
-                 i1, decodeStringStyle kind1, range0
-              if tag2 then
-                 i2, decodeStringStyle kind2, range0
+
+            [
+                if tag1 then
+                    i1, decodeStringStyle kind1, range0
+                if tag2 then
+                    i2, decodeStringStyle kind2, range0
             ]
 
         (colorState, ncomments, pos, ifDefs, hardwhite, stringKind, stringNest)
@@ -537,65 +696,112 @@ module internal LexerStateEncoding =
         | LexCont.Token (ifdefs, stringNest) ->
             encodeLexCont (FSharpTokenizerColorState.Token, 0L, pos0, ifdefs, indentationSyntaxStatus, LexerStringKind.String, stringNest)
         | LexCont.IfDefSkip (ifdefs, stringNest, n, m) ->
-            encodeLexCont (FSharpTokenizerColorState.IfDefSkip, int64 n, m.Start, ifdefs, indentationSyntaxStatus, LexerStringKind.String, stringNest)
-        | LexCont.EndLine(ifdefs, stringNest, econt) ->
+            encodeLexCont (
+                FSharpTokenizerColorState.IfDefSkip,
+                int64 n,
+                m.Start,
+                ifdefs,
+                indentationSyntaxStatus,
+                LexerStringKind.String,
+                stringNest
+            )
+        | LexCont.EndLine (ifdefs, stringNest, econt) ->
             match econt with
-            | LexerEndlineContinuation.Skip(n, m) ->
-               encodeLexCont (FSharpTokenizerColorState.EndLineThenSkip, int64 n, m.Start, ifdefs, indentationSyntaxStatus, LexerStringKind.String, stringNest)
+            | LexerEndlineContinuation.Skip (n, m) ->
+                encodeLexCont (
+                    FSharpTokenizerColorState.EndLineThenSkip,
+                    int64 n,
+                    m.Start,
+                    ifdefs,
+                    indentationSyntaxStatus,
+                    LexerStringKind.String,
+                    stringNest
+                )
             | LexerEndlineContinuation.Token ->
-               encodeLexCont (FSharpTokenizerColorState.EndLineThenToken, 0L, pos0, ifdefs, indentationSyntaxStatus, LexerStringKind.String, stringNest)
+                encodeLexCont (
+                    FSharpTokenizerColorState.EndLineThenToken,
+                    0L,
+                    pos0,
+                    ifdefs,
+                    indentationSyntaxStatus,
+                    LexerStringKind.String,
+                    stringNest
+                )
         | LexCont.String (ifdefs, stringNest, style, kind, m) ->
             let state =
                 match style with
                 | LexerStringStyle.SingleQuote -> FSharpTokenizerColorState.String
                 | LexerStringStyle.Verbatim -> FSharpTokenizerColorState.VerbatimString
                 | LexerStringStyle.TripleQuote -> FSharpTokenizerColorState.TripleQuoteString
+
             encodeLexCont (state, 0L, m.Start, ifdefs, indentationSyntaxStatus, kind, stringNest)
         | LexCont.Comment (ifdefs, stringNest, n, m) ->
-            encodeLexCont (FSharpTokenizerColorState.Comment, int64 n, m.Start, ifdefs, indentationSyntaxStatus, LexerStringKind.String, stringNest)
+            encodeLexCont (
+                FSharpTokenizerColorState.Comment,
+                int64 n,
+                m.Start,
+                ifdefs,
+                indentationSyntaxStatus,
+                LexerStringKind.String,
+                stringNest
+            )
         | LexCont.SingleLineComment (ifdefs, stringNest, n, m) ->
-            encodeLexCont (FSharpTokenizerColorState.SingleLineComment, int64 n, m.Start, ifdefs, indentationSyntaxStatus, LexerStringKind.String, stringNest)
+            encodeLexCont (
+                FSharpTokenizerColorState.SingleLineComment,
+                int64 n,
+                m.Start,
+                ifdefs,
+                indentationSyntaxStatus,
+                LexerStringKind.String,
+                stringNest
+            )
         | LexCont.StringInComment (ifdefs, stringNest, style, n, m) ->
             let state =
                 match style with
                 | LexerStringStyle.SingleQuote -> FSharpTokenizerColorState.StringInComment
                 | LexerStringStyle.Verbatim -> FSharpTokenizerColorState.VerbatimStringInComment
                 | LexerStringStyle.TripleQuote -> FSharpTokenizerColorState.TripleQuoteStringInComment
+
             encodeLexCont (state, int64 n, m.Start, ifdefs, indentationSyntaxStatus, LexerStringKind.String, stringNest)
         | LexCont.MLOnly (ifdefs, stringNest, m) ->
-            encodeLexCont (FSharpTokenizerColorState.CamlOnly, 0L, m.Start, ifdefs, indentationSyntaxStatus, LexerStringKind.String, stringNest)
+            encodeLexCont (
+                FSharpTokenizerColorState.CamlOnly,
+                0L,
+                m.Start,
+                ifdefs,
+                indentationSyntaxStatus,
+                LexerStringKind.String,
+                stringNest
+            )
 
     let decodeLexInt (state: FSharpTokenizerLexState) =
-        let tag, n1, p1, ifdefs, lightSyntaxStatusInitial, stringKind, stringNest = decodeLexCont state
+        let tag, n1, p1, ifdefs, lightSyntaxStatusInitial, stringKind, stringNest =
+            decodeLexCont state
+
         let lexcont =
             match tag with
-            | FSharpTokenizerColorState.Token ->
-                LexCont.Token (ifdefs, stringNest)
-            | FSharpTokenizerColorState.IfDefSkip ->
-                LexCont.IfDefSkip (ifdefs, stringNest, n1, mkRange "file" p1 p1)
+            | FSharpTokenizerColorState.Token -> LexCont.Token(ifdefs, stringNest)
+            | FSharpTokenizerColorState.IfDefSkip -> LexCont.IfDefSkip(ifdefs, stringNest, n1, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.String ->
-                LexCont.String (ifdefs, stringNest, LexerStringStyle.SingleQuote, stringKind, mkRange "file" p1 p1)
-            | FSharpTokenizerColorState.Comment ->
-                LexCont.Comment (ifdefs, stringNest, n1, mkRange "file" p1 p1)
-            | FSharpTokenizerColorState.SingleLineComment ->
-                LexCont.SingleLineComment (ifdefs, stringNest, n1, mkRange "file" p1 p1)
+                LexCont.String(ifdefs, stringNest, LexerStringStyle.SingleQuote, stringKind, mkRange "file" p1 p1)
+            | FSharpTokenizerColorState.Comment -> LexCont.Comment(ifdefs, stringNest, n1, mkRange "file" p1 p1)
+            | FSharpTokenizerColorState.SingleLineComment -> LexCont.SingleLineComment(ifdefs, stringNest, n1, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.StringInComment ->
-                LexCont.StringInComment (ifdefs, stringNest, LexerStringStyle.SingleQuote, n1, mkRange "file" p1 p1)
+                LexCont.StringInComment(ifdefs, stringNest, LexerStringStyle.SingleQuote, n1, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.VerbatimStringInComment ->
-                LexCont.StringInComment (ifdefs, stringNest, LexerStringStyle.Verbatim, n1, mkRange "file" p1 p1)
+                LexCont.StringInComment(ifdefs, stringNest, LexerStringStyle.Verbatim, n1, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.TripleQuoteStringInComment ->
-                LexCont.StringInComment (ifdefs, stringNest, LexerStringStyle.TripleQuote, n1, mkRange "file" p1 p1)
-            | FSharpTokenizerColorState.CamlOnly ->
-                LexCont.MLOnly (ifdefs, stringNest, mkRange "file" p1 p1)
+                LexCont.StringInComment(ifdefs, stringNest, LexerStringStyle.TripleQuote, n1, mkRange "file" p1 p1)
+            | FSharpTokenizerColorState.CamlOnly -> LexCont.MLOnly(ifdefs, stringNest, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.VerbatimString ->
-                LexCont.String (ifdefs, stringNest, LexerStringStyle.Verbatim, stringKind, mkRange "file" p1 p1)
+                LexCont.String(ifdefs, stringNest, LexerStringStyle.Verbatim, stringKind, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.TripleQuoteString ->
-                LexCont.String (ifdefs, stringNest, LexerStringStyle.TripleQuote, stringKind, mkRange "file" p1 p1)
+                LexCont.String(ifdefs, stringNest, LexerStringStyle.TripleQuote, stringKind, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.EndLineThenSkip ->
                 LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Skip(n1, mkRange "file" p1 p1))
-            | FSharpTokenizerColorState.EndLineThenToken ->
-                LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Token)
-            | _ -> LexCont.Token ([], stringNest)
+            | FSharpTokenizerColorState.EndLineThenToken -> LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Token)
+            | _ -> LexCont.Token([], stringNest)
+
         lightSyntaxStatusInitial, lexcont
 
 //----------------------------------------------------------------------------
@@ -608,17 +814,14 @@ type SingleLineTokenState =
     | BeforeHash = 0
     | NoFurtherMatchPossible = 1
 
-
 /// Split a line into tokens and attach information about the tokens. This information is used by Visual Studio.
 [<Sealed>]
-type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
-                         maxLength: int option,
-                         fileName: string option,
-                         lexargs: LexArgs) =
+type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fileName: string option, lexargs: LexArgs) =
 
-    let skip = false   // don't skip whitespace in the lexer
+    let skip = false // don't skip whitespace in the lexer
 
     let mutable singleLineTokenState = SingleLineTokenState.BeforeHash
+
     let fsx =
         match fileName with
         | None -> false
@@ -636,8 +839,11 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
     // Process: anywhite* #<directive>
     let processDirective (str: string) directiveLength delay cont =
         let hashIdx = str.IndexOf("#", StringComparison.Ordinal)
-        if (hashIdx <> 0) then delay(WHITESPACE cont, 0, hashIdx - 1)
-        delay(HASH_IF(range0, "", cont), hashIdx, hashIdx + directiveLength)
+
+        if (hashIdx <> 0) then
+            delay (WHITESPACE cont, 0, hashIdx - 1)
+
+        delay (HASH_IF(range0, "", cont), hashIdx, hashIdx + directiveLength)
         hashIdx + directiveLength + 1
 
     // Process: anywhite* ("//" [^'\n''\r']*)?
@@ -645,15 +851,21 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         let rest = str.Substring(offset, str.Length - offset)
         let comment = rest.IndexOf('/')
         let spaceLength = if comment = -1 then rest.Length else comment
-        if (spaceLength > 0) then delay(WHITESPACE cont, offset, offset + spaceLength - 1)
-        if (comment <> -1) then delay(COMMENT cont, offset + comment, offset + rest.Length - 1)
+
+        if (spaceLength > 0) then
+            delay (WHITESPACE cont, offset, offset + spaceLength - 1)
+
+        if (comment <> -1) then
+            delay (COMMENT cont, offset + comment, offset + rest.Length - 1)
 
     // Split a directive line from lexer into tokens usable in VS
     let processDirectiveLine ofs f =
         let delayed = ResizeArray<_>()
-        f (fun (tok, s, e) -> delayed.Add (tok, s + ofs, e + ofs) )
+        f (fun (tok, s, e) -> delayed.Add(tok, s + ofs, e + ofs))
         // delay all the tokens and return the remaining one
-        for i = delayed.Count - 1 downto 1 do delayToken delayed[i]
+        for i = delayed.Count - 1 downto 1 do
+            delayToken delayed[i]
+
         delayed[0]
 
     // Split the following line:
@@ -663,12 +875,13 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
             // Process: anywhite* "#else"   /   anywhite* "#endif"
             let offset = processDirective str length delay cont
             // Process: anywhite* ("//" [^'\n''\r']*)?
-            processWhiteAndComment str offset delay cont )
+            processWhiteAndComment str offset delay cont)
 
     // Split the following line:
     //  anywhite* "#if" anywhite+ ident anywhite* ("//" [^'\n''\r']*)?
     let processHashIfLine ofs (str: string) cont =
         let With n m = if (n < 0) then m else n
+
         processDirectiveLine ofs (fun delay ->
             // Process: anywhite* "#if"
             let offset = processDirective str 2 delay cont
@@ -677,16 +890,18 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                 let w = str.Substring offset
                 let r = w.TrimStart [| ' '; '\t' |]
                 r, w.Length - r.Length
+
             let beforeIdent = offset + spaces
             let identLength = With (rest.IndexOfAny([| '/'; '\t'; ' ' |])) rest.Length
-            delay(WHITESPACE cont, offset, beforeIdent - 1)
-            delay(IDENT(rest.Substring(0, identLength)), beforeIdent, beforeIdent + identLength - 1)
+            delay (WHITESPACE cont, offset, beforeIdent - 1)
+            delay (IDENT(rest.Substring(0, identLength)), beforeIdent, beforeIdent + identLength - 1)
             // Process: anywhite* ("//" [^'\n''\r']*)?
             let offset = beforeIdent + identLength
-            processWhiteAndComment str offset delay cont )
+            processWhiteAndComment str offset delay cont)
 
     // Set up the initial file position
-    do match fileName with
+    do
+        match fileName with
         | None -> lexbuf.EndPos <- Internal.Utilities.Text.Lexing.Position.Empty
         | Some value -> resetLexbufPos value lexbuf
 
@@ -718,6 +933,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
             lexargs.stringNest <- stringNest
             use buf = ByteBuffer.Create Lexer.StringCapacity
             let args = (buf, LexerStringFinisher.Default, m, kind, lexargs)
+
             match style with
             | LexerStringStyle.SingleQuote -> Lexer.singleQuoteString args skip lexbuf
             | LexerStringStyle.Verbatim -> Lexer.verbatimString args skip lexbuf
@@ -737,6 +953,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         | LexCont.StringInComment (ifdefs, stringNest, style, n, m) ->
             lexargs.ifdefStack <- ifdefs
             lexargs.stringNest <- stringNest
+
             match style with
             | LexerStringStyle.SingleQuote -> Lexer.stringInComment n m lexargs skip lexbuf
             | LexerStringStyle.Verbatim -> Lexer.verbatimStringInComment n m lexargs skip lexbuf
@@ -747,14 +964,16 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
             lexargs.stringNest <- stringNest
             Lexer.mlOnly m lexargs skip lexbuf
 
-    let columnsOfCurrentToken() =
+    let columnsOfCurrentToken () =
         let leftp = lexbuf.StartPos
         let rightp = lexbuf.EndPos
         let leftc = leftp.Column
+
         let rightc =
             match maxLength with
             | Some mx when rightp.Line > leftp.Line -> mx
             | _ -> rightp.Column
+
         let rightc = rightc - 1
         struct (leftc, rightc)
 
@@ -767,78 +986,80 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
             else
                 // Choose which lexer entry point to call and call it
                 let token = callLexCont lexcont indentationSyntaxStatus skip
-                let struct (leftc, rightc) = columnsOfCurrentToken()
+                let struct (leftc, rightc) = columnsOfCurrentToken ()
 
                 // Splits tokens like ">." into multiple tokens - this duplicates behavior from the 'lexfilter'
                 // which cannot be (easily) used from the language service. The rules here are not always valid,
                 // because sometimes token shouldn't be split. However it is just for colorization &
                 // for VS (which needs to recognize when user types ".").
                 match token with
-                | HASH_IF (m, lineStr, cont) when lineStr <> "" ->
-                    false, processHashIfLine m.StartColumn lineStr cont
-                | HASH_ELSE (m, lineStr, cont) when lineStr <> "" ->
-                    false, processHashEndElse m.StartColumn lineStr 4 cont
-                | HASH_ENDIF (m, lineStr, cont) when lineStr <> "" ->
-                    false, processHashEndElse m.StartColumn lineStr 5 cont
-                | HASH_IDENT(ident) ->
-                    delayToken(IDENT ident, leftc + 1, rightc)
+                | HASH_IF (m, lineStr, cont) when lineStr <> "" -> false, processHashIfLine m.StartColumn lineStr cont
+                | HASH_ELSE (m, lineStr, cont) when lineStr <> "" -> false, processHashEndElse m.StartColumn lineStr 4 cont
+                | HASH_ENDIF (m, lineStr, cont) when lineStr <> "" -> false, processHashEndElse m.StartColumn lineStr 5 cont
+                | HASH_IDENT (ident) ->
+                    delayToken (IDENT ident, leftc + 1, rightc)
                     false, (HASH, leftc, leftc)
                 | RQUOTE_DOT (s, raw) ->
-                    delayToken(DOT, rightc, rightc)
-                    false, (RQUOTE (s, raw), leftc, rightc - 1)
-                | INFIX_COMPARE_OP (LexFilter.TyparsCloseOp(greaters, afterOp) as opstr) ->
+                    delayToken (DOT, rightc, rightc)
+                    false, (RQUOTE(s, raw), leftc, rightc - 1)
+                | INFIX_COMPARE_OP (LexFilter.TyparsCloseOp (greaters, afterOp) as opstr) ->
                     match afterOp with
                     | None -> ()
-                    | Some tok -> delayToken(tok, leftc + greaters.Length, rightc)
+                    | Some tok -> delayToken (tok, leftc + greaters.Length, rightc)
+
                     for i = greaters.Length - 1 downto 1 do
-                        delayToken(greaters[i] false, leftc + i, rightc - opstr.Length + i + 1)
-                    false, (greaters[0] false, leftc, rightc - opstr.Length + 1)
+                        delayToken (greaters[i]false, leftc + i, rightc - opstr.Length + i + 1)
+
+                    false, (greaters[0]false, leftc, rightc - opstr.Length + 1)
                 // break up any operators that start with '.' so that we can get auto-popup-completion for e.g. "x.+1"  when typing the dot
                 | INFIX_STAR_STAR_OP opstr when opstr.StartsWithOrdinal(".") ->
-                    delayToken(INFIX_STAR_STAR_OP(opstr.Substring 1), leftc+1, rightc)
+                    delayToken (INFIX_STAR_STAR_OP(opstr.Substring 1), leftc + 1, rightc)
                     false, (DOT, leftc, leftc)
                 | PLUS_MINUS_OP opstr when opstr.StartsWithOrdinal(".") ->
-                    delayToken(PLUS_MINUS_OP(opstr.Substring 1), leftc+1, rightc)
+                    delayToken (PLUS_MINUS_OP(opstr.Substring 1), leftc + 1, rightc)
                     false, (DOT, leftc, leftc)
                 | INFIX_COMPARE_OP opstr when opstr.StartsWithOrdinal(".") ->
-                    delayToken(INFIX_COMPARE_OP(opstr.Substring 1), leftc+1, rightc)
+                    delayToken (INFIX_COMPARE_OP(opstr.Substring 1), leftc + 1, rightc)
                     false, (DOT, leftc, leftc)
                 | INFIX_AT_HAT_OP opstr when opstr.StartsWithOrdinal(".") ->
-                    delayToken(INFIX_AT_HAT_OP(opstr.Substring 1), leftc+1, rightc)
+                    delayToken (INFIX_AT_HAT_OP(opstr.Substring 1), leftc + 1, rightc)
                     false, (DOT, leftc, leftc)
                 | INFIX_BAR_OP opstr when opstr.StartsWithOrdinal(".") ->
-                    delayToken(INFIX_BAR_OP(opstr.Substring 1), leftc+1, rightc)
+                    delayToken (INFIX_BAR_OP(opstr.Substring 1), leftc + 1, rightc)
                     false, (DOT, leftc, leftc)
                 | PREFIX_OP opstr when opstr.StartsWithOrdinal(".") ->
-                    delayToken(PREFIX_OP(opstr.Substring 1), leftc+1, rightc)
+                    delayToken (PREFIX_OP(opstr.Substring 1), leftc + 1, rightc)
                     false, (DOT, leftc, leftc)
                 | INFIX_STAR_DIV_MOD_OP opstr when opstr.StartsWithOrdinal(".") ->
-                    delayToken(INFIX_STAR_DIV_MOD_OP(opstr.Substring 1), leftc+1, rightc)
+                    delayToken (INFIX_STAR_DIV_MOD_OP(opstr.Substring 1), leftc + 1, rightc)
                     false, (DOT, leftc, leftc)
                 | INFIX_AMP_OP opstr when opstr.StartsWithOrdinal(".") ->
-                    delayToken(INFIX_AMP_OP(opstr.Substring 1), leftc+1, rightc)
+                    delayToken (INFIX_AMP_OP(opstr.Substring 1), leftc + 1, rightc)
                     false, (DOT, leftc, leftc)
                 | ADJACENT_PREFIX_OP opstr when opstr.StartsWithOrdinal(".") ->
-                    delayToken(ADJACENT_PREFIX_OP(opstr.Substring 1), leftc+1, rightc)
+                    delayToken (ADJACENT_PREFIX_OP(opstr.Substring 1), leftc + 1, rightc)
                     false, (DOT, leftc, leftc)
                 | FUNKY_OPERATOR_NAME opstr when opstr.StartsWithOrdinal(".") ->
-                    delayToken(FUNKY_OPERATOR_NAME(opstr.Substring 1), leftc+1, rightc)
+                    delayToken (FUNKY_OPERATOR_NAME(opstr.Substring 1), leftc + 1, rightc)
                     false, (DOT, leftc, leftc)
                 | _ -> false, (token, leftc, rightc)
         with _ ->
             false, (EOF LexerStateEncoding.revertToDefaultLexCont, 0, 0)
 
     // Scan a token starting with the given lexer state
-    member x.ScanToken (lexState: FSharpTokenizerLexState) : FSharpTokenInfo option * FSharpTokenizerLexState =
+    member x.ScanToken(lexState: FSharpTokenizerLexState) : FSharpTokenInfo option * FSharpTokenizerLexState =
 
         use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
+        use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> DiscardErrorsLogger)
 
         let indentationSyntaxStatus, lexcont = LexerStateEncoding.decodeLexInt lexState
-        let indentationSyntaxStatus = IndentationAwareSyntaxStatus(indentationSyntaxStatus, false)
+
+        let indentationSyntaxStatus =
+            IndentationAwareSyntaxStatus(indentationSyntaxStatus, false)
 
         // Grab a token
-        let isCached, (token, leftc, rightc) = getTokenWithPosition lexcont indentationSyntaxStatus
+        let isCached, (token, leftc, rightc) =
+            getTokenWithPosition lexcont indentationSyntaxStatus
 
         // Check for end-of-string and failure
         let tokenDataOption, lexcontFinal, tokenTag =
@@ -846,43 +1067,52 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
             | EOF lexcont ->
                 // End of text! No more tokens.
                 None, lexcont, 0
-            | LEX_FAILURE _ ->
-                None, LexerStateEncoding.revertToDefaultLexCont, 0
+            | LEX_FAILURE _ -> None, LexerStateEncoding.revertToDefaultLexCont, 0
             | _ ->
                 // Get the information about the token
                 let colorClass, charClass, triggerClass = TokenClassifications.tokenInfo token
 
                 let lexcontFinal =
                     // If we're using token from cache, we don't move forward with lexing
-                    if isCached then lexcont
-                    else LexerStateEncoding.computeNextLexState token lexcont
+                    if isCached then
+                        lexcont
+                    else
+                        LexerStateEncoding.computeNextLexState token lexcont
 
                 let tokenTag = tagOfToken token
 
                 let tokenName = token_to_string token
 
-                let fullMatchedLength = lexbuf.EndPos.AbsoluteOffset - lexbuf.StartPos.AbsoluteOffset
+                let fullMatchedLength =
+                    lexbuf.EndPos.AbsoluteOffset - lexbuf.StartPos.AbsoluteOffset
 
                 let tokenData =
-                    { TokenName = tokenName
-                      LeftColumn=leftc
-                      RightColumn=rightc
-                      ColorClass=colorClass
-                      CharClass=charClass
-                      FSharpTokenTriggerClass=triggerClass
-                      Tag=tokenTag
-                      FullMatchedLength=fullMatchedLength}
+                    {
+                        TokenName = tokenName
+                        LeftColumn = leftc
+                        RightColumn = rightc
+                        ColorClass = colorClass
+                        CharClass = charClass
+                        FSharpTokenTriggerClass = triggerClass
+                        Tag = tokenTag
+                        FullMatchedLength = fullMatchedLength
+                    }
+
                 Some tokenData, lexcontFinal, tokenTag
 
         // Check for patterns like #-IDENT and see if they look like meta commands for .fsx files. If they do then merge them into a single token.
         let tokenDataOption, lexintFinal =
-            let lexintFinal = LexerStateEncoding.encodeLexInt indentationSyntaxStatus.Status lexcontFinal
+            let lexintFinal =
+                LexerStateEncoding.encodeLexInt indentationSyntaxStatus.Status lexcontFinal
+
             match tokenDataOption, singleLineTokenState, tokenTagToTokenId tokenTag with
             | Some tokenData, SingleLineTokenState.BeforeHash, TOKEN_HASH ->
                 // Don't allow further matches.
                 singleLineTokenState <- SingleLineTokenState.NoFurtherMatchPossible
                 // Peek at the next token
-                let isCached, (nextToken, _, rightc) = getTokenWithPosition lexcont indentationSyntaxStatus
+                let isCached, (nextToken, _, rightc) =
+                    getTokenWithPosition lexcont indentationSyntaxStatus
+
                 match nextToken with
                 | IDENT possibleMetaCommand ->
                     match fsx, possibleMetaCommand with
@@ -907,9 +1137,23 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
                     // These are for script and non-script
                     | _, "nowarn" ->
                         // Merge both tokens into one.
-                        let lexcontFinal = if isCached then lexcont else LexerStateEncoding.computeNextLexState token lexcont
-                        let tokenData = {tokenData with RightColumn=rightc;ColorClass=FSharpTokenColorKind.PreprocessorKeyword;CharClass=FSharpTokenCharKind.Keyword;FSharpTokenTriggerClass=FSharpTokenTriggerClass.None}
-                        let lexintFinal = LexerStateEncoding.encodeLexInt indentationSyntaxStatus.Status lexcontFinal
+                        let lexcontFinal =
+                            if isCached then
+                                lexcont
+                            else
+                                LexerStateEncoding.computeNextLexState token lexcont
+
+                        let tokenData =
+                            { tokenData with
+                                RightColumn = rightc
+                                ColorClass = FSharpTokenColorKind.PreprocessorKeyword
+                                CharClass = FSharpTokenCharKind.Keyword
+                                FSharpTokenTriggerClass = FSharpTokenTriggerClass.None
+                            }
+
+                        let lexintFinal =
+                            LexerStateEncoding.encodeLexInt indentationSyntaxStatus.Status lexcontFinal
+
                         Some tokenData, lexintFinal
                     | _ -> tokenDataOption, lexintFinal
                 | _ -> tokenDataOption, lexintFinal
@@ -926,7 +1170,10 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
         LexerStateEncoding.colorStateOfLexState lexState
 
     static member LexStateOfColorState(colorState: FSharpTokenizerColorState) =
-        { PosBits = 0L; OtherBits = LexerStateEncoding.lexStateOfColorState colorState }
+        {
+            PosBits = 0L
+            OtherBits = LexerStateEncoding.lexStateOfColorState colorState
+        }
 
 [<Sealed>]
 type FSharpSourceTokenizer(conditionalDefines: string list, fileName: string option) =
@@ -936,23 +1183,38 @@ type FSharpSourceTokenizer(conditionalDefines: string list, fileName: string opt
 
     let lexResourceManager = LexResourceManager()
 
-    let lexargs = mkLexargs(conditionalDefines, IndentationAwareSyntaxStatus(true, false), lexResourceManager, [], DiscardErrorsLogger, PathMap.empty)
+    let lexargs =
+        mkLexargs (
+            conditionalDefines,
+            IndentationAwareSyntaxStatus(true, false),
+            lexResourceManager,
+            [],
+            DiscardErrorsLogger,
+            PathMap.empty
+        )
 
     member _.CreateLineTokenizer(lineText: string) =
-        let lexbuf = UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, lineText)
+        let lexbuf =
+            UnicodeLexing.StringAsLexbuf(reportLibraryOnlyFeatures, langVersion, lineText)
+
         FSharpLineTokenizer(lexbuf, Some lineText.Length, fileName, lexargs)
 
     member _.CreateBufferTokenizer bufferFiller =
-        let lexbuf = UnicodeLexing.FunctionAsLexbuf(reportLibraryOnlyFeatures, langVersion, bufferFiller)
+        let lexbuf =
+            UnicodeLexing.FunctionAsLexbuf(reportLibraryOnlyFeatures, langVersion, bufferFiller)
+
         FSharpLineTokenizer(lexbuf, None, fileName, lexargs)
 
 module FSharpKeywords =
 
-    let DoesIdentifierNeedBackticks s = PrettyNaming.DoesIdentifierNeedBackticks s
+    let DoesIdentifierNeedBackticks s =
+        PrettyNaming.DoesIdentifierNeedBackticks s
 
-    let AddBackticksToIdentifierIfNeeded s = PrettyNaming.AddBackticksToIdentifierIfNeeded s
+    let AddBackticksToIdentifierIfNeeded s =
+        PrettyNaming.AddBackticksToIdentifierIfNeeded s
 
-    let NormalizeIdentifierBackticks s = PrettyNaming.NormalizeIdentifierBackticks s
+    let NormalizeIdentifierBackticks s =
+        PrettyNaming.NormalizeIdentifierBackticks s
 
     let KeywordsWithDescription = PrettyNaming.keywordsWithDescription
 
@@ -960,12 +1222,12 @@ module FSharpKeywords =
 
 [<Flags>]
 type FSharpLexerFlags =
-    | Default                       = 0x11011
-    | LightSyntaxOn                 = 0x00001
-    | Compiling                     = 0x00010
-    | CompilingFSharpCore           = 0x00110
-    | SkipTrivia                    = 0x01000
-    | UseLexFilter                  = 0x10000
+    | Default = 0x11011
+    | LightSyntaxOn = 0x00001
+    | Compiling = 0x00010
+    | CompilingFSharpCore = 0x00110
+    | SkipTrivia = 0x01000
+    | UseLexFilter = 0x10000
 
 [<RequireQualifiedAccess>]
 type FSharpTokenKind =
@@ -1160,13 +1422,13 @@ type FSharpTokenKind =
     | InfixLxor
     | InfixMod
 
-[<Struct;NoComparison;NoEquality>]
+[<Struct; NoComparison; NoEquality>]
 type FSharpToken =
 
     val private tok: token
     val private tokRange: range
 
-    new (tok, tokRange) = { tok = tok; tokRange = tokRange }
+    new(tok, tokRange) = { tok = tok; tokRange = tokRange }
 
     member this.Range = this.tokRange
 
@@ -1190,137 +1452,137 @@ type FSharpToken =
         | INACTIVECODE _ -> FSharpTokenKind.InactiveCode
         | LINE_COMMENT _ -> FSharpTokenKind.LineCommentTrivia
         | STRING_TEXT _ -> FSharpTokenKind.StringText
-        | FIXED  -> FSharpTokenKind.Fixed
-        | OINTERFACE_MEMBER  -> FSharpTokenKind.OffsideInterfaceMember
-        | OBLOCKEND  -> FSharpTokenKind.OffsideBlockEnd
-        | ORIGHT_BLOCK_END  -> FSharpTokenKind.OffsideRightBlockEnd
-        | ODECLEND  -> FSharpTokenKind.OffsideDeclEnd
-        | OEND  -> FSharpTokenKind.OffsideEnd
-        | OBLOCKSEP  -> FSharpTokenKind.OffsideBlockSep
-        | OBLOCKBEGIN  -> FSharpTokenKind.OffsideBlockBegin
-        | ORESET  -> FSharpTokenKind.OffsideReset
-        | OFUN  -> FSharpTokenKind.OffsideFun
-        | OFUNCTION  -> FSharpTokenKind.OffsideFunction
-        | OWITH  -> FSharpTokenKind.OffsideWith
-        | OELSE  -> FSharpTokenKind.OffsideElse
-        | OTHEN  -> FSharpTokenKind.OffsideThen
-        | ODO_BANG  -> FSharpTokenKind.OffsideDoBang
-        | ODO  -> FSharpTokenKind.OffsideDo
+        | FIXED -> FSharpTokenKind.Fixed
+        | OINTERFACE_MEMBER -> FSharpTokenKind.OffsideInterfaceMember
+        | OBLOCKEND -> FSharpTokenKind.OffsideBlockEnd
+        | ORIGHT_BLOCK_END -> FSharpTokenKind.OffsideRightBlockEnd
+        | ODECLEND -> FSharpTokenKind.OffsideDeclEnd
+        | OEND -> FSharpTokenKind.OffsideEnd
+        | OBLOCKSEP -> FSharpTokenKind.OffsideBlockSep
+        | OBLOCKBEGIN -> FSharpTokenKind.OffsideBlockBegin
+        | ORESET -> FSharpTokenKind.OffsideReset
+        | OFUN -> FSharpTokenKind.OffsideFun
+        | OFUNCTION -> FSharpTokenKind.OffsideFunction
+        | OWITH -> FSharpTokenKind.OffsideWith
+        | OELSE -> FSharpTokenKind.OffsideElse
+        | OTHEN -> FSharpTokenKind.OffsideThen
+        | ODO_BANG -> FSharpTokenKind.OffsideDoBang
+        | ODO -> FSharpTokenKind.OffsideDo
         | OBINDER _ -> FSharpTokenKind.OffsideBinder
         | OLET _ -> FSharpTokenKind.OffsideLet
-        | HIGH_PRECEDENCE_TYAPP  -> FSharpTokenKind.HighPrecedenceTypeApp
-        | HIGH_PRECEDENCE_PAREN_APP  -> FSharpTokenKind.HighPrecedenceParenthesisApp
-        | HIGH_PRECEDENCE_BRACK_APP  -> FSharpTokenKind.HighPrecedenceBracketApp
-        | EXTERN  -> FSharpTokenKind.Extern
-        | VOID  -> FSharpTokenKind.Void
-        | PUBLIC  -> FSharpTokenKind.Public
-        | PRIVATE  -> FSharpTokenKind.Private
-        | INTERNAL  -> FSharpTokenKind.Internal
-        | GLOBAL  -> FSharpTokenKind.Global
-        | STATIC  -> FSharpTokenKind.Static
-        | MEMBER  -> FSharpTokenKind.Member
-        | CLASS  -> FSharpTokenKind.Class
-        | ABSTRACT  -> FSharpTokenKind.Abstract
-        | OVERRIDE  -> FSharpTokenKind.Override
-        | DEFAULT  -> FSharpTokenKind.Default
-        | CONSTRUCTOR  -> FSharpTokenKind.Constructor
-        | INHERIT  -> FSharpTokenKind.Inherit
-        | GREATER_RBRACK  -> FSharpTokenKind.GreaterRightBracket
-        | STRUCT  -> FSharpTokenKind.Struct
-        | SIG  -> FSharpTokenKind.Sig
-        | BAR  -> FSharpTokenKind.Bar
-        | RBRACK  -> FSharpTokenKind.RightBracket
+        | HIGH_PRECEDENCE_TYAPP -> FSharpTokenKind.HighPrecedenceTypeApp
+        | HIGH_PRECEDENCE_PAREN_APP -> FSharpTokenKind.HighPrecedenceParenthesisApp
+        | HIGH_PRECEDENCE_BRACK_APP -> FSharpTokenKind.HighPrecedenceBracketApp
+        | EXTERN -> FSharpTokenKind.Extern
+        | VOID -> FSharpTokenKind.Void
+        | PUBLIC -> FSharpTokenKind.Public
+        | PRIVATE -> FSharpTokenKind.Private
+        | INTERNAL -> FSharpTokenKind.Internal
+        | GLOBAL -> FSharpTokenKind.Global
+        | STATIC -> FSharpTokenKind.Static
+        | MEMBER -> FSharpTokenKind.Member
+        | CLASS -> FSharpTokenKind.Class
+        | ABSTRACT -> FSharpTokenKind.Abstract
+        | OVERRIDE -> FSharpTokenKind.Override
+        | DEFAULT -> FSharpTokenKind.Default
+        | CONSTRUCTOR -> FSharpTokenKind.Constructor
+        | INHERIT -> FSharpTokenKind.Inherit
+        | GREATER_RBRACK -> FSharpTokenKind.GreaterRightBracket
+        | STRUCT -> FSharpTokenKind.Struct
+        | SIG -> FSharpTokenKind.Sig
+        | BAR -> FSharpTokenKind.Bar
+        | RBRACK -> FSharpTokenKind.RightBracket
         | RBRACE _ -> FSharpTokenKind.RightBrace
-        | MINUS  -> FSharpTokenKind.Minus
-        | DOLLAR  -> FSharpTokenKind.Dollar
-        | BAR_RBRACK  -> FSharpTokenKind.BarRightBracket
-        | BAR_RBRACE  -> FSharpTokenKind.BarRightBrace
-        | UNDERSCORE  -> FSharpTokenKind.Underscore
-        | SEMICOLON_SEMICOLON  -> FSharpTokenKind.SemicolonSemicolon
-        | LARROW  -> FSharpTokenKind.LeftArrow
-        | EQUALS  -> FSharpTokenKind.Equals
-        | LBRACK  -> FSharpTokenKind.LeftBracket
-        | LBRACK_BAR  -> FSharpTokenKind.LeftBracketBar
-        | LBRACE_BAR  -> FSharpTokenKind.LeftBraceBar
-        | LBRACK_LESS  -> FSharpTokenKind.LeftBracketLess
+        | MINUS -> FSharpTokenKind.Minus
+        | DOLLAR -> FSharpTokenKind.Dollar
+        | BAR_RBRACK -> FSharpTokenKind.BarRightBracket
+        | BAR_RBRACE -> FSharpTokenKind.BarRightBrace
+        | UNDERSCORE -> FSharpTokenKind.Underscore
+        | SEMICOLON_SEMICOLON -> FSharpTokenKind.SemicolonSemicolon
+        | LARROW -> FSharpTokenKind.LeftArrow
+        | EQUALS -> FSharpTokenKind.Equals
+        | LBRACK -> FSharpTokenKind.LeftBracket
+        | LBRACK_BAR -> FSharpTokenKind.LeftBracketBar
+        | LBRACE_BAR -> FSharpTokenKind.LeftBraceBar
+        | LBRACK_LESS -> FSharpTokenKind.LeftBracketLess
         | LBRACE _ -> FSharpTokenKind.LeftBrace
-        | QMARK  -> FSharpTokenKind.QuestionMark
-        | QMARK_QMARK  -> FSharpTokenKind.QuestionMarkQuestionMark
-        | DOT  -> FSharpTokenKind.Dot
-        | COLON  -> FSharpTokenKind.Colon
-        | COLON_COLON  -> FSharpTokenKind.ColonColon
-        | COLON_GREATER  -> FSharpTokenKind.ColonGreater
-        | COLON_QMARK_GREATER  -> FSharpTokenKind.ColonQuestionMarkGreater
-        | COLON_QMARK  -> FSharpTokenKind.ColonQuestionMark
-        | COLON_EQUALS  -> FSharpTokenKind.ColonEquals
-        | SEMICOLON  -> FSharpTokenKind.SemicolonSemicolon
-        | WHEN  -> FSharpTokenKind.When
-        | WHILE  -> FSharpTokenKind.While
-        | WITH  -> FSharpTokenKind.With
-        | HASH  -> FSharpTokenKind.Hash
-        | AMP  -> FSharpTokenKind.Ampersand
-        | AMP_AMP  -> FSharpTokenKind.AmpersandAmpersand
-        | QUOTE  -> FSharpTokenKind.RightQuote
-        | LPAREN  -> FSharpTokenKind.LeftParenthesis
-        | RPAREN  -> FSharpTokenKind.RightParenthesis
-        | STAR  -> FSharpTokenKind.Star
-        | COMMA  -> FSharpTokenKind.Comma
-        | RARROW  -> FSharpTokenKind.RightArrow
-        | GREATER_BAR_RBRACK  -> FSharpTokenKind.GreaterBarRightBracket
-        | LPAREN_STAR_RPAREN  -> FSharpTokenKind.LeftParenthesisStarRightParenthesis
-        | OPEN  -> FSharpTokenKind.Open
-        | OR  -> FSharpTokenKind.Or
-        | REC  -> FSharpTokenKind.Rec
-        | THEN  -> FSharpTokenKind.Then
-        | TO  -> FSharpTokenKind.To
-        | TRUE  -> FSharpTokenKind.True
-        | TRY  -> FSharpTokenKind.Try
-        | TYPE  -> FSharpTokenKind.Type
-        | VAL  -> FSharpTokenKind.Val
-        | INLINE  -> FSharpTokenKind.Inline
-        | INTERFACE  -> FSharpTokenKind.Interface
-        | INSTANCE  -> FSharpTokenKind.Instance
-        | CONST  -> FSharpTokenKind.Const
-        | LAZY  -> FSharpTokenKind.Lazy
-        | OLAZY  -> FSharpTokenKind.OffsideLazy
-        | MATCH  -> FSharpTokenKind.Match
-        | MATCH_BANG  -> FSharpTokenKind.MatchBang
-        | MUTABLE  -> FSharpTokenKind.Mutable
-        | NEW  -> FSharpTokenKind.New
-        | OF  -> FSharpTokenKind.Of
-        | EXCEPTION  -> FSharpTokenKind.Exception
-        | FALSE  -> FSharpTokenKind.False
-        | FOR  -> FSharpTokenKind.For
-        | FUN  -> FSharpTokenKind.Fun
-        | FUNCTION  -> FSharpTokenKind.Function
-        | IF  -> FSharpTokenKind.If
-        | IN  -> FSharpTokenKind.In
-        | JOIN_IN  -> FSharpTokenKind.JoinIn
-        | FINALLY  -> FSharpTokenKind.Finally
-        | DO_BANG  -> FSharpTokenKind.DoBang
-        | AND  -> FSharpTokenKind.And
-        | AS  -> FSharpTokenKind.As
-        | ASSERT  -> FSharpTokenKind.Assert
-        | OASSERT  -> FSharpTokenKind.OffsideAssert
-        | BEGIN  -> FSharpTokenKind.Begin
-        | DO  -> FSharpTokenKind.Do
-        | DONE  -> FSharpTokenKind.Done
-        | DOWNTO  -> FSharpTokenKind.DownTo
-        | ELSE  -> FSharpTokenKind.Else
-        | ELIF  -> FSharpTokenKind.Elif
-        | END  -> FSharpTokenKind.End
-        | DOT_DOT  -> FSharpTokenKind.DotDot
-        | DOT_DOT_HAT  -> FSharpTokenKind.DotDotHat
-        | BAR_BAR  -> FSharpTokenKind.BarBar
-        | UPCAST  -> FSharpTokenKind.Upcast
-        | DOWNCAST  -> FSharpTokenKind.Downcast
-        | NULL  -> FSharpTokenKind.Null
-        | RESERVED  -> FSharpTokenKind.Reserved
-        | MODULE  -> FSharpTokenKind.Module
-        | NAMESPACE  -> FSharpTokenKind.Namespace
-        | DELEGATE  -> FSharpTokenKind.Delegate
-        | CONSTRAINT  -> FSharpTokenKind.Constraint
-        | BASE  -> FSharpTokenKind.Base
+        | QMARK -> FSharpTokenKind.QuestionMark
+        | QMARK_QMARK -> FSharpTokenKind.QuestionMarkQuestionMark
+        | DOT -> FSharpTokenKind.Dot
+        | COLON -> FSharpTokenKind.Colon
+        | COLON_COLON -> FSharpTokenKind.ColonColon
+        | COLON_GREATER -> FSharpTokenKind.ColonGreater
+        | COLON_QMARK_GREATER -> FSharpTokenKind.ColonQuestionMarkGreater
+        | COLON_QMARK -> FSharpTokenKind.ColonQuestionMark
+        | COLON_EQUALS -> FSharpTokenKind.ColonEquals
+        | SEMICOLON -> FSharpTokenKind.SemicolonSemicolon
+        | WHEN -> FSharpTokenKind.When
+        | WHILE -> FSharpTokenKind.While
+        | WITH -> FSharpTokenKind.With
+        | HASH -> FSharpTokenKind.Hash
+        | AMP -> FSharpTokenKind.Ampersand
+        | AMP_AMP -> FSharpTokenKind.AmpersandAmpersand
+        | QUOTE -> FSharpTokenKind.RightQuote
+        | LPAREN -> FSharpTokenKind.LeftParenthesis
+        | RPAREN -> FSharpTokenKind.RightParenthesis
+        | STAR -> FSharpTokenKind.Star
+        | COMMA -> FSharpTokenKind.Comma
+        | RARROW -> FSharpTokenKind.RightArrow
+        | GREATER_BAR_RBRACK -> FSharpTokenKind.GreaterBarRightBracket
+        | LPAREN_STAR_RPAREN -> FSharpTokenKind.LeftParenthesisStarRightParenthesis
+        | OPEN -> FSharpTokenKind.Open
+        | OR -> FSharpTokenKind.Or
+        | REC -> FSharpTokenKind.Rec
+        | THEN -> FSharpTokenKind.Then
+        | TO -> FSharpTokenKind.To
+        | TRUE -> FSharpTokenKind.True
+        | TRY -> FSharpTokenKind.Try
+        | TYPE -> FSharpTokenKind.Type
+        | VAL -> FSharpTokenKind.Val
+        | INLINE -> FSharpTokenKind.Inline
+        | INTERFACE -> FSharpTokenKind.Interface
+        | INSTANCE -> FSharpTokenKind.Instance
+        | CONST -> FSharpTokenKind.Const
+        | LAZY -> FSharpTokenKind.Lazy
+        | OLAZY -> FSharpTokenKind.OffsideLazy
+        | MATCH -> FSharpTokenKind.Match
+        | MATCH_BANG -> FSharpTokenKind.MatchBang
+        | MUTABLE -> FSharpTokenKind.Mutable
+        | NEW -> FSharpTokenKind.New
+        | OF -> FSharpTokenKind.Of
+        | EXCEPTION -> FSharpTokenKind.Exception
+        | FALSE -> FSharpTokenKind.False
+        | FOR -> FSharpTokenKind.For
+        | FUN -> FSharpTokenKind.Fun
+        | FUNCTION -> FSharpTokenKind.Function
+        | IF -> FSharpTokenKind.If
+        | IN -> FSharpTokenKind.In
+        | JOIN_IN -> FSharpTokenKind.JoinIn
+        | FINALLY -> FSharpTokenKind.Finally
+        | DO_BANG -> FSharpTokenKind.DoBang
+        | AND -> FSharpTokenKind.And
+        | AS -> FSharpTokenKind.As
+        | ASSERT -> FSharpTokenKind.Assert
+        | OASSERT -> FSharpTokenKind.OffsideAssert
+        | BEGIN -> FSharpTokenKind.Begin
+        | DO -> FSharpTokenKind.Do
+        | DONE -> FSharpTokenKind.Done
+        | DOWNTO -> FSharpTokenKind.DownTo
+        | ELSE -> FSharpTokenKind.Else
+        | ELIF -> FSharpTokenKind.Elif
+        | END -> FSharpTokenKind.End
+        | DOT_DOT -> FSharpTokenKind.DotDot
+        | DOT_DOT_HAT -> FSharpTokenKind.DotDotHat
+        | BAR_BAR -> FSharpTokenKind.BarBar
+        | UPCAST -> FSharpTokenKind.Upcast
+        | DOWNCAST -> FSharpTokenKind.Downcast
+        | NULL -> FSharpTokenKind.Null
+        | RESERVED -> FSharpTokenKind.Reserved
+        | MODULE -> FSharpTokenKind.Module
+        | NAMESPACE -> FSharpTokenKind.Namespace
+        | DELEGATE -> FSharpTokenKind.Delegate
+        | CONSTRAINT -> FSharpTokenKind.Constraint
+        | BASE -> FSharpTokenKind.Base
         | LQUOTE _ -> FSharpTokenKind.LeftQuote
         | RQUOTE _ -> FSharpTokenKind.RightQuote
         | RQUOTE_DOT _ -> FSharpTokenKind.RightQuoteDot
@@ -1521,40 +1783,81 @@ type FSharpToken =
 
 [<AutoOpen>]
 module FSharpLexerImpl =
-    let lexWithDiagnosticsLogger (text: ISourceText) conditionalDefines (flags: FSharpLexerFlags) reportLibraryOnlyFeatures langVersion diagnosticsLogger onToken pathMap (ct: CancellationToken) =
-        let canSkipTrivia = (flags &&& FSharpLexerFlags.SkipTrivia) = FSharpLexerFlags.SkipTrivia
-        let isLightSyntaxOn = (flags &&& FSharpLexerFlags.LightSyntaxOn) = FSharpLexerFlags.LightSyntaxOn
-        let isCompiling = (flags &&& FSharpLexerFlags.Compiling) = FSharpLexerFlags.Compiling
-        let isCompilingFSharpCore = (flags &&& FSharpLexerFlags.CompilingFSharpCore) = FSharpLexerFlags.CompilingFSharpCore
-        let canUseLexFilter = (flags &&& FSharpLexerFlags.UseLexFilter) = FSharpLexerFlags.UseLexFilter
+    let lexWithDiagnosticsLogger
+        (text: ISourceText)
+        conditionalDefines
+        (flags: FSharpLexerFlags)
+        reportLibraryOnlyFeatures
+        langVersion
+        diagnosticsLogger
+        onToken
+        pathMap
+        (ct: CancellationToken)
+        =
+        let canSkipTrivia =
+            (flags &&& FSharpLexerFlags.SkipTrivia) = FSharpLexerFlags.SkipTrivia
 
-        let lexbuf = UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, langVersion, text)
+        let isLightSyntaxOn =
+            (flags &&& FSharpLexerFlags.LightSyntaxOn) = FSharpLexerFlags.LightSyntaxOn
+
+        let isCompiling =
+            (flags &&& FSharpLexerFlags.Compiling) = FSharpLexerFlags.Compiling
+
+        let isCompilingFSharpCore =
+            (flags &&& FSharpLexerFlags.CompilingFSharpCore) = FSharpLexerFlags.CompilingFSharpCore
+
+        let canUseLexFilter =
+            (flags &&& FSharpLexerFlags.UseLexFilter) = FSharpLexerFlags.UseLexFilter
+
+        let lexbuf =
+            UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, langVersion, text)
+
         let indentationSyntaxStatus = IndentationAwareSyntaxStatus(isLightSyntaxOn, true)
-        let lexargs = mkLexargs (conditionalDefines, indentationSyntaxStatus, LexResourceManager(0), [], diagnosticsLogger, pathMap)
-        let lexargs = { lexargs with applyLineDirectives = isCompiling }
+
+        let lexargs =
+            mkLexargs (conditionalDefines, indentationSyntaxStatus, LexResourceManager(0), [], diagnosticsLogger, pathMap)
+
+        let lexargs =
+            { lexargs with
+                applyLineDirectives = isCompiling
+            }
 
         let getNextToken =
             let lexer = Lexer.token lexargs canSkipTrivia
 
             if canUseLexFilter then
-                let lexFilter = LexFilter.LexFilter(lexargs.indentationSyntaxStatus, isCompilingFSharpCore, lexer, lexbuf)
+                let lexFilter =
+                    LexFilter.LexFilter(lexargs.indentationSyntaxStatus, isCompilingFSharpCore, lexer, lexbuf)
+
                 (fun _ -> lexFilter.GetToken())
             else
                 lexer
 
         use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind (fun _ -> DiscardErrorsLogger)
+        use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> DiscardErrorsLogger)
 
         resetLexbufPos "" lexbuf
+
         while not lexbuf.IsPastEndOfStream do
-            ct.ThrowIfCancellationRequested ()
+            ct.ThrowIfCancellationRequested()
             onToken (getNextToken lexbuf) lexbuf.LexemeRange
 
     let lex text conditionalDefines flags reportLibraryOnlyFeatures langVersion lexCallback pathMap ct =
-        let diagnosticsLogger = CompilationDiagnosticLogger("Lexer", FSharpDiagnosticOptions.Default)
-        lexWithDiagnosticsLogger text conditionalDefines flags reportLibraryOnlyFeatures langVersion diagnosticsLogger lexCallback pathMap ct
+        let diagnosticsLogger =
+            CompilationDiagnosticLogger("Lexer", FSharpDiagnosticOptions.Default)
 
-[<AbstractClass;Sealed>]
+        lexWithDiagnosticsLogger
+            text
+            conditionalDefines
+            flags
+            reportLibraryOnlyFeatures
+            langVersion
+            diagnosticsLogger
+            lexCallback
+            pathMap
+            ct
+
+[<AbstractClass; Sealed>]
 type FSharpLexer =
 
     static member Tokenize(text: ISourceText, tokenCallback, ?langVersion, ?filePath: string, ?conditionalDefines, ?flags, ?pathMap, ?ct) =
@@ -1570,10 +1873,11 @@ type FSharpLexer =
             ||> Seq.fold (fun state pair -> state |> PathMap.addMapping pair.Key pair.Value)
 
         let onToken tok m =
-                let fsTok = FSharpToken(tok, m)
-                match fsTok.Kind with
-                | FSharpTokenKind.None -> ()
-                | _ -> tokenCallback fsTok
+            let fsTok = FSharpToken(tok, m)
+
+            match fsTok.Kind with
+            | FSharpTokenKind.None -> ()
+            | _ -> tokenCallback fsTok
 
         let reportLibraryOnlyFeatures = true
         lex text conditionalDefines flags reportLibraryOnlyFeatures langVersion onToken pathMap ct

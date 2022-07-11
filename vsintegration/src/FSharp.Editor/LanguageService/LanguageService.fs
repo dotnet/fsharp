@@ -300,7 +300,9 @@ type internal FSharpLanguageService(package : FSharpPackage) =
     override this.Initialize() = 
         base.Initialize()
 
-        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.FSharpServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
+        let globalOptions = package.ComponentModel.DefaultExportProvider.GetExport<FSharpGlobalOptions>().Value
+        globalOptions.BlockForCompletionItems <- false
+        globalOptions.SetBackgroundAnalysisScope(openFilesOnly=true)
 
         let globalOptions = package.ComponentModel.DefaultExportProvider.GetExport<FSharpGlobalOptions>().Value
         globalOptions.BlockForCompletionItems <- false
@@ -344,7 +346,7 @@ type internal HackCpsCommandLineChanges
     /// This handles commandline change notifications from the Dotnet Project-system
     /// Prior to VS 15.7 path contained path to project file, post 15.7 contains target binpath
     /// binpath is more accurate because a project file can have multiple in memory projects based on configuration
-    member _.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, _references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
+    member _.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
         use _logBlock = Logger.LogBlock(LogEditorFunctionId.LanguageService_HandleCommandLineArgs)
 
         let projectId =
@@ -361,5 +363,11 @@ type internal HackCpsCommandLineChanges
 
         let sourcePaths = sources |> Seq.map(fun s -> getFullPath s.Path) |> Seq.toArray
 
-        let workspaceService = workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
-        workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projectId, sourcePaths, options)
+        /// Due to an issue in project system, when we close and reopen solution, it sends the CommandLineChanges twice for every project.
+        /// First time it sends a correct path, sources, references and options.
+        /// Second time it sends a correct path, empty sources, empty references and empty options, and we rewrite our cache, and fail to colourize the document later.
+        /// As a workaround, until we have a fix from PS or will move to Roslyn as a source of truth, we will not overwrite the cache in case of empty lists.
+
+        if not (sources.IsEmpty && references.IsEmpty && options.IsEmpty) then
+            let workspaceService = workspace.Services.GetRequiredService<IFSharpWorkspaceService>()
+            workspaceService.FSharpProjectOptionsManager.SetCommandLineOptions(projectId, sourcePaths, options)
