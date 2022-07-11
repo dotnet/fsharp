@@ -1,12 +1,10 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
 namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System.IO
-open FSharp.Compiler.CodeAnalysis
-open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open NUnit.Framework
-open UnitTests.TestLib.LanguageService
 open VisualFSharp.UnitTests.Roslyn
 
 [<Category "Roslyn Services">]
@@ -45,7 +43,6 @@ let GetQuickInfoTextFromCode (code:string) =
 
 let expectedLines (lines:string list) = System.String.Join("\n", lines)
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.EnumDUInterfacefromFSBrowse.InsideComputationExpression`` () =
     let code = """
@@ -70,7 +67,6 @@ module Test =
     let expected = "MyColors.Red: MyColors = 0"
     Assert.AreEqual(expected, quickInfo)
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.EnumDUInterfacefromFSBrowse.InsideMatch`` () =
     let code = """
@@ -100,7 +96,6 @@ module Test =
                         "Full name: FsTest.MyDistance" ]
     Assert.AreEqual(expected, quickInfo)
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.EnumDUInterfacefromFSBrowse.InsideLambda`` () =
     let code = """
@@ -129,7 +124,6 @@ module Test =
     let expected = "abstract IMyInterface.Represent: unit -> string"
     Assert.AreEqual(expected, quickInfo)
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.RecordAndInterfaceFromFSProj.InsideComputationExpression``() =
     let code = """
@@ -162,7 +156,6 @@ module Test =
     Assert.AreEqual(expected, quickInfo)
     ()
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.RecordAndInterfaceFromFSProj.InsideQuotation``() =
     let code = """
@@ -186,7 +179,6 @@ module Test =
     Assert.AreEqual(expected, quickInfo)
     ()
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.RecordAndInterfaceFromFSProj.InsideLambda``() =
     let code = """
@@ -212,7 +204,6 @@ module Test =
     Assert.AreEqual(expected, quickInfo)
     ()
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.TupleRecordFromFSBrowse.InsideComputationExpression``() =
     let code = """
@@ -237,7 +228,6 @@ module Test =
     Assert.AreEqual(expected, quickInfo)
     ()
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.TupleRecordFromFSBrowse.SequenceOfMethods``() =
     let code = """
@@ -266,7 +256,6 @@ module Test =
     Assert.AreEqual(expected, quickInfo)
     ()
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.UnionAndStructFromFSProj.MatchExpression``() =
     let code = """
@@ -289,7 +278,6 @@ module Test =
     Assert.AreEqual(expected, quickInfo)
     ()
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.UnionAndStructFromFSProj.MatchPattern``() =
     let code = """
@@ -312,7 +300,6 @@ module Test =
     Assert.AreEqual(expected, quickInfo)
     ()
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.UnionAndStructFromFSProj.UnionIfPredicate``() =
     let code = """
@@ -334,7 +321,6 @@ module Test =
     Assert.AreEqual(expected, quickInfo)
     ()
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.UnionAndStructFromFSProj.UnionForPattern``() =
     let code = """
@@ -356,7 +342,6 @@ module Test =
     Assert.AreEqual(expected, quickInfo)
     ()
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.UnionAndStructFromFSProj.UnionMethodPatternMatch``() =
     let code = """
@@ -386,7 +371,6 @@ module Test =
     Assert.AreEqual(expected, quickInfo)
     ()
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.UnionAndStructFromFSProj.UnionMethodPatternMatchBody``() =
     let code = """
@@ -414,7 +398,6 @@ module Test =
     Assert.AreEqual(expected, quickInfo)
     ()
 
-// migrated from legacy test
 [<Test>]
 let ``Automation.UnionAndStructFromFSProj.UnionPropertyInComputationExpression``() =
     let code = """
@@ -443,4 +426,53 @@ module Test =
     let quickInfo = GetQuickInfoTextFromCode code
     let expected = "property MyDistance.asNautical: MyDistance with get"
     Assert.AreEqual(expected, quickInfo)
+    ()
+
+[<Test>]
+let ``Automation.LetBindings.InsideModule``() =
+    let code = """
+namespace FsTest
+
+module Test =
+    let fu$$nc x = ()
+"""
+    let expectedSignature = "val func: x: 'a -> unit"
+
+    let tooltip = GetQuickInfoTextFromCode code
+
+    StringAssert.StartsWith(expectedSignature, tooltip)
+    ()
+
+[<Test>]
+let ``Automation.LetBindings.InsideType.Instance``() =
+    let code = """
+namespace FsTest
+
+module Test =
+    type T() =
+        let fu$$nc x = ()
+"""
+
+    let expectedSignature = "val func: x: 'a -> unit"
+
+    let tooltip = GetQuickInfoTextFromCode code
+
+    StringAssert.StartsWith(expectedSignature, tooltip)
+    ()
+
+[<Test>]
+let ``Automation.LetBindings.InsideType.Static``() =
+    let code = """
+namespace FsTest
+
+module Test =
+    type T() =
+        static let fu$$nc x = ()
+"""
+
+    let expectedSignature = "val func: x: 'a -> unit"
+
+    let tooltip = GetQuickInfoTextFromCode code
+
+    StringAssert.StartsWith(expectedSignature, tooltip)
     ()

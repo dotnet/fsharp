@@ -1555,13 +1555,6 @@ We really need to rewrite some code paths here to use the real parse tree rather
                 """, "bar(", ["int"]
 
                 """
-                type T() = 
-                    let foo x = x + 1
-                    member this.Run() = 
-                        foo(
-                """, "foo(", ["int"]
-
-                """
                 let f (Some x) = x + 1
                 f(
                 """, "f(", ["int option"]

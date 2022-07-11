@@ -631,16 +631,27 @@ module rec Compiler =
         | _ ->
             failwith "Compilation has errors."
 
-    let compileGuid (cUnit: CompilationUnit) : Guid =
-        let bytes =
-            compile cUnit
-            |> shouldSucceed
-            |> getAssemblyInBytes
+    let getAssembly = getAssemblyInBytes >> Assembly.Load
 
-        use reader1 = new PEReader(bytes.ToImmutableArray())
-        let reader1 = reader1.GetMetadataReader()
+    let withPeReader func compilationResult =
+        let bytes = getAssemblyInBytes compilationResult
+        use reader = new PEReader(bytes.ToImmutableArray())
+        func reader
 
-        reader1.GetModuleDefinition().Mvid |> reader1.GetGuid
+    let withMetadataReader func =
+        withPeReader (fun reader -> reader.GetMetadataReader() |> func)
+
+    let compileGuid cUnit =
+        cUnit
+        |> compile
+        |> shouldSucceed
+        |> withMetadataReader (fun reader -> reader.GetModuleDefinition().Mvid |> reader.GetGuid)
+
+    let compileAssembly cUnit =
+        cUnit
+        |> compile
+        |> shouldSucceed
+        |> getAssembly
 
     let private parseFSharp (fsSource: FSharpCompilationSource) : CompilationResult =
         let source = fsSource.Source.GetSourceText |> Option.defaultValue ""

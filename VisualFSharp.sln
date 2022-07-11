@@ -13,6 +13,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "VisualFSharp", "VisualFShar
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Compiler", "Compiler", "{3881429D-A97A-49EB-B7AE-A82BA5FE9C77}"
+	ProjectSection(SolutionItems) = preProject
+		src\Compiler\FSComp.txt = src\Compiler\FSComp.txt
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{F7876C9B-FB6A-4EFB-B058-D6967DB75FB2}"
 EndProject
