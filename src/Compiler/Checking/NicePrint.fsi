@@ -155,6 +155,7 @@ val prettyLayoutOfInstAndSig:
 
 val minimalStringsOfTwoTypes: denv: DisplayEnv -> ty1: TType -> ty2: TType -> string * string * string
 
-val minimalStringsOfTwoValues: denv: DisplayEnv -> infoReader: InfoReader -> vref1: ValRef -> vref2: ValRef -> string * string
+val minimalStringsOfTwoValues:
+    denv: DisplayEnv -> infoReader: InfoReader -> vref1: ValRef -> vref2: ValRef -> string * string
 
 val minimalStringOfType: denv: DisplayEnv -> ty: TType -> string

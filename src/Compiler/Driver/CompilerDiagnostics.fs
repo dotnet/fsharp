@@ -895,7 +895,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | ParameterlessStructCtor _ -> os.AppendString(ParameterlessStructCtorE().Format)
 
-        | InterfaceNotRevealed (denv, intfTy, _) -> os.AppendString(InterfaceNotRevealedE().Format(NicePrint.minimalStringOfType denv intfTy))
+        | InterfaceNotRevealed (denv, intfTy, _) ->
+            os.AppendString(InterfaceNotRevealedE().Format(NicePrint.minimalStringOfType denv intfTy))
 
         | NotAFunctionButIndexer (_, _, name, _, _, old) ->
             if old then
