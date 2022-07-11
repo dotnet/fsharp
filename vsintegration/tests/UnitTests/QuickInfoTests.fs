@@ -428,65 +428,34 @@ module Test =
     Assert.AreEqual(expected, quickInfo)
     ()
 
-[<Test>]
-let ``Automation.LetBindings.InsideModule``() =
-    let code = """
+[<TestCase """
 namespace FsTest
 
 module Test =
     let fu$$nc x = ()
-"""
-    let expectedSignature = "val func: x: 'a -> unit"
-
-    let tooltip = GetQuickInfoTextFromCode code
-
-    StringAssert.StartsWith(expectedSignature, tooltip)
-    ()
-
-[<Test>]
-let ``Automation.LetBindings.InsideType.Instance``() =
-    let code = """
+""">]
+[<TestCase """
 namespace FsTest
 
 module Test =
     type T() =
         let fu$$nc x = ()
-"""
-
-    let expectedSignature = "val func: x: 'a -> unit"
-
-    let tooltip = GetQuickInfoTextFromCode code
-
-    StringAssert.StartsWith(expectedSignature, tooltip)
-    ()
-
-[<Test>]
-let ``Automation.LetBindings.InsideType.Static``() =
-    let code = """
+""">]
+[<TestCase """
 namespace FsTest
 
 module Test =
     type T() =
         static let fu$$nc x = ()
-"""
-
-    let expectedSignature = "val func: x: 'a -> unit"
-
-    let tooltip = GetQuickInfoTextFromCode code
-
-    StringAssert.StartsWith(expectedSignature, tooltip)
-    ()
-
-[<Test>]
-let ``Automation.LetBindings.InsideExpression``() =
-    let code = """
+""">]
+[<TestCase """
 namespace FsTest
 
 module Test =
     do
         let fu$$nc x = ()
-"""
-
+""">]
+let ``Automation.LetBindings`` code =
     let expectedSignature = "val func: x: 'a -> unit"
 
     let tooltip = GetQuickInfoTextFromCode code
