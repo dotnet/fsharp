@@ -2081,11 +2081,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                                     ILMemberAccess.Private
 
                             let fdef = mkILInstanceField (fldName, fldTy, None, access)
-                            let attrs =
-                                [
-                                    g.CompilerGeneratedAttribute
-                                    g.DebuggerBrowsableNeverAttribute
-                                ]
+                            let attrs = [ g.CompilerGeneratedAttribute; g.DebuggerBrowsableNeverAttribute ]
                             fdef.With(customAttrs = mkILCustomAttrs attrs)
                     ]
 
@@ -10682,10 +10678,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                         let extraAttribs =
                             match tyconRepr with
                             | TFSharpRecdRepr _ when not useGenuineField ->
-                                [
-                                    g.CompilerGeneratedAttribute
-                                    g.DebuggerBrowsableNeverAttribute
-                                ]
+                                [ g.CompilerGeneratedAttribute; g.DebuggerBrowsableNeverAttribute ]
                             | _ -> [] // don't hide fields in classes in debug display
 
                         let access = ComputeMemberAccess isFieldHidden
