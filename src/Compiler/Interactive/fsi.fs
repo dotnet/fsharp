@@ -367,12 +367,12 @@ type ILMultiInMemoryAssemblyEmitEnv(
             emEnv.AddTypeDef asm ilScopeRef (enc@[tdef]) ntdef
         
         // Record the internal things to give warnings for internal access across fragment boundaries
-        for fdef in tdef.Fields.AsList() do
-            match fdef.Access with
-            | ILMemberAccess.Public -> ()
-            | _ ->
-                let lfref = mkRefForILField ILScopeRef.Local (enc, tdef) fdef
-                internalFields.Add(lfref) |> ignore
+        //for fdef in tdef.Fields.AsList() do
+        //    match fdef.Access with
+        //    | ILMemberAccess.Public -> ()
+        //    | _ ->
+        //        let lfref = mkRefForILField ILScopeRef.Local (enc, tdef) fdef
+        //        internalFields.Add(lfref) |> ignore
 
         for mdef in tdef.Methods.AsArray() do
             match mdef.Access with

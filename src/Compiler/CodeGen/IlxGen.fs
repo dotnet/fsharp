@@ -2073,7 +2073,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                 mkILFields
                     [
                         for _, fldName, fldTy in flds ->
-                            // Don't hide fields when splitting to multiple assemblies.
+
                             let access =
                                 if cenv.options.isInteractive && cenv.options.fsiMultiAssemblyEmit then
                                     ILMemberAccess.Public
@@ -2081,7 +2081,12 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                                     ILMemberAccess.Private
 
                             let fdef = mkILInstanceField (fldName, fldTy, None, access)
-                            fdef.With(customAttrs = mkILCustomAttrs [ g.DebuggerBrowsableNeverAttribute ])
+                            let attrs =
+                                [
+                                    g.CompilerGeneratedAttribute
+                                    g.DebuggerBrowsableNeverAttribute
+                                ]
+                            fdef.With(customAttrs = mkILCustomAttrs attrs)
                     ]
 
             // Generate property definitions for the fields compiled as properties
@@ -10676,7 +10681,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                         let extraAttribs =
                             match tyconRepr with
-                            | TFSharpRecdRepr _ when not useGenuineField -> [ g.DebuggerBrowsableNeverAttribute ] // hide fields in records in debug display
+                            | TFSharpRecdRepr _ when not useGenuineField ->
+                                [
+                                    g.CompilerGeneratedAttribute
+                                    g.DebuggerBrowsableNeverAttribute
+                                ]
                             | _ -> [] // don't hide fields in classes in debug display
 
                         let access = ComputeMemberAccess isFieldHidden
