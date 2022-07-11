@@ -74,16 +74,25 @@ type LongUnicodeLexResult =
     | SingleChar of uint16
     | Invalid
 
-let mkLexargs (conditionalDefines, indentationSyntaxStatus, resourceManager, ifdefStack, diagnosticsLogger, pathMap: PathMap, applyLineDirectives) =
-    { 
-      conditionalDefines = conditionalDefines
-      ifdefStack = ifdefStack
-      indentationSyntaxStatus = indentationSyntaxStatus
-      resourceManager = resourceManager
-      diagnosticsLogger = diagnosticsLogger
-      applyLineDirectives = applyLineDirectives
-      stringNest = []
-      pathMap = pathMap
+let mkLexargs
+    (
+        conditionalDefines,
+        indentationSyntaxStatus,
+        resourceManager,
+        ifdefStack,
+        diagnosticsLogger,
+        pathMap: PathMap,
+        applyLineDirectives
+    ) =
+    {
+        conditionalDefines = conditionalDefines
+        ifdefStack = ifdefStack
+        indentationSyntaxStatus = indentationSyntaxStatus
+        resourceManager = resourceManager
+        diagnosticsLogger = diagnosticsLogger
+        applyLineDirectives = applyLineDirectives
+        stringNest = []
+        pathMap = pathMap
     }
 
 /// Register the lexbuf and call the given function

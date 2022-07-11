@@ -1185,7 +1185,17 @@ type FSharpSourceTokenizer(conditionalDefines: string list, fileName: string opt
 
     let applyLineDirectives = false
     let indentationSyntaxStatus = IndentationAwareSyntaxStatus(true, false)
-    let lexargs = mkLexargs(conditionalDefines, indentationSyntaxStatus, lexResourceManager, [], DiscardErrorsLogger, PathMap.empty, applyLineDirectives)
+
+    let lexargs =
+        mkLexargs (
+            conditionalDefines,
+            indentationSyntaxStatus,
+            lexResourceManager,
+            [],
+            DiscardErrorsLogger,
+            PathMap.empty,
+            applyLineDirectives
+        )
 
     member _.CreateLineTokenizer(lineText: string) =
         let lexbuf =
@@ -1808,7 +1818,17 @@ module FSharpLexerImpl =
 
         let indentationSyntaxStatus = IndentationAwareSyntaxStatus(isLightSyntaxOn, true)
         let applyLineDirectives = isCompiling
-        let lexargs = mkLexargs (conditionalDefines, indentationSyntaxStatus, LexResourceManager(0), [], diagnosticsLogger, pathMap, applyLineDirectives)
+
+        let lexargs =
+            mkLexargs (
+                conditionalDefines,
+                indentationSyntaxStatus,
+                LexResourceManager(0),
+                [],
+                diagnosticsLogger,
+                pathMap,
+                applyLineDirectives
+            )
 
         let getNextToken =
             let lexer = Lexer.token lexargs canSkipTrivia

@@ -2187,7 +2187,15 @@ module internal ParseAndCheckFile =
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
         let lexargs =
-            mkLexargs(conditionalDefines, indentationSyntaxStatus, lexResourceManager, [], errHandler.DiagnosticsLogger, PathMap.empty, options.ApplyLineDirectives)
+            mkLexargs (
+                conditionalDefines,
+                indentationSyntaxStatus,
+                lexResourceManager,
+                [],
+                errHandler.DiagnosticsLogger,
+                PathMap.empty,
+                options.ApplyLineDirectives
+            )
 
         let tokenizer =
             LexFilter.LexFilter(indentationSyntaxStatus, options.CompilingFSharpCore, Lexer.token lexargs true, lexbuf)
