@@ -150,7 +150,9 @@ type ItemKeyStore(mmf: MemoryMappedFile, length) =
             while reader.Offset < reader.Length do
                 let m = this.ReadRange &reader
                 let keyString2 = this.ReadKeyString &reader
-                if keyString1.SequenceEqual keyString2 then results.Add m
+
+                if keyString1.SequenceEqual keyString2 then
+                    results.Add m
 
             results :> range seq
 
@@ -271,7 +273,9 @@ and [<Sealed>] ItemKeyStoreBuilder() =
     and writeTypar (isStandalone: bool) (typar: Typar) =
         match typar.Solution with
         | Some ty -> writeType isStandalone ty
-        | _ -> if isStandalone then writeInt64 typar.Stamp
+        | _ ->
+            if isStandalone then
+                writeInt64 typar.Stamp
 
     let writeValRef (vref: ValRef) =
         match vref.MemberInfo with

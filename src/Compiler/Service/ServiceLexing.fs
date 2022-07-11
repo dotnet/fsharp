@@ -683,8 +683,10 @@ module internal LexerStateEncoding =
             let kind2 = ((nestingValue &&& 0b000000000011) >>> 0)
 
             [
-                if tag1 then i1, decodeStringStyle kind1, range0
-                if tag2 then i2, decodeStringStyle kind2, range0
+                if tag1 then
+                    i1, decodeStringStyle kind1, range0
+                if tag2 then
+                    i2, decodeStringStyle kind2, range0
             ]
 
         (colorState, ncomments, pos, ifDefs, hardwhite, stringKind, stringNest)

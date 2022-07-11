@@ -1469,9 +1469,11 @@ module Patterns =
                     else
 
                     // If a known-number-of-arguments-including-object-argument has been given then check that
-                    if (match knownArgCount with
-                        | ValueNone -> false
-                        | ValueSome n -> n <> (if methInfo.IsStatic then 0 else 1) + nargTs) then
+                    if
+                        (match knownArgCount with
+                         | ValueNone -> false
+                         | ValueSome n -> n <> (if methInfo.IsStatic then 0 else 1) + nargTs)
+                    then
                         false
                     else
 

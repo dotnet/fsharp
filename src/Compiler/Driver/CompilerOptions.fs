@@ -288,9 +288,11 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
     let getSwitchOpt (opt: string) =
         // if opt is a switch, strip the  '+' or '-'
-        if opt <> "--"
-           && opt.Length > 1
-           && (opt.EndsWithOrdinal("+") || opt.EndsWithOrdinal("-")) then
+        if
+            opt <> "--"
+            && opt.Length > 1
+            && (opt.EndsWithOrdinal("+") || opt.EndsWithOrdinal("-"))
+        then
             opt[0 .. opt.Length - 2]
         else
             opt
@@ -368,7 +370,10 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                 | CompilerOption (s, _, OptionString f, d, _) as compilerOption :: _ when optToken = s ->
                     reportDeprecatedOption d
                     let oa = getOptionArg compilerOption argString
-                    if oa <> "" then f (getOptionArg compilerOption oa)
+
+                    if oa <> "" then
+                        f (getOptionArg compilerOption oa)
+
                     t
                 | CompilerOption (s, _, OptionInt f, d, _) as compilerOption :: _ when optToken = s ->
                     reportDeprecatedOption d
@@ -1234,7 +1239,9 @@ let noFrameworkFlag isFsc tcConfigB =
         tagNone,
         OptionUnit(fun () ->
             tcConfigB.implicitlyReferenceDotNetAssemblies <- false
-            if isFsc then tcConfigB.implicitlyResolveAssemblies <- false),
+
+            if isFsc then
+                tcConfigB.implicitlyResolveAssemblies <- false),
         None,
         Some(FSComp.SR.optsNoframework ())
     )
