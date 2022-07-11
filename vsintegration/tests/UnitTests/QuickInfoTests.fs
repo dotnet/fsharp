@@ -476,3 +476,20 @@ module Test =
 
     StringAssert.StartsWith(expectedSignature, tooltip)
     ()
+
+[<Test>]
+let ``Automation.LetBindings.InsideExpression``() =
+    let code = """
+namespace FsTest
+
+module Test =
+    do
+        let fu$$nc x = ()
+"""
+
+    let expectedSignature = "val func: x: 'a -> unit"
+
+    let tooltip = GetQuickInfoTextFromCode code
+
+    StringAssert.StartsWith(expectedSignature, tooltip)
+    ()
