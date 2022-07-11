@@ -454,6 +454,7 @@ namespace FsTest
 module Test =
     do
         let fu$$nc x = ()
+        ()
 """>]
 let ``Automation.LetBindings`` code =
     let expectedSignature = "val func: x: 'a -> unit"
