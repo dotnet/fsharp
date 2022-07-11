@@ -1,19 +1,96 @@
-// Print some stats about some very very basic code formatting conventions
+// Print some stats about identifiers grouped by type
+//
 
 #r "nuget: Ionide.ProjInfo"
-
 #I @"..\..\artifacts\bin\fsc\Debug\net6.0\"
 #r "FSharp.Compiler.Service.dll"
-
 
 open System
 open System.IO
 open Ionide.ProjInfo
-open System.Runtime.InteropServices
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open Ionide.ProjInfo.Types
 
+let argv = fsi.CommandLineArgs
+
+if argv.Length = 1 then
+    eprintfn "usage:"
+    eprintfn "    dotnet fsi tests/scripts/identifierAnalysisByType.fsx <project-file>"
+    eprintfn ""
+    eprintfn "examples:"
+    eprintfn "    dotnet fsi tests/scripts/identifierAnalysisByType.fsx src/FSharp.Build/FSharp.Build.fsproj"
+    eprintfn "    dotnet fsi tests/scripts/identifierAnalysisByType.fsx src/Compiler/FSharp.Compiler.Service.fsproj"
+    eprintfn ""
+    eprintfn "Sample output is at https://gist.github.com/dsyme/abfa11bebf0713251418906d55c08804"
+
+//let projectFile = Path.Combine(__SOURCE_DIRECTORY__, @"..\..\src\Compiler\FSharp.Compiler.Service.fsproj")
+//let projectFile = Path.Combine(__SOURCE_DIRECTORY__, @"..\..\src\FSharp.Build\FSharp.Build.fsproj")
+let projectFile = Path.GetFullPath(argv[1])
+
+let cwd = System.Environment.CurrentDirectory |> System.IO.DirectoryInfo
+
+let _toolsPath = Init.init cwd None
+
+printfn "Cracking project options...."
+let opts =
+    match ProjectLoader.getProjectInfo projectFile [] BinaryLogGeneration.Off [] with 
+    | Result.Ok res -> res
+    | Result.Error err -> failwithf "%s" err
+
+let checker = FSharpChecker.Create()
+
+let checkerOpts = checker.GetProjectOptionsFromCommandLineArgs(projectFile, [| yield! opts.SourceFiles; yield! opts.OtherOptions  |] )
+
+printfn "Checking project...."
+let results = checker.ParseAndCheckProject(checkerOpts) |> Async.RunSynchronously
+
+printfn "Grouping symbol uses...."
+let symbols = results.GetAllUsesOfAllSymbols()
+
+let rec stripTy (ty: FSharpType) = 
+    if ty.IsAbbreviation then stripTy ty.AbbreviatedType else ty
+
+let getTypeText (sym: FSharpMemberOrFunctionOrValue) =
+    let ty = stripTy sym.FullType
+    FSharpType.Prettify(ty).Format(FSharpDisplayContext.Empty)
+
+symbols
+|> Array.choose (fun vUse -> match vUse.Symbol with :? FSharpMemberOrFunctionOrValue as v -> Some (v, vUse.Range) | _ -> None)
+|> Array.filter (fun (v, _) -> v.GenericParameters.Count = 0)
+|> Array.filter (fun (v, _) -> v.CurriedParameterGroups.Count = 0)
+|> Array.filter (fun (v, _) -> not v.FullType.IsGenericParameter)
+|> Array.map (fun (v, vUse) -> getTypeText v, v, vUse)
+|> Array.filter (fun (vTypeText, v, _) -> 
+    match vTypeText with 
+    | "System.String" -> false
+    | "System.Boolean" -> false
+    | "System.Int32" -> false
+    | "System.Int64" -> false
+    | "System.Object" -> false
+    | "Microsoft.FSharp.Collections.List<Microsoft.FSharp.Core.string>" -> false
+    | "Microsoft.FSharp.Core.Option<Microsoft.FSharp.Core.string>" -> false
+    | s when s.EndsWith(" Microsoft.FSharp.Core.[]") -> false // for now filter array types
+    | _ when v.DisplayName.StartsWith "_" -> false
+    | _ -> true)
+|> Array.groupBy (fun (vTypeText, _, _) -> vTypeText)
+|> Array.map (fun (key, g) ->
+    key, 
+    (g 
+     |> Array.groupBy (fun (_, v, _) -> v.DisplayName)
+     |> Array.sortByDescending (snd >> Array.length)))
+|> Array.filter (fun (_, g) -> g.Length > 1)
+|> Array.sortByDescending (fun (key, g) -> Array.length g)
+|> Array.iter (fun (key, g) -> 
+    let key = key.Replace("Microsoft.FSharp", "FSharp").Replace("FSharp.Core.", "")
+    printfn "Type: %s" key
+    for (nm, entries) in g do
+       printfn "    %s (%d times)" nm (Array.length entries)
+       for (_, _, vUse) in entries do
+           printfn "        %s" (vUse.ToString())
+    printfn "")
+
+(*
 let isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
 
 let dotnet =
@@ -71,70 +148,5 @@ let getDotnetHostPath () =
             match probePathForDotnetHost () with
             | Some f -> Some(Path.Combine(f, dotnet))
             | None -> getDotnetGlobalHostPath ()
-
-let cwd = System.Environment.CurrentDirectory |> System.IO.DirectoryInfo
 let dotnetExe = getDotnetHostPath () |> Option.map System.IO.FileInfo
-let _toolsPath = Init.init cwd dotnetExe
-
-let projectFile = Path.Combine(__SOURCE_DIRECTORY__, @"..\..\src\Compiler\FSharp.Compiler.Service.fsproj")
-//let projectFile = Path.Combine(__SOURCE_DIRECTORY__, @"..\..\src\FSharp.Build\FSharp.Build.fsproj")
-let opts = ProjectLoader.getProjectInfo projectFile [] BinaryLogGeneration.Off []
-
-let opts2 = 
-    match opts with 
-    | Result.Ok res -> res
-    | Result.Error err -> failwithf "%s" err
-
-opts2.OtherOptions
-
-
-let checker = FSharpChecker.Create()
-
-let opts3 = checker.GetProjectOptionsFromCommandLineArgs(projectFile, [| yield! opts2.SourceFiles; yield! opts2.OtherOptions  |] )
-
-
-let results = checker.ParseAndCheckProject(opts3)
-let results2 = results |> Async.RunSynchronously
-
-let symbols = results2.GetAllUsesOfAllSymbols()
-
-let rec stripTy (ty: FSharpType) = 
-    if ty.IsAbbreviation then stripTy ty.AbbreviatedType else ty
-
-
-let getText (sym: FSharpMemberOrFunctionOrValue) =
-    let ty = stripTy sym.FullType
-    FSharpType.Prettify(ty).Format(FSharpDisplayContext.Empty)
-
-symbols
-|> Array.choose (fun s -> match s.Symbol with :? FSharpMemberOrFunctionOrValue as v -> Some v | _ -> None)
-|> Array.filter (fun v -> v.GenericParameters.Count = 0)
-|> Array.filter (fun v -> v.CurriedParameterGroups.Count = 0)
-|> Array.filter (fun v -> not v.FullType.IsGenericParameter)
-|> Array.map (fun v -> getText v, v)
-|> Array.filter (fun (s, v) -> 
-    match s with 
-    | "System.String" -> false
-    | "System.Boolean" -> false
-    | "System.Int32" -> false
-    | "System.Int64" -> false
-    | "System.Object" -> false
-    | "Microsoft.FSharp.Collections.List<Microsoft.FSharp.Core.string>" -> false
-    | "Microsoft.FSharp.Core.Option<Microsoft.FSharp.Core.string>" -> false
-    | _ when s.EndsWith(" Microsoft.FSharp.Core.[]") -> false // for now filter array types
-    | _ when v.DisplayName.StartsWith "_" -> false
-    | _ -> true)
-|> Array.groupBy fst
-|> Array.map (fun (key, g) ->
-    key, 
-    (g 
-     |> Array.map snd 
-     |> Array.groupBy (fun v -> v.DisplayName)
-     |> Array.sortByDescending (snd >> Array.length)))
-|> Array.filter (fun (_, g) -> g.Length > 1)
-|> Array.sortByDescending (fun (key, g) -> Array.length g)
-|> Array.iter (fun (key, g) -> 
-    printfn "Type: %s" key
-    for (nm, entries) in g do
-       printfn "    %s (%d times)" nm (Array.length entries))
-
+*)
