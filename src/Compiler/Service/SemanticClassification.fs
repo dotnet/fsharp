@@ -278,8 +278,10 @@ module TcResolutionsExtensions =
                             match minfos with
                             | [] -> add m SemanticClassificationType.ConstructorForReferenceType
                             | _ ->
-                                if minfos
-                                   |> List.forall (fun minfo -> isDisposableTy g amap minfo.ApparentEnclosingType) then
+                                if
+                                    minfos
+                                    |> List.forall (fun minfo -> isDisposableTy g amap minfo.ApparentEnclosingType)
+                                then
                                     add m SemanticClassificationType.DisposableType
                                 elif minfos |> List.forall (fun minfo -> isStructTy g minfo.ApparentEnclosingType) then
                                     add m SemanticClassificationType.ConstructorForValueType
