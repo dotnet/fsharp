@@ -472,9 +472,9 @@ namespace Microsoft.FSharp.Core
         let inline floatEq (x:float) (y:float) = (# "ceq" x y : bool #) 
         let inline float32Eq (x:float32) (y:float32) = (# "ceq" x y : bool #) 
         let inline charEq (x:char) (y:char) = (# "ceq" x y : bool #) 
-        let inline intOrder (x:int) (y:int) = if (# "clt" x y : bool #) then (0-1) else (# "cgt" x y : int #)
-        let inline int64Order (x:int64) (y:int64) = if (# "clt" x y : bool #) then (0-1) else (# "cgt" x y : int #)
-        let inline byteOrder (x:byte) (y:byte) = if (# "clt" x y : bool #) then (0-1) else (# "cgt" x y : int #)
+        let inline intOrder (x:int) (y:int) = (# "cgt" x y : int #) - (# "clt" x y : int #)
+        let inline int64Order (x:int64) (y:int64) = (# "cgt" x y : int #) - (# "clt" x y : int #)
+        let inline byteOrder (x:byte) (y:byte) = (# "cgt" x y: int #) - (# "clt" x y: int #)
         let inline byteEq (x:byte) (y:byte) = (# "ceq" x y : bool #) 
         let inline int64 (x:int) = (# "conv.i8" x  : int64 #)
         let inline int32 (x:int64) = (# "conv.i4" x  : int32 #)
@@ -914,10 +914,10 @@ namespace Microsoft.FSharp.Core
                        x.CompareTo(yobj)
 
                    | (:? nativeint as x),(:? nativeint as y) ->
-                       if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
+                       (# "cgt" x y : int #) - (# "clt" x y : int #)
 
                    | (:? unativeint as x),(:? unativeint as y) ->
-                       if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                       (# "cgt.un" x y : int #) - (# "clt.un" x y : int #)
 
                    | _,(:? IStructuralComparable as yc) ->
                        let res = yc.CompareTo(xobj,comp)
@@ -1059,17 +1059,25 @@ namespace Microsoft.FSharp.Core
             //
             let inline GenericComparisonWithComparerFast<'T> (comp:IComparer) (x:'T) (y:'T) : int = 
                  GenericComparisonWithComparerIntrinsic comp x y
-                 when 'T : bool   = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when 'T : sbyte  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when 'T : int16  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when 'T : int32  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when 'T : int64  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when 'T : nativeint  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when 'T : byte   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                 when 'T : uint16 = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                 when 'T : uint32 = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                 when 'T : uint64 = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                 when 'T : unativeint = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+
+                 when 'T : bool   =
+                    // bool is already 1 for True or 0 for False
+                    // x - y gives:
+                    // compare true  false -> 1 - 0 ->  1
+                    // compare false true  -> 0 - 1 -> -1
+                    // compare true  true  -> 1 - 1 ->  0
+                    // compare false false -> 0 - 0 ->  0
+                    (# "" x : int #) - (# "" y : int #)
+                 when 'T : sbyte  = (# "cgt" x y : int #) - (# "clt" x y : int #)
+                 when 'T : int16  = (# "cgt" x y : int #) - (# "clt" x y : int #)
+                 when 'T : int32  = (# "cgt" x y : int #) - (# "clt" x y : int #)
+                 when 'T : int64  = (# "cgt" x y : int #) - (# "clt" x y : int #)
+                 when 'T : nativeint  = (# "cgt" x y : int #) - (# "clt" x y : int #)
+                 when 'T : byte   = (# "cgt.un" x y : int #) - (# "clt.un" x y : int #)
+                 when 'T : uint16 = (# "cgt.un" x y : int #) - (# "clt.un" x y : int #)
+                 when 'T : uint32 = (# "cgt.un" x y : int #) - (# "clt.un" x y : int #)
+                 when 'T : uint64 = (# "cgt.un" x y : int #) - (# "clt.un" x y : int #)
+                 when 'T : unativeint = (# "cgt.un" x y : int #) - (# "clt.un" x y : int #)
                  // Note, these bail out to GenericComparisonWithComparerIntrinsic if called with NaN values, because clt and cgt and ceq all return "false" for that case.
                  when 'T : float  = if   (# "clt" x y : bool #) then (-1)
                                     elif (# "cgt" x y : bool #) then (1)
@@ -1079,7 +1087,7 @@ namespace Microsoft.FSharp.Core
                                      elif (# "cgt" x y : bool #) then (1)
                                      elif (# "ceq" x y : bool #) then (0)
                                      else GenericComparisonWithComparerIntrinsic comp x y
-                 when 'T : char   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                 when 'T : char   = (# "cgt" x y : int #) - (# "clt" x y : int #)
                  when 'T : string = 
                      // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
@@ -1137,17 +1145,25 @@ namespace Microsoft.FSharp.Core
             /// for known cases.
             let inline GenericComparisonFast<'T> (x:'T) (y:'T) : int = 
                  GenericComparisonIntrinsic x y
-                 when 'T : bool   = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when 'T : sbyte  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when 'T : int16  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when 'T : int32  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when 'T : int64  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when 'T : nativeint  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when 'T : byte   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                 when 'T : uint16 = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                 when 'T : uint32 = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                 when 'T : uint64 = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                 when 'T : unativeint = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                    
+                 when 'T : bool   = 
+                    // bool is already 1 for True or 0 for False
+                    // x - y gives:
+                    // compare true  false -> 1 - 0 ->  1
+                    // compare false true  -> 0 - 1 -> -1
+                    // compare true  true  -> 1 - 1 ->  0
+                    // compare false false -> 0 - 0 ->  0
+                    (# "" x : int #) - (# "" y : int #) 
+                 when 'T : sbyte  = (# "cgt" x y : int #) - (# "clt" x y : int #)
+                 when 'T : int16  = (# "cgt" x y : int #) - (# "clt" x y : int #)
+                 when 'T : int32  = (# "cgt" x y : int #) - (# "clt" x y : int #)
+                 when 'T : int64  = (# "cgt" x y : int #) - (# "clt" x y : int #)
+                 when 'T : nativeint  = (# "cgt" x y : int #) - (# "clt" x y : int #)
+                 when 'T : byte   = (# "cgt.un" x y : int #) - (# "clt.un" x y : int #)
+                 when 'T : uint16 = (# "cgt.un" x y : int #) - (# "clt.un" x y : int #)
+                 when 'T : uint32 = (# "cgt.un" x y : int #) - (# "clt.un" x y : int #)
+                 when 'T : uint64 = (# "cgt.un" x y : int #) - (# "clt.un" x y : int #)
+                 when 'T : unativeint = (# "cgt.un" x y : int #) - (# "clt.un" x y : int #)
                  when 'T : float  = if   (# "clt" x y : bool #) then (-1)
                                     elif (# "cgt" x y : bool #) then (1)
                                     elif (# "ceq" x y : bool #) then (0)
@@ -1158,7 +1174,7 @@ namespace Microsoft.FSharp.Core
                                      elif (# "ceq" x y : bool #) then (0)
                                      elif (# "ceq" y y : bool #) then (-1)
                                      else (# "ceq" x x : int #)
-                 when 'T : char   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+                 when 'T : char   = (# "cgt" x y : int #) - (# "clt" x y : int #)
                  when 'T : string = 
                      // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
@@ -4771,17 +4787,24 @@ namespace Microsoft.FSharp.Core
             [<CompiledName("Compare")>]
             let inline compare (e1: ^T) (e2: ^T) : int = 
                  (if e1 < e2 then -1 elif e1 > e2 then 1 else 0)
-                 when ^T : bool   = if (# "clt" e1 e2 : bool #) then (-1) else (# "cgt" e1 e2 : int #)
-                 when ^T : sbyte  = if (# "clt" e1 e2 : bool #) then (-1) else (# "cgt" e1 e2 : int #)
-                 when ^T : int16  = if (# "clt" e1 e2 : bool #) then (-1) else (# "cgt" e1 e2 : int #)
-                 when ^T : int32  = if (# "clt" e1 e2 : bool #) then (-1) else (# "cgt" e1 e2 : int #)
-                 when ^T : int64  = if (# "clt" e1 e2 : bool #) then (-1) else (# "cgt" e1 e2 : int #)
-                 when ^T : nativeint  = if (# "clt" e1 e2 : bool #) then (-1) else (# "cgt" e1 e2 : int #)
-                 when ^T : byte   = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
-                 when ^T : uint16 = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
-                 when ^T : uint32 = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
-                 when ^T : uint64 = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
-                 when ^T : unativeint = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
+                 when ^T : bool   =
+                    // bool is already 1 for true or 0 for false
+                    // e1 - e2 gives:
+                    // compare true  false -> 1 - 0 ->  1
+                    // compare false true  -> 0 - 1 -> -1
+                    // compare true  true  -> 1 - 1 ->  0
+                    // compare false false -> 0 - 0 ->  0
+                    (# "" e1 : int #) - (# "" e2 : int #)
+                 when ^T : sbyte  = (# "cgt" e1 e2 : int #) - (# "clt" e1 e2 : int #)
+                 when ^T : int16  = (# "cgt" e1 e2 : int #) - (# "clt" e1 e2 : int #)
+                 when ^T : int32  = (# "cgt" e1 e2 : int #) - (# "clt" e1 e2 : int #)
+                 when ^T : int64  = (# "cgt" e1 e2 : int #) - (# "clt" e1 e2 : int #)
+                 when ^T : nativeint  = (# "cgt" e1 e2 : int #) - (# "clt" e1 e2 : int #)
+                 when ^T : byte   = (# "cgt.un" e1 e2 : int #) - (# "clt.un" e1 e2 : int #)
+                 when ^T : uint16 = (# "cgt.un" e1 e2 : int #) - (# "clt.un" e1 e2 : int #)
+                 when ^T : uint32 = (# "cgt.un" e1 e2 : int #) - (# "clt.un" e1 e2 : int #)
+                 when ^T : uint64 = (# "cgt.un" e1 e2 : int #) - (# "clt.un" e1 e2 : int #)
+                 when ^T : unativeint = (# "cgt.un" e1 e2 : int #) - (# "clt.un" e1 e2 : int #)
                  when ^T : float  = if   (# "clt" e1 e2 : bool #) then (-1)
                                     elif (# "cgt" e1 e2 : bool #) then (1)
                                     elif (# "ceq" e1 e2 : bool #) then (0)
@@ -4792,7 +4815,7 @@ namespace Microsoft.FSharp.Core
                                      elif (# "ceq" e1 e2 : bool #) then (0)
                                      elif (# "ceq" e2 e2 : bool #) then (-1)
                                      else (# "ceq" e1 e1 : int #)
-                 when ^T : char   = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
+                 when ^T : char   = (# "cgt" e1 e2 : int #) - (# "clt" e1 e2 : int #)
                  when ^T : string = 
                      // NOTE: we don't have to null check here because String.CompareOrdinal
                      // gives reliable results on null values.
@@ -4833,8 +4856,7 @@ namespace Microsoft.FSharp.Core
             [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
             [<assembly: System.CLSCompliant(true)>]
             [<assembly: System.Security.SecurityTransparent>] // assembly is fully transparent
-#if CROSS_PLATFORM_COMPILER
-#else
+#if !CROSS_PLATFORM_COMPILER
             [<assembly: System.Security.SecurityRules(System.Security.SecurityRuleSet.Level2)>] // v4 transparency; soon to be the default, but not yet
 #endif
             do ()

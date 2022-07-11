@@ -5,10 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fsc.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fscAnyCpu\fscAnyCpu.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsi.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsiAnyCpu\fsiAnyCpu.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscProject\fsc.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscAnyCpuProject\fscAnyCpu.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsc\fscArm64Project\fscArm64.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiProject\fsi.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiAnyCpuProject\fsiAnyCpu.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiArm64Project\fsiArm64.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Build\FSharp.Build.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
@@ -83,10 +85,14 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools"
   file source="$(BinariesFolder)fsc\$(Configuration)\$(TargetFramework)\fsc.exe.config"
   file source="$(BinariesFolder)fscAnyCpu\$(Configuration)\$(TargetFramework)\fscAnyCpu.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X64 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fscAnyCpu.exe"
   file source="$(BinariesFolder)fscAnyCpu\$(Configuration)\$(TargetFramework)\fscAnyCpu.exe.config"
+  file source="$(BinariesFolder)fscArm64\$(Configuration)\$(TargetFramework)\fscArm64.exe" vs.file.ngen=yes vs.file.ngenArchitecture=arm64 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fscArm64.exe"
+  file source="$(BinariesFolder)fscArm64\$(Configuration)\$(TargetFramework)\fscArm64.exe.config"
   file source="$(BinariesFolder)fsi\$(Configuration)\$(TargetFramework)\fsi.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X86 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fsi.exe"
   file source="$(BinariesFolder)fsi\$(Configuration)\$(TargetFramework)\fsi.exe.config"
   file source="$(BinariesFolder)fsiAnyCpu\$(Configuration)\$(TargetFramework)\fsiAnyCpu.exe" vs.file.ngen=yes vs.file.ngenArchitecture=X64 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fsiAnyCpu.exe"
   file source="$(BinariesFolder)fsiAnyCpu\$(Configuration)\$(TargetFramework)\fsiAnyCpu.exe.config"
+  file source="$(BinariesFolder)fsiArm64\$(Configuration)\$(TargetFramework)\fsiArm64.exe" vs.file.ngen=yes vs.file.ngenArchitecture=arm64 vs.file.ngenPriority=2 vs.file.ngenApplication="[installDir]\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\fsiAnyCpu.exe"
+  file source="$(BinariesFolder)fsiArm64\$(Configuration)\$(TargetFramework)\fsiArm64.exe.config"
   file source="$(BinariesFolder)FSharp.Compiler.Interactive.Settings\$(Configuration)\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)FSharp.Compiler.Interactive.Settings\$(Configuration)\netstandard2.0\FSharp.Compiler.Interactive.Settings.xml"
   file source="$(BinariesFolder)fsc\$(Configuration)\$(TargetFramework)\FSharp.Compiler.Service.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2

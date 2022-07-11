@@ -1027,7 +1027,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     [<MeasureAnnotatedAbbreviation>]
     type byte<[<Measure>] 'Measure> = byte
-
+    
     /// <summary>The type of 16-bit unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
@@ -1036,7 +1036,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     [<MeasureAnnotatedAbbreviation>]
     type uint16<[<Measure>] 'Measure> = uint16
-
+    
     /// <summary>The type of 64-bit unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
@@ -1045,7 +1045,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     [<MeasureAnnotatedAbbreviation>]
     type uint64<[<Measure>] 'Measure> = uint64
-
+    
     /// <summary>The type of machine-sized unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to
@@ -1054,7 +1054,7 @@ namespace Microsoft.FSharp.Core
     /// <category>Basic Types with Units of Measure</category>
     [<MeasureAnnotatedAbbreviation>]
     type unativeint<[<Measure>] 'Measure> = unativeint
-
+    
     /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to

@@ -11,6 +11,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="fsi" />
     <InternalsVisibleTo Include="fsiAnyCpu" />
+    <InternalsVisibleTo Include="fsiArm64" />
     <InternalsVisibleTo Include="FSharp.VS.FSI" />
   </ItemGroup>
 

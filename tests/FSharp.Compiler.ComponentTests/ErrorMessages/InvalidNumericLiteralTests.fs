@@ -12,6 +12,7 @@ module ``Numeric Literals`` =
 
     [<Theory>]
     [<InlineData("1up")>]
+    [<InlineData("0xABCI")>]
     [<InlineData("3._1415F")>]
     [<InlineData("999_99_9999_L")>]
     [<InlineData("52_")>]
@@ -30,7 +31,7 @@ module ``Numeric Literals`` =
         |> typecheck
         |> shouldFail
         |> withSingleDiagnostic (Error 1156, Line 1, Col 9, Line 1, Col (9 + (String.length literal)),
-                                 "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).")
+                                 "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).")
 
     [<Fact>]
     let ``3_(dot)1415F is invalid numeric literal``() =
@@ -38,7 +39,7 @@ module ``Numeric Literals`` =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 1156, Line 1, Col 9,  Line 1, Col 11, "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).";)
+            (Error 1156, Line 1, Col 9,  Line 1, Col 11, "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).")
             (Error 599,  Line 1, Col 11, Line 1, Col 12,"Missing qualification after '.'")]
 
     [<Fact>]
@@ -68,7 +69,7 @@ let x = 1N
                     "Operation could not be completed due to earlier error"
                 ]
 
-    // Regressiont test for FSharp1.0: 2543 - Decimal literals do not support exponents
+    // Regression test for FSharp1.0: 2543 - Decimal literals do not support exponents
     [<Theory>]
     [<InlineData("1.0E28M")>]
     [<InlineData("1.0E-28M")>]

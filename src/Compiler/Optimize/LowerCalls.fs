@@ -24,11 +24,11 @@ let InterceptExpr g cont expr =
     | Expr.App (Expr.Val (vref, flags, _) as f0, f0ty, tyargsl, argsl, m) ->
         // Only transform if necessary, i.e. there are not enough arguments
         match vref.ValReprInfo with
-        | Some(topValInfo) ->
+        | Some(valReprInfo) ->
             let argsl = List.map cont argsl
             let f0 =
-                if topValInfo.AritiesOfArgs.Length > argsl.Length
-                then fst(AdjustValForExpectedArity g m vref flags topValInfo)
+                if valReprInfo.AritiesOfArgs.Length > argsl.Length
+                then fst(AdjustValForExpectedArity g m vref flags valReprInfo)
                 else f0
 
             Some (MakeApplicationAndBetaReduce g (f0, f0ty, [tyargsl], argsl, m))

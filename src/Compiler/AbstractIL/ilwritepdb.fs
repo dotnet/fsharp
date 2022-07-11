@@ -751,10 +751,12 @@ type PortablePdbGenerator
                             builder.WriteCompressedInteger offsetDelta
 
                             // Check for hidden-sequence-point-record
-                            if startLine = 0xfeefee
-                               || endLine = 0xfeefee
-                               || (startColumn = 0 && endColumn = 0)
-                               || ((endLine - startLine) = 0 && (endColumn - startColumn) = 0) then
+                            if
+                                startLine = 0xfeefee
+                                || endLine = 0xfeefee
+                                || (startColumn = 0 && endColumn = 0)
+                                || ((endLine - startLine) = 0 && (endColumn - startColumn) = 0)
+                            then
                                 // Hidden-sequence-point-record
                                 builder.WriteCompressedInteger 0
                                 builder.WriteCompressedInteger 0
@@ -1008,14 +1010,16 @@ let writePdbInfo showTimes outfile pdbfile info cvChunk =
                              | Some p -> sco.StartOffset <> p.StartOffset || sco.EndOffset <> p.EndOffset
                              | None -> true
 
-                         if nested then pdbOpenScope pdbw sco.StartOffset
+                         if nested then
+                             pdbOpenScope pdbw sco.StartOffset
 
                          sco.Locals
                          |> Array.iter (fun v -> pdbDefineLocalVariable pdbw v.Name v.Signature v.Index)
 
                          sco.Children |> Array.iter (writePdbScope (if nested then Some sco else parent))
 
-                         if nested then pdbCloseScope pdbw sco.EndOffset)
+                         if nested then
+                             pdbCloseScope pdbw sco.EndOffset)
 
              match minfo.RootScope with
              | None -> ()
@@ -1242,8 +1246,10 @@ and allNamesOfScopes acc (scopes: PdbMethodScope[]) =
 let rec pushShadowedLocals (stackGuard: StackGuard) (localsToPush: PdbLocalVar[]) (scope: PdbMethodScope) =
     stackGuard.Guard(fun () ->
         // Check if child scopes are properly nested
-        if scope.Children
-           |> Array.forall (fun child -> child.StartOffset >= scope.StartOffset && child.EndOffset <= scope.EndOffset) then
+        if
+            scope.Children
+            |> Array.forall (fun child -> child.StartOffset >= scope.StartOffset && child.EndOffset <= scope.EndOffset)
+        then
 
             let children = scope.Children |> Array.sortWith scopeSorter
 
