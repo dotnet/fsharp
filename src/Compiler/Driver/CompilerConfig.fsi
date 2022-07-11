@@ -255,6 +255,8 @@ type TcConfigBuilder =
 
         mutable inputCodePage: int option
 
+        mutable clearResultsCache: bool
+
         mutable embedResources: string list
 
         mutable diagnosticsOptions: FSharpDiagnosticOptions
@@ -567,6 +569,8 @@ type TcConfig =
     member reduceMemoryUsage: ReduceMemoryFlag
 
     member inputCodePage: int option
+
+    member clearResultsCache: bool
 
     member embedResources: string list
 

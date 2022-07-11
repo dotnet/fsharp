@@ -584,12 +584,13 @@ type RecursiveBindingInfo =
 [<Sealed>]
 type CheckedBindingInfo
 
-/// Represnts the results of the second phase of checking simple values
+/// Represents the results of the second phase of checking simple values
 type ValScheme =
     | ValScheme of
         id: Ident *
         typeScheme: GeneralizedType *
         valReprInfo: ValReprInfo option *
+        valReprInfoForDisplay: ValReprInfo option *
         memberInfo: PrelimMemberInfo option *
         isMutable: bool *
         inlineInfo: ValInline *
@@ -783,7 +784,7 @@ val InferGenericArityFromTyScheme: GeneralizedType -> prelimValReprInfo: PrelimV
 
 /// Locate the environment within a particular namespace path, used to process a
 /// 'namespace' declaration.
-val LocateEnv: ccu: CcuThunk -> env: TcEnv -> enclosingNamespacePath: Ident list -> TcEnv
+val LocateEnv: isModule: bool -> ccu: CcuThunk -> env: TcEnv -> enclosingNamespacePath: Ident list -> TcEnv
 
 /// Make the check for safe initialization of a member
 val MakeCheckSafeInit:
@@ -1179,7 +1180,7 @@ val TcPatLongIdentActivePatternCase:
     vFlags: TcPatValFlags ->
     patEnv: TcPatLinearEnv ->
     ty: TType ->
-    lidRange: range * item: Item * apref: ActivePatternElemRef * args: SynPat list * m: range ->
+    mLongId: range * item: Item * apref: ActivePatternElemRef * args: SynPat list * m: range ->
         (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
 
 /// The pattern syntax can also represent active pattern arguments. This routine

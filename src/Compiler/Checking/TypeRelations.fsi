@@ -63,17 +63,17 @@ val tryDestTopLambda:
 val destTopLambda:
     g: TcGlobals ->
     amap: ImportMap ->
-    topValInfo: ValReprInfo ->
+    valReprInfo: ValReprInfo ->
     e: Expr * ty: TType ->
         Typars * Val option * Val option * Val list list * Expr * TType
 
 /// Do AdjustArityOfLambdaBody for a series of iterated lambdas, producing one method.
-/// The required iterated function arity (List.length topValInfo) must be identical
+/// The required iterated function arity (List.length valReprInfo) must be identical
 /// to the iterated function arity of the input lambda (List.length vsl)
 val IteratedAdjustArityOfLambda:
     g: TcGlobals ->
     amap: ImportMap ->
-    topValInfo: ValReprInfo ->
+    valReprInfo: ValReprInfo ->
     e: Expr ->
         Typars * Val option * Val option * Val list list * Expr * TType
 

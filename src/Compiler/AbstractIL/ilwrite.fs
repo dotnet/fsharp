@@ -3881,9 +3881,11 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           let isItanium = modul.Platform = Some IA64
           let isItaniumOrAMD = match modul.Platform with | Some IA64 | Some AMD64 -> true | _ -> false
           let hasEntryPointStub = match modul.Platform with | Some ARM64 | Some ARM -> false | _ -> true
+          let hasMvidSection = options.referenceAssemblyAttribOpt.IsSome
           let numSections =
-              if hasEntryPointStub then 3           // .text, .sdata, .reloc
-              else 2                                // .text, .sdata
+              let ns = if hasMvidSection then 1 else 0
+              if hasEntryPointStub then ns + 3           // [.mvid], .text, .sdata, .reloc
+              else ns + 2                                // [.mvid], .text, .sdata
 
           // HEADERS
           let next = 0x0
@@ -3895,6 +3897,9 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           let peSignatureChunk, next = chunk 0x04 next
           let peFileHeaderChunk, next = chunk 0x14 next
           let peOptionalHeaderChunk, next = chunk (if modul.Is64Bit then 0xf0 else 0xe0) next
+          let mvidSectionHeaderChunk, next =
+              if hasMvidSection then chunk 0x28 next
+              else nochunk next
           let textSectionHeaderChunk, next = chunk 0x28 next
           let dataSectionHeaderChunk, next = chunk 0x28 next
           let relocSectionHeaderChunk, next = if hasEntryPointStub then chunk 0x28 next else nochunk next
@@ -3904,8 +3909,16 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           let headerSectionPhysSize = nextPhys - headerSectionPhysLoc
           let next = align alignVirt (headerAddr + headerSize)
 
-          // TEXT SECTION: 8 bytes IAT table 72 bytes CLI header
+          // .MVID SECTION
+          let mvidSectionPhysLoc = nextPhys
+          let mvidSectionAddr =  next
+          let mvidSectionChunk, next =  if hasMvidSection then chunk sizeof<Guid> next else nochunk next
+          let mvidSectionSize = if hasMvidSection then next - mvidSectionAddr else 0x00
+          let nextPhys = if hasMvidSection then align alignPhys (mvidSectionPhysLoc + mvidSectionSize) else nextPhys
+          let mvidSectionPhysSize = if hasMvidSection then nextPhys - mvidSectionPhysLoc else 0x00
+          let next = if hasMvidSection then align alignVirt (mvidSectionAddr + mvidSectionSize) else align alignVirt next
 
+          // TEXT SECTION: 8 bytes IAT table 72 bytes CLI header
           let textSectionPhysLoc = nextPhys
           let textSectionAddr = next
           let next = textSectionAddr
@@ -4123,13 +4136,9 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
                   os.Write 0uy
 
           // Now we've computed all the offsets, write the image
-
           write (Some msdosHeaderChunk.addr) os "msdos header" msdosHeader
-
           write (Some peSignatureChunk.addr) os "pe signature" [| |]
-
           writeInt32 os 0x4550
-
           write (Some peFileHeaderChunk.addr) os "pe file header" [| |]
 
           match modul.Platform with
@@ -4141,33 +4150,35 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
 
           writeInt32AsUInt16 os numSections
 
+          use sha =
+              match options.checksumAlgorithm with
+              | HashAlgorithm.Sha1 -> System.Security.Cryptography.SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
+              | HashAlgorithm.Sha256 -> System.Security.Cryptography.SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
+
+          let hCode = sha.ComputeHash code
+          let hData = sha.ComputeHash data
+          let hMeta = sha.ComputeHash metadata
+
+          // Not yet suitable for the mvidsection optimization 
+          let deterministicId = [| hCode; hData; hMeta |] |> Array.collect id |> sha.ComputeHash
+          let deterministicMvid () = deterministicId[0..15]
           let pdbData =
             // Hash code, data and metadata
             if options.deterministic then
-              use sha =
-                  match options.checksumAlgorithm with
-                  | HashAlgorithm.Sha1 -> System.Security.Cryptography.SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
-                  | HashAlgorithm.Sha256 -> System.Security.Cryptography.SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
-
-              let hCode = sha.ComputeHash code
-              let hData = sha.ComputeHash data
-              let hMeta = sha.ComputeHash metadata
-              let final = [| hCode; hData; hMeta |] |> Array.collect id |> sha.ComputeHash
-
               // Confirm we have found the correct data and aren't corrupting the metadata
               if metadata[ guidStart..guidStart+3] <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
               if metadata[ guidStart+12..guidStart+15] <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
 
               // Update MVID guid in metadata
-              Array.blit final 0 metadata guidStart 16
+              Array.blit deterministicId 0 metadata guidStart 16
 
               // Use last 4 bytes for timestamp - High bit set, to stop tool chains becoming confused
-              let timestamp = int final[16] ||| (int final[17] <<< 8) ||| (int final[18] <<< 16) ||| (int (final[19] ||| 128uy) <<< 24)
+              let timestamp = int deterministicId[16] ||| (int deterministicId[17] <<< 8) ||| (int deterministicId[18] <<< 16) ||| (int (deterministicId[19] ||| 128uy) <<< 24)
               writeInt32 os timestamp
 
               // Update pdbData with new guid and timestamp. Portable and embedded PDBs don't need the ModuleID
               // Full and PdbOnly aren't supported under deterministic builds currently, they rely on non-deterministic Windows native code
-              { pdbData with ModuleID = final[0..15] ; Timestamp = timestamp }
+              { pdbData with ModuleID = deterministicMvid() ; Timestamp = timestamp }
             else
               writeInt32 os timestamp   // date since 1970
               pdbData
@@ -4288,6 +4299,19 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           writeInt32 os 0x00 // Reserved Always 0 (see Section 23.1).
           writeInt32 os 0x00 // Reserved Always 0 (see Section 23.1).
 
+          if hasMvidSection then
+              write (Some mvidSectionHeaderChunk.addr) os "mvid section header" [| |]
+              writeBytes os [| 0x2euy; 0x6Duy; 0x76uy; 0x69uy; 0x64uy; 0x00uy; 0x00uy; 0x00uy; |] // ".mvid\000\000\000"
+              writeInt32 os mvidSectionSize     // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment.
+              writeInt32 os mvidSectionAddr     //  VirtualAddress For executable images this is the address of the first byte of the section
+              writeInt32 os mvidSectionPhysSize //  SizeOfRawData Size of the initialized data on disk in bytes
+              writeInt32 os mvidSectionPhysLoc  // PointerToRawData RVA to section's first page within the PE file.
+              writeInt32 os 0x00                // PointerToRelocations RVA of Relocation section.
+              writeInt32 os 0x00                // PointerToLineNumbers Always 0 (see Section 23.1).
+              writeInt32AsUInt16 os 0x00        // NumberOfRelocations Number of relocations, set to 0 if unused.
+              writeInt32AsUInt16 os 0x00        //  NumberOfLinenumbers Always 0 (see Section 23.1).
+              writeBytes os [| 0x20uy; 0x00uy; 0x00uy; 0x60uy |] //  Characteristics Flags IMAGE_SCN_CNT_CODE || IMAGE_SCN_MEM_EXECUTE || IMAGE_SCN_MEM_READ
+
           write (Some textSectionHeaderChunk.addr) os "text section header" [| |]
 
        // 00000178
@@ -4340,10 +4364,15 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
               writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1).
               writeBytes os [| 0x40uy; 0x00uy; 0x00uy; 0x42uy |] //  Characteristics Flags: IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ |
 
-          writePadding os "pad to text begin" (textSectionPhysLoc - headerSize)
+          writePadding os "pad to mvid begin" (mvidSectionPhysLoc - headerSize)
+
+          // MVID SECTION
+          if hasMvidSection then
+              ignore mvidSectionChunk
+              writeBytes os (deterministicMvid())
+              writePadding os "pad to mvid begin" (textSectionPhysLoc - (mvidSectionPhysLoc + mvidSectionSize))
 
           // TEXT SECTION: e.g. 0x200
-
           let textV2P v = v - textSectionAddr + textSectionPhysLoc
 
           // e.g. 0x0200

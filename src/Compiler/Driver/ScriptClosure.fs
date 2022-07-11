@@ -98,7 +98,8 @@ module ScriptPreprocessClosure =
         let seen = Dictionary<_, bool>()
 
         member _.SetSeen check =
-            if not (seen.ContainsKey check) then seen.Add(check, true)
+            if not (seen.ContainsKey check) then
+                seen.Add(check, true)
 
         member _.HaveSeen check = seen.ContainsKey check
 

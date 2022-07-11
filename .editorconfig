@@ -26,3 +26,17 @@ fsharp_max_if_then_else_short_width=40
 # fsharp_max_function_binding_width formats these over a single line.
 [src/Compiler/Driver/CompilerDiagnostics.fs]
 fsharp_max_function_binding_width=70
+
+# This file contains long specifications of navigation items
+[src/Compiler/Service/ServiceStructure.fs]
+fsharp_max_value_binding_width=100
+
+# This file contains long specifications of navigation items
+[src/Compiler/Service/ServiceNavigation.fs]
+max_line_length=170
+fsharp_max_value_binding_width=120
+
+# This file contains long calls with explicitly named arguments
+[src/Compiler/Service/service.fs]
+max_line_length=150
+fsharp_max_value_binding_width=100

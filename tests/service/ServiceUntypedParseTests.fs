@@ -152,7 +152,7 @@ let rec getParenTypes (synType: SynType): SynType list =
           yield synType
           yield! getParenTypes innerType
 
-      | SynType.Fun (argType, returnType, _) ->
+      | SynType.Fun (argType = argType; returnType = returnType) ->
           yield! getParenTypes argType
           yield! getParenTypes returnType
 
@@ -256,8 +256,7 @@ type T =
         with get () = x
         and set (value) = x <- value
 """
-        getTypeMemberRange source |> shouldEqual [ (3, 4), (5, 36)
-                                                   (3, 4), (5, 36) ]
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (5, 36) ]
 
 
     [<Test>]
