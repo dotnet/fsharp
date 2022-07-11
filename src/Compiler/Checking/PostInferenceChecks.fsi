@@ -10,7 +10,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
-/// Perform the checks on the TypedTree for a file after type inference is complete.
+/// Perform the checks on the TAST for a file after type inference is complete.
 val CheckImplFile:
     g: TcGlobals *
     amap: ImportMap *
@@ -23,6 +23,6 @@ val CheckImplFile:
     implFileTy: ModuleOrNamespaceType *
     implFileContents: ModuleOrNamespaceContents *
     extraAttribs: Attribs *
-    isLastCompiland: (bool * bool) *
+    (bool * bool) *
     isInternalTestSpanStackReferring: bool ->
         bool * StampMap<AnonRecdTypeInfo>

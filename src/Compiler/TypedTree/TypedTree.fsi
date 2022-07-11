@@ -1783,7 +1783,7 @@ type ValOptionalData =
         mutable val_repr_info: ValReprInfo option
 
         /// Records the "extra information" for display purposes for expression-level function definitions
-        /// that may be compiled as closures (that is are not-necessarily compiled as top-level methods).
+        /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
         mutable val_repr_info_for_display: ValReprInfo option
 
         /// How visible is this?
@@ -2144,7 +2144,7 @@ type Val =
     member ValReprInfo: ValReprInfo option
 
     /// Records the "extra information" for display purposes for expression-level function definitions
-    /// that may be compiled as closures (that is are not-necessarily compiled as top-level methods).
+    /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
     member ValReprInfoForDisplay: ValReprInfo option
 
     /// Get the declared documentation for the value

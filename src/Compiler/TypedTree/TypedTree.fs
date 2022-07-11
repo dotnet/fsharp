@@ -2501,7 +2501,7 @@ type ValOptionalData =
       mutable val_repr_info: ValReprInfo option
 
       /// Records the "extra information" for display purposes for expression-level function definitions
-      /// that may be compiled as closures (that is are not-necessarily compiled as top-level methods).
+      /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
       mutable val_repr_info_for_display: ValReprInfo option
 
       /// How visible is this? 
@@ -3009,39 +3009,39 @@ type Val =
     member x.SetValReprInfo info = 
         match x.val_opt_data with
         | Some optData -> optData.val_repr_info <- info
-        | None -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_repr_info = info }
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_repr_info = info }
 
     member x.SetValReprInfoForDisplay info = 
         match x.val_opt_data with
         | Some optData -> optData.val_repr_info_for_display <- info
-        | None -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_repr_info_for_display = info }
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_repr_info_for_display = info }
 
     member x.SetType ty = x.val_type <- ty
 
     member x.SetOtherRange m =
         match x.val_opt_data with
         | Some optData -> optData.val_other_range <- Some m
-        | None -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_other_range = Some m }
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_other_range = Some m }
 
     member x.SetDeclaringEntity parent = 
         match x.val_opt_data with
         | Some optData -> optData.val_declaring_entity <- parent
-        | None -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_declaring_entity = parent }
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_declaring_entity = parent }
 
     member x.SetAttribs attribs = 
         match x.val_opt_data with
         | Some optData -> optData.val_attribs <- attribs
-        | None -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_attribs = attribs }
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_attribs = attribs }
 
     member x.SetMemberInfo member_info = 
         match x.val_opt_data with
         | Some optData -> optData.val_member_info <- Some member_info
-        | None -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_member_info = Some member_info }
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_member_info = Some member_info }
 
     member x.SetValDefn val_defn = 
         match x.val_opt_data with
         | Some optData -> optData.val_defn <- Some val_defn
-        | None -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_defn = Some val_defn }
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_defn = Some val_defn }
 
     /// Create a new value with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Val = 

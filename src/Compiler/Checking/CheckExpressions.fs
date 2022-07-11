@@ -1903,18 +1903,12 @@ let CombineSyntacticAndInferredArities g rhsExpr prelimScheme =
 
         Some partialArityInfo
 
-// "let"/"pat" --> TcLetBinding, SynPat, SynSimplePat: Syn* -->  PrelimVal1 --> PrelimVal2 --> ValScheme --> Val
-// "let rec"/"member"/...., SynPat, SynSimplePat: Syn* -->  Val ---> Checking --> Incremental Generalization --> Fixup Val with inferred types
-
 let BuildValScheme declKind partialArityInfoOpt prelimScheme =
     let (PrelimVal2(id, typeScheme, _, memberInfoOpt, isMutable, inlineFlag, baseOrThis, _, vis, isCompGen, hasDeclaredTypars)) = prelimScheme
     let valReprInfoOpt =
-        match partialArityInfoOpt with
-        | Some partialValReprInfo ->
-            let valReprInfo = InferGenericArityFromTyScheme typeScheme partialValReprInfo
-            Some valReprInfo
-        | None ->
-            None
+        partialArityInfoOpt
+        |> Option.map (InferGenericArityFromTyScheme typeScheme)
+
     let valReprInfo, valReprInfoForDisplay =
         if DeclKind.MustHaveArity declKind then
             valReprInfoOpt, None

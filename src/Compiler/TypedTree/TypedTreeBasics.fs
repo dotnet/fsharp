@@ -26,7 +26,7 @@ let getNameOfScopeRef sref =
     | ILScopeRef.Assembly aref -> aref.Name
     | ILScopeRef.PrimaryAssembly -> "<primary>"
 
-/// Metadata on values (names of arguments etc. 
+/// Metadata on values (names of arguments etc.) 
 module ValReprInfo = 
 
     let unnamedTopArg1: ArgReprInfo = { Attribs=[]; Name=None }
