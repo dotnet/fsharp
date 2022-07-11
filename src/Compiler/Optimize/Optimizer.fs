@@ -2367,14 +2367,14 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         | None -> OptimizeApplication cenv env (f, fty, tyargs, argsl, m) 
 
     | Expr.Lambda (_lambdaId, _, _, argvs, _body, m, bodyTy) -> 
-        let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
+        let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
         let ty = mkMultiLambdaTy g m argvs bodyTy
-        OptimizeLambdas None cenv env topValInfo expr ty
+        OptimizeLambdas None cenv env valReprInfo expr ty
 
     | Expr.TyLambda (_lambdaId, tps, _body, _m, bodyTy) -> 
-        let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal)
+        let valReprInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal)
         let ty = mkForallTyIfNeeded tps bodyTy
-        OptimizeLambdas None cenv env topValInfo expr ty
+        OptimizeLambdas None cenv env valReprInfo expr ty
 
     | Expr.TyChoose _ -> 
         OptimizeExpr cenv env (ChooseTyparSolutionsForFreeChoiceTypars g cenv.amap expr)
@@ -3731,15 +3731,15 @@ and OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, d
                    Info=ValueOfExpr newExpr }
 
 /// Optimize/analyze a lambda expression
-and OptimizeLambdas (vspec: Val option) cenv env topValInfo expr exprTy = 
+and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy = 
     let g = cenv.g
 
     match expr with
     | Expr.Lambda (lambdaId, _, _, _, _, m, _)  
     | Expr.TyLambda (lambdaId, _, _, m, _) ->
         let env = { env with methEnv = { pipelineCount = 0 }}
-        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = IteratedAdjustArityOfLambda g cenv.amap topValInfo expr
-        let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v, topValInfo)) }
+        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = IteratedAdjustArityOfLambda g cenv.amap valReprInfo expr
+        let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v, valReprInfo)) }
         let env = Option.foldBack (BindInternalValToUnknown cenv) ctorThisValOpt env
         let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
         let env = BindTypeVarsToUnknown tps env

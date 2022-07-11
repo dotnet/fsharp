@@ -1211,7 +1211,7 @@ let BuildObjCtorCall (g: TcGlobals) m =
 let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, delInvokeMeth: MethInfo, delArgTys, delFuncExpr, delFuncTy, m) =
     let slotsig = delInvokeMeth.GetSlotSig(amap, m)
     let delArgVals, expr = 
-        let topValInfo = ValReprInfo([], List.replicate (max 1 (List.length delArgTys)) ValReprInfo.unnamedTopArg, ValReprInfo.unnamedRetVal)
+        let valReprInfo = ValReprInfo([], List.replicate (max 1 (List.length delArgTys)) ValReprInfo.unnamedTopArg, ValReprInfo.unnamedRetVal)
 
         // Try to pull apart an explicit lambda and use it directly 
         // Don't do this in the case where we're adjusting the arguments of a function used to build a .NET-compatible event handler 
@@ -1219,7 +1219,7 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
             if Option.isSome eventInfoOpt then 
                 None 
             else 
-                tryDestTopLambda g amap topValInfo (delFuncExpr, delFuncTy)        
+                tryDestTopLambda g amap valReprInfo (delFuncExpr, delFuncTy)        
 
         match lambdaContents with 
         | None -> 
@@ -1244,7 +1244,7 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
             delArgVals, expr
             
         | Some _ -> 
-            let _, _, _, vsl, body, _ = IteratedAdjustArityOfLambda g amap topValInfo delFuncExpr
+            let _, _, _, vsl, body, _ = IteratedAdjustArityOfLambda g amap valReprInfo delFuncExpr
             List.concat vsl, body
             
     let meth = TObjExprMethod(slotsig, [], [], [delArgVals], expr, m)
