@@ -20,7 +20,7 @@ open FSharp.Compiler.TypedTreeOps
 
 let mutable showTermFileCount = 0
 
-let PrintWholeAssemblyImplementation g (tcConfig: TcConfig) outfile header expr =
+let PrintWholeAssemblyImplementation (tcConfig: TcConfig) outfile header expr =
     if tcConfig.showTerms then
         if tcConfig.writeTermsToFiles then
             let fileName = outfile + ".terms"
@@ -31,10 +31,10 @@ let PrintWholeAssemblyImplementation g (tcConfig: TcConfig) outfile header expr 
                     .GetWriter()
 
             showTermFileCount <- showTermFileCount + 1
-            LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL g expr))
+            LayoutRender.outL f (Display.squashTo 192 (DebugPrint.implFilesL expr))
         else
             dprintf "\n------------------\nshowTerm: %s:\n" header
-            LayoutRender.outL stderr (Display.squashTo 192 (DebugPrint.implFilesL g expr))
+            LayoutRender.outL stderr (Display.squashTo 192 (DebugPrint.implFilesL expr))
             dprintf "\n------------------\n"
 
 let AddExternalCcuToOptimizationEnv tcGlobals optEnv (ccuinfo: ImportedAssembly) =
@@ -65,15 +65,13 @@ let ApplyAllOptimizations
     // Always optimize once - the results of this step give the x-module optimization
     // info.  Subsequent optimization steps choose representations etc. which we don't
     // want to save in the x-module info (i.e. x-module info is currently "high level").
-    PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-start" implFiles
+    PrintWholeAssemblyImplementation tcConfig outfile "pass-start" implFiles
 #if DEBUG
     if tcConfig.showOptimizationData then
-        dprintf
-            "Expression prior to optimization:\n%s\n"
-            (LayoutRender.showL (Display.squashTo 192 (DebugPrint.implFilesL tcGlobals implFiles)))
+        dprintf "Expression prior to optimization:\n%s\n" (LayoutRender.showL (Display.squashTo 192 (DebugPrint.implFilesL implFiles)))
 
     if tcConfig.showOptimizationData then
-        dprintf "CCU prior to optimization:\n%s\n" (LayoutRender.showL (Display.squashTo 192 (DebugPrint.entityL tcGlobals ccu.Contents)))
+        dprintf "CCU prior to optimization:\n%s\n" (LayoutRender.showL (Display.squashTo 192 (DebugPrint.entityL ccu.Contents)))
 #endif
 
     let optEnv0 = optEnv
@@ -205,7 +203,7 @@ let ApplyAllOptimizations
     let implFiles, implFileOptDatas = List.unzip results
     let assemblyOptData = Optimizer.UnionOptimizationInfos implFileOptDatas
     let tassembly = CheckedAssemblyAfterOptimization implFiles
-    PrintWholeAssemblyImplementation tcGlobals tcConfig outfile "pass-end" (implFiles |> List.map (fun implFile -> implFile.ImplFile))
+    PrintWholeAssemblyImplementation tcConfig outfile "pass-end" (implFiles |> List.map (fun implFile -> implFile.ImplFile))
     ReportTime tcConfig "Ending Optimizations"
     tassembly, assemblyOptData, optEnvFirstLoop
 
@@ -234,8 +232,10 @@ let GenerateIlxCode
     ) =
 
     let mainMethodInfo =
-        if (tcConfig.target = CompilerTarget.Dll)
-           || (tcConfig.target = CompilerTarget.Module) then
+        if
+            (tcConfig.target = CompilerTarget.Dll)
+            || (tcConfig.target = CompilerTarget.Module)
+        then
             None
         else
             Some topAttrs.mainMethodAttrs
@@ -245,7 +245,7 @@ let GenerateIlxCode
             generateFilterBlocks = tcConfig.generateFilterBlocks
             emitConstantArraysUsingStaticDataBlobs = not isInteractiveOnMono
             workAroundReflectionEmitBugs = tcConfig.isInteractive
-            generateDebugSymbols = tcConfig.debuginfo
+            generateDebugSymbols = tcConfig.debuginfo // REVIEW: is this still required?
             fragName = fragName
             localOptimizationsEnabled = tcConfig.optSettings.LocalOptimizationsEnabled
             testFlagEmitFeeFeeAs100001 = tcConfig.testFlagEmitFeeFeeAs100001

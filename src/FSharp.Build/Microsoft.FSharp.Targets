@@ -69,7 +69,7 @@ this file.
     <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true' and '$(FSharpPreferNetFrameworkTools)' == 'true'">
         <FscToolPath>$(Fsc_NetFramework_ToolPath)</FscToolPath>
         <FscToolExe Condition="'$(FSharpPrefer64BitTools)' != 'false'">$(Fsc_NetFramework_AnyCpu_ToolExe)</FscToolExe>
-        <FscToolExe Condition="'$(FSharpPrefer64BitTools)' == 'false'">$(Fsc_NetFramework_X86_ToolExe)</FscToolExe>
+        <FscToolExe Condition="'$(FSharpPrefer64BitTools)' == 'false'">$(Fsc_NetFramework_PlatformSpecific_ToolExe)</FscToolExe>
         <DotnetFscCompilerPath></DotnetFscCompilerPath>
     </PropertyGroup>
 
@@ -264,6 +264,7 @@ this file.
                 $(LoadSource)"
         Outputs="@(DocFileItem);
                  @(IntermediateAssembly);
+                 @(IntermediateRefAssembly);
                  @(_DebugSymbolsIntermediatePath);
                  $(NonExistentFile);
                  @(CustomAdditionalCompileOutputs)"
@@ -337,6 +338,7 @@ this file.
               Optimize="$(Optimize)"
               OtherFlags="$(FscOtherFlags)"
               OutputAssembly="@(IntermediateAssembly)"
+              OutputRefAssembly="@(IntermediateRefAssembly)"
               PathMap="$(PathMap)"
               PdbFile="$(PdbFile)"
               Platform="$(PlatformTarget)"
@@ -346,6 +348,7 @@ this file.
               PublicSign="$(PublicSign)"
               References="@(ReferencePath)"
               ReferencePath="$(ReferencePath)"
+              RefOnly="$(ProduceOnlyReferenceAssembly)"
               Resources="@(ActualEmbeddedResources)"
               SkipCompilerExecution="$(SkipCompilerExecution)"
               SourceLink="$(SourceLink)"
@@ -389,48 +392,6 @@ this file.
 
             ============================================================
     -->
-
-    <!--
-    ============================================================
-    Override _GenerateCompileDependencyCache
-
-    Workaround for Issue #3824 and #3739
-
-    MsBuild does some optimisations around CompileInputs
-    The project system erroneously uses this to determine whether 
-    to notify language services of CommandLine Information changes.
-    C# accidently changes it's file lists every build ... and so 
-    gets the notifications.
-    F# doesn't ... so we don't get CL notifications following rebuilds
-    or build.
-    This workaround is basically to adds the current time (in ticks) 
-    into the hash of CoreCompileInputs.cache at design time so that 
-    we always appear to have different options and overcome the
-    brokencache behaviour.
-    
-    Both msbuild and the project-system will fix their code at which time
-    this can go away.
-
-    ============================================================
-    -->
-    <Target Name="_GenerateCompileDependencyCache" DependsOnTargets="ResolveAssemblyReferences" Condition="'$(DesignTimeBuild)' == 'true'">
-        <ItemGroup>
-          <CustomAdditionalCompileInputs Include="$(IntermediateOutputPath)$(MSBuildProjectFile).CoreCompileInputs.cache" />
-          <CoreCompileCache Remove="@(Compile)" />
-          <CoreCompileCache Include="@(ReferencePath)" />
-          <CoreCompileCache Include="$([System.DateTime]::Now.Ticks)" />
-        </ItemGroup>
-
-        <Hash ItemsToHash="@(CoreCompileCache)">
-          <Output TaskParameter="HashResult" PropertyName="CoreCompileDependencyHash" />
-        </Hash>
-
-        <WriteLinesToFile Lines="$(CoreCompileDependencyHash)" File="$(IntermediateOutputPath)$(MSBuildProjectFile).CoreCompileInputs.cache" Overwrite="True" WriteOnlyWhenDifferent="True" />
-
-        <ItemGroup>
-          <FileWrites Include="$(IntermediateOutputPath)$(MSBuildProjectFile).CoreCompileInputs.cache" />
-        </ItemGroup>
-    </Target>
 
     <Target Name="GenerateTargetFrameworkMonikerAttribute" BeforeTargets="BeforeCompile" DependsOnTargets="PrepareForBuild;GetReferenceAssemblyPaths" Inputs="$(MSBuildThisFileFullPath)" Outputs="$(TargetFrameworkMonikerAssemblyAttributesPath)" Condition="'$(GenerateTargetFrameworkAttribute)' == 'true'">
 

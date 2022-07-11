@@ -187,26 +187,26 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             else 
                 let aenv = aenv.BindEquivTypars implTypars sigTypars 
 
-                let aintfs = implTycon.ImmediateInterfaceTypesOfFSharpTycon 
-                let fintfs = sigTycon.ImmediateInterfaceTypesOfFSharpTycon 
-                let aintfsUser = implTycon.TypeContents.tcaug_interfaces |> List.filter (fun (_, compgen, _) -> not compgen) |> List.map p13 
+                let implIntfTys = implTycon.ImmediateInterfaceTypesOfFSharpTycon 
+                let sigIntfTys = sigTycon.ImmediateInterfaceTypesOfFSharpTycon 
+                let implUserIntfTys = implTycon.TypeContents.tcaug_interfaces |> List.filter (fun (_, compgen, _) -> not compgen) |> List.map p13 
                 let flatten tys = 
                    tys 
                    |> List.collect (AllSuperTypesOfType g amap m AllowMultiIntfInstantiations.Yes) 
                    |> ListSet.setify (typeEquiv g) 
                    |> List.filter (isInterfaceTy g)
-                let aintfs     = flatten aintfs 
-                let fintfs     = flatten fintfs 
+                let implIntfTys     = flatten implIntfTys 
+                let sigIntfTys     = flatten sigIntfTys 
               
-                let unimpl = ListSet.subtract (fun fity aity -> typeAEquiv g aenv aity fity) fintfs aintfs
-                (unimpl 
+                let unimplIntfTys = ListSet.subtract (fun sigIntfTy implIntfTy -> typeAEquiv g aenv implIntfTy sigIntfTy) sigIntfTys implIntfTys
+                (unimplIntfTys 
                  |> List.forall (fun ity -> 
                     let errorMessage = FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, NicePrint.minimalStringOfType denv ity)
                     errorR (Error(errorMessage, m)); false)) &&
                     
-                let aintfsUser = flatten aintfsUser
+                let implUserIntfTys = flatten implUserIntfTys
 
-                let hidden = ListSet.subtract (typeAEquiv g aenv) aintfsUser fintfs
+                let hidden = ListSet.subtract (typeAEquiv g aenv) implUserIntfTys sigIntfTys
                 let continueChecks, warningOrError = if implTycon.IsFSharpInterfaceTycon then false, errorR else true, warning
                 (hidden |> List.forall (fun ity -> warningOrError (InterfaceNotRevealed(denv, ity, implTycon.Range)); continueChecks)) &&
 
@@ -328,12 +328,12 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             elif implVal.LiteralValue <> sigVal.LiteralValue then (err denv FSComp.SR.ValueNotContainedMutabilityLiteralConstantValuesDiffer)
             elif implVal.IsTypeFunction <> sigVal.IsTypeFunction then (err denv FSComp.SR.ValueNotContainedMutabilityOneIsTypeFunction)
             else 
-                let implTypars, atau = implVal.GeneralizedType
-                let sigTypars, ftau = sigVal.GeneralizedType
+                let implTypars, implValTy = implVal.GeneralizedType
+                let sigTypars, sigValTy = sigVal.GeneralizedType
                 if implTypars.Length <> sigTypars.Length then (err {denv with showTyparBinding=true} FSComp.SR.ValueNotContainedMutabilityParameterCountsDiffer) else
                 let aenv = aenv.BindEquivTypars implTypars sigTypars 
                 checkTypars m aenv implTypars sigTypars &&
-                if not (typeAEquiv g aenv atau ftau) then err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer
+                if not (typeAEquiv g aenv implValTy sigValTy) then err denv FSComp.SR.ValueNotContainedMutabilityTypesDiffer
                 elif not (checkValInfo aenv (err denv) implVal sigVal) then false
                 elif not (implVal.IsExtensionMember = sigVal.IsExtensionMember) then err denv FSComp.SR.ValueNotContainedMutabilityExtensionsDiffer
                 elif not (checkMemberDatasConform (err denv) (implVal.Attribs, implVal, implVal.MemberInfo) (sigVal.Attribs, sigVal, sigVal.MemberInfo)) then false

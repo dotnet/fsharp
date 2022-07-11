@@ -34,6 +34,7 @@ These release notes track our current efforts to document changes to the F# proj
   `a + b` is parsed as `SynLongIdent([op_Addition], [], [Some (OriginalNotation "+")])`.
 * `SynMeasure` was extended with [SynMeasure.Paren](https://fsharp.github.io/fsharp-compiler-docs/reference/fsharp-compiler-syntax-synmeasure.html#Paren) case.
 * Dynamic expressions (like `x?y`) are now represented as [SynExpr.Dynamic](https://fsharp.github.io/fsharp-compiler-docs/reference/fsharp-compiler-syntax-synexpr.html#Dynamic) in the Untyped Syntax Tree.
+* Members with `get` and/or `set` are now represented as [SynMemberDefn.GetSetMember](https://fsharp.github.io/fsharp-compiler-docs/reference/fsharp-compiler-syntax-synmemberdefn.html#GetSetMember) in the Untyped Syntax Tree.
 
 ### F# 6.0 / Visual Studio 17.0
 

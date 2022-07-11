@@ -417,6 +417,7 @@ type TcConfigBuilder =
         mutable subsystemVersion: int * int
         mutable useHighEntropyVA: bool
         mutable inputCodePage: int option
+        mutable clearResultsCache: bool
         mutable embedResources: string list
         mutable diagnosticsOptions: FSharpDiagnosticOptions
         mutable mlCompatibility: bool
@@ -540,7 +541,7 @@ type TcConfigBuilder =
         // If true - the compiler will copy FSharp.Core.dll along the produced binaries
         mutable copyFSharpCore: CopyFSharpCoreFlag
 
-        /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false (*default*)
+        /// When false FSI will lock referenced assemblies requiring process restart, false = disable Shadow Copy false, the default
         mutable shadowCopyReferences: bool
 
         mutable useSdkRefs: bool
@@ -633,6 +634,7 @@ type TcConfigBuilder =
             diagnosticsOptions = FSharpDiagnosticOptions.Default
             embedResources = []
             inputCodePage = None
+            clearResultsCache = false
             subsystemVersion = 4, 0 // per spec for 357994
             useHighEntropyVA = false
             mlCompatibility = false
@@ -860,7 +862,8 @@ type TcConfigBuilder =
         | None -> ()
         | Some n ->
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
-            if n = 62 then tcConfigB.mlCompatibility <- true
+            if n = 62 then
+                tcConfigB.mlCompatibility <- true
 
             tcConfigB.diagnosticsOptions <-
                 { tcConfigB.diagnosticsOptions with
@@ -874,7 +877,8 @@ type TcConfigBuilder =
         | None -> ()
         | Some n ->
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
-            if n = 62 then tcConfigB.mlCompatibility <- false
+            if n = 62 then
+                tcConfigB.mlCompatibility <- false
 
             tcConfigB.diagnosticsOptions <-
                 { tcConfigB.diagnosticsOptions with
@@ -942,11 +946,10 @@ type TcConfigBuilder =
         if FileSystem.IsInvalidPathShim path then
             warning (Error(FSComp.SR.buildInvalidAssemblyName (path), m))
         elif
-            not
-                (
-                    tcConfigB.referencedDLLs
-                    |> List.exists (fun ar2 -> equals m ar2.Range && path = ar2.Text)
-                )
+            not (
+                tcConfigB.referencedDLLs
+                |> List.exists (fun ar2 -> equals m ar2.Range && path = ar2.Text)
+            )
         then // NOTE: We keep same paths if range is different.
             let projectReference =
                 tcConfigB.projectReferences
@@ -1053,9 +1056,10 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 else
                     None
 
-        match data.referencedDLLs
-              |> List.filter (fun assemblyReference -> assemblyReference.SimpleAssemblyNameIs libraryName)
-            with
+        match
+            data.referencedDLLs
+            |> List.filter (fun assemblyReference -> assemblyReference.SimpleAssemblyNameIs libraryName)
+        with
         | [] -> defaultCoreLibraryReference, None
         | [ r ]
         | r :: _ -> nameOfDll r
@@ -1180,7 +1184,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         let frameworkRootVersion = Path.Combine(frameworkRoot, targetFrameworkVersionValue)
                         yield frameworkRootVersion
                         let facades = Path.Combine(frameworkRootVersion, "Facades")
-                        if FileSystem.DirectoryExistsShim facades then yield facades
+
+                        if FileSystem.DirectoryExistsShim facades then
+                            yield facades
 
                         match data.FxResolver.GetFrameworkRefsPackDirectory() with
                         | Some path when FileSystem.DirectoryExistsShim(path) -> yield path
@@ -1220,6 +1226,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.subsystemVersion = data.subsystemVersion
     member _.useHighEntropyVA = data.useHighEntropyVA
     member _.inputCodePage = data.inputCodePage
+    member _.clearResultsCache = data.clearResultsCache
     member _.embedResources = data.embedResources
     member _.diagnosticsOptions = data.diagnosticsOptions
     member _.mlCompatibility = data.mlCompatibility
