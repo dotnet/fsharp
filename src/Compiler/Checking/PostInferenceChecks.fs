@@ -416,8 +416,8 @@ and CheckTypeConstraintDeep cenv f g env x =
      | TyparConstraint.MayResolveMember(traitInfo, _) -> CheckTraitInfoDeep cenv f g env traitInfo
      | TyparConstraint.DefaultsTo(_, ty, _) -> CheckTypeDeep cenv f g env true ty
      | TyparConstraint.SimpleChoice(tys, _) -> CheckTypesDeep cenv f g env tys
-     | TyparConstraint.IsEnum(uty, _) -> CheckTypeDeep cenv f g env true uty
-     | TyparConstraint.IsDelegate(aty, bty, _) -> CheckTypeDeep cenv f g env true aty; CheckTypeDeep cenv f g env true bty
+     | TyparConstraint.IsEnum(underlyingTy, _) -> CheckTypeDeep cenv f g env true underlyingTy
+     | TyparConstraint.IsDelegate(argTys, retTy, _) -> CheckTypeDeep cenv f g env true argTys; CheckTypeDeep cenv f g env true retTy
      | TyparConstraint.SupportsComparison _ 
      | TyparConstraint.SupportsEquality _ 
      | TyparConstraint.SupportsNull _ 
@@ -717,39 +717,42 @@ type TTypeEquality =
     | FeasiblyEqual
     | NotEqual
 
-let compareTypesWithRegardToTypeVariablesAndMeasures g amap m typ1 typ2 =
+let compareTypesWithRegardToTypeVariablesAndMeasures g amap m ty1 ty2 =
     
-    if (typeEquiv g typ1 typ2) then
+    if (typeEquiv g ty1 ty2) then
         ExactlyEqual
     else
-        if (typeEquiv g typ1 typ2 || TypesFeasiblyEquivStripMeasures g amap m typ1 typ2) then 
+        if (typeEquiv g ty1 ty2 || TypesFeasiblyEquivStripMeasures g amap m ty1 ty2) then 
             FeasiblyEqual
         else
             NotEqual
 
-let CheckMultipleInterfaceInstantiations cenv (typ:TType) (interfaces:TType list) isObjectExpression m =
-    let keyf ty = assert isAppTy cenv.g ty; (tcrefOfAppTy cenv.g ty).Stamp
-    let groups = interfaces |> List.groupBy keyf
+let keyTyByStamp g ty =
+    assert isAppTy g ty
+    (tcrefOfAppTy g ty).Stamp
+
+let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list) isObjectExpression m =
+    let groups = interfaces |> List.groupBy (keyTyByStamp cenv.g)
     let errors = seq {
         for _, items in groups do
             for i1 in 0 .. items.Length - 1 do
                 for i2 in i1 + 1 .. items.Length - 1 do
-                    let typ1 = items[i1]
-                    let typ2 = items[i2]
-                    let tcRef1 = tcrefOfAppTy cenv.g typ1
-                    match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g cenv.amap m typ1 typ2 with
+                    let ty1 = items[i1]
+                    let ty2 = items[i2]
+                    let tcRef1 = tcrefOfAppTy cenv.g ty1
+                    match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g cenv.amap m ty1 ty2 with
                     | ExactlyEqual -> ()
                     | FeasiblyEqual ->
                         match tryLanguageFeatureErrorOption cenv.g.langVersion LanguageFeature.InterfacesWithMultipleGenericInstantiation m with
                         | None -> ()
                         | Some exn -> exn
 
-                        let typ1Str = NicePrint.minimalStringOfType cenv.denv typ1
-                        let typ2Str = NicePrint.minimalStringOfType cenv.denv typ2
+                        let typ1Str = NicePrint.minimalStringOfType cenv.denv ty1
+                        let typ2Str = NicePrint.minimalStringOfType cenv.denv ty2
                         if isObjectExpression then
                             Error(FSComp.SR.typrelInterfaceWithConcreteAndVariableObjectExpression(tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m)
                         else
-                            let typStr = NicePrint.minimalStringOfType cenv.denv typ
+                            let typStr = NicePrint.minimalStringOfType cenv.denv ty
                             Error(FSComp.SR.typrelInterfaceWithConcreteAndVariable(typStr, tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m)
 
                     | NotEqual ->
@@ -1575,8 +1578,8 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
             errorR(Error(FSComp.SR.chkNoWriteToLimitedSpan(rf.FieldName), m))
         NoLimit
 
-    | TOp.Coerce, [tgty;srcty], [x] ->
-        if TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgty srcty then
+    | TOp.Coerce, [tgtTy;srcTy], [x] ->
+        if TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgtTy srcTy then
             CheckExpr cenv env x ctxt
         else
             CheckTypeInstNoByrefs cenv env m tyargs
@@ -2279,8 +2282,8 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
         let allVirtualMethsInParent = 
             match GetSuperTypeOfType g cenv.amap m ty with 
-            | Some super -> 
-                GetIntrinsicMethInfosOfType cenv.infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m super
+            | Some superTy -> 
+                GetIntrinsicMethInfosOfType cenv.infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m superTy
                 |> List.filter (fun minfo -> minfo.IsVirtual)
             | None -> []
 

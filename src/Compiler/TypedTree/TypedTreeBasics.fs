@@ -77,24 +77,24 @@ let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
 // Equality relations on locally defined things 
 //---------------------------------------------------------------------------
 
-let typarEq (lv1: Typar) (lv2: Typar) = (lv1.Stamp = lv2.Stamp)
+let typarEq (tp1: Typar) (tp2: Typar) = (tp1.Stamp = tp2.Stamp)
 
 /// Equality on type variables, implemented as reference equality. This should be equivalent to using typarEq.
 let typarRefEq (tp1: Typar) (tp2: Typar) = (tp1 === tp2)
 
 /// Equality on value specs, implemented as reference equality
-let valEq (lv1: Val) (lv2: Val) = (lv1 === lv2)
+let valEq (v1: Val) (v2: Val) = (v1 === v2)
 
 /// Equality on CCU references, implemented as reference equality except when unresolved
-let ccuEq (mv1: CcuThunk) (mv2: CcuThunk) = 
-    (mv1 === mv2) || 
-    (if mv1.IsUnresolvedReference || mv2.IsUnresolvedReference then 
-        mv1.AssemblyName = mv2.AssemblyName
+let ccuEq (ccu1: CcuThunk) (ccu2: CcuThunk) = 
+    (ccu1 === ccu2) || 
+    (if ccu1.IsUnresolvedReference || ccu2.IsUnresolvedReference then 
+        ccu1.AssemblyName = ccu2.AssemblyName
      else 
-        mv1.Contents === mv2.Contents)
+        ccu1.Contents === ccu2.Contents)
 
 /// For dereferencing in the middle of a pattern
-let (|ValDeref|) (vr: ValRef) = vr.Deref
+let (|ValDeref|) (vref: ValRef) = vref.Deref
 
 //--------------------------------------------------------------------------
 // Make references to TAST items

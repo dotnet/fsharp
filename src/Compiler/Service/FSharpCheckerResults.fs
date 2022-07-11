@@ -351,13 +351,13 @@ type internal TypeCheckInfo
 
         // Find the most deeply nested enclosing scope that contains given position
         sResolutions.CapturedEnvs
-        |> ResizeArray.iter (fun (possm, env, ad) ->
-            if rangeContainsPos possm cursorPos then
+        |> ResizeArray.iter (fun (mPossible, env, ad) ->
+            if rangeContainsPos mPossible cursorPos then
                 match bestSoFar with
                 | Some (bestm, _, _) ->
-                    if rangeContainsRange bestm possm then
-                        bestSoFar <- Some(possm, env, ad)
-                | None -> bestSoFar <- Some(possm, env, ad))
+                    if rangeContainsRange bestm mPossible then
+                        bestSoFar <- Some(mPossible, env, ad)
+                | None -> bestSoFar <- Some(mPossible, env, ad))
 
         let mostDeeplyNestedEnclosingScope = bestSoFar
 
@@ -370,21 +370,21 @@ type internal TypeCheckInfo
         let mutable bestAlmostIncludedSoFar = None
 
         sResolutions.CapturedEnvs
-        |> ResizeArray.iter (fun (possm, env, ad) ->
+        |> ResizeArray.iter (fun (mPossible, env, ad) ->
             // take only ranges that strictly do not include cursorPos (all ranges that touch cursorPos were processed during 'Strict Inclusion' part)
-            if rangeBeforePos possm cursorPos && not (posEq possm.End cursorPos) then
+            if rangeBeforePos mPossible cursorPos && not (posEq mPossible.End cursorPos) then
                 let contained =
                     match mostDeeplyNestedEnclosingScope with
-                    | Some (bestm, _, _) -> rangeContainsRange bestm possm
+                    | Some (bestm, _, _) -> rangeContainsRange bestm mPossible
                     | None -> true
 
                 if contained then
                     match bestAlmostIncludedSoFar with
                     | Some (rightm: range, _, _) ->
-                        if posGt possm.End rightm.End
-                           || (posEq possm.End rightm.End && posGt possm.Start rightm.Start) then
-                            bestAlmostIncludedSoFar <- Some(possm, env, ad)
-                    | _ -> bestAlmostIncludedSoFar <- Some(possm, env, ad))
+                        if posGt mPossible.End rightm.End
+                           || (posEq mPossible.End rightm.End && posGt mPossible.Start rightm.Start) then
+                            bestAlmostIncludedSoFar <- Some(mPossible, env, ad)
+                    | _ -> bestAlmostIncludedSoFar <- Some(mPossible, env, ad))
 
         let resEnv =
             match bestAlmostIncludedSoFar, mostDeeplyNestedEnclosingScope with

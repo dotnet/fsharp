@@ -150,8 +150,8 @@ module TcResolutionsExtensions =
                         protectAssemblyExplorationNoReraise false false (fun () ->
                             ExistsHeadTypeInEntireHierarchy g amap range0 vref.Type g.tcref_System_IDisposable)
 
-                    let isStructTyconRef (tyconRef: TyconRef) =
-                        let ty = generalizedTyconRef g tyconRef
+                    let isStructTyconRef (tcref: TyconRef) =
+                        let ty = generalizedTyconRef g tcref
                         let underlyingTy = stripTyEqnsAndMeasureEqns g ty
                         isStructTy g underlyingTy
 

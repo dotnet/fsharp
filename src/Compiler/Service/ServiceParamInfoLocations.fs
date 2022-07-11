@@ -73,8 +73,8 @@ module internal ParameterLocationsImpl =
         match synExpr with
         | SynExpr.Ident id -> Some([ id.idText ], id.idRange)
         | SynExpr.LongIdent (_, SynLongIdent ([ id ], [], [ Some _ ]), _, _) -> Some([ id.idText ], id.idRange)
-        | SynExpr.LongIdent (_, SynLongIdent (lid, _, _), _, lidRange)
-        | SynExpr.DotGet (_, _, SynLongIdent (lid, _, _), lidRange) -> Some(pathOfLid lid, lidRange)
+        | SynExpr.LongIdent (_, SynLongIdent (lid, _, _), _, mLongId)
+        | SynExpr.DotGet (_, _, SynLongIdent (lid, _, _), mLongId) -> Some(pathOfLid lid, mLongId)
         | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> digOutIdentFromFuncExpr synExpr
         | SynExpr.Paren (expr = expr) -> digOutIdentFromFuncExpr expr
         | _ -> None
@@ -213,14 +213,14 @@ module internal ParameterLocationsImpl =
     let (|StaticParameters|_|) pos (StripParenTypes synType) =
         match synType with
         | SynType.App (StripParenTypes (SynType.LongIdent (SynLongIdent (lid, _, _) as lidwd)),
-                       Some (openm),
+                       Some mLess,
                        args,
                        commas,
-                       closemOpt,
+                       mGreaterOpt,
                        _pf,
                        wholem) ->
             let lidm = lidwd.Range
-            let betweenTheBrackets = mkRange wholem.FileName openm.Start wholem.End
+            let betweenTheBrackets = mkRange wholem.FileName mLess.Start wholem.End
 
             if SyntaxTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos
                && args |> List.forall isStaticArg then
@@ -230,10 +230,10 @@ module internal ParameterLocationsImpl =
                     ParameterLocations(
                         pathOfLid lid,
                         lidm,
-                        openm.Start,
+                        mLess.Start,
                         [],
                         commasAndCloseParen,
-                        closemOpt.IsSome,
+                        mGreaterOpt.IsSome,
                         args |> List.map digOutIdentFromStaticArg
                     )
                 )
@@ -279,7 +279,7 @@ module internal ParameterLocationsImpl =
                     // EXPR<  = error recovery of a form of half-written TypeApp
                     | SynExpr.App (_,
                                    _,
-                                   SynExpr.App (_, true, SynExpr.LongIdent(longDotId = SynLongIdent(id = [ op ])), synExpr, openm),
+                                   SynExpr.App (_, true, SynExpr.LongIdent(longDotId = SynLongIdent(id = [ op ])), synExpr, mLess),
                                    SynExpr.ArbitraryAfterError _,
                                    wholem) when op.idText = "op_LessThan" ->
                         // Look in the function expression
@@ -288,13 +288,13 @@ module internal ParameterLocationsImpl =
                         match fResult with
                         | Some _ -> fResult
                         | _ ->
-                            let typeArgsm = mkRange openm.FileName openm.Start wholem.End
+                            let typeArgsm = mkRange mLess.FileName mLess.Start wholem.End
 
                             if SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos then
                                 // We found it, dig out ident
                                 match digOutIdentFromFuncExpr synExpr with
-                                | Some (lid, lidRange) ->
-                                    Some(ParameterLocations(lid, lidRange, op.idRange.Start, [], [ wholem.End ], false, []))
+                                | Some (lid, mLongId) ->
+                                    Some(ParameterLocations(lid, mLongId, op.idRange.Start, [], [ wholem.End ], false, []))
                                 | None -> None
                             else
                                 None
@@ -314,8 +314,8 @@ module internal ParameterLocationsImpl =
                             | Found (parenLoc, argRanges, commasAndCloseParen, isThereACloseParen), _ ->
                                 // We found it, dig out ident
                                 match digOutIdentFromFuncExpr synExpr with
-                                | Some (lid, lidRange) ->
-                                    assert (isInfix = (posLt parenLoc lidRange.End))
+                                | Some (lid, mLongId) ->
+                                    assert (isInfix = (posLt parenLoc mLongId.End))
 
                                     if isInfix then
                                         // This seems to be an infix operator, since the start of the argument is a position earlier than the end of the long-id being applied to it.
@@ -325,7 +325,7 @@ module internal ParameterLocationsImpl =
                                         Some(
                                             ParameterLocations(
                                                 lid,
-                                                lidRange,
+                                                mLongId,
                                                 parenLoc,
                                                 argRanges,
                                                 commasAndCloseParen |> List.map fst,
@@ -338,11 +338,11 @@ module internal ParameterLocationsImpl =
                             | _ -> traverseSynExpr synExpr2
 
                     // ID<tyarg1, ...., tyargN>  and error recovery of these
-                    | SynExpr.TypeApp (synExpr, openm, tyArgs, commas, closemOpt, _, wholem) ->
+                    | SynExpr.TypeApp (synExpr, mLess, tyArgs, commas, mGreaterOpt, _, wholem) ->
                         match traverseSynExpr synExpr with
                         | Some _ as r -> r
                         | None ->
-                            let typeArgsm = mkRange openm.FileName openm.Start wholem.End
+                            let typeArgsm = mkRange mLess.FileName mLess.Start wholem.End
 
                             if SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos
                                && tyArgs |> List.forall isStaticArg then
@@ -360,10 +360,10 @@ module internal ParameterLocationsImpl =
                                     ParameterLocations(
                                         [ "dummy" ],
                                         synExpr.Range,
-                                        openm.Start,
+                                        mLess.Start,
                                         argRanges,
                                         commasAndCloseParen,
-                                        closemOpt.IsSome,
+                                        mGreaterOpt.IsSome,
                                         tyArgs |> List.map digOutIdentFromStaticArg
                                     )
 

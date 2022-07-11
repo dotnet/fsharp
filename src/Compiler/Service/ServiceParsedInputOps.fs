@@ -476,8 +476,8 @@ module ParsedInput =
                             ]
                             |> pick expr
 
-                        | SynExpr.DotGet (exprLeft, dotm, lidwd, _m) ->
-                            let afterDotBeforeLid = mkRange dotm.FileName dotm.End lidwd.Range.Start
+                        | SynExpr.DotGet (exprLeft, mDot, lidwd, _m) ->
+                            let afterDotBeforeLid = mkRange mDot.FileName mDot.End lidwd.Range.Start
 
                             [
                                 dive exprLeft exprLeft.Range traverseSynExpr

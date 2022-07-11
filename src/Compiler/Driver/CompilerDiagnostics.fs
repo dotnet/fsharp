@@ -895,7 +895,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | ParameterlessStructCtor _ -> os.AppendString(ParameterlessStructCtorE().Format)
 
-        | InterfaceNotRevealed (denv, ity, _) -> os.AppendString(InterfaceNotRevealedE().Format(NicePrint.minimalStringOfType denv ity))
+        | InterfaceNotRevealed (denv, intfTy, _) -> os.AppendString(InterfaceNotRevealedE().Format(NicePrint.minimalStringOfType denv intfTy))
 
         | NotAFunctionButIndexer (_, _, name, _, _, old) ->
             if old then
@@ -1501,7 +1501,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
                     |> List.exists (function
                         | TType_app (maybeUnit, [], _) ->
                             match maybeUnit.TypeAbbrev with
-                            | Some ttype when isUnitTy g ttype -> true
+                            | Some ty when isUnitTy g ty -> true
                             | _ -> false
                         | _ -> false)
 
@@ -1687,7 +1687,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | PatternMatchCompilation.RuleNeverMatched _ -> os.AppendString(RuleNeverMatchedE().Format)
 
-        | ValNotMutable (_, valRef, _) -> os.AppendString(ValNotMutableE().Format(valRef.DisplayName))
+        | ValNotMutable (_, vref, _) -> os.AppendString(ValNotMutableE().Format(vref.DisplayName))
 
         | ValNotLocal _ -> os.AppendString(ValNotLocalE().Format)
 
