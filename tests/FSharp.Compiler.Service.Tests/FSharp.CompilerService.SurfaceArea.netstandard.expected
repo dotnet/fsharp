@@ -2108,7 +2108,9 @@ FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String get_LangVersionText()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String[] SourceFiles
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String[] get_SourceFiles()
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Void .ctor(System.String[], Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions, System.String, Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Boolean, Boolean)
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean ApplyLineDirectives
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_ApplyLineDirectives()
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Void .ctor(System.String[], Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions, System.String, Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Boolean, Boolean)
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions ProjectOptions
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions get_ProjectOptions()
