@@ -479,11 +479,11 @@ module Zmap =
 
 let equalTypes (s: Type) (t: Type) = s.Equals t
 
-let equalTypeLists ss tt =
-    List.lengthsEqAndForall2 equalTypes ss tt
+let equalTypeLists (tys1: Type list) (tys2: Type list) =
+    List.lengthsEqAndForall2 equalTypes tys1 tys2
 
-let equalTypeArrays ss tt =
-    Array.lengthsEqAndForall2 equalTypes ss tt
+let equalTypeArrays (tys1: Type[]) (tys2: Type[]) =
+    Array.lengthsEqAndForall2 equalTypes tys1 tys2
 
 let getGenericArgumentsOfType (typT: Type) =
     if typT.IsGenericType then

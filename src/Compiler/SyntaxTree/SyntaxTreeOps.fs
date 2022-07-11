@@ -373,12 +373,12 @@ let mkSynOperator (opm: range) (oper: string) =
 
 let mkSynInfix opm (l: SynExpr) oper (r: SynExpr) =
     let firstTwoRange = unionRanges l.Range opm
-    let wholeRange = unionRanges l.Range r.Range
+    let mWhole = unionRanges l.Range r.Range
 
     let app1 =
         SynExpr.App(ExprAtomicFlag.NonAtomic, true, mkSynOperator opm oper, l, firstTwoRange)
 
-    SynExpr.App(ExprAtomicFlag.NonAtomic, false, app1, r, wholeRange)
+    SynExpr.App(ExprAtomicFlag.NonAtomic, false, app1, r, mWhole)
 
 let mkSynBifix m oper x1 x2 =
     let app1 = SynExpr.App(ExprAtomicFlag.NonAtomic, true, mkSynOperator m oper, x1, m)
@@ -417,17 +417,17 @@ let mkSynDotBrackGet m mDot a b = SynExpr.DotIndexedGet(a, b, mDot, m)
 
 let mkSynQMarkSet m a b c = mkSynTrifix m qmarkSet a b c
 
-let mkSynDotParenGet lhsm dotm a b =
+let mkSynDotParenGet mLhs mDot a b =
     match b with
     | SynExpr.Tuple (false, [ _; _ ], _, _) ->
-        errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), lhsm))
-        SynExpr.Const(SynConst.Unit, lhsm)
+        errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), mLhs))
+        SynExpr.Const(SynConst.Unit, mLhs)
 
     | SynExpr.Tuple (false, [ _; _; _ ], _, _) ->
-        errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), lhsm))
-        SynExpr.Const(SynConst.Unit, lhsm)
+        errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), mLhs))
+        SynExpr.Const(SynConst.Unit, mLhs)
 
-    | _ -> mkSynInfix dotm a parenGet b
+    | _ -> mkSynInfix mDot a parenGet b
 
 let mkSynUnit m = SynExpr.Const(SynConst.Unit, m)
 
@@ -452,24 +452,24 @@ let mkSynAssign (l: SynExpr) (r: SynExpr) =
     | SynExpr.App (_, _, SynExpr.DotGet (e, _, v, _), x, _) -> SynExpr.DotNamedIndexedPropertySet(e, v, x, r, m)
     | l -> SynExpr.Set(l, r, m)
 
-let mkSynDot dotm m l (SynIdent (r, rTrivia)) =
+let mkSynDot mDot m l (SynIdent (r, rTrivia)) =
     match l with
     | SynExpr.LongIdent (isOpt, SynLongIdent (lid, dots, trivia), None, _) ->
         // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
-        SynExpr.LongIdent(isOpt, SynLongIdent(lid @ [ r ], dots @ [ dotm ], trivia @ [ rTrivia ]), None, m)
-    | SynExpr.Ident id -> SynExpr.LongIdent(false, SynLongIdent([ id; r ], [ dotm ], [ None; rTrivia ]), None, m)
+        SynExpr.LongIdent(isOpt, SynLongIdent(lid @ [ r ], dots @ [ mDot ], trivia @ [ rTrivia ]), None, m)
+    | SynExpr.Ident id -> SynExpr.LongIdent(false, SynLongIdent([ id; r ], [ mDot ], [ None; rTrivia ]), None, m)
     | SynExpr.DotGet (e, dm, SynLongIdent (lid, dots, trivia), _) ->
         // REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
-        SynExpr.DotGet(e, dm, SynLongIdent(lid @ [ r ], dots @ [ dotm ], trivia @ [ rTrivia ]), m)
-    | expr -> SynExpr.DotGet(expr, dotm, SynLongIdent([ r ], [], [ rTrivia ]), m)
+        SynExpr.DotGet(e, dm, SynLongIdent(lid @ [ r ], dots @ [ mDot ], trivia @ [ rTrivia ]), m)
+    | expr -> SynExpr.DotGet(expr, mDot, SynLongIdent([ r ], [], [ rTrivia ]), m)
 
-let mkSynDotMissing dotm m l =
+let mkSynDotMissing mDot m l =
     match l with
     | SynExpr.LongIdent (isOpt, SynLongIdent (lid, dots, trivia), None, _) ->
         // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
-        SynExpr.LongIdent(isOpt, SynLongIdent(lid, dots @ [ dotm ], trivia), None, m)
-    | SynExpr.Ident id -> SynExpr.LongIdent(false, SynLongIdent([ id ], [ dotm ], []), None, m)
-    | SynExpr.DotGet (e, dm, SynLongIdent (lid, dots, trivia), _) -> SynExpr.DotGet(e, dm, SynLongIdent(lid, dots @ [ dotm ], trivia), m) // REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
+        SynExpr.LongIdent(isOpt, SynLongIdent(lid, dots @ [ mDot ], trivia), None, m)
+    | SynExpr.Ident id -> SynExpr.LongIdent(false, SynLongIdent([ id ], [ mDot ], []), None, m)
+    | SynExpr.DotGet (e, dm, SynLongIdent (lid, dots, trivia), _) -> SynExpr.DotGet(e, dm, SynLongIdent(lid, dots @ [ mDot ], trivia), m) // REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
     | expr -> SynExpr.DiscardAfterMissingQualificationAfterDot(expr, m)
 
 let mkSynFunMatchLambdas synArgNameGenerator isMember wholem ps arrow e =
@@ -1003,9 +1003,9 @@ let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
         | ParsedHashDirectiveArgument.SourceIdentifier (_, v, _) -> v)
         input
 
-let prependIdentInLongIdentWithTrivia (SynIdent (ident, identTrivia)) dotm lid =
+let prependIdentInLongIdentWithTrivia (SynIdent (ident, identTrivia)) mDot lid =
     match lid with
-    | SynLongIdent (lid, dots, trivia) -> SynLongIdent(ident :: lid, dotm :: dots, identTrivia :: trivia)
+    | SynLongIdent (lid, dots, trivia) -> SynLongIdent(ident :: lid, mDot :: dots, identTrivia :: trivia)
 
 let mkDynamicArgExpr expr =
     match expr with

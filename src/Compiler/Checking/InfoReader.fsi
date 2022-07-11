@@ -286,7 +286,7 @@ type SigOfFunctionForDelegate =
 /// Given a delegate type work out the minfo, argument types, return type
 /// and F# function type by looking at the Invoke signature of the delegate.
 val GetSigOfFunctionForDelegate:
-    infoReader: InfoReader -> delty: TType -> m: range -> ad: AccessorDomain -> SigOfFunctionForDelegate
+    infoReader: InfoReader -> delTy: TType -> m: range -> ad: AccessorDomain -> SigOfFunctionForDelegate
 
 /// Try and interpret a delegate type as a "standard" .NET delegate type associated with an event, with a "sender" parameter.
 val TryDestStandardDelegateType:
@@ -296,9 +296,9 @@ val TryDestStandardDelegateType:
 /// with a sender parameter.
 val IsStandardEventInfo: infoReader: InfoReader -> m: range -> ad: AccessorDomain -> einfo: EventInfo -> bool
 
-val ArgsTypOfEventInfo: infoReader: InfoReader -> m: range -> ad: AccessorDomain -> einfo: EventInfo -> TType
+val ArgsTypeOfEventInfo: infoReader: InfoReader -> m: range -> ad: AccessorDomain -> einfo: EventInfo -> TType
 
-val PropTypOfEventInfo: infoReader: InfoReader -> m: range -> ad: AccessorDomain -> einfo: EventInfo -> TType
+val PropTypeOfEventInfo: infoReader: InfoReader -> m: range -> ad: AccessorDomain -> einfo: EventInfo -> TType
 
 /// Try to find the name of the metadata file for this external definition
 val TryFindMetadataInfoOfExternalEntityRef:

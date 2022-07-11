@@ -55,7 +55,7 @@ type ValRef with
         | Some membInfo ->
         not membInfo.MemberFlags.IsDispatchSlot &&
         (match membInfo.ImplementedSlotSigs with
-         | TSlotSig(_, oty, _, _, _, _) :: _ -> isInterfaceTy g oty
+         | slotSig :: _ -> isInterfaceTy g slotSig.DeclaringType
          | [] -> false)
 
     member vref.ImplementedSlotSignatures =
@@ -376,8 +376,8 @@ let OptionalArgInfoOfProvidedParameter (amap: ImportMap) m (provParam : Tainted<
                 elif isObjTy g ty then MissingValue
                 else  DefaultValue
 
-            let pty = ImportProvidedType amap m (provParam.PApply((fun p -> p.ParameterType), m))
-            CallerSide (analyze pty)
+            let paramTy = ImportProvidedType amap m (provParam.PApply((fun p -> p.ParameterType), m))
+            CallerSide (analyze paramTy)
         | _ ->
             let v = provParam.PUntaint((fun p ->  p.RawDefaultValue), m)
             CallerSide (Constant (ILFieldInit.FromProvidedObj m v))
@@ -1221,8 +1221,8 @@ type MethInfo =
                     let formalRetTy = ImportReturnTypeFromMetadata amap m ilminfo.RawMetadata.Return.Type (fun _ -> ilminfo.RawMetadata.Return.CustomAttrs) ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
                     let formalParams =
                         [ [ for p in ilminfo.RawMetadata.Parameters do
-                                let paramType = ImportILTypeFromMetadataWithAttributes amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type (fun _ -> p.CustomAttrs)
-                                yield TSlotParam(p.Name, paramType, p.IsIn, p.IsOut, p.IsOptional, []) ] ]
+                                let paramTy = ImportILTypeFromMetadataWithAttributes amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type (fun _ -> p.CustomAttrs)
+                                yield TSlotParam(p.Name, paramTy, p.IsIn, p.IsOut, p.IsOptional, []) ] ]
                     formalRetTy, formalParams
 #if !NO_TYPEPROVIDERS
                 | ProvidedMeth (_, mi, _, _) ->
@@ -1234,9 +1234,9 @@ type MethInfo =
                     let formalParams =
                         [ [ for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
                                 let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some s), m)
-                                let paramType = ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
+                                let paramTy = ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
                                 let isIn, isOut, isOptional = p.PUntaint((fun p -> p.IsIn, p.IsOut, p.IsOptional), m)
-                                yield TSlotParam(paramName, paramType, isIn, isOut, isOptional, []) ] ]
+                                yield TSlotParam(paramName, paramTy, isIn, isOut, isOptional, []) ] ]
                     formalRetTy, formalParams
 #endif
                 | _ -> failwith "unreachable"
@@ -1260,15 +1260,15 @@ type MethInfo =
             | ProvidedMeth(amap, mi, _, _) ->
                 // A single set of tupled parameters
                 [ [for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
-                        let pname =
+                        let paramName =
                             match p.PUntaint((fun p -> p.Name), m) with
                             | null -> None
                             | name -> Some (mkSynId m name)
-                        let pty =
+                        let paramTy =
                             match p.PApply((fun p -> p.ParameterType), m) with
                             | Tainted.Null ->  amap.g.unit_ty
                             | parameterType -> ImportProvidedType amap m parameterType
-                        yield ParamNameAndType(pname, pty) ] ]
+                        yield ParamNameAndType(paramName, paramTy) ] ]
 
 #endif
 
@@ -1871,14 +1871,14 @@ type PropInfo =
         | ProvidedProp (_, pi, m) ->
             [ for p in pi.PApplyArray((fun pi -> pi.GetIndexParameters()), "GetIndexParameters", m) do
                 let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some (mkSynId m s)), m)
-                let paramType = ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
-                yield ParamNameAndType(paramName, paramType) ]
+                let paramTy = ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
+                yield ParamNameAndType(paramName, paramTy) ]
 #endif
 
     /// Get the details of the indexer parameters associated with the property
     member x.GetParamDatas(amap, m) =
         x.GetParamNamesAndTypes(amap, m)
-        |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
+        |> List.map (fun (ParamNameAndType(nmOpt, paramTy)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, paramTy))
 
     /// Get the types of the indexer parameters associated with the property
     member x.GetParamTypes(amap, m) =
@@ -1913,14 +1913,16 @@ type PropInfo =
     /// Uses the same techniques as 'MethInfosUseIdenticalDefinitions'.
     /// Must be compatible with ItemsAreEffectivelyEqual relation.
     static member PropInfosUseIdenticalDefinitions x1 x2 =
+
         let optVrefEq g = function
-          | Some v1, Some v2 -> valRefEq g v1 v2
+          | Some vref1, Some vref2 -> valRefEq g vref1 vref2
           | None, None -> true
           | _ -> false
+
         match x1, x2 with
         | ILProp ilpinfo1, ILProp ilpinfo2 -> (ilpinfo1.RawMetadata === ilpinfo2.RawMetadata)
         | FSProp(g, _, vrefa1, vrefb1), FSProp(_, _, vrefa2, vrefb2) ->
-            (optVrefEq g (vrefa1, vrefa2)) && (optVrefEq g (vrefb1, vrefb2))
+            optVrefEq g (vrefa1, vrefa2) && optVrefEq g (vrefb1, vrefb2)
 #if !NO_TYPEPROVIDERS
         | ProvidedProp(_, pi1, _), ProvidedProp(_, pi2, _) -> ProvidedPropertyInfo.TaintedEquals (pi1, pi2)
 #endif
@@ -1932,7 +1934,7 @@ type PropInfo =
         | ILProp ilpinfo -> hash ilpinfo.RawMetadata.Name
         | FSProp(_, _, vrefOpt1, vrefOpt2) ->
             // Hash on string option * string option
-            let vth = (vrefOpt1 |> Option.map (fun vr -> vr.LogicalName), (vrefOpt2 |> Option.map (fun vr -> vr.LogicalName)))
+            let vth = (vrefOpt1 |> Option.map (fun vr -> vr.LogicalName), (vrefOpt2 |> Option.map (fun vref -> vref.LogicalName)))
             hash vth
 #if !NO_TYPEPROVIDERS
         | ProvidedProp(_, pi, _) -> ProvidedPropertyInfo.TaintedGetHashCode pi

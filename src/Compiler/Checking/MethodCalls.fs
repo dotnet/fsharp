@@ -183,7 +183,7 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
         let reqdTy2 = 
             if isTyparTy g reqdTy then
                 let tp = destTyparTy g reqdTy 
-                match tp.Constraints |> List.choose (function TyparConstraint.CoercesTo (c, _) -> Some c | _ -> None) with
+                match tp.Constraints |> List.choose (function TyparConstraint.CoercesTo (tgtTy, _) -> Some tgtTy | _ -> None) with
                 | [reqdTy2] when tp.Rigidity = TyparRigidity.Flexible -> reqdTy2
                 | _ -> reqdTy
             else reqdTy
@@ -367,8 +367,8 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
                         calledArgTy, TypeDirectedConversionUsed.No, None
                     | _ ->
                         let compgenId = mkSynId range0 unassignedTyparName
-                        let tp = mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false))
-                        tp, TypeDirectedConversionUsed.No, None
+                        let tpTy = mkTyparTy (Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false))
+                        tpTy, TypeDirectedConversionUsed.No, None
             else
                 AdjustCalledArgTypeForTypeDirectedConversionsAndAutoQuote infoReader ad callerArgTy calledArgTy calledArg m
 
@@ -460,7 +460,7 @@ type CalledMethArgSet<'T> =
 let MakeCalledArgs amap m (minfo: MethInfo) minst =
     // Mark up the arguments with their position, so we can sort them back into order later 
     let paramDatas = minfo.GetParamDatas(amap, m, minst)
-    paramDatas |> List.mapiSquared (fun i j (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoFlags, nmOpt, reflArgInfo, typeOfCalledArg))  -> 
+    paramDatas |> List.mapiSquared (fun i j (ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfoFlags, nmOpt, reflArgInfo, calledArgTy))  -> 
       { Position=(i,j)
         IsParamArray=isParamArrayArg
         OptArgInfo=optArgInfo
@@ -469,7 +469,7 @@ let MakeCalledArgs amap m (minfo: MethInfo) minst =
         IsOutArg=isOutArg
         ReflArgInfo=reflArgInfo
         NameOpt=nmOpt
-        CalledArgumentType=typeOfCalledArg })
+        CalledArgumentType=calledArgTy })
 
 /// <summary>
 /// Represents the syntactic matching between a caller of a method and the called method.
@@ -982,7 +982,7 @@ let BuildILMethInfoCall g amap m isProp (minfo: ILMethInfo) valUseFlags minst di
 ///
 /// QUERY: this looks overly complex considering that we are doing a fundamentally simple 
 /// thing here. 
-let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
+let BuildFSharpMethodApp g m (vref: ValRef) vExpr vexprty (args: Exprs) =
     let arities =  (arityOfVal vref.Deref).AritiesOfArgs
     
     let args3, (leftover, retTy) =
@@ -1003,17 +1003,17 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
                 (mkRefTupled g m tupargs tuptys),
                 (argst, rangeOfFunTy g fty) )
     if not leftover.IsEmpty then error(InternalError("Unexpected "+string(leftover.Length)+" remaining arguments in method application", m))
-    mkApps g ((vexp, vexprty), [], args3, m),
+    mkApps g ((vExpr, vexprty), [], args3, m),
     retTy
     
 /// Build a call to an F# method.
 let BuildFSharpMethodCall g m (ty, vref: ValRef) valUseFlags minst args =
-    let vexp = Expr.Val (vref, valUseFlags, m)
-    let vexpty = vref.Type
+    let vExpr = Expr.Val (vref, valUseFlags, m)
+    let vExprTy = vref.Type
     let tpsorig, tau =  vref.GeneralizedType
     let vtinst = argsOfAppTy g ty @ minst
     if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected List.length mismatch", m))
-    let expr = mkTyAppExpr m (vexp, vexpty) vtinst
+    let expr = mkTyAppExpr m (vExpr, vExprTy) vtinst
     let exprTy = instType (mkTyparInst tpsorig vtinst) tau
     BuildFSharpMethodApp g m vref expr exprTy args
     
@@ -1133,8 +1133,8 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
                 if valRefEq amap.g fsValRef amap.g.reraise_vref then
                     mkReraise m exprTy, exprTy
                 else
-                    let vexp, vexpty = tcVal fsValRef valUseFlags (minfo.DeclaringTypeInst @ minst) m
-                    BuildFSharpMethodApp g m fsValRef vexp vexpty allArgs
+                    let vExpr, vExprTy = tcVal fsValRef valUseFlags (minfo.DeclaringTypeInst @ minst) m
+                    BuildFSharpMethodApp g m fsValRef vExpr vExprTy allArgs
             | None -> 
                 let ilMethRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m providedMeth
                 let isNewObj = isCtor && (match valUseFlags with NormalValUse -> true | _ -> false)
@@ -1159,8 +1159,8 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
 
             // Go see if this is a use of a recursive definition... Note we know the value instantiation 
             // we want to use so we pass that in order not to create a new one. 
-            let vexp, vexpty = tcVal vref valUseFlags (minfo.DeclaringTypeInst @ minst) m
-            BuildFSharpMethodApp g m vref vexp vexpty allArgs
+            let vExpr, vExprTy = tcVal vref valUseFlags (minfo.DeclaringTypeInst @ minst) m
+            BuildFSharpMethodApp g m vref vExpr vExprTy allArgs
 
         // Build a 'call' to a struct default constructor 
         | DefaultStructCtor (g, ty) -> 
@@ -1814,6 +1814,7 @@ module ProvidedMethodCalls =
             for v, e in Seq.zip (paramVars |> Seq.map (fun x -> x.PUntaint(id, m))) (Option.toList thisArg @ allArgs) do
                 dict.Add(v, (None, e))
             dict
+
         let rec exprToExprAndWitness top (ea: Tainted<ProvidedExpr>) =
             let fail() = error(Error(FSComp.SR.etUnsupportedProvidedExpression(ea.PUntaint((fun etree -> etree.UnderlyingExpressionString), m)), m))
             match ea with
@@ -1827,139 +1828,139 @@ module ProvidedMethodCalls =
                 let srcExpr = exprToExpr expr
                 let targetTy = Import.ImportProvidedType amap m (targetTy.PApply(id, m)) 
                 let sourceTy = Import.ImportProvidedType amap m (expr.PApply ((fun e -> e.Type), m)) 
-                let te = mkCoerceIfNeeded g targetTy sourceTy srcExpr
-                None, (te, tyOfExpr g te)
+                let exprR = mkCoerceIfNeeded g targetTy sourceTy srcExpr
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedTypeTestExpr (expr, targetTy) ->
                 let expr, targetTy = exprType.PApply2((fun _ -> (expr, targetTy)), m)
                 let srcExpr = exprToExpr expr
                 let targetTy = Import.ImportProvidedType amap m (targetTy.PApply(id, m)) 
-                let te = mkCallTypeTest g m targetTy srcExpr
-                None, (te, tyOfExpr g te)
+                let exprR = mkCallTypeTest g m targetTy srcExpr
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedIfThenElseExpr (test, thenBranch, elseBranch) ->
                 let test, thenBranch, elseBranch = exprType.PApply3((fun _ -> (test, thenBranch, elseBranch)), m)
                 let testExpr = exprToExpr test
                 let ifTrueExpr = exprToExpr thenBranch
                 let ifFalseExpr = exprToExpr elseBranch
-                let te = mkCond DebugPointAtBinding.NoneAtSticky m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
-                None, (te, tyOfExpr g te)
+                let exprR = mkCond DebugPointAtBinding.NoneAtSticky m (tyOfExpr g ifTrueExpr) testExpr ifTrueExpr ifFalseExpr
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedVarExpr providedVar ->
                 let _, vTe = varToExpr (exprType.PApply((fun _ -> providedVar), m))
                 None, (vTe, tyOfExpr g vTe)
             | ProvidedConstantExpr (obj, prType) ->
-                let ce = convertConstExpr g amap m (exprType.PApply((fun _ -> (obj, prType)), m))
-                None, (ce, tyOfExpr g ce)
+                let exprR = convertConstExpr g amap m (exprType.PApply((fun _ -> (obj, prType)), m))
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedNewTupleExpr info ->
                 let elems = exprType.PApplyArray((fun _ -> info), "GetInvokerExpression", m)
-                let elemsT = elems |> Array.map exprToExpr |> Array.toList
-                let exprT = mkRefTupledNoTypes g m elemsT
-                None, (exprT, tyOfExpr g exprT)
+                let elemsR = elems |> Array.map exprToExpr |> Array.toList
+                let exprR = mkRefTupledNoTypes g m elemsR
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedNewArrayExpr (ty, elems) ->
                 let ty, elems = exprType.PApply2((fun _ -> (ty, elems)), m)
-                let tyT = Import.ImportProvidedType amap m ty
+                let tyR = Import.ImportProvidedType amap m ty
                 let elems = elems.PApplyArray(id, "GetInvokerExpression", m)
-                let elemsT = elems |> Array.map exprToExpr |> Array.toList
-                let exprT = Expr.Op (TOp.Array, [tyT], elemsT, m)
-                None, (exprT, tyOfExpr g exprT)
+                let elemsR = elems |> Array.map exprToExpr |> Array.toList
+                let exprR = Expr.Op (TOp.Array, [tyR], elemsR, m)
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedTupleGetExpr (inp, n) -> 
                 let inp, n = exprType.PApply2((fun _ -> (inp, n)), m)
-                let inpT = inp |> exprToExpr 
+                let inpR = inp |> exprToExpr 
                 // if type of expression is erased type then we need convert it to the underlying base type
-                let typeOfExpr =
-                    let t = tyOfExpr g inpT
+                let exprTy =
+                    let t = tyOfExpr g inpR
                     stripTyEqnsWrtErasure EraseMeasures g t
-                let tupInfo, tysT = tryDestAnyTupleTy g typeOfExpr
-                let exprT = mkTupleFieldGet g (tupInfo, inpT, tysT, n.PUntaint(id, m), m)
-                None, (exprT, tyOfExpr g exprT)
+                let tupInfo, tysT = tryDestAnyTupleTy g exprTy
+                let exprR = mkTupleFieldGet g (tupInfo, inpR, tysT, n.PUntaint(id, m), m)
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedLambdaExpr (v, b) ->
                 let v, b = exprType.PApply2((fun _ -> (v, b)), m)
-                let vT = addVar v
-                let bT = exprToExpr b
+                let vR = addVar v
+                let bR = exprToExpr b
                 removeVar v
-                let exprT = mkLambda m vT (bT, tyOfExpr g bT)
-                None, (exprT, tyOfExpr g exprT)
+                let exprR = mkLambda m vR (bR, tyOfExpr g bR)
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedLetExpr (v, e, b) ->
                 let v, e, b = exprType.PApply3((fun _ -> (v, e, b)), m)
-                let eT = exprToExpr  e
-                let vT = addVar v
-                let bT = exprToExpr  b
+                let eR = exprToExpr  e
+                let vR = addVar v
+                let bR = exprToExpr  b
                 removeVar v
-                let exprT = mkCompGenLet m vT eT bT
-                None, (exprT, tyOfExpr g exprT)
+                let exprR = mkCompGenLet m vR eR bR
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedVarSetExpr (v, e) ->
                 let v, e = exprType.PApply2((fun _ -> (v, e)), m)
-                let eT = exprToExpr  e
-                let vTopt, _ = varToExpr v
-                match vTopt with 
+                let eR = exprToExpr e
+                let vOptR, _ = varToExpr v
+                match vOptR with 
                 | None -> 
                     fail()
-                | Some vT ->
-                    let exprT = mkValSet m (mkLocalValRef vT) eT 
-                    None, (exprT, tyOfExpr g exprT)
+                | Some vR ->
+                    let exprR = mkValSet m (mkLocalValRef vR) eR 
+                    None, (exprR, tyOfExpr g exprR)
             | ProvidedWhileLoopExpr (guardExpr, bodyExpr) ->
                 let guardExpr, bodyExpr = (exprType.PApply2((fun _ -> (guardExpr, bodyExpr)), m))
-                let guardExprT = exprToExpr guardExpr
-                let bodyExprT = exprToExpr bodyExpr
-                let exprT = mkWhile g (DebugPointAtWhile.No, SpecialWhileLoopMarker.NoSpecialWhileLoopMarker, guardExprT, bodyExprT, m)
-                None, (exprT, tyOfExpr g exprT)
+                let guardExprR = exprToExpr guardExpr
+                let bodyExprR = exprToExpr bodyExpr
+                let exprR = mkWhile g (DebugPointAtWhile.No, SpecialWhileLoopMarker.NoSpecialWhileLoopMarker, guardExprR, bodyExprR, m)
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedForIntegerRangeLoopExpr (v, e1, e2, e3) -> 
                 let v, e1, e2, e3 = exprType.PApply4((fun _ -> (v, e1, e2, e3)), m)
-                let e1T = exprToExpr  e1
-                let e2T = exprToExpr  e2
-                let vT = addVar v
-                let e3T = exprToExpr  e3
+                let e1R = exprToExpr e1
+                let e2R = exprToExpr e2
+                let vR = addVar v
+                let e3R = exprToExpr e3
                 removeVar v
-                let exprT = mkFastForLoop g (DebugPointAtFor.No, DebugPointAtInOrTo.No, m, vT, e1T, true, e2T, e3T)
-                None, (exprT, tyOfExpr g exprT)
+                let exprR = mkFastForLoop g (DebugPointAtFor.No, DebugPointAtInOrTo.No, m, vR, e1R, true, e2R, e3R)
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedNewDelegateExpr (delegateTy, boundVars, delegateBodyExpr) ->
                 let delegateTy, boundVars, delegateBodyExpr = exprType.PApply3((fun _ -> (delegateTy, boundVars, delegateBodyExpr)), m)
-                let delegateTyT = Import.ImportProvidedType amap m delegateTy
+                let delegateTyR = Import.ImportProvidedType amap m delegateTy
                 let vs = boundVars.PApplyArray(id, "GetInvokerExpression", m) |> Array.toList 
                 let vsT = List.map addVar vs
-                let delegateBodyExprT = exprToExpr delegateBodyExpr
+                let delegateBodyExprR = exprToExpr delegateBodyExpr
                 List.iter removeVar vs
-                let lambdaExpr = mkLambdas g m [] vsT (delegateBodyExprT, tyOfExpr g delegateBodyExprT)
+                let lambdaExpr = mkLambdas g m [] vsT (delegateBodyExprR, tyOfExpr g delegateBodyExprR)
                 let lambdaExprTy = tyOfExpr g lambdaExpr
                 let infoReader = InfoReader(g, amap)
-                let exprT = CoerceFromFSharpFuncToDelegate g amap infoReader AccessorDomain.AccessibleFromSomewhere lambdaExprTy m lambdaExpr delegateTyT
-                None, (exprT, tyOfExpr g exprT)
+                let exprR = CoerceFromFSharpFuncToDelegate g amap infoReader AccessorDomain.AccessibleFromSomewhere lambdaExprTy m lambdaExpr delegateTyR
+                None, (exprR, tyOfExpr g exprR)
 #if PROVIDED_ADDRESS_OF
             | ProvidedAddressOfExpr e ->
-                let eT =  exprToExpr (exprType.PApply((fun _ -> e), m))
-                let wrap,ce, _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates eT None m
-                let ce = wrap ce
-                None, (ce, tyOfExpr g ce)
+                let eR =  exprToExpr (exprType.PApply((fun _ -> e), m))
+                let wrap,exprR, _readonly, _writeonly = mkExprAddrOfExpr g true false DefinitelyMutates eR None m
+                let exprR = wrap exprR
+                None, (exprR, tyOfExpr g exprR)
 #endif
             | ProvidedDefaultExpr pty ->
                 let ty = Import.ImportProvidedType amap m (exprType.PApply((fun _ -> pty), m))
-                let ce = mkDefault (m, ty)
-                None, (ce, tyOfExpr g ce)
+                let exprR = mkDefault (m, ty)
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedCallExpr (e1, e2, e3) ->
                 methodCallToExpr top ea (exprType.PApply((fun _ -> (e1, e2, e3)), m))
             | ProvidedSequentialExpr (e1, e2) ->
                 let e1, e2 = exprType.PApply2((fun _ -> (e1, e2)), m)
-                let e1T = exprToExpr e1
-                let e2T = exprToExpr e2
-                let ce = mkCompGenSequential m e1T e2T
-                None, (ce, tyOfExpr g ce)
+                let e1R = exprToExpr e1
+                let e2R = exprToExpr e2
+                let exprR = mkCompGenSequential m e1R e2R
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedTryFinallyExpr (e1, e2) ->
                 let e1, e2 = exprType.PApply2((fun _ -> (e1, e2)), m)
-                let e1T = exprToExpr e1
-                let e2T = exprToExpr e2
-                let ce = mkTryFinally g (e1T, e2T, m, tyOfExpr g e1T, DebugPointAtTry.No, DebugPointAtFinally.No)
-                None, (ce, tyOfExpr g ce)
+                let e1R = exprToExpr e1
+                let e2R = exprToExpr e2
+                let exprR = mkTryFinally g (e1R, e2R, m, tyOfExpr g e1R, DebugPointAtTry.No, DebugPointAtFinally.No)
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedTryWithExpr (e1, e2, e3, e4, e5) ->
                 let info = exprType.PApply((fun _ -> (e1, e2, e3, e4, e5)), m)
-                let bT = exprToExpr (info.PApply((fun (x, _, _, _, _) -> x), m))
+                let bR = exprToExpr (info.PApply((fun (x, _, _, _, _) -> x), m))
                 let v1 = info.PApply((fun (_, x, _, _, _) -> x), m)
-                let v1T = addVar v1
-                let e1T = exprToExpr (info.PApply((fun (_, _, x, _, _) -> x), m))
+                let v1R = addVar v1
+                let e1R = exprToExpr (info.PApply((fun (_, _, x, _, _) -> x), m))
                 removeVar v1
                 let v2 = info.PApply((fun (_, _, _, x, _) -> x), m)
-                let v2T = addVar v2
-                let e2T = exprToExpr (info.PApply((fun (_, _, _, _, x) -> x), m))
+                let v2R = addVar v2
+                let e2R = exprToExpr (info.PApply((fun (_, _, _, _, x) -> x), m))
                 removeVar v2
-                let ce = mkTryWith g (bT, v1T, e1T, v2T, e2T, m, tyOfExpr g bT, DebugPointAtTry.No, DebugPointAtWith.No)
-                None, (ce, tyOfExpr g ce)
+                let exprR = mkTryWith g (bR, v1R, e1R, v2R, e2R, m, tyOfExpr g bR, DebugPointAtTry.No, DebugPointAtWith.No)
+                None, (exprR, tyOfExpr g exprR)
             | ProvidedNewObjectExpr (e1, e2) ->
                 None, ctorCallToExpr (exprType.PApply((fun _ -> (e1, e2)), m))
 
@@ -1976,10 +1977,10 @@ module ProvidedMethodCalls =
             let nm = v.PUntaint ((fun v -> v.Name), m)
             let mut = v.PUntaint ((fun v -> v.IsMutable), m)
             let vRaw = v.PUntaint (id, m)
-            let tyT = Import.ImportProvidedType amap m (v.PApply ((fun v -> v.Type), m))
-            let vT, vTe = if mut then mkMutableCompGenLocal m nm tyT else mkCompGenLocal m nm tyT
-            varConv[vRaw] <- (Some vT, vTe)
-            vT
+            let tyR = Import.ImportProvidedType amap m (v.PApply ((fun v -> v.Type), m))
+            let vR, vTe = if mut then mkMutableCompGenLocal m nm tyR else mkCompGenLocal m nm tyR
+            varConv[vRaw] <- (Some vR, vTe)
+            vR
 
         and removeVar (v: Tainted<ProvidedVar>) =    
             let vRaw = v.PUntaint (id, m)

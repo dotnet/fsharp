@@ -754,9 +754,9 @@ module internal SymbolHelpers =
         match item with
         | Item.Types(_name, tys) ->
             match tys with
-            | [AppTy g (tyconRef, _typeInst)] ->
-                if tyconRef.IsProvidedErasedTycon || tyconRef.IsProvidedGeneratedTycon then
-                    Some tyconRef
+            | [AppTy g (tcref, _typeInst)] ->
+                if tcref.IsProvidedErasedTycon || tcref.IsProvidedGeneratedTycon then
+                    Some tcref
                 else
                     None
             | _ -> None
@@ -767,10 +767,10 @@ module internal SymbolHelpers =
         match item with
         | Item.Types(_name, tys) ->
             match tys with
-            | [AppTy g (tyconRef, _typeInst)] ->
-                if tyconRef.IsProvidedErasedTycon || tyconRef.IsProvidedGeneratedTycon then
+            | [AppTy g (tcref, _typeInst)] ->
+                if tcref.IsProvidedErasedTycon || tcref.IsProvidedGeneratedTycon then
                     let typeBeforeArguments = 
-                        match tyconRef.TypeReprInfo with 
+                        match tcref.TypeReprInfo with 
                         | TProvidedTypeRepr info -> info.ProvidedType
                         | _ -> failwith "unreachable"
                     let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments, provider) -> typeBeforeArguments.GetStaticParameters provider), range=m) 

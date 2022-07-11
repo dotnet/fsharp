@@ -2840,7 +2840,7 @@ type ValRef =
 /// Represents a reference to a case of a union type
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type UnionCaseRef =
-    | UnionCaseRef of TyconRef * string
+    | UnionCaseRef of tyconRef: TyconRef * caseName: string
 
     /// Get a field of the union case by index
     member FieldByIndex: n: int -> RecdField
@@ -2889,7 +2889,7 @@ type UnionCaseRef =
 /// Represents a reference to a field in a record, class or struct
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type RecdFieldRef =
-    | RecdFieldRef of tcref: TyconRef * id: string
+    | RecdFieldRef of tyconRef: TyconRef * fieldName: string
 
     override ToString: unit -> string
 
@@ -3012,7 +3012,7 @@ type Measure =
     | Var of typar: Typar
 
     /// A constant, leaf unit-of-measure such as 'kg' or 'm'
-    | Con of tyconRef: TyconRef
+    | Const of tyconRef: TyconRef
 
     /// A product of two units of measure
     | Prod of measure1: Measure * measure2: Measure
@@ -3710,7 +3710,7 @@ type ObjExprMethod =
 type SlotSig =
     | TSlotSig of
         methodName: string *
-        implementedType: TType *
+        declaringType: TType *
         classTypars: Typars *
         methodTypars: Typars *
         formalParams: SlotParam list list *
@@ -3731,7 +3731,7 @@ type SlotSig =
     member FormalReturnType: TType option
 
     /// The (instantiated) type which the slot is logically a part of
-    member ImplementedType: TType
+    member DeclaringType: TType
 
     /// The method type parameters of the slot
     member MethodTypars: Typars

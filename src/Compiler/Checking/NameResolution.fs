@@ -1424,10 +1424,10 @@ and AddModuleOrNamespaceContentsToNameEnv (g: TcGlobals) amap (ad: AccessorDomai
 and AddModuleOrNamespaceRefsContentsToNameEnv g amap ad m root nenv modrefs =
    (modrefs, nenv) ||> List.foldBack (fun modref acc -> AddModuleOrNamespaceRefContentsToNameEnv g amap ad m root acc modref)
 
-and AddTypeContentsToNameEnv g amap ad m nenv (typ: TType) =
-    assert (isAppTy g typ)
-    assert not (tcrefOfAppTy g typ).IsModuleOrNamespace
-    AddStaticContentOfTypeToNameEnv g amap ad m nenv typ
+and AddTypeContentsToNameEnv g amap ad m nenv (ty: TType) =
+    assert (isAppTy g ty)
+    assert not (tcrefOfAppTy g ty).IsModuleOrNamespace
+    AddStaticContentOfTypeToNameEnv g amap ad m nenv ty
 
 and AddModuleOrNamespaceRefContentsToNameEnv g amap ad m root nenv (modref: EntityRef) =
     assert modref.IsModuleOrNamespace 
@@ -2435,8 +2435,8 @@ let TryFindUnionCaseOfType g ty nm =
         ValueNone
 
 /// Try to find a union case of a type, with the given name
-let TryFindAnonRecdFieldOfType g typ nm =
-    match tryDestAnonRecdTy g typ with
+let TryFindAnonRecdFieldOfType g ty nm =
+    match tryDestAnonRecdTy g ty with
     | ValueSome (anonInfo, tys) ->
         match anonInfo.SortedIds |> Array.tryFindIndex (fun x -> x.idText = nm) with
         | Some i -> Some (Item.AnonRecdField(anonInfo, tys, i, anonInfo.SortedIds[i].idRange))
@@ -4131,7 +4131,7 @@ let rec ResolvePartialLongIdentInType (ncenv: NameResolver) nenv isApplicableMet
 
       // e.g. <val-id>.<event-id>.<more>
       for einfo in ncenv.InfoReader.GetEventInfosOfType(Some id, ad, m, ty) do
-         let einfoTy = PropTypOfEventInfo ncenv.InfoReader m ad einfo
+         let einfoTy = PropTypeOfEventInfo ncenv.InfoReader m ad einfo
          yield! ResolvePartialLongIdentInType ncenv nenv isApplicableMeth m ad false rest einfoTy
 
       // nested types
@@ -4841,7 +4841,7 @@ let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad sta
 
           // e.g. <val-id>.<event-id>.<more>
           for einfo in ncenv.InfoReader.GetEventInfosOfType(Some id, ad, m, ty) do
-              let tyinfo = PropTypOfEventInfo ncenv.InfoReader m ad einfo
+              let tyinfo = PropTypeOfEventInfo ncenv.InfoReader m ad einfo
               yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item tyinfo
 
           // nested types!

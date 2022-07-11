@@ -845,7 +845,7 @@ val isDimensionless: TcGlobals -> TType -> bool
 // TType modifications and comparisons
 //---------------------------------------------------------------------------
 
-val stripMeasuresFromTType: TcGlobals -> TType -> TType
+val stripMeasuresFromTy: TcGlobals -> TType -> TType
 
 //-------------------------------------------------------------------------
 // Equivalence of types (up to substitution of type variables in the left-hand type)
