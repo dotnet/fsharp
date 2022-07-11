@@ -12,7 +12,20 @@ module ``Required and init-only properties`` =
         | CS cs -> CS { cs with LangVersion = ver }
         | _ -> failwith "Only supported in C#"
 
+
     let csharpBaseClass = 
+        CSharp """
+    namespace RequiredAndInitOnlyProperties
+    {
+        public sealed class RAIO
+        {
+            public int GetSet { get; set; }
+            public int GetInit { get; init; }
+        }
+
+    }""" |> withCSharpLanguageVersion CSharpLanguageVersion.Preview |> withName "csLib"
+
+    let csharpRBaseClass = 
         CSharp """
     // Until we move to .NET7 runtime (or use experimental)
     namespace System.Runtime.CompilerServices
@@ -133,7 +146,7 @@ let main _ =
     [<Fact>]
     let ``F# should produce compile-time error when required properties are not specified in the initializer`` () =
 
-        let csharpLib = csharpBaseClass
+        let csharpLib = csharpRBaseClass
 
         let fsharpSource =
             """
@@ -143,8 +156,7 @@ open RequiredAndInitOnlyProperties
 [<EntryPoint>]
 let main _ =
 
-    let raio = RAIO(GetSet = 1, GetInit = 2)
-    raio.GetInit <- 0
+    let raio = RAIO()
 
     0
 """
@@ -153,7 +165,4 @@ let main _ =
         |> withLangVersionPreview
         |> withReferences [csharpLib]
         |> compile
-        |> shouldFail
-        |> withDiagnostics [
-            Error 810, Line 9, Col 5, Line 9, Col 17, "Init-only property 'GetInit' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
-        ]
+        |> shouldSucceed
