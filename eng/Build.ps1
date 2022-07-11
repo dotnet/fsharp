@@ -61,6 +61,7 @@ param (
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch]$sourceBuild,
+    [switch]$skipBuild,
 
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
@@ -114,6 +115,7 @@ function Print-Usage() {
     Write-Host "  -useGlobalNuGetCache          Use global NuGet cache."
     Write-Host "  -noVisualStudio               Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
     Write-Host "  -sourceBuild                  Simulate building for source-build."
+    Write-Host "  -skipbuild                    Skip building product"
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -423,6 +425,8 @@ try {
 
     [System.Environment]::SetEnvironmentVariable('DOTNET_ROLL_FORWARD_TO_PRERELEASE', '1', [System.EnvironmentVariableTarget]::User)
 
+    $env:NativeToolsOnMachine = $true
+
     Process-Arguments
 
     . (Join-Path $PSScriptRoot "build-utils.ps1")
@@ -458,7 +462,7 @@ try {
     }
 
     $script:BuildMessage = "Failure building product"
-    if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish) {
+    if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild) {
         if ($noVisualStudio) {
             BuildSolution "FSharp.sln"
         }

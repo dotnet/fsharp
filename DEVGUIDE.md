@@ -128,8 +128,11 @@ If your changes involve modifying the list of language keywords in any way, (e.g
 ```shell
 dotnet build src\Compiler /t:UpdateXlf
 ```
+If you are on a Mac, you can run this command from the root of the repository:
 
-This only works on Windows/.NETStandard framework, so changing this from any other platform requires editing and syncing all of the XLF files manually.
+```shell
+sh build.sh -c Release
+```
 
 ## Updating baselines in tests
 
@@ -139,8 +142,16 @@ are updated using scripts or utilities that allow the following environment vari
 
 Windows:
 
+CMD:
+
 ```shell
 set TEST_UPDATE_BSL=1
+```
+
+PowerShell:
+
+```shell
+$env:TEST_UPDATE_BSL=1
 ```
 
 Linux/macOS:
@@ -148,6 +159,17 @@ Linux/macOS:
 ```shell
 export TEST_UPDATE_BSL=1
 ```
+
+Next, run a build script build (debug or release, desktop or coreclr, depending which baselines you need to update), and test as described [above](#Testing-from-the-command-line). For example:
+
+`./Build.cmd -c Release -testCoreClr` to update Release CoreCLR baselines.
+
+or
+
+`./Build.cmd -c Release -testDesktop` to update Release .NET Framework baselines.
+
+> **Note**
+> Please note, that by default, **Release** version of IL baseline baseline tests will be running in CI, so when updating baseline files, make sure to add `-c Release` flag to the build command.
 
 ## Automated Source Code Formatting
 
@@ -215,11 +237,11 @@ Where `<version>` corresponds to the latest Visual Studio version on your machin
 
 * Format using [the F# style guide](https://docs.microsoft.com/en-us/dotnet/fsharp/style-guide/)
 
-* Avoid tick identifiers like `body'`. They are generally harder to read and can't be inspected in the debugger as things stand. Generaly use R suffix instead, e.g. `bodyR`. The R can stand for "rewritten" or "result"
+* Avoid tick identifiers like `body'`. They are generally harder to read and can't be inspected in the debugger as things stand. Generally use R suffix instead, e.g. `bodyR`. The R can stand for "rewritten" or "result"
 
-* Avoid abbreviations like `bodyty` that run together lowercase are bad, really hard to head for newcomers. Use `bodyTy` instead.
+* Avoid abbreviations like `bodyty` that are all lowercase. They are really hard to read for newcomers. Use `bodyTy` instead.
 
-* See the comiler docs for common abbreviations
+* See the compiler docs for common abbreviations
 
 * Don't use `List.iter` and `Array.iter` in the compiler, a `for ... do ...` loop is simpler to read and debug
 
@@ -242,10 +264,10 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
 
 1. Perform a clean build of the compiler and FCS from source (as described in this document, build can be done with `-noVisualStudio` in case if FCS/FSharp.Core is being benchmarked/profiled).
 
-2. Create a benchmark project (in this example, the project will be created in `tests\benchmarks\`).
+2. Create a benchmark project (in this example, the project will be created in `tests\benchmarks\FCSBenchmarks`).
 
       ```shell
-      cd tests\benchmarks
+      cd tests\benchmarks\FCSBenchmarks
       dotnet new console -o FcsBench --name FcsBench -lang F#
       ```
 
@@ -257,7 +279,7 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
     dotnet add reference ..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj
     ```
 
-4. Additionally, if you want to test changes to the FSharp.Core
+4. Additionally, if you want to test changes to the FSharp.Core (note that the relative path can be different)
 
      ```shell
      dotnet add reference ..\..\..\src\FSharp.Core\FSharp.Core.fsproj
@@ -349,7 +371,7 @@ Existing compiler benchmarks can be found in `tests\benchmarks\`.
     ```shell
     > ls .\BenchmarkDotNet.Artifacts\results\
 
-        Directory: C:\Users\vlza\code\fsharp\tests\benchmarks\FcsBench\BenchmarkDotNet.Artifacts\results
+        Directory: C:\Users\vlza\code\fsharp\tests\benchmarks\FCSBenchmarks\FcsBench\BenchmarkDotNet.Artifacts\results
 
     Mode                 LastWriteTime         Length Name
     ----                 -------------         ------ ----

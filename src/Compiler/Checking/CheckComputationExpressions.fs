@@ -224,10 +224,10 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     // Give bespoke error messages for the FSharp.Core "query" builder
     let isQuery = 
         match stripDebugPoints interpExpr with 
-        | Expr.Val (vf, _, m) -> 
-            let item = Item.CustomBuilder (vf.DisplayName, vf)
+        | Expr.Val (vref, _, m) -> 
+            let item = Item.CustomBuilder (vref.DisplayName, vref)
             CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
-            valRefEq cenv.g vf cenv.g.query_value_vref 
+            valRefEq cenv.g vref cenv.g.query_value_vref 
         | _ -> false
 
     /// Make a builder.Method(...) call
@@ -1175,7 +1175,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             // For 'query' check immediately
             if isQuery then
                 match (List.map (BindingNormalization.NormalizeBinding ValOrMemberBinding cenv env) binds) with 
-                | [NormalizedBinding(_, SynBindingKind.Normal, (*inline*)false, (*mutable*)false, _, _, _, _, _, _, _, _)] when not isRec -> 
+                | [NormalizedBinding(_, SynBindingKind.Normal, false, false, _, _, _, _, _, _, _, _)] when not isRec -> 
                     ()
                 | normalizedBindings -> 
                     let failAt m = error(Error(FSComp.SR.tcNonSimpleLetBindingInQuery(), m))
@@ -1770,7 +1770,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     // Add a call to 'Quote' if the method is present
     let quotedSynExpr = 
         if isAutoQuote then 
-            SynExpr.Quote (mkSynIdGet mDelayOrQuoteOrRun (CompileOpName "<@ @>"), (*isRaw=*)false, delayedExpr, (*isFromQueryExpression=*)true, mWhole) 
+            SynExpr.Quote (mkSynIdGet mDelayOrQuoteOrRun (CompileOpName "<@ @>"), false, delayedExpr, true, mWhole) 
         else delayedExpr
             
     // Add a call to 'Run' if the method is present
@@ -1909,8 +1909,8 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             // This transformation is visible in quotations and thus needs to remain.
             | (TPat_as (TPat_wild _, PatternValBinding (v, _), _), 
                 [_],
-                DebugPoints(Expr.App (Expr.Val (vf, _, _), _, [genEnumElemTy], [yieldExpr], _mYield), recreate)) 
-                    when valRefEq cenv.g vf cenv.g.seq_singleton_vref ->
+                DebugPoints(Expr.App (Expr.Val (vref, _, _), _, [genEnumElemTy], [yieldExpr], _mYield), recreate)) 
+                    when valRefEq cenv.g vref cenv.g.seq_singleton_vref ->
 
                 // The debug point mFor is attached to the 'map'
                 // The debug point mIn is attached to the lambda
@@ -2051,11 +2051,11 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             error(Error(FSComp.SR.tcUseForInSequenceExpression(), m))
 
         | SynExpr.Match (spMatch, expr, clauses, _m, _trivia) ->
-            let inputExpr, matchty, tpenv = TcExprOfUnknownType cenv env tpenv expr
+            let inputExpr, inputTy, tpenv = TcExprOfUnknownType cenv env tpenv expr
 
             let tclauses, tpenv = 
                 (tpenv, clauses) ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, _, sp, _)) ->
-                      let patR, condR, vspecs, envinner, tpenv = TcMatchPattern cenv matchty env tpenv pat cond
+                      let patR, condR, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv pat cond
                       let envinner =
                           match sp with
                           | DebugPointAtTarget.Yes -> { envinner with eIsControlFlow = true }

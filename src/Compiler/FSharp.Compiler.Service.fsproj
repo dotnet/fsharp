@@ -77,8 +77,10 @@
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
     <InternalsVisibleTo Include="fscAnyCpu" />
+    <InternalsVisibleTo Include="fscArm64" />
     <InternalsVisibleTo Include="fsi" />
     <InternalsVisibleTo Include="fsiAnyCpu" />
+    <InternalsVisibleTo Include="fsiArm64" />
     <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
@@ -334,6 +336,8 @@
     <Compile Include="Checking\CheckPatterns.fs" />
     <Compile Include="Checking\CheckComputationExpressions.fsi" />
     <Compile Include="Checking\CheckComputationExpressions.fs" />
+    <Compile Include="Checking\CheckIncrementalClasses.fsi" />
+    <Compile Include="Checking\CheckIncrementalClasses.fs" />
     <Compile Include="Checking\CheckDeclarations.fsi" />
     <Compile Include="Checking\CheckDeclarations.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />
@@ -461,9 +465,9 @@
     <Compile Include="Service\ServiceStructure.fs" />
     <Compile Include="Service\ServiceAnalysis.fsi" />
     <Compile Include="Service\ServiceAnalysis.fs" />
+    <Compile Include="Interactive\ControlledExecution.fs" />
     <Compile Include="Interactive\fsi.fsi" />
     <Compile Include="Interactive\fsi.fs" />
-
     <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
     <Compile Include="Legacy\LegacyMSBuildReferenceResolver.fsi" Condition="'$(MonoPackaging)' != 'true'" />
     <Compile Include="Legacy\LegacyMSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'" />
@@ -480,7 +484,6 @@
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
   </ItemGroup>
-
 
   <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />

@@ -92,6 +92,8 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
                                          this assembly. Valid values are
                                          mscorlib, netcore or netstandard.
                                          Default - mscorlib
+--clearResultsCache                      Clear the package manager results
+                                         cache
 --noframework                            Do not reference the default CLI
                                          assemblies by default
 --exec                                   Exit fsi after loading the files or

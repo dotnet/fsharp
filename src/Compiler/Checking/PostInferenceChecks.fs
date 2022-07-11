@@ -416,8 +416,8 @@ and CheckTypeConstraintDeep cenv f g env x =
      | TyparConstraint.MayResolveMember(traitInfo, _) -> CheckTraitInfoDeep cenv f g env traitInfo
      | TyparConstraint.DefaultsTo(_, ty, _) -> CheckTypeDeep cenv f g env true ty
      | TyparConstraint.SimpleChoice(tys, _) -> CheckTypesDeep cenv f g env tys
-     | TyparConstraint.IsEnum(uty, _) -> CheckTypeDeep cenv f g env true uty
-     | TyparConstraint.IsDelegate(aty, bty, _) -> CheckTypeDeep cenv f g env true aty; CheckTypeDeep cenv f g env true bty
+     | TyparConstraint.IsEnum(underlyingTy, _) -> CheckTypeDeep cenv f g env true underlyingTy
+     | TyparConstraint.IsDelegate(argTys, retTy, _) -> CheckTypeDeep cenv f g env true argTys; CheckTypeDeep cenv f g env true retTy
      | TyparConstraint.SupportsComparison _ 
      | TyparConstraint.SupportsEquality _ 
      | TyparConstraint.SupportsNull _ 
@@ -591,8 +591,8 @@ let mkArgsPermit n =
 /// Work out what byref-values are allowed at input positions to named F# functions or members
 let mkArgsForAppliedVal isBaseCall (vref: ValRef) argsl = 
     match vref.ValReprInfo with
-    | Some topValInfo -> 
-        let argArities = topValInfo.AritiesOfArgs
+    | Some valReprInfo -> 
+        let argArities = valReprInfo.AritiesOfArgs
         let argArities = if isBaseCall && argArities.Length >= 1 then List.tail argArities else argArities
         // Check for partial applications: arguments to partial applications don't get to use byrefs
         if List.length argsl >= argArities.Length then 
@@ -717,39 +717,42 @@ type TTypeEquality =
     | FeasiblyEqual
     | NotEqual
 
-let compareTypesWithRegardToTypeVariablesAndMeasures g amap m typ1 typ2 =
+let compareTypesWithRegardToTypeVariablesAndMeasures g amap m ty1 ty2 =
     
-    if (typeEquiv g typ1 typ2) then
+    if (typeEquiv g ty1 ty2) then
         ExactlyEqual
     else
-        if (typeEquiv g typ1 typ2 || TypesFeasiblyEquivStripMeasures g amap m typ1 typ2) then 
+        if (typeEquiv g ty1 ty2 || TypesFeasiblyEquivStripMeasures g amap m ty1 ty2) then 
             FeasiblyEqual
         else
             NotEqual
 
-let CheckMultipleInterfaceInstantiations cenv (typ:TType) (interfaces:TType list) isObjectExpression m =
-    let keyf ty = assert isAppTy cenv.g ty; (tcrefOfAppTy cenv.g ty).Stamp
-    let groups = interfaces |> List.groupBy keyf
+let keyTyByStamp g ty =
+    assert isAppTy g ty
+    (tcrefOfAppTy g ty).Stamp
+
+let CheckMultipleInterfaceInstantiations cenv (ty:TType) (interfaces:TType list) isObjectExpression m =
+    let groups = interfaces |> List.groupBy (keyTyByStamp cenv.g)
     let errors = seq {
         for _, items in groups do
             for i1 in 0 .. items.Length - 1 do
                 for i2 in i1 + 1 .. items.Length - 1 do
-                    let typ1 = items[i1]
-                    let typ2 = items[i2]
-                    let tcRef1 = tcrefOfAppTy cenv.g typ1
-                    match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g cenv.amap m typ1 typ2 with
+                    let ty1 = items[i1]
+                    let ty2 = items[i2]
+                    let tcRef1 = tcrefOfAppTy cenv.g ty1
+                    match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g cenv.amap m ty1 ty2 with
                     | ExactlyEqual -> ()
                     | FeasiblyEqual ->
                         match tryLanguageFeatureErrorOption cenv.g.langVersion LanguageFeature.InterfacesWithMultipleGenericInstantiation m with
                         | None -> ()
                         | Some exn -> exn
 
-                        let typ1Str = NicePrint.minimalStringOfType cenv.denv typ1
-                        let typ2Str = NicePrint.minimalStringOfType cenv.denv typ2
+                        let typ1Str = NicePrint.minimalStringOfType cenv.denv ty1
+                        let typ2Str = NicePrint.minimalStringOfType cenv.denv ty2
                         if isObjectExpression then
                             Error(FSComp.SR.typrelInterfaceWithConcreteAndVariableObjectExpression(tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m)
                         else
-                            let typStr = NicePrint.minimalStringOfType cenv.denv typ
+                            let typStr = NicePrint.minimalStringOfType cenv.denv ty
                             Error(FSComp.SR.typrelInterfaceWithConcreteAndVariable(typStr, tcRef1.DisplayNameWithStaticParametersAndUnderscoreTypars, typ1Str, typ2Str),m)
 
                     | NotEqual ->
@@ -1352,14 +1355,14 @@ and CheckApplication cenv env expr (f, tyargs, argsl, m) ctxt =
         CheckCall cenv env m returnTy argsl ctxts ctxt
 
 and CheckLambda cenv env expr (argvs, m, bodyTy) = 
-    let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
+    let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
     let ty = mkMultiLambdaTy cenv.g m argvs bodyTy in 
-    CheckLambdas false None cenv env false topValInfo false expr m ty PermitByRefExpr.Yes
+    CheckLambdas false None cenv env false valReprInfo false expr m ty PermitByRefExpr.Yes
 
 and CheckTyLambda cenv env expr (tps, m, bodyTy) = 
-    let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
+    let valReprInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
     let ty = mkForallTyIfNeeded tps bodyTy in 
-    CheckLambdas false None cenv env false topValInfo false expr m ty PermitByRefExpr.Yes
+    CheckLambdas false None cenv env false valReprInfo false expr m ty PermitByRefExpr.Yes
 
 and CheckMatch cenv env ctxt (dtree, targets, m, ty) = 
     CheckTypeNoInnerByrefs cenv env m ty // computed byrefs allowed at each branch
@@ -1575,8 +1578,8 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
             errorR(Error(FSComp.SR.chkNoWriteToLimitedSpan(rf.FieldName), m))
         NoLimit
 
-    | TOp.Coerce, [tgty;srcty], [x] ->
-        if TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgty srcty then
+    | TOp.Coerce, [tgtTy;srcTy], [x] ->
+        if TypeDefinitelySubsumesTypeNoCoercion 0 g cenv.amap m tgtTy srcTy then
             CheckExpr cenv env x ctxt
         else
             CheckTypeInstNoByrefs cenv env m tyargs
@@ -1699,20 +1702,20 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsNoByRefLike cenv env args 
 
-and CheckLambdas isTop (memberVal: Val option) cenv env inlined topValInfo alwaysCheckNoReraise expr mOrig ety ctxt =
+and CheckLambdas isTop (memberVal: Val option) cenv env inlined valReprInfo alwaysCheckNoReraise expr mOrig ety ctxt =
     let g = cenv.g
     let memInfo = memberVal |> Option.bind (fun v -> v.MemberInfo)
 
-    // The topValInfo here says we are _guaranteeing_ to compile a function value 
+    // The valReprInfo here says we are _guaranteeing_ to compile a function value 
     // as a .NET method with precisely the corresponding argument counts. 
     match stripDebugPoints expr with
     | Expr.TyChoose (tps, e1, m)  -> 
         let env = BindTypars g env tps
-        CheckLambdas isTop memberVal cenv env inlined topValInfo alwaysCheckNoReraise e1 m ety ctxt
+        CheckLambdas isTop memberVal cenv env inlined valReprInfo alwaysCheckNoReraise e1 m ety ctxt
 
     | Expr.Lambda (_, _, _, _, _, m, _)  
     | Expr.TyLambda (_, _, _, m, _) ->
-        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destTopLambda g cenv.amap topValInfo (expr, ety)
+        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destTopLambda g cenv.amap valReprInfo (expr, ety)
         let env = BindTypars g env tps 
         let thisAndBase = Option.toList ctorThisValOpt @ Option.toList baseValOpt
         let restArgs = List.concat vsl
@@ -2071,7 +2074,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         
     | _ -> ()
         
-    let topValInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData 
+    let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData 
 
     // If the method has ResumableCode argument or return type it must be inline
     // unless warning is suppressed (user must know what they're doing).
@@ -2089,7 +2092,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         else
             env
 
-    CheckLambdas isTop (Some v) cenv env v.MustInline topValInfo alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
+    CheckLambdas isTop (Some v) cenv env v.MustInline valReprInfo alwaysCheckNoReraise bindRhs v.Range v.Type ctxt
 
 and CheckBindings cenv env binds = 
     for bind in binds do
@@ -2279,8 +2282,8 @@ let CheckEntityDefn cenv env (tycon: Entity) =
 
         let allVirtualMethsInParent = 
             match GetSuperTypeOfType g cenv.amap m ty with 
-            | Some super -> 
-                GetIntrinsicMethInfosOfType cenv.infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m super
+            | Some superTy -> 
+                GetIntrinsicMethInfosOfType cenv.infoReader None AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m superTy
                 |> List.filter (fun minfo -> minfo.IsVirtual)
             | None -> []
 
@@ -2479,8 +2482,8 @@ let CheckEntityDefn cenv env (tycon: Entity) =
     // Abstract slots can have byref arguments and returns
     for vref in abstractSlotValsOfTycons [tycon] do 
         match vref.ValReprInfo with 
-        | Some topValInfo -> 
-            let tps, argTysl, retTy, _ = GetTopValTypeInFSharpForm g topValInfo vref.Type m
+        | Some valReprInfo -> 
+            let tps, argTysl, retTy, _ = GetTopValTypeInFSharpForm g valReprInfo vref.Type m
             let env = BindTypars g env tps
             for argTys in argTysl do 
                 for argTy, _ in argTys do 

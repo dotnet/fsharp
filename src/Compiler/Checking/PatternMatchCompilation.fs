@@ -312,8 +312,8 @@ let RefuteDiscrimSet g m path discrims =
             raise CannotRefute
     go path tm
 
-let rec CombineRefutations g r1 r2 =
-    match r1, r2 with
+let rec CombineRefutations g refutation1 refutation2 =
+    match refutation1, refutation2 with
     | Expr.Val (vref, _, _), other | other, Expr.Val (vref, _, _) when vref.LogicalName = "_" -> other
     | Expr.Val (vref, _, _), other | other, Expr.Val (vref, _, _) when vref.LogicalName = notNullText -> other
     | Expr.Val (vref, _, _), other | other, Expr.Val (vref, _, _) when vref.LogicalName = otherSubtypeText -> other
@@ -326,9 +326,9 @@ let rec CombineRefutations g r1 r2 =
             Expr.Op (op1, tinst1, List.map2 (CombineRefutations g) flds1 flds2, m1)
         (* Choose the greater of the two ucrefs based on name ordering *)
         elif ucref1.CaseName < ucref2.CaseName then
-            r2
+            refutation2
         else
-            r1
+            refutation1
 
     | Expr.Op (op1, tinst1, flds1, m1), Expr.Op (_, _, flds2, _) ->
         Expr.Op (op1, tinst1, List.map2 (CombineRefutations g) flds1 flds2, m1)
@@ -352,19 +352,17 @@ let rec CombineRefutations g r1 r2 =
 
         Expr.Const (c12, m1, ty1)
 
-    | _ -> r1
+    | _ -> refutation1
 
 let ShowCounterExample g denv m refuted =
     try
-        let exprL expr = exprL g expr
         let refutations = refuted |> List.collect (function RefutedWhenClause -> [] | RefutedInvestigation(path, discrim) -> [RefuteDiscrimSet g m path discrim])
         let counterExample, enumCoversKnown =
             match refutations with
             | [] -> raise CannotRefute
             | (r, eck) :: t ->
-                if verbose then dprintf "r = %s (enumCoversKnownValue = %b)\n" (LayoutRender.showL (exprL r)) eck
-                List.fold (fun (rAcc, eckAcc) (r, eck) ->
-                    CombineRefutations g rAcc r, eckAcc || eck) (r, eck) t
+                ((r, eck), t) ||> List.fold (fun (rAcc, eckAcc) (r, eck) ->
+                    CombineRefutations g rAcc r, eckAcc || eck) 
         let text = LayoutRender.showL (NicePrint.dataExprL denv counterExample)
         let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
         Some(text, failingWhenClause, enumCoversKnown)
@@ -594,8 +592,8 @@ let getDiscrimOfPattern (g: TcGlobals) tpinst t =
     match t with
     | TPat_null _m ->
         Some(DecisionTreeTest.IsNull)
-    | TPat_isinst (srcty, tgty, _, _m) ->
-        Some(DecisionTreeTest.IsInst (instType tpinst srcty, instType tpinst tgty))
+    | TPat_isinst (srcTy, tgtTy, _, _m) ->
+        Some(DecisionTreeTest.IsInst (instType tpinst srcTy, instType tpinst tgtTy))
     | TPat_exnconstr(tcref, _, _m) ->
         Some(DecisionTreeTest.IsInst (g.exn_ty, mkAppTy tcref []))
     | TPat_const (c, _m) ->
@@ -626,7 +624,7 @@ let discrimsEq (g: TcGlobals) d1 d2 =
   | DecisionTreeTest.ArrayLength (n1, _),   DecisionTreeTest.ArrayLength(n2, _) -> (n1=n2)
   | DecisionTreeTest.Const c1,              DecisionTreeTest.Const c2 -> (c1=c2)
   | DecisionTreeTest.IsNull,               DecisionTreeTest.IsNull -> true
-  | DecisionTreeTest.IsInst (srcty1, tgty1), DecisionTreeTest.IsInst (srcty2, tgty2) -> typeEquiv g srcty1 srcty2 && typeEquiv g tgty1 tgty2
+  | DecisionTreeTest.IsInst (srcTy1, tgtTy1), DecisionTreeTest.IsInst (srcTy2, tgtTy2) -> typeEquiv g srcTy1 srcTy2 && typeEquiv g tgtTy1 tgtTy2
   | DecisionTreeTest.ActivePatternCase (_, _, _, vrefOpt1, n1, _), DecisionTreeTest.ActivePatternCase (_, _, _, vrefOpt2, n2, _) ->
       match vrefOpt1, vrefOpt2 with
       | Some (vref1, tinst1), Some (vref2, tinst2) -> valRefEq g vref1 vref2 && n1 = n2  && not (doesActivePatternHaveFreeTypars g vref1) && List.lengthsEqAndForall2 (typeEquiv g) tinst1 tinst2
@@ -1215,15 +1213,15 @@ let CompilePatternBasic
           // This is really an optimization that could be done more effectively in opt.fs
           // if we flowed a bit of information through
 
-         | [EdgeDiscrim(_i', DecisionTreeTest.IsInst (_srcty, tgty), m)]
+         | [EdgeDiscrim(_i', DecisionTreeTest.IsInst (_srcTy, tgtTy), m)]
                     // check we can use a simple 'isinst' instruction
-                    when isRefTy g tgty && canUseTypeTestFast g tgty && isNil origInputValTypars ->
+                    when isRefTy g tgtTy && canUseTypeTestFast g tgtTy && isNil origInputValTypars ->
 
-             let v, vExpr = mkCompGenLocal m "typeTestResult" tgty
+             let v, vExpr = mkCompGenLocal m "typeTestResult" tgtTy
              if origInputVal.IsMemberOrModuleBinding then
                  AdjustValToTopVal v origInputVal.DeclaringEntity ValReprInfo.emptyValData
              let argExpr = GetSubExprOfInput subexpr
-             let appExpr = mkIsInst tgty argExpr mMatch
+             let appExpr = mkIsInst tgtTy argExpr mMatch
              Some vExpr, Some(mkInvisibleBind v appExpr)
 
           // Any match on a struct union must take the address of its input.

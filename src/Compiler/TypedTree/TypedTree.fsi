@@ -301,7 +301,10 @@ type ModuleOrNamespaceKind =
     | ModuleOrType
 
     /// Indicates that a 'module' is really a namespace
-    | Namespace
+    | Namespace of
+        /// Indicates that the sourcecode had a namespace.
+        /// If false, this namespace was implicitly constructed during type checking.
+        isExplicit: bool
 
 /// A public path records where a construct lives within the global namespace
 /// of a CCU.
@@ -641,9 +644,13 @@ type Entity =
     /// Indicates if the entity is a namespace
     member IsNamespace: bool
 
+    /// Indicates if the entity has an implicit namespace
+    member IsImplicitNamespace: bool
+
     /// Indicates the type prefers the "tycon<a, b>" syntax for display etc.
     member IsPrefixDisplay: bool
 
+#if !NO_TYPEPROVIDERS
     /// Indicates if the entity is a provided type or namespace definition
     member IsProvided: bool
 
@@ -655,11 +662,14 @@ type Entity =
 
     /// Indicates if the entity is a provided namespace fragment
     member IsProvidedNamespace: bool
+#endif
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition.
     member IsRecordTycon: bool
 
+#if !NO_TYPEPROVIDERS
     member IsStaticInstantiationTycon: bool
+#endif
 
     /// Indicates if this is a struct or enum type definition, i.e. a value type definition
     member IsStructOrEnumTycon: bool
@@ -875,6 +885,7 @@ type TyconRepresentation =
     /// Indicates the type is parameterized on a measure (e.g. float<_>) but erases to some other type (e.g. float)
     | TMeasureableRepr of TType
 
+#if !NO_TYPEPROVIDERS
     /// TProvidedTypeRepr
     ///
     /// Indicates the representation information for a provided type.
@@ -882,6 +893,7 @@ type TyconRepresentation =
 
     /// Indicates the representation information for a provided namespace.
     | TProvidedNamespaceRepr of ResolutionEnvironment * Tainted<ITypeProvider> list
+#endif
 
     /// The 'NoRepr' value here has four meanings:
     ///     (1) it indicates 'not yet known' during the first 2 phases of establishing type definitions
@@ -903,6 +915,8 @@ type TILObjectReprData =
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
+
+#if !NO_TYPEPROVIDERS
 
 /// The information kept about a provided type
 [<NoComparison; NoEquality; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
@@ -964,6 +978,8 @@ type TProvidedTypeInfo =
 
     /// Indicates if the provided type is generated, i.e. not erased
     member IsGenerated: bool
+
+#endif
 
 type TyconFSharpObjModelKind =
 
@@ -1302,8 +1318,10 @@ type ModuleOrNamespaceType =
     /// Mutation used during compilation of FSharp.Core.dll
     member AddModuleOrNamespaceByMutation: modul: ModuleOrNamespace -> unit
 
+#if !NO_TYPEPROVIDERS
     /// Mutation used in hosting scenarios to hold the hosted types in this module or namespace
     member AddProvidedTypeEntity: entity: Entity -> unit
+#endif
 
     /// Return a new module or namespace type with a value added.
     member AddVal: vspec: Val -> ModuleOrNamespaceType
@@ -1759,7 +1777,14 @@ type ValOptionalData =
         /// What is the original, unoptimized, closed-term definition, if any?
         /// Used to implement [<ReflectedDefinition>]
         mutable val_defn: Expr option
+
+        /// Records the "extra information" for a value compiled as a method (rather
+        /// than a closure or a local), including argument names, attributes etc.
         mutable val_repr_info: ValReprInfo option
+
+        /// Records the "extra information" for display purposes for expression-level function definitions
+        /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
+        mutable val_repr_info_for_display: ValReprInfo option
 
         /// How visible is this?
         /// MUTABILITY: for unpickle linkage
@@ -1869,6 +1894,8 @@ type Val =
     member SetValRec: b: ValRecursiveScopeInfo -> unit
 
     member SetValReprInfo: info: ValReprInfo option -> unit
+
+    member SetValReprInfoForDisplay: info: ValReprInfo option -> unit
 
     override ToString: unit -> string
 
@@ -2116,6 +2143,10 @@ type Val =
     /// represent as "top level" bindings.
     member ValReprInfo: ValReprInfo option
 
+    /// Records the "extra information" for display purposes for expression-level function definitions
+    /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
+    member ValReprInfoForDisplay: ValReprInfo option
+
     /// Get the declared documentation for the value
     member XmlDoc: XmlDoc
 
@@ -2186,9 +2217,11 @@ type NonLocalEntityRef =
     /// Try to find the entity corresponding to the given path in the given CCU
     static member TryDerefEntityPath: ccu: CcuThunk * path: string[] * i: int * entity: Entity -> Entity voption
 
+#if !NO_TYPEPROVIDERS
     /// Try to find the entity corresponding to the given path, using type-providers to link the data
     static member TryDerefEntityPathViaProvidedType:
         ccu: CcuThunk * path: string[] * i: int * entity: Entity -> Entity voption
+#endif
 
     override ToString: unit -> string
 
@@ -2440,6 +2473,7 @@ type EntityRef =
     /// Indicates the type prefers the "tycon<a, b>" syntax for display etc.
     member IsPrefixDisplay: bool
 
+#if !NO_TYPEPROVIDERS
     /// Indicates if the entity is a provided namespace fragment
     member IsProvided: bool
 
@@ -2451,6 +2485,7 @@ type EntityRef =
 
     /// Indicates if the entity is a provided namespace fragment
     member IsProvidedNamespace: bool
+#endif
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition.
     member IsRecordTycon: bool
@@ -2458,8 +2493,10 @@ type EntityRef =
     /// Indicates if the reference has been resolved
     member IsResolved: bool
 
+#if !NO_TYPEPROVIDERS
     /// Indicates if the entity is an erased provided type definition that incorporates a static instantiation (type therefore in some sense compiler generated)
     member IsStaticInstantiationTycon: bool
+#endif
 
     /// Indicates if this is a struct or enum type definition, i.e. a value type definition
     member IsStructOrEnumTycon: bool
@@ -2781,7 +2818,7 @@ type ValRef =
 /// Represents a reference to a case of a union type
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type UnionCaseRef =
-    | UnionCaseRef of TyconRef * string
+    | UnionCaseRef of tyconRef: TyconRef * caseName: string
 
     /// Get a field of the union case by index
     member FieldByIndex: n: int -> RecdField
@@ -2830,7 +2867,7 @@ type UnionCaseRef =
 /// Represents a reference to a field in a record, class or struct
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type RecdFieldRef =
-    | RecdFieldRef of tcref: TyconRef * id: string
+    | RecdFieldRef of tyconRef: TyconRef * fieldName: string
 
     override ToString: unit -> string
 
@@ -2953,7 +2990,7 @@ type Measure =
     | Var of typar: Typar
 
     /// A constant, leaf unit-of-measure such as 'kg' or 'm'
-    | Con of tyconRef: TyconRef
+    | Const of tyconRef: TyconRef
 
     /// A product of two units of measure
     | Prod of measure1: Measure * measure2: Measure
@@ -3651,7 +3688,7 @@ type ObjExprMethod =
 type SlotSig =
     | TSlotSig of
         methodName: string *
-        implementedType: TType *
+        declaringType: TType *
         classTypars: Typars *
         methodTypars: Typars *
         formalParams: SlotParam list list *
@@ -3672,7 +3709,7 @@ type SlotSig =
     member FormalReturnType: TType option
 
     /// The (instantiated) type which the slot is logically a part of
-    member ImplementedType: TType
+    member DeclaringType: TType
 
     /// The method type parameters of the slot
     member MethodTypars: Typars
@@ -3861,6 +3898,7 @@ type CcuData =
         /// Indicates that this DLL was compiled using the F# compiler type has F# metadata
         IsFSharp: bool
 
+#if !NO_TYPEPROVIDERS
         /// Is the CCu an assembly injected by a type provider
         IsProviderGenerated: bool
 
@@ -3870,6 +3908,7 @@ type CcuData =
         /// A helper function used to link method signatures using type equality. This is effectively a forward call to the type equality
         /// logic in tastops.fs
         ImportProvidedType: Tainted<ProvidedType> -> TType
+#endif
 
         /// Indicates that this DLL uses pre-F#-4.0 quotation literals somewhere. This is used to implement a restriction on static linking
         mutable UsesFSharp20PlusQuotations: bool
@@ -3938,8 +3977,10 @@ type CcuThunk =
     /// Fixup a CCU to have the given contents
     member Fixup: avail: CcuThunk -> unit
 
+#if !NO_TYPEPROVIDERS
     /// Used to make 'forward' calls into the loader during linking
     member ImportProvidedType: ty: Tainted<ProvidedType> -> TType
+#endif
 
     /// Used to make forward calls into the type/assembly loader when comparing member signatures during linking
     member MemberSignatureEquality: ty1: TType * ty2: TType -> bool
@@ -3974,8 +4015,10 @@ type CcuThunk =
     /// Indicates that this DLL was compiled using the F# compiler type has F# metadata
     member IsFSharp: bool
 
+#if !NO_TYPEPROVIDERS
     /// Is this a provider-injected assembly
     member IsProviderGenerated: bool
+#endif
 
     /// Indicates if this assembly reference is unresolved
     member IsUnresolvedReference: bool
@@ -4114,9 +4157,11 @@ type Construct =
 
     new: unit -> Construct
 
+#if !NO_TYPEPROVIDERS
     /// Compute the definition location of a provided item
     static member ComputeDefinitionLocationOfProvidedItem:
         p: Tainted<#IProvidedCustomAttributeProvider> -> Text.range option
+#endif
 
     /// Key a Tycon or TyconRef by both mangled type demangled name.
     /// Generic types can be accessed either by 'List' or 'List`1'.
@@ -4201,6 +4246,7 @@ type Construct =
     static member NewModuleOrNamespaceType:
         mkind: ModuleOrNamespaceKind -> tycons: Entity list -> vals: Val list -> ModuleOrNamespaceType
 
+#if !NO_TYPEPROVIDERS
     /// Create a new entity node for a provided type definition
     static member NewProvidedTycon:
         resolutionEnvironment: ResolutionEnvironment *
@@ -4220,6 +4266,7 @@ type Construct =
         isSuppressRelocate: bool *
         m: Text.range ->
             TyconRepresentation
+#endif
 
     /// Create a new TAST RecdField node for an F# class, struct or record field
     static member NewRecdField:

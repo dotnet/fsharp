@@ -391,27 +391,36 @@ let CheckILFieldAttributes g (finfo:ILFieldInfo) m =
         CheckProvidedAttributes amap.g m (fi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) |> CommitOperationResult
 #endif
 
+/// Check the attributes on an entity, returning errors and warnings as data.
+let CheckEntityAttributes g (x:TyconRef) m = 
+    if x.IsILTycon then 
+        CheckILAttributes g (isByrefLikeTyconRef g m x) x.ILTyconRawMetadata.CustomAttrs m
+    else 
+        CheckFSharpAttributes g x.Attribs m
+
 /// Check the attributes associated with a method, returning warnings and errors as data.
-let CheckMethInfoAttributes g m tyargsOpt minfo = 
-    let search = 
-        BindMethInfoAttributes m minfo 
-            (fun ilAttribs -> Some(CheckILAttributes g false ilAttribs m)) 
-            (fun fsAttribs -> 
-                let res = 
-                    CheckFSharpAttributes g fsAttribs m ++ (fun () -> 
-                        if Option.isNone tyargsOpt && HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute fsAttribs then
-                            ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(minfo.LogicalName), m))
-                        else
-                            CompleteD)
-                Some res) 
+let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) = 
+    CheckEntityAttributes g minfo.ApparentEnclosingTyconRef m ++ (fun () ->
+        let search =
+            BindMethInfoAttributes m minfo 
+                (fun ilAttribs -> Some(CheckILAttributes g false ilAttribs m)) 
+                (fun fsAttribs -> 
+                    let res = 
+                        CheckFSharpAttributes g fsAttribs m ++ (fun () -> 
+                            if Option.isNone tyargsOpt && HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute fsAttribs then
+                                ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(minfo.LogicalName), m))
+                            else
+                                CompleteD)
+                    Some res) 
 #if !NO_TYPEPROVIDERS
-            (fun provAttribs -> Some (CheckProvidedAttributes g m provAttribs)) 
+                (fun provAttribs -> Some (CheckProvidedAttributes g m provAttribs)) 
 #else
-            (fun _provAttribs -> None)
+                (fun _provAttribs -> None)
 #endif 
-    match search with
-    | Some res -> res
-    | None -> CompleteD // no attribute = no errors 
+        match search with
+        | Some res -> res
+        | None -> CompleteD // no attribute = no errors 
+    )
 
 /// Indicate if a method has 'Obsolete', 'CompilerMessageAttribute' or 'TypeProviderEditorHideMethodsAttribute'. 
 /// Used to suppress the item in intellisense.
@@ -471,13 +480,6 @@ let PropInfoIsUnseen m pinfo =
     | ProvidedProp (_amap, pi, m) -> 
         CheckProvidedAttributesForUnseen (pi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) m
 #endif
-     
-/// Check the attributes on an entity, returning errors and warnings as data.
-let CheckEntityAttributes g (x:TyconRef) m = 
-    if x.IsILTycon then 
-        CheckILAttributes g (isByrefLikeTyconRef g m x) x.ILTyconRawMetadata.CustomAttrs m
-    else 
-        CheckFSharpAttributes g x.Attribs m
 
 /// Check the attributes on a union case, returning errors and warnings as data.
 let CheckUnionCaseAttributes g (x:UnionCaseRef) m =

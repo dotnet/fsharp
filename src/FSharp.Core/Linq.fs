@@ -593,11 +593,11 @@ module LeafExpressionConverter =
             | NullableConstruction arg -> Expression.Convert(ConvExprToLinqInContext env arg, x.Type) |> asExpr
             | _ -> Expression.New(ctorInfo, ConvExprsToLinq env args) |> asExpr
 
-        | Patterns.NewDelegate(dty, vs, b) ->
+        | Patterns.NewDelegate(delegateTy, vs, b) ->
             let vsP = List.map ConvVarToLinq vs
             let env = {env with varEnv = List.foldBack2 (fun (v:Var) vP -> Map.add v (vP |> asExpr)) vs vsP env.varEnv }
             let bodyP = ConvExprToLinqInContext env b
-            Expression.Lambda(dty, bodyP, vsP) |> asExpr
+            Expression.Lambda(delegateTy, bodyP, vsP) |> asExpr
 
         | Patterns.NewTuple args ->
              let tupTy = 

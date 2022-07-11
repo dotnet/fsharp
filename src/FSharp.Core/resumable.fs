@@ -9,7 +9,6 @@
 #nowarn "51"
 namespace Microsoft.FSharp.Core.CompilerServices
 
-#if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
 open System
 open System.Runtime.CompilerServices
 open Microsoft.FSharp.Core
@@ -444,5 +443,3 @@ module ResumableCode =
             //-- RESUMABLE CODE END
             else
                 YieldDynamic(&sm))
-
-#endif

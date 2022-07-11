@@ -395,11 +395,11 @@ type LowerStateMachine(g: TcGlobals) =
             let remake2 (moveNextExprR, stateVars, thisVars) = 
                 if sm_verbose then 
                     printfn "----------- AFTER REWRITE moveNextExprWithJumpTable ----------------------"
-                    printfn "%s" (DebugPrint.showExpr g moveNextExprR)
+                    printfn "%s" (DebugPrint.showExpr moveNextExprR)
                     printfn "----------- AFTER REWRITE setStateMachineBodyR ----------------------"
-                    printfn "%s" (DebugPrint.showExpr g setStateMachineBodyR)
+                    printfn "%s" (DebugPrint.showExpr setStateMachineBodyR)
                     printfn "----------- AFTER REWRITE afterCodeBodyR ----------------------"
-                    printfn "%s" (DebugPrint.showExpr g afterCodeBodyR)
+                    printfn "%s" (DebugPrint.showExpr afterCodeBodyR)
                 LoweredStateMachine 
                     (templateStructTy, dataTy, stateVars, thisVars, 
                         (moveNextThisVar, moveNextExprR), 
@@ -434,13 +434,13 @@ type LowerStateMachine(g: TcGlobals) =
     let rec ConvertResumableCode env (pcValInfo: ((Val * Expr) * Expr) option) expr : Result<StateMachineConversionFirstPhaseResult, string> = 
         if sm_verbose then 
             printfn "---------ConvertResumableCode-------------------"
-            printfn "%s" (DebugPrint.showExpr g expr)
+            printfn "%s" (DebugPrint.showExpr expr)
             printfn "---------"
         
         let env, expr = RepeatBindAndApplyOuterDefinitions env expr
         
         if sm_verbose then 
-            printfn "After RepeatBindAndApplyOuterDefinitions:\n%s" (DebugPrint.showExpr g expr)
+            printfn "After RepeatBindAndApplyOuterDefinitions:\n%s" (DebugPrint.showExpr expr)
             printfn "---------"
 
         // Detect the different permitted constructs in the expanded state machine
@@ -520,14 +520,14 @@ type LowerStateMachine(g: TcGlobals) =
             match res with 
             | Result.Ok res -> 
                 printfn "-------------------"
-                printfn "Phase 1 Done for %s" (DebugPrint.showExpr g res.phase1)
+                printfn "Phase 1 Done for %s" (DebugPrint.showExpr res.phase1)
                 printfn "Phase 1 Done, resumableVars = %A" (res.resumableVars.FreeLocals |> Zset.elements |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
                 printfn "Phase 1 Done, stateVars = %A" (res.stateVars |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
                 printfn "Phase 1 Done, thisVars = %A" (res.thisVars |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
                 printfn "-------------------"
             | Result.Error msg-> 
                 printfn "Phase 1 failed: %s" msg
-                printfn "Phase 1 failed for %s" (DebugPrint.showExpr g expr)
+                printfn "Phase 1 failed for %s" (DebugPrint.showExpr expr)
         res
 
     and ConvertResumableEntry env pcValInfo (noneBranchExpr, someVar, someBranchExpr, _rebuild) =
@@ -872,9 +872,9 @@ type LowerStateMachine(g: TcGlobals) =
                 if sm_verbose then 
                     printfn "Found state machine override method and code expression..."
                     printfn "----------- OVERALL EXPRESSION FOR STATE MACHINE CONVERSION ----------------------"
-                    printfn "%s" (DebugPrint.showExpr g overallExpr)
+                    printfn "%s" (DebugPrint.showExpr overallExpr)
                     printfn "----------- INPUT TO STATE MACHINE CONVERSION ----------------------"
-                    printfn "%s" (DebugPrint.showExpr g codeExpr)
+                    printfn "%s" (DebugPrint.showExpr codeExpr)
                     printfn "----------- START STATE MACHINE CONVERSION ----------------------"
     
                 // Perform phase1 of the conversion
