@@ -198,7 +198,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 let implIntfTys     = flatten implIntfTys 
                 let sigIntfTys     = flatten sigIntfTys 
               
-                let unimplIntfTys = ListSet.subtract (typeAEquiv g aenv) sigIntfTys implIntfTys
+                let unimplIntfTys = ListSet.subtract (fun sigIntfTy implIntfTy -> typeAEquiv g aenv implIntfTy sigIntfTy) sigIntfTys implIntfTys
                 (unimplIntfTys 
                  |> List.forall (fun ity -> 
                     let errorMessage = FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName, NicePrint.minimalStringOfType denv ity)
