@@ -49,8 +49,9 @@ type LanguageFeature =
     | DelegateTypeNameResolutionFix
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
-    | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
+    | LowercaseDUWhenRequireQualifiedAccess
+    | InterfacesWithAbstractStaticMembers
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -113,9 +114,9 @@ type LanguageVersion(versionText) =
                 LanguageFeature.BetterExceptionPrinting, previewVersion
                 LanguageFeature.ReallyLongLists, previewVersion
                 LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, previewVersion
+                LanguageFeature.LowercaseDUWhenRequireQualifiedAccess, previewVersion
                 LanguageFeature.InterfacesWithAbstractStaticMembers, previewVersion
                 LanguageFeature.SelfTypeConstraints, previewVersion
-
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -215,6 +216,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.DelegateTypeNameResolutionFix -> FSComp.SR.featureDelegateTypeNameResolutionFix ()
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()
         | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
+        | LanguageFeature.LowercaseDUWhenRequireQualifiedAccess -> FSComp.SR.featureLowercaseDUWhenRequireQualifiedAccess ()
         | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureInterfacesWithAbstractStaticMembers ()
         | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
 

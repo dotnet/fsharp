@@ -124,6 +124,7 @@ let GetRangeOfDiagnostic (diagnostic: PhasedDiagnostic) =
         | LetRecCheckedAtRuntime m
         | UpperCaseIdentifierInPattern m
         | NotUpperCaseConstructor m
+        | NotUpperCaseConstructorWithoutRQA m
         | RecursiveUseCheckedAtRuntime (_, _, m)
         | LetRecEvaluatedOutOfOrder (_, _, _, m)
         | DiagnosticWithText (_, _, m)
@@ -270,6 +271,7 @@ let GetDiagnosticNumber (diagnostic: PhasedDiagnostic) =
         | UseOfAddressOfOperator _ -> 51
         | DefensiveCopyWarning _ -> 52
         | NotUpperCaseConstructor _ -> 53
+        | NotUpperCaseConstructorWithoutRQA _ -> 53
         | TypeIsImplicitlyAbstract _ -> 54
         // 55 cannot be reused
         | DeprecatedThreadStaticBindingWarning _ -> 56
@@ -435,6 +437,7 @@ let ErrorFromApplyingDefault2E () = Message("ErrorFromApplyingDefault2", "")
 let ErrorsFromAddingSubsumptionConstraintE () = Message("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
 let UpperCaseIdentifierInPatternE () = Message("UpperCaseIdentifierInPattern", "")
 let NotUpperCaseConstructorE () = Message("NotUpperCaseConstructor", "")
+let NotUpperCaseConstructorWithoutRQAE () = Message("NotUpperCaseConstructorWithoutRQA", "")
 let FunctionExpectedE () = Message("FunctionExpected", "")
 let BakedInMemberConstraintNameE () = Message("BakedInMemberConstraintName", "%s")
 let BadEventTransformationE () = Message("BadEventTransformation", "")
@@ -770,6 +773,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
         | UpperCaseIdentifierInPattern _ -> os.AppendString(UpperCaseIdentifierInPatternE().Format)
 
         | NotUpperCaseConstructor _ -> os.AppendString(NotUpperCaseConstructorE().Format)
+
+        | NotUpperCaseConstructorWithoutRQA _ -> os.AppendString(NotUpperCaseConstructorWithoutRQAE().Format)
 
         | ErrorFromAddingConstraint (_, e, _) -> OutputExceptionR os e
 
