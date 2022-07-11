@@ -1673,7 +1673,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             | Some (cex, false) -> os.AppendString(MatchIncomplete2E().Format cex)
             | Some (cex, true) -> os.AppendString(MatchIncomplete3E().Format cex)
 
-            if isComp then os.AppendString(MatchIncomplete4E().Format)
+            if isComp then
+                os.AppendString(MatchIncomplete4E().Format)
 
         | PatternMatchCompilation.EnumMatchIncomplete (isComp, cexOpt, _) ->
             os.AppendString(EnumMatchIncomplete1E().Format)
@@ -1683,7 +1684,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             | Some (cex, false) -> os.AppendString(MatchIncomplete2E().Format cex)
             | Some (cex, true) -> os.AppendString(MatchIncomplete3E().Format cex)
 
-            if isComp then os.AppendString(MatchIncomplete4E().Format)
+            if isComp then
+                os.AppendString(MatchIncomplete4E().Format)
 
         | PatternMatchCompilation.RuleNeverMatched _ -> os.AppendString(RuleNeverMatchedE().Format)
 
@@ -1695,7 +1697,9 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | ObsoleteWarning (s, _) ->
             os.AppendString(Obsolete1E().Format)
-            if s <> "" then os.AppendString(Obsolete2E().Format s)
+
+            if s <> "" then
+                os.AppendString(Obsolete2E().Format s)
 
         | Experimental (s, _) -> os.AppendString(ExperimentalE().Format s)
 
@@ -1990,7 +1994,8 @@ let CollectFormattedDiagnostics
                     // Show prefix only for real files. Otherwise, we just want a truncated error like:
                     //      parse error FS0031: blah blah
                     if
-                        not (equals m range0) && not (equals m rangeStartup)
+                        not (equals m range0)
+                        && not (equals m rangeStartup)
                         && not (equals m rangeCmdArgs)
                     then
                         let file = file.Replace("/", "\\")

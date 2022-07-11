@@ -222,8 +222,10 @@ module internal ParameterLocationsImpl =
             let lidm = lidwd.Range
             let betweenTheBrackets = mkRange wholem.FileName openm.Start wholem.End
 
-            if SyntaxTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos
-               && args |> List.forall isStaticArg then
+            if
+                SyntaxTraversal.rangeContainsPosEdgesExclusive betweenTheBrackets pos
+                && args |> List.forall isStaticArg
+            then
                 let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
 
                 Some(
@@ -344,8 +346,10 @@ module internal ParameterLocationsImpl =
                         | None ->
                             let typeArgsm = mkRange openm.FileName openm.Start wholem.End
 
-                            if SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos
-                               && tyArgs |> List.forall isStaticArg then
+                            if
+                                SyntaxTraversal.rangeContainsPosEdgesExclusive typeArgsm pos
+                                && tyArgs |> List.forall isStaticArg
+                            then
                                 let commasAndCloseParen = [ for c in commas -> c.End ] @ [ wholem.End ]
 
                                 let argRanges =
