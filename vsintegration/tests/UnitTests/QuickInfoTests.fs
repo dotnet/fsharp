@@ -441,7 +441,7 @@ module Test =
     StringAssert.StartsWith(expectedSignature, tooltip)
 
 [<Test>]
-let ``Automation.LetBindings.InsideType``() =
+let ``Automation.LetBindings.InsideType.Instance``() =
     let code = """
 namespace FsTest
 
@@ -503,5 +503,19 @@ let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticMethod: unit 
 """
 
     let expectedSignature = "'T: (static member StaticMethod: unit -> 'T)"
+    let tooltip = GetQuickInfoTextFromCode code
+    StringAssert.StartsWith(expectedSignature, tooltip)
+
+[<Test>]
+let ``Automation.LetBindings.InsideType.Static``() =
+    let code = """
+namespace FsTest
+
+module Test =
+    type T() =
+        static let fu$$nc x = ()
+"""
+
+    let expectedSignature = "val func: x: 'a -> unit"
     let tooltip = GetQuickInfoTextFromCode code
     StringAssert.StartsWith(expectedSignature, tooltip)

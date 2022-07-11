@@ -998,7 +998,6 @@ module PrintTypes =
 
     /// Layout a single type used as the type of a member or value 
     let layoutTopType denv env argInfos retTy cxs =
-        // Parenthesize the return type to match the topValInfo 
         let retTyL = layoutReturnType denv env retTy
         let cxsL = layoutConstraintsWithInfo denv env cxs
         match argInfos with

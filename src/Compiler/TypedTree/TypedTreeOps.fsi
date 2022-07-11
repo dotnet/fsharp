@@ -1661,6 +1661,9 @@ val underlyingTypeOfEnumTy: TcGlobals -> TType -> TType
 /// If the input type is an enum type, then convert to its underlying type, otherwise return the input type
 val normalizeEnumTy: TcGlobals -> TType -> TType
 
+/// Determine if TyconRef is to a struct type
+val isStructTyconRef: TyconRef -> bool
+
 /// Determine if a type is a struct type
 val isStructTy: TcGlobals -> TType -> bool
 

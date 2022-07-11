@@ -467,12 +467,12 @@ module FSharpExprConvert =
 
             // Too few arguments or incorrect tupling? Convert to a lambda and beta-reduce the 
             // partially applied arguments to 'let' bindings 
-            let topValInfo = 
+            let valReprInfo = 
                 match vref.ValReprInfo with 
                 | None -> failwith ("no arity information found for F# value "+vref.LogicalName)
                 | Some a -> a 
 
-            let expr, exprTy = AdjustValForExpectedArity g m vref vFlags topValInfo 
+            let expr, exprTy = AdjustValForExpectedArity g m vref vFlags valReprInfo 
             let splitCallExpr = MakeApplicationAndBetaReduce g (expr, exprTy, [tyargs], curriedArgs, m)
             // tailcall
             ConvExprPrimLinear cenv env splitCallExpr contF
@@ -1352,8 +1352,8 @@ and FSharpImplementationFileContents(cenv, mimpl) =
     let rec getBind (bind: Binding) = 
         let v = bind.Var
         assert v.IsCompiledAsTopLevel
-        let topValInfo = InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v bind.Expr
-        let tps, _ctorThisValOpt, _baseValOpt, vsl, body, _bodyty = IteratedAdjustArityOfLambda g cenv.amap topValInfo bind.Expr
+        let valReprInfo = InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v bind.Expr
+        let tps, _ctorThisValOpt, _baseValOpt, vsl, body, _bodyty = IteratedAdjustArityOfLambda g cenv.amap valReprInfo bind.Expr
         let v = FSharpMemberOrFunctionOrValue(cenv, mkLocalValRef v)
         let gps = v.GenericParameters
         let vslR = List.mapSquared (FSharpExprConvert.ConvVal cenv) vsl 

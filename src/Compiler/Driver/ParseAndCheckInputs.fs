@@ -617,7 +617,8 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
                     )
 
                 // Report the statistics for testing purposes
-                if tcConfig.reportNumDecls then ReportParsingStatistics res
+                if tcConfig.reportNumDecls then
+                    ReportParsingStatistics res
 
                 res)
 

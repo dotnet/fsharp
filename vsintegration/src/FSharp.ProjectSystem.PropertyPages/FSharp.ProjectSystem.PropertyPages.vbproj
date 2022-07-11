@@ -16,6 +16,7 @@
     <RuntimeIdentifiers>win</RuntimeIdentifiers>
     <ImportVsSDK>true</ImportVsSDK>
     <CreateVsixContainer>false</CreateVsixContainer>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
     <DeployExtension>false</DeployExtension>
     <UseCodebase>true</UseCodebase>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
@@ -61,7 +62,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInfo.vb" />
     <Compile Include="Common\ArgumentValidation.vb" />
     <Compile Include="Common\DTEUtils.vb" />
     <Compile Include="Common\ShellUtil.vb" />

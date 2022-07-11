@@ -246,14 +246,15 @@ module SyntaxTraversal =
                         else
                             None)
                     diveResults
-                with
+            with
             | [] ->
                 // No entity's range contained the desired position.  However the ranges in the parse tree only span actual characters present in the file.
                 // The cursor may be at whitespace between entities or after everything, so find the nearest entity with the range left of the position.
                 let mutable e = diveResults.Head
 
                 for r in diveResults do
-                    if posGt pos (fst r).Start then e <- r
+                    if posGt pos (fst r).Start then
+                        e <- r
 
                 snd (e) ()
             | [ x ] -> x ()
@@ -396,9 +397,11 @@ module SyntaxTraversal =
                                     // special-case:caret is located in the offside position below inherit
                                     // inherit A()
                                     // $
-                                    if not (rangeContainsPos expr.Range pos)
-                                       && sepOpt.IsNone
-                                       && pos.Column = inheritRange.StartColumn then
+                                    if
+                                        not (rangeContainsPos expr.Range pos)
+                                        && sepOpt.IsNone
+                                        && pos.Column = inheritRange.StartColumn
+                                    then
                                         visitor.VisitRecordField(path, None, None)
                                     else
                                         traverseSynExpr expr)
@@ -451,9 +454,11 @@ module SyntaxTraversal =
                                         // special case: caret is below field binding
                                         // field x = 5
                                         // $
-                                        if not (rangeContainsPos e.Range pos)
-                                           && sepOpt.IsNone
-                                           && pos.Column = offsideColumn then
+                                        if
+                                            not (rangeContainsPos e.Range pos)
+                                            && sepOpt.IsNone
+                                            && pos.Column = offsideColumn
+                                        then
                                             visitor.VisitRecordField(path, copyOpt, None)
                                         else
                                             traverseSynExpr expr)

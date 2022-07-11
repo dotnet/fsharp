@@ -8,15 +8,12 @@ open System.IO
 open System.Reflection
 
 open NUnit.Framework
-open Salsa
 open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
-open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.Win32
 open System.Xml.Linq
 
 [<TestFixture>][<Category "ProjectSystem">]
@@ -25,25 +22,11 @@ type References() =
 
     //TODO: look for a way to remove the helper functions
     static let currentFrameworkDirectory = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
-    static let Net20AssemExPath () =
-        let key = @"SOFTWARE\Microsoft\.NETFramework\v2.0.50727\AssemblyFoldersEx\Public Assemblies (Common Files)"
-        let hklm = Registry.LocalMachine
-        let rkey = hklm.OpenSubKey(key)
-        let path = rkey.GetValue("") :?> string
-        if String.IsNullOrEmpty(path) then None
-        else Some(path)
 
     /////////////////////////////////
     // project helpers
     static let SaveProject(project : UnitTestingFSharpProjectNode) =
         project.Save(null, 1, 0u) |> ignore
-
-    static let DefaultBuildActionOfFilename(filename) : Salsa.BuildAction = 
-        match Path.GetExtension(filename) with 
-        | ".fsx" -> Salsa.BuildAction.None
-        | ".resx"
-        | ".resources" -> Salsa.BuildAction.EmbeddedResource
-        | _ -> Salsa.BuildAction.Compile            
 
     static let GetReferenceContainerNode(project : ProjectNode) =
         let l = new List<ReferenceContainerNode>()
@@ -260,75 +243,16 @@ type References() =
         with e ->
             TheTests.HelpfulAssertMatches ' ' "A reference to '.*' could not be added. A reference to the component '.*' already exists in the project." e.Message
 
-(*        
-    [<Ignore("Legacy test, NRE trying to get UI thread.")>]
-    [<Test>]
-    member this.``ReferenceResolution.Bug650591.AutomationReference.Add.FullPath``() = 
-        match Net20AssemExPath() with
-        | Some(net20) ->
-          let invoker = 
-              {
-                  new Microsoft.Internal.VisualStudio.Shell.Interop.IVsInvokerPrivate with
-                      member this.Invoke(invokable) = invokable.Invoke()
-              }
-          let log = 
-              {
-                  new Microsoft.VisualStudio.Shell.Interop.IVsActivityLog with
-                      member this.LogEntry(_, _, _) = VSConstants.S_OK
-                      member this.LogEntryGuid(_, _, _, _) = VSConstants.S_OK
-                      member this.LogEntryGuidHr(_, _, _, _, _) = VSConstants.S_OK
-                      member this.LogEntryGuidHrPath(_, _, _, _, _, _) = VSConstants.S_OK
-                      member this.LogEntryGuidPath(_, _, _, _, _) = VSConstants.S_OK
-                      member this.LogEntryHr(_, _, _, _) = VSConstants.S_OK
-                      member this.LogEntryHrPath(_, _, _, _, _) = VSConstants.S_OK
-                      member this.LogEntryPath(_, _, _, _) = VSConstants.S_OK
-              }
-          let mocks = 
-              [
-                  typeof<Microsoft.Internal.VisualStudio.Shell.Interop.SVsUIThreadInvokerPrivate>.GUID, box invoker
-                  typeof<Microsoft.VisualStudio.Shell.Interop.SVsActivityLog>.GUID, box log
-              ] |> dict
-          let mockProvider = 
-              {
-                  new Microsoft.VisualStudio.OLE.Interop.IServiceProvider with
-                      member this.QueryService(guidService, riid, punk) =
-                          match mocks.TryGetValue guidService with
-                          | true, v -> 
-                              punk <- System.Runtime.InteropServices.Marshal.GetIUnknownForObject(v)
-                              VSConstants.S_OK
-                          | _ ->
-                              punk <- IntPtr.Zero
-                              VSConstants.E_NOINTERFACE
-              }
-  
-          let _ = Microsoft.VisualStudio.Shell.ServiceProvider.CreateFromSetSite(mockProvider)
-          let envDte80RefAssemPath = Path.Combine(net20, "EnvDTE80.dll")
-          let dirName = Path.GetTempPath()
-          let copy = Path.Combine(dirName, "EnvDTE80.dll")
-          try
-              File.Copy(envDte80RefAssemPath, copy, true)
-              this.MakeProjectAndDo
-                  (
-                      ["DoesNotMatter.fs"], 
-                      [], 
-                      "",
-                      fun proj -> 
-                          let refContainer = GetReferenceContainerNode(proj)
-                          let automationRefs = refContainer.Object :?> Automation.OAReferences
-                          automationRefs.Add(copy) |> ignore
-                          SaveProject(proj)
-                          let fsprojFileText = File.ReadAllText(proj.FileName)
-                          printfn "%s" fsprojFileText
-                          let expectedFsProj = 
-                              @"<Reference Include=""EnvDTE80"">"
-                              + @"\s*<HintPath>\.\.\\EnvDTE80.dll</HintPath>"
-                              + @"\s*</Reference>"
-                          TheTests.HelpfulAssertMatches '<' expectedFsProj fsprojFileText
-                  )
-          finally
-              File.Delete(copy)
-        | _ -> ()
-*)
+    /// Create a dummy project named 'Test', build it, and then call k with the full path to the resulting exe
+    member public this.CreateDummyTestProjectBuildItAndDo(k : string -> unit) =
+        this.MakeProjectAndDo(["foo.fs"], [], "", (fun project ->
+        // Let's create a run-of-the-mill project just to have a spare assembly around
+        let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
+        File.AppendAllText(fooPath, "namespace Foo\nmodule Bar =\n  let x = 42")
+        let buildResult = project.Build("Build")
+        Assert.IsTrue buildResult.IsSuccessful
+        let exe = Path.Combine(project.ProjectFolder, "bin\\Debug\\Test.exe")
+        k exe))
 
     [<Test; Category("Expensive")>]
     member this.``ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.InsideProjectDir``() =

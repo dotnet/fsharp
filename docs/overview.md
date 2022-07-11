@@ -129,11 +129,11 @@ stateDiagram-v2
 
 The following are the key phases and high-level logical operations of the F# compiler code in its various configurations:
 
-* _Basic lexing_. Produces a token stream from input source file text.
+* _Basic lexing_. Produces a token stream from input source file text. F# uses the [FsLex](http://fsprojects.github.io/FsLexYacc/) tool to process a declarative specification of the tokenizer in [lex.fsl](https://github.com/dotnet/fsharp/blob/main/src/Compiler/lex.fsl). This compiles the tokenizer specification to a number of tables which are then interpreted by the code in [prim-lexing.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Facilities/prim-lexing.fs) (see also [prim-lexing.fsi](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Facilities/prim-lexing.fsi).
 
 * _White-space sensitive lexing_. Accepts and produces a token stream, augmenting per the [F# Language Specification](https://fsharp.org/specs/language-spec/).
 
-* _Parsing_. Accepts a token stream and produces an AST per the grammar in the [F# Language Specification](https://fsharp.org/specs/language-spec/).
+* _Parsing_. Accepts a token stream and produces an AST per the grammar in the [F# Language Specification](https://fsharp.org/specs/language-spec/). F# uses the [FsYacc](http://fsprojects.github.io/FsLexYacc/) tool to process a declarative specification of the parser in [pars.fsy](https://github.com/dotnet/fsharp/blob/main/src/Compiler/pars.fsy). This compiles the grammar to a number of tables which are then interpreted by the code in [prim-parsing.fs](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Facilities/prim-parsing.fs) (see also [prim-parsing.fsi](https://github.com/dotnet/fsharp/blob/main/src/Compiler/Facilities/prim-parsing.fsi).
 
 * _Resolving references_. For .NET SDK generally references are resolved explicitly by external tooling.
    There is a legacy aspect to this if references use old .NET Framework references including for

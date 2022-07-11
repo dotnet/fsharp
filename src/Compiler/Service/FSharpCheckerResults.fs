@@ -382,8 +382,10 @@ type internal TypeCheckInfo
                 if contained then
                     match bestAlmostIncludedSoFar with
                     | Some (rightm: range, _, _) ->
-                        if posGt possm.End rightm.End
-                           || (posEq possm.End rightm.End && posGt possm.Start rightm.Start) then
+                        if
+                            posGt possm.End rightm.End
+                            || (posEq possm.End rightm.End && posGt possm.Start rightm.Start)
+                        then
                             bestAlmostIncludedSoFar <- Some(possm, env, ad)
                     | _ -> bestAlmostIncludedSoFar <- Some(possm, env, ad))
 
@@ -946,9 +948,10 @@ type internal TypeCheckInfo
                 match TryToResolveLongIdentAsType ncenv nenv m plid with
                 | Some x -> tryTcrefOfAppTy g x
                 | None ->
-                    match lastDotPos
-                          |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1))
-                        with
+                    match
+                        lastDotPos
+                        |> Option.orElseWith (fun _ -> FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1))
+                    with
                     | Some p when lineStr[p] = '.' ->
                         match FindFirstNonWhitespacePosition lineStr (p - 1) with
                         | Some colAtEndOfNames ->
@@ -1190,7 +1193,7 @@ type internal TypeCheckInfo
                     match
                         GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, false)
                         |> toCompletionItems
-                        with
+                    with
                     | [], _, _ ->
                         // no record fields found, return completion list as if we were outside any computation expression
                         GetDeclaredItems(
@@ -2432,19 +2435,22 @@ module internal ParseAndCheckFile =
                             let errors =
                                 [
                                     for err, severity in diagnostics do
-                                        if severity = FSharpDiagnosticSeverity.Error then err
+                                        if severity = FSharpDiagnosticSeverity.Error then
+                                            err
                                 ]
 
                             let warnings =
                                 [
                                     for err, severity in diagnostics do
-                                        if severity = FSharpDiagnosticSeverity.Warning then err
+                                        if severity = FSharpDiagnosticSeverity.Warning then
+                                            err
                                 ]
 
                             let infos =
                                 [
                                     for err, severity in diagnostics do
-                                        if severity = FSharpDiagnosticSeverity.Info then err
+                                        if severity = FSharpDiagnosticSeverity.Info then
+                                            err
                                 ]
 
                             let message = HashLoadedSourceHasIssues(infos, warnings, errors, rangeOfHashLoad)

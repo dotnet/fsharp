@@ -1385,7 +1385,8 @@ let seekReadGuidIdx (ctxt: ILMetadataReader) mdv (addr: byref<int>) = seekReadId
 let seekReadBlobIdx (ctxt: ILMetadataReader) mdv (addr: byref<int>) = seekReadIdx ctxt.blobsBigness mdv &addr
 
 let seekReadModuleRow (ctxt: ILMetadataReader) mdv idx =
-    if idx = 0 then failwith "cannot read Module table row 0"
+    if idx = 0 then
+        failwith "cannot read Module table row 0"
 
     let mutable addr = ctxt.rowAddr TableNames.Module idx
     let generation = seekReadUInt16Adv mdv &addr
@@ -1852,7 +1853,9 @@ let getDataEndPointsDelayed (pectxt: PEReader) ctxtH =
             |> List.sort
 
 let rvaToData (ctxt: ILMetadataReader) (pectxt: PEReader) nm rva =
-    if rva = 0x0 then failwith "rva is zero"
+    if rva = 0x0 then
+        failwith "rva is zero"
+
     let start = pectxt.anyV2P (nm, rva)
     let endPoints = (Lazy.force ctxt.dataEndPoints)
 
@@ -2571,7 +2574,8 @@ and sigptrGetTy (ctxt: ILMetadataReader) numTypars bytes sigptr =
         let ccByte, sigptr = sigptrGetByte bytes sigptr
         let generic, cc = byteAsCallConv ccByte
 
-        if generic then failwith "fptr sig may not be generic"
+        if generic then
+            failwith "fptr sig may not be generic"
 
         let struct (numparams, sigptr) = sigptrGetZInt32 bytes sigptr
         let retTy, sigptr = sigptrGetTy ctxt numTypars bytes sigptr
@@ -3088,16 +3092,15 @@ and seekReadEvents (ctxt: ILMetadataReader) numTypars tidx =
             let mdv = ctxt.mdfile.GetView()
 
             match
-                seekReadOptionalIndexedRow
-                    (
-                        ctxt.getNumRows TableNames.EventMap,
-                        (fun i -> i, seekReadEventMapRow ctxt mdv i),
-                        (fun (_, row) -> fst row),
-                        compare tidx,
-                        false,
-                        (fun (i, row) -> (i, snd row))
-                    )
-                with
+                seekReadOptionalIndexedRow (
+                    ctxt.getNumRows TableNames.EventMap,
+                    (fun i -> i, seekReadEventMapRow ctxt mdv i),
+                    (fun (_, row) -> fst row),
+                    compare tidx,
+                    false,
+                    (fun (i, row) -> (i, snd row))
+                )
+            with
             | None -> []
             | Some (rowNum, beginEventIdx) ->
                 let endEventIdx =
@@ -3156,16 +3159,15 @@ and seekReadProperties (ctxt: ILMetadataReader) numTypars tidx =
             let mdv = ctxt.mdfile.GetView()
 
             match
-                seekReadOptionalIndexedRow
-                    (
-                        ctxt.getNumRows TableNames.PropertyMap,
-                        (fun i -> i, seekReadPropertyMapRow ctxt mdv i),
-                        (fun (_, row) -> fst row),
-                        compare tidx,
-                        false,
-                        (fun (i, row) -> (i, snd row))
-                    )
-                with
+                seekReadOptionalIndexedRow (
+                    ctxt.getNumRows TableNames.PropertyMap,
+                    (fun i -> i, seekReadPropertyMapRow ctxt mdv i),
+                    (fun (_, row) -> fst row),
+                    compare tidx,
+                    false,
+                    (fun (i, row) -> (i, snd row))
+                )
+            with
             | None -> []
             | Some (rowNum, beginPropIdx) ->
                 let endPropIdx =
@@ -3598,17 +3600,21 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numTypars (sz: int) start s
                     curr <- curr + 4
                     (* REVIEW: this incorrectly labels all MemberRef tokens as ILMethod's: we should go look at the MemberRef sig to determine if it is a field or method *)
                     let token_info =
-                        if tab = TableNames.Method
-                           || tab = TableNames.MemberRef (* REVIEW: generics or tab = TableNames.MethodSpec *) then
+                        if
+                            tab = TableNames.Method
+                            || tab = TableNames.MemberRef (* REVIEW: generics or tab = TableNames.MethodSpec *)
+                        then
                             let (MethodData (enclTy, cc, nm, argTys, retTy, methInst)) =
                                 seekReadMethodDefOrRefNoVarargs ctxt numTypars (uncodedTokenToMethodDefOrRef (tab, idx))
 
                             ILToken.ILMethod(mkILMethSpecInTy (enclTy, cc, nm, argTys, retTy, methInst))
                         elif tab = TableNames.Field then
                             ILToken.ILField(seekReadFieldDefAsFieldSpec ctxt idx)
-                        elif tab = TableNames.TypeDef
-                             || tab = TableNames.TypeRef
-                             || tab = TableNames.TypeSpec then
+                        elif
+                            tab = TableNames.TypeDef
+                            || tab = TableNames.TypeRef
+                            || tab = TableNames.TypeSpec
+                        then
                             ILToken.ILType(seekReadTypeDefOrRef ctxt numTypars AsObject [] (uncodedTokenToTypeDefOrRefOrSpec (tab, idx)))
                         else
                             failwith "bad token for ldtoken"
@@ -3686,7 +3692,8 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
         let isFatFormat = (b &&& e_CorILMethod_FormatMask) = e_CorILMethod_FatFormat
 
         if not isTinyFormat && not isFatFormat then
-            if logging then failwith "unknown format"
+            if logging then
+                failwith "unknown format"
 
             MethodBody.Abstract
         else
@@ -3930,7 +3937,8 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                             nextSectionBase <- sectionBase + sectionSize
 
                         // Convert the linear code format to the nested code format
-                        if logging then dprintn "doing localPdbInfos2"
+                        if logging then
+                            dprintn "doing localPdbInfos2"
 
                         let localPdbInfos2 = List.map (fun f -> f raw2nextLab) localPdbInfos
 
@@ -3939,7 +3947,8 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
 
                         let code = buildILCode nm lab2pc instrs seh localPdbInfos2
 
-                        if logging then dprintn "done checking code."
+                        if logging then
+                            dprintn "done checking code."
 
                         {
                             IsZeroInit = initlocals
@@ -4260,10 +4269,10 @@ let openMetadataReader
         | Some positions -> positions
 
     let tablesStreamPhysLoc, _tablesStreamSize =
-        match tryFindStream [| 0x23; 0x7e |] (* #~ *)  with
+        match tryFindStream [| 0x23; 0x7e |] (* #~ *) with
         | Some res -> res
         | None ->
-            match tryFindStream [| 0x23; 0x2d |] (* #-: at least one DLL I've seen uses this! *)  with
+            match tryFindStream [| 0x23; 0x2d |] (* #-: at least one DLL I've seen uses this! *) with
             | Some res -> res
             | None ->
                 let firstStreamOffset = seekReadInt32 mdv (streamHeadersStart + 0)
@@ -5079,8 +5088,10 @@ let stableFileHeuristicApplies fileName =
 let createByteFileChunk opts fileName chunk =
     // If we're trying to reduce memory usage then we are willing to go back and re-read the binary, so we can use
     // a weakly-held handle to an array of bytes.
-    if opts.reduceMemoryUsage = ReduceMemoryFlag.Yes
-       && stableFileHeuristicApplies fileName then
+    if
+        opts.reduceMemoryUsage = ReduceMemoryFlag.Yes
+        && stableFileHeuristicApplies fileName
+    then
         WeakByteFile(fileName, chunk) :> BinaryFile
     else
         let bytes =

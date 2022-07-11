@@ -156,12 +156,14 @@ module TcResolutionsExtensions =
                         | _ -> None
 
                     let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
-                        if valRefEq g g.raise_vref vref
-                           || valRefEq g g.reraise_vref vref
-                           || valRefEq g g.typeof_vref vref
-                           || valRefEq g g.typedefof_vref vref
-                           || valRefEq g g.sizeof_vref vref
-                           || valRefEq g g.nameof_vref vref then
+                        if
+                            valRefEq g g.raise_vref vref
+                            || valRefEq g g.reraise_vref vref
+                            || valRefEq g g.typeof_vref vref
+                            || valRefEq g g.typedefof_vref vref
+                            || valRefEq g g.sizeof_vref vref
+                            || valRefEq g g.nameof_vref vref
+                        then
                             Some()
                         else
                             None
@@ -292,8 +294,10 @@ module TcResolutionsExtensions =
                             match minfos with
                             | [] -> add m SemanticClassificationType.Method
                             | _ ->
-                                if minfos
-                                   |> List.forall (fun minfo -> minfo.IsExtensionMember || minfo.IsCSharpStyleExtensionMember) then
+                                if
+                                    minfos
+                                    |> List.forall (fun minfo -> minfo.IsExtensionMember || minfo.IsCSharpStyleExtensionMember)
+                                then
                                     add m SemanticClassificationType.ExtensionMethod
                                 else
                                     add m SemanticClassificationType.Method
