@@ -243,17 +243,6 @@ type References() =
         with e ->
             TheTests.HelpfulAssertMatches ' ' "A reference to '.*' could not be added. A reference to the component '.*' already exists in the project." e.Message
 
-    /// Create a dummy project named 'Test', build it, and then call k with the full path to the resulting exe
-    member public this.CreateDummyTestProjectBuildItAndDo(k : string -> unit) =
-        this.MakeProjectAndDo(["foo.fs"], [], "", (fun project ->
-        // Let's create a run-of-the-mill project just to have a spare assembly around
-        let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
-        File.AppendAllText(fooPath, "namespace Foo\nmodule Bar =\n  let x = 42")
-        let buildResult = project.Build("Build")
-        Assert.IsTrue buildResult.IsSuccessful
-        let exe = Path.Combine(project.ProjectFolder, "bin\\Debug\\Test.exe")
-        k exe))
-
     [<Test; Category("Expensive")>]
     member this.``ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.InsideProjectDir``() =
         // Let's create a run-of-the-mill project just to have a spare assembly around
