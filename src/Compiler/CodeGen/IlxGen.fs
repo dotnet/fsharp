@@ -432,12 +432,15 @@ let CompLocForFixedPath fragName qname (CompPath (sref, cpath)) =
     let ns = textOfPath ns
     let encl = t |> List.map (fun (s, _) -> s)
     let ns = if ns = "" then None else Some ns
-    { QualifiedNameOfFile = fragName
-      TopImplQualifiedName = qname
-      Scope = sref
-      Namespace = ns
-      IsSpecialName = false
-      Enclosing = encl }
+
+    {
+        QualifiedNameOfFile = fragName
+        TopImplQualifiedName = qname
+        Scope = sref
+        Namespace = ns
+        IsSpecialName = false
+        Enclosing = encl
+    }
 
 let CompLocForModuleDef fragName qname (mspec: ModuleOrNamespace) =
     assert not mspec.IsNamespace
@@ -471,16 +474,18 @@ let TypeNameForPrivateImplementationDetails cloc =
     + ">"
 
 let CompLocForInitClass cloc =
-    {cloc with
+    { cloc with
         IsSpecialName = true
-        Enclosing=[TypeNameForInitClass cloc]
-        Namespace=None}
+        Enclosing = [ TypeNameForInitClass cloc ]
+        Namespace = None
+    }
 
 let CompLocForPrivateImplementationDetails cloc =
-    {cloc with
+    { cloc with
         IsSpecialName = true
-        Enclosing=[TypeNameForPrivateImplementationDetails cloc]
-        Namespace=None}
+        Enclosing = [ TypeNameForPrivateImplementationDetails cloc ]
+        Namespace = None
+    }
 
 /// Compute an ILTypeRef for a CompilationLocation
 let rec TypeRefForCompLoc cloc =
@@ -1230,21 +1235,30 @@ and IlxGenEnv =
     member eenv.EnterValDefinition (cenv: cenv) (vref: ValRef) =
         if vref.IsCompilerGenerated then
             eenv
-        elif not vref.IsMemberOrModuleBinding && not vref.IsCompiledAsTopLevel && not (isFunTy cenv.g vref.TauType) then
+        elif
+            not vref.IsMemberOrModuleBinding
+            && not vref.IsCompiledAsTopLevel
+            && not (isFunTy cenv.g vref.TauType)
+        then
             eenv
         else
             let name = vref.CompiledName cenv.g.CompilerGlobalState
-            let newPrefixInfo = 
+
+            let newPrefixInfo =
                 match eenv.cloNameInfo with
                 | None, _ -> None, name
                 | Some ename, _ -> Some ename, name
-            { eenv with cloNameInfo = newPrefixInfo }
+
+            { eenv with
+                cloNameInfo = newPrefixInfo
+            }
 
     // Inside the definition of an entity, closures get prefixed with the display name of the entity being defined. We don't use the compiled
     // name as this may include ` characters
     member eenv.EnterEntityDefinition(entity: Entity) =
         { eenv with
-            cloNameInfo = (Some entity, "cctor") }
+            cloNameInfo = (Some entity, "cctor")
+        }
 
 let discard = DiscardThen Continue
 let discardAndReturnVoid = DiscardThen ReturnVoid
@@ -6728,8 +6742,8 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
     let g = cenv.g
 
     // Choose a base name for the closure
-    let basename = 
-        match eenvouter.cloNameInfo with 
+    let basename =
+        match eenvouter.cloNameInfo with
         | None, methodName -> methodName
         | Some entityName, methodName ->
             // If generating into "StartupCode" or "ImplementationDetails" then add the name of the entity responsible for the closure.
@@ -6737,7 +6751,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
             // This prevents a sea of "clo@365" closures without traceable names
             if eenvouter.cloc.IsSpecialName then
                 entityName.DisplayNameCore + "::" + methodName
-            else 
+            else
                 methodName
 
     // Get a unique stamp for the closure. This must be stable for things that can be part of a let rec.
@@ -7971,12 +7985,28 @@ and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
 
     let computeFixupsForOneRecursiveVar boundv forwardReferenceSet (fixups: _ ref) thisVars access set e =
         match stripExpr e with
-        | Expr.Lambda _ | Expr.TyLambda _ | Expr.Obj _ ->
-            let isLocalTypeFunc = Option.isSome thisVars && (IsNamedLocalTypeFuncVal cenv.g (Option.get thisVars) e)
-            let thisVars = (match e with Expr.Obj _ -> [] | _ when isLocalTypeFunc -> [] | _ -> Option.map mkLocalValRef thisVars |> Option.toList)
-            let canUseStaticField = (match e with Expr.Obj _ -> false | _ -> true)
+        | Expr.Lambda _
+        | Expr.TyLambda _
+        | Expr.Obj _ ->
+            let isLocalTypeFunc =
+                Option.isSome thisVars
+                && (IsNamedLocalTypeFuncVal cenv.g (Option.get thisVars) e)
+
+            let thisVars =
+                (match e with
+                 | Expr.Obj _ -> []
+                 | _ when isLocalTypeFunc -> []
+                 | _ -> Option.map mkLocalValRef thisVars |> Option.toList)
+
+            let canUseStaticField =
+                (match e with
+                 | Expr.Obj _ -> false
+                 | _ -> true)
+
             let eenvclo = eenv.EnterValDefinition cenv (mkLocalValRef boundv)
-            let clo, _, eenvclo = GetIlxClosureInfo cenv m ILBoxity.AsObject isLocalTypeFunc canUseStaticField thisVars eenvclo e
+
+            let clo, _, eenvclo =
+                GetIlxClosureInfo cenv m ILBoxity.AsObject isLocalTypeFunc canUseStaticField thisVars eenvclo e
 
             for fv in clo.cloFreeVars do
                 if Zset.contains fv forwardReferenceSet then
@@ -8102,10 +8132,17 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
 
     let eenv =
         if isStateVar then
-            eenv 
+            eenv
         else
             let eenv = eenv.EnterValDefinition cenv (mkLocalValRef vspec)
-            { eenv with initLocals = eenv.initLocals && (match vspec.ApparentEnclosingEntity with Parent ref -> not (HasFSharpAttribute g g.attrib_SkipLocalsInitAttribute ref.Attribs) | _ -> true) }
+
+            { eenv with
+                initLocals =
+                    eenv.initLocals
+                    && (match vspec.ApparentEnclosingEntity with
+                        | Parent ref -> not (HasFSharpAttribute g g.attrib_SkipLocalsInitAttribute ref.Attribs)
+                        | _ -> true)
+            }
 
     let access = ComputeMethodAccessRestrictedBySig eenv vspec
 
@@ -9495,7 +9532,10 @@ and AllocLocalVal cenv cgbuf v (eenv: IlxGenEnv) repr scopeMarks =
                 // known, named, non-escaping type functions
                 let cloinfoGenerate (eenv: IlxGenEnv) =
                     let eenvclo = eenv.EnterValDefinition cenv (mkLocalValRef v)
-                    let cloinfo, _, _ = GetIlxClosureInfo cenv v.Range ILBoxity.AsObject true true [] eenvclo repr
+
+                    let cloinfo, _, _ =
+                        GetIlxClosureInfo cenv v.Range ILBoxity.AsObject true true [] eenvclo repr
+
                     cloinfo
 
                 let idx, realloc, eenv =
@@ -9771,20 +9811,24 @@ and GenTypeDefForCompLoc (cenv, eenv, mgbuf: AssemblyBuilder, cloc, hidden, attr
     let tref = TypeRefForCompLoc cloc
 
     let tdef =
-      mkILSimpleClass g.ilg
-        (tref.Name,
-         ComputeTypeAccess tref hidden,
-         emptyILMethods,
-         emptyILFields,
-         emptyILTypeDefs,
-         emptyILProperties,
-         emptyILEvents,
-         mkILCustomAttrs
-           (GenAttrs cenv eenv attribs @
-            (if List.contains tref.Name [TypeNameForInitClass cloc; TypeNameForPrivateImplementationDetails cloc]
-             then [ ]
-             else [mkCompilationMappingAttr g (int SourceConstructFlags.Module)])),
-         initTrigger)
+        mkILSimpleClass
+            g.ilg
+            (tref.Name,
+             ComputeTypeAccess tref hidden,
+             emptyILMethods,
+             emptyILFields,
+             emptyILTypeDefs,
+             emptyILProperties,
+             emptyILEvents,
+             mkILCustomAttrs (
+                 GenAttrs cenv eenv attribs
+                 @ (if List.contains tref.Name [ TypeNameForInitClass cloc; TypeNameForPrivateImplementationDetails cloc ] then
+                        []
+                    else
+                        [ mkCompilationMappingAttr g (int SourceConstructFlags.Module) ])
+             ),
+             initTrigger)
+
     let tdef = tdef.WithSealed(true).WithAbstract(true)
     mgbuf.AddTypeDef(tref, tdef, eliminateIfEmpty, addAtEnd, None)
 
@@ -9975,7 +10019,8 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
             cloc = initClassCompLoc
             isFinalFile = isFinalFile
             cloNameInfo = (None, methodName)
-            someTypeInThisAssembly = initClassTy }
+            someTypeInThisAssembly = initClassTy
+        }
 
     // Create the class to hold the initialization code and static fields for this file.
     //     internal static class $<StartupCode...> {}
@@ -10361,8 +10406,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo (eenv: IlxGenEnv) m (tycon: Tycon) =
     let g = cenv.g
     let tcref = mkLocalTyconRef tycon
     let eenv = eenv.EnterEntityDefinition tycon
-    if tycon.IsTypeAbbrev then () else
-    match tycon.TypeReprInfo with
+
+    if tycon.IsTypeAbbrev then
+        ()
+    else
+        match tycon.TypeReprInfo with
 #if !NO_TYPEPROVIDERS
         | TProvidedNamespaceRepr _
         | TProvidedTypeRepr _
