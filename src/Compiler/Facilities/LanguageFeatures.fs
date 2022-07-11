@@ -49,9 +49,9 @@ type LanguageFeature =
     | DelegateTypeNameResolutionFix
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
-    | SelfTypeConstraints
     | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
+    | SelfTypeConstraints
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
