@@ -2504,6 +2504,9 @@ type ValOptionalData =
       /// Used to implement [<ReflectedDefinition>]
       mutable val_defn: Expr option 
 
+      /// Records the "extra information" for a value compiled as a method (rather
+      /// than a closure or a local), including argument names, attributes etc.
+      //
       // MUTABILITY CLEANUP: mutability of this field is used by 
       //     -- adjustAllUsesOfRecValue 
       //     -- TLR optimizations
@@ -2512,6 +2515,10 @@ type ValOptionalData =
       // For example, we use mutability to replace the empty arity initially assumed with an arity garnered from the 
       // type-checked expression.  
       mutable val_repr_info: ValReprInfo option
+
+      /// Records the "extra information" for display purposes for expression-level function definitions
+      /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
+      mutable val_repr_info_for_display: ValReprInfo option
 
       /// How visible is this? 
       /// MUTABILITY: for unpickle linkage
@@ -2572,6 +2579,7 @@ type Val =
           val_const = None
           val_defn = None
           val_repr_info = None
+          val_repr_info_for_display = None
           val_access = TAccess []
           val_xmldoc = XmlDoc.Empty
           val_member_info = None
@@ -2634,6 +2642,11 @@ type Val =
     member x.ValReprInfo: ValReprInfo option =
         match x.val_opt_data with
         | Some optData -> optData.val_repr_info
+        | _ -> None
+
+    member x.ValReprInfoForDisplay: ValReprInfo option =
+        match x.val_opt_data with
+        | Some optData -> optData.val_repr_info_for_display
         | _ -> None
 
     member x.Id = ident(x.LogicalName, x.Range)
@@ -3014,6 +3027,11 @@ type Val =
         | Some optData -> optData.val_repr_info <- info
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_repr_info = info }
 
+    member x.SetValReprInfoForDisplay info = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_repr_info_for_display <- info
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_repr_info_for_display = info }
+
     member x.SetType ty = x.val_type <- ty
 
     member x.SetOtherRange m =
@@ -3071,6 +3089,7 @@ type Val =
                        val_other_range = tg.val_other_range
                        val_const = tg.val_const
                        val_defn = tg.val_defn
+                       val_repr_info_for_display = tg.val_repr_info_for_display
                        val_repr_info = tg.val_repr_info
                        val_access = tg.val_access
                        val_xmldoc = tg.val_xmldoc

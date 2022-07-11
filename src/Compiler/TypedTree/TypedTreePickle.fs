@@ -2363,6 +2363,7 @@ and u_ValData st =
                      val_other_range      = (match x1a with None -> None | Some(_, b) -> Some(b, true))
                      val_defn             = None
                      val_repr_info        = x10
+                     val_repr_info_for_display = None
                      val_const            = x14
                      val_access           = x13
                      val_xmldoc           = defaultArg x15 XmlDoc.Empty

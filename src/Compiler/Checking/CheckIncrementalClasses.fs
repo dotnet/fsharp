@@ -133,7 +133,7 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
         let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, ctorTy)
         let isComplete = ComputeIsComplete copyOfTyconTypars [] ctorTy
         let varReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
-        let ctorValScheme = ValScheme(id, prelimTyschemeG, Some varReprInfo, Some memberInfo, false, ValInline.Never, NormalVal, vis, false, true, false, false)
+        let ctorValScheme = ValScheme(id, prelimTyschemeG, Some varReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, vis, false, true, false, false)
         let paramNames = varReprInfo.ArgNames
         let xmlDoc = xmlDoc.ToXmlDoc(true, Some paramNames)
         let ctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValInRecScope isComplete, ctorValScheme, attribs, xmlDoc, None, false) 
@@ -154,7 +154,7 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
             let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
             let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, cctorTy)
             let valReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
-            let cctorValScheme = ValScheme(id, prelimTyschemeG, Some valReprInfo, Some memberInfo, false, ValInline.Never, NormalVal, Some (SynAccess.Private Range.Zero), false, true, false, false)
+            let cctorValScheme = ValScheme(id, prelimTyschemeG, Some valReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, Some (SynAccess.Private Range.Zero), false, true, false, false)
                  
             let cctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValNotInRecScope, cctorValScheme, [(* no attributes*)], XmlDoc.Empty, None, false) 
             cctorArgs, cctorVal, cctorValScheme
@@ -162,7 +162,7 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
     let thisVal = 
         // --- Create this for use inside constructor 
         let thisId = ident ("this", m)
-        let thisValScheme = ValScheme(thisId, NonGenericTypeScheme thisTy, None, None, false, ValInline.Never, CtorThisVal, None, true, false, false, false)
+        let thisValScheme = ValScheme(thisId, NonGenericTypeScheme thisTy, None, None, None, false, ValInline.Never, CtorThisVal, None, true, false, false, false)
         let thisVal = MakeAndPublishVal cenv env (ParentNone, false, ClassLetBinding false, ValNotInRecScope, thisValScheme, [], XmlDoc.Empty, None, false)
         thisVal
 
@@ -350,7 +350,7 @@ type IncrClassReprInfo =
 
                 // NOTE: putting isCompilerGenerated=true here is strange.  The method is not public, nor is
                 // it a "member" in the F# sense, but the F# spec says it is generated and it is reasonable to reflect on it.
-                let memberValScheme = ValScheme(id, prelimTyschemeG, Some valReprInfo, Some memberInfo, false, ValInline.Never, NormalVal, None, true (* isCompilerGenerated *), true (* isIncrClass *), false, false)
+                let memberValScheme = ValScheme(id, prelimTyschemeG, Some valReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, None, true (* isCompilerGenerated *), true (* isIncrClass *), false, false)
 
                 let methodVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValNotInRecScope, memberValScheme, v.Attribs, XmlDoc.Empty, None, false) 
 

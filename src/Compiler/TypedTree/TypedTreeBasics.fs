@@ -26,7 +26,7 @@ let getNameOfScopeRef sref =
     | ILScopeRef.Assembly aref -> aref.Name
     | ILScopeRef.PrimaryAssembly -> "<primary>"
 
-/// Metadata on values (names of arguments etc. 
+/// Metadata on values (names of arguments etc.) 
 module ValReprInfo = 
 
     let unnamedTopArg1: ArgReprInfo = { Attribs=[]; Name=None }
@@ -40,6 +40,11 @@ module ValReprInfo =
     let selfMetadata = unnamedTopArg
 
     let emptyValData = ValReprInfo([], [], unnamedRetVal)
+
+    let IsEmpty info =
+        match info with
+        | ValReprInfo([], [], { Attribs = []; Name=None }) -> true
+        | _ -> false
 
     let InferTyparInfo (tps: Typar list) = tps |> List.map (fun tp -> TyparReprInfo(tp.Id, tp.Kind))
 
@@ -59,7 +64,18 @@ let typesOfVals (v: Val list) = v |> List.map (fun v -> v.Type)
 
 let nameOfVal (v: Val) = v.LogicalName
 
-let arityOfVal (v: Val) = (match v.ValReprInfo with None -> ValReprInfo.emptyValData | Some arities -> arities)
+let arityOfVal (v: Val) =
+    match v.ValReprInfo with
+    | None -> ValReprInfo.emptyValData
+    | Some info -> info
+
+let arityOfValForDisplay (v: Val) =
+    match v.ValReprInfoForDisplay with
+    | Some info -> info
+    | None ->
+         match v.ValReprInfo with
+         | None -> ValReprInfo.emptyValData
+         | Some info -> info
 
 let tupInfoRef = TupInfo.Const false
 

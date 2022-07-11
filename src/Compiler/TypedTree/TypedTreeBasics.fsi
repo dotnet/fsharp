@@ -29,6 +29,8 @@ module ValReprInfo =
 
     val emptyValData: ValReprInfo
 
+    val IsEmpty: ValReprInfo -> bool
+
     val InferTyparInfo: tps: Typar list -> TyparReprInfo list
 
     val InferArgReprInfo: v: Val -> ArgReprInfo
@@ -44,6 +46,8 @@ val typesOfVals: v: Val list -> TType list
 val nameOfVal: v: Val -> string
 
 val arityOfVal: v: Val -> ValReprInfo
+
+val arityOfValForDisplay: v: Val -> ValReprInfo
 
 val tupInfoRef: TupInfo
 

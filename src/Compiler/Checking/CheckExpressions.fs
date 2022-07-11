@@ -578,6 +578,7 @@ type ValScheme =
         id: Ident *
         typeScheme: GeneralizedType *
         valReprInfo: ValReprInfo option *
+        valReprInfoForDisplay: ValReprInfo option *
         memberInfo: PrelimMemberInfo option *
         isMutable: bool *
         inlineInfo: ValInline *
@@ -1503,7 +1504,7 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
 
     let g = cenv.g
 
-    let (ValScheme(id, typeScheme, valReprInfo, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, isCompGen, isIncrClass, isTyFunc, hasDeclaredTypars)) = vscheme
+    let (ValScheme(id, typeScheme, valReprInfo, valReprInfoForDisplay, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, isCompGen, isIncrClass, isTyFunc, hasDeclaredTypars)) = vscheme
 
     let ty = GeneralizedTypeForTypeScheme typeScheme
 
@@ -1611,6 +1612,10 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
              xmlDoc, isTopBinding, isExtrinsic, isIncrClass, isTyFunc,
              (hasDeclaredTypars || inSig), isGeneratedEventVal, konst, actualParent)
 
+    match valReprInfoForDisplay with
+    | Some info when not (ValReprInfo.IsEmpty info) ->
+        vspec.SetValReprInfoForDisplay valReprInfoForDisplay
+    | _ -> ()
 
     CheckForAbnormalOperatorNames cenv id.idRange vspec.DisplayNameCoreMangled memberInfoOpt
 
@@ -1644,10 +1649,11 @@ let MakeAndPublishVals cenv env (altActualParent, inSig, declKind, valRecInfo, v
         valSchemes
         Map.empty
 
+/// Create a Val node for "base" in a class
 let MakeAndPublishBaseVal cenv env baseIdOpt ty =
     baseIdOpt
     |> Option.map (fun (id: Ident) ->
-       let valscheme = ValScheme(id, NonGenericTypeScheme ty, None, None, false, ValInline.Never, BaseVal, None, false, false, false, false)
+       let valscheme = ValScheme(id, NonGenericTypeScheme ty, None, None, None, false, ValInline.Never, BaseVal, None, false, false, false, false)
        MakeAndPublishVal cenv env (ParentNone, false, ExpressionBinding, ValNotInRecScope, valscheme, [], XmlDoc.Empty, None, false))
 
 // Make the "delayed reference" value where the this pointer will reside after calling the base class constructor
@@ -1660,7 +1666,7 @@ let MakeAndPublishSafeThisVal (cenv: cenv) env (thisIdOpt: Ident option) thisTy 
         if not (isFSharpObjModelTy g thisTy) then
             errorR(Error(FSComp.SR.tcStructsCanOnlyBindThisAtMemberDeclaration(), thisId.idRange))
 
-        let valScheme = ValScheme(thisId, NonGenericTypeScheme(mkRefCellTy g thisTy), None, None, false, ValInline.Never, CtorThisVal, None, false, false, false, false)
+        let valScheme = ValScheme(thisId, NonGenericTypeScheme(mkRefCellTy g thisTy), None, None, None, false, ValInline.Never, CtorThisVal, None, false, false, false, false)
         Some(MakeAndPublishVal cenv env (ParentNone, false, ExpressionBinding, ValNotInRecScope, valScheme, [], XmlDoc.Empty, None, false))
 
     | None ->
@@ -1745,11 +1751,11 @@ let ChooseCanonicalDeclaredTyparsAfterInference g denv declaredTypars m =
     declaredTypars
 
 let ChooseCanonicalValSchemeAfterInference g denv vscheme m =
-    let (ValScheme(id, typeScheme, arityInfo, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, isCompGen, isIncrClass, isTyFunc, hasDeclaredTypars)) = vscheme
+    let (ValScheme(id, typeScheme, valReprInfo, valReprInfoForDisplay, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, isCompGen, isIncrClass, isTyFunc, hasDeclaredTypars)) = vscheme
     let (GeneralizedType(generalizedTypars, ty)) = typeScheme
     let generalizedTypars = ChooseCanonicalDeclaredTyparsAfterInference g denv generalizedTypars m
     let typeScheme = GeneralizedType(generalizedTypars, ty)
-    let valscheme = ValScheme(id, typeScheme, arityInfo, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, isCompGen, isIncrClass, isTyFunc, hasDeclaredTypars)
+    let valscheme = ValScheme(id, typeScheme, valReprInfo, valReprInfoForDisplay, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, isCompGen, isIncrClass, isTyFunc, hasDeclaredTypars)
     valscheme
 
 let PlaceTyparsInDeclarationOrder declaredTypars generalizedTypars =
@@ -1822,10 +1828,11 @@ let ComputeIsTyFunc(id: Ident, hasDeclaredTypars, arityInfo: ValReprInfo option)
      | Some info -> info.NumCurriedArgs = 0)
 
 let UseSyntacticArity declKind typeScheme prelimValReprInfo =
+    let valReprInfo = InferGenericArityFromTyScheme typeScheme prelimValReprInfo
     if DeclKind.MustHaveArity declKind then
-        Some(InferGenericArityFromTyScheme typeScheme prelimValReprInfo)
+        Some valReprInfo, None
     else
-        None
+        None, Some valReprInfo
 
 /// Combine the results of InferSynValData and InferArityOfExpr.
 //
@@ -1860,18 +1867,17 @@ let UseSyntacticArity declKind typeScheme prelimValReprInfo =
 //    { new Base<unit> with
 //        member x.M(v: unit) = () }
 //
-let CombineSyntacticAndInferredArities g declKind rhsExpr prelimScheme =
+let CombineSyntacticAndInferredArities g rhsExpr prelimScheme =
     let (PrelimVal2(_, typeScheme, partialValReprInfoOpt, memberInfoOpt, isMutable, _, _, ArgAndRetAttribs(argAttribs, retAttribs), _, _, _)) = prelimScheme
-    match partialValReprInfoOpt, DeclKind.MustHaveArity declKind with
-    | _, false -> None
-    | None, true -> Some(PrelimValReprInfo([], ValReprInfo.unnamedRetVal))
+    match partialValReprInfoOpt with
+    | None -> Some(PrelimValReprInfo([], ValReprInfo.unnamedRetVal))
     // Don't use any expression information for members, where syntax dictates the arity completely
     | _ when memberInfoOpt.IsSome ->
         partialValReprInfoOpt
     // Don't use any expression information for 'let' bindings where return attributes are present
     | _ when retAttribs.Length > 0 -> 
         partialValReprInfoOpt
-    | Some partialValReprInfoFromSyntax, true -> 
+    | Some partialValReprInfoFromSyntax -> 
         let (PrelimValReprInfo(curriedArgInfosFromSyntax, retInfoFromSyntax)) = partialValReprInfoFromSyntax
         let partialArityInfo =
             if isMutable then
@@ -1904,16 +1910,20 @@ let CombineSyntacticAndInferredArities g declKind rhsExpr prelimScheme =
 
 let BuildValScheme declKind partialArityInfoOpt prelimScheme =
     let (PrelimVal2(id, typeScheme, _, memberInfoOpt, isMutable, inlineFlag, baseOrThis, _, vis, isCompGen, hasDeclaredTypars)) = prelimScheme
-    let valReprInfo =
+    let valReprInfoOpt =
+        partialArityInfoOpt
+        |> Option.map (InferGenericArityFromTyScheme typeScheme)
+
+    let valReprInfo, valReprInfoForDisplay =
         if DeclKind.MustHaveArity declKind then
-            Option.map (InferGenericArityFromTyScheme typeScheme) partialArityInfoOpt
+            valReprInfoOpt, None
         else
-            None
+            None, valReprInfoOpt
     let isTyFunc = ComputeIsTyFunc(id, hasDeclaredTypars, valReprInfo)
-    ValScheme(id, typeScheme, valReprInfo, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, isCompGen, false, isTyFunc, hasDeclaredTypars)
+    ValScheme(id, typeScheme, valReprInfo, valReprInfoForDisplay, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, isCompGen, false, isTyFunc, hasDeclaredTypars)
 
 let UseCombinedArity g declKind rhsExpr prelimScheme =
-    let partialArityInfoOpt = CombineSyntacticAndInferredArities g declKind rhsExpr prelimScheme
+    let partialArityInfoOpt = CombineSyntacticAndInferredArities g rhsExpr prelimScheme
     BuildValScheme declKind partialArityInfoOpt prelimScheme
 
 let UseNoArity prelimScheme =
@@ -10458,7 +10468,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 | [] -> valSynData
                 | {Range=mHead} :: _ ->
                 let (SynValData(valMf, SynValInfo(args, SynArgInfo(attrs, opt, retId)), valId)) = valSynData
-                in SynValData(valMf, SynValInfo(args, SynArgInfo({Attributes=rotRetSynAttrs; Range=mHead} :: attrs, opt, retId)), valId)
+                SynValData(valMf, SynValInfo(args, SynArgInfo({Attributes=rotRetSynAttrs; Range=mHead} :: attrs, opt, retId)), valId)
             retAttribs, valAttribs, valSynData
 
         let isVolatile = HasFSharpAttribute g g.attrib_VolatileFieldAttribute valAttribs
@@ -11008,7 +11018,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
 
                 // If the overall declaration is declaring statics or a module value, then force the patternInputTmp to also
                 // have representation as module value.
-                if (DeclKind.MustHaveArity declKind) then
+                if DeclKind.MustHaveArity declKind then
                     AdjustValToTopVal tmp altActualParent (InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes tmp rhsExpr)
 
                 tmp, checkedPat
@@ -11614,9 +11624,9 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     // NOTE: top arity, type and typars get fixed-up after inference
     let prelimTyscheme = GeneralizedType(enclosingDeclaredTypars@declaredTypars, ty)
     let prelimValReprInfo = TranslateSynValInfo mBinding (TcAttributes cenv envinner) valSynInfo
-    let valReprInfo = UseSyntacticArity declKind prelimTyscheme prelimValReprInfo
+    let valReprInfo, valReprInfoForDisplay = UseSyntacticArity declKind prelimTyscheme prelimValReprInfo
     let hasDeclaredTypars = not (List.isEmpty declaredTypars)
-    let prelimValScheme = ValScheme(bindingId, prelimTyscheme, valReprInfo, memberInfoOpt, false, inlineFlag, NormalVal, vis, false, false, false, hasDeclaredTypars)
+    let prelimValScheme = ValScheme(bindingId, prelimTyscheme, valReprInfo, valReprInfoForDisplay, memberInfoOpt, false, inlineFlag, NormalVal, vis, false, false, false, hasDeclaredTypars)
 
     // Check the literal r.h.s., if any
     let _, literalValue = TcLiteral cenv ty envinner tpenv (bindingAttribs, bindingExpr)
