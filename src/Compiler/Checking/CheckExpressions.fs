@@ -3522,7 +3522,7 @@ let AnalyzeArbitraryExprAsEnumerable (cenv: cenv) (env: TcEnv) localAlloc m expr
                mkCompGenLocal m "enumerator" getEnumeratorRetTy, getEnumeratorRetTy
 
         let getEnumExpr, getEnumTy =
-            let getEnumExpr, getEnumTy as res = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates m false getEnumeratorMethInfo NormalValUse getEnumerator_minst [exprToSearchForGetEnumeratorAndItem] [] None
+            let getEnumExpr, getEnumTy as res = BuildPossiblyConditionalMethodCall cenv env PossiblyMutates m false getEnumeratorMethInfo NormalValUse getEnumeratorMethInst [exprToSearchForGetEnumeratorAndItem] [] None
             if not isEnumeratorTypeStruct || localAlloc then res
             else
                 // wrap enumerators that are represented as mutable structs into ref cells
@@ -3530,8 +3530,8 @@ let AnalyzeArbitraryExprAsEnumerable (cenv: cenv) (env: TcEnv) localAlloc m expr
                 let getEnumTy = mkRefCellTy g getEnumTy
                 getEnumExpr, getEnumTy
 
-        let guardExpr, guardTy = BuildPossiblyConditionalMethodCall cenv env DefinitelyMutates m false moveNextMethInfo NormalValUse moveNext_minst [enumeratorExpr] [] None
-        let currentExpr, currentTy = BuildPossiblyConditionalMethodCall cenv env DefinitelyMutates m true getCurrentMethInfo NormalValUse get_Current_minst [enumeratorExpr] [] None
+        let guardExpr, guardTy = BuildPossiblyConditionalMethodCall cenv env DefinitelyMutates m false moveNextMethInfo NormalValUse moveNextMethInst [enumeratorExpr] [] None
+        let currentExpr, currentTy = BuildPossiblyConditionalMethodCall cenv env DefinitelyMutates m true getCurrentMethInfo NormalValUse getCurrentMethInst [enumeratorExpr] [] None
         let currentExpr = mkCoerceExpr(currentExpr, enumElemTy, currentExpr.Range, currentTy)
         let currentExpr, enumElemTy =
             // Implicitly dereference byref for expr 'for x in ...'

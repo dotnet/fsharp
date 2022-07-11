@@ -1079,7 +1079,7 @@ classMemberSpfn:
                | None -> m
                | Some e -> unionRanges m e.Range
        let trivia = { ValKeyword = None; WithKeyword = mWith; EqualsRange = mEquals }
-       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, wholeRange, trivia)
+       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, mWhole, trivia)
        let flags = $3 (getSetAdjuster arity)
        SynMemberSig.Member(valSpfn, flags, mWhole) }
 
@@ -1937,7 +1937,7 @@ classDefnMember:
            | None -> unionRanges m ty.Range
            | Some m2 -> unionRanges m m2
            |> unionRangeWithXmlDoc doc
-       if Option.isSome $2 then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), wholeRange))
+       if Option.isSome $2 then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
        let trivia = { ValKeyword = None; WithKeyword = mWith; EqualsRange = None }
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWhole, trivia)
        [ SynMemberDefn.AbstractSlot(valSpfn, $3 (getSetAdjuster arity), mWhole) ] }
