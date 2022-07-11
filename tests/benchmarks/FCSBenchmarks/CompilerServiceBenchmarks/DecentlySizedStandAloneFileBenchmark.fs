@@ -14,7 +14,7 @@ type SingleFileCompilerWithILCacheClearing(file, options) =
 [<MemoryDiagnoser>]
 type DecentlySizedStandAloneFileBenchmark() =
     inherit SingleFileCompilerBenchmarkBase(
-        SingleFileCompiler(
+        SingleFileCompilerWithILCacheClearing(
             Path.Combine(__SOURCE_DIRECTORY__, "../decentlySizedStandAloneFile.fs"),
             OptionsCreationMethod.FromScript
         )
