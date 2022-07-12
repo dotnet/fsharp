@@ -135,7 +135,7 @@ let FreshenTypars traitCtxt m tpsorig =
         let _, _, tpTys = FreshenTypeInst traitCtxt m tpsorig
         tpTys
 
-let FreshenMethInfo m (minfo: MethInfo) =
+let FreshenMethInfo traitCtxt m (minfo: MethInfo) =
     let _, _, tpTys = FreshMethInst traitCtxt m (minfo.GetFormalTyparsOfDeclaringType m) minfo.DeclaringTypeInst minfo.FormalMethodTypars
     tpTys
 
@@ -1494,7 +1494,14 @@ and SolveDimensionlessNumericType (csenv: ConstraintSolverEnv) ndeep m2 trace ty
 ///
 /// 2. Some additional solutions are forced prior to generalization (permitWeakResolution= Yes or YesDuringCodeGen). See above
 and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace traitInfo : OperationResult<bool> = trackErrors {
-    let (TTrait(tys, nm, memFlags, traitObjAndArgTys, retTy, sln, traitCtxt))) = traitInfo
+    let (TTrait(tys, nm, memFlags, traitObjAndArgTys, retTy, sln, traitCtxt)) = traitInfo
+
+    // Work out the relevant accessibility domain for the trait
+    let traitAD =
+        match traitCtxt with
+        | None -> AccessorDomain.AccessibleFromEverywhere
+        | Some c -> (c.AccessRights :?> AccessorDomain)
+
     // Do not re-solve if already solved
     if sln.Value.IsSome then return true else
     let g = csenv.g
@@ -1509,7 +1516,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
     let tys = ListSet.setify (typeAEquiv g aenv) tys
 
     // Rebuild the trait info after removing duplicates 
-    let traitInfo = TTrait(tys, nm, memFlags, traitObjAndArgTys, retTy, sln, traitCtxt))
+    let traitInfo = TTrait(tys, nm, memFlags, traitObjAndArgTys, retTy, sln, traitCtxt)
     let retTy = GetFSharpViewOfReturnType g retTy    
     
     // Assert the object type if the constraint is for an instance member    
@@ -1562,7 +1569,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           return TTraitBuiltIn
 
       | _, false, ("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ), [argTy1;argTy2] 
-          when IsRelationalOpArgTypePair permitWeakResolution minfos g argty1 argty2 ->
+          when IsRelationalOpArgTypePair permitWeakResolution minfos g argTy1 argTy2 ->
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 argTy1 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy g.bool_ty
@@ -1623,8 +1630,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           return TTraitBuiltIn
 
       | _, false, ("op_BitwiseAnd" | "op_BitwiseOr" | "op_ExclusiveOr"), [argTy1;argTy2] 
-          when    IsBitwiseOpType g argTy1 && IsBinaryOpOtherArgType g permitWeakResolution argTy2
-               || IsBitwiseOpType g argTy2 && IsBinaryOpOtherArgType g permitWeakResolution argTy1 -> 
+          when IsBitwiseOpArgTypePair permitWeakResolution minfos g argTy1 argTy1 -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 argTy1
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy argTy1
@@ -1720,7 +1726,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           return TTraitBuiltIn
 
       | _, false, "Atan2", [argTy1; argTy2] 
-          when isFpTy g argty1 -> 
+          when isFpTy g argTy1 -> 
 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace argTy2 argTy1
           match getMeasureOfType g argTy1 with
@@ -2918,7 +2924,7 @@ and ReportNoCandidatesErrorSynExpr csenv callerArgCounts methodName ad calledMet
 and AssumeMethodSolvesTrait (csenv: ConstraintSolverEnv) (cx: TraitConstraintInfo option) m trace (calledMeth: CalledMeth<_>) = 
     match cx with
     | Some traitInfo when traitInfo.Solution.IsNone -> 
-        let traitSln = MemberConstraintSolutionOfMethInfo csenv.SolverState m calledMeth.Method calledMeth.CalledTyArgs
+        let traitSln = MemberConstraintSolutionOfMethInfo csenv.SolverState m traitInfo.TraitContext calledMeth.Method calledMeth.CalledTyArgs
 #if TRAIT_CONSTRAINT_CORRECTIONS
         if csenv.g.langVersion.SupportsFeature LanguageFeature.TraitConstraintCorrections then
             TransactMemberConstraintSolution traitInfo trace traitSln
@@ -3654,11 +3660,11 @@ let ApplyDefaultsAfterWitnessGeneration (g: TcGlobals) amap css denv sln =
     if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then 
         sln |> Option.iter (fun slnExpr -> 
             // Apply all defaults
-            let unsolved = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfExpr g amap denv slnExpr
+            let unsolved = FindUnsolved.UnsolvedTyparsOfExpr g amap denv slnExpr
             ApplyDefaultsForUnsolved css denv unsolved
 
             // Search again and choose solutions
-            let unsolved2 = FSharp.Compiler.FindUnsolved.UnsolvedTyparsOfExpr g amap denv slnExpr
+            let unsolved2 = FindUnsolved.UnsolvedTyparsOfExpr g amap denv slnExpr
             ChooseSolutionsForUnsolved css denv unsolved2)
 
 /// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code

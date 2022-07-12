@@ -783,7 +783,7 @@ val FakeInstantiationGenerator: (range -> Typars -> ITraitContext option -> Type
 val TryToResolveLongIdentAsType: NameResolver -> NameResolutionEnv -> range -> string list -> TType option
 
 /// Resolve a (possibly incomplete) long identifier to a loist of possible class or record fields
-val internal ResolvePartialLongIdentToClassOrRecdFields : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> Item list
+val ResolvePartialLongIdentToClassOrRecdFields: NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> bool -> Item list
 
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions.
 val ResolvePartialLongIdent:

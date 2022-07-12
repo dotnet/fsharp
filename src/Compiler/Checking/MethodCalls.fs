@@ -994,7 +994,7 @@ let BuildFSharpMethodApp g m (vref: ValRef) vExpr vexprty (args: Exprs) =
     retTy
     
 /// Build a call to an F# method.
-let BuildFSharpMethodCall g m (ty, vref: ValRef) valUseFlags declaringTypeInst minst args =
+let BuildFSharpMethodCall g m (vref: ValRef) valUseFlags declaringTypeInst minst args =
     let vExpr = Expr.Val (vref, valUseFlags, m)
     let vExprTy = vref.Type
     let tpsorig, tau =  vref.GeneralizedType

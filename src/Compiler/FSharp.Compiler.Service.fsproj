@@ -320,12 +320,12 @@
     <Compile Include="Checking\MethodCalls.fs" />
     <Compile Include="Checking\PatternMatchCompilation.fsi" />
     <Compile Include="Checking\PatternMatchCompilation.fs" />
+    <Compile Include="Checking\FindUnsolved.fsi" />
+    <Compile Include="Checking\FindUnsolved.fs" />
     <Compile Include="Checking\ConstraintSolver.fsi" />
     <Compile Include="Checking\ConstraintSolver.fs" />
     <Compile Include="Checking\CheckFormatStrings.fsi" />
     <Compile Include="Checking\CheckFormatStrings.fs" />
-    <Compile Include="Checking\FindUnsolved.fsi" />
-    <Compile Include="Checking\FindUnsolved.fs" />
     <Compile Include="Checking\QuotationTranslator.fsi" />
     <Compile Include="Checking\QuotationTranslator.fs" />
     <Compile Include="Checking\PostInferenceChecks.fsi" />

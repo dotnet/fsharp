@@ -65,14 +65,6 @@ type TyparMap<'T> =
 
 [<NoEquality; NoComparison; Sealed>]
 type TyconRefMap<'T>(imap: StampMap<'T>) =
-<<<<<<< HEAD
-    member m.Item with get (v: TyconRef) = imap[v.Stamp]
-    member m.TryFind (v: TyconRef) = imap.TryFind v.Stamp 
-    member m.ContainsKey (v: TyconRef) = imap.ContainsKey v.Stamp 
-    member m.Add (v: TyconRef) x = TyconRefMap (imap.Add (v.Stamp, x))
-    member m.Remove (v: TyconRef) = TyconRefMap (imap.Remove v.Stamp)
-    member m.IsEmpty = imap.IsEmpty
-=======
     member _.Item with get (tcref: TyconRef) = imap[tcref.Stamp]
     member _.TryFind (tcref: TyconRef) = imap.TryFind tcref.Stamp 
     member _.ContainsKey (tcref: TyconRef) = imap.ContainsKey tcref.Stamp 
@@ -80,7 +72,6 @@ type TyconRefMap<'T>(imap: StampMap<'T>) =
     member _.Remove (tcref: TyconRef) = TyconRefMap (imap.Remove tcref.Stamp)
     member _.IsEmpty = imap.IsEmpty
 
->>>>>>> 0c1eba0671d0edb86e97618e0a7678a7550befe4
     static member Empty: TyconRefMap<'T> = TyconRefMap Map.empty
     static member OfList vs = (vs, TyconRefMap<'T>.Empty) ||> List.foldBack (fun (x, y) acc -> acc.Add x y) 
 
@@ -290,7 +281,7 @@ and remapTraitWitnessInfo tyenv (TraitWitnessInfo(tys, nm, flags, argTys, retTy)
     let rtyR = Option.map (remapTypeAux tyenv) retTy
     TraitWitnessInfo(tysR, nm, flags, argTysR, rtyR)
 
-and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, slnCell, , traitCtxt)) =
+and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, slnCell, traitCtxt)) =
     let slnCell = 
         match slnCell.Value with 
         | None -> None
@@ -301,7 +292,7 @@ and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, slnCell, , trait
                 | ILMethSln(ty, extOpt, ilMethRef, minst) ->
                      ILMethSln(remapTypeAux tyenv ty, extOpt, ilMethRef, remapTypesAux tyenv minst)  
                 | FSMethSln(ty, vref, minst, isExt) ->
-                     FSMethSln(remapTypeAux tyenv ty, remapValRef tyenv vref, remapTypesAux tyenv minst, isExt)  
+                     FSMethSln(remapTypeAux tyenv ty, remapValRef tyenv vref, remapTypesAux tyenv minst, isExt)
                 | FSRecdFieldSln(tinst, rfref, isSet) ->
                      FSRecdFieldSln(remapTypesAux tyenv tinst, remapRecdFieldRef tyenv.tyconRefRemap rfref, isSet)  
                 | FSAnonRecdFieldSln(anonInfo, tinst, n) ->
@@ -314,7 +305,7 @@ and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, slnCell, , trait
 
     let traitCtxtNew = 
         if tyenv.traitCtxtsMap.ContainsKey nm then
-            Some tyenv.traitCtxtsMap.[nm]
+            Some tyenv.traitCtxtsMap[nm]
         else
             traitCtxt
 
@@ -2512,10 +2503,10 @@ and accTraitCtxtsInType acc ty  =
     match ty with 
     | TType_tuple (_, tys) 
     | TType_anon (_, tys) 
-    | TType_app (_, tys)  
+    | TType_app (_, tys, _)  
     | TType_ucase (_, tys) -> accTraitCtxtsInTypes acc tys
-    | TType_fun (d, r) -> accTraitCtxtsInType (accTraitCtxtsInType acc d) r
-    | TType_var r -> accTraitCtxtsTyparRef acc r 
+    | TType_fun (d, r, _) -> accTraitCtxtsInType (accTraitCtxtsInType acc d) r
+    | TType_var (r, _) -> accTraitCtxtsTyparRef acc r 
     | TType_forall (_tps, r) -> accTraitCtxtsInType acc r
     | TType_measure unt -> List.foldBack (fun (tp, _) acc -> accTraitCtxtsTyparRef acc tp) (ListMeasureVarOccsWithNonZeroExponents unt) acc
 

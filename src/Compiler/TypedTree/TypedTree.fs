@@ -2339,7 +2339,9 @@ type TyparConstraint =
     
     override x.ToString() = sprintf "%+A" x 
 
-/// Only satisfied by elsewhere. Not stored in TastPickle.
+/// Represents the ability to solve traits via extension methods in a particular scope.
+///
+/// Only satisfied by types defined elsewhere (e.g. NameResolutionEnv), and not stored in TypedTreePickle.
 type ITraitContext = 
     /// Used to select the extension methods in the context relevant to solving the constraint
     /// given the current support types
@@ -2378,7 +2380,7 @@ type TraitConstraintInfo =
     ///
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of supportTys: TTypes * memberName: string * memFlags: SynMemberFlags * argTys: TTypes * returnTy: TType option * traitSln: TraitConstraintSln option ref * traitContext: ITraitContext option
+    | TTrait of supportTys: TTypes * memberName: string * memFlags: SynMemberFlags * argTys: TTypes * returnTy: TType option * solution: TraitConstraintSln option ref * traitContext: ITraitContext option
 
     /// Get the support types that can help provide members to solve the constraint
     member x.SupportTypes = (let (TTrait(tys,_,_,_,_,_,_)) = x in tys)
@@ -2419,9 +2421,9 @@ type TraitConstraintSln =
     /// FSMethSln(ty, vref, minst)
     ///
     /// Indicates a trait is solved by an F# method.
-    ///    ty -- the apparent type and its instantiation
-    ///    vref -- the method that solves the trait constraint
-    ///    minst -- the generic method instantiation 
+    ///    apparentType -- the apparent type and its instantiation
+    ///    valRef -- the method that solves the trait constraint
+    ///    methodInst -- the generic method instantiation 
     ///    isExt -- is this a use of an extension method
     | FSMethSln of apparentType: TType * valRef: ValRef * methodInst: TypeInst * isExt: bool
 

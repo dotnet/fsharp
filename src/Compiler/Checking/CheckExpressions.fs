@@ -3006,7 +3006,7 @@ let LightweightTcValForUsingInBuildMethodCall g traitCtxt (vref: ValRef) vrefFla
             // Instantiate the value
             let tau =
                 // If we have got an explicit instantiation then use that
-                let _, tps, tpTys, tau = FreshenPossibleForallTy g m TyparRigidity.Flexible vTy
+                let _, tps, tpTys, tau = FreshenPossibleForallTy traitCtxt g m TyparRigidity.Flexible vTy
 
                 if tpTys.Length <> vrefTypeInst.Length then error(Error(FSComp.SR.tcTypeParameterArityMismatch(tps.Length, vrefTypeInst.Length), m))
 
@@ -3187,7 +3187,7 @@ let BuildPossiblyConditionalMethodCall (cenv: cenv) env isMutable m isProp minfo
             // and uses TcVal to do this. However we don't want to check attributes again for provided references to values,
             // so we pass 'false' for 'checkAttributes'.
             let tcVal = LightweightTcValForUsingInBuildMethodCall g env.TraitContext
-            let _, retExpr, retTy = ProvidedMethodCalls.BuildInvokerExpressionForProvidedMethodCall tcVal (g, cenv.amap, mi, objArgs, isMutable, isProp, valUseFlags, args, m)
+            let _, retExpr, retTy = ProvidedMethodCalls.BuildInvokerExpressionForProvidedMethodCall tcVal (g, cenv.amap, env.TraitContext, mi, objArgs, isMutable, isProp, valUseFlags, args, m)
             retExpr, retTy
 
         | _ ->
@@ -5582,7 +5582,7 @@ and TcAdjustExprForTypeDirectedConversions cenv (overallTy: OverallTy) actualTy 
     match overallTy with
     | MustConvertTo (_, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
         let tcVal = LightweightTcValForUsingInBuildMethodCall g env.TraitContext
-        AdjustExprForTypeDirectedConversions tcVal g cenv.amap cenv.infoReader env.AccessRights reqdTy actualTy m expr
+        AdjustExprForTypeDirectedConversions tcVal g cenv.amap env.TraitContext cenv.infoReader env.AccessRights reqdTy actualTy m expr
     | _ ->
         expr
 
@@ -6816,7 +6816,7 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implTy: TType) virtNameAndArit
     | [ (_, absSlot) ] ->
 
         let typarsFromAbsSlotAreRigid, typarsFromAbsSlot, argTysFromAbsSlot, retTyFromAbsSlot =
-            FreshenAbstractSlot g env.TraitContext cenv.amap mBinding synTyparDecls absSlot
+            FreshenAbstractSlot env.TraitContext g cenv.amap mBinding synTyparDecls absSlot
 
         // Work out the required type of the member
         let bindingTy = mkFunTy cenv.g implTy (mkMethodTy cenv.g argTysFromAbsSlot retTyFromAbsSlot) 
@@ -8492,7 +8492,7 @@ and TcTypeItemThen cenv overallTy env nm ty tpenv mItem tinstEnclosing delayed =
         let item = Item.Types(nm, [ty])
         CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
         let typeNameResInfo = GetLongIdentTypeNameInfo otherDelayed
-        let item, mItem, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true
+        let item, mItem, rest, afterResolution = ResolveExprDotLongIdentAndComputeRange cenv.tcSink cenv.nameResolver (unionRanges mExprAndTypeArgs mLongId) ad env.TraitContext env.eNameResEnv ty longId typeNameResInfo IgnoreOverrides true
         TcItemThen cenv overallTy env tpenv ((argsOfAppTy g ty), item, mItem, rest, afterResolution) otherDelayed
 
     | DelayedTypeApp(tyargs, _mTypeArgs, mExprAndTypeArgs) :: _delayed' ->

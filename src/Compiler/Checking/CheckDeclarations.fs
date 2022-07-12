@@ -5149,7 +5149,7 @@ let CheckOneImplFile
     let infoReader = InfoReader(g, amap)
 
     cancellable {
-        let envinner, mtypeAcc = MakeInitialEnv env 
+        let envinner, moduleTyAcc = MakeInitialEnv env 
 
         let tcVal = LightweightTcValForUsingInBuildMethodCall g envinner.TraitContext
 
@@ -5161,8 +5161,6 @@ let CheckOneImplFile
                 tcSequenceExpressionEntry=TcSequenceExpressionEntry,
                 tcArrayOrListSequenceExpression=TcArrayOrListComputedExpression,
                 tcComputationExpression=TcComputationExpression)    
-
-        let envinner, moduleTyAcc = MakeInitialEnv env 
 
         let defs = [ for x in implFileFrags -> SynModuleDecl.NamespaceFragment x ]
         let! moduleContents, topAttrs, envAtEnd = TcModuleOrNamespaceElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None openDecls0 defs

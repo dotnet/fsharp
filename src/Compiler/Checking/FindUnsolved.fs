@@ -292,11 +292,12 @@ let UnsolvedTyparsOfModuleDef g amap denv mdef extraAttribs =
 
 let UnsolvedTyparsOfExpr g amap denv expr =
    let cenv = 
-      { g =g  
-        amap=amap 
-        denv=denv 
-        unsolved = [] }
-   accExpr cenv Nix expr
+        { g =g  
+          amap=amap 
+          denv=denv 
+          unsolved = [] 
+          stackGuard = StackGuard(FindUnsolvedStackGuardDepth) }
+   accExpr cenv NoEnv expr
    List.rev cenv.unsolved
 
 
