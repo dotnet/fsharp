@@ -622,6 +622,11 @@
         <target state="translated">Bu özellik, bu F# sürümünde desteklenmiyor. Bu özelliği kullanabilmeniz için /langversion:preview eklemeniz gerekebilir.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAnonRecdDuplicateFieldId">
+        <source>The field '{0}' appears multiple times in this record expression.</source>
+        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
         <source>This is the wrong anonymous record. It should have the fields {0}.</source>
         <target state="translated">Bu anonim kayıt yanlış. Kayıt, {0} alanlarını içermelidir.</target>
@@ -640,6 +645,11 @@
       <trans-unit id="tcAnonRecdInvalid">
         <source>Invalid Anonymous Record type declaration.</source>
         <target state="translated">Anonim Kayıt türü bildirimi geçersiz.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
+        <source>The field '{0}' appears multiple times in this anonymous record type.</source>
+        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
