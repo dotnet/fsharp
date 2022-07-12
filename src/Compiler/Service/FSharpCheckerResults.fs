@@ -380,13 +380,13 @@ type internal TypeCheckInfo
 
                 if contained then
                     match bestAlmostIncludedSoFar with
-                    | Some (mRight: range, _, _) ->
+                    | Some (rightm: range, _, _) ->
                         if
-                            posGt mPossible.End mRight.End
-                            || (posEq mPossible.End mRight.End && posGt mPossible.Start mRight.Start)
+                            posGt possm.End rightm.End
+                            || (posEq possm.End rightm.End && posGt possm.Start rightm.Start)
                         then
-                            bestAlmostIncludedSoFar <- Some(mPossible, env, ad)
-                    | _ -> bestAlmostIncludedSoFar <- Some(mPossible, env, ad))
+                            bestAlmostIncludedSoFar <- Some(possm, env, ad)
+                    | _ -> bestAlmostIncludedSoFar <- Some(possm, env, ad))
 
         let resEnv =
             match bestAlmostIncludedSoFar, mostDeeplyNestedEnclosingScope with

@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="FSharpInteractiveAnyCpu">
         <source>Use fsiAnyCpu.exe</source>
-        <target state="new">Use fsiAnyCpu.exe</target>
+        <target state="translated">Usare fsiAnyCpu.exe</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveAnyCpuDescr">
         <source>If set to true, 'fsiAnyCpu.exe' is run as a platform neutral process. Otherwise, F# Interactive is a 32-bit process on X86/X64 or a native 64 bit process on Arm64 based systems.</source>
-        <target state="new">If set to true, 'fsiAnyCpu.exe' is run as a platform neutral process. Otherwise, F# Interactive is a 32-bit process on X86/X64 or a native 64 bit process on Arm64 based systems.</target>
+        <target state="translated">Se impostato su true, 'fsiAnyCpu.exe' viene eseguito come processo indipendente dalla piattaforma. In caso contrario, F# Interactive è un processo a 32 bit su X86/X64 o un processo nativo a 64 bit nei sistemi basati su Arm64.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">
