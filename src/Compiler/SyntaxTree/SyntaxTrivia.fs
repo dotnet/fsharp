@@ -161,5 +161,6 @@ type SynModuleOrNamespaceSigTrivia =
 [<NoEquality; NoComparison>]
 type SynValSigTrivia =
     { ValKeyword: range option
-      WithKeyword: range option }
-    static member Zero: SynValSigTrivia = { ValKeyword = None; WithKeyword = None }
+      WithKeyword: range option
+      EqualsRange: range option }
+    static member Zero: SynValSigTrivia = { ValKeyword = None; WithKeyword = None; EqualsRange = None }
