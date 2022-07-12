@@ -50,6 +50,7 @@ type LanguageFeature =
     | DelegateTypeNameResolutionFix
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
+    | LowercaseDUWhenRequireQualifiedAccess
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -113,6 +114,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.BetterExceptionPrinting, previewVersion
                 LanguageFeature.ReallyLongLists, previewVersion
                 LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, previewVersion
+                LanguageFeature.LowercaseDUWhenRequireQualifiedAccess, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -213,6 +215,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.ExtensionConstraintSolutions -> FSComp.SR.featureExtensionConstraintSolutions()
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()
         | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
+        | LanguageFeature.LowercaseDUWhenRequireQualifiedAccess -> FSComp.SR.featureLowercaseDUWhenRequireQualifiedAccess ()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

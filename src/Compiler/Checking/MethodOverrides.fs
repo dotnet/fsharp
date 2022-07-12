@@ -160,7 +160,7 @@ module DispatchSlotChecking =
                 let belongsToReqdTy = 
                     match overrideBy.MemberInfo.Value.ImplementedSlotSigs with
                     | [] -> false
-                    | ss :: _ -> isInterfaceTy g ss.ImplementedType && typeEquiv g reqdTy ss.ImplementedType
+                    | ss :: _ -> isInterfaceTy g ss.DeclaringType && typeEquiv g reqdTy ss.DeclaringType
                 if belongsToReqdTy then 
                     CanImplementAnyInterfaceSlot
                 else
@@ -178,7 +178,7 @@ module DispatchSlotChecking =
         Override(implKind, overrideBy.MemberApparentEntity, mkSynId overrideBy.Range nm, memberMethodTypars, memberToParentInst, argTys, retTy, isFakeEventProperty, overrideBy.IsCompilerGenerated)
 
     /// Get the override information for an object expression method being used to implement dispatch slots
-    let GetObjectExprOverrideInfo g amap (implty, id: Ident, memberFlags, ty, arityInfo, bindingAttribs, rhsExpr) = 
+    let GetObjectExprOverrideInfo g amap (implTy, id: Ident, memberFlags, ty, arityInfo, bindingAttribs, rhsExpr) = 
         // Dissect the type. The '0' indicates there are no enclosing generic class type parameters relevant here.
         let tps, _, argInfos, retTy, _ = GetMemberTypeInMemberForm g memberFlags arityInfo 0 ty id.idRange
         let argTys = argInfos |> List.mapSquared fst
@@ -192,13 +192,13 @@ module DispatchSlotChecking =
             // Check for empty variable list from a () arg
             let vs = if List.isSingleton vs && argInfos.IsEmpty then [] else vs
             let implKind = 
-                if isInterfaceTy g implty then 
+                if isInterfaceTy g implTy then 
                     CanImplementAnyInterfaceSlot 
                 else 
                     CanImplementAnyClassHierarchySlot
                     //CanImplementAnySlot  <<----- Change to this to enable implicit interface implementation
             let isFakeEventProperty = CompileAsEvent g bindingAttribs
-            let overrideByInfo = Override(implKind, tcrefOfAppTy g implty, id, tps, [], argTys, retTy, isFakeEventProperty, false)
+            let overrideByInfo = Override(implKind, tcrefOfAppTy g implTy, id, tps, [], argTys, retTy, isFakeEventProperty, false)
             overrideByInfo, (baseValOpt, thisv, vs, bindingAttribs, rhsExpr)
         | _ -> 
             error(InternalError("Unexpected shape for object expression override", id.idRange))
@@ -749,7 +749,7 @@ module DispatchSlotChecking =
         let amap = infoReader.amap
 
         let tcaug = tycon.TypeContents        
-        let interfaces = tycon.ImmediateInterfacesOfFSharpTycon |> List.map (fun (ity, _compgen, m) -> (ity, m))
+        let interfaces = tycon.ImmediateInterfacesOfFSharpTycon |> List.map (fun (intfTy, _compgen, m) -> (intfTy, m))
 
         let overallTy = generalizedTyconRef g (mkLocalTyconRef tycon)
 
@@ -780,9 +780,9 @@ module DispatchSlotChecking =
            | [] -> 
                 // Are we looking at the implementation of the class hierarchy? If so include all the override members
                 not (isInterfaceTy g reqdTy)
-           | ss -> 
-                 ss |> List.forall (fun ss -> 
-                     let ty = ss.ImplementedType
+           | slotSigs -> 
+                 slotSigs |> List.forall (fun slotSig -> 
+                     let ty = slotSig.DeclaringType
                      if isInterfaceTy g ty then 
                          // Is this a method impl listed under the reqdTy?
                          typeEquiv g ty reqdTy

@@ -12,6 +12,7 @@ trigger:
     exclude:
     - .github/*
     - docs/
+    - tests/scripts/
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md

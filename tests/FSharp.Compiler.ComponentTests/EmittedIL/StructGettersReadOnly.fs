@@ -15,51 +15,6 @@ module ``Struct getters readonly`` =
             [<Struct>] type MyRecord = { MyField : int }
             """
 
-    let nonStructRecord =
-        FSharp
-            """
-            module Test
-
-            type MyRecord = { MyField : int }
-            """
-
-    let structAnonRecord =
-        FSharp
-            """
-            module Test
-
-            let myRecord = struct {| MyField = 3 |}
-            """
-
-    let nonStructAnonRecord =
-        FSharp
-            """
-            module Test
-
-            let myRecord = {| MyField = 3 |}
-            """
-
-    let structNonRecord =
-        FSharp
-            """
-            module Test
-
-            [<Struct>]
-            type MyStruct =
-                val MyField: int
-            """
-
-    let structWithCustomGetter =
-        FSharp
-            """
-            module Test
-
-            [<Struct>]
-            type MyStruct =
-                val mutable x: int
-                member this.MyField with get () = this.x <- 4
-            """
-
     [<Fact>]
     let ``Struct record has readonly attribute on getter`` () =
         structRecord
@@ -67,46 +22,6 @@ module ``Struct getters readonly`` =
         |> getType "Test+MyRecord"
         |> getMethod "get_MyField"
         |> should haveAttribute "IsReadOnlyAttribute"
-
-    [<Fact>]
-    let ``Struct anonymous record has readonly attribute on getter`` () =
-        structAnonRecord
-        |> compileAssembly
-        |> getFirstAnonymousType
-        |> getMethod "get_MyField"
-        |> should haveAttribute "IsReadOnlyAttribute"
-
-    [<Fact>]
-    let ``Non-struct anonymous record doesn't have readonly attribute on getter`` () =
-        nonStructAnonRecord
-        |> compileAssembly
-        |> getFirstAnonymousType
-        |> getMethod "get_MyField"
-        |> shouldn't haveAttribute "IsReadOnlyAttribute"
-
-    [<Fact>]
-    let ``Non-struct record doesn't have readonly getters`` () =
-        nonStructRecord
-        |> compileAssembly
-        |> getType "Test+MyRecord"
-        |> getMethod "get_MyField"
-        |> shouldn't haveAttribute "IsReadOnlyAttribute"
-
-    [<Fact>]
-    let ``Struct has readonly getters`` () =
-        structNonRecord
-        |> compileAssembly
-        |> getType "Test+MyStruct"
-        |> getMethod "get_MyField"
-        |> should haveAttribute "IsReadOnlyAttribute"
-
-    [<Fact>]
-    let ``Custom getter on a struct doesn't have readonly attribute`` () =
-        structWithCustomGetter
-        |> compileAssembly
-        |> getType "Test+MyStruct"
-        |> getMethod "get_MyField"
-        |> shouldn't haveAttribute "IsReadOnlyAttribute"
 
     [<Fact>]
     let ``Struct record has readonly attribute on getter in IL`` () =
@@ -125,6 +40,22 @@ module ``Struct getters readonly`` =
               IL_0006:  ret
             }""" ]
 
+    let nonStructRecord =
+        FSharp
+            """
+            module Test
+
+            type MyRecord = { MyField : int }
+            """
+
+    [<Fact>]
+    let ``Non-struct record doesn't have readonly getters`` () =
+        nonStructRecord
+        |> compileAssembly
+        |> getType "Test+MyRecord"
+        |> getMethod "get_MyField"
+        |> shouldn't haveAttribute "IsReadOnlyAttribute"
+
     [<Fact>]
     let ``Non-struct record doesn't have readonly getters in IL`` () =
         nonStructRecord
@@ -140,3 +71,60 @@ module ``Struct getters readonly`` =
               IL_0001:  ldfld      int32 Test/MyRecord::MyField@
               IL_0006:  ret
             } """ ]
+
+    [<Fact>]
+    let ``Struct anonymous record has readonly attribute on getter`` () =
+        FSharp
+            """
+            module Test
+
+            let myRecord = struct {| MyField = 3 |}
+            """
+        |> compileAssembly
+        |> getFirstAnonymousType
+        |> getMethod "get_MyField"
+        |> should haveAttribute "IsReadOnlyAttribute"
+
+    [<Fact>]
+    let ``Non-struct anonymous record doesn't have readonly attribute on getter`` () =
+        FSharp
+            """
+            module Test
+
+            let myRecord = {| MyField = 3 |}
+            """
+        |> compileAssembly
+        |> getFirstAnonymousType
+        |> getMethod "get_MyField"
+        |> shouldn't haveAttribute "IsReadOnlyAttribute"
+
+    [<Fact>]
+    let ``Struct has readonly getters`` () =
+        FSharp
+            """
+            module Test
+
+            [<Struct>]
+            type MyStruct =
+                val MyField: int
+            """
+        |> compileAssembly
+        |> getType "Test+MyStruct"
+        |> getMethod "get_MyField"
+        |> should haveAttribute "IsReadOnlyAttribute"
+
+    [<Fact>]
+    let ``Custom getter on a struct doesn't have readonly attribute`` () =
+        FSharp
+            """
+            module Test
+
+            [<Struct>]
+            type MyStruct =
+                val mutable x: int
+                member this.MyField with get () = this.x <- 4
+            """
+        |> compileAssembly
+        |> getType "Test+MyStruct"
+        |> getMethod "get_MyField"
+        |> shouldn't haveAttribute "IsReadOnlyAttribute"

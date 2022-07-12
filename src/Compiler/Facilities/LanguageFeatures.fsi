@@ -40,6 +40,7 @@ type LanguageFeature =
     | DelegateTypeNameResolutionFix
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
+    | LowercaseDUWhenRequireQualifiedAccess
 
 /// LanguageVersion management
 type LanguageVersion =
