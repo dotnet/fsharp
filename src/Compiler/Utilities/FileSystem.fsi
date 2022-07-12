@@ -215,7 +215,6 @@ type public IFileSystem =
     /// Used to determine if a file will not be subject to deletion during the lifetime of a typical client process.
     abstract IsStableFileHeuristic: fileName: string -> bool
 
-
 /// Represents a default (memory-mapped) implementation of the file system
 type DefaultFileSystem =
     /// Create a default implementation of the file system

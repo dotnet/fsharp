@@ -2,6 +2,13 @@ root = true
 
 [*.fs]
 fsharp_newline_between_type_definition_and_members=true
+fsharp_max_infix_operator_expression=80
+fsharp_max_array_or_list_width=80
+fsharp_max_array_or_list_number_of_items=5
+fsharp_max_dot_get_expression_width=80
+fsharp_multiline_block_brackets_on_same_column=true
+fsharp_keep_max_number_of_blank_lines=1
 
 [*.fsi]
 fsharp_newline_between_type_definition_and_members=true
+fsharp_keep_max_number_of_blank_lines=1
