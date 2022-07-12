@@ -13,5 +13,3 @@ module Module1 =
 module Module2 =
     open M
     let _ = PrivateModule.x
-
-
