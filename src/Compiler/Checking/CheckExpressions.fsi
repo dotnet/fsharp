@@ -225,6 +225,89 @@ val LightweightTcValForUsingInBuildMethodCall:
 /// (i.e. are without explicit declaration).
 type UnscopedTyparEnv
 
+/// A type to represent information associated with values to indicate what explicit (declared) type parameters
+/// are given and what additional type parameters can be inferred, if any.
+///
+/// The declared type parameters, e.g. let f<'a> (x:'a) = x, plus an indication
+/// of whether additional polymorphism may be inferred, e.g. let f<'a, ..> (x:'a) y = x
+type ExplicitTyparInfo = ExplicitTyparInfo of rigidCopyOfDeclaredTypars: Typars * declaredTypars: Typars * infer: bool
+
+val permitInferTypars: ExplicitTyparInfo
+
+val dontInferTypars: ExplicitTyparInfo
+
+type ArgAndRetAttribs = ArgAndRetAttribs of Attribs list list * Attribs
+
+val noArgOrRetAttribs: ArgAndRetAttribs
+
+/// Indicates whether constraints should be checked when checking syntactic types
+type CheckConstraints =
+    | CheckCxs
+    | NoCheckCxs
+
+/// Represents the ValReprInfo for a value, before the typars are fully inferred
+type PrelimValReprInfo = PrelimValReprInfo of curriedArgInfos: ArgReprInfo list list * returnInfo: ArgReprInfo
+
+/// Holds the initial ValMemberInfo and other information before it is fully completed
+type PrelimMemberInfo = PrelimMemberInfo of memberInfo: ValMemberInfo * logicalName: string * compiledName: string
+
+/// Represents the results of the first phase of preparing simple values from a pattern
+type PrelimVal1 =
+    | PrelimVal1 of
+        id: Ident *
+        explicitTyparInfo: ExplicitTyparInfo *
+        prelimType: TType *
+        prelimValReprInfo: PrelimValReprInfo option *
+        memberInfoOpt: PrelimMemberInfo option *
+        isMutable: bool *
+        inlineFlag: ValInline *
+        baseOrThisInfo: ValBaseOrThisInfo *
+        argAttribs: ArgAndRetAttribs *
+        visibility: SynAccess option *
+        isCompGen: bool
+
+    member Type: TType
+
+    member Ident: Ident
+
+/// The results of applying let-style generalization after type checking.
+type PrelimVal2 =
+    | PrelimVal2 of
+        id: Ident *
+        prelimType: GeneralizedType *
+        prelimValReprInfo: PrelimValReprInfo option *
+        memberInfoOpt: PrelimMemberInfo option *
+        isMutable: bool *
+        inlineFlag: ValInline *
+        baseOrThisInfo: ValBaseOrThisInfo *
+        argAttribs: ArgAndRetAttribs *
+        visibility: SynAccess option *
+        isCompGen: bool *
+        hasDeclaredTypars: bool
+
+/// Translation of patterns is split into three phases. The first collects names.
+/// The second is run after val_specs have been created for those names and inference
+/// has been resolved. The second phase is run by applying a function returned by the
+/// first phase. The input to the second phase is a List.map that gives the Val and type scheme
+/// for each value bound by the pattern.
+type TcPatPhase2Input =
+    | TcPatPhase2Input of NameMap<Val * GeneralizedType> * bool
+
+    member WithRightPath: unit -> TcPatPhase2Input
+
+/// Represents the context flowed left-to-right through pattern checking
+type TcPatLinearEnv = TcPatLinearEnv of tpenv: UnscopedTyparEnv * names: NameMap<PrelimVal1> * takenNames: Set<string>
+
+/// Represents the flags passsed to TcPat regarding the binding location
+type TcPatValFlags =
+    | TcPatValFlags of
+        inlineFlag: ValInline *
+        explicitTyparInfo: ExplicitTyparInfo *
+        argAndRetAttribs: ArgAndRetAttribs *
+        isMutable: bool *
+        visibility: SynAccess option *
+        isCompilerGenerated: bool
+
 /// Represents the compilation environment for typechecking a single file in an assembly.
 [<NoEquality; NoComparison>]
 type TcFileState =
@@ -286,6 +369,27 @@ type TcFileState =
         isInternalTestSpanStackReferring: bool
 
         // forward call
+        TcPat: WarnOnUpperFlag
+            -> TcFileState
+            -> TcEnv
+            -> PrelimValReprInfo option
+            -> TcPatValFlags
+            -> TcPatLinearEnv
+            -> TType
+            -> SynPat
+            -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
+
+        // forward call
+        TcSimplePats: TcFileState
+            -> bool
+            -> CheckConstraints
+            -> TType
+            -> TcEnv
+            -> TcPatLinearEnv
+            -> SynSimplePats
+            -> string list * TcPatLinearEnv
+
+        // forward call
         TcSequenceExpressionEntry: TcFileState
             -> TcEnv
             -> OverallTy
@@ -324,6 +428,8 @@ type TcFileState =
         tcSink: TcResultsSink *
         tcVal: TcValF *
         isInternalTestSpanStackReferring: bool *
+        tcPat: (WarnOnUpperFlag -> TcFileState -> TcEnv -> PrelimValReprInfo option -> TcPatValFlags -> TcPatLinearEnv -> TType -> SynPat -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv) *
+        tcSimplePats: (TcFileState -> bool -> CheckConstraints -> TType -> TcEnv -> TcPatLinearEnv -> SynSimplePats -> string list * TcPatLinearEnv) *
         tcSequenceExpressionEntry: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
         tcArrayOrListSequenceExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
         tcComputationExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv) ->
@@ -403,11 +509,6 @@ type ImplicitlyBoundTyparsAllowed =
     | NewTyparsOK
     | NoNewTypars
 
-/// Indicates whether constraints should be checked when checking syntactic types
-type CheckConstraints =
-    | CheckCxs
-    | NoCheckCxs
-
 /// Indicates if a member binding is an object expression binding
 type IsObjExprBinding =
     | ObjExprBinding
@@ -420,12 +521,6 @@ type RecDefnBindingInfo =
         newslotsOk: NewSlotsOK *
         declKind: DeclKind *
         synBinding: SynBinding
-
-/// Represents the ValReprInfo for a value, before the typars are fully inferred
-type PrelimValReprInfo = PrelimValReprInfo of curriedArgInfos: ArgReprInfo list list * returnInfo: ArgReprInfo
-
-/// Holds the initial ValMemberInfo and other information before it is fully completed
-type PrelimMemberInfo = PrelimMemberInfo of memberInfo: ValMemberInfo * logicalName: string * compiledName: string
 
 /// The result of checking a value or member signature
 type ValSpecResult =
@@ -441,13 +536,6 @@ type ValSpecResult =
 
 /// An empty environment of type variables with implicit scope
 val emptyUnscopedTyparEnv: UnscopedTyparEnv
-
-/// A type to represent information associated with values to indicate what explicit (declared) type parameters
-/// are given and what additional type parameters can be inferred, if any.
-///
-/// The declared type parameters, e.g. let f<'a> (x:'a) = x, plus an indication
-/// of whether additional polymorphism may be inferred, e.g. let f<'a, ..> (x:'a) y = x
-type ExplicitTyparInfo = ExplicitTyparInfo of rigidCopyOfDeclaredTypars: Typars * declaredTypars: Typars * infer: bool
 
 /// NormalizedBindingRhs records the r.h.s. of a binding after some munging just before type checking.
 type NormalizedBindingRhs =
@@ -494,12 +582,6 @@ type RecursiveBindingInfo =
     member Val: Val
     member EnclosingDeclaredTypars: Typar list
     member Index: int
-
-/// Represents the results of the first phase of preparing simple values from a pattern
-[<Sealed>]
-type PrelimVal1 =
-    member Ident: Ident
-    member Type: TType
 
 /// Represents the results of the first phase of preparing bindings
 [<Sealed>]
@@ -967,6 +1049,9 @@ val TcNewExpr:
     mWholeExprOrObjTy: range ->
         Expr * UnscopedTyparEnv
 
+/// Check a 'nameof' expression
+val TcNameOfExpr: cenv: TcFileState -> env: TcEnv -> tpenv: UnscopedTyparEnv -> synArg: SynExpr -> Expr
+
 #if !NO_TYPEPROVIDERS
 /// Check the application of a provided type to static args
 val TcProvidedTypeAppToStaticConstantArgs:
@@ -979,16 +1064,6 @@ val TcProvidedTypeAppToStaticConstantArgs:
     m: range ->
         bool * Tainted<ProvidedType> * (unit -> unit)
 #endif
-
-/// Check a set of simple patterns, e.g. the declarations of parameters for an implicit constructor.
-val TcSimplePatsOfUnknownType:
-    cenv: TcFileState ->
-    optionalArgsOK: bool ->
-    checkConstraints: CheckConstraints ->
-    env: TcEnv ->
-    tpenv: UnscopedTyparEnv ->
-    synSimplePats: SynSimplePats ->
-        string list * (UnscopedTyparEnv * NameMap<PrelimVal1> * Set<string>)
 
 /// Check a set of explicitly declared constraints on type parameters
 val TcTyparConstraints:
@@ -1067,6 +1142,67 @@ val TranslatePartialValReprInfo: tps: Typar list -> PrelimValReprInfo -> ValRepr
 
 /// Constrain two types to be equal within this type checking context
 val UnifyTypes: cenv: TcFileState -> env: TcEnv -> m: range -> actualTy: TType -> expectedTy: TType -> unit
+
+val TcRuntimeTypeTest:
+    isCast: bool ->
+    isOperator: bool ->
+    cenv: TcFileState ->
+    denv: DisplayEnv ->
+    m: range ->
+    tgtTy: TType ->
+    srcTy: TType ->
+        unit
+
+/// Allow the inference of structness from the known type, e.g.
+///    let (x: struct (int * int)) = (3,4)
+val UnifyTupleTypeAndInferCharacteristics:
+    contextInfo: ContextInfo ->
+    cenv: TcFileState ->
+    denv: DisplayEnv ->
+    m: range ->
+    knownTy: TType ->
+    isExplicitStruct: bool ->
+    'T list ->
+        TupInfo * TTypes
+
+/// Helper used to check both record expressions and record patterns
+val BuildFieldMap:
+    cenv: TcFileState ->
+    env: TcEnv ->
+    isPartial: bool ->
+    ty: TType ->
+    ((Ident list * Ident) * 'T) list ->
+    m: range ->
+        TypeInst * TyconRef * Map<string, 'T> * (string * 'T) list
+
+/// Check a long identifier 'Case' or 'Case argsR' that has been resolved to an active pattern case
+val TcPatLongIdentActivePatternCase:
+    warnOnUpper: WarnOnUpperFlag ->
+    cenv: TcFileState ->
+    env: TcEnv ->
+    vFlags: TcPatValFlags ->
+    patEnv: TcPatLinearEnv ->
+    ty: TType ->
+    lidRange: range * item: Item * apref: ActivePatternElemRef * args: SynPat list * m: range ->
+        (TcPatPhase2Input -> Pattern) * TcPatLinearEnv
+
+/// The pattern syntax can also represent active pattern arguments. This routine
+/// converts from the pattern syntax to the expression syntax.
+///
+/// Note we parse arguments to parameterized pattern labels as patterns, not expressions.
+/// This means the range of syntactic expression forms that can be used here is limited.
+val ConvSynPatToSynExpr: synPat: SynPat -> SynExpr
+
+val TcVal:
+    checkAttributes: bool ->
+    cenv: TcFileState ->
+    env: TcEnv ->
+    tpenv: UnscopedTyparEnv ->
+    vref: ValRef ->
+    instantiationInfoOpt: (ValUseFlag * (UnscopedTyparEnv -> TyparKind list -> TypeInst * UnscopedTyparEnv)) option ->
+    optAfterResolution: AfterResolution option ->
+    m: range ->
+        Typar list * Expr * bool * TType * TType list * UnscopedTyparEnv
 
 module GeneralizationHelpers =
 

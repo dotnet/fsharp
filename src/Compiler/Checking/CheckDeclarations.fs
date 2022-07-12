@@ -11,11 +11,11 @@ open Internal.Utilities.Library.Extras
 open Internal.Utilities.Library.ResultOrException
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.AbstractIL.Diagnostics 
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
-open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckComputationExpressions
+open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckPatterns
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
@@ -758,7 +758,9 @@ module IncrClassChecking =
 
         // Type check arguments by processing them as 'simple' patterns 
         //     NOTE: if we allow richer patterns here this is where we'd process those patterns 
-        let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true CheckCxs env tpenv (SynSimplePats.SimplePats (spats, m))
+        let ctorArgNames, patEnv = TcSimplePatsOfUnknownType cenv true CheckCxs env tpenv (SynSimplePats.SimplePats (spats, m))
+
+        let (TcPatLinearEnv(_, names, _)) = patEnv
         
         // Create the values with the given names 
         let _, vspecs = MakeAndPublishSimpleVals cenv env names
@@ -3231,7 +3233,10 @@ module EstablishTypeDefinitionCores =
               match implicitCtorSynPats with
               | None -> ()
               | Some spats -> 
-                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true NoCheckCxs env tpenv spats
+                  let ctorArgNames, patEnv = TcSimplePatsOfUnknownType cenv true NoCheckCxs env tpenv spats
+
+                  let (TcPatLinearEnv(_, names, _)) = patEnv
+
                   for arg in ctorArgNames do
                       let ty = names[arg].Type
                       let m = names[arg].Ident.idRange
@@ -4112,7 +4117,10 @@ module EstablishTypeDefinitionCores =
                               ()
                           | Some spats -> 
                               if tycon.IsFSharpStructOrEnumTycon then 
-                                  let ctorArgNames, (_, names, _) = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv spats
+                                  let ctorArgNames, patEnv = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv spats
+
+                                  let (TcPatLinearEnv(_, names, _)) = patEnv
+
                                   for arg in ctorArgNames do
                                       let ty = names[arg].Type
                                       let id = names[arg].Ident
@@ -5574,7 +5582,6 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
       | SynModuleDecl.NamespaceFragment(SynModuleOrNamespace(longId, isRec, kind, defs, xml, attribs, vis, m, _)) ->
 
-          if progress then dprintn ("Typecheck implementation " + textOfLid longId)
           let endm = m.EndRange
 
           do for id in longId do 
@@ -5990,6 +5997,8 @@ let CheckOneImplFile
         let cenv = 
             cenv.Create (g, isScript, niceNameGen, amap, thisCcu, false, Option.isSome rootSigOpt,
                 conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring,
+                tcPat=TcPat,
+                tcSimplePats=TcSimplePats,
                 tcSequenceExpressionEntry=TcSequenceExpressionEntry,
                 tcArrayOrListSequenceExpression=TcArrayOrListComputedExpression,
                 tcComputationExpression=TcComputationExpression)    
@@ -6120,6 +6129,8 @@ let CheckOneSigFile (g, niceNameGen, amap, thisCcu, checkForErrors, conditionalD
         cenv.Create 
             (g, false, niceNameGen, amap, thisCcu, true, false, conditionalDefines, tcSink,
              tcVal, isInternalTestSpanStackReferring,
+             tcPat=TcPat,
+             tcSimplePats=TcSimplePats,
              tcSequenceExpressionEntry=TcSequenceExpressionEntry,
              tcArrayOrListSequenceExpression=TcArrayOrListComputedExpression,
              tcComputationExpression=TcComputationExpression)
