@@ -1,4 +1,4 @@
-﻿module internal CheckIncrementalClasses
+﻿module internal FSharp.Compiler.CheckIncrementalClasses
 
 open Internal.Utilities.Collections
 open FSharp.Compiler.CheckExpressions
