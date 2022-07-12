@@ -49,7 +49,7 @@ val FreshenMethInfo : ITraitContext option -> range -> MethInfo -> TType list
 
 /// Information about the context of a type equation, for better error reporting
 [<RequireQualifiedAccess>]
->>>>>>> 06d9821e5561dd9125fafa4a77b0a4a922da29c6
+type ContextInfo =
 
     /// No context was given.
     | NoContext
@@ -314,13 +314,9 @@ val ChooseTyparSolutionAndSolve: ConstraintSolverState -> DisplayEnv -> Typar ->
 /// for any unsolved free inference type variables.
 val ApplyDefaultsForUnsolved: ConstraintSolverState -> DisplayEnv -> Typar list -> unit
 
-<<<<<<< HEAD
 /// Choose solutions for any remaining unsolved free inference type variables.
 val ChooseSolutionsForUnsolved: ConstraintSolverState -> DisplayEnv -> Typar list -> unit
 
 val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> ITraitContext option -> MethInfo -> TType -> bool
 
 val CanonicalizePartialInferenceProblem:  ConstraintSolverState -> DisplayEnv -> range -> Typars -> bool -> unit
-=======
-val CanonicalizePartialInferenceProblem: ConstraintSolverState -> DisplayEnv -> range -> Typars -> unit
->>>>>>> f5e74287fdf2813acdf54316da97475bbb140df0
