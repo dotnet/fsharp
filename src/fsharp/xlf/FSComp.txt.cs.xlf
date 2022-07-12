@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="new">The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</target>
+        <target state="translated">Soubor {0} má nerozpoznanou příponu. Zdrojové soubory musí mít příponu .fs, .fsi, .fsx nebo .fsscript. Pokud chcete povolit použití zastaralých přípon .ml nebo .mli, použijte parametry --langversion:5.0 a --mlcompatibility.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
-        <target state="new">The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</target>
+        <target state="translated">Soubor {0} má nerozpoznanou příponu. Zdrojové soubory musí mít příponu .fs, .fsi, .fsx nebo .fsscript.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -184,7 +184,7 @@
       </trans-unit>
       <trans-unit id="featureMLCompatRevisions">
         <source>ML compatibility revisions</source>
-        <target state="new">ML compatibility revisions</target>
+        <target state="translated">Revize kompatibility ML</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -312,6 +312,11 @@
         <target state="translated">Atribut InlineIfLambda se nachází v signatuře, ale ne v implementaci.</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidXmlDocPosition">
+        <source>XML comment is not placed on a valid language element.</source>
+        <target state="translated">Komentář XML není umístěn v platném prvku jazyka.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">Klíčové slovo, které specifikuje konstantní literál jako argument parametru typu v poskytovatelích typů</target>
@@ -324,7 +329,7 @@
       </trans-unit>
       <trans-unit id="lexIfOCaml">
         <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
-        <target state="new">IF-FSHARP/IF-CAML regions are no longer supported</target>
+        <target state="translated">Oblasti IF-FSHARP/IF-CAML už nejsou podporovány.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -344,37 +349,37 @@
       </trans-unit>
       <trans-unit id="mlCompatError">
         <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="new">This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</target>
+        <target state="translated">Tento konstruktor je zastaralý. {0}. Tuto funkci můžete povolit pomocí parametrů --langversion:5.0 a --mlcompatibility.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatKeyword">
         <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
-        <target state="new">In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</target>
+        <target state="translated">V předchozích verzích jazyka F# bylo {0} rezervovaným klíčovým slovem, ale použití tohoto klíčového slova je nyní zastaralé.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatLightOffNoLongerSupported">
         <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</target>
+        <target state="translated">Použití #light \"off\" nebo #indent \"off\" je ve verzi F# 2.0 zastaralé a už není podporováno.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
         <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="new">The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</target>
+        <target state="translated">Použití několika parametrů typu v závorkách před názvem obecného typu, například (int, int) Map, je ve verzi F# 2.0 zastaralé a už není podporováno.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatSigColonNoLongerSupported">
         <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</target>
+        <target state="translated">Použití modulu M: sig ... end je ve verzi F# 2.0 zastaralé a už není podporováno. Změňte : na =, odeberte sig a end použijte místo toho odsazení.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatSigEndNoLongerSupported">
         <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</target>
+        <target state="translated">Použití modulu M: sig ... end je ve verzi F# 2.0 zastaralé a už není podporováno. Odeberte sig a end použijte místo toho odsazení.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatStructEndNoLongerSupported">
         <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</target>
+        <target state="translated">Použití modulu M: struct ... end je ve verzi F# 2.0 zastaralé a už není podporováno. Odeberte struct a end použijte místo toho odsazení.</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -465,6 +470,11 @@
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
         <target state="translated">Neočekávaný token v definici typu. Za typem {0} se očekává =.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsNewExprMemberAccess">
+        <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
+        <target state="translated">Tento přístup člena je nejednoznačný. Při vytváření objektu použijte závorky, např. (new SomeType(args)).MemberName'</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -4309,7 +4319,7 @@
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
         <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</source>
-        <target state="new">A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</target>
+        <target state="translated">Pokud se definuje také konstantní hodnota, například val x: int = 1, může být deklarací jenom atribut [&lt;Literal&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">

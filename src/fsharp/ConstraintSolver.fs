@@ -141,8 +141,8 @@ let FreshenMethInfo traitCtxt m (minfo: MethInfo) =
 // Subsumption of types: solve/record subtyping constraints
 //------------------------------------------------------------------------- 
 
-[<RequireQualifiedAccess>] 
 /// Information about the context of a type equation.
+[<RequireQualifiedAccess>]
 type ContextInfo =
 
     /// No context was given.

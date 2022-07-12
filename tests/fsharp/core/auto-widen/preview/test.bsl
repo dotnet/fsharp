@@ -636,3 +636,7 @@ test.fsx(543,36,543,37): typecheck error FS0001: All elements of a list must be 
 test.fsx(544,14,544,21): typecheck error FS0039: The type 'float64' is not defined. Maybe you want one of the following:
    float
    float32
+
+test.fsx(610,25,610,43): typecheck error FS3388: This expression implicitly converts type 'int -> unit' to type 'Action<int>'. See https://aka.ms/fsharp-implicit-convs.
+
+test.fsx(617,18,617,22): typecheck error FS3388: This expression implicitly converts type 'int -> int' to type 'Func<int,int>'. See https://aka.ms/fsharp-implicit-convs.

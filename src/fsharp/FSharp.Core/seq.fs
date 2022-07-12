@@ -980,46 +980,57 @@ namespace Microsoft.FSharp.Collections
             //   * the prefix followed by elts from the enumerator are the initial sequence.
             //   * the prefix contains only as many elements as the longest enumeration so far.
             let prefix      = ResizeArray<_>()
-            let enumeratorR = ref None
-                               // None          = Unstarted.
-                               // Some(Some e)  = Started.
-                               // Some None     = Finished.
+
+            // None          = Unstarted.
+            // Some(Some e)  = Started.
+            // Some None     = Finished.
+            let mutable enumeratorR = None
+
             let oneStepTo i =
               // If possible, step the enumeration to prefix length i (at most one step).
               // Be speculative, since this could have already happened via another thread.
-              if not (i < prefix.Count) then // is a step still required?
+              if i >= prefix.Count then // is a step still required?
                   // If not yet started, start it (create enumerator).
-                  match !enumeratorR with
-                  | None -> enumeratorR := Some (Some (source.GetEnumerator()))
-                  | Some _ -> ()
-                  match (!enumeratorR).Value with
-                  | Some enumerator -> if enumerator.MoveNext() then
-                                          prefix.Add(enumerator.Current)
-                                       else
-                                          enumerator.Dispose()     // Move failed, dispose enumerator,
-                                          enumeratorR := Some None // drop it and record finished.
+                  let optEnumerator =
+                      match enumeratorR with
+                      | None ->
+                          let optEnumerator = Some (source.GetEnumerator())
+                          enumeratorR <- Some optEnumerator
+                          optEnumerator
+                      | Some optEnumerator ->
+                          optEnumerator
+
+                  match optEnumerator with
+                  | Some enumerator ->
+                      if enumerator.MoveNext() then
+                          prefix.Add(enumerator.Current)
+                      else
+                          enumerator.Dispose()     // Move failed, dispose enumerator,
+                          enumeratorR <- Some None // drop it and record finished.
                   | None -> ()
+
             let result =
                 unfold (fun i ->
-                              // i being the next position to be returned
-                              // A lock is needed over the reads to prefix.Count since the list may be being resized
-                              // NOTE: we could change to a reader/writer lock here
-                              lock enumeratorR (fun () ->
-                                  if i < prefix.Count then
-                                    Some (prefix.[i],i+1)
-                                  else
-                                    oneStepTo i
-                                    if i < prefix.Count then
-                                      Some (prefix.[i],i+1)
-                                    else
-                                      None)) 0
+                    // i being the next position to be returned
+                    // A lock is needed over the reads to prefix.Count since the list may be being resized
+                    // NOTE: we could change to a reader/writer lock here
+                    lock prefix (fun () ->
+                        if i < prefix.Count then
+                            Some (prefix.[i],i+1)
+                        else
+                            oneStepTo i
+                            if i < prefix.Count then
+                                Some (prefix.[i],i+1)
+                            else
+                                None)) 0
             let cleanup() =
-               lock enumeratorR (fun () ->
+               lock prefix (fun () ->
                    prefix.Clear()
-                   match !enumeratorR with
+                   match enumeratorR with
                    | Some (Some e) -> IEnumerator.dispose e
                    | _ -> ()
-                   enumeratorR := None)
+                   enumeratorR <- None)
+
             (new CachedSeq<_>(cleanup, result) :> seq<_>)
 
         [<CompiledName("AllPairs")>]

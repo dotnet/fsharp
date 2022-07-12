@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="new">The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</target>
+        <target state="translated">'{0}' のファイル拡張子を認識できません。ソース ファイル拡張子は .fs、.fsi、.fsx、または .fsscript にする必要があります。非推奨の拡張子 .ml または .mli の使用を有効にするには、'--langversion:5.0' および '--mlcompatibility' を使用してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
-        <target state="new">The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</target>
+        <target state="translated">'{0}' のファイル拡張子は認識されません。ソース ファイルの拡張子は .fs、.fsi、.fsx、または .fsscript にする必要があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -184,7 +184,7 @@
       </trans-unit>
       <trans-unit id="featureMLCompatRevisions">
         <source>ML compatibility revisions</source>
-        <target state="new">ML compatibility revisions</target>
+        <target state="translated">ML 互換性のリビジョン</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -312,6 +312,11 @@
         <target state="translated">'InlineIfLambda' 属性はシグネチャに存在しますが、実装はありません。</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidXmlDocPosition">
+        <source>XML comment is not placed on a valid language element.</source>
+        <target state="translated">XML コメントは有効な言語要素上にありません。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">定数リテラルを型プロバイダーの型パラメーター引数として指定するキーワード。</target>
@@ -324,7 +329,7 @@
       </trans-unit>
       <trans-unit id="lexIfOCaml">
         <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
-        <target state="new">IF-FSHARP/IF-CAML regions are no longer supported</target>
+        <target state="translated">IF-FSHARP/IF-CAML リージョンは現在サポートされていません</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -344,37 +349,37 @@
       </trans-unit>
       <trans-unit id="mlCompatError">
         <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="new">This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</target>
+        <target state="translated">このコンストラクトは使用されなくなりました。{0}。'--langversion:5.0' と '--mlcompatibility' を使用することで、この機能を有効にすることができます。</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatKeyword">
         <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
-        <target state="new">In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</target>
+        <target state="translated">F# '{0}' の以前のバージョンは予約されたキーワードでしたが、このキーワードは現在では使用されなくなりました</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatLightOffNoLongerSupported">
         <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</target>
+        <target state="translated">'#light \"off\"' または '#indent \"off\"' の使用は F# 2.0 では使用されなくなり、現在サポートされていません</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
         <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="new">The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</target>
+        <target state="translated">'(int, int) Map' のような一般的なジェネリック型名の前に複数のかっこで囲まれた型パラメーターを使用することは、F# 2.0 では使用されなくなり、現在サポートされていません</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatSigColonNoLongerSupported">
         <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</target>
+        <target state="translated">'module M = struct ... end ' の使用は F# 2.0 では使用されなくなり、現在サポートされていません。':' を '=' に変更し、'sig' と 'end' を削除し、代わりにインデントを使用します</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatSigEndNoLongerSupported">
         <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</target>
+        <target state="translated">'module M = sig ... end ' の使用は F# 2.0 では使用されなくなり、現在サポートされていません。'sig' と 'end' を削除し、代わりにインデントを使用します</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatStructEndNoLongerSupported">
         <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</target>
+        <target state="translated">'module M = struct ... end ' の使用は F# 2.0 では使用されなくなり、現在サポートされていません。'struct' と 'end' を削除し、代わりにインデントを使用します</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -465,6 +470,11 @@
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
         <target state="translated">型定義に予期しないトークンがあります。型 '{0}' の後には '=' が必要です。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsNewExprMemberAccess">
+        <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
+        <target state="translated">このメンバーへのアクセスはあいまいです。オブジェクト作成の前後にはかっこを使用してください。例: '(new SomeType(args)).MemberName'</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -4309,7 +4319,7 @@
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
         <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</source>
-        <target state="new">A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</target>
+        <target state="translated">定数値も指定する場合には、宣言を [&lt;Literal&gt;] 属性のみにできます。例: 'val x : int = 1'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">

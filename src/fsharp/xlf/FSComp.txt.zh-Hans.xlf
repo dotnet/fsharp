@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="new">The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</target>
+        <target state="translated">无法识别“{0}”的文件扩展名。源文件必须具有扩展名 .fs、.fsi、.fsx 或 .fsscript。要启用已弃用的 .ml 或 .mli 扩展名，请使用 “--langversion:5.0” 和 “--mlcompatibility”。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
-        <target state="new">The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</target>
+        <target state="translated">无法识别“{0}”的文件扩展名。源文件必须具有扩展名 .fs、.fsi、.fsx 或 .fsscript</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -184,7 +184,7 @@
       </trans-unit>
       <trans-unit id="featureMLCompatRevisions">
         <source>ML compatibility revisions</source>
-        <target state="new">ML compatibility revisions</target>
+        <target state="translated">ML 兼容性修订</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -312,6 +312,11 @@
         <target state="translated">"InlineIfLambda" 属性存在于签名中，但实现中不存在。</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidXmlDocPosition">
+        <source>XML comment is not placed on a valid language element.</source>
+        <target state="translated">未将 XML 注释放在有效语言元素上。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">用于将常量文本指定为类型提供程序中的类型形参实参的关键字。</target>
@@ -324,7 +329,7 @@
       </trans-unit>
       <trans-unit id="lexIfOCaml">
         <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
-        <target state="new">IF-FSHARP/IF-CAML regions are no longer supported</target>
+        <target state="translated">不再支持 IF-FSHARP/IF-CAML 区域</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -344,37 +349,37 @@
       </trans-unit>
       <trans-unit id="mlCompatError">
         <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="new">This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</target>
+        <target state="translated">此构造已弃用。{0}。可以通过使用 “--langversion:5.0” 和 “--mlcompatibility” 启用此功能。</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatKeyword">
         <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
-        <target state="new">In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</target>
+        <target state="translated">在早期版本的 F# 中，“{0}”是保留关键字，但现在已启用此关键字的使用</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatLightOffNoLongerSupported">
         <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</target>
+        <target state="translated">“#light \"off\"” 或 “#indent \"off\"” 在的使用在 F# 2.0 中已启用，并且不再受支持</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
         <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="new">The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</target>
+        <target state="translated">在泛型类型名称，例如 “(int, int) Map”，之前使用多个带圆括号类型参数已在 F# 2.0 中弃用，并且不再受支持</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatSigColonNoLongerSupported">
         <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</target>
+        <target state="translated">使用 “module M: sig ... end ” 在 F# 2.0 中已弃用，并且不再受支持。请将 “:” 更改为 “=”，删除 “sig” 和 “end”，并改为使用缩进</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatSigEndNoLongerSupported">
         <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</target>
+        <target state="translated">使用 “module M = sig ... end ” 在 F# 2.0 中已弃用，并且不再受支持。请删除 “sig” 和 “end” 并改用缩进</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatStructEndNoLongerSupported">
         <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</target>
+        <target state="translated">使用 “module M = struct ... end ” 在 F# 2.0 中已弃用，并且不再受支持。请删除 “struct” 和 “end” 并改用缩进</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -465,6 +470,11 @@
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
         <target state="translated">类型定义中出现意外标记。类型“{0}”后应为 "="。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsNewExprMemberAccess">
+        <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
+        <target state="translated">此成员访问权限不明确。请在对象创建周围使用括号，例如 “(new SomeType(args)).MemberName”</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -4309,7 +4319,7 @@
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
         <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</source>
-        <target state="new">A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</target>
+        <target state="translated">如果还给定了常量值，例如 “val x: int = 1”，则声明可能只能是 [&lt;Literal&gt;] 属性</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">

@@ -4,12 +4,12 @@
     <body>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="new">The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</target>
+        <target state="translated">Die Dateierweiterung von „{0}“ wurde nicht erkannt. Quelldateien müssen die Erweiterung .fs, .fsi, .fsx oder .fsscript haben. Um die veraltete Verwendung der Erweiterungen .ml oder .mli zu aktivieren, verwenden Sie „--langversion:5.0“ und „--mlcompatibility“.</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionUpdated">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</source>
-        <target state="new">The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript</target>
+        <target state="translated">Die Dateierweiterung von „{0}“ wurde nicht erkannt. Quelldateien müssen die Erweiterung .fs, .fsi, .fsx oder .fsscript haben</target>
         <note />
       </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
@@ -184,7 +184,7 @@
       </trans-unit>
       <trans-unit id="featureMLCompatRevisions">
         <source>ML compatibility revisions</source>
-        <target state="new">ML compatibility revisions</target>
+        <target state="translated">ML-Kompatibilitätsrevisionen</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -312,6 +312,11 @@
         <target state="translated">Das Attribut "InlineIfLambda" ist in der Signatur vorhanden, jedoch nicht in der Implementierung.</target>
         <note />
       </trans-unit>
+      <trans-unit id="invalidXmlDocPosition">
+        <source>XML comment is not placed on a valid language element.</source>
+        <target state="translated">Der XML-Kommentar wird nicht in einem gültigen Sprachelement platziert.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">Schlüsselwort, um ein konstantes Literal als Typparameterargument in Typanbietern anzugeben.</target>
@@ -324,7 +329,7 @@
       </trans-unit>
       <trans-unit id="lexIfOCaml">
         <source>IF-FSHARP/IF-CAML regions are no longer supported</source>
-        <target state="new">IF-FSHARP/IF-CAML regions are no longer supported</target>
+        <target state="translated">IF-FSHARP-/IF-CAML-Regionen werden nicht mehr unterstützt</target>
         <note />
       </trans-unit>
       <trans-unit id="lexRBraceInInterpolatedString">
@@ -344,37 +349,37 @@
       </trans-unit>
       <trans-unit id="mlCompatError">
         <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
-        <target state="new">This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</target>
+        <target state="translated">Dieses Konstrukt ist veraltet. {0}. Sie können dieses Feature mithilfe von „--langversion:5.0“ und „--mlcompatibility“ aktivieren.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatKeyword">
         <source>In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</source>
-        <target state="new">In previous versions of F# '{0}' was a reserved keyword but the use of this keyword is now deprecated</target>
+        <target state="translated">In früheren Versionen von F# war „{0}“ ein reserviertes Schlüsselwort, aber die Verwendung dieses Schlüsselworts ist jetzt veraltet</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatLightOffNoLongerSupported">
         <source>The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="new">The use of '#light \"off\"' or '#indent \"off\"' was deprecated in F# 2.0 and is no longer supported</target>
+        <target state="translated">Die Verwendung von „#light \"off\"“ oder „#indent \"off\&gt;"“ wurde in F# 2.0 als veraltet markiert und wird nicht mehr unterstützt</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatMultiPrefixTyparsNoLongerSupported">
         <source>The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</source>
-        <target state="new">The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported</target>
+        <target state="translated">Die Verwendung mehrerer in Klammern gesetzter Typparameter vor einem generischen Typnamen wie „(int, int) Map“ wurde in F# 2.0 als veraltet markiert und wird nicht mehr unterstützt</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatSigColonNoLongerSupported">
         <source>The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M: sig ... end ' was deprecated in F# 2.0 and is no longer supported. Change the ':' to an '=' and remove the 'sig' and 'end' and use indentation instead</target>
+        <target state="translated">Die Verwendung von „Modul M: sig ... end “ wurde in F# 2.0 als veraltet markiert und wird nicht mehr unterstützt. Ändern Sie „:“ in „=“, entfernen Sie „sig“ und „end“, und verwenden Sie stattdessen einen Einzug</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatSigEndNoLongerSupported">
         <source>The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M = sig ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'sig' and 'end' and use indentation instead</target>
+        <target state="translated">Die Verwendung von „Modul M = sig ... end “ wurde in F# 2.0 als veraltet markiert und wird nicht mehr unterstützt. Entfernen Sie „sig“ und „end“, und verwenden Sie stattdessen einen Einzug</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatStructEndNoLongerSupported">
         <source>The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</source>
-        <target state="new">The use of 'module M = struct ... end ' was deprecated in F# 2.0 and is no longer supported. Remove the 'struct' and 'end' and use indentation instead</target>
+        <target state="translated">Die Verwendung von „Modul M = struct... end “ wurde in F# 2.0 als veraltet markiert und wird nicht mehr unterstützt. Entfernen Sie „struct“ und „end“, und verwenden Sie stattdessen einen Einzug</target>
         <note />
       </trans-unit>
       <trans-unit id="nativeResourceFormatError">
@@ -465,6 +470,11 @@
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
         <target state="translated">Unerwartetes Token in Typdefinition. Nach Typ "{0}" wurde "=" erwartet.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsNewExprMemberAccess">
+        <source>This member access is ambiguous. Please use parentheses around the object creation, e.g. '(new SomeType(args)).MemberName'</source>
+        <target state="translated">Dieser Memberzugriff ist mehrdeutig. Setzen Sie Klammern um die Objekterstellung, z. B. "(new SomeType(args)). MemberName“</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedSymbolDot">
@@ -4309,7 +4319,7 @@
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
         <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</source>
-        <target state="new">A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</target>
+        <target state="translated">Eine Deklaration darf nur das [&lt;Literal&gt;]-Attribut sein, wenn auch ein konstanter Wert angegeben wird, z. B. "val x: int = 1".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">

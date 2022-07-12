@@ -46,10 +46,10 @@ val InitialImplicitCtorInfo: unit -> CtorInfo
 [<NoEquality; NoComparison>]
 type UngeneralizableItem
 
-[<NoEquality; NoComparison>]
 /// Represents the type environment at a particular scope. Includes the name
 /// resolution environment, the ungeneralizable items from earlier in the scope
 /// and other information about the scope.
+[<NoEquality; NoComparison>]
 type TcEnv =
     { 
       /// Name resolution information 

@@ -250,8 +250,8 @@ module Pass1_DetermineTLRAndArities =
 // pass2: determine reqdTypars(f) and envreq(f) - notes
 //-------------------------------------------------------------------------
 
-/// What are the closing types/values for {f1, f2...} mutually defined?
-///
+// What are the closing types/values for {f1, f2...} mutually defined?
+//
 //   Note: arity-met g-applications (g TLR) will translated as:
 //           [[g @ tps ` args]] -> gHAT @ reqdTypars(g) tps ` env(g) args
 //         so they require availability of closing types/values for g.
@@ -1157,8 +1157,8 @@ module Pass4_RewriteAssembly =
             let pds, z = ExtractPreDecs z
             MakePreDecs m pds (mkTypeLambda m argtyvs (body, rty)), z
 
-        /// Lifting TLR out over constructs (disabled)
-        /// Lift minimally to ensure the defn is not lifted up and over defns on which it depends (disabled)
+        // Lifting TLR out over constructs (disabled)
+        // Lift minimally to ensure the defn is not lifted up and over defns on which it depends (disabled)
         | Expr.Match (spBind, exprm, dtree, targets, m, ty) ->
             let targets = Array.toList targets
             let dtree, z   = TransDecisionTree penv z dtree

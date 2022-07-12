@@ -47,9 +47,9 @@ val FreshenTypars : ITraitContext option -> range -> Typars -> TType list
 /// Make new type inference variables for the use of a method at a particular location
 val FreshenMethInfo : ITraitContext option -> range -> MethInfo -> TType list
 
-[<RequireQualifiedAccess>] 
 /// Information about the context of a type equation, for better error reporting
-type ContextInfo =
+[<RequireQualifiedAccess>]
+>>>>>>> 06d9821e5561dd9125fafa4a77b0a4a922da29c6
 
     /// No context was given.
     | NoContext

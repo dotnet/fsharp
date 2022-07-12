@@ -67,8 +67,8 @@ type ValMutability =
     | Immutable 
     | Mutable 
 
-[<RequireQualifiedAccess>]
 /// Indicates if a type parameter is needed at runtime and may not be eliminated
+[<RequireQualifiedAccess>]
 type TyparDynamicReq = 
 
     /// Indicates the type parameter is not needed at runtime and may be eliminated
@@ -92,8 +92,8 @@ type ValBaseOrThisInfo =
     /// Indicates the 'this' value specified in a memberm e.g. 'x' in 'member x.M() = 1'
     | MemberThisVal 
 
-[<Struct>]
 /// Flags on values
+[<Struct>]
 type ValFlags(flags: int64) = 
 
     new (recValInfo, baseOrThis, isCompGen, inlineInfo, isMutable, isModuleOrMemberBinding, isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal) =
@@ -5284,22 +5284,22 @@ type CcuReference = string // ILAssemblyRef
 
 /// A relinkable handle to the contents of a compilation unit. Relinking is performed by mutation.
 //
-/// A compilation unit is, more or less, the new material created in one
-/// invocation of the compiler. Due to static linking assemblies may hold more 
-/// than one compilation unit (i.e. when two assemblies are merged into a compilation
-/// the resulting assembly will contain 3 CUs). Compilation units are also created for referenced
-/// .NET assemblies. 
-/// 
-/// References to items such as type constructors are via 
-/// cross-compilation-unit thunks, which directly reference the data structures that define
-/// these modules. Thus, when saving out values to disk we only wish 
-/// to save out the "current" part of the term graph. When reading values
-/// back in we "fixup" the links to previously referenced modules.
-///
-/// All non-local accesses to the data structures are mediated
-/// by ccu-thunks. Ultimately, a ccu-thunk is either a (named) element of
-/// the data structure, or it is a delayed fixup, i.e. an invalid dangling
-/// reference that has not had an appropriate fixup applied.  
+// A compilation unit is, more or less, the new material created in one
+// invocation of the compiler. Due to static linking assemblies may hold more
+// than one compilation unit (i.e. when two assemblies are merged into a compilation
+// the resulting assembly will contain 3 CUs). Compilation units are also created for referenced
+// .NET assemblies.
+//
+// References to items such as type constructors are via
+// cross-compilation-unit thunks, which directly reference the data structures that define
+// these modules. Thus, when saving out values to disk we only wish
+// to save out the "current" part of the term graph. When reading values
+// back in we "fixup" the links to previously referenced modules.
+//
+// All non-local accesses to the data structures are mediated
+// by ccu-thunks. Ultimately, a ccu-thunk is either a (named) element of
+// the data structure, or it is a delayed fixup, i.e. an invalid dangling
+// reference that has not had an appropriate fixup applied.
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type CcuThunk = 
     {

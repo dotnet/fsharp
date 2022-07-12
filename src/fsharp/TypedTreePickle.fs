@@ -2060,7 +2060,7 @@ and u_tycon_repr st =
                             | [] -> List.rev acc, tdefs.FindByName iltref.Name
                             | h :: t ->
                                 let nestedTypeDef = tdefs.FindByName h
-                                find (tdefs.FindByName h :: acc) t nestedTypeDef.NestedTypes
+                                find (nestedTypeDef :: acc) t nestedTypeDef.NestedTypes
                         let nestedILTypeDefs, ilTypeDef = find [] iltref.Enclosing iILModule.TypeDefs
                         TILObjectRepr(TILObjectReprData(st.iilscope, nestedILTypeDefs, ilTypeDef))
                     with _ ->

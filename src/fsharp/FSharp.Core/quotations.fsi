@@ -19,12 +19,18 @@ open System.Reflection
 [<CompiledName("FSharpVar")>]
 type Var =
     /// <summary>The type associated with the variable</summary>
+    /// 
+    /// <example-tbd></example-tbd>
     member Type : Type
 
     /// <summary>The declared name of the variable</summary>
+    /// 
+    /// <example-tbd></example-tbd>
     member Name : string
 
     /// <summary>Indicates if the variable represents a mutable storage location</summary>
+    /// 
+    /// <example-tbd></example-tbd>
     member IsMutable: bool
 
     /// <summary>Creates a new variable with the given name, type and mutability</summary>
@@ -34,6 +40,8 @@ type Var =
     /// <param name="isMutable">Indicates if the variable represents a mutable storage location. Default is false.</param>
     ///
     /// <returns>The created variable.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     new : name:string * typ:Type * ?isMutable : bool -> Var
 
     /// <summary>Fetches or create a new variable with the given name and type from a global pool of shared variables
@@ -43,6 +51,8 @@ type Var =
     /// <param name="typ">The type associated with the variable.</param>
     ///
     /// <returns>The retrieved or created variable.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Global : name:string * typ:Type -> Var
     
     interface System.IComparable
@@ -60,16 +70,24 @@ type Expr =
     /// <param name="substitution">The function to map variables into expressions.</param>
     ///
     /// <returns>The expression with the given substitutions.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     member Substitute : substitution:(Var -> Expr option) -> Expr 
 
     /// <summary>Gets the free expression variables of an expression as a list.</summary>
     /// <returns>A sequence of the free variables in the expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     member GetFreeVars : unit -> seq<Var>
 
     /// <summary>Returns type of an expression.</summary>
+    /// 
+    /// <example-tbd></example-tbd>
     member Type : Type
 
     /// <summary>Returns the custom attributes of an expression.</summary>
+    /// 
+    /// <example-tbd></example-tbd>
     member CustomAttributes : Expr list
 
     override Equals : obj:obj -> bool 
@@ -79,6 +97,8 @@ type Expr =
     /// <param name="target">The target expression.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member AddressOf : target:Expr -> Expr
     
     /// <summary>Builds an expression that represents setting the value held at a particular address.</summary>
@@ -87,6 +107,8 @@ type Expr =
     /// <param name="value">The value to set at the address.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member AddressSet : target:Expr * value:Expr -> Expr
     
     /// <summary>Builds an expression that represents the application of a first class function value to a single argument.</summary>
@@ -95,6 +117,8 @@ type Expr =
     /// <param name="argument">The argument to the function.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Application: functionExpr:Expr * argument:Expr -> Expr
     
     /// <summary>Builds an expression that represents the application of a first class function value to multiple arguments</summary>
@@ -103,6 +127,8 @@ type Expr =
     /// <param name="arguments">The list of lists of arguments to the function.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Applications: functionExpr:Expr * arguments:list<list<Expr>> -> Expr
     
     /// <summary>Builds an expression that represents a call to an static method or module-bound function</summary>
@@ -111,6 +137,8 @@ type Expr =
     /// <param name="arguments">The list of arguments to the method.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Call : methodInfo:MethodInfo * arguments:list<Expr> -> Expr
 
     /// <summary>Builds an expression that represents a call to an instance method associated with an object</summary>
@@ -120,6 +148,8 @@ type Expr =
     /// <param name="arguments">The list of arguments to the method.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Call : obj:Expr * methodInfo:MethodInfo * arguments:list<Expr> -> Expr
 
     /// <summary>Builds an expression that represents a call to an static method or module-bound function</summary>
@@ -130,6 +160,8 @@ type Expr =
     /// <param name="arguments">The list of arguments to the method.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member CallWithWitnesses: methodInfo: MethodInfo * methodInfoWithWitnesses: MethodInfo * witnesses: Expr list * arguments: Expr list -> Expr
 
     /// <summary>Builds an expression that represents a call to an instance method associated with an object</summary>
@@ -141,6 +173,8 @@ type Expr =
     /// <param name="arguments">The list of arguments to the method.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member CallWithWitnesses: obj:Expr * methodInfo:MethodInfo * methodInfoWithWitnesses: MethodInfo * witnesses: Expr list * arguments:Expr list -> Expr
 
     /// <summary>Builds an expression that represents the coercion of an expression to a type</summary>
@@ -149,6 +183,8 @@ type Expr =
     /// <param name="target">The target type.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Coerce : source:Expr * target:Type -> Expr 
 
     /// <summary>Builds 'if ... then ... else' expressions.</summary>
@@ -158,6 +194,8 @@ type Expr =
     /// <param name="elseExpr">The <c>else</c> sub-expression.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member IfThenElse : guard:Expr * thenExpr:Expr * elseExpr:Expr -> Expr 
 
     /// <summary>Builds a 'for i = ... to ... do ...' expression that represent loops over integer ranges</summary>
@@ -168,6 +206,8 @@ type Expr =
     /// <param name="body">The sub-expression representing the body of the loop.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member ForIntegerRangeLoop: loopVariable:Var * start:Expr * endExpr:Expr * body:Expr -> Expr 
 
     /// <summary>Builds an expression that represents the access of a static field</summary>
@@ -175,6 +215,8 @@ type Expr =
     /// <param name="fieldInfo">The description of the field to access.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member FieldGet: fieldInfo:FieldInfo -> Expr 
 
     /// <summary>Builds an expression that represents the access of a field of an object</summary>
@@ -183,6 +225,8 @@ type Expr =
     /// <param name="fieldInfo">The description of the field to access.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member FieldGet: obj:Expr * fieldInfo:FieldInfo -> Expr 
 
     /// <summary>Builds an expression that represents writing to a static field </summary>
@@ -191,6 +235,8 @@ type Expr =
     /// <param name="value">The value to the set to the field.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member FieldSet: fieldInfo:FieldInfo * value:Expr -> Expr 
 
     /// <summary>Builds an expression that represents writing to a field of an object</summary>
@@ -200,6 +246,8 @@ type Expr =
     /// <param name="value">The value to set to the field.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member FieldSet: obj:Expr * fieldInfo:FieldInfo * value:Expr -> Expr 
 
     /// <summary>Builds an expression that represents the construction of an F# function value</summary>
@@ -208,6 +256,8 @@ type Expr =
     /// <param name="body">The body of the function.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Lambda : parameter:Var * body:Expr -> Expr
 
     /// <summary>Builds expressions associated with 'let' constructs</summary>
@@ -217,6 +267,8 @@ type Expr =
     /// <param name="body">The sub-expression where the binding is in scope.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Let : letVariable:Var * letExpr:Expr * body:Expr -> Expr 
 
     /// <summary>Builds recursive expressions associated with 'let rec' constructs</summary>
@@ -225,6 +277,8 @@ type Expr =
     /// <param name="body">The sub-expression where the bindings are in scope.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member LetRecursive : bindings:(Var * Expr) list * body:Expr -> Expr 
 
     /// <summary>Builds an expression that represents the invocation of an object constructor</summary>
@@ -233,22 +287,26 @@ type Expr =
     /// <param name="arguments">The list of arguments to the constructor.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member NewObject: constructorInfo:ConstructorInfo * arguments:Expr list -> Expr 
-
 
     /// <summary>Builds an expression that represents the invocation of a default object constructor</summary>
     ///
     /// <param name="expressionType">The type on which the constructor is invoked.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member DefaultValue: expressionType:Type -> Expr 
-
 
     /// <summary>Builds an expression that represents the creation of an F# tuple value</summary>
     ///
     /// <param name="elements">The list of elements of the tuple.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member NewTuple: elements:Expr list -> Expr 
 
     /// <summary>Builds an expression that represents the creation of an F# tuple value</summary>
@@ -257,6 +315,8 @@ type Expr =
     /// <param name="elements">The list of elements of the tuple.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member NewStructTuple: asm:Assembly * elements:Expr list -> Expr 
 
     /// <summary>Builds record-construction expressions </summary>
@@ -265,6 +325,8 @@ type Expr =
     /// <param name="elements">The list of elements of the record.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member NewRecord: recordType:Type * elements:Expr list -> Expr 
 
     /// <summary>Builds an expression that represents the creation of an array value initialized with the given elements</summary>
@@ -273,6 +335,8 @@ type Expr =
     /// <param name="elements">The list of elements of the array.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member NewArray: elementType:Type * elements:Expr list -> Expr 
 
     /// <summary>Builds an expression that represents the creation of a delegate value for the given type</summary>
@@ -282,6 +346,8 @@ type Expr =
     /// <param name="body">The body of the function.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member NewDelegate: delegateType:Type * parameters:Var list * body:Expr -> Expr 
 
     /// <summary>Builds an expression that represents the creation of a union case value</summary>
@@ -290,6 +356,8 @@ type Expr =
     /// <param name="arguments">The list of arguments for the case.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member NewUnionCase: unionCase:UnionCaseInfo * arguments:Expr list -> Expr 
 
     /// <summary>Builds an expression that represents reading a property of an object</summary>
@@ -299,6 +367,8 @@ type Expr =
     /// <param name="indexerArgs">List of indices for the property if it is an indexed property.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member PropertyGet: obj:Expr * property:PropertyInfo  * ?indexerArgs: Expr list -> Expr 
 
     /// <summary>Builds an expression that represents reading a static property </summary>
@@ -307,6 +377,8 @@ type Expr =
     /// <param name="indexerArgs">List of indices for the property if it is an indexed property.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member PropertyGet: property:PropertyInfo * ?indexerArgs: Expr list -> Expr 
 
     /// <summary>Builds an expression that represents writing to a property of an object</summary>
@@ -317,6 +389,8 @@ type Expr =
     /// <param name="indexerArgs">List of indices for the property if it is an indexed property.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member PropertySet: obj:Expr * property:PropertyInfo * value:Expr * ?indexerArgs: Expr list -> Expr 
 
     /// <summary>Builds an expression that represents writing to a static property </summary>
@@ -326,6 +400,8 @@ type Expr =
     /// <param name="indexerArgs">List of indices for the property if it is an indexed property.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member PropertySet: property:PropertyInfo * value:Expr * ?indexerArgs: Expr list -> Expr 
 
     /// <summary>Builds an expression that represents a nested typed or raw quotation literal</summary>
@@ -333,6 +409,8 @@ type Expr =
     /// <param name="inner">The expression being quoted.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    ///
+    /// <example-tbd></example-tbd>
     [<Obsolete("Please use Expr.QuoteTyped or Expr.QuoteRaw to distinguish between typed and raw quotation literals")>]
     static member Quote: inner:Expr -> Expr 
 
@@ -341,6 +419,8 @@ type Expr =
     /// <param name="inner">The expression being quoted.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member QuoteRaw: inner:Expr -> Expr 
 
     /// <summary>Builds an expression that represents a nested typed quotation literal</summary>
@@ -348,6 +428,8 @@ type Expr =
     /// <param name="inner">The expression being quoted.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member QuoteTyped: inner:Expr -> Expr 
 
     /// <summary>Builds an expression that represents the sequential execution of one expression followed by another</summary>
@@ -356,6 +438,8 @@ type Expr =
     /// <param name="second">The second expression.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Sequential: first:Expr * second:Expr -> Expr 
 
     /// <summary>Builds an expression that represents a try/with construct for exception filtering and catching.</summary>
@@ -367,6 +451,8 @@ type Expr =
     /// <param name="catchBody">The expression evaluated when an exception is caught.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member TryWith: body:Expr * filterVar:Var * filterBody:Expr * catchVar:Var * catchBody:Expr -> Expr 
 
     /// <summary>Builds an expression that represents a try/finally construct </summary>
@@ -375,6 +461,8 @@ type Expr =
     /// <param name="compensation">The final part of the expression to be evaluated.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member TryFinally: body:Expr * compensation:Expr -> Expr 
 
     /// <summary>Builds an expression that represents getting a field of a tuple</summary>
@@ -383,6 +471,8 @@ type Expr =
     /// <param name="index">The index of the tuple element to get.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member TupleGet: tuple:Expr * index:int -> Expr 
 
 
@@ -392,6 +482,8 @@ type Expr =
     /// <param name="target">The target type.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member TypeTest: source:Expr * target:Type -> Expr 
 
     /// <summary>Builds an expression that represents a test of a value is of a particular union case</summary>
@@ -400,6 +492,8 @@ type Expr =
     /// <param name="unionCase">The description of the union case.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member UnionCaseTest: source:Expr * unionCase:UnionCaseInfo -> Expr 
 
     /// <summary>Builds an expression that represents a constant value of a particular type</summary>
@@ -408,6 +502,8 @@ type Expr =
     /// <param name="expressionType">The type of the object.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Value : value:obj * expressionType:Type -> Expr
     
     /// <summary>Builds an expression that represents a constant value </summary>
@@ -415,6 +511,8 @@ type Expr =
     /// <param name="value">The typed value.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Value : value:'T -> Expr
 
     /// <summary>Builds an expression that represents a constant value, arising from a variable of the given name </summary>
@@ -423,6 +521,8 @@ type Expr =
     /// <param name="name">The name of the variable.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member ValueWithName : value:'T * name: string -> Expr
 
     /// <summary>Builds an expression that represents a constant value of a particular type, arising from a variable of the given name </summary>
@@ -432,6 +532,8 @@ type Expr =
     /// <param name="name">The name of the variable.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member ValueWithName : value:obj * expressionType:Type * name: string -> Expr
     
     /// <summary>Builds an expression that represents a value and its associated reflected definition as a quotation</summary>
@@ -440,8 +542,9 @@ type Expr =
     /// <param name="definition">The definition of the value being quoted.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member WithValue: value: 'T * definition: Expr<'T> -> Expr<'T>
-
 
     /// <summary>Builds an expression that represents a value and its associated reflected definition as a quotation</summary>
     ///
@@ -450,6 +553,8 @@ type Expr =
     /// <param name="definition">The definition of the value being quoted.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member WithValue: value: obj * expressionType:Type * definition: Expr -> Expr
 
     /// <summary>Builds an expression that represents a variable</summary>
@@ -457,6 +562,8 @@ type Expr =
     /// <param name="variable">The input variable.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Var : variable:Var -> Expr
     
     /// <summary>Builds an expression that represents setting a mutable variable</summary>
@@ -465,6 +572,8 @@ type Expr =
     /// <param name="value">The value to set.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member VarSet : variable:Var * value:Expr -> Expr
     
     /// <summary>Builds an expression that represents a while loop</summary>
@@ -473,10 +582,9 @@ type Expr =
     /// <param name="body">The body of the while loop.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member WhileLoop : guard:Expr * body:Expr -> Expr
-
-    //----------------    
-
 
     /// <summary>Returns a new typed expression given an underlying runtime-typed expression.
     /// A type annotation is usually required to use this function, and 
@@ -485,6 +593,8 @@ type Expr =
     /// <param name="source">The expression to cast.</param>
     ///
     /// <returns>The resulting typed expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Cast : source:Expr -> Expr<'T> 
 
     /// <summary>Try and find a stored reflection definition for the given method. Stored reflection
@@ -493,6 +603,8 @@ type Expr =
     /// <param name="methodBase">The description of the method to find.</param>
     ///
     /// <returns>The reflection definition or None if a match could not be found.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member TryGetReflectedDefinition : methodBase:MethodBase -> Expr option
     
     /// <summary>This function is called automatically when quotation syntax (&lt;@ @&gt;) and other sources of
@@ -504,6 +616,8 @@ type Expr =
     /// <param name="bytes">The serialized form of the quoted expression.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Deserialize : qualifyingType:System.Type * spliceTypes:list<System.Type> * spliceExprs:list<Expr> * bytes:byte[] -> Expr
     
     /// <summary>This function is called automatically when quotation syntax (&lt;@ @&gt;) and other sources of
@@ -516,6 +630,8 @@ type Expr =
     /// <param name="bytes">The serialized form of the quoted expression.</param>
     ///
     /// <returns>The resulting expression.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member Deserialize40 : qualifyingType:Type * referencedTypes:Type[] * spliceTypes:Type[] * spliceExprs:Expr[] * bytes:byte[] -> Expr
     
     /// <summary>Permits interactive environments such as F# Interactive
@@ -525,6 +641,8 @@ type Expr =
     /// <param name="assembly">The assembly associated with the resource.</param>
     /// <param name="resource">The unique name for the resources being added.</param>
     /// <param name="serializedValue">The serialized resource to register with the environment.</param>
+    /// 
+    /// <example-tbd></example-tbd>
     static member RegisterReflectedDefinitions: assembly:Assembly * resource:string * serializedValue:byte[] -> unit
 
     /// <summary>Permits interactive environments such as F# Interactive
@@ -535,6 +653,8 @@ type Expr =
     /// <param name="resource">The unique name for the resources being added.</param>
     /// <param name="referencedTypes">The type definitions referenced.</param>
     /// <param name="serializedValue">The serialized resource to register with the environment.</param>
+    /// 
+    /// <example-tbd></example-tbd>
     static member RegisterReflectedDefinitions: assembly:Assembly * resource:string * serializedValue:byte[] * referencedTypes:Type[] -> unit
 
     /// <summary>Fetches or creates a new variable with the given name and type from a global pool of shared variables
@@ -543,6 +663,8 @@ type Expr =
     /// <param name="name">The variable name.</param>
     ///
     /// <returns>The created of fetched typed global variable.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     static member GlobalVar<'T> : name:string -> Expr<'T>
 
     /// <summary>Format the expression as a string</summary>
@@ -552,7 +674,6 @@ type Expr =
     /// <returns>The formatted string.</returns>
     member ToString : full: bool -> string
 
-
 /// <summary>Type-carrying quoted expressions. Expressions are generated either
 /// by quotations in source text or programatically</summary>
 and [<CompiledName("FSharpExpr`1")>]
@@ -560,11 +681,12 @@ and [<CompiledName("FSharpExpr`1")>]
     Expr<'T> =
         inherit Expr
         /// <summary>Gets the raw expression associated with this type-carrying expression</summary>
+        /// 
+        /// <example-tbd></example-tbd>
         member Raw : Expr
 
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// <summary>Contains a set of primitive F# active patterns to analyze F# expression objects</summary>
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Patterns =
     
     /// <summary>An active pattern to recognize expressions that represent getting the address of a value</summary>
@@ -572,6 +694,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the sub-expression of the input AddressOf expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("AddressOfPattern")>]
     val (|AddressOf|_|)       : input:Expr -> Expr option
 
@@ -580,6 +704,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the target and value expressions of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("AddressSetPattern")>]
     val (|AddressSet|_|)      : input:Expr -> (Expr * Expr) option
 
@@ -588,6 +714,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the function and argument of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("ApplicationPattern")>]
     val (|Application|_|)     : input:Expr -> (Expr * Expr) option
 
@@ -596,6 +724,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the object, method and argument sub-expressions of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("CallPattern")>]
     val (|Call|_|)            : input:Expr -> (Expr option * MethodInfo * Expr list) option
 
@@ -604,6 +734,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the object, method, witness-argument and argument sub-expressions of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("CallWithWitnessesPattern")>]
     val (|CallWithWitnesses|_|) : input:Expr -> (Expr option * MethodInfo * MethodInfo * Expr list * Expr list) option
 
@@ -612,6 +744,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the source expression and target type of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("CoercePattern")>]
     val (|Coerce|_|)          : input:Expr -> (Expr * Type) option
 
@@ -620,6 +754,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the object and field of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("FieldGetPattern")>]
     val (|FieldGet|_|)        : input:Expr -> (Expr option * FieldInfo) option
 
@@ -628,6 +764,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the object, field and value of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("FieldSetPattern")>]
     val (|FieldSet|_|)        : input:Expr -> (Expr option * FieldInfo * Expr) option
 
@@ -636,6 +774,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the value, start, finish and body of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("ForIntegerRangeLoopPattern")>]
     val (|ForIntegerRangeLoop|_|) : input:Expr -> (Var * Expr * Expr * Expr) option
 
@@ -644,6 +784,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the guard and body of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("WhileLoopPattern")>]
     val (|WhileLoop|_|)       : input:Expr -> (Expr * Expr) option
 
@@ -652,6 +794,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the condition, then-branch and else-branch of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("IfThenElsePattern")>]
     val (|IfThenElse|_|)      : input:Expr -> (Expr * Expr * Expr) option
 
@@ -660,6 +804,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the variable and body of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("LambdaPattern")>]
     val (|Lambda|_|)          : input:Expr -> (Var * Expr) option
 
@@ -668,6 +814,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the variable, binding expression and body of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("LetPattern")>]
     val (|Let|_|)             : input:Expr -> (Var * Expr * Expr) option
 
@@ -676,6 +824,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the bindings and body of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("LetRecursivePattern")>]
     val (|LetRecursive|_|)          : input:Expr -> ((Var * Expr) list * Expr) option
 
@@ -684,6 +834,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the element type and values of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("NewArrayPattern")>]
     val (|NewArray|_|)        : input:Expr -> (Type * Expr list) option
 
@@ -692,6 +844,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the relevant type of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("DefaultValuePattern")>]
     val (|DefaultValue|_|)    : input:Expr -> Type option
 
@@ -700,6 +854,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the delegate type, argument parameters and body of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("NewDelegatePattern")>]
     val (|NewDelegate|_|)     : input:Expr -> (Type * Var list * Expr) option
 
@@ -708,6 +864,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constructor and arguments of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("NewObjectPattern")>]
     val (|NewObject|_|)       : input:Expr -> (ConstructorInfo * Expr list) option
 
@@ -716,6 +874,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the record type and field values of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("NewRecordPattern")>]
     val (|NewRecord|_|)       : input:Expr -> (Type * Expr list) option
 
@@ -724,6 +884,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the union case and field values of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("NewUnionCasePattern")>]
     val (|NewUnionCase|_|)    : input:Expr -> (UnionCaseInfo * Expr list) option
 
@@ -732,6 +894,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the element expressions of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("NewTuplePattern")>]
     val (|NewTuple|_|)        : input:Expr -> (Expr list) option
 
@@ -740,6 +904,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the element expressions of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("NewStructTuplePattern")>]
     val (|NewStructTuple|_|)        : input:Expr -> (Expr list) option
 
@@ -748,6 +914,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the object, property and indexer arguments of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("PropertyGetPattern")>]
     val (|PropertyGet|_|)         : input:Expr -> (Expr option * PropertyInfo * Expr list) option
 
@@ -756,6 +924,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the object, property, indexer arguments and setter value of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("PropertySetPattern")>]
     val (|PropertySet|_|)         : input:Expr -> (Expr option * PropertyInfo * Expr list * Expr) option
 
@@ -764,6 +934,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the nested quotation expression of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("QuotePattern")>]
     [<Obsolete("Please use QuoteTyped or QuoteRaw to distinguish between typed and raw quotation literals")>]
     val (|Quote|_|)           : input:Expr -> Expr option 
@@ -773,6 +945,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the nested quotation expression of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("QuoteRawPattern")>]
     val (|QuoteRaw|_|)           : input:Expr -> Expr option 
 
@@ -781,6 +955,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the nested quotation expression of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("QuoteTypedPattern")>]
     val (|QuoteTyped|_|)           : input:Expr -> Expr option 
 
@@ -789,6 +965,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the two sub-expressions of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("SequentialPattern")>]
     val (|Sequential|_|)      : input:Expr -> (Expr * Expr) option 
 
@@ -797,6 +975,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the body, exception variable, filter expression and catch expression of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("TryWithPattern")>]
     val (|TryWith|_|)        : input:Expr -> (Expr * Var * Expr * Var * Expr) option 
 
@@ -805,6 +985,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the body and handler parts of the try/finally expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("TryFinallyPattern")>]
     val (|TryFinally|_|)      : input:Expr -> (Expr * Expr) option 
 
@@ -813,6 +995,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the expression and tuple field being accessed</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("TupleGetPattern")>]
     val (|TupleGet|_|)        : input:Expr -> (Expr * int) option 
 
@@ -821,6 +1005,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the expression and type being tested</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("TypeTestPattern")>]
     val (|TypeTest|_|)        : input:Expr -> (Expr * Type) option 
 
@@ -829,6 +1015,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the expression and union case being tested</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("UnionCaseTestPattern")>]
     val (|UnionCaseTest|_|)   : input:Expr -> (Expr * UnionCaseInfo) option 
 
@@ -837,6 +1025,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the boxed value and its static type</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("ValuePattern")>]
     val (|Value|_|)           : input:Expr -> (obj * Type) option
 
@@ -845,6 +1035,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the boxed value, its static type and its name</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("ValueWithNamePattern")>]
     val (|ValueWithName|_|)  : input:Expr -> (obj * Type * string) option
 
@@ -853,6 +1045,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the boxed value, its static type and its definition</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("WithValuePattern")>]
     val (|WithValue|_|)  : input:Expr -> (obj * Type * Expr) option
 
@@ -861,6 +1055,8 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the variable of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("VarPattern")>]
     val (|Var|_|)             : input:Expr -> Var option
 
@@ -869,11 +1065,13 @@ module Patterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the variable and value expression of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("VarSetPattern")>]
     val (|VarSet|_|)          : input:Expr -> (Var * Expr) option
     
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 /// <summary>Contains a set of derived F# active patterns to analyze F# expression objects</summary>
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module DerivedPatterns =    
 
     /// <summary>An active pattern to recognize expressions that represent a (possibly curried or tupled) first class function value</summary>
@@ -881,6 +1079,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the curried variables and body of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("LambdasPattern")>]
     val (|Lambdas|_|)       : input:Expr -> (Var list list * Expr) option
 
@@ -889,6 +1089,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the function and curried arguments of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("ApplicationsPattern")>]
     val (|Applications|_|)  : input:Expr -> (Expr * Expr list list) option
 
@@ -897,6 +1099,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the left and right parts of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("AndAlsoPattern")>]
     val (|AndAlso|_|)       : input:Expr -> (Expr * Expr) option
 
@@ -905,6 +1109,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the left and right parts of the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("OrElsePattern")>]
     val (|OrElse|_|)        : input:Expr -> (Expr * Expr) option
 
@@ -913,6 +1119,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern does not bind any results</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("UnitPattern")>]
     val (|Unit|_|)          : input:Expr -> unit option 
 
@@ -921,6 +1129,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("BoolPattern")>]
     val (|Bool|_|)          : input:Expr -> bool option 
 
@@ -929,6 +1139,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("StringPattern")>]
     val (|String|_|)        : input:Expr -> string option 
 
@@ -937,6 +1149,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("SinglePattern")>]
     val (|Single|_|)        : input:Expr -> float32 option 
 
@@ -945,6 +1159,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("DoublePattern")>]
     val (|Double|_|)        : input:Expr -> float option 
 
@@ -953,6 +1169,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("CharPattern")>]
     val (|Char|_|)          : input:Expr -> char  option 
 
@@ -961,6 +1179,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("SBytePattern")>]
     val (|SByte|_|)         : input:Expr -> sbyte option 
 
@@ -969,6 +1189,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("BytePattern")>]
     val (|Byte|_|)          : input:Expr -> byte option 
 
@@ -977,6 +1199,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("Int16Pattern")>]
     val (|Int16|_|)         : input:Expr -> int16 option 
 
@@ -985,6 +1209,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("UInt16Pattern")>]
     val (|UInt16|_|)        : input:Expr -> uint16 option 
 
@@ -993,6 +1219,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("Int32Pattern")>]
     val (|Int32|_|)         : input:Expr -> int32 option 
 
@@ -1001,6 +1229,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("UInt32Pattern")>]
     val (|UInt32|_|)        : input:Expr -> uint32 option 
 
@@ -1009,6 +1239,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("Int64Pattern")>]
     val (|Int64|_|)         : input:Expr -> int64 option 
 
@@ -1017,6 +1249,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("UInt64Pattern")>]
     val (|UInt64|_|)        : input:Expr -> uint64 option 
 
@@ -1025,6 +1259,8 @@ module DerivedPatterns =
     /// <param name="input">The input expression to match against.</param>
     ///
     /// <returns>When successful, the pattern binds the constant value from the input expression</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("DecimalPattern")>]
     val (|Decimal|_|)        : input:Expr -> decimal option 
 
@@ -1038,6 +1274,8 @@ module DerivedPatterns =
     /// <returns>The optional target object (present if the target is an 
     /// instance method), the generic type instantiation (non-empty if the target is a generic
     /// instantiation), and the arguments to the function or method.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("SpecificCallPattern")>]
     val (|SpecificCall|_|)  : templateParameter:Expr -> (Expr -> (Expr option * list<Type> * list<Expr>) option)
 
@@ -1046,6 +1284,8 @@ module DerivedPatterns =
     /// <param name="methodBase">The description of the method.</param>
     ///
     /// <returns>The expression of the method definition if found, or None.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("MethodWithReflectedDefinitionPattern")>]
     val (|MethodWithReflectedDefinition|_|) : methodBase:MethodBase -> Expr option
     
@@ -1054,6 +1294,8 @@ module DerivedPatterns =
     /// <param name="propertyInfo">The description of the property.</param>
     ///
     /// <returns>The expression of the method definition if found, or None.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("PropertyGetterWithReflectedDefinitionPattern")>]
     val (|PropertyGetterWithReflectedDefinition|_|) : propertyInfo:PropertyInfo -> Expr option
 
@@ -1062,6 +1304,8 @@ module DerivedPatterns =
     /// <param name="propertyInfo">The description of the property.</param>
     ///
     /// <returns>The expression of the method definition if found, or None.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("PropertySetterWithReflectedDefinitionPattern")>]
     val (|PropertySetterWithReflectedDefinition|_|) : propertyInfo:PropertyInfo -> Expr option
 
@@ -1074,6 +1318,8 @@ module ExprShape =
     /// <param name="input">The input expression.</param>
     ///
     /// <returns>The decomposed Var, Lambda, or ConstApp.</returns>
+    /// 
+    /// <example-tbd></example-tbd>
     [<CompiledName("ShapePattern")>]
     val (|ShapeVar|ShapeLambda|ShapeCombination|) : 
             input:Expr -> Choice<Var,                // Var

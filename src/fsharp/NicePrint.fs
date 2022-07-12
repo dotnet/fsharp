@@ -2324,7 +2324,7 @@ module PrintData =
             wordL (tagLocal v.DisplayName)
 
         | Expr.Link rX ->
-            dataExprWrapL denv isAtomic (!rX)
+            dataExprWrapL denv isAtomic rX.Value
 
         | Expr.Op (TOp.UnionCase c, _, args, _) -> 
             if denv.g.unionCaseRefEq c denv.g.nil_ucref then wordL (tagPunctuation "[]")

@@ -66,10 +66,10 @@ namespace Microsoft.FSharp.Core
        /// <summary>Indicates that the compiled entity had private or internal representation in F# source code.</summary>
        | NonPublicRepresentation = 32
 
-    [<Flags>]
     /// <summary>Indicates one or more adjustments to the compiled representation of an F# type or member.</summary>
     ///
     /// <category>Attributes</category>
+    [<Flags>]
     type CompilationRepresentationFlags = 
 
        /// <summary>No special compilation representation.</summary>
@@ -417,12 +417,12 @@ namespace Microsoft.FSharp.Core
         /// <returns>StructuralComparisonAttribute</returns>
         new : unit -> StructuralComparisonAttribute
 
-    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
-    [<Sealed>]
     /// <summary>Indicates that a member on a computation builder type is a custom query operator,
     /// and indicates the name of that operator.</summary>
     ///
     /// <category>Attributes</category>
+    [<AttributeUsage(AttributeTargets.Method,AllowMultiple=false)>]
+    [<Sealed>]
     type CustomOperationAttribute = 
         inherit Attribute
 
@@ -454,12 +454,12 @@ namespace Microsoft.FSharp.Core
         /// <summary>Indicates if the custom operation maintains the variable space of the query of computation expression through the use of a bind operation</summary>
         member MaintainsVariableSpaceUsingBind : bool with get,set
 
-    [<AttributeUsage(AttributeTargets.Parameter,AllowMultiple=false)>]
-    [<Sealed>]
     /// <summary>Indicates that, when a custom operator is used in a computation expression,
     /// a parameter is automatically parameterized by the variable space of the computation expression</summary>
     ///
     /// <category>Attributes</category>
+    [<AttributeUsage(AttributeTargets.Parameter,AllowMultiple=false)>]
+    [<Sealed>]
     type ProjectionParameterAttribute = 
 
         /// <summary>Creates an instance of the attribute</summary>
@@ -946,191 +946,191 @@ namespace Microsoft.FSharp.Core
         /// or an enclosing module opened.</summary>
         member Path: string
 
-    [<MeasureAnnotatedAbbreviation>] 
-    /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure. 
+    /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.Double"/>.</summary>
     ///
     /// <category index="6">Basic Types with Units of Measure</category>
+    [<MeasureAnnotatedAbbreviation>]
     type float<[<Measure>] 'Measure> = float
 
-    [<MeasureAnnotatedAbbreviation>] 
-    /// <summary>The type of single-precision floating point numbers, annotated with a unit of measure. 
+    /// <summary>The type of single-precision floating point numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.Single"/>.
     /// </summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<MeasureAnnotatedAbbreviation>]
     type float32<[<Measure>] 'Measure> = float32
     
-    [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of decimal numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.Decimal"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<MeasureAnnotatedAbbreviation>]
     type decimal<[<Measure>] 'Measure> = decimal
 
-    [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 32-bit signed integer numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.Int32"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<MeasureAnnotatedAbbreviation>]
     type int<[<Measure>] 'Measure> = int
     
-    [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 8-bit signed integer numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.SByte"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<MeasureAnnotatedAbbreviation>]
     type sbyte<[<Measure>] 'Measure> = sbyte
 
-    [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 16-bit signed integer numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.Int16"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<MeasureAnnotatedAbbreviation>]
     type int16<[<Measure>] 'Measure> = int16
 
-    [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 64-bit signed integer numbers, annotated with a unit of measure. The unit
     /// of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.Int64"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<MeasureAnnotatedAbbreviation>]
     type int64<[<Measure>] 'Measure> = int64
 
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
-    [<MeasureAnnotatedAbbreviation>]
     /// <summary>The type of machine-sized signed integer numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
     /// <see cref="T:System.IntPtr"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    [<MeasureAnnotatedAbbreviation>]
     type nativeint<[<Measure>] 'Measure> = nativeint
 
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
-    [<MeasureAnnotatedAbbreviation>] 
     /// <summary>The type of 32-bit unsigned integer numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
     /// <see cref="T:System.UInt32"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    [<MeasureAnnotatedAbbreviation>]
     type uint<[<Measure>] 'Measure> = uint
-    
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
-    [<MeasureAnnotatedAbbreviation>] 
+
     /// <summary>The type of 8-bit unsigned integer numbers, annotated with a unit of measure. 
     /// The unit of measure is erased in compiled code and when values of this type
     /// are analyzed using reflection. The type is representationally equivalent to 
     /// <see cref="T:System.Byte"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    [<MeasureAnnotatedAbbreviation>]
     type byte<[<Measure>] 'Measure> = byte
     
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
-    [<MeasureAnnotatedAbbreviation>] 
-    /// <summary>The type of 16-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// <summary>The type of 16-bit unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.UInt16"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    [<MeasureAnnotatedAbbreviation>]
     type uint16<[<Measure>] 'Measure> = uint16
     
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
-    [<MeasureAnnotatedAbbreviation>] 
-    /// <summary>The type of 64-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// <summary>The type of 64-bit unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.UInt64"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    [<MeasureAnnotatedAbbreviation>]
     type uint64<[<Measure>] 'Measure> = uint64
     
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
-    [<MeasureAnnotatedAbbreviation>]
-    /// <summary>The type of machine-sized unsigned integer numbers, annotated with a unit of measure. 
+    /// <summary>The type of machine-sized unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.UIntPtr"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
+    [<MeasureAnnotatedAbbreviation>]
     type unativeint<[<Measure>] 'Measure> = unativeint
     
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
-    /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure. 
+    /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.Double"/>.</summary>
     ///
     /// <category index="6">Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type double<[<Measure>] 'Measure> = float<'Measure>
     
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
-    /// <summary>The type of single-precision floating point numbers, annotated with a unit of measure. 
+    /// <summary>The type of single-precision floating point numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.Single"/>.</summary>
     ///
     /// <category index="6">Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type single<[<Measure>] 'Measure> = float32<'Measure>
     
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
-    /// <summary>The type of 8-bit signed integer numbers, annotated with a unit of measure. 
+    /// <summary>The type of 8-bit signed integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.SByte"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type int8<[<Measure>] 'Measure> = sbyte<'Measure>
     
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
-    /// <summary>The type of 32-bit signed integer numbers, annotated with a unit of measure. 
+    /// <summary>The type of 32-bit signed integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.Int32"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type int32<[<Measure>] 'Measure> = int<'Measure>
     
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
-    /// <summary>The type of 8-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// <summary>The type of 8-bit unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.Byte"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type uint8<[<Measure>] 'Measure> = byte<'Measure>
     
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
-    /// <summary>The type of 32-bit unsigned integer numbers, annotated with a unit of measure. 
+    /// <summary>The type of 32-bit unsigned integer numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type
-    /// are analyzed using reflection. The type is representationally equivalent to 
+    /// are analyzed using reflection. The type is representationally equivalent to
     /// <see cref="T:System.UInt32"/>.</summary>
     ///
     /// <category>Basic Types with Units of Measure</category>
+    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     type uint32<[<Measure>] 'Measure> = uint<'Measure>
 
     /// <summary>Represents a managed pointer in F# code.</summary>
+    /// <category index="7">ByRef and Pointer Types</category>
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
 #else
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
 #endif
-    /// <category index="7">ByRef and Pointer Types</category>
     type byref<'T, 'Kind> = (# "!0&" #)
 
     /// <summary>Represents a managed pointer in F# code. For F# 4.5+ this is considered equivalent to <c>byref&lt;'T, ByRefKinds.InOut&gt;</c></summary>
@@ -1138,12 +1138,12 @@ namespace Microsoft.FSharp.Core
     type byref<'T> = (# "!0&" #)
 
     /// <summary>Represents the types of byrefs in F# 4.5+</summary>
+    /// <category>ByRef and Pointer Types</category>
 #if BUILDING_WITH_LKG || BUILD_FROM_SOURCE
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true)>]
 #else
     [<CompilerMessage("This construct is for use in the FSharp.Core library and should not be used directly", 1204, IsHidden=true, IsError=true)>]
 #endif
-    /// <category>ByRef and Pointer Types</category>
     module ByRefKinds = 
 
         /// Represents a byref that can be written
@@ -1326,8 +1326,8 @@ namespace Microsoft.FSharp.Core
         [<CompilerMessage("This function is a compiler intrinsic should not be used directly", 1204, IsHidden=true)>]
         val FastGenericEqualityComparerFromTable<'T> : System.Collections.Generic.IEqualityComparer<'T> when 'T : equality
 
-        [<CompilerMessage("This function is a compiler intrinsic should not be used directly", 1204, IsHidden=true)>]
         /// <summary>Make an F# comparer object for the given type</summary>
+        [<CompilerMessage("This function is a compiler intrinsic should not be used directly", 1204, IsHidden=true)>]
         val FastGenericComparerFromTable<'T>  : System.Collections.Generic.IComparer<'T> when 'T : comparison 
 
         /// <summary>Hash a value according to its structure. This hash is not limited by an overall node count when hashing F#
@@ -1418,52 +1418,52 @@ namespace Microsoft.FSharp.Core
         /// <returns>The sbyte with units-of-measure.</returns>
         val inline SByteWithMeasure : input: sbyte -> sbyte<'Measure>
 
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a nativeint value with units-of-measure</summary>
         ///
         /// <param name="input">The input nativeint.</param>
         ///
         /// <returns>The nativeint with units-of-measure.</returns>
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline IntPtrWithMeasure : input: nativeint -> nativeint<'Measure>
 
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a uint value with units-of-measure</summary>
         ///
         /// <param name="input">The input uint.</param>
         ///
         /// <returns>The uint with units-of-measure.</returns>
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline UInt32WithMeasure : input: uint -> uint<'Measure>
         
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a uint64 value with units-of-measure</summary>
         ///
         /// <param name="input">The input uint64.</param>
         ///
         /// <returns>The uint64 with units-of-measure.</returns>
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline UInt64WithMeasure : input: uint64 -> uint64<'Measure>
         
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a uint16 value with units-of-measure</summary>
         ///
         /// <param name="input">The input uint16.</param>
         ///
         /// <returns>The uint16 with units-of-measure.</returns>
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline UInt16WithMeasure : input: uint16 -> uint16<'Measure>
         
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a byte value with units-of-measure</summary>
         ///
         /// <param name="input">The input byte.</param>
         ///
         /// <returns>The byte with units-of-measure.</returns>
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline ByteWithMeasure : input: byte -> byte<'Measure>
         
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>] 
         /// <summary>Creates a unativeint value with units-of-measure</summary>
         ///
         /// <param name="input">The input unativeint.</param>
         ///
         /// <returns>The unativeint with units-of-measure.</returns>
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         val inline UIntPtrWithMeasure : input: unativeint -> unativeint<'Measure>
 
         /// <summary>Parse an int32 according to the rules used by the overloaded 'int32' conversion operator when applied to strings</summary>
@@ -2096,12 +2096,12 @@ namespace Microsoft.FSharp.Core
         /// <returns>The function result.</returns>
         static member InvokeFast : func: FSharpFunc<'T,('U -> 'V)> * arg1:'T * arg2:'U -> 'V
 
-    [<AbstractClass>]
-    [<Sealed>]
     /// <summary>Helper functions for converting F# first class function values to and from CLI representations
     /// of functions using delegates.</summary>
     /// <category>Language Primitives</category>
-    type FuncConvert = 
+    [<AbstractClass>]
+    [<Sealed>]
+    type FuncConvert =
 
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         ///
@@ -2426,8 +2426,8 @@ namespace Microsoft.FSharp.Core
         /// <exclude />
         static member op_Implicit : value:'T -> 'T option
 
-        [<CompilationRepresentation(CompilationRepresentationFlags.Instance)>]
         /// <summary>Get the value of a 'Some' option. A NullReferenceException is raised if the option is 'None'.</summary>
+        [<CompilationRepresentation(CompilationRepresentationFlags.Instance)>]
         member Value : 'T
 
         /// <summary>Return 'true' if the option is a 'Some' value.</summary>
@@ -3621,10 +3621,10 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("KeyValuePattern")>]
         val ( |KeyValue| ): keyValuePair:KeyValuePair<'Key,'Value> -> 'Key * 'Value
 
-        [<AutoOpen>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         /// <summary>Contains extension methods to allow the use of F# indexer notation with arrays.
         /// This module is automatically opened in all F# code.</summary>
+        [<AutoOpen>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         module ArrayExtensions = 
             type ``[,,,]``<'T> with
                 /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
@@ -4544,22 +4544,22 @@ namespace Microsoft.FSharp.Core
             [<CompiledName("DefaultOf")>]
             val inline defaultof<'T> : 'T
 
-            [<CompiledName("Compare")>]
-            /// <summary>Perform generic comparison on two values where the type of the values is not 
+            /// <summary>Perform generic comparison on two values where the type of the values is not
             /// statically required to have the 'comparison' constraint. </summary>
             /// <returns>The result of the comparison.</returns>
+            [<CompiledName("Compare")>]
             val inline compare : 'T -> 'T -> int
 
-            [<CompiledName("Equals")>]
-            /// <summary>Perform generic equality on two values where the type of the values is not 
+            /// <summary>Perform generic equality on two values where the type of the values is not
             /// statically required to satisfy the 'equality' constraint. </summary>
             /// <returns>The result of the comparison.</returns>
+            [<CompiledName("Equals")>]
             val inline equals : 'T -> 'T -> bool
 
-            [<CompiledName("Hash")>]
-            /// <summary>Perform generic hashing on a value where the type of the value is not 
+            /// <summary>Perform generic hashing on a value where the type of the value is not
             /// statically required to satisfy the 'equality' constraint. </summary>
             /// <returns>The computed hash value.</returns>
+            [<CompiledName("Hash")>]
             val inline hash : 'T -> int
 
         /// <summary>A module of comparison and equality operators that are statically resolved, but which are not fully generic and do not make structural comparison. Opening this

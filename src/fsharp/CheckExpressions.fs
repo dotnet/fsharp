@@ -556,10 +556,12 @@ let MakeInnerEnvForMember env (v: Val) =
     | Some _ -> MakeInnerEnvForTyconRef env v.MemberApparentEntity v.IsExtensionMember
 
 /// Get the current accumulator for the namespace/module we're in
-let GetCurrAccumulatedModuleOrNamespaceType env = !(env.eModuleOrNamespaceTypeAccumulator)
+let GetCurrAccumulatedModuleOrNamespaceType env =
+    env.eModuleOrNamespaceTypeAccumulator.Value
 
 /// Set the current accumulator for the namespace/module we're in, updating the inferred contents
-let SetCurrAccumulatedModuleOrNamespaceType env x = env.eModuleOrNamespaceTypeAccumulator := x
+let SetCurrAccumulatedModuleOrNamespaceType env x =
+    env.eModuleOrNamespaceTypeAccumulator.Value <- x
 
 /// Set up the initial environment accounting for the enclosing "namespace X.Y.Z" definition
 let LocateEnv ccu env enclosingNamespacePath =
@@ -1041,8 +1043,8 @@ let noArgOrRetAttribs = ArgAndRetAttribs ([], [])
 /// shares the same code paths (e.g. TcLetBinding and TcLetrec) as processing expression bindings (such as "let x = 1 in ...")
 /// Member bindings also use this path.
 //
-/// However there are differences in how different bindings get processed,
-/// i.e. module bindings get published to the implicitly accumulated module type, but expression 'let' bindings don't.
+// However there are differences in how different bindings get processed,
+// i.e. module bindings get published to the implicitly accumulated module type, but expression 'let' bindings don't.
 type DeclKind =
     | ModuleOrMemberBinding
 
@@ -2092,7 +2094,7 @@ module GeneralizationHelpers =
         | Expr.App (e1, _, _, [], _) -> IsGeneralizableValue g e1
         | Expr.TyChoose (_, b, _) -> IsGeneralizableValue g b
         | Expr.Obj (_, ty, _, _, _, _, _) -> isInterfaceTy g ty || isDelegateTy g ty
-        | Expr.Link eref -> IsGeneralizableValue g !eref
+        | Expr.Link eref -> IsGeneralizableValue g eref.Value
 
         | _ -> false
 
@@ -3447,7 +3449,7 @@ let EliminateInitializationGraphs
           // n-ary expressions
             | Expr.Op (op, _, args, m) -> CheckExprOp st op m; List.iter (CheckExpr (strict st)) args
           // misc
-            | Expr.Link eref -> CheckExpr st !eref
+            | Expr.Link eref -> CheckExpr st eref.Value
             | Expr.TyChoose (_, b, _) -> CheckExpr st b
             | Expr.Quote _ -> ()
             | Expr.WitnessArg (_witnessInfo, _m) -> ()
@@ -3535,7 +3537,8 @@ let EliminateInitializationGraphs
                 let vrhs = (mkLazyDelayed g m ty felazy)
 
                 if mustHaveArity then vlazy.SetValReprInfo (Some(InferArityOfExpr g AllowTypeDirectedDetupling.Yes vty [] [] vrhs))
-                fixupPoints |> List.iter (fun (fp, _) -> fp := mkLazyForce g (!fp).Range ty velazy)
+                for (fixupPoint, _) in fixupPoints do
+                    fixupPoint.Value <- mkLazyForce g fixupPoint.Value.Range ty velazy
 
                 [mkInvisibleBind flazy frhs; mkInvisibleBind vlazy vrhs],
                 [mkBind seqPtOpt v (mkLazyForce g m ty velazy)]
@@ -3626,8 +3629,8 @@ let CheckAndRewriteObjectCtor g env (ctorLambdaExpr: Expr) =
     and checkAndRewriteCtorUsage expr =
          match expr with
          | Expr.Link eref ->
-               let e = checkAndRewriteCtorUsage !eref
-               eref := e
+               let e = checkAndRewriteCtorUsage eref.Value
+               eref.Value <- e
                expr
 
          // Type applications are ok, e.g.
@@ -4718,9 +4721,14 @@ and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp ty p
 and TryAdjustHiddenVarNameToCompGenName cenv env (id: Ident) altNameRefCellOpt =
     match altNameRefCellOpt with 
     | Some ({contents = SynSimplePatAlternativeIdInfo.Undecided altId } as altNameRefCell) ->
-        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false id.idRange env.eAccessRights env.TraitContext env.eNameResEnv TypeNameResolutionInfo.Default [id] with 
-        | Item.NewDef _ -> None // the name is not in scope as a pattern identifier (e.g. union case), so do not use the alternate ID
-        | _ -> altNameRefCell := SynSimplePatAlternativeIdInfo.Decided altId; Some altId // the name is in scope as a pattern identifier, so use the alternate ID
+        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false id.idRange env.eAccessRights env.TraitContext env.eNameResEnv TypeNameResolutionInfo.Default [id] with
+        | Item.NewDef _ ->
+            // The name is not in scope as a pattern identifier (e.g. union case), so do not use the alternate ID
+            None
+        | _ ->
+            // The name is in scope as a pattern identifier, so use the alternate ID
+            altNameRefCell.Value <- SynSimplePatAlternativeIdInfo.Decided altId
+            Some altId
     | Some {contents = SynSimplePatAlternativeIdInfo.Decided altId } -> Some altId
     | None -> None
 
@@ -5969,7 +5977,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         let e3', tpenv = TcExpr cenv overallTy env tpenv e3
         Expr.StaticOptimization (constraints', e2', e3', m), tpenv
 
-    /// e1.longId <- e2
+    // e1.longId <- e2
     | SynExpr.DotSet (e1, (LongIdentWithDots(longId, _) as lidwd), e2, mStmt) ->
         if lidwd.ThereIsAnExtraDotAtTheEnd then
             // just drop rhs on the floor
@@ -5979,11 +5987,11 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
             let mExprAndDotLookup = unionRanges e1.Range (rangeOfLid longId)
             TcExprThen cenv overallTy env tpenv false e1 [DelayedDotLookup(longId, mExprAndDotLookup); MakeDelayedSet(e2, mStmt)]
 
-    /// e1 <- e2
+    // e1 <- e2
     | SynExpr.Set (e1, e2, mStmt) ->
         TcExprThen cenv overallTy env tpenv false e1 [MakeDelayedSet(e2, mStmt)]
 
-    /// e1.longId(e2) <- e3, very rarely used named property setters
+    // e1.longId(e2) <- e3, very rarely used named property setters
     | SynExpr.DotNamedIndexedPropertySet (e1, (LongIdentWithDots(longId, _) as lidwd), e2, e3, mStmt) ->
         if lidwd.ThereIsAnExtraDotAtTheEnd then
             // just drop rhs on the floor
