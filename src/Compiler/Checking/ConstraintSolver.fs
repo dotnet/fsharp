@@ -459,7 +459,7 @@ let isFpTy g ty =
 
 /// decimal or decimal<_>
 let isDecimalTy g ty = 
-    typeEquivAux EraseMeasures g g.decimal_ty ty 
+    typeEquivAux EraseMeasures g g.decimal_ty ty
 
 // int*, int*<_> float*, float<_>*, enums
 //
@@ -494,7 +494,7 @@ let IsCharOrStringType g ty = isCharTy g ty || isStringTy g ty
 
 /// Checks the argument type for a built-in solution to an op_Addition, op_Subtraction or op_Modulus constraint.
 let IsAddSubModType nm g ty =
-    IsNonDecimalNumericOrIntegralEnumOrUnitizedDecimalType g ty || (nm = "op_Addition" && IsCharOrStringType g ty)
+    IsNonDecimalNumericOrIntegralEnumOrUnitizedDecimalType g ty || (nm = "op_Addition" && IsCharOrStringType g ty) || (nm = "op_Subtraction" && isCharTy g ty)
 
 /// Checks the argument type for a built-in solution to a bitwise operator constraint
 let IsBitwiseOpType g ty = IsIntegerOrIntegerEnumTy g ty || (isEnumTy g ty)
@@ -1695,26 +1695,30 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy argTy
           return TTraitBuiltIn
 
-      // Simulate solutions to op_Implicit and op_Explicit
-      | _, false, "op_Explicit", [argTy] 
-          when (// The input type. 
+      // Conversions from non-decimal numbers / strings / chars to non-decimal numbers / chars are built-in
+      | _, false, "op_Explicit", [argTy]
+          when (// The input type.
                 (IsNonDecimalNumericOrIntegralEnumType g argTy || isStringTy g argTy || isCharTy g argTy) &&
                 // The output type
-                (IsNonDecimalNumericOrIntegralEnumType g retTy || isCharTy g retTy) && 
-                // Exclusion: IntPtr and UIntPtr do not support .Parse() from string 
-                not (isStringTy g argTy && isNativeIntegerTy g retTy) &&
-                // Exclusion: No conversion from char to decimal
-                not (isCharTy g argTy && isDecimalTy g retTy)) -> 
+                (IsNonDecimalNumericOrIntegralEnumType g retTy || isCharTy g retTy)) ->
 
           return TTraitBuiltIn
 
-
+      // Conversions from (including decimal) numbers / strings / chars to decimals are built-in
       | _, false, "op_Explicit", [argTy] 
           when (// The input type. 
-                (IsNumericOrIntegralEnumType g argTy || isStringTy g argTy) &&
+                (IsNumericOrIntegralEnumType g argTy || isStringTy g argTy || isCharTy g argTy) &&
                 // The output type
-                (isDecimalTy g retTy)) -> 
+                (isDecimalTy g retTy)) ->
+          return TTraitBuiltIn
 
+      // Conversions from decimal numbers to native integers are built-in
+      // The rest of decimal conversions are handled via op_Explicit/op_Implicit lookup on System.Decimal
+      |  _, false, "op_Explicit", [argTy]
+          when (// The input type.
+                (isDecimalTy g argTy) &&
+                // The output type
+                (isNativeIntegerTy g retTy)) ->
           return TTraitBuiltIn
 
       | _, false, "Pow", [argTy1; argTy2] 

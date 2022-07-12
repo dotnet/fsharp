@@ -1487,6 +1487,7 @@ Microsoft.FSharp.Core.LanguagePrimitives: TResult AdditionDynamic[T1,T2,TResult]
 Microsoft.FSharp.Core.LanguagePrimitives: TResult BitwiseAndDynamic[T1,T2,TResult](T1, T2)
 Microsoft.FSharp.Core.LanguagePrimitives: TResult BitwiseOrDynamic[T1,T2,TResult](T1, T2)
 Microsoft.FSharp.Core.LanguagePrimitives: TResult CheckedAdditionDynamic[T1,T2,TResult](T1, T2)
+Microsoft.FSharp.Core.LanguagePrimitives: TResult CheckedExplicitDynamic[T,TResult](T)
 Microsoft.FSharp.Core.LanguagePrimitives: TResult CheckedMultiplyDynamic[T1,T2,TResult](T1, T2)
 Microsoft.FSharp.Core.LanguagePrimitives: TResult CheckedSubtractionDynamic[T1,T2,TResult](T1, T2)
 Microsoft.FSharp.Core.LanguagePrimitives: TResult CheckedUnaryNegationDynamic[T,TResult](T)

@@ -1139,10 +1139,13 @@ module CoreTests =
         let rawFileErr = tryCreateTemporaryFileName ()
         ``fsi <a >b 2>c`` "%s --nologo --preferreduilang:en-US %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
 
-        // REM REVIEW: want to normalise CWD paths, not suppress them.
-        let ``findstr /v`` text = Seq.filter (fun (s: string) -> not <| s.Contains(text))
-        let removeCDandHelp from' to' =
-            File.ReadLines from' |> (``findstr /v`` cfg.Directory) |> (``findstr /v`` "--help' for options") |> (fun lines -> File.WriteAllLines(getfullpath cfg to', lines))
+        let removeCDandHelp fromFile toFile =
+            File.ReadAllLines fromFile
+            |> Array.filter (fun s -> not (s.Contains(cfg.Directory)))
+            |> Array.filter (fun s -> not (s.Contains("--help' for options")))
+            |> Array.filter (fun s -> not (s.Contains("[Loading")))
+            |> Array.filter (fun s -> not (s.Contains("Binding session")))
+            |> (fun lines -> File.WriteAllLines(getfullpath cfg toFile, lines))
 
         removeCDandHelp rawFileOut diffFileOut
         removeCDandHelp rawFileErr diffFileErr
