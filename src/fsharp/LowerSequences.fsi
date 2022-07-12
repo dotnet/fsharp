@@ -1,17 +1,18 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.LowerCallsAndSeqs
+module internal FSharp.Compiler.LowerSequenceExpressions
 
 open FSharp.Compiler.Import
+open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.Text
 
-/// An "expr -> expr" pass that eta-expands under-applied values of
-/// known arity to lambda expressions and beta-var-reduces to bind
-/// any known arguments.  The results are later optimized by the peephole
-/// optimizer in opt.fs
-val LowerImplFile: g: TcGlobals -> assembly: TypedImplFile -> TypedImplFile
+/// Detect a 'seq<int>' type
+val (|SeqElemTy|_|): TcGlobals -> ImportMap -> range -> TType -> TType option
+
+val callNonOverloadedILMethod:
+    g: TcGlobals -> amap: ImportMap -> m: range -> methName: string -> ty: TType -> args: Exprs -> Expr
 
 /// Analyze a TAST expression to detect the elaborated form of a sequence expression.
 /// Then compile it to a state machine represented as a TAST containing goto, return and label nodes.
@@ -26,6 +27,3 @@ val ConvertSequenceExprToObject:
         (ValRef * ValRef * ValRef * ValRef list * Expr * Expr * Expr * TType * range) option
 
 val IsPossibleSequenceExpr: g: TcGlobals -> overallExpr: Expr -> bool
-
-val LowerComputedListOrArrayExpr:
-    tcVal: ConstraintSolver.TcValF -> g: TcGlobals -> amap: ImportMap -> Expr -> Expr option

@@ -6,12 +6,13 @@ module internal FSharp.Compiler.AccessibilityLogic
 open Internal.Utilities.Library
 open FSharp.Compiler 
 open FSharp.Compiler.AbstractIL.IL 
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypeHierarchy
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders

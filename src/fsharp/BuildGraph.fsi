@@ -5,7 +5,7 @@ module internal FSharp.Compiler.BuildGraph
 open System
 open System.Threading
 open System.Threading.Tasks
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
 
 /// Represents code that can be run as part of the build graph.

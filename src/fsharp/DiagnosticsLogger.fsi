@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.ErrorLogger
+module internal FSharp.Compiler.DiagnosticsLogger
 
 open System
 open FSharp.Compiler.Diagnostics
@@ -9,12 +9,12 @@ open FSharp.Compiler.Text
 
 /// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
-type ErrorStyle =
-    | DefaultErrors
-    | EmacsErrors
-    | TestErrors
-    | VSErrors
-    | GccErrors
+type DiagnosticStyle =
+    | Default
+    | Emacs
+    | Test
+    | VisualStudio
+    | Gcc
 
 /// Thrown when we want to add some range information to a .NET exception
 exception WrappedError of exn * range
@@ -41,29 +41,41 @@ val (|StopProcessing|_|): exn: exn -> unit option
 
 val StopProcessing<'T> : exn
 
-exception Error of (int * string) * range
+/// Represents a diagnostic exeption whose text comes via SR.*
+exception DiagnosticWithText of number: int * message: string * range: range
 
-exception InternalError of msg: string * range
+/// Creates a diagnostic exeption whose text comes via SR.*
+val Error: (int * string) * range -> exn
 
-exception UserCompilerMessage of string * int * range
+exception InternalError of message: string * range: range
 
-exception LibraryUseOnly of range
+exception UserCompilerMessage of message: string * number: int * range: range
 
-exception Deprecated of string * range
+exception LibraryUseOnly of range: range
 
-exception Experimental of string * range
+exception Deprecated of message: string * range: range
 
-exception PossibleUnverifiableCode of range
+exception Experimental of message: string * range: range
 
-exception UnresolvedReferenceNoRange of string
+exception PossibleUnverifiableCode of range: range
 
-exception UnresolvedReferenceError of string * range
+exception UnresolvedReferenceNoRange of assemblyName: string
 
-exception UnresolvedPathReferenceNoRange of string * string
+exception UnresolvedReferenceError of assemblyName: string * range: range
 
-exception UnresolvedPathReference of string * string * range
+exception UnresolvedPathReferenceNoRange of assemblyName: string * path: string
 
-exception ErrorWithSuggestions of (int * string) * range * string * Suggestions
+exception UnresolvedPathReference of assemblyName: string * path: string * range: range
+
+exception DiagnosticWithSuggestions of
+    number: int *
+    message: string *
+    range: range *
+    identifier: string *
+    suggestions: Suggestions
+
+/// Creates a DiagnosticWithSuggestions whose text comes via SR.*
+val ErrorWithSuggestions: (int * string) * range * string * Suggestions -> exn
 
 val inline protectAssemblyExploration: dflt: 'a -> f: (unit -> 'a) -> 'a
 
@@ -155,9 +167,9 @@ type PhasedDiagnostic =
     member Subcategory: unit -> string
 
 [<AbstractClass>]
-type ErrorLogger =
+type DiagnosticsLogger =
 
-    new: nameForDebugging: string -> ErrorLogger
+    new: nameForDebugging: string -> DiagnosticsLogger
 
     member DebugDisplay: unit -> string
 
@@ -165,16 +177,16 @@ type ErrorLogger =
 
     abstract member ErrorCount: int
 
-val DiscardErrorsLogger: ErrorLogger
+val DiscardErrorsLogger: DiagnosticsLogger
 
-val AssertFalseErrorLogger: ErrorLogger
+val AssertFalseDiagnosticsLogger: DiagnosticsLogger
 
-type CapturingErrorLogger =
-    inherit ErrorLogger
+type CapturingDiagnosticsLogger =
+    inherit DiagnosticsLogger
 
-    new: nm: string -> CapturingErrorLogger
+    new: nm: string -> CapturingDiagnosticsLogger
 
-    member CommitDelayedDiagnostics: errorLogger: ErrorLogger -> unit
+    member CommitDelayedDiagnostics: errorLogger: DiagnosticsLogger -> unit
 
     override DiagnosticSink: phasedError: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
@@ -189,10 +201,10 @@ type CompileThreadStatic =
 
     static member BuildPhaseUnchecked: BuildPhase
 
-    static member ErrorLogger: ErrorLogger with get, set
+    static member DiagnosticsLogger: DiagnosticsLogger with get, set
 
 [<AutoOpen>]
-module ErrorLoggerExtensions =
+module DiagnosticsLoggerExtensions =
 
     val tryAndDetectDev15: bool
 
@@ -202,25 +214,32 @@ module ErrorLoggerExtensions =
     /// Reraise an exception if it is one we want to report to Watson.
     val ReraiseIfWatsonable: exn: exn -> unit
 
-    type ErrorLogger with
+    type DiagnosticsLogger with
 
         member ErrorR: exn: exn -> unit
+
         member Warning: exn: exn -> unit
+
         member Error: exn: exn -> 'b
+
         member SimulateError: ph: PhasedDiagnostic -> 'a
+
         member ErrorRecovery: exn: exn -> m: range -> unit
+
         member StopProcessingRecovery: exn: exn -> m: range -> unit
+
         member ErrorRecoveryNoRange: exn: exn -> unit
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 val PushThreadBuildPhaseUntilUnwind: phase: BuildPhase -> IDisposable
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val PushErrorLoggerPhaseUntilUnwind: errorLoggerTransformer: (ErrorLogger -> #ErrorLogger) -> IDisposable
+val PushDiagnosticsLoggerPhaseUntilUnwind:
+    errorLoggerTransformer: (DiagnosticsLogger -> #DiagnosticsLogger) -> IDisposable
 
 val SetThreadBuildPhaseNoUnwind: phase: BuildPhase -> unit
 
-val SetThreadErrorLoggerNoUnwind: errorLogger: ErrorLogger -> unit
+val SetThreadDiagnosticsLoggerNoUnwind: errorLogger: DiagnosticsLogger -> unit
 
 /// Reports an error diagnostic and continues
 val errorR: exn: exn -> unit
@@ -384,10 +403,10 @@ type StackGuard =
 ///
 /// Use to reset error and warning handlers.
 type CompilationGlobalsScope =
-    new: errorLogger: ErrorLogger * buildPhase: BuildPhase -> CompilationGlobalsScope
+    new: errorLogger: DiagnosticsLogger * buildPhase: BuildPhase -> CompilationGlobalsScope
 
     interface IDisposable
 
-    member ErrorLogger: ErrorLogger
+    member DiagnosticsLogger: DiagnosticsLogger
 
     member BuildPhase: BuildPhase

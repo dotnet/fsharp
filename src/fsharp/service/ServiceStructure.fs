@@ -705,7 +705,7 @@ module Structure =
             with the following construct. This necessitates inspecting the children of the construct and
             finding the end of the last child's range to use instead.
 
-            Detailed further in - https://github.com/Microsoft/visualfsharp/issues/2094
+            Detailed further in - https://github.com/dotnet/fsharp/issues/2094
         *)
 
         let lastMemberSigRangeElse r memberSigs =

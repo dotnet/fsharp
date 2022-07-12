@@ -14,7 +14,7 @@ open Internal.Utilities.Rational
 open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
@@ -280,15 +280,7 @@ and remapTraitWitnessInfo tyenv (TraitWitnessInfo(tys, nm, flags, argTys, retTy)
     let rtyR = Option.map (remapTypeAux tyenv) retTy
     TraitWitnessInfo(tysR, nm, flags, argTysR, rtyR)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-and remapTraitInfo tyenv (TTrait(tys, nm, mf, argtys, rty, slnCell, traitCtxt)) =
-=======
-and remapTraitInfo tyenv (TTrait(tys, nm, mf, argtys, retTy, slnCell)) =
->>>>>>> f9b72061ca0e6ad865bc462c40c9877a6168d69d
-=======
-and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, slnCell)) =
->>>>>>> 01e5bbb5da602388d44444696f3469ba129d7b1c
+and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, slnCell, , traitCtxt)) =
     let slnCell = 
         match slnCell.Value with 
         | None -> None
@@ -309,7 +301,6 @@ and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, slnCell)) =
                 | ClosedExprSln e -> 
                      ClosedExprSln e // no need to remap because it is a closed expression, referring only to external types
             Some sln
-<<<<<<< HEAD
 
     let traitCtxtNew = 
         if tyenv.traitCtxtsMap.ContainsKey nm then
@@ -317,15 +308,11 @@ and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, slnCell)) =
         else
             traitCtxt
 
-    // Note: we reallocate a new solution cell (though keep existing solutions unless 'removeTraitSolutions'=true) on every traversal of a trait constraint
-=======
-    
     let tysR = remapTypesAux tyenv tys
     let argTysR = remapTypesAux tyenv argTys
     let retTyR = Option.map (remapTypeAux tyenv) retTy
 
     // Note: we reallocate a new solution cell on every traversal of a trait constraint
->>>>>>> 01e5bbb5da602388d44444696f3469ba129d7b1c
     // This feels incorrect for trait constraints that are quantified: it seems we should have 
     // formal binders for trait constraints when they are quantified, just as
     // we have formal binders for type variables.
@@ -333,17 +320,9 @@ and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, slnCell)) =
     // The danger here is that a solution for one syntactic occurrence of a trait constraint won't
     // be propagated to other, "linked" solutions. However trait constraints don't appear in any algebra
     // in the same way as types
-<<<<<<< HEAD
-<<<<<<< HEAD
-    TTrait(remapTypesAux tyenv tys, nm, mf, remapTypesAux tyenv argtys, Option.map (remapTypeAux tyenv) rty, ref slnCell, traitCtxtNew)
-=======
-    TTrait(remapTypesAux tyenv tys, nm, mf, remapTypesAux tyenv argtys, Option.map (remapTypeAux tyenv) retTy, ref slnCell)
->>>>>>> f9b72061ca0e6ad865bc462c40c9877a6168d69d
-=======
     let newSlnCell = ref slnCell
 
-    TTrait(tysR, nm, flags, argTysR, retTyR, newSlnCell)
->>>>>>> 01e5bbb5da602388d44444696f3469ba129d7b1c
+    TTrait(tysR, nm, flags, argTysR, retTyR, newSlnCell, traitCtxtNew)
 
 and bindTypars tps tyargs tpinst =   
     match tps with 
@@ -1000,18 +979,8 @@ type TypeEquivEnv with
         TypeEquivEnv.Empty.BindEquivTypars tps1 tps2 
 
 let rec traitsAEquivAux erasureFlag g aenv traitInfo1 traitInfo2 =
-<<<<<<< HEAD
-<<<<<<< HEAD
-   let (TTrait(tys1, nm, mf1, argtys, rty, _, _traitCtxt)) = traitInfo1
-   let (TTrait(tys2, nm2, mf2, argtys2, rty2, _, _traitCtxt2)) = traitInfo2
-=======
-   let (TTrait(tys1, nm, mf1, argtys, retTy, _)) = traitInfo1
-   let (TTrait(tys2, nm2, mf2, argtys2, retTy2, _)) = traitInfo2
->>>>>>> f9b72061ca0e6ad865bc462c40c9877a6168d69d
-=======
-   let (TTrait(tys1, nm, mf1, argTys, retTy, _)) = traitInfo1
-   let (TTrait(tys2, nm2, mf2, argTys2, retTy2, _)) = traitInfo2
->>>>>>> 01e5bbb5da602388d44444696f3469ba129d7b1c
+   let (TTrait(tys1, nm, mf1, argTys, retTy, _, _traitCtxt)) = traitInfo1
+   let (TTrait(tys2, nm2, mf2, argTys2, retTy2, _, _traitCtxt2)) = traitInfo2
    mf1 = mf2 &&
    nm = nm2 &&
    ListSet.equals (typeAEquivAux erasureFlag g aenv) tys1 tys2 &&
@@ -2289,15 +2258,7 @@ and accFreeInTyparConstraint opts tpc acc =
     | TyparConstraint.IsUnmanaged _
     | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-and accFreeInTrait opts (TTrait(tys, _, _, argtys, rty, sln, _)) acc = 
-=======
-and accFreeInTrait opts (TTrait(tys, _, _, argtys, retTy, sln)) acc = 
->>>>>>> f9b72061ca0e6ad865bc462c40c9877a6168d69d
-=======
-and accFreeInTrait opts (TTrait(tys, _, _, argTys, retTy, sln)) acc = 
->>>>>>> 01e5bbb5da602388d44444696f3469ba129d7b1c
+and accFreeInTrait opts (TTrait(tys, _, _, argTys, retTy, sln, _)) acc = 
     Option.foldBack (accFreeInTraitSln opts) sln.Value
        (accFreeInTypes opts tys 
          (accFreeInTypes opts argTys 
@@ -2435,22 +2396,10 @@ and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
     | TyparConstraint.IsReferenceType _ 
     | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(tys, _, _, argtys, rty, _, _traitCtxt))  = 
-    let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc tys
-    let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc argtys
-    let acc = Option.fold (accFreeInTypeLeftToRight g cxFlag thruFlag) acc rty
-    // Note, the _extSlns are _not_ considered free. 
-=======
-and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(tys, _, _, argtys, retTy, _)) = 
-=======
-and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(tys, _, _, argTys, retTy, _)) = 
->>>>>>> 01e5bbb5da602388d44444696f3469ba129d7b1c
+and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(tys, _, _, argTys, retTy, _, _traitCtxt)) = 
     let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc tys
     let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc argTys
     let acc = Option.fold (accFreeInTypeLeftToRight g cxFlag thruFlag) acc retTy
->>>>>>> f9b72061ca0e6ad865bc462c40c9877a6168d69d
     acc
 
 and accFreeTyparRefLeftToRight g cxFlag thruFlag acc (tp: Typar) = 
@@ -3964,15 +3913,7 @@ module DebugPrint =
 
     and auxTraitL env (ttrait: TraitConstraintInfo) =
 #if DEBUG
-<<<<<<< HEAD
-<<<<<<< HEAD
-        let (TTrait(tys, nm, memFlags, argtys, rty, _, _traitCtxt)) = ttrait 
-=======
-        let (TTrait(tys, nm, memFlags, argtys, retTy, _)) = ttrait 
->>>>>>> f9b72061ca0e6ad865bc462c40c9877a6168d69d
-=======
-        let (TTrait(tys, nm, memFlags, argTys, retTy, _)) = ttrait 
->>>>>>> 01e5bbb5da602388d44444696f3469ba129d7b1c
+        let (TTrait(tys, nm, memFlags, argTys, retTy, _, _traitCtxt)) = ttrait 
         match global_g with
         | None -> wordL (tagText "<no global g>")
         | Some g -> 
@@ -5252,15 +5193,7 @@ and accFreeInOp opts op acc =
     | TOp.Reraise -> 
         accUsesRethrow true acc
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-    | TOp.TraitCall (TTrait (tys, _, _, argtys, rty, sln, _traitCtxt)) -> 
-=======
-    | TOp.TraitCall (TTrait(tys, _, _, argtys, retTy, sln)) -> 
->>>>>>> f9b72061ca0e6ad865bc462c40c9877a6168d69d
-=======
-    | TOp.TraitCall (TTrait(tys, _, _, argTys, retTy, sln)) -> 
->>>>>>> 01e5bbb5da602388d44444696f3469ba129d7b1c
+    | TOp.TraitCall (TTrait(tys, _, _, argTys, retTy, sln, _traitCtxt)) -> 
         Option.foldBack (accFreeVarsInTraitSln opts) sln.Value
            (accFreeVarsInTys opts tys 
              (accFreeVarsInTys opts argTys 
@@ -6343,7 +6276,7 @@ let isRecdOrUnionOrStructTyconRefDefinitelyMutable (tcref: TyconRef) =
         tycon.UnionCasesArray |> Array.exists isUnionCaseDefinitelyMutable
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then 
         // Note: This only looks at the F# fields, causing oddities.
-        // See https://github.com/Microsoft/visualfsharp/pull/4576
+        // See https://github.com/dotnet/fsharp/pull/4576
         tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldDefinitelyMutable
     else
         false
@@ -10211,3 +10144,96 @@ let ComputeUseMethodImpl g (v: Val) =
             (tcref.GeneratedHashAndEqualsWithComparerValues.IsSome && typeEquiv g oty g.mk_IStructuralEquatable_ty)
 
          not isStructural))
+
+let (|Seq|_|) g expr =
+    match expr with
+    // use 'seq { ... }' as an indicator
+    | ValApp g g.seq_vref ([elemTy], [e], _m) -> Some (e, elemTy)
+    | _ -> None
+
+/// Detect a 'yield x' within a 'seq { ... }'
+let (|SeqYield|_|) g expr =
+    match expr with
+    | ValApp g g.seq_singleton_vref (_, [arg], m) -> Some (arg, m)
+    | _ -> None
+
+/// Detect a 'expr; expr' within a 'seq { ... }'
+let (|SeqAppend|_|) g expr =
+    match expr with
+    | ValApp g g.seq_append_vref (_, [arg1; arg2], m) -> Some (arg1, arg2, m)
+    | _ -> None
+
+let isVarFreeInExpr v e = Zset.contains v (freeInExpr CollectTyparsAndLocals e).FreeLocals
+
+/// Detect a 'while gd do expr' within a 'seq { ... }'
+let (|SeqWhile|_|) g expr =
+    match expr with
+    | ValApp g g.seq_generated_vref (_, [Expr.Lambda (_, _, _, [dummyv], guardExpr, _, _);innerExpr], m) 
+         when not (isVarFreeInExpr dummyv guardExpr) ->
+        
+        // The debug point for 'while' is attached to the innerExpr, see TcSequenceExpression
+        let mWhile = innerExpr.Range
+        let spWhile = match mWhile.NotedSourceConstruct with NotedSourceConstruct.While -> DebugPointAtWhile.Yes mWhile | _ -> DebugPointAtWhile.No
+        Some (guardExpr, innerExpr, spWhile, m)
+
+    | _ ->
+        None
+
+let (|SeqTryFinally|_|) g expr =
+    match expr with
+    | ValApp g g.seq_finally_vref (_, [arg1;Expr.Lambda (_, _, _, [dummyv], compensation, _, _) as arg2], m) 
+        when not (isVarFreeInExpr dummyv compensation) ->
+
+        // The debug point for 'try' and 'finally' are attached to the first and second arguments
+        // respectively, see TcSequenceExpression
+        let mTry = arg1.Range
+        let mFinally = arg2.Range
+        let spTry = match mTry.NotedSourceConstruct with NotedSourceConstruct.Try -> DebugPointAtTry.Yes mTry | _ -> DebugPointAtTry.No
+        let spFinally = match mFinally.NotedSourceConstruct with NotedSourceConstruct.Finally -> DebugPointAtFinally.Yes mFinally | _ -> DebugPointAtFinally.No
+
+        Some (arg1, compensation, spTry, spFinally, m)
+
+    | _ ->
+        None
+
+let (|SeqUsing|_|) g expr =
+    match expr with
+    | ValApp g g.seq_using_vref ([_;_;elemTy], [resource;Expr.Lambda (_, _, _, [v], body, mBind, _)], m) ->
+        // The debug point mFor at the 'use x = ... ' gets attached to the lambda
+        let spBind = match mBind.NotedSourceConstruct with NotedSourceConstruct.Binding -> DebugPointAtBinding.Yes mBind | _ -> DebugPointAtBinding.NoneAtInvisible
+        Some (resource, v, body, elemTy, spBind, m)
+    | _ ->
+        None
+
+let (|SeqForEach|_|) g expr =
+    match expr with
+    // Nested for loops are represented by calls to Seq.collect
+    | ValApp g g.seq_collect_vref ([_inpElemTy;_enumty2;genElemTy], [Expr.Lambda (_, _, _, [v], body, mIn, _); inp], mFor) ->
+        // The debug point mIn at the 'in' gets attached to the first argument, see TcSequenceExpression
+        let spIn = match mIn.NotedSourceConstruct with NotedSourceConstruct.InOrTo -> DebugPointAtInOrTo.Yes mIn | _ -> DebugPointAtInOrTo.No
+        Some (inp, v, body, genElemTy, mFor, mIn, spIn)
+
+    // "for x in e -> e2" is converted to a call to Seq.map by the F# type checker. This could be removed, except it is also visible in F# quotations.
+    | ValApp g g.seq_map_vref ([_inpElemTy;genElemTy], [Expr.Lambda (_, _, _, [v], body, mIn, _); inp], mFor) ->
+        let spIn = match mIn.NotedSourceConstruct with NotedSourceConstruct.InOrTo -> DebugPointAtInOrTo.Yes mIn | _ -> DebugPointAtInOrTo.No
+        // The debug point mFor at the 'for' gets attached to the first argument, see TcSequenceExpression
+        Some (inp, v, mkCallSeqSingleton g body.Range genElemTy body, genElemTy, mFor, mIn, spIn)
+
+    | _ -> None
+
+let (|SeqDelay|_|) g expr =
+    match expr with
+    | ValApp g g.seq_delay_vref ([elemTy], [Expr.Lambda (_, _, _, [v], e, _, _)], _m) 
+        when not (isVarFreeInExpr v e) -> 
+        Some (e, elemTy)
+    | _ -> None
+
+let (|SeqEmpty|_|) g expr =
+    match expr with
+    | ValApp g g.seq_empty_vref (_, [], m) -> Some m
+    | _ -> None
+
+let isFSharpExceptionTy g ty =
+    match tryTcrefOfAppTy g ty with
+    | ValueSome tcref -> tcref.IsFSharpException
+    | _ -> false

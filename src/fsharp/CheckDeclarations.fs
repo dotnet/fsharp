@@ -18,7 +18,7 @@ open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckComputationExpressions
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
-open FSharp.Compiler.ErrorLogger
+open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.InfoReader
@@ -35,6 +35,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
+open FSharp.Compiler.TypeHierarchy
 open FSharp.Compiler.TypeRelations
 
 #if !NO_TYPEPROVIDERS
@@ -374,7 +375,7 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath (env:
 // Bind elements of data definitions for exceptions and types (fields, etc.)
 //------------------------------------------------------------------------- 
 
-exception NotUpperCaseConstructor of range
+exception NotUpperCaseConstructor of range: range
 
 let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: Ident) = 
     // type names '[]' etc. are used in fslib
@@ -678,7 +679,7 @@ let TcOpenDecl (cenv: cenv) mOpenDecl scopem env target =
     | SynOpenDeclTarget.Type (synType, m) ->
         TcOpenTypeDecl cenv mOpenDecl scopem env (synType, m)
         
-exception ParameterlessStructCtor of range
+exception ParameterlessStructCtor of range: range
 
 let MakeSafeInitField (g: TcGlobals) env m isStatic = 
     let id =
@@ -2289,7 +2290,7 @@ module MutRecBindingChecking =
                 let moduleAbbrevs = decls |> List.choose (function MutRecShape.ModuleAbbrev (MutRecDataForModuleAbbrev (id, mp, m)) -> Some (id, mp, m) | _ -> None)
                 let opens = decls |> List.choose (function MutRecShape.Open (MutRecDataForOpen (target, m, moduleRange, openDeclsRef)) -> Some (target, m, moduleRange, openDeclsRef) | _ -> None)
                 let lets = decls |> List.collect (function MutRecShape.Lets binds -> getVals binds | _ -> [])
-                let exns = tycons |> List.filter (fun (tycon: Tycon) -> tycon.IsExceptionDecl)
+                let exns = tycons |> List.filter (fun (tycon: Tycon) -> tycon.IsFSharpException)
 
                 // Add the type definitions, exceptions, modules and "open" declarations.
                 // The order here is sensitive. The things added first will be resolved in an environment
@@ -2474,7 +2475,7 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial bindsm scopem mutRecNSInfo (env
         let overridesOK = DeclKind.CanOverrideOrImplement declKind
         members |> List.collect (function
             | SynMemberDefn.Interface(interfaceType=intfTy; members=defnOpt) -> 
-                  let ty = if tcref.Deref.IsExceptionDecl then g.exn_ty else generalizedTyconRef g tcref
+                  let ty = if tcref.Deref.IsFSharpException then g.exn_ty else generalizedTyconRef g tcref
                   let m = intfTy.Range
                   if tcref.IsTypeAbbrev then error(Error(FSComp.SR.tcTypeAbbreviationsCannotHaveInterfaceDeclaration(), m))
                   if tcref.IsEnumTycon then error(Error(FSComp.SR.tcEnumerationsCannotHaveInterfaceDeclaration(), m))
@@ -2599,7 +2600,7 @@ module AddAugmentationDeclarations =
         if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare g tycon && scSet.Contains tycon.Stamp then 
             let tcref = mkLocalTyconRef tycon
             let tcaug = tycon.TypeContents
-            let ty = if tcref.Deref.IsExceptionDecl then g.exn_ty else generalizedTyconRef g tcref
+            let ty = if tcref.Deref.IsFSharpException then g.exn_ty else generalizedTyconRef g tcref
             let m = tycon.Range
             let genericIComparableTy = mkAppTy g.system_GenericIComparable_tcref [ty]
 
@@ -2622,7 +2623,7 @@ module AddAugmentationDeclarations =
 
                 PublishInterface cenv env.DisplayEnv tcref m true g.mk_IStructuralComparable_ty
                 PublishInterface cenv env.DisplayEnv tcref m true g.mk_IComparable_ty
-                if not tycon.IsExceptionDecl && not hasExplicitGenericIComparable then 
+                if not tycon.IsFSharpException && not hasExplicitGenericIComparable then 
                     PublishInterface cenv env.DisplayEnv tcref m true genericIComparableTy
                 tcaug.SetCompare (mkLocalValRef cvspec1, mkLocalValRef cvspec2)
                 tcaug.SetCompareWith (mkLocalValRef cvspec3)
@@ -2683,7 +2684,7 @@ module AddAugmentationDeclarations =
         if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tycon then 
             let tcref = mkLocalTyconRef tycon
             let tcaug = tycon.TypeContents
-            let ty = if tcref.Deref.IsExceptionDecl then g.exn_ty else generalizedTyconRef g tcref
+            let ty = if tcref.Deref.IsFSharpException then g.exn_ty else generalizedTyconRef g tcref
             let m = tycon.Range
             
             // Note: tycon.HasOverride only gives correct results after we've done the type augmentation 
@@ -2700,7 +2701,7 @@ module AddAugmentationDeclarations =
 
                  let vspec1, vspec2 = AugmentWithHashCompare.MakeValsForEqualsAugmentation g tcref
                  tcaug.SetEquals (mkLocalValRef vspec1, mkLocalValRef vspec2)
-                 if not tycon.IsExceptionDecl then 
+                 if not tycon.IsFSharpException then 
                     PublishInterface cenv env.DisplayEnv tcref m true (mkAppTy g.system_GenericIEquatable_tcref [ty])
                  PublishValueDefn cenv env ModuleOrMemberBinding vspec1
                  PublishValueDefn cenv env ModuleOrMemberBinding vspec2
@@ -4605,7 +4606,7 @@ module EstablishTypeDefinitionCores =
             (envMutRecPrelim, withAttrs) 
             ||> MutRecShapes.extendEnvs (fun envForDecls decls -> 
                     let tycons = decls |> List.choose (function MutRecShape.Tycon (_, Some (tycon, _)) -> Some tycon | _ -> None) 
-                    let exns = tycons |> List.filter (fun tycon -> tycon.IsExceptionDecl) 
+                    let exns = tycons |> List.filter (fun tycon -> tycon.IsFSharpException) 
                     let envForDecls = (envForDecls, exns) ||> List.fold (AddLocalExnDefnAndReport cenv.tcSink scopem)
                     envForDecls)
 
@@ -6093,7 +6094,7 @@ let CheckOneImplFile
 /// Check an entire signature file
 let CheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile; modules = sigFileFrags)) = 
  cancellable {     
-    let envinner, mtypeAcc = MakeInitialEnv tcEnv 
+    let envinner, modTyAcc = MakeInitialEnv tcEnv 
 
     let tcVal = LightweightTcValForUsingInBuildMethodCall g envinner.TraitContext
 
@@ -6105,11 +6106,6 @@ let CheckOneSigFile (g, niceNameGen, amap, topCcu, checkForErrors, conditionalDe
              tcArrayOrListSequenceExpression=TcArrayOrListComputedExpression,
              tcComputationExpression=TcComputationExpression)
 
-<<<<<<< HEAD
-=======
-    let envinner, modTyAcc = MakeInitialEnv tcEnv 
-
->>>>>>> 01e5bbb5da602388d44444696f3469ba129d7b1c
     let specs = [ for x in sigFileFrags -> SynModuleSigDecl.NamespaceFragment x ]
     let! tcEnv = TcSignatureElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None specs
     

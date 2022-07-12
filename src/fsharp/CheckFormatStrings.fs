@@ -367,7 +367,7 @@ let parseFormatStringInternal (m: range) (fragRanges: range list) (g: TcGlobals)
                   parseLoop acc (i+1, fragLine, fragCol+1) fragments
 
               | 'd' | 'i' | 'u' | 'B' | 'o' | 'x' | 'X' ->
-                  if ch = 'B' then ErrorLogger.checkLanguageFeatureError g.langVersion Features.LanguageFeature.PrintfBinaryFormat m
+                  if ch = 'B' then DiagnosticsLogger.checkLanguageFeatureError g.langVersion Features.LanguageFeature.PrintfBinaryFormat m
                   if info.precision then failwithf "%s" <| FSComp.SR.forFormatDoesntSupportPrecision(ch.ToString())
                   collectSpecifierLocation fragLine fragCol 1
                   let i = skipPossibleInterpolationHole (i+1)
