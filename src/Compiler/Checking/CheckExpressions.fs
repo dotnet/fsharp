@@ -8542,8 +8542,10 @@ and TcMethodItemThen cenv overallTy env item methodName minfos tpenv mItem after
         TcMethodApplicationThen cenv env overallTy None tpenv None [] mItem mItem methodName ad NeverMutates false meths afterResolution NormalValUse [] ExprAtomicFlag.Atomic delayed
 
 and TcCtorItemThen cenv overallTy env item nm minfos tinstEnclosing tpenv mItem afterResolution delayed =
+#if !NO_TYPEPROVIDERS
     let g = cenv.g
     let ad = env.eAccessRights
+#endif
     let objTy =
         match minfos with
         | minfo :: _ -> minfo.ApparentEnclosingType
