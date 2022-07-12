@@ -414,14 +414,11 @@
     <Compile Include="Checking\PatternMatchCompilation.fs">
       <Link>Checking\PatternMatchCompilation.fs</Link>
     </Compile>
-    <Compile Include="..\FindUnsolved.fsi">
-      <Link>Logic\FindUnsolved.fsi</Link>
+    <Compile Include="Checking\FindUnsolved.fsi">
+      <Link>Checking\FindUnsolved.fsi</Link>
     </Compile>
-    <Compile Include="..\FindUnsolved.fs">
-      <Link>Logic\FindUnsolved.fs</Link>
-    </Compile>
-    <Compile Include="..\ConstraintSolver.fsi">
-      <Link>Logic\ConstraintSolver.fsi</Link>
+    <Compile Include="Checking\FindUnsolved.fs">
+      <Link>Checking\FindUnsolved.fs</Link>
     </Compile>
     <Compile Include="Checking\ConstraintSolver.fsi">
       <Link>Checking\ConstraintSolver.fsi</Link>
@@ -437,12 +434,6 @@
     </Compile>
     <Compile Include="..\QuotationTranslator.fsi">
       <Link>Logic\QuotationTranslator.fsi</Link>
-    </Compile>
-    <Compile Include="Checking\FindUnsolved.fsi">
-      <Link>Checking\FindUnsolved.fsi</Link>
-    </Compile>
-    <Compile Include="Checking\FindUnsolved.fs">
-      <Link>Checking\FindUnsolved.fs</Link>
     </Compile>
     <Compile Include="Checking\QuotationTranslator.fsi">
       <Link>Checking\QuotationTranslator.fsi</Link>
