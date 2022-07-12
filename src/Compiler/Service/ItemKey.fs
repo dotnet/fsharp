@@ -241,10 +241,10 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString anonInfo.ILTypeRef.BasicQualifiedName
             tinst |> List.iter (writeType false)
 
-        | TType_fun (d, r, _) ->
+        | TType_fun (domainTy, rangeTy, _) ->
             writeString ItemKeyTags.typeFunction
-            writeType false d
-            writeType false r
+            writeType false domainTy
+            writeType false rangeTy
 
         | TType_measure ms ->
             if isStandalone then
@@ -265,7 +265,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Measure.Var typar ->
             writeString ItemKeyTags.typeMeasureVar
             writeTypar isStandalone typar
-        | Measure.Con tcref ->
+        | Measure.Const tcref ->
             writeString ItemKeyTags.typeMeasureCon
             writeEntityRef tcref
         | _ -> ()

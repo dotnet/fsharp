@@ -21,12 +21,14 @@ type OperatorsModuleChecked() =
         let charByte = Operators.Checked.byte '0'
         Assert.AreEqual(48uy, charByte)
 
- // boundary value
+        // boundary value
         let boundByte = Operators.Checked.byte 255.0
         Assert.AreEqual(255uy, boundByte)
 
         // overflow exception
         CheckThrowsOverflowException(fun () -> Operators.Checked.byte 256 |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.byte 256f |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.byte 256. |> ignore)
 
         // overflow exception
         CheckThrowsOverflowException(fun () -> 255uy + 1uy |> ignore)
@@ -51,6 +53,8 @@ type OperatorsModuleChecked() =
         
         // overflow exception
         CheckThrowsOverflowException(fun () -> Operators.Checked.char (int64 Char.MaxValue + 1L) |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.char Single.MaxValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.char Double.MaxValue |> ignore)
 
         // overflow exception
         CheckThrowsOverflowException(fun () -> '\uFFFF' + '\u0001' |> ignore)
@@ -72,7 +76,9 @@ type OperatorsModuleChecked() =
         Assert.AreEqual(32767, boundInt)
         
         // overflow exception
-        CheckThrowsOverflowException(fun() -> Operators.Checked.int 2147483648.0 |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.int 2147483648.0 |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.int Single.MaxValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.int Double.MaxValue |> ignore)
 
         // overflow exception
         CheckThrowsOverflowException(fun () -> Int32.MaxValue + 1 |> ignore)
@@ -97,6 +103,8 @@ type OperatorsModuleChecked() =
         
         // overflow exception
         CheckThrowsOverflowException(fun () -> Operators.Checked.int16 32768.0 |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.int16 Single.MaxValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.int16 Double.MaxValue |> ignore)
 
         // overflow exception
         CheckThrowsOverflowException(fun () -> Int16.MaxValue + 1s |> ignore)
@@ -121,6 +129,8 @@ type OperatorsModuleChecked() =
         
         // overflow exception
         CheckThrowsOverflowException(fun () -> Operators.Checked.int32 2147483648.0 |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.int32 Single.MaxValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.int32 Double.MaxValue |> ignore)
 
         // overflow exception
         CheckThrowsOverflowException(fun () -> Int32.MaxValue + 1 |> ignore)
@@ -150,7 +160,9 @@ type OperatorsModuleChecked() =
         Assert.AreEqual(-9223372036854775808L, boundInt64)
         
         // overflow exception
-        CheckThrowsOverflowException(fun() -> Operators.Checked.int64 (float Int64.MaxValue + 1.0) |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.int64 (float Int64.MaxValue + 1.0) |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.int64 Single.MaxValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.int64 Double.MaxValue |> ignore)
 
         // overflow exception
         CheckThrowsOverflowException(fun () -> Int64.MaxValue + 1L |> ignore)
@@ -179,6 +191,8 @@ type OperatorsModuleChecked() =
                 Operators.Checked.nativeint 2147483648.0 |> ignore
             else
                 Operators.Checked.nativeint 9223372036854775808.0 |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.nativeint Single.MaxValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.nativeint Double.MaxValue |> ignore)
 
          
     [<Fact>]
@@ -198,6 +212,8 @@ type OperatorsModuleChecked() =
         
         // overflow exception
         CheckThrowsOverflowException(fun () -> Operators.Checked.sbyte -256 |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.sbyte Single.MaxValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.sbyte Double.MaxValue |> ignore)
 
         // overflow exception
         CheckThrowsOverflowException(fun () -> SByte.MaxValue + 1y |> ignore)
@@ -220,7 +236,9 @@ type OperatorsModuleChecked() =
         let bounduint16 = Operators.Checked.uint16 65535.0
         Assert.AreEqual(65535us, bounduint16)
         
-        CheckThrowsOverflowException(fun() -> Operators.Checked.uint16 65536.0 |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.uint16 65536.0 |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.uint16 Single.MaxValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.uint16 Double.MaxValue |> ignore)
 
         // overflow exception
         CheckThrowsOverflowException(fun () -> UInt16.MaxValue + 1us |> ignore)
@@ -244,7 +262,9 @@ type OperatorsModuleChecked() =
         Assert.AreEqual(429496729u, bounduint32)
 
         // overflow exception
-        CheckThrowsOverflowException(fun () ->  Operators.Checked.uint32(float UInt32.MaxValue + 1.0) |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.uint32 (float UInt32.MaxValue + 1.0) |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.uint32 Single.MaxValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.uint32 Double.MaxValue |> ignore)
 
         // overflow exception
         CheckThrowsOverflowException(fun () -> UInt32.MaxValue + 1u |> ignore)
@@ -269,6 +289,8 @@ type OperatorsModuleChecked() =
         
         // overflow exception
         CheckThrowsOverflowException(fun () -> Operators.Checked.uint64 (float System.UInt64.MaxValue + 1.0) |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.uint64 Single.MaxValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.uint64 Double.MaxValue |> ignore)
 
         // overflow exception
         CheckThrowsOverflowException(fun () -> UInt64.MaxValue + 1UL |> ignore)
@@ -302,5 +324,7 @@ type OperatorsModuleChecked() =
             else 
                 Operators.Checked.unativeint (float UInt64.MaxValue + 1.0) |> ignore
         )
+        CheckThrowsOverflowException(fun () -> Operators.Checked.unativeint Single.MaxValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.Checked.unativeint Double.MaxValue |> ignore)
 
 

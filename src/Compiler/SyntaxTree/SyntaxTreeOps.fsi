@@ -143,7 +143,7 @@ val mkSynQMarkSet: m: range -> a: SynExpr -> b: SynExpr -> c: SynExpr -> SynExpr
 
 //val mkSynDotBrackSeqSliceGet: m:range -> mDot:range -> arr:SynExpr -> argsList:SynIndexerArg list -> SynExpr
 
-val mkSynDotParenGet: lhsm: range -> dotm: range -> a: SynExpr -> b: SynExpr -> SynExpr
+val mkSynDotParenGet: mLhs: range -> mDot: range -> a: SynExpr -> b: SynExpr -> SynExpr
 
 val mkSynUnit: m: range -> SynExpr
 
@@ -153,9 +153,9 @@ val mkSynDelay: m: range -> e: SynExpr -> SynExpr
 
 val mkSynAssign: l: SynExpr -> r: SynExpr -> SynExpr
 
-val mkSynDot: dotm: range -> m: range -> l: SynExpr -> r: SynIdent -> SynExpr
+val mkSynDot: mDot: range -> m: range -> l: SynExpr -> r: SynIdent -> SynExpr
 
-val mkSynDotMissing: dotm: range -> m: range -> l: SynExpr -> SynExpr
+val mkSynDotMissing: mDot: range -> m: range -> l: SynExpr -> SynExpr
 
 val mkSynFunMatchLambdas:
     synArgNameGenerator: SynArgNameGenerator ->
@@ -337,7 +337,7 @@ val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
 /// 'e1 |||> e2'
 val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
 
-val prependIdentInLongIdentWithTrivia: ident: SynIdent -> dotm: range -> lid: SynLongIdent -> SynLongIdent
+val prependIdentInLongIdentWithTrivia: ident: SynIdent -> mDot: range -> lid: SynLongIdent -> SynLongIdent
 
 val mkDynamicArgExpr: expr: SynExpr -> SynExpr
 

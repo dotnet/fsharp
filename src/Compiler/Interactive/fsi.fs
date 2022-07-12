@@ -1814,9 +1814,9 @@ type internal FsiDynamicCompiler(
                     ilTy |> Morphs.morphILTypeRefsInILType emEnv.ReverseMapTypeRef
                 | _ -> ilTy)
 
-        ((istate, []), ilTys) ||> List.fold (fun (state, addedTypes) ilTy ->
-            let nextState, addedType = addTypeToEnvironment state ilTy
-            nextState, addedTypes @ [addedType]) 
+        ((istate, []), ilTys) ||> List.fold (fun (state, addedTys) ilTy ->
+            let nextState, addedTy = addTypeToEnvironment state ilTy
+            nextState, addedTys @ [addedTy]) 
 
     member _.DynamicAssemblies = dynamicAssemblies.ToArray()
 
