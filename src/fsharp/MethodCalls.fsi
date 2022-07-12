@@ -16,7 +16,7 @@ open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -328,7 +328,7 @@ val BuildMethodCall:
 val BuildObjCtorCall: g:TcGlobals -> m:range -> Expr
 
 /// Implements the elaborated form of adhoc conversions from functions to delegates at member callsites
-val BuildNewDelegateExpr: eventInfoOpt:EventInfo option * g:TcGlobals * amap:ImportMap * traitCtxt: ITraitContext option * delegateTy:TType * invokeMethInfo:MethInfo * delArgTys:TType list * f:Expr * fty:TType * m:range -> Expr
+val BuildNewDelegateExpr: eventInfoOpt:EventInfo option * g:TcGlobals * amap:ImportMap * traitCtxt: ITraitContext option * delegateTy:TType * delInvokeMeth:MethInfo * delArgTys:TType list * delFuncExpr:Expr * delFuncTy:TType * m:range -> Expr
 
 val CoerceFromFSharpFuncToDelegate: g:TcGlobals -> amap:ImportMap -> traitCtxt: ITraitContext option -> infoReader:InfoReader -> ad:AccessorDomain -> callerArgTy:TType -> m:range -> callerArgExpr:Expr -> delegateTy:TType -> Expr
 
@@ -414,7 +414,7 @@ val GenWitnessExprLambda: amap:ImportMap -> g:TcGlobals -> m:range -> traitInfo:
 /// Generate the arguments passed for a set of (solved) traits in non-generic code
 val GenWitnessArgs: amap:ImportMap -> g:TcGlobals -> m:range -> traitInfos:TraitConstraintInfo list -> Choice<TraitConstraintInfo,Expr> list
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 module ProvidedMethodCalls =
   val BuildInvokerExpressionForProvidedMethodCall:
       tcVal:(ValRef -> ValUseFlag -> TType list -> range -> Expr * TType) ->

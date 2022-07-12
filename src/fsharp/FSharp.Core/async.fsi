@@ -17,7 +17,7 @@ namespace Microsoft.FSharp.Control
     ///
     /// <remarks>
     ///  This type has no members. Asynchronous computations are normally specified either by using an async expression
-    ///  or the static methods in the <see cref="T:Microsoft.FSharp.Control.Async"/> type.
+    ///  or the static methods in the <see cref="T:Microsoft.FSharp.Control.FSharpAsync`1"/> type.
     ///
     ///  See also <a href="https://docs.microsoft.com/en-us/dotnet/fsharp/language-reference/asynchronous-workflows">F# Language Guide - Async Workflows</a>.
     /// </remarks> 

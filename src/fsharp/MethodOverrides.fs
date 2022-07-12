@@ -398,7 +398,7 @@ module DispatchSlotChecking =
 
             if missingOverloadImplementation.Count = 1 then
                 // only one missing override, we have specific message for that
-                let signature = (snd missingOverloadImplementation.[0]).Value
+                let signature = (snd missingOverloadImplementation[0]).Value
                 if messageWithInterfaceSuggestion then 
                     fail(Error(FSComp.SR.typrelNoImplementationGivenWithSuggestion(signature), m))
                 else
@@ -834,7 +834,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
   
     // Note you only have to explicitly implement 'System.IComparable' to customize structural comparison AND equality on F# types 
     if isImplementation &&
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
        not tycon.IsProvidedGeneratedTycon &&
 #endif
        Option.isNone tycon.GeneratedCompareToValues &&
@@ -851,7 +851,7 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
     AugmentWithHashCompare.CheckAugmentationAttribs isImplementation g amap tycon
     // Check some conditions about generic comparison and hashing. We can only check this condition after we've done the augmentation 
     if isImplementation 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
        && not tycon.IsProvidedGeneratedTycon  
 #endif
        then

@@ -298,12 +298,12 @@ let GetLimitValByRef cenv env m v =
 
 let LimitVal cenv (v: Val) limit = 
     if not v.IgnoresByrefScope then
-        cenv.limitVals.[v.Stamp] <- limit
+        cenv.limitVals[v.Stamp] <- limit
 
 let BindVal cenv env (v: Val) = 
     //printfn "binding %s..." v.DisplayName
     let alreadyDone = cenv.boundVals.ContainsKey v.Stamp
-    cenv.boundVals.[v.Stamp] <- 1
+    cenv.boundVals[v.Stamp] <- 1
     if not env.external &&
        not alreadyDone &&
        cenv.reportErrors && 
@@ -733,8 +733,8 @@ let CheckMultipleInterfaceInstantiations cenv (typ:TType) (interfaces:TType list
         for _, items in groups do
             for i1 in 0 .. items.Length - 1 do
                 for i2 in i1 + 1 .. items.Length - 1 do
-                    let typ1 = items.[i1]
-                    let typ2 = items.[i2]
+                    let typ1 = items[i1]
+                    let typ2 = items[i2]
                     let tcRef1 = tcrefOfAppTy cenv.g typ1
                     match compareTypesWithRegardToTypeVariablesAndMeasures cenv.g cenv.amap m typ1 typ2 with
                     | ExactlyEqual -> ()
@@ -1805,7 +1805,7 @@ and CheckLambdas isTop (memberVal: Val option) cenv env inlined topValInfo alway
 
 and CheckExprs cenv env exprs contexts : Limit =
     let contexts = Array.ofList contexts 
-    let argArity i = if i < contexts.Length then contexts.[i] else PermitByRefExpr.No 
+    let argArity i = if i < contexts.Length then contexts[i] else PermitByRefExpr.No 
     exprs 
     |> List.mapi (fun i exp -> CheckExpr cenv env exp (argArity i)) 
     |> CombineLimits
@@ -2134,7 +2134,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
                 if not skipValCheck && 
                    v.IsModuleBinding && 
                    tcref.ModuleOrNamespaceType.AllValsByLogicalName.ContainsKey nm && 
-                   not (valEq tcref.ModuleOrNamespaceType.AllValsByLogicalName.[nm] v) then
+                   not (valEq tcref.ModuleOrNamespaceType.AllValsByLogicalName[nm] v) then
                     
                     error(Duplicate(kind, v.DisplayName, v.Range))
 
@@ -2159,7 +2159,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
 
                             //  In unions user cannot define properties that clash with generated ones 
                             if tcref.UnionCasesArray.Length = 1 && hasNoArgs then 
-                               let ucase1 = tcref.UnionCasesArray.[0]
+                               let ucase1 = tcref.UnionCasesArray[0]
                                for f in ucase1.RecdFieldsArray do
                                    if f.LogicalName = nm then
                                        error(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.typeInfoGeneratedProperty(), f.LogicalName, ucase1.Range))
@@ -2167,14 +2167,14 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
                 // Default augmentation contains the nasty 'Case<UnionCase>' etc.
                 let prefix = "New"
                 if nm.StartsWithOrdinal prefix then
-                    match tcref.GetUnionCaseByName(nm.[prefix.Length ..]) with 
+                    match tcref.GetUnionCaseByName(nm[prefix.Length ..]) with 
                     | Some uc -> error(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.chkUnionCaseCompiledForm(), uc.DisplayName, uc.Range))
                     | None -> ()
 
                 // Default augmentation contains the nasty 'Is<UnionCase>' etc.
                 let prefix = "Is"
                 if nm.StartsWithOrdinal prefix && hasDefaultAugmentation then
-                    match tcref.GetUnionCaseByName(nm.[prefix.Length ..]) with 
+                    match tcref.GetUnionCaseByName(nm[prefix.Length ..]) with 
                     | Some uc -> error(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.chkUnionCaseDefaultAugmentation(), uc.DisplayName, uc.Range))
                     | None -> ()
 
@@ -2188,7 +2188,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
 
             // Check if an F# extension member clashes
             if v.IsExtensionMember then 
-                tcref.ModuleOrNamespaceType.AllValsAndMembersByLogicalNameUncached.[v.LogicalName] |> List.iter (fun v2 -> 
+                tcref.ModuleOrNamespaceType.AllValsAndMembersByLogicalNameUncached[v.LogicalName] |> List.iter (fun v2 -> 
                     if v2.IsExtensionMember && not (valEq v v2) && (v.CompiledName cenv.g.CompilerGlobalState) = (v2.CompiledName cenv.g.CompilerGlobalState) then
                         let minfo1 =  FSMeth(g, generalizedTyconRef g tcref, mkLocalValRef v, Some 0UL)
                         let minfo2 =  FSMeth(g, generalizedTyconRef g tcref, mkLocalValRef v2, Some 0UL)
@@ -2245,7 +2245,7 @@ let CheckRecdField isUnion cenv env (tycon: Tycon) (rfield: RecdField) =
     CheckAttribs cenv env rfield.FieldAttribs
 
 let CheckEntityDefn cenv env (tycon: Entity) =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
   if not tycon.IsProvidedGeneratedTycon then
 #endif
     let g = cenv.g
@@ -2301,14 +2301,14 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 for minfo in immediateMeths do
                     match h.TryGetValue minfo.LogicalName with
                     | true, methods -> 
-                        h.[minfo.LogicalName] <- minfo :: methods
+                        h[minfo.LogicalName] <- minfo :: methods
                     | false, _ -> 
-                        h.[minfo.LogicalName] <- [minfo]
+                        h[minfo.LogicalName] <- [minfo]
                 h
         let getOtherMethods (minfo : MethInfo) =                         
             [
                 //we have added all methods to the dictionary on the previous step
-                let methods = hashOfImmediateMeths.[minfo.LogicalName]
+                let methods = hashOfImmediateMeths[minfo.LogicalName]
                 for m in methods do
                     // use referential identity to filter out 'minfo' method
                     if not(Object.ReferenceEquals(m, minfo)) then 
@@ -2422,14 +2422,14 @@ let CheckEntityDefn cenv env (tycon: Entity) =
                 if not (typeEquivAux EraseNone cenv.amap.g ty1 ty2) then
                     errorR(Error(FSComp.SR.chkGetterAndSetterHaveSamePropertyType(pinfo.PropertyName, NicePrint.minimalStringOfType cenv.denv ty1, NicePrint.minimalStringOfType cenv.denv ty2), m))
 
-            hashOfImmediateProps.[nm] <- pinfo :: others
+            hashOfImmediateProps[nm] <- pinfo :: others
             
         if not (isInterfaceTy g ty) then
             let hashOfAllVirtualMethsInParent = Dictionary<string, _>()
             for minfo in allVirtualMethsInParent do
                 let nm = minfo.LogicalName
                 let others = getHash hashOfAllVirtualMethsInParent nm
-                hashOfAllVirtualMethsInParent.[nm] <- minfo :: others
+                hashOfAllVirtualMethsInParent[nm] <- minfo :: others
             for minfo in immediateMeths do
                 if not minfo.IsDispatchSlot && not minfo.IsVirtual && minfo.IsInstance then
                     let nm = minfo.LogicalName

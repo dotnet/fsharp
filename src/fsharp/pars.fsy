@@ -54,19 +54,20 @@ let mkUnderscoreRecdField m = LongIdentWithDots([ident("_", m)], []), false
 
 let mkRecdField lidwd = lidwd, true
 
-let mkSynDoBinding (vis, strict, expr, m) = 
+// Used for 'do expr' in a class.
+let mkSynDoBinding (vis, expr, m) = 
     match vis with
     | Some vis -> errorR(Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations (vis.ToString()), m))
     | None -> ()
     SynBinding(None,
-             (if strict then SynBindingKind.Do else SynBindingKind.StandaloneExpression),
+             SynBindingKind.Do,
              false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData,
-             (if strict then SynPat.Const(SynConst.Unit, m) else SynPat.Wild m),
+             SynPat.Const(SynConst.Unit, m),
              None, expr, m, DebugPointAtBinding.NoneAtDo,
              SynBindingTrivia.Zero)
 
-let mkSynDoDecl (e: SynExpr) = 
-    SynModuleDecl.DoExpr(DebugPointAtBinding.NoneAtDo, e, e.Range)
+let mkSynExprDecl (e: SynExpr) = 
+    SynModuleDecl.Expr(e, e.Range)
 
 let addAttribs attrs p =  SynPat.Attrib(p, attrs, p.Range)
 
@@ -611,8 +612,7 @@ interactiveExpr:
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()), rhs parseState 3))
         | _ -> ()
         let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] in 
-        attrDecls @ [ mkSynDoDecl($3)] }
-
+        attrDecls @ [ mkSynExprDecl $3 ] }
 
 /* A #directive interaction in F# Interactive */
 interactiveHash:      
@@ -1279,21 +1279,21 @@ moduleDefnsOrExpr:
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()), rhs parseState 3))
         | _ -> ()
         let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ mkSynDoDecl ($3) :: $5 }
+        attrDecls @ mkSynExprDecl $3 :: $5 }
 
   | opt_attributes opt_declVisibility declExpr topSeparators
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()), rhs parseState 3))
         | _ -> ()
         let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ [ mkSynDoDecl($3) ] }
+        attrDecls @ [ mkSynExprDecl $3 ] }
 
   | opt_attributes opt_declVisibility declExpr
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()), rhs parseState 3))
         | _ -> ()
         let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ [ mkSynDoDecl($3) ] }
+        attrDecls @ [ mkSynExprDecl $3 ] }
 
   | moduleDefns 
       { $1 } 
@@ -1456,7 +1456,7 @@ namedModuleDefnBlock:
          // However in that case we do use type name lookup to make the resolution.
 
          match $2 with 
-         | [ SynModuleDecl.DoExpr (_, LongOrSingleIdent(false, LongIdentWithDots(path, _), None, _), _) ] -> 
+         | [ SynModuleDecl.Expr (LongOrSingleIdent(false, LongIdentWithDots(path, _), None, _), _) ] -> 
              Choice1Of2  path
          | _ -> 
              Choice2Of2 $2 
@@ -2786,7 +2786,7 @@ doBinding:
         let mWhole = unionRanges mDoKwd $2.Range
         // any attributes prior to the 'let' are left free, e.g. become top-level attributes 
         // associated with the module, 'main' function or assembly depending on their target 
-        BindingSetPreAttrs(mDoKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, true, $2, mWhole)]), mWhole) }
+        BindingSetPreAttrs(mDoKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, $2, mWhole)]), mWhole) }
 
 
 /* A 'let ....' binding in the #light syntax */
@@ -2827,7 +2827,7 @@ hardwhiteDoBinding:
         let seqPt = DebugPointAtBinding.NoneAtDo 
         // any attributes prior to the 'let' are left free, e.g. become top-level attributes 
         // associated with the module, 'main' function or assembly depending on their target 
-        BindingSetPreAttrs(mLetKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, true, $2, bindingSetRange)]), bindingSetRange), $2 }
+        BindingSetPreAttrs(mLetKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, $2, bindingSetRange)]), bindingSetRange), $2 }
 
 
 /* The bindings in a class type definition */
@@ -2865,49 +2865,52 @@ hardwhiteDefnBindingsTerminator:
 
 /* An 'extern' DllImport function definition in C-style syntax */
 cPrototype: 
-  | EXTERN cRetType opt_access ident opt_HIGH_PRECEDENCE_APP LPAREN cArgs rparen 
+  | EXTERN cRetType opt_access ident opt_HIGH_PRECEDENCE_APP LPAREN externArgs rparen 
       { let rty, vis, nm, args  = $2, $3, $4, $7
         let nmm = rhs parseState 3 
         let argsm = rhs parseState 6 
         let mBindLhs = lhs parseState
         let mWhole = lhs parseState
         let mRhs = lhs parseState 
-        let rhsExpr = SynExpr.App (ExprAtomicFlag.NonAtomic,
-                                  false,
-                                  SynExpr.Ident (ident("failwith", rhs parseState 6)),
-                                  SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", SynStringKind.Regular, rhs parseState 8), rhs parseState 8),
-                                  mRhs)
+        let rhsExpr =
+            SynExpr.App (
+                ExprAtomicFlag.NonAtomic,
+                false,
+                SynExpr.Ident (ident("failwith", rhs parseState 6)),
+                SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", SynStringKind.Regular, rhs parseState 8), rhs parseState 8),
+                mRhs)
         (fun attrs _ ->
             let bindingPat = SynPat.LongIdent (LongIdentWithDots([nm], []), None, None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let xmlDoc = grabXmlDoc(parseState, attrs, 1)
-            let binding = mkSynBinding 
-                              (xmlDoc, bindingPat) 
-                              (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None, SynBindingTrivia.Zero)
+            let binding =
+                mkSynBinding 
+                    (xmlDoc, bindingPat) 
+                    (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None, SynBindingTrivia.Zero)
             [], [binding]) }
 
 /* A list of arguments in an 'extern' DllImport function definition */
-cArgs: 
-  | cMoreArgs 
+externArgs: 
+  | externMoreArgs 
      { List.rev $1 }
 
-  | cArg 
+  | externArg 
      { [$1] }
   |       
      { [] }
   
 
 /* Part of the list of arguments in an 'extern' DllImport function definition */
-cMoreArgs: 
-  | cMoreArgs COMMA cArg 
+externMoreArgs: 
+  | externMoreArgs COMMA externArg 
      { $3 :: $1 }
 
-  | cArg COMMA cArg 
+  | externArg COMMA externArg 
      { [$3; $1] }
 
 
 /* A single argument in an 'extern' DllImport function definition */
-cArg: 
+externArg: 
   | opt_attributes cType       
      { let m = lhs parseState in SynPat.Typed(SynPat.Wild m, $2, m) |> addAttribs $1 }
 
@@ -3666,7 +3669,8 @@ declExpr:
       { let mMatch = rhs parseState 1
         let mWith, (clauses, mLast) = $3
         let spBind = DebugPointAtBinding.Yes(unionRanges mMatch mWith)
-        SynExpr.Match (mMatch, spBind, $2, mWith, clauses, unionRanges mMatch mLast) }
+        let trivia = { MatchKeyword = mMatch; WithKeyword = mWith }
+        SynExpr.Match (spBind, $2, clauses, unionRanges mMatch mLast, trivia) }
 
   | MATCH typedSequentialExpr recover %prec expr_match
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileMatch())
@@ -3676,8 +3680,9 @@ declExpr:
   | MATCH_BANG typedSequentialExpr     withClauses              %prec expr_match 
       { let mMatch = (rhs parseState 1)
         let mWith, (clauses, mLast) = $3 
-        let spBind = DebugPointAtBinding.Yes(unionRanges mMatch mWith) 
-        SynExpr.MatchBang (mMatch, spBind, $2, mWith, clauses, unionRanges mMatch mLast) }
+        let spBind = DebugPointAtBinding.Yes(unionRanges mMatch mWith)
+        let trivia = { MatchBangKeyword = mMatch; WithKeyword = mWith }
+        SynExpr.MatchBang (spBind, $2, clauses, unionRanges mMatch mLast, trivia) }
 
   | MATCH_BANG typedSequentialExpr     recover               %prec expr_match 
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileMatch())

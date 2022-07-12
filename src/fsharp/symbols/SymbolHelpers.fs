@@ -259,14 +259,14 @@ module internal SymbolHelpers =
    
     let rangeOfPropInfo preferFlag (pinfo: PropInfo) =
         match pinfo with
-#if !NO_EXTENSIONTYPING 
+#if !NO_TYPEPROVIDERS 
         |   ProvidedProp(_, pi, _) -> Construct.ComputeDefinitionLocationOfProvidedItem pi
 #endif
         |   _ -> pinfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
 
     let rangeOfMethInfo (g: TcGlobals) preferFlag (minfo: MethInfo) = 
         match minfo with
-#if !NO_EXTENSIONTYPING 
+#if !NO_TYPEPROVIDERS 
         |   ProvidedMeth(_, mi, _, _) -> Construct.ComputeDefinitionLocationOfProvidedItem mi
 #endif
         |   DefaultStructCtor(_, AppTy g (tcref, _)) -> Some(rangeOfEntityRef preferFlag tcref)
@@ -274,7 +274,7 @@ module internal SymbolHelpers =
 
     let rangeOfEventInfo preferFlag (einfo: EventInfo) = 
         match einfo with
-#if !NO_EXTENSIONTYPING 
+#if !NO_TYPEPROVIDERS 
         | ProvidedEvent (_, ei, _) -> Construct.ComputeDefinitionLocationOfProvidedItem ei
 #endif
         | _ -> einfo.ArbitraryValRef |> Option.map (rangeOfValRef preferFlag)
@@ -325,14 +325,16 @@ module internal SymbolHelpers =
 
     // Provided type definitions do not have a useful F# CCU for the purposes of goto-definition.
     let computeCcuOfTyconRef (tcref: TyconRef) = 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         if tcref.IsProvided then None else 
 #endif
         ccuOfTyconRef tcref
 
     let ccuOfMethInfo (g: TcGlobals) (minfo: MethInfo) = 
         match minfo with
-        | DefaultStructCtor(_, AppTy g (tcref, _)) -> computeCcuOfTyconRef tcref
+        | DefaultStructCtor(_, AppTy g (tcref, _)) ->
+            computeCcuOfTyconRef tcref
+
         | _ -> 
             minfo.ArbitraryValRef 
             |> Option.bind ccuOfValRef 
@@ -340,35 +342,63 @@ module internal SymbolHelpers =
 
     let rec ccuOfItem (g: TcGlobals) d = 
         match d with
-        | Item.Value vref | Item.CustomBuilder (_, vref) -> ccuOfValRef vref 
-        | Item.UnionCase(ucinfo, _)             -> computeCcuOfTyconRef ucinfo.TyconRef
-        | Item.ActivePatternCase apref         -> ccuOfValRef apref.ActivePatternVal
-        | Item.ExnCase tcref                   -> computeCcuOfTyconRef tcref
-        | Item.RecdField rfinfo                -> computeCcuOfTyconRef rfinfo.RecdFieldRef.TyconRef
-        | Item.UnionCaseField (ucinfo, _)      -> computeCcuOfTyconRef ucinfo.TyconRef
-        | Item.Event einfo                     -> einfo.DeclaringTyconRef |> computeCcuOfTyconRef
-        | Item.ILField finfo                   -> finfo.DeclaringTyconRef |> computeCcuOfTyconRef
+        | Item.Value vref
+        | Item.CustomBuilder (_, vref) ->
+            ccuOfValRef vref 
+
+        | Item.UnionCase(ucinfo, _) ->
+            computeCcuOfTyconRef ucinfo.TyconRef
+
+        | Item.ActivePatternCase apref ->
+            ccuOfValRef apref.ActivePatternVal
+
+        | Item.ExnCase tcref ->
+            computeCcuOfTyconRef tcref
+
+        | Item.RecdField rfinfo ->
+            computeCcuOfTyconRef rfinfo.RecdFieldRef.TyconRef
+
+        | Item.UnionCaseField (ucinfo, _) ->
+            computeCcuOfTyconRef ucinfo.TyconRef
+
+        | Item.Event einfo ->
+            einfo.DeclaringTyconRef |> computeCcuOfTyconRef
+
+        | Item.ILField finfo ->
+            finfo.DeclaringTyconRef |> computeCcuOfTyconRef
+
         | Item.Property(_, pinfos)              -> 
             pinfos |> List.tryPick (fun pinfo -> 
                 pinfo.ArbitraryValRef 
                 |> Option.bind ccuOfValRef
                 |> Option.orElseWith (fun () -> pinfo.DeclaringTyconRef |> computeCcuOfTyconRef))
 
-        | Item.ArgName (_, _, Some (ArgumentContainer.Method minfo))  -> ccuOfMethInfo g minfo
+        | Item.ArgName (_, _, Some (ArgumentContainer.Method minfo)) ->
+            ccuOfMethInfo g minfo
 
         | Item.MethodGroup(_, minfos, _)
-        | Item.CtorGroup(_, minfos) -> minfos |> List.tryPick (ccuOfMethInfo g)
-        | Item.CustomOperation (_, _, Some minfo)       -> ccuOfMethInfo g minfo
+        | Item.CtorGroup(_, minfos) ->
+            minfos |> List.tryPick (ccuOfMethInfo g)
 
-        | Item.Types(_, tys)             -> tys |> List.tryPick (tryNiceEntityRefOfTyOption >> Option.bind computeCcuOfTyconRef)
+        | Item.CustomOperation (_, _, Some minfo) ->
+            ccuOfMethInfo g minfo
 
-        | Item.ArgName (_, _, Some (ArgumentContainer.Type eref)) -> computeCcuOfTyconRef eref
+        | Item.Types(_, tys) ->
+            tys |> List.tryPick (tryNiceEntityRefOfTyOption >> Option.bind computeCcuOfTyconRef)
+
+        | Item.ArgName (_, _, Some (ArgumentContainer.Type eref)) ->
+            computeCcuOfTyconRef eref
 
         | Item.ModuleOrNamespaces erefs 
-        | Item.UnqualifiedType erefs -> erefs |> List.tryPick computeCcuOfTyconRef 
+        | Item.UnqualifiedType erefs ->
+            erefs |> List.tryPick computeCcuOfTyconRef 
 
-        | Item.SetterArg (_, item) -> ccuOfItem g item
-        | Item.AnonRecdField (info, _, _, _) -> Some info.Assembly
+        | Item.SetterArg (_, item) ->
+            ccuOfItem g item
+
+        | Item.AnonRecdField (info, _, _, _) ->
+            Some info.Assembly
+
         | Item.TypeVar _  -> None
         | _ -> None
 
@@ -428,27 +458,53 @@ module internal SymbolHelpers =
         | Item.ActivePatternCase (APElemRef(_, vref, _, _))        
         | Item.Value vref | Item.CustomBuilder (_, vref) -> 
             mkXmlComment (GetXmlDocSigOfValRef g vref)
-        | Item.UnionCase  (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseRef ucinfo.UnionCaseRef)
-        | Item.ExnCase tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
-        | Item.RecdField rfinfo -> mkXmlComment (GetXmlDocSigOfRecdFieldRef rfinfo.RecdFieldRef)
+
+        | Item.UnionCase  (ucinfo, _) ->
+            mkXmlComment (GetXmlDocSigOfUnionCaseRef ucinfo.UnionCaseRef)
+
+        | Item.ExnCase tcref ->
+            mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+
+        | Item.RecdField rfinfo ->
+            mkXmlComment (GetXmlDocSigOfRecdFieldRef rfinfo.RecdFieldRef)
+
         | Item.NewDef _ -> FSharpXmlDoc.None
-        | Item.ILField finfo -> mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader m finfo)
-        | Item.Types(_, TType_app(tcref, _, _) :: _) ->  mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
-        | Item.CustomOperation (_, _, Some minfo) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
+
+        | Item.ILField finfo ->
+            mkXmlComment (GetXmlDocSigOfILFieldInfo infoReader m finfo)
+
+        | Item.Types(_, TType_app(tcref, _, _) :: _) ->
+            mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
+
+        | Item.CustomOperation (_, _, Some minfo) ->
+            mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
+
         | Item.TypeVar _  -> FSharpXmlDoc.None
-        | Item.ModuleOrNamespaces(modref :: _) -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m modref)
 
-        | Item.Property(_, pinfo :: _) -> mkXmlComment (GetXmlDocSigOfProp infoReader m pinfo)
-        | Item.Event einfo -> mkXmlComment (GetXmlDocSigOfEvent infoReader m einfo)
+        | Item.ModuleOrNamespaces(modref :: _) ->
+            mkXmlComment (GetXmlDocSigOfEntityRef infoReader m modref)
 
-        | Item.MethodGroup(_, minfo :: _, _) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
-        | Item.CtorGroup(_, minfo :: _) -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
+        | Item.Property(_, pinfo :: _) ->
+            mkXmlComment (GetXmlDocSigOfProp infoReader m pinfo)
+
+        | Item.Event einfo ->
+            mkXmlComment (GetXmlDocSigOfEvent infoReader m einfo)
+
+        | Item.MethodGroup(_, minfo :: _, _) ->
+            mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
+
+        | Item.CtorGroup(_, minfo :: _) ->
+            mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
+
         | Item.ArgName(_, _, Some argContainer) -> 
             match argContainer with 
             | ArgumentContainer.Method minfo -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
             | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
-        | Item.UnionCaseField (ucinfo, _) -> mkXmlComment (GetXmlDocSigOfUnionCaseRef ucinfo.UnionCaseRef)
-        |  _ -> FSharpXmlDoc.None
+
+        | Item.UnionCaseField (ucinfo, _) ->
+            mkXmlComment (GetXmlDocSigOfUnionCaseRef ucinfo.UnionCaseRef)
+
+        | _ -> FSharpXmlDoc.None
 
         |> GetXmlDocFromLoader infoReader
 
@@ -587,7 +643,7 @@ module internal SymbolHelpers =
               | Item.ExnCase tcref -> hash tcref.LogicalName
               | Item.UnionCase(UnionCaseInfo(_, UnionCaseRef(tcref, n)), _) -> hash(tcref.Stamp, n)
               | Item.RecdField(RecdFieldInfo(_, RecdFieldRef(tcref, n))) -> hash(tcref.Stamp, n)
-              | Item.AnonRecdField(anon, _, i, _) -> hash anon.SortedNames.[i]
+              | Item.AnonRecdField(anon, _, i, _) -> hash anon.SortedNames[i]
               | Item.Event evt -> evt.ComputeHashCode()
               | Item.Property(_name, pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
               | Item.UnqualifiedType(tcref :: _) -> hash tcref.LogicalName
@@ -644,10 +700,10 @@ module internal SymbolHelpers =
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _, _)) }) 
         | Item.Value vref | Item.CustomBuilder (_, vref) -> fullDisplayTextOfValRef vref
         | Item.UnionCase (ucinfo, _) -> fullDisplayTextOfUnionCaseRef  ucinfo.UnionCaseRef
-        | Item.ActivePatternResult(apinfo, _ty, idx, _) -> apinfo.Names.[idx]
+        | Item.ActivePatternResult(apinfo, _ty, idx, _) -> apinfo.Names[idx]
         | Item.ActivePatternCase apref -> FullNameOfItem g (Item.Value apref.ActivePatternVal)  + "." + apref.Name 
         | Item.ExnCase ecref -> fullDisplayTextOfExnRef ecref 
-        | Item.AnonRecdField(anon, _argTys, i, _) -> anon.SortedNames.[i]
+        | Item.AnonRecdField(anon, _argTys, i, _) -> anon.SortedNames[i]
         | Item.RecdField rfinfo -> fullDisplayTextOfRecdFieldRef  rfinfo.RecdFieldRef
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> bufs (fun os -> NicePrint.outputType denv os finfo.ApparentEnclosingType; bprintf os ".%s" finfo.FieldName)
@@ -774,7 +830,7 @@ module internal SymbolHelpers =
             | _ -> false
         with _ -> false
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 
     /// Determine if an item is a provided type 
     let (|ItemIsProvidedType|_|) g item =
@@ -849,7 +905,7 @@ module internal SymbolHelpers =
                 sprintf "%s.%s%s" typeString minfo.RawMetadata.Name paramString |> Some
 
             | DefaultStructCtor _  -> None
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             | ProvidedMeth _ -> None
 #endif
              
@@ -882,7 +938,7 @@ module internal SymbolHelpers =
              match finfo with 
              | ILFieldInfo(tinfo, fdef) -> 
                  (tinfo.TyconRefOfRawMetadata |> ticksAndArgCountTextOfTyconRef) + "." + fdef.Name |> Some
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
              | ProvidedField _ -> None
 #endif
         | Item.Types(_, AppTy g (tcref, _) :: _) 
@@ -908,7 +964,7 @@ module internal SymbolHelpers =
                 // namespaces from type providers need to be handled separately because they don't have compiled representation
                 // otherwise we'll fail at tast.fs
                 match modref.Deref.TypeReprInfo with
-#if !NO_EXTENSIONTYPING                
+#if !NO_TYPEPROVIDERS                
                 | TProvidedNamespaceRepr _ -> 
                     modref.CompilationPathOpt
                     |> Option.bind (fun path ->
@@ -936,7 +992,7 @@ module internal SymbolHelpers =
                 let tcref = tinfo.TyconRefOfRawMetadata
                 (tcref |> ticksAndArgCountTextOfTyconRef)+"."+pdef.Name |> Some
             | FSProp _ -> None
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             | ProvidedProp _ -> None
 #endif
         | Item.Property(_, []) -> None // Pathological case of the above
@@ -954,7 +1010,7 @@ module internal SymbolHelpers =
                    | Parent tcref -> (tcref |> ticksAndArgCountTextOfTyconRef)+"."+vref.PropertyName|> Some                     
                    | ParentNone -> None
                 | None -> None
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             | ProvidedEvent _ -> None 
 #endif
         | Item.CtorGroup(_, minfos) ->
@@ -964,7 +1020,7 @@ module internal SymbolHelpers =
                    match vref.DeclaringEntity with
                    | Parent tcref -> (tcref |> ticksAndArgCountTextOfTyconRef) + ".#ctor"|> Some
                    | ParentNone -> None
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             | ProvidedMeth _ :: _ -> None
 #endif
             | minfo :: _ ->
@@ -1004,7 +1060,7 @@ module internal SymbolHelpers =
         | Item.Property(_, pinfos) -> 
             let pinfo = List.head pinfos 
             if pinfo.IsIndexer then [item] else []
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | ItemIsWithStaticArguments m g _ -> [item] // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
 #endif
         | Item.CustomOperation(_name, _helpText, _minfo) -> [item]

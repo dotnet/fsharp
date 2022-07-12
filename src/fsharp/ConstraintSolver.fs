@@ -121,19 +121,11 @@ let FreshenAndFixupTypars (traitCtxt: ITraitContext option) m rigid fctps tinst 
     let renaming, tinst = FixupNewTypars traitCtxt m fctps tinst tpsorig tps
     tps, renaming, tinst
 
-<<<<<<< HEAD
 let FreshenTypeInst traitCtxt m tpsorig =
     FreshenAndFixupTypars traitCtxt m TyparRigidity.Flexible [] [] tpsorig 
 
-let FreshenMethInst traitCtxt m fctps tinst tpsorig =
+let FreshMethInst traitCtxt m fctps tinst tpsorig =
     FreshenAndFixupTypars traitCtxt m TyparRigidity.Flexible fctps tinst tpsorig 
-=======
-let FreshenTypeInst m tpsorig =
-    FreshenAndFixupTypars m TyparRigidity.Flexible [] [] tpsorig 
-
-let FreshMethInst m fctps tinst tpsorig =
-    FreshenAndFixupTypars m TyparRigidity.Flexible fctps tinst tpsorig 
->>>>>>> c786fbfff90e78bf7860f779489daec9f0996d9b
 
 let FreshenTypars traitCtxt m tpsorig = 
     match tpsorig with 
@@ -1741,7 +1733,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
               let isGetProp = nm.StartsWithOrdinal("get_") 
               let isSetProp = nm.StartsWithOrdinal("set_") 
               if argtys.IsEmpty && isGetProp || isSetProp then 
-                  let propName = nm.[4..]
+                  let propName = nm[4..]
                   let props = 
                     tys |> List.choose (fun ty -> 
                         match TryFindIntrinsicNamedItemOfType csenv.InfoReader (propName, traitAD) FindMemberFlag.IgnoreOverrides m ty with
@@ -1762,7 +1754,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           let anonRecdPropSearch = 
               let isGetProp = nm.StartsWith "get_" 
               if isGetProp && memFlags.IsInstance  then 
-                  let propName = nm.[4..]
+                  let propName = nm[4..]
                   let props = 
                     tys |> List.choose (fun ty -> 
                         match NameResolution.TryFindAnonRecdFieldOfType g ty propName with
@@ -1907,7 +1899,7 @@ and RecordMemberConstraintSolution css m trace traitInfo res =
 
 /// Convert a MethInfo into the data we save in the TAST
 and MemberConstraintSolutionOfMethInfo css m traitCtxt minfo minst = 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 #else
     // to prevent unused parameter warning
     ignore css
@@ -1924,19 +1916,14 @@ and MemberConstraintSolutionOfMethInfo css m traitCtxt minfo minst =
     | MethInfo.DefaultStructCtor _ -> 
        error(InternalError("the default struct constructor was the unexpected solution to a trait constraint", m))
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedMeth(amap, mi, _, m) -> 
         let g = amap.g
         let minst = []   // GENERIC TYPE PROVIDERS: for generics, we would have an minst here
         let allArgVars, allArgs = minfo.GetParamTypes(amap, m, minst) |> List.concat |> List.mapi (fun i ty -> mkLocal m ("arg"+string i) ty) |> List.unzip
         let objArgVars, objArgs = (if minfo.IsInstance then [mkLocal m "this" minfo.ApparentEnclosingType] else []) |> List.unzip
-<<<<<<< HEAD
         let callMethInfoOpt, callExpr, callExprTy = ProvidedMethodCalls.BuildInvokerExpressionForProvidedMethodCall css.TcVal (g, amap, traitCtxt, mi, objArgs, NeverMutates, false, ValUseFlag.NormalValUse, allArgs, m) 
-        let closedExprSln = ClosedExprSln (mkLambdas m [] (objArgVars@allArgVars) (callExpr, callExprTy) )
-=======
-        let callMethInfoOpt, callExpr, callExprTy = ProvidedMethodCalls.BuildInvokerExpressionForProvidedMethodCall css.TcVal (g, amap, mi, objArgs, NeverMutates, false, ValUseFlag.NormalValUse, allArgs, m) 
         let closedExprSln = ClosedExprSln (mkLambdas g m [] (objArgVars@allArgVars) (callExpr, callExprTy) )
->>>>>>> c786fbfff90e78bf7860f779489daec9f0996d9b
 
         // If the call is a simple call to an IL method with all the arguments in the natural order, then revert to use ILMethSln.
         // This is important for calls to operators on generated provided types. There is an (unchecked) condition

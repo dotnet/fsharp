@@ -1320,7 +1320,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MPM2ExtP2Ext")
 
@@ -1355,7 +1355,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MP")
 
@@ -1393,7 +1393,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "MExtP")
 
@@ -1423,7 +1423,7 @@ let main _ =
             """
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|])
 
         CompilerAssert.ExecutionHasOutput(fsCmpl, "M")
 
@@ -1685,7 +1685,7 @@ let x2: int = X
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
+            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -1811,7 +1811,7 @@ let x2: int = X
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
+            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -1961,7 +1961,7 @@ let x2: string = X
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
+            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2120,7 +2120,7 @@ let x2: float32 = X()
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
+            Compilation.Create("test.fs", fsharpSource, Library, options = [|"--langversion:5.0"|], cmplRefs = [ilCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2161,7 +2161,7 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2203,7 +2203,7 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl], name = "Test")
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl], name = "Test")
 
         CompilerAssert.Compile(fsCmpl)
 
@@ -2242,7 +2242,7 @@ let main _ =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fsharpSource, Fs, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
+            Compilation.Create("test.fs", fsharpSource, Exe, options = [|"--langversion:5.0"|], cmplRefs = [csCmpl])
 
         CompilerAssert.CompileWithErrors(fsCmpl, [|
             (FSharpDiagnosticSeverity.Error, 39, (9, 5, 9, 6), "The value or constructor 'M' is not defined.")

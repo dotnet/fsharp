@@ -242,7 +242,7 @@ type Summary<'Info> =
 //------------------------------------------------------------------------- 
 
 let rec SizeOfValueInfos (arr:_[]) =
-    if arr.Length <= 0 then 0 else max 0 (SizeOfValueInfo arr.[0])
+    if arr.Length <= 0 then 0 else max 0 (SizeOfValueInfo arr[0])
 
 and SizeOfValueInfo x =
     match x with
@@ -533,7 +533,7 @@ let FindOrCreateGlobalModuleInfo n (ss: LayeredMap<_, _>) =
 
 let rec BindValueInSubModuleFSharpCore (mp: string[]) i (v: Val) vval ss =
     if i < mp.Length then 
-        {ss with ModuleOrNamespaceInfos = BindValueInModuleForFslib mp.[i] mp (i+1) v vval ss.ModuleOrNamespaceInfos }
+        {ss with ModuleOrNamespaceInfos = BindValueInModuleForFslib mp[i] mp (i+1) v vval ss.ModuleOrNamespaceInfos }
     else 
         // REVIEW: this line looks quadratic for performance when compiling FSharp.Core
         {ss with ValInfos = ValInfos(Seq.append ss.ValInfos.Entries (Seq.singleton (mkLocalValRef v, vval))) }
@@ -560,7 +560,7 @@ let BindInternalLocalVal cenv (v: Val) vval env =
     match vval.ValExprInfo with 
     | UnknownValue -> env
     | _ ->
-        cenv.localInternalVals.[v.Stamp] <- vval
+        cenv.localInternalVals[v.Stamp] <- vval
         env
         
 let BindExternalLocalVal cenv (v: Val) vval env = 
@@ -647,7 +647,7 @@ let TryGetInfoForEntity sv n =
 
 let rec TryGetInfoForPath sv (p:_[]) i = 
     if i >= p.Length then Some sv else 
-    match TryGetInfoForEntity sv p.[i] with 
+    match TryGetInfoForEntity sv p[i] with 
     | Some info -> TryGetInfoForPath info p (i+1)
     | None -> None
 
@@ -1537,9 +1537,9 @@ let TryEliminateBinding cenv _env bind e2 _m =
 
          // Immediate consumption of delegate via an application in a sequential, e.g. 'let part1 = e in part1.Invoke(args); rest'
          // See https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1034-lambda-optimizations.md
-         | Expr.Sequential(DebugPoints(DelegateInvokeExpr g (invokeRef, f0ty, tyargs, DebugPoints (Expr.Val (VRefLocal vspec2, _, _), recreate2), args, _), recreate1), rest, NormalSeq, m)  
-             when IsUniqueUse vspec2 (rest :: args) -> 
-               let invoke = MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, recreate2 e1, f0ty, tyargs, args, m)
+         | Expr.Sequential(DebugPoints(DelegateInvokeExpr g (delInvokeRef, delInvokeTy, DebugPoints (Expr.Val (VRefLocal vspec2, _, _), recreate2), delInvokeArg, _), recreate1), rest, NormalSeq, m)  
+             when IsUniqueUse vspec2 [rest;delInvokeArg] -> 
+               let invoke = MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, recreate2 e1, delInvokeTy, delInvokeArg, m)
                Some (Expr.Sequential(recreate1 invoke, rest, NormalSeq, m)  |> recreate0)
 
          // Immediate consumption of value by a pattern match 'let x = e in match x with ...'
@@ -1618,7 +1618,7 @@ let rec CountBoolLogicTree (targets: DecisionTreeTarget[], costOuterCaseTree, co
         let tc2, ec2 = CountBoolLogicTree data defaultTree 
         tc1 + tc2, ec1 + ec2
     | TDSuccess([], idx) -> 
-        match targets.[idx] with
+        match targets[idx] with
         | ConstantBoolTarget result -> (if result = testBool then costOuterCaseTree else costOuterDefaultTree), 0
         | TTarget([], _exp, _) -> costOuterCaseTree + costOuterDefaultTree, 10
         | _ -> 100, 100 
@@ -1634,7 +1634,7 @@ let rec RewriteBoolLogicTree (targets: DecisionTreeTarget[], outerCaseTree, oute
         let defaultTree2 = defaultTree |> Option.map (RewriteBoolLogicTree data)
         TDSwitch (expr, cases2, defaultTree2, range)
     | TDSuccess([], idx) -> 
-        match targets.[idx] with 
+        match targets[idx] with 
         | ConstantBoolTarget result -> if result = testBool then outerCaseTree else outerDefaultTree
         | TTarget([], exp, _) -> mkBoolSwitch exp.Range exp (if testBool then outerCaseTree else outerDefaultTree) (if testBool then outerDefaultTree else outerCaseTree)
         | _ -> failwith "CountBoolLogicTree should exclude this case"
@@ -2175,8 +2175,8 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
 
     | Expr.App (f, fty, tyargs, argsl, m) -> 
         match expr with
-        | DelegateInvokeExpr g (iref, fty, tyargs, delegatef, args, m) ->
-            OptimizeFSharpDelegateInvoke cenv env (iref, delegatef, fty, tyargs, args, m) 
+        | DelegateInvokeExpr g (delInvokeRef, delInvokeTy, delExpr, delInvokeArg, m) ->
+            OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, delInvokeArg, m) 
         | _ -> 
         let attempt = 
             if IsDebugPipeRightExpr cenv expr then
@@ -2455,7 +2455,7 @@ and OptimizeExprOpFallback cenv env (op, tyargs, argsR, m) arginfos valu =
           // We count the proof as size 0
           // We maintain the value of the source of the proof-cast if it is known to be a UnionCaseValue
           let valu = 
-              match argValues.[0] with 
+              match argValues[0] with 
               | StripUnionCaseValue (uc, info) -> UnionCaseValue(uc, info) 
               | _ -> valu
           0, valu
@@ -2536,7 +2536,7 @@ and TryOptimizeRecordFieldGet cenv _env (e1info, (RecdFieldRef (rtcref, _) as r)
         | None ->
             let n = r.Index
             if n >= finfos.Length then errorR(InternalError( "TryOptimizeRecordFieldGet: term argument out of range", m))
-            Some finfos.[n]
+            Some finfos[n]
     | _ -> None
   
 and TryOptimizeTupleFieldGet cenv _env (_tupInfo, e1info, tys, n, m) =
@@ -2545,7 +2545,7 @@ and TryOptimizeTupleFieldGet cenv _env (_tupInfo, e1info, tys, n, m) =
         let len = tups.Length 
         if len <> tys.Length then errorR(InternalError("error: tuple lengths don't match", m))
         if n >= len then errorR(InternalError("TryOptimizeTupleFieldGet: tuple index out of range", m))
-        Some tups.[n]
+        Some tups[n]
     | _ -> None
       
 and TryOptimizeUnionCaseGet cenv _env (e1info, cspec, _tys, n, m) =
@@ -2553,7 +2553,7 @@ and TryOptimizeUnionCaseGet cenv _env (e1info, cspec, _tys, n, m) =
     match e1info.Info with
     | StripUnionCaseValue(cspec2, args) when cenv.settings.EliminateUnionCaseFieldGet() && not e1info.HasEffect && g.unionCaseRefEq cspec cspec2 ->
         if n >= args.Length then errorR(InternalError( "TryOptimizeUnionCaseGet: term argument out of range", m))
-        Some args.[n]
+        Some args[n]
     | _ -> None
 
 /// Optimize/analyze a for-loop
@@ -3182,7 +3182,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
            else true))) ->
             
         let isBaseCall = not (List.isEmpty args) &&
-                              match args.[0] with
+                              match args[0] with
                               | Expr.Val (vref, _, _) when vref.IsBaseVal -> true
                               | _ -> false
         
@@ -3301,11 +3301,11 @@ and StripPreComputationsFromComputedFunction g f0 args mkApp =
             let remake (newExprs: Expr list) = 
                 let newExprsInChunks, _ = 
                     ((newExprs,0), chunkSizes) ||> Array.mapFold (fun (acc,i) chunkSize -> 
-                        let chunk = acc.[0..chunkSize-1]
-                        let acc = acc.[chunkSize..]
+                        let chunk = acc[0..chunkSize-1]
+                        let acc = acc[chunkSize..]
                         chunk, (acc, i+chunkSize))
                 let targetsR = (newExprsInChunks, targetRemakes) ||> Array.map2 (fun newExprsChunk targetRemake -> targetRemake newExprsChunk)
-                let tyR = tyOfExpr g targetsR.[0].TargetExpression
+                let tyR = tyOfExpr g targetsR[0].TargetExpression
                 Expr.Match (spMatch, exprm, dtree, targetsR, dflt, tyR)
             fs, remake
 
@@ -3529,17 +3529,18 @@ and OptimizeDebugPipeRights cenv env expr =
             pipesExprR
     expr, { pipesInfo with HasEffect=true}
     
-and OptimizeFSharpDelegateInvoke cenv env (invokeRef, f0, f0ty, tyargs, args, m) =
+and OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, delInvokeArg, m) =
     let g = cenv.g
-    let optf0, finfo = OptimizeExpr cenv env f0
+    let optf0, finfo = OptimizeExpr cenv env delExpr
 
-    match StripPreComputationsFromComputedFunction g optf0 args (fun f argsR -> MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, f, f0ty, tyargs, argsR, m)) with
+    match StripPreComputationsFromComputedFunction g optf0 [delInvokeArg] (fun f delInvokeArgsR -> MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, f, delInvokeTy, List.head delInvokeArgsR, m)) with
     | Choice1Of2 remade -> 
         OptimizeExpr cenv env remade
     | Choice2Of2 (newf0, remake) -> 
 
-    let newArgs, arginfos = OptimizeExprsThenConsiderSplits cenv env args
-    let reducedExpr = MakeFSharpDelegateInvokeAndTryBetaReduce g (invokeRef, newf0, f0ty, tyargs, newArgs, m)
+    let newDelInvokeArgs, arginfos = OptimizeExprsThenConsiderSplits cenv env [delInvokeArg]
+    let newDelInvokeArg = List.head newDelInvokeArgs
+    let reducedExpr = MakeFSharpDelegateInvokeAndTryBetaReduce g (delInvokeRef, newf0, delInvokeTy, newDelInvokeArg, m)
     let newExpr = reducedExpr |> remake
     match newf0, reducedExpr with 
     | Expr.Obj _, Expr.Let _ -> 
@@ -3552,7 +3553,6 @@ and OptimizeFSharpDelegateInvoke cenv env (invokeRef, f0, f0ty, tyargs, args, m)
                    HasEffect=true
                    MightMakeCriticalTailcall = true
                    Info=ValueOfExpr newExpr }
-
 
 /// Optimize/analyze a lambda expression
 and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety = 

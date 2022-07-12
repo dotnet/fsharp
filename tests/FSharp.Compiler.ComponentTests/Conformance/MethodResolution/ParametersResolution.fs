@@ -253,6 +253,7 @@ let mutable think5 = Unchecked.defaultof<float>
 
 let ok5 = Thing.Do(1, &fast5, &think5)
         """
+
     [<Fact>]
     let ``Method with same optional and out parameter does not resolve`` () =
         Fsx """

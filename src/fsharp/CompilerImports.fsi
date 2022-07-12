@@ -20,7 +20,7 @@ open FSharp.Compiler.BuildGraph
 open FSharp.Compiler.Text
 open FSharp.Core.CompilerServices
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -85,7 +85,7 @@ type AssemblyResolution =
        mutable ilAssemblyRef: ILAssemblyRef option
      }
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
@@ -94,7 +94,7 @@ type ResolvedExtensionReference = ResolvedExtensionReference of string * Assembl
 type ImportedBinary = 
     { FileName: string
       RawMetadata: IRawFSharpAssemblyData
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       ProviderGeneratedAssembly: System.Reflection.Assembly option
       IsProviderGenerated: bool
       ProviderGeneratedStaticLinkMap: ProvidedAssemblyStaticLinkingMap  option
@@ -109,7 +109,7 @@ type ImportedAssembly =
       FSharpViewOfMetadata: CcuThunk
       AssemblyAutoOpenAttributes: string list
       AssemblyInternalsVisibleToAttributes: string list
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       IsProviderGenerated: bool
       mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
@@ -158,7 +158,7 @@ type TcImports =
 
     member FindCcuFromAssemblyRef: CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     member ProviderGeneratedTypeRoots: ProviderGeneratedType list
 #endif
 
@@ -179,7 +179,7 @@ type TcImports =
     /// Try to find the given assembly reference.
     member TryFindExistingFullyQualifiedPathByExactAssemblyRef: ILAssemblyRef -> string option
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     /// Try to find a provider-generated assembly
     member TryFindProviderGeneratedAssemblyByName: CompilationThreadToken * assemblyName:string -> System.Reflection.Assembly option
 #endif

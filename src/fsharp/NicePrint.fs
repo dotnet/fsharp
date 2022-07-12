@@ -1116,7 +1116,18 @@ module PrintTypes =
 
     let prettyLayoutOfTypeNoConstraints denv ty = 
         let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
-        layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 ty 
+        layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 ty
+
+    let layoutOfValReturnType denv (v: ValRef) =
+        match v.ValReprInfo with 
+        | None ->
+            let _, tau = v.TypeScheme
+            let _argtysl, rty = stripFunTy denv.g tau
+            layoutReturnType denv SimplifyTypes.typeSimplificationInfo0 rty
+        | Some (ValReprInfo(_typars, argInfos, _retInfo)) -> 
+            let tau = v.TauType
+            let _c, rty = GetTopTauTypeInFSharpForm denv.g argInfos tau Range.range0
+            layoutReturnType denv SimplifyTypes.typeSimplificationInfo0 rty
 
     let layoutAssemblyName _denv (ty: TType) =
         ty.GetAssemblyName()
@@ -1507,7 +1518,7 @@ module InfoMemberPrinting =
             let prettyTyparInst, prettyMethInfo, minst = prettifyILMethInfo amap m methInfo typarInst ilminfo
             let resL = layoutMethInfoCSharpStyle amap m denv prettyMethInfo minst
             prettyTyparInst, resL
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | ProvidedMeth _ -> 
             let prettyTyparInst, _ = PrettyTypes.PrettifyInst amap.g typarInst 
             prettyTyparInst, layoutMethInfoCSharpStyle amap m denv methInfo methInfo.FormalMethodInst
@@ -1626,7 +1637,7 @@ module TastDefinitionPrinting =
              r.CasesTable.UnionCasesAsList |> List.exists (fun uc -> not uc.XmlDoc.IsEmpty)
         | TAsmRepr _ 
         | TMeasureableRepr _ 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         | TProvidedTypeRepr _
         | TProvidedNamespaceRepr _
 #endif
@@ -1840,7 +1851,7 @@ module TastDefinitionPrinting =
             |> List.map snd
 
         let nestedTypeLs =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             match tryTcrefOfAppTy g ty with
             | ValueSome tcref ->
                 match tcref.TypeReprInfo with 
@@ -2103,7 +2114,7 @@ module TastDefinitionPrinting =
                     | [_] -> 
                         nameL
                     | _ ->
-                        let innerPath = path.[..path.Length - 2]
+                        let innerPath = path[..path.Length - 2]
                         let innerPathL = innerPath |> List.map (ConvertNameToDisplayLayout (tagNamespace >> wordL))
                         sepListL SepL.dot innerPathL ^^ SepL.dot ^^ nameL
 
@@ -2446,7 +2457,9 @@ let prettyLayoutOfValOrMember denv infoReader typarInst v = PrintTastMemberOrVal
 
 let prettyLayoutOfValOrMemberNoInst denv infoReader v = PrintTastMemberOrVals.prettyLayoutOfValOrMemberNoInst denv infoReader v
 
-let prettyLayoutOfMemberNoInstShort denv v = PrintTastMemberOrVals.prettyLayoutOfMemberNoInstShort denv v 
+let prettyLayoutOfMemberNoInstShort denv v = PrintTastMemberOrVals.prettyLayoutOfMemberNoInstShort denv v
+
+let layoutOfValReturnType denv v = v |> PrintTypes.layoutOfValReturnType denv
 
 let prettyLayoutOfInstAndSig denv x = PrintTypes.prettyLayoutOfInstAndSig denv x
 

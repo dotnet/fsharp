@@ -13,7 +13,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -229,7 +229,7 @@ let ComputeILAccess isPublic isFamily isFamilyOrAssembly isFamilyAndAssembly =
 let IsILFieldInfoAccessible g amap m ad x = 
     match x with 
     | ILFieldInfo (tinfo, fd) -> IsILTypeAndMemberAccessible g amap m ad ad tinfo fd.Access
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedField (amap, tpfi, m) -> 
         let access = tpfi.PUntaint((fun fi -> ComputeILAccess fi.IsPublic fi.IsFamily fi.IsFamilyOrAssembly fi.IsFamilyAndAssembly), m)
         IsProvidedMemberAccessible amap m ad x.ApparentEnclosingType access
@@ -356,7 +356,7 @@ let IsTypeAndMethInfoAccessible amap m accessDomainTy ad = function
     | ILMeth (g, x, _) -> IsILMethInfoAccessible g amap m accessDomainTy ad x 
     | FSMeth (_, _, vref, _) -> IsValAccessible ad vref
     | DefaultStructCtor(g, ty) -> IsTypeAccessible g amap m ad ty
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedMeth(amap, tpmb, _, m) as etmi -> 
         let access = tpmb.PUntaint((fun mi -> ComputeILAccess mi.IsPublic mi.IsFamily mi.IsFamilyOrAssembly mi.IsFamilyAndAssembly), m)        
         IsProvidedMemberAccessible amap m ad etmi.ApparentEnclosingType access
@@ -370,7 +370,7 @@ let IsPropInfoAccessible g amap m ad = function
     | FSProp (_, _, Some vrefGet, Some vrefSet) -> 
         // pick most accessible
         IsValAccessible ad vrefGet || IsValAccessible ad vrefSet
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     | ProvidedProp (amap, tppi, m) as pp-> 
         let access = 
             let a = tppi.PUntaint((fun ppi -> 

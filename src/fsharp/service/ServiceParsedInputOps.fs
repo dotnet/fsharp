@@ -21,7 +21,7 @@ module SourceFileImpl =
         0 = String.Compare(".fsi", ext, StringComparison.OrdinalIgnoreCase)
 
     /// Additional #defines that should be in place when editing a file in a file editor such as VS.
-    let AdditionalDefinesForUseInEditor(isInteractive: bool) =
+    let GetImplicitConditionalDefinesForEditing(isInteractive: bool) =
         if isInteractive then ["INTERACTIVE";"EDITING"] // This is still used by the foreground parse
         else ["COMPILED";"EDITING"]
            
@@ -125,11 +125,11 @@ type OpenStatementInsertionPoint =
 module Entity =
     let getRelativeNamespace (targetNs: ShortIdents) (sourceNs: ShortIdents) =
         let rec loop index =
-            if index > targetNs.Length - 1 then sourceNs.[index..]
+            if index > targetNs.Length - 1 then sourceNs[index..]
             // target namespace is not a full parent of source namespace, keep the source ns as is
             elif index > sourceNs.Length - 1 then sourceNs
-            elif targetNs.[index] = sourceNs.[index] then loop (index + 1)
-            else sourceNs.[index..]
+            elif targetNs[index] = sourceNs[index] then loop (index + 1)
+            else sourceNs[index..]
         if sourceNs.Length = 0 || targetNs.Length = 0 then sourceNs
         else loop 0
 
@@ -139,7 +139,7 @@ module Entity =
             | Some parent when parent.Length > 0 -> 
                 min (parent.Length - 1) candidateNs.Length
             | _ -> candidateNs.Length
-        candidateNs.[0..nsCount - 1]
+        candidateNs[0..nsCount - 1]
 
     let tryCreate (targetNamespace: ShortIdents option, targetScope: ShortIdents, partiallyQualifiedName: MaybeUnresolvedIdent[], 
                    requiresQualifiedAccessParent: ShortIdents option, autoOpenParent: ShortIdents option, candidateNamespace: ShortIdents option, candidate: ShortIdents) =
@@ -161,7 +161,7 @@ module Entity =
                           match requiresQualifiedAccessParent with
                           | Some parent -> min parent.Length candidate.Length
                           | None -> candidate.Length
-                      candidate.[0..openableNsCount - 2], candidate.[openableNsCount - 1..]
+                      candidate[0..openableNsCount - 2], candidate[openableNsCount - 1..]
               
                   let openableNs = cutAutoOpenModules autoOpenParent fullOpenableNs
                    
@@ -183,11 +183,11 @@ module Entity =
                           match relativeNs with 
                           | [||] -> None 
                           | _ when identCount > 1 && relativeNs.Length >= identCount -> 
-                              Some (relativeNs.[0..relativeNs.Length - identCount] |> String.concat ".")
+                              Some (relativeNs[0..relativeNs.Length - identCount] |> String.concat ".")
                           | _ -> Some (relativeNs |> String.concat ".")
                       let qualifier = 
                           if fullRelativeName.Length > 1 && fullRelativeName.Length >= identCount then
-                              fullRelativeName.[0..fullRelativeName.Length - identCount]  
+                              fullRelativeName[0..fullRelativeName.Length - identCount]  
                           else fullRelativeName
                       Some 
                           { FullRelativeName = String.concat "." fullRelativeName //.[0..fullRelativeName.Length - identCount - 1]
@@ -719,7 +719,7 @@ module ParsedInput =
                 |> Option.orElseWith (fun () -> ifPosInRange range (fun _ -> List.tryPick (walkSynModuleDecl false) modules))
             | SynModuleDecl.Open _ -> None
             | SynModuleDecl.Let (_, bindings, _) -> List.tryPick walkBinding bindings
-            | SynModuleDecl.DoExpr (_, expr, _) -> walkExpr expr
+            | SynModuleDecl.Expr (expr, _) -> walkExpr expr
             | SynModuleDecl.Types (types, _) -> List.tryPick walkTypeDefn types
             | _ -> None
 
@@ -956,7 +956,7 @@ module ParsedInput =
                                     Some (CompletionContext.ParameterList args)
                                 | _ -> 
                                     defaultTraverse expr
-                            
+
                             | _ -> defaultTraverse expr
 
                     member _.VisitRecordField(path, copyOpt, field) = 
@@ -1039,7 +1039,7 @@ module ParsedInput =
                     member _.VisitModuleOrNamespace(_path, SynModuleOrNamespace(longId = idents)) =
                         match List.tryLast idents with
                         | Some lastIdent when pos.Line = lastIdent.idRange.EndLine && lastIdent.idRange.EndColumn >= 0 && pos.Column <= lineStr.Length ->
-                            let stringBetweenModuleNameAndPos = lineStr.[lastIdent.idRange.EndColumn..pos.Column - 1]
+                            let stringBetweenModuleNameAndPos = lineStr[lastIdent.idRange.EndColumn..pos.Column - 1]
                             if stringBetweenModuleNameAndPos |> Seq.forall (fun x -> x = ' ' || x = '.') then
                                 // No completions in a top level a module or namespace identifier
                                 Some CompletionContext.Invalid
@@ -1060,13 +1060,20 @@ module ParsedInput =
 
                     member _.VisitSimplePats (_path, pats) =
                         pats |> List.tryPick (fun pat ->
-                            // No completions in an identifier or type in a pattern
+                            // No completions in an identifier in a pattern
                             match pat with
                             // fun x| ->
-                            | SynSimplePat.Id(range = range)
-                            // fun (x: int|) ->
-                            | SynSimplePat.Typed(SynSimplePat.Id(range = range), _, _) when rangeContainsPos range pos ->
+                            | SynSimplePat.Id(range = range) when rangeContainsPos range pos ->
                                 Some CompletionContext.Invalid
+                            | SynSimplePat.Typed(SynSimplePat.Id(range = idRange), synType, _) ->
+                                // fun (x|: int) ->
+                                if rangeContainsPos idRange pos then
+                                    Some CompletionContext.Invalid
+                                // fun (x: int|) ->
+                                elif rangeContainsPos synType.Range pos then
+                                    Some CompletionContext.PatternType
+                                else
+                                    None
                             | _ -> None)
 
                     member _.VisitModuleDecl(_path, defaultTraverse, decl) =
@@ -1132,7 +1139,7 @@ module ParsedInput =
                  // cut off leading attributes, i.e. we cut "[<A1; A2; >]" to " >]"
                  match str.LastIndexOf ';' with
                  | -1 -> str
-                 | idx when idx < str.Length -> str.[idx + 1..].TrimStart()
+                 | idx when idx < str.Length -> str[idx + 1..].TrimStart()
                  | _ -> ""   
 
              let isLongIdent = Seq.forall (fun c -> IsIdentifierPartCharacter c || c = '.' || c = ':') // ':' may occur in "[<type: AnAttribute>]"
@@ -1147,7 +1154,7 @@ module ParsedInput =
              if not (Array.isEmpty matches) then
                  matches
                  |> Seq.tryPick (fun m ->
-                      let g = m.Groups.["attribute"]
+                      let g = m.Groups["attribute"]
                       let col = pos.Column - g.Index
                       if col >= 0 && col < g.Length then
                           let str = g.Value.Substring(0, col).TrimStart() // cut other rhs attributes
@@ -1161,7 +1168,7 @@ module ParsedInput =
                 match lineStr.LastIndexOf("[<", StringComparison.Ordinal) with
                 | -1 -> None
                 | openParenIndex when pos.Column >= openParenIndex + 2 -> 
-                    let str = lineStr.[openParenIndex + 2..pos.Column - 1].TrimStart()
+                    let str = lineStr[openParenIndex + 2..pos.Column - 1].TrimStart()
                     let str = cutLeadingAttributes str
                     if isLongIdent str then
                         Some CompletionContext.AttributeApplication
@@ -1202,19 +1209,19 @@ module ParsedInput =
     
         let addLongIdent (longIdent: LongIdent) =
             for ident in longIdent do
-                identsByEndPos.[ident.idRange.End] <- longIdent
+                identsByEndPos[ident.idRange.End] <- longIdent
     
         let addLongIdentWithDots (LongIdentWithDots (longIdent, lids) as value) =
             match longIdent with
             | [] -> ()
-            | [_] as idents -> identsByEndPos.[value.Range.End] <- idents
+            | [_] as idents -> identsByEndPos[value.Range.End] <- idents
             | idents ->
                 for dotRange in lids do
-                    identsByEndPos.[mkPos dotRange.EndLine (dotRange.EndColumn - 1)] <- idents
-                identsByEndPos.[value.Range.End] <- idents
+                    identsByEndPos[mkPos dotRange.EndLine (dotRange.EndColumn - 1)] <- idents
+                identsByEndPos[value.Range.End] <- idents
     
         let addIdent (ident: Ident) =
-            identsByEndPos.[ident.idRange.End] <- [ident]
+            identsByEndPos[ident.idRange.End] <- [ident]
     
         let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
             List.iter walkSynModuleOrNamespace moduleOrNamespaceList
@@ -1532,7 +1539,7 @@ module ParsedInput =
                 walkComponentInfo false info
                 List.iter walkSynModuleDecl modules
             | SynModuleDecl.Let (_, bindings, _) -> List.iter walkBinding bindings
-            | SynModuleDecl.DoExpr (_, expr, _) -> walkExpr expr
+            | SynModuleDecl.Expr (expr, _) -> walkExpr expr
             | SynModuleDecl.Types (types, _) -> List.iter walkTypeDefn types
             | SynModuleDecl.Attributes (Attributes attrs, _) -> List.iter walkAttribute attrs
             | _ -> ()
@@ -1600,7 +1607,7 @@ module ParsedInput =
                 match firstDecl with
                 | SynModuleDecl.NestedModule (range=r)
                 | SynModuleDecl.Let (range=r)
-                | SynModuleDecl.DoExpr (range=r)
+                | SynModuleDecl.Expr (range=r)
                 | SynModuleDecl.Types (range=r)
                 | SynModuleDecl.Exception (range=r)
                 | SynModuleDecl.Open (range=r)
@@ -1620,7 +1627,7 @@ module ParsedInput =
                 // top level module with "inlined" namespace like Ns1.Ns2.TopModule
                 | true, [], _f :: _s :: _ -> 
                     let ident = longIdentToIdents ident
-                    ns <- Some ident.[0..ident.Length - 2]
+                    ns <- Some ident[0..ident.Length - 2]
                 | _ -> ()
                 
                 let fullIdent = parent @ ident

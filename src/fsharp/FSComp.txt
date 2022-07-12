@@ -1249,6 +1249,7 @@ featureNonVariablePatternsToRightOfAsPatterns,"non-variable patterns to the righ
 featureAttributesToRightOfModuleKeyword,"attributes to the right of the 'module' keyword"
 featureMLCompatRevisions,"ML compatibility revisions"
 featureBetterExceptionPrinting,"automatic generation of 'Message' property for 'exception' declarations"
+featureDelegateTypeNameResolutionFix,"fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228"
 3090,tcIfThenElseMayNotBeUsedWithinQueries,"An if/then/else expression may not be used within queries. Consider using either an if/then expression, or use a sequence expression instead."
 3091,ilxgenUnexpectedArgumentToMethodHandleOfDuringCodegen,"Invalid argument to 'methodhandleof' during codegen"
 3092,etProvidedTypeReferenceMissingArgument,"A reference to a provided type was missing a value for the static parameter '%s'. You may need to recompile one or more referenced assemblies."

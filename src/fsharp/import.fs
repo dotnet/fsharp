@@ -19,7 +19,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -32,7 +32,7 @@ type AssemblyLoader =
 
     abstract TryFindXmlDocumentationInfo : assemblyName: string -> XmlDocumentationInfo option
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 
     /// Get a flag indicating if an assembly is a provided assembly, plus the
     /// table of information recording remappings from type names in the provided assembly to type
@@ -109,7 +109,7 @@ let ImportTypeRefData (env: ImportMap) m (scoref, path, typeName) =
             fakeTyconRef.Deref
         with _ ->
             error (Error(FSComp.SR.impReferencedTypeCouldNotBeFoundInAssembly(String.concat "." (Array.append path  [| typeName |]), ccu.AssemblyName), m))
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     // Validate (once because of caching)
     match tycon.TypeReprInfo with
     | TProvidedTypeRepr info ->
@@ -148,7 +148,7 @@ let ImportILTypeRef (env: ImportMap) m (tref: ILTypeRef) =
     | true, tcref -> tcref
     | _ ->
         let tcref = ImportILTypeRefUncached  env m tref
-        env.ILTypeRefToTyconRefCache.[tref] <- tcref
+        env.ILTypeRefToTyconRefCache[tref] <- tcref
         tcref
 
 /// Import a reference to a type definition, given an AbstractIL ILTypeRef, with caching
@@ -204,7 +204,7 @@ let rec CanImportILType (env: ImportMap) m ty =
     | ILType.Modified(_, _, ety) -> CanImportILType env m ety
     | ILType.TypeVar _u16 -> true
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 
 /// Import a provided type reference as an F# type TyconRef
 let ImportProvidedNamedType (env: ImportMap) (m: range) (st: Tainted<ProvidedType>) = 
@@ -463,7 +463,7 @@ let multisetDiscriminateAndMap nodef tipf (items: ('Key list * 'Value) list) =
             match keylist with 
             | [] -> ()
             | key :: rest ->
-                buckets.[key] <-
+                buckets[key] <-
                     match buckets.TryGetValue key with
                     | true, b -> (rest, v) :: b
                     | _ -> (rest, v) :: []
@@ -602,7 +602,7 @@ let ImportILAssembly(amap: unit -> ImportMap, m, auxModuleLoader, xmlDocInfoLoad
     let ccuData: CcuData = 
         { IsFSharp=false
           UsesFSharp20PlusQuotations=false
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
           InvalidateEvent=invalidateCcu
           IsProviderGenerated = false
           ImportProvidedType = (fun ty -> ImportProvidedType (amap()) m ty)

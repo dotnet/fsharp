@@ -223,9 +223,8 @@ let getSingleDeclInModule (input: ParsedInput) =
 
 let getSingleExprInModule (input: ParsedInput) =
     match getSingleDeclInModule input with
-    | SynModuleDecl.DoExpr (_, expr, _) -> expr
+    | SynModuleDecl.Expr (expr, _) -> expr
     | _ -> failwith "Unexpected expression"
-
 
 let parseSourceCodeAndGetModule (source: string) =
     parseSourceCode ("test.fsx", source) |> getSingleModuleLikeDecl
@@ -273,7 +272,7 @@ let attribsOfSymbol (s:FSharpSymbol) =
             if v.IsFSharpUnion then yield "union"
             if v.IsInterface then yield "interface"
             if v.IsMeasure then yield "measure"
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             if v.IsProvided then yield "provided"
             if v.IsStaticInstantiation then yield "staticinst"
             if v.IsProvidedAndErased then yield "erased"
@@ -281,6 +280,9 @@ let attribsOfSymbol (s:FSharpSymbol) =
 #endif
             if v.IsUnresolved then yield "unresolved"
             if v.IsValueType then yield "valuetype"
+
+        | :? FSharpActivePatternCase as v ->
+            yield sprintf "apatcase%d" v.Index
 
         | :? FSharpMemberOrFunctionOrValue as v ->
             if v.IsActivePattern then yield "apat"

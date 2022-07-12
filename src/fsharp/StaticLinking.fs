@@ -20,7 +20,7 @@ open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeBasics
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Compiler.ExtensionTyping
 #endif
 
@@ -48,8 +48,8 @@ type TypeForwarding (tcImports: TcImports) =
             let parts =  tref.FullName.Split([|'.'|])
             match parts.Length with
             | 0 -> None
-            | 1 -> Some (Array.empty<string>, parts.[0])
-            | n -> Some (parts.[0..n-2], parts.[n-1])
+            | 1 -> Some (Array.empty<string>, parts[0])
+            | n -> Some (parts[0..n-2], parts[n-1])
 
         let  scoref = tref.Scope
         match scoref with
@@ -136,7 +136,7 @@ let StaticLinkILModules (tcConfig:TcConfig, ilGlobals, tcImports, ilxMainModule,
             // Don't save interface, optimization or resource definitions for provider-generated assemblies.
             // These are "fake".
             let isProvided (ccu: CcuThunk option) =
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
                 match ccu with
                 | Some c -> c.IsProviderGenerated
                 | None -> false
@@ -224,7 +224,7 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
                 let ilAssemRef = List.head remaining
                 remaining <- List.tail remaining
                 if assumedIndependentSet.Contains ilAssemRef.Name || (ilAssemRef.PublicKey = Some ecmaPublicKey) then
-                    depModuleTable.[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
+                    depModuleTable[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
                 else
                     if not (depModuleTable.ContainsKey ilAssemRef.Name) then
                         match tcImports.TryFindDllInfo(ctok, rangeStartup, ilAssemRef.Name, lookupOnly=false) with
@@ -271,7 +271,7 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
                                       MethodReferences = [| |]
                                       FieldReferences = [||] }
 
-                            depModuleTable.[ilAssemRef.Name] <-
+                            depModuleTable[ilAssemRef.Name] <-
                                 { refs=refs
                                   name=ilAssemRef.Name
                                   ccu=ccu
@@ -284,7 +284,7 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
 
                         | None ->
                             warning(Error(FSComp.SR.fscAssumeStaticLinkContainsNoDependencies(ilAssemRef.Name), rangeStartup))
-                            depModuleTable.[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
+                            depModuleTable[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
             done
         end
 
@@ -293,13 +293,13 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
         // Add edges from modules to the modules that depend on them
         for KeyValue(_, n) in depModuleTable do
             for aref in n.refs.AssemblyReferences do
-                let n2 = depModuleTable.[aref.Name]
+                let n2 = depModuleTable[aref.Name]
                 n2.edges <- n :: n2.edges
 
         // Find everything that depends on FSharp.Core
         let roots =
             [ if tcConfig.standalone && depModuleTable.ContainsKey (GetFSharpCoreLibraryName()) then
-                  yield depModuleTable.[GetFSharpCoreLibraryName()]
+                  yield depModuleTable[GetFSharpCoreLibraryName()]
               for n in tcConfig.extraStaticLinkRoots  do
                   match depModuleTable.TryFind n with
                   | Some x -> yield x
@@ -339,7 +339,7 @@ let FindProviderGeneratedILModules (ctok, tcImports: TcImports, providerGenerate
 // prior to this point.
 let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlobals) =
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     let providerGeneratedAssemblies =
 
         [ // Add all EST-generated assemblies into the static linking set
@@ -350,7 +350,7 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
                     | Some provAssemStaticLinkInfo -> yield (importedBinary, provAssemStaticLinkInfo) ]
 #endif
     if not tcConfig.standalone && tcConfig.extraStaticLinkRoots.IsEmpty
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             && providerGeneratedAssemblies.IsEmpty
 #endif
             then
@@ -363,7 +363,7 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
 
             ReportTime tcConfig "Static link"
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             Morphs.enableMorphCustomAttributeData()
             let providerGeneratedILModules =  FindProviderGeneratedILModules (ctok, tcImports, providerGeneratedAssemblies)
 

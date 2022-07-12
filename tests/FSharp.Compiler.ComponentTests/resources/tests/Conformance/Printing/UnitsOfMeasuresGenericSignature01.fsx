@@ -5,4 +5,4 @@
 // goes back to 'u)
 //<Expects status="success">val f: x: float+</Expects>
 let f(x:float<'a>) = x*x;;
-exit 0;;
+printfn "Finished"

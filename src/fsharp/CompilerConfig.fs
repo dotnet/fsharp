@@ -26,7 +26,7 @@ open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.BuildGraph
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 open FSharp.Core.CompilerServices
 #endif
 
@@ -83,7 +83,7 @@ let GetWarningNumber(m, warningNumber: string) =
         //      #pragma strips FS of the #pragma "FS0004" and validates the warning number
         //      therefore if we have warning id that starts with a numeric digit we convert it to Some (int32)
         //      anything else is ignored None
-        if Char.IsDigit(warningNumber.[0]) then Some (int32 warningNumber)
+        if Char.IsDigit(warningNumber[0]) then Some (int32 warningNumber)
         elif warningNumber.StartsWithOrdinal("FS") = true then raise (ArgumentException())
         else None
     with _ ->
@@ -189,14 +189,14 @@ type TimeStampCache(defaultTimeStamp: DateTime) =
             with
             | :? FileNotFoundException ->
                 defaultTimeStamp
-        files.[fileName] <- v
+        files[fileName] <- v
         v
 
     member cache.GetProjectReferenceTimeStamp (pr: IProjectReference) =
         let ok, v = projects.TryGetValue pr
         if ok then v else
         let v = defaultArg (pr.TryGetLogicalTimeStamp cache) defaultTimeStamp
-        projects.[pr] <- v
+        projects[pr] <- v
         v
 
 and [<RequireQualifiedAccess>]
@@ -242,7 +242,7 @@ type AssemblyReference =
     override x.ToString() = sprintf "AssemblyReference(%s)" x.Text
 
 type UnresolvedAssemblyReference = UnresolvedAssemblyReference of string * AssemblyReference list
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
 type ResolvedExtensionReference = ResolvedExtensionReference of string * AssemblyReference list * Tainted<ITypeProvider> list
 #endif
 
@@ -251,7 +251,7 @@ type ImportedAssembly =
       FSharpViewOfMetadata: CcuThunk
       AssemblyAutoOpenAttributes: string list
       AssemblyInternalsVisibleToAttributes: string list
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       IsProviderGenerated: bool
       mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
@@ -343,7 +343,7 @@ type TcConfigBuilder =
       mutable resolutionEnvironment: LegacyResolutionEnvironment
       mutable implicitlyResolveAssemblies: bool
       mutable light: bool option
-      mutable conditionalCompilationDefines: string list
+      mutable conditionalDefines: string list
       mutable loadedSources: (range * string * string) list
       mutable compilerToolPaths: string list
       mutable referencedDLLs: AssemblyReference list
@@ -413,6 +413,7 @@ type TcConfigBuilder =
       mutable win32manifest: string
       mutable includewin32manifest: bool
       mutable linkResources: string list
+
       mutable legacyReferenceResolver: LegacyReferenceResolver
 
       mutable showFullPaths: bool
@@ -448,7 +449,7 @@ type TcConfigBuilder =
       mutable showLoadedAssemblies: bool
       mutable continueAfterParseFailure: bool
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
       /// show messages about extension type resolution?
       mutable showExtensionTypeMessages: bool
 #endif
@@ -526,16 +527,19 @@ type TcConfigBuilder =
         }
         |> Seq.distinct
 
-    static member CreateNew(legacyReferenceResolver,
-                            defaultFSharpBinariesDir,
-                            reduceMemoryUsage,
-                            implicitIncludeDir,
-                            isInteractive,
-                            isInvalidationSupported,
-                            defaultCopyFSharpCore,
-                            tryGetMetadataSnapshot,
-                            sdkDirOverride,
-                            rangeForErrors) =
+    static member CreateNew
+        (
+            legacyReferenceResolver,
+            defaultFSharpBinariesDir,
+            reduceMemoryUsage,
+            implicitIncludeDir,
+            isInteractive,
+            isInvalidationSupported,
+            defaultCopyFSharpCore,
+            tryGetMetadataSnapshot,
+            sdkDirOverride,
+            rangeForErrors
+        ) =
 
         if (String.IsNullOrEmpty defaultFSharpBinariesDir) then
             failwith "Expected a valid defaultFSharpBinariesDir"
@@ -546,7 +550,7 @@ type TcConfigBuilder =
           light = None
           noFeedback = false
           stackReserveSize = None
-          conditionalCompilationDefines = []
+          conditionalDefines = []
           openDebugInformationForLaterStaticLinking = false
           compilingFslib = false
           useIncrementalBuilder = false
@@ -654,7 +658,7 @@ type TcConfigBuilder =
           showTimes = false
           showLoadedAssemblies = false
           continueAfterParseFailure = false
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
           showExtensionTypeMessages = false
 #endif
           pause = false
@@ -947,7 +951,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.implicitlyResolveAssemblies = data.implicitlyResolveAssemblies
     member x.resolutionEnvironment = data.resolutionEnvironment
     member x.light = data.light
-    member x.conditionalCompilationDefines = data.conditionalCompilationDefines
+    member x.conditionalDefines = data.conditionalDefines
     member x.loadedSources = data.loadedSources
     member x.compilerToolPaths = data.compilerToolPaths
     member x.referencedDLLs = data.referencedDLLs
@@ -1042,7 +1046,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member x.showTimes = data.showTimes
     member x.showLoadedAssemblies = data.showLoadedAssemblies
     member x.continueAfterParseFailure = data.continueAfterParseFailure
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
     member x.showExtensionTypeMessages = data.showExtensionTypeMessages
 #endif
     member x.pause = data.pause
@@ -1064,10 +1068,10 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         TcConfig(builder, validate)
 
-    member x.legacyReferenceResolver = data.legacyReferenceResolver
+    member _.legacyReferenceResolver = data.legacyReferenceResolver
 
-    member tcConfig.CloneToBuilder() =
-        { data with conditionalCompilationDefines=data.conditionalCompilationDefines }
+    member _.CloneToBuilder() =
+        { data with conditionalDefines=data.conditionalDefines }
 
     member tcConfig.ComputeCanContainEntryPoint(sourceFiles: string list) =
         let n = sourceFiles.Length in
