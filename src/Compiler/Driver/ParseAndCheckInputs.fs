@@ -5,6 +5,7 @@ module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System
 open System.IO
+open System.Collections.Generic
 
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
@@ -727,7 +728,7 @@ let CheckSimulateException(tcConfig: TcConfig) =
     | Some("tc-oe") -> raise(OverflowException())
     | Some("tc-atmm") -> raise(ArrayTypeMismatchException())
     | Some("tc-bif") -> raise(BadImageFormatException())
-    | Some("tc-knf") -> raise(System.Collections.Generic.KeyNotFoundException())
+    | Some("tc-knf") -> raise(KeyNotFoundException())
     | Some("tc-ior") -> raise(IndexOutOfRangeException())
     | Some("tc-ic") -> raise(InvalidCastException())
     | Some("tc-ip") -> raise(InvalidProgramException())
@@ -808,7 +809,7 @@ let GetInitialTcState(m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcIm
           ILScopeRef=ILScopeRef.Local
           Contents=ccuContents
           MemberSignatureEquality= typeEquivAux EraseAll tcGlobals
-          TypeForwarders=Map.empty
+          TypeForwarders= CcuTypeForwarderTable.Empty
           XmlDocumentationInfo = None }
 
     let ccu = CcuThunk.Create(ccuName, ccuData)

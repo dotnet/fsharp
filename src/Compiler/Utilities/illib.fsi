@@ -90,43 +90,43 @@ module internal Order =
 
 module internal Array =
 
-    val mapq: f: ('a -> 'a) -> inp: 'a [] -> 'a [] when 'a: not struct
+    val mapq: f: ('a -> 'a) -> inp: 'a[] -> 'a[] when 'a: not struct
 
-    val lengthsEqAndForall2: p: ('a -> 'b -> bool) -> l1: 'a [] -> l2: 'b [] -> bool
+    val lengthsEqAndForall2: p: ('a -> 'b -> bool) -> l1: 'a[] -> l2: 'b[] -> bool
 
     val order: eltOrder: IComparer<'T> -> IComparer<'T array>
 
-    val existsOne: p: ('a -> bool) -> l: 'a [] -> bool
+    val existsOne: p: ('a -> bool) -> l: 'a[] -> bool
 
-    val existsTrue: arr: bool [] -> bool
+    val existsTrue: arr: bool[] -> bool
 
-    val findFirstIndexWhereTrue: arr: 'a [] -> p: ('a -> bool) -> int
+    val findFirstIndexWhereTrue: arr: 'a[] -> p: ('a -> bool) -> int
 
     /// pass an array byref to reverse it in place
-    val revInPlace: array: 'T [] -> unit
+    val revInPlace: array: 'T[] -> unit
 
     /// Async implementation of Array.map.
-    val mapAsync: mapping: ('T -> Async<'U>) -> array: 'T [] -> Async<'U []>
+    val mapAsync: mapping: ('T -> Async<'U>) -> array: 'T[] -> Async<'U[]>
 
     /// Returns a new array with an element replaced with a given value.
-    val replace: index: int -> value: 'a -> array: 'a [] -> 'a []
+    val replace: index: int -> value: 'a -> array: 'a[] -> 'a[]
 
     /// Optimized arrays equality. ~100x faster than `array1 = array2` on strings.
     /// ~2x faster for floats
     /// ~0.8x slower for ints
-    val inline areEqual: xs: 'T [] -> ys: 'T [] -> bool when 'T: equality
+    val inline areEqual: xs: 'T[] -> ys: 'T[] -> bool when 'T: equality
 
     /// Returns all heads of a given array.
-    val heads: array: 'T [] -> 'T [] []
+    val heads: array: 'T[] -> 'T[][]
 
     /// Check if subArray is found in the wholeArray starting at the provided index
-    val inline isSubArray: subArray: 'T [] -> wholeArray: 'T [] -> index: int -> bool when 'T: equality
+    val inline isSubArray: subArray: 'T[] -> wholeArray: 'T[] -> index: int -> bool when 'T: equality
 
     /// Returns true if one array has another as its subset from index 0.
-    val startsWith: prefix: 'a [] -> whole: 'a [] -> bool when 'a: equality
+    val startsWith: prefix: 'a[] -> whole: 'a[] -> bool when 'a: equality
 
     /// Returns true if one array has trailing elements equal to another's.
-    val endsWith: suffix: 'a [] -> whole: 'a [] -> bool when 'a: equality
+    val endsWith: suffix: 'a[] -> whole: 'a[] -> bool when 'a: equality
 
 module internal Option =
 
@@ -187,7 +187,7 @@ module internal List =
 
     val collect2: f: ('a -> 'b -> 'c list) -> xs: 'a list -> ys: 'b list -> 'c list
 
-    val toArraySquared: xss: 'a list list -> 'a [] []
+    val toArraySquared: xss: 'a list list -> 'a[][]
 
     val iterSquared: f: ('a -> unit) -> xss: 'a list list -> unit
 
@@ -216,12 +216,12 @@ module internal ResizeArray =
     /// Split a ResizeArray into an array of smaller chunks.
     /// This requires `items/chunkSize` Array copies of length `chunkSize` if `items/chunkSize % 0 = 0`,
     /// otherwise `items/chunkSize + 1` Array copies.
-    val chunkBySize: chunkSize: int -> f: ('t -> 'a) -> items: ResizeArray<'t> -> 'a [] []
+    val chunkBySize: chunkSize: int -> f: ('t -> 'a) -> items: ResizeArray<'t> -> 'a[][]
 
     /// Split a large ResizeArray into a series of array chunks that are each under the Large Object Heap limit.
     /// This is done to help prevent a stop-the-world collection of the single large array, instead allowing for a greater
     /// probability of smaller collections. Stop-the-world is still possible, just less likely.
-    val mapToSmallArrayChunks: f: ('t -> 'a) -> inp: ResizeArray<'t> -> 'a [] []
+    val mapToSmallArrayChunks: f: ('t -> 'a) -> inp: ResizeArray<'t> -> 'a[][]
 
 module internal ValueOptionInternal =
 
@@ -256,20 +256,20 @@ module internal String =
 
     val dropSuffix: s: string -> t: string -> string
 
-    val inline toCharArray: str: string -> char []
+    val inline toCharArray: str: string -> char[]
 
     val lowerCaseFirstChar: str: string -> string
 
     val extractTrailingIndex: str: string -> string * int option
 
     /// Splits a string into substrings based on the strings in the array separators
-    val split: options: StringSplitOptions -> separator: string [] -> value: string -> string []
+    val split: options: StringSplitOptions -> separator: string[] -> value: string -> string[]
 
     val (|StartsWith|_|): pattern: string -> value: string -> unit option
 
     val (|Contains|_|): pattern: string -> value: string -> unit option
 
-    val getLines: str: string -> string []
+    val getLines: str: string -> string[]
 
 module internal Dictionary =
     val inline newWithSize: size: int -> Dictionary<'a, 'b> when 'a: equality
@@ -623,7 +623,7 @@ module internal MapAutoOpens =
         member Values: 'Value list
 #endif
 
-        member AddMany: kvs: KeyValuePair<'Key, 'Value> [] -> Map<'Key, 'Value> when 'Key: comparison
+        member AddMany: kvs: KeyValuePair<'Key, 'Value>[] -> Map<'Key, 'Value> when 'Key: comparison
 
         member AddOrModify: key: 'Key * f: ('Value option -> 'Value) -> Map<'Key, 'Value> when 'Key: comparison
 
@@ -635,7 +635,7 @@ type internal LayeredMultiMap<'Key, 'Value when 'Key: comparison> =
 
     member Add: k: 'Key * v: 'Value -> LayeredMultiMap<'Key, 'Value>
 
-    member AddMany: kvs: KeyValuePair<'Key, 'Value> [] -> LayeredMultiMap<'Key, 'Value>
+    member AddMany: kvs: KeyValuePair<'Key, 'Value>[] -> LayeredMultiMap<'Key, 'Value>
 
     member TryFind: k: 'Key -> 'Value list option
 

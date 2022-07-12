@@ -175,62 +175,63 @@ type ExtensionMember =
 /// The environment of information used to resolve names
 [<NoEquality; NoComparison>]
 type NameResolutionEnv =
-    { /// Display environment information for output
-      eDisplayEnv: DisplayEnv
+    {
+        /// Display environment information for output
+        eDisplayEnv: DisplayEnv
 
-      /// Values and Data Tags available by unqualified name
-      eUnqualifiedItems: LayeredMap<string, Item>
+        /// Values and Data Tags available by unqualified name
+        eUnqualifiedItems: LayeredMap<string, Item>
 
-      /// Enclosing type instantiations that are associated with an unqualified type item
-      eUnqualifiedEnclosingTypeInsts: TyconRefMap<EnclosingTypeInst>
+        /// Enclosing type instantiations that are associated with an unqualified type item
+        eUnqualifiedEnclosingTypeInsts: TyconRefMap<EnclosingTypeInst>
 
-      /// Data Tags and Active Pattern Tags available by unqualified name
-      ePatItems: NameMap<Item>
+        /// Data Tags and Active Pattern Tags available by unqualified name
+        ePatItems: NameMap<Item>
 
-      /// Modules accessible via "." notation. Note this is a multi-map.
-      /// Adding a module abbreviation adds it a local entry to this List.map.
-      /// Likewise adding a ccu or opening a path adds entries to this List.map.
-      eModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
+        /// Modules accessible via "." notation. Note this is a multi-map.
+        /// Adding a module abbreviation adds it a local entry to this List.map.
+        /// Likewise adding a ccu or opening a path adds entries to this List.map.
+        eModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
 
-      /// Fully qualified modules and namespaces. 'open' does not change this.
-      eFullyQualifiedModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
+        /// Fully qualified modules and namespaces. 'open' does not change this.
+        eFullyQualifiedModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
 
-      /// RecdField labels in scope.  RecdField labels are those where type are inferred
-      /// by label rather than by known type annotation.
-      /// Bools indicate if from a record, where no warning is given on indeterminate lookup
-      eFieldLabels: NameMultiMap<RecdFieldRef>
+        /// RecdField labels in scope.  RecdField labels are those where type are inferred
+        /// by label rather than by known type annotation.
+        /// Bools indicate if from a record, where no warning is given on indeterminate lookup
+        eFieldLabels: NameMultiMap<RecdFieldRef>
 
-      /// Record or unions that may have type instantiations associated with them
-      /// when record labels or union cases are used in an unqualified context.
-      eUnqualifiedRecordOrUnionTypeInsts: TyconRefMap<TypeInst>
+        /// Record or unions that may have type instantiations associated with them
+        /// when record labels or union cases are used in an unqualified context.
+        eUnqualifiedRecordOrUnionTypeInsts: TyconRefMap<TypeInst>
 
-      /// Tycons indexed by the various names that may be used to access them, e.g.
-      ///     "List" --> multiple TyconRef's for the various tycons accessible by this name.
-      ///     "List`1" --> TyconRef
-      eTyconsByAccessNames: LayeredMultiMap<string, TyconRef>
+        /// Tycons indexed by the various names that may be used to access them, e.g.
+        ///     "List" --> multiple TyconRef's for the various tycons accessible by this name.
+        ///     "List`1" --> TyconRef
+        eTyconsByAccessNames: LayeredMultiMap<string, TyconRef>
 
-      eFullyQualifiedTyconsByAccessNames: LayeredMultiMap<string, TyconRef>
+        eFullyQualifiedTyconsByAccessNames: LayeredMultiMap<string, TyconRef>
 
-      /// Tycons available by unqualified, demangled names (i.e. (List,1) --> TyconRef)
-      eTyconsByDemangledNameAndArity: LayeredMap<NameArityPair, TyconRef>
+        /// Tycons available by unqualified, demangled names (i.e. (List,1) --> TyconRef)
+        eTyconsByDemangledNameAndArity: LayeredMap<NameArityPair, TyconRef>
 
-      /// Tycons available by unqualified, demangled names (i.e. (List,1) --> TyconRef)
-      eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair, TyconRef>
+        /// Tycons available by unqualified, demangled names (i.e. (List,1) --> TyconRef)
+        eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair, TyconRef>
 
-      /// Extension members by type and name
-      eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
+        /// Extension members by type and name
+        eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
 
-      /// Extension members by name 
-      eExtensionMembersByName: NameMultiMap<ExtensionMember>
+        /// Extension members by name 
+        eExtensionMembersByName: NameMultiMap<ExtensionMember>
 
-      /// Other extension members unindexed by type
-      eUnindexedExtensionMembers: ExtensionMember list
+        /// Other extension members unindexed by type
+        eUnindexedExtensionMembers: ExtensionMember list
 
-      /// Typars (always available by unqualified names). Further typars can be
-      /// in the tpenv, a structure folded through each top-level definition.
-      eTypars: NameMap<Typar>
+        /// Typars (always available by unqualified names). Further typars can be
+        /// in the tpenv, a structure folded through each top-level definition.
+        eTypars: NameMap<Typar>
 
-     }
+    }
 
     static member Empty: g: TcGlobals -> NameResolutionEnv
     member DisplayEnv: DisplayEnv
@@ -438,24 +439,26 @@ type TcSymbolUseData =
 type internal TcSymbolUses =
 
     /// Get all the uses of a particular item within the file
-    member GetUsesOfSymbol: Item -> TcSymbolUseData []
+    member GetUsesOfSymbol: Item -> TcSymbolUseData[]
 
     /// All the uses of all items within the file
-    member AllUsesOfSymbols: TcSymbolUseData [] []
+    member AllUsesOfSymbols: TcSymbolUseData[][]
 
     /// Get the locations of all the printf format specifiers in the file
-    member GetFormatSpecifierLocationsAndArity: unit -> (range * int) []
+    member GetFormatSpecifierLocationsAndArity: unit -> (range * int)[]
 
     /// Empty collection of symbol uses
     static member Empty: TcSymbolUses
 
 /// Source text and an array of line end positions, used for format string parsing
 type FormatStringCheckContext =
-    { /// Source text
-      SourceText: ISourceText
+    {
+        /// Source text
+        SourceText: ISourceText
 
-      /// Array of line start positions
-      LineStartPositions: int [] }
+        /// Array of line start positions
+        LineStartPositions: int[]
+    }
 
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =
@@ -500,10 +503,10 @@ type internal TcResultsSinkImpl =
     member GetSymbolUses: unit -> TcSymbolUses
 
     /// Get all open declarations reported to the sink
-    member GetOpenDeclarations: unit -> OpenDeclaration []
+    member GetOpenDeclarations: unit -> OpenDeclaration[]
 
     /// Get the format specifier locations
-    member GetFormatSpecifierLocations: unit -> (range * int) []
+    member GetFormatSpecifierLocations: unit -> (range * int)[]
 
     interface ITypecheckResultsSink
 
