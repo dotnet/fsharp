@@ -266,8 +266,7 @@ let SetProcessThreadLocals tcConfigB =
 let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv) =
     let mutable inputFilesRef = []
     let collect name =
-        let lower = String.lowercase name
-        if List.exists (FileSystemUtils.checkSuffix lower) [".resx"]  then
+        if List.exists (FileSystemUtils.checkSuffix name) [".resx"]  then
             error(Error(FSComp.SR.fscResxSourceFileDeprecated name, rangeStartup))
         else
             inputFilesRef <- name :: inputFilesRef
