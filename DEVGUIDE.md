@@ -237,9 +237,9 @@ Where `<version>` corresponds to the latest Visual Studio version on your machin
 
 * Format using [the F# style guide](https://docs.microsoft.com/en-us/dotnet/fsharp/style-guide/)
 
-* Avoid tick identifiers like `body'`. They are generally harder to read and can't be inspected in the debugger as things stand. Generaly use R suffix instead, e.g. `bodyR`. The R can stand for "rewritten" or "result"
+* Avoid tick identifiers like `body'`. They are generally harder to read and can't be inspected in the debugger as things stand. Generally use R suffix instead, e.g. `bodyR`. The R can stand for "rewritten" or "result"
 
-* Avoid abbreviations like `bodyty` that run together lowercase are bad, really hard to head for newcomers. Use `bodyTy` instead.
+* Avoid abbreviations like `bodyty` that are all lowercase. They are really hard to read for newcomers. Use `bodyTy` instead.
 
 * See the compiler docs for common abbreviations
 

@@ -245,7 +245,7 @@ let GenerateIlxCode
             generateFilterBlocks = tcConfig.generateFilterBlocks
             emitConstantArraysUsingStaticDataBlobs = not isInteractiveOnMono
             workAroundReflectionEmitBugs = tcConfig.isInteractive
-            generateDebugSymbols = tcConfig.debuginfo
+            generateDebugSymbols = tcConfig.debuginfo // REVIEW: is this still required?
             fragName = fragName
             localOptimizationsEnabled = tcConfig.optSettings.LocalOptimizationsEnabled
             testFlagEmitFeeFeeAs100001 = tcConfig.testFlagEmitFeeFeeAs100001
