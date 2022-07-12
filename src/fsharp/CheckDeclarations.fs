@@ -25,6 +25,7 @@ open FSharp.Compiler.InfoReader
 open FSharp.Compiler.MethodOverrides
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
@@ -469,7 +470,7 @@ module TcRecdUnionAndEnumDeclarations =
             | _ ->
                 seen.Add(f.LogicalName, sf))
                 
-    let TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv (SynUnionCase(Attributes synAttrs, id, args, xmldoc, vis, m)) =
+    let TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv (SynUnionCase(Attributes synAttrs, id, args, xmldoc, vis, m, _)) =
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
         let vis, _ = ComputeAccessAndCompPath env None m vis None parent
         let vis = CombineReprAccess parent vis
@@ -752,7 +753,7 @@ module IncrClassChecking =
             let ctorTy = mkFunTy argty objTy    
             // REVIEW: no attributes can currently be specified for the implicit constructor 
             let attribs = TcAttributes cenv env (AttributeTargets.Constructor ||| AttributeTargets.Method) attrs
-            let memberFlags = CtorMemberFlags 
+            let memberFlags = CtorMemberFlags SynMemberFlagsTrivia.Zero
                                   
             let synArgInfos = List.map (SynInfo.InferSynArgInfoFromSimplePat []) spats
             let valSynData = SynValInfo([synArgInfos], SynInfo.unnamedRetVal)
@@ -780,8 +781,8 @@ module IncrClassChecking =
                 let cctorTy = mkFunTy cenv.g.unit_ty cenv.g.unit_ty
                 let valSynData = SynValInfo([[]], SynInfo.unnamedRetVal)
                 let id = ident ("cctor", m)
-                CheckForNonAbstractInterface ModuleOrMemberBinding tcref ClassCtorMemberFlags id.idRange
-                let memberInfo = MakeMemberDataAndMangledNameForMemberVal(cenv.g, tcref, false, [(*no attributes*)], [], ClassCtorMemberFlags, valSynData, id, false)
+                CheckForNonAbstractInterface ModuleOrMemberBinding tcref (ClassCtorMemberFlags SynMemberFlagsTrivia.Zero) id.idRange
+                let memberInfo = MakeMemberDataAndMangledNameForMemberVal(cenv.g, tcref, false, [(*no attributes*)], [], (ClassCtorMemberFlags SynMemberFlagsTrivia.Zero), valSynData, id, false)
                 let partialValReprInfo = TranslateTopValSynInfo m (TcAttributes cenv env) valSynData
                 let prelimTyschemeG = TypeScheme(copyOfTyconTypars, cctorTy)
                 let topValInfo = InferGenericArityFromTyScheme prelimTyschemeG partialValReprInfo
@@ -953,7 +954,7 @@ module IncrClassChecking =
                     let tps, _, argInfos, _, _ = GetTopValTypeInCompiledForm g topValInfo 0 v.Type v.Range
 
                     let valSynInfo = SynValInfo(argInfos |> List.mapSquared (fun (_, argInfo) -> SynArgInfo([], false, argInfo.Name)), SynInfo.unnamedRetVal)
-                    let memberFlags = (if isStatic then StaticMemberFlags else NonVirtualMemberFlags) SynMemberKind.Member
+                    let memberFlags = (if isStatic then StaticMemberFlags else NonVirtualMemberFlags) SynMemberFlagsTrivia.Zero SynMemberKind.Member
                     let id = mkSynId v.Range name
                     let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], memberFlags, valSynInfo, mkSynId v.Range name, true)
 
@@ -2910,7 +2911,7 @@ let CheckForDuplicateModule env nm m =
 /// Check 'exception' declarations in implementations and signatures
 module TcExceptionDeclarations = 
 
-    let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(_, id, _, _, _, _), _, doc, vis, m)) =
+    let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(ident=id), _, doc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
         if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor m)
         let vis, cpath = ComputeAccessAndCompPath env None m vis None parent
@@ -2921,7 +2922,7 @@ module TcExceptionDeclarations =
         let doc = doc.ToXmlDoc(true, Some [])
         Construct.NewExn cpath id vis repr attrs doc
 
-    let TcExnDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) (env: TcEnv) parent (exnc: Entity) (SynExceptionDefnRepr(_, SynUnionCase(_, _, args, _, _, _), reprIdOpt, _, _, m)) =
+    let TcExnDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) (env: TcEnv) parent (exnc: Entity) (SynExceptionDefnRepr(_, SynUnionCase(caseType=args), reprIdOpt, _, _, m)) =
         let g = cenv.g 
         let args = match args with SynUnionCaseKind.Fields args -> args | _ -> error(Error(FSComp.SR.tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors(), m))
         let ad = env.AccessRights
@@ -3003,7 +3004,7 @@ module TcExceptionDeclarations =
         binds, exnc
 
 
-    let TcExnDefn cenv envInitial parent (SynExceptionDefn(core, aug, m), scopem) = 
+    let TcExnDefn cenv envInitial parent (SynExceptionDefn(core, _, aug, m), scopem) = 
         let binds1, exnc = TcExnDefnCore cenv envInitial parent core
         let envMutRec = AddLocalExnDefnAndReport cenv.tcSink scopem (AddLocalTycons cenv.g cenv.amap scopem [exnc] envInitial) exnc 
 
@@ -3110,7 +3111,7 @@ module EstablishTypeDefinitionCores =
           | SynTypeDefnSimpleRepr.None _ -> ()
           | SynTypeDefnSimpleRepr.Union (_, unionCases, _) -> 
 
-              for SynUnionCase (_, _, args, _, _, m) in unionCases do 
+              for SynUnionCase (caseType=args; range=m) in unionCases do 
                 match args with
                 | SynUnionCaseKind.Fields flds -> 
                   for SynField(_, _, _, ty, _, _, _, m) in flds do 
@@ -4717,7 +4718,7 @@ module TcDeclarations =
                             | SynMemberKind.PropertyGetSet -> true 
                             | _ -> false
                         let attribs = mkAttributeList attribs mWholeAutoProp
-                        let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, None, synExpr, synExpr.Range, [], attribs, None)
+                        let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, synExpr, synExpr.Range, [], attribs, None, SynBindingTrivia.Zero)
 
                         [(SynMemberDefn.LetBindings ([binding], isStatic, false, mWholeAutoProp))]
 
@@ -4752,7 +4753,7 @@ module TcDeclarations =
                                     let rhsExpr = SynExpr.Ident fldId
                                     let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                                     let attribs = mkAttributeList attribs mMemberPortion
-                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, None, rhsExpr, rhsExpr.Range, [], attribs, Some (memberFlags SynMemberKind.Member))
+                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some (memberFlags SynMemberKind.Member), SynBindingTrivia.Zero)
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield getter
                             | _ -> ()
@@ -4765,7 +4766,7 @@ module TcDeclarations =
                                     let headPat = SynPat.LongIdent (LongIdentWithDots(headPatIds, []), None, None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                                     let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
                                     //let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
-                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, None, rhsExpr, rhsExpr.Range, [], [], Some (memberFlags SynMemberKind.PropertySet))
+                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some (memberFlags SynMemberKind.PropertySet), SynBindingTrivia.Zero)
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield setter 
                             | _ -> ()]
@@ -5224,7 +5225,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
                       decls, (openOk, moduleAbbrevOk)
 
                 | SynModuleSigDecl.Exception (exnSig=SynExceptionSig(exnRepr=exnRepr; withKeyword=withKeyword; members=members)) ->
-                      let ( SynExceptionDefnRepr(synAttrs, SynUnionCase(_, id, _args, _, _, _), _, doc, vis, m)) = exnRepr
+                      let ( SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=id), _, doc, vis, m)) = exnRepr
                       let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.idRange)
                       let decls = [ MutRecShape.Tycon(SynTypeDefnSig.SynTypeDefnSig(compInfo, None, SynTypeDefnSigRepr.Exception exnRepr, withKeyword, members, m)) ]
                       decls, (false, false)
@@ -5281,7 +5282,7 @@ and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id, modKind, 
 let ElimModuleDoBinding bind =
     match bind with 
     | SynModuleDecl.DoExpr (spExpr, expr, m) -> 
-        let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, None, expr, m, spExpr)
+        let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, expr, m, spExpr, SynBindingTrivia.Zero)
         SynModuleDecl.Let(false, [bind2], m)
     | _ -> bind
 
@@ -5560,10 +5561,10 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
                   let decls = [ MutRecShape.Open (MutRecDataForOpen(target, m, moduleRange, ref [])) ]
                   decls, (openOk, moduleAbbrevOk, attrs)
 
-              | SynModuleDecl.Exception (SynExceptionDefn(repr, members, _), _m) -> 
-                  let (SynExceptionDefnRepr(synAttrs, SynUnionCase(_, id, _args, _, _, _), _repr, doc, vis, m)) = repr
+              | SynModuleDecl.Exception (SynExceptionDefn(repr, _, members, _), _m) -> 
+                  let (SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=id), _repr, doc, vis, m)) = repr
                   let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.idRange)
-                  let decls = [ MutRecShape.Tycon(SynTypeDefn(compInfo, None, SynTypeDefnRepr.Exception repr, members, None, m)) ]
+                  let decls = [ MutRecShape.Tycon(SynTypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, None, m, SynTypeDefnTrivia.Zero)) ]
                   decls, (false, false, attrs)
 
               | SynModuleDecl.HashDirective _ -> 

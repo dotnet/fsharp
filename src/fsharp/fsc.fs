@@ -730,7 +730,7 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     let oldLogger = errorLogger
     let errorLogger =
         let scopedPragmas = [ for TImplFile (_, pragmas, _, _, _, _) in typedImplFiles do yield! pragmas ]
-        GetErrorLoggerFilteringByScopedPragmas(true, scopedPragmas, oldLogger)
+        GetErrorLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.errorSeverityOptions, oldLogger)
 
     let _unwindEL_3 = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
 
@@ -741,7 +741,10 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
            match tcConfig.version with
            | VersionNone -> Some v
            | _ -> warning(Error(FSComp.SR.fscAssemblyVersionAttributeIgnored(), rangeStartup)); None
-        | _ -> None
+        | _ ->
+            match tcConfig.version with
+            | VersionNone -> Some (ILVersionInfo (0us,0us,0us,0us))               //If no attribute was specified in source then version is 0.0.0.0
+            | _ -> Some (tcConfig.version.GetVersionInfo tcConfig.implicitIncludeDir)
 
     // write interface, xmldoc
     ReportTime tcConfig "Write Interface File"

@@ -7633,8 +7633,8 @@
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionStruct">
-        <source>Used to declare a structure type. Also used in generic parameter constraints. Used for OCaml compatibility in module definitions.</source>
-        <target state="translated">Yapı türü bildirmek için kullanılır. Ayrıca genel parametre kısıtlamaları içinde kullanılır. Modül tanımlarında OCaml uyumluluğu için kullanılır.</target>
+        <source>Used to declare a structure type. Also used in generic parameter constraints.</source>
+        <target state="translated">Bir yapı türü bildirmek için kullanılır. Genel parametre kısıtlamalarında da kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionThen">

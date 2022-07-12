@@ -55,6 +55,7 @@ open FSharp.Compiler.OptimizeInputs
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.TcGlobals
@@ -1030,6 +1031,7 @@ let internal convertReflectionTypeToILTypeRef (reflectionTy: Type) =
         ILTypeRef.Create(scoref, List.ofArray enc, nm)
 
 let rec internal convertReflectionTypeToILType (reflectionTy: Type) =
+    let arrayRank = if reflectionTy.IsArray then reflectionTy.GetArrayRank() else 0
     let reflectionTy =
         // Special case functions.
         if FSharp.Reflection.FSharpType.IsFunction reflectionTy then
@@ -1045,10 +1047,14 @@ let rec internal convertReflectionTypeToILType (reflectionTy: Type) =
         else
             reflectionTy
 
-    let tref = convertReflectionTypeToILTypeRef reflectionTy
+    let elementOrItemTref =
+        if reflectionTy.HasElementType then reflectionTy.GetElementType() else reflectionTy
+        |> convertReflectionTypeToILTypeRef
+
     let genericArgs =
         reflectionTy.GenericTypeArguments
         |> Seq.map convertReflectionTypeToILType
+        |> Seq.map List.head
         |> List.ofSeq
 
     let boxity =
@@ -1057,9 +1063,15 @@ let rec internal convertReflectionTypeToILType (reflectionTy: Type) =
         else
             ILBoxity.AsObject
 
-    let tspec = ILTypeSpec.Create(tref, genericArgs)
+    let tspec = ILTypeSpec.Create(elementOrItemTref, genericArgs)
 
-    mkILTy boxity tspec
+    let ilType = mkILTy boxity tspec
+    if arrayRank = 0 then
+        [ilType]
+    else
+        let arrayShape = ILArrayShape.FromRank arrayRank
+        let arrayIlType = mkILArrTy (ilType, arrayShape)
+        [arrayIlType; ilType]
 
 let internal mkBoundValueTypedImpl tcGlobals m moduleName name ty =
     let vis = Accessibility.TAccess([])
@@ -1361,18 +1373,24 @@ type internal FsiDynamicCompiler
                     ccuinfos
             ccuinfos, ty
 
-        let ilTy = convertReflectionTypeToILType reflectionTy
+        let addTypeToEnvironment state ilTy =
+            if not (Import.CanImportILType amap range0 ilTy) then
+                invalidOp (sprintf "Unable to import type, %A." reflectionTy)
 
-        if not (Import.CanImportILType amap range0 ilTy) then
-            invalidOp (sprintf "Unable to import type, %A." reflectionTy)
+            let ccuinfos, ty = import [] ilTy
+            let ccuinfos =
+                ccuinfos
+                |> List.distinctBy (fun x -> x.FSharpViewOfMetadata.AssemblyName)
+                |> List.filter (fun asm1 -> not (prevCcuinfos |> List.exists (fun asm2 -> asm2.FSharpViewOfMetadata.AssemblyName = asm1.FSharpViewOfMetadata.AssemblyName)))
+            // After we have successfully imported the type, then we can add newly resolved ccus to the env.
+            addCcusToIncrementalEnv state ccuinfos, ty
 
-        let ccuinfos, ty = import [] ilTy
-        let ccuinfos =
-            ccuinfos
-            |> List.distinctBy (fun x -> x.FSharpViewOfMetadata.AssemblyName)
-            |> List.filter (fun asm1 -> not (prevCcuinfos |> List.exists (fun asm2 -> asm2.FSharpViewOfMetadata.AssemblyName = asm1.FSharpViewOfMetadata.AssemblyName)))
-        // After we have successfully imported the type, then we can add newly resolved ccus to the env.
-        addCcusToIncrementalEnv istate ccuinfos, ty
+        let ilTys = convertReflectionTypeToILType reflectionTy
+
+        ilTys
+        |> List.fold (fun (state, addedTypes) ilTy ->
+            let nextState, addedType = addTypeToEnvironment state ilTy
+            nextState, addedTypes @ [addedType]) (istate, [])
 
     member _.DynamicAssemblyName = assemblyName
 
@@ -1439,7 +1457,7 @@ type internal FsiDynamicCompiler
 
         let itID  = mkSynId m itName
         //let itExp = SynExpr.Ident itID
-        let mkBind pat expr = SynBinding (None, SynBindingKind.Do, false, (*mutable*)false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, pat, None, None, expr, m, DebugPointAtBinding.NoneAtInvisible)
+        let mkBind pat expr = SynBinding (None, SynBindingKind.Do, false, (*mutable*)false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, pat, None, expr, m, DebugPointAtBinding.NoneAtInvisible, SynBindingTrivia.Zero)
         let bindingA = mkBind (mkSynPatVar None itID) expr (* let it = <expr> *)  // NOTE: the generalizability of 'expr' must not be damaged, e.g. this can't be an application
         //let saverPath  = ["Microsoft";"FSharp";"Compiler";"Interactive";"RuntimeHelpers";"SaveIt"]
         //let dots = List.replicate (saverPath.Length - 1) m
@@ -1652,7 +1670,8 @@ type internal FsiDynamicCompiler
             if IsCompilerGeneratedName name then
                 invalidArg "name" (FSComp.SR.lexhlpIdentifiersContainingAtSymbolReserved() |> snd)
 
-            let istate, ty = importReflectionType istate (value.GetType())
+            let istate, tys = importReflectionType istate (value.GetType())
+            let ty = List.head tys
             let amap = istate.tcImports.GetImportMap()
 
             let i = nextFragmentId()

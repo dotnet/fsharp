@@ -4,6 +4,7 @@
 
   <PropertyGroup>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <DebugType>portable</DebugType>
   </PropertyGroup>
 
 </Project>

@@ -166,12 +166,12 @@ module NavigationImpl =
             | _ -> []
         
         // Process a class declaration or F# type declaration
-        let rec processExnDefnRepr baseName nested (SynExceptionDefnRepr(_, SynUnionCase(_, id, fldspec, _, _, _), _, _, access, m)) =
+        let rec processExnDefnRepr baseName nested (SynExceptionDefnRepr(_, SynUnionCase(ident=id; caseType=fldspec), _, _, access, m)) =
             // Exception declaration
             [ createDecl(baseName, id, NavigationItemKind.Exception, FSharpGlyph.Exception, m, fldspecRange fldspec, nested, NavigationEntityKind.Exception, false, access) ] 
 
         // Process a class declaration or F# type declaration
-        and processExnDefn baseName (SynExceptionDefn(repr, membDefns, _)) =  
+        and processExnDefn baseName (SynExceptionDefn(repr, _, membDefns, _)) =  
             let nested = processMembers membDefns NavigationEntityKind.Exception |> snd
             processExnDefnRepr baseName nested repr
 
@@ -189,7 +189,7 @@ module NavigationImpl =
                 match simple with
                 | SynTypeDefnSimpleRepr.Union(_, cases, mb) ->
                     let cases = 
-                        [ for SynUnionCase(_, id, fldspec, _, _, _) in cases -> 
+                        [ for SynUnionCase(ident=id; caseType=fldspec) in cases -> 
                             createMember(id, NavigationItemKind.Other, FSharpGlyph.Struct, unionRanges (fldspecRange fldspec) id.idRange, NavigationEntityKind.Union, false, access) ]
                     let nested = cases@topMembers              
                     [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Union, m, bodyRange mb nested, nested, NavigationEntityKind.Union, false, access) ]
@@ -339,7 +339,7 @@ module NavigationImpl =
         let createMember(id:Ident, kind, baseGlyph, m, enclosingEntityKind, isAbstract, access) =
             NavigationItem.Create(id.idText, kind, baseGlyph, m, m, false, enclosingEntityKind, isAbstract, access), (addItemName(id.idText))
 
-        let rec processExnRepr baseName nested (SynExceptionDefnRepr(_, SynUnionCase(_, id, fldspec, _, _, _), _, _, access, m)) =
+        let rec processExnRepr baseName nested (SynExceptionDefnRepr(_, SynUnionCase(ident=id; caseType=fldspec), _, _, access, m)) =
             // Exception declaration
             [ createDecl(baseName, id, NavigationItemKind.Exception, FSharpGlyph.Exception, m, fldspecRange fldspec, nested, NavigationEntityKind.Exception, false, access) ] 
         
@@ -361,7 +361,7 @@ module NavigationImpl =
                 match simple with
                 | SynTypeDefnSimpleRepr.Union(_, cases, mb) ->
                     let cases = 
-                        [ for SynUnionCase(_, id, fldspec, _, _, _) in cases -> 
+                        [ for SynUnionCase(ident=id; caseType=fldspec) in cases -> 
                             createMember(id, NavigationItemKind.Other, FSharpGlyph.Struct, unionRanges (fldspecRange fldspec) id.idRange, NavigationEntityKind.Union, false, access) ]
                     let nested = cases@topMembers              
                     [ createDeclLid(baseName, lid, NavigationItemKind.Type, FSharpGlyph.Union, m, bodyRange mb nested, nested, NavigationEntityKind.Union, false, access) ]
@@ -530,7 +530,7 @@ module NavigateTo =
         let addModuleAbbreviation (id: Ident) isSig container =
             addIdent NavigableItemKind.ModuleAbbreviation id isSig container
         
-        let addExceptionRepr (SynExceptionDefnRepr(_, SynUnionCase(_, id, _, _, _, _), _, _, _, _)) isSig container = 
+        let addExceptionRepr (SynExceptionDefnRepr(_, SynUnionCase(ident=id), _, _, _, _)) isSig container = 
             addIdent NavigableItemKind.Exception id isSig container
             { Type = NavigableContainerType.Exception; Name = id.idText }
     
@@ -551,7 +551,7 @@ module NavigateTo =
         let addEnumCase(SynEnumCase(ident=id)) isSig = 
             addIdent NavigableItemKind.EnumCase id isSig
         
-        let addUnionCase(SynUnionCase(_, id, _, _, _, _)) isSig container = 
+        let addUnionCase(SynUnionCase(ident=id)) isSig container = 
             addIdent NavigableItemKind.UnionCase id isSig container
     
         let mapMemberKind mk = 
@@ -663,7 +663,7 @@ module NavigateTo =
     
         and walkSynModuleDecl(decl: SynModuleDecl) container =
             match decl with
-            | SynModuleDecl.Exception(SynExceptionDefn(repr, synMembers, _), _) -> 
+            | SynModuleDecl.Exception(SynExceptionDefn(repr, _, synMembers, _), _) -> 
                 let container = addExceptionRepr repr false container
                 for m in synMembers do
                     walkSynMemberDefn m container

@@ -8,6 +8,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
+open FSharp.Compiler.SyntaxTrivia
 
 [<Struct; NoEquality; NoComparison; DebuggerDisplay("{idText}")>]
 type Ident (text: string, range: range) =
@@ -508,6 +509,7 @@ type SynExpr =
         argOptions:(SynExpr * Ident option) option *
         withKeyword: range option *
         bindings: SynBinding list *
+        members: SynMemberDefn list *
         extraImpls: SynInterfaceImpl list *
         newExprRange: range *
         range: range
@@ -563,10 +565,10 @@ type SynExpr =
         fromMethod: bool *
         inLambdaSeq: bool *
         args: SynSimplePats *
-        arrow: range option *
         body: SynExpr *
         parsedData: (SynPat list * SynExpr) option *
-        range: range
+        range: range *
+        trivia: SynExprLambdaTrivia
 
     | MatchLambda of
         isExnMatch: bool *
@@ -612,25 +614,24 @@ type SynExpr =
         isUse: bool *
         bindings: SynBinding list *
         body: SynExpr *
-        range: range
+        range: range *
+        trivia: SynExprLetOrUseTrivia
 
     | TryWith of
-        tryKeywordRange: range *
         tryExpr: SynExpr *
-        tryRange: range *
-        withKeywordRange: range *
         withCases: SynMatchClause list *
-        withRange: range *
         range: range *
         tryDebugPoint: DebugPointAtTry *
-        withDebugPoint: DebugPointAtWith
+        withDebugPoint: DebugPointAtWith *
+        trivia: SynExprTryWithTrivia
 
     | TryFinally of
         tryExpr: SynExpr *
         finallyExpr: SynExpr *
         range: range *
         tryDebugPoint: DebugPointAtTry *
-        finallyDebugPoint: DebugPointAtFinally
+        finallyDebugPoint: DebugPointAtFinally *
+        trivia: SynExprTryFinallyTrivia
 
     | Lazy of
         expr: SynExpr *
@@ -644,17 +645,13 @@ type SynExpr =
         range: range
 
     | IfThenElse of
-        ifKeyword: range *
-        isElif: bool *
         ifExpr: SynExpr *
-        thenKeyword: range *
         thenExpr: SynExpr *
-        elseKeyword: range option *
         elseExpr: SynExpr option *
         spIfToThen: DebugPointAtBinding *
         isFromErrorRecovery: bool *
-        ifToThenRange: range *
-        range: range
+        range: range *
+        trivia: SynExprIfThenElseTrivia
 
     | Ident of
         ident: Ident
@@ -956,9 +953,9 @@ type SynExprAndBang =
         isUse: bool *
         isFromSource: bool *
         pat: SynPat *
-        equalsRange: range *
         body: SynExpr *
-        range: range
+        range: range *
+        trivia: SynExprAndBangTrivia
 
 [<NoEquality; NoComparison>]
 type SynExprRecordField =
@@ -1077,7 +1074,8 @@ type SynPat =
     | Or of
         lhsPat: SynPat *
         rhsPat: SynPat *
-        range: range
+        range: range *
+        trivia: SynPatOrTrivia
 
     | Ands of
         pats: SynPat list *
@@ -1180,6 +1178,7 @@ type SynInterfaceImpl =
         interfaceTy: SynType *
         withKeyword: range option *
         bindings: SynBinding list *
+        members: SynMemberDefn list *
         range: range
 
 [<NoEquality; NoComparison>]
@@ -1187,14 +1186,14 @@ type SynMatchClause =
     | SynMatchClause of
         pat: SynPat *
         whenExpr: SynExpr option *
-        arrow: range option *
         resultExpr: SynExpr *
         range: range *
-        debugPoint: DebugPointAtTarget
+        debugPoint: DebugPointAtTarget *
+        trivia: SynMatchClauseTrivia
 
     member this.RangeOfGuardAndRhs =
         match this with
-        | SynMatchClause(_, eo, _, e, _, _) ->
+        | SynMatchClause(whenExpr=eo; resultExpr=e) ->
             match eo with
             | None -> e.Range
             | Some x -> unionRanges e.Range x.Range
@@ -1247,10 +1246,10 @@ type SynBinding =
         valData: SynValData *
         headPat: SynPat *
         returnInfo: SynBindingReturnInfo option *
-        equalsRange: range option *
         expr: SynExpr  *
         range: range *
-        debugPoint: DebugPointAtBinding
+        debugPoint: DebugPointAtBinding *
+        trivia: SynBindingTrivia
 
     // no member just named "Range", as that would be confusing:
     //  - for everything else, the 'range' member that appears last/second-to-last is the 'full range' of the whole tree construct
@@ -1269,7 +1268,7 @@ type SynBindingReturnInfo =
         range: range *
         attributes: SynAttributes
 
-[<NoComparison; RequireQualifiedAccess>]
+[<NoComparison; RequireQualifiedAccess; CustomEquality>]
 type SynMemberFlags =
     { 
       IsInstance: bool
@@ -1281,7 +1280,26 @@ type SynMemberFlags =
       IsFinal: bool
 
       MemberKind: SynMemberKind
+      
+      Trivia: SynMemberFlagsTrivia
     }
+    
+    override this.Equals other =
+        match other with
+        | :? SynMemberFlags as other ->
+            this.IsInstance = other.IsInstance
+            && this.IsDispatchSlot = other.IsDispatchSlot
+            && this.IsOverrideOrExplicitImpl = other.IsOverrideOrExplicitImpl
+            && this.IsFinal = other.IsFinal
+            && this.MemberKind = other.MemberKind
+        | _ -> false
+
+    override this.GetHashCode () =
+        hash this.IsInstance +
+        hash this.IsDispatchSlot +
+        hash this.IsOverrideOrExplicitImpl +
+        hash this.IsFinal +
+        hash this.MemberKind
 
 [<StructuralEquality; NoComparison; RequireQualifiedAccess>]
 type SynMemberKind =
@@ -1403,11 +1421,11 @@ type SynEnumCase =
     | SynEnumCase of
         attributes: SynAttributes *
         ident: Ident *
-        equalsRange: range *
         value: SynConst *
         valueRange: range *
         xmlDoc: PreXmlDoc *
-        range: range
+        range: range *
+        trivia: SynEnumCaseTrivia
 
     member this.Range =
         match this with
@@ -1422,7 +1440,8 @@ type SynUnionCase =
         caseType: SynUnionCaseKind *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynUnionCaseTrivia
 
     member this.Range =
         match this with
@@ -1578,6 +1597,7 @@ type SynExceptionDefn =
 
     | SynExceptionDefn of
         exnRepr: SynExceptionDefnRepr *
+        withKeyword: range option *
         members: SynMemberDefns *
         range: range
 
@@ -1610,11 +1630,11 @@ type SynTypeDefnRepr =
 type SynTypeDefn =
     | SynTypeDefn of
         typeInfo: SynComponentInfo *
-        equalsRange: range option *
         typeRepr: SynTypeDefnRepr *
         members: SynMemberDefns *
         implicitConstructor: SynMemberDefn option *
-        range: range
+        range: range *
+        trivia: SynTypeDefnTrivia
 
     member this.Range =
         match this with

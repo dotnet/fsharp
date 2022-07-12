@@ -42,6 +42,7 @@ module rec Compiler =
           Baseline:       Baseline option
           Options:        string list
           OutputType:     CompileOutput
+          OutputDirectory:DirectoryInfo option
           SourceKind:     SourceKind
           Name:           string option
           IgnoreWarnings: bool
@@ -146,6 +147,7 @@ module rec Compiler =
               Baseline       = None
               Options        = defaultOptions
               OutputType     = Library
+              OutputDirectory= None
               SourceKind     = kind
               Name           = None
               IgnoreWarnings = false
@@ -251,6 +253,9 @@ module rec Compiler =
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
 
+    let withAssemblyVersion (version:string) (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ $"--version:{version}" ] "withAssemblyVersion is only supported on F#" cUnit
+
     /// Turns on checks that check integrity of XML doc comments
     let withXmlCommentChecking (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--warnon:3390" ] "withXmlCommentChecking is only supported for F#" cUnit
@@ -296,9 +301,9 @@ module rec Compiler =
                 | FS fs ->
                     let refs = loop [] fs.References
                     let source = getSource fs.Source
-                    let name = defaultArg fs.Name null
                     let options = fs.Options |> List.toArray
-                    let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, options = options, cmplRefs = refs, name = name) |> CompilationReference.CreateFSharp
+                    let name = defaultArg fs.Name null
+                    let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, options, refs, name, fs.OutputDirectory) |> CompilationReference.CreateFSharp
                     loop (cmpl::acc) xs
                 | CS cs ->
                     let refs = loop [] cs.References
@@ -332,18 +337,19 @@ module rec Compiler =
         else
             Success { result with OutputPath = Some outputFilePath }
 
-    let private compileFSharp (fsSource: FSharpCompilationSource) : TestResult =
+    let private compileFSharp (fs: FSharpCompilationSource) : TestResult =
 
-        let source = getSource fsSource.Source
-        let sourceKind = fsSource.SourceKind
-        let output = fsSource.OutputType
-        let options = fsSource.Options |> Array.ofList
+        let source = getSource fs.Source
+        let sourceKind = fs.SourceKind
+        let output = fs.OutputType
+        let options = fs.Options |> Array.ofList
+        let name = defaultArg fs.Name null
 
-        let references = processReferences fsSource.References
+        let references = processReferences fs.References
 
-        let compilation = Compilation.Create(source, sourceKind, output, options, references)
+        let compilation = Compilation.Create(source, sourceKind, output, options, references, name, fs.OutputDirectory)
 
-        compileFSharpCompilation compilation fsSource.IgnoreWarnings
+        compileFSharpCompilation compilation fs.IgnoreWarnings
 
     let private compileCSharpCompilation (compilation: CSharpCompilation) : TestResult =
 
@@ -637,7 +643,9 @@ module rec Compiler =
 
         let private assertErrorMessages (source: ErrorInfo list) (expected: string list) : unit =
             for exp in expected do
-                if not (List.exists (fun (el: ErrorInfo) -> el.Message = exp) source) then
+                if not (List.exists (fun (el: ErrorInfo) ->
+                    let msg = el.Message 
+                    msg = exp) source) then
                     failwith (sprintf "Mismatch in error message, expected '%A' was not found during compilation.\nAll errors:\n%A" exp (List.map getErrorInfo source))
             assertErrorsLength source expected
 
