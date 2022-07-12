@@ -1229,7 +1229,7 @@ let ensureCcuHasModuleOrNamespaceAtPath (ccu: CcuThunk) path (CompPath(_, cpath)
                 let smodul = Construct.NewModuleOrNamespace (Some cpath) taccessPublic hpath xml [] (MaybeLazy.Strict mty)
                 mtype.AddModuleOrNamespaceByMutation smodul
             let modul = Map.find modName mtype.AllEntitiesByCompiledAndLogicalMangledNames 
-            loop (prior_cpath @ [(modName, Namespace)]) tpath tcpath modul 
+            loop (prior_cpath @ [(modName, Namespace true)]) tpath tcpath modul 
 
         | _ -> () 
 
@@ -4465,10 +4465,10 @@ let wrapModuleOrNamespaceType id cpath mtyp =
 
 let wrapModuleOrNamespaceTypeInNamespace id cpath mtyp = 
     let mspec = wrapModuleOrNamespaceType id cpath mtyp
-    Construct.NewModuleOrNamespaceType Namespace [ mspec ] [], mspec
+    Construct.NewModuleOrNamespaceType (Namespace false) [ mspec ] [], mspec
 
-let wrapModuleOrNamespaceContentsInNamespace (id: Ident) cpath mexpr = 
-    let mspec = wrapModuleOrNamespaceType id cpath (Construct.NewEmptyModuleOrNamespaceType Namespace)
+let wrapModuleOrNamespaceContentsInNamespace isModule (id: Ident) (cpath: CompilationPath) mexpr =
+    let mspec = wrapModuleOrNamespaceType id cpath (Construct.NewEmptyModuleOrNamespaceType (Namespace (not isModule)))
     TMDefRec (false, [], [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
 
 //--------------------------------------------------------------------------
@@ -9881,7 +9881,7 @@ let CombineCcuContentFragments m l =
     /// same namespace, making new module specs as we go.
     let rec CombineModuleOrNamespaceTypes path m (mty1: ModuleOrNamespaceType) (mty2: ModuleOrNamespaceType) = 
         match mty1.ModuleOrNamespaceKind, mty2.ModuleOrNamespaceKind with 
-        | Namespace, Namespace -> 
+        | Namespace _, Namespace _ -> 
             let kind = mty1.ModuleOrNamespaceKind
             let tab1 = mty1.AllEntitiesByLogicalMangledName
             let tab2 = mty2.AllEntitiesByLogicalMangledName
@@ -9899,7 +9899,7 @@ let CombineCcuContentFragments m l =
 
             ModuleOrNamespaceType(kind, vals, QueueList.ofList entities)
 
-        | Namespace, _ | _, Namespace -> 
+        | Namespace _, _ | _, Namespace _ -> 
             error(Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly(textOfPath path), m))
 
         | _-> 

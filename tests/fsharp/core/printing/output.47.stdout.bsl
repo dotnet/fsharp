@@ -3,44 +3,44 @@
 
 > val repeatId: string = "B"
 
-namespace FSI_0004
-  val x1: int
-  val x2: string
-  val x3: 'a option
-  val x4: int option
-  val x5: 'a list
-  val x6: int list
-  val x7: System.Windows.Forms.Form
-  val x8: int[,]
-  val x9: Lazy<string>
-  type ClassInFile1 =
-    new: unit -> ClassInFile1
+module FSI_0004.TestLoadFile
+val x1: int
+val x2: string
+val x3: 'a option
+val x4: int option
+val x5: 'a list
+val x6: int list
+val x7: System.Windows.Forms.Form
+val x8: int[,]
+val x9: Lazy<string>
+type ClassInFile1 =
+  new: unit -> ClassInFile1
 
-namespace FSI_0005
-  val x1: int
-  val x2: string
-  val x3: 'a option
-  val x4: int option
-  val x5: 'a list
-  val x6: int list
-  val x7: System.Windows.Forms.Form
-  val x8: int[,]
-  val x9: Lazy<string>
-  type ClassInFile1 =
-    new: unit -> ClassInFile1
+module FSI_0005.TestLoadFile
+val x1: int
+val x2: string
+val x3: 'a option
+val x4: int option
+val x5: 'a list
+val x6: int list
+val x7: System.Windows.Forms.Form
+val x8: int[,]
+val x9: Lazy<string>
+type ClassInFile1 =
+  new: unit -> ClassInFile1
 
-namespace FSI_0005
-  val x1: int
-  val x2: string
-  val x3: 'a option
-  val x4: int option
-  val x5: 'a list
-  val x6: int list
-  val x7: System.Windows.Forms.Form
-  val x8: int[,]
-  val x9: Lazy<string>
-  type ClassInFile2 =
-    new: unit -> ClassInFile2
+module FSI_0005.TestLoadFile2
+val x1: int
+val x2: string
+val x3: 'a option
+val x4: int option
+val x5: 'a list
+val x6: int list
+val x7: System.Windows.Forms.Form
+val x8: int[,]
+val x9: Lazy<string>
+type ClassInFile2 =
+  new: unit -> ClassInFile2
 
 > val x1: seq<string>
 val x2: seq<string>

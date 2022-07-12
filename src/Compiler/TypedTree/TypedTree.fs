@@ -481,7 +481,10 @@ type ModuleOrNamespaceKind =
     | ModuleOrType 
 
     /// Indicates that a 'module' is really a namespace 
-    | Namespace
+    | Namespace of
+        /// Indicates that the sourcecode had a namespace.
+        /// If false, this namespace was implicitly constructed during type checking. 
+        isExplicit: bool
 
 /// A public path records where a construct lives within the global namespace
 /// of a CCU.
@@ -867,10 +870,13 @@ type Entity =
     member x.IsModuleOrNamespace = x.entity_flags.IsModuleOrNamespace
 
     /// Indicates if the entity is a namespace
-    member x.IsNamespace = x.IsModuleOrNamespace && (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace -> true | _ -> false)
+    member x.IsNamespace = x.IsModuleOrNamespace && (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace _ -> true | _ -> false)
+    
+    /// Indicates if the entity has an implicit namespace
+    member x.IsImplicitNamespace = (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace false -> true | _ -> false)
 
     /// Indicates if the entity is an F# module definition
-    member x.IsModule = x.IsModuleOrNamespace && (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace -> false | _ -> true)
+    member x.IsModule = x.IsModuleOrNamespace && (match x.ModuleOrNamespaceType.ModuleOrNamespaceKind with Namespace _ -> false | _ -> true)
 #if !NO_TYPEPROVIDERS
 
     /// Indicates if the entity is a provided type or namespace definition
@@ -3231,12 +3237,12 @@ type NonLocalEntityRef =
                             entity.ModuleOrNamespaceType.AddProvidedTypeEntity newEntity
                             newEntity
                         else
-                            let cpath = entity.CompilationPath.NestedCompPath entity.LogicalName ModuleOrNamespaceKind.Namespace
+                            let cpath = entity.CompilationPath.NestedCompPath entity.LogicalName (ModuleOrNamespaceKind.Namespace false)
                             let newEntity = 
                                 Construct.NewModuleOrNamespace 
                                     (Some cpath) 
                                     (TAccess []) (ident(path[k], m)) XmlDoc.Empty [] 
-                                    (MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType Namespace)) 
+                                    (MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType (Namespace true))) 
                             entity.ModuleOrNamespaceType.AddModuleOrNamespaceByMutation newEntity
                             injectNamespacesFromIToJ newEntity (k+1)
                     let newEntity = injectNamespacesFromIToJ entity i
@@ -5691,7 +5697,7 @@ type Construct() =
             | None -> 
                 let ilScopeRef = st.TypeProviderAssemblyRef
                 let enclosingName = GetFSharpPathToProvidedType(st, m)
-                CompPath(ilScopeRef, enclosingName |> List.map(fun id->id, ModuleOrNamespaceKind.Namespace))
+                CompPath(ilScopeRef, enclosingName |> List.map(fun id->id, ModuleOrNamespaceKind.Namespace true))
             | Some p -> p
         let pubpath = cpath.NestedPublicPath id
 
@@ -5706,7 +5712,7 @@ type Construct() =
             entity_typars= LazyWithContext.NotLazy []
             entity_tycon_repr = repr
             entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_modul_type = MaybeLazy.Lazy (lazy ModuleOrNamespaceType(Namespace, QueueList.ofList [], QueueList.ofList []))
+            entity_modul_type = MaybeLazy.Lazy (lazy ModuleOrNamespaceType(Namespace true, QueueList.ofList [], QueueList.ofList []))
             // Generated types get internal accessibility
             entity_pubpath = Some pubpath
             entity_cpath = Some cpath

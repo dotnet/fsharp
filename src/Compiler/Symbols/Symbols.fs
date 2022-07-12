@@ -424,7 +424,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         match entity.CompilationPathOpt with 
         | None -> None
         | Some (CompPath(_, [])) -> None
-        | Some cp when cp.AccessPath |> List.forall (function _, ModuleOrNamespaceKind.Namespace -> true | _  -> false) -> 
+        | Some cp when cp.AccessPath |> List.forall (function _, ModuleOrNamespaceKind.Namespace _ -> true | _  -> false) -> 
             Some (buildAccessPath (Some cp))
         | Some _ -> None
 
@@ -748,7 +748,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
         let partsList =
             [ yield parts
               match parts with
-              | ("Microsoft", ModuleOrNamespaceKind.Namespace) :: rest when isDefinedInFSharpCore() -> yield rest
+              | ("Microsoft", ModuleOrNamespaceKind.Namespace _) :: rest when isDefinedInFSharpCore() -> yield rest
               | _ -> ()]
 
         let mapEachCurrentPath (paths: string list list) path =
@@ -838,7 +838,7 @@ type FSharpEntity(cenv: SymbolEnv, entity:EntityRef) =
                         | [] -> acc
                         | (name, ModuleOrNamespaceKind.ModuleOrType) :: accessPath ->
                             getOpenPath accessPath (name :: acc)
-                        | (name, ModuleOrNamespaceKind.Namespace) :: accessPath ->
+                        | (name, ModuleOrNamespaceKind.Namespace _) :: accessPath ->
                             getOpenPath accessPath (name :: acc)
                         | (name, ModuleOrNamespaceKind.FSharpModuleWithSuffix) :: accessPath ->
                             getOpenPath accessPath (name :: acc)
