@@ -241,7 +241,7 @@ Where `<version>` corresponds to the latest Visual Studio version on your machin
 
 * Avoid abbreviations like `bodyty` that run together lowercase are bad, really hard to head for newcomers. Use `bodyTy` instead.
 
-* See the comiler docs for common abbreviations
+* See the compiler docs for common abbreviations
 
 * Don't use `List.iter` and `Array.iter` in the compiler, a `for ... do ...` loop is simpler to read and debug
 
