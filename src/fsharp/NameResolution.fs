@@ -4404,7 +4404,15 @@ let rec ResolvePartialLongIdentPrim (ncenv: NameResolver) (nenv: NameResolutionE
            |> Seq.collect (InfosForTyconConstructors ncenv m ad)
            |> Seq.toList
 
-       unqualifiedItems @ activePatternItems @ moduleAndNamespaceItems @ tycons @ constructors
+       let typeVars =
+           if nenv.eTypars.IsEmpty then
+               []
+           else
+               nenv.eTypars
+               |> Seq.map (fun kvp -> Item.TypeVar (kvp.Key, kvp.Value))
+               |> Seq.toList
+
+       unqualifiedItems @ activePatternItems @ moduleAndNamespaceItems @ tycons @ constructors @ typeVars
 
     | id :: rest ->
 

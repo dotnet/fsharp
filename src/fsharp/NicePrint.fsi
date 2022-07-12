@@ -87,6 +87,8 @@ val prettyLayoutOfType: denv:DisplayEnv -> x:TType -> Layout
 
 val prettyLayoutOfTypeNoCx: denv:DisplayEnv -> x:TType -> Layout
 
+val prettyLayoutOfTypar: denv:DisplayEnv -> x:Typar -> Layout
+
 val prettyStringOfTy: denv:DisplayEnv -> x:TType -> string
 
 val prettyStringOfTyNoCx: denv:DisplayEnv -> x:TType -> string

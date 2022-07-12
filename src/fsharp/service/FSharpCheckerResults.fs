@@ -1046,14 +1046,15 @@ type internal TypeCheckInfo
             | Some(CompletionContext.RecordField(RecordContext.Declaration false)) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
-                     items
-                     |> List.filter (fun cItem ->
-                         match cItem.Item with
-                         | Item.ModuleOrNamespaces _
-                         | Item.Types _
-                         | Item.UnqualifiedType _
-                         | Item.ExnCase _ -> true
-                         | _ -> false), denv, m)
+                    items
+                    |> List.filter (fun cItem ->
+                        match cItem.Item with
+                        | Item.ModuleOrNamespaces _
+                        | Item.Types _
+                        | Item.TypeVar _
+                        | Item.UnqualifiedType _
+                        | Item.ExnCase _ -> true
+                        | _ -> false), denv, m)
 
             // Other completions
             | cc ->
