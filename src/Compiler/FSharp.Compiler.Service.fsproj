@@ -607,6 +607,8 @@
     <Compile Include="Checking\CheckPatterns.fs" />
     <Compile Include="Checking\CheckComputationExpressions.fsi" />
     <Compile Include="Checking\CheckComputationExpressions.fs" />
+    <Compile Include="Checking\CheckIncrementalClasses.fsi" />
+    <Compile Include="Checking\CheckIncrementalClasses.fs" />
     <Compile Include="Checking\CheckDeclarations.fsi" />
     <Compile Include="Checking\CheckDeclarations.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />

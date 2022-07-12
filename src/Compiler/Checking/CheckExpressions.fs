@@ -2644,7 +2644,7 @@ module BindingNormalization =
             | SynPat.FromParseError(innerPat, _) ->
                 normPattern innerPat
 
-            | SynPat.LongIdent (SynLongIdent(longId, _, _), _, toolId, tyargs, SynArgPats.Pats args, vis, m) ->
+            | SynPat.LongIdent (SynLongIdent(longId, _, _), toolId, tyargs, SynArgPats.Pats args, vis, m) ->
                 let typars = match tyargs with None -> inferredTyparDecls | Some typars -> typars
                 match memberFlagsOpt with
                 | None ->
@@ -5718,6 +5718,12 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
         )
 
     | SynExpr.ObjExpr (synObjTy, argopt, _mWith, binds, members, extraImpls, mNewExpr, m) ->
+        let members = desugarGetSetMembers members
+        let extraImpls =
+            extraImpls
+            |> List.map (fun (SynInterfaceImpl(interfaceTy, withKeyword, bindings, members, m)) ->
+                SynInterfaceImpl(interfaceTy, withKeyword, bindings, desugarGetSetMembers members, m)
+            )
         TcNonControlFlowExpr env <| fun env ->
         let binds = unionBindingAndMembers binds members
         TcExprObjectExpr cenv overallTy env tpenv (synObjTy, argopt, binds, extraImpls, mNewExpr, m)
