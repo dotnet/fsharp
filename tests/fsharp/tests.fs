@@ -3328,7 +3328,7 @@ module TypecheckTests =
         singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg126"
 
     [<Test>] 
-    let ``type check neg126 preview`` () =
+    let ``type check neg126 preview positive`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:library -o:neg126-preview.dll --langversion:preview --warnaserror" cfg.fsc_flags ["neg126.fs"]
         peverify cfg "neg126-preview.dll"
@@ -3351,55 +3351,24 @@ module TypecheckTests =
         singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg128"
 
     [<Test>] 
-    let ``type check neg128 preview`` () =
+    let ``type check neg128 preview positive`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:library -o:neg128-preview.dll --langversion:preview --warnaserror" cfg.fsc_flags ["neg128.fs"]
         peverify cfg "neg128-preview.dll"
 
     // The code in this test starts to compile once FS-1043 is enabled.
     [<Test>] 
-    let ``type check neg129 4_7`` () =
-        singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg129"
+    let ``type check neg129 6_0`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "6.0" "neg129"
 
     [<Test>] 
-    let ``type check neg129 preview`` () =
+    let ``type check neg129 preview positive`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:library -o:neg129-preview.dll --langversion:preview --warnaserror" cfg.fsc_flags ["neg129.fs"]
         peverify cfg "neg129-preview.dll"
 
     [<Test>]
     let ``type check neg130`` () = singleNegTest (testConfig "typecheck/sigs") "neg130"
-
-    [<Test>] 
-    let ``type check neg131b 4_7`` () =
-        singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg131b"
-
-    [<Test>] 
-    let ``type check neg131b preview`` () =
-        singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg131b"
-
-    [<Test>] 
-    // This code must pass compilation with /langversion:4.7 on because RFC FS-1043 is not supported
-    let ``type check neg132b 4_7`` () =
-        let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s -o:neg132b-4.7.exe --langversion:4.7 --warnaserror" cfg.fsc_flags ["neg132b.fs"]
-        peverify cfg "neg132b-4.7.exe"
-        exec cfg ("." ++ "neg132b-4.7.exe") ""
-
-    [<Test>] 
-    // This code must not pass compilation with /langversion:preview on because RFC FS-1043 is supported
-    let ``type check neg132b preview`` () =
-        singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg132b"
-
-    // The code in the neg133 test does not compile (in any language version).
-    // However it raises an internal error without RFC-1043 and so we don't
-    // run it under that configuration.
-    //
-    //[<Test>] 
-    //let ``type check neg133`` () = singleNegTest (testConfig "typecheck/sigs") "neg133"
-
-    [<Test>] 
-    let ``type check neg133 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg133"
 
     [<Test>]
     let ``type check neg131`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "6.0" "neg131"
@@ -3409,6 +3378,37 @@ module TypecheckTests =
     
     [<Test>]
     let ``type check neg133`` () = singleNegTest (testConfig "typecheck/sigs") "neg133"
+
+    [<Test>] 
+    let ``type check neg140 4_7`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg140"
+
+    [<Test>] 
+    let ``type check neg140 preview`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg140"
+
+    [<Test>] 
+    // This code must pass compilation with /langversion:4.7 on because RFC FS-1043 is not supported
+    let ``type check neg141 4_7`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s -o:neg141-4.7.exe --langversion:4.7 --warnaserror" cfg.fsc_flags ["neg141.fs"]
+        peverify cfg "neg141-4.7.exe"
+        exec cfg ("." ++ "neg141-4.7.exe") ""
+
+    [<Test>] 
+    // This code must not pass compilation with /langversion:preview on because RFC FS-1043 is supported
+    let ``type check neg141 preview`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg141"
+
+    // The code in the neg133 test does not compile (in any language version).
+    // However it raises an internal error without RFC-1043 and so we don't
+    // run it under that configuration.
+    //
+    //[<Test>] 
+    //let ``type check neg133`` () = singleNegTest (testConfig "typecheck/sigs") "neg133"
+
+    [<Test>] 
+    let ``type check neg142 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg142"
 
     [<Test>]
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"

@@ -85,7 +85,8 @@ project.lock.json
 Backup/
 tests/fsharp/core/array/dont.run.peverify
 tests/fsharp/core/innerpoly/dont.run.peverify
-tests/fsharp/typecheck/sigs/neg94-pre.dll
+tests/fsharp/typecheck/sigs/*.dll
+tests/fsharp/typecheck/sigs/*.exe
 times
 /tests/fsharpqa/testenv/bin/System.ValueTuple.dll
 source_link.json

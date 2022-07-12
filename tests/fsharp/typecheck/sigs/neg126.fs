@@ -17,8 +17,8 @@ module Neg126
 //
 // That is, the code is not generic at all, because the F# compiler thinks that it commit to the one and only witness.
 //
-// This test exists to pin down that we get a warning produced saying ^a has been instantiated to "sbyte"
-
+// For pre-FS0143 this test exists to pin down that we get a warning produced saying ^a has been instantiated to "sbyte"
+// For post-FS0143 this test exists to check that the code now compiles
 module Negative_SelectOverloadedWitnessBasedOnInputTypeOneWitness = 
     type witnesses = 
       static member inline foo_witness (x : sbyte) : byte = byte x

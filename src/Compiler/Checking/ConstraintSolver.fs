@@ -381,32 +381,32 @@ let rec occursCheck g un ty =
 type PermitWeakResolution = 
 
     /// Represents the point where we are generalizing inline code
-    | LegacyYesAtInlineGeneralization
+    | YesAtInlineGeneralization
     
     /// Represents points where we are choosing a default solution to trait constraints
     | YesAtChooseSolution
 
     /// Represents invocations of the constraint solver during codegen or inlining to determine witnesses
-    | LegacyYesAtCodeGen
+    | YesAtCodeGen
 
     /// No weak resolution allowed
     | No
 
     /// Determine if the weak resolution flag means we perform overload resolution
     /// based on weak information.
-    member x.PerformWeakOverloadResolution (g: TcGlobals) =
+    member x.Permit (g: TcGlobals) =
         if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then 
             match x with
             | YesAtChooseSolution -> true
-            | LegacyYesAtCodeGen
-            | LegacyYesAtInlineGeneralization
+            | YesAtCodeGen
+            | YesAtInlineGeneralization
             | No -> false
         else
             //legacy 
             match x with
             | YesAtChooseSolution
-            | LegacyYesAtCodeGen
-            | LegacyYesAtInlineGeneralization -> true
+            | YesAtCodeGen
+            | YesAtInlineGeneralization -> true
             | No -> false
 
 // Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
@@ -523,9 +523,9 @@ let IsBinaryOpArgTypePair p1 p2 permitWeakResolution minfos g ty1 ty2 =
             // erasing units)
             typeEquivAux EraseMeasures g ty1 ty2
 
-    // During regular canonicalization (weak resolution) we don't do any check on the other type at all - we 
+    // During regular canonicalization we don't do any check on the other type at all - we 
     // ignore the possibility that method overloads may resolve the constraint
-    | PermitWeakResolution.LegacyYesAtInlineGeneralization
+    | PermitWeakResolution.YesAtInlineGeneralization
     | PermitWeakResolution.YesAtChooseSolution -> 
         // weak resolution lets the other type be a variable type
         isTyparTy g ty2 || 
@@ -535,7 +535,7 @@ let IsBinaryOpArgTypePair p1 p2 permitWeakResolution minfos g ty1 ty2 =
         typeEquivAux EraseMeasures g ty1 ty2
     
     // During codegen we only apply a builtin resolution if both the types are correct
-    | PermitWeakResolution.LegacyYesAtCodeGen ->
+    | PermitWeakResolution.YesAtCodeGen ->
         p2 ty2 &&
         // All built-in rules only apply in cases where left and right operator types are equal (after
         // erasing units)
@@ -1862,7 +1862,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   // If there's nothing left to learn then raise the errors.
                   // Note: we should likely call MemberConstraintIsReadyForResolution here when permitWeakResolution=false but for stability
                   // reasons we use the more restrictive isNil frees.
-                  if (permitWeakResolution.PerformWeakOverloadResolution g && MemberConstraintIsReadyForWeakResolution csenv traitInfo) || isNil frees then 
+                  if (permitWeakResolution.Permit g && MemberConstraintIsReadyForWeakResolution csenv traitInfo) || isNil frees then 
                       do! errors  
                   else
                       do! AddMemberConstraint csenv ndeep m2 trace traitInfo support frees
@@ -1870,7 +1870,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   match errors with
                   | ErrorResult (_, UnresolvedOverloading _)
                       when
-                          not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions) &&
+                          //not (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions) &&
                           not ignoreUnresolvedOverload &&
                           csenv.ErrorOnFailedMemberConstraintResolution &&
                           (not (nm = "op_Explicit" || nm = "op_Implicit")) ->
@@ -1958,17 +1958,20 @@ and TransactMemberConstraintSolution traitInfo (trace: OptionalTrace) sln  =
     trace.Exec (fun () -> traitInfo.Solution <- Some sln) (fun () -> traitInfo.Solution <- prev)
 
 and GetRelevantExtensionMethodsForTrait m (infoReader: InfoReader) (traitInfo: TraitConstraintInfo) =
-    match traitInfo.TraitContext with 
-    | None -> []
-    | Some traitCtxt -> 
-        [ for extMethInfo in traitCtxt.SelectExtensionMethods(traitInfo, m, infoReader=infoReader) do
-              yield (extMethInfo :?> MethInfo) ]
+    [
+        match traitInfo.TraitContext with 
+        | None -> ()
+        | Some traitCtxt -> 
+            for extMethInfo in traitCtxt.SelectExtensionMethods(traitInfo, m, infoReader=infoReader) do
+                (extMethInfo :?> MethInfo)
+    ]
 
 /// Only consider overload resolution if canonicalizing or all the types are now nominal. 
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
 and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm (TTrait(tys, _, memFlags, argTys, retTy, soln, traitCtxt) as traitInfo): MethInfo list =
+    let g = csenv.g
     let results = 
-        if permitWeakResolution.PerformWeakOverloadResolution csenv.g || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
+        if permitWeakResolution.Permit g || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
             let m = csenv.m
             let minfos = 
                 match memFlags.MemberKind with
@@ -1983,14 +1986,14 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
             
             // Get the extension method that may be relevant to solving the constraint as MethInfo objects.
             // Extension members are not used when canonicalizing prior to generalization (permitWeakResolution=true)
-            let extMInfos = 
+            let extMethInfos = 
                 if MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then 
                     GetRelevantExtensionMethodsForTrait csenv.m csenv.InfoReader traitInfo
                 else []
 
-            let extMInfos = extMInfos |> ListSet.setify MethInfo.MethInfosUseIdenticalDefinitions 
+            let extMethInfos = extMethInfos |> ListSet.setify MethInfo.MethInfosUseIdenticalDefinitions 
 
-            let minfos = minfos @ extMInfos
+            let minfos = minfos @ extMethInfos
 
             /// Check that the available members aren't hiding a member from the parent (depth 1 only)
             let relevantMinfos = minfos |> List.filter(fun minfo -> not minfo.IsDispatchSlot && not minfo.IsVirtual && minfo.IsInstance)
@@ -2065,8 +2068,9 @@ and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep (pe
         let csenv = { csenv with m = m2 }
         SolveMemberConstraint csenv true permitWeakResolution (ndeep+1) m2 trace traitInfo)
 
-and CanonicalizeRelevantMemberConstraints (csenv: ConstraintSolverEnv) ndeep trace tps isInline =
-    let permitWeakResolution = (if isInline then PermitWeakResolution.LegacyYesAtInlineGeneralization else PermitWeakResolution.YesAtChooseSolution)
+and CanonicalizeRelevantMemberConstraints (csenv: ConstraintSolverEnv) ndeep trace tps (isInline: bool) =
+    ignore isInline
+    let permitWeakResolution = (if isInline then PermitWeakResolution.YesAtInlineGeneralization else PermitWeakResolution.YesAtChooseSolution)
     SolveRelevantMemberConstraints csenv ndeep permitWeakResolution trace tps
   
 and AddMemberConstraint (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace) traitInfo support (frees: Typar list) =
@@ -3632,11 +3636,11 @@ let ApplyDefaultsForUnsolved css denv (unsolved: Typar list) =
 
     // The priority order comes from the order of declaration of the defaults in FSharp.Core.
     for priority = 10 downto 0 do
-        unsolved |> List.iter (fun tp -> 
+        for tp in unsolved do
             if not tp.IsSolved then 
                 // Apply the first default. If we're defaulting one type variable to another then 
                 // the defaults will be propagated to the new type variable. 
-                ApplyTyparDefaultAtPriority denv css priority tp)
+                ApplyTyparDefaultAtPriority denv css priority tp
 
     // OK, now apply defaults for any unsolved HeadTypeStaticReq 
     for tp in unsolved do
@@ -3669,7 +3673,7 @@ let CodegenWitnessExprForTraitConstraint tcVal g amap m (traitInfo:TraitConstrai
     let css = CreateCodegenState tcVal g amap
     let denv = DisplayEnv.Empty g
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.LegacyYesAtCodeGen 0 m NoTrace traitInfo
+    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.YesAtCodeGen 0 m NoTrace traitInfo
     let sln = GenWitnessExpr amap g m traitInfo argExprs
     ApplyDefaultsAfterWitnessGeneration g amap css denv sln
     return sln
@@ -3700,7 +3704,7 @@ let CodegenWitnessArgForTraitConstraint tcVal g amap m traitInfo = trackErrors {
     let css = CreateCodegenState tcVal g amap
     let denv = DisplayEnv.Empty g
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.LegacyYesAtCodeGen 0 m NoTrace traitInfo
+    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.YesAtCodeGen 0 m NoTrace traitInfo
     let witnessLambda = MethodCalls.GenWitnessExprLambda amap g m traitInfo
     match witnessLambda with 
     | Choice1Of2 _traitInfo -> ()
