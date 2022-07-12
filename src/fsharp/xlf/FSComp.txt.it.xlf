@@ -697,6 +697,11 @@
         <target state="translated">Non è possibile assegnare '{0}' a un valore contrassegnato come letterale</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
+        <target state="translated">L'utilizzo di metodi con 'NoEagerConstraintApplicationAttribute' richiede /langversion: anteprima o versione successiva</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
         <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
         <target state="translated">Questa espressione supporta l'indicizzazione, ad esempio 'expr.[index]'. La sintassi 'expr[index]' richiede/langversion:preview. Vedere https://aka.ms/fsharp-index-notation..</target>

@@ -127,7 +127,6 @@ exception ConstraintSolverTypesNotInEqualityRelation    of displayEnv: DisplayEn
 exception ConstraintSolverTypesNotInSubsumptionRelation of displayEnv: DisplayEnv * argTy: TType * paramTy: TType * callRange: range * parameterRange: range
 exception ConstraintSolverMissingConstraint             of displayEnv: DisplayEnv * Typar * TyparConstraint * range * range
 exception ConstraintSolverError                         of string * range * range
-exception ConstraintSolverRelatedInformation            of string option * range * exn
 
 exception ErrorFromApplyingDefault              of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * range
 exception ErrorFromAddingTypeEquation           of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * range
@@ -145,6 +144,15 @@ type TcValF = ValRef -> ValUseFlag -> TType list -> range -> Expr * TType
 type ConstraintSolverState =
     static member New: TcGlobals * ImportMap * InfoReader * TcValF -> ConstraintSolverState
 
+    /// Add a post-inference check to run at the end of inference
+    member PushPostInferenceCheck: preDefaults: bool * check: (unit -> unit) -> unit
+
+    /// Get the post-inference checks to run near the end of inference, but before defaults are applied
+    member GetPostInferenceChecksPreDefaults: unit -> seq<unit -> unit>
+
+    /// Get the post-inference checks to run at the end of inference
+    member GetPostInferenceChecksFinal: unit -> seq<unit -> unit>
+
 val BakedInTraitConstraintNames: Set<string>
 
 [<Sealed; NoEquality; NoComparison>]
@@ -156,7 +164,8 @@ type OptionalTrace =
 
 val SimplifyMeasuresInTypeScheme: TcGlobals -> bool -> Typars -> TType -> TyparConstraint list -> Typars
 
-val ResolveOverloadingForCall: DisplayEnv -> ConstraintSolverState -> range -> methodName: string -> ndeep: int -> cx: TraitConstraintInfo option -> callerArgs: CallerArgs<Expr> -> AccessorDomain -> calledMethGroup: CalledMeth<Expr> list -> permitOptArgs: bool -> reqdRetTyOpt: OverallTy option -> CalledMeth<Expr> option * OperationResult<unit>
+/// The entry point to resolve the overloading for an entire call
+val ResolveOverloadingForCall: DisplayEnv -> ConstraintSolverState -> range -> methodName: string -> callerArgs: CallerArgs<Expr> -> AccessorDomain -> calledMethGroup: CalledMeth<Expr> list -> permitOptArgs: bool -> reqdRetTy: OverallTy -> CalledMeth<Expr> option * OperationResult<unit>
 
 val UnifyUniqueOverloading: DisplayEnv -> ConstraintSolverState -> range -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> OverallTy -> OperationResult<bool> 
 
@@ -177,7 +186,7 @@ val AddCxTypeMustSubsumeType: ContextInfo -> DisplayEnv -> ConstraintSolverState
 
 val AddCxTypeMustSubsumeTypeUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
 
-val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
+val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> extraRigidTypars: FreeTypars -> TType -> TType -> bool
 
 val AddCxMethodConstraint: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TraitConstraintInfo -> unit
 

@@ -9,7 +9,7 @@ parameters:
 
 stages:
 - stage: insert
-  dependsOn: build
+  dependsOn: publish_using_darc
   displayName: Insert into VS
   jobs:
   - job: Insert_VS

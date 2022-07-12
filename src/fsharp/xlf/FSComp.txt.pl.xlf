@@ -697,6 +697,11 @@
         <target state="translated">Nie można przypisać elementu „{0}” do wartości oznaczonej jako literał</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
+        <target state="translated">Używanie metod z elementem "NoEagerConstraintApplicationAttribute" wymaga atrybutu /langversion:preview lub nowszego</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
         <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
         <target state="translated">To wyrażenie obsługuje indeksowanie, np. „expr.[index]”. Składnia wyrażenia „expr[index]” wymaga parametru /langversion:preview. Zobacz: https://aka.ms/fsharp-index-notation.</target>

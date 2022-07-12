@@ -396,13 +396,15 @@ let ComputeTypeAccess (tref: ILTypeRef) hidden =
 
 /// Indicates how type parameters are mapped to IL type variables
 [<NoEquality; NoComparison>]
-type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (TyconRef * ILType * TyparInst) option) =
+type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (TyconRef * ILTypeRef * Typars * TyparInst) option) =
 
     static let empty = TypeReprEnv(count = 0, reprs = Map.empty, templateReplacement = None)
+
     /// Get the template replacement information used when using struct types for state machines based on a "template" struct
     member __.TemplateReplacement = templateReplacement
 
-    member __.WithTemplateReplacement(tcref, ilty, tpinst) = TypeReprEnv(reprs, count, Some (tcref, ilty, tpinst)) 
+    member __.WithTemplateReplacement(tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst) =
+        TypeReprEnv(reprs, count, Some (tcref, ilCloTyRef, cloFreeTyvars, templateTypeInst)) 
 
     /// Lookup a type parameter
     member _.LookupTyparRepr (tp: Typar, m: range) =
@@ -515,7 +517,10 @@ and GenILTyAppAux amap m tyenv (tref, boxity, ilTypeOpt) tinst =
 and GenNamedTyAppAux (amap: ImportMap) m (tyenv: TypeReprEnv) ptrsOK tcref tinst =
     let g = amap.g
     match tyenv.TemplateReplacement with
-    | Some (tcref2, ilty, _) when tyconRefEq g tcref tcref2 -> ilty
+    | Some (tcref2, ilCloTyRef, cloFreeTyvars, _) when tyconRefEq g tcref tcref2 -> 
+        let cloInst = List.map mkTyparTy cloFreeTyvars
+        let ilTypeInst = GenTypeArgsAux amap m tyenv cloInst
+        mkILValueTy ilCloTyRef ilTypeInst
     | _ ->
     let tinst = DropErasedTyargs tinst
     // See above note on ptrsOK
@@ -686,11 +691,25 @@ let GenFieldSpecForStaticField (isInteractive, g, ilContainerTy, vspec: Val, nm,
 
 let GenRecdFieldRef m cenv (tyenv: TypeReprEnv) (rfref: RecdFieldRef) tyargs =
     // Fixup references to the fields of a struct machine template
+    // templateStructTy = ResumableStateMachine<TaskStateMachineData<SomeType['FreeTyVars]>
+    // templateTyconRef = ResumableStateMachine<'Data>
+    // templateTypeArgs = <TaskStateMachineData<SomeType['FreeTyVars]>
+    // templateTypeInst = 'Data -> TaskStateMachineData<SomeType['FreeTyVars]>
+    // cloFreeTyvars = <'FreeTyVars>
+    // ilCloTy = clo<'FreeTyVars> w.r.t envinner
+    // rfref = ResumableStateMachine<'Data>::Result
+    // rfref.RecdField.FormalType = 'Data
     match tyenv.TemplateReplacement with
-    | Some (tcref2, ilty, inst) when tyconRefEq cenv.g rfref.TyconRef tcref2 -> 
-        mkILFieldSpecInTy(ilty,
+    | Some (tcref2, ilCloTyRef, cloFreeTyvars, templateTypeInst) when tyconRefEq cenv.g rfref.TyconRef tcref2 -> 
+        let ilCloTy = 
+            let cloInst = List.map mkTyparTy cloFreeTyvars
+            let ilTypeInst = GenTypeArgsAux cenv.amap m tyenv cloInst
+            mkILValueTy ilCloTyRef ilTypeInst
+
+        let tyenvinner = TypeReprEnv.Empty.ForTypars cloFreeTyvars
+        mkILFieldSpecInTy(ilCloTy,
                       ComputeFieldName rfref.Tycon rfref.RecdField,
-                      GenType cenv.amap m tyenv (instType inst rfref.RecdField.FormalType))
+                      GenType cenv.amap m tyenvinner (instType templateTypeInst rfref.RecdField.FormalType))
     | _ -> 
         let tyenvinner = TypeReprEnv.Empty.ForTycon rfref.Tycon
         let ilty = GenTyApp cenv.amap m tyenv rfref.TyconRef.CompiledRepresentation tyargs
@@ -1095,8 +1114,8 @@ let AddStorageForVal (g: TcGlobals) (v, s) eenv =
 let AddStorageForLocalVals g vals eenv =
     List.foldBack (fun (v, s) acc -> AddStorageForVal g (v, notlazy s) acc) vals eenv
 
-let AddTemplateReplacement eenv (tcref, ilty, inst) =
-    { eenv with tyenv = eenv.tyenv.WithTemplateReplacement (tcref, ilty, inst) }
+let AddTemplateReplacement eenv (tcref, ftyvs, ilty, inst) =
+    { eenv with tyenv = eenv.tyenv.WithTemplateReplacement (tcref, ftyvs, ilty, inst) }
 
 let AddStorageForLocalWitness eenv (w,s) =
     { eenv with witnessesInScope = eenv.witnessesInScope.SetItem (w, s) }
@@ -4578,10 +4597,18 @@ and GenDefaultValue cenv cgbuf eenv (ty, m) =
                     // Ensure that we have an g.CompilerGlobalState
                     assert(g.CompilerGlobalState |> Option.isSome)
                     AllocLocal cenv cgbuf eenv true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName ("default", m), ilTy, false) scopeMarks
+                // We can normally rely on .NET IL zero-initialization of the temporaries
+                // we create to get zero values for struct types.
+                //
+                // However this doesn't work when
+                //   - we're reusing a local (realloc)
+                //   - SkipLocalsInit is active (not eenv.initLocals)
+                //   - we're in a loop (when we may get a backward branch, and the local may have been realloc'd elsewhere)
+                //
                 // "initobj" (Generated by EmitInitLocal) doesn't work on byref types
                 // But ilzero(&ty) only gets generated in the built-in get-address function so
                 // we can just rely on zeroinit of all IL locals.
-                if (realloc || not eenv.initLocals) && not (IsILTypeByref ilTy) then
+                if (realloc || not eenv.initLocals || eenv.isInLoop) && not (IsILTypeByref ilTy) then
                     EmitInitLocal cgbuf ilTy locIdx
 
                 EmitGetLocal cgbuf ilTy locIdx
@@ -4834,7 +4861,8 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
 
     let templateTyconRef, templateTypeArgs = destAppTy g templateStructTy
     let templateTypeInst = mkTyconRefInst templateTyconRef templateTypeArgs
-    let eenvinner = AddTemplateReplacement eenvinner (templateTyconRef, ilCloTy, templateTypeInst)
+    let eenvinner =
+        AddTemplateReplacement eenvinner (templateTyconRef, ilCloTypeRef, cloinfo.cloFreeTyvars, templateTypeInst)
 
     let infoReader = InfoReader.InfoReader(g, cenv.amap)
 
@@ -4950,13 +4978,15 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
 
     CountClosure()
     LocalScope "machine" cgbuf (fun scopeMarks ->
+        let eenvouter = AddTemplateReplacement eenvouter (templateTyconRef, ilCloTypeRef, cloinfo.cloFreeTyvars, templateTypeInst)
         let ilMachineAddrTy = ILType.Byref ilCloTy
 
         // The local for the state machine
-        let locIdx, realloc, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName ("machine", m), ilCloTy, false) scopeMarks
+        let locIdx, realloc, _ = AllocLocal cenv cgbuf eenvouter true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName ("machine", m), ilCloTy, false) scopeMarks
 
         // The local for the state machine address
-        let locIdx2, _realloc2, _ = AllocLocal cenv cgbuf eenvinner true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName (afterCodeThisVar.DisplayName, m), ilMachineAddrTy, false) scopeMarks
+        let locIdx2, _realloc2, _ = AllocLocal cenv cgbuf eenvouter true (g.CompilerGlobalState.Value.IlxGenNiceNameGenerator.FreshCompilerGeneratedName (afterCodeThisVar.DisplayName, m), ilMachineAddrTy, false) scopeMarks
+        let eenvouter = eenvouter |> AddStorageForLocalVals g [(afterCodeThisVar, Local (locIdx2, realloc, None)) ] 
 
         // Zero-initialize the machine 
         EmitInitLocal cgbuf ilCloTy locIdx
@@ -4964,8 +4994,6 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
         // Initialize the address-of-machine local
         CG.EmitInstr cgbuf (pop 0) (Push [ ilMachineAddrTy ]) (I_ldloca (uint16 locIdx) )
         CG.EmitInstr cgbuf (pop 1) (Push [ ]) (I_stloc (uint16 locIdx2) )
-
-        let eenvinner = eenvinner |> AddStorageForLocalVals g [(afterCodeThisVar, Local (locIdx2, realloc, None)) ] 
 
         // Initialize the closure variables
         for fv, ilv in Seq.zip cloFreeVars cloinfo.ilCloAllFreeVars do
@@ -4981,8 +5009,8 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                 GenGetLocalVal cenv cgbuf eenvouter m fv None
                 CG.EmitInstr cgbuf (pop 2) (Push [ ]) (mkNormalStfld (mkILFieldSpecInTy (ilCloTy, ilv.fvName, ilv.fvType)))
 
-        // Generate the start expression - eenvinner is used as it contains the binding for machineAddrVar
-        GenExpr cenv cgbuf eenvinner SPSuppress afterCodeBody sequel
+        // Generate the start expression 
+        GenExpr cenv cgbuf eenvouter SPSuppress afterCodeBody sequel
    
     )
 
@@ -6064,7 +6092,11 @@ and GenLetRecFixup cenv cgbuf eenv (ilxCloSpec: IlxClosureSpec, e, ilField: ILFi
 
 /// Generate letrec bindings
 and GenLetRecBindings cenv (cgbuf: CodeGenBuffer) eenv (allBinds: Bindings, m) =
+    
+    // 'let rec' bindings are always considered to be in loops, that is each may have backward branches for the
+    // tailcalls back to the entry point. This means we don't rely on zero-init of mutable locals
     let eenv = SetIsInLoop true eenv
+
     // Fix up recursion for non-toplevel recursive bindings
     let bindsPossiblyRequiringFixup =
         allBinds |> List.filter (fun b ->

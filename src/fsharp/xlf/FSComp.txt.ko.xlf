@@ -697,6 +697,11 @@
         <target state="translated">리터럴로 표시된 값에 '{0}'을(를) 할당할 수 없습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
+        <target state="translated">'NoEagerConstraintApplicationAttribute'와 함께 메서드를 사용하려면 /langversion:preview 이상이 필요합니다.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
         <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
         <target state="translated">이 식은 인덱싱을 지원합니다. 'expr.[index]'. 'expr[index]' 구문에는 /langversion:preview가 필요합니다. https://aka.ms/fsharp-index-notation을 참조하세요.</target>

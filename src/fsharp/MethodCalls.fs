@@ -800,7 +800,7 @@ type ArgumentAnalysis =
     | NoInfo
     | ArgDoesNotMatch 
     | CallerLambdaHasArgTypes of TType list
-    | CalledArgMatchesType of TType
+    | CalledArgMatchesType of adjustedCalledArgTy: TType * noEagerConstraintApplication: bool
 
 let InferLambdaArgsForLambdaPropagation origRhsExpr = 
     let rec loop e = 
@@ -810,7 +810,7 @@ let InferLambdaArgsForLambdaPropagation origRhsExpr =
         | _ -> 0
     loop origRhsExpr
 
-let ExamineArgumentForLambdaPropagation (infoReader: InfoReader) ad (arg: AssignedCalledArg<SynExpr>) =
+let ExamineArgumentForLambdaPropagation (infoReader: InfoReader) ad noEagerConstraintApplication (arg: AssignedCalledArg<SynExpr>) =
     let g = infoReader.g
 
     // Find the explicit lambda arguments of the caller. Ignore parentheses.
@@ -833,12 +833,18 @@ let ExamineArgumentForLambdaPropagation (infoReader: InfoReader) ad (arg: Assign
             NoInfo
     else
         // not a lambda on the caller side - push information from caller to called
-        CalledArgMatchesType(adjustedCalledArgTy)  
+        CalledArgMatchesType(adjustedCalledArgTy, noEagerConstraintApplication)  
         
+let ExamineMethodForLambdaPropagation (g: TcGlobals) m (meth: CalledMeth<SynExpr>) ad =
+    let noEagerConstraintApplication = MethInfoHasAttribute g m g.attrib_NoEagerConstraintApplicationAttribute meth.Method
 
-let ExamineMethodForLambdaPropagation (x: CalledMeth<SynExpr>) ad =
-    let unnamedInfo = x.AssignedUnnamedArgs |> List.mapSquared (ExamineArgumentForLambdaPropagation x.infoReader ad)
-    let namedInfo = x.AssignedNamedArgs |> List.mapSquared (fun arg -> (arg.NamedArgIdOpt.Value, ExamineArgumentForLambdaPropagation x.infoReader ad arg))
+    // The logic associated with NoEagerConstraintApplicationAttribute is part of the
+    // Tasks and Resumable Code RFC
+    if noEagerConstraintApplication && not (g.langVersion.SupportsFeature LanguageFeature.ResumableStateMachines) then
+        errorR(Error(FSComp.SR.tcNoEagerConstraintApplicationAttribute(), m))
+
+    let unnamedInfo = meth.AssignedUnnamedArgs |> List.mapSquared (ExamineArgumentForLambdaPropagation meth.infoReader ad noEagerConstraintApplication)
+    let namedInfo = meth.AssignedNamedArgs |> List.mapSquared (fun arg -> (arg.NamedArgIdOpt.Value, ExamineArgumentForLambdaPropagation meth.infoReader ad noEagerConstraintApplication arg))
     if unnamedInfo |> List.existsSquared (function CallerLambdaHasArgTypes _ -> true | _ -> false) || 
        namedInfo |> List.existsSquared (function _, CallerLambdaHasArgTypes _ -> true | _ -> false) then 
         Some (unnamedInfo, namedInfo)

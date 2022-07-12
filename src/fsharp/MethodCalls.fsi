@@ -289,9 +289,9 @@ type ArgumentAnalysis =
     | NoInfo
     | ArgDoesNotMatch
     | CallerLambdaHasArgTypes of TType list
-    | CalledArgMatchesType of TType
+    | CalledArgMatchesType of adjustedCalledArgTy: TType * noEagerConstraintApplication: bool
 
-val ExamineMethodForLambdaPropagation: x:CalledMeth<SynExpr> -> ad:AccessorDomain -> (ArgumentAnalysis list list * (Ident * ArgumentAnalysis) list list) option
+val ExamineMethodForLambdaPropagation: g: TcGlobals -> m: range -> meth:CalledMeth<SynExpr> -> ad:AccessorDomain -> (ArgumentAnalysis list list * (Ident * ArgumentAnalysis) list list) option
 
 /// Is this a 'base' call
 val IsBaseCall: objArgs:Expr list -> bool

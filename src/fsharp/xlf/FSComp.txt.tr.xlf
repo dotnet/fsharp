@@ -697,6 +697,11 @@
         <target state="translated">Sabit değer olarak işaretlenen bir değere '{0}' atanamaz</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
+        <target state="translated">'NoEagerConstraintApplicationAttribute' içeren yöntemlerin kullanılması /langversion:preview veya üstünü gerektiriyor</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
         <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
         <target state="translated">Bu ifade dizin oluşturmayı destekler, örn. “expr.[index]”. Söz dizimi “expr.[index]” /langversion:preview gerektirir. https://aka.ms/fsharp-index-notation'a bakın.</target>

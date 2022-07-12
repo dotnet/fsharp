@@ -107,7 +107,7 @@ type internal DelayedILModuleReader =
 [<RequireQualifiedAccess;NoComparison;CustomEquality>]
 type FSharpReferencedProject =
     | FSharpReference of projectFileName: string * options: FSharpProjectOptions
-    | PEReference of projectFileName: string * stamp: DateTime * delayedReader: DelayedILModuleReader
+    | PEReference of projectFileName: string * getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
     | ILModuleReference of projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
 
     member this.FileName =
@@ -119,8 +119,8 @@ type FSharpReferencedProject =
     static member CreateFSharp(projectFileName, options) =
         FSharpReference(projectFileName, options)
 
-    static member CreatePortableExecutable(projectFileName, stamp, getStream) =
-        PEReference(projectFileName, stamp, DelayedILModuleReader(projectFileName, getStream))
+    static member CreatePortableExecutable(projectFileName, getStamp, getStream) =
+        PEReference(projectFileName, getStamp, DelayedILModuleReader(projectFileName, getStream))
 
     static member CreateFromILModuleReader(projectFileName, getStamp, getReader) =
         ILModuleReference(projectFileName, getStamp, getReader)
@@ -131,8 +131,8 @@ type FSharpReferencedProject =
             match this, o with
             | FSharpReference(projectFileName1, options1), FSharpReference(projectFileName2, options2) ->
                 projectFileName1 = projectFileName2 && options1 = options2
-            | PEReference(projectFileName1, stamp1, _), PEReference(projectFileName2, stamp2, _) ->
-                projectFileName1 = projectFileName2 && stamp1 = stamp2
+            | PEReference(projectFileName1, getStamp1, _), PEReference(projectFileName2, getStamp2, _) ->
+                projectFileName1 = projectFileName2 && (getStamp1()) = (getStamp2())
             | ILModuleReference(projectFileName1, getStamp1, _), ILModuleReference(projectFileName2, getStamp2, _) ->
                 projectFileName1 = projectFileName2 && (getStamp1()) = (getStamp2())
             | _ ->
@@ -181,8 +181,8 @@ and FSharpProjectOptions =
             match r1, r2 with
             | FSharpReferencedProject.FSharpReference(n1,a), FSharpReferencedProject.FSharpReference(n2,b) ->
                 n1 = n2 && FSharpProjectOptions.AreSameForChecking(a,b)
-            | FSharpReferencedProject.PEReference(n1, stamp1, _), FSharpReferencedProject.PEReference(n2, stamp2, _) ->
-                n1 = n2 && stamp1 = stamp2
+            | FSharpReferencedProject.PEReference(n1, getStamp1, _), FSharpReferencedProject.PEReference(n2, getStamp2, _) ->
+                n1 = n2 && (getStamp1()) = (getStamp2())
             | _ ->
                 false) &&
         options1.LoadTime = options2.LoadTime
@@ -1240,6 +1240,17 @@ type internal TypeCheckInfo
                 Trace.TraceInformation(sprintf "FCS: recovering from error in GetReferenceResolutionStructuredToolTipText: '%s'" err)
                 ToolTipText [ToolTipElement.CompositionError err])
 
+    member _.GetDescription(symbol: FSharpSymbol, inst: (FSharpGenericParameter * FSharpType) list, displayFullName, m: range) =
+        let (nenv, accessorDomain), _ = GetBestEnvForPos m.Start
+        let denv = nenv.DisplayEnv
+
+        let item = symbol.Item
+        let inst = inst |> List.map (fun (typar, t) -> typar.TypeParameter, t.Type)
+        let itemWithInst = { ItemWithInst.Item = item; ItemWithInst.TyparInst = inst }
+
+        let toolTipElement = FormatStructuredDescriptionOfItem displayFullName infoReader accessorDomain m denv itemWithInst
+        ToolTipText [toolTipElement]
+
     // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
     member _.GetStructuredToolTipText(line, lineStr, colAtEndOfNames, names) =
         let Compute() =
@@ -1970,6 +1981,10 @@ type FSharpCheckFileResults
                 scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames) )
         | _ ->
             dflt
+
+    member _.GetDescription(symbol: FSharpSymbol, inst: (FSharpGenericParameter * FSharpType) list, displayFullName, range: range) =
+        threadSafeOp (fun () -> ToolTipText []) (fun scope ->
+            scope.GetDescription(symbol, inst, displayFullName, range))
 
     member _.GetF1Keyword (line, colAtEndOfNames, lineText, names) =
         threadSafeOp (fun () -> None) (fun scope ->

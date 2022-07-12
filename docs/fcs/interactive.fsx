@@ -1,3 +1,11 @@
+(**
+---
+title: Tutorial: Hosted execution
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 700
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
@@ -31,6 +39,7 @@ First, we need to reference the libraries that contain F# interactive service:
 *)
 
 #r "FSharp.Compiler.Service.dll"
+
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Tokenization
 
@@ -52,10 +61,15 @@ let errStream = new StringWriter(sbErr)
 
 // Build command line arguments & start FSI session
 let argv = [| "C:\\fsi.exe" |]
-let allArgs = Array.append argv [|"--noninteractive"|]
 
-let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-let fsiSession = FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream)
+let allArgs =
+    Array.append argv [| "--noninteractive" |]
+
+let fsiConfig =
+    FsiEvaluationSession.GetDefaultConfiguration()
+
+let fsiSession =
+    FsiEvaluationSession.Create(fsiConfig, allArgs, inStream, outStream, errStream)
 
 
 
@@ -69,9 +83,9 @@ the returned value (as `obj`) and the statically inferred type of the value:
 *)
 /// Evaluate expression & return the result
 let evalExpression text =
-  match fsiSession.EvalExpression(text) with
-  | Some value -> printfn "%A" value.ReflectionValue
-  | None -> printfn "Got no result!"
+    match fsiSession.EvalExpression(text) with
+    | Some value -> printfn "%A" value.ReflectionValue
+    | None -> printfn "Got no result!"
 
 (**
 This takes a string as an argument and evaluates (i.e. executes) it as F# code.
@@ -88,7 +102,7 @@ let evalExpressionTyped<'T> (text) =
     | Some value -> value.ReflectionValue |> unbox<'T>
     | None -> failwith "Got no result!"
 
-evalExpressionTyped<int> "42+1"  // gives '43'
+evalExpressionTyped<int> "42+1" // gives '43'
 
 
 (**
@@ -126,7 +140,9 @@ occur for any normal input expressions, and only for primitives used in librarie
 *)
 
 File.WriteAllText("sample.fsx", "let twenty = 'a' + 10.0")
-let result, warnings = fsiSession.EvalScriptNonThrowing "sample.fsx"
+
+let result, warnings =
+    fsiSession.EvalScriptNonThrowing "sample.fsx"
 
 // show the result
 match result with
@@ -142,7 +158,7 @@ Gives:
 
 // show the errors and warnings
 for w in warnings do
-   printfn "Warning %s at %d,%d" w.Message w.StartLine w.StartColumn
+    printfn "Warning %s at %d,%d" w.Message w.StartLine w.StartColumn
 
 (**
 Gives:
@@ -155,15 +171,18 @@ For expressions:
 
 
 let evalExpressionTyped2<'T> text =
-   let res, warnings = fsiSession.EvalExpressionNonThrowing(text)
-   for w in warnings do
-       printfn "Warning %s at %d,%d" w.Message w.StartLine w.StartColumn
-   match res with
-   | Choice1Of2 (Some value) -> value.ReflectionValue |> unbox<'T>
-   | Choice1Of2 None -> failwith "null or no result"
-   | Choice2Of2 (exn:exn) -> failwith (sprintf "exception %s" exn.Message)
+    let res, warnings =
+        fsiSession.EvalExpressionNonThrowing(text)
 
-evalExpressionTyped2<int> "42+1"  // gives '43'
+    for w in warnings do
+        printfn "Warning %s at %d,%d" w.Message w.StartLine w.StartColumn
+
+    match res with
+    | Choice1Of2 (Some value) -> value.ReflectionValue |> unbox<'T>
+    | Choice1Of2 None -> failwith "null or no result"
+    | Choice2Of2 (exn: exn) -> failwith (sprintf "exception %s" exn.Message)
+
+evalExpressionTyped2<int> "42+1" // gives '43'
 
 
 (**
@@ -184,8 +203,11 @@ async {
 }
   |> Async.StartAsTask"""
 
-let task1 = evalExpressionTyped<Task<int>>(sampleLongRunningExpr)
-let task2 = evalExpressionTyped<Task<int>>(sampleLongRunningExpr)
+let task1 =
+    evalExpressionTyped<Task<int>> (sampleLongRunningExpr)
+
+let task2 =
+    evalExpressionTyped<Task<int>> (sampleLongRunningExpr)
 
 (**
 Both computations have now started.  You can now fetch the results:
@@ -213,7 +235,6 @@ Now you want to typecheck the partially complete code `xxx + xx`
 
 let parseResults, checkResults, checkProjectResults =
     fsiSession.ParseAndCheckInteraction("xxx + xx")
-    |> Async.RunSynchronously
 
 (**
 The `parseResults` and `checkResults` have types `ParseFileResults` and `CheckFileResults`
@@ -229,9 +250,9 @@ You can also request declaration list information, tooltip text and symbol resol
 *)
 
 // get a tooltip
-checkResults.GetToolTip(1, 2, "xxx + xx", ["xxx"], FSharpTokenTag.IDENT)
+checkResults.GetToolTip(1, 2, "xxx + xx", [ "xxx" ], FSharpTokenTag.IDENT)
 
-checkResults.GetSymbolUseAtLocation(1, 2, "xxx + xx", ["xxx"]) // symbol xxx
+checkResults.GetSymbolUseAtLocation(1, 2, "xxx + xx", [ "xxx" ]) // symbol xxx
 
 (**
 The 'fsi' object
@@ -241,7 +262,8 @@ If you want your scripting code to be able to access the 'fsi' object, you shoul
 Normally the one from FSharp.Compiler.Interactive.Settings.dll is used.
 *)
 
-let fsiConfig2 = FsiEvaluationSession.GetDefaultConfiguration(fsiSession)
+let fsiConfig2 =
+    FsiEvaluationSession.GetDefaultConfiguration(fsiSession)
 
 (**
 Collectible code generation
@@ -260,19 +282,30 @@ If collectible code is working correctly,
 overall resource usage will not increase linearly as the evaluation progresses.
 *)
 
-let collectionTest() =
+let collectionTest () =
 
     for i in 1 .. 200 do
-        let defaultArgs = [|"fsi.exe";"--noninteractive";"--nologo";"--gui-"|]
+        let defaultArgs =
+            [| "fsi.exe"
+               "--noninteractive"
+               "--nologo"
+               "--gui-" |]
+
         use inStream = new StringReader("")
         use outStream = new StringWriter()
         use errStream = new StringWriter()
 
-        let fsiConfig = FsiEvaluationSession.GetDefaultConfiguration()
-        use session = FsiEvaluationSession.Create(fsiConfig, defaultArgs, inStream, outStream, errStream, collectible=true)
+        let fsiConfig =
+            FsiEvaluationSession.GetDefaultConfiguration()
 
-        session.EvalInteraction (sprintf "type D = { v : int }")
-        let v = session.EvalExpression (sprintf "{ v = 42 * %d }" i)
+        use session =
+            FsiEvaluationSession.Create(fsiConfig, defaultArgs, inStream, outStream, errStream, collectible = true)
+
+        session.EvalInteraction(sprintf "type D = { v : int }")
+
+        let v =
+            session.EvalExpression(sprintf "{ v = 42 * %d }" i)
+
         printfn "iteration %d, result = %A" i v.Value.ReflectionValue
 
 // collectionTest()  <-- run the test like this

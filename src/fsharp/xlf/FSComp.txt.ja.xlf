@@ -697,6 +697,11 @@
         <target state="translated">リテラルとしてマークされた値に '{0}' を割り当てることはできません</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
+        <target state="translated">'NoEagerConstraintApplicationAttribute' を指定してメソッドを使用するには、/langversion:preview 以降が必要です</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
         <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
         <target state="translated">この式は、'expr. [index]' などのインデックスをサポートしています。構文 'expr[index]' には　/langversion:preview が必要です。https://aka.ms/fsharp-index-notation を参照してください。</target>

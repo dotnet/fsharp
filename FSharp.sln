@@ -81,6 +81,37 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharp_Analysis", "tests\se
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "TestTP", "tests\service\data\TestTP\TestTP.fsproj", "{7BFA159A-BF9D-4489-BF46-1B83ACCEEE0F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{4E4F41D9-86A7-4F5D-B735-1A0744AB68AC}"
+	ProjectSection(SolutionItems) = preProject
+		docs\coding-standards.md = docs\coding-standards.md
+		docs\compiler-startup-performance.md = docs\compiler-startup-performance.md
+		docs\diagnostics.md = docs\diagnostics.md
+		docs\fsharp-core-notes.md = docs\fsharp-core-notes.md
+		docs\index.md = docs\index.md
+		docs\large-inputs-and-stack-overflows.md = docs\large-inputs-and-stack-overflows.md
+		docs\memory-usage.md = docs\memory-usage.md
+		docs\optimizations.md = docs\optimizations.md
+		docs\overview.md = docs\overview.md
+		docs\public-fcs-api.md = docs\public-fcs-api.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fcs", "fcs", "{B86EBFF1-E03E-4FAE-89BF-60A4CAE2BC78}"
+	ProjectSection(SolutionItems) = preProject
+		docs\fcs\caches.fsx = docs\fcs\caches.fsx
+		docs\fcs\compiler.fsx = docs\fcs\compiler.fsx
+		docs\fcs\corelib.fsx = docs\fcs\corelib.fsx
+		docs\fcs\editor.fsx = docs\fcs\editor.fsx
+		docs\fcs\filesystem.fsx = docs\fcs\filesystem.fsx
+		docs\fcs\index.md = docs\fcs\index.md
+		docs\fcs\interactive.fsx = docs\fcs\interactive.fsx
+		docs\fcs\project.fsx = docs\fcs\project.fsx
+		docs\fcs\react.fsx = docs\fcs\react.fsx
+		docs\fcs\symbols.fsx = docs\fcs\symbols.fsx
+		docs\fcs\tokenizer.fsx = docs\fcs\tokenizer.fsx
+		docs\fcs\typedtree.fsx = docs\fcs\typedtree.fsx
+		docs\fcs\untypedtree.fsx = docs\fcs\untypedtree.fsx
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -425,6 +456,7 @@ Global
 		{452EED3C-AA87-471F-B9AC-0F4479C5820C} = {CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}
 		{F8743670-C8D4-41B3-86BE-BBB1226C352F} = {452EED3C-AA87-471F-B9AC-0F4479C5820C}
 		{7BFA159A-BF9D-4489-BF46-1B83ACCEEE0F} = {452EED3C-AA87-471F-B9AC-0F4479C5820C}
+		{B86EBFF1-E03E-4FAE-89BF-60A4CAE2BC78} = {4E4F41D9-86A7-4F5D-B735-1A0744AB68AC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BD5177C7-1380-40E7-94D2-7768E1A8B1B8}

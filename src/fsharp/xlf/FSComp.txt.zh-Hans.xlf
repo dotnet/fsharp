@@ -697,6 +697,11 @@
         <target state="translated">无法将“{0}”分配给标记为文本的值</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
+        <target state="translated">将方法与 "NoEagerConstraintApplicationAttribute" 配合使用需要 /langversion:preview 或更高版本</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
         <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
         <target state="translated">此表达式支持索引，例如“expr.[index]”。语法“expr[index]”需要 /langversion:preview。请参阅 https://aka.ms/fsharp-index-notation。</target>

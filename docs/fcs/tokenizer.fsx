@@ -1,3 +1,11 @@
+(**
+---
+title: Tutorial: Tokenizing
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 200
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**

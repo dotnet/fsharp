@@ -697,6 +697,11 @@
         <target state="translated">K hodnotě označené jako literál se {0} nedá přiřadit.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcNoEagerConstraintApplicationAttribute">
+        <source>Using methods with 'NoEagerConstraintApplicationAttribute' requires /langversion:preview or later</source>
+        <target state="translated">Použití metod s atributem NoEagerConstraintApplicationAttribute vyžaduje /langversion:preview nebo novější.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcNotAFunctionButIndexerIndexingNotYetEnabled">
         <source>This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation.</source>
         <target state="translated">Tento výraz podporuje indexování, třeba expr.[index]. Syntaxe expr[index] vyžaduje /langversion:preview. Více informací: https://aka.ms/fsharp-index-notation</target>

@@ -3,5 +3,11 @@
     "files.trimTrailingWhitespace": false,
     "FSharp.suggestGitignore": false,
     "FSharp.workspacePath": "FSharp.sln",
-    "dotnet-test-explorer.testProjectPath": "tests/*Tests/"
+    "dotnet-test-explorer.testProjectPath": "tests/*Tests/",
+    "markdownlint.config": {
+        "MD028": false,
+        "MD025": {
+            "front_matter_title": ""
+        }
+    }
 }

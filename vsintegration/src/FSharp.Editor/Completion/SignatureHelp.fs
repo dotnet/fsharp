@@ -512,6 +512,7 @@ type internal FSharpSignatureHelpProvider
             let caretLineColumn = caretLinePos.Character
 
             let adjustedColumnInSource =
+
                 let rec loop ch pos =
                     if Char.IsWhiteSpace(ch) then
                         loop sourceText.[pos - 1] (pos - 1)

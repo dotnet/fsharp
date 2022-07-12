@@ -326,6 +326,15 @@ module CoreTests =
     let ``nbody-FSI_BASIC`` () = singleTestBuildAndRun "perf/nbody" FSI_BASIC
 
     [<Test>]
+    let ``forexpression-FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/forexpression" FSC_BASIC_OPT_MINUS
+
+    [<Test>]
+    let ``forexpression-FSC_BASIC`` () = singleTestBuildAndRun "core/forexpression" FSC_BASIC
+
+    [<Test>]
+    let ``forexpression-FSI_BASIC`` () = singleTestBuildAndRun "core/forexpression" FSI_BASIC
+
+    [<Test>]
     let ``letrec (mutrec variations part two) FSC_BASIC_OPT_MINUS`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSC_BASIC_OPT_MINUS
 
     [<Test>]
@@ -1641,7 +1650,7 @@ module CoreTests =
     let ``math-numbersVS2008-FSI_BASIC`` () = singleTestBuildAndRun "core/math/numbersVS2008" FSI_BASIC
 
     [<Test>]
-    let ``patterns-FSC_BASIC`` () = singleTestBuildAndRun "core/patterns" FSC_BASIC
+    let ``patterns-FSC_BASIC`` () = singleTestBuildAndRunVersion "core/patterns" FSC_BASIC "preview"
 
 //BUGBUG: https://github.com/Microsoft/visualfsharp/issues/6601
 //    [<Test>]
@@ -2610,6 +2619,13 @@ module TypecheckTests =
         exec cfg ("." ++ "pos39.exe") ""
 
     [<Test>]
+    let ``sigs pos40`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --langversion:preview --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
+        peverify cfg "pos40.exe"
+        exec cfg ("." ++ "pos40.exe") ""
+
+    [<Test>]
     let ``sigs pos23`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos23.exe" cfg.fsc_flags ["pos23.fs"]
@@ -2904,8 +2920,10 @@ module TypecheckTests =
     [<Test>]
     let ``type check neg44`` () = singleNegTest (testConfig "typecheck/sigs") "neg44"
 
+#if !DEBUG // requires release version of compiler to avoid very deep stacks
     [<Test>]
     let ``type check neg45`` () = singleNegTest (testConfig "typecheck/sigs") "neg45"
+#endif
 
     [<Test>]
     let ``type check neg46`` () = singleNegTest (testConfig "typecheck/sigs") "neg46"
@@ -3263,25 +3281,25 @@ module TypecheckTests =
     let ``type check neg130`` () = singleNegTest (testConfig "typecheck/sigs") "neg130"
 
     [<Test>] 
-    let ``type check neg131 4_7`` () =
-        singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg131"
+    let ``type check neg131b 4_7`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "4.7" "neg131b"
 
     [<Test>] 
-    let ``type check neg131 preview`` () =
-        singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg131"
+    let ``type check neg131b preview`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg131b"
 
     [<Test>] 
     // This code must pass compilation with /langversion:4.7 on because RFC FS-1043 is not supported
-    let ``type check neg132 4_7`` () =
+    let ``type check neg132b 4_7`` () =
         let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s -o:neg132-4.7.exe --langversion:4.7 --warnaserror" cfg.fsc_flags ["neg132.fs"]
-        peverify cfg "neg132-4.7.exe"
-        exec cfg ("." ++ "neg132-4.7.exe") ""
+        fsc cfg "%s -o:neg132b-4.7.exe --langversion:4.7 --warnaserror" cfg.fsc_flags ["neg132b.fs"]
+        peverify cfg "neg132b-4.7.exe"
+        exec cfg ("." ++ "neg132b-4.7.exe") ""
 
     [<Test>] 
     // This code must not pass compilation with /langversion:preview on because RFC FS-1043 is supported
-    let ``type check neg132 preview`` () =
-        singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg132"
+    let ``type check neg132b preview`` () =
+        singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg132b"
 
     // The code in the neg133 test does not compile (in any language version).
     // However it raises an internal error without RFC-1043 and so we don't
@@ -3292,6 +3310,12 @@ module TypecheckTests =
 
     [<Test>] 
     let ``type check neg133 preview`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg133"
+
+    [<Test>]
+    let ``type check neg131`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "preview" "neg131"
+
+    [<Test>]
+    let ``type check neg132`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "5.0" "neg132"
 
     [<Test>]
     let ``type check neg_anon_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_anon_1"

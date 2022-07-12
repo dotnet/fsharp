@@ -3,6 +3,7 @@
 /// Contains logic to coordinate the parsing and checking of one or a group of files
 module internal FSharp.Compiler.ParseAndCheckInputs
 
+open System.IO
 open Internal.Utilities.Library
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
@@ -45,6 +46,12 @@ val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string * Depe
 
 /// Process the #nowarn in an input and integrate them into the TcConfig
 val ApplyNoWarnsToTcConfig: TcConfig * ParsedInput * string -> TcConfig
+
+/// Parse one input stream
+val ParseOneInputStream: TcConfig * Lexhelp.LexResourceManager * conditionalCompilationDefines: string list * string * isLastCompiland: (bool * bool) * ErrorLogger * retryLocked: bool * stream: Stream -> ParsedInput
+
+/// Parse one input source text
+val ParseOneInputSourceText: TcConfig * Lexhelp.LexResourceManager * conditionalCompilationDefines: string list * string * isLastCompiland: (bool * bool) * ErrorLogger * sourceText: ISourceText -> ParsedInput
 
 /// Parse one input file
 val ParseOneInputFile: TcConfig * Lexhelp.LexResourceManager * conditionalCompilationDefines: string list * string * isLastCompiland: (bool * bool) * ErrorLogger * retryLocked: bool -> ParsedInput

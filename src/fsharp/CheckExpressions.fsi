@@ -184,9 +184,6 @@ type TcFileState =
       /// we infer type parameters 
       mutable recUses: ValMultiMap<Expr ref * range * bool>
       
-      /// Checks to run after all inference is complete. 
-      mutable postInferenceChecks: ResizeArray<unit -> unit>
-
       /// Set to true if this file causes the creation of generated provided types.
       mutable createsGeneratedProvidedTypes: bool
 
