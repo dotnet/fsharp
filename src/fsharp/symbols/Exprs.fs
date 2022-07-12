@@ -609,7 +609,7 @@ module FSharpExprConvert =
             let basecallR = ConvExpr cenv env basecall
             let ConvertMethods methods = 
                 [ for TObjExprMethod(slotsig, _, tps, tmvs, body, _) in methods -> 
-                    let vslR = List.map (List.map (ConvVal cenv)) tmvs 
+                    let vslR = List.mapSquared (ConvVal cenv) tmvs 
                     let sgn = FSharpAbstractSignature(cenv, slotsig)
                     let tpsR = [ for tp in tps -> FSharpGenericParameter(cenv, tp) ]
                     let env = env.BindTypars (Seq.zip tps tpsR |> Seq.toList)
@@ -774,15 +774,15 @@ module FSharpExprConvert =
 
             // For units of measure some binary operators change their return type, e.g. a * b where each is int<kg> gives int<kg*kg>
             | TOp.ILAsm ([ ILMulDivOp (binaryOp, isMul) ], _), _, [arg1;arg2] -> 
-                let argty1 = tyOfExpr g arg1
-                let argty2 = tyOfExpr g arg2
-                let rty = 
-                    match getMeasureOfType g argty1, getMeasureOfType g argty2 with
+                let argTy1 = tyOfExpr g arg1
+                let argTy2 = tyOfExpr g arg2
+                let resTy = 
+                    match getMeasureOfType g argTy1, getMeasureOfType g argTy2 with
                     | Some (tcref, ms1), Some (_tcref2, ms2)  ->  mkAppTy tcref [TType_measure (Measure.Prod(ms1, if isMul then ms2 else Measure.Inv ms2))]
-                    | Some _, None  -> argty1
-                    | None, Some _ -> argty2
-                    | None, None -> argty1
-                let op = binaryOp g m argty1 argty2 rty arg1 arg2
+                    | Some _, None  -> argTy1
+                    | None, Some _ -> argTy2
+                    | None, None -> argTy1
+                let op = binaryOp g m argTy1 argTy2 resTy arg1 arg2
                 ConvExprPrim cenv env op
 
             | TOp.ILAsm ([ ILConvertOp convertOp1; ILConvertOp convertOp2 ], _), _, [arg] -> 
@@ -902,12 +902,12 @@ module FSharpExprConvert =
                 let typR = ConvType cenv (mkAppTy tycr tyargs)
                 E.UnionCaseTag(ConvExpr cenv env arg1, typR) 
 
-            | TOp.TraitCall (TTrait(tys, nm, memFlags, argtys, _rty, _solution, _traitCtxt)), _, _ -> 
+            | TOp.TraitCall (TTrait(tys, nm, memFlags, argTys, _retTy, _solution, _traitCtxt)), _, _                    -> 
                 let tysR = ConvTypes cenv tys
                 let tyargsR = ConvTypes cenv tyargs
-                let argtysR = ConvTypes cenv argtys
+                let argTysR = ConvTypes cenv argTys
                 let argsR = ConvExprs cenv env args
-                E.TraitCall(tysR, nm, memFlags, argtysR, tyargsR, argsR) 
+                E.TraitCall(tysR, nm, memFlags, argTysR, tyargsR, argsR) 
 
             | TOp.RefAddrGet readonly, [ty], [e]  -> 
                 let replExpr = mkRecdFieldGetAddrViaExprAddr(readonly, e, mkRefCellContentsRef g, [ty], m)
@@ -1151,18 +1151,18 @@ module FSharpExprConvert =
                 // TODO: this will not work for curried methods in F# classes.
                 // This is difficult to solve as the information in the ILMethodRef
                 // is not sufficient to resolve to a symbol unambiguously in these cases.
-                let argtys = [ ilMethRef.ArgTypes |> List.map (ImportILTypeFromMetadata cenv.amap m scoref tinst1 tinst2) ]
-                let rty = 
+                let argTys = [ ilMethRef.ArgTypes |> List.map (ImportILTypeFromMetadata cenv.amap m scoref tinst1 tinst2) ]
+                let retTy = 
                     match ImportReturnTypeFromMetadata cenv.amap m ilMethRef.ReturnType (fun _ -> emptyILCustomAttrs) scoref tinst1 tinst2 with 
                     | None -> if isCtor then  enclosingType else g.unit_ty
                     | Some ty -> ty
 
                 let linkageType = 
-                    let ty = mkIteratedFunTy g (List.map (mkRefTupledTy g) argtys) rty
+                    let ty = mkIteratedFunTy g (List.map (mkRefTupledTy g) argTys) retTy
                     let ty = if isStatic then ty else mkFunTy g enclosingType ty 
                     mkForallTyIfNeeded (typars1 @ typars2) ty
 
-                let argCount = List.sum (List.map List.length argtys)  + (if isStatic then 0 else 1)
+                let argCount = List.sum (List.map List.length argTys)  + (if isStatic then 0 else 1)
                 let key = ValLinkageFullKey({ MemberParentMangledName=memberParentName; MemberIsOverride=false; LogicalName=logicalName; TotalArgCount= argCount }, Some linkageType)
 
                 let (PubPath p) = tcref.PublicPath.Value
@@ -1351,16 +1351,15 @@ and FSharpImplementationFileDeclaration =
 
 and FSharpImplementationFileContents(cenv, mimpl) = 
     let g = cenv.g
-    let (TImplFile (qname, _pragmas, ModuleOrNamespaceExprWithSig(_, mdef, _), hasExplicitEntryPoint, isScript, _anonRecdTypes, _)) = mimpl 
-    let rec getDecls2 (ModuleOrNamespaceExprWithSig(_mty, def, _m)) = getDecls def
-    and getBind (bind: Binding) = 
+    let (TImplFile (qname, _pragmas, ModuleOrNamespaceContentsWithSig(_, mdef, _), hasExplicitEntryPoint, isScript, _anonRecdTypes, _)) = mimpl 
+    let rec getBind (bind: Binding) = 
         let v = bind.Var
         assert v.IsCompiledAsTopLevel
         let topValInfo = InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v bind.Expr
         let tps, _ctorThisValOpt, _baseValOpt, vsl, body, _bodyty = IteratedAdjustArityOfLambda g cenv.amap topValInfo bind.Expr
         let v = FSharpMemberOrFunctionOrValue(cenv, mkLocalValRef v)
         let gps = v.GenericParameters
-        let vslR = List.map (List.map (FSharpExprConvert.ConvVal cenv)) vsl 
+        let vslR = List.mapSquared (FSharpExprConvert.ConvVal cenv) vsl 
         let env = ExprTranslationEnv.Empty(g).BindTypars (Seq.zip tps gps |> Seq.toList)
         let env = env.BindCurriedVals vsl 
         let e = FSharpExprConvert.ConvExprOnDemand cenv env body
@@ -1379,7 +1378,8 @@ and FSharpImplementationFileContents(cenv, mimpl) =
                       yield FSharpImplementationFileDeclaration.Entity (entity, getDecls def) 
                   | ModuleOrNamespaceBinding.Binding bind -> 
                       yield getBind bind ]
-        | TMAbstract mexpr -> getDecls2 mexpr
+        | TMWithSig mexpr ->
+            getDecls mexpr.Contents
         | TMDefLet(bind, _m)  ->
             [ yield getBind bind  ]
         | TMDefOpens _ ->
@@ -1391,9 +1391,13 @@ and FSharpImplementationFileContents(cenv, mimpl) =
             [ for mdef in mdefs do yield! getDecls mdef ]
 
     member _.QualifiedName = qname.Text
+
     member _.FileName = qname.Range.FileName
+
     member _.Declarations = getDecls mdef 
+
     member _.HasExplicitEntryPoint = hasExplicitEntryPoint
+
     member _.IsScript = isScript
 
 

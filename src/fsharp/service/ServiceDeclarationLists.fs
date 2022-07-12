@@ -169,7 +169,7 @@ module DeclarationListHelpers =
         // Union tags (constructors)
         | Item.UnionCase(ucinfo, _) -> 
             let uc = ucinfo.UnionCase 
-            let rty = generalizedTyconRef g ucinfo.TyconRef
+            let unionTy = generalizedTyconRef g ucinfo.TyconRef
             let recd = uc.RecdFields 
             let layout = 
                 wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
@@ -178,7 +178,7 @@ module DeclarationListHelpers =
                 wordL (tagUnionCase (DecompileOpName uc.Id.idText) |> mkNav uc.DefinitionRange) ^^
                 RightL.colon ^^
                 (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv infoReader ucinfo.TyconRef recd ^^ WordL.arrow) ^^
-                NicePrint.layoutType denv rty
+                NicePrint.layoutType denv unionTy
             let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
@@ -292,15 +292,15 @@ module DeclarationListHelpers =
 
         // .NET events
         | Item.Event einfo ->
-            let rty = PropTypOfEventInfo infoReader m AccessibleFromSomewhere einfo
-            let rty, _cxs = PrettyTypes.PrettifyType g rty
+            let eventTy = PropTypOfEventInfo infoReader m AccessibleFromSomewhere einfo
+            let eventTy, _cxs = PrettyTypes.PrettifyType g eventTy
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoEvent())) ^^
                 NicePrint.layoutTyconRef denv einfo.ApparentEnclosingTyconRef ^^
                 SepL.dot ^^
                 wordL (tagEvent einfo.EventName) ^^
                 RightL.colon ^^
-                NicePrint.layoutType denv rty
+                NicePrint.layoutType denv eventTy
             let layout = toArray layout
             ToolTipElement.Single (layout, xml)
 
@@ -529,7 +529,7 @@ module internal DescriptionListsImpl =
           isOptional=optArgInfo.IsOptional)
 
     // TODO this code is similar to NicePrint.fs:formatParamDataToBuffer, refactor or figure out why different?
-    let PrettyParamsOfParamDatas g denv typarInst (paramDatas:ParamData list) rty = 
+    let PrettyParamsOfParamDatas g denv typarInst (paramDatas:ParamData list) paramTy = 
         let paramInfo, paramTypes = 
             paramDatas 
             |> List.map (fun (ParamData(isParamArrayArg, _isInArg, _isOutArg, optArgInfo, _callerInfo, nmOpt, _reflArgInfo, pty)) -> 
@@ -562,7 +562,7 @@ module internal DescriptionListsImpl =
 
         // Prettify everything
         let prettyTyparInst, (prettyParamTys, _prettyRetTy), (prettyParamTysL, prettyRetTyL), prettyConstraintsL = 
-            NicePrint.prettyLayoutOfInstAndSig denv (typarInst, paramTypes, rty)
+            NicePrint.prettyLayoutOfInstAndSig denv (typarInst, paramTypes, paramTy)
 
         // Remake the params using the prettified versions
         let prettyParams = 
@@ -689,8 +689,8 @@ module internal DescriptionListsImpl =
                 match ucinfo.UnionCase.RecdFields with
                 | [f] -> [PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField -1 f]
                 | fs -> fs |> List.mapi (PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField)
-            let rty = generalizedTyconRef g ucinfo.TyconRef
-            let rtyL = NicePrint.layoutType denv rty
+            let unionTy = generalizedTyconRef g ucinfo.TyconRef
+            let rtyL = NicePrint.layoutType denv unionTy
             prettyParams, rtyL
 
         | Item.ActivePatternCase(apref)   -> 
@@ -701,9 +701,9 @@ module internal DescriptionListsImpl =
             let apinfo = Option.get (TryGetActivePatternInfo v)
             let aparity = apinfo.Names.Length
             
-            let rty = if aparity <= 1 then resTy else (argsOfAppTy g resTy)[apref.CaseIndex]
+            let caseTy = if aparity <= 1 then resTy else (argsOfAppTy g resTy)[apref.CaseIndex]
 
-            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfTypes g denv item.TyparInst args rty
+            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfTypes g denv item.TyparInst args caseTy
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
             // for display as part of the method group
             prettyParams, prettyRetTyL
@@ -731,9 +731,9 @@ module internal DescriptionListsImpl =
 
         | Item.Property(_, pinfo :: _) -> 
             let paramDatas = pinfo.GetParamDatas(amap, m)
-            let rty = pinfo.GetPropertyType(amap, m) 
+            let propTy = pinfo.GetPropertyType(amap, m) 
 
-            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas rty
+            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas propTy
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
             // for display as part of the method group
             prettyParams, prettyRetTyL
@@ -741,8 +741,8 @@ module internal DescriptionListsImpl =
         | Item.CtorGroup(_, minfo :: _) 
         | Item.MethodGroup(_, minfo :: _, _) -> 
             let paramDatas = minfo.GetParamDatas(amap, m, minfo.FormalMethodInst) |> List.head
-            let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
-            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas rty
+            let retTy = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
+            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas retTy
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
             // for display as part of the method group
             prettyParams, prettyRetTyL
@@ -759,16 +759,16 @@ module internal DescriptionListsImpl =
                 let argNamesAndTys = ParamNameAndTypesOfUnaryCustomOperation g minfo 
                 let argTys, _ = PrettyTypes.PrettifyTypes g (argNamesAndTys |> List.map (fun (ParamNameAndType(_, ty)) -> ty))
                 let paramDatas = (argNamesAndTys, argTys) ||> List.map2 (fun (ParamNameAndType(nmOpt, _)) argTy -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, argTy))
-                let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
-                let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas rty
+                let retTy = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
+                let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas retTy
 
                 // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
                 // for display as part of the method group
                 prettyParams, prettyRetTyL
 
             | Some _ -> 
-                let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
-                let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] rty
+                let retTy = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
+                let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] retTy
                 [], prettyRetTyL  // no parameter data available for binary operators like 'zip', 'join' and 'groupJoin' since they use bespoke syntax 
 
         | Item.FakeInterfaceCtor ty -> 

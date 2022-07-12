@@ -89,7 +89,7 @@ val internal ImportILAssembly:
     IXmlDocumentationInfoLoader option *
     ILScopeRef *
     sourceDir: string *
-    filename: string option *
+    fileName: string option *
     ILModuleDef *
     IEvent<string> ->
         CcuThunk

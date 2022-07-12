@@ -216,15 +216,15 @@ let AdjustForScriptCompile(tcConfigB: TcConfigBuilder, commandLineSourceFiles, l
 
     let tcConfig = TcConfig.Create(tcConfigB, validate=false)
 
-    let AddIfNotPresent(filename: string) =
-        if not(allSources |> List.contains filename) then
-            allSources <- filename :: allSources
+    let AddIfNotPresent (fileName: string) =
+        if not(allSources |> List.contains fileName) then
+            allSources <- fileName :: allSources
 
-    let AppendClosureInformation filename =
-        if IsScript filename then
+    let AppendClosureInformation fileName =
+        if IsScript fileName then
             let closure =
                 LoadClosure.ComputeClosureOfScriptFiles
-                   (tcConfig, [filename, rangeStartup], CodeContext.Compilation,
+                   (tcConfig, [fileName, rangeStartup], CodeContext.Compilation,
                     lexResourceManager, dependencyProvider)
 
             // Record the new references (non-framework) references from the analysis of the script. (The full resolutions are recorded
@@ -245,11 +245,12 @@ let AdjustForScriptCompile(tcConfigB: TcConfigBuilder, commandLineSourceFiles, l
             // If there is a target framework for the script then push that as a requirement into the overall compilation and add all the framework references implied
             // by the script too.
             tcConfigB.SetPrimaryAssembly (if closure.UseDesktopFramework then PrimaryAssembly.Mscorlib else PrimaryAssembly.System_Runtime)
-            if tcConfigB.framework then
+
+            if tcConfigB.implicitlyReferenceDotNetAssemblies then
                 let references = closure.References |> List.collect snd
                 references |> List.iter (fun r -> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
 
-        else AddIfNotPresent filename
+        else AddIfNotPresent fileName
 
     // Find closure of .fsx files.
     commandLineSourceFiles |> List.iter AppendClosureInformation
@@ -320,7 +321,7 @@ module InterfaceFileWriter =
             (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> LayoutRender.showL)
 
         let writeHeader filePath os =
-            if filePath <> "" && not (List.exists (FileSystemUtils.checkSuffix filePath) FSharpLightSyntaxFileSuffixes) then
+            if filePath <> "" && not (List.exists (FileSystemUtils.checkSuffix filePath) FSharpIndentationAwareSyntaxFileSuffixes) then
                 fprintfn os "#light"
                 fprintfn os ""
 
@@ -347,10 +348,10 @@ module InterfaceFileWriter =
 
         let writeToSeparateFiles (declaredImpls: TypedImplFile list) =
             for TImplFile (qualifiedNameOfFile=name) as impl in declaredImpls do
-                let filename = Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
-                printfn "writing impl file to %s" filename
-                use os = FileSystem.OpenFileForWriteShim(filename, FileMode.Create).GetWriter()
-                writeHeader filename os
+                let fileName = Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
+                printfn "writing impl file to %s" fileName
+                use os = FileSystem.OpenFileForWriteShim(fileName, FileMode.Create).GetWriter()
+                writeHeader fileName os
                 writeToFile os impl
 
         if tcConfig.printSignature then
@@ -631,8 +632,9 @@ let main1OfAst
 
     tcConfigB.target <- target
     tcConfigB.SetPrimaryAssembly primaryAssembly
+
     if noframework then
-        tcConfigB.framework <- false
+        tcConfigB.implicitlyReferenceDotNetAssemblies <- false
         tcConfigB.implicitlyResolveAssemblies <- false
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
@@ -983,7 +985,7 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
     AbortOnError(errorLogger, exiter)
 
     // Don't copy referenced FSharp.core.dll if we are building FSharp.Core.dll
-    if (tcConfig.copyFSharpCore = CopyFSharpCoreFlag.Yes) && not tcConfig.compilingFslib && not tcConfig.standalone then
+    if (tcConfig.copyFSharpCore = CopyFSharpCoreFlag.Yes) && not tcConfig.compilingFSharpCore && not tcConfig.standalone then
         CopyFSharpCore(outfile, tcConfig.referencedDLLs)
 
     ReportTime tcConfig "Exiting"

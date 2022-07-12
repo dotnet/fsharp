@@ -1711,7 +1711,7 @@ type UnionCase =
 
     override x.ToString() = "UnionCase(" + x.LogicalName + ")"
 
-/// Represents a class, struct or record field in an F# type definition.
+/// Represents a class, struct, record or exception field in an F# type, exception or union-case definition.
 /// This may represent a "field" in either a struct, class, record or union.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type RecdField =
@@ -2386,7 +2386,7 @@ type TraitConstraintInfo =
 
     /// Get the argument types recorded in the member constraint. This includes the object instance type for
     /// instance members.
-    member x.ArgumentTypes = (let (TTrait(_, _, _, argtys, _, _, _)) = x in argtys)
+    member x.ArgumentTypes = (let (TTrait(_, _, _, argTys, _, _, _)) = x in argTys)
 
     /// Get the return type recorded in the member constraint.
     member x.ReturnType = (let (TTrait(_, _, _, _, rty, _, _)) = x in rty)
@@ -4540,7 +4540,11 @@ type ValReprInfo =
         loop args 0
 
     member x.ArgNames =
-        Some [ for argtys in x.ArgInfos do for arginfo in argtys do match arginfo.Name with None -> () | Some nm -> nm.idText ]
+        [ for argTys in x.ArgInfos do
+            for argInfo in argTys do
+                match argInfo.Name with
+                | None -> ()
+                | Some nm -> nm.idText ]
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -5105,21 +5109,23 @@ type SlotParam =
     override x.ToString() = "TSlotParam(...)"
 
 /// A type for a module-or-namespace-fragment and the actual definition of the module-or-namespace-fragment
-/// The first ModuleOrNamespaceType is the signature and is a binder. However the bindings are not used in the ModuleOrNamespaceExpr: it is only referenced from the 'outside' 
+/// The first ModuleOrNamespaceType is the signature and is a binder. However the bindings are not used in the ModuleOrNamespaceContents: it is only referenced from the 'outside' 
 /// is for use by FCS only to report the "hidden" contents of the assembly prior to applying the signature.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type ModuleOrNamespaceExprWithSig = 
-    | ModuleOrNamespaceExprWithSig of 
-         moduleType: ModuleOrNamespaceType *
-         contents: ModuleOrNamespaceExpr *
+type ModuleOrNamespaceContentsWithSig = 
+    | ModuleOrNamespaceContentsWithSig of 
+         moduleSig: ModuleOrNamespaceType *
+         contents: ModuleOrNamespaceContents *
          range: range
 
-    member x.Type = let (ModuleOrNamespaceExprWithSig(mtyp, _, _)) = x in mtyp
+    member x.Type = let (ModuleOrNamespaceContentsWithSig(moduleSig=moduleSig)) = x in moduleSig
+
+    member x.Contents = let (ModuleOrNamespaceContentsWithSig(contents=contents)) = x in contents
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "ModuleOrNamespaceExprWithSig(...)"
+    override x.ToString() = "ModuleOrNamespaceContentsWithSig(...)"
 
 /// Represents open declaration statement.
 type OpenDeclaration =
@@ -5156,12 +5162,12 @@ type OpenDeclaration =
     
 /// The contents of a module-or-namespace-fragment definition 
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
-type ModuleOrNamespaceExpr = 
+type ModuleOrNamespaceContents = 
     /// Indicates the module is a module with a signature 
-    | TMAbstract of moduleOrNamespaceExprWithSig: ModuleOrNamespaceExprWithSig
+    | TMWithSig of contentsWithSig: ModuleOrNamespaceContentsWithSig
 
     /// Indicates the module fragment is made of several module fragments in succession 
-    | TMDefs of moduleOrNamespaceExprs: ModuleOrNamespaceExpr list  
+    | TMDefs of defs: ModuleOrNamespaceContents list  
 
     /// Indicates the given 'open' declarations are active
     | TMDefOpens of openDecls: OpenDeclaration list
@@ -5173,7 +5179,7 @@ type ModuleOrNamespaceExpr =
     | TMDefDo of expr: Expr * range: range
 
     /// Indicates the module fragment is a 'rec' or 'non-rec' definition of types and modules
-    | TMDefRec of isRec: bool * opens: OpenDeclaration list * tycons: Tycon list * moduleOrNamespaceBindings: ModuleOrNamespaceBinding list * range: range
+    | TMDefRec of isRec: bool * opens: OpenDeclaration list * tycons: Tycon list * bindings: ModuleOrNamespaceBinding list * range: range
 
     // %+A formatting is used, so this is not needed
     //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -5187,12 +5193,12 @@ type ModuleOrNamespaceBinding =
 
     | Binding of binding: Binding 
 
+    /// The moduleOrNamespace represents the signature of the module.
+    /// The moduleOrNamespaceContents contains the definitions of the module.
+    /// The same set of entities are bound in the ModuleOrNamespace as in the ModuleOrNamespaceContents.
     | Module of 
-         /// This ModuleOrNamespace that represents the compilation of a module as a class. 
-         /// The same set of tycons etc. are bound in the ModuleOrNamespace as in the ModuleOrNamespaceExpr
          moduleOrNamespace: ModuleOrNamespace * 
-         /// This is the body of the module/namespace 
-         moduleOrNamespaceExpr: ModuleOrNamespaceExpr
+         moduleOrNamespaceContents: ModuleOrNamespaceContents
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -5228,7 +5234,7 @@ type TypedImplFile =
     | TImplFile of 
         qualifiedNameOfFile: QualifiedNameOfFile *
         pragmas: ScopedPragma list *
-        implExprWithSig: ModuleOrNamespaceExprWithSig *
+        implExprWithSig: ModuleOrNamespaceContentsWithSig *
         hasExplicitEntryPoint: bool *
         isScript: bool *
         anonRecdTypeInfo: StampMap<AnonRecdTypeInfo> *
@@ -5263,7 +5269,7 @@ type TypedAssemblyAfterOptimization =
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type CcuData = 
     {
-      /// Holds the filename for the DLL, if any 
+      /// Holds the file name for the DLL, if any 
       FileName: string option 
       
       /// Holds the data indicating how this assembly/module is referenced from the code being compiled. 
@@ -5379,7 +5385,7 @@ type CcuThunk =
     /// A unique stamp for this assembly
     member ccu.Stamp = ccu.Deref.Stamp
 
-    /// Holds the filename for the assembly, if any 
+    /// Holds the file name for the assembly, if any 
     member ccu.FileName = ccu.Deref.FileName
 
     /// Try to get the .NET Assembly, if known. May not be present for `IsFSharp` for
@@ -5752,31 +5758,31 @@ type Construct() =
         Construct.NewTypar (TyparKind.Type, TyparRigidity.Rigid, SynTypar(mkSynId m nm, TyparStaticReq.None, true), false, TyparDynamicReq.Yes, [], false, false)
 
     /// Create a new union case node
-    static member NewUnionCase id tys rty attribs docOption access: UnionCase = 
-        { Id=id
-          XmlDoc=docOption
-          XmlDocSig=""
-          Accessibility=access
+    static member NewUnionCase id tys retTy attribs docOption access: UnionCase = 
+        { Id = id
+          XmlDoc = docOption
+          XmlDocSig = ""
+          Accessibility = access
           FieldTable = Construct.MakeRecdFieldsTable tys
-          ReturnType = rty
-          Attribs=attribs 
+          ReturnType = retTy
+          Attribs = attribs 
           OtherRangeOpt = None } 
 
     /// Create a new TAST Entity node for an F# exception definition
     static member NewExn cpath (id: Ident) access repr attribs (doc: XmlDoc) = 
         Tycon.New "exnc"
-          { entity_stamp=newStamp()
-            entity_attribs=attribs
-            entity_logical_name=id.idText
-            entity_range=id.idRange
-            entity_tycon_tcaug=TyconAugmentation.Create()
-            entity_pubpath=cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
+          { entity_stamp = newStamp()
+            entity_attribs = attribs
+            entity_logical_name = id.idText
+            entity_range = id.idRange
+            entity_tycon_tcaug = TyconAugmentation.Create()
+            entity_pubpath = cpath |> Option.map (fun (cp: CompilationPath) -> cp.NestedPublicPath id)
             entity_modul_contents = MaybeLazy.Strict (Construct.NewEmptyModuleOrNamespaceType ModuleOrType)
-            entity_cpath= cpath
-            entity_typars=LazyWithContext.NotLazy []
+            entity_cpath = cpath
+            entity_typars = LazyWithContext.NotLazy []
             entity_tycon_repr = TNoRepr
-            entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
-            entity_il_repr_cache= newCache()
+            entity_flags = EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
+            entity_il_repr_cache = newCache()
             entity_opt_data =
                 match doc, access, repr with
                 | doc, TAccess [], TExnNone when doc.IsEmpty -> None
@@ -5784,18 +5790,18 @@ type Construct() =
 
     /// Create a new TAST RecdField node for an F# class, struct or record field
     static member NewRecdField stat konst id nameGenerated ty isMutable isVolatile pattribs fattribs docOption access secret =
-        { rfield_mutable=isMutable
-          rfield_pattribs=pattribs
-          rfield_fattribs=fattribs
-          rfield_type=ty
-          rfield_static=stat
-          rfield_volatile=isVolatile
-          rfield_const=konst
+        { rfield_mutable = isMutable
+          rfield_pattribs = pattribs
+          rfield_fattribs = fattribs
+          rfield_type = ty
+          rfield_static = stat
+          rfield_volatile = isVolatile
+          rfield_const = konst
           rfield_access = access
           rfield_secret = secret
           rfield_xmldoc = docOption 
           rfield_xmldocsig = ""
-          rfield_id=id
+          rfield_id = id
           rfield_name_generated = nameGenerated
           rfield_other_range = None }
     
@@ -5829,33 +5835,56 @@ type Construct() =
         tycon
 
     /// Create a new Val node
-    static member NewVal 
-           (logicalName: string, m: range, compiledName, ty, isMutable, isCompGen, arity, access,
-            recValInfo, specialRepr, baseOrThis, attribs, inlineInfo, doc: XmlDoc, isModuleOrMemberBinding,
-            isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal,
-            konst, actualParent) : Val =
+    static member NewVal(
+        logicalName: string,
+        m: range,
+        compiledName,
+        ty,
+        isMutable,
+        isCompGen,
+        arity,
+        access,
+        recValInfo,
+        specialRepr,
+        baseOrThis,
+        attribs,
+        inlineInfo,
+        doc: XmlDoc,
+        isModuleOrMemberBinding,
+        isExtensionMember,
+        isIncrClassSpecialMember,
+        isTyFunc,
+        allowTypeInst,
+        isGeneratedEventVal,
+        konst,
+        actualParent) : Val =
 
         let stamp = newStamp()
+        let optData = 
+            match compiledName, arity, konst, access, doc, specialRepr, actualParent, attribs with
+            | None, None, None, TAccess [], doc, None, ParentNone, [] when doc.IsEmpty -> None
+            | _ -> 
+                { Val.NewEmptyValOptData() with
+                    val_compiled_name = (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
+                    val_repr_info = arity
+                    val_const = konst
+                    val_access = access
+                    val_xmldoc = doc
+                    val_member_info = specialRepr
+                    val_declaring_entity = actualParent
+                    val_attribs = attribs }
+                |> Some
+
+        let flags = ValFlags(recValInfo, baseOrThis, isCompGen, inlineInfo, isMutable, isModuleOrMemberBinding, isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal)
+
         Val.New {
             val_stamp = stamp
             val_logical_name = logicalName
             val_range = m
-            val_flags = ValFlags(recValInfo, baseOrThis, isCompGen, inlineInfo, isMutable, isModuleOrMemberBinding, isExtensionMember, isIncrClassSpecialMember, isTyFunc, allowTypeInst, isGeneratedEventVal)
+            val_flags = flags
             val_type = ty
-            val_opt_data =
-                match compiledName, arity, konst, access, doc, specialRepr, actualParent, attribs with
-                | None, None, None, TAccess [], doc, None, ParentNone, [] when doc.IsEmpty -> None
-                | _ -> 
-                    Some { Val.NewEmptyValOptData() with
-                             val_compiled_name = (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
-                             val_repr_info = arity
-                             val_const = konst
-                             val_access = access
-                             val_xmldoc = doc
-                             val_member_info = specialRepr
-                             val_declaring_entity = actualParent
-                             val_attribs = attribs }
-            }
+            val_opt_data = optData
+        }
 
     /// Create the new contents of an overall assembly
     static member NewCcuContents sref m nm mty =

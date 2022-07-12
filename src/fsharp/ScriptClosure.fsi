@@ -76,7 +76,7 @@ type LoadClosure =
     static member ComputeClosureOfScriptText:
         legacyReferenceResolver: LegacyReferenceResolver *
         defaultFSharpBinariesDir: string *
-        filename: string *
+        fileName: string *
         sourceText: ISourceText *
         implicitDefines: CodeContext *
         useSimpleResolution: bool *

@@ -51,8 +51,8 @@ type SubstituteText () =
                                 let getTargetPathFrom key =
                                     let md = item.GetMetadata(key)
                                     let path = Path.GetDirectoryName(md)
-                                    let filename = Path.GetFileName(md)
-                                    let target = Path.Combine(path, @"..\resources", filename)
+                                    let fileName = Path.GetFileName(md)
+                                    let target = Path.Combine(path, @"..\resources", fileName)
                                     target
 
                                 // Copy from the location specified in Identity
@@ -63,8 +63,8 @@ type SubstituteText () =
                                     let identityPath = getTargetPathFrom "Identity"
                                     let intermediateTargetPath = item.GetMetadata("IntermediateTargetPath")
                                     if not (String.IsNullOrWhiteSpace(intermediateTargetPath)) then
-                                        let filename = Path.GetFileName(identityPath)
-                                        let target = Path.Combine(intermediateTargetPath, filename)
+                                        let fileName = Path.GetFileName(identityPath)
+                                        let target = Path.Combine(intermediateTargetPath, fileName)
                                         target
                                     else
                                         identityPath

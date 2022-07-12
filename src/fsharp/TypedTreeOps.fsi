@@ -1045,7 +1045,7 @@ type DisplayEnv =
       showObsoleteMembers: bool
       showHiddenMembers: bool
       showTyparBinding: bool
-      showImperativeTyparAnnotations: bool
+      showInferenceTyparAnnotations: bool
       suppressInlineKeyword: bool
       suppressMutableKeyword: bool
       showMemberContainers: bool
@@ -1053,7 +1053,7 @@ type DisplayEnv =
       useColonForReturnType: bool
       showAttributes: bool
       showOverrides: bool
-      showConstraintTyparAnnotations: bool
+      showStaticallyResolvedTyparAnnotations: bool
       abbreviateAdditionalConstraints: bool
       showTyparDefaultConstraints: bool
       /// If set, signatures will be rendered with XML documentation comments for members if they exist
@@ -1115,7 +1115,7 @@ val trimPathByDisplayEnv: DisplayEnv -> string list -> string
 
 val prefixOfStaticReq: TyparStaticReq -> string
 
-val prefixOfRigidTypar: Typar -> string
+val prefixOfInferenceTypar: Typar -> string
 
 /// Utilities used in simplifying types for visual presentation
 module SimplifyTypes =
@@ -1152,7 +1152,7 @@ val accFreeInSwitchCases: FreeVarOptions -> DecisionTreeCase list -> DecisionTre
 val accFreeInDecisionTree: FreeVarOptions -> DecisionTree -> FreeVars -> FreeVars
 
 /// Get the free variables in a module definition.
-val freeInModuleOrNamespace: FreeVarOptions -> ModuleOrNamespaceExpr -> FreeVars
+val freeInModuleOrNamespace: FreeVarOptions -> ModuleOrNamespaceContents -> FreeVars
 
 /// Get the free variables in an expression.
 val freeInExpr: FreeVarOptions -> Expr -> FreeVars
@@ -1267,7 +1267,7 @@ type SignatureHidingInfo =
 
 /// Compute the remapping information implied by a signature being inferred for a particular implementation
 val ComputeRemappingFromImplementationToSignature:
-    TcGlobals -> ModuleOrNamespaceExpr -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
+    TcGlobals -> ModuleOrNamespaceContents -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
 
 /// Compute the remapping information implied by an explicit signature being given for an inferred signature
 val ComputeRemappingFromInferredSignatureToExplicitSignature:
@@ -1278,12 +1278,13 @@ val ComputeSignatureHidingInfoAtAssemblyBoundary: ModuleOrNamespaceType -> Signa
 
 /// Compute the hiding information that corresponds to the hiding applied at an assembly boundary
 val ComputeImplementationHidingInfoAtAssemblyBoundary:
-    ModuleOrNamespaceExpr -> SignatureHidingInfo -> SignatureHidingInfo
+    ModuleOrNamespaceContents -> SignatureHidingInfo -> SignatureHidingInfo
 
 val mkRepackageRemapping: SignatureRepackageInfo -> Remap
 
 /// Wrap one module or namespace implementation in a 'namespace N' outer wrapper
-val wrapModuleOrNamespaceExprInNamespace: Ident -> CompilationPath -> ModuleOrNamespaceExpr -> ModuleOrNamespaceExpr
+val wrapModuleOrNamespaceContentsInNamespace:
+    Ident -> CompilationPath -> ModuleOrNamespaceContents -> ModuleOrNamespaceContents
 
 /// Wrap one module or namespace definition in a 'namespace N' outer wrapper
 val wrapModuleOrNamespaceTypeInNamespace:
@@ -2518,7 +2519,7 @@ val mkCoerceIfNeeded: TcGlobals -> tgtTy: TType -> srcTy: TType -> Expr -> Expr
 
 val (|InnerExprPat|): Expr -> Expr
 
-val allValsOfModDef: ModuleOrNamespaceExpr -> seq<Val>
+val allValsOfModDef: ModuleOrNamespaceContents -> seq<Val>
 
 val BindUnitVars: TcGlobals -> Val list * ArgReprInfo list * Expr -> Val list * Expr
 

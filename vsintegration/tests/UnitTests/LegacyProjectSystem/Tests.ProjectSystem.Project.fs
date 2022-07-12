@@ -34,20 +34,8 @@ type Project() =
     static let SaveProject(project : UnitTestingFSharpProjectNode) =
         project.Save(null, 1, 0u) |> ignore
 
-    static let DefaultBuildActionOfFilename(filename) : Salsa.BuildAction = 
-        match Path.GetExtension(filename) with 
-        | ".fsx" -> Salsa.BuildAction.None
-        | ".resx"
-        | ".resources" -> Salsa.BuildAction.EmbeddedResource
-        | _ -> Salsa.BuildAction.Compile            
-
-    static let GetReferenceContainerNode(project : ProjectNode) =
-        let l = new List<ReferenceContainerNode>()
-        project.FindNodesOfType(l)
-        l.[0]     
-
     [<Test>]    
-    member public this.NewFolderOnProjectMenu() =
+    member public _.NewFolderOnProjectMenu() =
         printfn "starting..."
         let package = new FSharpProjectPackage()
         let project = new FSharpProjectNode(package)
@@ -802,7 +790,7 @@ type Project() =
         VsMocks.vsUIShellShowMessageBoxResult <- Some 6 // IDYES = 6
 
         this.MakeProjectAndDo(["foo.fs"], [], "", (fun project ->
-            let Absolutize filename = Path.Combine(project.ProjectFolder, filename)
+            let Absolutize fileName = Path.Combine(project.ProjectFolder, fileName)
             let mutable currentAbsoluteFilePath = Absolutize "foo.fs"
             File.AppendAllText(currentAbsoluteFilePath, "// dummy content")
             try
