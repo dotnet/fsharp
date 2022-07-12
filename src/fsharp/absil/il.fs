@@ -154,13 +154,13 @@ type LazyOrderedMultiMap<'Key, 'Data when 'Key : equality>(keyf : 'Data -> 'Key,
     let quickMap =
         lazyItems |> lazyMap (fun entries ->
             let t = Dictionary<_, _>(entries.Length, HashIdentity.Structural)
-            do entries |> List.iter (fun y ->
+            for y in entries do
                 let key = keyf y
                 let v =
                     match t.TryGetValue key with
                     | true, v -> v
                     | _ -> []
-                t[key] <- y :: v)
+                t[key] <- y :: v
             t)
 
     member self.Entries() = lazyItems.Force()

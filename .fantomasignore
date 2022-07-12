@@ -26,3 +26,8 @@
 **/Query.fsi
 **/resumable.fsi
 **/async.fsi
+
+## https://github.com/fsprojects/fantomas/issues/2230
+**/array.fsi
+**/tasks.fsi
+**/seq.fsi

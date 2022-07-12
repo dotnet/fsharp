@@ -32,7 +32,7 @@ module Array3D =
     /// </example>
     ///
     [<CompiledName("Create")>]
-    val create: length1:int -> length2:int -> length3:int -> initial:'T -> 'T[,,]
+    val create: length1: int -> length2: int -> length3: int -> initial: 'T -> 'T [,,]
 
     /// <summary>Creates an array given the dimensions and a generator function to compute the elements.</summary>
     ///
@@ -50,7 +50,7 @@ module Array3D =
     /// Evaluates to a 2x2x3 array with contents <c>[[[0; 1; 2]; [10; 11; 12]]; [[100; 101; 102]; [110; 111; 112]]]</c>
     /// </example>
     [<CompiledName("Initialize")>]
-    val init: length1:int -> length2:int -> length3:int  -> initializer:(int -> int -> int -> 'T) -> 'T[,,]
+    val init: length1: int -> length2: int -> length3: int -> initializer: (int -> int -> int -> 'T) -> 'T [,,]
 
     /// <summary>Fetches an element from a 3D array. You can also use the syntax 'array.[index1,index2,index3]'</summary>
     ///
@@ -65,7 +65,7 @@ module Array3D =
     /// Indexer syntax is generally preferred, e.g.
     /// <code lang="fsharp">
     /// let array = Array3D.init 2 3 3 (fun i j k -> 100*i + 10*j + k)
-    /// 
+    ///
     /// array[0,2,1]
     /// </code>
     /// Evaluates to <c>11</c>.
@@ -80,7 +80,7 @@ module Array3D =
     /// Evaluates to <c>21</c>.
     /// </example>
     [<CompiledName("Get")>]
-    val get: array:'T[,,] -> index1:int -> index2:int -> index3:int -> 'T
+    val get: array: 'T [,,] -> index1: int -> index2: int -> index3: int -> 'T
 
     /// <summary>Applies the given function to each element of the array.</summary>
     ///
@@ -111,7 +111,7 @@ module Array3D =
     /// in the console.
     /// </example>
     [<CompiledName("Iterate")>]
-    val iter: action:('T -> unit) -> array:'T[,,] -> unit
+    val iter: action: ('T -> unit) -> array: 'T [,,] -> unit
 
     /// <summary>Applies the given function to each element of the array. The integer indices passed to the
     /// function indicates the index of element.</summary>
@@ -143,14 +143,14 @@ module Array3D =
     /// in the console.
     /// </example>
     [<CompiledName("IterateIndexed")>]
-    val iteri: action:(int -> int -> int -> 'T -> unit) -> array:'T[,,] -> unit
+    val iteri: action: (int -> int -> int -> 'T -> unit) -> array: 'T [,,] -> unit
 
     /// <summary>Returns the length of an array in the first dimension  </summary>
     ///
     /// <param name="array">The input array.</param>
     ///
     /// <returns>The length of the array in the first dimension.</returns>
-    /// 
+    ///
     /// <example id="length1-1">
     /// <code>
     /// let array = Array3D.init 2 3 4 (fun i j k -> 100*i + 10*j + k)
@@ -160,14 +160,14 @@ module Array3D =
     /// Evaluates to <c>2</c>.
     /// </example>
     [<CompiledName("Length1")>]
-    val length1: array:'T[,,] -> int
+    val length1: array: 'T [,,] -> int
 
     /// <summary>Returns the length of an array in the second dimension.</summary>
     ///
     /// <param name="array">The input array.</param>
     ///
     /// <returns>The length of the array in the second dimension.</returns>
-    /// 
+    ///
     /// <example id="length2-1">
     /// <code>
     /// let array = Array3D.init 2 3 4 (fun i j k -> 100*i + 10*j + k)
@@ -177,14 +177,14 @@ module Array3D =
     /// Evaluates to <c>3</c>.
     /// </example>
     [<CompiledName("Length2")>]
-    val length2: array:'T[,,] -> int
+    val length2: array: 'T [,,] -> int
 
     /// <summary>Returns the length of an array in the third dimension.</summary>
     ///
     /// <param name="array">The input array.</param>
     ///
     /// <returns>The length of the array in the third dimension.</returns>
-    /// 
+    ///
     /// <example id="length3-1">
     /// <code>
     /// let array = Array3D.init 2 3 4 (fun i j k -> 100*i + 10*j + k)
@@ -194,7 +194,7 @@ module Array3D =
     /// Evaluates to <c>4</c>.
     /// </example>
     [<CompiledName("Length3")>]
-    val length3: array:'T[,,] -> int
+    val length3: array: 'T [,,] -> int
 
     /// <summary>Builds a new array whose elements are the results of applying the given function
     /// to each of the elements of the array.</summary>
@@ -215,7 +215,7 @@ module Array3D =
     /// Evaluates to a 2x3x3 array with contents <c> <c>[[[0; 2; 4]; [20; 22; 24]]; [[200; 202; 204]; [220; 222; 224]]]</c></c>
     /// </example>
     [<CompiledName("Map")>]
-    val map: mapping:('T -> 'U) -> array:'T[,,] -> 'U[,,]
+    val map: mapping: ('T -> 'U) -> array: 'T [,,] -> 'U [,,]
 
     /// <summary>Builds a new array whose elements are the results of applying the given function
     /// to each of the elements of the array. The integer indices passed to the
@@ -237,9 +237,9 @@ module Array3D =
     /// Evaluates to a 2x3x3 array with contents <c>[[[0; 2; 4]; [20; 22; 24]]; [[200; 202; 204]; [220; 222; 224]]]</c>
     /// </example>
     [<CompiledName("MapIndexed")>]
-    val mapi: mapping:(int -> int -> int -> 'T -> 'U) -> array:'T[,,] -> 'U[,,]
+    val mapi: mapping: (int -> int -> int -> 'T -> 'U) -> array: 'T [,,] -> 'U [,,]
 
-    /// <summary>Sets the value of an element in an array. You can also 
+    /// <summary>Sets the value of an element in an array. You can also
     /// use the syntax 'array.[index1,index2,index3] &lt;- value'.</summary>
     ///
     /// <param name="array">The input array.</param>
@@ -247,12 +247,12 @@ module Array3D =
     /// <param name="index2">The index along the second dimension.</param>
     /// <param name="index3">The index along the third dimension.</param>
     /// <param name="value">The value to set at the given index.</param>
-    /// 
+    ///
     /// <remarks>
     /// Indexer syntax is generally preferred, e.g.
     /// <code lang="fsharp">
     /// let array = Array3D.zeroCreate 2 3 3
-    /// 
+    ///
     /// array[0,2,1] &lt; 4.0
     /// </code>
     /// Evaluates to <c>11</c>.
@@ -267,7 +267,7 @@ module Array3D =
     /// After evaluation <c>array</c> is a 2x3x3 array with contents <c>[[[0.0; 0.0; 0.0]; [0.0; 4.0; 0.0]]; [[0.0; 0.0; 0.0]; [0.0; 0.0; 0.0]]]</c>
     /// </example>
     [<CompiledName("Set")>]
-    val set: array:'T[,,] -> index1:int -> index2:int -> index3:int -> value:'T -> unit
+    val set: array: 'T [,,] -> index1: int -> index2: int -> index3: int -> value: 'T -> unit
 
     /// <summary>Creates an array where the entries are initially the "default" value.</summary>
     ///
@@ -284,7 +284,7 @@ module Array3D =
     /// After evaluation <c>array</c> is a 2x3x3 array with contents all zero.
     /// </example>
     [<CompiledName("ZeroCreate")>]
-    val zeroCreate: length1:int -> length2:int -> length3:int  -> 'T[,,]
+    val zeroCreate: length1: int -> length2: int -> length3: int -> 'T [,,]
 
 /// <summary>Contains operations for working with rank 4 arrays. </summary>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -309,7 +309,7 @@ module Array4D =
     /// </example>
     ///
     [<CompiledName("Create")>]
-    val create: length1:int -> length2:int -> length3:int -> length4:int -> initial:'T -> 'T[,,,]
+    val create: length1: int -> length2: int -> length3: int -> length4: int -> initial: 'T -> 'T [,,,]
 
     /// <summary>Creates an array given the dimensions and a generator function to compute the elements.</summary>
     ///
@@ -329,14 +329,20 @@ module Array4D =
     /// </example>
     ///
     [<CompiledName("Initialize")>]
-    val init: length1:int -> length2:int -> length3:int  -> length4:int  -> initializer:(int -> int -> int -> int -> 'T) -> 'T[,,,]
+    val init:
+        length1: int ->
+        length2: int ->
+        length3: int ->
+        length4: int ->
+        initializer: (int -> int -> int -> int -> 'T) ->
+            'T [,,,]
 
     /// <summary>Returns the length of an array in the first dimension  </summary>
     ///
     /// <param name="array">The input array.</param>
     ///
     /// <returns>The length of the array in the first dimension.</returns>
-    /// 
+    ///
     /// <example id="length1-1">
     /// <code>
     /// let array = Array4D.init 2 3 4 5 (fun i j k -> 100*i + 10*j + k)
@@ -346,14 +352,14 @@ module Array4D =
     /// Evaluates to <c>2</c>.
     /// </example>
     [<CompiledName("Length1")>]
-    val length1: array:'T[,,,] -> int
+    val length1: array: 'T [,,,] -> int
 
     /// <summary>Returns the length of an array in the second dimension.</summary>
     ///
     /// <param name="array">The input array.</param>
     ///
     /// <returns>The length of the array in the second dimension.</returns>
-    /// 
+    ///
     /// <example id="length2-1">
     /// <code>
     /// let array = Array4D.init 2 3 4 5 (fun i j k -> 100*i + 10*j + k)
@@ -363,14 +369,14 @@ module Array4D =
     /// Evaluates to <c>3</c>.
     /// </example>
     [<CompiledName("Length2")>]
-    val length2: array:'T[,,,] -> int
+    val length2: array: 'T [,,,] -> int
 
     /// <summary>Returns the length of an array in the third dimension.</summary>
     ///
     /// <param name="array">The input array.</param>
     ///
     /// <returns>The length of the array in the third dimension.</returns>
-    /// 
+    ///
     /// <example id="length3-1">
     /// <code>
     /// let array = Array4D.init 2 3 4 5 (fun i j k -> 100*i + 10*j + k)
@@ -380,14 +386,14 @@ module Array4D =
     /// Evaluates to <c>4</c>.
     /// </example>
     [<CompiledName("Length3")>]
-    val length3: array:'T[,,,] -> int
+    val length3: array: 'T [,,,] -> int
 
     /// <summary>Returns the length of an array in the fourth dimension.</summary>
     ///
     /// <param name="array">The input array.</param>
     ///
     /// <returns>The length of the array in the fourth dimension.</returns>
-    /// 
+    ///
     /// <example id="length4-1">
     /// <code>
     /// let array = Array4D.init 2 3 4 5 (fun i j k -> 100*i + 10*j + k)
@@ -397,7 +403,7 @@ module Array4D =
     /// Evaluates to <c>5</c>.
     /// </example>
     [<CompiledName("Length4")>]
-    val length4: array:'T[,,,] -> int
+    val length4: array: 'T [,,,] -> int
 
     /// <summary>Creates an array where the entries are initially the "default" value.</summary>
     ///
@@ -415,7 +421,7 @@ module Array4D =
     /// After evaluation <c>array</c> is a 2x3x3x5 array with contents all zero.
     /// </example>
     [<CompiledName("ZeroCreate")>]
-    val zeroCreate: length1:int -> length2:int -> length3:int  -> length4:int  -> 'T[,,,]
+    val zeroCreate: length1: int -> length2: int -> length3: int -> length4: int -> 'T [,,,]
 
     /// <summary>Fetches an element from a 4D array. You can also use the syntax 'array.[index1,index2,index3,index4]'</summary>
     ///
@@ -426,12 +432,12 @@ module Array4D =
     /// <param name="index4">The index along the fourth dimension.</param>
     ///
     /// <returns>The value at the given index.</returns>
-    /// 
+    ///
     /// <remarks>
     /// Indexer syntax is generally preferred, e.g.
     /// <code lang="fsharp">
     /// let array: float[,,,] = Array4D.zeroCreate 2 3 4 5
-    /// 
+    ///
     /// array[0,2,1,3]
     /// </code>
     /// </remarks>
@@ -444,9 +450,9 @@ module Array4D =
     /// </code>
     /// </example>
     [<CompiledName("Get")>]
-    val get: array:'T[,,,] -> index1:int -> index2:int -> index3:int -> index4:int -> 'T
+    val get: array: 'T [,,,] -> index1: int -> index2: int -> index3: int -> index4: int -> 'T
 
-    /// <summary>Sets the value of an element in an array. You can also 
+    /// <summary>Sets the value of an element in an array. You can also
     /// use the syntax 'array.[index1,index2,index3,index4] &lt;- value'.</summary>
     ///
     /// <param name="array">The input array.</param>
@@ -455,12 +461,12 @@ module Array4D =
     /// <param name="index3">The index along the third dimension.</param>
     /// <param name="index4">The index along the fourth dimension.</param>
     /// <param name="value">The value to set.</param>
-    /// 
+    ///
     /// <remarks>
     /// Indexer syntax is generally preferred, e.g.
     /// <code lang="fsharp">
     /// let array: float[,,,] = Array4D.zeroCreate 2 3 4 5
-    /// 
+    ///
     /// array[0,2,1,3] &lt;- 5.0
     /// </code>
     /// </remarks>
@@ -473,4 +479,4 @@ module Array4D =
     /// </code>
     /// </example>
     [<CompiledName("Set")>]
-    val set: array:'T[,,,] -> index1:int -> index2:int -> index3:int -> index4:int -> value:'T -> unit
+    val set: array: 'T [,,,] -> index1: int -> index2: int -> index3: int -> index4: int -> value: 'T -> unit

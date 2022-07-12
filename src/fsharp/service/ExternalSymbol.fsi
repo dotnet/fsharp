@@ -4,7 +4,7 @@ namespace FSharp.Compiler.EditorServices
 
 open FSharp.Compiler.Text
 open FSharp.Compiler.AbstractIL.IL
-    
+
 /// Represents a type in an external (non F#) assembly.
 [<RequireQualifiedAccess>]
 type public FindDeclExternalType =
@@ -20,10 +20,10 @@ type public FindDeclExternalType =
     /// Type variable defined in non-F# assembly.
     | TypeVar of typeName: string
 
-    override ToString : unit -> string
-        
+    override ToString: unit -> string
+
 module internal FindDeclExternalType =
-    val internal tryOfILType : string array -> ILType -> FindDeclExternalType option
+    val internal tryOfILType: string array -> ILType -> FindDeclExternalType option
 
 /// Represents the type of a single method parameter
 [<Sealed>]
@@ -35,13 +35,13 @@ type public FindDeclExternalParam =
 
     static member Create: parameterType: FindDeclExternalType * isByRef: bool -> FindDeclExternalParam
 
-    override ToString : unit -> string
+    override ToString: unit -> string
 
 module internal FindDeclExternalParam =
 
-    val internal tryOfILType : string array -> ILType -> FindDeclExternalParam option
+    val internal tryOfILType: string array -> ILType -> FindDeclExternalParam option
 
-    val internal tryOfILTypes : string array -> ILType list -> FindDeclExternalParam list option
+    val internal tryOfILTypes: string array -> ILType list -> FindDeclExternalParam list option
 
 /// Represents a symbol in an external (non F#) assembly
 [<RequireQualifiedAccess>]
@@ -50,7 +50,7 @@ type public FindDeclExternalSymbol =
 
     | Constructor of typeName: string * args: FindDeclExternalParam list
 
-    | Method of typeName: string * name: string * paramSyms: FindDeclExternalParam list * genericArity: int 
+    | Method of typeName: string * name: string * paramSyms: FindDeclExternalParam list * genericArity: int
 
     | Field of typeName: string * name: string
 
@@ -58,13 +58,13 @@ type public FindDeclExternalSymbol =
 
     | Property of typeName: string * name: string
 
-    override ToString : unit -> string
+    override ToString: unit -> string
 
-    member internal ToDebuggerDisplay : unit -> string
+    member internal ToDebuggerDisplay: unit -> string
 
 /// Represents the reason why the GetDeclarationLocation operation failed.
 [<RequireQualifiedAccess>]
-type public FindDeclFailureReason = 
+type public FindDeclFailureReason =
 
     /// Generic reason: no particular information about error apart from a message
     | Unknown of message: string
@@ -80,7 +80,7 @@ type public FindDeclFailureReason =
 
 /// Represents the result of the GetDeclarationLocation operation.
 [<RequireQualifiedAccess>]
-type public FindDeclResult = 
+type public FindDeclResult =
 
     /// Indicates a declaration location was not found, with an additional reason
     | DeclNotFound of FindDeclFailureReason
@@ -89,5 +89,4 @@ type public FindDeclResult =
     | DeclFound of location: range
 
     /// Indicates an external declaration was found
-    | ExternalDecl of assembly: string * externalSym : FindDeclExternalSymbol
-     
+    | ExternalDecl of assembly: string * externalSym: FindDeclExternalSymbol
