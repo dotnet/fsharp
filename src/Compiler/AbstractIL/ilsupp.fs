@@ -611,8 +611,7 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
         let bNil = Bytes.zeroCreate 3
 
         // Align remaining fields on DWORD (nb. poor bit twiddling code taken from ildasm's dres.cpp)
-        if (dwFiller &&& 0x1) <> 0 then
-            SaveChunk(bNil, 2)
+        if (dwFiller &&& 0x1) <> 0 then SaveChunk(bNil, 2)
 
         //---- Constant part of the header: DWORD, WORD, WORD, DWORD, DWORD
         SaveChunk(dwToBytes resHdr.DataVersion)
@@ -628,8 +627,7 @@ type ResFormatNode(tid: int32, nid: int32, lid: int32, dataOffset: int32, pbLink
 
         dwFiller <- dataEntry.Size &&& 0x3
 
-        if dwFiller <> 0 then
-            SaveChunk(bNil, 4 - dwFiller)
+        if dwFiller <> 0 then SaveChunk(bNil, 4 - dwFiller)
 
         size
 
