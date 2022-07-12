@@ -2235,10 +2235,13 @@ let TcArrayOrListComputedExpression (cenv: cenv) env (overallTy: OverallTy) tpen
                 elif nelems > 0 && List.forall (function SynExpr.Const (SynConst.Byte _, _) -> true | _ -> false) elems 
                 then SynExpr.Const (SynConst.Bytes (Array.ofList (List.map (function SynExpr.Const (SynConst.Byte x, _) -> x | _ -> failwith "unreachable") elems), SynByteStringKind.Regular, m), m)
                 else SynExpr.ArrayOrList (isArray, elems, m)
-            else 
-                if elems.Length > 500 then 
-                    error(Error(FSComp.SR.tcListLiteralMaxSize(), m))
-                SynExpr.ArrayOrList (isArray, elems, m)
+            else
+                if cenv.g.langVersion.SupportsFeature(LanguageFeature.ReallyLongLists) then
+                     SynExpr.ArrayOrList (isArray, elems, m)
+                 else
+                    if elems.Length > 500 then 
+                        error(Error(FSComp.SR.tcListLiteralMaxSize(), m))
+                    SynExpr.ArrayOrList (isArray, elems, m)
 
         TcExprUndelayed cenv overallTy env tpenv replacementExpr
     | _ -> 

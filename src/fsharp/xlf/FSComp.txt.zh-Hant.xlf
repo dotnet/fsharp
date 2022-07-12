@@ -232,6 +232,11 @@
         <target state="translated">整數的二進位格式化</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureReallyLongList">
+        <source>list literals of any size</source>
+        <target state="new">list literals of any size</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
         <source>informational messages related to reference cells</source>
         <target state="translated">與參考儲存格相關的資訊訊息</target>
