@@ -4876,8 +4876,8 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                   ILFieldDef(name = templateFld.LogicalName, fieldType = fty, attributes = enum 0, data = None, literalValue = None, offset = None, marshal = None, customAttrs = mkILCustomAttrs [])
                       .WithAccess(access)
                       .WithStatic(false)
-              yield fdef 
-                
+              yield fdef
+
           // Fields for captured variables
           for ilCloFreeVar in ilCloFreeVars do
               let access = ComputeMemberAccess false
@@ -4902,6 +4902,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                   nestedTypes = emptyILTypeDefs,
                   implements = ilInterfaceTys,
                   extends = Some super,
+                  isKnownToBeAttribute = false,
                   securityDecls = emptyILSecurityDecls)
             .WithSealed(true)
             .WithSpecialName(true)
@@ -5138,6 +5139,7 @@ and GenClosureTypeDefs cenv (tref: ILTypeRef, ilGenParams, attrs, ilCloAllFreeVa
               nestedTypes=emptyILTypeDefs,
               implements = ilIntfTys,
               extends= Some ext,
+              isKnownToBeAttribute=false,
               securityDecls= emptyILSecurityDecls)
         .WithSealed(true)
         .WithSerializable(true)
@@ -8299,6 +8301,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                    else
                        ILTypeInit.BeforeField
 
+               let isKnownToBeAttribute = ExistsSameHeadTypeInHierarchy g cenv.amap m super g.mk_Attribute_ty
+
                let tdef = mkILGenericClass (ilTypeName, access, ilGenParams, ilBaseTy, ilIntfTys,
                                             mkILMethods ilMethods, ilFields, emptyILTypeDefs, ilProperties, ilEvents, mkILCustomAttrs ilAttrs,
                                             typeDefTrigger)
@@ -8311,7 +8315,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                        .WithSerializable(isSerializable)
                        .WithAbstract(isAbstract)
                        .WithImport(isComInteropTy g thisTy)
-                       .With(methodImpls=mkILMethodImpls methodImpls)
+                       .With(methodImpls=mkILMethodImpls methodImpls, isKnownToBeAttribute=isKnownToBeAttribute)
 
                let tdLayout, tdEncoding =
                     match TryFindFSharpAttribute g g.attrib_StructLayoutAttribute tycon.Attribs with
@@ -8424,6 +8428,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                              nestedTypes=emptyILTypeDefs,
                              implements = ilIntfTys,
                              extends= Some (if tycon.IsStructOrEnumTycon then g.iltyp_ValueType else g.ilg.typ_Object),
+                             isKnownToBeAttribute=false,
                              securityDecls= emptyILSecurityDecls)
                          .WithLayout(layout)
                          .WithSerializable(isSerializable)

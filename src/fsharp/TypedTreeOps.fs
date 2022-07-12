@@ -1565,7 +1565,7 @@ let tryRescopeEntity viewedCcu (entity: Entity) : ValueOption<EntityRef> =
     | None -> ValueNone
 
 /// Try to create a ValRef suitable for accessing the given Val from another assembly 
-let tryRescopeVal viewedCcu (entityRemap: Remap) (vspec: Val) : ValueOption<ValRef> = 
+let tryRescopeVal viewedCcu (entityRemap: Remap) (vspec: Val) : ValueOption<ValRef> =
     match vspec.PublicPath with 
     | Some (ValPubPath(p, fullLinkageKey)) -> 
         // The type information in the val linkage doesn't need to keep any information to trait solutions.
@@ -2057,7 +2057,7 @@ let emptyFreeTyvars =
     { FreeTycons = emptyFreeTycons
       // The summary of values used as trait solutions
       FreeTraitSolutions = emptyFreeLocals
-      FreeTypars = emptyFreeTypars}
+      FreeTypars = emptyFreeTypars }
 
 let isEmptyFreeTyvars ftyvs = 
     Zset.isEmpty ftyvs.FreeTypars &&

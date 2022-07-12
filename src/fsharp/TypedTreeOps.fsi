@@ -775,7 +775,7 @@ val emptyFreeLocals: FreeLocals
 
 val unionFreeLocals: FreeLocals -> FreeLocals -> FreeLocals
 
-type FreeVarOptions 
+type FreeVarOptions
 
 val CollectLocalsNoCaching: FreeVarOptions
 
