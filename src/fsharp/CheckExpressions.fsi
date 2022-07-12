@@ -10,6 +10,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
@@ -184,6 +185,9 @@ type TcFileState =
       /// we infer type parameters 
       mutable recUses: ValMultiMap<Expr ref * range * bool>
       
+      /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
+      stackGuard: StackGuard
+
       /// Set to true if this file causes the creation of generated provided types.
       mutable createsGeneratedProvidedTypes: bool
 

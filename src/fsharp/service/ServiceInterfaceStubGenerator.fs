@@ -503,7 +503,7 @@ module InterfaceStubGenerator =
         GetInterfaceMembers entity |> Seq.isEmpty
 
     let internal (|LongIdentPattern|_|) = function
-        | SynPat.LongIdent(LongIdentWithDots(xs, _), _, _, _, _, _) ->
+        | SynPat.LongIdent(longDotId=LongIdentWithDots(xs, _)) ->
 //            let (name, range) = xs |> List.map (fun x -> x.idText, x.idRange) |> List.last
             let last = List.last xs
             Some(last.idText, last.idRange)
@@ -729,7 +729,7 @@ module InterfaceStubGenerator =
                     None
                 | SynMemberDefn.AutoProperty(synExpr=expr) ->
                     walkExpr expr
-                | SynMemberDefn.Interface(interfaceType, members, _range) ->
+                | SynMemberDefn.Interface(interfaceType=interfaceType; members=members) ->
                     if rangeContainsPos interfaceType.Range pos then
                         Some(InterfaceData.Interface(interfaceType, members))
                     else
@@ -776,13 +776,13 @@ module InterfaceStubGenerator =
                 | SynExpr.New (_, _synType, synExpr, _range) -> 
                     walkExpr synExpr
 
-                | SynExpr.ObjExpr (ty, baseCallOpt, binds, ifaces, _range1, _range2) -> 
+                | SynExpr.ObjExpr (objType=ty; argOptions=baseCallOpt; bindings=binds; extraImpls=ifaces) -> 
                     match baseCallOpt with
                     | None -> 
                         if rangeContainsPos ty.Range pos then
                             Some (InterfaceData.ObjExpr(ty, binds))
                         else
-                            ifaces |> List.tryPick (fun (SynInterfaceImpl(ty, binds, range)) ->
+                            ifaces |> List.tryPick (fun (SynInterfaceImpl(interfaceTy=ty; bindings=binds; range=range)) ->
                                 if rangeContainsPos range pos then 
                                     Some (InterfaceData.ObjExpr(ty, binds))
                                 else None)
@@ -807,7 +807,7 @@ module InterfaceStubGenerator =
 
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) -> 
                     synMatchClauseList |> List.tryPick (fun (SynMatchClause(resultExpr = e)) -> walkExpr e)
-                | SynExpr.Match (_sequencePointInfoForBinding, synExpr, synMatchClauseList, _range) ->
+                | SynExpr.Match (expr=synExpr; clauses=synMatchClauseList) ->
                     walkExpr synExpr
                     |> Option.orElse (synMatchClauseList |> List.tryPick (fun (SynMatchClause(resultExpr = e)) -> walkExpr e))
 
@@ -827,7 +827,7 @@ module InterfaceStubGenerator =
                 | SynExpr.LetOrUse (_, _, synBindingList, synExpr, _range) -> 
                     Option.orElse (List.tryPick walkBinding synBindingList) (walkExpr synExpr)
 
-                | SynExpr.TryWith (synExpr, _range, _synMatchClauseList, _range2, _range3, _sequencePointInfoForTry, _sequencePointInfoForWith) -> 
+                | SynExpr.TryWith (tryExpr=synExpr) -> 
                     walkExpr synExpr
 
                 | SynExpr.TryFinally (synExpr1, synExpr2, _range, _sequencePointInfoForTry, _sequencePointInfoForFinally) -> 

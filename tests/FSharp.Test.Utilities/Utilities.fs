@@ -30,6 +30,20 @@ module Utilities =
                 cancellationToken)
             task.Result
 
+    /// Disposable type to implement a simple resolve handler that searches the currently loaded assemblies to see if the requested assembly is already loaded.
+    type AlreadyLoadedAppDomainResolver () =
+        let resolveHandler =
+            ResolveEventHandler(fun _ args ->
+                let assemblies = AppDomain.CurrentDomain.GetAssemblies()
+                let assembly = assemblies |> Array.tryFind(fun a -> String.Compare(a.FullName, args.Name,StringComparison.OrdinalIgnoreCase) = 0)
+                assembly |> Option.defaultValue Unchecked.defaultof<Assembly>
+                )
+        do AppDomain.CurrentDomain.add_AssemblyResolve(resolveHandler)
+
+        interface IDisposable with
+            member this.Dispose() = AppDomain.CurrentDomain.remove_AssemblyResolve(resolveHandler)
+
+
     [<RequireQualifiedAccess>]
     type TargetFramework =
         | NetStandard20

@@ -106,41 +106,41 @@ type internal DelayedILModuleReader =
 
 [<RequireQualifiedAccess;NoComparison;CustomEquality>]
 type FSharpReferencedProject =
-    | FSharpReference of projectFileName: string * options: FSharpProjectOptions
-    | PEReference of projectFileName: string * getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
-    | ILModuleReference of projectFileName: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
+    | FSharpReference of projectOutputFile: string * options: FSharpProjectOptions
+    | PEReference of projectOutputFile: string * getStamp: (unit -> DateTime) * delayedReader: DelayedILModuleReader
+    | ILModuleReference of projectOutputFile: string * getStamp: (unit -> DateTime) * getReader: (unit -> ILModuleReader)
 
-    member this.FileName =
+    member this.OutputFile =
         match this with
-        | FSharpReference(projectFileName=projectFileName)
-        | PEReference(projectFileName=projectFileName)
-        | ILModuleReference(projectFileName=projectFileName) -> projectFileName
+        | FSharpReference(projectOutputFile=projectOutputFile)
+        | PEReference(projectOutputFile=projectOutputFile)
+        | ILModuleReference(projectOutputFile=projectOutputFile) -> projectOutputFile
 
-    static member CreateFSharp(projectFileName, options) =
-        FSharpReference(projectFileName, options)
+    static member CreateFSharp(projectOutputFile, options) =
+        FSharpReference(projectOutputFile, options)
 
-    static member CreatePortableExecutable(projectFileName, getStamp, getStream) =
-        PEReference(projectFileName, getStamp, DelayedILModuleReader(projectFileName, getStream))
+    static member CreatePortableExecutable(projectOutputFile, getStamp, getStream) =
+        PEReference(projectOutputFile, getStamp, DelayedILModuleReader(projectOutputFile, getStream))
 
-    static member CreateFromILModuleReader(projectFileName, getStamp, getReader) =
-        ILModuleReference(projectFileName, getStamp, getReader)
+    static member CreateFromILModuleReader(projectOutputFile, getStamp, getReader) =
+        ILModuleReference(projectOutputFile, getStamp, getReader)
 
     override this.Equals(o) =
         match o with
         | :? FSharpReferencedProject as o ->
             match this, o with
-            | FSharpReference(projectFileName1, options1), FSharpReference(projectFileName2, options2) ->
-                projectFileName1 = projectFileName2 && options1 = options2
-            | PEReference(projectFileName1, getStamp1, _), PEReference(projectFileName2, getStamp2, _) ->
-                projectFileName1 = projectFileName2 && (getStamp1()) = (getStamp2())
-            | ILModuleReference(projectFileName1, getStamp1, _), ILModuleReference(projectFileName2, getStamp2, _) ->
-                projectFileName1 = projectFileName2 && (getStamp1()) = (getStamp2())
+            | FSharpReference(projectOutputFile1, options1), FSharpReference(projectOutputFile2, options2) ->
+                projectOutputFile1 = projectOutputFile2 && options1 = options2
+            | PEReference(projectOutputFile1, getStamp1, _), PEReference(projectOutputFile2, getStamp2, _) ->
+                projectOutputFile1 = projectOutputFile2 && (getStamp1()) = (getStamp2())
+            | ILModuleReference(projectOutputFile1, getStamp1, _), ILModuleReference(projectOutputFile2, getStamp2, _) ->
+                projectOutputFile1 = projectOutputFile2 && (getStamp1()) = (getStamp2())
             | _ ->
                 false
         | _ ->
             false
 
-    override this.GetHashCode() = this.FileName.GetHashCode()
+    override this.GetHashCode() = this.OutputFile.GetHashCode()
 
 // NOTE: may be better just to move to optional arguments here
 and FSharpProjectOptions =
@@ -974,6 +974,9 @@ type internal TypeCheckInfo
                 Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName]))
                 |> Option.map toCompletionItems
 
+            // No completion at '...: string'
+            | Some(CompletionContext.RecordField(RecordContext.Declaration true)) -> None
+
             // Completion at ' SomeMethod( ... ) ' with named arguments
             | Some(CompletionContext.ParameterList (endPos, fields)) ->
                 let results = GetNamedParametersAndSettableFields endPos
@@ -1022,7 +1025,13 @@ type internal TypeCheckInfo
                         | _ -> false), denv, m)
 
             // Completion at '(x: ...)"
-            | Some CompletionContext.PatternType ->
+            | Some CompletionContext.PatternType
+            // Completion at  '| Case1 of ...'
+            | Some CompletionContext.UnionCaseFieldsDeclaration
+            // Completion at 'type Long = int6...' or 'type SomeUnion = Abc...'
+            | Some CompletionContext.TypeAbbreviationOrSingleCaseUnion
+            // Completion at 'Field1: ...'
+            | Some(CompletionContext.RecordField(RecordContext.Declaration false)) ->
                 GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, lastDotPos, line, loc, filterCtors, resolveOverloads, false, getAllSymbols)
                 |> Option.map (fun (items, denv, m) ->
                      items

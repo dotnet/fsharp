@@ -56,8 +56,6 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
-  - name: DotNetSdkVersion
-    value: '5.0.401'
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -355,6 +353,28 @@ stages:
           - script: .\tests\EndToEndBuildTests\EndToEndBuildTests.cmd -c Release
             displayName: End to end build tests
 
+        # Determinism, we want to run it only in PR builds
+        - job: Determinism_Debug
+          condition: eq(variables['Build.Reason'], 'PullRequest')
+          variables:
+          - name: _SignType
+            value: Test
+          pool:
+            vmImage: windows-latest
+          timeoutInMinutes: 90
+          steps:
+          - checkout: self
+            clean: true
+          - script: .\eng\test-determinism.cmd -configuration Debug
+            displayName: Determinism tests with Debug configuration
+          - task: PublishPipelineArtifact@1
+            displayName: Publish Determinism Logs
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
+              artifactName: 'Determinism_Debug Attempt $(System.JobAttempt) Logs'
+            continueOnError: true
+            condition: not(succeeded())
+
         # Up-to-date - disabled due to it being flaky
         #- job: UpToDate_Windows
         #  pool:
@@ -497,8 +517,8 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev16.11
-      insertTargetBranch: rel/d16.11
+      componentBranchName: refs/heads/release/dev17.0
+      insertTargetBranch: rel/d17.0
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'

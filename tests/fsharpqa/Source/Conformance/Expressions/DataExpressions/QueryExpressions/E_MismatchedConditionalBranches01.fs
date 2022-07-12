@@ -1,6 +1,6 @@
 // #Conformance #DataExpressions #Query #Regression
 // DevDiv:196007, this used to throw
-//<Expects status="error" span="(8,13-8,25)" id="FS3163">'match' expressions may not be used in queries$</Expects>
+//<Expects status="error" span="(8,13-8,18)" id="FS3163">'match' expressions may not be used in queries$</Expects>
 
 let x =
     query { 

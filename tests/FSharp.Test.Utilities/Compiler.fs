@@ -5,6 +5,7 @@ namespace FSharp.Test
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.IO
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Symbols
 open FSharp.Test.Assert
 open FSharp.Test.Utilities
 open FSharp.Test.ScriptHelpers
@@ -58,7 +59,35 @@ module rec Compiler =
         { Source:     TestType
           References: CompilationUnit list  }
 
-    type ErrorType = Error of int | Warning of int
+    type ErrorType = Error of int | Warning of int | Information of int | Hidden of int
+
+    type SymbolType = 
+        | MemberOrFunctionOrValue of string 
+        | Entity of string 
+        | GenericParameter of string 
+        | Parameter of string 
+        | StaticParameter of string 
+        | ActivePatternCase of string
+        | UnionCase of string 
+        | Field of string 
+ 
+        member this.FullName () =
+            match this with
+            | MemberOrFunctionOrValue fullname
+            | Entity fullname
+            | GenericParameter fullname
+            | Parameter fullname
+            | StaticParameter fullname
+            | ActivePatternCase fullname
+            | UnionCase fullname
+            | Field fullname -> fullname
+
+    let mapDiagnosticSeverity severity errorNumber =
+        match severity with
+        | FSharpDiagnosticSeverity.Hidden -> Hidden errorNumber
+        | FSharpDiagnosticSeverity.Info -> Information errorNumber
+        | FSharpDiagnosticSeverity.Warning -> Warning errorNumber
+        | FSharpDiagnosticSeverity.Error -> Error errorNumber
 
     type Line = Line of int
     type Col = Col of int
@@ -105,6 +134,9 @@ module rec Compiler =
         | Path p ->
             use stream = FileSystem.OpenFileForReadShim(p)
             stream.ReadAllText()
+
+    // Load the source file from the path
+    let loadSourceFromFile path = getSource(TestType.Path path)
 
     let private fsFromString (source: string) (kind: SourceKind) : FSharpCompilationSource =
         match source with
@@ -265,7 +297,8 @@ module rec Compiler =
                     let refs = loop [] fs.References
                     let source = getSource fs.Source
                     let name = defaultArg fs.Name null
-                    let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, cmplRefs = refs, name = name) |> CompilationReference.CreateFSharp
+                    let options = fs.Options |> List.toArray
+                    let cmpl = Compilation.Create(source, fs.SourceKind, fs.OutputType, options = options, cmplRefs = refs, name = name) |> CompilationReference.CreateFSharp
                     loop (cmpl::acc) xs
                 | CS cs ->
                     let refs = loop [] cs.References
@@ -592,7 +625,7 @@ module rec Compiler =
     module Assertions =
         let private getErrorNumber (error: ErrorType) : int =
             match error with
-            | Error e | Warning e -> e
+            | Error e | Warning e | Information e | Hidden e -> e
 
         let private getErrorInfo (info: ErrorInfo) : string =
             sprintf "%A %A" info.Error info.Message

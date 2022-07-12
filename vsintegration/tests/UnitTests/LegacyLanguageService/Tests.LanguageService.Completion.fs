@@ -4258,38 +4258,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
           [ ] // should not contain
 
     [<Test>]
-    member public this.``InDeclaration.Bug3176a``() =        
-        AssertCtrlSpaceCompleteContains 
-          [ "type T<'a> = { aaaa : 'a; bbbb : int } " ]
-          "aa"       // marker
-          [ "aaaa" ] // should contain
-          [ "bbbb" ] // should not contain
-
-    [<Test>]
-    member public this.``InDeclaration.Bug3176b``() =        
-        AssertCtrlSpaceCompleteContains 
-          [ "type T<'a> = { aaaa : 'a; bbbb : int } " ]
-          "bb"       // marker
-          [ "bbbb" ] // should contain
-          [ "aaaa" ] // should not contain
-
-    [<Test>]
-    member public this.``InDeclaration.Bug3176c``() =        
-        AssertCtrlSpaceCompleteContains 
-          [ "type C =";
-            "  val aaaa: int" ]
-          "aa"        // move to marker
-          ["aaaa"] [] // should contain 'aaaa'
-
-    [<Test>]
-    member public this.``InDeclaration.Bug3176d``() =        
-        AssertCtrlSpaceCompleteContains 
-          [ "type DU<'a> =";
-                      "  | DULabel of 'a" ]
-          "DULab"        // move to marker
-          ["DULabel"] [] // should contain 'DULabel'
-          
-    [<Test>]
     member public this.``IncompleteIfClause.Bug4594``() = 
         AssertCtrlSpaceCompleteContains 
           [ "let Bar(xyz) =";

@@ -6,4 +6,17 @@
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('FSharpTests.Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
+  <PropertyGroup>
+    <!-- Ensure end-to-end build tests can find recently-build FSharp.Core and test packages. -->
+    <RestoreSources>
+      $(RestoreSources);
+      $(MSBuildThisFileDirectory)..\..\artifacts\packages\$(Configuration)\Release;
+      $(MSBuildThisFileDirectory)..\..\artifacts\packages\$(Configuration)\Shipping;
+      https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-public/nuget/v3/index.json
+    </RestoreSources>
+
+    <RestoreSources Condition="Exists('$(MSBuildThisFileDirectory)BasicProvider\artifacts')">$(RestoreSources);$(MSBuildThisFileDirectory)BasicProvider\artifacts</RestoreSources>
+    <RestoreSources Condition="Exists('$(MSBuildThisFileDirectory)ComboProvider\artifacts')">$(RestoreSources);$(MSBuildThisFileDirectory)ComboProvider\artifacts</RestoreSources>
+  </PropertyGroup>
+
 </Project>

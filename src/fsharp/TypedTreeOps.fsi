@@ -8,6 +8,7 @@ open System.Collections.Immutable
 open Internal.Utilities.Collections
 open Internal.Utilities.Rational
 open FSharp.Compiler.AbstractIL.IL 
+open FSharp.Compiler.ErrorLogger
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
@@ -779,6 +780,10 @@ val CollectTyparsAndLocalsNoCaching: FreeVarOptions
 val CollectTyparsAndLocals: FreeVarOptions
 
 val CollectLocals: FreeVarOptions
+
+val CollectLocalsWithStackGuard: unit -> FreeVarOptions
+
+val CollectTyparsAndLocalsWithStackGuard: unit -> FreeVarOptions
 
 val CollectTypars: FreeVarOptions
 
@@ -2166,6 +2171,9 @@ val TryFindTyconRefBoolAttribute: TcGlobals -> range -> BuiltinAttribInfo -> Tyc
 /// Try to find a specific attribute on a type definition
 val TyconRefHasAttribute: TcGlobals -> range -> BuiltinAttribInfo -> TyconRef -> bool
 
+/// Try to find an attribute with a specific full name on a type definition
+val TyconRefHasAttributeByName: range -> string -> TyconRef -> bool
+
 /// Try to find the AttributeUsage attribute, looking for the value of the AllowMultiple named parameter
 val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool option
 
@@ -2344,7 +2352,8 @@ type ExprRewritingEnv =
     { PreIntercept: ((Expr -> Expr) -> Expr -> Expr option) option
       PostTransform: Expr -> Expr option
       PreInterceptBinding: ((Expr -> Expr) -> Binding -> Binding option) option
-      IsUnderQuotations: bool }    
+      RewriteQuotations: bool
+      StackGuard: StackGuard }
 
 val RewriteDecisionTree: ExprRewritingEnv -> DecisionTree -> DecisionTree
 

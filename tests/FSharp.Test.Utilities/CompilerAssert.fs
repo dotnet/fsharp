@@ -91,16 +91,17 @@ type CompilerAssert private () =
             ctxt.Unload()
 #else
 
-    static let pathToThisDll = Assembly.GetExecutingAssembly().CodeBase
-
     static let adSetup =
         let setup = new System.AppDomainSetup ()
-        setup.PrivateBinPath <- pathToThisDll
+        let directory = Path.GetDirectoryName(typeof<Worker>.Assembly.Location)
+        setup.ApplicationBase <- directory
         setup
 
     static let executeBuiltApp assembly deps =
         let ad = AppDomain.CreateDomain((Guid()).ToString(), null, adSetup)
-        let worker = (ad.CreateInstanceFromAndUnwrap(pathToThisDll, typeof<Worker>.FullName)) :?> Worker
+        let worker =
+            use _ = new AlreadyLoadedAppDomainResolver()
+            (ad.CreateInstanceFromAndUnwrap(typeof<Worker>.Assembly.CodeBase, typeof<Worker>.FullName)) :?> Worker
         worker.ExecuteTestCase assembly (deps |> Array.ofList) |>ignore
 #endif
 
@@ -173,7 +174,7 @@ type CompilerAssert private () =
     static let assertErrors libAdjust ignoreWarnings (errors: FSharpDiagnostic []) expectedErrors =
         let errors =
             errors
-            |> Array.filter (fun error -> if ignoreWarnings then error.Severity <> FSharpDiagnosticSeverity.Warning else true)
+            |> Array.filter (fun error -> if ignoreWarnings then error.Severity <> FSharpDiagnosticSeverity.Warning && error.Severity <> FSharpDiagnosticSeverity.Info else true)
             |> Array.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
             |> Array.map (fun info ->
                 (info.Severity, info.ErrorNumber, (info.StartLine - libAdjust, info.StartColumn + 1, info.EndLine - libAdjust, info.EndColumn + 1), info.Message))

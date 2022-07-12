@@ -41,6 +41,8 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreeOps.DebugPrint
 open FSharp.Compiler.TypeRelations
 
+let IlxGenStackGuardDepth = StackGuard.GetDepthOption "IlxGen"
+
 let IsNonErasedTypar (tp: Typar) =
     not tp.IsErased
 
@@ -256,14 +258,12 @@ type cenv =
       /// Used to apply forced inlining optimizations to witnesses generated late during codegen
       mutable optimizeDuringCodeGen: bool -> Expr -> Expr
 
-      /// What depth are we at when generating an expression?
-      mutable exprRecursionDepth: int
+      /// Guard the stack and move to a new one if necessary
+      mutable stackGuard: StackGuard
 
-      /// Delayed Method Generation - prevents stack overflows when we need to generate methods that are split into many methods by the optimizer.
-      delayedGenMethods: Queue<cenv -> unit>
     }
 
-    override x.ToString() = "<cenv>"
+    override _.ToString() = "<cenv>"
 
 
 let mkTypeOfExpr cenv m ilty =
@@ -2480,32 +2480,9 @@ let ProcessDebugPointForExpr (cenv: cenv) (cgbuf: CodeGenBuffer) sp expr =
 //-------------------------------------------------------------------------
 
 let rec GenExpr cenv cgbuf eenv sp (expr: Expr) sequel =
-    cenv.exprRecursionDepth <- cenv.exprRecursionDepth + 1
+    cenv.stackGuard.Guard <| fun () ->
 
-    if cenv.exprRecursionDepth > 1 then
-        StackGuard.EnsureSufficientExecutionStack cenv.exprRecursionDepth
-        GenExprAux cenv cgbuf eenv sp expr sequel
-    else
-        GenExprWithStackGuard cenv cgbuf eenv sp expr sequel
-
-    cenv.exprRecursionDepth <- cenv.exprRecursionDepth - 1
-
-    if cenv.exprRecursionDepth = 0 then
-        ProcessDelayedGenMethods cenv
-
-and ProcessDelayedGenMethods cenv =
-    while cenv.delayedGenMethods.Count > 0 do
-        let gen = cenv.delayedGenMethods.Dequeue ()
-        gen cenv
-
-and GenExprWithStackGuard cenv cgbuf eenv sp expr sequel =
-    assert (cenv.exprRecursionDepth = 1)
-    try
-        GenExprAux cenv cgbuf eenv sp expr sequel
-        assert (cenv.exprRecursionDepth = 1)
-    with
-    | :? System.InsufficientExecutionStackException ->
-        error(InternalError(sprintf "Expression is too large and/or complex to emit. Method name: '%s'. Recursive depth: %i." cgbuf.MethodName cenv.exprRecursionDepth, expr.Range))
+    GenExprAux cenv cgbuf eenv sp expr sequel
 
 /// Process the debug point and check for alternative ways to generate this expression.
 /// Returns 'true' if the expression was processed by alternative means.
@@ -2942,26 +2919,35 @@ and GenLinearExpr cenv cgbuf eenv sp expr sequel preSteps (contf: FakeUnit -> Fa
         // Compiler generated sequential executions result in suppressions of debug points on both
         // left and right of the sequence
         let spStmt, spExpr =
-            (match spSeq with
-             | DebugPointAtSequential.SuppressNeither -> SPAlways, SPAlways
-             | DebugPointAtSequential.SuppressStmt -> SPSuppress, sp
-             | DebugPointAtSequential.SuppressExpr -> sp, SPSuppress
-             | DebugPointAtSequential.SuppressBoth -> SPSuppress, SPSuppress)
+            match spSeq with
+            | DebugPointAtSequential.SuppressNeither -> SPAlways, SPAlways
+            | DebugPointAtSequential.SuppressStmt -> SPSuppress, sp
+            | DebugPointAtSequential.SuppressExpr -> sp, SPSuppress
+            | DebugPointAtSequential.SuppressBoth -> SPSuppress, SPSuppress
+
         match specialSeqFlag with
         | NormalSeq ->
             GenExpr cenv cgbuf eenv spStmt e1 discard
             GenLinearExpr cenv cgbuf eenv spExpr e2 sequel true contf
         | ThenDoSeq ->
-            let g = cenv.g
-            let isUnit = isUnitTy g (tyOfExpr g e1) 
-            if isUnit then
-                GenExpr cenv cgbuf eenv spExpr e1 discard
-                GenExpr cenv cgbuf eenv spStmt e2 discard
-                GenUnitThenSequel cenv eenv e2.Range eenv.cloc cgbuf sequel
-            else
-                GenExpr cenv cgbuf eenv spExpr e1 Continue
-                GenExpr cenv cgbuf eenv spStmt e2 discard
-                GenSequel cenv eenv.cloc cgbuf sequel
+            // "e then ()" with DebugPointAtSequential.SuppressStmt is used
+            // in mkDebugPoint to emit a debug point on "e".  However we don't want this to interfere
+            // with tailcalls, so detect this case and throw the "then ()" away, having already
+            // worked out "spExpr" up above.
+            match e2 with
+            | Expr.Const (Const.Unit, _, _) ->
+                GenExpr cenv cgbuf eenv spExpr e1 sequel
+            | _ -> 
+                let g = cenv.g
+                let isUnit = isUnitTy g (tyOfExpr g e1) 
+                if isUnit then
+                    GenExpr cenv cgbuf eenv spExpr e1 discard
+                    GenExpr cenv cgbuf eenv spStmt e2 discard
+                    GenUnitThenSequel cenv eenv e2.Range eenv.cloc cgbuf sequel
+                else
+                    GenExpr cenv cgbuf eenv spExpr e1 Continue
+                    GenExpr cenv cgbuf eenv spStmt e2 discard
+                    GenSequel cenv eenv.cloc cgbuf sequel
             contf Fake
 
     | Expr.Let (bind, body, _, _) ->
@@ -5356,7 +5342,7 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
         NestedTypeRefForCompLoc eenvouter.cloc cloName
 
     // Collect the free variables of the closure
-    let cloFreeVarResults = freeInExpr CollectTyparsAndLocals expr
+    let cloFreeVarResults = freeInExpr (CollectTyparsAndLocalsWithStackGuard()) expr
 
     // Partition the free variables when some can be accessed from places besides the immediate environment
     // Also filter out the current value being bound, if any, as it is available from the "this"
@@ -6395,7 +6381,9 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv sp (TBind(vspec, rhsExpr, _)) isSt
 and GetStoreValCtxt cenv cgbuf eenv (vspec: Val) =
     // Emit the ldarg0 if needed
     match StorageForVal cenv.g vspec.Range vspec eenv with
-    | Env (ilCloTy, _, _) -> CG.EmitInstr cgbuf (pop 0) (Push [ilCloTy]) mkLdarg0
+    | Env (ilCloTy, _, _) ->
+        let ilCloAddrTy = if ilCloTy.Boxity = ILBoxity.AsValue then ILType.Byref ilCloTy else ilCloTy
+        CG.EmitInstr cgbuf (pop 0) (Push [ilCloAddrTy]) mkLdarg0
     | _ -> ()
 
 //-------------------------------------------------------------------------
@@ -6841,20 +6829,10 @@ and GenMethodForBinding
                 | [h] -> Some h
                 | _ -> None
 
-            let ilCodeLazy = lazy CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, selfValOpt, bodyExpr, sequel)
+            let ilCodeLazy = CodeGenMethodForExpr cenv mgbuf (SPAlways, tailCallInfo, mspec.Name, eenvForMeth, 0, selfValOpt, bodyExpr, sequel)
 
             // This is the main code generation for most methods
-            false, MethodBody.IL(ilCodeLazy), false
-
-    match ilMethodBody with
-    | MethodBody.IL(ilCodeLazy) ->
-        if cenv.exprRecursionDepth > 0 then
-            cenv.delayedGenMethods.Enqueue(fun _ -> ilCodeLazy.Force() |> ignore)
-        else
-            // Eagerly codegen if we are not in an expression depth.
-            ilCodeLazy.Force() |> ignore
-    | _ ->
-        ()
+            false, MethodBody.IL(notlazy ilCodeLazy), false
 
     // Do not generate DllImport attributes into the code - they are implicit from the P/Invoke
     let attrs =
@@ -7551,8 +7529,26 @@ and GenModuleDef cenv (cgbuf: CodeGenBuffer) qname lazyInitInfo eenv x =
                 GenExnDef cenv cgbuf.mgbuf eenvinner m tc
             else
                 GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenvinner m tc
-        for mbind in mbinds do
-            GenModuleBinding cenv cgbuf qname lazyInitInfo eenvinner m mbind
+
+        // Generate chunks of non-nested bindings together to allow recursive fixups.
+        let mutable bindsRemaining = mbinds 
+        while not bindsRemaining.IsEmpty do
+            match bindsRemaining with 
+            | ModuleOrNamespaceBinding.Binding _ :: _ -> 
+                let recBinds =
+                    bindsRemaining
+                    |> List.takeWhile (function ModuleOrNamespaceBinding.Binding _ -> true | _ -> false)
+                    |> List.map (function ModuleOrNamespaceBinding.Binding recBind -> recBind | _ -> failwith "unexpected")
+                let otherBinds =
+                    bindsRemaining
+                    |> List.skipWhile (function ModuleOrNamespaceBinding.Binding _ -> true | _ -> false) 
+                GenLetRecBindings cenv cgbuf eenv (recBinds, m)
+                bindsRemaining <- otherBinds
+            | (ModuleOrNamespaceBinding.Module _ as mbind) :: rest ->
+                GenModuleBinding cenv cgbuf qname lazyInitInfo eenvinner m mbind
+                bindsRemaining <- rest
+            | [] -> failwith "unreachable"
+
         eenvinner
 
     | TMDefLet(bind, _) ->
@@ -8896,8 +8892,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
               intraAssemblyInfo = intraAssemblyInfo
               opts = codeGenOpts
               optimizeDuringCodeGen = (fun _flag expr -> expr)
-              exprRecursionDepth = 0
-              delayedGenMethods = Queue () }
+              stackGuard = StackGuard(IlxGenStackGuardDepth) }
         GenerateCode (cenv, anonTypeTable, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)
 
     /// Invert the compilation of the given value and clear the storage of the value
