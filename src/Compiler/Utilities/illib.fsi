@@ -369,80 +369,53 @@ type internal ValueOrCancelled<'TResult> =
     | Value of result: 'TResult
     | Cancelled of ``exception``: OperationCanceledException
 
-/// Represents a synchronous cancellable computation with explicit representation of a cancelled result.
+/// Represents a synchronous, cold-start, cancellable computation with explicit representation of a cancelled result.
 ///
-/// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.
+/// A cancellable computation may be cancelled via a CancellationToken, which is propagated implicitly.
 /// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.
 [<Struct>]
-type internal Cancellable<'TResult> = Cancellable of (CancellationToken -> ValueOrCancelled<'TResult>)
+type internal Cancellable<'T> = Cancellable of (CancellationToken -> ValueOrCancelled<'T>)
 
 module internal Cancellable =
 
     /// Run a cancellable computation using the given cancellation token
-    val run: ct: CancellationToken -> Cancellable<'a> -> ValueOrCancelled<'a>
+    val inline run: ct: CancellationToken -> Cancellable<'T> -> ValueOrCancelled<'T>
 
-    /// Bind the result of a cancellable computation
-    val inline bind: f: ('a -> Cancellable<'b>) -> comp1: Cancellable<'a> -> Cancellable<'b>
-
-    /// Map the result of a cancellable computation
-    val inline map: f: ('a -> 'b) -> oper: Cancellable<'a> -> Cancellable<'b>
-
-    /// Return a simple value as the result of a cancellable computation
-    val inline ret: x: 'a -> Cancellable<'a>
-
-    /// Fold a cancellable computation along a sequence of inputs
-    val fold: f: ('a -> 'b -> Cancellable<'a>) -> acc: 'a -> seq: seq<'b> -> Cancellable<'a>
-
-    /// Iterate a cancellable computation over a collection
-    val inline each: f: ('a -> Cancellable<'b>) -> seq: seq<'a> -> Cancellable<'b list>
-
-    /// Delay a cancellable computation
-    val inline delay: f: (unit -> Cancellable<'T>) -> Cancellable<'T>
+    val fold: f: ('State -> 'T -> Cancellable<'State>) -> acc: 'State -> seq: seq<'T> -> Cancellable<'State>
 
     /// Run the computation in a mode where it may not be cancelled. The computation never results in a
     /// ValueOrCancelled.Cancelled.
-    val runWithoutCancellation: comp: Cancellable<'a> -> 'a
+    val runWithoutCancellation: comp: Cancellable<'T> -> 'T
 
     /// Bind the cancellation token associated with the computation
     val token: unit -> Cancellable<CancellationToken>
 
-    /// Represents a canceled computation
-    val canceled: unit -> Cancellable<'a>
-
-    /// Implement try/finally for a cancellable computation
-    val inline catch: comp: Cancellable<'a> -> Cancellable<Choice<'a, Exception>>
-
-    /// Implement try/finally for a cancellable computation
-    val inline tryFinally: comp: Cancellable<'a> -> compensation: (unit -> unit) -> Cancellable<'a>
-
-    /// Implement try/with for a cancellable computation
-    val inline tryWith: comp: Cancellable<'a> -> handler: (exn -> Cancellable<'a>) -> Cancellable<'a>
-
-    val toAsync: Cancellable<'a> -> Async<'a>
+    val toAsync: Cancellable<'T> -> Async<'T>
 
 type internal CancellableBuilder =
 
     new: unit -> CancellableBuilder
 
-    member inline BindReturn: comp: Cancellable<'T> * k: ('T -> 'U) -> Cancellable<'U>
+    member inline BindReturn: comp: Cancellable<'T> * [<InlineIfLambda>] k: ('T -> 'U) -> Cancellable<'U>
 
-    member inline Bind: comp: Cancellable<'T> * k: ('T -> Cancellable<'U>) -> Cancellable<'U>
+    member inline Bind: comp: Cancellable<'T> * [<InlineIfLambda>] k: ('T -> Cancellable<'U>) -> Cancellable<'U>
 
-    member inline Combine: e1: Cancellable<unit> * e2: Cancellable<'T> -> Cancellable<'T>
+    member inline Combine: comp1: Cancellable<unit> * comp2: Cancellable<'T> -> Cancellable<'T>
 
-    member inline Delay: f: (unit -> Cancellable<'T>) -> Cancellable<'T>
-
-    member inline For: es: seq<'T> * f: ('T -> Cancellable<'U>) -> Cancellable<'U list>
+    member inline Delay: [<InlineIfLambda>] f: (unit -> Cancellable<'T>) -> Cancellable<'T>
 
     member inline Return: v: 'T -> Cancellable<'T>
 
     member inline ReturnFrom: v: Cancellable<'T> -> Cancellable<'T>
 
-    member inline TryFinally: comp: Cancellable<'T> * compensation: (unit -> unit) -> Cancellable<'T>
+    member inline TryFinally: comp: Cancellable<'T> * [<InlineIfLambda>] compensation: (unit -> unit) -> Cancellable<'T>
 
-    member inline TryWith: comp: Cancellable<'T> * handler: (exn -> Cancellable<'T>) -> Cancellable<'T>
+    member inline TryWith:
+        comp: Cancellable<'T> * [<InlineIfLambda>] handler: (exn -> Cancellable<'T>) -> Cancellable<'T>
 
-    member inline Using: resource: 'c * comp: ('c -> Cancellable<'T>) -> Cancellable<'T> when 'c :> IDisposable
+    member inline Using:
+        resource: 'Resource * [<InlineIfLambda>] comp: ('Resource -> Cancellable<'T>) -> Cancellable<'T>
+            when 'Resource :> IDisposable
 
     member inline Zero: unit -> Cancellable<unit>
 
