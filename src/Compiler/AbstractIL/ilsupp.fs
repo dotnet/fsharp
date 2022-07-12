@@ -1039,8 +1039,8 @@ let pdbClose (writer: PdbWriter) dllFilename pdbFilename =
                 FileSystem.OpenFileForWriteShim(fileName, FileMode.Open, FileAccess.ReadWrite, FileShare.None)
 
             false
-        with
-        | _ -> true
+        with _ ->
+            true
 
     let mutable attempts = 0
 
@@ -1072,8 +1072,8 @@ let internal setCheckSum (url: string, writer: ISymUnmanagedDocumentWriter) =
 
         if (checkSum.Length = hashSizeOfMD5) then
             writer.SetCheckSum(guidSourceHashMD5, hashSizeOfMD5, checkSum)
-    with
-    | _ -> ()
+    with _ ->
+        ()
 
 let pdbDefineDocument (writer: PdbWriter) (url: string) =
     //3F5162F8-07C6-11D3-9053-00C04FA302A1
@@ -1204,8 +1204,8 @@ let pdbReadOpen (moduleName: string) (path: string) : PdbReader =
                 )
 
             { symReader = reader :?> ISymbolReader }
-        with
-        | _ -> { symReader = null }
+        with _ ->
+            { symReader = null }
 #else
         let symbolBinder = new System.Diagnostics.SymbolStore.SymBinder()
 

@@ -531,18 +531,21 @@ module internal NameMap =
     val layer: m1: NameMap<'T> -> m2: Map<string, 'T> -> Map<string, 'T>
 
     /// Not a very useful function - only called in one place - should be changed
-    val layerAdditive: addf: ('a list -> 'b -> 'a list) -> m1: Map<'c, 'b> -> m2: Map<'c, 'a list> -> Map<'c, 'a list>
-        when 'c: comparison
+    val layerAdditive:
+        addf: ('a list -> 'b -> 'a list) -> m1: Map<'c, 'b> -> m2: Map<'c, 'a list> -> Map<'c, 'a list>
+            when 'c: comparison
 
     /// Union entries by identical key, using the provided function to union sets of values
     val union: unionf: (seq<'a> -> 'b) -> ms: seq<NameMap<'a>> -> Map<string, 'b>
 
     /// For every entry in m2 find an entry in m1 and fold
-    val subfold2: errf: ('a -> 'b -> 'c) -> f: ('a -> 'd -> 'b -> 'c -> 'c) -> m1: Map<'a, 'd> -> m2: Map<'a, 'b> -> acc: 'c -> 'c
-        when 'a: comparison
+    val subfold2:
+        errf: ('a -> 'b -> 'c) -> f: ('a -> 'd -> 'b -> 'c -> 'c) -> m1: Map<'a, 'd> -> m2: Map<'a, 'b> -> acc: 'c -> 'c
+            when 'a: comparison
 
-    val suball2: errf: ('a -> 'b -> bool) -> p: ('c -> 'b -> bool) -> m1: Map<'a, 'c> -> m2: Map<'a, 'b> -> bool
-        when 'a: comparison
+    val suball2:
+        errf: ('a -> 'b -> bool) -> p: ('c -> 'b -> bool) -> m1: Map<'a, 'c> -> m2: Map<'a, 'b> -> bool
+            when 'a: comparison
 
     val mapFold: f: ('a -> string -> 'T -> 'b * 'a) -> s: 'a -> l: NameMap<'T> -> Map<string, 'b> * 'a
 
