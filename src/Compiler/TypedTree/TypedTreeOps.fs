@@ -5359,7 +5359,8 @@ let InferArityOfExpr g allowTypeDirectedDetupling ty partialArgAttribsL retAttri
             (ids, attribs) ||> List.map2 (fun id attribs -> { Name = id; Attribs = attribs }: ArgReprInfo ))
 
     let retInfo: ArgReprInfo = { Attribs = retAttribs; Name = None }
-    ValReprInfo (ValReprInfo.InferTyparInfo tps, curriedArgInfos, retInfo)
+    let info = ValReprInfo (ValReprInfo.InferTyparInfo tps, curriedArgInfos, retInfo)
+    if ValReprInfo.IsEmpty info then ValReprInfo.emptyValData else info
 
 let InferArityOfExprBinding g allowTypeDirectedDetupling (v: Val) expr = 
     match v.ValReprInfo with

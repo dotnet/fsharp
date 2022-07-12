@@ -584,12 +584,13 @@ type RecursiveBindingInfo =
 [<Sealed>]
 type CheckedBindingInfo
 
-/// Represnts the results of the second phase of checking simple values
+/// Represents the results of the second phase of checking simple values
 type ValScheme =
     | ValScheme of
         id: Ident *
         typeScheme: GeneralizedType *
         valReprInfo: ValReprInfo option *
+        valReprInfoForDisplay: ValReprInfo option *
         memberInfo: PrelimMemberInfo option *
         isMutable: bool *
         inlineInfo: ValInline *

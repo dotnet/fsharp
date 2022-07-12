@@ -1777,7 +1777,14 @@ type ValOptionalData =
         /// What is the original, unoptimized, closed-term definition, if any?
         /// Used to implement [<ReflectedDefinition>]
         mutable val_defn: Expr option
+
+        /// Records the "extra information" for a value compiled as a method (rather
+        /// than a closure or a local), including argument names, attributes etc.
         mutable val_repr_info: ValReprInfo option
+
+        /// Records the "extra information" for display purposes for expression-level function definitions
+        /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
+        mutable val_repr_info_for_display: ValReprInfo option
 
         /// How visible is this?
         /// MUTABILITY: for unpickle linkage
@@ -1887,6 +1894,8 @@ type Val =
     member SetValRec: b: ValRecursiveScopeInfo -> unit
 
     member SetValReprInfo: info: ValReprInfo option -> unit
+
+    member SetValReprInfoForDisplay: info: ValReprInfo option -> unit
 
     override ToString: unit -> string
 
@@ -2133,6 +2142,10 @@ type Val =
     /// TLR also sets this for inner bindings that it wants to
     /// represent as "top level" bindings.
     member ValReprInfo: ValReprInfo option
+
+    /// Records the "extra information" for display purposes for expression-level function definitions
+    /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
+    member ValReprInfoForDisplay: ValReprInfo option
 
     /// Get the declared documentation for the value
     member XmlDoc: XmlDoc

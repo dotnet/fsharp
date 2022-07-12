@@ -48,14 +48,14 @@ type PdbDebugPoint =
       pdbSeqPointEndLine: int
       pdbSeqPointEndColumn: int }
 
-val pdbReadOpen: string (* module *)  -> string (* path *)  -> PdbReader
+val pdbReadOpen: string (* module *) -> string (* path *) -> PdbReader
 val pdbReadClose: PdbReader -> unit
-val pdbReaderGetMethod: PdbReader -> int32 (* token *)  -> PdbMethod
-val pdbReaderGetMethodFromDocumentPosition: PdbReader -> PdbDocument -> int (* line *)  -> int (* col *)  -> PdbMethod
+val pdbReaderGetMethod: PdbReader -> int32 (* token *) -> PdbMethod
+val pdbReaderGetMethodFromDocumentPosition: PdbReader -> PdbDocument -> int (* line *) -> int (* col *) -> PdbMethod
 val pdbReaderGetDocuments: PdbReader -> PdbDocument array
 
 val pdbReaderGetDocument:
-    PdbReader -> string (* url *)  -> byte (* guid *) [] -> byte (* guid *) [] -> byte (* guid *) [] -> PdbDocument
+    PdbReader -> string (* url *) -> byte (* guid *) [] -> byte (* guid *) [] -> byte (* guid *) [] -> PdbDocument
 
 val pdbDocumentGetURL: PdbDocument -> string
 val pdbDocumentGetType: PdbDocument -> byte (* guid *) []
@@ -72,7 +72,7 @@ val pdbScopeGetLocals: PdbMethodScope -> PdbVariable array
 
 val pdbVariableGetName: PdbVariable -> string
 val pdbVariableGetSignature: PdbVariable -> byte[]
-val pdbVariableGetAddressAttributes: PdbVariable -> int32 (* kind *)  * int32 (* addrField1 *)
+val pdbVariableGetAddressAttributes: PdbVariable -> int32 (* kind *) * int32 (* addrField1 *)
 #endif
 
 #if !FX_NO_PDB_WRITER
@@ -89,7 +89,7 @@ type idd =
       iddType: int32
       iddData: byte[] }
 
-val pdbInitialize: string (* .exe/.dll already written and closed *)  -> string (* .pdb to write *)  -> PdbWriter
+val pdbInitialize: string (* .exe/.dll already written and closed *) -> string (* .pdb to write *) -> PdbWriter
 val pdbClose: PdbWriter -> string -> string -> unit
 val pdbCloseDocument: PdbDocumentWriter -> unit
 val pdbSetUserEntryPoint: PdbWriter -> int32 -> unit

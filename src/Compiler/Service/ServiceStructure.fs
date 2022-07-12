@@ -319,24 +319,28 @@ module Structure =
 
             | SynExpr.App (atomicFlag, isInfix, funcExpr, argExpr, r) ->
                 // seq exprs, custom operators, etc
-                if ExprAtomicFlag.NonAtomic = atomicFlag
-                   && not isInfix
-                   && (match funcExpr with
-                       | SynExpr.Ident _ -> true
-                       | _ -> false)
-                   && (match argExpr with
-                       | SynExpr.ComputationExpr _ -> false
-                       | _ -> true) then
+                if
+                    ExprAtomicFlag.NonAtomic = atomicFlag
+                    && not isInfix
+                    && (match funcExpr with
+                        | SynExpr.Ident _ -> true
+                        | _ -> false)
+                    && (match argExpr with
+                        | SynExpr.ComputationExpr _ -> false
+                        | _ -> true)
+                then
                     // if the argExpr is a computation expression another match will handle the outlining
                     // these cases must be removed to prevent creating unnecessary tags for the same scope
                     let collapse = Range.endToEnd funcExpr.Range r
                     rcheck Scope.SpecialFunc Collapse.Below r collapse
 
-                elif ExprAtomicFlag.NonAtomic = atomicFlag
-                     && (not isInfix)
-                     && (match argExpr with
-                         | SynExpr.ComputationExpr _ -> true
-                         | _ -> false) then
+                elif
+                    ExprAtomicFlag.NonAtomic = atomicFlag
+                    && (not isInfix)
+                    && (match argExpr with
+                        | SynExpr.ComputationExpr _ -> true
+                        | _ -> false)
+                then
                     let collapse = Range.startToEnd argExpr.Range r
                     let collapse = Range.modBoth 1 1 collapse
                     rcheck Scope.ComputationExpr Collapse.Same r collapse

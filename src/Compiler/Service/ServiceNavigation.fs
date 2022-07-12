@@ -831,7 +831,9 @@ module NavigateTo =
         and walkSynModuleOrNamespaceSig (inp: SynModuleOrNamespaceSig) container =
             let (SynModuleOrNamespaceSig (longId = lid; kind = kind; decls = decls)) = inp
             let isModule = kind.IsModule
-            if isModule then addModule lid true container
+
+            if isModule then
+                addModule lid true container
 
             let container =
                 {
@@ -900,7 +902,9 @@ module NavigateTo =
         and walkSynModuleOrNamespace inp container =
             let (SynModuleOrNamespace (longId = lid; kind = kind; decls = decls)) = inp
             let isModule = kind.IsModule
-            if isModule then addModule lid false container
+
+            if isModule then
+                addModule lid false container
 
             let container =
                 {

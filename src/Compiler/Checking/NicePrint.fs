@@ -1270,7 +1270,8 @@ module PrintTastMemberOrVals =
     let layoutNonMemberVal denv (tps, v: Val, tau, cxs) =
         let env = SimplifyTypes.CollectInfo true [tau] cxs
         let cxs = env.postfixConstraints
-        let argInfos, retTy = GetTopTauTypeInFSharpForm denv.g (arityOfVal v).ArgInfos tau v.Range
+        let valReprInfo = arityOfValForDisplay v
+        let argInfos, retTy = GetTopTauTypeInFSharpForm denv.g valReprInfo.ArgInfos tau v.Range
         let nameL =
 
             let tagF =
