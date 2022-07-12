@@ -568,7 +568,11 @@ and ApplyUnionCaseOrExn m (cenv: cenv) env overallTy item =
 
     | Item.UnionCase(ucinfo, showDeprecated) ->
         if showDeprecated then
-            warning(Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.DisplayName, ucinfo.Tycon.DisplayName) |> snd, m))
+            let diagnostic = Deprecated(FSComp.SR.nrUnionTypeNeedsQualifiedAccess(ucinfo.DisplayName, ucinfo.Tycon.DisplayName) |> snd, m)
+            if g.langVersion.SupportsFeature(LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess) then
+                errorR(diagnostic)
+            else
+                warning(diagnostic)
 
         let ucref = ucinfo.UnionCaseRef
         CheckUnionCaseAttributes g ucref m |> CommitOperationResult
