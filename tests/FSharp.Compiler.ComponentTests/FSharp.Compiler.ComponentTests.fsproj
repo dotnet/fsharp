@@ -36,6 +36,11 @@
     <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
     <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs" />
     <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\PermittedLocations\PermittedLocations.fs" />
+    <Compile Include="Conformance\DeclarationElements\CustomAttributes\AttributeInheritance\AttributeInheritance.fs" />
+    <Compile Include="Conformance\DeclarationElements\CustomAttributes\AttributeUsage\AttributeUsage.fs" />
+    <Compile Include="Conformance\DeclarationElements\CustomAttributes\Basic\Basic.fs" />
+    <Compile Include="Conformance\DeclarationElements\CustomAttributes\ImportedAttributes\ImportedAttributes.fs" />
+    <Compile Include="Conformance\DeclarationElements\CustomAttributes\ArgumentsOfAllTypes\ArgumentsOfAllTypes.fs" />
     <Compile Include="Conformance\DeclarationElements\LetBindings\TypeFunctions\TypeFunctions.fs" />
     <Compile Include="Conformance\DeclarationElements\UseBindings\UseBindings.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication\BasicApplication.fs" />
@@ -152,15 +157,15 @@
     <Compile Include="OCamlCompat\OCamlCompat.fs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
-    <EmbeddedResource Remove="Properties\**" />
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
       <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
     </None>
     <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
       <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
     </None>
+    <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
+    <EmbeddedResource Remove="Properties\**" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="**\*.bsl">
       <Link>%(RelativeDir)\BaseLine\%(Filename)%(Extension)</Link>
     </None>
