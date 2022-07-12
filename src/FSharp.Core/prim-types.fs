@@ -256,10 +256,10 @@ namespace Microsoft.FSharp.Core
 
     module internal ExperimentalAttributeMessages =
         [<Literal>]
-        let RequiresPreview : string = "Experimental library feature, requires '--langversion:preview'"
+        let RequiresPreview: string = "Experimental library feature, requires '--langversion:preview'"
 
         [<Literal>]
-        let NotSupportedYet : string = "This construct is not supported by your version of the F# compiler"
+        let NotSupportedYet: string = "This construct is not supported by your version of the F# compiler"
 
     [<AttributeUsage(AttributeTargets.All, AllowMultiple=false)>]
     [<Sealed>]
