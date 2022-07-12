@@ -3648,6 +3648,9 @@ module GeneratedSignatureTests =
 
     [<Test>]
     let ``unionWithFunctionType-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/unionWithFunctionType" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``mixCurriedTupled-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/mixCurriedTupled" FSC_NETFX_TEST_GENERATED_SIGNATURE
 #endif
 
 #if !NETCOREAPP
