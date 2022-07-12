@@ -3555,21 +3555,21 @@ and OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, d
                    Info=ValueOfExpr newExpr }
 
 /// Optimize/analyze a lambda expression
-and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety = 
+and OptimizeLambdas (vspec: Val option) cenv env topValInfo expr exprTy = 
     let g = cenv.g
 
-    match e with
+    match expr with
     | Expr.Lambda (lambdaId, _, _, _, _, m, _)  
     | Expr.TyLambda (lambdaId, _, _, m, _) ->
         let env = { env with methEnv = { pipelineCount = 0 }}
-        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyty = IteratedAdjustArityOfLambda g cenv.amap topValInfo e
+        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = IteratedAdjustArityOfLambda g cenv.amap topValInfo expr
         let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v, topValInfo)) }
         let env = Option.foldBack (BindInternalValToUnknown cenv) ctorThisValOpt env
         let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
         let env = BindTypeVarsToUnknown tps env
         let env = List.foldBack (BindInternalValsToUnknown cenv) vsl env
         let bodyR, bodyinfo = OptimizeExpr cenv env body
-        let exprR = mkMemberLambdas g m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyty)
+        let exprR = mkMemberLambdas g m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyTy)
         let arities = vsl.Length
         let arities = if isNil tps then arities else 1+arities
         let bsize = bodyinfo.TotalSize
@@ -3604,14 +3604,14 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
         // can't inline any values with semi-recursive object references to self or base 
         let valu =   
           match baseValOpt with 
-          | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, ety) 
+          | None -> CurriedLambdaValue (lambdaId, arities, bsize, exprR, exprTy) 
           | Some baseVal -> 
               let fvs = freeInExpr CollectLocals bodyR
               if fvs.UsesMethodLocalConstructs || fvs.FreeLocals.Contains baseVal then 
                   UnknownValue
               else 
-                  let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (bodyR, bodyty)
-                  CurriedLambdaValue (lambdaId, arities, bsize, expr2, ety) 
+                  let expr2 = mkMemberLambdas g m tps ctorThisValOpt None vsl (bodyR, bodyTy)
+                  CurriedLambdaValue (lambdaId, arities, bsize, expr2, exprTy) 
                   
         let estimatedSize = 
             match vspec with
@@ -3624,7 +3624,8 @@ and OptimizeLambdas (vspec: Val option) cenv env topValInfo e ety =
                  MightMakeCriticalTailcall = false
                  Info= valu }
 
-    | _ -> OptimizeExpr cenv env e 
+    | _ ->
+        OptimizeExpr cenv env expr 
       
 and OptimizeNewDelegateExpr cenv env (lambdaId, vsl, body, remake) = 
     let g = cenv.g
@@ -4010,7 +4011,7 @@ and OptimizeModuleExprWithSig cenv env mexpr =
                 let mtyp = elimModTy mspec.ModuleOrNamespaceType 
                 mspec.entity_modul_contents <- MaybeLazy.Strict mtyp
 
-            let rec elimModDef x =                  
+            let rec elimModuleDefn x =                  
                 match x with 
                 | TMDefRec(isRec, opens, tycons, mbinds, m) -> 
                     let mbinds = mbinds |> List.choose elimModuleBinding
@@ -4019,20 +4020,20 @@ and OptimizeModuleExprWithSig cenv env mexpr =
                     if Zset.contains bind.Var deadSet then TMDefRec(false, [], [], [], m) else x
                 | TMDefOpens _ -> x
                 | TMDefDo _ -> x
-                | TMDefs defs -> TMDefs(List.map elimModDef defs) 
+                | TMDefs defs -> TMDefs(List.map elimModuleDefn defs) 
                 | TMAbstract _ -> x 
 
-            and elimModuleBinding x = 
-                match x with 
+            and elimModuleBinding modBind = 
+                match modBind with 
                 | ModuleOrNamespaceBinding.Binding bind -> 
                      if bind.Var |> Zset.memberOf deadSet then None
-                     else Some x
+                     else Some modBind
                 | ModuleOrNamespaceBinding.Module(mspec, d) ->
                     // Clean up the ModuleOrNamespaceType by mutation
                     elimModSpec mspec
-                    Some (ModuleOrNamespaceBinding.Module(mspec, elimModDef d))
+                    Some (ModuleOrNamespaceBinding.Module(mspec, elimModuleDefn d))
             
-            elimModDef def 
+            elimModuleDefn def 
 
         let info = AbstractAndRemapModulInfo "defs" g m rpi info
 
@@ -4072,8 +4073,8 @@ and OptimizeModuleDef cenv (env, bindInfosColl) input =
         (env, ([bindInfo] :: bindInfosColl))
 
     | TMDefDo(e, m) ->
-        let e, _einfo = OptimizeExpr cenv env e
-        (TMDefDo(e, m), EmptyModuleInfo), 
+        let eR, _einfo = OptimizeExpr cenv env e
+        (TMDefDo(eR, m), EmptyModuleInfo), 
         (env, bindInfosColl)
 
     | TMDefs defs -> 

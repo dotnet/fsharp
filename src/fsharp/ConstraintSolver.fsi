@@ -144,6 +144,7 @@ exception ConstraintSolverTypesNotInSubsumptionRelation of
     parameterRange: range
 
 exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * TyparConstraint * range * range
+
 exception ConstraintSolverError of string * range * range
 
 exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * range

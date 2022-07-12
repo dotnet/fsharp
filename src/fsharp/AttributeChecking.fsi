@@ -20,6 +20,7 @@ exception ObsoleteError of string * range
 type AttribInfo =
     | FSAttribInfo of TcGlobals * Attrib
     | ILAttribInfo of TcGlobals * Import.ImportMap * ILScopeRef * ILAttribute * range
+
     member ConstructorArguments: (TType * obj) list
     member NamedArguments: (TType * string * bool * obj) list
     member Range: range

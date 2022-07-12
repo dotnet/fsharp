@@ -229,6 +229,7 @@ type NameResolutionEnv =
       eTypars: NameMap<Typar>
 
      }
+
     static member Empty: g: TcGlobals -> NameResolutionEnv
     member DisplayEnv: DisplayEnv
     member FindUnqualifiedItem: string -> Item
@@ -507,6 +508,7 @@ type internal TcResultsSinkImpl =
 /// temporary suspension and/or redirection of reporting.
 type TcResultsSink =
     { mutable CurrentSink: ITypecheckResultsSink option }
+
     static member NoSink: TcResultsSink
     static member WithSink: ITypecheckResultsSink -> TcResultsSink
 
