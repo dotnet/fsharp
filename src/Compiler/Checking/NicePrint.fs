@@ -1113,7 +1113,7 @@ module PrintTypes =
     let layoutOfValReturnType denv (v: ValRef) =
         match v.ValReprInfo with 
         | None ->
-            let _, tau = v.TypeScheme
+            let tau = v.TauType
             let _argTysl, retTy = stripFunTy denv.g tau
             layoutReturnType denv SimplifyTypes.typeSimplificationInfo0 retTy
         | Some (ValReprInfo(_typars, argInfos, _retInfo)) -> 
@@ -1304,7 +1304,7 @@ module PrintTastMemberOrVals =
         let prettyTyparInst, valL =
             match vref.MemberInfo with 
             | None ->
-                let tps, tau = vref.TypeScheme
+                let tps, tau = vref.GeneralizedType
 
                 // adjust the type in case this is the 'this' pointer stored in a reference cell
                 let tau = StripSelfRefCell(denv.g, vref.BaseOrThisInfo, tau)
@@ -1423,7 +1423,7 @@ module InfoMemberPrinting =
             let layout = layout ^^ paramsL
             
             let retL =
-                let retTy = minfo.GetFSharpReturnTy(amap, m, minst)
+                let retTy = minfo.GetFSharpReturnType(amap, m, minst)
                 WordL.arrow ^^
                 PrintTypes.layoutType denv retTy
 
@@ -1435,7 +1435,7 @@ module InfoMemberPrinting =
     //          Container(argName1: argType1, ..., argNameN: argTypeN) : retType
     //          Container.Method(argName1: argType1, ..., argNameN: argTypeN) : retType
     let layoutMethInfoCSharpStyle amap m denv (minfo: MethInfo) minst =
-        let retTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst) 
+        let retTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnType(amap, m, minst) 
         let layout = 
             if minfo.IsExtensionMember then
                 LeftL.leftParen ^^ wordL (tagKeyword (FSComp.SR.typeInfoExtension())) ^^ RightL.rightParen
@@ -2187,9 +2187,10 @@ module InferredSigPrinting =
     open PrintTypes
 
     /// Layout the inferred signature of a compilation unit
-    let layoutInferredSigOfModuleExpr showHeader denv infoReader ad m expr =
+    let layoutImpliedSignatureOfModuleOrNamespace showHeader denv infoReader ad m expr =
 
         let (@@*) = if denv.printVerboseSignatures then (@@----) else (@@--)
+
         let rec isConcreteNamespace x = 
             match x with 
             | TMDefRec(_, _opens, tycons, mbinds, _) -> 
@@ -2198,13 +2199,8 @@ module InferredSigPrinting =
             | TMDefDo _ -> true
             | TMDefOpens _ -> false
             | TMDefs defs -> defs |> List.exists isConcreteNamespace 
-            | TMWithSig(ModuleOrNamespaceContentsWithSig(_, def, _)) -> isConcreteNamespace def
 
-        let rec imexprLP denv (ModuleOrNamespaceContentsWithSig(_, def, _)) = imdefL denv def
-
-        and imexprL denv (ModuleOrNamespaceContentsWithSig(mty, def, m)) = imexprLP denv (ModuleOrNamespaceContentsWithSig(mty, def, m))
-
-        and imdefsL denv x = aboveListL (x |> List.map (imdefL denv))
+        let rec imdefsL denv x = aboveListL (x |> List.map (imdefL denv))
 
         and imdefL denv x = 
             let filterVal (v: Val) = not v.IsCompilerGenerated && Option.isNone v.MemberInfo
@@ -2245,8 +2241,6 @@ module InferredSigPrinting =
             | TMDefs defs -> imdefsL denv defs
 
             | TMDefDo _ -> emptyL
-
-            | TMWithSig mexpr -> imexprLP denv mexpr
 
         and imbindL denv (mspec, def) = 
             let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath
@@ -2307,7 +2301,8 @@ module InferredSigPrinting =
                         else
                             modNameEqualsL @@* basic
                 layoutXmlDoc denv true mspec.XmlDoc basicL
-        imexprL denv expr
+
+        imdefL denv expr
 
 //--------------------------------------------------------------------------
 
@@ -2392,7 +2387,7 @@ let prettyLayoutOfPropInfoFreeStyle g amap m denv d = InfoMemberPrinting.prettyL
 
 /// Convert a MethInfo to a string
 let stringOfMethInfo infoReader m denv minfo =
-    bufs (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf minfo)
+    buildString (fun buf -> InfoMemberPrinting.formatMethInfoToBufferFreeStyle infoReader m denv buf minfo)
 
 /// Convert MethInfos to lines separated by newline including a newline as the first character
 let multiLineStringOfMethInfos infoReader m denv minfos =
@@ -2402,7 +2397,7 @@ let multiLineStringOfMethInfos infoReader m denv minfos =
      |> String.concat ""
 
 /// Convert a ParamData to a string
-let stringOfParamData denv paramData = bufs (fun buf -> InfoMemberPrinting.formatParamDataToBuffer denv buf paramData)
+let stringOfParamData denv paramData = buildString (fun buf -> InfoMemberPrinting.formatParamDataToBuffer denv buf paramData)
 
 let layoutOfParamData denv paramData = InfoMemberPrinting.layoutParamData denv paramData
 
@@ -2445,7 +2440,8 @@ let stringOfFSAttrib denv x = x |> PrintTypes.layoutAttrib denv |> squareAngleL 
 
 let stringOfILAttrib denv x = x |> PrintTypes.layoutILAttrib denv |> squareAngleL |> showL
 
-let layoutInferredSigOfModuleExpr showHeader denv infoReader ad m expr = InferredSigPrinting.layoutInferredSigOfModuleExpr showHeader denv infoReader ad m expr 
+let layoutImpliedSignatureOfModuleOrNamespace showHeader denv infoReader ad m contents =
+    InferredSigPrinting.layoutImpliedSignatureOfModuleOrNamespace showHeader denv infoReader ad m contents 
 
 let prettyLayoutOfValOrMember denv infoReader typarInst v = PrintTastMemberOrVals.prettyLayoutOfValOrMember denv infoReader typarInst v  
 
@@ -2519,14 +2515,14 @@ let minimalStringsOfTwoTypes denv t1 t2=
 // Note: Always show imperative annotations when comparing value signatures 
 let minimalStringsOfTwoValues denv infoReader v1 v2= 
     let denvMin = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=false }
-    let min1 = bufs (fun buf -> outputQualifiedValOrMember denvMin infoReader buf v1)
-    let min2 = bufs (fun buf -> outputQualifiedValOrMember denvMin infoReader buf v2) 
+    let min1 = buildString (fun buf -> outputQualifiedValOrMember denvMin infoReader buf v1)
+    let min2 = buildString (fun buf -> outputQualifiedValOrMember denvMin infoReader buf v2) 
     if min1 <> min2 then 
         (min1, min2) 
     else
         let denvMax = { denv with showInferenceTyparAnnotations=true; showStaticallyResolvedTyparAnnotations=true }
-        let max1 = bufs (fun buf -> outputQualifiedValOrMember denvMax infoReader buf v1)
-        let max2 = bufs (fun buf -> outputQualifiedValOrMember denvMax infoReader buf v2) 
+        let max1 = buildString (fun buf -> outputQualifiedValOrMember denvMax infoReader buf v1)
+        let max2 = buildString (fun buf -> outputQualifiedValOrMember denvMax infoReader buf v2) 
         max1, max2
     
 let minimalStringOfType denv ty = 

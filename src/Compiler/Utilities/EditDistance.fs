@@ -122,7 +122,7 @@ let private calcDamerauLevenshtein (a:string, b:string) =
 /// Calculates the edit distance between two strings.
 /// The edit distance is a metric that allows to measure the amount of difference between two strings 
 /// and shows how many edit operations (insert, delete, substitution) are needed to transform one string into the other.
-let CalcEditDistance(a:string, b:string) =
+let CalculateEditDistance(a:string, b:string) =
     if a.Length > b.Length then
         calcDamerauLevenshtein(a, b)
     else

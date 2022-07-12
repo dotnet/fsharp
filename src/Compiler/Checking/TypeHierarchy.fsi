@@ -117,7 +117,7 @@ val ExistsHeadTypeInEntireHierarchy:
 
 /// Read an Abstract IL type from metadata and convert to an F# type.
 val ImportILTypeFromMetadata:
-    amap: ImportMap -> m: range -> scoref: ILScopeRef -> tinst: TType list -> minst: TType list -> ilty: ILType -> TType
+    amap: ImportMap -> m: range -> scoref: ILScopeRef -> tinst: TType list -> minst: TType list -> ilTy: ILType -> TType
 
 /// Read an Abstract IL type from metadata, including any attributes that may affect the type itself, and convert to an F# type.
 val ImportILTypeFromMetadataWithAttributes:
@@ -126,7 +126,7 @@ val ImportILTypeFromMetadataWithAttributes:
     scoref: ILScopeRef ->
     tinst: TType list ->
     minst: TType list ->
-    ilty: ILType ->
+    ilTy: ILType ->
     getCattrs: (unit -> ILAttributes) ->
         TType
 
@@ -134,7 +134,7 @@ val ImportILTypeFromMetadataWithAttributes:
 val ImportParameterTypeFromMetadata:
     amap: ImportMap ->
     m: range ->
-    ilty: ILType ->
+    ilTy: ILType ->
     getCattrs: (unit -> ILAttributes) ->
     scoref: ILScopeRef ->
     tinst: TType list ->
@@ -146,7 +146,7 @@ val ImportParameterTypeFromMetadata:
 val ImportReturnTypeFromMetadata:
     amap: ImportMap ->
     m: range ->
-    ilty: ILType ->
+    ilTy: ILType ->
     getCattrs: (unit -> ILAttributes) ->
     scoref: ILScopeRef ->
     tinst: TType list ->
@@ -161,7 +161,7 @@ val ImportReturnTypeFromMetadata:
 ///
 /// Note: this now looks identical to constraint instantiation.
 
-val CopyTyparConstraints: traitCtxt: ITraitContext option -> m: range -> tprefInst: TyparInst -> tporig: Typar -> TyparConstraint list
+val CopyTyparConstraints: traitCtxt: ITraitContext option -> m: range -> tprefInst: TyparInstantiation -> tporig: Typar -> TyparConstraint list
 
 /// The constraints for each typar copied from another typar can only be fixed up once
 /// we have generated all the new constraints, e.g. f<A :> List<B>, B :> List<A>> ...
@@ -172,4 +172,4 @@ val FixupNewTypars:
     tinst: TType list ->
     tpsorig: Typars ->
     tps: Typars ->
-        TyparInst * TTypes
+        TyparInstantiation * TTypes

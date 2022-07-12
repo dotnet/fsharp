@@ -931,7 +931,7 @@ let GetSigOfFunctionForDelegate (infoReader: InfoReader) delty m ad =
         | [] -> [g.unit_ty] 
         | _ -> delArgTys
 
-    let delRetTy = delInvokeMeth.GetFSharpReturnTy(amap, m, minst)
+    let delRetTy = delInvokeMeth.GetFSharpReturnType(amap, m, minst)
 
     CheckMethInfoAttributes g m None delInvokeMeth |> CommitOperationResult
 

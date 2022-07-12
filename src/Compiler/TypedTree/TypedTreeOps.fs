@@ -92,17 +92,17 @@ type ValMap<'T>(imap: StampMap<'T>) =
 // renamings
 //--------------------------------------------------------------------------
 
-type TyparInst = (Typar * TType) list
+type TyparInstantiation = (Typar * TType) list
 
 type TyconRefRemap = TyconRefMap<TyconRef>
 type ValRemap = ValMap<ValRef>
 
 let emptyTyconRefRemap: TyconRefRemap = TyconRefMap<_>.Empty
-let emptyTyparInst = ([]: TyparInst)
+let emptyTyparInst = ([]: TyparInstantiation)
 
 [<NoEquality; NoComparison>]
 type Remap =
-    { tpinst: TyparInst
+    { tpinst: TyparInstantiation
 
       /// Values to remap
       valRemap: ValRemap
@@ -170,7 +170,7 @@ let remapUnionCaseRef tcmap (UnionCaseRef(tcref, nm)) = UnionCaseRef(remapTyconR
 let remapRecdFieldRef tcmap (RecdFieldRef(tcref, nm)) = RecdFieldRef(remapTyconRef tcmap tcref, nm)
 
 let mkTyparInst (typars: Typars) tyargs =
-    (List.zip typars tyargs: TyparInst)
+    (List.zip typars tyargs: TyparInstantiation)
 
 let generalizeTypar tp = mkTyparTy tp
 let generalizeTypars tps = List.map generalizeTypar tps
@@ -426,9 +426,9 @@ let instTyparConstraints tpinst x = if isNil tpinst then x else remapTyparConstr
 let instSlotSig tpinst ss = remapSlotSig (fun _ -> []) (mkInstRemap tpinst) ss
 let copySlotSig ss = remapSlotSig (fun _ -> []) Remap.Empty ss
 
-let mkTyparToTyparRenaming tpsOrig tps = 
+let mkTyparToTyparRenaming tpsorig tps = 
     let tinst = generalizeTypars tps
-    mkTyparInst tpsOrig tinst, tinst
+    mkTyparInst tpsorig tinst, tinst
 
 let mkTyconInst (tycon: Tycon) tinst = mkTyparInst tycon.TyparsNoRange tinst
 let mkTyconRefInst (tcref: TyconRef) tinst = mkTyconInst tcref.Deref tinst
@@ -1270,7 +1270,7 @@ let rangeOfExpr (x: Expr) = x.Range
 //---------------------------------------------------------------------------
 
 
-let primMkMatch(spBind, exprm, tree, targets, matchm, ty) = Expr.Match (spBind, exprm, tree, targets, matchm, ty)
+let primMkMatch(spBind, mExpr, tree, targets, mMatch, ty) = Expr.Match (spBind, mExpr, tree, targets, mMatch, ty)
 
 type MatchBuilder(spBind, inpRange: range) = 
 
@@ -1402,10 +1402,10 @@ let NormalizeDeclaredTyparsForEquiRecursiveInference g tps =
           | ValueSome anyParTy -> anyParTy 
           | ValueNone -> tp)
  
-type TypeScheme = TypeScheme of Typars * TType    
+type GeneralizedType = GeneralizedType of Typars * TType    
   
 let mkGenericBindRhs g m generalizedTyparsForRecursiveBlock typeScheme bodyExpr = 
-    let (TypeScheme(generalizedTypars, tauType)) = typeScheme
+    let (GeneralizedType(generalizedTypars, tauType)) = typeScheme
 
     // Normalize the generalized typars
     let generalizedTypars = NormalizeDeclaredTyparsForEquiRecursiveInference g generalizedTypars
@@ -1426,7 +1426,7 @@ let mkGenericBindRhs g m generalizedTyparsForRecursiveBlock typeScheme bodyExpr 
     mkTypeLambda m generalizedTypars (mkTypeChoose m freeChoiceTypars bodyExpr, tauType)
 
 let isBeingGeneralized tp typeScheme = 
-    let (TypeScheme(generalizedTypars, _)) = typeScheme
+    let (GeneralizedType(generalizedTypars, _)) = typeScheme
     ListSet.contains typarRefEq tp generalizedTypars
 
 //-------------------------------------------------------------------------
@@ -2862,8 +2862,8 @@ module PrettyTypes =
     let foldTypars f z (x: Typars) = List.fold (foldTypar f) z x
     let mapTypars g f (x: Typars) : Typars = List.map (mapTypar g f) x
 
-    let foldTyparInst f z (x: TyparInst) = List.fold (foldPair (foldTypar f, f)) z x
-    let mapTyparInst g f (x: TyparInst) : TyparInst = List.map (mapPair (mapTypar g f, f)) x
+    let foldTyparInst f z (x: TyparInstantiation) = List.fold (foldPair (foldTypar f, f)) z x
+    let mapTyparInst g f (x: TyparInstantiation) : TyparInstantiation = List.map (mapPair (mapTypar g f, f)) x
 
     let PrettifyInstAndTyparsAndType g x = 
         PrettifyThings g 
@@ -2871,13 +2871,13 @@ module PrettyTypes =
             (fun f-> mapTriple (mapTyparInst g f, mapTypars g f, f)) 
             x
 
-    let PrettifyInstAndUncurriedSig g (x: TyparInst * UncurriedArgInfos * TType) = 
+    let PrettifyInstAndUncurriedSig g (x: TyparInstantiation * UncurriedArgInfos * TType) = 
         PrettifyThings g 
             (fun f -> foldTriple (foldTyparInst f, foldUnurriedArgInfos f, f)) 
             (fun f -> mapTriple (mapTyparInst g f, List.map (map1Of2 f), f))
             x
 
-    let PrettifyInstAndCurriedSig g (x: TyparInst * TTypes * CurriedArgInfos * TType) = 
+    let PrettifyInstAndCurriedSig g (x: TyparInstantiation * TTypes * CurriedArgInfos * TType) = 
         PrettifyThings g 
             (fun f -> foldQuadruple (foldTyparInst f, List.fold f, List.fold (List.fold (fold1Of2 f)), f)) 
             (fun f -> mapQuadruple (mapTyparInst g f, List.map f, List.mapSquared (map1Of2 f), f))
@@ -4373,12 +4373,11 @@ module DebugPrint =
         let z = if isNil args then z else z --- spaceListL (List.map (atomL g) args)
         z
 
-    and implFileL g (TImplFile (implExprWithSig=mexpr)) =
-        aboveListL [(wordL(tagText "top implementation ")) @@-- mexprL g mexpr]
+    and implFileL g (CheckedImplFile (signature=implFileTy; contents=implFileContents)) =
+        aboveListL [(wordL(tagText "top implementation ")) @@-- mexprL g implFileTy implFileContents]
 
-    and mexprL g x =
-        match x with 
-        | ModuleOrNamespaceContentsWithSig(mtyp, defs, _) -> mdefL g defs @@- (wordL(tagText ":") @@- entityTypeL g mtyp)
+    and mexprL g mtyp defs =
+        mdefL g defs @@- (wordL(tagText ":") @@- entityTypeL g mtyp)
 
     and mdefsL  g defs =
         wordL(tagText "Module Defs") @@-- aboveListL(List.map (mdefL g) defs)
@@ -4390,7 +4389,6 @@ module DebugPrint =
         | TMDefDo(e, _) -> exprL g e
         | TMDefOpens _ -> wordL (tagText "open ... ")
         | TMDefs defs -> mdefsL g defs
-        | TMWithSig mexpr -> mexprL g mexpr
 
     and mbindL g x =
        match x with
@@ -4472,9 +4470,6 @@ let wrapModuleOrNamespaceTypeInNamespace id cpath mtyp =
 let wrapModuleOrNamespaceContentsInNamespace (id: Ident) cpath mexpr = 
     let mspec = wrapModuleOrNamespaceType id cpath (Construct.NewEmptyModuleOrNamespaceType Namespace)
     TMDefRec (false, [], [], [ModuleOrNamespaceBinding.Module(mspec, mexpr)], id.idRange)
-
-// cleanup: make this a property
-let SigTypeOfImplFile (TImplFile (implExprWithSig=mexpr)) = mexpr.Type 
 
 //--------------------------------------------------------------------------
 // Data structures representing what gets hidden and what gets remapped
@@ -4642,7 +4637,6 @@ let rec accEntityRemapFromModuleOrNamespace msigty x acc =
     | TMDefOpens _ -> acc
     | TMDefDo _ -> acc
     | TMDefs defs -> accEntityRemapFromModuleOrNamespaceDefs msigty defs acc
-    | TMWithSig mexpr -> accEntityRemapFromModuleOrNamespaceType mexpr.Type msigty acc
 
 and accEntityRemapFromModuleOrNamespaceDefs msigty mdefs acc = 
     List.foldBack (accEntityRemapFromModuleOrNamespace msigty) mdefs acc
@@ -4665,7 +4659,6 @@ let rec accValRemapFromModuleOrNamespace g aenv msigty x acc =
     | TMDefOpens _ -> acc
     | TMDefDo _ -> acc
     | TMDefs defs -> accValRemapFromModuleOrNamespaceDefs g aenv msigty defs acc
-    | TMWithSig mexpr -> accValRemapFromModuleOrNamespaceType g aenv mexpr.Type msigty acc
 
 and accValRemapFromModuleOrNamespaceBind g aenv msigty x acc = 
     match x with 
@@ -4745,9 +4738,6 @@ let rec accImplHidingInfoAtAssemblyBoundary mdef acc =
                 | ModuleOrNamespaceBinding.Module(_mspec, def) -> 
                     accImplHidingInfoAtAssemblyBoundary def acc)
         acc
-
-    | TMWithSig mexpr -> 
-        accModuleOrNamespaceHidingInfoAtAssemblyBoundary mexpr.Type acc
 
     | TMDefOpens _openDecls ->  acc
 
@@ -5246,7 +5236,6 @@ let rec accFreeInModuleOrNamespace opts mexpr acc =
     | TMDefDo(e, _) -> accFreeInExpr opts e acc
     | TMDefOpens _ -> acc
     | TMDefs defs -> accFreeInModuleOrNamespaces opts defs acc
-    | TMWithSig(ModuleOrNamespaceContentsWithSig(_, mdef, _)) -> accFreeInModuleOrNamespace opts mdef acc // not really right, but sufficient for how this is used in optimization 
 
 and accFreeInModuleOrNamespaceBind opts mbind acc = 
     match mbind with 
@@ -5620,8 +5609,8 @@ and remapExprImpl (ctxt: RemapContext) (compgen: ValCopyFlag) (tmenv: Remap) exp
         let binds', tmenvinner = copyAndRemapAndBindBindings ctxt compgen tmenv binds 
         Expr.LetRec (binds', remapExprImpl ctxt compgen tmenvinner e, m, Construct.NewFreeVarsCache())
 
-    | Expr.Match (spBind, exprm, pt, targets, m, ty) ->
-        primMkMatch (spBind, exprm, remapDecisionTree ctxt compgen tmenv pt, 
+    | Expr.Match (spBind, mExpr, pt, targets, m, ty) ->
+        primMkMatch (spBind, mExpr, remapDecisionTree ctxt compgen tmenv pt, 
                      targets |> Array.map (remapTarget ctxt compgen tmenv), 
                      m, remapType tmenv ty)
 
@@ -5738,13 +5727,13 @@ and remapLinearExpr ctxt compgen tmenv expr contf =
             if expr1 === expr1R && expr2 === expr2R then expr 
             else Expr.Sequential (expr1R, expr2R, dir, m)))
 
-    | LinearMatchExpr (spBind, exprm, dtree, tg1, expr2, m2, ty) ->
+    | LinearMatchExpr (spBind, mExpr, dtree, tg1, expr2, m2, ty) ->
         let dtreeR = remapDecisionTree ctxt compgen tmenv dtree
         let tg1R = remapTarget ctxt compgen tmenv tg1
         let tyR = remapType tmenv ty
         // tailcall for the linear position
         remapLinearExpr ctxt compgen tmenv expr2 (contf << (fun expr2R -> 
-            rebuildLinearMatchExpr (spBind, exprm, dtreeR, tg1R, expr2R, m2, tyR)))
+            rebuildLinearMatchExpr (spBind, mExpr, dtreeR, tg1R, expr2R, m2, tyR)))
 
     | LinearOpExpr (op, tyargs, argsFront, argLast, m) -> 
         let opR = remapOp tmenv op 
@@ -5928,9 +5917,9 @@ and remapMemberInfo ctxt m topValInfo ty tyR tmenv x =
     // The slotsig in the ImplementedSlotSigs is w.r.t. the type variables in the value's type. 
     // REVIEW: this is a bit gross. It would be nice if the slotsig was standalone 
     assert (Option.isSome topValInfo)
-    let tpsOrig, _, _, _ = GetMemberTypeInFSharpForm ctxt.g x.MemberFlags (Option.get topValInfo) ty m
+    let tpsorig, _, _, _ = GetMemberTypeInFSharpForm ctxt.g x.MemberFlags (Option.get topValInfo) ty m
     let tps, _, _, _ = GetMemberTypeInFSharpForm ctxt.g x.MemberFlags (Option.get topValInfo) tyR m
-    let renaming, _ = mkTyparToTyparRenaming tpsOrig tps 
+    let renaming, _ = mkTyparToTyparRenaming tpsorig tps 
     let tmenv = { tmenv with tpinst = tmenv.tpinst @ renaming } 
     { x with 
         ApparentEnclosingEntity = x.ApparentEnclosingEntity |> remapTyconRef tmenv.tyconRefRemap 
@@ -6005,7 +5994,7 @@ and copyAndRemapAndBindTyconsAndVals ctxt compgen tmenv tycons vs =
         tcdR.entity_tycon_repr <- tcd.entity_tycon_repr |> remapTyconRepr ctxt tmenvinner2
         let typeAbbrevR = tcd.TypeAbbrev |> Option.map (remapType tmenvinner2)
         tcdR.entity_tycon_tcaug <- tcd.entity_tycon_tcaug |> remapTyconAug tmenvinner2
-        tcdR.entity_modul_contents <- MaybeLazy.Strict (tcd.entity_modul_contents.Value 
+        tcdR.entity_modul_type <- MaybeLazy.Strict (tcd.entity_modul_type.Value 
                                                         |> mapImmediateValsAndTycons lookupTycon lookupVal)
         let exnInfoR = tcd.ExceptionInfo |> remapTyconExnInfo ctxt tmenvinner2
         match tcdR.entity_opt_data with
@@ -6038,8 +6027,7 @@ and allEntitiesOfModDef mdef =
           | TMDefs defs -> 
               for def in defs do 
                   yield! allEntitiesOfModDef def
-          | TMWithSig(ModuleOrNamespaceContentsWithSig(mty, _, _)) -> 
-              yield! allEntitiesOfModuleOrNamespaceTy mty }
+    }
 
 and allValsOfModDef mdef = 
     seq { match mdef with 
@@ -6056,18 +6044,7 @@ and allValsOfModDef mdef =
           | TMDefs defs -> 
               for def in defs do 
                   yield! allValsOfModDef def
-          | TMWithSig(ModuleOrNamespaceContentsWithSig(mty, _, _)) -> 
-              yield! allValsOfModuleOrNamespaceTy mty }
-
-and remapAndBindModuleOrNamespaceContentsWithSig ctxt compgen tmenv (ModuleOrNamespaceContentsWithSig(mty, mdef, m)) =
-    let mdef = copyAndRemapModDef ctxt compgen tmenv mdef
-    let mty, tmenv = copyAndRemapAndBindModTy ctxt compgen tmenv mty
-    ModuleOrNamespaceContentsWithSig(mty, mdef, m), tmenv
-
-and remapModuleOrNamespaceContentsWithSig ctxt compgen tmenv (ModuleOrNamespaceContentsWithSig(mty, mdef, m)) =
-    let mdef = copyAndRemapModDef ctxt compgen tmenv mdef 
-    let mty = remapModTy ctxt compgen tmenv mty 
-    ModuleOrNamespaceContentsWithSig(mty, mdef, m)
+    }
 
 and copyAndRemapModDef ctxt compgen tmenv mdef =
     let tycons = allEntitiesOfModDef mdef |> List.ofSeq
@@ -6106,9 +6083,6 @@ and remapAndRenameModDef ctxt compgen tmenv mdef =
     | TMDefs defs -> 
         let defs = remapAndRenameModDefs ctxt compgen tmenv defs
         TMDefs defs
-    | TMWithSig mexpr -> 
-        let mexpr = remapModuleOrNamespaceContentsWithSig ctxt compgen tmenv mexpr
-        TMWithSig mexpr
 
 and remapAndRenameModBind ctxt compgen tmenv x = 
     match x with 
@@ -6121,8 +6095,12 @@ and remapAndRenameModBind ctxt compgen tmenv x =
         let def = remapAndRenameModDef ctxt compgen tmenv def
         ModuleOrNamespaceBinding.Module(mspec, def)
 
-and remapImplFile ctxt compgen tmenv mv = 
-    mapAccImplFile (remapAndBindModuleOrNamespaceContentsWithSig ctxt compgen) tmenv mv
+and remapImplFile ctxt compgen tmenv implFile = 
+    let (CheckedImplFile (fragName, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
+    let contentsR = copyAndRemapModDef ctxt compgen tmenv contents
+    let signatureR, tmenv = copyAndRemapAndBindModTy ctxt compgen tmenv signature
+    let implFileR = CheckedImplFile (fragName, pragmas, signatureR, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+    implFileR, tmenv
 
 // Entry points
 
@@ -6609,7 +6587,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
             treeR, targetsR
 
 // Simplify a little as we go, including dead target elimination 
-let rec simplifyTrivialMatch spBind exprm matchm ty tree (targets : _[]) = 
+let rec simplifyTrivialMatch spBind mExpr mMatch ty tree (targets : _[]) = 
     match tree with 
     | TDSuccess(es, n) -> 
         if n >= targets.Length then failwith "simplifyTrivialMatch: target out of range"
@@ -6626,18 +6604,18 @@ let rec simplifyTrivialMatch spBind exprm matchm ty tree (targets : _[]) =
             | _ -> res
         res
     | _ -> 
-        primMkMatch (spBind, exprm, tree, targets, matchm, ty)
+        primMkMatch (spBind, mExpr, tree, targets, mMatch, ty)
  
 // Simplify a little as we go, including dead target elimination 
-let mkAndSimplifyMatch spBind exprm matchm ty tree targets = 
+let mkAndSimplifyMatch spBind mExpr mMatch ty tree targets = 
     let targets = Array.ofList targets
     match tree with 
     | TDSuccess _ -> 
-        simplifyTrivialMatch spBind exprm matchm ty tree targets
+        simplifyTrivialMatch spBind mExpr mMatch ty tree targets
     | _ -> 
         let tree, targets = eliminateDeadTargetsFromMatch tree targets
         let tree, targets = foldLinearBindingTargetsOfMatch tree targets
-        simplifyTrivialMatch spBind exprm matchm ty tree targets
+        simplifyTrivialMatch spBind mExpr mMatch ty tree targets
 
 //-------------------------------------------------------------------------
 // mkExprAddrOfExprAux
@@ -7158,10 +7136,6 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
             let (TObjExprMethod(_, _, _, _, e, _)) = x
             exprF z e
 
-    and mexprF z x =
-        match x with 
-        | ModuleOrNamespaceContentsWithSig(_, def, _) -> mdefF z def
-
     and mdefF z x = 
         match x with
         | TMDefRec(_, _, _, mbinds, _) -> 
@@ -7172,14 +7146,14 @@ type ExprFolders<'State> (folders: ExprFolder<'State>) =
         | TMDefOpens _ -> z
         | TMDefDo(e, _) -> exprF z e
         | TMDefs defs -> List.fold mdefF z defs 
-        | TMWithSig x -> mexprF z x
 
     and mbindF z x = 
         match x with 
         | ModuleOrNamespaceBinding.Binding b -> valBindF false z b
         | ModuleOrNamespaceBinding.Module(_, def) -> mdefF z def
 
-    and implF z x = foldTImplFile mexprF z x
+    let implF z (x: CheckedImplFile) =
+        mdefF z x.Contents
 
     do exprFClosure <- exprF // allocate one instance of this closure
     do exprNoInterceptFClosure <- exprNoInterceptF // allocate one instance of this closure
@@ -8872,7 +8846,7 @@ let canUseUnboxFast g m ty =
 //
 // No sequence point is generated for this expression form as this function is only
 // used for compiler-generated code.
-let mkIsInstConditional g m tgty vinpe v e2 e3 = 
+let mkIsInstConditional g m tgty vinputExpr v e2 e3 = 
     
     if canUseTypeTestFast g tgty && isRefTy g tgty then 
 
@@ -8881,13 +8855,13 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
         let tg3 = mbuilder.AddResultTarget(e3)
         let dtree = TDSwitch(exprForVal m v, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
-        mkCompGenLet m v (mkIsInst tgty vinpe m) expr
+        mkCompGenLet m v (mkIsInst tgty vinputExpr m) expr
 
     else
         let mbuilder = MatchBuilder(DebugPointAtBinding.NoneAtInvisible, m)
-        let tg2 = TDSuccess([mkCallUnbox g m tgty vinpe], mbuilder.AddTarget(TTarget([v], e2, None)))
+        let tg2 = TDSuccess([mkCallUnbox g m tgty vinputExpr], mbuilder.AddTarget(TTarget([v], e2, None)))
         let tg3 = mbuilder.AddResultTarget(e3)
-        let dtree = TDSwitch(vinpe, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinpe, tgty), tg2)], Some tg3, m)
+        let dtree = TDSwitch(vinputExpr, [TCase(DecisionTreeTest.IsInst(tyOfExpr g vinputExpr, tgty), tg2)], Some tg3, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
         expr
 
@@ -9169,10 +9143,10 @@ and rewriteExprStructure env expr =
       let bodyR = RewriteExpr env body
       mkTypeLambda m tps (bodyR, bodyTy)
 
-  | Expr.Match (spBind, exprm, dtree, targets, m, ty) -> 
+  | Expr.Match (spBind, mExpr, dtree, targets, m, ty) -> 
       let dtreeR = RewriteDecisionTree env dtree
       let targetsR = rewriteTargets env targets
-      mkAndSimplifyMatch spBind exprm m ty dtreeR targetsR
+      mkAndSimplifyMatch spBind mExpr m ty dtreeR targetsR
 
   | Expr.LetRec (binds, e, m, _) ->
       let bindsR = rewriteBinds env binds
@@ -9221,12 +9195,12 @@ and rewriteLinearExpr env expr contf =
                 if argsFront === argsFrontR && argLast === argLastR then expr 
                 else rebuildLinearOpExpr (op, tyargs, argsFrontR, argLastR, m)))
 
-        | LinearMatchExpr (spBind, exprm, dtree, tg1, expr2, m2, ty) ->
+        | LinearMatchExpr (spBind, mExpr, dtree, tg1, expr2, m2, ty) ->
             let dtree = RewriteDecisionTree env dtree
             let tg1R = rewriteTarget env tg1
             // tailcall
             rewriteLinearExpr env expr2 (contf << (fun expr2R ->
-                rebuildLinearMatchExpr (spBind, exprm, dtree, tg1R, expr2R, m2, ty)))
+                rebuildLinearMatchExpr (spBind, mExpr, dtree, tg1R, expr2R, m2, ty)))
       
         | Expr.DebugPoint (dpm, innerExpr) ->
             rewriteLinearExpr env innerExpr (contf << (fun innerExprR ->
@@ -9272,30 +9246,28 @@ and rewriteObjExprInterfaceImpl env (ty, overrides) =
     (ty, List.map (rewriteObjExprOverride env) overrides)
     
 and rewriteModuleOrNamespaceContents env x = 
-    match x with  
-    | ModuleOrNamespaceContentsWithSig(mty, def, m) -> ModuleOrNamespaceContentsWithSig(mty, rewriteModuleOrNamespaceDef env def, m)
-
-and rewriteModuleOrNamespaceDefs env x = List.map (rewriteModuleOrNamespaceDef env) x
-    
-and rewriteModuleOrNamespaceDef env x = 
     match x with 
     | TMDefRec(isRec, opens, tycons, mbinds, m) -> TMDefRec(isRec, opens, tycons, rewriteModuleOrNamespaceBindings env mbinds, m)
     | TMDefLet(bind, m) -> TMDefLet(rewriteBind env bind, m)
     | TMDefDo(e, m) -> TMDefDo(RewriteExpr env e, m)
     | TMDefOpens _ -> x
-    | TMDefs defs -> TMDefs(rewriteModuleOrNamespaceDefs env defs)
-    | TMWithSig mexpr -> TMWithSig(rewriteModuleOrNamespaceContents env mexpr)
+    | TMDefs defs -> TMDefs(List.map (rewriteModuleOrNamespaceContents env) defs)
 
 and rewriteModuleOrNamespaceBinding env x = 
-   match x with 
-   | ModuleOrNamespaceBinding.Binding bind -> ModuleOrNamespaceBinding.Binding (rewriteBind env bind)
-   | ModuleOrNamespaceBinding.Module(nm, rhs) -> ModuleOrNamespaceBinding.Module(nm, rewriteModuleOrNamespaceDef env rhs)
+    match x with 
+    | ModuleOrNamespaceBinding.Binding bind ->
+        ModuleOrNamespaceBinding.Binding (rewriteBind env bind)
+    | ModuleOrNamespaceBinding.Module(nm, rhs) ->
+        ModuleOrNamespaceBinding.Module(nm, rewriteModuleOrNamespaceContents env rhs)
 
-and rewriteModuleOrNamespaceBindings env mbinds = List.map (rewriteModuleOrNamespaceBinding env) mbinds
+and rewriteModuleOrNamespaceBindings env mbinds =
+    List.map (rewriteModuleOrNamespaceBinding env) mbinds
 
-and RewriteImplFile env mv = mapTImplFile (rewriteModuleOrNamespaceContents env) mv
-
-
+and RewriteImplFile env implFile =
+    let (CheckedImplFile (fragName, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
+    let contentsR = rewriteModuleOrNamespaceContents env contents
+    let implFileR = CheckedImplFile (fragName, pragmas, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+    implFileR
 
 //--------------------------------------------------------------------------
 // Build a Remap that converts all "local" references to "public" things 
@@ -9348,7 +9320,7 @@ let rec remapEntityDataToNonLocal ctxt tmenv (d: Entity) =
     let tyconAbbrevR = d.TypeAbbrev |> Option.map (remapType tmenvinner)
     let tyconTcaugR = d.entity_tycon_tcaug |> remapTyconAug tmenvinner
     let modulContentsR = 
-        MaybeLazy.Strict (d.entity_modul_contents.Value
+        MaybeLazy.Strict (d.entity_modul_type.Value
                           |> mapImmediateValsAndTycons (remapTyconToNonLocal ctxt tmenv) (remapValToNonLocal ctxt tmenv))
     let exnInfoR = d.ExceptionInfo |> remapTyconExnInfo ctxt tmenvinner
     { d with 
@@ -9356,7 +9328,7 @@ let rec remapEntityDataToNonLocal ctxt tmenv (d: Entity) =
           entity_attribs = attribsR
           entity_tycon_repr = tyconReprR
           entity_tycon_tcaug = tyconTcaugR
-          entity_modul_contents = modulContentsR
+          entity_modul_type = modulContentsR
           entity_opt_data =
             match d.entity_opt_data with
             | Some dd ->
@@ -9941,7 +9913,7 @@ let CombineCcuContentFragments m l =
                         let xml = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
                         { data1 with 
                              entity_attribs = entity1.Attribs @ entity2.Attribs
-                             entity_modul_contents = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
+                             entity_modul_type = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
                              entity_opt_data = 
                                 match data1.entity_opt_data with
                                 | Some optData -> Some { optData with entity_xmldoc = xml }
@@ -9997,11 +9969,11 @@ let (|TryWithExpr|_|) expr =
 
 let (|MatchTwoCasesExpr|_|) expr =
     match expr with 
-    | Expr.Match (spBind, exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty) -> 
+    | Expr.Match (spBind, mExpr, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty) -> 
 
         // How to rebuild this construct
         let rebuild (cond, ucref, tg1, tg2, tgs) = 
-            Expr.Match (spBind, exprm, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty)
+            Expr.Match (spBind, mExpr, TDSwitch(cond, [ TCase( DecisionTreeTest.UnionCase (ucref, a), TDSuccess ([], tg1) )], Some (TDSuccess ([], tg2)), b), tgs, m, ty)
 
         Some (cond, ucref, tg1, tg2, tgs, rebuild)
 

@@ -315,7 +315,7 @@ module internal SymbolHelpers =
         else
             mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
 
-    let FormatTyparMapping denv (prettyTyparInst: TyparInst) = 
+    let FormatTyparMapping denv (prettyTyparInst: TyparInstantiation) = 
         [ for tp, ty in prettyTyparInst -> 
             wordL (tagTypeParameter ("'" + tp.DisplayName))  ^^ wordL (tagText (FSComp.SR.descriptionWordIs())) ^^ NicePrint.layoutType denv ty  ]
 
@@ -500,19 +500,19 @@ module internal SymbolHelpers =
         | Item.AnonRecdField(anon, _argTys, i, _) -> anon.SortedNames[i]
         | Item.RecdField rfinfo -> fullDisplayTextOfRecdFieldRef  rfinfo.RecdFieldRef
         | Item.NewDef id -> id.idText
-        | Item.ILField finfo -> bufs (fun os -> NicePrint.outputType denv os finfo.ApparentEnclosingType; bprintf os ".%s" finfo.FieldName)
-        | Item.Event einfo -> bufs (fun os -> NicePrint.outputTyconRef denv os einfo.DeclaringTyconRef; bprintf os ".%s" einfo.EventName)
-        | Item.Property(_, pinfo :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os pinfo.DeclaringTyconRef; bprintf os ".%s" pinfo.PropertyName)
+        | Item.ILField finfo -> buildString (fun os -> NicePrint.outputType denv os finfo.ApparentEnclosingType; bprintf os ".%s" finfo.FieldName)
+        | Item.Event einfo -> buildString (fun os -> NicePrint.outputTyconRef denv os einfo.DeclaringTyconRef; bprintf os ".%s" einfo.EventName)
+        | Item.Property(_, pinfo :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os pinfo.DeclaringTyconRef; bprintf os ".%s" pinfo.PropertyName)
         | Item.CustomOperation (customOpName, _, _) -> customOpName
-        | Item.CtorGroup(_, minfo :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef)
-        | Item.MethodGroup(_, _, Some minfo) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
-        | Item.MethodGroup(_, minfo :: _, _) -> bufs (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
-        | Item.UnqualifiedType (tcref :: _) -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
+        | Item.CtorGroup(_, minfo :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef)
+        | Item.MethodGroup(_, _, Some minfo) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
+        | Item.MethodGroup(_, minfo :: _, _) -> buildString (fun os -> NicePrint.outputTyconRef denv os minfo.DeclaringTyconRef; bprintf os ".%s" minfo.DisplayName)        
+        | Item.UnqualifiedType (tcref :: _) -> buildString (fun os -> NicePrint.outputTyconRef denv os tcref)
         | Item.FakeInterfaceCtor ty 
         | Item.DelegateCtor ty 
         | Item.Types(_, ty :: _) -> 
             match tryTcrefOfAppTy g ty with
-            | ValueSome tcref -> bufs (fun os -> NicePrint.outputTyconRef denv os tcref)
+            | ValueSome tcref -> buildString (fun os -> NicePrint.outputTyconRef denv os tcref)
             | _ -> ""
         | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
@@ -839,9 +839,9 @@ module internal SymbolHelpers =
         ignore m
         match item.Item with 
         | Item.MethodGroup(nm, minfos, orig) ->
-            minfos |> List.map (fun minfo -> { Item = Item.MethodGroup(nm, [minfo], orig); TyparInst = item.TyparInst })
+            minfos |> List.map (fun minfo -> { Item = Item.MethodGroup(nm, [minfo], orig); TyparInstantiation = item.TyparInstantiation })
         | Item.CtorGroup(nm, cinfos) ->
-            cinfos |> List.map (fun minfo -> { Item = Item.CtorGroup(nm, [minfo]); TyparInst = item.TyparInst }) 
+            cinfos |> List.map (fun minfo -> { Item = Item.CtorGroup(nm, [minfo]); TyparInstantiation = item.TyparInstantiation }) 
         | Item.FakeInterfaceCtor _
         | Item.DelegateCtor _ -> [item]
         | Item.NewDef _ 

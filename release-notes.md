@@ -25,6 +25,8 @@ These release notes track our current efforts to document changes to the F# proj
   A 'do expr' declaration in a module will correspond to a SynModuleDecl.Expr enclosing a SynExpr.Do 
   This constructo also loses the debug point as it was always None. The debug point
   is always implicit for this construct.
+* In FCS API, FSharpParsingOptions, `CompilingFsLib` --> `CompilingFSharpCore`
+* In FCS API, FSharpParsingOptions, `ErrorSeverityOptions` --> `DiagnosticOptions`
 
 ### F# 6.0 / Visual Studio 17.0
 

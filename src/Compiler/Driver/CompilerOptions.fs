@@ -847,6 +847,7 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
            ("crossoptimize", tagNone,
             OptionSwitch (crossOptimizeSwitch tcConfigB), None,
             Some (FSComp.SR.optsCrossoptimize()))
+
         ]
     if isFsi then debug @ codegen
     else debug @ embed @ codegen

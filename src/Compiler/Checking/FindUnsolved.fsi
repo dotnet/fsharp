@@ -12,7 +12,8 @@ val UnsolvedTyparsOfModuleDef:
     g: TcGlobals ->
     amap: ImportMap ->
     denv: DisplayEnv ->
-    mdef: ModuleOrNamespaceContents * extraAttribs: Attrib list ->
+    mdef: ModuleOrNamespaceContents ->
+    extraAttribs: Attrib list ->
         Typar list
 
 /// Find all unsolved inference variables after adhoc generation of witness

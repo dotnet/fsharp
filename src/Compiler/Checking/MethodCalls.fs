@@ -207,7 +207,7 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
                     (match minfo.GetParamTypes(amap, m, []) with
                      | [[a]] -> typeEquiv g a actualTy 
                      | _ -> false) &&
-                    (let retTy = minfo.GetFSharpReturnTy(amap, m, []) 
+                    (let retTy = minfo.GetFSharpReturnType(amap, m, []) 
                      typeEquiv g retTy reqdTy2)
                 )
 
@@ -506,7 +506,7 @@ type CalledMeth<'T>
        tyargsOpt: TType option)    
     =
     let g = infoReader.g
-    let methodRetTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(infoReader.amap, m, calledTyArgs)
+    let methodRetTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnType(infoReader.amap, m, calledTyArgs)
 
     let fullCurriedCalledArgs = MakeCalledArgs infoReader.amap m minfo calledTyArgs
     do assert (fullCurriedCalledArgs.Length = fullCurriedCalledArgs.Length)
@@ -726,7 +726,7 @@ type CalledMeth<'T>
 
     member x.NumArgSets = x.ArgSets.Length
 
-    member x.HasOptArgs = not (isNil x.UnnamedCalledOptArgs)
+    member x.HasOptionalArgs = not (isNil x.UnnamedCalledOptArgs)
 
     member x.HasOutArgs = not (isNil x.UnnamedCalledOutArgs)
 
@@ -946,19 +946,19 @@ let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m objArgs f =
 
 /// Build an expression node that is a call to a .NET method. 
 let BuildILMethInfoCall g amap m isProp (minfo: ILMethInfo) valUseFlags minst direct args = 
-    let valu = isStructTy g minfo.ApparentEnclosingType
+    let isStruct = isStructTy g minfo.ApparentEnclosingType
     let ctor = minfo.IsConstructor
     if minfo.IsClassConstructor then 
         error (InternalError (minfo.ILName+": cannot call a class constructor", m))
     let useCallvirt = 
-        not valu && not direct && minfo.IsVirtual
+        not isStruct && not direct && minfo.IsVirtual
     let isProtected = minfo.IsProtectedAccessibility
     let ilMethRef = minfo.ILMethodRef
     let newobj = ctor && (match valUseFlags with NormalValUse -> true | _ -> false)
-    let exprTy = if ctor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnTy(amap, m, minst)
+    let exprTy = if ctor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnType(amap, m, minst)
     let retTy = if not ctor && (stripILModifiedFromTy ilMethRef.ReturnType) = ILType.Void then [] else [exprTy]
     let isDllImport = minfo.IsDllImport g
-    Expr.Op (TOp.ILCall (useCallvirt, isProtected, valu, newobj, valUseFlags, isProp, isDllImport, ilMethRef, minfo.DeclaringTypeInst, minst, retTy), [], args, m),
+    Expr.Op (TOp.ILCall (useCallvirt, isProtected, isStruct, newobj, valUseFlags, isProp, isDllImport, ilMethRef, minfo.DeclaringTypeInst, minst, retTy), [], args, m),
     exprTy
 
 
@@ -998,9 +998,9 @@ let BuildFSharpMethodApp g m (vref: ValRef) vexp vexprty (args: Exprs) =
 let BuildFSharpMethodCall g m (vref: ValRef) valUseFlags declaringTypeInst minst args =
     let vexp = Expr.Val (vref, valUseFlags, m)
     let vexpty = vref.Type
-    let tpsorig, tau =  vref.TypeScheme
+    let tpsorig, tau =  vref.GeneralizedType
     let vtinst = declaringTypeInst @ minst
-    if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected typar length mismatch",m))
+    if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected typar length mismatch", m))
     let expr = mkTyAppExpr m (vexp, vexpty) vtinst
     let exprTy = instType (mkTyparInst tpsorig vtinst) tau
     BuildFSharpMethodApp g m vref expr exprTy args
@@ -1029,12 +1029,12 @@ let MakeMethInfoCall amap m minfo minst args =
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
         let ilMethodRef = Import.ImportProvidedMethodBaseAsILMethodRef amap m mi
         let isConstructor = mi.PUntaint((fun c -> c.IsConstructor), m)
-        let valu = mi.PUntaint((fun c -> c.DeclaringType.IsValueType), m)
+        let isStruct = mi.PUntaint((fun c -> c.DeclaringType.IsValueType), m)
         let actualTypeInst = [] // GENERIC TYPE PROVIDERS: for generics, we would have something here
         let actualMethInst = [] // GENERIC TYPE PROVIDERS: for generics, we would have something here
-        let ilReturnTys = Option.toList (minfo.GetCompiledReturnTy(amap, m, []))  // GENERIC TYPE PROVIDERS: for generics, we would have more here
+        let ilReturnTys = Option.toList (minfo.GetCompiledReturnType(amap, m, []))  // GENERIC TYPE PROVIDERS: for generics, we would have more here
         // REVIEW: Should we allow protected calls?
-        Expr.Op (TOp.ILCall (false, false, valu, isConstructor, valUseFlags, isProp, false, ilMethodRef, actualTypeInst, actualMethInst, ilReturnTys), [], args, m)
+        Expr.Op (TOp.ILCall (false, false, isStruct, isConstructor, valUseFlags, isProp, false, ilMethodRef, actualTypeInst, actualMethInst, ilReturnTys), [], args, m)
 
 #endif
 
@@ -1100,13 +1100,13 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
             if isArrayTy g enclTy then
                 let tpe = TypeProviderError(FSComp.SR.tcRuntimeSuppliedMethodCannotBeUsedInUserCode(minfo.DisplayName), providedMeth.TypeProviderDesignation, m)
                 error tpe
-            let valu = isStructTy g enclTy
+            let isStruct = isStructTy g enclTy
             let isCtor = minfo.IsConstructor
             if minfo.IsClassConstructor then 
                 error (InternalError (minfo.LogicalName + ": cannot call a class constructor", m))
-            let useCallvirt = not valu && not direct && minfo.IsVirtual
+            let useCallvirt = not isStruct && not direct && minfo.IsVirtual
             let isProtected = minfo.IsProtectedAccessibility
-            let exprTy = if isCtor then enclTy else minfo.GetFSharpReturnTy(amap, m, minst)
+            let exprTy = if isCtor then enclTy else minfo.GetFSharpReturnType(amap, m, minst)
             match TryImportProvidedMethodBaseAsLibraryIntrinsic (amap, m, providedMeth) with 
             | Some fsValRef -> 
                 //reraise() calls are converted to TOp.Reraise in the type checker. So if a provided expression includes a reraise call
@@ -1126,7 +1126,7 @@ let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objA
                 let actualMethInst = minst
                 let retTy = if not isCtor && (ilMethRef.ReturnType = ILType.Void) then [] else [exprTy]
                 let noTailCall = false
-                let expr = Expr.Op (TOp.ILCall (useCallvirt, isProtected, valu, isNewObj, valUseFlags, isProp, noTailCall, ilMethRef, actualTypeInst, actualMethInst, retTy), [], allArgs, m)
+                let expr = Expr.Op (TOp.ILCall (useCallvirt, isProtected, isStruct, isNewObj, valUseFlags, isProp, noTailCall, ilMethRef, actualTypeInst, actualMethInst, retTy), [], allArgs, m)
                 expr, exprTy
 
 #endif
@@ -1156,7 +1156,7 @@ let ILFieldStaticChecks g amap infoReader ad m (finfo : ILFieldInfo) =
     // Static IL interfaces fields are not supported in lower F# versions.
     if isInterfaceTy g finfo.ApparentEnclosingType then    
         checkLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
-        checkLanguageFeatureErrorRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
+        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
 
     CheckILFieldAttributes g finfo m
 

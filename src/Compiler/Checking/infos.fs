@@ -535,12 +535,12 @@ type ILMethInfo =
             []
 
     /// Get the compiled return type of the method, where 'void' is None.
-    member x.GetCompiledReturnTy (amap, m, minst) =
+    member x.GetCompiledReturnType (amap, m, minst) =
         ImportReturnTypeFromMetadata amap m x.RawMetadata.Return.Type (fun _ -> x.RawMetadata.Return.CustomAttrs) x.MetadataScope x.DeclaringTypeInst minst
 
     /// Get the F# view of the return type of the method, where 'void' is 'unit'.
-    member x.GetFSharpReturnTy (amap, m, minst) =
-        x.GetCompiledReturnTy(amap, m, minst)
+    member x.GetFSharpReturnType (amap, m, minst) =
+        x.GetCompiledReturnType(amap, m, minst)
         |> GetFSharpViewOfReturnType amap.g
 
 
@@ -997,10 +997,10 @@ type MethInfo =
 #endif
 
     /// Get the return type of a method info, where 'void' is returned as 'None'
-    member x.GetCompiledReturnTy (amap, m, minst) =
+    member x.GetCompiledReturnType (amap, m, minst) =
         match x with
         | ILMeth(_g, ilminfo, _) ->
-            ilminfo.GetCompiledReturnTy(amap, m, minst)
+            ilminfo.GetCompiledReturnType(amap, m, minst)
         | FSMeth(g, _, vref, _) ->
             let ty = x.ApparentEnclosingAppType
             let inst = GetInstantiationForMemberVal g x.IsCSharpStyleExtensionMember (ty, vref, minst)
@@ -1013,8 +1013,8 @@ type MethInfo =
 #endif
 
     /// Get the return type of a method info, where 'void' is returned as 'unit'
-    member x.GetFSharpReturnTy(amap, m, minst) =
-        x.GetCompiledReturnTy(amap, m, minst) |> GetFSharpViewOfReturnType amap.g
+    member x.GetFSharpReturnType(amap, m, minst) =
+        x.GetCompiledReturnType(amap, m, minst) |> GetFSharpViewOfReturnType amap.g
 
     /// Get the parameter types of a method info
     member x.GetParamTypes(amap, m, minst) =
@@ -1228,7 +1228,7 @@ type MethInfo =
                 | ProvidedMeth (_, mi, _, _) ->
                     // GENERIC TYPE PROVIDERS: for generics, formal types should be  generated here, not the actual types
                     // For non-generic type providers there is no difference
-                    let formalRetTy = x.GetCompiledReturnTy(amap, m, formalMethTyparTys)
+                    let formalRetTy = x.GetCompiledReturnType(amap, m, formalMethTyparTys)
                     // GENERIC TYPE PROVIDERS: formal types should be  generated here, not the actual types
                     // For non-generic type providers there is no difference
                     let formalParams =
@@ -2200,7 +2200,7 @@ let stripByrefTy g ty =
 
 /// Represents the information about the compiled form of a method signature. Used when analyzing implementation
 /// relations between members and abstract slots.
-type CompiledSig = CompiledSig of argTys: TType list list * returnTy: TType option * formalMethTypars: Typars * formalMethTyparInst: TyparInst
+type CompiledSig = CompiledSig of argTys: TType list list * returnTy: TType option * formalMethTypars: Typars * formalMethTyparInst: TyparInstantiation
 
 /// Get the information about the compiled form of a method signature. Used when analyzing implementation
 /// relations between members and abstract slots.
@@ -2208,7 +2208,7 @@ let CompiledSigOfMeth g amap m (minfo: MethInfo) =
     let formalMethTypars = minfo.FormalMethodTypars
     let fminst = generalizeTypars formalMethTypars
     let vargTys = minfo.GetParamTypes(amap, m, fminst)
-    let vrty = minfo.GetCompiledReturnTy(amap, m, fminst)
+    let vrty = minfo.GetCompiledReturnType(amap, m, fminst)
 
     // The formal method typars returned are completely formal - they don't take into account the instantiation
     // of the enclosing type. For example, they may have constraints involving the _formal_ type parameters

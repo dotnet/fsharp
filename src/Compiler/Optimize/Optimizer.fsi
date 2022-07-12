@@ -76,8 +76,8 @@ val internal OptimizeImplFile:
     fsiMultiAssemblyEmit: bool *
     emitTailcalls: bool *
     SignatureHidingInfo *
-    TypedImplFile ->
-        (IncrementalOptimizationEnv * TypedImplFile * ImplFileOptimizationInfo * SignatureHidingInfo) *
+    CheckedImplFile ->
+        (IncrementalOptimizationEnv * CheckedImplFile * ImplFileOptimizationInfo * SignatureHidingInfo) *
         (bool -> Expr -> Expr)
 
 #if DEBUG

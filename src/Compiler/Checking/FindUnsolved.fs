@@ -255,11 +255,7 @@ let accTycon cenv env (tycon:Tycon) =
 let accTycons cenv env tycons = 
     List.iter (accTycon cenv env) tycons
 
-let rec accModuleOrNamespaceContents cenv env x = 
-    match x with  
-    | ModuleOrNamespaceContentsWithSig(_mty, def, _m) -> accModuleOrNamespaceDef cenv env def
-    
-and accModuleOrNamespaceDefs cenv env defs = 
+let rec accModuleOrNamespaceDefs cenv env defs = 
     List.iter (accModuleOrNamespaceDef cenv env) defs
 
 and accModuleOrNamespaceDef cenv env def = 
@@ -270,8 +266,7 @@ and accModuleOrNamespaceDef cenv env def =
     | TMDefLet(bind, _m)  -> accBind cenv env bind 
     | TMDefDo(e, _m)  -> accExpr cenv env e
     | TMDefOpens _ -> ()
-    | TMWithSig(def)  -> accModuleOrNamespaceContents cenv env def
-    | TMDefs(defs) -> accModuleOrNamespaceDefs cenv env defs 
+    | TMDefs defs -> accModuleOrNamespaceDefs cenv env defs 
 
 and accModuleOrNamespaceBinds cenv env xs = 
     List.iter (accModuleOrNamespaceBind cenv env) xs
@@ -284,7 +279,7 @@ and accModuleOrNamespaceBind cenv env x =
         accTycon cenv env mspec
         accModuleOrNamespaceDef cenv env rhs 
 
-let UnsolvedTyparsOfModuleDef g amap denv (mdef, extraAttribs) =
+let UnsolvedTyparsOfModuleDef g amap denv mdef extraAttribs =
     let cenv = 
         { g =g  
           amap=amap 
