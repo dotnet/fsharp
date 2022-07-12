@@ -11,31 +11,33 @@ open Microsoft.FSharp.Quotations
 open Microsoft.FSharp.Quotations.DerivedPatterns
 open Microsoft.FSharp.Reflection
 open Microsoft.FSharp.Linq.RuntimeHelpers
+open System.Collections
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Linq
 open System.Linq.Expressions
+open System.Reflection
 
 // ----------------------------------------------------------------------------
 
 /// A type used to reconstruct a grouping after applying a mutable->immutable mapping transformation
 /// on a result of a query.
 type Grouping<'K, 'T>(key: 'K, values: seq<'T>) =
-    interface System.Linq.IGrouping<'K, 'T> with
+    interface IGrouping<'K, 'T> with
         member _.Key = key
 
-    interface System.Collections.IEnumerable with
+    interface IEnumerable with
         member _.GetEnumerator() =
-            values.GetEnumerator() :> System.Collections.IEnumerator
+            values.GetEnumerator() :> IEnumerator
 
-    interface System.Collections.Generic.IEnumerable<'T> with
+    interface Generic.IEnumerable<'T> with
         member _.GetEnumerator() =
             values.GetEnumerator()
 
 module internal Adapters =
 
     let memoize f =
-        let d =
-            new System.Collections.Concurrent.ConcurrentDictionary<Type, 'b>(HashIdentity.Structural)
+        let d = new ConcurrentDictionary<Type, 'b>(HashIdentity.Structural)
 
         fun x -> d.GetOrAdd(x, (fun r -> f r))
 
@@ -46,13 +48,13 @@ module internal Adapters =
 
     let MemberInitializationHelperMeth =
         methodhandleof (fun x -> LeafExpressionConverter.MemberInitializationHelper x)
-        |> System.Reflection.MethodInfo.GetMethodFromHandle
-        :?> System.Reflection.MethodInfo
+        |> MethodInfo.GetMethodFromHandle
+        :?> MethodInfo
 
     let NewAnonymousObjectHelperMeth =
         methodhandleof (fun x -> LeafExpressionConverter.NewAnonymousObjectHelper x)
-        |> System.Reflection.MethodInfo.GetMethodFromHandle
-        :?> System.Reflection.MethodInfo
+        |> MethodInfo.GetMethodFromHandle
+        :?> MethodInfo
 
     // The following patterns are used to recognize object construction
     // using the 'new O(Prop1 = <e>, Prop2 = <e>)' syntax
@@ -73,7 +75,8 @@ module internal Adapters =
         let rec propSetList acc x =
             match x with
             // detect " v.X <- y"
-            | ((Patterns.PropertySet (Some (Patterns.Var var), _, _, _)) as p) :: xs when var = varArg -> propSetList (p :: acc) xs
+            | ((Patterns.PropertySet (Some (Patterns.Var var), _, _, _)) as p) :: xs when var = varArg ->
+                propSetList (p :: acc) xs
             // skip unit values
             | (Patterns.Value (v, _)) :: xs when v = null -> propSetList acc xs
             // detect "v"
@@ -190,8 +193,7 @@ module internal Adapters =
             let fields =
                 Microsoft.FSharp.Reflection.FSharpType.GetRecordFields(
                     typ,
-                    System.Reflection.BindingFlags.Public
-                    ||| System.Reflection.BindingFlags.NonPublic
+                    BindingFlags.Public ||| BindingFlags.NonPublic
                 )
 
             match fields |> Array.tryFindIndex (fun p -> p = propInfo) with
@@ -223,7 +225,8 @@ module internal Adapters =
 
             match convs with
             | x1 :: x2 :: x3 :: x4 :: x5 :: x6 :: x7 :: x8 :: tail ->
-                RewriteTupleType ty (List.map2 ConvImmutableTypeToMutableType [ x1; x2; x3; x4; x5; x6; x7; TupleConv(x8 :: tail) ])
+                let els = [ x1; x2; x3; x4; x5; x6; x7; TupleConv(x8 :: tail) ]
+                RewriteTupleType ty (List.map2 ConvImmutableTypeToMutableType els)
             | _ -> RewriteTupleType ty (List.map2 ConvImmutableTypeToMutableType convs)
         | RecordConv (_, convs) ->
             assert (isPartiallyImmutableRecord ty)
@@ -231,10 +234,10 @@ module internal Adapters =
             ConvImmutableTypeToMutableType (TupleConv convs) (FSharpType.MakeTupleType types)
         | GroupingConv (_keyTy, _elemTy, conv) ->
             assert ty.IsGenericType
-            assert (ty.GetGenericTypeDefinition() = typedefof<System.Linq.IGrouping<_, _>>)
+            assert (ty.GetGenericTypeDefinition() = typedefof<IGrouping<_, _>>)
             let keyt1 = ty.GetGenericArguments().[0]
             let valt1 = ty.GetGenericArguments().[1]
-            typedefof<System.Linq.IGrouping<_, _>>.MakeGenericType [| keyt1; ConvImmutableTypeToMutableType conv valt1 |]
+            typedefof<IGrouping<_, _>>.MakeGenericType [| keyt1; ConvImmutableTypeToMutableType conv valt1 |]
         | SeqConv conv ->
             assert ty.IsGenericType
             let isIQ = ty.GetGenericTypeDefinition() = typedefof<IQueryable<_>>
@@ -256,14 +259,14 @@ module internal Adapters =
         let mhandle =
             (methodhandleof (fun x -> LeafExpressionConverter.NewAnonymousObjectHelper x))
 
-        let minfo =
-            (System.Reflection.MethodInfo.GetMethodFromHandle mhandle) :?> System.Reflection.MethodInfo
+        let minfo = (MethodInfo.GetMethodFromHandle mhandle) :?> MethodInfo
 
         let gmd = minfo.GetGenericMethodDefinition()
 
         (fun tm ->
             match tm with
-            | Patterns.Call (_obj, minfo2, _args) -> minfo2.IsGenericMethod && (gmd = minfo2.GetGenericMethodDefinition())
+            | Patterns.Call (_obj, minfo2, _args) ->
+                minfo2.IsGenericMethod && (gmd = minfo2.GetGenericMethodDefinition())
             | _ -> false)
 
     /// Cleanup the use of property-set object constructions in leaf expressions that form parts of F# queries.
@@ -305,7 +308,8 @@ module internal Adapters =
         // rewrite bottom-up
         let e =
             match e with
-            | ExprShape.ShapeCombination (comb, args) -> ExprShape.RebuildShapeCombination(comb, List.map SimplifyConsumingExpr args)
+            | ExprShape.ShapeCombination (comb, args) ->
+                ExprShape.RebuildShapeCombination(comb, List.map SimplifyConsumingExpr args)
             | ExprShape.ShapeLambda (v, body) -> Expr.Lambda(v, SimplifyConsumingExpr body)
             | ExprShape.ShapeVar _ -> e
 

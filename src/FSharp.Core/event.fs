@@ -8,8 +8,9 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 open Microsoft.FSharp.Core.Operators
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Control
-open System.Reflection
+open System
 open System.Diagnostics
+open System.Reflection
 
 module private Atomic =
     open System.Threading
@@ -79,7 +80,8 @@ type EventDelegee<'Args>(observer: System.IObserver<'Args>) =
 type EventWrapper<'Delegate, 'Args> = delegate of 'Delegate * obj * 'Args -> unit
 
 [<CompiledName("FSharpEvent`2")>]
-type Event<'Delegate, 'Args when 'Delegate: delegate<'Args, unit> and 'Delegate :> System.Delegate and 'Delegate: not struct>() =
+type Event<'Delegate, 'Args
+    when 'Delegate: delegate<'Args, unit> and 'Delegate :> System.Delegate and 'Delegate: not struct>() =
 
     let mutable multicast: 'Delegate = Unchecked.defaultof<_>
 
@@ -98,7 +100,7 @@ type Event<'Delegate, 'Args when 'Delegate: delegate<'Args, unit> and 'Delegate 
     // CreateDelegate creates a delegate that is fast to invoke.
     static let invoker =
         if argTypes.Length = 1 then
-            (System.Delegate.CreateDelegate(typeof<EventWrapper<'Delegate, 'Args>>, mi) :?> EventWrapper<'Delegate, 'Args>)
+            (Delegate.CreateDelegate(typeof<EventWrapper<'Delegate, 'Args>>, mi) :?> EventWrapper<'Delegate, 'Args>)
         else
             null
 
@@ -152,8 +154,7 @@ type Event<'Delegate, 'Args when 'Delegate: delegate<'Args, unit> and 'Delegate 
               member e.Subscribe(observer) =
                   let obj = new EventDelegee<'Args>(observer)
 
-                  let h =
-                      System.Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeInfo) :?> 'Delegate
+                  let h = Delegate.CreateDelegate(typeof<'Delegate>, obj, invokeInfo) :?> 'Delegate
 
                   (e :?> IDelegateEvent<'Delegate>).AddHandler(h)
 

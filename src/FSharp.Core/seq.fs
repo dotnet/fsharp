@@ -443,7 +443,8 @@ module Internal =
 
             static member Bind(g: Generator<'T>, cont) =
                 match g with
-                | :? GenerateThen<'T> as g -> GenerateThen<_>.Bind (g.Generator, (fun () -> GenerateThen<_>.Bind (g.Cont(), cont)))
+                | :? GenerateThen<'T> as g ->
+                    GenerateThen<_>.Bind (g.Generator, (fun () -> GenerateThen<_>.Bind (g.Cont(), cont)))
                 | g -> (new GenerateThen<'T>(g, cont) :> Generator<'T>)
 
         let bindG g cont =
@@ -1290,7 +1291,10 @@ module Seq =
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let groupByRefType (keyf: 'T -> 'Key) (seq: seq<'T>) =
         seq
-        |> groupByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox(keyf t)) (fun sb -> sb.Value)
+        |> groupByImpl
+            RuntimeHelpers.StructBox<'Key>.Comparer
+            (fun t -> RuntimeHelpers.StructBox(keyf t))
+            (fun sb -> sb.Value)
 
     [<CompiledName("GroupBy")>]
     let groupBy (projection: 'T -> 'Key) (source: seq<'T>) =
@@ -1402,7 +1406,10 @@ module Seq =
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
     let countByRefType (keyf: 'T -> 'Key) (seq: seq<'T>) =
         seq
-        |> countByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox(keyf t)) (fun sb -> sb.Value)
+        |> countByImpl
+            RuntimeHelpers.StructBox<'Key>.Comparer
+            (fun t -> RuntimeHelpers.StructBox(keyf t))
+            (fun sb -> sb.Value)
 
     [<CompiledName("CountBy")>]
     let countBy (projection: 'T -> 'Key) (source: seq<'T>) =
