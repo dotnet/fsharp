@@ -422,6 +422,7 @@
     </Compile>
     <Compile Include="..\ConstraintSolver.fsi">
       <Link>Logic\ConstraintSolver.fsi</Link>
+    </Compile>
     <Compile Include="Checking\ConstraintSolver.fsi">
       <Link>Checking\ConstraintSolver.fsi</Link>
     </Compile>
@@ -436,6 +437,7 @@
     </Compile>
     <Compile Include="..\QuotationTranslator.fsi">
       <Link>Logic\QuotationTranslator.fsi</Link>
+    </Compile>
     <Compile Include="Checking\FindUnsolved.fsi">
       <Link>Checking\FindUnsolved.fsi</Link>
     </Compile>
