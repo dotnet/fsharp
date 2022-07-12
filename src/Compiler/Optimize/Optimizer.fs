@@ -882,13 +882,61 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
         | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkBoolVal g (a1 = a2)
         | _ -> UnknownValue
 
-    | [ AI_clt ], [a;b], _ -> 
+    | [ AI_clt ], [a;b], [ty] when typeEquiv g ty g.bool_ty -> 
         match stripValue a, stripValue b with
         | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkBoolVal g (a1 < a2)
         | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkBoolVal g (a1 < a2)
         | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkBoolVal g (a1 < a2)
         | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkBoolVal g (a1 < a2)
         | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkBoolVal g (a1 < a2)
+        | _ -> UnknownValue
+    | [ AI_clt ], [a;b], [ty] when typeEquiv g ty g.int32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | _ -> UnknownValue
+    | [ AI_clt ], [a;b], [ty] when typeEquiv g ty g.uint32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | _ -> UnknownValue
+    | [ AI_clt ], [a;b], [ty] when typeEquiv g ty g.int16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | _ -> UnknownValue
+    | [ AI_clt ], [a;b], [ty] when typeEquiv g ty g.uint16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkUInt16Val g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkUInt16Val  g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkUInt16Val  g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkUInt16Val  g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkUInt16Val  g (if a1 < a2 then 1us else 0us)
+        | _ -> UnknownValue
+    | [ AI_clt ], [a;b], [ty] when typeEquiv g ty g.sbyte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkInt8Val g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkInt8Val  g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkInt8Val  g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkInt8Val  g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkInt8Val  g (if a1 < a2 then 1y else 0y)
+        | _ -> UnknownValue
+    | [ AI_clt ], [a;b], [ty] when typeEquiv g ty g.byte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkUInt8Val g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkUInt8Val  g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkUInt8Val  g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkUInt8Val  g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkUInt8Val  g (if a1 < a2 then 1uy else 0uy)
         | _ -> UnknownValue
 
     | [ AI_conv DT_U1 ], [a], [ty] when typeEquiv g ty g.byte_ty -> 
@@ -995,6 +1043,55 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
         | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkBoolVal g (a1 < a2)
         | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkBoolVal g (a1 < a2)
         | _ -> UnknownValue
+    | [ AI_clt_un ], [a;b], [ty] when typeEquiv g ty g.int32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | _ -> UnknownValue
+    | [ AI_clt_un ], [a;b], [ty] when typeEquiv g ty g.uint32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | _ -> UnknownValue
+    | [ AI_clt_un ], [a;b], [ty] when typeEquiv g ty g.int16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | _ -> UnknownValue
+    | [ AI_clt_un ], [a;b], [ty] when typeEquiv g ty g.uint16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkUInt16Val g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkUInt16Val g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkUInt16Val g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkUInt16Val g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkUInt16Val g (if a1 < a2 then 1us else 0us)
+        | _ -> UnknownValue
+    | [ AI_clt_un ], [a;b], [ty] when typeEquiv g ty g.sbyte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkInt8Val g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkInt8Val g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkInt8Val g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkInt8Val g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkInt8Val g (if a1 < a2 then 1y else 0y)
+        | _ -> UnknownValue
+    | [ AI_clt_un ], [a;b], [ty] when typeEquiv g ty g.byte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkUInt8Val g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkUInt8Val g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkUInt8Val g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkUInt8Val g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkUInt8Val g (if a1 < a2 then 1uy else 0uy)
+        | _ -> UnknownValue
+
 
     | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.bool_ty -> 
         match stripValue a, stripValue b with
@@ -1002,6 +1099,48 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
         | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkBoolVal g (a1 > a2)
         | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkBoolVal g (a1 > a2)
         | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkBoolVal g (a1 > a2)
+        | _ -> UnknownValue
+    | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.int32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | _ -> UnknownValue
+    | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.uint32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | _ -> UnknownValue
+    | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.int16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | _ -> UnknownValue
+    | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.uint16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | _ -> UnknownValue
+    | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.sbyte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | _ -> UnknownValue
+    | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.byte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
         | _ -> UnknownValue
 
     | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.bool_ty -> 
@@ -1012,6 +1151,55 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
         | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkBoolVal g (a1 > a2)
         | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkBoolVal g (a1 > a2)
         | _ -> UnknownValue
+    | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.int32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | _ -> UnknownValue
+    | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.uint32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | _ -> UnknownValue
+    | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.int16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | _ -> UnknownValue
+    | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.uint16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | _ -> UnknownValue
+    | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.sbyte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | _ -> UnknownValue
+    | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.byte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | _ -> UnknownValue
+
 
     | [ AI_shl ], [a;n], _ -> 
         match stripValue a, stripValue n with
