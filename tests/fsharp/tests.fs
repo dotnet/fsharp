@@ -3639,6 +3639,9 @@ module GeneratedSignatureTests =
 
     [<Test>]
     let ``typeAugmentation-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/typeAugmentation" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``typeAliasPrimitives-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/typeAliasPrimitives" FSC_NETFX_TEST_GENERATED_SIGNATURE
 #endif
 
 #if !NETCOREAPP

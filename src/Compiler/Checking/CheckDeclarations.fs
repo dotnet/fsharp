@@ -5090,7 +5090,7 @@ module TcDeclarations =
                         memberFlags.MemberKind=SynMemberKind.Constructor && 
                         // REVIEW: This is a syntactic approximation
                         (match synValSig.SynType, synValSig.SynInfo.CurriedArgInfos with 
-                         | StripParenTypes (SynType.Fun (StripParenTypes (SynType.LongIdent (SynLongIdent([id], _, _))), _, _)), [[_]] when id.idText = "unit" -> true
+                         | StripParenTypes (SynType.Fun (argType = StripParenTypes (SynType.LongIdent (SynLongIdent([id], _, _))))), [[_]] when id.idText = "unit" -> true
                          | _ -> false) 
                     | _ -> false) 
 
