@@ -2290,7 +2290,8 @@ let CheckEntityDefn cenv env (tycon: Entity) =
         let methodUniquenessIncludesReturnType (minfo: MethInfo) =
             minfo.LogicalName = "op_Explicit" ||
             minfo.LogicalName = "op_Implicit" ||
-            (AttributeChecking.MethInfoHasAttribute g m g.attrib_AllowOverloadByReturnTypeAttribute minfo)
+            (g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions &&
+             AttributeChecking.MethInfoHasAttribute g m g.attrib_AllowOverloadByReturnTypeAttribute minfo)
 
         let MethInfosEquivWrtUniqueness eraseFlag m minfo minfo2 =
             if methodUniquenessIncludesReturnType minfo then

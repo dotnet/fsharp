@@ -2999,7 +2999,6 @@ and ResolveOverloading
               candidates |> FilterEachThenUndo (fun newTrace calledMeth -> 
                     let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
                     let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
-                     //let cxsln = cx |> Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m traitInfo.TraitContext calledMeth.Method calledMeth.CalledTyArgs))
                     CanMemberSigsMatchUpToCheck 
                         csenv 
                         permitOptArgs 
@@ -3043,7 +3042,6 @@ and ResolveOverloading
                             match CollectThenUndo (fun newTrace -> 
                                          let csenv = { csenv with IsSpeculativeForMethodOverloading = true }
                                          let cxsln = AssumeMethodSolvesTrait csenv cx m (WithTrace newTrace) calledMeth
-                                         //let cxsln = cx |> Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m traitInfo.TraitContext calledMeth.Method calledMeth.CalledTyArgs))
                                          CanMemberSigsMatchUpToCheck 
                                              csenv 
                                              permitOptArgs
@@ -3083,7 +3081,6 @@ and ResolveOverloading
         trackErrors {
                         do! errors
                         let cxsln = AssumeMethodSolvesTrait csenv cx m trace calledMeth
-                        //let cxsln = cx |> Option.map (fun traitInfo -> (traitInfo, MemberConstraintSolutionOfMethInfo csenv.SolverState m traitInfo.TraitContext calledMeth.Method calledMeth.CalledTyArgs))
                         match calledMethTrace with
                         | NoTrace ->
                            let! _usesTDC =
