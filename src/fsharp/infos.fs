@@ -2172,8 +2172,9 @@ type PropInfo =
         | FSProp(g, _, Some vref, _)  ->
             // A getter has signature  { OptionalObjectType } -> Unit -> PropertyType
             // A getter indexer has signature  { OptionalObjectType } -> TupledIndexerArguments -> PropertyType
-            let arginfos = ArgInfosOfMember g vref
-            arginfos.Length = 1 && arginfos.Head.Length >= 1
+            match ArgInfosOfMember g vref with
+            | [argInfos] -> not (List.isEmpty argInfos)
+            | _ -> false
         | FSProp(g, _, _, Some vref) ->
             // A setter has signature  { OptionalObjectType } -> PropertyType -> Void
             // A setter indexer has signature  { OptionalObjectType } -> TupledIndexerArguments -> PropertyType -> Void

@@ -2909,7 +2909,7 @@ module SimplifyTypes =
             simplify &&
             isTTyparCoercesToType tpc && 
             Zset.contains tp singletons && 
-            tp.Constraints.Length = 1)
+            List.isSingleton tp.Constraints)
         let inplace = inplace |> List.map (function tp, TyparConstraint.CoercesTo(ty, _) -> tp, ty | _ -> failwith "not isTTyparCoercesToType")
         
         { singletons = singletons
@@ -9330,23 +9330,29 @@ type Entity with
         tycon.TypeContents.tcaug_adhoc 
         |> NameMultiMap.find nm
         |> List.exists (fun vref -> 
-                          match vref.MemberInfo with 
-                          | None -> false 
-                          | Some membInfo -> 
-                                         let argInfos = ArgInfosOfMember g vref 
-                                         argInfos.Length = 1 && 
-                                         List.lengthsEqAndForall2 (typeEquiv g) (List.map fst (List.head argInfos)) argtys &&  
-                                         membInfo.MemberFlags.IsOverrideOrExplicitImpl) 
+            match vref.MemberInfo with 
+            | None -> false 
+            | Some membInfo ->
+ 
+            let argInfos = ArgInfosOfMember g vref 
+            match argInfos with
+            | [argInfos] ->
+                List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfos) argtys &&  
+                membInfo.MemberFlags.IsOverrideOrExplicitImpl
+            | _ -> false) 
     
     member tycon.HasMember g nm argtys = 
         tycon.TypeContents.tcaug_adhoc 
         |> NameMultiMap.find nm
         |> List.exists (fun vref -> 
-                          match vref.MemberInfo with 
-                          | None -> false 
-                          | _ -> let argInfos = ArgInfosOfMember g vref 
-                                 argInfos.Length = 1 && 
-                                 List.lengthsEqAndForall2 (typeEquiv g) (List.map fst (List.head argInfos)) argtys) 
+            match vref.MemberInfo with 
+            | None -> false 
+            | _ ->
+
+            let argInfos = ArgInfosOfMember g vref
+            match argInfos with
+            | [argInfos] -> List.lengthsEqAndForall2 (typeEquiv g) (List.map fst argInfos) argtys
+            | _ -> false) 
 
 
 type EntityRef with 
