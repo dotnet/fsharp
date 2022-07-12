@@ -11,6 +11,10 @@ namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 open System
 open NUnit.Framework
 open Microsoft.VisualStudio.FSharp
+open FSharp.Compiler.EditorServices
+open FSharp.Compiler.CodeAnalysis
+open Microsoft.CodeAnalysis
+open Microsoft.VisualStudio.FSharp.Editor
 
 [<SetUpFixture>]
 type public AssemblyResolverTestFixture () =
@@ -21,11 +25,6 @@ type public AssemblyResolverTestFixture () =
 [<NUnit.Framework.Category "Roslyn Services">]
 module QuickInfoProviderTests =
 
-open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Text
-open Microsoft.VisualStudio.FSharp.Editor
-open FSharp.Compiler.SourceCodeServices
-open UnitTests.TestLib.LanguageService
 let filePath = "C:\\test.fs"
 
 let internal projectOptions = { 
@@ -39,24 +38,30 @@ let internal projectOptions = {
     LoadTime = DateTime.MaxValue
     OriginalLoadReferences = []
     UnresolvedReferences = None
-    ExtraProjectInfo = None
     Stamp = None
 }
 
 let private normalizeLineEnds (s: string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n")
 
-let private getQuickInfoText (FSharpToolTipText elements) : string =
+let private getQuickInfoText (ToolTipText elements) : string =
     let rec parseElement = function
-        | FSharpToolTipElement.None -> ""
-        | FSharpToolTipElement.Group(xs) -> 
-            let text = xs |> List.map (fun item -> item.MainDescription) |> String.concat "\n"
-            let tps = xs |> List.collect (fun item -> item.TypeMapping)
+        | ToolTipElement.None -> ""
+        | ToolTipElement.Group(xs) -> 
+            let descriptions = xs |> List.map (fun item -> item.MainDescription)
+            let descriptionTexts = descriptions |> List.map (fun taggedTexts -> taggedTexts |> Array.map (fun taggedText -> taggedText.Text))
+            let descriptionText = descriptionTexts |> Array.concat |> String.concat ""
+            
             let remarks = xs |> List.choose (fun item -> item.Remarks)
-            let tpText = (match tps with [] -> "" | _ -> "\n" + String.concat "\n" tps)
-            let remarksText = (match remarks with [] -> "" | _ -> "\n" + String.concat "\n" remarks)
-            text + remarksText + tpText
-        | FSharpToolTipElement.CompositionError(error) -> error
-    elements |> List.map (FSharpToolTip.ToFSharpToolTipElement >> parseElement) |> String.concat "\n" |> normalizeLineEnds
+            let remarkTexts = remarks |> Array.concat |> Array.map (fun taggedText -> taggedText.Text)
+            let remarkText = (match remarks with [] -> "" | _ -> "\n" + String.concat "" remarkTexts)
+            
+            let tps = xs |> List.collect (fun item -> item.TypeMapping)
+            let tpTexts = tps |> List.map (fun x -> x |> Array.map (fun y -> y.Text) |> String.concat "")
+            let tpText = (match tps with [] -> "" | _ -> "\n" + String.concat "\n" tpTexts)
+
+            descriptionText + remarkText + tpText
+        | ToolTipElement.CompositionError(error) -> error
+    elements |> List.map parseElement |> String.concat "\n" |> normalizeLineEnds
 
 [<Test>]
 let ShouldShowQuickInfoAtCorrectPositions() =
@@ -67,19 +72,6 @@ let ShouldShowQuickInfoAtCorrectPositions() =
          "2", None
          "x +", Some "val x: int\nFull name: Test.x"
          "System", Some "namespace System"
-         "Console", Some "type Console =
-  static member BackgroundColor: ConsoleColor with get, set
-  static member Beep: unit -> unit + 1 overload
-  static member BufferHeight: int with get, set
-  static member BufferWidth: int with get, set
-  static member CapsLock: bool
-  static member Clear: unit -> unit
-  static member CursorLeft: int with get, set
-  static member CursorSize: int with get, set
-  static member CursorTop: int with get, set
-  static member CursorVisible: bool with get, set
-  ...
-Full name: System.Console"
          "WriteLine", Some "System.Console.WriteLine(value: int) : unit" ]
 
     for (symbol: string, expected: string option) in testCases do
@@ -90,14 +82,13 @@ Full name: System.Console"
     System.Console.WriteLine(x + y)
     """
         let caretPosition = fileContents.IndexOf(symbol)
-        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
+
         let quickInfo =
-            FSharpAsyncQuickInfoSource.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, parsingOptions, projectOptions, 0)
+            FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
             |> Async.RunSynchronously
         
-        let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)
+        let actual = quickInfo |> Option.map (fun qi -> getQuickInfoText qi.StructuredText)
         Assert.AreEqual(expected, actual)
 
 [<Test>]
@@ -109,39 +100,39 @@ let ShouldShowQuickInfoForGenericParameters() =
             "(extension) System.Collections.Generic.IEnumerable.GroupBy<'TSource,'TKey>(keySelector: System.Func<'TSource,'TKey>) : System.Collections.Generic.IEnumerable<IGrouping<'TKey,'TSource>>
 'TSource is int * string
 'TKey is int");
-         ("Sort", Some "System.Array.Sort<'T>(array: 'T []) : unit
+         ("Sort", Some "System.Array.Sort<'T>(array: 'T[]) : unit
 'T is int");
          ("let test4 x = C().FSharpGenericMethodExplitTypeParams",
           Some
-            "member C.FSharpGenericMethodExplitTypeParams : a:'T0 * y:'T0 -> 'T0 * 'T0
+            "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
 'T is 'a list");
          ("let test5<'U> (x: 'U) = C().FSharpGenericMethodExplitTypeParams",
           Some
-            "member C.FSharpGenericMethodExplitTypeParams : a:'T0 * y:'T0 -> 'T0 * 'T0
+            "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
 'T is 'U list");
          ("let test6 = C().FSharpGenericMethodExplitTypeParams",
           Some
-            "member C.FSharpGenericMethodExplitTypeParams : a:'T0 * y:'T0 -> 'T0 * 'T0
+            "member C.FSharpGenericMethodExplitTypeParams: a: 'T0 * y: 'T0 -> 'T0 * 'T0
 'T is int");
          ("let test7 x = C().FSharpGenericMethodInferredTypeParams",
           Some
-            "member C.FSharpGenericMethodInferredTypeParams : a:'a1 * y:'b2 -> 'a1 * 'b2
+            "member C.FSharpGenericMethodInferredTypeParams: a: 'a1 * y: 'b2 -> 'a1 * 'b2
 'a is 'a0 list
 'b is 'a0 list");
          ("let test8 = C().FSharpGenericMethodInferredTypeParams",
           Some
-            "member C.FSharpGenericMethodInferredTypeParams : a:'a0 * y:'b1 -> 'a0 * 'b1
+            "member C.FSharpGenericMethodInferredTypeParams: a: 'a0 * y: 'b1 -> 'a0 * 'b1
 'a is int
 'b is int");
          ("let test9<'U> (x: 'U) = C().FSharpGenericMethodInferredTypeParams",
           Some
-            "member C.FSharpGenericMethodInferredTypeParams : a:'a0 * y:'b1 -> 'a0 * 'b1
+            "member C.FSharpGenericMethodInferredTypeParams: a: 'a0 * y: 'b1 -> 'a0 * 'b1
 'a is 'U list
 'b is 'U list");
          ("let res3 = [1] |>",
           Some
-            "val ( |> ) : arg:'T1 -> func:('T1 -> 'U) -> 'U
-Full name: Microsoft.FSharp.Core.Operators.( |> )
+            "val (|>) : arg: 'T1 -> func: ('T1 -> 'U) -> 'U
+Full name: Microsoft.FSharp.Core.Operators.(|>)
 'T1 is int list
 'U is int list");
          ("let res3 = [1] |> List.map id",
@@ -151,8 +142,8 @@ Full name: Microsoft.FSharp.Core.Operators.id
 'T is int");
          ("let res4 = (1.0,[1]) ||>",
           Some
-            "val ( ||> ): arg1: 'T1 * arg2: 'T2 -> func: ('T1 -> 'T2 -> 'U) -> 'U
-Full name: Microsoft.FSharp.Core.Operators.( ||> )
+            "val (||>) : arg1: 'T1 * arg2: 'T2 -> func: ('T1 -> 'T2 -> 'U) -> 'U
+Full name: Microsoft.FSharp.Core.Operators.(||>)
 'T1 is float
 'T2 is int list
 'U is float");
@@ -164,22 +155,22 @@ Full name: Microsoft.FSharp.Collections.List.fold
 'State is float");
          ("let res4 = (1.0,[1]) ||> List.fold (fun s x -> string s +",
           Some
-            "val ( + ) : x:'T1 -> y:'T2 -> 'T3 (requires member ( + ))
-Full name: Microsoft.FSharp.Core.Operators.( + )
+            "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
+Full name: Microsoft.FSharp.Core.Operators.(+)
 'T1 is string
 'T2 is string
 'T3 is float");
          ("let res5 = 1 +",
           Some
-            "val ( + ) : x:'T1 -> y:'T2 -> 'T3 (requires member ( + ))
-Full name: Microsoft.FSharp.Core.Operators.( + )
+            "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
+Full name: Microsoft.FSharp.Core.Operators.(+)
 'T1 is int
 'T2 is int
 'T3 is int");
          ("let res6 = System.DateTime.Now +",
           Some
-            "val ( + ) : x:'T1 -> y:'T2 -> 'T3 (requires member ( + ))
-Full name: Microsoft.FSharp.Core.Operators.( + )
+            "val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
+Full name: Microsoft.FSharp.Core.Operators.(+)
 'T1 is System.DateTime
 'T2 is System.TimeSpan
 'T3 is System.DateTime");
@@ -221,15 +212,16 @@ let res7 = sin 5.0
 let res8 = abs 5.0<kg>
     """
         let caretPosition = fileContents.IndexOf(symbol) + symbol.Length - 1
-        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
         
-        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         let quickInfo =
-            FSharpAsyncQuickInfoSource.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, parsingOptions, projectOptions, 0)
+            FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
             |> Async.RunSynchronously
         
-        let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)
+        let actual = quickInfo |> Option.map (fun qi -> getQuickInfoText qi.StructuredText)
         yield symbol, actual ]
-    printfn "results:\n%A" actualForAllTests
-    for ((symbol, expected),(_,actual)) in List.zip testCases actualForAllTests do
-       Assert.AreEqual(Option.map normalizeLineEnds expected, Option.map normalizeLineEnds actual)
+
+    for ((_, expected),(_,actual)) in List.zip testCases actualForAllTests do
+        let normalizedExpected = Option.map normalizeLineEnds expected
+        let normalizedActual = Option.map normalizeLineEnds actual
+        Assert.AreEqual(normalizedExpected, normalizedActual)

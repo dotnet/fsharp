@@ -1240,7 +1240,17 @@ let noFrameworkFlag isFsc tcConfigB =
     )
 
 let advancedFlagsFsi tcConfigB =
-    advancedFlagsBoth tcConfigB @ [ noFrameworkFlag false tcConfigB ]
+    advancedFlagsBoth tcConfigB
+    @ [
+        CompilerOption(
+            "clearResultsCache",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.clearResultsCache <- true),
+            None,
+            Some(FSComp.SR.optsClearResultsCache ())
+        )
+        noFrameworkFlag false tcConfigB
+    ]
 
 let advancedFlagsFsc tcConfigB =
     advancedFlagsBoth tcConfigB
