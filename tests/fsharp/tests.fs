@@ -3550,7 +3550,7 @@ open System.Runtime.InteropServices
         fv.LegalTrademarks |> Assert.areEqual "CST \u2122"
 #endif
 
-#if NET472
+#if !NETCOREAPP
 [<NonParallelizable>]
 module ProductVersionTest =
 
