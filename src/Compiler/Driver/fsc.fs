@@ -491,6 +491,8 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
         TcImports.BuildFrameworkTcImports (foundationalTcConfigP, sysRes, otherRes)
         |> NodeCode.RunImmediateWithoutCancellation
 
+    let ilSourceDocs = [ for sourceFile in sourceFiles -> tcGlobals.memoize_file (FileIndex.fileIndexOfFile sourceFile)]
+
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
 
@@ -557,7 +559,7 @@ let main1(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted,
     AbortOnError(diagnosticsLogger, exiter)
     ReportTime tcConfig "Typechecked"
 
-    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedAssembly, topAttrs, tcConfig, outfile, pdbfile, assemblyName, diagnosticsLogger, exiter)
+    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedAssembly, topAttrs, tcConfig, outfile, pdbfile, assemblyName, diagnosticsLogger, exiter, ilSourceDocs)
 
 /// Alternative first phase of compilation.  This is for the compile-from-AST feature of FCS.
 ///   - Import assemblies
@@ -677,11 +679,11 @@ let main1OfAst
     AbortOnError(diagnosticsLogger, exiter)
     ReportTime tcConfig "Typechecked"
 
-    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedAssembly, topAttrs, tcConfig, outfile, pdbFile, assemblyName, diagnosticsLogger, exiter)
+    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedAssembly, topAttrs, tcConfig, outfile, pdbFile, assemblyName, diagnosticsLogger, exiter, [])
 
 /// Second phase of compilation.
 ///   - Write the signature file, check some attributes
-let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu: CcuThunk, typedImplFiles, topAttrs, tcConfig: TcConfig, outfile, pdbfile, assemblyName, diagnosticsLogger, exiter: Exiter)) =
+let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu: CcuThunk, typedImplFiles, topAttrs, tcConfig: TcConfig, outfile, pdbfile, assemblyName, diagnosticsLogger, exiter: Exiter, ilSourceDocs)) =
 
     if tcConfig.typeCheckOnly then exiter.Exit 0
 
@@ -728,7 +730,7 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
         XmlDocWriter.WriteXmlDocFile (tcGlobals, assemblyName, generatedCcu, xmlFile))
 
     // Pass on only the minimum information required for the next phase
-    Args (ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, diagnosticsLogger, generatedCcu, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)
+    Args (ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, diagnosticsLogger, generatedCcu, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter, ilSourceDocs)
 
 
 /// Third phase of compilation.
@@ -737,7 +739,7 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
 ///   - encode optimization data
 let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals,
                  diagnosticsLogger: DiagnosticsLogger, generatedCcu: CcuThunk, outfile, typedImplFiles,
-                 topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter)) =
+                 topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter, ilSourceDocs)) =
 
     // Encode the signature data
     ReportTime tcConfig "Encode Interface Data"
@@ -781,7 +783,7 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
     // Pass on only the minimum information required for the next phase
     Args (ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger,
           generatedCcu, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName,
-          sigDataAttributes, sigDataResources, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter)
+          sigDataAttributes, sigDataResources, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter, ilSourceDocs)
 
 /// Fourth phase of compilation.
 ///   -  Static linking
@@ -790,7 +792,7 @@ let main4
       (tcImportsCapture,dynamicAssemblyCreator)
       (Args (ctok, tcConfig: TcConfig, tcImports, tcGlobals: TcGlobals, diagnosticsLogger,
              generatedCcu: CcuThunk, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName,
-             sigDataAttributes, sigDataResources, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter: Exiter)) =
+             sigDataAttributes, sigDataResources, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter: Exiter, ilSourceDocs)) =
 
     match tcImportsCapture with
     | None -> ()
@@ -831,11 +833,11 @@ let main4
     AbortOnError(diagnosticsLogger, exiter)
 
     // Pass on only the minimum information required for the next phase
-    Args (ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter)
+    Args (ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter, ilSourceDocs)
 
 /// Fifth phase of compilation.
 ///   -  static linking
-let main5(Args (ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger: DiagnosticsLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter: Exiter)) =
+let main5(Args (ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger: DiagnosticsLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter: Exiter, ilSourceDocs)) =
 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
 
@@ -849,13 +851,13 @@ let main5(Args (ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger: Diagnos
     AbortOnError(diagnosticsLogger, exiter)
 
     // Pass on only the minimum information required for the next phase
-    Args (ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, ilxMainModule, outfile, pdbfile, signingInfo, exiter)
+    Args (ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, ilxMainModule, outfile, pdbfile, signingInfo, exiter, ilSourceDocs)
 
 /// Sixth phase of compilation.
 ///   -  write the binaries
 let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, tcGlobals: TcGlobals,
                                         diagnosticsLogger: DiagnosticsLogger, ilxMainModule, outfile, pdbfile,
-                                        signingInfo, exiter: Exiter)) =
+                                        signingInfo, exiter: Exiter, ilSourceDocs)) =
 
     ReportTime tcConfig "Write .NET Binary"
 
@@ -902,6 +904,7 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
                         embeddedPDB = false
                         embedAllSource = tcConfig.embedAllSource
                         embedSourceList = tcConfig.embedSourceList
+                        allGivenSources = ilSourceDocs
                         sourceLink = tcConfig.sourceLink
                         checksumAlgorithm = tcConfig.checksumAlgorithm
                         signer = GetStrongNameSigner signingInfo
@@ -930,6 +933,7 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
                         embeddedPDB = tcConfig.embeddedPDB
                         embedAllSource = tcConfig.embedAllSource
                         embedSourceList = tcConfig.embedSourceList
+                        allGivenSources = ilSourceDocs
                         sourceLink = tcConfig.sourceLink
                         checksumAlgorithm = tcConfig.checksumAlgorithm
                         signer = GetStrongNameSigner signingInfo

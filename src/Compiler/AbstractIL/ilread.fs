@@ -4741,7 +4741,9 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, noFileOnDisk) =
     let platform =
         match machine with
         | 0x8664 -> Some AMD64
+        | 0xaa64 -> Some ARM64
         | 0x200 -> Some IA64
+        | 0x1c0 -> Some ARM
         | _ -> Some X86
 
     let sectionHeadersStartPhysLoc = peOptionalHeaderPhysLoc + headerSizeOpt
