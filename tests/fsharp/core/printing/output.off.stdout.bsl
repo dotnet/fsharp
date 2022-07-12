@@ -1636,9 +1636,9 @@ val x: optionRecord
     TwoFields2: obj
   }
 
-> type Int32 with
+> type System.Int32 with
   member ExtrinsicExtensionProperty: int
-type Int32 with
+type System.Int32 with
   member ExtrinsicExtensionMethod: unit -> int
 
 > val ``value with spaces in name`` : bool

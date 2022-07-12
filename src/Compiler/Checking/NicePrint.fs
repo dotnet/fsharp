@@ -1556,7 +1556,7 @@ module TastDefinitionPrinting =
     let layoutExtensionMember denv infoReader (vref: ValRef) =
         let (@@*) = if denv.printVerboseSignatures then (@@----) else (@@--)
         let tycon = vref.MemberApparentEntity.Deref
-        let nameL = ConvertNameToDisplayLayout (tagMethod >> mkNav vref.DefinitionRange >> wordL) tycon.DisplayNameCore
+        let nameL = layoutTyconRefImpl false denv vref.MemberApparentEntity
         let nameL = layoutAccessibility denv tycon.Accessibility nameL // "type-accessibility"
         let tps =
             match PartitionValTyparsForApparentEnclosingType denv.g vref.Deref with
