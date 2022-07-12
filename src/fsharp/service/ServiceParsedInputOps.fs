@@ -43,7 +43,8 @@ type InheritanceContext =
 type RecordContext =
     | CopyOnUpdate of range: range * path: CompletionPath
     | Constructor of typeName: string
-    | New of path: CompletionPath
+    | Empty
+    | New of path: CompletionPath * isFirstField: bool
     | Declaration of isInIdentifier: bool
 
 [<RequireQualifiedAccess>]
@@ -956,7 +957,8 @@ module ParsedInput =
                                     Some (CompletionContext.ParameterList args)
                                 | _ -> 
                                     defaultTraverse expr
-
+                            | SynExpr.Record(None, None, [], _) ->
+                                Some(CompletionContext.RecordField RecordContext.Empty)
                             // Unchecked.defaultof<str$>
                             | SynExpr.TypeApp (typeArgsRange = range) when rangeContainsPos range pos ->
                                 Some CompletionContext.PatternType
@@ -968,7 +970,22 @@ module ParsedInput =
                             match path with
                             | SyntaxNode.SynExpr _ :: SyntaxNode.SynBinding _ :: SyntaxNode.SynMemberDefn _ :: SyntaxNode.SynTypeDefn(SynTypeDefn(typeInfo=SynComponentInfo(longId=[id]))) :: _ ->  
                                 RecordContext.Constructor(id.idText)
-                            | _ -> RecordContext.New completionPath
+
+                            | SyntaxNode.SynExpr(SynExpr.Record(None, _, fields, _)) :: _ ->
+                                let isFirstField = 
+                                    match field, fields with
+                                    | Some contextLid, SynExprRecordField(fieldName = lid, _) :: _ -> contextLid.Range = lid.Range
+                                    | _ -> false
+
+                                RecordContext.New(completionPath, isFirstField)
+
+                            // Unfinished `{ xxx }` expression considered a record field by the tree walker. 
+                            | SyntaxNode.SynExpr(SynExpr.ComputationExpr _) :: _ ->
+                                RecordContext.New(completionPath, true)
+
+                            | _ ->
+                                RecordContext.New(completionPath, false)
+
                         match field with
                         | Some field -> 
                             match parseLid field with
@@ -1079,6 +1096,12 @@ module ParsedInput =
                                     None
                             | _ -> None)
 
+                    member _.VisitPat (_, defaultTraverse, pat) =
+                        match pat with
+                        | SynPat.IsInst (_, range) when rangeContainsPos range pos ->
+                            Some CompletionContext.PatternType
+                        | _ -> defaultTraverse pat
+
                     member _.VisitModuleDecl(_path, defaultTraverse, decl) =
                         match decl with
                         | SynModuleDecl.Open(target, m) -> 
@@ -1105,12 +1128,15 @@ module ParsedInput =
                             Some CompletionContext.PatternType
                         | _ -> defaultTraverse ty
 
-                    member _.VisitRecordDefn(_path, fields, _range) =
-                        fields |> List.tryPick (fun (SynField (idOpt = idOpt; range = fieldRange)) ->
+                    member _.VisitRecordDefn(_path, fields, range) =
+                        fields
+                        |> List.tryPick (fun (SynField (idOpt = idOpt; range = fieldRange)) ->
                             match idOpt with
                             | Some id when rangeContainsPos id.idRange pos -> Some(CompletionContext.RecordField(RecordContext.Declaration true))
                             | _ when rangeContainsPos fieldRange pos -> Some(CompletionContext.RecordField(RecordContext.Declaration false))
                             | _ -> None)
+                        // No completions in a record outside of all fields
+                        |> Option.orElseWith (fun () -> if rangeContainsPos range pos then Some CompletionContext.Invalid else None)
 
                     member _.VisitUnionDefn(_path, cases, _range) =
                         cases |> List.tryPick (fun (SynUnionCase (ident = id; caseType = caseType)) ->

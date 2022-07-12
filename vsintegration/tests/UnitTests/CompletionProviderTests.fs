@@ -648,6 +648,25 @@ let _ = fun (p:l) -> ()
     VerifyCompletionList(fileContents, "let _ = fun (p:l", ["LanguagePrimitives"; "List"], ["let"; "log"])
 
 [<Test>]
+let ``Completions in match clause type test contain modules and types but not keywords or functions``() =
+    let fileContents = """
+match box 5 with
+| :? l as x -> ()
+| _ -> ()
+"""
+    VerifyCompletionList(fileContents, ":? l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``Completions in catch clause type test contain modules and types but not keywords or functions``() =
+    let fileContents = """
+try
+    ()
+with :? l as x ->
+    ()
+"""
+    VerifyCompletionList(fileContents, ":? l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
 let ``Extensions.Bug5162``() =
     let fileContents = """
 module Extensions =
@@ -756,6 +775,20 @@ let ``Completion list on record field type at declaration site contains modules,
 type A<'lType> = { Field: l }
 """
     VerifyCompletionList(fileContents, "Field: l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``No completion on record stub with no fields at declaration site``() =
+    let fileContents = """
+type A = {  }
+"""
+    VerifyNoCompletionList(fileContents, "{ ")
+
+[<Test>]
+let ``No completion on record outside of all fields at declaration site``() =
+    let fileContents = """
+type A = { Field: string; }
+"""
+    VerifyNoCompletionList(fileContents, "; ")
 
 [<Test>]
 let ``No completion on union case identifier at declaration site``() =
