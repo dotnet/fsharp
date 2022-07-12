@@ -811,7 +811,7 @@ module IncrClassChecking =
                 let valSynData = SynValInfo([[]], SynInfo.unnamedRetVal)
                 let id = ident ("cctor", m)
                 CheckForNonAbstractInterface ModuleOrMemberBinding tcref (ClassCtorMemberFlags SynMemberFlagsTrivia.Zero) id.idRange
-                let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [(*no attributes*)], [], (ClassCtorMemberFlags SynMemberFlagsTrivia.Zero), valSynData, id, false)
+                let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], (ClassCtorMemberFlags SynMemberFlagsTrivia.Zero), valSynData, id, false)
                 let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
                 let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, cctorTy)
                 let topValInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
@@ -864,13 +864,13 @@ module IncrClassChecking =
     type IncrClassValRepr = 
 
         // e.g representation for 'let v = 3' if it is not used in anything given a method representation
-        | InVar of (* isArg: *) bool 
+        | InVar of isArg: bool 
 
         // e.g representation for 'let v = 3'
-        | InField of (*isStatic:*)bool * (*staticCountForSafeInit:*) int * RecdFieldRef
+        | InField of isStatic: bool * staticCountForSafeInit: int * fieldRef: RecdFieldRef
 
         // e.g representation for 'let f x = 3'
-        | InMethod of (*isStatic:*)bool * Val * ValReprInfo
+        | InMethod of isStatic:bool * value: Val * valReprInfo: ValReprInfo
 
     /// IncrClassReprInfo represents the decisions we make about the representation of 'let' and 'do' bindings in a
     /// type defined with implicit class construction.
@@ -1931,7 +1931,7 @@ module MutRecBindingChecking =
                                 
                                     // Type check local recursive binding 
                                     let binds = binds |> List.map (fun bind -> RecDefnBindingInfo(ExprContainerInfo, NoNewSlots, ClassLetBinding isStatic, bind))
-                                    let binds, env, tpenv = TcLetrecBindings ErrorOnOverrides cenv envForBinding tpenv (binds, scopem(*bindsm*), scopem)
+                                    let binds, env, tpenv = TcLetrecBindings ErrorOnOverrides cenv envForBinding tpenv (binds, scopem, scopem)
                                     let bindRs = [IncrClassBindingGroup(binds, isStatic, true)]
                                     binds, bindRs, env, tpenv 
                                 else
