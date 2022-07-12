@@ -15,7 +15,7 @@ let f3 x = (x : float32<Kg>) + 1M<Kg>
 let f4 x = (x : decimal<N*s*s/m>) + ""
 
 exit 1
-
+s
 //<Expects id="FS0001" span="(11,27-11,28)" status="error">The types 'string, int' do not support the operator</Expects>
 //<Expects id="FS0043" span="(11,25-11,26)" status="error">The types 'string, int' do not support the operator</Expects>
 //<Expects id="FS0001" span="(12,18-12,26)" status="error">The types 'string, byte' do not support the operator</Expects>

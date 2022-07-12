@@ -62,7 +62,6 @@ this file.
       If Shim helpers are present then the values are valid and set by the Microsoft.FSharp.Helpers.props
     -->
 
-    <!-- Here we set the default value to true when nothing is set, it will be removed in a future release when we default to the net sdk compiler -->
     <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true'">
         <FSharpPreferNetFrameworkTools Condition="'$(FSharpPreferNetFrameworkTools)' == ''">true</FSharpPreferNetFrameworkTools>
     </PropertyGroup>

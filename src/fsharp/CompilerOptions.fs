@@ -1201,7 +1201,7 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
     // "Resolve assembly references using MSBuild resolution rules rather than directory based (Default=true except when running fsc.exe under mono)")
     CompilerOption
        ("msbuildresolution", tagNone,
-        OptionUnit (fun () -> tcConfigB.useSimpleResolution<-false),
+        OptionUnit (fun () -> tcConfigB.useSimpleResolution <- false),
         Some(InternalCommandLineOption("msbuildresolution", rangeCmdArgs)), None)
 
     CompilerOption
@@ -1211,8 +1211,8 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
 
     CompilerOption
        ("nodebugdata", tagNone,
-        OptionUnit (fun () -> tcConfigB.noDebugData<-true),
-        Some(InternalCommandLineOption("--nodebugdata", rangeCmdArgs)), None)
+        OptionUnit (fun () -> tcConfigB.noDebugAttributes <- true),
+        Some(InternalCommandLineOption("nodebugdata", rangeCmdArgs)), None)
 
     testFlag tcConfigB  ] @
 

@@ -66,8 +66,7 @@ let mkSynDoBinding (vis, strict, expr, m) =
              SynBindingTrivia.Zero)
 
 let mkSynDoDecl (e: SynExpr) = 
-    let spExpr = if IsControlFlowExpression e then DebugPointAtBinding.NoneAtDo else DebugPointAtBinding.Yes e.Range
-    SynModuleDecl.DoExpr(spExpr, e, e.Range)
+    SynModuleDecl.DoExpr(DebugPointAtBinding.NoneAtDo, e, e.Range)
 
 let addAttribs attrs p =  SynPat.Attrib(p, attrs, p.Range)
 
@@ -687,7 +686,8 @@ moduleIntro:
   | moduleKeyword opt_attributes opt_access opt_rec path
       { if not (isNil $2) then
             parseState.LexBuffer.CheckLanguageFeatureErrorRecover LanguageFeature.AttributesToRightOfModuleKeyword <| rhs parseState 4
-        $4, $5.Lid, $3, $2 }
+        let mModule = rhs parseState 1
+        mModule, $4, $5.Lid, $3, $2 }
 
 
 /* The start of a namespace declaration */
@@ -736,7 +736,7 @@ fileModuleSpec:
     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
       let m2 = rhs parseState 3
       let mDeclsAndAttrs = (List.map (fun (a: SynAttributeList) -> a.Range) $1) @ (List.map (fun (d: SynModuleSigDecl) -> d.Range) $4)
-      let isRec, path2, vis, attribs2 = $3
+      let _mModule, isRec, path2, vis, attribs2 = $3
       let xmlDoc = grabXmlDoc(parseState, $1, 1)
       let m = (m2, mDeclsAndAttrs) ||> unionRangeWithListBy id |> unionRangeWithXmlDoc xmlDoc
       (fun (isRec2, path, _) ->
@@ -752,7 +752,8 @@ fileModuleSpec:
         | _ ->
             let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
             let m = mkRange lastDeclRange.FileName (lhs parseState).Start lastDeclRange.End
-            ParsedSigFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, xml, [], m))  } 
+            xml.MarkAsInvalid()
+            ParsedSigFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, PreXmlDoc.Empty, [], m))  } 
 
 
 moduleSpfnsPossiblyEmptyBlock: 
@@ -803,7 +804,7 @@ moduleSpfn:
 
   | opt_attributes opt_declVisibility moduleIntro colonOrEquals namedModuleAbbrevBlock 
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let isRec, path, vis, attribs2 = $3
+        let _mModule, isRec, path, vis, attribs2 = $3
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
         if not (isNil $1) then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
@@ -813,7 +814,7 @@ moduleSpfn:
         | _ -> SynModuleSigDecl.ModuleAbbrev(List.head path, $5, rhs2 parseState 1 5) } 
 
   | opt_attributes opt_declVisibility moduleIntro colonOrEquals moduleSpecBlock
-      { let isRec, path, vis, attribs2 = $3
+      { let mModule, isRec, path, vis, attribs2 = $3
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleDefnMustBeSimpleName())
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
@@ -822,7 +823,8 @@ moduleSpfn:
         let m = (rhs2 parseState 1 4, $5)
                 ||> unionRangeWithListBy (fun (d: SynModuleSigDecl) -> d.Range)
                 |> unionRangeWithXmlDoc xmlDoc
-        SynModuleSigDecl.NestedModule(info, isRec, $4, $5, m) }
+        let trivia: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = $4 }
+        SynModuleSigDecl.NestedModule(info, isRec, $5, m, trivia) }
 
   | opt_attributes opt_declVisibility typeKeyword tyconSpfn tyconSpfnList
       { if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
@@ -916,15 +918,15 @@ tyconSpfn:
         $3 lhsm $1 (Some mEquals) }
   | typeNameInfo  opt_classSpfn       
       { let mWithKwd, members = $2
+        let (SynComponentInfo(range=range)) = $1
         let m =
             match members with
             | [] ->
                 match mWithKwd with
-                | None -> rhs parseState 1
-                | Some mWithKwd -> unionRanges (rhs parseState 1) mWithKwd
+                | None -> range
+                | Some mWithKwd -> unionRanges range mWithKwd
             | decls ->
-                let (SynComponentInfo(range=start)) = $1
-                (start, decls) ||> unionRangeWithListBy (fun (s: SynMemberSig) -> s.Range)
+                (range, decls) ||> unionRangeWithListBy (fun (s: SynMemberSig) -> s.Range)
         SynTypeDefnSig($1, None, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m), mWithKwd, members, m) }
 
 
@@ -1093,7 +1095,7 @@ classMemberSpfn:
 
   | opt_attributes opt_declVisibility NEW COLON topTypeWithTypeConstraints  
      { let vis, doc, (ty, valSynInfo) = $2, grabXmlDoc(parseState, $1, 1), $5
-       let m = unionRanges (rhs parseState 1) ty.Range 
+       let m = unionRanges (rhs parseState 1) ty.Range |> unionRangeWithXmlDoc doc
        let isInline = false 
        let valSpfn = SynValSig ($1, mkSynId (rhs parseState 3) "new", noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, None, m)
        SynMemberSig.Member(valSpfn, CtorMemberFlags SynMemberFlagsTrivia.Zero, m) }
@@ -1225,7 +1227,7 @@ fileModuleImpl:
       let mDeclsAndAttrs = (List.map (fun (a: SynAttributeList) -> a.Range) $1) @ (List.map (fun (d: SynModuleDecl) -> d.Range) $4)
       let xmlDoc = grabXmlDoc(parseState, $1, 1)
       let m = (m2, mDeclsAndAttrs) ||> unionRangeWithListBy id |> unionRangeWithXmlDoc xmlDoc
-      let isRec2, path2, vis, attribs2 = $3
+      let _mModule, isRec2, path2, vis, attribs2 = $3
       (fun (isRec, path, _) ->
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
         let lid = path@path2 
@@ -1239,7 +1241,8 @@ fileModuleImpl:
         | _ ->
             let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
             let m = mkRange lastDeclRange.FileName (lhs parseState).Start lastDeclRange.End
-            ParsedImplFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, xml, [], m)) } 
+            xml.MarkAsInvalid()
+            ParsedImplFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, PreXmlDoc.Empty, [], m)) } 
 
 
 /* A collection/block of definitions or expressions making up a module or namespace, possibly empty */
@@ -1376,7 +1379,7 @@ moduleDefn:
   /* 'module' definitions */
   | opt_attributes opt_declVisibility moduleIntro EQUALS namedModuleDefnBlock
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let attribs, (isRec, path, vis, attribs2) = $1, $3
+        let attribs, (mModule, isRec, path, vis, attribs2) = $1, $3
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
         match $5 with
         | Choice1Of2 eqn -> 
@@ -1393,7 +1396,8 @@ moduleDefn:
             if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
             let info = SynComponentInfo(attribs @ attribs2, None, [], path, xmlDoc, false, vis, rhs parseState 3)
             let mEquals = rhs parseState 4
-            [ SynModuleDecl.NestedModule(info, isRec, Some mEquals, def, false, ((rhs2 parseState 1 4, def) ||> unionRangeWithListBy (fun d -> d.Range) |> unionRangeWithXmlDoc xmlDoc))] }
+            let trivia: SynModuleDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = Some mEquals }
+            [ SynModuleDecl.NestedModule(info, isRec, def, false, ((rhs2 parseState 1 4, def) ||> unionRangeWithListBy (fun d -> d.Range) |> unionRangeWithXmlDoc xmlDoc), trivia)] }
 
   /* unattached custom attributes */
   | attributes recover
@@ -1832,13 +1836,13 @@ memberCore:
      { let mRhs = $5.Range 
        let optReturnType = $3
        let mEquals = rhs parseState 4
-       let bindingBuilder, mBindLhs = $2 
+       let bindingPat, mBindLhs = $2 
        (fun vis memFlagsBuilder attrs rangeStart ->
             let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
             let memberFlags = Some (memFlagsBuilder SynMemberKind.Member)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = Some mEquals }
-            let binding = (bindingBuilder xmlDoc) (vis, $1, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, $5, mRhs, [], attrs, memberFlags, trivia)
+            let binding = mkSynBinding (xmlDoc, bindingPat) (vis, $1, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, $5, mRhs, [], attrs, memberFlags, trivia)
             let memberRange = unionRanges rangeStart mRhs |> unionRangeWithXmlDoc xmlDoc
             [ SynMemberDefn.Member (binding, memberRange) ]) }
 
@@ -1846,7 +1850,7 @@ memberCore:
   | opt_inline bindingPattern opt_topReturnTypeWithTypeConstraints classDefnMemberGetSet  
      { let mWith, (classDefnMemberGetSetElements, mAnd) = $4
        let mWhole = (rhs parseState 2, classDefnMemberGetSetElements) ||> unionRangeWithListBy (fun (_, _, _, _, _, _, m2) -> m2) 
-       let propertyNameBindingBuilder, _ = $2 
+       let propertyNameBindingPat, _ = $2 
        let optPropertyType = $3 
        let isMutable = false
        (fun visNoLongerUsed memFlagsBuilder attrs rangeStart -> 
@@ -1856,7 +1860,7 @@ memberCore:
              
              let tryMkSynMemberDefnMember 
                  (withPropertyKeyword: PropertyKeyword option)
-                 (optInline, (optAttrs: SynAttributeList list), (bindingBuilder, mBindLhs), optReturnType, mEquals, expr, exprm)
+                 (optInline, (optAttrs: SynAttributeList list), (bindingPat, mBindLhs), optReturnType, mEquals, expr, exprm)
                  =
                  let optInline = $1 || optInline 
                  // optional attributes are only applied to getters and setters
@@ -1866,8 +1870,9 @@ memberCore:
                          { attrList with Attributes = attrList.Attributes |> List.map (fun a -> { a with AppliesToGetterAndSetter = true } ) })
   
                  let attrs = attrs @ optAttrs
+  
                  let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = mEquals }
-                 let binding = (bindingBuilder xmlDoc) (visNoLongerUsed, optInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, exprm, [], attrs, Some (memFlagsBuilder SynMemberKind.Member), trivia)
+                 let binding = mkSynBinding (xmlDoc, bindingPat) (visNoLongerUsed, optInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, exprm, [], attrs, Some (memFlagsBuilder SynMemberKind.Member), trivia)
                  let (SynBinding (vis, _, isInline, _, attrs, doc, valSynData, pv, _, _, mBindLhs, spBind, _)) = binding 
                  let memberKind = 
                        let getset = 
@@ -1917,7 +1922,7 @@ memberCore:
   
                  // REDO with the correct member kind 
                  let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = mEquals }
-                 let binding = (bindingBuilder PreXmlDoc.Empty) (vis, isInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, exprm, [], attrs, Some(memFlagsBuilder memberKind), trivia)
+                 let binding = mkSynBinding (PreXmlDoc.Empty, bindingPat) (vis, isInline, isMutable, mBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, expr, exprm, [], attrs, Some(memFlagsBuilder memberKind), trivia)
   
                  let (SynBinding (vis, _, isInline, _, attrs, doc, valSynData, pv, rhsRetInfo, rhsExpr, mBindLhs, spBind, trivia)) = binding
                  let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
@@ -1976,8 +1981,9 @@ memberCore:
                  // replacing the get/set identifier. A little gross. 
   
                  let bindingPatAdjusted, xmlDocAdjusted = 
+  
                      let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = mEquals }
-                     let bindingOuter = (propertyNameBindingBuilder xmlDoc) (vis, optInline, isMutable, mWholeBindLhs, spBind, optReturnType, expr, exprm, [], attrs, Some(memFlagsBuilder SynMemberKind.Member), trivia)
+                     let bindingOuter = mkSynBinding (xmlDoc, propertyNameBindingPat) (vis, optInline, isMutable, mWholeBindLhs, spBind, optReturnType, expr, exprm, [], attrs, Some(memFlagsBuilder SynMemberKind.Member), trivia)
   
                      let (SynBinding (_, _, _, _, _, doc2, _, bindingPatOuter, _, _, _, _, _)) = bindingOuter 
                  
@@ -2114,7 +2120,8 @@ classDefnMember:
 
   | opt_attributes opt_declVisibility NEW  atomicPattern optAsSpec EQUALS typedSequentialExprBlock opt_ODECLEND
      {  let mWholeBindLhs = rhs2 parseState 1 (if Option.isSome $5 then 5 else 4)
-        let m = unionRanges mWholeBindLhs $7.Range 
+        let xmlDoc = grabXmlDoc(parseState, $1, 1)
+        let m = unionRanges mWholeBindLhs $7.Range |> unionRangeWithXmlDoc xmlDoc
         let mEquals = rhs parseState 6
         let expr = $7
         let valSynData = SynValData (Some (CtorMemberFlags SynMemberFlagsTrivia.Zero), SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), $5) 
@@ -2123,7 +2130,7 @@ classDefnMember:
         // Check that 'SynPatForConstructorDecl' matches this correctly
         assert (match declPat with SynPatForConstructorDecl _ -> true | _ -> false)
         let synBindingTrivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = Some mEquals }
-        [ SynMemberDefn.Member(SynBinding (None, SynBindingKind.Normal, false, false, $1, grabXmlDoc(parseState, $1, 1), valSynData, declPat, None, expr, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, synBindingTrivia), m) ] }
+        [ SynMemberDefn.Member(SynBinding (None, SynBindingKind.Normal, false, false, $1, xmlDoc, valSynData, declPat, None, expr, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, synBindingTrivia), m) ] }
         
   | opt_attributes opt_declVisibility STATIC typeKeyword tyconDefn 
      {  if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
@@ -2871,11 +2878,11 @@ cPrototype:
                                   SynExpr.Const (SynConst.String("extern was not given a DllImport attribute", SynStringKind.Regular, rhs parseState 8), rhs parseState 8),
                                   mRhs)
         (fun attrs _ ->
-            let bindingId = SynPat.LongIdent (LongIdentWithDots([nm], []), None, None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
+            let bindingPat = SynPat.LongIdent (LongIdentWithDots([nm], []), None, None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let xmlDoc = grabXmlDoc(parseState, attrs, 1)
             let binding = mkSynBinding 
-                              (xmlDoc, bindingId) 
+                              (xmlDoc, bindingPat) 
                               (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None, SynBindingTrivia.Zero)
             [], [binding]) }
 
@@ -2988,29 +2995,30 @@ localBinding:
         let mEquals = rhs parseState 5
         let mRhs = expr.Range 
         let optReturnType = $4 
-        let bindingBuilder, mBindLhs = $3 
+        let bindingPat, mBindLhs = $3 
         let localBindingRange = unionRanges (rhs2 parseState 1 5) mRhs
         let localBindingBuilder = 
           (fun xmlDoc attrs vis mLetKwd ->
             let mWhole = (unionRanges mLetKwd mRhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
-            let spBind = if IsControlFlowExpression expr then DebugPointAtBinding.NoneAtLet else DebugPointAtBinding.Yes mWhole
+            let spBind = if IsDebugPointBinding bindingPat expr then DebugPointAtBinding.Yes mWhole else DebugPointAtBinding.NoneAtLet
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let trivia: SynBindingTrivia = { LetKeyword = Some mLetKwd; EqualsRange = Some mEquals }
-            (bindingBuilder xmlDoc) (vis, $1, $2, mWholeBindLhs, spBind, optReturnType, expr, mRhs, opts, attrs, None, trivia))
+            mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mWholeBindLhs, spBind, optReturnType, expr, mRhs, opts, attrs, None, trivia))
         localBindingRange, localBindingBuilder }
 
   | opt_inline opt_mutable bindingPattern  opt_topReturnTypeWithTypeConstraints EQUALS  error
       { let mWhole = rhs2 parseState 1 5 
         let mRhs = rhs parseState 5
         let optReturnType = $4 
-        let bindingBuilder, mBindLhs = $3
+        let bindingPat, mBindLhs = $3
         let localBindingBuilder = 
           (fun xmlDoc attrs vis mLetKwd ->
-            let spBind = DebugPointAtBinding.Yes (unionRanges mLetKwd mRhs)
             let mEquals = rhs parseState 5
             let zeroWidthAtEnd = mEquals.EndRange
+            let rhsExpr = arbExpr("localBinding1", zeroWidthAtEnd)
+            let spBind = if IsDebugPointBinding bindingPat rhsExpr then DebugPointAtBinding.Yes mWhole else DebugPointAtBinding.NoneAtLet
             let trivia: SynBindingTrivia = { LetKeyword = Some mLetKwd; EqualsRange = Some mEquals }
-            (bindingBuilder xmlDoc) (vis, $1, $2, mBindLhs, spBind, optReturnType, arbExpr("localBinding1", zeroWidthAtEnd), mRhs, [], attrs, None, trivia))
+            mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mBindLhs, spBind, optReturnType, rhsExpr, mRhs, [], attrs, None, trivia))
         mWhole, localBindingBuilder }
 
   | opt_inline opt_mutable bindingPattern  opt_topReturnTypeWithTypeConstraints recover
@@ -3018,13 +3026,14 @@ localBinding:
         let optReturnType = $4 
         let mWhole = rhs2 parseState 1 (match optReturnType with None -> 3 | _ -> 4)
         let mRhs = mWhole.EndRange  // zero-width range at end of last good token
-        let bindingBuilder, mBindLhs = $3 
+        let bindingPat, mBindLhs = $3 
         let localBindingBuilder = 
           (fun xmlDoc attrs vis mLetKwd ->
             let spBind = DebugPointAtBinding.Yes (unionRanges mLetKwd mRhs)
-            (bindingBuilder xmlDoc) (vis, $1, $2, mBindLhs, spBind, optReturnType, arbExpr("localBinding2", mRhs), mRhs, [], attrs, None, { LetKeyword = Some mLetKwd; EqualsRange = None }))
+            let trivia = { LetKeyword = Some mLetKwd; EqualsRange = None }
+            let rhsExpr = arbExpr("localBinding2", mRhs)
+            mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mBindLhs, spBind, optReturnType, rhsExpr, mRhs, [], attrs, None, trivia))
         mWhole, localBindingBuilder }
-
 
 /* A single expression with an optional type annotation, and an optional static optimization block */
 typedExprWithStaticOptimizationsBlock: 
@@ -3174,7 +3183,7 @@ constant:
 
 bindingPattern:
   | headBindingPattern
-    { (fun (xmlDoc: PreXmlDoc) -> mkSynBinding (xmlDoc, $1)), rhs parseState 1 }
+    { $1, rhs parseState 1 }
 
 // Subset of patterns allowed to be used in implicit ctors.
 // For a better error recovery we could replace these rules with the actual SynPat parsing
@@ -3787,96 +3796,102 @@ declExpr:
         exprFromParseError (SynExpr.While (spWhile, arbExpr("whileGuard1", mWhileHeader), arbExpr("whileBody3", mWhileBodyArb), mWhileAll))  }
 
   | FOR forLoopBinder doToken typedSequentialExprBlock doneDeclEnd 
-      { let mForLoopHeader = rhs2 parseState 1 3
-        let spBind = DebugPointAtFor.Yes mForLoopHeader
-        let (a, b, _) = $2 
-        SynExpr.ForEach (spBind, SeqExprOnly false, true, a, b, $4, unionRanges (rhs parseState 1) $4.Range) }
+      { let mFor = rhs parseState 1
+        let mDo = rhs parseState 3
+        let spFor = DebugPointAtFor.Yes mFor
+        let (a, b, _, spIn) = $2 
+        SynExpr.ForEach (spFor, spIn, SeqExprOnly false, true, a, b, $4, unionRanges (rhs parseState 1) $4.Range) }
 
   | FOR forLoopBinder doToken typedSequentialExprBlock ends_coming_soon_or_recover
       { if not $5 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFor())
-        let mForLoopHeader = rhs2 parseState 1 3
-        let spBind = DebugPointAtFor.Yes mForLoopHeader
-        let (a, b, _) = $2 
+        let mFor = rhs parseState 1
+        let spFor = DebugPointAtFor.Yes mFor
+        let (a, b, _, spIn) = $2 
         let mForLoopAll = unionRanges (rhs parseState 1) $4.Range
-        SynExpr.ForEach (spBind, SeqExprOnly false, true, a, b, $4, mForLoopAll) }  
+        SynExpr.ForEach (spFor, spIn, SeqExprOnly false, true, a, b, $4, mForLoopAll) }  
 
   | FOR forLoopBinder doToken error doneDeclEnd 
       { // Silent recovery
-        let mForLoopHeader = rhs2 parseState 1 3
-        let spBind = DebugPointAtFor.Yes mForLoopHeader
-        let (a, b, _) = $2 
+        let mFor = rhs parseState 1
+        let spFor = DebugPointAtFor.Yes mFor
+        let (a, b, _, spIn) = $2 
         let mForLoopBodyArb = rhs parseState 5
         let mForLoopAll = rhs2 parseState 1 5
-        SynExpr.ForEach (spBind, SeqExprOnly false, true, a, b, arbExpr("forLoopBody2a", mForLoopBodyArb), mForLoopAll) }
+        SynExpr.ForEach (spFor, spIn, SeqExprOnly false, true, a, b, arbExpr("forLoopBody2a", mForLoopBodyArb), mForLoopAll) }
 
   | FOR forLoopBinder doToken ends_coming_soon_or_recover 
       { if not $4 then reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsExpectedExpressionAfterToken())
-        let mForLoopHeader = rhs2 parseState 1 3
-        let spBind = DebugPointAtFor.Yes mForLoopHeader
-        let (a, b, _) = $2 
+        let mFor = rhs parseState 1
+        let spFor = DebugPointAtFor.Yes mFor
+        let (a, b, _, spIn) = $2 
         let mForLoopBodyArb = rhs parseState 3
         let mForLoopAll = rhs2 parseState 1 3
-        SynExpr.ForEach (spBind, SeqExprOnly false, true, a, b, arbExpr("forLoopBody2", mForLoopBodyArb), mForLoopAll) }
+        SynExpr.ForEach (spFor, spIn, SeqExprOnly false, true, a, b, arbExpr("forLoopBody2", mForLoopBodyArb), mForLoopAll) }
 
   | FOR forLoopBinder ends_coming_soon_or_recover
-      { let (a, b, ok) = $2 
+      { let (a, b, ok, spIn) = $2 
         if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsForDoExpected())
-        let mForLoopHeader = rhs2 parseState 1 3
-        let spBind = DebugPointAtFor.Yes mForLoopHeader
+        let mFor = rhs parseState 1
+        let spFor = DebugPointAtFor.Yes mFor
         let mForLoopBodyArb = rhs parseState 3
         let mForLoopAll = rhs2 parseState 1 3
-        SynExpr.ForEach (spBind, SeqExprOnly false, true, a, b, arbExpr("forLoopBody1", mForLoopBodyArb), mForLoopAll) }
+        SynExpr.ForEach (spFor, spIn, SeqExprOnly false, true, a, b, arbExpr("forLoopBody1", mForLoopBodyArb), mForLoopAll) }
+
+  | FOR forLoopBinder opt_OBLOCKSEP arrowThenExprR %prec expr_let 
+     { let spFor = DebugPointAtFor.Yes (rhs parseState 1)
+       let (a, b, _, spIn) = $2
+       SynExpr.ForEach (spFor, spIn, SeqExprOnly true, true, a, b, $4, unionRanges (rhs parseState 1) $4.Range) }
 
   | FOR forLoopRange  doToken typedSequentialExprBlock doneDeclEnd 
-      { let mForLoopHeader = rhs2 parseState 1 3
-        let spBind = DebugPointAtFor.Yes mForLoopHeader
-        let (a, b, c, d, e) = $2 
+      { let mFor = rhs parseState 1
+        let spFor = DebugPointAtFor.Yes mFor
+        let (a, b, c, d, e, spTo) = $2 
         let mForLoopAll = unionRanges (rhs parseState 1) $4.Range
-        SynExpr.For (spBind, a, b, c, d, e, $4, mForLoopAll) }
+        SynExpr.For (spFor, spTo, a, b, c, d, e, $4, mForLoopAll) }
 
   | FOR forLoopRange  doToken typedSequentialExprBlock recover 
       { if not $5 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFor())
         // Still produce an expression
-        let mForLoopHeader = rhs2 parseState 1 3
-        let spBind = DebugPointAtFor.Yes mForLoopHeader
-        let (a, b, c, d, e) = $2 
+        let mFor = rhs parseState 1
+        let spFor = DebugPointAtFor.Yes mFor
+        let (a, b, c, d, e, spTo) = $2 
         let mForLoopAll = unionRanges (rhs parseState 1) $4.Range
-        exprFromParseError (SynExpr.For (spBind, a, b, c, d, e, $4, mForLoopAll)) }
+        exprFromParseError (SynExpr.For (spFor, spTo, a, b, c, d, e, $4, mForLoopAll)) }
 
   | FOR forLoopRange  doToken error doneDeclEnd 
       { // silent recovery 
-        let mForLoopHeader = rhs2 parseState 1 3
-        let spBind = DebugPointAtFor.Yes mForLoopHeader
-        let (a, b, c, d, e) = $2 
+        let mFor = rhs parseState 1
+        let spFor = DebugPointAtFor.Yes mFor
+        let (a, b, c, d, e, spTo) = $2 
         let mForLoopBodyArb = rhs parseState 5
         let mForLoopAll = rhs2 parseState 1 5
-        SynExpr.For (spBind, a, b, c, d, e, arbExpr("declExpr11", mForLoopBodyArb), mForLoopAll) }
+        SynExpr.For (spFor, spTo, a, b, c, d, e, arbExpr("declExpr11", mForLoopBodyArb), mForLoopAll) }
 
   | FOR forLoopRange  doToken recover
       { if not $4 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFor())
-        let mForLoopHeader = rhs2 parseState 1 3
-        let spBind = DebugPointAtFor.Yes mForLoopHeader
-        let (a, b, c, d, e) = $2 
+        let mFor = rhs parseState 1
+        let spFor = DebugPointAtFor.Yes mFor
+        let (a, b, c, d, e, spTo) = $2 
         let mForLoopBodyArb = rhs parseState 3
         let mForLoopAll = rhs2 parseState 1 3
-        exprFromParseError (SynExpr.For (spBind, a, b, c, d, e, arbExpr("declExpr11", mForLoopBodyArb), mForLoopAll)) }
+        exprFromParseError (SynExpr.For (spFor, spTo, a, b, c, d, e, arbExpr("declExpr11", mForLoopBodyArb), mForLoopAll)) }
 
   | FOR forLoopRange recover
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFor())
-        let mForLoopHeader = rhs2 parseState 1 2
-        let spBind = DebugPointAtFor.Yes mForLoopHeader
-        let (a, b, c, d, e) = $2 
+        let mFor = rhs parseState 1
+        let spFor = DebugPointAtFor.Yes mFor
+        let (a, b, c, d, e, spTo) = $2 
         let mForLoopBodyArb = (rhs parseState 2).EndRange
         let mForLoopAll = rhs2 parseState 1 2
-        exprFromParseError (SynExpr.For (spBind, a, b, c, d, e, arbExpr("declExpr11", mForLoopBodyArb), mForLoopAll)) }
-
+        exprFromParseError (SynExpr.For (spFor, spTo, a, b, c, d, e, arbExpr("declExpr11", mForLoopBodyArb), mForLoopAll)) }
 
   | FOR error doToken typedSequentialExprBlock doneDeclEnd 
       { // silent recovery 
-        let mForLoopHeader = rhs2 parseState 1 2
+        let mFor = rhs parseState 1
+        let spToFake = DebugPointAtInOrTo.Yes mFor
         let mForLoopAll = unionRanges (rhs parseState 1) $4.Range
-        let spBind = DebugPointAtFor.Yes mForLoopHeader
-        SynExpr.For (spBind, mkSynId mForLoopHeader "_loopVar", None, arbExpr("startLoopRange1", mForLoopHeader), true, arbExpr("endLoopRange1", rhs parseState 3), $4, mForLoopAll) }
+        let spFor = DebugPointAtFor.Yes mFor
+        SynExpr.For (spFor, spToFake, mkSynId mFor "_loopVar", None, arbExpr("startLoopRange1", mFor), true, arbExpr("endLoopRange1", rhs parseState 3), $4, mForLoopAll) }
 
   | FOR ends_coming_soon_or_recover
       { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsIdentifierExpected())
@@ -3884,19 +3899,22 @@ declExpr:
 
   | FOR parenPattern error doneDeclEnd 
       { reportParseErrorAt (rhs parseState 3) (FSComp.SR.parsInOrEqualExpected())
-        let mForLoopHeader = rhs2 parseState 1 2
-        let spBind = DebugPointAtFor.Yes mForLoopHeader
+        let mFor = rhs parseState 1
+        let spFor = DebugPointAtFor.Yes mFor
+        let spInFake = DebugPointAtInOrTo.Yes mFor
         let mForLoopBodyArb = rhs parseState 4
         let mForLoopAll = rhs2 parseState 1 4
-        SynExpr.ForEach (spBind, SeqExprOnly false, true, $2, arbExpr("forLoopCollection", mForLoopHeader), arbExpr("forLoopBody3", mForLoopBodyArb), mForLoopAll) }
+        SynExpr.ForEach (spFor, spInFake, SeqExprOnly false, true, $2, arbExpr("forLoopCollection", mFor), arbExpr("forLoopBody3", mForLoopBodyArb), mForLoopAll) }
 
   | FOR parenPattern recover
       { if not $3 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileFor())
-        let mForLoopHeader = rhs2 parseState 1 2
-        let spBind = DebugPointAtFor.Yes mForLoopHeader
+        let mFor = rhs parseState 1
+        let mIn = rhs parseState 1
+        let spFor = DebugPointAtFor.Yes mFor
+        let spIn = DebugPointAtInOrTo.Yes mIn
         let mForLoopBodyArb = (rhs parseState 2).EndRange
         let mForLoopAll = rhs2 parseState 1 2
-        exprFromParseError (SynExpr.ForEach (spBind, SeqExprOnly false, true, $2, arbExpr("forLoopCollection", mForLoopHeader), arbExpr("forLoopBody3", mForLoopBodyArb), mForLoopAll)) }
+        exprFromParseError (SynExpr.ForEach (spFor, spIn, SeqExprOnly false, true, $2, arbExpr("forLoopCollection", mFor), arbExpr("forLoopBody3", mForLoopBodyArb), mForLoopAll)) }
 
   | YIELD declExpr
      { SynExpr.YieldOrReturn (($1, not $1), $2, unionRanges (rhs parseState 1) $2.Range) } 
@@ -3916,7 +3934,8 @@ declExpr:
      { let spBind = DebugPointAtBinding.Yes(rhs2 parseState 1 5)
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $8.Range
-       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, Some mEquals, $4, $7, $8, m) }
+       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = Some mEquals }
+       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m, trivia) }
 
   | OBINDER headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP moreBinders typedSequentialExprBlock %prec expr_let
      { let report, mIn = $5
@@ -3924,7 +3943,8 @@ declExpr:
        let spBind = DebugPointAtBinding.Yes(unionRanges (rhs parseState 1) $4.Range)
        let mEquals = rhs parseState 3
        let m = unionRanges (rhs parseState 1) $8.Range
-       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, Some mEquals, $4, $7, $8, m) }
+       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = Some mEquals }
+       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, $7, $8, m, trivia) }
 
   | OBINDER headBindingPattern EQUALS typedSequentialExprBlock hardwhiteDefnBindingsTerminator opt_OBLOCKSEP error %prec expr_let 
      { // error recovery that allows intellisense when writing incomplete computation expressions 
@@ -3932,18 +3952,16 @@ declExpr:
        let mEquals = rhs parseState 3
        let mAll = unionRanges (rhs parseState 1) (rhs parseState 7)
        let m = $4.Range.EndRange // zero-width range
-       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, Some mEquals, $4, [], SynExpr.ImplicitZero m, mAll) }
+       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = Some mEquals }
+       SynExpr.LetOrUseBang(spBind, ($1 = "use"), true, $2, $4, [], SynExpr.ImplicitZero m, mAll, trivia) }
 
   | DO_BANG typedSequentialExpr IN opt_OBLOCKSEP typedSequentialExprBlock %prec expr_let 
      { let spBind = DebugPointAtBinding.NoneAtDo
-       SynExpr.LetOrUseBang(spBind, false, true, SynPat.Const(SynConst.Unit, $2.Range), None, $2, [], $5, unionRanges (rhs parseState 1) $5.Range) }
+       let trivia: SynExprLetOrUseBangTrivia = { EqualsRange = None }
+       SynExpr.LetOrUseBang(spBind, false, true, SynPat.Const(SynConst.Unit, $2.Range), $2, [], $5, unionRanges (rhs parseState 1) $5.Range, trivia) }
 
   | ODO_BANG typedSequentialExprBlock hardwhiteDefnBindingsTerminator %prec expr_let 
      { SynExpr.DoBang ($2, unionRanges (rhs parseState 1) $2.Range) }
-
-  | FOR forLoopBinder opt_OBLOCKSEP arrowThenExprR %prec expr_let 
-     { let spBind = DebugPointAtFor.Yes (rhs2 parseState 1 2)
-       let (a, b, _) = $2 in SynExpr.ForEach (spBind, SeqExprOnly true, true, a, b, $4, unionRanges (rhs parseState 1) $4.Range) }
 
   | FIXED declExpr
      { SynExpr.Fixed ($2, (unionRanges (rhs parseState 1) $2.Range)) } 
@@ -4727,20 +4745,21 @@ arrowThenExprR:
 
 forLoopBinder: 
   | parenPattern IN declExpr 
-     { ($1, $3, true) }
+     { ($1, $3, true, DebugPointAtInOrTo.Yes (rhs parseState 2)) }
 
   | parenPattern IN ends_coming_soon_or_recover
      { if not $3 then reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsExpectedExpressionAfterToken())
-       ($1, arbExpr("forLoopBinder", (rhs parseState 2)), false) }
+       ($1, arbExpr("forLoopBinder", (rhs parseState 2)), false, DebugPointAtInOrTo.Yes (rhs parseState 2)) }
 
   | parenPattern ends_coming_soon_or_recover
      { if not $2 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInOrEqualExpected())
-       ($1, arbExpr("forLoopBinder2", (rhs parseState 1).EndRange), false) }
+       ($1, arbExpr("forLoopBinder2", (rhs parseState 1).EndRange), false, DebugPointAtInOrTo.Yes (rhs parseState 2)) }
 
 forLoopRange: 
   | parenPattern EQUALS declExpr forLoopDirection declExpr 
       { let mEquals = rhs parseState 2
-        idOfPat parseState (rhs parseState 1) $1, Some mEquals, $3, $4, $5 }
+        let spTo = DebugPointAtInOrTo.Yes (rhs parseState 4)
+        idOfPat parseState (rhs parseState 1) $1, Some mEquals, $3, $4, $5, spTo }
 
 forLoopDirection: 
   | TO     { true } 

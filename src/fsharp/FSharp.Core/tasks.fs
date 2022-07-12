@@ -163,8 +163,8 @@ namespace Microsoft.FSharp.Control
             sm.Data.MethodBuilder.Start(&sm)
             sm.Data.MethodBuilder.Task
 
-        static member inline Run(code : TaskCode<'T, 'T>) : Task<'T> = 
-             if __useResumableCode then 
+        member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
+            if __useResumableCode then 
                 __stateMachine<TaskStateMachineData<'T>, Task<'T>>
                     (MoveNextMethodImpl<_>(fun sm -> 
                         //-- RESUMABLE CODE START
@@ -187,11 +187,8 @@ namespace Microsoft.FSharp.Control
                         sm.Data.MethodBuilder <- AsyncTaskMethodBuilder<'T>.Create()
                         sm.Data.MethodBuilder.Start(&sm)
                         sm.Data.MethodBuilder.Task))
-             else
+            else
                 TaskBuilder.RunDynamic(code)
-
-        member inline _.Run(code : TaskCode<'T, 'T>) : Task<'T> = 
-           TaskBuilder.Run(code)
 
     type BackgroundTaskBuilder() =
 

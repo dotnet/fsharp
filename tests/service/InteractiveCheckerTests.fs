@@ -54,7 +54,7 @@ let internal identsAndRanges (input: ParsedInput) =
             (identAndRange (longIdentToString longIdent) (longIdent |> List.map (fun id -> id.idRange) |> List.reduce unionRanges)) :: xs
 
     match input with
-    | ParsedInput.ImplFile(ParsedImplFileInput(_, _, _, _, _, modulesOrNamespaces, _)) ->
+    | ParsedInput.ImplFile(ParsedImplFileInput(modules = modulesOrNamespaces)) ->
          modulesOrNamespaces |> List.collect extractFromModuleOrNamespace
     | ParsedInput.SigFile _ -> []
 

@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly SeqExpressionTailCalls01
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000220 Length: 0x0000008C
 }
 .module SeqExpressionTailCalls01.exe
-// MVID: {60BD414B-093A-A6BE-A745-03834B41BD60}
+// MVID: {61FD4A6D-093A-A6BE-A745-03836D4AFD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06CE0000
+// Image base: 0x05DB0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -127,6 +127,7 @@
       IL_0038:  ldc.i4.1
       IL_0039:  ret
 
+      .line 3,3 : 34,52 ''
       IL_003a:  ldarg.0
       IL_003b:  ldc.i4.2
       IL_003c:  stfld      int32 SeqExpressionTailCalls01/rwalk@3::pc

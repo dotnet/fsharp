@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-/// <summary>This namespace contains constructs for reflecting on the representation of
-/// F# values and types. It augments the design of System.Reflection.</summary>
+// This namespace contains constructs for reflecting on the representation of
+// F# values and types. It augments the design of System.Reflection.
 namespace Microsoft.FSharp.Reflection 
 
 open System

@@ -6,6 +6,7 @@ module internal FSharp.Compiler.TypedTreeOps
 open System.Collections.Generic
 open System.Collections.Immutable
 open Internal.Utilities.Collections
+open Internal.Utilities.Library
 open Internal.Utilities.Rational
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler.ErrorLogger
@@ -34,10 +35,7 @@ val getMeasureOfType: TcGlobals -> TType -> (TyconRef * Measure) option
 val stripTyEqnsWrtErasure: Erasure -> TcGlobals -> TType -> TType
 
 /// Build a function type
-val mkFunTy: TType -> TType -> TType
-
-/// Build a function type
-val ( --> ): TType -> TType -> TType
+val mkFunTy: TcGlobals -> TType -> TType -> TType
 
 /// Build a type-forall anonymous generic type if necessary
 val mkForallTyIfNeeded: Typars -> TType -> TType
@@ -45,22 +43,28 @@ val mkForallTyIfNeeded: Typars -> TType -> TType
 val ( +-> ): Typars -> TType -> TType
 
 /// Build a curried function type
-val mkIteratedFunTy: TTypes -> TType -> TType
+val mkIteratedFunTy: TcGlobals -> TTypes -> TType -> TType
 
 /// Get the natural type of a single argument amongst a set of curried arguments
 val typeOfLambdaArg: range -> Val list -> TType
 
-/// Get the curried type corresponding to a lambda 
-val mkMultiLambdaTy: range -> Val list -> TType -> TType
+/// Get the type corresponding to a lambda 
+val mkLambdaTy: TcGlobals -> Typars -> TTypes -> TType -> TType
 
 /// Get the curried type corresponding to a lambda 
-val mkLambdaTy: Typars -> TTypes -> TType -> TType
+val mkMultiLambdaTy: TcGlobals -> range -> Val list -> TType -> TType
 
 /// Module publication, used while compiling fslib.
 val ensureCcuHasModuleOrNamespaceAtPath: CcuThunk -> Ident list -> CompilationPath -> XmlDoc -> unit 
 
 /// Ignore 'Expr.Link' in an expression
 val stripExpr: Expr -> Expr
+
+/// Ignore 'Expr.Link' and 'Expr.DebugPoint' in an expression
+val stripDebugPoints: Expr -> Expr
+
+/// Match any 'Expr.Link' and 'Expr.DebugPoint' in an expression, providing the inner expression and a function to rebuild debug points
+val (|DebugPoints|): Expr -> Expr * (Expr -> Expr) 
 
 /// Get the values for a set of bindings
 val valsOfBinds: Bindings -> Vals 
@@ -78,7 +82,7 @@ type MatchBuilder =
     member AddTarget: DecisionTreeTarget -> int
 
     /// Add a new destination target that is an expression result
-    member AddResultTarget: Expr * DebugPointAtTarget -> DecisionTree
+    member AddResultTarget: Expr -> DecisionTree
 
     /// Finish the targets
     member CloseTargets: unit -> DecisionTreeTarget list
@@ -87,13 +91,13 @@ type MatchBuilder =
     member Close: DecisionTree * range * TType -> Expr
 
 /// Add an if-then-else boolean conditional node into a decision tree
-val mkBoolSwitch: DebugPointAtSwitch -> range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
+val mkBoolSwitch: range -> Expr -> DecisionTree -> DecisionTree -> DecisionTree
 
 /// Build a conditional expression
-val primMkCond: DebugPointAtBinding -> DebugPointAtTarget -> DebugPointAtTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
+val primMkCond: DebugPointAtBinding -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build a conditional expression
-val mkCond: DebugPointAtBinding -> DebugPointAtTarget -> range -> TType -> Expr -> Expr -> Expr -> Expr
+val mkCond: DebugPointAtBinding -> range -> TType -> Expr -> Expr -> Expr -> Expr
 
 /// Build a conditional expression that checks for non-nullness
 val mkNonNullCond: TcGlobals -> range -> TType -> Expr -> Expr -> Expr -> Expr
@@ -140,22 +144,22 @@ val mkObjExpr: TType * Val option * Expr * ObjExprMethod list * (TType * ObjExpr
 val mkTypeChoose: range -> Typars -> Expr -> Expr
 
 /// Build an iterated (curried) lambda expression
-val mkLambdas: range -> Typars -> Val list -> Expr * TType -> Expr
+val mkLambdas: TcGlobals -> range -> Typars -> Val list -> Expr * TType -> Expr
 
 /// Build an iterated (tupled+curried) lambda expression
-val mkMultiLambdasCore: range -> Val list list -> Expr * TType -> Expr * TType
+val mkMultiLambdasCore: TcGlobals -> range -> Val list list -> Expr * TType -> Expr * TType
 
 /// Build an iterated generic (type abstraction + tupled+curried) lambda expression
-val mkMultiLambdas: range -> Typars -> Val list list -> Expr * TType -> Expr
+val mkMultiLambdas: TcGlobals -> range -> Typars -> Val list list -> Expr * TType -> Expr
 
 /// Build a lambda expression that corresponds to the implementation of a member
-val mkMemberLambdas: range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
+val mkMemberLambdas: TcGlobals -> range -> Typars -> Val option -> Val option -> Val list list -> Expr * TType -> Expr
 
 /// Build a 'while' loop expression
 val mkWhile: TcGlobals -> DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range -> Expr
 
 /// Build a 'for' loop expression
-val mkFor: TcGlobals -> DebugPointAtFor * Val * Expr * ForLoopStyle * Expr * Expr * range -> Expr
+val mkIntegerForLoop: TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * Val * Expr * ForLoopStyle * Expr * Expr * range -> Expr
 
 /// Build a 'try/with' expression
 val mkTryWith: TcGlobals -> Expr * (* filter val *) Val * (* filter expr *) Expr * (* handler val *) Val * (* handler expr *) Expr * range * TType * DebugPointAtTry * DebugPointAtWith -> Expr
@@ -179,7 +183,7 @@ val mkLetsFromBindings: range -> Bindings -> Expr -> Expr
 val mkLet: DebugPointAtBinding -> range -> Val -> Expr -> Expr -> Expr
 
 /// Make a binding that binds a function value to a lambda taking multiple arguments
-val mkMultiLambdaBind: Val -> DebugPointAtBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
+val mkMultiLambdaBind: TcGlobals -> Val -> DebugPointAtBinding -> range -> Typars -> Val list list -> Expr * TType -> Binding
 
 // Compiler generated bindings may involve a user variable.
 // Compiler generated bindings may give rise to a sequence point if they are part of
@@ -557,12 +561,14 @@ val instTyparConstraints: TyparInst -> TyparConstraint list -> TyparConstraint l
 
 val instTrait: TyparInst -> TraitConstraintInfo -> TraitConstraintInfo 
 
+val generalTyconRefInst : TyconRef -> TypeInst
+
 /// From typars to types 
 val generalizeTypars: Typars -> TypeInst
 
-val generalizeTyconRef: TyconRef -> TTypes * TType
+val generalizeTyconRef: TcGlobals -> TyconRef -> TTypes * TType
 
-val generalizedTyconRef: TyconRef -> TType
+val generalizedTyconRef: TcGlobals -> TyconRef -> TType
 
 val mkTyparToTyparRenaming: Typars -> Typars -> TyparInst * TTypes
 
@@ -1110,10 +1116,6 @@ val freeTyvarsAllPublic: FreeTyvars -> bool
 /// Check if a set of free variables are all public
 val freeVarsAllPublic: FreeVars -> bool
 
-/// Get the mark/range/position information from an expression
-type Expr with 
-    member Range: range
-
 /// Compute the type of an expression from the expression itself
 val tyOfExpr: TcGlobals -> Expr -> TType 
 
@@ -1219,7 +1221,10 @@ val ComputeRemappingFromImplementationToSignature: TcGlobals -> ModuleOrNamespac
 val ComputeRemappingFromInferredSignatureToExplicitSignature: TcGlobals -> ModuleOrNamespaceType -> ModuleOrNamespaceType -> SignatureRepackageInfo * SignatureHidingInfo
 
 /// Compute the hiding information that corresponds to the hiding applied at an assembly boundary
-val ComputeHidingInfoAtAssemblyBoundary: ModuleOrNamespaceType -> SignatureHidingInfo -> SignatureHidingInfo
+val ComputeSignatureHidingInfoAtAssemblyBoundary: ModuleOrNamespaceType -> SignatureHidingInfo -> SignatureHidingInfo
+
+/// Compute the hiding information that corresponds to the hiding applied at an assembly boundary
+val ComputeImplementationHidingInfoAtAssemblyBoundary: ModuleOrNamespaceExpr -> SignatureHidingInfo -> SignatureHidingInfo
 
 val mkRepackageRemapping: SignatureRepackageInfo -> Remap 
 
@@ -1783,9 +1788,9 @@ val mkOptionDefaultValue: TcGlobals -> range -> TType -> Expr -> Expr -> Expr
 // Make a few more expressions
 //------------------------------------------------------------------------- 
 
-val mkSequential: DebugPointAtSequential -> range -> Expr -> Expr -> Expr
+val mkSequential: range -> Expr -> Expr -> Expr
 
-val mkThenDoSequential: DebugPointAtSequential -> range -> expr: Expr -> stmt: Expr -> Expr
+val mkThenDoSequential: range -> expr: Expr -> stmt: Expr -> Expr
 
 /// This is used for tacking on code _before_ the expression. The SuppressStmt
 /// setting is used for debug points, suppressing the debug points for the statement if possible.
@@ -1795,7 +1800,7 @@ val mkCompGenSequential: range -> stmt: Expr -> expr: Expr -> Expr
 /// setting is used for debug points, suppressing the debug points for the statement if possible.
 val mkCompGenThenDoSequential: range -> expr: Expr -> stmt: Expr -> Expr
 
-val mkSequentials: DebugPointAtSequential -> TcGlobals -> range -> Exprs -> Expr   
+val mkSequentials: TcGlobals -> range -> Exprs -> Expr   
 
 val mkRecordExpr: TcGlobals -> RecordConstructionInfo * TyconRef * TypeInst * RecdFieldRef list * Exprs * range -> Expr
 
@@ -1933,8 +1938,6 @@ val mkCallHash: TcGlobals -> range -> TType -> Expr -> Expr
 val mkCallBox: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallIsNull: TcGlobals -> range -> TType -> Expr -> Expr
-
-val mkCallIsNotNull: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallRaise: TcGlobals -> range -> TType -> Expr -> Expr
 
@@ -2179,7 +2182,7 @@ val TryFindAttributeUsageAttribute: TcGlobals -> range -> TyconRef -> bool optio
 
 #if !NO_EXTENSIONTYPING
 /// returns Some(assemblyName) for success
-val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string option
+val TryDecodeTypeProviderAssemblyAttr: ILAttribute -> string MaybeNull option
 #endif
 
 val IsSignatureDataVersionAttr: ILAttribute -> bool
@@ -2320,7 +2323,7 @@ val DecideStaticOptimizations: TcGlobals -> StaticOptimization list -> haveWitne
 val mkStaticOptimizationExpr: TcGlobals -> StaticOptimization list * Expr * Expr * range -> Expr
 
 /// Build for loops
-val mkFastForLoop: TcGlobals -> DebugPointAtFor * range * Val * Expr * bool * Expr * Expr -> Expr
+val mkFastForLoop: TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * range * Val * Expr * bool * Expr * Expr -> Expr
 
 //---------------------------------------------------------------------------
 // Active pattern helpers
@@ -2423,7 +2426,7 @@ val (|SpecialNotEquatableHeadType|_|): TcGlobals -> TType -> unit option
 
 type OptimizeForExpressionOptions = OptimizeIntRangesOnly | OptimizeAllForExpressions
 
-val DetectAndOptimizeForExpression: TcGlobals -> OptimizeForExpressionOptions -> Expr -> Expr
+val DetectAndOptimizeForEachExpression: TcGlobals -> OptimizeForExpressionOptions -> Expr -> Expr
 
 val TryEliminateDesugaredConstants: TcGlobals -> range -> Const -> Expr option
 
@@ -2433,9 +2436,9 @@ val ValIsExplicitImpl: TcGlobals -> Val -> bool
 
 val ValRefIsExplicitImpl: TcGlobals -> ValRef -> bool
 
-val (|LinearMatchExpr|_|): Expr -> (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointAtTarget * range * TType) option
+val (|LinearMatchExpr|_|): Expr -> (DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * range * TType) option
 
-val rebuildLinearMatchExpr: DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * DebugPointAtTarget * range * TType -> Expr
+val rebuildLinearMatchExpr: DebugPointAtBinding * range * DecisionTree * DecisionTreeTarget * Expr * range * TType -> Expr
 
 val (|LinearOpExpr|_|): Expr -> (TOp * TypeInst * Expr list * Expr * range) option
 
@@ -2497,14 +2500,17 @@ val (|StructStateMachineExpr|_|):
 /// Recognise a sequential or binding construct in a resumable code
 val (|SequentialResumableCode|_|): g: TcGlobals -> Expr -> (Expr * Expr * range * (Expr -> Expr -> Expr)) option
 
+/// Recognise a '__debugPoint' expression
+val (|DebugPointExpr|_|): g: TcGlobals -> Expr -> string option
+
 /// Recognise a '__resumeAt' expression
 val (|ResumeAtExpr|_|): g: TcGlobals -> Expr -> Expr option
 
 /// Recognise a while expression
 val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Expr * range) option
 
-/// Recognise a for-loop expression
-val (|ForLoopExpr|_|): Expr -> (DebugPointAtFor * ForLoopStyle * Expr * Expr * Val * Expr * range) option
+/// Recognise an integer for-loop expression
+val (|IntegerForLoopExpr|_|): Expr -> (DebugPointAtFor * DebugPointAtInOrTo * ForLoopStyle * Expr * Expr * Val * Expr * range) option
 
 /// Recognise a try-with expression
 val (|TryWithExpr|_|): Expr -> (DebugPointAtTry * DebugPointAtWith * TType * Expr * Val * Expr * Val * Expr * range) option
@@ -2552,5 +2558,7 @@ val (|OpPipeRight3|_|):
     expr: Expr -> 
         (TType * Expr * Expr * Expr * Expr * range) option
 
-/// This uses 'expr thendo ()' with a note that there should be a debug point on the 'expr'
-val mkDebugPoint: g: TcGlobals -> m: range -> expr: Expr -> Expr
+val mkDebugPoint: m: range -> expr: Expr -> Expr
+
+/// Match an if...then...else expression or the result of "a && b" or "a || b"
+val (|IfThenElseExpr|_|): expr: Expr -> (Expr * Expr * Expr) option

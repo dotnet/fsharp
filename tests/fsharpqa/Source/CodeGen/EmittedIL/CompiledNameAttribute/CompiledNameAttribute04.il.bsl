@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.8.3928.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:4:1:0
+  .ver 6:0:0:0
 }
 .assembly CompiledNameAttribute04
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.CompiledNameAttribute04
 {
-  // Offset: 0x00000000 Length: 0x00000CE9
+  // Offset: 0x00000000 Length: 0x00000CD9
 }
 .mresource public FSharpOptimizationData.CompiledNameAttribute04
 {
-  // Offset: 0x00000CF0 Length: 0x000002CB
+  // Offset: 0x00000CE0 Length: 0x000002CB
 }
 .module CompiledNameAttribute04.exe
-// MVID: {59B1923F-34DF-584F-A745-03833F92B159}
+// MVID: {6220CCA3-34DF-584F-A745-0383A3CC2062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x01680000
+// Image base: 0x07130000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -74,12 +74,11 @@
       // Code size       9 (0x9)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\CompiledNameAttribute\\CompiledNameAttribute04.fs'
+      .line 20,20 : 6,7 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\CompiledNameAttribute\\CompiledNameAttribute04.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
       IL_0007:  pop
-      .line 20,20 : 6,7 ''
       IL_0008:  ret
     } // end of method C::.ctor
 
@@ -150,8 +149,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       5 (0x5)
       .maxstack  3
-      .locals init ([0] valuetype CompiledNameAttribute04/S& V_0)
-      .line 37,37 : 6,7 ''
+      .locals init (valuetype CompiledNameAttribute04/S& V_0)
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  ldc.i4.0
@@ -164,7 +162,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 37,37 : 6,7 ''
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  CompiledNameAttribute04/S
@@ -179,9 +176,8 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  3
-      .locals init ([0] valuetype CompiledNameAttribute04/S V_0,
-               [1] valuetype CompiledNameAttribute04/S& V_1)
-      .line 37,37 : 6,7 ''
+      .locals init (valuetype CompiledNameAttribute04/S V_0,
+               valuetype CompiledNameAttribute04/S& V_1)
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  CompiledNameAttribute04/S
       IL_0006:  stloc.0
@@ -197,7 +193,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       2 (0x2)
       .maxstack  8
-      .line 37,37 : 6,7 ''
       IL_0000:  ldc.i4.0
       IL_0001:  ret
     } // end of method S::GetHashCode
@@ -208,7 +203,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
-      .line 37,37 : 6,7 ''
       IL_0000:  ldarg.0
       IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
       IL_0006:  call       instance int32 CompiledNameAttribute04/S::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
@@ -220,29 +214,32 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       24 (0x18)
+      // Code size       27 (0x1b)
       .maxstack  3
-      .locals init ([0] valuetype CompiledNameAttribute04/S V_0,
-               [1] valuetype CompiledNameAttribute04/S& V_1)
+      .locals init ([0] object V_0,
+               [1] valuetype CompiledNameAttribute04/S V_1,
+               [2] valuetype CompiledNameAttribute04/S& V_2)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype CompiledNameAttribute04/S>(object)
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_0016
+      IL_0001:  stloc.0
+      IL_0002:  ldloc.0
+      IL_0003:  isinst     CompiledNameAttribute04/S
+      IL_0008:  ldnull
+      IL_0009:  cgt.un
+      IL_000b:  brfalse.s  IL_0019
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  unbox.any  CompiledNameAttribute04/S
-      IL_0010:  stloc.0
-      IL_0011:  ldloca.s   V_0
+      IL_000d:  ldarg.1
+      IL_000e:  unbox.any  CompiledNameAttribute04/S
       IL_0013:  stloc.1
-      IL_0014:  ldc.i4.1
-      IL_0015:  ret
+      IL_0014:  ldloca.s   V_1
+      IL_0016:  stloc.2
+      IL_0017:  ldc.i4.1
+      IL_0018:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0016:  ldc.i4.0
-      IL_0017:  ret
+      IL_0019:  ldc.i4.0
+      IL_001a:  ret
     } // end of method S::Equals
 
     .method public hidebysig instance !!a 
@@ -261,8 +258,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       5 (0x5)
       .maxstack  3
-      .locals init ([0] valuetype CompiledNameAttribute04/S& V_0)
-      .line 37,37 : 6,7 ''
+      .locals init (valuetype CompiledNameAttribute04/S& V_0)
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  ldc.i4.1
@@ -273,28 +269,31 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       27 (0x1b)
+      // Code size       30 (0x1e)
       .maxstack  4
-      .locals init ([0] valuetype CompiledNameAttribute04/S V_0)
+      .locals init ([0] object V_0,
+               [1] valuetype CompiledNameAttribute04/S V_1)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype CompiledNameAttribute04/S>(object)
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_0019
-
-      .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  unbox.any  CompiledNameAttribute04/S
-      IL_0010:  stloc.0
-      IL_0011:  ldarg.0
-      IL_0012:  ldloc.0
-      IL_0013:  call       instance bool CompiledNameAttribute04/S::Equals(valuetype CompiledNameAttribute04/S)
-      IL_0018:  ret
+      IL_0001:  stloc.0
+      IL_0002:  ldloc.0
+      IL_0003:  isinst     CompiledNameAttribute04/S
+      IL_0008:  ldnull
+      IL_0009:  cgt.un
+      IL_000b:  brfalse.s  IL_001c
 
       .line 100001,100001 : 0,0 ''
-      IL_0019:  ldc.i4.0
-      IL_001a:  ret
+      IL_000d:  ldarg.1
+      IL_000e:  unbox.any  CompiledNameAttribute04/S
+      IL_0013:  stloc.1
+      IL_0014:  ldarg.0
+      IL_0015:  ldloc.1
+      IL_0016:  call       instance bool CompiledNameAttribute04/S::Equals(valuetype CompiledNameAttribute04/S)
+      IL_001b:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_001c:  ldc.i4.0
+      IL_001d:  ret
     } // end of method S::Equals
 
   } // end of class S
@@ -395,7 +394,8 @@
     .entrypoint
     // Code size       13 (0xd)
     .maxstack  4
-    .locals init (class CompiledNameAttribute04/ITestInterface V_0)
+    .locals init ([0] class CompiledNameAttribute04/ITestInterface a)
+    .line 49,51 : 1,40 ''
     IL_0000:  newobj     instance void CompiledNameAttribute04/a@49::.ctor()
     IL_0005:  dup
     IL_0006:  stsfld     class CompiledNameAttribute04/ITestInterface '<StartupCode$CompiledNameAttribute04>'.$CompiledNameAttribute04::a@49

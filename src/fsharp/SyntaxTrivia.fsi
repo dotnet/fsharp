@@ -1,8 +1,45 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace FSharp.Compiler.SyntaxTrivia
+namespace rec FSharp.Compiler.SyntaxTrivia
 
 open FSharp.Compiler.Text
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type ConditionalDirectiveTrivia =
+    | If of expr:IfDirectiveExpression * range:range
+    | Else of range:range
+    | EndIf of range:range
+
+type [<RequireQualifiedAccess; NoEquality; NoComparison>] IfDirectiveExpression =
+    | And of IfDirectiveExpression * IfDirectiveExpression
+    | Or of IfDirectiveExpression * IfDirectiveExpression
+    | Not of IfDirectiveExpression
+    | Ident of string
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type CommentTrivia =
+    | LineComment of range: range
+    | BlockComment of range: range
+
+/// Represents additional information for ParsedImplFileInput
+[<NoEquality; NoComparison>]
+type ParsedImplFileInputTrivia =
+    {
+        /// Preprocessor directives of type #if, #else or #endif
+        ConditionalDirectives: ConditionalDirectiveTrivia list
+        /// Represent code comments found in the source file
+        CodeComments: CommentTrivia list
+    }
+
+/// Represents additional information for ParsedSigFileInputTrivia
+[<NoEquality; NoComparison>]
+type ParsedSigFileInputTrivia =
+    {
+        /// Preprocessor directives of type #if, #else or #endif
+        ConditionalDirectives: ConditionalDirectiveTrivia list
+        /// Represent code comments found in the source file
+        CodeComments: CommentTrivia list
+    }
 
 /// Represents additional information for SynExpr.TryWith
 [<NoEquality; NoComparison>]
@@ -53,13 +90,22 @@ type SynExprLambdaTrivia =
     }
     static member Zero: SynExprLambdaTrivia
 
-/// Represents additional information for SynExpr.Lambda
+/// Represents additional information for SynExpr.LetOrUse
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseTrivia =
     {
         /// The syntax range of the `in` keyword.
         InKeyword: range option
     }
+
+/// Represents additional information for SynExpr.LetOrUseBang
+[<NoEquality; NoComparison>]
+type SynExprLetOrUseBangTrivia =
+    {
+        /// The syntax range of the `=` token.
+        EqualsRange: range option
+    }
+    static member Zero: SynExprLetOrUseBangTrivia
 
 /// Represents additional information for SynMatchClause
 [<NoEquality; NoComparison>]
@@ -148,3 +194,25 @@ type SynExprAndBangTrivia =
         /// The syntax range of the `in` keyword.
         InKeyword: range option
     }
+
+/// Represents additional information for SynModuleDecl.NestedModule
+[<NoEquality; NoComparison>]
+type SynModuleDeclNestedModuleTrivia =
+    {
+        /// The syntax range of the `module` keyword
+        ModuleKeyword: range option
+        /// The syntax range of the `=` token.
+        EqualsRange: range option
+    }
+    static member Zero: SynModuleDeclNestedModuleTrivia
+
+/// Represents additional information for SynModuleSigDecl.NestedModule
+[<NoEquality; NoComparison>]
+type SynModuleSigDeclNestedModuleTrivia =
+    {
+        /// The syntax range of the `module` keyword
+        ModuleKeyword: range option
+        /// The syntax range of the `=` token.
+        EqualsRange: range option
+    }
+    static member Zero: SynModuleSigDeclNestedModuleTrivia

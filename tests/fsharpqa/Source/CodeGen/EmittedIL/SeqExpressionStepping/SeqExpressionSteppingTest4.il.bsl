@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly SeqExpressionSteppingTest4
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000268 Length: 0x000000AD
 }
 .module SeqExpressionSteppingTest4.exe
-// MVID: {611B0EC5-2432-93E0-A745-0383C50E1B61}
+// MVID: {61FD4A6D-2432-93E0-A745-03836D4AFD61}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06F50000
+// Image base: 0x069C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -177,7 +177,6 @@
         IL_0098:  ldc.i4.1
         IL_0099:  ret
 
-        .line 7,7 : 19,20 ''
         IL_009a:  ldarg.0
         IL_009b:  ldnull
         IL_009c:  stfld      class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> SeqExpressionSteppingTest4/SeqExpressionSteppingTest4/f3@5::y

@@ -20,7 +20,7 @@ open FSharp.Compiler.TypedTreeOps
 val NewAnonTypar: TyparKind * range * TyparRigidity * TyparStaticReq * TyparDynamicReq -> Typar
 
 /// Create an inference type variable 
-val NewInferenceType: unit -> TType
+val NewInferenceType: TcGlobals -> TType
 
 /// Create an inference type variable for the kind of a byref pointer
 val NewByRefKindInferenceType: TcGlobals -> range -> TType
@@ -32,7 +32,7 @@ val NewErrorType: unit -> TType
 val NewErrorMeasure: unit -> Measure
 
 /// Create a list of inference type variables, one for each element in the input list
-val NewInferenceTypes: 'a list -> TType list
+val NewInferenceTypes: TcGlobals -> 'a list -> TType list
 
 /// Given a set of formal type parameters and their constraints, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted to refer to these.
@@ -190,7 +190,7 @@ val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed: DisplayEnv -> ConstraintSo
 
 val AddCxMethodConstraint: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TraitConstraintInfo -> unit
 
-val AddCxTypeMustSupportNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeUseSupportsNull: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 
 val AddCxTypeMustSupportComparison: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
 

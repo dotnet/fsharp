@@ -175,11 +175,6 @@ type DebugPointAtTarget =
     | No
 
 [<RequireQualifiedAccess>]
-type DebugPointAtSwitch =
-    | Yes of range
-    | No
-
-[<RequireQualifiedAccess>]
 type DebugPointAtSequential =
     | SuppressNeither
     | SuppressStmt
@@ -189,8 +184,11 @@ type DebugPointAtSequential =
 [<RequireQualifiedAccess>]
 type DebugPointAtTry =
     | Yes of range: range
-    | Body
     | No
+
+[<RequireQualifiedAccess>]
+type DebugPointAtLeafExpr =
+    | Yes of range
 
 [<RequireQualifiedAccess>]
 type DebugPointAtWith =
@@ -200,11 +198,15 @@ type DebugPointAtWith =
 [<RequireQualifiedAccess>]
 type DebugPointAtFinally =
     | Yes of range: range
-    | Body
     | No
 
 [<RequireQualifiedAccess>]
 type DebugPointAtFor =
+    | Yes of range: range
+    | No
+
+[<RequireQualifiedAccess>]
+type DebugPointAtInOrTo =
     | Yes of range: range
     | No
 
@@ -522,6 +524,7 @@ type SynExpr =
 
     | For of
         forDebugPoint: DebugPointAtFor *
+        toDebugPoint: DebugPointAtInOrTo *
         ident: Ident *
         equalsRange: range option *
         identBody: SynExpr *
@@ -532,6 +535,7 @@ type SynExpr =
 
     | ForEach of
         forDebugPoint: DebugPointAtFor *
+        inDebugPoint: DebugPointAtInOrTo *
         seqExprOnly: SeqExprOnly *
         isFromSource: bool *
         pat: SynPat *
@@ -780,11 +784,11 @@ type SynExpr =
         isUse: bool *
         isFromSource: bool *
         pat: SynPat *
-        equalsRange: range option *
         rhs: SynExpr *
         andBangs: SynExprAndBang list *
         body:SynExpr *
-        range: range 
+        range: range *
+        trivia: SynExprLetOrUseBangTrivia
 
     | MatchBang of
         matchKeyword: range *
@@ -844,6 +848,11 @@ type SynExpr =
         contents: SynInterpolatedStringPart list *
         synStringKind :SynStringKind *
         range: range
+
+    | DebugPoint of
+        debugPoint: DebugPointAtLeafExpr *
+        isControlFlow: bool *
+        innerExpr: SynExpr
 
     member e.Range =
         match e with
@@ -915,6 +924,7 @@ type SynExpr =
         | SynExpr.Fixed (range=m) 
         | SynExpr.InterpolatedString (range=m) -> m
         | SynExpr.Ident id -> id.idRange
+        | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
 
     member e.RangeWithoutAnyExtraDot =
         match e with
@@ -935,7 +945,7 @@ type SynExpr =
         | SynExpr.SequentialOrImplicitYield (_, e1, _, _, _)
         | SynExpr.App (_, _, e1, _, _) ->
             e1.RangeOfFirstPortion
-        | SynExpr.ForEach (_, _, _, pat, _, _, r) ->
+        | SynExpr.ForEach (pat=pat; range=r) ->
             let start = r.Start
             let e = (pat.Range: range).Start
             mkRange r.FileName start e
@@ -1738,10 +1748,10 @@ type SynModuleDecl =
     | NestedModule of
         moduleInfo: SynComponentInfo *
         isRecursive: bool *
-        equalsRange: range option *
         decls: SynModuleDecl list *
         isContinuing: bool *
-        range: range
+        range: range *
+        trivia: SynModuleDeclNestedModuleTrivia
 
     | Let of
         isRecursive: bool *
@@ -1820,9 +1830,9 @@ type SynModuleSigDecl =
     | NestedModule of
         moduleInfo: SynComponentInfo *
         isRecursive: bool *
-        equalsRange: range option *
         moduleDecls: SynModuleSigDecl list *
-        range: range
+        range: range *
+        trivia: SynModuleSigDeclNestedModuleTrivia
 
     | Val of
         valSig: SynValSig * range: range
@@ -2004,7 +2014,8 @@ type ParsedImplFileInput =
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         modules: SynModuleOrNamespace list *
-        isLastCompiland: (bool * bool)
+        isLastCompiland: (bool * bool) *
+        trivia: ParsedImplFileInputTrivia
 
 [<NoEquality; NoComparison>]
 type ParsedSigFileInput =
@@ -2013,7 +2024,8 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespaceSig list
+        modules: SynModuleOrNamespaceSig list *
+        trivia: ParsedSigFileInputTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedInput =

@@ -14,9 +14,14 @@ val mkILFuncTy : cenv -> ILType -> ILType -> ILType
 
 val mkILTyFuncTy : cenv -> ILType
 
-val newIlxPubCloEnv : ILGlobals * addMethodGeneratedAttrs: (ILMethodDef -> ILMethodDef) * addFieldGeneratedAttrs: (ILFieldDef -> ILFieldDef) * addFieldNeverAttrs: (ILFieldDef -> ILFieldDef) -> cenv
+val newIlxPubCloEnv:
+    ilg: ILGlobals *
+    addMethodGeneratedAttrs: (ILMethodDef -> ILMethodDef) *
+    addFieldGeneratedAttrs: (ILFieldDef -> ILFieldDef) *
+    addFieldNeverAttrs: (ILFieldDef -> ILFieldDef)
+        -> cenv
 
 val mkTyOfLambdas: cenv -> IlxClosureLambdas -> ILType
 
-val convIlxClosureDef : cenv -> encl: string list -> ILTypeDef -> IlxClosureInfo -> ILTypeDef list
+val convIlxClosureDef: cenv -> encl: string list -> ILTypeDef -> IlxClosureInfo -> ILTypeDef list
 

@@ -132,6 +132,11 @@
         <target state="translated">atrybuty po prawej stronie słowa kluczowego "module"</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureBetterExceptionPrinting">
+        <source>automatic generation of 'Message' property for 'exception' declarations</source>
+        <target state="translated">Automatyczne generowanie właściwości „Wiadomość“ dla deklaracji „Wyjątek“</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">domyślne użycie składowej interfejsu</target>
@@ -300,6 +305,11 @@
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">Nieprawidłowa dyrektywa „#{0} {1}”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ilxGenUnknownDebugPoint">
+        <source>Unknown debug point '{0}'. The available debug points are '{1}'.</source>
+        <target state="translated">Nieznany punkt debugowania „{0}”. Dostępnymi punktami debugowania są „{1}”.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxgenInvalidConstructInStateMachineDuringCodegen">

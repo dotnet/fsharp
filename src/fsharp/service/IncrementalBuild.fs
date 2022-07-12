@@ -120,7 +120,8 @@ module IncrementalBuildSyntaxTree =
                                 [],
                                 [],
                                 [],
-                                isLastCompiland
+                                isLastCompiland,
+                                { ConditionalDirectives = []; CodeComments = [] }
                             )
                         )
                     else

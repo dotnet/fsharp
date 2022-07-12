@@ -4,6 +4,33 @@ namespace FSharp.Compiler.SyntaxTrivia
 
 open FSharp.Compiler.Text
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type ConditionalDirectiveTrivia =
+    | If of expr:IfDirectiveExpression * range:range
+    | Else of range:range
+    | EndIf of range:range
+
+and [<RequireQualifiedAccess; NoEquality; NoComparison>] IfDirectiveExpression =
+    | And of IfDirectiveExpression * IfDirectiveExpression
+    | Or of IfDirectiveExpression * IfDirectiveExpression
+    | Not of IfDirectiveExpression
+    | Ident of string
+    
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type CommentTrivia =
+    | LineComment of range: range
+    | BlockComment of range: range
+
+[<NoEquality; NoComparison>]
+type ParsedImplFileInputTrivia =
+    { ConditionalDirectives: ConditionalDirectiveTrivia list
+      CodeComments: CommentTrivia list }
+
+[<NoEquality; NoComparison>]
+type ParsedSigFileInputTrivia =
+    { ConditionalDirectives: ConditionalDirectiveTrivia list
+      CodeComments: CommentTrivia list }
+
 [<NoEquality; NoComparison>]
 type SynExprTryWithTrivia =
     { TryKeyword: range
@@ -32,6 +59,12 @@ type SynExprLambdaTrivia =
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseTrivia =
     { InKeyword: range option }
+
+[<NoEquality; NoComparison>]
+type SynExprLetOrUseBangTrivia =
+    { EqualsRange: range option }
+    static member Zero: SynExprLetOrUseBangTrivia =
+        { EqualsRange = None }
 
 [<NoEquality; NoComparison>]
 type SynMatchClauseTrivia =
@@ -86,3 +119,15 @@ type SynMemberFlagsTrivia =
 type SynExprAndBangTrivia =
     { EqualsRange: range
       InKeyword: range option }
+
+[<NoEquality; NoComparison>]
+type SynModuleDeclNestedModuleTrivia =
+    { ModuleKeyword: range option
+      EqualsRange: range option }
+    static member Zero: SynModuleDeclNestedModuleTrivia = { ModuleKeyword = None; EqualsRange = None }
+
+[<NoEquality; NoComparison>]
+type SynModuleSigDeclNestedModuleTrivia =
+    { ModuleKeyword: range option
+      EqualsRange: range option }
+    static member Zero: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = None; EqualsRange = None }

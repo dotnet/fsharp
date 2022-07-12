@@ -14,10 +14,8 @@ type Ident =
      member idText: string
      member idRange: range
        
-
 /// Represents a long identifier e.g. 'A.B.C'
 type LongIdent = Ident list
-
 
 /// Represents a long identifier with possible '.' at end.
 ///
@@ -219,19 +217,17 @@ type DebugPointAtTarget =
     | Yes
     | No
 
-/// Represents whether a debug point should be present at the switch
-/// logic of a decision tree. These are introduced for 'when' expressions
-/// and the encoding of 'a && b', 'a || b'
+/// Represents a debug point at a leaf expression (e.g. an application or constant).
 [<RequireQualifiedAccess>]
-type DebugPointAtSwitch =
+type DebugPointAtLeafExpr =
     | Yes of range
-    | No
 
 /// Represents whether a debug point should be suppressed for either the
 /// first or second part of a sequential execution, that is whether the
 /// construct corresponds to a debug point in the original source.
 [<RequireQualifiedAccess>]
 type DebugPointAtSequential =
+    // This means "always put an implicit debug point on each part of the sequential"
     | SuppressNeither
 
     // This means "suppress a in 'a;b'" and "suppress b in 'a before b'"
@@ -248,7 +244,6 @@ type DebugPointAtSequential =
 [<RequireQualifiedAccess>]
 type DebugPointAtTry =
     | Yes of range: range
-    | Body
     | No
 
 /// Represents whether a debug point should be present for the 'with' in a 'try .. with',
@@ -263,13 +258,19 @@ type DebugPointAtWith =
 [<RequireQualifiedAccess>]
 type DebugPointAtFinally =
     | Yes of range: range
-    | Body
     | No
 
 /// Represents whether a debug point should be present for the 'for' in a 'for...' loop,
 /// that is whether the construct corresponds to a debug point in the original source.
 [<RequireQualifiedAccess>]
 type DebugPointAtFor =
+    | Yes of range: range
+    | No
+
+/// Represents whether a debug point should be present for the 'in' or 'to' of a 'for...' loop,
+/// that is whether the construct corresponds to a debug point in the original source.
+[<RequireQualifiedAccess>]
+type DebugPointAtInOrTo =
     | Yes of range: range
     | No
 
@@ -636,6 +637,7 @@ type SynExpr =
     /// F# syntax: 'for i = ... to ... do ...'
     | For of
         forDebugPoint: DebugPointAtFor *
+        toDebugPoint: DebugPointAtInOrTo *
         ident: Ident *
         equalsRange: range option *
         identBody: SynExpr *
@@ -647,6 +649,7 @@ type SynExpr =
     /// F# syntax: 'for ... in ... do ...'
     | ForEach of
         forDebugPoint: DebugPointAtFor *
+        inDebugPoint: DebugPointAtInOrTo *
         seqExprOnly: SeqExprOnly *
         isFromSource: bool *
         pat: SynPat *
@@ -969,11 +972,11 @@ type SynExpr =
         isUse: bool *
         isFromSource: bool *
         pat: SynPat *
-        equalsRange: range option *
         rhs: SynExpr *
         andBangs: SynExprAndBang list *
         body:SynExpr *
-        range: range 
+        range: range *
+        trivia: SynExprLetOrUseBangTrivia
 
     /// F# syntax: match! expr with pat1 -> expr | ... | patN -> exprN
     | MatchBang of
@@ -1046,6 +1049,12 @@ type SynExpr =
         contents: SynInterpolatedStringPart list *
         synStringKind :SynStringKind *
         range: range
+
+    /// Debug points arising from computation expressions
+    | DebugPoint of
+        debugPoint: DebugPointAtLeafExpr *
+        isControlFlow: bool *
+        innerExpr: SynExpr
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -1909,10 +1918,10 @@ type SynModuleDecl =
     | NestedModule of
         moduleInfo: SynComponentInfo *
         isRecursive: bool *
-        equalsRange: range option *
         decls: SynModuleDecl list *
         isContinuing: bool *
-        range: range
+        range: range *
+        trivia: SynModuleDeclNestedModuleTrivia
 
     /// A 'let' definition within a module
     | Let of
@@ -1994,9 +2003,9 @@ type SynModuleSigDecl =
     | NestedModule of
         moduleInfo: SynComponentInfo *
         isRecursive: bool *
-        equalsRange: range option *
         moduleDecls: SynModuleSigDecl list *
-        range: range
+        range: range *
+        trivia: SynModuleSigDeclNestedModuleTrivia
 
     /// A 'val' definition within a module or namespace in a signature file, corresponding
     /// to a 'let' definition in the implementation
@@ -2198,7 +2207,8 @@ type ParsedImplFileInput =
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         modules: SynModuleOrNamespace list *
-        isLastCompiland: (bool * bool)
+        isLastCompiland: (bool * bool) *
+        trivia: ParsedImplFileInputTrivia
 
 /// Represents the full syntax tree, file name and other parsing information for a signature file
 [<NoEquality; NoComparison>]
@@ -2208,7 +2218,8 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespaceSig list
+        modules: SynModuleOrNamespaceSig list *
+        trivia: ParsedSigFileInputTrivia
 
 /// Represents the syntax tree for a parsed implementation or signature file
 [<NoEquality; NoComparison; RequireQualifiedAccess>]

@@ -65,7 +65,7 @@ let sumBy f xs =
     loop xs 0
 ```
 
-The inner `loop` function is emitted as a separate static method named `loop@2` and incurs no overhead involved with allocatin an `FSharpFunc` at runtime.
+The inner `loop` function is emitted as a separate static method named `loop@2` and incurs no overhead involved with allocating an `FSharpFunc` at runtime.
 
 In [`LowerCallsAndSeqs.fs`](https://github.com/dotnet/fsharp/blob/main/src/fsharp/LowerCallsAndSeqs.fs), a few optimizations are performed:
 

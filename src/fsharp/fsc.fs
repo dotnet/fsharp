@@ -316,7 +316,7 @@ module InterfaceFileWriter =
         let denv = DisplayEnv.InitialForSigFileGeneration tcGlobals
         let denv = { denv with shrinkOverloads = false; printVerboseSignatures = true }
 
-        let writeToFile os (TImplFile (_, _, mexpr, _, _, _)) =
+        let writeToFile os (TImplFile (implExprWithSig=mexpr)) =
           writeViaBuffer os (fun os s -> Printf.bprintf os "%s\n\n" s)
             (NicePrint.layoutInferredSigOfModuleExpr true denv infoReader AccessibleFromSomewhere range0 mexpr |> Display.squashTo 80 |> LayoutRender.showL)
 
@@ -347,7 +347,7 @@ module InterfaceFileWriter =
                 ".fsi"
 
         let writeToSeparateFiles (declaredImpls: TypedImplFile list) =
-            for TImplFile (name, _, _, _, _, _) as impl in declaredImpls do
+            for TImplFile (qualifiedNameOfFile=name) as impl in declaredImpls do
                 let filename = Path.ChangeExtension(name.Range.FileName, extensionForFile name.Range.FileName)
                 printfn "writing impl file to %s" filename
                 use os = FileSystem.OpenFileForWriteShim(filename, FileMode.Create).GetWriter()
@@ -729,7 +729,7 @@ let main2(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     // it as the updated global error logger and never remove it
     let oldLogger = errorLogger
     let errorLogger =
-        let scopedPragmas = [ for TImplFile (_, pragmas, _, _, _, _) in typedImplFiles do yield! pragmas ]
+        let scopedPragmas = [ for TImplFile (pragmas=pragmas) in typedImplFiles do yield! pragmas ]
         GetErrorLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.errorSeverityOptions, oldLogger)
 
     let _unwindEL_3 = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
@@ -798,9 +798,15 @@ let main3(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlob
              | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion
              | _ -> ""
 
+<<<<<<< HEAD
     let optimizedImpls, optimizationData, _ = 
         ApplyAllOptimizations 
             (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone), outfile, 
+=======
+    let optimizedImpls, optimizationData, _ =
+        ApplyAllOptimizations
+            (tcConfig, tcGlobals, LightweightTcValForUsingInBuildMethodCall tcGlobals, outfile,
+>>>>>>> c786fbfff90e78bf7860f779489daec9f0996d9b
              importMap, false, optEnv0, generatedCcu, typedImplFiles)
 
     AbortOnError(errorLogger, exiter)
@@ -910,10 +916,10 @@ let main6 dynamicAssemblyCreator (Args (ctok, tcConfig,  tcImports: TcImports, t
     | None ->
         try
             try
-                ILBinaryWriter.WriteILBinary
-                 (outfile,
-                  { ilg = tcGlobals.ilg
-                    pdbfile=pdbfile
+                ILBinaryWriter.WriteILBinaryFile
+                 ({ ilg = tcGlobals.ilg
+                    outfile = outfile
+                    pdbfile = pdbfile
                     emitTailcalls = tcConfig.emitTailcalls
                     deterministic = tcConfig.deterministic
                     showTimes = tcConfig.showTimes

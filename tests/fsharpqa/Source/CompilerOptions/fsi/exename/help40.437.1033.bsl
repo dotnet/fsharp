@@ -103,3 +103,5 @@ Usage: fsharpi <options> [script.fsx [<arguments>]]
 --quotations-debug[+|-]                  Emit debug information in quotations
 --shadowcopyreferences[+|-]              Prevents references from being
                                          locked by the F# Interactive process
+--multiemit[+|-]                         Emit multiple assemblies (off by
+                                         default for .NET Framework)

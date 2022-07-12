@@ -433,7 +433,7 @@ type MethInfo =
     member ImplementedSlotSignatures: SlotSig list
 
     // Is this particular MethInfo one that doesn't provide an implementation?
-    ///
+    //
     // For F# methods, this is 'true' for the MethInfos corresponding to 'abstract' declarations,
     // and false for the (potentially) matching 'default' implementation MethInfos that eventually
     // provide an implementation for the dispatch slot.

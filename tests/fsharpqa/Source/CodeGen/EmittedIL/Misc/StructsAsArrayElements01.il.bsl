@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly StructsAsArrayElements01
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000758 Length: 0x0000022C
 }
 .module StructsAsArrayElements01.dll
-// MVID: {611C52A3-29F3-6E68-A745-0383A3521C61}
+// MVID: {6220CCA3-29F3-6E68-A745-0383A3CC2062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06670000
+// Image base: 0x06980000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -73,7 +73,7 @@
                [2] int32 V_2,
                [3] int32 V_3)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 7,7 : 6,7 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\StructsAsArrayElements01.fs'
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\fsharp\\tests\\fsharpqa\\source\\CodeGen\\EmittedIL\\Misc\\StructsAsArrayElements01.fs'
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
@@ -106,7 +106,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 7,7 : 6,7 ''
       IL_0000:  ldarg.0
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  StructsAsArrayElements01/T
@@ -126,7 +125,7 @@
                [2] class [mscorlib]System.Collections.IComparer V_2,
                [3] int32 V_3,
                [4] int32 V_4)
-      .line 7,7 : 6,7 ''
+      .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
       IL_0001:  unbox.any  StructsAsArrayElements01/T
       IL_0006:  stloc.0
@@ -162,9 +161,8 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       27 (0x1b)
       .maxstack  7
-      .locals init ([0] int32 V_0,
-               [1] class [mscorlib]System.Collections.IEqualityComparer V_1)
-      .line 7,7 : 6,7 ''
+      .locals init (int32 V_0,
+               class [mscorlib]System.Collections.IEqualityComparer V_1)
       IL_0000:  ldc.i4.0
       IL_0001:  stloc.0
       IL_0002:  ldc.i4     0x9e3779b9
@@ -192,7 +190,6 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
-      .line 7,7 : 6,7 ''
       IL_0000:  ldarg.0
       IL_0001:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
       IL_0006:  call       instance int32 StructsAsArrayElements01/T::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
@@ -204,36 +201,39 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       39 (0x27)
+      // Code size       42 (0x2a)
       .maxstack  4
-      .locals init ([0] valuetype StructsAsArrayElements01/T V_0,
-               [1] valuetype StructsAsArrayElements01/T& V_1,
-               [2] class [mscorlib]System.Collections.IEqualityComparer V_2)
+      .locals init ([0] object V_0,
+               [1] valuetype StructsAsArrayElements01/T V_1,
+               [2] valuetype StructsAsArrayElements01/T& V_2,
+               [3] class [mscorlib]System.Collections.IEqualityComparer V_3)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype StructsAsArrayElements01/T>(object)
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_0025
+      IL_0001:  stloc.0
+      IL_0002:  ldloc.0
+      IL_0003:  isinst     StructsAsArrayElements01/T
+      IL_0008:  ldnull
+      IL_0009:  cgt.un
+      IL_000b:  brfalse.s  IL_0028
 
       .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  unbox.any  StructsAsArrayElements01/T
-      IL_0010:  stloc.0
-      IL_0011:  ldloca.s   V_0
+      IL_000d:  ldarg.1
+      IL_000e:  unbox.any  StructsAsArrayElements01/T
       IL_0013:  stloc.1
-      IL_0014:  ldarg.2
-      IL_0015:  stloc.2
-      IL_0016:  ldarg.0
-      IL_0017:  ldfld      int32 StructsAsArrayElements01/T::i
-      IL_001c:  ldloc.1
-      IL_001d:  ldfld      int32 StructsAsArrayElements01/T::i
-      IL_0022:  ceq
-      IL_0024:  ret
+      IL_0014:  ldloca.s   V_1
+      IL_0016:  stloc.2
+      IL_0017:  ldarg.2
+      IL_0018:  stloc.3
+      IL_0019:  ldarg.0
+      IL_001a:  ldfld      int32 StructsAsArrayElements01/T::i
+      IL_001f:  ldloc.2
+      IL_0020:  ldfld      int32 StructsAsArrayElements01/T::i
+      IL_0025:  ceq
+      IL_0027:  ret
 
       .line 100001,100001 : 0,0 ''
-      IL_0025:  ldc.i4.0
-      IL_0026:  ret
+      IL_0028:  ldc.i4.0
+      IL_0029:  ret
     } // end of method T::Equals
 
     .method public hidebysig instance void 
@@ -254,8 +254,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       18 (0x12)
       .maxstack  4
-      .locals init ([0] valuetype StructsAsArrayElements01/T& V_0)
-      .line 7,7 : 6,7 ''
+      .locals init (valuetype StructsAsArrayElements01/T& V_0)
       IL_0000:  ldarga.s   obj
       IL_0002:  stloc.0
       IL_0003:  ldarg.0
@@ -270,28 +269,31 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       27 (0x1b)
+      // Code size       30 (0x1e)
       .maxstack  4
-      .locals init ([0] valuetype StructsAsArrayElements01/T V_0)
+      .locals init ([0] object V_0,
+               [1] valuetype StructsAsArrayElements01/T V_1)
       .line 100001,100001 : 0,0 ''
       IL_0000:  ldarg.1
-      IL_0001:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::TypeTestGeneric<valuetype StructsAsArrayElements01/T>(object)
-      IL_0006:  brtrue.s   IL_000a
-
-      IL_0008:  br.s       IL_0019
-
-      .line 100001,100001 : 0,0 ''
-      IL_000a:  ldarg.1
-      IL_000b:  unbox.any  StructsAsArrayElements01/T
-      IL_0010:  stloc.0
-      IL_0011:  ldarg.0
-      IL_0012:  ldloc.0
-      IL_0013:  call       instance bool StructsAsArrayElements01/T::Equals(valuetype StructsAsArrayElements01/T)
-      IL_0018:  ret
+      IL_0001:  stloc.0
+      IL_0002:  ldloc.0
+      IL_0003:  isinst     StructsAsArrayElements01/T
+      IL_0008:  ldnull
+      IL_0009:  cgt.un
+      IL_000b:  brfalse.s  IL_001c
 
       .line 100001,100001 : 0,0 ''
-      IL_0019:  ldc.i4.0
-      IL_001a:  ret
+      IL_000d:  ldarg.1
+      IL_000e:  unbox.any  StructsAsArrayElements01/T
+      IL_0013:  stloc.1
+      IL_0014:  ldarg.0
+      IL_0015:  ldloc.1
+      IL_0016:  call       instance bool StructsAsArrayElements01/T::Equals(valuetype StructsAsArrayElements01/T)
+      IL_001b:  ret
+
+      .line 100001,100001 : 0,0 ''
+      IL_001c:  ldc.i4.0
+      IL_001d:  ret
     } // end of method T::Equals
 
   } // end of class T

@@ -78,14 +78,14 @@ let mkRawStructTupleTy tys = TType_tuple (tupInfoStruct, tys)
 // make up the entire compilation unit
 //---------------------------------------------------------------------------
 
-let mapTImplFile f (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
-    TImplFile (fragName, pragmas, f moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)
+let mapTImplFile f (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) =
+    TImplFile (fragName, pragmas, f moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
-let mapAccImplFile f z (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes)) =
+let mapAccImplFile f z (TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) =
     let moduleExpr, z = f z moduleExpr
-    TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes), z
+    TImplFile (fragName, pragmas, moduleExpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode), z
 
-let foldTImplFile f z (TImplFile (_, _, moduleExpr, _, _, _)) = f z moduleExpr
+let foldTImplFile f z (TImplFile (implExprWithSig= moduleExpr)) = f z moduleExpr
 
 //---------------------------------------------------------------------------
 // Equality relations on locally defined things 
@@ -231,7 +231,7 @@ let rec stripUnitEqnsAux canShortcut unt =
 
 let rec stripTyparEqnsAux canShortcut ty = 
     match ty with 
-    | TType_var r -> 
+    | TType_var (r, _) -> 
         match r.Solution with
         | Some soln -> 
             if canShortcut then 
@@ -240,7 +240,7 @@ let rec stripTyparEqnsAux canShortcut ty =
                 // This is only because IterType likes to walk _all_ the constraints _everywhere_ in a type, including
                 // those attached to _solved_ type variables. In an ideal world this would never be needed - see the notes
                 // on IterType.
-                | TType_var r2 when r2.Constraints.IsEmpty -> 
+                | TType_var (r2, _) when r2.Constraints.IsEmpty -> 
                    match r2.Solution with
                    | None -> ()
                    | Some _ as soln2 -> 

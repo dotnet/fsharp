@@ -36,8 +36,8 @@ let DecideEscapes syntacticArgs body =
     frees.FreeLocals |> Zset.filter isMutableEscape 
 
 /// Find all the mutable locals that escape a lambda expression, ignoring the arguments to the lambda
-let DecideLambda exprF cenv topValInfo expr ety z   = 
-    match expr with 
+let DecideLambda exprF cenv topValInfo expr ety z = 
+    match stripDebugPoints expr with 
     | Expr.Lambda _
     | Expr.TyLambda _ ->
         let _tps, ctorThisValOpt, baseValOpt, vsl, body, _bodyty = destTopLambda cenv.g cenv.amap topValInfo (expr, ety) 
@@ -62,7 +62,7 @@ let DecideExprOp exprF noInterceptF (z: Zset<Val>) (expr: Expr) (op, tyargs, arg
     | TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] ->
         exprF (exprF z e1) e2
 
-    | TOp.For _, _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [_], e3, _, _)] ->
+    | TOp.IntegerForLoop _, _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [_], e3, _, _)] ->
         exprF (exprF (exprF z e1) e2) e3
 
     | TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
@@ -75,11 +75,12 @@ let DecideExprOp exprF noInterceptF (z: Zset<Val>) (expr: Expr) (op, tyargs, arg
 
 /// Find all the mutable locals that escape a lambda expression or object expression 
 let DecideExpr cenv exprF noInterceptF z expr  = 
-    match expr with 
+    let g = cenv.g
+    match stripDebugPoints expr with 
     | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _, m, rty) -> 
         let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
-        let ty = mkMultiLambdaTy m argvs rty 
-        DecideLambda (Some exprF)  cenv topValInfo expr ty z
+        let ty = mkMultiLambdaTy g m argvs rty 
+        DecideLambda (Some exprF) cenv topValInfo expr ty z
 
     | Expr.TyLambda (_, tps, _, _m, rty)  -> 
         let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 

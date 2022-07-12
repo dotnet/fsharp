@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 5:0:0:0
+  .ver 6:0:0:0
 }
 .assembly Compare09
 {
@@ -36,13 +36,13 @@
   // Offset: 0x00000230 Length: 0x000000B2
 }
 .module Compare09.dll
-// MVID: {60BE1F16-03C8-F88E-A745-0383161FBE60}
+// MVID: {619833D0-03C8-F88E-A745-0383D0339861}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x06710000
+// Image base: 0x07540000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -87,7 +87,7 @@
       IL_001f:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0> [FSharp.Core]Microsoft.FSharp.Core.Operators::CreateSequence<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
       IL_0024:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
       IL_0029:  stloc.2
-      .line 8,8 : 8,30 ''
+      .line 8,8 : 8,11 ''
       IL_002a:  ldc.i4.0
       IL_002b:  stloc.3
       IL_002c:  br.s       IL_003a
@@ -102,7 +102,7 @@
       IL_0037:  ldc.i4.1
       IL_0038:  add
       IL_0039:  stloc.3
-      .line 8,8 : 8,30 ''
+      .line 8,8 : 18,20 ''
       IL_003a:  ldloc.3
       IL_003b:  ldc.i4     0x186a1
       IL_0040:  blt.s      IL_002e

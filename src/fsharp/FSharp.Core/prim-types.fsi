@@ -3,7 +3,7 @@
 #nowarn "35" // This construct is deprecated: the treatment of this operator is now handled directly by the F# compiler and its meaning may not be redefined.
 #nowarn "61" // The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.
 
-/// <summary>Basic F# type definitions, functions and operators </summary>
+// Basic F# type definitions, functions and operators
 namespace Microsoft.FSharp.Core
 
     open System
@@ -1284,8 +1284,7 @@ namespace Microsoft.FSharp.Core
         /// <returns>The result of the comparison.</returns>
         val inline PhysicalEquality: e1: 'T -> e2: 'T -> bool when 'T: not struct
 
-        /// <summary>The physical hash. Hashes on the object identity, except for value types,
-        /// where we hash on the contents.</summary>
+        /// <summary>The physical hash. Hashes on the object identity.</summary>
         ///
         /// <param name="obj">The input object.</param>
         ///
@@ -2776,9 +2775,9 @@ namespace Microsoft.FSharp.Core
         /// <example id="left-shift-example-1">
         /// <code lang="fsharp">
         /// let a = 13       // 00000000000000000000000000001101
-        /// let c = a &lt;&lt; 4   // 00000000000000000000000011010000
+        /// let c = a &lt;&lt;&lt; 4   // 00000000000000000000000011010000
         /// </code>
-        /// Evaluates to 206
+        /// Evaluates to 208
         /// </example>
         val inline (<<<): value: ^T -> shift: int32 -> ^T when ^T : (static member (<<<) : ^T * int32 -> ^T) and default ^T : int
         
@@ -2792,9 +2791,9 @@ namespace Microsoft.FSharp.Core
         /// <example id="right-shift-example-1">
         /// <code lang="fsharp">
         /// let a = 206      // 00000000000000000000000011010000
-        /// let c1 = a &gt;&gt; 2  // 00000000000000000000000000110100
+        /// let c1 = a &gt;&gt;&gt; 2  // 00000000000000000000000000110100
         /// // Evaluates to 51
-        /// let c2 = a &gt;&gt; 6  // 00000000000000000000000000000011
+        /// let c2 = a &gt;&gt;&gt; 6  // 00000000000000000000000000000011
         /// Evaluates to 3
         /// </code>
         /// </example>
@@ -3376,7 +3375,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <param name="message">The exception message.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         ///
         /// <example id="failwith-example">
         /// <code lang="fsharp">
@@ -3397,7 +3396,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="argumentName">The argument name.</param>
         /// <param name="message">The exception message.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         ///
         /// <example id="invalidarg-example">
         /// <code lang="fsharp">
@@ -3420,7 +3419,7 @@ namespace Microsoft.FSharp.Core
         ///
         /// <param name="argumentName">The argument name.</param>
         ///
-        /// <returns>The result value.</returns>
+        /// <returns>Never returns.</returns>
         /// 
         /// <example id="nullarg-example">
         /// <code lang="fsharp">
@@ -3610,8 +3609,8 @@ namespace Microsoft.FSharp.Core
         /// otherwise raise an exception. Calls <see cref="M:System.Environment.Exit"/>.</summary>
         ///
         /// <param name="exitcode">The exit code to use.</param>
-        ///
-        /// <returns>The result value.</returns>
+        /// 
+        /// <returns>Never returns.</returns>
         /// 
         /// <example id="exit-example">
         /// <code lang="fsharp">
