@@ -18,6 +18,4 @@ module TestModule1 =
     
     let dsc = ABC.DirectorySeparatorChar
     printfn "Current directory seperator char is %c" dsc
-    
-// If this compiles ok, then we are good to go
-exit 0
+

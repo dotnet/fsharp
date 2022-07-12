@@ -169,6 +169,15 @@ module rec Compiler =
         | Success of CompilationOutput
         | Failure of CompilationOutput
 
+    type ExecutionPlatform =
+        | Anycpu = 0
+        | AnyCpu32bitPreferred = 1
+        | X86 = 2
+        | Itanium = 3
+        | X64 = 4
+        | Arm = 5
+        | Arm64 = 6
+
     let private defaultOptions : string list = []
 
     // Not very safe version of reading stuff from file, but we want to fail fast for now if anything goes wrong.
@@ -426,6 +435,23 @@ module rec Compiler =
         match cUnit with
         | FS fs -> FS { fs with OutputType = CompileOutput.Exe }
         | _ -> failwith "TODO: Implement where applicable."
+
+    let withPlatform (platform:ExecutionPlatform) (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | FS _ -> 
+            let p =
+                match platform with
+                | ExecutionPlatform.Anycpu -> "anycpu"
+                | ExecutionPlatform.AnyCpu32bitPreferred -> "anycpu32bitpreferred"
+                | ExecutionPlatform.Itanium -> "itanium"
+                | ExecutionPlatform.X64 -> "x64"
+                | ExecutionPlatform.X86 -> "x86"
+                | ExecutionPlatform.Arm -> "arm"
+                | ExecutionPlatform.Arm64 -> "arm64"
+                | _ -> failwith $"Unknown value for ExecutionPlatform: {platform}"
+
+            withOptionsHelper [ $"--platform:{p}" ] "withPlatform is only supported for F#" cUnit
+        | _ -> failwith "TODO: Implement ignorewarnings for the rest."
 
     let ignoreWarnings (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
