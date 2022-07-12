@@ -1644,7 +1644,7 @@ type TraitWitnessInfo =
 /// Represents the ability to solve traits via extension methods in a particular scope.
 ///
 /// Only satisfied by types defined elsewhere (e.g. NameResolutionEnv), and not stored in TypedTreePickle.
-type ITraitContext = 
+type ITraitContext =
     /// Used to select the extension methods in the context relevant to solving the constraint
     /// given the current support types
     abstract SelectExtensionMethods: TraitConstraintInfo * range * infoReader: obj -> ITraitExtensionMember list
@@ -1653,9 +1653,13 @@ type ITraitContext =
     abstract AccessRights: ITraitAccessorDomain
 
 /// Only satisfied by elsewhere. Not stored in TastPickle.
-type ITraitExtensionMember = interface end
+type ITraitExtensionMember =
+    interface
+    end
 
-type ITraitAccessorDomain = interface end
+type ITraitAccessorDomain =
+    interface
+    end
 
 /// The specification of a member constraint that must be solved
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -1711,7 +1715,7 @@ type TraitConstraintSln =
     /// Indicates a trait is solved by an F# method.
     ///    apparentType -- the apparent type and its instantiation
     ///    valRef -- the method that solves the trait constraint
-    ///    methodInst -- the generic method instantiation 
+    ///    methodInst -- the generic method instantiation
     ///    isExt -- is this a use of an extension method
     | FSMethSln of apparentType: TType * valRef: ValRef * methodInst: TypeInst * isExt: bool
 

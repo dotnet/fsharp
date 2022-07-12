@@ -18,7 +18,10 @@ open FSharp.Compiler.TcGlobals
 type NameResolver =
 
     new:
-        g: TcGlobals * amap: ImportMap * infoReader: InfoReader * instantiationGenerator: (range -> Typars -> ITraitContext option -> TypeInst) ->
+        g: TcGlobals *
+        amap: ImportMap *
+        infoReader: InfoReader *
+        instantiationGenerator: (range -> Typars -> ITraitContext option -> TypeInst) ->
             NameResolver
 
     member InfoReader: InfoReader
@@ -164,15 +167,15 @@ type ExtensionMember =
     | ILExtMem of TyconRef * MethInfo * ExtensionMethodPriority
 
     /// The logical name, e.g. for constraint solving
-    member LogicalName : string
+    member LogicalName: string
 
     /// Describes the sequence order of the introduction of an extension method. Extension methods that are introduced
     /// later through 'open' get priority in overload resolution.
     member Priority: ExtensionMethodPriority
 
 /// Freshen a trait for use at a particular location
-
 /// The environment of information used to resolve names
+
 [<NoEquality; NoComparison>]
 type NameResolutionEnv =
     {
@@ -221,7 +224,7 @@ type NameResolutionEnv =
         /// Extension members by type and name
         eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
 
-        /// Extension members by name 
+        /// Extension members by name
         eExtensionMembersByName: NameMultiMap<ExtensionMember>
 
         /// Other extension members unindexed by type
@@ -588,7 +591,8 @@ val internal AllMethInfosOfTypeInScope:
     TType ->
         MethInfo list
 
-val internal SelectExtensionMethInfosForTrait: traitInfo: TraitConstraintInfo * m: range * nenv: NameResolutionEnv * infoReader: InfoReader -> MethInfo list
+val internal SelectExtensionMethInfosForTrait:
+    traitInfo: TraitConstraintInfo * m: range * nenv: NameResolutionEnv * infoReader: InfoReader -> MethInfo list
 
 /// Used to report an error condition where name resolution failed due to an indeterminate type
 exception internal IndeterminateType of range
@@ -783,7 +787,8 @@ val FakeInstantiationGenerator: (range -> Typars -> ITraitContext option -> Type
 val TryToResolveLongIdentAsType: NameResolver -> NameResolutionEnv -> range -> string list -> TType option
 
 /// Resolve a (possibly incomplete) long identifier to a loist of possible class or record fields
-val ResolvePartialLongIdentToClassOrRecdFields: NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> bool -> Item list
+val ResolvePartialLongIdentToClassOrRecdFields:
+    NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> bool -> Item list
 
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions.
 val ResolvePartialLongIdent:
@@ -822,4 +827,5 @@ val TrySelectExtensionMethInfoOfILExtMem:
 
 val traitCtxtNone: ITraitContext option
 
-val ExtensionMethInfosOfTypeInScope: ResultCollectionSettings -> InfoReader -> NameResolutionEnv -> string option -> range -> TType -> MethInfo list
+val ExtensionMethInfosOfTypeInScope:
+    ResultCollectionSettings -> InfoReader -> NameResolutionEnv -> string option -> range -> TType -> MethInfo list

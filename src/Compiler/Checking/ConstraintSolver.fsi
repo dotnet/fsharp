@@ -42,7 +42,13 @@ val NewInferenceTypes: TcGlobals -> 'T list -> TType list
 ///   2. the instantiation mapping old type parameters to inference variables
 ///   3. the inference type variables as a list of types.
 val FreshenAndFixupTypars:
-    ITraitContext option -> m: range -> rigid: TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInstantiation * TType list
+    ITraitContext option ->
+    m: range ->
+    rigid: TyparRigidity ->
+    Typars ->
+    TType list ->
+    Typars ->
+        Typars * TyparInstantiation * TType list
 
 /// Given a set of type parameters, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted.
@@ -338,4 +344,4 @@ val ChooseSolutionsForUnsolved: ConstraintSolverState -> DisplayEnv -> Typar lis
 
 val IsApplicableMethApprox: TcGlobals -> ImportMap -> range -> ITraitContext option -> MethInfo -> TType -> bool
 
-val CanonicalizePartialInferenceProblem:  ConstraintSolverState -> DisplayEnv -> range -> Typars -> bool -> unit
+val CanonicalizePartialInferenceProblem: ConstraintSolverState -> DisplayEnv -> range -> Typars -> bool -> unit

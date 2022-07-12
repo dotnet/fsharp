@@ -550,19 +550,21 @@ type ValRemap = ValMap<ValRef>
 /// Represents a combination of substitutions/instantiations where things replace other things during remapping
 [<NoEquality; NoComparison>]
 type Remap =
-    { tpinst : TyparInstantiation
+    {
+        tpinst: TyparInstantiation
 
-      /// Values to remap
-      valRemap: ValRemap
+        /// Values to remap
+        valRemap: ValRemap
 
-      /// TyconRefs to remap
-      tyconRefRemap : TyconRefRemap
+        /// TyconRefs to remap
+        tyconRefRemap: TyconRefRemap
 
-      /// Remove existing trait solutions?
-      removeTraitSolutions: bool 
+        /// Remove existing trait solutions?
+        removeTraitSolutions: bool
 
-      /// A map indicating how to fill in trait contexts for traits as we copy an expression. Indexed by the member name of the trait
-      traitCtxtsMap: Map<string, ITraitContext> }
+        /// A map indicating how to fill in trait contexts for traits as we copy an expression. Indexed by the member name of the trait
+        traitCtxtsMap: Map<string, ITraitContext>
+    }
 
     static member Empty: Remap
 
@@ -1594,7 +1596,7 @@ type TypeDefMetadata =
 val metadataOfTycon: Tycon -> TypeDefMetadata
 
 #if EXTENSIONTYPING
-val extensionInfoOfTy : TcGlobals -> TType -> TyconRepresentation
+val extensionInfoOfTy: TcGlobals -> TType -> TyconRepresentation
 #endif
 
 /// Extract metadata from a type

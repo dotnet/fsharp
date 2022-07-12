@@ -1141,7 +1141,13 @@ let main4
 
     // Create the Abstract IL generator
     let ilxGenerator =
-        CreateIlxAssemblyGenerator(tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone), generatedCcu)
+        CreateIlxAssemblyGenerator(
+            tcConfig,
+            tcImports,
+            tcGlobals,
+            (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone),
+            generatedCcu
+        )
 
     let codegenBackend =
         (if Option.isSome dynamicAssemblyCreator then

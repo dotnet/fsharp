@@ -113,7 +113,7 @@ type TcEnv =
     member NameEnv: NameResolutionEnv
 
     member AccessRights: AccessorDomain
-    member TraitContext : ITraitContext option
+    member TraitContext: ITraitContext option
 
     interface ITraitContext
 
@@ -215,7 +215,13 @@ exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: s
 val TcFieldInit: range -> ILFieldInit -> Const
 
 val LightweightTcValForUsingInBuildMethodCall:
-    g: TcGlobals -> traitCtxt: ITraitContext option -> vref: ValRef -> vrefFlags: ValUseFlag -> vrefTypeInst: TTypes -> m: range -> Expr * TType
+    g: TcGlobals ->
+    traitCtxt: ITraitContext option ->
+    vref: ValRef ->
+    vrefFlags: ValUseFlag ->
+    vrefTypeInst: TTypes ->
+    m: range ->
+        Expr * TType
 
 //-------------------------------------------------------------------------
 // The rest are all helpers needed for declaration checking (CheckDeclarations.fs)

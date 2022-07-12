@@ -539,7 +539,7 @@ type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (Ty
     member _.WithoutTemplateReplacement() = TypeReprEnv(reprs, count, None)
 
     /// Lookup a type parameter
-    member _.LookupTyparRepr (tp: Typar, m: range) =
+    member _.LookupTyparRepr(tp: Typar, m: range) =
         try
             reprs[tp.Stamp]
         with :? KeyNotFoundException ->
@@ -711,8 +711,7 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         else
             EraseClosures.mkILTyFuncTy cenv.ilxPubCloEnv
 
-    | TType_var (tp, _) ->
-        mkILTyvarTy (tyenv.LookupTyparRepr(tp, m))
+    | TType_var (tp, _) -> mkILTyvarTy (tyenv.LookupTyparRepr(tp, m))
 
     | TType_measure _ -> g.ilg.typ_Int32
 
@@ -6552,7 +6551,9 @@ and GenGenericParams cenv eenv tps =
     tps |> DropErasedTypars |> List.map (GenGenericParam cenv eenv)
 
 and GenGenericArgs m (tyenv: TypeReprEnv) tps =
-    tps |> DropErasedTypars |> List.map (fun c -> mkILTyvarTy (tyenv.LookupTyparRepr(c, m)))
+    tps
+    |> DropErasedTypars
+    |> List.map (fun c -> mkILTyvarTy (tyenv.LookupTyparRepr(c, m)))
 
 /// Generate a local type function contract class and implementation
 and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr m =
