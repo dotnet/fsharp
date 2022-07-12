@@ -32,7 +32,8 @@ let singleTestBuildAndRun = getTestsDirectory >> singleTestBuildAndRun
 let singleTestBuildAndRunVersion = getTestsDirectory >> singleTestBuildAndRunVersion
 let testConfig = getTestsDirectory >> testConfig
 
-[<NonParallelizable>]
+
+[<NonParallelizable; SetUICulture("en-US"); SetCulture("en-US")>]
 module CoreTests =
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
@@ -464,7 +465,7 @@ module CoreTests =
 
         let cfg = testConfig "core/span"
 
-        let cfg = { cfg with fsc_flags = sprintf "%s --test:StackSpan" cfg.fsc_flags}
+        let cfg = { cfg with fsc_flags = sprintf "%s --preferreduilang:en-US --test:StackSpan" cfg.fsc_flags}
 
         begin
             use testOkFile = fileguard cfg "test.ok"
@@ -1136,7 +1137,7 @@ module CoreTests =
 
         let rawFileOut = tryCreateTemporaryFileName ()
         let rawFileErr = tryCreateTemporaryFileName ()
-        ``fsi <a >b 2>c`` "%s --nologo %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
+        ``fsi <a >b 2>c`` "%s --nologo --preferreduilang:en-US %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
 
         // REM REVIEW: want to normalise CWD paths, not suppress them.
         let ``findstr /v`` text = Seq.filter (fun (s: string) -> not <| s.Contains(text))
@@ -2177,13 +2178,14 @@ module VersionTests =
     let ``nameof-fsi``() = singleTestBuildAndRunVersion "core/nameof/preview" FSI "preview"
 
 #if !NETCOREAPP
-[<NonParallelizable>]
+[<NonParallelizable; SetUICulture("en-US"); SetCulture("en-US")>]
 module ToolsTests =
 
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
     [<Test>]
     let bundle () =
-        let cfg = testConfig "tools/bundle"
+        let cfg = 
+            testConfig "tools/bundle" 
 
         fsc cfg "%s --progress --standalone -o:test-one-fsharp-module.exe -g" cfg.fsc_flags ["test-one-fsharp-module.fs"]
 
@@ -2307,7 +2309,9 @@ module RegressionTests =
 
     [<Test>]
     let ``SRTP doesn't handle calling member hiding hinherited members`` () =
-        let cfg = testConfig "regression/5531"
+        let cfg = 
+            testConfig "regression/5531"
+       
 
         let outFile = "compilation.output.test.txt"
         let expectedFile = "compilation.output.test.bsl"

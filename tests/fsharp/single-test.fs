@@ -378,8 +378,8 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
 
     let cfg = {
         cfg with
-            fsc_flags = sprintf "%s %s --define:NEGATIVE" cfg.fsc_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
-            fsi_flags = sprintf "%s %s" cfg.fsi_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
+            fsc_flags = sprintf "%s %s --preferreduilang:en-US --define:NEGATIVE" cfg.fsc_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
+            fsi_flags = sprintf "%s --preferreduilang:en-US %s" cfg.fsi_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
             }
 
     let ERRFILE, BSLFILE = 
