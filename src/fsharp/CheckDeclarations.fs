@@ -476,7 +476,7 @@ module TcRecdUnionAndEnumDeclarations =
             | _ ->
                 seen.Add(f.LogicalName, sf))
                 
-    let TcUnionCaseDecl (cenv: cenv) env parent thisTy thisTyInst tpenv (SynUnionCase(Attributes synAttrs, id, args, xmldoc, vis, m, _)) =
+    let TcUnionCaseDecl (cenv: cenv) env parent thisTy thisTyInst tpenv (SynUnionCase(Attributes synAttrs, SynIdent(id, _), args, xmldoc, vis, m, _)) =
         let g = cenv.g
         let attrs = TcAttributes cenv env AttributeTargets.UnionCaseDecl synAttrs // the attributes of a union case decl get attached to the generated "static factory" method
         let vis, _ = ComputeAccessAndCompPath env None m vis None parent
@@ -527,7 +527,7 @@ module TcRecdUnionAndEnumDeclarations =
         let unionCasesR = unionCases |> List.map (TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv) 
         unionCasesR |> CheckDuplicates (fun uc -> uc.Id) "union case" 
 
-    let TcEnumDecl cenv env parent thisTy fieldTy (SynEnumCase(attributes=Attributes synAttrs; ident=id; value=v; xmlDoc=xmldoc; range=m)) =
+    let TcEnumDecl cenv env parent thisTy fieldTy (SynEnumCase(attributes=Attributes synAttrs; ident= SynIdent(id,_); value=v; xmlDoc=xmldoc; range=m)) =
         let attrs = TcAttributes cenv env AttributeTargets.Field synAttrs
         match v with 
         | SynConst.Bytes _
@@ -3000,7 +3000,7 @@ let CheckForDuplicateModule env nm m =
 /// Check 'exception' declarations in implementations and signatures
 module TcExceptionDeclarations = 
 
-    let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(ident=id), _, doc, vis, m)) =
+    let TcExnDefnCore_Phase1A cenv env parent (SynExceptionDefnRepr(Attributes synAttrs, SynUnionCase(ident= SynIdent(id,_)), _, doc, vis, m)) =
         let attrs = TcAttributes cenv env AttributeTargets.ExnDecl synAttrs
         if not (String.isLeadingIdentifierCharacterUpperCase id.idText) then errorR(NotUpperCaseConstructor m)
         let vis, cpath = ComputeAccessAndCompPath env None m vis None parent
@@ -4830,7 +4830,7 @@ module TcDeclarations =
                         let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> true | _ -> false)
                         let mLetPortion = synExpr.Range
                         let fldId = ident (CompilerGeneratedName id.idText, mLetPortion)
-                        let headPat = SynPat.LongIdent (LongIdentWithDots([fldId], []), None, None, Some noInferredTypars, SynArgPats.Pats [], None, mLetPortion)
+                        let headPat = SynPat.LongIdent (SynLongIdent([fldId], [], [None]), None, None, Some noInferredTypars, SynArgPats.Pats [], None, mLetPortion)
                         let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                         let isMutable = 
                             match propKind with 
@@ -4858,7 +4858,7 @@ module TcDeclarations =
                         let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
                         let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion)
                         let headPatIds = if isStatic then [id] else [ident ("__", mMemberPortion);id]
-                        let headPat = SynPat.LongIdent (LongIdentWithDots(headPatIds, []), None, None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
+                        let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
 
                         match propKind, mGetSetOpt with 
                         | SynMemberKind.PropertySet, Some m -> errorR(Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSetNotJustSet(), m))
@@ -4883,7 +4883,7 @@ module TcDeclarations =
                             | SynMemberKind.PropertyGetSet -> 
                                 let setter = 
                                     let vId = ident("v", mMemberPortion)
-                                    let headPat = SynPat.LongIdent (LongIdentWithDots(headPatIds, []), None, None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
+                                    let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                                     let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
                                     //let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                                     let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some (memberFlags SynMemberKind.PropertySet), SynBindingTrivia.Zero)
@@ -5349,7 +5349,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
                       decls, (openOk, moduleAbbrevOk)
 
                 | SynModuleSigDecl.Exception (exnSig=SynExceptionSig(exnRepr=exnRepr; withKeyword=withKeyword; members=members)) ->
-                      let ( SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=id), _, doc, vis, m)) = exnRepr
+                      let ( SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=SynIdent(id,_)), _, doc, vis, m)) = exnRepr
                       let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.idRange)
                       let decls = [ MutRecShape.Tycon(SynTypeDefnSig.SynTypeDefnSig(compInfo, None, SynTypeDefnSigRepr.Exception exnRepr, withKeyword, members, m)) ]
                       decls, (false, false)
@@ -5687,7 +5687,7 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
                   decls, (openOk, moduleAbbrevOk, attrs)
 
               | SynModuleDecl.Exception (SynExceptionDefn(repr, _, members, _), _m) -> 
-                  let (SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=id), _repr, doc, vis, m)) = repr
+                  let (SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=SynIdent(id,_)), _repr, doc, vis, m)) = repr
                   let compInfo = SynComponentInfo(synAttrs, None, [], [id], doc, false, vis, id.idRange)
                   let decls = [ MutRecShape.Tycon(SynTypeDefn(compInfo, SynTypeDefnRepr.Exception repr, members, None, m, SynTypeDefnTrivia.Zero)) ]
                   decls, (false, false, attrs)
