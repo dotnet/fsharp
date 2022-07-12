@@ -49,6 +49,16 @@ module ``Struct getters readonly`` =
                 member _.MyField = myField
             """
 
+    let structNonRecordVal =
+        FSharp
+            """
+            module TestStructNonRecordVal
+
+            [<Struct>]
+            type MyStruct =
+                val MyField: int
+            """
+
     let structWithCustomGetter =
         FSharp
             """
@@ -93,10 +103,18 @@ module ``Struct getters readonly`` =
         |> shouldn't haveAttribute "IsReadOnlyAttribute"
 
     [<Fact>]
-    let ``Struct non-record has readonly getters`` () =
+    let ``Struct has readonly getters`` () =
         structNonRecord
         |> compileAssembly
         |> getType "TestStructNonRecord+MyStruct"
+        |> getMethod "get_MyField"
+        |> should haveAttribute "IsReadOnlyAttribute"
+
+    [<Fact>]
+    let ``Struct val has readonly getter`` () =
+        structNonRecordVal
+        |> compileAssembly
+        |> getType "TestStructNonRecordVal+MyStruct"
         |> getMethod "get_MyField"
         |> should haveAttribute "IsReadOnlyAttribute"
 
