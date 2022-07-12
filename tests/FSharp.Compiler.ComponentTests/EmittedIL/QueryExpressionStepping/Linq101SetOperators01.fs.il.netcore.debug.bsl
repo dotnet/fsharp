@@ -37,22 +37,22 @@
 }
 .mresource public FSharpSignatureData.Linq101SetOperators01
 {
-  // Offset: 0x00000000 Length: 0x000003C0
+  // Offset: 0x00000000 Length: 0x000003CE
   // WARNING: managed resource file FSharpSignatureData.Linq101SetOperators01 created
 }
 .mresource public FSharpOptimizationData.Linq101SetOperators01
 {
-  // Offset: 0x000003C8 Length: 0x0000011E
+  // Offset: 0x000003D8 Length: 0x0000011E
   // WARNING: managed resource file FSharpOptimizationData.Linq101SetOperators01 created
 }
 .module Linq101SetOperators01.exe
-// MVID: {62466677-47B8-3AF1-A745-038377664662}
+// MVID: {62501638-8730-DC0C-A745-038338165062}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000002854FCD0000
+// Image base: 0x0000018D99810000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -101,7 +101,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [System.Runtime]System.Collections.Generic.IEnumerable`1<int32>& next) cil managed
     {
-      // Code size       149 (0x95)
+      // Code size       148 (0x94)
       .maxstack  6
       .locals init (int32 V_0,
                int32 V_1)
@@ -116,13 +116,13 @@
       IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_006b
+      IL_001c:  br.s       IL_006a
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_0068
+      IL_001f:  br.s       IL_005d
 
       IL_0021:  nop
-      IL_0022:  br.s       IL_008c
+      IL_0022:  br.s       IL_008b
 
       IL_0024:  nop
       IL_0025:  nop
@@ -133,47 +133,46 @@
       IL_0036:  ldarg.0
       IL_0037:  ldc.i4.1
       IL_0038:  stfld      int32 Linq101SetOperators01/'Pipe #1 input at line 12@13'::pc
-      IL_003d:  ldarg.0
-      IL_003e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'Pipe #1 input at line 12@13'::'enum'
-      IL_0043:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
-      IL_0048:  brfalse.s  IL_006b
+      IL_003d:  br.s       IL_005d
 
-      IL_004a:  ldarg.0
-      IL_004b:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'Pipe #1 input at line 12@13'::'enum'
-      IL_0050:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
-      IL_0055:  stloc.0
-      IL_0056:  ldloc.0
-      IL_0057:  stloc.1
-      IL_0058:  ldarg.0
-      IL_0059:  ldc.i4.2
-      IL_005a:  stfld      int32 Linq101SetOperators01/'Pipe #1 input at line 12@13'::pc
-      IL_005f:  ldarg.0
-      IL_0060:  ldloc.1
-      IL_0061:  stfld      int32 Linq101SetOperators01/'Pipe #1 input at line 12@13'::current
-      IL_0066:  ldc.i4.1
-      IL_0067:  ret
+      IL_003f:  ldarg.0
+      IL_0040:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'Pipe #1 input at line 12@13'::'enum'
+      IL_0045:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>::get_Current()
+      IL_004a:  stloc.0
+      IL_004b:  ldloc.0
+      IL_004c:  stloc.1
+      IL_004d:  ldarg.0
+      IL_004e:  ldc.i4.2
+      IL_004f:  stfld      int32 Linq101SetOperators01/'Pipe #1 input at line 12@13'::pc
+      IL_0054:  ldarg.0
+      IL_0055:  ldloc.1
+      IL_0056:  stfld      int32 Linq101SetOperators01/'Pipe #1 input at line 12@13'::current
+      IL_005b:  ldc.i4.1
+      IL_005c:  ret
 
-      IL_0068:  nop
-      IL_0069:  br.s       IL_003d
+      IL_005d:  ldarg.0
+      IL_005e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'Pipe #1 input at line 12@13'::'enum'
+      IL_0063:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
+      IL_0068:  brtrue.s   IL_003f
 
-      IL_006b:  ldarg.0
-      IL_006c:  ldc.i4.3
-      IL_006d:  stfld      int32 Linq101SetOperators01/'Pipe #1 input at line 12@13'::pc
-      IL_0072:  ldarg.0
-      IL_0073:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'Pipe #1 input at line 12@13'::'enum'
-      IL_0078:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
-      IL_007d:  nop
-      IL_007e:  ldarg.0
-      IL_007f:  ldnull
-      IL_0080:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'Pipe #1 input at line 12@13'::'enum'
-      IL_0085:  ldarg.0
-      IL_0086:  ldc.i4.3
-      IL_0087:  stfld      int32 Linq101SetOperators01/'Pipe #1 input at line 12@13'::pc
-      IL_008c:  ldarg.0
-      IL_008d:  ldc.i4.0
-      IL_008e:  stfld      int32 Linq101SetOperators01/'Pipe #1 input at line 12@13'::current
-      IL_0093:  ldc.i4.0
-      IL_0094:  ret
+      IL_006a:  ldarg.0
+      IL_006b:  ldc.i4.3
+      IL_006c:  stfld      int32 Linq101SetOperators01/'Pipe #1 input at line 12@13'::pc
+      IL_0071:  ldarg.0
+      IL_0072:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'Pipe #1 input at line 12@13'::'enum'
+      IL_0077:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32>>(!!0)
+      IL_007c:  nop
+      IL_007d:  ldarg.0
+      IL_007e:  ldnull
+      IL_007f:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<int32> Linq101SetOperators01/'Pipe #1 input at line 12@13'::'enum'
+      IL_0084:  ldarg.0
+      IL_0085:  ldc.i4.3
+      IL_0086:  stfld      int32 Linq101SetOperators01/'Pipe #1 input at line 12@13'::pc
+      IL_008b:  ldarg.0
+      IL_008c:  ldc.i4.0
+      IL_008d:  stfld      int32 Linq101SetOperators01/'Pipe #1 input at line 12@13'::current
+      IL_0092:  ldc.i4.0
+      IL_0093:  ret
     } // end of method 'Pipe #1 input at line 12@13'::GenerateNext
 
     .method public strict virtual instance void 
@@ -407,7 +406,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [System.Runtime]System.Collections.Generic.IEnumerable`1<string>& next) cil managed
     {
-      // Code size       161 (0xa1)
+      // Code size       160 (0xa0)
       .maxstack  7
       .locals init (class [Utils]Utils/Product V_0)
       IL_0000:  ldarg.0
@@ -421,13 +420,13 @@
       IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_0077
+      IL_001c:  br.s       IL_0076
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_0074
+      IL_001f:  br.s       IL_0069
 
       IL_0021:  nop
-      IL_0022:  br.s       IL_0098
+      IL_0022:  br.s       IL_0097
 
       IL_0024:  nop
       IL_0025:  ldarg.0
@@ -440,46 +439,45 @@
       IL_003f:  ldarg.0
       IL_0040:  ldc.i4.1
       IL_0041:  stfld      int32 Linq101SetOperators01/'Pipe #2 input at line 21@23'::pc
-      IL_0046:  ldarg.0
-      IL_0047:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/'Pipe #2 input at line 21@23'::'enum'
-      IL_004c:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
-      IL_0051:  brfalse.s  IL_0077
+      IL_0046:  br.s       IL_0069
 
-      IL_0053:  ldarg.0
-      IL_0054:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/'Pipe #2 input at line 21@23'::'enum'
-      IL_0059:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
-      IL_005e:  stloc.0
-      IL_005f:  ldarg.0
-      IL_0060:  ldc.i4.2
-      IL_0061:  stfld      int32 Linq101SetOperators01/'Pipe #2 input at line 21@23'::pc
-      IL_0066:  ldarg.0
-      IL_0067:  ldloc.0
-      IL_0068:  callvirt   instance string [Utils]Utils/Product::get_Category()
-      IL_006d:  stfld      string Linq101SetOperators01/'Pipe #2 input at line 21@23'::current
-      IL_0072:  ldc.i4.1
-      IL_0073:  ret
+      IL_0048:  ldarg.0
+      IL_0049:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/'Pipe #2 input at line 21@23'::'enum'
+      IL_004e:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
+      IL_0053:  stloc.0
+      IL_0054:  ldarg.0
+      IL_0055:  ldc.i4.2
+      IL_0056:  stfld      int32 Linq101SetOperators01/'Pipe #2 input at line 21@23'::pc
+      IL_005b:  ldarg.0
+      IL_005c:  ldloc.0
+      IL_005d:  callvirt   instance string [Utils]Utils/Product::get_Category()
+      IL_0062:  stfld      string Linq101SetOperators01/'Pipe #2 input at line 21@23'::current
+      IL_0067:  ldc.i4.1
+      IL_0068:  ret
 
-      IL_0074:  nop
-      IL_0075:  br.s       IL_0046
+      IL_0069:  ldarg.0
+      IL_006a:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/'Pipe #2 input at line 21@23'::'enum'
+      IL_006f:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
+      IL_0074:  brtrue.s   IL_0048
 
-      IL_0077:  ldarg.0
-      IL_0078:  ldc.i4.3
-      IL_0079:  stfld      int32 Linq101SetOperators01/'Pipe #2 input at line 21@23'::pc
-      IL_007e:  ldarg.0
-      IL_007f:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/'Pipe #2 input at line 21@23'::'enum'
-      IL_0084:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>>(!!0)
-      IL_0089:  nop
-      IL_008a:  ldarg.0
-      IL_008b:  ldnull
-      IL_008c:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/'Pipe #2 input at line 21@23'::'enum'
-      IL_0091:  ldarg.0
-      IL_0092:  ldc.i4.3
-      IL_0093:  stfld      int32 Linq101SetOperators01/'Pipe #2 input at line 21@23'::pc
-      IL_0098:  ldarg.0
-      IL_0099:  ldnull
-      IL_009a:  stfld      string Linq101SetOperators01/'Pipe #2 input at line 21@23'::current
-      IL_009f:  ldc.i4.0
-      IL_00a0:  ret
+      IL_0076:  ldarg.0
+      IL_0077:  ldc.i4.3
+      IL_0078:  stfld      int32 Linq101SetOperators01/'Pipe #2 input at line 21@23'::pc
+      IL_007d:  ldarg.0
+      IL_007e:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/'Pipe #2 input at line 21@23'::'enum'
+      IL_0083:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>>(!!0)
+      IL_0088:  nop
+      IL_0089:  ldarg.0
+      IL_008a:  ldnull
+      IL_008b:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/'Pipe #2 input at line 21@23'::'enum'
+      IL_0090:  ldarg.0
+      IL_0091:  ldc.i4.3
+      IL_0092:  stfld      int32 Linq101SetOperators01/'Pipe #2 input at line 21@23'::pc
+      IL_0097:  ldarg.0
+      IL_0098:  ldnull
+      IL_0099:  stfld      string Linq101SetOperators01/'Pipe #2 input at line 21@23'::current
+      IL_009e:  ldc.i4.0
+      IL_009f:  ret
     } // end of method 'Pipe #2 input at line 21@23'::GenerateNext
 
     .method public strict virtual instance void 
@@ -713,7 +711,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [System.Runtime]System.Collections.Generic.IEnumerable`1<char>& next) cil managed
     {
-      // Code size       170 (0xaa)
+      // Code size       166 (0xa6)
       .maxstack  7
       .locals init (class [Utils]Utils/Product V_0)
       IL_0000:  ldarg.0
@@ -724,70 +722,69 @@
                             IL_001b,
                             IL_001e,
                             IL_0021)
-      IL_0019:  br.s       IL_0027
+      IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_0080
+      IL_001c:  br.s       IL_007c
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_007d
+      IL_001f:  br.s       IL_006f
 
       IL_0021:  nop
-      IL_0022:  br         IL_00a1
+      IL_0022:  br.s       IL_009d
 
-      IL_0027:  nop
-      IL_0028:  ldarg.0
-      IL_0029:  ldsfld     class Linq101SetOperators01/'productFirstChars@32-1' Linq101SetOperators01/'productFirstChars@32-1'::@_instance
-      IL_002e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101SetOperators01::get_products()
-      IL_0033:  call       class [System.Runtime]System.Collections.Generic.IEnumerable`1<!!2> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Collect<class [Utils]Utils/Product,class [System.Runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
+      IL_0024:  nop
+      IL_0025:  ldarg.0
+      IL_0026:  ldsfld     class Linq101SetOperators01/'productFirstChars@32-1' Linq101SetOperators01/'productFirstChars@32-1'::@_instance
+      IL_002b:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101SetOperators01::get_products()
+      IL_0030:  call       class [System.Runtime]System.Collections.Generic.IEnumerable`1<!!2> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Collect<class [Utils]Utils/Product,class [System.Runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>,class [Utils]Utils/Product>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                               class [System.Runtime]System.Collections.Generic.IEnumerable`1<!!0>)
-      IL_0038:  callvirt   instance class [System.Runtime]System.Collections.Generic.IEnumerator`1<!0> class [System.Runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>::GetEnumerator()
-      IL_003d:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/productFirstChars@33::'enum'
-      IL_0042:  ldarg.0
-      IL_0043:  ldc.i4.1
-      IL_0044:  stfld      int32 Linq101SetOperators01/productFirstChars@33::pc
-      IL_0049:  ldarg.0
-      IL_004a:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/productFirstChars@33::'enum'
-      IL_004f:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
-      IL_0054:  brfalse.s  IL_0080
+      IL_0035:  callvirt   instance class [System.Runtime]System.Collections.Generic.IEnumerator`1<!0> class [System.Runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>::GetEnumerator()
+      IL_003a:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/productFirstChars@33::'enum'
+      IL_003f:  ldarg.0
+      IL_0040:  ldc.i4.1
+      IL_0041:  stfld      int32 Linq101SetOperators01/productFirstChars@33::pc
+      IL_0046:  br.s       IL_006f
 
-      IL_0056:  ldarg.0
-      IL_0057:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/productFirstChars@33::'enum'
-      IL_005c:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
-      IL_0061:  stloc.0
-      IL_0062:  ldarg.0
-      IL_0063:  ldc.i4.2
-      IL_0064:  stfld      int32 Linq101SetOperators01/productFirstChars@33::pc
-      IL_0069:  ldarg.0
-      IL_006a:  ldloc.0
-      IL_006b:  callvirt   instance string [Utils]Utils/Product::get_ProductName()
-      IL_0070:  ldc.i4.0
-      IL_0071:  callvirt   instance char [netstandard]System.String::get_Chars(int32)
-      IL_0076:  stfld      char Linq101SetOperators01/productFirstChars@33::current
-      IL_007b:  ldc.i4.1
-      IL_007c:  ret
+      IL_0048:  ldarg.0
+      IL_0049:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/productFirstChars@33::'enum'
+      IL_004e:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>::get_Current()
+      IL_0053:  stloc.0
+      IL_0054:  ldarg.0
+      IL_0055:  ldc.i4.2
+      IL_0056:  stfld      int32 Linq101SetOperators01/productFirstChars@33::pc
+      IL_005b:  ldarg.0
+      IL_005c:  ldloc.0
+      IL_005d:  callvirt   instance string [Utils]Utils/Product::get_ProductName()
+      IL_0062:  ldc.i4.0
+      IL_0063:  callvirt   instance char [netstandard]System.String::get_Chars(int32)
+      IL_0068:  stfld      char Linq101SetOperators01/productFirstChars@33::current
+      IL_006d:  ldc.i4.1
+      IL_006e:  ret
 
-      IL_007d:  nop
-      IL_007e:  br.s       IL_0049
+      IL_006f:  ldarg.0
+      IL_0070:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/productFirstChars@33::'enum'
+      IL_0075:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
+      IL_007a:  brtrue.s   IL_0048
 
-      IL_0080:  ldarg.0
-      IL_0081:  ldc.i4.3
-      IL_0082:  stfld      int32 Linq101SetOperators01/productFirstChars@33::pc
-      IL_0087:  ldarg.0
-      IL_0088:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/productFirstChars@33::'enum'
-      IL_008d:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>>(!!0)
-      IL_0092:  nop
-      IL_0093:  ldarg.0
-      IL_0094:  ldnull
-      IL_0095:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/productFirstChars@33::'enum'
-      IL_009a:  ldarg.0
-      IL_009b:  ldc.i4.3
-      IL_009c:  stfld      int32 Linq101SetOperators01/productFirstChars@33::pc
-      IL_00a1:  ldarg.0
-      IL_00a2:  ldc.i4.0
-      IL_00a3:  stfld      char Linq101SetOperators01/productFirstChars@33::current
-      IL_00a8:  ldc.i4.0
-      IL_00a9:  ret
+      IL_007c:  ldarg.0
+      IL_007d:  ldc.i4.3
+      IL_007e:  stfld      int32 Linq101SetOperators01/productFirstChars@33::pc
+      IL_0083:  ldarg.0
+      IL_0084:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/productFirstChars@33::'enum'
+      IL_0089:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product>>(!!0)
+      IL_008e:  nop
+      IL_008f:  ldarg.0
+      IL_0090:  ldnull
+      IL_0091:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Product> Linq101SetOperators01/productFirstChars@33::'enum'
+      IL_0096:  ldarg.0
+      IL_0097:  ldc.i4.3
+      IL_0098:  stfld      int32 Linq101SetOperators01/productFirstChars@33::pc
+      IL_009d:  ldarg.0
+      IL_009e:  ldc.i4.0
+      IL_009f:  stfld      char Linq101SetOperators01/productFirstChars@33::current
+      IL_00a4:  ldc.i4.0
+      IL_00a5:  ret
     } // end of method productFirstChars@33::GenerateNext
 
     .method public strict virtual instance void 
@@ -1021,7 +1018,7 @@
     .method public strict virtual instance int32 
             GenerateNext(class [System.Runtime]System.Collections.Generic.IEnumerable`1<char>& next) cil managed
     {
-      // Code size       170 (0xaa)
+      // Code size       166 (0xa6)
       .maxstack  7
       .locals init (class [Utils]Utils/Customer V_0)
       IL_0000:  ldarg.0
@@ -1032,70 +1029,69 @@
                             IL_001b,
                             IL_001e,
                             IL_0021)
-      IL_0019:  br.s       IL_0027
+      IL_0019:  br.s       IL_0024
 
       IL_001b:  nop
-      IL_001c:  br.s       IL_0080
+      IL_001c:  br.s       IL_007c
 
       IL_001e:  nop
-      IL_001f:  br.s       IL_007d
+      IL_001f:  br.s       IL_006f
 
       IL_0021:  nop
-      IL_0022:  br         IL_00a1
+      IL_0022:  br.s       IL_009d
 
-      IL_0027:  nop
-      IL_0028:  ldarg.0
-      IL_0029:  ldsfld     class Linq101SetOperators01/'customerFirstChars@38-1' Linq101SetOperators01/'customerFirstChars@38-1'::@_instance
-      IL_002e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> Linq101SetOperators01::get_customers()
-      IL_0033:  call       class [System.Runtime]System.Collections.Generic.IEnumerable`1<!!2> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Collect<class [Utils]Utils/Customer,class [System.Runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Customer>,class [Utils]Utils/Customer>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
+      IL_0024:  nop
+      IL_0025:  ldarg.0
+      IL_0026:  ldsfld     class Linq101SetOperators01/'customerFirstChars@38-1' Linq101SetOperators01/'customerFirstChars@38-1'::@_instance
+      IL_002b:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> Linq101SetOperators01::get_customers()
+      IL_0030:  call       class [System.Runtime]System.Collections.Generic.IEnumerable`1<!!2> [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::Collect<class [Utils]Utils/Customer,class [System.Runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Customer>,class [Utils]Utils/Customer>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                  class [System.Runtime]System.Collections.Generic.IEnumerable`1<!!0>)
-      IL_0038:  callvirt   instance class [System.Runtime]System.Collections.Generic.IEnumerator`1<!0> class [System.Runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Customer>::GetEnumerator()
-      IL_003d:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer> Linq101SetOperators01/customerFirstChars@39::'enum'
-      IL_0042:  ldarg.0
-      IL_0043:  ldc.i4.1
-      IL_0044:  stfld      int32 Linq101SetOperators01/customerFirstChars@39::pc
-      IL_0049:  ldarg.0
-      IL_004a:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer> Linq101SetOperators01/customerFirstChars@39::'enum'
-      IL_004f:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
-      IL_0054:  brfalse.s  IL_0080
+      IL_0035:  callvirt   instance class [System.Runtime]System.Collections.Generic.IEnumerator`1<!0> class [System.Runtime]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Customer>::GetEnumerator()
+      IL_003a:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer> Linq101SetOperators01/customerFirstChars@39::'enum'
+      IL_003f:  ldarg.0
+      IL_0040:  ldc.i4.1
+      IL_0041:  stfld      int32 Linq101SetOperators01/customerFirstChars@39::pc
+      IL_0046:  br.s       IL_006f
 
-      IL_0056:  ldarg.0
-      IL_0057:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer> Linq101SetOperators01/customerFirstChars@39::'enum'
-      IL_005c:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer>::get_Current()
-      IL_0061:  stloc.0
-      IL_0062:  ldarg.0
-      IL_0063:  ldc.i4.2
-      IL_0064:  stfld      int32 Linq101SetOperators01/customerFirstChars@39::pc
-      IL_0069:  ldarg.0
-      IL_006a:  ldloc.0
-      IL_006b:  callvirt   instance string [Utils]Utils/Customer::get_CompanyName()
-      IL_0070:  ldc.i4.0
-      IL_0071:  callvirt   instance char [netstandard]System.String::get_Chars(int32)
-      IL_0076:  stfld      char Linq101SetOperators01/customerFirstChars@39::current
-      IL_007b:  ldc.i4.1
-      IL_007c:  ret
+      IL_0048:  ldarg.0
+      IL_0049:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer> Linq101SetOperators01/customerFirstChars@39::'enum'
+      IL_004e:  callvirt   instance !0 class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer>::get_Current()
+      IL_0053:  stloc.0
+      IL_0054:  ldarg.0
+      IL_0055:  ldc.i4.2
+      IL_0056:  stfld      int32 Linq101SetOperators01/customerFirstChars@39::pc
+      IL_005b:  ldarg.0
+      IL_005c:  ldloc.0
+      IL_005d:  callvirt   instance string [Utils]Utils/Customer::get_CompanyName()
+      IL_0062:  ldc.i4.0
+      IL_0063:  callvirt   instance char [netstandard]System.String::get_Chars(int32)
+      IL_0068:  stfld      char Linq101SetOperators01/customerFirstChars@39::current
+      IL_006d:  ldc.i4.1
+      IL_006e:  ret
 
-      IL_007d:  nop
-      IL_007e:  br.s       IL_0049
+      IL_006f:  ldarg.0
+      IL_0070:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer> Linq101SetOperators01/customerFirstChars@39::'enum'
+      IL_0075:  callvirt   instance bool [System.Runtime]System.Collections.IEnumerator::MoveNext()
+      IL_007a:  brtrue.s   IL_0048
 
-      IL_0080:  ldarg.0
-      IL_0081:  ldc.i4.3
-      IL_0082:  stfld      int32 Linq101SetOperators01/customerFirstChars@39::pc
-      IL_0087:  ldarg.0
-      IL_0088:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer> Linq101SetOperators01/customerFirstChars@39::'enum'
-      IL_008d:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer>>(!!0)
-      IL_0092:  nop
-      IL_0093:  ldarg.0
-      IL_0094:  ldnull
-      IL_0095:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer> Linq101SetOperators01/customerFirstChars@39::'enum'
-      IL_009a:  ldarg.0
-      IL_009b:  ldc.i4.3
-      IL_009c:  stfld      int32 Linq101SetOperators01/customerFirstChars@39::pc
-      IL_00a1:  ldarg.0
-      IL_00a2:  ldc.i4.0
-      IL_00a3:  stfld      char Linq101SetOperators01/customerFirstChars@39::current
-      IL_00a8:  ldc.i4.0
-      IL_00a9:  ret
+      IL_007c:  ldarg.0
+      IL_007d:  ldc.i4.3
+      IL_007e:  stfld      int32 Linq101SetOperators01/customerFirstChars@39::pc
+      IL_0083:  ldarg.0
+      IL_0084:  ldfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer> Linq101SetOperators01/customerFirstChars@39::'enum'
+      IL_0089:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::Dispose<class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer>>(!!0)
+      IL_008e:  nop
+      IL_008f:  ldarg.0
+      IL_0090:  ldnull
+      IL_0091:  stfld      class [System.Runtime]System.Collections.Generic.IEnumerator`1<class [Utils]Utils/Customer> Linq101SetOperators01/customerFirstChars@39::'enum'
+      IL_0096:  ldarg.0
+      IL_0097:  ldc.i4.3
+      IL_0098:  stfld      int32 Linq101SetOperators01/customerFirstChars@39::pc
+      IL_009d:  ldarg.0
+      IL_009e:  ldc.i4.0
+      IL_009f:  stfld      char Linq101SetOperators01/customerFirstChars@39::current
+      IL_00a4:  ldc.i4.0
+      IL_00a5:  ret
     } // end of method customerFirstChars@39::GenerateNext
 
     .method public strict virtual instance void 
