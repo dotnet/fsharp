@@ -662,6 +662,11 @@
         <target state="translated">Gli attributi non possono essere applicati a estensioni di tipo.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcGetterForInitOnlyPropertyCannotBeCalled1">
+        <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">La sintassi 'expr1[expr2]' viene usata per l'indicizzazione. Provare ad aggiungere un'annotazione di tipo per abilitare l'indicizzazione oppure se la chiamata a una funzione aggiunge uno spazio, ad esempio 'expr1 [expr2]'.</target>

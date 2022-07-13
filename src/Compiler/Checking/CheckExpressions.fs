@@ -8964,6 +8964,19 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         // To get better warnings we special case some of the few known mutate-a-struct method names
         let mutates = (if methodName = "MoveNext" || methodName = "GetNextArg" then DefinitelyMutates else PossiblyMutates)
 
+        let minfo = List.head minfos
+
+        // Check, wheter this method has `IsExternalInit`, emit an error diagnostic in this case.
+        let hasInitOnlyMod =
+            match minfo with
+            | ILMeth (_, ilMethInfo, _) ->
+                match ilMethInfo.ILMethodRef.ReturnType with
+                | ILType.Modified(_, cls, _) -> cls.FullName = "System.Runtime.CompilerServices.IsExternalInit"
+                | _ -> false
+            | _ -> false
+        if hasInitOnlyMod then
+            errorR (Error (FSComp.SR.tcGetterForInitOnlyPropertyCannotBeCalled1 methodName, mItem))
+
 #if !NO_TYPEPROVIDERS
         match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyArgsOpt, mExprAndItem, mItem) with
         | Some minfoAfterStaticArguments ->

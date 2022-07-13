@@ -662,6 +662,11 @@
         <target state="translated">屬性無法套用到類型延伸模組。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcGetterForInitOnlyPropertyCannotBeCalled1">
+        <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">語法 'expr1[expr2]' 已用於編製索引。請考慮新增類型註釋來啟用編製索引，或是呼叫函式並新增空格，例如 'expr1 [expr2]'。</target>

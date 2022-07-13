@@ -113,6 +113,63 @@ let main _ =
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
+    
+    [<Fact>]
+    let ``F# can change set property via calling an explicit setter`` () =
+
+        let csharpLib = csharpBaseClass
+
+        let fsharpSource =
+            """
+open System
+open RequiredAndInitOnlyProperties
+
+[<EntryPoint>]
+let main _ =
+
+    let raio = RAIO(GetSet = 1, GetInit = 2)
+
+    if raio.GetSet <> 1 then
+        failwith $"Unexpected result %d{raio.GetSet}"
+
+    raio.set_GetSet(0)
+
+    if raio.GetSet <> 0 then
+        failwith $"Unexpected result %d{raio.GetSet}"
+    0
+"""
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``F# can get property via calling an explicit getter`` () =
+
+        let csharpLib = csharpBaseClass
+
+        let fsharpSource =
+            """
+open System
+open RequiredAndInitOnlyProperties
+
+[<EntryPoint>]
+let main _ =
+
+    let raio = RAIO(GetSet = 1, GetInit = 2)
+
+    if raio.get_GetSet <> 1 then
+        failwith $"Unexpected result %d{raio.GetSet}"
+    0
+"""
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compileAndRun
+        |> shouldSucceed
 
     [<Fact>]
     let ``F# cannot change init-only property`` () =
@@ -140,6 +197,34 @@ let main _ =
         |> shouldFail
         |> withDiagnostics [
             Error 810, Line 9, Col 5, Line 9, Col 17, "Init-only property 'GetInit' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
+        ]
+
+    [<Fact>]
+    let ``F# cannot change init-only property via calling an explicit setter`` () =
+
+        let csharpLib = csharpBaseClass
+
+        let fsharpSource =
+            """
+open System
+open RequiredAndInitOnlyProperties
+
+[<EntryPoint>]
+let main _ =
+
+    let raio = RAIO(GetSet = 1, GetInit = 2)
+    raio.set_GetInit(0)
+
+    0
+"""
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            Error 810, Line 9, Col 5, Line 9, Col 21, "Cannot call 'set_GetInit' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
         ]
 
 

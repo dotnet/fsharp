@@ -662,6 +662,11 @@
         <target state="translated">형식 확장에 특성을 적용할 수 없습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcGetterForInitOnlyPropertyCannotBeCalled1">
+        <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">인덱싱에는 'expr1[expr2]' 구문이 사용됩니다. 인덱싱을 사용하도록 설정하기 위해 형식 주석을 추가하는 것을 고려하거나 함수를 호출하는 경우 공백을 추가하세요(예: 'expr1 [expr2]').</target>
