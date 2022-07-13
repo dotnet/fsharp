@@ -160,7 +160,7 @@ let main _ =
 
     let raio = RAIO(GetSet = 1, GetInit = 2)
 
-    if raio.get_GetSet <> 1 then
+    if raio.get_GetSet() <> 1 then
         failwith $"Unexpected result %d{raio.GetSet}"
     0
 """
