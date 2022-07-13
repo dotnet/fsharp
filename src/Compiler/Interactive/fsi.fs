@@ -2524,8 +2524,8 @@ type FsiStdinLexerProvider
 
         resetLexbufPos sourceFileName lexbuf
         let skip = true  // don't report whitespace from lexer
-        let defines = tcConfigB.conditionalDefines
-        let lexargs = mkLexargs (defines, indentationSyntaxStatus, lexResourceManager, [], diagnosticsLogger, PathMap.empty)
+        let applyLineDirectives = true
+        let lexargs = mkLexargs (tcConfigB.conditionalDefines, indentationSyntaxStatus, lexResourceManager, [], diagnosticsLogger, PathMap.empty, applyLineDirectives)
         let tokenizer = LexFilter.LexFilter(indentationSyntaxStatus, tcConfigB.compilingFSharpCore, Lexer.token lexargs skip, lexbuf)
         tokenizer
 
