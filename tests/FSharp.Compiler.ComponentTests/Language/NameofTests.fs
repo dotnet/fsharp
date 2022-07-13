@@ -12,6 +12,7 @@ module NameofTests =
     [<InlineData("-")>]
     [<InlineData("/")>]
     [<InlineData("*")>]
+    [<InlineData(".. ..")>]
     let ``nameof() with operator should return demangled name`` operator =
         let source = $"""
 let expected = "{operator}"
