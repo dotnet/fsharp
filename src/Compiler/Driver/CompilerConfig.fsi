@@ -349,8 +349,6 @@ type TcConfigBuilder =
 
         mutable sourceLink: string
 
-        mutable ignoreSymbolStoreSequencePoints: bool
-
         mutable internConstantStrings: bool
 
         mutable extraOptimizationIterations: int
@@ -664,8 +662,6 @@ type TcConfig =
     member embedSourceList: string list
 
     member sourceLink: string
-
-    member ignoreSymbolStoreSequencePoints: bool
 
     member internConstantStrings: bool
 

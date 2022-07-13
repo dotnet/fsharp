@@ -1813,11 +1813,6 @@ let emitCode cenv modB emEnv (ilG: ILGenerator) (code: ILCode) =
 let emitLocal cenv emEnv (ilG: ILGenerator) (local: ILLocal) =
     let ty = convType cenv emEnv local.Type
     let locBuilder = ilG.DeclareLocalAndLog(ty, local.IsPinned)
-#if !FX_NO_PDB_WRITER
-    match local.DebugInfo with
-    | Some (nm, start, finish) -> locBuilder.SetLocalSymInfo(nm, start, finish)
-    | None -> ()
-#endif
     locBuilder
 
 let emitILMethodBody cenv modB emEnv (ilG: ILGenerator) (ilmbody: ILMethodBody) =
