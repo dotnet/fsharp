@@ -84,6 +84,7 @@
     <Compile Include="Conformance\StructTypes\StructTypes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes\CheckingSyntacticTypes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes\LogicalPropertiesOfTypes.fs" />
+    <Compile Include="Conformance\TypesAndTypeConstraints\IWSAM\IWSAMTests.fs" />
     <Compile Include="Conformance\UnionTypes\UnionTypes.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Basic.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Diagnostics.fs" />

@@ -406,3 +406,4 @@ let main _ =
         |> withLangVersionPreview
         |> compileAndRun
         |> shouldSucceed
+        // TODO: verifyIL
