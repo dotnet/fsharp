@@ -14,7 +14,7 @@
   
   <PropertyGroup>
     <FcsReferenceType Condition="'$(FcsReferenceType)' == ''">project</FcsReferenceType>
-    <FcsProjectPath Condition="'$(FcsDllPath)' == ''">..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj</FcsProjectPath>
+    <FcsProjectPath Condition="'$(FcsProjectPath)' == ''">..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj</FcsProjectPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,19 +25,32 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
-    <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
   <!-- Reference FCS in one of three different ways -->
-  <ItemGroup>
-    <!-- Reference a project -->
-    <ProjectReference Include="$(FcsProjectPath)" Condition="'$(FcsReferenceType)' == 'project'" />
-    <!-- Reference the FCS NuGet package with the specified $FcsVersion -->
-    <PackageReference Include="FSharp.Compiler.Service" Version="$(FcsNuGetVersion)" Condition=" '$(FcsReferenceType)' == 'nuget' " />
-    <!-- Reference the dll specified in $FcsDllPath -->
-    <Reference Include="FSharp.Compiler.Service" Condition=" '$(FcsReferenceType)' == 'dll' ">
+
+  <!-- Reference a project -->
+  <ItemGroup Condition="'$(FcsReferenceType)' == 'project'">
+    <ProjectReference Include="$(FcsProjectPath)" />
+    <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+  <!-- Reference the FCS NuGet package with the specified $FcsVersion -->
+  <ItemGroup Condition=" '$(FcsReferenceType)' == 'nuget' ">
+    <PackageReference Include="FSharp.Compiler.Service" Version="$(FcsNuGetVersion)" />
+    <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+  <!-- Reference the dll specified in $FcsDllPath -->
+  <ItemGroup Condition=" '$(FcsReferenceType)' == 'dll' ">
+    <Reference Include="FSharp.Compiler.Service">
       <HintPath>$(FcsDllPath)</HintPath>
     </Reference>
+    <Reference Include="FSharp.Core">
+      <HintPath>$(FSharpCoreDllPath)</HintPath>
+    </Reference>
   </ItemGroup>
+
+  <Target Name="FakeBuild" BeforeTargets="Build">
+    <Message Text="Type=$(FcsReferenceType) FcsDllPath=$(FcsDllPath)"/>
+  </Target>
 
 </Project>

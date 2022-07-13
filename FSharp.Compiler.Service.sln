@@ -33,6 +33,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "HistoricalBenchmark", "test
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Benchmarks", "tests\benchmarks\FCSBenchmarks\CompilerServiceBenchmarks\FSharp.Compiler.Benchmarks.fsproj", "{C1950E28-1CB7-4DEC-BB3A-8A0443A17282}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "HistoricalBenchmark.Runner", "tests\benchmarks\FCSBenchmarks\BenchmarkComparison\HistoricalBenchmark.Runner\HistoricalBenchmark.Runner.fsproj", "{07CD957A-3C31-4F75-A735-16CE72E1BD71}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{DD4D4A7E-D519-4409-89DA-16DCA3EF80AA}"
 	ProjectSection(SolutionItems) = preProject
 		src\Compiler\FSComp.txt = src\Compiler\FSComp.txt
@@ -80,6 +82,10 @@ Global
 		{C1950E28-1CB7-4DEC-BB3A-8A0443A17282}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1950E28-1CB7-4DEC-BB3A-8A0443A17282}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1950E28-1CB7-4DEC-BB3A-8A0443A17282}.Release|Any CPU.Build.0 = Release|Any CPU
+		{07CD957A-3C31-4F75-A735-16CE72E1BD71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{07CD957A-3C31-4F75-A735-16CE72E1BD71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{07CD957A-3C31-4F75-A735-16CE72E1BD71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{07CD957A-3C31-4F75-A735-16CE72E1BD71}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -90,6 +96,7 @@ Global
 		{38A23D53-E2BF-4B76-907F-49F41D60C88E} = {875D91AC-BA4C-4191-AB11-AE461DB9B8DB}
 		{35F5F1C5-AE4F-4B5A-8D94-1AF708724FD5} = {AF321816-B4A0-41DD-9A1D-484E8A20C6F6}
 		{C1950E28-1CB7-4DEC-BB3A-8A0443A17282} = {AF321816-B4A0-41DD-9A1D-484E8A20C6F6}
+		{07CD957A-3C31-4F75-A735-16CE72E1BD71} = {AF321816-B4A0-41DD-9A1D-484E8A20C6F6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F9A60F3B-D894-4C8E-BA0F-C51115B25A5A}
