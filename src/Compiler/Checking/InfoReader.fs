@@ -628,10 +628,10 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
               
               keyComparer=
                  { new System.Collections.Generic.IEqualityComparer<_> with 
-                       member _.Equals((flags1, _, typ1), (flags2, _, typ2)) =
+                       member _.Equals((flags1, _, ty1), (flags2, _, ty2)) =
                                     // Ignoring the ranges - that's OK.
                                     flagsEq.Equals(flags1, flags2) && 
-                                    match stripTyEqns g typ1, stripTyEqns g typ2 with 
+                                    match stripTyEqns g ty1, stripTyEqns g ty2 with 
                                     | TType_app(tcref1, [], _), TType_app(tcref2, [], _) -> tyconRefEq g tcref1 tcref2
                                     | _ -> false
                        member _.GetHashCode((flags, _, ty)) =
@@ -910,11 +910,11 @@ type SigOfFunctionForDelegate =
 
 /// Given a delegate type work out the minfo, argument types, return type 
 /// and F# function type by looking at the Invoke signature of the delegate. 
-let GetSigOfFunctionForDelegate (infoReader: InfoReader) delty m ad =
+let GetSigOfFunctionForDelegate (infoReader: InfoReader) delTy m ad =
     let g = infoReader.g
     let amap = infoReader.amap
     let delInvokeMeth = 
-        match GetIntrinsicMethInfosOfType infoReader (Some "Invoke") ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m delty with 
+        match GetIntrinsicMethInfosOfType infoReader (Some "Invoke") ad AllowMultiIntfInstantiations.Yes IgnoreOverrides m delTy with 
         | [h] -> h
         | [] -> error(Error(FSComp.SR.noInvokeMethodsFound (), m))
         | h :: _ -> warning(InternalError(FSComp.SR.moreThanOneInvokeMethodFound (), m)); h
@@ -964,26 +964,26 @@ let TryDestStandardDelegateType (infoReader: InfoReader) m ad delTy =
 // already defined an appropriate delegate type: EventHandler.
 // (from http://msdn.microsoft.com/library/default.asp?url=/library/en-us/csref/html/vcwlkEventsTutorial.asp)
 let IsStandardEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =
-    let dty = einfo.GetDelegateType(infoReader.amap, m)
-    match TryDestStandardDelegateType infoReader m ad dty with
+    let delTy = einfo.GetDelegateType(infoReader.amap, m)
+    match TryDestStandardDelegateType infoReader m ad delTy with
     | Some _ -> true
     | None -> false
 
 /// Get the (perhaps tupled) argument type accepted by an event 
-let ArgsTypOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo)  =
+let ArgsTypeOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo)  =
     let amap = infoReader.amap
-    let dty = einfo.GetDelegateType(amap, m)
-    match TryDestStandardDelegateType infoReader m ad dty with
+    let delTy = einfo.GetDelegateType(amap, m)
+    match TryDestStandardDelegateType infoReader m ad delTy with
     | Some(argTys, _) -> argTys
     | None -> error(nonStandardEventError einfo.EventName m)
 
 /// Get the type of the event when looked at as if it is a property 
 /// Used when displaying the property in Intellisense 
-let PropTypOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =  
+let PropTypeOfEventInfo (infoReader: InfoReader) m ad (einfo: EventInfo) =  
     let g = infoReader.g
     let amap = infoReader.amap
     let delTy = einfo.GetDelegateType(amap, m)
-    let argsTy = ArgsTypOfEventInfo infoReader m ad einfo 
+    let argsTy = ArgsTypeOfEventInfo infoReader m ad einfo 
     mkIEventType g delTy argsTy
 
 /// Try to find the name of the metadata file for this external definition 

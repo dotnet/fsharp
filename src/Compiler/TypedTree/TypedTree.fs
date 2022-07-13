@@ -1156,7 +1156,7 @@ type Entity =
     member x.MembersOfFSharpTyconSorted =
         x.TypeContents.tcaug_adhoc 
         |> NameMultiMap.rangeReversingEachBucket 
-        |> List.filter (fun v -> not v.IsCompilerGenerated)
+        |> List.filter (fun vref -> not vref.IsCompilerGenerated)
 
     /// Gets all immediate members of an F# type definition keyed by name, including compiler-generated ones.
     /// Note: result is a indexed table, and for each name the results are in reverse declaration order
@@ -1179,16 +1179,16 @@ type Entity =
     member x.AllGeneratedValues = 
         [ match x.GeneratedCompareToValues with 
           | None -> ()
-          | Some (v1, v2) -> yield v1; yield v2
+          | Some (vref1, vref2) -> yield vref1; yield vref2
           match x.GeneratedCompareToWithComparerValues with
           | None -> ()
           | Some v -> yield v
           match x.GeneratedHashAndEqualsValues with
           | None -> ()
-          | Some (v1, v2) -> yield v1; yield v2
+          | Some (vref1, vref2) -> yield vref1; yield vref2
           match x.GeneratedHashAndEqualsWithComparerValues with
           | None -> ()
-          | Some (v1, v2, v3) -> yield v1; yield v2; yield v3 ]
+          | Some (vref1, vref2, vref3) -> yield vref1; yield vref2; yield vref3 ]
     
 
     /// Gets the data indicating the compiled representation of a type or module in terms of Abstract IL data structures.
@@ -2488,6 +2488,9 @@ type ValOptionalData =
       /// Used to implement [<ReflectedDefinition>]
       mutable val_defn: Expr option 
 
+      /// Records the "extra information" for a value compiled as a method (rather
+      /// than a closure or a local), including argument names, attributes etc.
+      //
       // MUTABILITY CLEANUP: mutability of this field is used by 
       //     -- adjustAllUsesOfRecValue 
       //     -- TLR optimizations
@@ -2496,6 +2499,10 @@ type ValOptionalData =
       // For example, we use mutability to replace the empty arity initially assumed with an arity garnered from the 
       // type-checked expression.  
       mutable val_repr_info: ValReprInfo option
+
+      /// Records the "extra information" for display purposes for expression-level function definitions
+      /// that may be compiled as closures (that is are not necessarily compiled as top-level methods).
+      mutable val_repr_info_for_display: ValReprInfo option
 
       /// How visible is this? 
       /// MUTABILITY: for unpickle linkage
@@ -2556,6 +2563,7 @@ type Val =
           val_const = None
           val_defn = None
           val_repr_info = None
+          val_repr_info_for_display = None
           val_access = TAccess []
           val_xmldoc = XmlDoc.Empty
           val_member_info = None
@@ -2618,6 +2626,11 @@ type Val =
     member x.ValReprInfo: ValReprInfo option =
         match x.val_opt_data with
         | Some optData -> optData.val_repr_info
+        | _ -> None
+
+    member x.ValReprInfoForDisplay: ValReprInfo option =
+        match x.val_opt_data with
+        | Some optData -> optData.val_repr_info_for_display
         | _ -> None
 
     member x.Id = ident(x.LogicalName, x.Range)
@@ -2998,6 +3011,11 @@ type Val =
         | Some optData -> optData.val_repr_info <- info
         | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_repr_info = info }
 
+    member x.SetValReprInfoForDisplay info = 
+        match x.val_opt_data with
+        | Some optData -> optData.val_repr_info_for_display <- info
+        | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_repr_info_for_display = info }
+
     member x.SetType ty = x.val_type <- ty
 
     member x.SetOtherRange m =
@@ -3055,6 +3073,7 @@ type Val =
                        val_other_range = tg.val_other_range
                        val_const = tg.val_const
                        val_defn = tg.val_defn
+                       val_repr_info_for_display = tg.val_repr_info_for_display
                        val_repr_info = tg.val_repr_info
                        val_access = tg.val_access
                        val_xmldoc = tg.val_xmldoc
@@ -3701,32 +3720,32 @@ type ValRef =
     member x.ResolvedTarget = x.binding
 
     /// Dereference the ValRef to a Val.
-    member vr.Deref = 
-        if obj.ReferenceEquals(vr.binding, null) then
+    member x.Deref = 
+        if obj.ReferenceEquals(x.binding, null) then
             let res = 
-                let nlr = vr.nlr 
+                let nlr = x.nlr 
                 let e = nlr.EnclosingEntity.Deref 
                 let possible = e.ModuleOrNamespaceType.TryLinkVal(nlr.EnclosingEntity.nlr.Ccu, nlr.ItemKey)
                 match possible with 
                 | ValueNone -> error (InternalUndefinedItemRef (FSComp.SR.tastUndefinedItemRefVal, e.DisplayNameWithStaticParameters, nlr.AssemblyName, sprintf "%+A" nlr.ItemKey.PartialKey))
                 | ValueSome h -> h
-            vr.binding <- nullableSlotFull res 
+            x.binding <- nullableSlotFull res 
             res 
-        else vr.binding
+        else x.binding
 
     /// Dereference the ValRef to a Val option.
-    member vr.TryDeref = 
-        if obj.ReferenceEquals(vr.binding, null) then
+    member x.TryDeref = 
+        if obj.ReferenceEquals(x.binding, null) then
             let resOpt = 
-                match vr.nlr.EnclosingEntity.TryDeref with 
+                match x.nlr.EnclosingEntity.TryDeref with 
                 | ValueNone -> ValueNone
-                | ValueSome e -> e.ModuleOrNamespaceType.TryLinkVal(vr.nlr.EnclosingEntity.nlr.Ccu, vr.nlr.ItemKey)
+                | ValueSome e -> e.ModuleOrNamespaceType.TryLinkVal(x.nlr.EnclosingEntity.nlr.Ccu, x.nlr.ItemKey)
             match resOpt with 
             | ValueNone -> ()
             | ValueSome res -> 
-                vr.binding <- nullableSlotFull res 
+                x.binding <- nullableSlotFull res 
             resOpt
-        else ValueSome vr.binding
+        else ValueSome x.binding
 
     /// The type of the value. May be a TType_forall for a generic value. 
     /// May be a type variable or type containing type variables during type inference. 
@@ -3923,7 +3942,7 @@ type ValRef =
 /// Represents a reference to a case of a union type
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type UnionCaseRef = 
-    | UnionCaseRef of TyconRef * string
+    | UnionCaseRef of tyconRef: TyconRef * caseName: string
 
     /// Get a reference to the type containing this union case
     member x.TyconRef = let (UnionCaseRef(tcref, _)) = x in tcref
@@ -3982,7 +4001,7 @@ type UnionCaseRef =
 /// Represents a reference to a field in a record, class or struct
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type RecdFieldRef = 
-    | RecdFieldRef of tcref: TyconRef * id: string
+    | RecdFieldRef of tyconRef: TyconRef * fieldName: string
 
     /// Get a reference to the type containing this union case
     member x.TyconRef = let (RecdFieldRef(tcref, _)) = x in tcref
@@ -4079,7 +4098,7 @@ type TType =
         | TType_anon (anonInfo, _tinst) -> defaultArg anonInfo.Assembly.QualifiedName ""
         | TType_fun _ -> ""
         | TType_measure _ -> ""
-        | TType_var (tp, _) -> tp.Solution |> function Some sln -> sln.GetAssemblyName() | None -> ""
+        | TType_var (tp, _) -> tp.Solution |> function Some slnTy -> slnTy.GetAssemblyName() | None -> ""
         | TType_ucase (_uc, _tinst) ->
             let (TILObjectReprData(scope, _nesting, _definition)) = _uc.Tycon.ILTyconInfo
             scope.QualifiedName
@@ -4101,7 +4120,7 @@ type TType =
              | TupInfo.Const false -> ""
              | TupInfo.Const true -> "struct ")
              + "{|" + String.concat "," (Seq.map2 (fun nm ty -> nm + " " + string ty + ";") anonInfo.SortedNames tinst) + ")" + "|}"
-        | TType_fun (d, r, _) -> "(" + string d + " -> " + string r + ")"
+        | TType_fun (domainTy, retTy, _) -> "(" + string domainTy + " -> " + string retTy + ")"
         | TType_ucase (uc, tinst) -> "ucase " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
         | TType_var (tp, _) -> 
             match tp.Solution with 
@@ -4178,7 +4197,7 @@ type Measure =
     | Var of typar: Typar
 
     /// A constant, leaf unit-of-measure such as 'kg' or 'm'
-    | Con of tyconRef: TyconRef
+    | Const of tyconRef: TyconRef
 
     /// A product of two units of measure
     | Prod of measure1: Measure * measure2: Measure
@@ -5042,7 +5061,7 @@ type ObjExprMethod =
 type SlotSig = 
     | TSlotSig of
         methodName: string *
-        implementedType: TType *
+        declaringType: TType *
         classTypars: Typars *
         methodTypars: Typars *
         formalParams: SlotParam list list *
@@ -5052,7 +5071,7 @@ type SlotSig =
     member ss.Name = let (TSlotSig(nm, _, _, _, _, _)) = ss in nm
 
     /// The (instantiated) type which the slot is logically a part of 
-    member ss.ImplementedType = let (TSlotSig(_, ty, _, _, _, _)) = ss in ty
+    member ss.DeclaringType = let (TSlotSig(_, ty, _, _, _, _)) = ss in ty
 
     /// The class type parameters of the slot
     member ss.ClassTypars = let (TSlotSig(_, _, ctps, _, _, _)) = ss in ctps

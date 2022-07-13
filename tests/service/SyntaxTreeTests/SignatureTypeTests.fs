@@ -173,7 +173,7 @@ type X = delegate of string -> string
     match parseResults with
     | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.Types(
-            types = [ SynTypeDefnSig(equalsRange = Some mEquals
+            types = [ SynTypeDefnSig(trivia = { EqualsRange = Some mEquals }
                                      typeRepr = SynTypeDefnSigRepr.ObjectModel(kind = SynTypeDefnKind.Delegate _)) ]
         )
     ]) ])) ->
@@ -195,7 +195,7 @@ type Foobar =
     match parseResults with
     | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.Types(
-            types = [ SynTypeDefnSig(equalsRange = Some mEquals
+            types = [ SynTypeDefnSig(trivia = { EqualsRange = Some mEquals }
                                      typeRepr = SynTypeDefnSigRepr.ObjectModel(kind = SynTypeDefnKind.Class)) ]
         )
     ]) ])) ->
@@ -217,7 +217,7 @@ type Bear =
     match parseResults with
     | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.Types(
-            types = [ SynTypeDefnSig(equalsRange = Some mEquals
+            types = [ SynTypeDefnSig(trivia = { EqualsRange = Some mEquals }
                                      typeRepr = SynTypeDefnSigRepr.Simple(repr =
                                          SynTypeDefnSimpleRepr.Enum(cases = [
                                             SynEnumCase(trivia={ EqualsRange = mEqualsEnumCase1 })
@@ -245,7 +245,7 @@ type Shape =
     match parseResults with
     | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.Types(
-            types = [ SynTypeDefnSig(equalsRange = Some mEquals
+            types = [ SynTypeDefnSig(trivia = { EqualsRange = Some mEquals }
                                      typeRepr = SynTypeDefnSigRepr.Simple(repr = SynTypeDefnSimpleRepr.Union _)) ]
         )
     ]) ])) ->
@@ -267,7 +267,7 @@ member Meh : unit -> unit
     | ParsedInput.SigFile (ParsedSigFileInput (modules =[ SynModuleOrNamespaceSig(decls =[
         SynModuleSigDecl.Types(
             types=[ SynTypeDefnSig(typeRepr=SynTypeDefnSigRepr.Simple _
-                                   withKeyword=Some mWithKeyword) ]
+                                   trivia = { WithKeyword = Some mWithKeyword }) ]
         )
     ]) ])) ->
         assertRange (4, 9) (4, 13) mWithKeyword
@@ -425,3 +425,49 @@ type X =
         assertRange (5, 19) (5, 20) mEquals
         assertRange (5, 4) (5, 23) mMember
     | _ -> Assert.Fail "Could not get valid AST"
+
+[<Test>]
+let ``Trivia is present in SynTypeDefnSig`` () =
+    let parseResults = 
+        getParseResultsOfSignatureFile
+            """
+module Meh
+
+type X =
+    member a : int = 10
+
+/// Represents a line number when using zero-based line counting (used by Visual Studio)
+#if CHECK_LINE0_TYPES
+
+#else
+type Y = int
+#endif
+
+type Z with
+    static member P : int -> int
+"""
+
+    match parseResults with
+    | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+        SynModuleOrNamespaceSig(decls=[
+            SynModuleSigDecl.Types(types = [
+                SynTypeDefnSig(trivia = { TypeKeyword = Some mType1
+                                          EqualsRange = Some mEq1
+                                          WithKeyword = None }) ])
+            SynModuleSigDecl.Types(types = [
+                SynTypeDefnSig(trivia = { TypeKeyword = Some mType2
+                                          EqualsRange = Some mEq2
+                                          WithKeyword = None  }) ])
+            SynModuleSigDecl.Types(types = [
+                SynTypeDefnSig(trivia = { TypeKeyword = Some mType3
+                                          EqualsRange = None
+                                          WithKeyword = Some mWith3 }) ])
+        ] ) ])) ->
+        ()
+        assertRange (4, 0) (4, 4) mType1
+        assertRange (4, 7) (4, 8) mEq1
+        assertRange (11, 0) (11, 4) mType2
+        assertRange (11, 7) (11, 8) mEq2
+        assertRange (14, 0) (14, 4) mType3
+        assertRange (14, 7) (14, 11) mWith3
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

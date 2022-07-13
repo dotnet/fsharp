@@ -39,7 +39,7 @@ type IlxUnionRef =
         boxity: ILBoxity *
         ILTypeRef *
         IlxUnionCase[] *
-        bool (* IsNullPermitted *)  *
+        bool (* IsNullPermitted *) *
         IlxUnionHasHelpers (* HasHelpers *)
 
 type IlxUnionSpec =
