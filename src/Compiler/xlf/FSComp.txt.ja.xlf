@@ -29,12 +29,12 @@
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
         <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
-        <target state="translated">F# ライブラリからの ':=' の使用は非推奨です。https://aka.ms/fsharp-refcell-ops を参照してください。たとえば、'cell : = expr' を 'cell.Value &lt;- expr' に変えてください。</target>
+        <target state="translated">F# ライブラリからの ':=' の使用は非推奨です。https://aka.ms/fsharp-refcell-ops を参照してください。たとえば、'cell : = expr' を 'cell.Value &lt;- expr' に変更してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDecr">
         <source>The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</source>
-        <target state="translated">F# ライブラリからの 'decr' の使用は非推奨とされます。https://aka.ms/fsharp-refcell-ops を参照してください。たとえば、'decr cell' を 'cell.Value &lt;- cell.Value - 1' に変更してください。</target>
+        <target state="translated">F# ライブラリからの 'decr' の使用は非推奨です。https://aka.ms/fsharp-refcell-ops を参照してください。たとえば、'decr cell' を 'cell.Value &lt;- cell.Value - 1' に変更してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDeref">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
-        <target state="translated">F# ライブラリからの 'incr' の使用は非推奨です。https://aka.ms/fsharp-refcell-ops を参照してください。たとえば、'incr cell' を 'cell.Value &lt;- cell.Value +1' に変えてください。</target>
+        <target state="translated">F# ライブラリからの 'incr' の使用は非推奨です。https://aka.ms/fsharp-refcell-ops を参照してください。たとえば、'incr cell' を 'cell.Value &lt;- cell.Value +1' に変更してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureDelegateTypeNameResolutionFix">
         <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
-        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
+        <target state="translated">デリゲート型名の解決を修正するには、https://github.com/dotnet/fsharp/issues/10228 を参照してください</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
-        <target state="new">give error on deprecated access of construct with RequireQualifiedAccess attribute</target>
+        <target state="translated">RequireQualifiedAccess 属性を持つコンストラクトの非推奨アクセスでエラーが発生しました</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -239,7 +239,7 @@
       </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
-        <target state="new">list literals of any size</target>
+        <target state="translated">任意のサイズのリテラルを一覧表示する</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
@@ -439,17 +439,17 @@
       </trans-unit>
       <trans-unit id="optsClearResultsCache">
         <source>Clear the package manager results cache</source>
-        <target state="new">Clear the package manager results cache</target>
+        <target state="translated">パッケージ マネージャーの結果キャッシュをクリアする</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
-        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
+        <target state="translated">参照アセンブリの生成の使用が無効です。'--staticlink'、または '--refonly' と '--refout' を同時に使用しないでください。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
-        <target state="new">Invalid reference assembly path'</target>
+        <target state="translated">参照アセンブリ パスが無効です'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -459,12 +459,12 @@
       </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
-        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <target state="translated">完全なアセンブリではなく、参照アセンブリをプライマリ出力として生成します</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
-        <target state="new">Produce a reference assembly with the specified file path.</target>
+        <target state="translated">指定されたファイル パスを使用して参照アセンブリを生成します。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -524,7 +524,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
         <source>Expecting expression</source>
-        <target state="new">Expecting expression</target>
+        <target state="translated">式を指定してください</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -604,7 +604,7 @@
       </trans-unit>
       <trans-unit id="reprStateMachineNotCompilableNoAlternative">
         <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
-        <target state="translated">このステート マシンは静的にコンパイル可能ではないため、代替手段はありません。{0}。代替手段を用意するには、 '__useResumableCode である場合、&lt;state-machine&gt; または &lt;alternative&gt;' を使用してください。</target>
+        <target state="translated">このステート マシンは静的にコンパイル可能ではないため、代替手段はありません。{0}。代替手段を用意するには、'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' を使用してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
@@ -634,7 +634,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this record expression.</source>
-        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <target state="translated">このレコード式に、フィールド '{0}' が複数回出現します。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
@@ -659,7 +659,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this anonymous record type.</source>
-        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
+        <target state="translated">この匿名レコードの種類に、フィールド '{0}' が複数回出現します。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -1194,7 +1194,7 @@
       </trans-unit>
       <trans-unit id="buildInvalidHashrDirective">
         <source>Invalid directive. Expected '#r \"&lt;file-or-assembly&gt;\"'.</source>
-        <target state="translated">ディレクティブが無効です。'#r \"&lt;file-or-assembly&gt;\"' という形式で指定する必要があります。</target>
+        <target state="translated">ディレクティブが無効です。'#r \"&lt;file-or-assembly&gt;\"' が必要でした。</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashloadDirective">
@@ -1529,7 +1529,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">シグネチャと実装の種類 '{1}' の {0} 定義に互換性がありません。実装の種類はシールド型ではありませんが、シグネチャは暗黙的にシールド型に設定されています。実装に [&lt;Sealed&gt;] 属性を追加することを検討してください。</target>
+        <target state="translated">シグネチャと実装の種類 '{0}' の {1} 定義に互換性がありません。実装の種類はシールド型ではありませんが、シグネチャは暗黙的にシールド型に設定されています。実装に [&lt;Sealed&gt;] 属性を追加することを検討してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
@@ -4419,7 +4419,7 @@
       </trans-unit>
       <trans-unit id="tcStaticValFieldsMustBeMutableAndPrivate">
         <source>Static 'val' fields in types must be mutable, private and marked with the '[&lt;DefaultValue&gt;]' attribute. They are initialized to the 'null' or 'zero' value for their type. Consider also using a 'static let mutable' binding in a class type.</source>
-        <target state="translated">型の静的な 'val' フィールドは変更可能で、プライベートで、さらには'[&lt;DefaultValue&gt;]' 属性でマークされている必要があります。これらの型では、'null' 値または 'zero' 値に初期化されます。クラス型で 'static let mutable' バインディングを使用することも検討してください。</target>
+        <target state="translated">型の静的な 'val' フィールドは変更可能で、プライベートで、さらには '[&lt;DefaultValue&gt;]' 属性でマークされている必要があります。これらの型は、'null' 値または 'zero' 値に初期化されます。クラス型で 'static let mutable' バインディングを使用することも検討してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldRequiresName">
@@ -4684,7 +4684,7 @@
       </trans-unit>
       <trans-unit id="tcRepresentationOfTypeHiddenBySignature">
         <source>The representation of this type is hidden by the signature. It must be given an attribute such as [&lt;Sealed&gt;], [&lt;Class&gt;] or [&lt;Interface&gt;] to indicate the characteristics of the type.</source>
-        <target state="translated">この種の表現は、シグネチャによって非表示になります。この種の特性を示すには、[&lt;Sealed&gt;]、[&lt;Class&gt;]、または [&lt;Interface&gt;] などの属性を指定する必要があります。</target>
+        <target state="translated">この型の表現は、シグネチャによって非表示になります。この型の特性を示すには、[&lt;Sealed&gt;]、[&lt;Class&gt;]、または [&lt;Interface&gt;] などの属性を指定する必要があります。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcOnlyClassesCanHaveAbstract">
@@ -5024,7 +5024,7 @@
       </trans-unit>
       <trans-unit id="optsPlatform">
         <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="needs-review-translation">このコードが実行されるプラットフォームの制限: x86、Itanium、x64、anycpu32bitpreferred、または anycpu。既定は anycpu です。</target>
+        <target state="translated">このコードが実行されるプラットフォームの制限: x86、x64、Arm、Arm64、Itanium、anycpu32bitpreferred、または anycpu。既定値は anycpu です。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5319,7 +5319,7 @@
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
         <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
-        <target state="needs-review-translation">認識されないプラットフォーム '{0}'。有効な値は 'x86'、'x64'、'Itanium'、'anycpu32bitpreferred'、および 'anycpu' です。</target>
+        <target state="translated">認識されないプラットフォーム '{0}' です。有効な値は 'x86'、'x64'、'Arm'、'Arm64'、'Itanium'、'anycpu32bitpreferred'、'anycpu' です。既定値は anycpu です。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">
@@ -5834,7 +5834,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
-        <target state="new">これは有効な数値リテラルではありません。有効な数値リテラルの例には、1、0x1、0o1、0b1、1l (int)、1u (uint32)、1L (int64)、1UL (uint64)、1s (int16)、1y (sbyte)、1uy (byte)、1.0 (float)、1.0f (float32)、1.0m (decimal)、1I (BigInteger) などがあります。</target>
+        <target state="new">This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">
@@ -6054,7 +6054,7 @@
       </trans-unit>
       <trans-unit id="tcParameterInferredByref">
         <source>The parameter '{0}' was inferred to have byref type. Parameters of byref type must be given an explicit type annotation, e.g. 'x1: byref&lt;int&gt;'. When used, a byref parameter is implicitly dereferenced.</source>
-        <target state="translated">byre 型に設定するためにパラメーター '{0}' が継承されました。byref 型のパラメーターには明示的な型注釈を指定する必要があります (例: 'x1: byref&lt;int&gt;')。使用すると、byref パラメーターが暗黙的に逆参照されます。</target>
+        <target state="translated">byref 型に設定するためにパラメーター '{0}' が継承されました。byref 型のパラメーターには明示的な型注釈を指定する必要があります (例: 'x1: byref&lt;int&gt;')。使用すると、byref パラメーターが暗黙的に逆参照されます。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNonUniformMemberUse">
@@ -6229,7 +6229,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString">
         <source>Unexpected quotation operator '&lt;@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '&lt;' and '@' characters.</source>
-        <target state="translated">型定義に予期しない引用演算子 '&lt;@' が見つかりました。verbatim 文字列を静的引数として型プロバイダーに渡す場合は、'&lt;' と '@' の間に空白を挿入してください。</target>
+        <target state="translated">型定義に予期しない引用演算子 '&lt;@' が見つかりました。逐語的文字列を静的引数として型プロバイダーに渡す場合は、'&lt;' と '@' の間に空白を挿入してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsErrorParsingAsOperatorName">
@@ -6739,7 +6739,7 @@
       </trans-unit>
       <trans-unit id="etStaticParameterRequiresAValue">
         <source>The static parameter '{0}' of the provided type or method '{1}' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. '{2}&lt;{3}=...&gt;'.</source>
-        <target state="translated">指定された型またはメソッド '{1}' の静的パラメーター '{0}' には値が必要です。型プロバイダーへの静的パラメーターは、名前付き引数を使用して任意で指定できます (例: '{2}&lt;{3}=...&gt;')。</target>
+        <target state="translated">指定された型またはメソッド '{0}' の静的パラメーター '{1}' には値が必要です。型プロバイダーへの静的パラメーターは、名前付き引数を使用して任意で指定できます (例: '{2}&lt;{3}=...&gt;')。</target>
         <note />
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
@@ -6889,7 +6889,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileFunBody">
         <source>Unexpected end of input in body of lambda expression. Expected 'fun &lt;pat&gt; ... &lt;pat&gt; -&gt; &lt;expr&gt;'.</source>
-        <target state="translated">ラムダ式本体の入力末尾が予期されたものと異なります。必要な入力末尾は、'fun &lt;pat&gt; ... &lt;pat&gt; -&gt; &lt;expr&gt;' です。</target>
+        <target state="translated">ラムダ式本体の入力末尾が予期しない形式で終了しています。'fun &lt;pat&gt; ... &lt;pat&gt; -&gt; &lt;expr&gt;' が必要でした。</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileTypeArgs">

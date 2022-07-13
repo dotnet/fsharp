@@ -29,12 +29,12 @@
       </trans-unit>
       <trans-unit id="chkInfoRefcellAssign">
         <source>The use of ':=' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'cell := expr' to 'cell.Value &lt;- expr'.</source>
-        <target state="translated">F# kitaplığından gelen “:=” kullanımı kullanım dışı. https://aka.ms/fsharp-refcell-ops'a bakın. Örneğin, lütfen “cell := expr” ifadesini “cell.Value &lt;- expr” olarak değiştirin.</target>
+        <target state="translated">F# kitaplığından gelen ':=' kullanımı kullanım dışı. https://aka.ms/fsharp-refcell-ops’a bakın. Örneğin, lütfen 'cell := expr' ifadesini 'cell.Value &lt;- expr' olarak değiştirin.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDecr">
         <source>The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</source>
-        <target state="translated">F# kitaplığından gelen “decr” kullanımı kullanım dışı. https://aka.ms/fsharp-refcell-ops'a bakın. Örneğin, lütfen “decr cell”i “cell.Value &lt;- cell.Value - 1” olarak değiştirin.</target>
+        <target state="translated">F# kitaplığından gelen 'decr' kullanımı kullanım dışı. https://aka.ms/fsharp-refcell-ops’a bakın. Örneğin, lütfen 'decr cell' ifadesini 'cell.Value &lt;- cell.Value - 1' olarak değiştirin.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDeref">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
-        <target state="translated">F# kitaplığından “incr” kullanımı kullanım dışı. https://aka.ms/fsharp-refcell-ops’a bakın. Örneğin, lütfen “incr cell”i “cell.Value &lt;- cell.Value + 1” olarak değiştirin</target>
+        <target state="translated">F# kitaplığından gelen 'incr' kullanımı kullanım dışı. https://aka.ms/fsharp-refcell-ops’a bakın. Örneğin, lütfen 'incr cell' ifadesini 'cell.Value &lt;- cell.Value + 1' olarak değiştirin.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureDelegateTypeNameResolutionFix">
         <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
-        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
+        <target state="translated">temsilci türü adlarının çözümlenmesiyle ilgili sorunun çözümü için bkz. https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
-        <target state="new">give error on deprecated access of construct with RequireQualifiedAccess attribute</target>
+        <target state="translated">RequireQualifiedAccess özniteliğine sahip yapının kullanım dışı erişiminde hata</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -239,7 +239,7 @@
       </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
-        <target state="new">list literals of any size</target>
+        <target state="translated">tüm boyutlardaki sabit değerleri listele</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
@@ -439,17 +439,17 @@
       </trans-unit>
       <trans-unit id="optsClearResultsCache">
         <source>Clear the package manager results cache</source>
-        <target state="new">Clear the package manager results cache</target>
+        <target state="translated">Paket yöneticisi sonuçları önbelleğini temizle</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
-        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
+        <target state="translated">Başvuru bütünleştirilmiş kodunun oluşturulması için geçersiz kullanım: '--staticlink' veya '--refonly' ile '--refout' birlikte kullanılmaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
-        <target state="new">Invalid reference assembly path'</target>
+        <target state="translated">Geçersiz başvuru bütünleştirilmiş kodu yolu'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -459,12 +459,12 @@
       </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
-        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <target state="translated">Birincil çıktı olarak, tam bir derleme yerine, başvuru bütünleştirilmiş kodu üretin</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
-        <target state="new">Produce a reference assembly with the specified file path.</target>
+        <target state="translated">Belirtilen dosya yoluna sahip bir başvuru bütünleştirilmiş kodu üretin.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -524,7 +524,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
         <source>Expecting expression</source>
-        <target state="new">Expecting expression</target>
+        <target state="translated">İfade bekleniyor</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -604,7 +604,7 @@
       </trans-unit>
       <trans-unit id="reprStateMachineNotCompilableNoAlternative">
         <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
-        <target state="translated">Bu durum makinesi statik uyumlu değil ve kullanılabilir alternatif yok. {0}. Bir alternatif sağlamak için 'if__useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' kullanın.</target>
+        <target state="translated">Bu durum makinesi statik olarak derlenebilir değil ve kullanılabilir alternatif yok. {0}. Bir alternatif sağlamak için 'if__useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' kullanın.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
@@ -634,7 +634,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this record expression.</source>
-        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <target state="translated">'{0}' alanı bu kayıt ifadesinde birden fazla yerde görünüyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
@@ -659,7 +659,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this anonymous record type.</source>
-        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
+        <target state="translated">'{0}' alanı bu anonim kayıt türünde birden fazla yerde görünüyor.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -729,7 +729,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
         <source>The use of '[&lt;Struct&gt;]' on values, functions and methods is only allowed on partial active pattern definitions</source>
-        <target state="translated">Değerlerde, işlevlerde ve yöntemlerde '[&lt;Struct&gt;]' kullanımına yalnızca kısmi etkin desen tanımlarında izin veriliyor</target>
+        <target state="translated">Değerler, işlevler ve yöntemler üzerinde '[&lt;Struct&gt;]' kullanımına yalnızca kısmi etkin model tanımlarında izin verilir</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidUseBangBindingNoAndBangs">
@@ -754,7 +754,7 @@
       </trans-unit>
       <trans-unit id="tcLiteralAttributeCannotUseActivePattern">
         <source>A [&lt;Literal&gt;] declaration cannot use an active pattern for its identifier</source>
-        <target state="translated">[&lt;Literal&gt;] bildirimi, tanımlayıcısı için etkin desen kullanamaz</target>
+        <target state="translated">Bir [&lt;Literal&gt;] bildirimi, tanımlayıcısı için aktif bir kalıp kullanamaz</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralFieldAssignmentNoArg">
@@ -1429,7 +1429,7 @@
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityGenericParametersAreDifferentKinds">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe generic parameters in the signature and implementation have different kinds. Perhaps there is a missing [&lt;Measure&gt;] attribute.</source>
-        <target state="translated">'{0}' modülü\n    {1}    \niçeriyor, ancak modülün imzası tarafından\n    {2} belirtiliyor    \nİmzadaki ve uygulamadaki genel parametrelerin türleri farklı. Bir [&lt;Measure&gt;] özniteliği eksik olabilir.</target>
+        <target state="translated">'{0}' modülü\n    {1}    \niçeriyor, ancak modülün imzasında\n    {2}    \nİmzadaki ve uygulamadaki genel parametrelerin türlerinin farklı olduğu belirtiliyor. Bir [&lt;Measure&gt;] özniteliği eksik olabilir.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityAritiesDiffer">
@@ -1539,7 +1539,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the signature is an abstract class but the implementation is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the implementation.</source>
-        <target state="translated">İmza soyut bir sınıf olduğu halde uygulama soyut sınıf olmadığından '{1}' türü için imzadaki ve uygulamadaki {0} tanımları uyumlu değil. Uygulamaya [&lt;AbstractClass&gt;] özniteliğini eklemeyi göz önünde bulundurun.</target>
+        <target state="translated">İmza soyut bir sınıf olduğu halde uygulama soyut sınıf olmadığından '{1}' türü için imzadaki ve uygulamadaki{0} tanımları uyumlu değil. Uygulamaya [&lt;AbstractClass&gt;] özniteliğini eklemeyi göz önünde bulundurun.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes">
@@ -1939,12 +1939,12 @@
       </trans-unit>
       <trans-unit id="augRefEqCantHaveObjEquals">
         <source>A type with attribute 'ReferenceEquality' cannot have an explicit implementation of 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' or 'System.Collections.IStructuralEquatable'</source>
-        <target state="translated">'ReferenceEquality' özniteliğine sahip bir tür, açık bir 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' veya 'System.Collections.IStructuralEquatable' uygulamasına sahip olamaz</target>
+        <target state="translated">'ReferenceEquality' özniteliğine sahip bir tür 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' veya 'System.Collections.IStructuralEquatable' metotlarının açık uygulamasına sahip olamaz.</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomEqNeedsObjEquals">
         <source>A type with attribute 'CustomEquality' must have an explicit implementation of at least one of 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' or 'System.Collections.IStructuralEquatable'</source>
-        <target state="translated">'CustomEquality' özniteliğine sahip bir aracın en az bir 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' veya 'System.Collections.IStructuralEquatable' için açık bir uygulaması olmalıdır</target>
+        <target state="translated">'CustomEquality' özniteliğine sahip bir türün 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' veya 'System.Collections.IStructuralEquatable' metotlarından en az birinin açık bir uygulamasına sahip olmalıdır.</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomCompareNeedsIComp">
@@ -1959,7 +1959,7 @@
       </trans-unit>
       <trans-unit id="augNoCompCantImpIComp">
         <source>A type with attribute 'NoComparison' should not usually have an explicit implementation of 'System.IComparable', 'System.IComparable&lt;_&gt;' or 'System.Collections.IStructuralComparable'. Disable this warning if this is intentional for interoperability purposes</source>
-        <target state="translated">'NoComparison' özniteliğine sahip bir tür genellikle açık bir 'System.IComparable', 'System.IComparable&lt;_&gt;' veya 'System.Collections.IStructuralComparable' uygulamasına sahip olmamalıdır. Bunu birlikte çalışabilirlik amacıyla bilerek yaptıysanız bu uyarıyı devre dışı bırakın</target>
+        <target state="translated">'NoComparison' özniteliğine sahip bir tür genellikle açık bir 'System.IComparable', 'System.IComparable&lt;_&gt;' veya 'System.Collections.IStructuralComparable' uygulamasına sahip olmamalıdır. Bunu birlikte çalışabilirlik için bilerek yaptıysanız bu uyarıyı devre dışı bırakın.</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomEqNeedsNoCompOrCustomComp">
@@ -2079,7 +2079,7 @@
       </trans-unit>
       <trans-unit id="chkSystemVoidOnlyInTypeof">
         <source>'System.Void' can only be used as 'typeof&lt;System.Void&gt;' in F#</source>
-        <target state="translated">F# dilinde 'System.Void' yalnızca 'typeof&lt;System.Void&gt;' olarak kullanılabilir</target>
+        <target state="translated">F# dilinde 'System.Void' yalnızca 'typeof&lt;System.Void&gt;' olarak kullanılabilir.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkErrorUseOfByref">
@@ -2179,7 +2179,7 @@
       </trans-unit>
       <trans-unit id="chkReflectedDefCantSplice">
         <source>[&lt;ReflectedDefinition&gt;] terms cannot contain uses of the prefix splice operator '%'</source>
-        <target state="translated">[&lt;ReflectedDefinition&gt;] terimleri, '%' ön ek birleştirme işlecinin kullanımını içeremez</target>
+        <target state="translated">[&lt;ReflectedDefinition&gt;] terimleri, '%' ön ek birleştirme işlecinin kullanımını içeremez.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkEntryPointUsage">
@@ -3019,7 +3019,7 @@
       </trans-unit>
       <trans-unit id="parsIncompleteIf">
         <source>Incomplete conditional. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">Eksik koşullu. 'if &lt;expr&gt; then &lt;expr&gt;' veya 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;' bekleniyordu.</target>
+        <target state="translated">Eksik koşul. 'if &lt;expr&gt; then &lt;expr&gt;' veya 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;' bekleniyordu.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAssertIsNotFirstClassValue">
@@ -3109,7 +3109,7 @@
       </trans-unit>
       <trans-unit id="parsMultiArgumentGenericTypeFormDeprecated">
         <source>The syntax '(typ,...,typ) ident' is not used in F# code. Consider using 'ident&lt;typ,...,typ&gt;' instead</source>
-        <target state="translated">F# kodunda '(typ,...,typ) ident' söz dizimi kullanılmaz. Bunun yerine 'ident&lt;typ,...,typ&gt;' söz dizimini kullanmayı göz önünde bulundurun</target>
+        <target state="translated">F# kodunda '(typ,...,typ) ident' söz dizimi kullanılmaz. Bunun yerine 'ident&lt;typ,...,typ&gt;' söz dizimini kullanmayı göz önünde bulundurun.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsInvalidLiteralInType">
@@ -3219,7 +3219,7 @@
       </trans-unit>
       <trans-unit id="tcParameterRequiresName">
         <source>A parameter with attributes must also be given a name, e.g. '[&lt;Attribute&gt;] Name : Type'</source>
-        <target state="translated">Öznitelikleri olan bir parametreye ad da verilmelidir, ör. '[&lt;Attribute&gt;] Name : Type'</target>
+        <target state="translated">Nitelikleri olan bir parametreye ayrıca bir isim verilmelidir, örn. '[&lt;Özellik&gt;] Ad : Tür'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcReturnValuesCannotHaveNames">
@@ -3304,7 +3304,7 @@
       </trans-unit>
       <trans-unit id="tcImplementsGenericIComparableExplicitly">
         <source>The struct, record or union type '{0}' implements the interface 'System.IComparable&lt;_&gt;' explicitly. You must apply the 'CustomComparison' attribute to the type, and should also provide a consistent implementation of the non-generic interface System.IComparable.</source>
-        <target state="translated">Yapı, kayıt veya birleşim türü '{0}', 'System.IComparable&lt;_&gt;' arabirimini açıkça uyguluyor. Türe 'CustomComparison' özniteliğini uygulamalı ve aynı zamanda genel olmayan System.IComparable arabiriminin tutarlı bir uygulamasını sağlamalısınız.</target>
+        <target state="translated">Yapı, kayıt veya birleşim türü '{0}', 'System.IComparable&lt;_&gt;' arabirimini açıkça uyguluyor. Türe 'CustomComparison' özniteliğini uygulamalı ve aynı zamanda genel olmayan System.IComparable arabiriminin tutarlı olarak uygulandığından emin olmalısınız.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcImplementsIStructuralComparableExplicitly">
@@ -3354,7 +3354,7 @@
       </trans-unit>
       <trans-unit id="tcTypeParametersInferredAreNotStable">
         <source>The type parameters inferred for this value are not stable under the erasure of type abbreviations. This is due to the use of type abbreviations which drop or reorder type parameters, e.g. \n\ttype taggedInt&lt;'a&gt; = int or\n\ttype swap&lt;'a,'b&gt; = 'b * 'a.\nConsider declaring the type parameters for this value explicitly, e.g.\n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x).</source>
-        <target state="translated">Bu değer için çıkarsanan tür parametreleri, tür kısaltmalarının silinmesi halinde kararlı değildir. Bunun nedeni, tür parametrelerini bırakan veya yeniden sıralayan tür kısaltmalarının kullanımıdır, ör. \n\ttype taggedInt&lt;'a&gt; = int or\n\ttype swap&lt;'a,'b&gt; = 'b * 'a.\nBu değer için tür parametrelerini açıkça bildirmeyi deneyin, ör.\n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x).</target>
+        <target state="translated">Bu değer için türetilen tür parametreleri, tür kısaltmalarının silinmesi altında sabit değildir. Bunun nedeni, tür parametrelerini düşüren veya yeniden sıralayan tür kısaltmalarının kullanılmasıdır, örn. \n\ttype taggedInt&lt;'a&gt; = int veya\n\ttype swap&lt;'a,'b&gt; = 'b * 'a.\nBu değer için tür parametrelerini açıkça bildirmeyi düşünün, ör.\n\tlet f&lt;' a,'b&gt; ((x,y) : takas&lt;'b,'a&gt;) : takas&lt;'a,'b&gt; = (y,x).</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExplicitTypeParameterInvalid">
@@ -3524,7 +3524,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidEnumConstraint">
         <source>An 'enum' constraint must be of the form 'enum&lt;type&gt;'</source>
-        <target state="translated">Bir 'enum' kısıtlaması, 'enum&lt;type&gt;' biçiminde olmalıdır</target>
+        <target state="translated">Bir 'enum' kısıtlaması 'enum&lt;type&gt;' biçiminde olmalıdır</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidNewConstraint">
@@ -3624,7 +3624,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidNonPrimitiveLiteralInPatternMatch">
         <source>Non-primitive numeric literal constants cannot be used in pattern matches because they can be mapped to multiple different types through the use of a NumericLiteral module. Consider using replacing with a variable, and use 'when &lt;variable&gt; = &lt;constant&gt;' at the end of the match clause.</source>
-        <target state="translated">Temel olmayan sayısal sabit değerler bir NumericLiteral kullanılarak birden çok farklı türle eşleştirilemediğinden desen eşleştirmelerinde kullanılamaz. Bunu bir değişkenle değiştirmeyi ve eşleşme yan tümcesinin sonunda 'when &lt;variable&gt; = &lt;constant&gt;' kullanmayı göz önünde bulundurun.</target>
+        <target state="translated">İlkel olmayan sayısal değişmez sabitler, bir NumericLiteral modülü kullanılarak birden çok farklı türe eşlenebildikleri için desen eşleşmelerinde kullanılamaz. Bir değişkenle değiştirmeyi kullanmayı düşünün ve eşleşme yan tümcesinin sonunda 'ne zaman &lt;değişken&gt; = &lt;sabit&gt;' kullanın.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidTypeArgumentUsage">
@@ -4184,7 +4184,7 @@
       </trans-unit>
       <trans-unit id="tcIllegalAttributesForLiteral">
         <source>A literal value cannot be given the [&lt;ThreadStatic&gt;] or [&lt;ContextStatic&gt;] attributes</source>
-        <target state="translated">Sabit bir değere [&lt;ThreadStatic&gt;] veya [&lt;ContextStatic&gt;] öznitelikleri verilemez</target>
+        <target state="translated">Bir değişmez değere [&lt;ThreadStatic&gt;] veya [&lt;ContextStatic&gt;] öznitelikleri verilemez.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcLiteralCannotBeMutable">
@@ -4394,7 +4394,7 @@
       </trans-unit>
       <trans-unit id="tcLiteralAttributeRequiresConstantValue">
         <source>A declaration may only be the [&lt;Literal&gt;] attribute if a constant value is also given, e.g. 'val x: int = 1'</source>
-        <target state="translated">Bir sabit değer de sağlanmışsa bildirim yalnızca [&lt;Literal&gt;] özniteliği olabilir, ör. 'val x : int = 1'</target>
+        <target state="translated">Bir bildirim, yalnızca sabit bir değer verilmişse [&lt;Literal&gt;] özniteliği olabilir, örn. 'değer x: int = 1'</target>
         <note />
       </trans-unit>
       <trans-unit id="tcValueInSignatureRequiresLiteralAttribute">
@@ -4649,7 +4649,7 @@
       </trans-unit>
       <trans-unit id="tcTypeAbbreviationHasTypeParametersMissingOnType">
         <source>This type abbreviation has one or more declared type parameters that do not appear in the type being abbreviated. Type abbreviations must use all declared type parameters in the type being abbreviated. Consider removing one or more type parameters, or use a concrete type definition that wraps an underlying type, such as 'type C&lt;'a&gt; = C of ...'.</source>
-        <target state="translated">Bu tür kısaltması, kısaltılan türde görünmeyen bir veya daha fazla bildirilen tür parametresine sahip. Tür kısaltmaları, kısaltılan türdeki tüm bildirilen tür parametrelerini kullanılmalıdır. Bir veya daha fazla tür parametresini kaldırmayı ya da temel bir türü sarmalayan 'type C&lt;'a&gt; = C of ...' gibi somut bir tür kullanmayı göz önünde bulundurun.</target>
+        <target state="translated">Bu tür kısaltması, kısaltılmakta olan türde görünmeyen bir veya daha fazla beyan edilmiş tür parametresine sahiptir. Tür kısaltmaları, kısaltılmakta olan türde bildirilen tüm tür parametrelerini kullanmalıdır. Bir veya daha fazla tür parametresini kaldırmayı düşünün veya 'type C&lt;'a&gt; = C of ...' gibi temel bir türü saran somut bir tür tanımı kullanın.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes">
@@ -5024,7 +5024,7 @@
       </trans-unit>
       <trans-unit id="optsPlatform">
         <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="needs-review-translation">Bu kodun üzerinde çalışabileceği platformları sınırlandırın: x86, Itanium, x64, anycpu32bitpreferred veya anycpu. Varsayılan: anycpu.</target>
+        <target state="translated">Bu kodun üzerinde çalışabileceği platformları sınırlayın: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred veya anycpu. Varsayılan: anycpu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5074,7 +5074,7 @@
       </trans-unit>
       <trans-unit id="optsSourceLink">
         <source>Source link information file to embed in the portable PDB file</source>
-        <target state="translated">Taşınabilir PDB dosyasına eklenecek kaynak bağlantı bilgileri dosyası</target>
+        <target state="translated">Taşınabilir PDB dosyasına eklenecek kaynak bağlantısı bilgileri dosyası</target>
         <note />
       </trans-unit>
       <trans-unit id="optsEmbeddedSourceRequirePortablePDBs">
@@ -5319,7 +5319,7 @@
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
         <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
-        <target state="needs-review-translation">Tanınmayan platform '{0}', geçerli değerler: 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred' ve 'anycpu'</target>
+        <target state="translated">Tanınmayan platform '{0}', geçerli değerler: 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred' ve 'anycpu'. Varsayılan: anycpu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">
@@ -5514,7 +5514,7 @@
       </trans-unit>
       <trans-unit id="eventHasNonStandardType">
         <source>The event '{0}' has a non-standard type. If this event is declared in another CLI language, you may need to access this event using the explicit {1} and {2} methods for the event. If this event is declared in F#, make the type of the event an instantiation of either 'IDelegateEvent&lt;_&gt;' or 'IEvent&lt;_,_&gt;'.</source>
-        <target state="translated">'{0}' olayının standart olmayan bir türü var. Bu olay başka bir CLI dilinde bildirilmişse, bu olaya olay için açık {1} ve {2} metotlarını kullanarak erişmeniz gerekebilir. Bu olay F# dilinde belirtilmişse olayın türünü 'IDelegateEvent&lt;_&gt;' veya 'IEvent&lt;_,_&gt;' örnek oluşturması yapın.</target>
+        <target state="translated">'{0}' olayının standart olmayan bir türü var. Bu olay başka bir CLI dilinde bildirilmişse bu olaya, olay için açık {1} ve {2} metotlarını kullanarak erişmeniz gerekebilir. Bu olay F# dilinde belirtilmişse olayın türünü 'IDelegateEvent&lt;_&gt;' veya 'IEvent&lt;_,_&gt;' örnek oluşturması yapın.</target>
         <note />
       </trans-unit>
       <trans-unit id="typeIsNotAccessible">
@@ -5834,7 +5834,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
-        <target state="new">Bu geçerli bir sayısal sabit değer değil. Geçerli sayısal sabit değerler şunları içerir: 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</target>
+        <target state="new">This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">
@@ -6019,17 +6019,17 @@
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
         <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="translated">Tür adı ile tür parametresi arasındaki boşlukları kaldırın, ör. \"C   &lt;'T&gt;\" değil \"type C&lt;'T&gt;\". Tür parametreleri doğrudan tür adına bitişik olarak yerleştirilmelidir.</target>
+        <target state="translated">Tür adı ile tür parametresi arasındaki boşlukları kaldırın (ör. type \"C   &lt;'T&gt;\" değil, \"type C&lt;'T&gt;\" olmalı). Tür parametreleri doğrudan tür adına bitişik olarak yerleştirilmelidir.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
         <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="translated">Tür adı ile tür parametresi arasındaki boşlukları kaldırın, ör. \"C &lt;'T&gt;\" değil \"C&lt;'T&gt;\". Tür parametreleri doğrudan tür adına bitişik olarak yerleştirilmelidir.</target>
+        <target state="translated">Tür adı ile tür parametresi arasındaki boşlukları kaldırın (ör. \"C &lt;'T&gt;\" değil, \"C&lt;'T&gt;\" olmalı). Tür parametreleri doğrudan tür adına bitişik olarak yerleştirilmelidir.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
         <source>The use of the type syntax 'int C' and 'C  &lt;int&gt;' is not permitted here. Consider adjusting this type to be written in the form 'C&lt;int&gt;'</source>
-        <target state="translated">Burada 'int C' ve 'C  &lt;int&gt;' tür söz diziminin kullanılmasına izin verilmiyor. Bu türü şu biçimde yazılacak şekilde değiştirmeyi göz önünde bulundurun: 'C&lt;int&gt;'</target>
+        <target state="translated">Burada 'int C' ve 'C  &lt;int&gt;' tür söz diziminin kullanılmasına izin verilmiyor. Bu türü 'C&lt;int&gt;' biçiminde yazılacak şekilde değiştirmeyi göz önünde bulundurun.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastUndefinedItemRefModuleNamespace">
@@ -6054,7 +6054,7 @@
       </trans-unit>
       <trans-unit id="tcParameterInferredByref">
         <source>The parameter '{0}' was inferred to have byref type. Parameters of byref type must be given an explicit type annotation, e.g. 'x1: byref&lt;int&gt;'. When used, a byref parameter is implicitly dereferenced.</source>
-        <target state="translated">'{0}' parametresinin byref türüne sahip olduğu çıkarsandı. Byref türündeki parametrelere açık bir tür ek açıklaması verilmelidir, ör. 'x1: byref&lt;int&gt;'. Bir byref parametresi kullanılırsa parametre başvurusu örtük olarak kaldırılır.</target>
+        <target state="translated">'{0} ' parametresinin byref tipine sahip olduğu anlaşıldı. Byref türünün parametrelerine açık bir tür ek açıklaması verilmelidir, örn. 'x1: byref&lt;int&gt;'. Kullanıldığında, bir byref parametresi dolaylı olarak başvurudan çıkarılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNonUniformMemberUse">
@@ -6119,7 +6119,7 @@
       </trans-unit>
       <trans-unit id="activePatternChoiceHasFreeTypars">
         <source>Active pattern '{0}' has a result type containing type variables that are not determined by the input. The common cause is a when a result case is not mentioned, e.g. 'let (|A|B|) (x:int) = A x'. This can be fixed with a type constraint, e.g. 'let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x'</source>
-        <target state="translated">'{0}' etkin deseninin, giriş tarafından belirlenmeyen tür değişkenleri içeren bir sonuç türü var. Genellikle bunun nedeni, bir sonuç durumunun (ör. 'let (|A|B|) (x:int) = A x') belirtilmemesidir. Bu bir tür kısıtlamasıyla düzeltilebilir, ör. 'let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x'</target>
+        <target state="translated">'{0}' etkin deseninin, giriş tarafından belirlenmeyen tür değişkenleri içeren bir sonuç türü var. Genellikle bunun nedeni, bir sonuç durumunun belirtilmemesidir (ör. 'let (|A|B|) (x:int) = A x'). Bu bir tür kısıtlamasıyla düzeltilebilir (ör. 'let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x').</target>
         <note />
       </trans-unit>
       <trans-unit id="ilFieldHasOffsetForSequentialLayout">
@@ -6144,7 +6144,7 @@
       </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
         <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">MDB dosyasının adı &lt;assembly-file-name&gt;.mdb olmalıdır. --pdb seçeneği yoksayılacak.</target>
+        <target state="translated">MDB dosyasının adı &lt;assembly-file-name&gt;.mdb olmalıdır. --pdb seçeneği yok sayılacak.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilwriteMDBMemberMissing">
@@ -6224,12 +6224,12 @@
       </trans-unit>
       <trans-unit id="parsMissingGreaterThan">
         <source>Unmatched '&lt;'. Expected closing '&gt;'</source>
-        <target state="translated">Eşleşmeyen '&lt;'. Expected closing '&gt;'</target>
+        <target state="translated">Eşleşmeyen '&lt;'. Beklenen kapanış: '&gt;'</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString">
         <source>Unexpected quotation operator '&lt;@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '&lt;' and '@' characters.</source>
-        <target state="translated">Tür tanımında beklenmeyen '&lt;@' alıntı işleci. Bir tür sağlayıcısına bir harf dizisini statik bağımsız değişken olarak geçirmek istiyorsanız '&lt;' ile '@' karakterinin arasına bir boşluk koyun.</target>
+        <target state="translated">Tür tanımında beklenmeyen '&lt;@' alıntı işleci. Bir tür sağlayıcısına, bir düz metin dizesini statik bağımsız değişken olarak geçirmek istiyorsanız '&lt;' ile '@' karakterinin arasına bir boşluk koyun.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsErrorParsingAsOperatorName">
@@ -6584,7 +6584,7 @@
       </trans-unit>
       <trans-unit id="etDirectReferenceToGeneratedTypeNotAllowed">
         <source>A direct reference to the generated type '{0}' is not permitted. Instead, use a type definition, e.g. 'type TypeAlias = &lt;path&gt;'. This indicates that a type provider adds generated types to your assembly.</source>
-        <target state="translated">Oluşturulan '{0}' türüne doğrudan başvuruya izin verilmez. Bunun yerine bir tür tanımı (ör. 'type TypeAlias = &lt;path&gt;') kullanın. Bu, bir tür sağlayıcısının derlemeniz için oluşturulmuş türler eklediğini gösterir.</target>
+        <target state="translated">Oluşturulan '{0}' türüne doğrudan başvuruya izin verilmiyor. Bunun yerine bir tür tanımı (ör. 'type TypeAlias = &lt;path&gt;') kullanın. Bu, bir tür sağlayıcısının derlemeniz için oluşturulmuş türler eklediğini gösterir.</target>
         <note />
       </trans-unit>
       <trans-unit id="etProvidedTypeHasUnexpectedPath">
@@ -6739,7 +6739,7 @@
       </trans-unit>
       <trans-unit id="etStaticParameterRequiresAValue">
         <source>The static parameter '{0}' of the provided type or method '{1}' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. '{2}&lt;{3}=...&gt;'.</source>
-        <target state="translated">Sağlanan '{1}' türünün veya metodunun '{0}' statik parametresi bir değer gerektirir. İsteğe bağlı olarak, tür sağlayıcılarına yönelik statik parametreler adlandırılmış bağımsız değişkenler kullanılarak belirtilebilir, ör. '{2}&lt;{3}=...&gt;'.</target>
+        <target state="translated">Sağlanan '{1}' türünün veya metodunun '{0}' statik parametresi bir değer gerektirir. İsteğe bağlı olarak, tür sağlayıcılarına yönelik statik parametreler adlandırılmış bağımsız değişkenler kullanılarak belirtilebilir (ör. '{2}&lt;{3}=...&gt;').</target>
         <note />
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
@@ -6849,7 +6849,7 @@
       </trans-unit>
       <trans-unit id="parsUnmatchedLBrackLess">
         <source>Unmatched '[&lt;'. Expected closing '&gt;]'</source>
-        <target state="translated">Eşleşmeyen '[&lt;'. '&gt;]' kapanışı bekleniyordu</target>
+        <target state="translated">Eşleşmeyen '[&lt;'. Beklenen kapanış: '&gt;]'</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileMatch">
@@ -6954,12 +6954,12 @@
       </trans-unit>
       <trans-unit id="parsForDoExpected">
         <source>Missing 'do' in 'for' expression. Expected 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">'for' ifadesinde 'do' eksik. &lt;expr&gt; do &lt;expr&gt;' içinde 'for &lt;pat&gt; bekleniyordu.</target>
+        <target state="translated">'for' ifadesinde 'do' eksik. 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;' bekleniyordu.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidRelationInJoin">
         <source>Invalid join relation in '{0}'. Expected 'expr &lt;op&gt; expr', where &lt;op&gt; is =, =?, ?= or ?=?.</source>
-        <target state="translated">'{0}' içinde geçersiz birleştirme ilişkisi. &lt;op&gt; değerinin =, =?, ?= veya ?=? olduğu 'expr &lt;op&gt; expr' bekleniyordu.</target>
+        <target state="translated">'{0} ' içinde geçersiz birleştirme ilişkisi. Beklenen 'ifade &lt;op&gt; ifade', burada &lt;op&gt; =, =?, ?= veya ?=?.</target>
         <note />
       </trans-unit>
       <trans-unit id="typeInfoCallsWord">
@@ -7024,7 +7024,7 @@
       </trans-unit>
       <trans-unit id="chkNoByrefsOfByrefs">
         <source>Type '{0}' is illegal because in byref&lt;T&gt;, T cannot contain byref types.</source>
-        <target state="translated">byref&lt;T&gt;, içindeki T byref türleri içeremeyeceğinden '{0}' türü geçersizdir.</target>
+        <target state="translated">byref&lt;T&gt; içindeki T, byref türleri içeremeyeceğinden '{0}' türü geçersizdir.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastopsMaxArrayThirtyTwo">
@@ -7244,7 +7244,7 @@
       </trans-unit>
       <trans-unit id="tcIllegalStructTypeForConstantExpression">
         <source>This is not valid literal expression. The [&lt;Literal&gt;] attribute will be ignored.</source>
-        <target state="translated">Bu geçerli bir sabit değer ifadesi değil. [&lt;Literal&gt;] özniteliği yoksayılacak.</target>
+        <target state="translated">Bu geçerli bir değişmez değer ifadesi değil. [&lt;Literal&gt;] özniteliği yok sayılacak.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscSystemRuntimeInteropServicesIsRequired">
@@ -7914,7 +7914,7 @@
       </trans-unit>
       <trans-unit id="tcIsReadOnlyNotStruct">
         <source>A type annotated with IsReadOnly must also be a struct. Consider adding the [&lt;Struct&gt;] attribute to the type.</source>
-        <target state="translated">IsReadOnly ek açıklamasına sahip bir tür, aynı zamanda bir yapı olmalıdır. Türe [&lt;Struct&gt;] özniteliğini eklemeyi göz önünde bulundurun.</target>
+        <target state="translated">IsReadOnly ile açıklama eklenmiş bir tür de bir yapı olmalıdır. Türe [&lt;Struct&gt;] özniteliğini eklemeyi düşünün.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkStructsMayNotReturnAddressesOfContents">
