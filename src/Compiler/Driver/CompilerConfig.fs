@@ -565,6 +565,8 @@ type TcConfigBuilder =
 
         mutable noConditionalErasure: bool
 
+        mutable applyLineDirectives: bool
+
         mutable pathMap: PathMap
 
         mutable langVersion: LanguageVersion
@@ -739,6 +741,7 @@ type TcConfigBuilder =
             internalTestSpanStackReferring = false
             noConditionalErasure = false
             pathMap = PathMap.empty
+            applyLineDirectives = true
             langVersion = LanguageVersion.Default
             implicitIncludeDir = implicitIncludeDir
             defaultFSharpBinariesDir = defaultFSharpBinariesDir
@@ -1326,6 +1329,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
     member _.internalTestSpanStackReferring = data.internalTestSpanStackReferring
     member _.noConditionalErasure = data.noConditionalErasure
+    member _.applyLineDirectives = data.applyLineDirectives
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
 
     static member Create(builder, validate) =

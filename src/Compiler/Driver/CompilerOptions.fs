@@ -1397,6 +1397,7 @@ let editorSpecificFlags (tcConfigB: TcConfigBuilder) =
         CompilerOption("exename", tagNone, OptionString(fun s -> tcConfigB.exename <- Some s), None, None)
         CompilerOption("maxerrors", tagInt, OptionInt(fun n -> tcConfigB.maxErrors <- n), None, None)
         CompilerOption("noconditionalerasure", tagNone, OptionUnit(fun () -> tcConfigB.noConditionalErasure <- true), None, None)
+        CompilerOption("ignorelinedirectives", tagNone, OptionUnit(fun () -> tcConfigB.applyLineDirectives <- false), None, None)
     ]
 
 let internalFlags (tcConfigB: TcConfigBuilder) =
