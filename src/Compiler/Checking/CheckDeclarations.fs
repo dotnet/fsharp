@@ -4523,7 +4523,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
                 | SynModuleSigDecl.Exception (exnSig=SynExceptionSig(exnRepr=exnRepr; withKeyword=withKeyword; members=members)) ->
                       let ( SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=SynIdent(id,_)), _, xmlDoc, vis, m)) = exnRepr
                       let compInfo = SynComponentInfo(synAttrs, None, [], [id], xmlDoc, false, vis, id.idRange)
-                      let decls = [ MutRecShape.Tycon(SynTypeDefnSig.SynTypeDefnSig(compInfo, None, SynTypeDefnSigRepr.Exception exnRepr, withKeyword, members, m)) ]
+                      let decls = [ MutRecShape.Tycon(SynTypeDefnSig.SynTypeDefnSig(compInfo, SynTypeDefnSigRepr.Exception exnRepr, members, m, { TypeKeyword = None; WithKeyword = withKeyword; EqualsRange = None })) ]
                       decls, (false, false)
 
                 | SynModuleSigDecl.Val (vspec, _) -> 

@@ -8799,9 +8799,11 @@ FSharp.Compiler.Syntax.SynTypeDefnRepr: System.String ToString()
 FSharp.Compiler.Syntax.SynTypeDefnSig
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynComponentInfo get_typeInfo()
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynComponentInfo typeInfo
-FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynTypeDefnSig NewSynTypeDefnSig(FSharp.Compiler.Syntax.SynComponentInfo, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], FSharp.Compiler.Syntax.SynTypeDefnSigRepr, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberSig], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynTypeDefnSig NewSynTypeDefnSig(FSharp.Compiler.Syntax.SynComponentInfo, FSharp.Compiler.Syntax.SynTypeDefnSigRepr, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberSig], FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia)
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynTypeDefnSigRepr get_typeRepr()
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Syntax.SynTypeDefnSigRepr typeRepr
+FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia get_trivia()
+FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia trivia
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.SynTypeDefnSig: FSharp.Compiler.Text.Range get_range()
@@ -8810,10 +8812,6 @@ FSharp.Compiler.Syntax.SynTypeDefnSig: Int32 Tag
 FSharp.Compiler.Syntax.SynTypeDefnSig: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynTypeDefnSig: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberSig] get_members()
 FSharp.Compiler.Syntax.SynTypeDefnSig: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynMemberSig] members
-FSharp.Compiler.Syntax.SynTypeDefnSig: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] equalsRange
-FSharp.Compiler.Syntax.SynTypeDefnSig: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_equalsRange()
-FSharp.Compiler.Syntax.SynTypeDefnSig: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_withKeyword()
-FSharp.Compiler.Syntax.SynTypeDefnSig: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] withKeyword
 FSharp.Compiler.Syntax.SynTypeDefnSig: System.String ToString()
 FSharp.Compiler.Syntax.SynTypeDefnSigRepr
 FSharp.Compiler.Syntax.SynTypeDefnSigRepr+Exception: FSharp.Compiler.Syntax.SynExceptionDefnRepr get_repr()
@@ -9457,6 +9455,17 @@ FSharp.Compiler.SyntaxTrivia.SynPatOrTrivia: FSharp.Compiler.Text.Range BarRange
 FSharp.Compiler.SyntaxTrivia.SynPatOrTrivia: FSharp.Compiler.Text.Range get_BarRange()
 FSharp.Compiler.SyntaxTrivia.SynPatOrTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynPatOrTrivia: Void .ctor(FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia
+FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia: FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia Zero
+FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia: FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia get_Zero()
+FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] EqualsRange
+FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] TypeKeyword
+FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] WithKeyword
+FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_EqualsRange()
+FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_TypeKeyword()
+FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_WithKeyword()
+FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynTypeDefnSigTrivia: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.SyntaxTrivia.SynTypeDefnTrivia
 FSharp.Compiler.SyntaxTrivia.SynTypeDefnTrivia: FSharp.Compiler.SyntaxTrivia.SynTypeDefnTrivia Zero
 FSharp.Compiler.SyntaxTrivia.SynTypeDefnTrivia: FSharp.Compiler.SyntaxTrivia.SynTypeDefnTrivia get_Zero()
