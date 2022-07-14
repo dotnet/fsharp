@@ -47,15 +47,14 @@ module CheckNewSyntax =
     if f_Length(myInstance) <> 0 then
         failwith "Unexpected result"
 
-// TODO: fix these
-//    if f_InstanceMethod(myInstance) <> 8 then
-//        failwith "Unexpected result"
-//
-//    if f_set_Length(myInstance) <> () then
-//        failwith "Unexpected result"
-//
-//    if f_Length(myInstance) <> 3 then
-//        failwith "Unexpected result"
-//
-//    if f_Item(myInstance) <> "Hello" then
-//        failwith "Unexpected result"
+    if f_InstanceMethod(myInstance) <> 8 then
+        failwith "Unexpected result"
+
+    if f_set_Length(myInstance) <> () then
+        failwith "Unexpected result"
+
+    if f_Length(myInstance) <> 3 then
+        failwith "Unexpected result"
+
+    if f_Item(myInstance) <> "Hello" then
+        failwith "Unexpected result"

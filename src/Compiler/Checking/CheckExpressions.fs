@@ -8780,7 +8780,7 @@ and TcTraitItemThen cenv overallTy env objOpt traitInfo tpenv mItem delayed =
             Expr.Op (TOp.TraitCall traitInfo, [], objArgs, mItem)
         | _ ->
             let vs, ves = argTys |> List.mapi (fun i ty -> mkCompGenLocal mItem ("arg" + string i) ty) |> List.unzip
-            let expr = Expr.Op (TOp.TraitCall traitInfo, [], ves, mItem)
+            let expr = Expr.Op (TOp.TraitCall traitInfo, [], objArgs@ves, mItem)
             let v, body = MultiLambdaToTupledLambda g vs expr
             mkLambda mItem v (body, retTy)
 
