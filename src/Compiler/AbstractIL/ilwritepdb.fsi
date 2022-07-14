@@ -87,10 +87,6 @@ val sizeof_IMAGE_DEBUG_DIRECTORY: System.Int32
 
 val logDebugInfo: string -> PdbData -> unit
 
-#if ENABLE_MONO_SUPPORT
-val writeMdbInfo<'a> : string -> string -> PdbData -> 'a
-#endif
-
 type BinaryChunk = { size: int32; addr: int32 }
 
 type idd =
@@ -144,11 +140,6 @@ val getInfoForPortablePdb:
     embeddedPdb: bool ->
     deterministic: bool ->
         idd[]
-
-#if !FX_NO_PDB_WRITER
-val writePdbInfo:
-    showTimes: bool -> outfile: string -> pdbfile: string -> info: PdbData -> cvChunk: BinaryChunk -> idd[]
-#endif
 
 /// Check to see if a scope has a local with the same name as any of its children
 ///

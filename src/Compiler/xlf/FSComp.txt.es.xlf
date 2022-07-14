@@ -457,6 +457,11 @@
         <target state="translated">Mostrar los valores permitidos para la versión de idioma, especificar la versión de idioma como "latest" "preview"</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsPdbMatchesOutputFileName">
+        <source>The pdb output file name cannot match the build output filename use --pdb:filename.pdb</source>
+        <target state="new">The pdb output file name cannot match the build output filename use --pdb:filename.pdb</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
         <target state="translated">Generar un ensamblado de referencia, en lugar de un ensamblado completo, como salida principal</target>
@@ -5077,16 +5082,6 @@
         <target state="translated">Archivo de información de vínculos de origen para insertar en el archivo PDB portable</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsEmbeddedSourceRequirePortablePDBs">
-        <source>--embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">El modificador --embed solo se admite cuando se emite un archivo PDB portátil (--debug:portable o --debug:embedded)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsSourceLinkRequirePortablePDBs">
-        <source>--sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">El modificador --sourcelink solo se admite cuando se emite un archivo PDB portátil (--debug:portable o --debug:embedded)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="srcFileTooLarge">
         <source>Source file is too large to embed in a portable PDB</source>
         <target state="translated">El archivo de código fuente es demasiado grande para insertarlo en un archivo PDB portable</target>
@@ -6142,21 +6137,6 @@
         <target state="translated">Los miembros de extensión no pueden proporcionar sobrecargas de operador. En su lugar, considere definir el operador como parte de la definición de tipo.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
-        <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">El nombre del archivo MDB debe ser &lt;nombre de archivo de ensamblado&gt;.mdb. Se omitirá la opción--pdb.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteMDBMemberMissing">
-        <source>MDB generation failed. Could not find compatible member {0}</source>
-        <target state="translated">Error en la generación de MDB. No se encontró un miembro {0} compatible.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteErrorCreatingMdb">
-        <source>Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</source>
-        <target state="translated">No se puede generar información de depuración de MDB. No se pudo cargar el tipo 'MonoSymbolWriter' del ensamblado 'Mono.CompilerServices.SymbolWriter.dll'.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnionCaseNameConflictsWithGeneratedType">
         <source>The union case named '{0}' conflicts with the generated type '{1}'</source>
         <target state="translated">El caso de unión denominado '{0}' entra en conflicto con el tipo generado '{1}'.</target>
@@ -6430,11 +6410,6 @@
       <trans-unit id="fscAssemblyWildcardAndDeterminism">
         <source>An {0} specified version '{1}', but this value is a wildcard, and you have requested a deterministic build, these are in conflict.</source>
         <target state="translated">Un objeto {0} especificó la versión "{1}", pero este valor es un carácter comodín y ha solicitado una compilación determinista. Estas opciones están en conflicto.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
-        <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Las compilaciones deterministas solo admiten PDB portátiles (--Debug: portable o--Debug: embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -8060,11 +8035,6 @@
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
         <target state="translated">Asigna rutas físicas de acceso a nombres de ruta de origen resultantes del compilador</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fscPathMapDebugRequiresPortablePdb">
-        <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">--pathmap solo se puede utilizar con PDB portátiles (--Debug:portable o --Debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">
