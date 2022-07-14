@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Collections.Generic
+open System.Threading
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.VisualStudio.Core.Imaging
@@ -75,7 +76,7 @@ module internal QuickInfoViewProvider =
                 match item with
                 | :? NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
                     flushRuns()
-                    let navigableTextRun = NavigableTextRun(classificationTag, item.Text, fun () -> navigation.NavigateTo nav.Range)
+                    let navigableTextRun = NavigableTextRun(classificationTag, item.Text, fun () -> navigation.NavigateTo(nav.Range, CancellationToken.None))
                     currentContainerItems.Add(navigableTextRun :> obj)
                 | _ when item.Tag = TextTag.LineBreak ->
                     flushRuns()

@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureDelegateTypeNameResolutionFix">
         <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
-        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
+        <target state="translated">修正委派類型名稱的解析，請參閱 https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
-        <target state="new">give error on deprecated access of construct with RequireQualifiedAccess attribute</target>
+        <target state="translated">對具有 RequireQualifiedAccess 屬性的建構的已取代存取發出錯誤</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -239,7 +239,7 @@
       </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
-        <target state="new">list literals of any size</target>
+        <target state="translated">列出任何大小的常值</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
@@ -439,17 +439,17 @@
       </trans-unit>
       <trans-unit id="optsClearResultsCache">
         <source>Clear the package manager results cache</source>
-        <target state="new">Clear the package manager results cache</target>
+        <target state="translated">清除封裝管理員結果快取</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
-        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
+        <target state="translated">發出參考組件的使用無效，請勿同時使用 '--staticlink' 或 '--refonly' 和 '--refout'。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
-        <target state="new">Invalid reference assembly path'</target>
+        <target state="translated">無效的參考組件路徑'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -464,12 +464,12 @@
       </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
-        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <target state="translated">產生參考組件，而非完整組件作為主要輸出</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
-        <target state="new">Produce a reference assembly with the specified file path.</target>
+        <target state="translated">使用指定的檔案路徑產生參考組件。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -529,7 +529,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
         <source>Expecting expression</source>
-        <target state="new">Expecting expression</target>
+        <target state="translated">必須是運算式</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -609,7 +609,7 @@
       </trans-unit>
       <trans-unit id="reprStateMachineNotCompilableNoAlternative">
         <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
-        <target state="translated">此狀態機器靜並非靜態可編譯，且沒有任何替代方法。{0}。請使用 if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' 以提供替代項。</target>
+        <target state="translated">此狀態機器並非靜態可編譯，且沒有任何替代方法。{0}。請使用 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' 以提供替代項。</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
@@ -639,7 +639,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this record expression.</source>
-        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <target state="translated">欄位 '{0}' 在這個記錄運算式中出現多次。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
@@ -664,7 +664,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this anonymous record type.</source>
-        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
+        <target state="translated">欄位 '{0}' 在這個匿名記錄類型中出現多次。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -1529,22 +1529,22 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is sealed but the signature implies it is not. Consider adding the [&lt;Sealed&gt;] attribute to the signature.</source>
-        <target state="translated">因為實作類型已密封，特徵標記卻表示未密封，所以特徵標記和實作中類型 '{1}' 的 {0} 定義不相容。請考慮將 [&lt;Sealed&gt;] 屬性新增到特徵標記。</target>
+        <target state="translated">因為實作類型已密封，特徵標記卻表示未密封，所以特徵標記和實作中類型 '{0}' 的 {1} 定義不相容。請考慮將 [&lt;Sealed&gt;] 屬性新增到特徵標記。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">因為實作類型未密封，但特徵標記表示其已密封，所以特徵標記和實作中類型 '{1}' 的 {0} 定義不相容。請考慮將 [&lt;Sealed&gt;] 屬性新增到實作。</target>
+        <target state="translated">因為實作類型未密封，但特徵標記表示其已密封，所以特徵標記和實作中類型 '{0}' 的 {1} 定義不相容。請考慮將 [&lt;Sealed&gt;] 屬性新增到實作。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation is an abstract class but the signature is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the signature.</source>
-        <target state="translated">因為實作是抽象類別，但特徵標記並不是，所以特徵標記和實作中類型 '{1}' 的 {0} 定義不相容。請考慮將 [&lt;AbstractClass&gt;] 屬性新增到特徵標記。</target>
+        <target state="translated">因為實作是抽象類別，但特徵標記並不是，所以特徵標記和實作中類型 '{0}' 的 {1} 定義不相容。請考慮將 [&lt;AbstractClass&gt;] 屬性新增到特徵標記。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the signature is an abstract class but the implementation is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the implementation.</source>
-        <target state="translated">因為特徵標記是抽象類別。但實作並不是，所以特徵標記和實作中類型 '{1}' 的 {0} 定義不相容。請考慮將 [&lt;AbstractClass&gt;] 屬性新增到實作。</target>
+        <target state="translated">因為特徵標記是抽象類別。但實作並不是，所以特徵標記和實作中類型 '{0}' 的 {1} 定義不相容。請考慮將 [&lt;AbstractClass&gt;] 屬性新增到實作。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes">
@@ -4589,7 +4589,7 @@
       </trans-unit>
       <trans-unit id="tcImplementsIEquatableExplicitly">
         <source>The struct, record or union type '{0}' implements the interface 'System.IEquatable&lt;_&gt;' explicitly. Apply the 'CustomEquality' attribute to the type and provide a consistent implementation of the non-generic override 'System.Object.Equals(obj)'.</source>
-        <target state="translated">結構、記錄或等位型別 '{0}' 會明確實作介面 'System.IEquatable&lt;_&gt;'。請將 'CustomEquality' 屬性套用到類型，並提供一致的非泛型覆寫 'System.Object.Equals(obj)' 實作。</target>
+        <target state="translated">結構、記錄或等位類型 '{0}' 會明確實作介面 'System.IEquatable&lt;_&gt;'。請將 'CustomEquality' 屬性套用到類型，並提供一致的非泛型覆寫 'System.Object.Equals(obj)' 實作。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExplicitTypeSpecificationCannotBeUsedForExceptionConstructors">
@@ -5029,7 +5029,7 @@
       </trans-unit>
       <trans-unit id="optsPlatform">
         <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="needs-review-translation">限制這個程式碼可以在哪些平台執行: x86、Itanium、x64、anycpu32bitpreferred 或 anycpu。預設為 anycpu。</target>
+        <target state="translated">限制這個程式碼可以在哪些平台執行: x86、x64、Arm、Arm64、Itanium、anycpu32bitpreferred 或 anycpu。預設為 anycpu。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5094,7 +5094,7 @@
       </trans-unit>
       <trans-unit id="optsLinkresource">
         <source>Link the specified resource to this assembly where the resinfo format is &lt;file&gt;[,&lt;string name&gt;[,public|private]]</source>
-        <target state="translated">將指定的資源連結到此組件，其中 resinfo 格式為 &lt;檔案&gt;[,&lt;字串名稱&gt;[,public|private]]</target>
+        <target state="translated">將指定的資源連結到此組件，其中 resinfo 格式為 &lt;file&gt;[,&lt;string name&gt;[,public|private]]</target>
         <note />
       </trans-unit>
       <trans-unit id="optsDebugPM">
@@ -5314,7 +5314,7 @@
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
         <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
-        <target state="needs-review-translation">無法辨識的平台 '{0}'，有效的值是 'x86'、'x64'、'Itanium'、'anycpu32bitpreferred' 和 'anycpu'</target>
+        <target state="translated">無法辨識的平台 '{0}'，有效值為 'x86'、'x64'、'Arm'、'Arm64'、'Itanium'、'anycpu32bitpreferred' 和 'anycpu'。預設值為 anycpu。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">
@@ -5829,7 +5829,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
-        <target state="new">這不是有效的數值常值。有效的數值常值包括 1、0x1、0o1、0b1、1l (int)、1u (uint32)、1L (int64)、1UL (uint64)、1s (int16)、1y (sbyte)、1uy (byte)、1.0 (float)、1.0f (float32)、1.0m (decimal)、1I (BigInteger)。</target>
+        <target state="new">This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">

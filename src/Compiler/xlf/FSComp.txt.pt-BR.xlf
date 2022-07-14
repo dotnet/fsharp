@@ -34,7 +34,7 @@
       </trans-unit>
       <trans-unit id="chkInfoRefcellDecr">
         <source>The use of 'decr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'decr cell' to 'cell.Value &lt;- cell.Value - 1'.</source>
-        <target state="translated">O uso de 'decr' da biblioteca F# foi preterido. Consulte https://aka.ms/fsharp-refcell-ops. Por exemplo, altere a célula 'decr célula' para 'cell.Value &lt;- cell.Value - 1'.</target>
+        <target state="translated">O uso de 'decr' da biblioteca F# foi preterido. Consulte https://aka.ms/fsharp-refcell-ops. Por exemplo, altere a célula 'decr cell' para 'cell.Value &lt;- cell.Value - 1'.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkInfoRefcellDeref">
@@ -44,7 +44,7 @@
       </trans-unit>
       <trans-unit id="chkInfoRefcellIncr">
         <source>The use of 'incr' from the F# library is deprecated. See https://aka.ms/fsharp-refcell-ops. For example, please change 'incr cell' to 'cell.Value &lt;- cell.Value + 1'.</source>
-        <target state="translated">O uso de 'incr' da biblioteca F# foi preterido. Consulte https://aka.ms/fsharp-refcell-ops. Por exemplo, altere a célula 'incr célula' para 'cell.Value &lt;- cell.Value + 1'.</target>
+        <target state="translated">O uso de 'incr' da biblioteca F# foi preterido. Consulte https://aka.ms/fsharp-refcell-ops. Por exemplo, altere a célula 'incr cell' para 'cell.Value &lt;- cell.Value + 1'.</target>
         <note />
       </trans-unit>
       <trans-unit id="containerDeprecated">
@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureDelegateTypeNameResolutionFix">
         <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
-        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
+        <target state="translated">corrigir para resolução de nomes de tipos delegados, consulte https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
-        <target state="new">give error on deprecated access of construct with RequireQualifiedAccess attribute</target>
+        <target state="translated">fornecer erro no acesso preterido do constructo com o atributo RequireQualifiedAccess</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -239,7 +239,7 @@
       </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
-        <target state="new">list literals of any size</target>
+        <target state="translated">literais de lista de qualquer tamanho</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
@@ -439,17 +439,17 @@
       </trans-unit>
       <trans-unit id="optsClearResultsCache">
         <source>Clear the package manager results cache</source>
-        <target state="new">Clear the package manager results cache</target>
+        <target state="translated">Limpar o cache de resultados do gerenciador de pacotes</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
-        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
+        <target state="translated">Uso inválido de emitir um assembly de referência, não use '--staticlink' ou '--reutilly' e '--refout' juntos.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
-        <target state="new">Invalid reference assembly path'</target>
+        <target state="translated">Caminho de assembly de referência inválido'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -464,12 +464,12 @@
       </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
-        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <target state="translated">Produzir um assembly de referência, em vez de um assembly completo, como a saída primária</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
-        <target state="new">Produce a reference assembly with the specified file path.</target>
+        <target state="translated">Produza um assembly de referência com o caminho de arquivo especificado.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -529,7 +529,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
         <source>Expecting expression</source>
-        <target state="new">Expecting expression</target>
+        <target state="translated">Esperando uma expressão</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -639,7 +639,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this record expression.</source>
-        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <target state="translated">O campo '{0}' aparece várias vezes nesta expressão de registro.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
@@ -664,7 +664,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this anonymous record type.</source>
-        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
+        <target state="translated">O campo '{0}' aparece várias vezes nesse tipo de registro anônimo.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -1434,7 +1434,7 @@
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityGenericParametersAreDifferentKinds">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe generic parameters in the signature and implementation have different kinds. Perhaps there is a missing [&lt;Measure&gt;] attribute.</source>
-        <target state="translated">O módulo '{0}' contém\n {1} \nmas sua assinatura especifica\n {2} \nOs parâmetros genéricos na assinatura e na implementação apresentam tipos diferentes. Talvez haja um atributo [&lt;Measure&gt;] ausente.</target>
+        <target state="translated">O módulo '{0}' contém\n {1} \nbut sua assinatura especifica\n {2} \nOs parâmetros genéricos na assinatura e na implementação apresentam tipos diferentes. Talvez haja um atributo [&lt;Measure&gt;] ausente.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityAritiesDiffer">
@@ -1539,7 +1539,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation is an abstract class but the signature is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the signature.</source>
-        <target state="translated">As definições de {0} para o tipo '{1}' na assinatura e na implementação não são compatíveis, porque a implementação é uma classe abstrata, mas a assinatura não é. Adicione o atributo [&lt; AbstractClass&gt;] para a assinatura.</target>
+        <target state="translated">As definições de {0} para o tipo '{1}' na assinatura e na implementação não são compatíveis, porque a implementação é uma classe abstrata, mas a assinatura não é. Adicione o atributo [&lt;AbstractClass&gt;] para a assinatura.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract">
@@ -5029,7 +5029,7 @@
       </trans-unit>
       <trans-unit id="optsPlatform">
         <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="needs-review-translation">Limite em quais plataformas este código pode ser executado: x86, Itanium, x64, anycpu32bitpreferred ou anycpu. O padrão é anycpu.</target>
+        <target state="translated">Limite em quais plataformas esse código pode ser executado: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred ou anycpu. O padrão é anycpu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5079,7 +5079,7 @@
       </trans-unit>
       <trans-unit id="optsSourceLink">
         <source>Source link information file to embed in the portable PDB file</source>
-        <target state="translated">O arquivo de informações do link de origem para inserir em um arquivo PDB portátil</target>
+        <target state="translated">O arquivo de informações do Source Link para inserir em um arquivo PDB portátil</target>
         <note />
       </trans-unit>
       <trans-unit id="srcFileTooLarge">
@@ -5314,7 +5314,7 @@
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
         <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
-        <target state="needs-review-translation">Plataforma não reconhecida '{0}', os valores válidos são 'x86', 'x64', 'Itanium', 'anycpu32bitpreferred' e 'anycpu'</target>
+        <target state="translated">Plataforma não reconhecida '{0}', os valores válidos são 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred' e 'anycpu'. O padrão é anycpu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">
@@ -5829,7 +5829,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
-        <target state="new">Este não é um literal numérico válido. Literais numéricos válidos incluem 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</target>
+        <target state="new">This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">
@@ -6399,7 +6399,7 @@
       </trans-unit>
       <trans-unit id="fscResxSourceFileDeprecated">
         <source>Passing a .resx file ({0}) as a source file to the compiler is deprecated. Use resgen.exe to transform the .resx file into a .resources file to pass as a --resource option. If you are using MSBuild, this can be done via an &lt;EmbeddedResource&gt; item in the .fsproj project file.</source>
-        <target state="translated">Passar um arquivo. resx ({0}) como um arquivo de origem para o compilador é preterido. Use resgen.exe para transformar o arquivo .resx em um arquivo .resources para passar como uma opção --resource.Se você estiver usando MSBuild, isso poderá ser feito por meio de um item &lt;EmbeddedResource&gt; no arquivo de projeto. fsproj.</target>
+        <target state="translated">Passar um arquivo .resx ({0}) como um arquivo de origem para o compilador é preterido. Use resgen.exe para transformar o arquivo .resx em um arquivo .resources para passar como uma opção --resource.Se você estiver usando MSBuild, isso poderá ser feito por meio de um item &lt;EmbeddedResource&gt; no arquivo de projeto .fsproj.</target>
         <note />
       </trans-unit>
       <trans-unit id="fscStaticLinkingNoProfileMismatches">

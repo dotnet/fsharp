@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureDelegateTypeNameResolutionFix">
         <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
-        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
+        <target state="translated">修复了委托类型名称的解析，请参阅 https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
-        <target state="new">give error on deprecated access of construct with RequireQualifiedAccess attribute</target>
+        <target state="translated">对具有 RequireQualifiedAccess 属性的构造进行弃用的访问时出错</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -239,7 +239,7 @@
       </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
-        <target state="new">list literals of any size</target>
+        <target state="translated">列出任何大小的文本</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
@@ -439,17 +439,17 @@
       </trans-unit>
       <trans-unit id="optsClearResultsCache">
         <source>Clear the package manager results cache</source>
-        <target state="new">Clear the package manager results cache</target>
+        <target state="translated">清除包管理器结果缓存</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
-        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
+        <target state="translated">发出引用程序集的使用无效，请勿同时使用“--staticlink”或“--refonly”和“--refout”。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
-        <target state="new">Invalid reference assembly path'</target>
+        <target state="translated">引用程序集路径无效</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -464,12 +464,12 @@
       </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
-        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <target state="translated">生成引用程序集而不是完整程序集作为主输出</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
-        <target state="new">Produce a reference assembly with the specified file path.</target>
+        <target state="translated">生成具有指定文件路径的引用程序集。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -529,7 +529,7 @@
       </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
         <source>Expecting expression</source>
-        <target state="new">Expecting expression</target>
+        <target state="translated">应为表达式</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -639,7 +639,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this record expression.</source>
-        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <target state="translated">字段“{0}”在此记录表达式中多次出现。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
@@ -664,7 +664,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this anonymous record type.</source>
-        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
+        <target state="translated">字段“{0}”在此匿名记录类型中多次出现。</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -1529,22 +1529,22 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is sealed but the signature implies it is not. Consider adding the [&lt;Sealed&gt;] attribute to the signature.</source>
-        <target state="translated">签名和实现中类型为“{1}”的 {0} 定义不兼容，因为实现类型已密封，但签名暗示其未密封。请考虑向签名添加 [&lt;Sealed&gt;] 属性。</target>
+        <target state="translated">签名和实现中类型为“{0}”的 {1} 定义不兼容，因为实现类型已密封，但签名暗示其未密封。请考虑向签名添加 [&lt;Sealed&gt;] 属性。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">签名和实现中类型为“{1}”的 {0} 定义不兼容，因为实现类型并未密封，但签名暗示其已密封。请考虑向实现添加 [&lt;Sealed&gt;] 属性。</target>
+        <target state="translated">签名和实现中类型为“{0}”的 {1} 定义不兼容，因为实现类型并未密封，但签名暗示其已密封。请考虑向实现添加 [&lt;Sealed&gt;] 属性。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation is an abstract class but the signature is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the signature.</source>
-        <target state="translated">签名和实现中类型为“{1}”的 {0} 定义不兼容，因为实现是一个抽象类，但签名不是。请考虑向签名添加 [&lt;AbstractClass&gt;] 属性。</target>
+        <target state="translated">签名和实现中类型为“{0}”的 {1} 定义不兼容，因为实现是一个抽象类，但签名不是。请考虑向签名添加 [&lt;AbstractClass&gt;] 属性。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the signature is an abstract class but the implementation is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the implementation.</source>
-        <target state="translated">签名和实现中类型为“{1}”的 {0} 定义不兼容，因为签名是一个抽象类，但实现不是。请考虑向实现添加 [&lt;AbstractClass&gt;] 属性。</target>
+        <target state="translated">签名和实现中类型为“{0}”的 {1} 定义不兼容，因为签名是一个抽象类，但实现不是。请考虑向实现添加 [&lt;AbstractClass&gt;] 属性。</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes">
@@ -5029,7 +5029,7 @@
       </trans-unit>
       <trans-unit id="optsPlatform">
         <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="needs-review-translation">限制可以运行此代码的平台: x86、Itanium、x64、anycpu32bitpreferred 或 anycpu。默认值为 anycpu。</target>
+        <target state="translated">限制此代码可以在哪些平台上运行:x86、x64、Arm、Arm64、Itanium、anycpu32bitpreferred 或 anycpu。默认值为 anycpu。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5314,7 +5314,7 @@
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
         <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
-        <target state="needs-review-translation">无法识别的平台“{0}”，有效值为“x86”、“x64”、“Itanium”、“anycpu32bitpreferred”和“anycpu”</target>
+        <target state="translated">无法识别的平台“{0}”，有效值为“x86”、“x64”、“Arm”、“Arm64”、“Itanium”、“anycpu32bitpreferred”和“anycpu”。默认值为 anycpu。</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">
@@ -5829,7 +5829,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
-        <target state="new">这不是有效的数字文本。有效的数字文本包括 1、0x1、0o1、0b1、1l (int)、1u (uint32)、1L (int64)、1UL (uint64)、1s (int16)、1y (sbyte)、1uy (byte)、1.0 (float)、1.0f (float32)、1.0m (decimal)、1I (BigInteger)。</target>
+        <target state="new">This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">
@@ -6714,7 +6714,7 @@
       </trans-unit>
       <trans-unit id="etStaticParameterRequiresAValue">
         <source>The static parameter '{0}' of the provided type or method '{1}' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. '{2}&lt;{3}=...&gt;'.</source>
-        <target state="translated">提供的类型或方法“{1}”的静态参数“{0}”需要一个值。可以选择使用命名参数(例如 "{2}&lt;{3}=...&gt;")指定类型提供程序的静态参数。</target>
+        <target state="translated">提供的类型或方法“{0}”的静态参数“{1}”需要一个值。可以选择使用命名参数(例如 "{2}&lt;{3}=...&gt;")指定类型提供程序的静态参数。</target>
         <note />
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
