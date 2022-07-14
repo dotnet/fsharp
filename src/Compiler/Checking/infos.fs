@@ -1582,6 +1582,10 @@ type ILPropInfo =
         (x.HasGetter && x.GetterMethod.IsNewSlot) ||
         (x.HasSetter && x.SetterMethod.IsNewSlot)
 
+    member _.IsRequired =
+        //x.RawMetadata.Attributes
+        false
+
     /// Get the names and types of the indexer arguments associated with the IL property.
     ///
     /// Any type parameters of the enclosing type are instantiated in the type returned.

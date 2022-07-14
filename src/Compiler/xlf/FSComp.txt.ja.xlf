@@ -252,6 +252,11 @@
         <target state="translated">whitespace relaxation v2</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRequiredMembers">
+        <source>support for required type members</source>
+        <target state="new">support for required type members</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">再開可能なステート マシン</target>

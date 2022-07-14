@@ -252,6 +252,11 @@
         <target state="translated">空格放空 v2</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRequiredMembers">
+        <source>support for required type members</source>
+        <target state="new">support for required type members</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">可恢复状态机</target>

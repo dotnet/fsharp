@@ -695,6 +695,9 @@ type ILPropInfo =
     /// Get the declaring IL type of the IL property, including any generic instantiation
     member ILTypeInfo: ILTypeInfo
 
+    /// Is the property requied (has the RequiredMemberAttribute).
+    member IsRequired: bool
+
     /// Indicates if the IL property is logically a 'newslot', i.e. hides any previous slots of the same name.
     member IsNewSlot: bool
 

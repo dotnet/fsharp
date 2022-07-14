@@ -21,6 +21,8 @@ open FSharp.Compiler.TypeHierarchy
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
 open FSharp.Core.CompilerServices
+open Features
+
 #endif
 
 exception ObsoleteWarning of string * range
@@ -236,8 +238,20 @@ let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     | Some ([ILAttribElem.String (Some msg) ], _) when not isByrefLikeTyconRef -> 
             WarnD(ObsoleteWarning(msg, m))
     | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef -> 
-        if isError then 
-            ErrorD (ObsoleteError(msg, m))
+        if isError then
+            if g.langVersion.SupportsFeature(LanguageFeature.RequiredMembersSupport) then
+                // In some cases C# will generate both ObsoleteAttribute and CompilerFeatureRequiredAttribute.
+                // Specifically, when default constructor is generated for class with any reqired members in them.
+                // ObsoleteAttribute should be ignored if CompilerFeatureRequiredAttribute is present, and its name is "RequiredMembers".
+                // REVIEW: Shall feature names be moved to LanguageFeatures (or elsewhere), and be tied to actual features somehow?
+                let (AttribInfo(tref,_)) = g.attrib_CompilerFeatureRequiredAttribute
+                match TryDecodeILAttribute tref cattrs with
+                | Some([ILAttribElem.String (Some featureName) ], _) when featureName = "RequiredMembers" ->
+                    CompleteD
+                | _ ->
+                    ErrorD (ObsoleteError(msg, m))
+            else
+                ErrorD (ObsoleteError(msg, m))
         else 
             WarnD (ObsoleteWarning(msg, m))
     | Some ([ILAttribElem.String None ], _) when not isByrefLikeTyconRef -> 

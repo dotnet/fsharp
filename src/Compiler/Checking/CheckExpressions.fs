@@ -9730,6 +9730,23 @@ and TcMethodApplication
     // Handle post-hoc property assignments
     let setterExprPrebinders, callExpr3 =
         let expr = callExpr2b
+
+        // Make sure, if apparent type has any required properties, they all are in the `finalAssignedItemSetters`.
+        // If if is a constructor, and it is not marked with `SetsRequiredMembersAttributeAttribute`, then:
+        // 1. Get all properties of the type.
+        // 2. Check if any of them has `IsRequired` set.
+        //      2.1. If there are none, proceed as usual
+        //      2.2. If there are any, make sure all of them (or their setters) are in `finalAssignedItemSetters`.
+        // 3. If some are missing, produce a diagnostic which missing ones.
+        if g.langVersion.SupportsFeature(LanguageFeature.RequiredMembersSupport) && finalCalledMethInfo.IsConstructor then
+            let _requiredProps = 
+                //&& (TryFindFSharpAttribute g.attrib_SetsRequiredMembersAttribute finalCalledMethInfo ) then []
+                match finalCalledMethInfo with
+                | FSMeth (_, _enclosingType, _vref, _) -> [] // TODO: check if constructor has attrib_SetsRequiredMembersAttribute, then we don't required to init anything, otherwise check for props
+                | _ -> []
+
+            ()
+                    
         if isCheckingAttributeCall then
             [], expr
         elif isNil finalAssignedItemSetters then
