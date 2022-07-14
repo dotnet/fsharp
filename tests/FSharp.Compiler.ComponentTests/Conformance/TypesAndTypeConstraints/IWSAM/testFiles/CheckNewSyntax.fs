@@ -29,12 +29,19 @@ module CheckNewSyntax =
     //let inline f_set_Length2<'T when 'T : (member Length: int with set) >(x: 'T) = x.Length <- 3
     //let inline f_Item2<'T when 'T : (member Item: int -> string with get) >(x: 'T) = x[3]
         
-    assert (f_StaticMethod<MyType>() = 8)
-    assert (f_set_StaticProperty<MyType>() = ())
-    assert (f_StaticProperty<MyType>() = 3)
+    if f_StaticMethod<MyType>() <> 8 then
+        failwith "Unexpected result"
+
+    if f_set_StaticProperty<MyType>() <> () then
+        failwith "Unexpected result"
+
+    if f_StaticProperty<MyType>() <> 3 then
+        failwith "Unexpected result"
 
     let myInstance = MyType()
 
-    assert (f_set_Length(myInstance) = ())
-    assert (f_Length(myInstance) = 3)
-    assert false
+    if f_set_Length(myInstance) <> () then
+        failwith "Unexpected result"
+
+    if f_Length(myInstance) <> 3 then
+        failwith "Unexpected result"

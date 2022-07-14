@@ -2080,7 +2080,7 @@ let CheckRecdFieldMutation m denv (rfinfo: RecdFieldInfo) =
     if not rfinfo.RecdField.IsMutable then
         errorR (FieldNotMutable (denv, rfinfo.RecdFieldRef, m))
 
-/// Generate a witness for the given (solved) constraint.  Five possiblilities are taken
+/// Generate a witness for the given (solved) constraint.  Five possibilities are taken
 /// into account.
 ///   1. The constraint is solved by a .NET-declared method or an F#-declared method
 ///   2. The constraint is solved by an F# record field
