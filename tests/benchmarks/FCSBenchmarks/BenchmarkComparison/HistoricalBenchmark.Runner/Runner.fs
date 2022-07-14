@@ -184,6 +184,8 @@ type RunConfig =
         Parallelism : int
         /// Name to suffx the benchmark result files with
         ResultsSuffix : string
+        /// Whether to build local codebases before benchmarking
+        BuildLocalCodebases : bool
     }
     with
         member this.CheckoutBaseDir = Path.Combine(this.BaseDir, "checkouts")
@@ -196,6 +198,7 @@ module RunConfig =
             BaseDir = "."
             Parallelism = 1
             ResultsSuffix = "results"
+            BuildLocalCodebases = false
         }
 
 /// Benchmarking a specific git revision of FCS
@@ -294,8 +297,11 @@ module Git =
 
 [<RequireQualifiedAccess>]
 type FCSVersion =
+    /// The current local codebase
     | Local
+    /// A given version of the FCS NuGet package
     | NuGet of NuGetVersion
+    /// A given Git revision of dotnet/fsharp
     | Git of string
     override this.ToString() =
         match this with

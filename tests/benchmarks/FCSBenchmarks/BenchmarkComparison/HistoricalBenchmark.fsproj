@@ -21,6 +21,7 @@
     <Compile Include="Helpers.fs" />
     <Compile Include="SingleFileCompiler.fs" />
     <Compile Include="Program.fs" />
+    <None Include="sample_results\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,12 +35,15 @@
     <ProjectReference Include="$(FcsProjectPath)" />
     <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
-  <!-- Reference the FCS NuGet package with the specified $FcsVersion -->
+  <!-- Reference the FCS NuGet package with the specified $FcsVersion, use locally built FSharp.Core
+       Arguably this could be changed to depend on the version of FSharp.Core that's pulled in via FSharp.Compiler.Service.
+       Keeping the old behaviour for now
+  -->
   <ItemGroup Condition=" '$(FcsReferenceType)' == 'nuget' ">
     <PackageReference Include="FSharp.Compiler.Service" Version="$(FcsNuGetVersion)" />
     <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
-  <!-- Reference the dll specified in $FcsDllPath -->
+  <!-- Reference the dlls specified in $FcsDllPath and $FSharpCoreDllPath -->
   <ItemGroup Condition=" '$(FcsReferenceType)' == 'dll' ">
     <Reference Include="FSharp.Compiler.Service">
       <HintPath>$(FcsDllPath)</HintPath>
@@ -50,7 +54,7 @@
   </ItemGroup>
 
   <Target Name="FakeBuild" BeforeTargets="Build">
-    <Message Text="Type=$(FcsReferenceType) FcsDllPath=$(FcsDllPath)"/>
+    <Message Text="Type=$(FcsReferenceType) FcsDllPath=$(FcsDllPath)" />
   </Target>
 
 </Project>
