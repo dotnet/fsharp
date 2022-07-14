@@ -9741,7 +9741,7 @@ and TcMethodApplication
             // Build the expression that mutates the properties on the result of the call
             let setterExprPrebinders, propSetExpr =
                 (mkUnit g mMethExpr, finalAssignedItemSetters) ||> List.mapFold (fun acc assignedItemSetter ->
-                        let argExprPrebinder, action, m = TcSetterArgExpr cenv env denv objExpr ad assignedItemSetter
+                        let argExprPrebinder, action, m = TcSetterArgExpr cenv env denv objExpr ad assignedItemSetter finalCalledMethInfo.IsConstructor
                         argExprPrebinder, mkCompGenSequential m acc action)
 
             // now put them together
@@ -9787,7 +9787,7 @@ and TcMethodApplication
     (callExpr6, finalAttributeAssignedNamedItems, delayed), tpenv
 
 /// For Method(X = expr) 'X' can be a property, IL Field or F# record field
-and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, CallerArg(callerArgTy, m, isOptCallerArg, argExpr))) =
+and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, CallerArg(callerArgTy, m, isOptCallerArg, argExpr))) calledFromConstructor =
     let g = cenv.g
 
     if isOptCallerArg then
@@ -9796,6 +9796,10 @@ and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, Cal
     let argExprPrebinder, action, defnItem =
         match setter with
         | AssignedPropSetter (pinfo, pminfo, pminst) ->
+
+            if pinfo.IsSetterInitOnly && not calledFromConstructor then
+                errorR (Error (FSComp.SR.tcInitOnlyPropertyCannotBeSet1 pinfo.PropertyName, m))
+
             MethInfoChecks g cenv.amap true None [objExpr] ad m pminfo
             let calledArgTy = List.head (List.head (pminfo.GetParamTypes(cenv.amap, m, pminst)))
             let tcVal = LightweightTcValForUsingInBuildMethodCall g

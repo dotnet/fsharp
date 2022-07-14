@@ -21,6 +21,7 @@ module ``Required and init-only properties`` =
         {
             public int GetSet { get; set; }
             public int GetInit { get; init; }
+            public RAIO GetThis() => this;
         }
 
     }""" |> withCSharpLanguageVersion CSharpLanguageVersion.Preview |> withName "csLib"
@@ -225,6 +226,33 @@ let main _ =
         |> shouldFail
         |> withDiagnostics [
             Error 810, Line 9, Col 5, Line 9, Col 21, "Cannot call 'set_GetInit' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
+        ]
+
+    [<Fact>]
+    let ``F# cannot change init-only property via calling an initializer on instance`` () =
+
+        let csharpLib = csharpBaseClass
+
+        let fsharpSource =
+            """
+open System
+open RequiredAndInitOnlyProperties
+
+[<EntryPoint>]
+let main _ =
+
+    let raio = RAIO()
+    raio.GetThis(GetSet=2, GetInit = 42) |> ignore
+    0
+"""
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            Error 810, Line 9, Col 38, Line 9, Col 40, "Init-only property 'GetInit' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
         ]
 
 
