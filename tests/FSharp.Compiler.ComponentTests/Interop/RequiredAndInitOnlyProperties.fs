@@ -4,6 +4,7 @@ namespace FSharp.Compiler.ComponentTests.Interop
 open Xunit
 open FSharp.Test.Compiler
 open FSharp.Test
+open System
 
 module ``Required and init-only properties`` =
 
@@ -278,4 +279,63 @@ let main _ =
         |> withLangVersionPreview
         |> withReferences [csharpLib]
         |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            Error 3545, Line 8, Col 16, Line 8, Col 22, "The following required properties have to be initalized:" + Environment.NewLine + "   property RAIO.GetSet: int with get, set" + Environment.NewLine + "   property RAIO.GetInit: int with get, set"
+        ]
+
+    [<Fact>]
+    let ``F# should produce compile-time error when some required properties are not specified in the initializer`` () =
+
+        let csharpLib = csharpRBaseClass
+
+        let fsharpSource =
+            """
+open System
+open RequiredAndInitOnlyProperties
+
+[<EntryPoint>]
+let main _ =
+
+    let raio = RAIO(GetSet=1)
+
+    0
+"""
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            Error 3545, Line 8, Col 16, Line 8, Col 30, "The following required properties have to be initalized:" + Environment.NewLine + "   property RAIO.GetInit: int with get, set"
+        ]
+
+    [<Fact>]
+    let ``F# should not produce compile-time error when all required properties are specified in the initializer`` () =
+
+        let csharpLib = csharpRBaseClass
+
+        let fsharpSource =
+            """
+open System
+open RequiredAndInitOnlyProperties
+
+[<EntryPoint>]
+let main _ =
+
+    let raio = RAIO(GetSet=1, GetInit=2)
+
+    if raio.GetSet <> 1 then
+        failwith "Unexpected value"
+
+    if raio.GetInit <> 2 then
+        failwith "Unexpected value"
+    0
+"""
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compileAndRun
         |> shouldSucceed

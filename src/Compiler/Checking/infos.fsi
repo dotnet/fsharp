@@ -793,6 +793,9 @@ type PropInfo =
     /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
     member IsSetterInitOnly: bool
 
+    /// Is the property requied (has the RequiredMemberAttribute).
+    member IsRequired: bool
+
     member ImplementedSlotSignatures: SlotSig list
 
     /// Indicates if this property is marked 'override' and thus definitely overrides another property.

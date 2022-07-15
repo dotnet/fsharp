@@ -187,6 +187,11 @@
         <target state="translated">expr[idx] для индексации и среза</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureInitProperties">
+        <source>support for consuming init properties</source>
+        <target state="new">support for consuming init properties</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">интерфейсы с множественным универсальным созданием экземпляра</target>
@@ -252,9 +257,9 @@
         <target state="translated">смягчение требований по использованию пробелов, версия 2</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureRequiredMembers">
-        <source>support for required type members</source>
-        <target state="new">support for required type members</target>
+      <trans-unit id="featureRequiredProperties">
+        <source>support for required properties</source>
+        <target state="new">support for required properties</target>
         <note />
       </trans-unit>
       <trans-unit id="featureResumableStateMachines">
@@ -775,6 +780,11 @@
       <trans-unit id="tcLiteralFieldAssignmentWithArg">
         <source>Cannot assign '{0}' to a value marked literal</source>
         <target state="translated">Невозможно присвоить "{0}" значению, помеченному как литерал</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMissingRequiredMembers">
+        <source>The following required properties have to be initalized:{0}</source>
+        <target state="new">The following required properties have to be initalized:{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">

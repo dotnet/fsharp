@@ -8964,18 +8964,19 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         // To get better warnings we special case some of the few known mutate-a-struct method names
         let mutates = (if methodName = "MoveNext" || methodName = "GetNextArg" then DefinitelyMutates else PossiblyMutates)
 
-        let minfo = List.head minfos
+        if g.langVersion.SupportsFeature(LanguageFeature.InitPropertiesSupport) then
+            let minfo = List.head minfos
 
-        // Check, wheter this method has `IsExternalInit`, emit an error diagnostic in this case.
-        let hasInitOnlyMod =
-            match minfo with
-            | ILMeth (_, ilMethInfo, _) ->
-                match ilMethInfo.ILMethodRef.ReturnType with
-                | ILType.Modified(_, cls, _) -> cls.FullName = "System.Runtime.CompilerServices.IsExternalInit"
+            // Check, wheter this method has `IsExternalInit`, emit an error diagnostic in this case.
+            let hasInitOnlyMod =
+                match minfo with
+                | ILMeth (_, ilMethInfo, _) ->
+                    match ilMethInfo.ILMethodRef.ReturnType with
+                    | ILType.Modified(_, cls, _) -> cls.FullName = "System.Runtime.CompilerServices.IsExternalInit"
+                    | _ -> false
                 | _ -> false
-            | _ -> false
-        if hasInitOnlyMod then
-            errorR (Error (FSComp.SR.tcGetterForInitOnlyPropertyCannotBeCalled1 methodName, mItem))
+            if hasInitOnlyMod then
+                errorR (Error (FSComp.SR.tcGetterForInitOnlyPropertyCannotBeCalled1 methodName, mItem))
 
 #if !NO_TYPEPROVIDERS
         match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyArgsOpt, mExprAndItem, mItem) with
@@ -9024,7 +9025,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
                 TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItem nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag delayed
             else
 
-                if pinfo.IsSetterInitOnly then
+                if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly then
                     errorR (Error (FSComp.SR.tcInitOnlyPropertyCannotBeSet1 nm, mItem))
 
                 let args = if pinfo.IsIndexer then args else []
@@ -9738,14 +9739,28 @@ and TcMethodApplication
         //      2.1. If there are none, proceed as usual
         //      2.2. If there are any, make sure all of them (or their setters) are in `finalAssignedItemSetters`.
         // 3. If some are missing, produce a diagnostic which missing ones.
-        if g.langVersion.SupportsFeature(LanguageFeature.RequiredMembersSupport) && finalCalledMethInfo.IsConstructor then
-            let _requiredProps = 
-                //&& (TryFindFSharpAttribute g.attrib_SetsRequiredMembersAttribute finalCalledMethInfo ) then []
+        if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && finalCalledMethInfo.IsConstructor then
+            let requiredProps = 
                 match finalCalledMethInfo with
-                | FSMeth (_, _enclosingType, _vref, _) -> [] // TODO: check if constructor has attrib_SetsRequiredMembersAttribute, then we don't required to init anything, otherwise check for props
+                | ILMeth (_, ilmethInfo, _) ->
+                    if TryFindILAttribute g.attrib_SetsRequiredMembersAttribute ilmethInfo.RawMetadata.CustomAttrs then
+                        []
+                    else     
+                        let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g cenv.amap range0 ilmethInfo.ApparentEnclosingType
+                        List.filter (fun (p: PropInfo) -> p.IsRequired ) props
                 | _ -> []
-
-            ()
+            
+            if requiredProps.Length > 0 then
+                let setterPropNames = 
+                    finalAssignedItemSetters
+                    |> List.choose (function | AssignedItemSetter(_, AssignedPropSetter (pinfo, _, _), _) -> Some pinfo.PropertyName  | _ -> None)
+                
+                let missingProps =
+                    requiredProps
+                    |> List.filter (fun pinfo -> not (List.contains pinfo.PropertyName setterPropNames))
+                if missingProps.Length > 0 then
+                    let details = NicePrint.multiLineStringOfPropInfos g cenv.amap mMethExpr env.DisplayEnv missingProps
+                    errorR(Error(FSComp.SR.tcMissingRequiredMembers details, mMethExpr))
                     
         if isCheckingAttributeCall then
             [], expr
@@ -9814,7 +9829,7 @@ and TcSetterArgExpr cenv env denv objExpr ad (AssignedItemSetter(id, setter, Cal
         match setter with
         | AssignedPropSetter (pinfo, pminfo, pminst) ->
 
-            if pinfo.IsSetterInitOnly && not calledFromConstructor then
+            if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly && not calledFromConstructor then
                 errorR (Error (FSComp.SR.tcInitOnlyPropertyCannotBeSet1 pinfo.PropertyName, m))
 
             MethInfoChecks g cenv.amap true None [objExpr] ad m pminfo

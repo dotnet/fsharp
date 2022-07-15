@@ -239,7 +239,7 @@ let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
             WarnD(ObsoleteWarning(msg, m))
     | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef -> 
         if isError then
-            if g.langVersion.SupportsFeature(LanguageFeature.RequiredMembersSupport) then
+            if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) then
                 // In some cases C# will generate both ObsoleteAttribute and CompilerFeatureRequiredAttribute.
                 // Specifically, when default constructor is generated for class with any reqired members in them.
                 // ObsoleteAttribute should be ignored if CompilerFeatureRequiredAttribute is present, and its name is "RequiredMembers".

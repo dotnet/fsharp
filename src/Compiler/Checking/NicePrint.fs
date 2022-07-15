@@ -1552,6 +1552,10 @@ module InfoMemberPrinting =
         layoutType denv retTy ^^
         getterSetter
 
+    let formatPropInfoToBufferFreeStyle g amap m denv os (pinfo: PropInfo) = 
+        let resL = prettyLayoutOfPropInfoFreeStyle g amap m denv pinfo 
+        resL |> bufferL os
+
     let formatMethInfoToBufferFreeStyle amap m denv os (minfo: MethInfo) = 
         let _, resL = prettyLayoutOfMethInfoFreeStyle amap m denv emptyTyparInst minfo 
         resL |> bufferL os
@@ -2458,6 +2462,16 @@ let stringOfMethInfo infoReader m denv minfo =
 let multiLineStringOfMethInfos infoReader m denv minfos =
      minfos
      |> List.map (stringOfMethInfo infoReader m denv)
+     |> List.map (sprintf "%s   %s" Environment.NewLine)
+     |> String.concat ""
+
+let stringOfPropInfo g amap m denv pinfo =
+         buildString (fun buf -> InfoMemberPrinting.formatPropInfoToBufferFreeStyle g amap m denv buf pinfo)
+
+/// Convert PropInfos to lines separated by newline including a newline as the first character
+let multiLineStringOfPropInfos g amap m denv pinfos =
+     pinfos
+     |> List.map (stringOfPropInfo g amap m denv)
      |> List.map (sprintf "%s   %s" Environment.NewLine)
      |> String.concat ""
 

@@ -39,7 +39,8 @@ type LanguageFeature =
     | DelegateTypeNameResolutionFix
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
-    | RequiredMembersSupport
+    | RequiredPropertiesSupport
+    | InitPropertiesSupport
 
 /// LanguageVersion management
 type LanguageVersion =
