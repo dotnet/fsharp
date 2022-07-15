@@ -4538,7 +4538,7 @@ and TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ env (tpenv: Unscoped
     | SynType.LongIdentApp (synLeftTy, synLongId, _, args, _commas, _, m) ->
         TcNestedAppType cenv newOk checkConstraints occ env tpenv synLeftTy synLongId args m
 
-    | SynType.Tuple(isStruct, args, m) ->
+    | SynType.Tuple(isStruct, _, _, args, m) ->
         TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct args m
 
     | SynType.AnonRecd(_, [],m) ->

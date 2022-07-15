@@ -812,8 +812,6 @@ let mkSynMemberDefnGetSet
         | _ -> []
     | _ -> []
 
-// | Tuple of isStruct:bool * hasLeadingSlash:bool * firstType:SynType * elements: (bool * SynType) list * range: range
-
 // The last element of elementTypes does not have a star or slash
 let mkTupleOrDivide (isStruct: bool) (leadingType: SynType) (isStar: bool) (elementTypes: (bool * SynType) list) : SynType =
     // x * y

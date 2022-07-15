@@ -156,8 +156,8 @@ let rec getParenTypes (synType: SynType): SynType list =
           yield! getParenTypes argType
           yield! getParenTypes returnType
 
-      | SynType.Tuple (_, types, _) ->
-          for _, synType in types do
+      | SynType.Tuple(_, _, _, elements, _) ->
+          for _, synType in elements do
               yield! getParenTypes synType
 
       | SynType.AnonRecd (_, fields, _) ->
