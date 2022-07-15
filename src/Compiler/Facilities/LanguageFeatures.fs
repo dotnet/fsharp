@@ -51,6 +51,7 @@ type LanguageFeature =
     | ErrorOnDeprecatedRequireQualifiedAccess
     | RequiredPropertiesSupport
     | InitPropertiesSupport
+    | LowercaseDUWhenRequireQualifiedAccess
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -115,6 +116,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, previewVersion
                 LanguageFeature.RequiredPropertiesSupport, previewVersion
                 LanguageFeature.InitPropertiesSupport, previewVersion
+                LanguageFeature.LowercaseDUWhenRequireQualifiedAccess, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -216,6 +218,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
         | LanguageFeature.RequiredPropertiesSupport -> FSComp.SR.featureRequiredProperties ()
         | LanguageFeature.InitPropertiesSupport -> FSComp.SR.featureInitProperties ()
+        | LanguageFeature.LowercaseDUWhenRequireQualifiedAccess -> FSComp.SR.featureLowercaseDUWhenRequireQualifiedAccess ()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

@@ -41,6 +41,7 @@ type LanguageFeature =
     | ErrorOnDeprecatedRequireQualifiedAccess
     | RequiredPropertiesSupport
     | InitPropertiesSupport
+    | LowercaseDUWhenRequireQualifiedAccess
 
 /// LanguageVersion management
 type LanguageVersion =

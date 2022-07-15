@@ -1575,7 +1575,7 @@ let p_measure_one = p_byte 4
 // Pickle a unit-of-measure variable or constructor
 let p_measure_varcon unt st =
      match unt with
-     | Measure.Con tcref   -> p_measure_con tcref st
+     | Measure.Const tcref   -> p_measure_con tcref st
      | Measure.Var v       -> p_measure_var v st
      | _                  -> pfailwith st "p_measure_varcon: expected measure variable or constructor"
 
@@ -1604,7 +1604,7 @@ let rec p_measure_power unt q st =
 let rec p_normalized_measure unt st =
      let unt = stripUnitEqnsAux false unt
      match unt with
-     | Measure.Con tcref   -> p_measure_con tcref st
+     | Measure.Const tcref   -> p_measure_con tcref st
      | Measure.Inv x       -> p_byte 1 st; p_normalized_measure x st
      | Measure.Prod(x1, x2) -> p_byte 2 st; p_normalized_measure x1 st; p_normalized_measure x2 st
      | Measure.Var v       -> p_measure_var v st
@@ -1625,7 +1625,7 @@ let u_rational st =
 let rec u_measure_expr st =
     let tag = u_byte st
     match tag with
-    | 0 -> let a = u_tcref st in Measure.Con a
+    | 0 -> let a = u_tcref st in Measure.Const a
     | 1 -> let a = u_measure_expr st in Measure.Inv a
     | 2 -> let a, b = u_tup2 u_measure_expr u_measure_expr st in Measure.Prod (a, b)
     | 3 -> let a = u_tpref st in Measure.Var a
@@ -2353,6 +2353,7 @@ and u_ValData st =
                      val_other_range      = (match x1a with None -> None | Some(_, b) -> Some(b, true))
                      val_defn             = None
                      val_repr_info        = x10
+                     val_repr_info_for_display = None
                      val_const            = x14
                      val_access           = x13
                      val_xmldoc           = defaultArg x15 XmlDoc.Empty
@@ -2436,7 +2437,7 @@ and p_dtree_discrim x st =
     | DecisionTreeTest.UnionCase (ucref, tinst) -> p_byte 0 st; p_tup2 p_ucref p_tys (ucref, tinst) st
     | DecisionTreeTest.Const c                   -> p_byte 1 st; p_const c st
     | DecisionTreeTest.IsNull                    -> p_byte 2 st
-    | DecisionTreeTest.IsInst (srcty, tgty)       -> p_byte 3 st; p_ty srcty st; p_ty tgty st
+    | DecisionTreeTest.IsInst (srcTy, tgtTy)       -> p_byte 3 st; p_ty srcTy st; p_ty tgtTy st
     | DecisionTreeTest.ArrayLength (n, ty)       -> p_byte 4 st; p_tup2 p_int p_ty (n, ty) st
     | DecisionTreeTest.ActivePatternCase _ -> pfailwith st "DecisionTreeTest.ActivePatternCase: only used during pattern match compilation"
     | DecisionTreeTest.Error _ -> pfailwith st "DecisionTreeTest.Error: only used during pattern match compilation"

@@ -199,7 +199,8 @@ module Array =
             let mutable i = 0
 
             while eq && i < len do
-                if not (inp[i] === res[i]) then eq <- false
+                if not (inp[i] === res[i]) then
+                    eq <- false
 
                 i <- i + 1
 
@@ -1082,9 +1083,11 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
     let table = new ConcurrentDictionary<'T, 'U>(keyComparer)
 
     member t.Apply x =
-        if (match canMemoize with
-            | None -> true
-            | Some f -> f x) then
+        if
+            (match canMemoize with
+             | None -> true
+             | Some f -> f x)
+        then
             match table.TryGetValue x with
             | true, res -> res
             | _ ->

@@ -25,7 +25,9 @@ open Internal.Utilities
 
 let logging = false
 
-let _ = if logging then dprintn "* warning: Il.logging is on"
+let _ =
+    if logging then
+        dprintn "* warning: Il.logging is on"
 
 let int_order = LanguagePrimitives.FastGenericComparer<int>
 
@@ -68,11 +70,13 @@ let memoizeNamespaceRightTable =
 let memoizeNamespacePartTable = ConcurrentDictionary<string, string>()
 
 let splitNameAt (nm: string) idx =
-    if idx < 0 then failwith "splitNameAt: idx < 0"
+    if idx < 0 then
+        failwith "splitNameAt: idx < 0"
 
     let last = nm.Length - 1
 
-    if idx > last then failwith "splitNameAt: idx > last"
+    if idx > last then
+        failwith "splitNameAt: idx > last"
 
     (nm.Substring(0, idx)), (if idx < last then nm.Substring(idx + 1, last - idx) else "")
 
@@ -551,7 +555,8 @@ type ILAssemblyRef(data) =
                     addC (convDigit (int32 v / 16))
                     addC (convDigit (int32 v % 16))
             // retargetable can be true only for system assemblies that definitely have Version
-            if aref.Retargetable then add ", Retargetable=Yes"
+            if aref.Retargetable then
+                add ", Retargetable=Yes"
 
         b.ToString()
 
@@ -2497,8 +2502,10 @@ let typeKindOfFlags nm (super: ILType option) flags =
 
             if name = "System.Enum" then
                 ILTypeDefKind.Enum
-            elif (name = "System.Delegate" && nm <> "System.MulticastDelegate")
-                 || name = "System.MulticastDelegate" then
+            elif
+                (name = "System.Delegate" && nm <> "System.MulticastDelegate")
+                || name = "System.MulticastDelegate"
+            then
                 ILTypeDefKind.Delegate
             elif name = "System.ValueType" && nm <> "System.Enum" then
                 ILTypeDefKind.ValueType
@@ -3925,7 +3932,8 @@ let cdef_cctorCode2CodeOrCreate tag imports f (cd: ILTypeDef) =
             [|
                 yield f cctor
                 for md in mdefs do
-                    if md.Name <> ".cctor" then yield md
+                    if md.Name <> ".cctor" then
+                        yield md
             |])
 
     cd.With(methods = methods)
@@ -4199,7 +4207,7 @@ let mkILSimpleModule
             AssemblyLongevity = ILAssemblyLongevity.Unspecified
             DisableJitOptimizations = 0 <> (flags &&& 0x4000)
             JitTracking = (0 <> (flags &&& 0x8000)) // always turn these on
-            IgnoreSymbolStoreSequencePoints = (0 <> (flags &&& 0x2000))
+            IgnoreSymbolStoreSequencePoints = false
             Retargetable = (0 <> (flags &&& 0x100))
             ExportedTypes = exportedTypes
             EntrypointElsewhere = None
@@ -4888,7 +4896,8 @@ type ILTypeSigParser(tstring: string) =
 
         // Does the type name start with a leading '['? If so, ignore it
         // (if the specialization type is in another module, it will be wrapped in bracket)
-        if here () = '[' then drop ()
+        if here () = '[' then
+            drop ()
 
         // 1. Iterate over beginning of type, grabbing the type name and determining if it's generic or an array
         let typeName =
@@ -4947,8 +4956,11 @@ type ILTypeSigParser(tstring: string) =
         let scope =
             if (here () = ',' || here () = ' ') && (peek () <> '[' && peekN 2 <> '[') then
                 let grabScopeComponent () =
-                    if here () = ',' then drop () // ditch the ','
-                    if here () = ' ' then drop () // ditch the ' '
+                    if here () = ',' then
+                        drop () // ditch the ','
+
+                    if here () = ' ' then
+                        drop () // ditch the ' '
 
                     while (peek () <> ',' && peek () <> ']' && peek () <> nil) do
                         step ()
@@ -4969,8 +4981,11 @@ type ILTypeSigParser(tstring: string) =
                 ILScopeRef.Local
 
         // strip any extraneous trailing brackets or commas
-        if (here () = ']') then drop ()
-        if (here () = ',') then drop ()
+        if (here () = ']') then
+            drop ()
+
+        if (here () = ',') then
+            drop ()
 
         // build the IL type
         let tref = mkILTyRef (scope, typeName)
@@ -5549,17 +5564,18 @@ let resolveILMethodRefWithRescope r (td: ILTypeDef) (mref: ILMethodRef) =
     let argTypes = mref.ArgTypes |> List.map r
     let retType: ILType = r mref.ReturnType
 
-    match possibles
-          |> List.filter (fun md ->
-              mref.CallingConv = md.CallingConv
-              &&
-              // REVIEW: this uses equality on ILType. For CMOD_OPTIONAL this is not going to be correct
-              (md.Parameters, argTypes)
-              ||> List.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2)
-              &&
-              // REVIEW: this uses equality on ILType. For CMOD_OPTIONAL this is not going to be correct
-              r md.Return.Type = retType)
-        with
+    match
+        possibles
+        |> List.filter (fun md ->
+            mref.CallingConv = md.CallingConv
+            &&
+            // REVIEW: this uses equality on ILType. For CMOD_OPTIONAL this is not going to be correct
+            (md.Parameters, argTypes)
+            ||> List.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2)
+            &&
+            // REVIEW: this uses equality on ILType. For CMOD_OPTIONAL this is not going to be correct
+            r md.Return.Type = retType)
+    with
     | [] ->
         failwith (
             "no method named "

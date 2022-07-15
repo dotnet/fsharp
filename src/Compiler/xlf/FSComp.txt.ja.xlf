@@ -197,6 +197,11 @@
         <target state="translated">複数のジェネリックのインスタンス化を含むインターフェイス</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
+        <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
+        <target state="new">Allow lowercase DU when RequireQualifiedAccess attribute</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureMLCompatRevisions">
         <source>ML compatibility revisions</source>
         <target state="translated">ML 互換性のリビジョン</target>
@@ -460,6 +465,11 @@
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">言語バージョンで許可された値を表示し、'最新' や 'プレビュー' などの言語バージョンを指定する</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsPdbMatchesOutputFileName">
+        <source>The pdb output file name cannot match the build output filename use --pdb:filename.pdb</source>
+        <target state="new">The pdb output file name cannot match the build output filename use --pdb:filename.pdb</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -5097,16 +5107,6 @@
         <target state="translated">移植可能な PDB ファイルに埋め込むソース リンク情報ファイル</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsEmbeddedSourceRequirePortablePDBs">
-        <source>--embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">--embed スイッチは、移植可能な PDB の生成時にのみサポートされます (--debug:portable または --debug:embedded)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsSourceLinkRequirePortablePDBs">
-        <source>--sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">--sourcelink スイッチは、移植可能な PDB の生成時にのみサポートされます (--debug:portable または --debug:embedded)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="srcFileTooLarge">
         <source>Source file is too large to embed in a portable PDB</source>
         <target state="translated">ソース ファイルが大きすぎるので、移植可能な PDB 内に埋め込めません</target>
@@ -6162,21 +6162,6 @@
         <target state="translated">拡張メンバーでは演算子のオーバーロードを実行できません。代わりに型定義の一部として演算子を定義してください。</target>
         <note />
       </trans-unit>
-      <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
-        <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">MDB ファイルの名前は &lt;assembly-file-name&gt;.mdb でなければなりません、--pdb オプションは無視されます。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteMDBMemberMissing">
-        <source>MDB generation failed. Could not find compatible member {0}</source>
-        <target state="translated">MDB を生成できませんでした。互換性のあるメンバー {0} が見つかりませんでした</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteErrorCreatingMdb">
-        <source>Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</source>
-        <target state="translated">MDB デバッグ情報を生成できません。'Mono.CompilerServices.SymbolWriter.dll' アセンブリから 'MonoSymbolWriter' 型を読み込むことができませんでした。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnionCaseNameConflictsWithGeneratedType">
         <source>The union case named '{0}' conflicts with the generated type '{1}'</source>
         <target state="translated">{0}' という名前の共用体ケースが、生成された型 '{1}' と競合します</target>
@@ -6450,11 +6435,6 @@
       <trans-unit id="fscAssemblyWildcardAndDeterminism">
         <source>An {0} specified version '{1}', but this value is a wildcard, and you have requested a deterministic build, these are in conflict.</source>
         <target state="translated">{0} によりバージョン '{1}' が指定されましたが、この値はワイルドカードです。決定論的なビルドを要求しているため、これらの指定は矛盾しています。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
-        <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">決定論的ビルドは、ポータブル PDB のみをサポートします (--debug:portable または --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -8080,11 +8060,6 @@
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
         <target state="translated">物理パスをコンパイラ出力のソース パス名にマップします</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fscPathMapDebugRequiresPortablePdb">
-        <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">--pathmap は、ポータブル PDB でのみ使用できます (--debug:portable または --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">
