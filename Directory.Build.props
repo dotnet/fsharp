@@ -3,4 +3,9 @@
   <Import Project="FSharpBuild.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
   <Import Project="FSharpTests.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' != '' "/>
 
+  <ItemGroup>
+    <!-- If there is a README.md next to a project file, include it (for easier access in the IDE) -->
+    <None Include="README.md" Condition="Exists('README.md')" />
+  </ItemGroup>
+
 </Project>
