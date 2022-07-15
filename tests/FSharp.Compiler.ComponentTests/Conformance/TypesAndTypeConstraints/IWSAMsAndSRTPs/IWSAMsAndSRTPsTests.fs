@@ -1,5 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-module FSharp.Compiler.ComponentTests.Conformance.TypeAndTypeConstraints.IWSAM
+module FSharp.Compiler.ComponentTests.Conformance.TypeAndTypeConstraints.IWSAMsAndSRTPs
 
 open Xunit
 open System.IO
@@ -282,7 +282,6 @@ module Negative =
     [<InlineData("let inline f_TraitWithOut<'T when 'T : (static member StaticMethod: x: outref<int> -> int) >() = ()")>]
     [<InlineData("let inline f_TraitWithParamArray<'T when 'T : (static member StaticMethod: [<System.ParamArray>] x: int[] -> int) >() = ()")>]
     [<InlineData("let inline f_TraitWithCallerName<'T when 'T : (static member StaticMethod: [<System.Runtime.CompilerServices.CallerMemberNameAttribute>] x: int[] -> int) >() = ()")>]
-// TODO: fix this:    [<InlineData("let inline f_TraitWithExpression<'T when 'T : (static member StaticMethod: x: System.Linq.Expressions.Expression<System.Func<int,int>> -> int) >() = ()")>]
     let ``Trait warning`` code =
         Fsx code
         |> compile
@@ -292,7 +291,7 @@ module Negative =
         |> ignore
 
     [<Fact>]
-    let ``IWSAM waring`` () =
+    let ``IWSAM warning`` () =
         Fsx "let fExpectAWarning(x: Types.ISinOperator<'T>) = ()"
         |> withReferences [typesModule]
         |> compile
@@ -309,3 +308,22 @@ module Negative =
         |> withErrorCode 3537
         |> withDiagnosticMessage "The trait 'A' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance."
         |> ignore
+
+
+module FuncConversions =
+
+    [<Fact>]
+    let ``SRTP expression conversion not supported`` () =
+        Fsx "let inline f_TraitWithExpression<'T when 'T : (static member StaticMethod: x: System.Linq.Expressions.Expression<System.Func<int,int>> -> int) >() =
+            'T.StaticMethod(fun x -> x + 1)"
+        |> compile
+        |> shouldFail
+        |> withErrorMessage "This function takes too many arguments, or is used in a context where a function is not expected"
+
+    [<Fact>]
+    let ``SRTP delegate conversion not supported`` () =
+        Fsx "let inline f_TraitWithExpression<'T when 'T : (static member StaticMethod: x: System.Func<int,int> -> int) >() =
+            'T.StaticMethod(fun x -> x + 1)"
+        |> compile
+        |> shouldFail
+        |> withErrorMessage "This function takes too many arguments, or is used in a context where a function is not expected"
