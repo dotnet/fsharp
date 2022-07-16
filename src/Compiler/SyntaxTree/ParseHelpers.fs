@@ -25,7 +25,7 @@ open Internal.Utilities.Text.Parsing
 /// information about the grammar at the point where the error occurred, e.g. what tokens
 /// are valid to shift next at that point in the grammar. This information is processed in CompileOps.fs.
 [<NoEquality; NoComparison>]
-exception SyntaxError of obj (* ParseErrorContext<_> *)  * range: range
+exception SyntaxError of obj (* ParseErrorContext<_> *) * range: range
 
 exception IndentationProblem of string * range
 

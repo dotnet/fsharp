@@ -149,7 +149,8 @@ type ConsoleLoggerProvider() =
 
 /// Notify the exiter if any error has occurred
 let AbortOnError (diagnosticsLogger: DiagnosticsLogger, exiter: Exiter) =
-    if diagnosticsLogger.ErrorCount > 0 then exiter.Exit 1
+    if diagnosticsLogger.ErrorCount > 0 then
+        exiter.Exit 1
 
 let TypeCheck
     (
@@ -299,20 +300,6 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
     // This is where flags are interpreted by the command line fsc.exe.
     ParseCompilerOptions(collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
 
-    if not (tcConfigB.portablePDB || tcConfigB.embeddedPDB) then
-        if tcConfigB.embedAllSource || (tcConfigB.embedSourceList |> isNil |> not) then
-            error (Error(FSComp.SR.optsEmbeddedSourceRequirePortablePDBs (), rangeCmdArgs))
-
-        if not (String.IsNullOrEmpty(tcConfigB.sourceLink)) then
-            error (Error(FSComp.SR.optsSourceLinkRequirePortablePDBs (), rangeCmdArgs))
-
-    if tcConfigB.debuginfo && not tcConfigB.portablePDB then
-        if tcConfigB.deterministic then
-            error (Error(FSComp.SR.fscDeterministicDebugRequiresPortablePdb (), rangeCmdArgs))
-
-        if tcConfigB.pathMap <> PathMap.empty then
-            error (Error(FSComp.SR.fscPathMapDebugRequiresPortablePdb (), rangeCmdArgs))
-
     let inputFiles = List.rev inputFilesRef
 
     // Check if we have a codepage from the console
@@ -382,7 +369,8 @@ module InterfaceFileWriter =
             for impl in declaredImpls do
                 writeToFile os impl
 
-            if tcConfig.printSignatureFile <> "" then os.Dispose()
+            if tcConfig.printSignatureFile <> "" then
+                os.Dispose()
 
         let extensionForFile (filePath: string) =
             if (List.exists (FileSystemUtils.checkSuffix filePath) FSharpMLCompatFileSuffixes) then
@@ -489,11 +477,13 @@ let main1
 
     // See Bug 735819
     let lcidFromCodePage =
-        if (Console.OutputEncoding.CodePage <> 65001)
-           && (Console.OutputEncoding.CodePage
-               <> Thread.CurrentThread.CurrentUICulture.TextInfo.OEMCodePage)
-           && (Console.OutputEncoding.CodePage
-               <> Thread.CurrentThread.CurrentUICulture.TextInfo.ANSICodePage) then
+        if
+            (Console.OutputEncoding.CodePage <> 65001)
+            && (Console.OutputEncoding.CodePage
+                <> Thread.CurrentThread.CurrentUICulture.TextInfo.OEMCodePage)
+            && (Console.OutputEncoding.CodePage
+                <> Thread.CurrentThread.CurrentUICulture.TextInfo.ANSICodePage)
+        then
             Thread.CurrentThread.CurrentUICulture <- CultureInfo("en-US")
             Some 1033
         else
@@ -553,7 +543,8 @@ let main1
     tcConfigB.conditionalDefines <- "COMPILED" :: tcConfigB.conditionalDefines
 
     // Display the banner text, if necessary
-    if not bannerAlreadyPrinted then DisplayBannerText tcConfigB
+    if not bannerAlreadyPrinted then
+        DisplayBannerText tcConfigB
 
     // Create tcGlobals and frameworkTcImports
     let outfile, pdbfile, assemblyName =
@@ -633,7 +624,8 @@ let main1
             printfn "%+A" input
             printf "\n"
 
-    if tcConfig.parseOnly then exiter.Exit 0
+    if tcConfig.parseOnly then
+        exiter.Exit 0
 
     if not tcConfig.continueAfterParseFailure then
         AbortOnError(diagnosticsLogger, exiter)
@@ -659,7 +651,8 @@ let main1
     if not tcConfig.continueAfterParseFailure then
         AbortOnError(diagnosticsLogger, exiter)
 
-    if tcConfig.importAllReferencesOnly then exiter.Exit 0
+    if tcConfig.importAllReferencesOnly then
+        exiter.Exit 0
 
     // Build the initial type checking environment
     ReportTime tcConfig "Typecheck"
@@ -912,7 +905,8 @@ let main2
            ilSourceDocs))
     =
 
-    if tcConfig.typeCheckOnly then exiter.Exit 0
+    if tcConfig.typeCheckOnly then
+        exiter.Exit 0
 
     generatedCcu.Contents.SetAttribs(generatedCcu.Contents.Attribs @ topAttrs.assemblyAttrs)
 
@@ -945,7 +939,7 @@ let main2
                 "AssemblyVersionAttribute"
                 topAttrs.assemblyAttrs
                 tcConfig.deterministic
-            with
+        with
         | Some v ->
             match tcConfig.version with
             | VersionNone -> Some v
@@ -1351,9 +1345,11 @@ let main6
     AbortOnError(diagnosticsLogger, exiter)
 
     // Don't copy referenced FSharp.core.dll if we are building FSharp.Core.dll
-    if (tcConfig.copyFSharpCore = CopyFSharpCoreFlag.Yes)
-       && not tcConfig.compilingFSharpCore
-       && not tcConfig.standalone then
+    if
+        (tcConfig.copyFSharpCore = CopyFSharpCoreFlag.Yes)
+        && not tcConfig.compilingFSharpCore
+        && not tcConfig.standalone
+    then
         CopyFSharpCore(outfile, tcConfig.referencedDLLs)
 
     ReportTime tcConfig "Exiting"

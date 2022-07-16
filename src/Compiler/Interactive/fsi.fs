@@ -1814,9 +1814,9 @@ type internal FsiDynamicCompiler(
                     ilTy |> Morphs.morphILTypeRefsInILType emEnv.ReverseMapTypeRef
                 | _ -> ilTy)
 
-        ((istate, []), ilTys) ||> List.fold (fun (state, addedTypes) ilTy ->
-            let nextState, addedType = addTypeToEnvironment state ilTy
-            nextState, addedTypes @ [addedType]) 
+        ((istate, []), ilTys) ||> List.fold (fun (state, addedTys) ilTy ->
+            let nextState, addedTy = addTypeToEnvironment state ilTy
+            nextState, addedTys @ [addedTy]) 
 
     member _.DynamicAssemblies = dynamicAssemblies.ToArray()
 
@@ -2524,8 +2524,8 @@ type FsiStdinLexerProvider
 
         resetLexbufPos sourceFileName lexbuf
         let skip = true  // don't report whitespace from lexer
-        let defines = tcConfigB.conditionalDefines
-        let lexargs = mkLexargs (defines, indentationSyntaxStatus, lexResourceManager, [], diagnosticsLogger, PathMap.empty)
+        let applyLineDirectives = true
+        let lexargs = mkLexargs (tcConfigB.conditionalDefines, indentationSyntaxStatus, lexResourceManager, [], diagnosticsLogger, PathMap.empty, applyLineDirectives)
         let tokenizer = LexFilter.LexFilter(indentationSyntaxStatus, tcConfigB.compilingFSharpCore, Lexer.token lexargs skip, lexbuf)
         tokenizer
 
