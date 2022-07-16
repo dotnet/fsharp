@@ -392,7 +392,7 @@ type SynType =
         greaterRange: range option *
         range: range
 
-    | Tuple of isStruct: bool * elementTypes: (bool option * SynType) list * range: range
+    | Tuple of isStruct:bool * hasLeadingSlash:bool * firstType:SynType * elements: (bool * SynType) list * range: range
 
     | AnonRecd of isStruct: bool * fields: (Ident * SynType) list * range: range
 

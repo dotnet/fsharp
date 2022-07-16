@@ -5029,7 +5029,7 @@ topType:
 
 topTupleType:
   | topAppType STAR topTupleTypeElements 
-     { let ty, mdata = $1 in let tys, mdatas = List.unzip $3 in (SynType.Tuple(false, List.map (fun ty -> (ty)) (ty :: tys), lhs parseState)), (mdata :: mdatas) }
+     { let ty, mdata = $1 in let tys, mdatas = List.unzip $3 in (SynType.Tuple(false, false, ty, List.map (fun t -> false, t) tys, lhs parseState)), (mdata :: mdatas) }
 
   | topAppType                 
      { let ty, mdata = $1 in ty, [mdata] }

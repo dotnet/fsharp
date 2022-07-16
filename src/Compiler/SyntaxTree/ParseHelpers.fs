@@ -812,6 +812,20 @@ let mkSynMemberDefnGetSet
         | _ -> []
     | _ -> []
 
-let mkTupleOrDivide (isStruct: bool) (leadingType: SynType) (isStar: bool) (elementTypes: (bool option * SynType) list) : SynType = failwith "Todo"
+// | Tuple of isStruct:bool * hasLeadingSlash:bool * firstType:SynType * elements: (bool * SynType) list * range: range
 
-let mkDivideWithLeadingSlash (elementTypes: (bool option * SynType) list) : SynType = failwith "TODO"
+// The last element of elementTypes does not have a star or slash
+let mkTupleOrDivide (isStruct: bool) (leadingType: SynType) (isStar: bool) (elementTypes: (bool * SynType) list) : SynType =
+    // x * y
+    let range =
+        (leadingType.Range, elementTypes) ||> List.fold (fun acc (_, t) -> unionRanges acc t.Range)
+    
+    let newElementTypes =
+        elementTypes
+        |> List.fold (fun (lastIsStar, currentList) (isStar , t) -> (isStar, (lastIsStar, t) :: currentList)) (isStar, [])
+        |> snd
+        |> List.rev
+        
+    SynType.Tuple(isStruct, false, leadingType, newElementTypes, range)
+
+let mkDivideWithLeadingSlash (_: (bool * SynType) list) : SynType = failwith "TODO"
