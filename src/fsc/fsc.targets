@@ -37,12 +37,15 @@
 
   <ItemGroup>
     <PackageReference Include="System.Console" Version="$(SystemConsoleVersion)" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
     <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
     <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
     <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.1.0" />
+
   </ItemGroup>
 
 </Project>

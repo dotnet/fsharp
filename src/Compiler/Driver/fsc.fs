@@ -1380,7 +1380,7 @@ let CompileFromCommandLineArguments
                 with _ ->
                     ()
         }
-
+    use mainActivity = new Activity("fcs:main")
     main1 (
         ctok,
         argv,

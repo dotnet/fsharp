@@ -87,6 +87,7 @@
     <SystemConsoleVersion>4.3.0</SystemConsoleVersion>
     <SystemDataSqlClientPackageVersion>4.3.0</SystemDataSqlClientPackageVersion>
     <SystemDesignVersion>4.0.0</SystemDesignVersion>
+    <SystemDiagnosticsDiagnosticSourceVersion>5.0.1</SystemDiagnosticsDiagnosticSourceVersion>
     <SystemDiagnosticsProcessVersion>4.3.0</SystemDiagnosticsProcessVersion>
     <SystemDiagnosticsTraceSourceVersion>4.3.0</SystemDiagnosticsTraceSourceVersion>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>

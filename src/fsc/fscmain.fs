@@ -17,12 +17,30 @@ open FSharp.Compiler.Driver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
+open System.Diagnostics
+open OpenTelemetry
+open OpenTelemetry.Resources
+open OpenTelemetry.Trace
 
 [<Dependency("FSharp.Compiler.Service", LoadHint.Always)>]
 do ()
 
 [<EntryPoint>]
 let main (argv) =
+
+    use tracerProvider = 
+        Sdk.CreateTracerProviderBuilder()
+           .AddSource("fsc")
+           .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName ="fsc", serviceVersion = "42.42.42.42"))
+           .AddConsoleExporter()
+           .Build();
+    use activitySource = new ActivitySource("fsc") 
+    use mainActivity = activitySource.StartActivity("main") 
+    
+    let forceCleanup() = 
+        mainActivity.Dispose()
+        activitySource.Dispose()
+        tracerProvider.Dispose()
 
     let compilerName =
         // the 64 bit desktop version of the compiler is name fscAnyCpu.exe, all others are fsc.exe
@@ -67,6 +85,7 @@ let main (argv) =
             let stats = ILBinaryReader.GetStatistics()
 
             AppDomain.CurrentDomain.ProcessExit.Add(fun _ ->
+                forceCleanup()
                 printfn
                     "STATS: #ByteArrayFile = %d, #MemoryMappedFileOpen = %d, #MemoryMappedFileClosed = %d, #RawMemoryFile = %d, #WeakByteArrayFile = %d"
                     stats.byteFileCount
@@ -81,6 +100,7 @@ let main (argv) =
         let quitProcessExiter =
             { new Exiter with
                 member _.Exit(n) =
+                    forceCleanup()
                     try
                         exit n
                     with _ ->
