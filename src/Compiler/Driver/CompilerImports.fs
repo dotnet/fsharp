@@ -2156,8 +2156,15 @@ and [<Sealed>] TcImports
             let runInParallel =
                 Environment.GetEnvironmentVariable("FCS_PARALLEL_PROJECTS_ANALYSIS")
                 |> bool.TryParse
-                |> function | true, runInParallel -> runInParallel | false, _ -> false
-            let runMethod = if runInParallel then NodeCode.Parallel else NodeCode.Sequential
+                |> function
+                    | true, runInParallel -> runInParallel
+                    | false, _ -> false
+
+            let runMethod =
+                if runInParallel then
+                    NodeCode.Parallel
+                else
+                    NodeCode.Sequential
 
             let! results =
                 nms
