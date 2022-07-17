@@ -13,6 +13,7 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.Diagnostics.Activity
 open FSharp.Compiler.Driver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CodeAnalysis
@@ -26,18 +27,20 @@ open OpenTelemetry.Trace
 do ()
 
 [<EntryPoint>]
-let main (argv) =
+let main(argv) =
 
-    use tracerProvider = 
+    // eventually this would need to only export to the OLTP collector, and even then only if configured. always-on is no good.
+    // when this configuration becomes opt-in, we'll also need to safely check activities around every StartActivity call, because those could
+    // be null
+    use tracerProvider =
         Sdk.CreateTracerProviderBuilder()
-           .AddSource("fsc")
+           .AddSource(activitySourceName)
            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName ="fsc", serviceVersion = "42.42.42.42"))
            .AddConsoleExporter()
            .Build();
-    use activitySource = new ActivitySource("fsc") 
-    use mainActivity = activitySource.StartActivity("main") 
-    
-    let forceCleanup() = 
+    use mainActivity = activitySource.StartActivity("main")
+
+    let forceCleanup() =
         mainActivity.Dispose()
         activitySource.Dispose()
         tracerProvider.Dispose()
