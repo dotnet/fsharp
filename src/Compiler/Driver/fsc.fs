@@ -477,6 +477,8 @@ let main1
         diagnosticsLoggerProvider: DiagnosticsLoggerProvider,
         disposables: DisposablesTracker
     ) =
+    
+    use mainActivity = new Activity("main")
 
     // See Bug 735819
     let lcidFromCodePage =
@@ -532,7 +534,7 @@ let main1
 
     // Process command line, flags and collect filenames
     let sourceFiles =
-        use parseActivity = activitySource.StartActivity("fcs:main1:determine_sources")
+        use parseActivity = activitySource.StartActivity("determine_source_files")
 
         // The ParseCompilerOptions function calls imperative function to process "real" args
         // Rather than start processing, just collect names, then process them.
@@ -566,7 +568,7 @@ let main1
 
     // If there's a problem building TcConfig, abort
     let tcConfig =
-        use createConfigActivity = activitySource.StartActivity("fcs:main1:create_tc_config")
+        use createConfigActivity = activitySource.StartActivity("create_tc_config")
 
         try
             TcConfig.Create(tcConfigB, validate = false)
@@ -592,12 +594,12 @@ let main1
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
 
     let sysRes, otherRes, knownUnresolved =
-        use splitResolutionsActivity = activitySource.StartActivity("fcs:main1:split_resolutions")
+        use splitResolutionsActivity = activitySource.StartActivity("split_resolutions")
         TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
 
     // Import basic assemblies
     let tcGlobals, frameworkTcImports =
-        use frameworkImportsActivity = activitySource.StartActivity("fcs:main:import_framework_references")
+        use frameworkImportsActivity = activitySource.StartActivity("import_framework_references")
         TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes)
         |> NodeCode.RunImmediateWithoutCancellation
 
@@ -650,7 +652,7 @@ let main1
     ReportTime tcConfig "Import non-system references"
 
     let tcImports =
-        use nonFrameworkImportsActivity = activitySource.StartActivity("fcs:main1:import_non_framework_references")
+        use nonFrameworkImportsActivity = activitySource.StartActivity("import_non_framework_references")
         TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
         |> NodeCode.RunImmediateWithoutCancellation
 
@@ -669,7 +671,7 @@ let main1
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
 
     let tcEnv0, openDecls0 =
-        use initialTcEnvActivity = activitySource.StartActivity("fcs:main1:get_initial_tc_env")
+        use initialTcEnvActivity = activitySource.StartActivity("get_initial_tc_env")
         GetInitialTcEnv(assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
     // Type check the inputs
@@ -730,7 +732,7 @@ let main1OfAst
         inputs: ParsedInput list
     ) =
     
-    use main1AstActivity = activitySource.StartActivity("fcs:main1_ast")
+    use main1AstActivity = activitySource.StartActivity("main1_of_ast")
     
     let tryGetMetadataSnapshot = (fun _ -> None)
 
@@ -916,7 +918,7 @@ let main2
            exiter: Exiter,
            ilSourceDocs))
     =
-    use main2Activity = activitySource.StartActivity("fcs:main2")
+    use main2Activity = activitySource.StartActivity("main2")
 
 
     if tcConfig.typeCheckOnly then
@@ -1026,7 +1028,7 @@ let main3
            exiter: Exiter,
            ilSourceDocs))
     =
-    use main3Activity = activitySource.StartActivity("fcs:main3")
+    use main3Activity = activitySource.StartActivity("main3")
     // Encode the signature data
     ReportTime tcConfig "Encode Interface Data"
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
@@ -1122,7 +1124,7 @@ let main4
            exiter: Exiter,
            ilSourceDocs))
     =
-    use main4Activity = activitySource.StartActivity("fcs:main4")
+    use main4Activity = activitySource.StartActivity("main4")
 
     match tcImportsCapture with
     | None -> ()
@@ -1227,7 +1229,7 @@ let main5
            exiter: Exiter,
            ilSourceDocs))
     =
-    use main5Activity = activitySource.StartActivity("fcs:main5")
+    use main5Activity = activitySource.StartActivity("main5")
 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
 
@@ -1260,7 +1262,7 @@ let main6
            exiter: Exiter,
            ilSourceDocs))
     =
-    use main6Activity = activitySource.StartActivity("fcs:main6")
+    use main6Activity = activitySource.StartActivity("main6")
 
     ReportTime tcConfig "Write .NET Binary"
 
@@ -1385,7 +1387,6 @@ let CompileFromCommandLineArguments
         tcImportsCapture,
         dynamicAssemblyCreator
     ) =
-    use mainActivity = activitySource.StartActivity("fcs:main")
 
     use disposables = new DisposablesTracker()
     let savedOut = Console.Out
@@ -1398,7 +1399,6 @@ let CompileFromCommandLineArguments
                 with _ ->
                     ()
         }
-    use mainActivity = new Activity("fcs:main")
     main1 (
         ctok,
         argv,

@@ -36,7 +36,8 @@ let main(argv) =
         Sdk.CreateTracerProviderBuilder()
            .AddSource(activitySourceName)
            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName ="fsc", serviceVersion = "42.42.42.42"))
-           .AddConsoleExporter()
+           .AddOtlpExporter()
+           .AddZipkinExporter()
            .Build();
     use mainActivity = activitySource.StartActivity("main")
 
