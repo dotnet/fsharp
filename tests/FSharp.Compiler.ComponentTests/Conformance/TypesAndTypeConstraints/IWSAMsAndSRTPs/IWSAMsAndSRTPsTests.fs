@@ -310,18 +310,10 @@ module Negative =
         |> ignore
 
 
-module SRTPInvocationBehavior =
+module InvocationBehavior =
 
     [<Fact>]
-    let ``Expression conversion not supported`` () =
-        Fsx "let inline f_TraitWithExpression<'T when 'T : (static member StaticMethod: x: System.Linq.Expressions.Expression<System.Func<int,int>> -> int) >() =
-            'T.StaticMethod(fun x -> x + 1)"
-        |> compile
-        |> shouldFail
-        |> withErrorMessage "This function takes too many arguments, or is used in a context where a function is not expected"
-
-    [<Fact>]
-    let ``Delegate conversion not supported`` () =
+    let ``SRTP Delegate conversion not supported`` () =
         Fsx "let inline f_TraitWithDelegate<'T when 'T : (static member StaticMethod: x: System.Func<int,int> -> int) >() =
             'T.StaticMethod(fun x -> x + 1)"
         |> compile
@@ -329,7 +321,49 @@ module SRTPInvocationBehavior =
         |> withErrorMessage "This function takes too many arguments, or is used in a context where a function is not expected"
 
     [<Fact>]
-    let ``Byref can be passed with old syntax`` () =
+    let ``SRTP Expression conversion not supported`` () =
+        Fsx "let inline f_TraitWithExpression<'T when 'T : (static member StaticMethod: x: System.Linq.Expressions.Expression<System.Func<int,int>> -> int) >() =
+            'T.StaticMethod(fun x -> x + 1)"
+        |> compile
+        |> shouldFail
+        |> withErrorMessage "This function takes too many arguments, or is used in a context where a function is not expected"
+
+    [<Fact>]
+    let ``IWSAM Delegate conversion works`` () =
+        Fsx
+            """
+            open Types
+
+            let inline f_IwsamWithFunc<'T when IDelegateConversion<'T>>() =
+                'T.FuncConversion(fun x -> x + 1)
+
+            if not (f_IwsamWithFunc<C>().Value = 4) then
+                failwith "Unexpected result"
+
+            """
+        |> setupCompilation
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``IWSAM Expression conversion works`` () =
+        Fsx
+            """
+            open Types
+
+            let inline f_IwsamWithExpression<'T when IDelegateConversion<'T>>() =
+                'T.ExpressionConversion(fun x -> x + 1)
+
+            if not (f_IwsamWithExpression<C>().Value = 4) then
+                failwith "Unexpected result"
+
+            """
+        |> setupCompilation
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``SRTP Byref can be passed with old syntax`` () =
         Fsx "let inline f_TraitWithByref<'T when 'T : ( static member TryParse: string * byref<int> -> bool) >() =
                 let mutable result = 0
                 (^T : ( static member TryParse: x: string * byref<int> -> bool) (\"42\", &result))"
@@ -337,7 +371,7 @@ module SRTPInvocationBehavior =
         |> shouldSucceed
 
     [<Fact>]
-    let ``Byref can't be passed with new syntax`` () =
+    let ``SRTP Byref can't be passed with new syntax`` () =
         Fsx "let inline f_TraitWithByref<'T when 'T : ( static member TryParse: string * byref<int> -> bool) >() =
                 let mutable result = 0
                 'T.TryParse(\"42\", &result)"
