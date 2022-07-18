@@ -1144,7 +1144,10 @@ let canGenMethodDef (tdef: ILTypeDef) cenv (mdef: ILMethodDef) =
     //          member val internal Prop1 : int = 0 with get, set
     //      [<PublicWithInternalSetterPropertyAttribute(Prop1=4)>]
     //      type ClassPublicWithAttributes() = class end
-    else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsConstructor) && (not mdef.IsClassInitializer) then
+    
+    // TODO: add comment why constructors of attributes should always be included in the reference assembly.
+    // Example: NoDynamicInvocationAttribute has an internal constructor, which should be included in the reference assembly.
+    else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsClassInitializer) then
         true
     else
         match mdef.Access with
