@@ -816,14 +816,15 @@ let mkSynMemberDefnGetSet
 let mkTupleOrDivide (isStruct: bool) (leadingType: SynType) (isStar: bool) (elementTypes: (bool * SynType) list) : SynType =
     // x * y
     let range =
-        (leadingType.Range, elementTypes) ||> List.fold (fun acc (_, t) -> unionRanges acc t.Range)
-    
+        (leadingType.Range, elementTypes)
+        ||> List.fold (fun acc (_, t) -> unionRanges acc t.Range)
+
     let newElementTypes =
         elementTypes
-        |> List.fold (fun (lastIsStar, currentList) (isStar , t) -> (isStar, (lastIsStar, t) :: currentList)) (isStar, [])
+        |> List.fold (fun (lastIsStar, currentList) (isStar, t) -> (isStar, (lastIsStar, t) :: currentList)) (isStar, [])
         |> snd
         |> List.rev
-        
+
     SynType.Tuple(isStruct, false, leadingType, newElementTypes, range)
 
 let mkDivideWithLeadingSlash (_: (bool * SynType) list) : SynType = failwith "TODO"

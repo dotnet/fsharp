@@ -661,7 +661,7 @@ module ParsedInput =
                     None
             | SynType.App (ty, _, types, _, _, _, _) -> walkType ty |> Option.orElseWith (fun () -> List.tryPick walkType types)
             | SynType.LongIdentApp (_, _, _, types, _, _, _) -> List.tryPick walkType types
-            | SynType.Tuple(_, _, _, elements, _) -> elements |> List.tryPick (fun (_, t) -> walkType t)
+            | SynType.Tuple (_, _, firstType, tys, _) -> firstType :: (List.map snd tys) |> List.tryPick (fun t -> walkType t)
             | SynType.Array (_, t, _) -> walkType t
             | SynType.Fun (argType = t1; returnType = t2) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.WithGlobalConstraints (t, _, _) -> walkType t
@@ -1669,7 +1669,7 @@ module ParsedInput =
                 walkType ty
                 List.iter walkType types
             | SynType.LongIdentApp (_, _, _, types, _, _, _) -> List.iter walkType types
-            | SynType.Tuple(_, _, _, elements, _) -> elements |> List.iter (fun (_, t) -> walkType t)
+            | SynType.Tuple (_, _, firstType, tys, _) -> firstType :: (List.map snd tys) |> List.iter (fun t -> walkType t)
             | SynType.WithGlobalConstraints (t, typeConstraints, _) ->
                 walkType t
                 List.iter walkTypeConstraint typeConstraints
