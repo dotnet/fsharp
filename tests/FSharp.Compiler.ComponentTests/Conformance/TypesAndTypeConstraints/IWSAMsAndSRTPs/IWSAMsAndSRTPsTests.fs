@@ -379,3 +379,144 @@ module InvocationBehavior =
         |> shouldFail
         |> withDiagnosticMessageMatches "A type instantiation involves a byref type. This is not permitted by the rules of Common IL."
         |> withDiagnosticMessageMatches "The address of the variable 'result' cannot be used at this point"
+
+
+module ``Implicit conversion`` =
+
+    let library =
+        FSharp
+            """
+            module Lib
+
+                type ICanBeInt<'T when 'T :> ICanBeInt<'T>> =
+                    static abstract op_Implicit: 'T -> int
+                    //static abstract TakeInt: int -> int
+
+                type C(c: int) =
+                    member _.Value = c
+
+                    interface ICanBeInt<C> with
+                        static member op_Implicit(x) = x.Value
+
+                    static member TakeInt(x: int) = x
+
+                let add1 (x: int) = x + 1
+            """
+        |> withLangVersionPreview
+        |> withOptions ["--nowarn:3535"]
+
+    [<Fact>]
+    let ``Function implicit conversion not supported on constrained type`` () =
+        Fsx
+            """
+            open Lib
+            let f_function_implicit_conversion<'T when ICanBeInt<'T>>(a: 'T) : int =
+                add1(a)
+            """
+        |> withReferences [library]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'int'\\s+but here has type\\s+''T'"
+
+    [<Fact>]
+    let ``Method implicit conversion not supported on constrained type`` () =
+        Fsx
+            """
+            open Lib
+            let f_method_implicit_conversion<'T when ICanBeInt<'T>>(a: 'T) : int =
+                C.TakeInt(a)
+            """
+        |> withReferences [library]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'int'\\s+but here has type\\s+''T'"
+
+    [<Fact>]
+    let ``Function explicit conversion works on constrained type`` () =
+        Fsx
+            """
+            open Lib
+            let f_function_explicit_conversion<'T when ICanBeInt<'T>>(a: 'T) : int =
+                add1(int(a))
+            """
+        |> withReferences [library]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Method explicit conversion works on constrained type`` () =
+        Fsx
+            """
+            open Lib
+            let f_method_explicit_conversion<'T when ICanBeInt<'T>>(a: 'T) : int =
+                C.TakeInt(int(a))
+            """
+        |> withReferences [library]
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+
+module ``Nominal type after or`` =
+
+    [<Fact>]
+    let ``Nominal type can be used after or`` () =
+        Fsx
+            """
+            type C() =
+                static member X(n, c) = $"{n} OK"
+
+            let inline callX (x: 'T) (y: C) = ((^T or C): (static member X : 'T * C -> string) (x, y));;
+
+            if not (callX 1 (C()) = "1 OK") then
+                failwith "Unexpected result"
+
+            if not (callX "A" (C()) = "A OK") then
+                failwith "Unexpected result"
+            """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Nominal type can't be used before or`` () =
+        Fsx
+            """
+            type C() =
+                static member X(n, c) = $"{n} OK"
+
+            let inline callX (x: 'T) (y: C) = ((C or ^T): (static member X : 'T * C -> string) (x, y));;
+            """
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "Unexpected keyword 'static' in binding"
+
+    [<Fact>]
+    let ``Nominal type is preferred`` () =
+        Fsx
+            """
+            type C() =
+                static member X(a, b) = "C"
+
+            type D() =
+                static member X(d: D, a) = "D"
+
+            let inline callX (x: 'T) (y: C) = ((^T or C): (static member X : 'T * C -> string) (x, y));;
+
+            if not (callX (D()) (C()) = "C") then
+                failwith "Unexpected result"
+
+            let inline callX2 (x: C) (y: 'T) = ((^T or C): (static member X : 'T * C -> string) (y, x));;
+
+            if not (callX2 (C()) (D()) = "C") then
+                failwith "Unexpected result"
+            """
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
