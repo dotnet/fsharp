@@ -313,14 +313,7 @@ let pdbGetDebugInfo
 //------------------------------------------------------------------------------
 
 // This function takes output file name and returns debug file name.
-let getDebugFileName outfile (portablePDB: bool) =
-#if ENABLE_MONO_SUPPORT
-    if runningOnMono && not portablePDB then
-        outfile + ".mdb"
-    else
-#else
-    ignore portablePDB
-#endif
+let getDebugFileName outfile =
     (FileSystemUtils.chopExtension outfile) + ".pdb"
 
 let sortMethods showTimes info =
