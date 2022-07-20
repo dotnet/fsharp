@@ -427,6 +427,14 @@ type SynTyparDecls =
     member Constraints: SynTypeConstraint list
     member Range: range
 
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type TupleTypeSegment =
+    | Type of typeName: SynType
+    | Star of range: range
+    | Slash of range: range
+
+    member Range: range
+
 /// Represents a syntax tree for F# types
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynType =
@@ -457,12 +465,7 @@ type SynType =
 
     /// F# syntax: type * ... * type
     /// F# syntax: struct (type * ... * type)
-    | Tuple of
-        isStruct: bool *
-        hasLeadingSlash: bool *
-        firstType: SynType *
-        elements: (bool * SynType) list *
-        range: range
+    | Tuple of isStruct: bool * path: TupleTypeSegment list * range: range
 
     /// F# syntax: {| id: type; ...; id: type |}
     /// F# syntax: struct {| id: type; ...; id: type |}

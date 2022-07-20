@@ -5029,17 +5029,23 @@ topType:
 
 topTupleType:
   | topAppType STAR topTupleTypeElements 
-     { let ty, mdata = $1 in let tys, mdatas = List.unzip $3 in (SynType.Tuple(false, false, ty, List.map (fun t -> false, t) tys, lhs parseState)), (mdata :: mdatas) }
+     { let t, argInfo = $1
+       let path = TupleTypeSegment.Type t :: (List.map fst $3)
+       let mdata = argInfo :: (List.choose snd $3)
+       mkTupleOrDivide false path, mdata }
 
   | topAppType                 
      { let ty, mdata = $1 in ty, [mdata] }
 
 topTupleTypeElements:
   | topAppType STAR topTupleTypeElements       
-     { $1 :: $3 }
+     { let t, argInfo = $1
+       let mStar = rhs parseState 2
+       (TupleTypeSegment.Type t, Some argInfo) :: (TupleTypeSegment.Star mStar, None) :: $3 }
 
   | topAppType %prec prec_toptuptyptail_prefix 
-     { [$1] }
+     { let t, argInfo = $1
+       [ TupleTypeSegment.Type t, Some argInfo ] }
 
 topAppType:
   | attributes appType COLON appType 
@@ -5080,31 +5086,39 @@ typEOF:
 
 tupleType:
   | appType STAR tupleOrQuotTypeElements 
-    { mkTupleOrDivide false $1 true $3 }
+    { let mStar = rhs parseState 2
+      let path = TupleTypeSegment.Type $1 :: TupleTypeSegment.Star mStar :: $3
+      mkTupleOrDivide false path }
 
   | INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
       //SynType.Division((SynType.StaticConstant (SynConst.Int32 1, lhs parseState)) :: $2, lhs parseState)
-      mkDivideWithLeadingSlash $2 }
+      let mSlash = rhs parseState 1
+      let path = TupleTypeSegment.Slash mSlash :: $2
+      mkTupleOrDivide false path }
 
   | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
       //SynType.Tuple(false, (true, $1) :: $3, lhs parseState)
-      mkTupleOrDivide false $1 false $3 }
+      let mSlash = rhs parseState 2
+      let path = TupleTypeSegment.Type $1 :: TupleTypeSegment.Slash mSlash :: $3
+      mkTupleOrDivide false path }
 
   | appType %prec prec_tuptyp_prefix 
     { $1 }
 
 tupleOrQuotTypeElements:
   | appType STAR tupleOrQuotTypeElements              
-    { (false, $1) :: $3 }
+    { let mStar = rhs parseState 2
+      TupleTypeSegment.Type $1 :: TupleTypeSegment.Star mStar :: $3 }
 
   | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements 
     { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-      (true, $1) :: $3 }
+      let mSlash = rhs parseState 2
+      TupleTypeSegment.Type $1 :: TupleTypeSegment.Slash mSlash :: $3 }
 
   | appType %prec prec_tuptyptail_prefix 
-    { [(false, $1)] }
+    { [ TupleTypeSegment.Type $1 ] }
 
 appTypeCon:
   | path %prec prec_atomtyp_path 
@@ -5238,14 +5252,17 @@ atomType:
        SynType.Paren ($2, lhs parseState) }
 
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  rparen 
-    { 
+    { let mStar = rhs parseState 4
+      let path = TupleTypeSegment.Type $3 :: TupleTypeSegment.Star mStar :: $5
         //SynType.Tuple(true, (false, $3) :: $5, lhs parseState)
-      mkTupleOrDivide true $3 true $5 }
+      mkTupleOrDivide true path }
 
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  recover
     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
-      //SynType.Tuple(true, (false, $3) :: $5, lhs parseState)
-      mkTupleOrDivide true $3 true $5 }
+      //SynType.Tuple(true, (false, $3) :: $5, lhs parseState
+      let mStar = rhs parseState 4
+      let path = TupleTypeSegment.Type $3 :: TupleTypeSegment.Star mStar :: $5
+      mkTupleOrDivide true path }
 
   | STRUCT LPAREN appType STAR recover
     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
