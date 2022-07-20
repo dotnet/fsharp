@@ -63,7 +63,8 @@ module XmlDocWriter =
 
             let ptext = defaultArg path ""
 
-            if mspec.IsModule then doModuleMemberSig ptext mspec
+            if mspec.IsModule then
+                doModuleMemberSig ptext mspec
 
             let vals =
                 mtype.AllValsAndMembers
@@ -116,7 +117,9 @@ module XmlDocWriter =
 
         let rec doModule (mspec: ModuleOrNamespace) =
             let mtype = mspec.ModuleOrNamespaceType
-            if mspec.IsModule then modulMember mspec
+
+            if mspec.IsModule then
+                modulMember mspec
 
             let vals =
                 mtype.AllValsAndMembers

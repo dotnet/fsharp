@@ -751,10 +751,12 @@ type PortablePdbGenerator
                             builder.WriteCompressedInteger offsetDelta
 
                             // Check for hidden-sequence-point-record
-                            if startLine = 0xfeefee
-                               || endLine = 0xfeefee
-                               || (startColumn = 0 && endColumn = 0)
-                               || ((endLine - startLine) = 0 && (endColumn - startColumn) = 0) then
+                            if
+                                startLine = 0xfeefee
+                                || endLine = 0xfeefee
+                                || (startColumn = 0 && endColumn = 0)
+                                || ((endLine - startLine) = 0 && (endColumn - startColumn) = 0)
+                            then
                                 // Hidden-sequence-point-record
                                 builder.WriteCompressedInteger 0
                                 builder.WriteCompressedInteger 0
@@ -911,271 +913,6 @@ let getInfoForEmbeddedPortablePdb
         true
         deterministic
 
-#if !FX_NO_PDB_WRITER
-
-open Microsoft.Win32
-
-//---------------------------------------------------------------------
-// PDB Writer.  The function [WritePdbInfo] abstracts the
-// imperative calls to the Symbol Writer API.
-//---------------------------------------------------------------------
-let writePdbInfo showTimes outfile pdbfile info cvChunk =
-
-    try
-        FileSystem.FileDeleteShim pdbfile
-    with _ ->
-        ()
-
-    let pdbw =
-        try
-            pdbInitialize outfile pdbfile
-        with _ ->
-            error (Error(FSComp.SR.ilwriteErrorCreatingPdb pdbfile, rangeCmdArgs))
-
-    match info.EntryPoint with
-    | None -> ()
-    | Some x -> pdbSetUserEntryPoint pdbw x
-
-    let docs = info.Documents |> Array.map (fun doc -> pdbDefineDocument pdbw doc.File)
-
-    let getDocument i =
-        if i < 0 || i > docs.Length then
-            failwith "getDocument: bad doc number"
-
-        docs.[i]
-
-    reportTime showTimes (sprintf "PDB: Defined %d documents" info.Documents.Length)
-    Array.sortInPlaceBy (fun x -> x.MethToken) info.Methods
-    reportTime showTimes (sprintf "PDB: Sorted %d methods" info.Methods.Length)
-
-    let spCounts = info.Methods |> Array.map (fun x -> x.DebugPoints.Length)
-    let allSps = Array.collect (fun x -> x.DebugPoints) info.Methods |> Array.indexed
-
-    let mutable spOffset = 0
-
-    info.Methods
-    |> Array.iteri (fun i minfo ->
-
-        let sps = Array.sub allSps spOffset spCounts.[i]
-        spOffset <- spOffset + spCounts.[i]
-
-        (match minfo.DebugRange with
-         | None -> ()
-         | Some (a, b) ->
-             pdbOpenMethod pdbw minfo.MethToken
-
-             pdbSetMethodRange pdbw (getDocument a.Document) a.Line a.Column (getDocument b.Document) b.Line b.Column
-
-             // Partition the sequence points by document
-             let spsets =
-                 let res = Dictionary<int, PdbDebugPoint list ref>()
-
-                 for (_, sp) in sps do
-                     let k = sp.Document
-
-                     match res.TryGetValue(k) with
-                     | true, xsR -> xsR.Value <- sp :: xsR.Value
-                     | _ -> res.[k] <- ref [ sp ]
-
-                 res
-
-             spsets
-             |> Seq.iter (fun (KeyValue (_, vref)) ->
-                 let spset = vref.Value
-
-                 if not spset.IsEmpty then
-                     let spset = Array.ofList spset
-                     Array.sortInPlaceWith SequencePoint.orderByOffset spset
-
-                     let sps =
-                         spset
-                         |> Array.map (fun sp ->
-                             // Ildiag.dprintf "token 0x%08lx has an sp at offset 0x%08x\n" minfo.MethToken sp.Offset
-                             (sp.Offset, sp.Line, sp.Column, sp.EndLine, sp.EndColumn))
-                     // Use of alloca in implementation of pdbDefineSequencePoints can give stack overflow here
-                     if sps.Length < 5000 then
-                         pdbDefineSequencePoints pdbw (getDocument spset.[0].Document) sps)
-
-             // Avoid stack overflow when writing linearly nested scopes
-             let stackGuard = StackGuard(100)
-             // Write the scopes
-             let rec writePdbScope parent sco =
-                 stackGuard.Guard(fun () ->
-                     if parent = None || sco.Locals.Length <> 0 || sco.Children.Length <> 0 then
-                         // Only nest scopes if the child scope is a different size from
-                         let nested =
-                             match parent with
-                             | Some p -> sco.StartOffset <> p.StartOffset || sco.EndOffset <> p.EndOffset
-                             | None -> true
-
-                         if nested then pdbOpenScope pdbw sco.StartOffset
-
-                         sco.Locals
-                         |> Array.iter (fun v -> pdbDefineLocalVariable pdbw v.Name v.Signature v.Index)
-
-                         sco.Children |> Array.iter (writePdbScope (if nested then Some sco else parent))
-
-                         if nested then pdbCloseScope pdbw sco.EndOffset)
-
-             match minfo.RootScope with
-             | None -> ()
-             | Some rootscope -> writePdbScope None rootscope
-
-             pdbCloseMethod pdbw))
-
-    reportTime showTimes "PDB: Wrote methods"
-
-    let res = pdbWriteDebugInfo pdbw
-
-    for pdbDoc in docs do
-        pdbCloseDocument pdbDoc
-
-    pdbClose pdbw outfile pdbfile
-
-    reportTime showTimes "PDB: Closed"
-
-    [|
-        {
-            iddCharacteristics = res.iddCharacteristics
-            iddMajorVersion = res.iddMajorVersion
-            iddMinorVersion = res.iddMinorVersion
-            iddType = res.iddType
-            iddTimestamp = info.Timestamp
-            iddData = res.iddData
-            iddChunk = cvChunk
-        }
-    |]
-#endif
-
-#if ENABLE_MONO_SUPPORT
-//---------------------------------------------------------------------
-// Support functions for calling 'Mono.CompilerServices.SymbolWriter'
-// assembly dynamically if it is available to the compiler
-//---------------------------------------------------------------------
-open Microsoft.FSharp.Reflection
-
-// Dynamic invoke operator. Implements simple overload resolution based
-// on the name and number of parameters only.
-// Supports the following cases:
-//   obj?Foo()        // call with no arguments
-//   obj?Foo(1, "a")  // call with two arguments (extracted from tuple)
-// NOTE: This doesn't actually handle all overloads.  It just picks first entry with right
-// number of arguments.
-let (?) this memb (args: 'Args) : 'R =
-    // Get array of 'obj' arguments for the reflection call
-    let args =
-        if typeof<'Args> = typeof<unit> then
-            [||]
-        elif FSharpType.IsTuple typeof<'Args> then
-            FSharpValue.GetTupleFields args
-        else
-            [| box args |]
-
-    // Get methods and perform overload resolution
-    let methods = this.GetType().GetMethods()
-
-    let bestMatch =
-        methods
-        |> Array.tryFind (fun mi -> mi.Name = memb && mi.GetParameters().Length = args.Length)
-
-    match bestMatch with
-    | Some mi -> unbox (mi.Invoke(this, args))
-    | None -> error (Error(FSComp.SR.ilwriteMDBMemberMissing memb, rangeCmdArgs))
-
-// Creating instances of needed classes from 'Mono.CompilerServices.SymbolWriter' assembly
-
-let monoCompilerSvc =
-    AssemblyName("Mono.CompilerServices.SymbolWriter, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
-
-let ctor (asmName: AssemblyName) clsName (args: obj[]) =
-    let asm = Assembly.Load asmName
-    let ty = asm.GetType clsName
-    Activator.CreateInstance(ty, args)
-
-let createSourceMethodImpl (name: string) (token: int) (namespaceID: int) =
-    ctor monoCompilerSvc "Mono.CompilerServices.SymbolWriter.SourceMethodImpl" [| box name; box token; box namespaceID |]
-
-let createWriter (f: string) =
-    ctor monoCompilerSvc "Mono.CompilerServices.SymbolWriter.MonoSymbolWriter" [| box f |]
-
-//---------------------------------------------------------------------
-// MDB Writer.  Generate debug symbols using the MDB format
-//---------------------------------------------------------------------
-let writeMdbInfo fmdb f info =
-    // Note, if we can't delete it code will fail later
-    try
-        FileSystem.FileDeleteShim fmdb
-    with _ ->
-        ()
-
-    // Try loading the MDB symbol writer from an assembly available on Mono dynamically
-    // Report an error if the assembly is not available.
-    let wr =
-        try
-            createWriter f
-        with _ ->
-            error (Error(FSComp.SR.ilwriteErrorCreatingMdb (), rangeCmdArgs))
-
-    // NOTE: MonoSymbolWriter doesn't need information about entrypoints, so 'info.EntryPoint' is unused here.
-    // Write information about Documents. Returns '(SourceFileEntry*CompileUnitEntry)[]'
-    let docs =
-        [|
-            for doc in info.Documents do
-                let doc = wr?DefineDocument (doc.File)
-                let unit = wr?DefineCompilationUnit doc
-                yield doc, unit
-        |]
-
-    let getDocument i =
-        if i < 0 || i >= Array.length docs then
-            failwith "getDocument: bad doc number"
-        else
-            docs[i]
-
-    // Sort methods and write them to the MDB file
-    Array.sortInPlaceBy (fun x -> x.MethToken) info.Methods
-
-    for meth in info.Methods do
-        // Creates an instance of 'SourceMethodImpl' which is a private class that implements 'IMethodDef' interface
-        // We need this as an argument to 'OpenMethod' below. Using private class is ugly, but since we don't reference
-        // the assembly, the only way to implement 'IMethodDef' interface would be dynamically using Reflection.Emit...
-        let sm = createSourceMethodImpl meth.MethName meth.MethToken 0
-
-        match meth.DebugRange with
-        | Some (mstart, _) ->
-            // NOTE: 'meth.Params' is not needed, Mono debugger apparently reads this from meta-data
-            let _, cue = getDocument mstart.Document
-            wr?OpenMethod (cue, 0, sm) |> ignore
-
-            // Write sequence points
-            for sp in meth.DebugPoints do
-                wr?MarkSequencePoint (sp.Offset, cue?get_SourceFile (), sp.Line, sp.Column, false)
-
-            // Walk through the tree of scopes and write all variables
-            let rec writeScope (scope: PdbMethodScope) =
-                wr?OpenScope (scope.StartOffset) |> ignore
-
-                for local in scope.Locals do
-                    wr?DefineLocalVariable (local.Index, local.Name)
-
-                for child in scope.Children do
-                    writeScope child
-
-                wr?CloseScope (scope.EndOffset)
-
-            match meth.RootScope with
-            | None -> ()
-            | Some rootscope -> writeScope rootscope
-
-            // Finished generating debug information for the curretn method
-            wr?CloseMethod ()
-        | _ -> ()
-
-    // Finalize - MDB requires the MVID of the generated .NET module
-    let moduleGuid = Guid(info.ModuleID |> Array.map byte)
-    wr?WriteSymbolFile moduleGuid
-#endif
-
 //---------------------------------------------------------------------
 // Dumps debug info into a text file for testing purposes
 //---------------------------------------------------------------------
@@ -1242,8 +979,10 @@ and allNamesOfScopes acc (scopes: PdbMethodScope[]) =
 let rec pushShadowedLocals (stackGuard: StackGuard) (localsToPush: PdbLocalVar[]) (scope: PdbMethodScope) =
     stackGuard.Guard(fun () ->
         // Check if child scopes are properly nested
-        if scope.Children
-           |> Array.forall (fun child -> child.StartOffset >= scope.StartOffset && child.EndOffset <= scope.EndOffset) then
+        if
+            scope.Children
+            |> Array.forall (fun child -> child.StartOffset >= scope.StartOffset && child.EndOffset <= scope.EndOffset)
+        then
 
             let children = scope.Children |> Array.sortWith scopeSorter
 

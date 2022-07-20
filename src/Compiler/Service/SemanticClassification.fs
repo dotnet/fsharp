@@ -93,12 +93,14 @@ module TcResolutionsExtensions =
                         | _ -> None
 
                     let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
-                        if valRefEq g g.raise_vref vref
-                           || valRefEq g g.reraise_vref vref
-                           || valRefEq g g.typeof_vref vref
-                           || valRefEq g g.typedefof_vref vref
-                           || valRefEq g g.sizeof_vref vref
-                           || valRefEq g g.nameof_vref vref then
+                        if
+                            valRefEq g g.raise_vref vref
+                            || valRefEq g g.reraise_vref vref
+                            || valRefEq g g.typeof_vref vref
+                            || valRefEq g g.typedefof_vref vref
+                            || valRefEq g g.sizeof_vref vref
+                            || valRefEq g g.nameof_vref vref
+                        then
                             Some()
                         else
                             None
@@ -150,8 +152,8 @@ module TcResolutionsExtensions =
                         protectAssemblyExplorationNoReraise false false (fun () ->
                             ExistsHeadTypeInEntireHierarchy g amap range0 vref.Type g.tcref_System_IDisposable)
 
-                    let isStructTyconRef (tyconRef: TyconRef) =
-                        let ty = generalizedTyconRef g tyconRef
+                    let isStructTyconRef (tcref: TyconRef) =
+                        let ty = generalizedTyconRef g tcref
                         let underlyingTy = stripTyEqnsAndMeasureEqns g ty
                         isStructTy g underlyingTy
 
@@ -257,8 +259,10 @@ module TcResolutionsExtensions =
                             match minfos with
                             | [] -> add m SemanticClassificationType.Method
                             | _ ->
-                                if minfos
-                                   |> List.forall (fun minfo -> minfo.IsExtensionMember || minfo.IsCSharpStyleExtensionMember) then
+                                if
+                                    minfos
+                                    |> List.forall (fun minfo -> minfo.IsExtensionMember || minfo.IsCSharpStyleExtensionMember)
+                                then
                                     add m SemanticClassificationType.ExtensionMethod
                                 else
                                     add m SemanticClassificationType.Method
