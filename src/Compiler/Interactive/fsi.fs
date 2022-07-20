@@ -2345,16 +2345,16 @@ type internal FsiInterruptController(
 //
 // For information about contexts, see the Assembly.LoadFrom(String) method overload.
 
-module internal MagicAssemblyResolution =
+type internal MagicAssemblyResolution () =
 
     // See bug 5501 for details on decision to use UnsafeLoadFrom here.
     // Summary:
     //  It is an explicit user trust decision to load an assembly with #r. Scripts are not run automatically (for example, by double-clicking in explorer).
     //  We considered setting loadFromRemoteSources in fsi.exe.config but this would transitively confer unsafe loading to the code in the referenced
     //  assemblies. Better to let those assemblies decide for themselves which is safer.
-    let private assemblyLoadFrom (path:string) = Assembly.UnsafeLoadFrom(path)
+    static let assemblyLoadFrom (path:string) = Assembly.UnsafeLoadFrom(path)
 
-    let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) =
+    static member private ResolveAssemblyCore (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) =
 
         try
             // Grab the name of the assembly
@@ -2363,8 +2363,7 @@ module internal MagicAssemblyResolution =
             if progress then fsiConsoleOutput.uprintfn "ATTEMPT MAGIC LOAD ON ASSEMBLY, simpleAssemName = %s" simpleAssemName // "Attempting to load a dynamically required assembly in response to an AssemblyResolve event by using known static assembly references..."
 
             // We can't resolve an assembly called blah.resources" so don't try.
-            if simpleAssemName.EndsWith(".resources", StringComparison.OrdinalIgnoreCase) ||
-               simpleAssemName.EndsWith(".XmlSerializers", StringComparison.OrdinalIgnoreCase) ||
+            if simpleAssemName.EndsWith(".XmlSerializers", StringComparison.OrdinalIgnoreCase) ||
                (simpleAssemName = "UIAutomationWinforms") then null
             else
                 match fsiDynamicCompiler.FindDynamicAssembly(simpleAssemName) with
@@ -2449,7 +2448,22 @@ module internal MagicAssemblyResolution =
             stopProcessingRecovery e range0
             null
 
-    let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) =
+    [<ThreadStatic; DefaultValue>]
+    static val mutable private resolving: bool
+
+    static member private ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) =
+
+        //Eliminate recursive calls to Resolve which can happen via our callout to msbuild resolution
+        if MagicAssemblyResolution.resolving then
+            null
+        else
+            try
+                MagicAssemblyResolution.resolving <- true
+                MagicAssemblyResolution.ResolveAssemblyCore (ctok, m, tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput, fullAssemName)
+            finally
+                MagicAssemblyResolution.resolving <- false
+
+    static member Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) =
 
         let rangeStdin0 = rangeN stdinMockFileName 0
 
@@ -2457,7 +2471,7 @@ module internal MagicAssemblyResolution =
             // Explanation: our understanding is that magic assembly resolution happens
             // during compilation. So we recover the CompilationThreadToken here.
             let ctok = AssumeCompilationThreadWithoutEvidence ()
-            ResolveAssembly (ctok, rangeStdin0, tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput, args.Name))
+            MagicAssemblyResolution.ResolveAssembly (ctok, rangeStdin0, tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput, args.Name))
 
         AppDomain.CurrentDomain.add_AssemblyResolve(resolveAssembly)
 
