@@ -242,7 +242,7 @@ let GenerateIlxCode
     let ilxGenOpts: IlxGenOptions =
         {
             generateFilterBlocks = tcConfig.generateFilterBlocks
-            emitConstantArraysUsingStaticDataBlobs = true //@@@@@@
+            emitConstantArraysUsingStaticDataBlobs = true
             workAroundReflectionEmitBugs = tcConfig.isInteractive
             generateDebugSymbols = tcConfig.debuginfo // REVIEW: is this still required?
             fragName = fragName
