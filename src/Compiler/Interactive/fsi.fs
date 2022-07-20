@@ -2361,11 +2361,7 @@ module internal MagicAssemblyResolution =
             let simpleAssemName = fullAssemName.Split([| ',' |]).[0]
             if progress then fsiConsoleOutput.uprintfn "ATTEMPT MAGIC LOAD ON ASSEMBLY, simpleAssemName = %s" simpleAssemName // "Attempting to load a dynamically required assembly in response to an AssemblyResolve event by using known static assembly references..."
 
-            // Special case: Mono Windows Forms attempts to load an assembly called something like "Windows.Forms.resources"
-            // We can't resolve this, so don't try.
-            // REVIEW: Suggest 4481, delete this special case.
-            if simpleAssemName.EndsWith(".resources",StringComparison.OrdinalIgnoreCase) ||
-               simpleAssemName.EndsWith(".XmlSerializers", StringComparison.OrdinalIgnoreCase) ||
+            if simpleAssemName.EndsWith(".XmlSerializers", StringComparison.OrdinalIgnoreCase) ||
                simpleAssemName = "UIAutomationWinforms" then null
             else
                 match fsiDynamicCompiler.FindDynamicAssembly(simpleAssemName) with
