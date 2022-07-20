@@ -643,7 +643,7 @@ type TcConfigBuilder =
             outputFile = None
             platform = None
             prefer32Bit = false
-            useSimpleResolution = runningOnMono
+            useSimpleResolution = false
             target = CompilerTarget.ConsoleExe
             debuginfo = false
             testFlagEmitFeeFeeAs100001 = false
@@ -836,7 +836,7 @@ type TcConfigBuilder =
             if tcConfigB.debuginfo then
                 Some(
                     match tcConfigB.debugSymbolFile with
-                    | None -> getDebugFileName outfile tcConfigB.portablePDB
+                    | None -> getDebugFileName outfile
                     | Some f -> f
                 )
             elif (tcConfigB.debugSymbolFile <> None) && (not tcConfigB.debuginfo) then
@@ -1089,12 +1089,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 // We no longer expect the above to fail but leaving this just in case
                 error (Error(FSComp.SR.buildErrorOpeningBinaryFile (fileName, e.Message), rangeStartup))
         | None ->
-#if !ENABLE_MONO_SUPPORT
-            // TODO: we have to get msbuild out of this
-            if data.useSimpleResolution then
-                None, ""
-            else
-#endif
             None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
 
     let makePathAbsolute path =
@@ -1143,30 +1137,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         | _ -> ()
 
                     | LegacyResolutionEnvironment.EditingOrCompilation _ ->
-#if ENABLE_MONO_SUPPORT
-                        if runningOnMono then
-                            // Default compilation-time references on Mono
-                            //
-                            // On Mono, the default references come from the implementation assemblies.
-                            // This is because we have had trouble reliably using MSBuild APIs to compute DotNetFrameworkReferenceAssembliesRootDirectory on Mono.
-                            yield runtimeRoot
-
-                            if FileSystem.DirectoryExistsShim runtimeRootFacades then
-                                yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
-
-                            if FileSystem.DirectoryExistsShim runtimeRootWPF then
-                                yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
-                            // On Mono we also add a default reference to the 4.5-api and 4.5-api/Facades directories.
-                            let runtimeRootApi = runtimeRootWithoutSlash + "-api"
-                            let runtimeRootApiFacades = Path.Combine(runtimeRootApi, "Facades")
-
-                            if FileSystem.DirectoryExistsShim runtimeRootApi then
-                                yield runtimeRootApi
-
-                            if FileSystem.DirectoryExistsShim runtimeRootApiFacades then
-                                yield runtimeRootApiFacades
-                        else
-#endif
                         // Default compilation-time references on .NET Framework
                         //
                         // This is the normal case for "fsc.exe a.fs". We refer to the reference assemblies folder.

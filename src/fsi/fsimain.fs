@@ -333,17 +333,10 @@ let evaluateSession (argv: string[]) =
                 new ThreadExceptionEventHandler(fun _ args -> fsiSession.ReportUnhandledException args.Exception)
             )
 
-            let runningOnMono =
-                try
-                    System.Type.GetType("Mono.Runtime") <> null
-                with e ->
-                    false
-
-            if not runningOnMono then
-                try
-                    TrySetUnhandledExceptionMode()
-                with _ ->
-                    ()
+            try
+                TrySetUnhandledExceptionMode()
+            with _ ->
+                ()
 
             fsiWinFormsLoop.Value |> Option.iter (fun l -> l.LCID <- fsiSession.LCID)
 #endif

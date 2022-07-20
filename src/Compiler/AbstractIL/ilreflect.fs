@@ -631,26 +631,6 @@ let envUpdateCreatedTypeRef emEnv (tref: ILTypeRef) =
 
     if typB.IsCreated() then
         let ty = typB.CreateTypeAndLog()
-#if ENABLE_MONO_SUPPORT
-        // Mono has a bug where executing code that includes an array type
-        // match "match x with :? C[] -> ..." before the full loading of an object of type
-        // causes a failure when C is later loaded. One workaround for this is to attempt to do a fake allocation
-        // of objects. We use System.Runtime.Serialization.FormatterServices.GetUninitializedObject to do
-        // the fake allocation - this creates an "empty" object, even if the object doesn't have
-        // a constructor. It is not usable in partial trust code.
-        if
-            runningOnMono
-            && ty.IsClass
-            && not ty.IsAbstract
-            && not ty.IsGenericType
-            && not ty.IsGenericTypeDefinition
-        then
-            try
-                System.Runtime.Serialization.FormatterServices.GetUninitializedObject ty
-                |> ignore
-            with _ ->
-                ()
-#endif
         { emEnv with
             emTypMap = Zmap.add tref (typT, typB, typeDef, Some ty) emEnv.emTypMap
         }
@@ -899,15 +879,6 @@ let convReturnModifiers cenv emEnv (p: ILReturn) =
 // it isn't we resort to this technique...
 let TypeBuilderInstantiationT =
     let ty =
-#if ENABLE_MONO_SUPPORT
-        if runningOnMono then
-            let ty = Type.GetType("System.Reflection.MonoGenericClass")
-
-            match ty with
-            | null -> Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
-            | _ -> ty
-        else
-#endif
         Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
 
     assert (not (isNull ty))
@@ -1633,12 +1604,6 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
             let elemTy = arrayTy.GetElementType()
 
             let meth =
-#if ENABLE_MONO_SUPPORT
-                // See bug 6254: Mono has a bug in reflection-emit dynamic calls to the "Get", "Address" or "Set" methods on arrays
-                if runningOnMono then
-                    getArrayMethInfo shape.Rank elemTy
-                else
-#endif
                 modB.GetArrayMethodAndLog(arrayTy, "Get", CallingConventions.HasThis, elemTy, Array.create shape.Rank typeof<int>)
 
             ilG.EmitAndLog(OpCodes.Call, meth)
@@ -1651,12 +1616,6 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
             let elemTy = arrayTy.GetElementType()
 
             let meth =
-#if ENABLE_MONO_SUPPORT
-                // See bug 6254: Mono has a bug in reflection-emit dynamic calls to the "Get", "Address" or "Set" methods on arrays
-                if runningOnMono then
-                    setArrayMethInfo shape.Rank elemTy
-                else
-#endif
                 modB.GetArrayMethodAndLog(
                     arrayTy,
                     "Set",
