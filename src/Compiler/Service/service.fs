@@ -1081,8 +1081,7 @@ type BackgroundCompiler
 
             let otherFlags = defaultArg otherFlags extraFlags
 
-            let useSimpleResolution =
-                otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
+            let useSimpleResolution = otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
 
             let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
 

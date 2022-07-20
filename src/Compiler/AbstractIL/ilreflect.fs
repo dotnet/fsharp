@@ -631,6 +631,7 @@ let envUpdateCreatedTypeRef emEnv (tref: ILTypeRef) =
 
     if typB.IsCreated() then
         let ty = typB.CreateTypeAndLog()
+
         { emEnv with
             emTypMap = Zmap.add tref (typT, typB, typeDef, Some ty) emEnv.emTypMap
         }
@@ -878,8 +879,7 @@ let convReturnModifiers cenv emEnv (p: ILReturn) =
 // have to use alternative means for various Method/Field/Constructor lookups. However since
 // it isn't we resort to this technique...
 let TypeBuilderInstantiationT =
-    let ty =
-        Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
+    let ty = Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
 
     assert (not (isNull ty))
     ty

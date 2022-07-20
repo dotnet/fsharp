@@ -1088,8 +1088,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             with e ->
                 // We no longer expect the above to fail but leaving this just in case
                 error (Error(FSComp.SR.buildErrorOpeningBinaryFile (fileName, e.Message), rangeStartup))
-        | None ->
-            None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
+        | None -> None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
 
     let makePathAbsolute path =
         ComputeMakePathAbsolute data.implicitIncludeDir path
