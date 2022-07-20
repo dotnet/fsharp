@@ -2081,12 +2081,14 @@ FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String get_FileName(
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String[] DependencyFiles
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean ApplyLineDirectives
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean CompilingFSharpCore
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpParsingOptions)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean IsExe
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean IsInteractive
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_ApplyLineDirectives()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_CompilingFSharpCore()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_IsExe()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_IsInteractive()
@@ -2108,8 +2110,6 @@ FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String get_LangVersionText()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String[] SourceFiles
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String[] get_SourceFiles()
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean ApplyLineDirectives
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_ApplyLineDirectives()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Void .ctor(System.String[], Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions, System.String, Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Boolean, Boolean)
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions ProjectOptions
@@ -8477,8 +8477,8 @@ FSharp.Compiler.Syntax.SynType+Tuple: Boolean get_isStruct()
 FSharp.Compiler.Syntax.SynType+Tuple: Boolean isStruct
 FSharp.Compiler.Syntax.SynType+Tuple: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynType+Tuple: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynType+Tuple: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.Boolean,FSharp.Compiler.Syntax.SynType]] elementTypes
-FSharp.Compiler.Syntax.SynType+Tuple: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.Boolean,FSharp.Compiler.Syntax.SynType]] get_elementTypes()
+FSharp.Compiler.Syntax.SynType+Tuple: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.TupleTypeSegment] get_path()
+FSharp.Compiler.Syntax.SynType+Tuple: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.TupleTypeSegment] path
 FSharp.Compiler.Syntax.SynType+Var: FSharp.Compiler.Syntax.SynTypar get_typar()
 FSharp.Compiler.Syntax.SynType+Var: FSharp.Compiler.Syntax.SynTypar typar
 FSharp.Compiler.Syntax.SynType+Var: FSharp.Compiler.Text.Range get_range()
@@ -8537,7 +8537,7 @@ FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewParen(FSharp.C
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewStaticConstant(FSharp.Compiler.Syntax.SynConst, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewStaticConstantExpr(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewStaticConstantNamed(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewTuple(Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.Boolean,FSharp.Compiler.Syntax.SynType]], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewTuple(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.TupleTypeSegment], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewVar(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewWithGlobalConstraints(FSharp.Compiler.Syntax.SynType, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+Anon
@@ -9145,6 +9145,34 @@ FSharp.Compiler.Syntax.SyntaxVisitorBase`1[T]: Microsoft.FSharp.Core.FSharpOptio
 FSharp.Compiler.Syntax.SyntaxVisitorBase`1[T]: Microsoft.FSharp.Core.FSharpOption`1[T] VisitTypeAbbrev(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode], FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SyntaxVisitorBase`1[T]: Microsoft.FSharp.Core.FSharpOption`1[T] VisitUnionDefn(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SyntaxNode], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynUnionCase], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SyntaxVisitorBase`1[T]: Void .ctor()
+FSharp.Compiler.Syntax.TupleTypeSegment
+FSharp.Compiler.Syntax.TupleTypeSegment+Slash: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.TupleTypeSegment+Slash: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.TupleTypeSegment+Star: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.TupleTypeSegment+Star: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.TupleTypeSegment+Tags: Int32 Slash
+FSharp.Compiler.Syntax.TupleTypeSegment+Tags: Int32 Star
+FSharp.Compiler.Syntax.TupleTypeSegment+Tags: Int32 Type
+FSharp.Compiler.Syntax.TupleTypeSegment+Type: FSharp.Compiler.Syntax.SynType get_typeName()
+FSharp.Compiler.Syntax.TupleTypeSegment+Type: FSharp.Compiler.Syntax.SynType typeName
+FSharp.Compiler.Syntax.TupleTypeSegment: Boolean IsSlash
+FSharp.Compiler.Syntax.TupleTypeSegment: Boolean IsStar
+FSharp.Compiler.Syntax.TupleTypeSegment: Boolean IsType
+FSharp.Compiler.Syntax.TupleTypeSegment: Boolean get_IsSlash()
+FSharp.Compiler.Syntax.TupleTypeSegment: Boolean get_IsStar()
+FSharp.Compiler.Syntax.TupleTypeSegment: Boolean get_IsType()
+FSharp.Compiler.Syntax.TupleTypeSegment: FSharp.Compiler.Syntax.TupleTypeSegment NewSlash(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.TupleTypeSegment: FSharp.Compiler.Syntax.TupleTypeSegment NewStar(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.TupleTypeSegment: FSharp.Compiler.Syntax.TupleTypeSegment NewType(FSharp.Compiler.Syntax.SynType)
+FSharp.Compiler.Syntax.TupleTypeSegment: FSharp.Compiler.Syntax.TupleTypeSegment+Slash
+FSharp.Compiler.Syntax.TupleTypeSegment: FSharp.Compiler.Syntax.TupleTypeSegment+Star
+FSharp.Compiler.Syntax.TupleTypeSegment: FSharp.Compiler.Syntax.TupleTypeSegment+Tags
+FSharp.Compiler.Syntax.TupleTypeSegment: FSharp.Compiler.Syntax.TupleTypeSegment+Type
+FSharp.Compiler.Syntax.TupleTypeSegment: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.TupleTypeSegment: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Syntax.TupleTypeSegment: Int32 Tag
+FSharp.Compiler.Syntax.TupleTypeSegment: Int32 get_Tag()
+FSharp.Compiler.Syntax.TupleTypeSegment: System.String ToString()
 FSharp.Compiler.Syntax.TyparStaticReq
 FSharp.Compiler.Syntax.TyparStaticReq+Tags: Int32 HeadType
 FSharp.Compiler.Syntax.TyparStaticReq+Tags: Int32 None
