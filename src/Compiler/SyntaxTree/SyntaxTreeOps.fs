@@ -1017,3 +1017,9 @@ let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =
             let members = Option.map desugarGetSetMembers members
             [ SynMemberDefn.Interface(interfaceType, withKeyword, members, m) ]
         | md -> [ md ])
+
+let getTypeFromTuplePath (path: TupleTypeSegment list) : SynType list =
+    path
+    |> List.choose (function
+        | TupleTypeSegment.Type t -> Some t
+        | _ -> None)

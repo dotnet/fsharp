@@ -813,18 +813,13 @@ let mkSynMemberDefnGetSet
     | _ -> []
 
 // The last element of elementTypes does not have a star or slash
-let mkTupleOrDivide (isStruct: bool) (leadingType: SynType) (isStar: bool) (elementTypes: (bool * SynType) list) : SynType =
-    // x * y
+let mkTupleOrDivide (isStruct: bool) (elementTypes: TupleTypeSegment list) : SynType =
     let range =
-        (leadingType.Range, elementTypes)
-        ||> List.fold (fun acc (_, t) -> unionRanges acc t.Range)
+        match elementTypes with
+        | [] -> Range.Zero
+        | head :: tail ->
 
-    let newElementTypes =
-        elementTypes
-        |> List.fold (fun (lastIsStar, currentList) (isStar, t) -> (isStar, (lastIsStar, t) :: currentList)) (isStar, [])
-        |> snd
-        |> List.rev
+            (head.Range, tail)
+            ||> List.fold (fun acc segment -> unionRanges acc segment.Range)
 
-    SynType.Tuple(isStruct, false, leadingType, newElementTypes, range)
-
-let mkDivideWithLeadingSlash (_: (bool * SynType) list) : SynType = failwith "TODO"
+    SynType.Tuple(isStruct, elementTypes, range)

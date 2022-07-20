@@ -4538,8 +4538,8 @@ and TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ env (tpenv: Unscoped
     | SynType.LongIdentApp (synLeftTy, synLongId, _, args, _commas, _, m) ->
         TcNestedAppType cenv newOk checkConstraints occ env tpenv synLeftTy synLongId args m
 
-    | SynType.Tuple(isStruct, _, _, args, m) ->
-        TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct args m
+    | SynType.Tuple(isStruct, segments, m) ->
+        TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct segments m
 
     | SynType.AnonRecd(_, [],m) ->
         error(Error((FSComp.SR.tcAnonymousTypeInvalidInDeclaration()), m))
@@ -4649,24 +4649,24 @@ and TcNestedAppType cenv newOk checkConstraints occ env tpenv synLeftTy synLongI
     | _ ->
         error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), m))
 
-and TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct args m =
-
-    let tupInfo = mkTupInfo isStruct
-    if isStruct then
-        let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
-        TType_tuple(tupInfo, argsR), tpenv
-    else
-        let isMeasure =
-            match kindOpt with
-            | Some TyparKind.Measure -> true
-            | None -> List.exists (fun (isquot,_) -> isquot) args | _ -> false
-
-        if isMeasure then
-            let ms,tpenv = TcMeasuresAsTuple cenv newOk checkConstraints occ env tpenv args m
-            TType_measure ms,tpenv
-        else
-            let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
-            TType_tuple(tupInfo, argsR), tpenv
+and TcTupleType _kindOpt _cenv _newOk _checkConstraints _occ _env _tpenv _isStruct _args _m =
+    failwith "todo"
+    // let tupInfo = mkTupInfo isStruct
+    // if isStruct then
+    //     let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
+    //     TType_tuple(tupInfo, argsR), tpenv
+    // else
+    //     let isMeasure =
+    //         match kindOpt with
+    //         | Some TyparKind.Measure -> true
+    //         | None -> List.exists (fun (isquot,_) -> isquot) args | _ -> false
+    //
+    //     if isMeasure then
+    //         let ms,tpenv = TcMeasuresAsTuple cenv newOk checkConstraints occ env tpenv args m
+    //         TType_measure ms,tpenv
+    //     else
+    //         let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
+    //         TType_tuple(tupInfo, argsR), tpenv
 
 and TcAnonRecdType cenv newOk checkConstraints occ env tpenv isStruct args m =
     let tupInfo = mkTupInfo isStruct

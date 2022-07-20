@@ -176,9 +176,4 @@ val mkSynMemberDefnGetSet:
     rangeStart: range ->
         SynMemberDefn list
 
-val mkTupleOrDivide:
-    isStruct: bool -> leadingType: SynType -> isStar: bool -> elementTypes: (bool * SynType) list -> SynType
-
-val mkDivideWithLeadingSlash: elementTypes: (bool * SynType) list -> SynType
-
-//| Tuple of isStruct:bool * hasLeadingSlash:bool * firstType:SynType * elements: (bool * SynType) list * range: range
+val mkTupleOrDivide: isStruct: bool -> elementTypes: TupleTypeSegment list -> SynType

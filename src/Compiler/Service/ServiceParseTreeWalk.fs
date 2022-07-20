@@ -819,7 +819,7 @@ module SyntaxTraversal =
                 | SynType.Array (_, ty, _) -> traverseSynType path ty
                 | SynType.StaticConstantNamed (ty1, ty2, _)
                 | SynType.MeasureDivide (ty1, ty2, _) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
-                | SynType.Tuple (_, _, firstType, tys, _) -> firstType :: (List.map snd tys) |> List.tryPick (traverseSynType path)
+                | SynType.Tuple (path = segments) -> getTypeFromTuplePath segments |> List.tryPick (traverseSynType path)
                 | SynType.StaticConstantExpr (expr, _) -> traverseSynExpr [] expr
                 | SynType.Anon _ -> None
                 | _ -> None
