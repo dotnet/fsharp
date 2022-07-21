@@ -425,7 +425,6 @@ try {
 
     [System.Environment]::SetEnvironmentVariable('DOTNET_ROLL_FORWARD_TO_PRERELEASE', '1', [System.EnvironmentVariableTarget]::User)
 
-    $env:NativeToolsOnMachine = $true
 
     Process-Arguments
 
@@ -438,6 +437,10 @@ try {
     Get-ChildItem ENV: | Sort-Object Name
     Write-Host ""
 
+    if($env:NativeToolsOnMachine) {
+        $variable:NativeToolsOnMachine = $env:NativeToolsOnMachine
+    }
+
     if ($ci) {
         Prepare-TempDir
         EnablePreviewSdks
@@ -449,8 +452,17 @@ try {
 
     $nativeToolsDir = InitializeNativeTools
     write-host "Native tools: $nativeToolsDir"
-    $env:PERL5Path = Join-Path "$nativeToolsDir" "perl\5.32.1.1\perl\bin\perl.exe"
-    $env:PERL5LIB = Join-Path "$nativeToolsDir" "perl\5.32.1.1\perl\vendor\lib"
+
+    if (-not (Test-Path variable:NativeToolsOnMachine)) {
+        $env:PERL5Path = Join-Path "$nativeToolsDir" "perl\5.32.1.1\perl\bin\perl.exe"
+        write-host "variable:NativeToolsOnMachine = unset or false"
+        write-host "Path = $env:PERL5Path"
+    }
+    else {
+        $env:PERL5Path = "perl.exe"
+        write-host "variable:NativeToolsOnMachine = $variable:NativeToolsOnMachine"
+        write-host "Path = $env:PERL5Path"
+    }
 
     $dotnetPath = InitializeDotNetCli
     $env:DOTNET_ROOT = "$dotnetPath"
@@ -517,7 +529,9 @@ try {
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
+        write-host "Exec-Console $env:PERL5Path"
         Exec-Console $env:PERL5Path """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+        write-host "Exec-Console finished"
         Pop-Location
     }
 
