@@ -1499,6 +1499,7 @@ let u_MemberFlags st : SynMemberFlags=
       IsDispatchSlot=x4
       IsOverrideOrExplicitImpl=x5
       IsFinal=x6
+      IsCompilerGenerated=false
       MemberKind=x7
       Trivia = SynMemberFlagsTrivia.Zero }
 

@@ -74,6 +74,8 @@
       .method public hidebysig specialname 
               instance int32  get_key1() cil managed
       {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       7 (0x7)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -84,6 +86,8 @@
       .method public hidebysig specialname 
               instance int32  get_key2() cil managed
       {
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       7 (0x7)
         .maxstack  8
         IL_0000:  ldarg.0

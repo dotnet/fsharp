@@ -11366,7 +11366,23 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     let prelimValReprInfo = TranslateSynValInfo mBinding (TcAttributes cenv envinner) valSynInfo
     let valReprInfo, valReprInfoForDisplay = UseSyntacticArity declKind prelimTyscheme prelimValReprInfo
     let hasDeclaredTypars = not (List.isEmpty declaredTypars)
-    let prelimValScheme = ValScheme(bindingId, prelimTyscheme, valReprInfo, valReprInfoForDisplay, memberInfoOpt, false, inlineFlag, NormalVal, vis, false, false, false, hasDeclaredTypars)
+    let isCompGen = memberFlagsOpt |> Option.map (fun f -> f.IsCompilerGenerated) |> Option.defaultValue false
+    let prelimValScheme =
+        ValScheme(
+            bindingId,
+            prelimTyscheme,
+            valReprInfo,
+            valReprInfoForDisplay,
+            memberInfoOpt,
+            false,
+            inlineFlag,
+            NormalVal,
+            vis,
+            isCompGen = isCompGen,
+            isIncrClass = false,
+            isTyFunc = false,
+            hasDeclaredTypars = hasDeclaredTypars
+        )
 
     // Check the literal r.h.s., if any
     let _, literalValue = TcLiteral cenv ty envinner tpenv (bindingAttribs, bindingExpr)

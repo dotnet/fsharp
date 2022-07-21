@@ -1047,6 +1047,9 @@ type SynMemberFlags =
 
         IsFinal: bool
 
+        // This is not persisted in pickling
+        IsCompilerGenerated: bool
+
         MemberKind: SynMemberKind
 
         Trivia: SynMemberFlagsTrivia
@@ -1059,6 +1062,7 @@ type SynMemberFlags =
             && this.IsDispatchSlot = other.IsDispatchSlot
             && this.IsOverrideOrExplicitImpl = other.IsOverrideOrExplicitImpl
             && this.IsFinal = other.IsFinal
+            && this.IsCompilerGenerated = other.IsCompilerGenerated
             && this.MemberKind = other.MemberKind
         | _ -> false
 
@@ -1067,6 +1071,7 @@ type SynMemberFlags =
         + hash this.IsDispatchSlot
         + hash this.IsOverrideOrExplicitImpl
         + hash this.IsFinal
+        + hash this.IsCompilerGenerated
         + hash this.MemberKind
 
 [<StructuralEquality; NoComparison; RequireQualifiedAccess>]

@@ -2106,8 +2106,13 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             let ilMethods =
                 [
                     for propName, fldName, fldTy in flds ->
-                        let attrs = if isStruct then [ GenReadOnlyAttribute g ] else []
+                        let attrs =
+                            if isStruct then
+                                [ GenReadOnlyAttribute g ]
+                            else
+                                []
                         mkLdfldMethodDef ("get_" + propName, ILMemberAccess.Public, false, ilTy, fldName, fldTy, attrs)
+                        |> g.AddMethodGeneratedAttributes
                     yield! genToStringMethod ilTy
                 ]
 
@@ -6996,8 +7001,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod (slotsig, _attribs
         (if useStaticClosure then
              mkILNonGenericStaticMethod
          else
-             mkILNonGenericInstanceMethod)
-            (
+             mkILNonGenericInstanceMethod) (
                 delegeeMethName,
                 ILMemberAccess.Assembly,
                 ilDelegeeParams,
@@ -10761,6 +10765,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                     []
 
                             yield mkLdfldMethodDef (ilMethName, access, isStatic, ilThisTy, ilFieldName, ilPropType, attrs)
+                                  |> g.AddMethodGeneratedAttributes
 
                     // Generate property setter methods for the mutable fields
                     for useGenuineField, ilFieldName, isFSharpMutable, isStatic, _, ilPropType, isPropHidden, fspec in fieldSummaries do
@@ -10799,6 +10804,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                         )
 
                                     mkILNonGenericInstanceMethod (ilMethName, iLAccess, ilParams, ilReturn, ilMethodBody)
+                                    |> g.AddMethodGeneratedAttributes
 
                             yield ilMethodDef.WithSpecialName
 

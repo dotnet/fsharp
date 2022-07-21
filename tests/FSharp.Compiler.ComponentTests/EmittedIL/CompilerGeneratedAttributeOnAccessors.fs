@@ -35,6 +35,37 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
         |> getMethod method
         |> should haveAttribute "CompilerGeneratedAttribute"
 
+    [<Fact>]
+    let ``Class property has CompilerGenerated attributes in IL`` () =
+        classProperty
+        |> compile
+        |> verifyIL [
+            """
+            .method public hidebysig specialname
+                        instance int32  get_Age() cil managed
+                {
+                  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+
+                  .maxstack  8
+                  IL_0000:  ldarg.0
+                  IL_0001:  ldfld      int32 Test/User::Age@
+                  IL_0006:  ret
+                }
+
+                .method public hidebysig specialname
+                        instance void  set_Age(int32 v) cil managed
+                {
+                  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+
+                  .maxstack  8
+                  IL_0000:  ldarg.0
+                  IL_0001:  ldarg.1
+                  IL_0002:  stfld      int32 Test/User::Age@
+                  IL_0007:  ret
+                }
+            """
+        ]
+
     [<Theory>]
     [<InlineData("get_Age")>]
     [<InlineData("set_Age")>]
@@ -44,6 +75,51 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
         |> getType "Test+User"
         |> getMethod method
         |> should haveAttribute "CompilerGeneratedAttribute"
+
+    [<Fact>]
+    let ``Class static property has CompilerGenerated attributes in IL`` () =
+        classStaticProperty
+        |> compile
+        |> verifyIL [
+            """
+             .method public specialname static int32
+                        get_Age() cil managed
+                {
+                  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+
+                  .maxstack  8
+                  IL_0000:  volatile.
+                  IL_0002:  ldsfld     int32 Test/User::init@4
+                  IL_0007:  ldc.i4.1
+                  IL_0008:  bge.s      IL_0011
+
+                  IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+                  IL_000f:  br.s       IL_0011
+
+                  IL_0011:  ldsfld     int32 Test/User::Age@
+                  IL_0016:  ret
+                }
+
+                .method public specialname static void
+                        set_Age(int32 v) cil managed
+                {
+                  .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+
+                  .maxstack  8
+                  IL_0000:  volatile.
+                  IL_0002:  ldsfld     int32 Test/User::init@4
+                  IL_0007:  ldc.i4.1
+                  IL_0008:  bge.s      IL_0011
+
+                  IL_000a:  call       void [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/IntrinsicFunctions::FailStaticInit()
+                  IL_000f:  br.s       IL_0011
+
+                  IL_0011:  ldarg.0
+                  IL_0012:  stsfld     int32 Test/User::Age@
+                  IL_0017:  ret
+                }
+            """
+        ]
 
     [<Theory>]
     [<InlineData("get_Age")>]
@@ -75,6 +151,22 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
         |> getType "Test+User"
         |> getMethod "get_Age"
         |> should haveAttribute "CompilerGeneratedAttribute"
+        |> should haveAttribute "DebuggerNonUserCodeAttribute"
+
+
+    [<Fact>]
+    let ``Record setters should have CompilerGenerated attribute`` () =
+        FSharp
+            """
+            module Test
+
+            type User = { mutable Age : int }
+            """
+        |> compileAssembly
+        |> getType "Test+User"
+        |> getMethod "set_Age"
+        |> should haveAttribute "CompilerGeneratedAttribute"
+        |> should haveAttribute "DebuggerNonUserCodeAttribute"
 
     [<Fact>]
     let ``Anonymous record getters should have CompilerGenerated attribute`` () =
@@ -88,3 +180,4 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
         |> getFirstAnonymousType
         |> getMethod "get_Age"
         |> should haveAttribute "CompilerGeneratedAttribute"
+        |> should haveAttribute "DebuggerNonUserCodeAttribute"
