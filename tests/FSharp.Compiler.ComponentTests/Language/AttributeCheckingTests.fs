@@ -535,7 +535,11 @@ b.text("Hello 2") |> ignore
             (Error 101, Line 16, Col 1, Line 16, Col 7, "This construct is deprecated. Use B instead")
         ]
 
+#if !NETCOREAPP
+    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
+#else
     [<Fact>]
+#endif
     let ``Regression: typechecker does not fail when attribute is on type variable (https://github.com/dotnet/fsharp/issues/13525)`` () =
         let csharpBaseClass = 
             CSharp """
