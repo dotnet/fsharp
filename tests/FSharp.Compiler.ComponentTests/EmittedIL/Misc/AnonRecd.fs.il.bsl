@@ -18,10 +18,10 @@
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute::.ctor(int32,
                                                                                                       int32,
-                                                                                                      int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 )
+                                                                                                      int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 )
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
@@ -51,7 +51,7 @@
 .class public abstract auto ansi sealed AnonRecd
        extends [mscorlib]System.Object
 {
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 )
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .method public static int32  main<a>(!!a argv) cil managed
   {
     // Code size       16 (0x10)
@@ -96,15 +96,15 @@
                   [mscorlib]System.Collections.IStructuralEquatable,
                   class [mscorlib]System.IEquatable`1<class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'>>
 {
-  .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 02 00 00 00 00 00 )
+  .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 02 00 00 00 00 00 ) 
   .field private !'<A>j__TPar' A@
-  .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 )
+  .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field private !'<B>j__TPar' B@
-  .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
-  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 )
-  .method public specialname rtspecialname
+  .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+  .method public specialname rtspecialname 
           instance void  .ctor(!'<A>j__TPar' A,
                                !'<B>j__TPar' B) cil managed
   {
@@ -121,7 +121,7 @@
     IL_0014:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::.ctor
 
-  .method public hidebysig specialname instance !'<A>j__TPar'
+  .method public hidebysig specialname instance !'<A>j__TPar' 
           get_A() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
@@ -133,7 +133,7 @@
     IL_0006:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::get_A
 
-  .method public hidebysig specialname instance !'<B>j__TPar'
+  .method public hidebysig specialname instance !'<B>j__TPar' 
           get_B() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
@@ -145,10 +145,10 @@
     IL_0006:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::get_B
 
-  .method public strict virtual instance string
+  .method public strict virtual instance string 
           ToString() cil managed
   {
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     // Code size       22 (0x16)
     .maxstack  8
     IL_0000:  ldstr      "%+A"
@@ -159,10 +159,10 @@
     IL_0015:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::ToString
 
-  .method public hidebysig virtual final
+  .method public hidebysig virtual final 
           instance int32  CompareTo(class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> obj) cil managed
   {
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     // Code size       75 (0x4b)
     .maxstack  5
     .locals init (int32 V_0)
@@ -219,10 +219,10 @@
     IL_004a:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::CompareTo
 
-  .method public hidebysig virtual final
+  .method public hidebysig virtual final 
           instance int32  CompareTo(object obj) cil managed
   {
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     // Code size       15 (0xf)
     .maxstack  8
     IL_0000:  ldarg.0
@@ -233,11 +233,11 @@
     IL_000e:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::CompareTo
 
-  .method public hidebysig virtual final
+  .method public hidebysig virtual final 
           instance int32  CompareTo(object obj,
                                     class [mscorlib]System.Collections.IComparer comp) cil managed
   {
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     // Code size       86 (0x56)
     .maxstack  5
     .locals init (class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> V_0,
@@ -303,10 +303,10 @@
     IL_0055:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::CompareTo
 
-  .method public hidebysig virtual final
+  .method public hidebysig virtual final 
           instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
   {
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     // Code size       63 (0x3f)
     .maxstack  7
     .locals init (int32 V_0)
@@ -354,10 +354,10 @@
     IL_003e:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::GetHashCode
 
-  .method public hidebysig virtual final
+  .method public hidebysig virtual final 
           instance int32  GetHashCode() cil managed
   {
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     // Code size       14 (0xe)
     .maxstack  8
     IL_0000:  ldarg.0
@@ -367,11 +367,11 @@
     IL_000d:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::GetHashCode
 
-  .method public hidebysig virtual final
+  .method public hidebysig virtual final 
           instance bool  Equals(object obj,
                                 class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
   {
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     // Code size       68 (0x44)
     .maxstack  5
     .locals init (class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> V_0,
@@ -422,10 +422,10 @@
     IL_0043:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::Equals
 
-  .method public hidebysig virtual final
+  .method public hidebysig virtual final 
           instance bool  Equals(class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> obj) cil managed
   {
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     // Code size       57 (0x39)
     .maxstack  8
     IL_0000:  ldarg.0
@@ -465,10 +465,10 @@
     IL_0038:  ret
   } // end of method '<>f__AnonymousType1912756633`2'::Equals
 
-  .method public hidebysig virtual final
+  .method public hidebysig virtual final 
           instance bool  Equals(object obj) cil managed
   {
-    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
     // Code size       22 (0x16)
     .maxstack  4
     .locals init (class '<>f__AnonymousType1912756633`2'<!'<A>j__TPar',!'<B>j__TPar'> V_0)
@@ -491,13 +491,13 @@
   .property instance !'<A>j__TPar' A()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
-                                                                                                int32) = ( 01 00 04 00 00 00 00 00 00 00 00 00 )
+                                                                                                int32) = ( 01 00 04 00 00 00 00 00 00 00 00 00 ) 
     .get instance !'<A>j__TPar' '<>f__AnonymousType1912756633`2'::get_A()
   } // end of property '<>f__AnonymousType1912756633`2'::A
   .property instance !'<B>j__TPar' B()
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
-                                                                                                int32) = ( 01 00 04 00 00 00 01 00 00 00 00 00 )
+                                                                                                int32) = ( 01 00 04 00 00 00 01 00 00 00 00 00 ) 
     .get instance !'<B>j__TPar' '<>f__AnonymousType1912756633`2'::get_B()
   } // end of property '<>f__AnonymousType1912756633`2'::B
 } // end of class '<>f__AnonymousType1912756633`2'
