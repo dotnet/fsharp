@@ -534,3 +534,38 @@ b.text("Hello 2") |> ignore
         |> withDiagnostics [
             (Error 101, Line 16, Col 1, Line 16, Col 7, "This construct is deprecated. Use B instead")
         ]
+
+    [<Fact>]
+    let ``Regression: typechecker does not fail when attribute is on type variable (https://github.com/dotnet/fsharp/issues/13525)`` () =
+        let csharpBaseClass = 
+            CSharp """
+        using System.Diagnostics.CodeAnalysis;
+        
+        namespace CSharp
+        {
+        
+            public interface ITreeNode
+            {
+            }
+        
+            public static class Extensions
+            {
+                public static TNode Copy<TNode>([NotNull] this TNode node, ITreeNode context1 = null) where TNode : ITreeNode =>
+                    node;
+            }
+        }""" |> withName "csLib"
+        
+        let fsharpSource =
+            """
+    module FooBar
+    open type CSharp.Extensions
+    
+    let replaceWithCopy oldChild newChild =
+        let newChildCopy = newChild.Copy()
+        ignore newChildCopy
+    """
+        FSharp fsharpSource
+        |> withLangVersionPreview
+        |> withReferences [csharpBaseClass]
+        |> compile
+        |> shouldSucceed
