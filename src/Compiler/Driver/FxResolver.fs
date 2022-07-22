@@ -430,7 +430,7 @@ type internal FxResolver
             | _, -1 ->
                 if isRunningOnCoreClr then
                     // Running on coreclr but no deps.json was deployed with the host so default to 6.0
-                    Some "net6.0"
+                    Some "net7.0"
                 else
                     // Running on desktop
                     None
