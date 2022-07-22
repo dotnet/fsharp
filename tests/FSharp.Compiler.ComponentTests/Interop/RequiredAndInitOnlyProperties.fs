@@ -316,7 +316,7 @@ let main _ =
             Error 3545, Line 8, Col 16, Line 8, Col 22, "The following required properties have to be initalized:" + Environment.NewLine + "   property RAIO.GetSet: int with get, set" + Environment.NewLine + "   property RAIO.GetInit: int with get, set"
         ]
 
- #if !NETCOREAPP
+#if !NETCOREAPP
     [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
 #else
     [<Fact>]
@@ -347,7 +347,7 @@ let main _ =
             Error 3545, Line 8, Col 16, Line 8, Col 30, "The following required properties have to be initalized:" + Environment.NewLine + "   property RAIO.GetInit: int with get, set"
         ]
 
- #if !NETCOREAPP
+#if !NETCOREAPP
     [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
 #else
     [<Fact>]
@@ -378,4 +378,37 @@ let main _ =
         |> withLangVersionPreview
         |> withReferences [csharpLib]
         |> compileAndRun
+        |> shouldSucceed
+
+#if !NETCOREAPP
+    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
+#else
+    [<Fact>]
+#endif
+    let ``F# should produce a warning if RequiredMemberAttribute is specified`` () =
+
+        let csharpLib = csharpRBaseClass
+
+        let fsharpSource =
+            """
+open System
+open RequiredAndInitOnlyProperties
+open System.Runtime.CompilerServices
+
+type RAIOFS() =
+    [<RequiredMember>]
+    member val GetSet = 0 with get, set
+
+[<EntryPoint>]
+let main _ =
+
+    let raio = RAIOFS(GetSet=1)
+
+    0
+"""
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
         |> shouldSucceed
