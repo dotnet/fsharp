@@ -402,7 +402,8 @@ type TcConfig with
                     seq {
                         yield! tcConfig.GetSearchPathsForLibraryFiles()
 
-                        if isHashRReference m then Path.GetDirectoryName(m.FileName)
+                        if isHashRReference m then
+                            Path.GetDirectoryName(m.FileName)
                     }
 
                 let resolved = TryResolveFileUsingPaths(searchPaths, m, nm)
@@ -592,8 +593,10 @@ type TcConfig with
 
             // O(N^2) here over a small set of referenced assemblies.
             let IsResolved (originalName: string) =
-                if resultingResolutions
-                   |> List.exists (fun resolution -> resolution.originalReference.Text = originalName) then
+                if
+                    resultingResolutions
+                    |> List.exists (fun resolution -> resolution.originalReference.Text = originalName)
+                then
                     true
                 else
                     // MSBuild resolution may have unified the result of two duplicate references. Try to re-resolve now.
@@ -615,8 +618,10 @@ type TcConfig with
 
             // If mode=Speculative, then we haven't reported any errors.
             // We report the error condition by returning an empty list of resolutions
-            if mode = ResolveAssemblyReferenceMode.Speculative
-               && unresolvedReferences.Length > 0 then
+            if
+                mode = ResolveAssemblyReferenceMode.Speculative
+                && unresolvedReferences.Length > 0
+            then
                 [], unresolved
             else
                 resultingResolutions, unresolved
@@ -736,7 +741,8 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
 
                             resolutions.Length = 1
 
-                    if found then asm
+                    if found then
+                        asm
 
             if tcConfig.implicitlyReferenceDotNetAssemblies then
                 let references, _useDotNetFramework =
@@ -1097,7 +1103,9 @@ and [<Sealed>] TcImports
     let mutable disposed = false // this doesn't need locking, it's only for debugging
     let mutable tcGlobals = None // this doesn't need locking, it's set during construction of the TcImports
 
-    let CheckDisposed () = if disposed then assert false
+    let CheckDisposed () =
+        if disposed then
+            assert false
 
     let dispose () =
         CheckDisposed()
@@ -1116,8 +1124,11 @@ and [<Sealed>] TcImports
             let unsuccessful =
                 [
                     for ccuThunk, func in contents do
-                        if ccuThunk.IsUnresolvedReference then func ()
-                        if ccuThunk.IsUnresolvedReference then (ccuThunk, func)
+                        if ccuThunk.IsUnresolvedReference then
+                            func ()
+
+                        if ccuThunk.IsUnresolvedReference then
+                            (ccuThunk, func)
                 ]
 
             ccuThunks <- ResizeArray unsuccessful)

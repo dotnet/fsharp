@@ -204,5 +204,5 @@ module LayoutRender =
 
     let toArray layout =
         let output = ResizeArray()
-        renderL (taggedTextListR (fun tt -> output.Add(tt))) layout |> ignore
+        renderL (taggedTextListR output.Add) layout |> ignore
         output.ToArray()

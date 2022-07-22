@@ -479,11 +479,11 @@ module Zmap =
 
 let equalTypes (s: Type) (t: Type) = s.Equals t
 
-let equalTypeLists ss tt =
-    List.lengthsEqAndForall2 equalTypes ss tt
+let equalTypeLists (tys1: Type list) (tys2: Type list) =
+    List.lengthsEqAndForall2 equalTypes tys1 tys2
 
-let equalTypeArrays ss tt =
-    Array.lengthsEqAndForall2 equalTypes ss tt
+let equalTypeArrays (tys1: Type[]) (tys2: Type[]) =
+    Array.lengthsEqAndForall2 equalTypes tys1 tys2
 
 let getGenericArgumentsOfType (typT: Type) =
     if typT.IsGenericType then
@@ -631,24 +631,7 @@ let envUpdateCreatedTypeRef emEnv (tref: ILTypeRef) =
 
     if typB.IsCreated() then
         let ty = typB.CreateTypeAndLog()
-#if ENABLE_MONO_SUPPORT
-        // Mono has a bug where executing code that includes an array type
-        // match "match x with :? C[] -> ..." before the full loading of an object of type
-        // causes a failure when C is later loaded. One workaround for this is to attempt to do a fake allocation
-        // of objects. We use System.Runtime.Serialization.FormatterServices.GetUninitializedObject to do
-        // the fake allocation - this creates an "empty" object, even if the object doesn't have
-        // a constructor. It is not usable in partial trust code.
-        if runningOnMono
-           && ty.IsClass
-           && not ty.IsAbstract
-           && not ty.IsGenericType
-           && not ty.IsGenericTypeDefinition then
-            try
-                System.Runtime.Serialization.FormatterServices.GetUninitializedObject ty
-                |> ignore
-            with _ ->
-                ()
-#endif
+
         { emEnv with
             emTypMap = Zmap.add tref (typT, typB, typeDef, Some ty) emEnv.emTypMap
         }
@@ -896,17 +879,7 @@ let convReturnModifiers cenv emEnv (p: ILReturn) =
 // have to use alternative means for various Method/Field/Constructor lookups. However since
 // it isn't we resort to this technique...
 let TypeBuilderInstantiationT =
-    let ty =
-#if ENABLE_MONO_SUPPORT
-        if runningOnMono then
-            let ty = Type.GetType("System.Reflection.MonoGenericClass")
-
-            match ty with
-            | null -> Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
-            | _ -> ty
-        else
-#endif
-        Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
+    let ty = Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
 
     assert (not (isNull ty))
     ty
@@ -972,7 +945,9 @@ let convFieldSpec cenv emEnv fspec =
         nonQueryableTypeGetField parentTI fieldB
     else
     // Prior type.
-    if typeIsNotQueryable parentTI then
+    if
+        typeIsNotQueryable parentTI
+    then
         let parentT = getTypeConstructor parentTI
         let fieldInfo = queryableTypeGetField emEnv parentT fref
         nonQueryableTypeGetField parentTI fieldInfo
@@ -1009,10 +984,12 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref: ILMethodRef) =
             | Some a ->
                 if
                     // obvious case
-                    p.IsAssignableFrom a then
+                    p.IsAssignableFrom a
+                then
                     true
                 elif
-                    p.IsGenericType && a.IsGenericType
+                    p.IsGenericType
+                    && a.IsGenericType
                     // non obvious due to contravariance: Action<T> where T: IFoo accepts Action<FooImpl> (for FooImpl: IFoo)
                     && p.GetGenericTypeDefinition().IsAssignableFrom(a.GetGenericTypeDefinition())
                 then
@@ -1124,8 +1101,10 @@ let queryableTypeGetMethod cenv emEnv parentT (mref: ILMethodRef) : MethodInfo =
         queryableTypeGetMethodBySearch cenv emEnv parentT mref
 
 let nonQueryableTypeGetMethod (parentTI: Type) (methInfo: MethodInfo) : MethodInfo MaybeNull =
-    if (parentTI.IsGenericType
-        && not (equalTypes parentTI (getTypeConstructor parentTI))) then
+    if
+        (parentTI.IsGenericType
+         && not (equalTypes parentTI (getTypeConstructor parentTI)))
+    then
         TypeBuilder.GetMethod(parentTI, methInfo)
     else
         methInfo
@@ -1141,7 +1120,9 @@ let convMethodRef cenv emEnv (parentTI: Type) (mref: ILMethodRef) =
             nonQueryableTypeGetMethod parentTI methB
         else
         // Prior type.
-        if typeIsNotQueryable parentTI then
+        if
+            typeIsNotQueryable parentTI
+        then
             let parentT = getTypeConstructor parentTI
             let methInfo = queryableTypeGetMethod cenv emEnv parentT mref
             nonQueryableTypeGetMethod parentTI methInfo
@@ -1216,7 +1197,9 @@ let convConstructorSpec cenv emEnv (mspec: ILMethodSpec) =
             nonQueryableTypeGetConstructor parentTI consB
         else
         // Prior type.
-        if typeIsNotQueryable parentTI then
+        if
+            typeIsNotQueryable parentTI
+        then
             let parentT = getTypeConstructor parentTI
             let ctorG = queryableTypeGetConstructor cenv emEnv parentT mref
             nonQueryableTypeGetConstructor parentTI ctorG
@@ -1621,12 +1604,6 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
             let elemTy = arrayTy.GetElementType()
 
             let meth =
-#if ENABLE_MONO_SUPPORT
-                // See bug 6254: Mono has a bug in reflection-emit dynamic calls to the "Get", "Address" or "Set" methods on arrays
-                if runningOnMono then
-                    getArrayMethInfo shape.Rank elemTy
-                else
-#endif
                 modB.GetArrayMethodAndLog(arrayTy, "Get", CallingConventions.HasThis, elemTy, Array.create shape.Rank typeof<int>)
 
             ilG.EmitAndLog(OpCodes.Call, meth)
@@ -1639,12 +1616,6 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
             let elemTy = arrayTy.GetElementType()
 
             let meth =
-#if ENABLE_MONO_SUPPORT
-                // See bug 6254: Mono has a bug in reflection-emit dynamic calls to the "Get", "Address" or "Set" methods on arrays
-                if runningOnMono then
-                    setArrayMethInfo shape.Rank elemTy
-                else
-#endif
                 modB.GetArrayMethodAndLog(
                     arrayTy,
                     "Set",
@@ -1801,11 +1772,6 @@ let emitCode cenv modB emEnv (ilG: ILGenerator) (code: ILCode) =
 let emitLocal cenv emEnv (ilG: ILGenerator) (local: ILLocal) =
     let ty = convType cenv emEnv local.Type
     let locBuilder = ilG.DeclareLocalAndLog(ty, local.IsPinned)
-#if !FX_NO_PDB_WRITER
-    match local.DebugInfo with
-    | Some (nm, start, finish) -> locBuilder.SetLocalSymInfo(nm, start, finish)
-    | None -> ()
-#endif
     locBuilder
 
 let emitILMethodBody cenv modB emEnv (ilG: ILGenerator) (ilmbody: ILMethodBody) =
@@ -2134,9 +2100,11 @@ let buildFieldPass2 cenv tref (typB: TypeBuilder) emEnv (fdef: ILFieldDef) =
         match fdef.LiteralValue with
         | None -> emEnv
         | Some initial ->
-            if not fieldT.IsEnum
-               // it is ok to init fields with type = enum that are defined in other assemblies
-               || not fieldT.Assembly.IsDynamic then
+            if
+                not fieldT.IsEnum
+                // it is ok to init fields with type = enum that are defined in other assemblies
+                || not fieldT.Assembly.IsDynamic
+            then
                 fieldB.SetConstant(initial.AsObject())
                 emEnv
             else
@@ -2267,9 +2235,10 @@ let typeAttributesOfTypeLayout cenv emEnv x =
         if p.Size = None && p.Pack = None then
             None
         else
-            match cenv.tryFindSysILTypeRef "System.Runtime.InteropServices.StructLayoutAttribute",
-                  cenv.tryFindSysILTypeRef "System.Runtime.InteropServices.LayoutKind"
-                with
+            match
+                cenv.tryFindSysILTypeRef "System.Runtime.InteropServices.StructLayoutAttribute",
+                cenv.tryFindSysILTypeRef "System.Runtime.InteropServices.LayoutKind"
+            with
             | Some tref1, Some tref2 ->
                 Some(
                     convCustomAttr
@@ -2564,7 +2533,8 @@ let createTypeRef (visited: Dictionary<_, _>, created: Dictionary<_, _>) emEnv t
 
                     match emEnv.emTypMap.TryFind typeRef with
                     | Some (_, tb, _, _) ->
-                        if not (tb.IsCreated()) then tb.CreateTypeAndLog() |> ignore
+                        if not (tb.IsCreated()) then
+                            tb.CreateTypeAndLog() |> ignore
 
                         tb.Assembly
                     | None -> null)
@@ -2590,7 +2560,8 @@ let createTypeRef (visited: Dictionary<_, _>, created: Dictionary<_, _>) emEnv t
     traverseTypeRef tref
 
 let rec buildTypeDefPass4 (visited, created) nesting emEnv (tdef: ILTypeDef) =
-    if verbose2 then dprintf "buildTypeDefPass4 %s\n" tdef.Name
+    if verbose2 then
+        dprintf "buildTypeDefPass4 %s\n" tdef.Name
 
     let tref = mkRefForNestedILTypeDef ILScopeRef.Local (nesting, tdef)
     createTypeRef (visited, created) emEnv tref

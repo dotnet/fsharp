@@ -13,7 +13,6 @@
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
-    <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);USE_SHIPPED_FSCORE</DefineConstants>
     <OtherFlags>$(OtherFlags) --extraoptimizationloops:1 --times</OtherFlags>
     <!-- 1182: Unused variables -->
@@ -90,6 +89,7 @@
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
     <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
+    <InternalsVisibleTo Include="HistoricalBenchmark" />
   </ItemGroup>
 
   <ItemGroup>
@@ -336,6 +336,8 @@
     <Compile Include="Checking\CheckPatterns.fs" />
     <Compile Include="Checking\CheckComputationExpressions.fsi" />
     <Compile Include="Checking\CheckComputationExpressions.fs" />
+    <Compile Include="Checking\CheckIncrementalClasses.fsi" />
+    <Compile Include="Checking\CheckIncrementalClasses.fs" />
     <Compile Include="Checking\CheckDeclarations.fsi" />
     <Compile Include="Checking\CheckDeclarations.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />

@@ -492,13 +492,14 @@ type internal FxResolver
                 defaultMscorlibVersion
 
         // Get the ProductVersion of this framework compare with table compatible monikers
-        match desktopProductVersionMonikers
-              |> Array.tryFind (fun (major, minor, build, revision, _) ->
-                  (majorPart >= major)
-                  && (minorPart >= minor)
-                  && (buildPart >= build)
-                  && (privatePart >= revision))
-            with
+        match
+            desktopProductVersionMonikers
+            |> Array.tryFind (fun (major, minor, build, revision, _) ->
+                (majorPart >= major)
+                && (minorPart >= minor)
+                && (buildPart >= build)
+                && (privatePart >= revision))
+        with
         | Some (_, _, _, _, moniker) -> moniker
         | None ->
             // no TFM could be found, assume latest stable?
@@ -653,7 +654,8 @@ type internal FxResolver
             "System.Configuration"
 
             getFSharpCoreLibraryName
-            if useFsiAuxLib then fsiLibraryName
+            if useFsiAuxLib then
+                fsiLibraryName
 
             // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources
             match getSystemValueTupleImplementationReference () with
@@ -687,7 +689,8 @@ type internal FxResolver
             [
                 yield! Directory.GetFiles(implDir, "*.dll")
                 getFSharpCoreImplementationReference ()
-                if useFsiAuxLib then getFsiLibraryImplementationReference ()
+                if useFsiAuxLib then
+                    getFsiLibraryImplementationReference ()
             ]
 
         (getDependenciesOf roots).Values |> Seq.toList
@@ -979,7 +982,8 @@ type internal FxResolver
                                 [
                                     yield! Directory.GetFiles(path, "*.dll")
                                     getFSharpCoreImplementationReference ()
-                                    if useFsiAuxLib then getFsiLibraryImplementationReference ()
+                                    if useFsiAuxLib then
+                                        getFsiLibraryImplementationReference ()
                                 ]
                                 |> List.filter (fun f -> systemAssemblies.Contains(Path.GetFileNameWithoutExtension(f)))
 

@@ -67,24 +67,6 @@ module internal PervasiveAutoOpens =
     /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
     let LOH_SIZE_THRESHOLD_BYTES = 80_000
 
-    let runningOnMono =
-#if ENABLE_MONO_SUPPORT
-        // Officially supported way to detect if we are running on Mono.
-        // See http://www.mono-project.com/FAQ:_Technical
-        // "How can I detect if am running in Mono?" section
-        try
-            Type.GetType "Mono.Runtime" <> null
-        with _ ->
-            // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
-            // that is not reliable.
-            // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is
-            // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get
-            // their issue fixed but we need to be robust here anyway.
-            false
-#else
-        false
-#endif
-
     type String with
 
         member inline x.StartsWithOrdinal value =
@@ -199,7 +181,8 @@ module Array =
             let mutable i = 0
 
             while eq && i < len do
-                if not (inp[i] === res[i]) then eq <- false
+                if not (inp[i] === res[i]) then
+                    eq <- false
 
                 i <- i + 1
 
@@ -1082,9 +1065,11 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
     let table = new ConcurrentDictionary<'T, 'U>(keyComparer)
 
     member t.Apply x =
-        if (match canMemoize with
-            | None -> true
-            | Some f -> f x) then
+        if
+            (match canMemoize with
+             | None -> true
+             | Some f -> f x)
+        then
             match table.TryGetValue x with
             | true, res -> res
             | _ ->
