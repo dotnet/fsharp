@@ -6,40 +6,40 @@ open NUnit.Framework
 
 [<Test>]
 let ``words in operator name should not be considered as mangled infix operator`` () =
-    IsMangledInfixOperator "$foo hoo"
+    IsLogicalInfixOpName "$foo hoo"
     |> should equal false
 
-    IsMangledInfixOperator "@foo hoo"
+    IsLogicalInfixOpName "@foo hoo"
     |> should equal false
 
 [<Test>]
 let ``typo in mangled operator name should not be considered as mangled infix operator`` () =
-    IsMangledInfixOperator "op_Nagation"
+    IsLogicalInfixOpName "op_Nagation"
     |> should equal false
 
 [<Test>]
 let ``valid mangled operator name should be considered as mangled infix operator`` () =
-    IsMangledInfixOperator "op_Addition"
+    IsLogicalInfixOpName "op_Addition"
     |> should equal true
     
-    IsMangledInfixOperator "op_Append"
+    IsLogicalInfixOpName "op_Append"
     |> should equal true
 
 [<Test>]
 let ``invalid mangled operator name should not be considered as mangled infix operator`` () =
-    IsMangledInfixOperator "op_Dollarfoo"
+    IsLogicalInfixOpName "op_Dollarfoo"
     |> should equal false
     
-    IsMangledInfixOperator "foo"
+    IsLogicalInfixOpName "foo"
     |> should equal false
 
 [<Test>]
 let ``symbols in mangled operator name should not be considered as mangled infix operator`` () =
-    IsMangledInfixOperator "$foo"
+    IsLogicalInfixOpName "$foo"
     |> should equal false
     
-    IsMangledInfixOperator "$"
+    IsLogicalInfixOpName "$"
     |> should equal false
 
-    IsMangledInfixOperator "+"
+    IsLogicalInfixOpName "+"
     |> should equal false

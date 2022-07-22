@@ -358,7 +358,7 @@ let IsOperatorDisplayName (name: string) =
 //IsOperatorDisplayName "(  )" // false
 //IsOperatorDisplayName "( +)" // false
 
-let IsMangledOpName (name: string) = name.StartsWithOrdinal(opNamePrefix)
+let IsLogicalOpName (name: string) = name.StartsWithOrdinal(opNamePrefix)
 
 /// Compiles a custom operator into a mangled operator name.
 /// For example, "!%" becomes "op_DereferencePercent".
@@ -514,7 +514,7 @@ let DecompileOpName opName =
     match standardOpsDecompile.TryGetValue opName with
     | true, res -> res
     | false, _ ->
-        if IsMangledOpName opName then
+        if IsLogicalOpName opName then
             decompileCustomOpName opName
         else
             opName
@@ -550,10 +550,10 @@ let ConvertNameToDisplayName name = AddBackticksToIdentifierIfNeeded name
 let ConvertValNameToDisplayName isBaseVal name =
     if isBaseVal && name = "base" then
         "base"
-    elif IsUnencodedOpName name || IsMangledOpName name || IsActivePatternName name then
+    elif IsUnencodedOpName name || IsLogicalOpName name || IsActivePatternName name then
         let nm = DecompileOpName name
         // Check for no decompilation, e.g. op_Implicit, op_NotAMangledOpName, op_A-B
-        if IsMangledOpName name && (nm = name) then
+        if IsLogicalOpName name && (nm = name) then
             AddBackticksToIdentifierIfNeeded nm
         // Add parentheses for multiply-like symbols, with spacing to avoid confusion with comments
         elif nm <> "*" && (nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*") then
@@ -574,10 +574,10 @@ let ConvertNameToDisplayLayout nonOpLayout name =
 let ConvertValNameToDisplayLayout isBaseVal nonOpLayout name =
     if isBaseVal && name = "base" then
         nonOpLayout "base"
-    elif IsUnencodedOpName name || IsMangledOpName name || IsActivePatternName name then
+    elif IsUnencodedOpName name || IsLogicalOpName name || IsActivePatternName name then
         let nm = DecompileOpName name
         // Check for no decompilation, e.g. op_Implicit, op_NotAMangledOpName, op_A-B
-        if IsMangledOpName name && (nm = name) then
+        if IsLogicalOpName name && (nm = name) then
             ConvertNameToDisplayLayout nonOpLayout name
         elif nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*" then
             wordL (TaggedText.tagPunctuation "(")
@@ -712,7 +712,7 @@ let ignoredChars = [| '.'; '?' |]
 // The lexer defines the strings that lead to those tokens.
 //------
 // This function recognises these "infix operator" names.
-let IsMangledInfixOperator mangled = (* where mangled is assumed to be a compiled name *)
+let IsLogicalInfixOpName mangled = (* where mangled is assumed to be a compiled name *)
     let s = DecompileOpName mangled
     let skipIgnoredChars = s.TrimStart(ignoredChars)
 

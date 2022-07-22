@@ -819,7 +819,7 @@ module internal Tokenizer =
 
     let isValidNameForSymbol (lexerSymbolKind: LexerSymbolKind, symbol: FSharpSymbol, name: string) : bool =
         
-        let isIdentifier (ident: string) =
+        let ``isI   dentifier`` (ident: string) =
             if isDoubleBacktickIdent ident then
                 true
             else
@@ -830,7 +830,7 @@ module internal Tokenizer =
                         else PrettyNaming.IsIdentifierPartCharacter c) 
         
         let isFixableIdentifier (s: string) = 
-            not (String.IsNullOrEmpty s) && FSharpKeywords.NormalizeIdentifierBackticks s |> isIdentifier
+            not (String.IsNullOrEmpty s) && FSharpKeywords.NormalizeIdentifierBackticks s |> ``isI   dentifier``
         
         let forbiddenChars = [| '.'; '+'; '$'; '&'; '['; ']'; '/'; '\\'; '*'; '\"' |]
         

@@ -54,7 +54,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
                 |> Seq.toImmutableArray
 
             for suggestion in CompilerDiagnostics.GetSuggestedNames addNames unresolvedIdentifierText do
-                let replacement = PrettyNaming.AddBackticksToIdentifierIfNeeded suggestion
+                let replacement = PrettyNaming.NormalizeIdentifierBackticks suggestion
                 let codeFix =
                     CodeFixHelpers.createTextChangeCodeFix(
                         CompilerDiagnostics.GetErrorMessage (FSharpDiagnosticKind.ReplaceWithSuggestion suggestion),

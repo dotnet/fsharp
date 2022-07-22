@@ -37,7 +37,7 @@ type public NavigationEntityKind =
 /// Represents an item to be displayed in the navigation bar
 [<Sealed>]
 type public NavigationItem =
-    member Name: string
+    member LogicalName: string
 
     member UniqueName: string
 
@@ -100,10 +100,10 @@ type NavigableContainerType =
 
 type NavigableContainer =
     { Type: NavigableContainerType
-      Name: string }
+      LogicalName: string }
 
 type NavigableItem =
-    { Name: string
+    { LogicalName: string
       Range: range
       IsSignature: bool
       Kind: NavigableItemKind

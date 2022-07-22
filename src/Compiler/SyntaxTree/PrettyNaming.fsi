@@ -62,17 +62,18 @@ val DoesIdentifierNeedBackticks: name: string -> bool
 ///     A-B          -->  ``A-B``
 ///     AB           -->  AB
 ///     |A|_|        -->  |A|_|    this is an active pattern name, needs parens not backticks
-val AddBackticksToIdentifierIfNeeded: name: string -> string
-
 /// Removes double backticks if not necessary to make a valid identifier, e.g.
 ///     ``A``        --> A
 ///     ``A-B``      --> ``A-B``
 val NormalizeIdentifierBackticks: name: string -> string
 
-/// Is the name a mangled operator name (approximate)
+/// Is the name a logical operator name
 ///    op_Addition - yes
-///    op_Quack - yes
-val IsMangledOpName: name: string -> bool
+///    op_Quack    - no
+///    +           - no
+///    ABC         - no
+///    |A|_|       - no
+val IsLogicalOpName: name: string -> bool
 
 /// Compiles an operator into a mangled operator name. For example,
 ///    +  --> op_Addition
@@ -149,7 +150,7 @@ val IsPunctuation: s: string -> bool
 
 val IsTernaryOperator: s: string -> bool
 
-val IsMangledInfixOperator: string -> bool
+val IsLogicalInfixOpName: string -> bool
 
 val internal (|Control|Equality|Relational|Indexer|FixedTypes|Other|):
     opName: string -> Choice<unit, unit, unit, unit, unit, unit>

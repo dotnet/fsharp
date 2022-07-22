@@ -21,15 +21,16 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 
-type internal NavigableItem(document: Document, sourceSpan: TextSpan, glyph: Glyph, name: string, kind: string, additionalInfo: string) =
-    inherit FSharpNavigableItem(glyph, ImmutableArray.Create (TaggedText(TextTags.Text, name)), document, sourceSpan)
+type internal NavigableItem(document: Document, sourceSpan: TextSpan, glyph: Glyph, logicalName: string, kind: string, additionalInfo: string) =
+    inherit FSharpNavigableItem(glyph, ImmutableArray.Create (TaggedText(TextTags.Text, logicalName)), document, sourceSpan)
 
-    member _.Name = name
+    // This use of compiler logical names is leaking out into the IDE. We should only report display names here.
+    member _.LogicalName = logicalName
     member _.Kind = kind
     member _.AdditionalInfo = additionalInfo
 
 type internal NavigateToSearchResult(item: NavigableItem, matchKind: FSharpNavigateToMatchKind) =
-    inherit FSharpNavigateToSearchResult(item.AdditionalInfo, item.Kind, matchKind, item.Name, item)
+    inherit FSharpNavigateToSearchResult(item.AdditionalInfo, item.Kind, matchKind, item.LogicalName, item)
 
 module private Index =
     [<System.Diagnostics.DebuggerDisplay("{DebugString()}")>]
@@ -69,10 +70,12 @@ module private Index =
 
         for item in items do
             let name = 
-                if PrettyNaming.IsMangledOpName item.Name then 
-                    PrettyNaming.DecompileOpName item.Name 
+                // This conversion back from logical names to display names should never be needed, because
+                // the FCS API should only report display names in the first place.
+                if PrettyNaming.IsLogicalOpName item.LogicalName then 
+                    PrettyNaming.DecompileOpName item.LogicalName
                 else 
-                    item.Name
+                    item.LogicalName
             for i = 0 to name.Length - 1 do
                 entries.Add(IndexEntry(name, i, item))
 
@@ -251,7 +254,7 @@ type internal FSharpNavigateToSearchService
                            yield! items
                                   |> Array.collect (fun item -> item.AllItems)
                                   |> Array.Parallel.collect (fun x -> 
-                                      patternMatcher.GetMatches(x.Name)
+                                      patternMatcher.GetMatches(x.LogicalName)
                                       |> Seq.map (fun pm ->
                                           NavigateToSearchResult(x, patternMatchKindToNavigateToMatchKind pm.Kind) :> FSharpNavigateToSearchResult)
                                       |> Seq.toArray) |]

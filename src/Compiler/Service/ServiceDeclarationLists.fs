@@ -918,7 +918,7 @@ module internal DescriptionListsImpl =
 [<Sealed>]
 type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility,
                                kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
-    member _.Name = textInDeclList
+    member _.NameInList = textInDeclList
 
     member _.NameInCode = textInCode
 

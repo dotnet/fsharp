@@ -1059,7 +1059,7 @@ let ChooseMethInfosForNameEnv g m ty (minfos: MethInfo list) =
     |> List.filter (fun minfo ->
         not (minfo.IsInstance || minfo.IsClassConstructor || minfo.IsConstructor) && typeEquiv g minfo.ApparentEnclosingType ty &&
         not (IsMethInfoPlainCSharpStyleExtensionMember g m isExtTy minfo) &&
-        not (IsMangledOpName minfo.LogicalName))
+        not (IsLogicalOpName minfo.LogicalName))
     |> List.groupBy (fun minfo -> minfo.LogicalName)
     |> List.filter (fun (_, methGroup) -> not methGroup.IsEmpty)
     |> List.map (fun (methName, methGroup) -> KeyValuePair(methName, Item.MethodGroup(methName, methGroup, None)))
@@ -2862,7 +2862,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                         ChooseTyconRefInExpr (ncenv, m, ad, nenv, id, typeNameResInfo, tcrefs)
 
                     let implicitOpSearch() =
-                        if IsMangledOpName id.idText then
+                        if IsLogicalOpName id.idText then
                             success [(ResolutionInfo.Empty, Item.ImplicitOp(id, ref None))]
                         else
                             NoResultsOrUsefulErrors

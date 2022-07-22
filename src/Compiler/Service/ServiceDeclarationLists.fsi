@@ -95,9 +95,13 @@ type internal CompletionItem =
 [<Sealed>]
 type public DeclarationListItem =
     /// Get the text to display in the declaration list for the declaration.
-    member Name: string
+    ///
+    /// This is a display name without backticks.
+    member NameInList: string
 
     /// Get the text for the declaration as it's to be inserted into source code.
+    ///
+    /// This is a display name with backticks if necessary.
     member NameInCode: string
 
     /// Get the description

@@ -1339,7 +1339,7 @@ let MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, attrs, implS
         else
             List.foldBack (fun x -> qualifiedMangledNameOfTyconRef (tcrefOfAppTy g x)) intfSlotTys logicalName
 
-    if not isCompGen && IsMangledOpName id.idText && IsMangledInfixOperator id.idText then
+    if not isCompGen && IsLogicalInfixOpName id.idText then
         let m = id.idRange
         let name = DecompileOpName id.idText
         // Check symbolic members. Expect valSynData implied arity to be [[2]].
@@ -1351,7 +1351,7 @@ let MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, attrs, implS
             if n<>3 && opTakesThreeArgs then warning(Error(FSComp.SR.memberOperatorDefinitionWithNonTripleArgument(name, n), m))
             if not (isNil otherArgs) then warning(Error(FSComp.SR.memberOperatorDefinitionWithCurriedArguments name, m))
 
-    if isExtrinsic && IsMangledOpName id.idText then
+    if isExtrinsic && IsLogicalOpName id.idText then
         warning(Error(FSComp.SR.tcMemberOperatorDefinitionInExtrinsic(), id.idRange))
 
     PrelimMemberInfo(memberInfo, logicalName, compiledName)
@@ -8031,7 +8031,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
                 | Some (IdentTrivia.OriginalNotation(text = text))
                 | Some (IdentTrivia.OriginalNotationWithParen(text = text)) -> ident(text, result.idRange)
                 | _ ->
-                    if IsMangledOpName result.idText then
+                    if IsLogicalOpName result.idText then
                         let demangled = DecompileOpName result.idText
                         if demangled.Length = result.idRange.EndColumn - result.idRange.StartColumn then
                             ident(demangled, result.idRange)
