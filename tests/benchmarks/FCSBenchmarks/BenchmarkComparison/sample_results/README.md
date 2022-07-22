@@ -16,7 +16,7 @@ The three different version sets are:
 - `10_latest_nuget_versions` - 10 FCS NuGet versions between `v41.0.2` and ``v41.0.5-preview.22327.2`
 
 ## Observations
-One thing that can be observed by looking at the results in `between_2_nuget_versions` is the noticable increase of allocations in https://github.com/dotnet/fsharp/pull/11517
+One thing that can be observed by looking at the results in `between_2_nuget_versions` is the noticeable increase of allocations in https://github.com/dotnet/fsharp/pull/11517
 
 While this isn't necessarily something worth addressing, partly because later revisions show reduced allocations, it shows how running a historical benchmark can be potentially useful.
 

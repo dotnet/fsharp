@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <OutputType>exe</OutputType>
+        <RootNamespace>BenchmarkRunner</RootNamespace>
+        <Configurations>Release</Configurations>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="..\Benchmarks.Generator\Dtos.fs">
+          <Link>Dtos.fs</Link>
+        </Compile>
+        <Compile Include="Runner.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- It's hard to avoid recompiling FCS every time the benchmark is run.
+             To avoid that we reference the dll directly -->
+        <Reference Include="FSharp.Compiler.Service">
+            <HintPath>$(ArtifactsBinDir)\FSharp.Compiler.Service\$(Configuration)\netstandard2.0\FSharp.Compiler.Service.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    </ItemGroup>
+
+</Project>

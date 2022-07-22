@@ -1,0 +1,10 @@
+﻿{
+  "LocalCodeRoot": "d:/test",
+  "SlnRelative": "test.sln",
+  "CheckActions": [
+    {
+      "FileName": "Library.fs",
+      "ProjectName": "test"
+    }
+  ]
+}

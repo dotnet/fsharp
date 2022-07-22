@@ -40,6 +40,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		src\Compiler\FSComp.txt = src\Compiler\FSComp.txt
 	EndProjectSection
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Benchmarks.Runner", "tests\benchmarks\FCSBenchmarks\Benchmarks.Runner\Benchmarks.Runner.fsproj", "{5AF477A4-5F64-4695-A20B-4114F040326D}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Benchmarks.Generator", "tests\benchmarks\FCSBenchmarks\Benchmarks.Generator\Benchmarks.Generator.fsproj", "{7A81B9A9-DCF5-47D0-AB96-C11021C4CCE0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,6 +90,14 @@ Global
 		{07CD957A-3C31-4F75-A735-16CE72E1BD71}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{07CD957A-3C31-4F75-A735-16CE72E1BD71}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{07CD957A-3C31-4F75-A735-16CE72E1BD71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5AF477A4-5F64-4695-A20B-4114F040326D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5AF477A4-5F64-4695-A20B-4114F040326D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5AF477A4-5F64-4695-A20B-4114F040326D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5AF477A4-5F64-4695-A20B-4114F040326D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A81B9A9-DCF5-47D0-AB96-C11021C4CCE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A81B9A9-DCF5-47D0-AB96-C11021C4CCE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A81B9A9-DCF5-47D0-AB96-C11021C4CCE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A81B9A9-DCF5-47D0-AB96-C11021C4CCE0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -97,6 +109,8 @@ Global
 		{35F5F1C5-AE4F-4B5A-8D94-1AF708724FD5} = {AF321816-B4A0-41DD-9A1D-484E8A20C6F6}
 		{C1950E28-1CB7-4DEC-BB3A-8A0443A17282} = {AF321816-B4A0-41DD-9A1D-484E8A20C6F6}
 		{07CD957A-3C31-4F75-A735-16CE72E1BD71} = {AF321816-B4A0-41DD-9A1D-484E8A20C6F6}
+		{5AF477A4-5F64-4695-A20B-4114F040326D} = {AF321816-B4A0-41DD-9A1D-484E8A20C6F6}
+		{7A81B9A9-DCF5-47D0-AB96-C11021C4CCE0} = {AF321816-B4A0-41DD-9A1D-484E8A20C6F6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F9A60F3B-D894-4C8E-BA0F-C51115B25A5A}

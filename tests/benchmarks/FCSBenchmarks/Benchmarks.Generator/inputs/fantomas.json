@@ -1,0 +1,24 @@
+﻿{
+  "Repo": {
+    "Name": "fantomas",
+    "GitUrl": "https://github.com/fsprojects/fantomas",
+    "Revision" : "724087e0ffe09c6e1db040fe81b9986d90be8cc6"
+  },
+  "CodebasePrep": [
+    {
+      "Command": "dotnet",
+      "Args": "tool restore"
+    },
+    {
+      "Command": "dotnet",
+      "Args": "paket restore"
+    }
+  ],
+  "SlnRelative": "fantomas.sln",
+  "CheckActions": [
+    {
+      "FileName": "Integration/DaemonTests.fs",
+      "ProjectName": "Fantomas.Tests"
+    }
+  ]
+}

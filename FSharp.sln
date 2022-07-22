@@ -107,6 +107,7 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "HistoricalBenchmark", "tests\benchmarks\FCSBenchmarks\BenchmarkComparison\HistoricalBenchmark.fsproj", "{BEC6E796-7E53-4888-AAFC-B8FD55C425DF}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Benchmarks", "tests\benchmarks\FCSBenchmarks\CompilerServiceBenchmarks\FSharp.Compiler.Benchmarks.fsproj", "{9C7523BA-7AB2-4604-A5FD-653E82C2BAD1}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D58BFE8B-7C85-4D3B-B5F3-9A7BB90FF1EE}"
 	ProjectSection(SolutionItems) = preProject
 		src\Compiler\FSComp.txt = src\Compiler\FSComp.txt

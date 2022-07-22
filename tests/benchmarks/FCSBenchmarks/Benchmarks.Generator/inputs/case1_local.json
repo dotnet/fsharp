@@ -1,0 +1,10 @@
+﻿{
+  "LocalCodeRoot": "D:/projekty/parallel_test",
+  "SlnRelative": "top.sln",
+  "CheckActions": [
+    {
+      "FileName": "top.fs",
+      "ProjectName": "top"
+    }
+  ]
+}

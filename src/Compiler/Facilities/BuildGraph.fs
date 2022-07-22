@@ -331,7 +331,7 @@ type GraphNode<'T>(retryCompute: bool, computation: NodeCode<'T>) =
                             // occur, making sure we are under the protection of the 'try'.
                             // For example, NodeCode's 'try/finally' (TryFinally) uses async.TryFinally which does
                             // implicit cancellation checks even before the try is entered, as do the
-                            // de-sugaring of 'do!' and other CodeCode constructs.
+                            // de-sugaring of 'do!' and other NodeCode constructs.
                             let mutable taken = false
 
                             try

@@ -1,0 +1,14 @@
+﻿{
+  "Repo": {
+    "Name": "50_leaves",
+    "GitUrl": "https://github.com/safesparrow/fsharp-samples",
+    "Revision" : "89b0cea40ff6350fbdd65d8a086ba5aa9c9f4470"
+  },
+  "SlnRelative": "50_leaves/solution.sln",
+  "CheckActions": [
+    {
+      "FileName": "library.fs",
+      "ProjectName": "root"
+    }
+  ]
+}
