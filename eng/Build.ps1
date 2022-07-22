@@ -454,6 +454,8 @@ try {
 
     Get-ChildItem ENV: | Sort-Object Name
     Write-Host ""
+    $x = (where.exe "perl.exe")
+    $x
 
     if (-not (Test-Path variable:NativeToolsOnMachine)) {
         $env:PERL5Path = Join-Path "$nativeToolsDir" "perl\5.32.1.1\perl\bin\perl.exe"
@@ -462,7 +464,7 @@ try {
         write-host "Path = $env:PERL5Path"
     }
     else {
-        $env:PERL5Path = (get-command -all "perl.exe")[0].path
+        $env:PERL5Path = (where.exe "perl.exe")
         write-host "variable:NativeToolsOnMachine = $variable:NativeToolsOnMachine"
         write-host "nativeToolsDir = $nativeToolsDir"
         write-host "Path = $env:PERL5Path"
