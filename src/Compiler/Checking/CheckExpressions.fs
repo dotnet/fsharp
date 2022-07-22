@@ -1497,6 +1497,42 @@ let CheckForAbnormalOperatorNames (cenv: cenv) (idRange: range) coreDisplayName 
                 warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberNameFixedTypes opName, idRange))
         | Other -> ()
 
+let CheckInitProperties (g: TcGlobals) (minfo: MethInfo) methodName mItem =
+    if g.langVersion.SupportsFeature(LanguageFeature.InitPropertiesSupport) then
+        // Check, wheter this method has external init, emit an error diagnostic in this case.
+        if minfo.HasExternalInit then
+            errorR (Error (FSComp.SR.tcSetterForInitOnlyPropertyCannotBeCalled1 methodName, mItem))
+
+let CheckRequiredProps (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minfo: MethInfo) finalAssignedItemSetters mMethExpr =
+    // Make sure, if apparent type has any required properties, they all are in the `finalAssignedItemSetters`.
+    // If if is a constructor, and it is not marked with `SetsRequiredMembersAttributeAttribute`, then:
+    // 1. Get all properties of the type.
+    // 2. Check if any of them has `IsRequired` set.
+    //      2.1. If there are none, proceed as usual
+    //      2.2. If there are any, make sure all of them (or their setters) are in `finalAssignedItemSetters`.
+    // 3. If some are missing, produce a diagnostic which missing ones.
+    if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && minfo.IsConstructor then
+        let requiredProps =
+            [
+                if not (TryFindILAttribute g.attrib_SetsRequiredMembersAttribute (minfo.GetCustomAttrs())) then
+                    let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g cenv.amap range0 minfo.ApparentEnclosingType
+                    for prop in props do
+                        if prop.IsRequired then
+                           prop
+             ]
+        
+        if requiredProps.Length > 0 then
+            let setterPropNames = 
+                finalAssignedItemSetters
+                |> List.choose (function | AssignedItemSetter(_, AssignedPropSetter (pinfo, _, _), _) -> Some pinfo.PropertyName  | _ -> None)
+            
+            let missingProps =
+                requiredProps
+                |> List.filter (fun pinfo -> not (List.contains pinfo.PropertyName setterPropNames))
+            if missingProps.Length > 0 then
+                let details = NicePrint.multiLineStringOfPropInfos g cenv.amap mMethExpr env.DisplayEnv missingProps
+                errorR(Error(FSComp.SR.tcMissingRequiredMembers details, mMethExpr))
+
 let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRecInfo, vscheme, attrs, xmlDoc, konst, isGeneratedEventVal) =
 
     let g = cenv.g
@@ -8978,19 +9014,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         // To get better warnings we special case some of the few known mutate-a-struct method names
         let mutates = (if methodName = "MoveNext" || methodName = "GetNextArg" then DefinitelyMutates else PossiblyMutates)
 
-        if g.langVersion.SupportsFeature(LanguageFeature.InitPropertiesSupport) then
-            let minfo = List.head minfos
-
-            // Check, wheter this method has `IsExternalInit`, emit an error diagnostic in this case.
-            let hasInitOnlyMod =
-                match minfo with
-                | ILMeth (_, ilMethInfo, _) ->
-                    match ilMethInfo.ILMethodRef.ReturnType with
-                    | ILType.Modified(_, cls, _) -> cls.FullName = "System.Runtime.CompilerServices.IsExternalInit"
-                    | _ -> false
-                | _ -> false
-            if hasInitOnlyMod then
-                errorR (Error (FSComp.SR.tcGetterForInitOnlyPropertyCannotBeCalled1 methodName, mItem))
+        CheckInitProperties g (List.head minfos) methodName mItem
 
 #if !NO_TYPEPROVIDERS
         match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyArgsOpt, mExprAndItem, mItem) with
@@ -9746,35 +9770,7 @@ and TcMethodApplication
     let setterExprPrebinders, callExpr3 =
         let expr = callExpr2b
 
-        // Make sure, if apparent type has any required properties, they all are in the `finalAssignedItemSetters`.
-        // If if is a constructor, and it is not marked with `SetsRequiredMembersAttributeAttribute`, then:
-        // 1. Get all properties of the type.
-        // 2. Check if any of them has `IsRequired` set.
-        //      2.1. If there are none, proceed as usual
-        //      2.2. If there are any, make sure all of them (or their setters) are in `finalAssignedItemSetters`.
-        // 3. If some are missing, produce a diagnostic which missing ones.
-        if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && finalCalledMethInfo.IsConstructor then
-            let requiredProps = 
-                match finalCalledMethInfo with
-                | ILMeth (_, ilmethInfo, _) ->
-                    if TryFindILAttribute g.attrib_SetsRequiredMembersAttribute ilmethInfo.RawMetadata.CustomAttrs then
-                        []
-                    else     
-                        let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g cenv.amap range0 ilmethInfo.ApparentEnclosingType
-                        List.filter (fun (p: PropInfo) -> p.IsRequired ) props
-                | _ -> []
-            
-            if requiredProps.Length > 0 then
-                let setterPropNames = 
-                    finalAssignedItemSetters
-                    |> List.choose (function | AssignedItemSetter(_, AssignedPropSetter (pinfo, _, _), _) -> Some pinfo.PropertyName  | _ -> None)
-                
-                let missingProps =
-                    requiredProps
-                    |> List.filter (fun pinfo -> not (List.contains pinfo.PropertyName setterPropNames))
-                if missingProps.Length > 0 then
-                    let details = NicePrint.multiLineStringOfPropInfos g cenv.amap mMethExpr env.DisplayEnv missingProps
-                    errorR(Error(FSComp.SR.tcMissingRequiredMembers details, mMethExpr))
+        CheckRequiredProps g env cenv finalCalledMethInfo finalAssignedItemSetters mMethExpr
                     
         if isCheckingAttributeCall then
             [], expr

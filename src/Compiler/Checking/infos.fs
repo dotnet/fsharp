@@ -22,6 +22,8 @@ open FSharp.Compiler.Xml
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
+open FSharp.Compiler.AbstractIL
+
 #endif
 
 //-------------------------------------------------------------------------
@@ -933,6 +935,15 @@ type MethInfo =
         | FSMeth _ -> false // F# defined methods not supported yet. Must be a language feature.
         | _ -> false
 
+    /// Indicates, wheter this method has `IsExternalInit` modreq.
+    member x.HasExternalInit =
+        match x with
+        | ILMeth (_, ilMethInfo, _) ->
+            match ilMethInfo.ILMethodRef.ReturnType with
+            | ILType.Modified(_, cls, _) -> cls.FullName = "System.Runtime.CompilerServices.IsExternalInit"
+            | _ -> false
+        | _ -> false
+
     /// Indicates if this method is an extension member that is read-only.
     /// An extension member is considered read-only if the first argument is a read-only byref (inref) type.
     member x.IsReadOnlyExtensionMember (amap: ImportMap, m) =
@@ -1052,6 +1063,12 @@ type MethInfo =
             if x.IsInstance then [ ImportProvidedType amap m (mi.PApply((fun mi -> mi.DeclaringType), m)) ] // find the type of the 'this' argument
             else []
 #endif
+
+    /// Get custom attributes for method (only applicable for IL methods)
+    member x.GetCustomAttrs() =
+        match x with
+        | ILMeth(_, ilMethInfo, _) -> ilMethInfo.RawMetadata.CustomAttrs
+        | _ -> ILAttributes.Empty
 
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
     member x.GetParamAttribs(amap, m) =

@@ -653,7 +653,7 @@ tcExpressionWithIfRequiresParenthesis,"This list or array expression includes an
 809,tcPropertyIsStatic,"Property '%s' is static"
 810,tcPropertyCannotBeSet1,"Property '%s' cannot be set"
 810,tcInitOnlyPropertyCannotBeSet1,"Init-only property '%s' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
-810,tcGetterForInitOnlyPropertyCannotBeCalled1,"Cannot call '%s' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
+810,tcSetterForInitOnlyPropertyCannotBeCalled1,"Cannot call '%s' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
 811,tcConstructorsCannotBeFirstClassValues,"Constructors must be applied to arguments and cannot be used as first-class values. If necessary use an anonymous function '(fun arg1 ... argN -> new Type(arg1,...,argN))'."
 812,tcSyntaxFormUsedOnlyWithRecordLabelsPropertiesAndFields,"The syntax 'expr.id' may only be used with record labels, properties and fields"
 813,tcEventIsStatic,"Event '%s' is static"

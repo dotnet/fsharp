@@ -1203,10 +1203,11 @@ type ILAttribute =
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes(array: ILAttribute[]) =
+    member _.AsArray() = array
 
-    member x.AsArray() = array
+    member _.AsList() = array |> Array.toList
 
-    member x.AsList() = array |> Array.toList
+    static member Empty with get () = ILAttributes([||])
 
 [<NoEquality; NoComparison>]
 type ILAttributesStored =

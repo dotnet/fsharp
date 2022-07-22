@@ -682,11 +682,6 @@
         <target state="translated">Os atributos não podem ser aplicados às extensões de tipo.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcGetterForInitOnlyPropertyCannotBeCalled1">
-        <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
-        <target state="new">Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcHighPrecedenceFunctionApplicationToListDeprecated">
         <source>The syntax 'expr1[expr2]' is used for indexing. Consider adding a type annotation to enable indexing, or if calling a function add a space, e.g. 'expr1 [expr2]'.</source>
         <target state="translated">A sintaxe 'expr1[expr2]' é usada para indexação. Considere adicionar uma anotação de tipo para habilitar a indexação ou, se chamar uma função, adicione um espaço, por exemplo, 'expr1 [expr2]'.</target>
@@ -875,6 +870,11 @@
       <trans-unit id="tcResumableCodeNotSupported">
         <source>Using resumable code or resumable state machines requires /langversion:preview</source>
         <target state="translated">Usar código retomável ou máquinas de estado retomável requer /langversion:preview</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
+        <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
