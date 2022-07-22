@@ -134,20 +134,9 @@ module internal FSharpEnvironment =
 
     let is32Bit = IntPtr.Size = 4
 
-    let runningOnMono =
-        try
-            System.Type.GetType("Mono.Runtime") <> null
-        with e ->
-            false
-
     let tryRegKey (subKey: string) =
 
-        //if we are running on mono simply return None
-        // GetDefaultRegistryStringValueViaDotNet will result in an access denied by default,
-        // and Get32BitRegistryStringValueViaPInvoke will fail due to Advapi32.dll not existing
-        if runningOnMono then
-            None
-        else if is32Bit then
+        if is32Bit then
             let s = GetDefaultRegistryStringValueViaDotNet(subKey)
             // If we got here AND we're on a 32-bit OS then we can validate that Get32BitRegistryStringValueViaPInvoke(...) works
             // by comparing against the result from GetDefaultRegistryStringValueViaDotNet(...)
@@ -260,7 +249,6 @@ module internal FSharpEnvironment =
     let IsNetFx45OrAboveInstalled =
         IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Client"
         || IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full"
-        || runningOnMono
 
     // Check if the running framework version is 4.5 or above.
     // Use the presence of v4.5.x in the registry to distinguish between 4.0 and 4.5

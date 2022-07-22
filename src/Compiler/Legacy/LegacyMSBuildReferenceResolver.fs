@@ -314,19 +314,11 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
                                      AllowedAssemblyExtensions= [| ".dll" ; ".exe" |])
         rar.TargetProcessorArchitecture <- targetProcessorArchitecture
         let targetedRuntimeVersionValue = typeof<obj>.Assembly.ImageRuntimeVersion
-#if ENABLE_MONO_SUPPORT
-        // The properties TargetedRuntimeVersion and CopyLocalDependenciesWhenParentReferenceInGac 
-        // are not available on Mono. So we only set them if available (to avoid a compile-time dependency). 
-        if not runningOnMono then
-            typeof<ResolveAssemblyReference>.InvokeMember("TargetedRuntimeVersion",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box targetedRuntimeVersionValue |])  |> ignore 
-            typeof<ResolveAssemblyReference>.InvokeMember("CopyLocalDependenciesWhenParentReferenceInGac",(BindingFlags.Instance ||| BindingFlags.SetProperty ||| BindingFlags.Public),null,rar,[| box true |])  |> ignore 
-#else
         rar.TargetedRuntimeVersion <- targetedRuntimeVersionValue
         rar.CopyLocalDependenciesWhenParentReferenceInGac <- true
-#endif
         
         let succeeded = rar.Execute()
-        
+
         if not succeeded then 
             raise LegacyResolutionFailure
 
