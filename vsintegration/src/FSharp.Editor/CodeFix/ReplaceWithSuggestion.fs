@@ -46,7 +46,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
             let declInfo = checkFileResults.GetDeclarationListInfo(Some parseFileResults, fcsCaretLineNumber, lineText, partialName)
             let addNames (addToBuffer:string -> unit) = 
                 for item in declInfo.Items do
-                    addToBuffer item.Name
+                    addToBuffer item.NameInList
 
             let diagnostics =
                 context.Diagnostics

@@ -686,7 +686,7 @@ type Entity =
 #if !NO_TYPEPROVIDERS
     member x.IsStaticInstantiationTycon = 
         x.IsProvidedErasedTycon &&
-            let _nm, args = demangleProvidedTypeName x.LogicalName
+            let _nm, args = DemangleProvidedTypeName x.LogicalName
             args.Length > 0 
 #endif
 
@@ -697,7 +697,7 @@ type Entity =
         if x.IsModuleOrNamespace then x.DemangledModuleOrNamespaceName 
 #if !NO_TYPEPROVIDERS
         elif x.IsProvidedErasedTycon then 
-            let nm, args = demangleProvidedTypeName nm
+            let nm, args = DemangleProvidedTypeName nm
             if withStaticParameters && args.Length > 0 then 
                 nm + "<" + String.concat "," (Array.map snd args) + ">"
             else
@@ -710,7 +710,7 @@ type Entity =
             | tps -> 
                 let nm = DemangleGenericTypeName nm
                 let isArray = nm.StartsWithOrdinal("[") && nm.EndsWithOrdinal("]")
-                let nm = if coreName || isArray then nm else ConvertNameToDisplayName nm
+                let nm = if coreName || isArray then nm else ConvertLogicalNameToDisplayName nm
                 if withUnderscoreTypars then
                     let typarNames = tps |> List.map (fun _  -> "_")
                     nm + "<" + String.concat "," typarNames + ">"
@@ -1680,18 +1680,18 @@ type UnionCase =
     ///
     /// Backticks and parens are not added for non-identifiers.
     ///
-    /// Note logical names op_Nil and op_ConsCons become [] and :: respectively.
-    member uc.DisplayNameCore = uc.LogicalName |> DecompileOpName
+    /// Note logical names op_Nil and op_ColonColon become [] and :: respectively.
+    member uc.DisplayNameCore = uc.LogicalName |> ConvertValLogicalNameToDisplayNameCore
 
     /// Get the display name of the union case
     ///
     /// Backticks and parens are added for non-identifiers.
     ///
-    /// Note logical names op_Nil and op_ConsCons become ([]) and (::) respectively.
-    member uc.DisplayName = uc.LogicalName |> ConvertValNameToDisplayName false
+    /// Note logical names op_Nil and op_ColonColon become ([]) and (::) respectively.
+    member uc.DisplayName = uc.LogicalName |> ConvertValLogicalNameToDisplayName false
 
     /// Get the name of the case in generated IL code.
-    /// Note logical names `op_Nil` and `op_ConsCons` become `Empty` and `Cons` respectively.
+    /// Note logical names `op_Nil` and `op_ColonColon` become `Empty` and `Cons` respectively.
     /// This is because this is how ILX union code gen expects to see them.
     member uc.CompiledName =
         let idText = uc.Id.idText
@@ -1803,7 +1803,7 @@ type RecdField =
     member v.DisplayNameCore = v.LogicalName
 
     /// Name of the field 
-    member v.DisplayName = v.DisplayNameCore |> ConvertNameToDisplayName
+    member v.DisplayName = v.DisplayNameCore |> ConvertLogicalNameToDisplayName
 
       /// Indicates a compiler generated field, not visible to Intellisense or name resolution 
     member v.IsCompilerGenerated = v.rfield_secret
@@ -2973,7 +2973,7 @@ type Val =
     ///
     /// Note: here "Core" means "without added backticks or parens"
     member x.DisplayNameCore = 
-        x.DisplayNameCoreMangled |> DecompileOpName
+        x.DisplayNameCoreMangled |> ConvertValLogicalNameToDisplayNameCore
 
     /// The full text for the value to show in error messages and to use in code.
     /// This includes backticks, parens etc.
@@ -2986,7 +2986,7 @@ type Val =
     ///   - If this is a base value  --> base
     ///   - If this is a value named ``base`` --> ``base``
     member x.DisplayName = 
-        ConvertValNameToDisplayName x.IsBaseVal x.DisplayNameCoreMangled
+        ConvertValLogicalNameToDisplayName x.IsBaseVal x.DisplayNameCoreMangled
 
     member x.SetValRec b = x.val_flags <- x.val_flags.WithRecursiveValInfo b 
 
@@ -4010,7 +4010,7 @@ type RecdFieldRef =
     member x.FieldName = let (RecdFieldRef(_, id)) = x in id
 
     /// Get the name of the field, with backticks added for non-identifier names
-    member x.DisplayName = x.FieldName |> ConvertNameToDisplayName
+    member x.DisplayName = x.FieldName |> ConvertLogicalNameToDisplayName
 
     /// Get the Entity for the type containing this union case
     member x.Tycon = x.TyconRef.Deref
@@ -4184,6 +4184,10 @@ type AnonRecdTypeInfo =
 
     member x.IsLinked = (match x.SortedIds with null -> true | _ -> false)
     
+    member x.DisplayNameCoreByIdx idx = x.SortedNames[idx]
+
+    member x.DisplayNameByIdx idx = x.SortedNames[idx] |> ConvertLogicalNameToDisplayName
+
 [<RequireQualifiedAccess>] 
 type TupInfo = 
     /// Some constant, e.g. true or false for tupInfo

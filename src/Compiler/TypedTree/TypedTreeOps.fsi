@@ -2395,7 +2395,11 @@ val mkFastForLoop: TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * range * V
 
 type ActivePatternElemRef with
 
-    member Name: string
+    member LogicalName: string
+
+    member DisplayNameCore: string
+
+    member DisplayName: string
 
 val TryGetActivePatternInfo: ValRef -> PrettyNaming.ActivePatternInfo option
 
@@ -2403,10 +2407,16 @@ val mkChoiceCaseRef: g: TcGlobals -> m: range -> n: int -> i: int -> UnionCaseRe
 
 type PrettyNaming.ActivePatternInfo with
 
-    member Names: string list
+    /// Get the core of the display name for one of the cases of the active pattern, by index
+    member DisplayNameCoreByIdx: idx: int -> string
 
+    /// Get the display name for one of the cases of the active pattern, by index
+    member DisplayNameByIdx: idx: int -> string
+
+    /// Get the result type for the active pattern
     member ResultType: g: TcGlobals -> range -> TType list -> bool -> TType
 
+    /// Get the overall type for a function that implements the active pattern
     member OverallType: g: TcGlobals -> m: range -> argTy: TType -> retTys: TType list -> isStruct: bool -> TType
 
 val doesActivePatternHaveFreeTypars: TcGlobals -> ValRef -> bool

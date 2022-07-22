@@ -363,10 +363,11 @@ type internal FSharpSignatureHelpProvider
                             taggedText |> Seq.iter (RoslynHelpers.CollectTaggedText tt)
                             
                             let name =
-                                if String.IsNullOrWhiteSpace(argument.DisplayName) then
+                                let nm = argument.DisplayName
+                                if String.IsNullOrWhiteSpace nm then
                                     "arg" + string index
                                 else
-                                    argument.DisplayName
+                                    nm
 
                             let display =
                                 [|

@@ -99,8 +99,14 @@ type NavigableContainerType =
     | Exception
 
 type NavigableContainer =
-    { Type: NavigableContainerType
-      LogicalName: string }
+    {
+        /// The kind of container.
+        Type: NavigableContainerType
+
+        /// If Type = File, this is the name of the file
+        /// In other cases it is the logical name of the entity.
+        LogicalName: string
+    }
 
 type NavigableItem =
     { LogicalName: string

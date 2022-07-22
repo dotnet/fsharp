@@ -1211,9 +1211,6 @@ type FSharpSourceTokenizer(conditionalDefines: string list, fileName: string opt
 
 module FSharpKeywords =
 
-    let DoesIdentifierNeedBackticks s =
-        PrettyNaming.DoesIdentifierNeedBackticks s
-
     let NormalizeIdentifierBackticks s =
         PrettyNaming.NormalizeIdentifierBackticks s
 

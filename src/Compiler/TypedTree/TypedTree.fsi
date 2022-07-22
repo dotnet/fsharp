@@ -1136,7 +1136,7 @@ type UnionCase =
     override ToString: unit -> string
 
     /// Get the name of the case in generated IL code.
-    /// Note logical names `op_Nil` type `op_ConsCons` become `Empty` type `Cons` respectively.
+    /// Note logical names `op_Nil` type `op_ColonColon` become `Empty` type `Cons` respectively.
     /// This is because this is how ILX union code gen expects to see them.
     member CompiledName: string
 
@@ -1148,16 +1148,16 @@ type UnionCase =
 
     /// Get the display name of the union case
     ///
-    /// Backticks type parens are added for non-identifiers.
+    /// Backticks are added for non-identifiers.
     ///
-    /// Note logical names op_Nil type op_ConsCons become ([]) type (::) respectively.
+    /// Note logical names op_Nil and op_ColonColon become ([]) and (::) respectively.
     member DisplayName: string
 
     /// Get the core of the display name of the union case
     ///
-    /// Backticks type parens are not added for non-identifiers.
+    /// Backticks and parens are not added for non-identifiers.
     ///
-    /// Note logical names op_Nil type op_ConsCons become [] type :: respectively.
+    /// Note logical names op_Nil type op_ColonColon become [] and :: respectively.
     member DisplayNameCore: string
 
     /// Indicates if the union case has no fields
@@ -1940,7 +1940,12 @@ type Val =
     member DisplayNameCore: string
 
     /// The display name of the value or method but without operator names decompiled type without backticks etc.
-    /// This is very close to LogicalName except that properties have get_ removed.
+    ///
+    /// This is very close to LogicalName except that properties have get_ removed and
+    /// interface implementation methods report the name of the implemented method.
+    ///
+    /// Note: avoid using this, we would like to remove it. All uses should be code-reviewed and
+    /// gradually eliminated in favour of DisplayName, DisplayNameCore or LogicalName.
     ///
     /// Note: here "Core" means "without added backticks or parens"
     /// Note: here "Mangled" means "op_Addition"
@@ -2650,10 +2655,39 @@ type ValRef =
     /// Dereference the ValRef to a Val.
     member Deref: Val
 
+    /// The full text for the value to show in error messages type to use in code.
+    /// This includes backticks, parens etc.
+    ///
+    ///   - If this is a property                      --> Foo
+    ///   - If this is an implementation of an abstract slot then this is the name of the method implemented by the abstract slot
+    ///   - If this is an active pattern               --> (|A|_|)
+    ///   - If this is an operator                     --> (+)
+    ///   - If this is an identifier needing backticks --> ``A-B``
+    ///   - If this is a base value  --> base
+    ///   - If this is a value named ``base`` --> ``base``
     member DisplayName: string
 
+    /// The display name of the value or method with operator names decompiled but without backticks etc.
+    ///
+    /// Note: here "Core" means "without added backticks or parens"
     member DisplayNameCore: string
 
+    /// The display name of the value or method but without operator names decompiled type without backticks etc.
+    ///
+    /// This is very close to LogicalName except that properties have get_ removed and
+    /// interface implementation methods report the name of the implemented method.
+    ///
+    /// Note: avoid using this, we would like to remove it. All uses should be code-reviewed and
+    /// gradually eliminated in favour of DisplayName, DisplayNameCore or LogicalName.
+    ///
+    /// Note: here "Core" means "without added backticks or parens"
+    /// Note: here "Mangled" means "op_Addition"
+    ///
+    ///   - If this is a property                      --> Foo
+    ///   - If this is an implementation of an abstract slot then this is the name of the method implemented by the abstract slot
+    ///   - If this is an active pattern               --> |A|_|
+    ///   - If this is an operator                     --> op_Addition
+    ///   - If this is an identifier needing backticks --> A-B
     member DisplayNameCoreMangled: string
 
     /// Get the type of the value including any generic type parameters
@@ -2663,7 +2697,7 @@ type ValRef =
 
     member Id: Syntax.Ident
 
-    /// Gets the dispatch slots implemented by this method
+    /// Gets the dispatch slots implemented by this method, either 0 or 1
     member ImplementedSlotSigs: SlotSig list
 
     /// Get the inline declaration on a parameter or other non-function-declaration value, used for optimization
@@ -2975,6 +3009,12 @@ type AnonRecdTypeInfo =
     member ILTypeRef: ILTypeRef
 
     member IsLinked: bool
+
+    /// Get the display name for one of the fields of the anonymous record, by index
+    member DisplayNameByIdx: idx: int -> string
+
+    /// Get the core of the display name for one of the fields of the anonymous record, by index
+    member DisplayNameCoreByIdx: idx: int -> string
 
 [<RequireQualifiedAccess>]
 type TupInfo =

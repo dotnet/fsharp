@@ -337,9 +337,6 @@ module internal TestExpose =
     val TokenInfo: Parser.token -> FSharpTokenColorKind * FSharpTokenCharKind * FSharpTokenTriggerClass
 
 module FSharpKeywords =
-    /// Checks if adding backticks to identifier is needed.
-    val DoesIdentifierNeedBackticks: string -> bool
-
     /// Add backticks if the identifier is a keyword.
     /// Remove backticks if present and not needed.
     val NormalizeIdentifierBackticks: string -> string

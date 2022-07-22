@@ -73,7 +73,7 @@ module private Index =
                 // This conversion back from logical names to display names should never be needed, because
                 // the FCS API should only report display names in the first place.
                 if PrettyNaming.IsLogicalOpName item.LogicalName then 
-                    PrettyNaming.DecompileOpName item.LogicalName
+                    PrettyNaming.ConvertValLogicalNameToDisplayNameCore item.LogicalName
                 else 
                     item.LogicalName
             for i = 0 to name.Length - 1 do
@@ -156,8 +156,8 @@ module private Utils =
         let name =
             match container.Type with
             | NavigableContainerType.File ->
-                (Path.GetFileNameWithoutExtension project.Name) + ", " + (Path.GetFileName container.Name)
-            | _ -> container.Name
+                (Path.GetFileNameWithoutExtension project.Name) + ", " + (Path.GetFileName container.LogicalName)
+            | _ -> container.LogicalName
 
         let combined = typeAsString + name
 
@@ -200,10 +200,10 @@ type internal FSharpNavigateToSearchService
                             let additionalInfo = containerToString item.Container document
                             let _name =
                                 if isSignatureFile document.FilePath then
-                                    item.Name + " (signature)"
+                                    item.LogicalName + " (signature)"
                                 else
-                                    item.Name
-                            yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo)
+                                    item.LogicalName
+                            yield NavigableItem(document, sourceSpan, glyph, item.LogicalName, kind, additionalInfo)
                 |]
             return navigableItems
         }

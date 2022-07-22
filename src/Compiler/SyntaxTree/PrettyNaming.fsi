@@ -28,7 +28,12 @@ val internal opNamePrefix: string = "op_"
 ///    ..
 val IsOperatorDisplayName: name: string -> bool
 
-/// Is the name a valid F# identifier
+/// Is the name a valid F# identifier, primarily used internally in PrettyNaming.fs for determining if an
+/// identifier needs backticks.
+///
+/// In general do not use this routine. It is only used in one quick fix, for determining if it is valid
+/// to add "_" in front of an identifier.
+///
 ///     A            --> true
 ///     A'           --> true
 ///     _A           --> true
@@ -36,6 +41,10 @@ val IsOperatorDisplayName: name: string -> bool
 ///     |A|B|        --> false
 ///     op_Addition  --> true
 ///     +            --> false
+///     let          --> false
+///     base         --> false
+///
+/// TBD: needs unit testing
 val IsIdentifierName: name: string -> bool
 
 /// Determines if the specified name is a valid name for an active pattern.
@@ -45,15 +54,9 @@ val IsIdentifierName: name: string -> bool
 ///     |            --> false
 ///     ||           --> false
 ///     op_Addition  --> false
+///
+/// TBD: needs unit testing
 val IsActivePatternName: name: string -> bool
-
-/// Returns `true` if given string requires double backticks to be a valid identifier, e.g.
-///     +     true, e.g. ``+``    (this is not op_Addition)
-///     |>>   true, e.g. ``|>>``  (this is not op_Addition)
-///     A-B   true, e.g. ``A-B``
-///     AB    false, e.g. AB
-///     |A|_| false   // this is an active pattern name, needs parens not backticks
-val DoesIdentifierNeedBackticks: name: string -> bool
 
 /// Adds double backticks if necessary to make a valid identifier, e.g.
 ///     op_Addition  -->  op_Addition
@@ -67,36 +70,58 @@ val DoesIdentifierNeedBackticks: name: string -> bool
 ///     ``A-B``      --> ``A-B``
 val NormalizeIdentifierBackticks: name: string -> string
 
-/// Is the name a logical operator name
-///    op_Addition - yes
-///    op_Quack    - no
-///    +           - no
-///    ABC         - no
-///    |A|_|       - no
-val IsLogicalOpName: name: string -> bool
+/// Is the name a logical operator name, including unary, binary and ternary operators
+///    op_UnaryPlus         - yes
+///    op_Addition          - yes
+///    op_Range             - yes (?)
+///    op_RangeStep         - yes (?)
+///    op_DynamicAssignment - yes
+///    op_Quack             - no
+///    +                    - no
+///    ABC                  - no
+///    ABC DEF              - no
+///    base                 - no
+///    |A|_|                - no
+val IsLogicalOpName: logicalName: string -> bool
 
-/// Compiles an operator into a mangled operator name. For example,
+/// Converts the core of an operator name into a logical name. For example,
 ///    +  --> op_Addition
 ///    !%  --> op_DereferencePercent
 /// Only used on actual operator names
-val CompileOpName: string -> string
-
-/// Decompiles a potentially-mangled operator name back into a display name. For example:
-///     Foo                   --> Foo
-///     +                     --> +
-///     op_Addition           --> +
-///     op_DereferencePercent --> !%
-///     A-B                   --> A-B
-///     |A|_|                 --> |A|_|
-/// Used on names of all kinds
-val DecompileOpName: string -> string
+val CompileOpName: op: string -> string
 
 /// Take a core display name (e.g. "List" or "Strange module name") and convert it to display text
 /// by adding backticks if necessary.
 ///     Foo                   --> Foo
 ///     +                     --> ``+``
 ///     A-B                   --> ``A-B``
-val internal ConvertNameToDisplayName: name: string -> string
+val internal ConvertLogicalNameToDisplayName: name: string -> string
+
+/// Converts the logical name for and operator back into the core of a display name. For example:
+///     Foo                   --> Foo
+///     +                     --> +
+///     op_Addition           --> +
+///     op_DereferencePercent --> !%
+///     A-B                   --> A-B
+///     |A|_|                 --> |A|_|
+///     base                  --> base        regardless of IsBaseVal
+/// Used on names of all kinds
+///
+/// TODO: We should assess uses of this function.
+///
+/// In any cases it is used it probably indicates that text is being
+/// generated which:
+///    1. does not contain double-backticks for non-identifiers
+///    2. does not put parentheses arounf operators or active pattern names
+///
+/// If the text is immediately in quotes, this is generally ok, e.g. 
+///
+///         error FS0038: '+' is bound twice in this pattern
+///         error FS0038: '|A|_|' is bound twice in this pattern
+///         error FS0038: 'a a' is bound twice in this pattern
+///
+/// If not, the it is likely this should be replaced by ConvertValLogicalNameToDisplayName.
+val ConvertValLogicalNameToDisplayNameCore: opName: string -> string
 
 /// Take a core display name for a value (e.g. op_Addition or PropertyName) and convert it to display text
 ///     Foo                   --> Foo
@@ -106,16 +131,19 @@ val internal ConvertNameToDisplayName: name: string -> string
 ///     op_DereferencePercent --> (!%)
 ///     A-B                   --> ``A-B``
 ///     |A|_|                 --> (|A|_|)
+///     let                   --> ``let``
+///     type                  --> ``type``
+///     params                --> ``params``
 ///     base                  --> base
 ///     or                    --> or
 ///     mod                   --> mod
-val internal ConvertValNameToDisplayName: isBaseVal: bool -> name: string -> string
+val internal ConvertValLogicalNameToDisplayName: isBaseVal: bool -> name: string -> string
 
-/// Like ConvertNameToDisplayName but produces a tagged layout
-val internal ConvertNameToDisplayLayout: nonOpLayout: (string -> Layout) -> name: string -> Layout
+/// Like ConvertLogicalNameToDisplayName but produces a tagged layout
+val internal ConvertLogicalNameToDisplayLayout: nonOpLayout: (string -> Layout) -> name: string -> Layout
 
-/// Like ConvertValNameToDisplayName but produces a tagged layout
-val internal ConvertValNameToDisplayLayout: isBaseVal: bool -> nonOpLayout: (string -> Layout) -> name: string -> Layout
+/// Like ConvertValLogicalNameToDisplayName but produces a tagged layout
+val internal ConvertValLogicalNameToDisplayLayout: isBaseVal: bool -> nonOpLayout: (string -> Layout) -> name: string -> Layout
 
 val internal opNameCons: string
 
@@ -144,13 +172,13 @@ val internal IsValidPrefixOperatorUse: s: string -> bool
 
 val internal IsValidPrefixOperatorDefinitionName: s: string -> bool
 
-val IsPrefixOperator: s: string -> bool
+val IsLogicalPrefixOperator: logicalName: string -> bool
+
+val IsLogicalInfixOpName: logicalName: string -> bool
+
+val IsLogicalTernaryOperator: logicalName: string -> bool
 
 val IsPunctuation: s: string -> bool
-
-val IsTernaryOperator: s: string -> bool
-
-val IsLogicalInfixOpName: string -> bool
 
 val internal (|Control|Equality|Relational|Indexer|FixedTypes|Other|):
     opName: string -> Choice<unit, unit, unit, unit, unit, unit>
@@ -204,13 +232,13 @@ val internal ActivePatternInfoOfValName: nm: string -> m: range -> ActivePattern
 
 exception internal InvalidMangledStaticArg of string
 
-val internal demangleProvidedTypeName: typeLogicalName: string -> string * (string * string)[]
+val internal DemangleProvidedTypeName: typeLogicalName: string -> string * (string * string)[]
 
 /// Mangle the static parameters for a provided type or method
-val internal mangleProvidedTypeName: typeLogicalName: string * nonDefaultArgs: (string * string)[] -> string
+val internal MangleProvidedTypeName: typeLogicalName: string * nonDefaultArgs: (string * string)[] -> string
 
 /// Mangle the static parameters for a provided type or method
-val internal computeMangledNameWithoutDefaultArgValues:
+val internal ComputeMangledNameWithoutDefaultArgValues:
     nm: string * staticArgs: 'a[] * defaultArgValues: (string * string option)[] -> string
 
 val internal outArgCompilerGeneratedName: string

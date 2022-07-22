@@ -1689,9 +1689,9 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           match minfos, recdPropSearch, anonRecdPropSearch with 
           | [], None, None when MemberConstraintIsReadyForStrongResolution csenv traitInfo ->
               if tys |> List.exists (isFunTy g) then 
-                  return! ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenFunction(DecompileOpName nm), m, m2)) 
+                  return! ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenFunction(ConvertValLogicalNameToDisplayNameCore nm), m, m2)) 
               elif tys |> List.exists (isAnyTupleTy g) then 
-                  return! ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenTuple(DecompileOpName nm), m, m2)) 
+                  return! ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenTuple(ConvertValLogicalNameToDisplayNameCore nm), m, m2)) 
               else
                   match nm, argTys with 
                   | "op_Explicit", [argTy] ->
@@ -1703,7 +1703,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                          match tys with 
                          | [ty] -> NicePrint.minimalStringOfType denv ty
                          | _ -> tys |> List.map (NicePrint.minimalStringOfType denv) |> String.concat ", "
-                      let opName = DecompileOpName nm
+                      let opName = ConvertValLogicalNameToDisplayNameCore nm
                       let err = 
                           match opName with 
                           | "?>="  | "?>"  | "?<="  | "?<"  | "?="  | "?<>" 
@@ -1757,9 +1757,9 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   if isInstance <> memFlags.IsInstance then 
                       return!
                           if isInstance then
-                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsNotStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (DecompileOpName nm), nm), m, m2 ))
+                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsNotStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (ConvertValLogicalNameToDisplayNameCore nm), nm), m, m2 ))
                           else
-                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (DecompileOpName nm), nm), m, m2 ))
+                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (ConvertValLogicalNameToDisplayNameCore nm), nm), m, m2 ))
                   else 
                       do! CheckMethInfoAttributes g m None minfo
                       return TTraitSolved (minfo, calledMeth.CalledTyArgs)
