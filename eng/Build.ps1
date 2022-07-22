@@ -451,15 +451,14 @@ try {
     TryDownloadDotnetFrameworkSdk
 
     $nativeToolsDir = InitializeNativeTools
-    write-host "Native tools: $nativeToolsDir"
-
-    $env:PERL5Path = Join-Path "$nativeToolsDir" "perl\5.32.1.1\perl\bin\perl.exe"
 
     if (-not (Test-Path variable:NativeToolsOnMachine)) {
+        $env:PERL5Path = Join-Path "$nativeToolsDir" "perl\5.32.1.1\perl\bin\perl.exe"
         write-host "variable:NativeToolsOnMachine = unset or false"
         write-host "Path = $env:PERL5Path"
     }
     else {
+        $env:PERL5Path = (get-command -all "perl.exe")[0].path
         write-host "variable:NativeToolsOnMachine = $variable:NativeToolsOnMachine"
         write-host "Path = $env:PERL5Path"
     }
