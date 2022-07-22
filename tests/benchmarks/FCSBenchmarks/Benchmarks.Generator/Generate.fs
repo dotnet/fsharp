@@ -53,14 +53,16 @@ module Utils =
         if p.ExitCode <> 0 then
             let msg = $"Process {name} {args} failed: {errors}."
             log.LogError $"{msg}. Its full output:"
-            Thread.Sleep(100) // A rather hacky way to make sure that the above log is flushed before the long message below
+            // This is a workaround to make sure that the above log is flushed before the long message below
+            Thread.Sleep(100) 
             Console.ForegroundColor <- ConsoleColor.Gray
             printfn $"{o}"
             Console.ResetColor()
             failwith msg
         else if printOutput then
             log.LogInformation "Full output of the process:"
-            Thread.Sleep(100) // A rather hacky way to make sure that the above log is flushed before the long message below
+            // This is a workaround to make sure that the above log is flushed before the long message below
+            Thread.Sleep(100)
             Console.ForegroundColor <- ConsoleColor.DarkGray
             printfn $"{o}"
             Console.ResetColor()

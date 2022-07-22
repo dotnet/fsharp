@@ -114,7 +114,10 @@ See an example from [inputs/local_example.json](inputs/local_example.json):
 }
 ```
 
-
-
-[link](#process-steps-graph)
-
+## Known issues
+* Benchmark assumes that the FSharp.Compiler.Service has already been built
+* Only `Release` configuration is supported
+* Currently BenchmarkDotNet is not used - a single iteration of the listed actions is performed
+* Little customization of the actual benchmark's environment
+* Console output could be improved
+* Depends on having the correct MSBuild/Dotnet setup available

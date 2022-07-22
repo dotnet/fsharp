@@ -8,9 +8,9 @@
     <ItemGroup>
         <Compile Include="Dtos.fs" />
         <Compile Include="Generate.fs" />
-        <Content Include="inputs\local_example.json" CopyToOutputDirectory="PreserveNewest" />
-        <Content Include="inputs\50_leaves.json" CopyToOutputDirectory="PreserveNewest" />
-        <Content Include="inputs\fantomas.json" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="inputs/local_example.json" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="inputs/50_leaves.json" CopyToOutputDirectory="PreserveNewest" />
+        <Content Include="inputs/fantomas.json" CopyToOutputDirectory="PreserveNewest" />
         <Content Include=".gitignore" />
         <None Include="README.md" />
     </ItemGroup>
