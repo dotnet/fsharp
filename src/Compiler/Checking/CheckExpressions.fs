@@ -8052,7 +8052,6 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
                 | Result (_, item, _, _, _ as res)
                     when
                          (match item with
-                          | Item.Types _
                           | Item.DelegateCtor _
                           | Item.CtorGroup _
                           | Item.FakeInterfaceCtor _ -> false
