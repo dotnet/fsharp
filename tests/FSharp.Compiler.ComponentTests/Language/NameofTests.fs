@@ -25,6 +25,23 @@ if actual <> expected then failwith $"Expected nameof({{expected}}) to be '{{exp
         |> compileAndRun
         |> shouldSucceed
         
+    [<Fact>]
+    let ``nameof() with member of a generic type should return the name without types provided`` () =    
+        let source = $"""
+type A<'a>() =
+    static member P = ()
+
+let expected = "P"
+let actual = nameof(A.P)
+if actual <> expected then failwith $"Expected nameof({{expected}}) to be '{{expected}}', but got '{{actual}}'"
+        """
+        Fsx source
+        |> asExe
+        |> withLangVersion50
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed
+        
     [<Theory>]
     [<InlineData(1)>]
     [<InlineData(2)>]
