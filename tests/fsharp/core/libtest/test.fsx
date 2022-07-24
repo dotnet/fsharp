@@ -22,7 +22,7 @@ let test s b =
 
   
 let format_uint64 outc formatc width left_justify add_zeros num_prefix_if_pos (n:uint64) = 
-  let _ = match formatc with 'd' | 'i' | 'u' -> 10UL | 'o' -> 8UL | 'x' | 'X' -> 16UL in
+  let _ = match formatc with 'd' | 'i' | 'u' -> 10UL | 'o' -> 8UL | 'x' | 'X' -> 16UL | _ -> 0UL in
   failwith "hello"
 
 
