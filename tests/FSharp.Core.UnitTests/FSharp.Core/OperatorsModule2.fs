@@ -307,6 +307,15 @@ type OperatorsModule2() =
         // reference type
         let result = Operators.max "A" "ABC"
         Assert.AreEqual("ABC", result)
+
+        // floating point
+        let assertNaN f result = Assert.True(f result, "Operators.max with NaN must result in NaN.")
+        Operators.max nan 1.0 |> assertNaN Double.IsNaN 
+        Operators.max 1.0 nan |> assertNaN Double.IsNaN
+        Operators.max nan nan |> assertNaN Double.IsNaN
+        Operators.max 1.0f nanf |> assertNaN Single.IsNaN
+        Operators.max nanf 1.0f |> assertNaN Single.IsNaN
+        Operators.max nanf nanf |> assertNaN Single.IsNaN
         
     [<Fact>]
     member _.min() =
@@ -325,6 +334,15 @@ type OperatorsModule2() =
         // reference type
         let result = Operators.min "A" "ABC"
         Assert.AreEqual("A", result)
+
+        // floating point
+        let assertNaN f result = Assert.True(f result, "Operators.min with NaN must result in NaN.")
+        Operators.min nan 1.0 |> assertNaN Double.IsNaN 
+        Operators.min 1.0 nan |> assertNaN Double.IsNaN
+        Operators.min nan nan |> assertNaN Double.IsNaN
+        Operators.min 1.0f nanf |> assertNaN Single.IsNaN
+        Operators.min nanf 1.0f |> assertNaN Single.IsNaN
+        Operators.min nanf nanf |> assertNaN Single.IsNaN
         
     [<Fact>]
     member _.nan() =
