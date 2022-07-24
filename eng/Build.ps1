@@ -451,11 +451,10 @@ try {
     TryDownloadDotnetFrameworkSdk
 
     $nativeTools = InitializeNativeTools
-
     if (-not (Test-Path variable:NativeToolsOnMachine)) {
         $env:PERL5Path = Join-Path $nativeTools "perl\5.32.1.1\perl\bin\perl.exe"
         write-host "variable:NativeToolsOnMachine = unset or false"
-        $nativeTools.values
+        $nativeTools
         write-host "Path = $env:PERL5Path"
     }
     else {
