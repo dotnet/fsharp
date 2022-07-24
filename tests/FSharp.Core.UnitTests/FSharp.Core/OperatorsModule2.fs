@@ -16,17 +16,31 @@ open Xunit
 
 #nowarn "3370"
 
-/// floating point helpers for min/max tests
+/// floating point helpers for min/max tests, because Double.IsNegative and some other methods aren't available yet
 module FP =
+    let (<&>) f g a = f a && g a
+    let isNegative x =
+        // From https://github.com/dotnet/runtime/blob/a5f3676cc71e176084f0f7f1f6beeecd86fbeafc/src/libraries/System.Private.CoreLib/src/System/Double.cs#L86
+        let signMask = 0x8000_0000_0000_0000L
+        let intValue = BitConverter.DoubleToInt64Bits x
+        intValue &&& signMask = signMask
+
+    let isNegativef (x: float32)  =
+        // https://github.com/dotnet/runtime/blob/a5f3676cc71e176084f0f7f1f6beeecd86fbeafc/src/libraries/System.Private.CoreLib/src/System/Single.cs#L85
+        let signMask = 0x8000_0000_0000_0000L
+        let intValue = x |> float |> BitConverter.DoubleToInt64Bits  // cannot use SingleToInt32Bits yet...
+        intValue &&& signMask = signMask
+
     let shouldBe (v, test) result = Assert.True(test result, $"Operators.max/min expected a %s{v}.")
-    let positive = "positive zero float", (Double.IsNegative >> not)
-    let positivef = "positive zero float32", (Single.IsNegative >> not)
-    let negative = "negative zero float", Double.IsNegative
-    let negativef = "positive zero float32", Single.IsNegative
-    let positiveNaN = "positive NaN float", Double.IsNegative
-    let positiveNaNf = "positive NaN float32", Single.IsNegative
-    let negativeNaN = "positive NaN float", Double.IsNegative
-    let negativeNaNf = "positive NaN float32", Single.IsNegative
+    let positive = "positive zero float", (isNegative >> not)
+    let positivef = "positive zero float32", (isNegativef >> not)
+    let negative = "negative zero float", isNegative
+    let negativef = "positive zero float32", isNegativef
+    let positiveNaN = "positive NaN float", (isNegative >> not) <&> Double.IsNaN
+    let positiveNaNf = "positive NaN float32", (isNegativef >> not) <&> Single.IsNaN
+    let negativeNaN = "positive NaN float", isNegative <&> Double.IsNaN
+    let negativeNaNf = "positive NaN float32", isNegativef <&> Single.IsNaN
+    let f() = isNegativef <&> Single.IsNaN
 
 
 /// If this type compiles without error it is correct
@@ -41,6 +55,28 @@ type TestFs0670Error<'T> =
             Operators.string x
 
 type OperatorsModule2() =
+
+    [<Fact>]
+    member _.isNegativeHelpers() =
+        let shouldBeTrueFor test = Assert.True(FP.isNegative test, $"Helper FP.isNegative should return true for %f{test}")
+        let shouldBeFalseFor test = Assert.False(FP.isNegative test, $"Helper FP.isNegative should return false for %f{test}")
+        
+        [ -1.0; nan (* default nan is negative! *); -0.0; -9999.99999; -infinity; -Double.Epsilon]
+        |> List.iter shouldBeTrueFor
+
+        [ 1.0; -nan (* default nan is negative! *); 0.0; 9999.99999; infinity; Double.Epsilon]
+        |> List.iter shouldBeFalseFor
+
+    [<Fact>]
+    member _.isNegativefHelper() =
+        let shouldBeTrueFor test = Assert.True(FP.isNegativef test, $"Helper FP.isNegativef should return true for %f{test}")
+        let shouldBeFalseFor test = Assert.False(FP.isNegativef test, $"Helper FP.isNegativef should return false for %f{test}")
+        
+        [ -1.0f; nanf (* default nan is negative! *); -0.0f; -9999.99999f; -infinityf; -Single.Epsilon]
+        |> List.iter shouldBeTrueFor
+
+        [ 1.0f; -nanf (* default nan is negative! *); 0.0f; 9999.99999f; infinityf; Single.Epsilon]
+        |> List.iter shouldBeFalseFor
 
     [<Fact>]
     member _.int() =
