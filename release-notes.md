@@ -37,6 +37,7 @@ These release notes track our current efforts to document changes to the F# proj
 * Members with `get` and/or `set` are now represented as [SynMemberDefn.GetSetMember](https://fsharp.github.io/fsharp-compiler-docs/reference/fsharp-compiler-syntax-synmemberdefn.html#GetSetMember) in the Untyped Syntax Tree.
 * DoesIdentifierNeedBackticks removed, it should always be sufficient to call NormalizeIdentifierBackticks or else call something in PrettyNaming
 * AddBackticksToIdentifierIfNeeded removed, it should always be sufficient to call NormalizeIdentifierBackticks
+* `DeclarationListItem.Name` --> `DeclarationListItem.NameInList`
 
 ### F# 6.0 / Visual Studio 17.0
 
