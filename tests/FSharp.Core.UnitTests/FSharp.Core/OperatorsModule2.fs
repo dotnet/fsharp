@@ -18,12 +18,15 @@ open Xunit
 
 /// floating point helpers for min/max tests
 module FP =
-    let shouldBeNaN f result = Assert.True(f result, "Operators.max with NaN must result in NaN.")
-    let shouldBeZero (v, test) result = Assert.True(test result, $"Operators.max expected a %s{v} zero.")
-    let positive = "positive", (Double.IsNegative >> not)
-    let positivef = "positive", (Single.IsNegative >> not)
-    let negative = "positive", Double.IsNegative
-    let negativef = "positive", Single.IsNegative
+    let shouldBe (v, test) result = Assert.True(test result, $"Operators.max/min expected a %s{v}.")
+    let positive = "positive zero float", (Double.IsNegative >> not)
+    let positivef = "positive zero float32", (Single.IsNegative >> not)
+    let negative = "negative zero float", Double.IsNegative
+    let negativef = "positive zero float32", Single.IsNegative
+    let positiveNaN = "positive NaN float", Double.IsNegative
+    let positiveNaNf = "positive NaN float32", Single.IsNegative
+    let negativeNaN = "positive NaN float", Double.IsNegative
+    let negativeNaNf = "positive NaN float32", Single.IsNegative
 
 
 /// If this type compiles without error it is correct
@@ -317,44 +320,38 @@ type OperatorsModule2() =
 
         // floating point
         // negative zero
-        Operators.max 0.0 -0.0 |> FP.shouldBeZero FP.positive
-        Operators.max -0.0 0.0 |> FP.shouldBeZero FP.positive
-        Operators.max -1.0 0.0 |> FP.shouldBeZero FP.positive
-        Operators.max -1.0 -0.0 |> FP.shouldBeZero FP.negative
-        Operators.max 0.0f -0.0f |> FP.shouldBeZero FP.positivef
-        Operators.max -0.0f 0.0f |> FP.shouldBeZero FP.positivef
-        Operators.max -1.0f 0.0f |> FP.shouldBeZero FP.positivef
-        Operators.max -1.0f -0.0f |> FP.shouldBeZero FP.negativef
-        Operators.max -1.0 -2.0 |> shouldEqual -2.0
+        Operators.max 0.0 -0.0 |> FP.shouldBe FP.positive
+        Operators.max -0.0 0.0 |> FP.shouldBe FP.positive
+        Operators.max -1.0 0.0 |> FP.shouldBe FP.positive
+        Operators.max -1.0 -0.0 |> FP.shouldBe FP.negative
+        Operators.max 0.0f -0.0f |> FP.shouldBe FP.positivef
+        Operators.max -0.0f 0.0f |> FP.shouldBe FP.positivef
+        Operators.max -1.0f 0.0f |> FP.shouldBe FP.positivef
+        Operators.max -1.0f -0.0f |> FP.shouldBe FP.negativef
+        Operators.max -1.0 -2.0 |> shouldEqual -1.0
         Operators.max infinity -infinity |> shouldEqual infinity
         Operators.max infinityf -infinityf |> shouldEqual infinityf
 
-        Operators.max nan 1.0 |> FP.shouldBeNaN Double.IsNaN
-        Operators.max 1.0 nan |> FP.shouldBeNaN Double.IsNaN
-        Operators.max nan nan |> FP.shouldBeNaN Double.IsNaN
-        Operators.max nan -1.0 |> FP.shouldBeNaN Double.IsNaN 
-        Operators.max -1.0 nan |> FP.shouldBeNaN Double.IsNaN
-        Operators.max nan -nan |> FP.shouldBeNaN Double.IsNaN
-        Operators.max 1.0f nanf |> FP.shouldBeNaN Single.IsNaN
-        Operators.max nanf 1.0f |> FP.shouldBeNaN Single.IsNaN
-        Operators.max nanf nanf |> FP.shouldBeNaN Single.IsNaN
+        // note that the default nan is negative, using -nan (which does change 
+        // the binary representation), makes nan positive
+        let posNan, negNan, posNanf, negNanf = -nan, nan, -nanf, nanf
+        Operators.max negNan 1.0      |> FP.shouldBe FP.negativeNaN
+        Operators.max 1.0 negNan      |> FP.shouldBe FP.negativeNaN
+        Operators.max negNan -1.0     |> FP.shouldBe FP.negativeNaN 
+        Operators.max -1.0 negNan     |> FP.shouldBe FP.negativeNaN
+        Operators.max 1.0f negNanf    |> FP.shouldBe FP.negativeNaNf
+        Operators.max negNanf 1.0f    |> FP.shouldBe FP.negativeNaNf
 
-        // no difference in outcome, just positive NaN, when comparing to other types of NaN
-        let negNaN = Math.CopySign(nan, -1.0)
-        let negNaNf = MathF.CopySign(nanf, -1.0f)
-        Operators.max negNaN 1.0 |> FP.shouldBeNaN Double.IsNaN
-        Operators.max 1.0 negNaN |> FP.shouldBeNaN Double.IsNaN
-        Operators.max negNaN negNaN |> FP.shouldBeNaN Double.IsNaN
-        Operators.max negNaN -1.0 |> FP.shouldBeNaN Double.IsNaN 
-        Operators.max -1.0 negNaN |> FP.shouldBeNaN Double.IsNaN
-        Operators.max nan negNaN |> FP.shouldBeNaN Double.IsNaN
-        Operators.max negNaN nan |> FP.shouldBeNaN Double.IsNaN
-        Operators.max 1.0f negNaNf |> FP.shouldBeNaN Single.IsNaN
-        Operators.max negNaNf 1.0f |> FP.shouldBeNaN Single.IsNaN
-        Operators.max negNaNf nanf |> FP.shouldBeNaN Single.IsNaN
-        Operators.max nanf negNaNf |> FP.shouldBeNaN Single.IsNaN
-        Operators.max negNaNf negNaNf |> FP.shouldBeNaN Single.IsNaN
+        // truth table
+        Operators.max negNan negNan   |> FP.shouldBe FP.negativeNaN
+        Operators.max negNan posNan   |> FP.shouldBe FP.negativeNaN       // Bug in BCL: Math.Max returns first arg if it is any NaN
+        Operators.max posNan negNan   |> FP.shouldBe FP.positiveNaN       // Bug in BCL: Math.Max returns first arg if it is any NaN
+        Operators.max posNan posNan   |> FP.shouldBe FP.positiveNaN
 
+        Operators.max negNanf negNanf |> FP.shouldBe FP.negativeNaNf
+        Operators.max negNanf posNanf |> FP.shouldBe FP.negativeNaNf      // Bug in BCL: Math.Max returns first arg if it is any NaN
+        Operators.max posNanf negNanf |> FP.shouldBe FP.positiveNaNf      // Bug in BCL: Math.Max returns first arg if it is any NaN
+        Operators.max posNanf posNanf |> FP.shouldBe FP.negativeNaNf
         
     [<Fact>]
     member _.min() =
@@ -374,43 +371,39 @@ type OperatorsModule2() =
 
         // floating point
         // negative zero
-        Operators.min 0.0 -0.0 |> FP.shouldBeZero FP.negative
-        Operators.min -0.0 0.0 |> FP.shouldBeZero FP.negative
-        Operators.min -1.0 0.0 |> shouldEqual -1.0
-        Operators.min 1.0 -0.0 |> FP.shouldBeZero FP.negative
-        Operators.min 0.0f -0.0f |> FP.shouldBeZero FP.negativef
-        Operators.min -0.0f 0.0f |> FP.shouldBeZero FP.negativef
-        Operators.min -1.0f 0.0f |> shouldEqual -1.0
-        Operators.min 1.0f -0.0f |> FP.shouldBeZero FP.negativef
-        Operators.min -1.0 -2.0 |> shouldEqual -1.0
+        Operators.min 0.0 -0.0 |> FP.shouldBe FP.negative
+        Operators.min -0.0 0.0 |> FP.shouldBe FP.negative
+        Operators.min 1.0 0.0 |> FP.shouldBe FP.positive
+        Operators.min 1.0 -0.0 |> FP.shouldBe FP.negative
+        Operators.min 0.0f -0.0f |> FP.shouldBe FP.negativef
+        Operators.min -0.0f 0.0f |> FP.shouldBe FP.negativef
+        Operators.min 1.0f 0.0f |> FP.shouldBe FP.positivef
+        Operators.min 1.0f -0.0f |> FP.shouldBe FP.negativef
+        Operators.min -1.0 -2.0 |> shouldEqual -2.0
         Operators.min infinity -infinity |> shouldEqual -infinity
         Operators.min infinityf -infinityf |> shouldEqual -infinityf
 
-        Operators.min nan 1.0 |> FP.shouldBeNaN Double.IsNaN
-        Operators.min 1.0 nan |> FP.shouldBeNaN Double.IsNaN
-        Operators.min nan nan |> FP.shouldBeNaN Double.IsNaN
-        Operators.min nan -1.0 |> FP.shouldBeNaN Double.IsNaN 
-        Operators.min -1.0 nan |> FP.shouldBeNaN Double.IsNaN
-        Operators.min nan -nan |> FP.shouldBeNaN Double.IsNaN
-        Operators.min 1.0f nanf |> FP.shouldBeNaN Single.IsNaN
-        Operators.min nanf 1.0f |> FP.shouldBeNaN Single.IsNaN
-        Operators.min nanf nanf |> FP.shouldBeNaN Single.IsNaN
+        // note that the default nan is negative, using -nan (which does change 
+        // the binary representation), makes nan positive
+        let posNan, negNan, posNanf, negNanf = -nan, nan, -nanf, nanf
+        Operators.min negNan 1.0      |> FP.shouldBe FP.negativeNaN
+        Operators.min 1.0 negNan      |> FP.shouldBe FP.negativeNaN
+        Operators.min negNan -1.0     |> FP.shouldBe FP.negativeNaN 
+        Operators.min -1.0 negNan     |> FP.shouldBe FP.negativeNaN
+        Operators.min 1.0f negNanf    |> FP.shouldBe FP.negativeNaNf
+        Operators.min negNanf 1.0f    |> FP.shouldBe FP.negativeNaNf
 
-        // no difference in outcome, just positive NaN, when comparing to other types of NaN
-        let negNaN = Math.CopySign(nan, -1.0)
-        let negNaNf = MathF.CopySign(nanf, -1.0f)
-        Operators.min negNaN 1.0 |> FP.shouldBeNaN Double.IsNaN
-        Operators.min 1.0 negNaN |> FP.shouldBeNaN Double.IsNaN
-        Operators.min negNaN negNaN |> FP.shouldBeNaN Double.IsNaN
-        Operators.min negNaN -1.0 |> FP.shouldBeNaN Double.IsNaN 
-        Operators.min -1.0 negNaN |> FP.shouldBeNaN Double.IsNaN
-        Operators.min nan negNaN |> FP.shouldBeNaN Double.IsNaN
-        Operators.min negNaN nan |> FP.shouldBeNaN Double.IsNaN
-        Operators.min 1.0f negNaNf |> FP.shouldBeNaN Single.IsNaN
-        Operators.min negNaNf 1.0f |> FP.shouldBeNaN Single.IsNaN
-        Operators.min negNaNf nanf |> FP.shouldBeNaN Single.IsNaN
-        Operators.min nanf negNaNf |> FP.shouldBeNaN Single.IsNaN
-        Operators.min negNaNf negNaNf |> FP.shouldBeNaN Single.IsNaN        
+        // truth table
+        Operators.min negNan negNan   |> FP.shouldBe FP.negativeNaN
+        Operators.min negNan posNan   |> FP.shouldBe FP.negativeNaN       // Math.Min works like IEEE totalOrder
+        Operators.min posNan negNan   |> FP.shouldBe FP.negativeNaN       // Math.Min works like IEEE totalOrder
+        Operators.min posNan posNan   |> FP.shouldBe FP.positiveNaN
+
+        Operators.min negNanf negNanf |> FP.shouldBe FP.negativeNaNf
+        Operators.min negNanf posNanf |> FP.shouldBe FP.negativeNaNf      // Math.Min works like IEEE totalOrder
+        Operators.min posNanf negNanf |> FP.shouldBe FP.negativeNaNf      // Math.Min works like IEEE totalOrder
+        Operators.min posNanf posNanf |> FP.shouldBe FP.positiveNaNf
+ 
 
     [<Fact>]
     member _.nan() =
