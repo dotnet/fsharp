@@ -459,7 +459,7 @@ try {
         write-host "Path = $env:PERL5Path"
     }
     else {
-        $env:PERL5Path = Join-Path $nativeTools["perl"] "perl-5.32.1.1\perl\bin\perl.exe"
+        $env:PERL5Path = Join-Path $nativeTools["perl"] "perl\bin\perl.exe"
         write-host "variable:NativeToolsOnMachine = $variable:NativeToolsOnMachine"
         $nativeTools.values
         write-host "Path = $env:PERL5Path"
