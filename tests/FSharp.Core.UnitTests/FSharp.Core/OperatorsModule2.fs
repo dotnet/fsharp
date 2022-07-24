@@ -16,6 +16,16 @@ open Xunit
 
 #nowarn "3370"
 
+/// floating point helpers for min/max tests
+module FP =
+    let shouldBeNaN f result = Assert.True(f result, "Operators.max with NaN must result in NaN.")
+    let shouldBeZero (v, test) result = Assert.True(test result, $"Operators.max expected a %s{v} zero.")
+    let positive = "positive", (Double.IsNegative >> not)
+    let positivef = "positive", (Single.IsNegative >> not)
+    let negative = "positive", Double.IsNegative
+    let negativef = "positive", Single.IsNegative
+
+
 /// If this type compiles without error it is correct
 /// Wrong if you see: FS0670 This code is not sufficiently generic. The type variable ^T could not be generalized because it would escape its scope.
 type TestFs0670Error<'T> =
@@ -292,58 +302,116 @@ type OperatorsModule2() =
         
     [<Fact>]
     member _.max() =
+        let shouldEqual a b = Assert.AreEqual(a, b)
         // value type
-        let result = Operators.max 10 8
-        Assert.AreEqual(10, result)
-        
+        Operators.max 10 8 |> shouldEqual 10
+
         // negative
-        let result = Operators.max -10.0 -8.0
-        Assert.AreEqual(-8.0, result)
+        Operators.max -10.0M -8.0M |> shouldEqual -8.0M
         
         // zero
-        let result = Operators.max 0 0
-        Assert.AreEqual(0, result)
-        
+        Operators.max 0 0 |> shouldEqual 0
+
         // reference type
-        let result = Operators.max "A" "ABC"
-        Assert.AreEqual("ABC", result)
+        Operators.max "A" "ABC" |> shouldEqual "ABC"
 
         // floating point
-        let assertNaN f result = Assert.True(f result, "Operators.max with NaN must result in NaN.")
-        Operators.max nan 1.0 |> assertNaN Double.IsNaN 
-        Operators.max 1.0 nan |> assertNaN Double.IsNaN
-        Operators.max nan nan |> assertNaN Double.IsNaN
-        Operators.max 1.0f nanf |> assertNaN Single.IsNaN
-        Operators.max nanf 1.0f |> assertNaN Single.IsNaN
-        Operators.max nanf nanf |> assertNaN Single.IsNaN
+        // negative zero
+        Operators.max 0.0 -0.0 |> FP.shouldBeZero FP.positive
+        Operators.max -0.0 0.0 |> FP.shouldBeZero FP.positive
+        Operators.max -1.0 0.0 |> FP.shouldBeZero FP.positive
+        Operators.max -1.0 -0.0 |> FP.shouldBeZero FP.negative
+        Operators.max 0.0f -0.0f |> FP.shouldBeZero FP.positivef
+        Operators.max -0.0f 0.0f |> FP.shouldBeZero FP.positivef
+        Operators.max -1.0f 0.0f |> FP.shouldBeZero FP.positivef
+        Operators.max -1.0f -0.0f |> FP.shouldBeZero FP.negativef
+        Operators.max -1.0 -2.0 |> shouldEqual -2.0
+        Operators.max infinity -infinity |> shouldEqual infinity
+        Operators.max infinityf -infinityf |> shouldEqual infinityf
+
+        Operators.max nan 1.0 |> FP.shouldBeNaN Double.IsNaN
+        Operators.max 1.0 nan |> FP.shouldBeNaN Double.IsNaN
+        Operators.max nan nan |> FP.shouldBeNaN Double.IsNaN
+        Operators.max nan -1.0 |> FP.shouldBeNaN Double.IsNaN 
+        Operators.max -1.0 nan |> FP.shouldBeNaN Double.IsNaN
+        Operators.max nan -nan |> FP.shouldBeNaN Double.IsNaN
+        Operators.max 1.0f nanf |> FP.shouldBeNaN Single.IsNaN
+        Operators.max nanf 1.0f |> FP.shouldBeNaN Single.IsNaN
+        Operators.max nanf nanf |> FP.shouldBeNaN Single.IsNaN
+
+        // no difference in outcome, just positive NaN, when comparing to other types of NaN
+        let negNaN = Math.CopySign(nan, -1.0)
+        let negNaNf = MathF.CopySign(nanf, -1.0f)
+        Operators.max negNaN 1.0 |> FP.shouldBeNaN Double.IsNaN
+        Operators.max 1.0 negNaN |> FP.shouldBeNaN Double.IsNaN
+        Operators.max negNaN negNaN |> FP.shouldBeNaN Double.IsNaN
+        Operators.max negNaN -1.0 |> FP.shouldBeNaN Double.IsNaN 
+        Operators.max -1.0 negNaN |> FP.shouldBeNaN Double.IsNaN
+        Operators.max nan negNaN |> FP.shouldBeNaN Double.IsNaN
+        Operators.max negNaN nan |> FP.shouldBeNaN Double.IsNaN
+        Operators.max 1.0f negNaNf |> FP.shouldBeNaN Single.IsNaN
+        Operators.max negNaNf 1.0f |> FP.shouldBeNaN Single.IsNaN
+        Operators.max negNaNf nanf |> FP.shouldBeNaN Single.IsNaN
+        Operators.max nanf negNaNf |> FP.shouldBeNaN Single.IsNaN
+        Operators.max negNaNf negNaNf |> FP.shouldBeNaN Single.IsNaN
+
         
     [<Fact>]
     member _.min() =
+        let shouldEqual a b = Assert.AreEqual(a, b)
+
         // value type
-        let result = Operators.min 10 8
-        Assert.AreEqual(8, result)
+        Operators.min 10 8 |> shouldEqual 8
         
         // negative
-        let result = Operators.min -10.0 -8.0
-        Assert.AreEqual(-10.0, result)
+        Operators.min -10.0M -8.0M |> shouldEqual -10M
         
         // zero
-        let result = Operators.min 0 0
-        Assert.AreEqual(0, result)
+        Operators.min 0 0 |> shouldEqual 0
         
         // reference type
-        let result = Operators.min "A" "ABC"
-        Assert.AreEqual("A", result)
+        Operators.min "A" "ABC" |> shouldEqual "A"
 
         // floating point
-        let assertNaN f result = Assert.True(f result, "Operators.min with NaN must result in NaN.")
-        Operators.min nan 1.0 |> assertNaN Double.IsNaN 
-        Operators.min 1.0 nan |> assertNaN Double.IsNaN
-        Operators.min nan nan |> assertNaN Double.IsNaN
-        Operators.min 1.0f nanf |> assertNaN Single.IsNaN
-        Operators.min nanf 1.0f |> assertNaN Single.IsNaN
-        Operators.min nanf nanf |> assertNaN Single.IsNaN
-        
+        // negative zero
+        Operators.min 0.0 -0.0 |> FP.shouldBeZero FP.negative
+        Operators.min -0.0 0.0 |> FP.shouldBeZero FP.negative
+        Operators.min -1.0 0.0 |> shouldEqual -1.0
+        Operators.min 1.0 -0.0 |> FP.shouldBeZero FP.negative
+        Operators.min 0.0f -0.0f |> FP.shouldBeZero FP.negativef
+        Operators.min -0.0f 0.0f |> FP.shouldBeZero FP.negativef
+        Operators.min -1.0f 0.0f |> shouldEqual -1.0
+        Operators.min 1.0f -0.0f |> FP.shouldBeZero FP.negativef
+        Operators.min -1.0 -2.0 |> shouldEqual -1.0
+        Operators.min infinity -infinity |> shouldEqual -infinity
+        Operators.min infinityf -infinityf |> shouldEqual -infinityf
+
+        Operators.min nan 1.0 |> FP.shouldBeNaN Double.IsNaN
+        Operators.min 1.0 nan |> FP.shouldBeNaN Double.IsNaN
+        Operators.min nan nan |> FP.shouldBeNaN Double.IsNaN
+        Operators.min nan -1.0 |> FP.shouldBeNaN Double.IsNaN 
+        Operators.min -1.0 nan |> FP.shouldBeNaN Double.IsNaN
+        Operators.min nan -nan |> FP.shouldBeNaN Double.IsNaN
+        Operators.min 1.0f nanf |> FP.shouldBeNaN Single.IsNaN
+        Operators.min nanf 1.0f |> FP.shouldBeNaN Single.IsNaN
+        Operators.min nanf nanf |> FP.shouldBeNaN Single.IsNaN
+
+        // no difference in outcome, just positive NaN, when comparing to other types of NaN
+        let negNaN = Math.CopySign(nan, -1.0)
+        let negNaNf = MathF.CopySign(nanf, -1.0f)
+        Operators.min negNaN 1.0 |> FP.shouldBeNaN Double.IsNaN
+        Operators.min 1.0 negNaN |> FP.shouldBeNaN Double.IsNaN
+        Operators.min negNaN negNaN |> FP.shouldBeNaN Double.IsNaN
+        Operators.min negNaN -1.0 |> FP.shouldBeNaN Double.IsNaN 
+        Operators.min -1.0 negNaN |> FP.shouldBeNaN Double.IsNaN
+        Operators.min nan negNaN |> FP.shouldBeNaN Double.IsNaN
+        Operators.min negNaN nan |> FP.shouldBeNaN Double.IsNaN
+        Operators.min 1.0f negNaNf |> FP.shouldBeNaN Single.IsNaN
+        Operators.min negNaNf 1.0f |> FP.shouldBeNaN Single.IsNaN
+        Operators.min negNaNf nanf |> FP.shouldBeNaN Single.IsNaN
+        Operators.min nanf negNaNf |> FP.shouldBeNaN Single.IsNaN
+        Operators.min negNaNf negNaNf |> FP.shouldBeNaN Single.IsNaN        
+
     [<Fact>]
     member _.nan() =
         // value type
