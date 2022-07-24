@@ -262,7 +262,7 @@ function BuildSolution {
     fi
     if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
       BuildMessage="Error building bootstrap"
-      MSBuild "$repo_root/proto.sln" \
+      MSBuild "$repo_root/Proto.sln" \
         /restore \
         /p:Configuration=$bootstrap_config
 
