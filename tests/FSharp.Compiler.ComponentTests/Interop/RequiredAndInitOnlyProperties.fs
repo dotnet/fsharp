@@ -386,29 +386,21 @@ let main _ =
     [<Fact>]
 #endif
     let ``F# should produce a warning if RequiredMemberAttribute is specified`` () =
-
-        let csharpLib = csharpRBaseClass
-
+        // TODO: This test will start failing with different reason when we will move to .NET7, since RequiredMemberArgument will be in System.Runtime.*.dll.
+        // It will needs to be fixed then.
         let fsharpSource =
             """
+namespace FooBarBaz
 open System
-open RequiredAndInitOnlyProperties
 open System.Runtime.CompilerServices
 
 type RAIOFS() =
     [<RequiredMember>]
     member val GetSet = 0 with get, set
-
-[<EntryPoint>]
-let main _ =
-
-    let raio = RAIOFS(GetSet=1)
-
-    0
 """
         FSharp fsharpSource
-        |> asExe
+        |> asLibrary
         |> withLangVersionPreview
-        |> withReferences [csharpLib]
         |> compile
-        |> shouldSucceed
+        |> shouldFail
+        |> withErrorCode 39

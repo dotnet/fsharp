@@ -1581,9 +1581,13 @@ type ILPropInfo =
 
     /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
     member x.IsSetterInitOnly =
-        match x.SetterMethod.ILMethodRef.ReturnType with
-        | ILType.Modified(_, cls, _) -> cls.FullName = "System.Runtime.CompilerServices.IsExternalInit"
-        | _ -> false
+        assert x.HasSetter
+        if x.HasSetter then
+            match x.SetterMethod.ILMethodRef.ReturnType with
+            | ILType.Modified(_, cls, _) -> cls.FullName = "System.Runtime.CompilerServices.IsExternalInit"
+            | _ -> false
+        else
+            false
 
     /// Indicates if the IL property is static
     member x.IsStatic = (x.RawMetadata.CallingConv = ILThisConvention.Static)
@@ -1598,6 +1602,7 @@ type ILPropInfo =
         (x.HasGetter && x.GetterMethod.IsNewSlot) ||
         (x.HasSetter && x.SetterMethod.IsNewSlot)
 
+    /// Indicates if the property is required, i.e. has RequiredMemberAttribute applied.
     member x.IsRequired = TryFindILAttribute x.TcGlobals.attrib_RequiredMemberAttribute x.RawMetadata.CustomAttrs
 
     /// Get the names and types of the indexer arguments associated with the IL property.
