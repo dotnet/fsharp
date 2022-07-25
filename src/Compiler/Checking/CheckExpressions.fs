@@ -4658,7 +4658,8 @@ and TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct (args
         let isMeasure =
             match kindOpt with
             | Some TyparKind.Measure -> true
-            | None | Some _ -> args |> List.exists(function | TupleTypeSegment.Slash _ -> true | _ -> false)
+            | None -> args |> List.exists(function | TupleTypeSegment.Slash _ -> true | _ -> false)
+            | Some _ -> false
     
         if isMeasure then
             let ms,tpenv = TcMeasuresAsTuple cenv newOk checkConstraints occ env tpenv args m
