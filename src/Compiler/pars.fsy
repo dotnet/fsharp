@@ -1432,7 +1432,7 @@ moduleDefn:
 openDecl:
   /* 'open' declarations */
   | OPEN path
-      { SynOpenDeclTarget.ModuleOrNamespace($2.LongIdent, (rhs parseState 2)) }
+      { SynOpenDeclTarget.ModuleOrNamespace($2, (rhs parseState 2)) }
 
   | OPEN typeKeyword appType
       { SynOpenDeclTarget.Type($3, (rhs parseState 3)) }
@@ -2013,7 +2013,7 @@ atomicPatternLongIdent:
   | GLOBAL DOT pathOp
      { let globalIdent = ident(MangledGlobalName, rhs parseState 1)
        let mDot = rhs parseState 2
-       None, prependIdentInLongIdentWithTrivia (SynIdent(globalIdent, None)) mDot $3 }
+       None, prependIdentInLongIdentWithTrivia (SynIdent(globalIdent, (Some (IdentTrivia.OriginalNotation "global")))) mDot $3 }
 
   | pathOp
      { (None, $1) }
@@ -5445,7 +5445,7 @@ ident:
 /* A A.B.C path used to an identifier */
 path: 
   | GLOBAL
-      { SynLongIdent([ident(MangledGlobalName, rhs parseState 1)], [], [None]) }
+      { SynLongIdent([ident(MangledGlobalName, rhs parseState 1)], [], [Some (IdentTrivia.OriginalNotation "global")]) }
 
   | ident  
      { SynLongIdent([$1], [], [None]) }
