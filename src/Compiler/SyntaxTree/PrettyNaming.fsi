@@ -114,7 +114,7 @@ val internal ConvertLogicalNameToDisplayName: name: string -> string
 ///    1. does not contain double-backticks for non-identifiers
 ///    2. does not put parentheses arounf operators or active pattern names
 ///
-/// If the text is immediately in quotes, this is generally ok, e.g. 
+/// If the text is immediately in quotes, this is generally ok, e.g.
 ///
 ///         error FS0038: '+' is bound twice in this pattern
 ///         error FS0038: '|A|_|' is bound twice in this pattern
@@ -143,7 +143,8 @@ val internal ConvertValLogicalNameToDisplayName: isBaseVal: bool -> name: string
 val internal ConvertLogicalNameToDisplayLayout: nonOpLayout: (string -> Layout) -> name: string -> Layout
 
 /// Like ConvertValLogicalNameToDisplayName but produces a tagged layout
-val internal ConvertValLogicalNameToDisplayLayout: isBaseVal: bool -> nonOpLayout: (string -> Layout) -> name: string -> Layout
+val internal ConvertValLogicalNameToDisplayLayout:
+    isBaseVal: bool -> nonOpLayout: (string -> Layout) -> name: string -> Layout
 
 val internal opNameCons: string
 

@@ -661,13 +661,11 @@ let IsLogicalPrefixOperator logicalName =
         false
     else
         let displayName = ConvertValLogicalNameToDisplayNameCore logicalName
-        displayName <> logicalName && 
-        IsValidPrefixOperatorDefinitionName displayName
+        displayName <> logicalName && IsValidPrefixOperatorDefinitionName displayName
 
 let IsLogicalTernaryOperator logicalName =
     let displayName = ConvertValLogicalNameToDisplayNameCore logicalName
-    displayName <> logicalName && 
-    (displayName = qmarkSet)
+    displayName <> logicalName && (displayName = qmarkSet)
 
 let IsPunctuation s =
     if String.IsNullOrEmpty s then
@@ -759,9 +757,9 @@ let IsLogicalInfixOpName logicalName =
         (s = "**"))
 
 let IsLogicalOpName (logicalName: string) =
-    IsLogicalPrefixOperator logicalName ||
-    IsLogicalInfixOpName logicalName ||
-    IsLogicalTernaryOperator logicalName
+    IsLogicalPrefixOperator logicalName
+    || IsLogicalInfixOpName logicalName
+    || IsLogicalTernaryOperator logicalName
 
 let (|Control|Equality|Relational|Indexer|FixedTypes|Other|) opName =
     match opName with
@@ -1046,7 +1044,7 @@ let ComputeMangledNameWithoutDefaultArgValues (nm, staticArgs, defaultArgValues)
             | Some v when v = actualArgValue -> None
             | _ -> Some(defaultArgName, actualArgValue))
 
-    MangleProvidedTypeName (nm, nonDefaultArgs)
+    MangleProvidedTypeName(nm, nonDefaultArgs)
 
 let outArgCompilerGeneratedName = "outArg"
 

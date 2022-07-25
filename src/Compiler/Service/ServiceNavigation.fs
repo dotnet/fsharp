@@ -643,7 +643,9 @@ module NavigationImpl =
 
                     nested |> Array.sortInPlaceWith (fun a b -> compare a.LogicalName b.LogicalName)
 
-                    let nested = nested |> Array.distinctBy (fun x -> x.Range, x.BodyRange, x.LogicalName, x.Kind)
+                    let nested =
+                        nested
+                        |> Array.distinctBy (fun x -> x.Range, x.BodyRange, x.LogicalName, x.Kind)
 
                     {
                         Declaration = d.WithUniqueName(uniqueName d.LogicalName idx)
