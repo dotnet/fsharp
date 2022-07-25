@@ -11366,7 +11366,6 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     let prelimValReprInfo = TranslateSynValInfo mBinding (TcAttributes cenv envinner) valSynInfo
     let valReprInfo, valReprInfoForDisplay = UseSyntacticArity declKind prelimTyscheme prelimValReprInfo
     let hasDeclaredTypars = not (List.isEmpty declaredTypars)
-    let isCompGen = memberFlagsOpt |> Option.map (fun f -> f.IsCompilerGenerated) |> Option.defaultValue false
     let prelimValScheme =
         ValScheme(
             bindingId,
@@ -11378,7 +11377,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
             inlineFlag,
             NormalVal,
             vis,
-            isCompGen = isCompGen,
+            isCompGen = false,
             isIncrClass = false,
             isTyFunc = false,
             hasDeclaredTypars = hasDeclaredTypars

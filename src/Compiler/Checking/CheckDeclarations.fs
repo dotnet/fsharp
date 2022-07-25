@@ -4031,7 +4031,7 @@ module TcDeclarations =
                         let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion)
                         let headPatIds = if isStatic then [id] else [ident ("__", mMemberPortion);id]
                         let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
-                        let memberFlags kind = Some { memberFlags kind with IsCompilerGenerated = true }
+                        let memberFlags kind = Some { memberFlags kind with GetterOrSetterIsCompilerGenerated = true }
 
                         match propKind, mGetSetOpt with 
                         | SynMemberKind.PropertySet, Some m -> errorR(Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSetNotJustSet(), m))
