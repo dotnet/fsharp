@@ -112,82 +112,90 @@
     <SystemThreadingThreadPoolVersion>4.3.0</SystemThreadingThreadPoolVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
-    <!-- VisualStudio package versions  -->
-    <VisualStudioImplementationPackagesVersion>17.3.133-preview</VisualStudioImplementationPackagesVersion>
-    <VisualStudioContractPackagesVersion>17.3.0-preview-1-32407-044</VisualStudioContractPackagesVersion>
+
+    <!-- Versions for package groups -->
+    <RoslynVersion>4.4.0-1.22368.2</RoslynVersion>
+    <VisualStudioEditorPackagesVersion>17.3.133-preview</VisualStudioEditorPackagesVersion>
+    <MicrosoftVisualStudioShellPackagesVersion>17.3.0-preview-1-32407-044</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>17.0.77-pre-g62a6cb5699</VisualStudioProjectSystemPackagesVersion>
-    <MicrosoftVisualStudioInteropVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioInteropVersion>
-    <MicrosoftInternalVisualStudioInteropVersion>$(VisualStudioContractPackagesVersion)</MicrosoftInternalVisualStudioInteropVersion>
-    <MicrosoftVisualStudioImagingInterop140DesignTimeVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioImagingInterop140DesignTimeVersion>
-    <VisualStudioLanguageAndShellInteropVersion>17.0.0-preview-1-31115-307</VisualStudioLanguageAndShellInteropVersion>
-    <MicrosoftVisualStudioShellInterop80Version>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioShellInterop80Version>
-    <MicrosoftVisualStudioShellInterop90Version>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioShellInterop90Version>
-    <MicrosoftVisualStudioShellInterop100Version>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioShellInterop100Version>
-    <MicrosoftVisualStudioShellInterop110Version>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioShellInterop110Version>
-    <MicrosoftVisualStudioShellInterop120Version>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioShellInterop120Version>
-    <MicrosoftVisualStudioImageCatalogVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioImageCatalogVersion>
-    <MicrosoftVisualStudioShellInteropVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioShellInteropVersion>
-    <MicrosoftVisualStudioTextManagerInteropVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioTextManagerInteropVersion>
-    <MicrosoftVisualStudioTextManagerInterop80Version>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioTextManagerInterop80Version>
-    <MicrosoftVisualStudioTextManagerInterop100Version>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioTextManagerInterop100Version>
-    <MicrosoftVisualStudioTextManagerInterop120Version>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioTextManagerInterop120Version>
-    <MicrosoftVisualStudioOLEInteropVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioOLEInteropVersion>
-    <EnvDTEVersion>$(VisualStudioContractPackagesVersion)</EnvDTEVersion>
-    <EnvDTE80Version>$(VisualStudioContractPackagesVersion)</EnvDTE80Version>
+    <MicrosoftVisualStudioThreadingPackagesVersion>17.3.1-alpha</MicrosoftVisualStudioThreadingPackagesVersion>
+    <MicrosoftBuildOverallPackagesVersion>17.1.0</MicrosoftBuildOverallPackagesVersion>
+
     <!-- Roslyn packages -->
-    <RoslynVersion>4.4.0-1.22360.2</RoslynVersion>
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
     <MicrosoftCodeAnalysisEditorFeaturesWpfVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesWpfVersion>
     <MicrosoftCodeAnalysisExternalAccessFSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
     <MicrosoftCodeAnalysisWorkspacesCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisWorkspacesCommonVersion>
     <MicrosoftCodeAnalysisCSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpVersion>
-    <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(RoslynVersion)</MicrosoftVisualStudioLanguageServicesVersion>
+    <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
 
-    <!-- Microsoft Build packages -->
-    <MicrosoftBuildOverallPackagesVersion>17.1.0</MicrosoftBuildOverallPackagesVersion>
-    <MicrosoftBuildVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildVersion>
-    <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkVersion>
-    <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCoreVersion>
-    <MicrosoftBuildUtilitiesCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildUtilitiesCoreVersion>
-    <MicrosoftVSSDKBuildToolsVersion>17.1.4054</MicrosoftVSSDKBuildToolsVersion>
-    <!-- Visual Studio editor packages -->
-    <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
-    <MicrosoftVisualStudioEditorVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioEditorVersion>
-    <MicrosoftVisualStudioLanguageStandardClassificationVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioLanguageStandardClassificationVersion>
-    <MicrosoftVisualStudioLanguageVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioLanguageVersion>
-    <MicrosoftVisualStudioLanguageIntellisenseVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioLanguageIntellisenseVersion>
-    <MicrosoftVisualStudioPlatformVSEditorVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioPlatformVSEditorVersion>
-    <MicrosoftVisualStudioTextUIVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioTextUIVersion>
-    <MicrosoftVisualStudioTextUIWpfVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioTextUIWpfVersion>
-    <MicrosoftVisualStudioTextDataVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioTextDataVersion>
-    <MicrosoftVisualStudioTextInternalVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioTextInternalVersion>
-    <!-- Visual Studio language+shell packages -->
-    <VisualStudioLanguageAndShellVersion>16.7.30329.88</VisualStudioLanguageAndShellVersion>
-    <MicrosoftVisualStudioShell150Version>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioShell150Version>
-    <MicrosoftVisualStudioShellDesignVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioShellDesignVersion>
-    <MicrosoftVisualStudioShellFrameworkVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioShellFrameworkVersion>
-    <MicrosoftVisualStudioPackageLanguageService150Version>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioPackageLanguageService150Version>
-    <!-- Misc. Visual Studio packages -->
-    <MicrosoftVisualStudioRpcContractsVersion>17.3.3-alpha</MicrosoftVisualStudioRpcContractsVersion>
-    <MicrosoftVisualStudioComponentModelHostVersion>$(VisualStudioImplementationPackagesVersion)</MicrosoftVisualStudioComponentModelHostVersion>
-    <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>17.0.0</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>
-    <MicrosoftVisualStudioDesignerInterfacesVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioDesignerInterfacesVersion>
-    <MicrosoftVisualStudioGraphModelVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioGraphModelVersion>
-    <MicrosoftVisualStudioImagingVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioImagingVersion>
-    <MicrosoftVisualStudioManagedInterfacesVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioManagedInterfacesVersion>
-    <MicrosoftVisualStudioProjectAggregatorVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioProjectAggregatorVersion>
-    <MicrosoftVisualStudioProjectSystemVersion>$(VisualStudioProjectSystemPackagesVersion)</MicrosoftVisualStudioProjectSystemVersion>
-    <MicrosoftVisualStudioProjectSystemManagedVersion>2.3.6152103</MicrosoftVisualStudioProjectSystemManagedVersion>
+    <!-- Visual Studio Shell packages -->
+    <MicrosoftVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioInteropVersion>
+    <MicrosoftInternalVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftInternalVisualStudioInteropVersion>
+    <MicrosoftVisualStudioImagingInterop140DesignTimeVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioImagingInterop140DesignTimeVersion>
+    <MicrosoftVisualStudioShellInterop80Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInterop80Version>
+    <MicrosoftVisualStudioShellInterop90Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInterop90Version>
+    <MicrosoftVisualStudioShellInterop100Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInterop100Version>
+    <MicrosoftVisualStudioShellInterop110Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInterop110Version>
+    <MicrosoftVisualStudioShellInterop120Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInterop120Version>
+    <MicrosoftVisualStudioImageCatalogVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioImageCatalogVersion>
+    <MicrosoftVisualStudioShellInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInteropVersion>
+    <MicrosoftVisualStudioTextManagerInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioTextManagerInteropVersion>
+    <MicrosoftVisualStudioTextManagerInterop80Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioTextManagerInterop80Version>
+    <MicrosoftVisualStudioTextManagerInterop100Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioTextManagerInterop100Version>
+    <MicrosoftVisualStudioTextManagerInterop120Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioTextManagerInterop120Version>
+    <MicrosoftVisualStudioOLEInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioOLEInteropVersion>
+    <MicrosoftVisualStudioShell150Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShell150Version>
+    <MicrosoftVisualStudioShellDesignVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellDesignVersion>
+    <MicrosoftVisualStudioShellFrameworkVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellFrameworkVersion>
+    <MicrosoftVisualStudioPackageLanguageService150Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioPackageLanguageService150Version>
+    <MicrosoftVisualStudioManagedInterfacesVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioManagedInterfacesVersion>
+    <MicrosoftVisualStudioProjectAggregatorVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioProjectAggregatorVersion>
+    <MicrosoftVisualStudioGraphModelVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioGraphModelVersion>
+    <MicrosoftVisualStudioImagingVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioImagingVersion>
+    <MicrosoftVisualStudioDesignerInterfacesVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioDesignerInterfacesVersion>
+    <MicrosoftVisualStudioUtilitiesVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioUtilitiesVersion>
+    <EnvDTEVersion>$(MicrosoftVisualStudioShellPackagesVersion)</EnvDTEVersion>
+    <EnvDTE80Version>$(MicrosoftVisualStudioShellPackagesVersion)</EnvDTE80Version>
     <MicrosoftVisualStudioShell140Version>14.3.25407</MicrosoftVisualStudioShell140Version>
     <MicrosoftVisualStudioShellImmutable100Version>10.0.30319</MicrosoftVisualStudioShellImmutable100Version>
     <MicrosoftVisualStudioShellImmutable110Version>11.0.50727</MicrosoftVisualStudioShellImmutable110Version>
     <MicrosoftVisualStudioShellImmutable150Version>15.0.25123-Dev15Preview</MicrosoftVisualStudioShellImmutable150Version>
     <MicrosoftVisualStudioShellInterop160DesignTimeVersion>16.0.1</MicrosoftVisualStudioShellInterop160DesignTimeVersion>
     <MicrosoftVisualStudioShellInterop16DesignTimeVersion>16.0.28924.11111</MicrosoftVisualStudioShellInterop16DesignTimeVersion>
-    <MicrosoftVisualStudioThreadingVersion>17.3.1-alpha</MicrosoftVisualStudioThreadingVersion>
-    <MicrosoftVisualStudioUtilitiesVersion>$(VisualStudioContractPackagesVersion)</MicrosoftVisualStudioUtilitiesVersion>
+
+    <!-- Microsoft Build packages -->
+    <MicrosoftBuildVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildVersion>
+    <MicrosoftBuildFrameworkVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildFrameworkVersion>
+    <MicrosoftBuildTasksCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildTasksCoreVersion>
+    <MicrosoftBuildUtilitiesCoreVersion>$(MicrosoftBuildOverallPackagesVersion)</MicrosoftBuildUtilitiesCoreVersion>
+
+    <!-- Visual Studio Editor packages -->
+    <MicrosoftVisualStudioCoreUtilityVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioCoreUtilityVersion>
+    <MicrosoftVisualStudioEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioEditorVersion>
+    <MicrosoftVisualStudioLanguageStandardClassificationVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageStandardClassificationVersion>
+    <MicrosoftVisualStudioLanguageVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageVersion>
+    <MicrosoftVisualStudioLanguageIntellisenseVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioLanguageIntellisenseVersion>
+    <MicrosoftVisualStudioPlatformVSEditorVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioPlatformVSEditorVersion>
+    <MicrosoftVisualStudioTextUIVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextUIVersion>
+    <MicrosoftVisualStudioTextUIWpfVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextUIWpfVersion>
+    <MicrosoftVisualStudioTextDataVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextDataVersion>
+    <MicrosoftVisualStudioTextInternalVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioTextInternalVersion>
+    <MicrosoftVisualStudioComponentModelHostVersion>$(VisualStudioEditorPackagesVersion)</MicrosoftVisualStudioComponentModelHostVersion>
+
+    <!-- Visual Studio Threading packags -->
+    <MicrosoftVisualStudioThreadingVersion>$(MicrosoftVisualStudioThreadingPackagesVersion)</MicrosoftVisualStudioThreadingVersion>
+
+    <!-- Visual Studio Project System packages-->
+    <MicrosoftVisualStudioProjectSystemVersion>$(VisualStudioProjectSystemPackagesVersion)</MicrosoftVisualStudioProjectSystemVersion>
+    <MicrosoftVisualStudioProjectSystemManagedVersion>2.3.6152103</MicrosoftVisualStudioProjectSystemManagedVersion>
+
+    <!-- Misc. Visual Studio packages -->
+    <MicrosoftVSSDKBuildToolsVersion>17.1.4054</MicrosoftVSSDKBuildToolsVersion>
+    <MicrosoftVisualStudioRpcContractsVersion>17.3.3-alpha</MicrosoftVisualStudioRpcContractsVersion>
+    <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>17.0.0</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>
     <MicrosoftVisualStudioValidationVersion>17.0.53</MicrosoftVisualStudioValidationVersion>
     <MicrosoftVisualStudioWCFReferenceInteropVersion>9.0.30729</MicrosoftVisualStudioWCFReferenceInteropVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.0.0</SystemRuntimeCompilerServicesUnsafeVersion>

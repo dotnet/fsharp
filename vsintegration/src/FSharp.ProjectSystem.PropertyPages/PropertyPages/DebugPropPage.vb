@@ -22,7 +22,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Private m_controlGroup As Control()()
 
         'PERF: A note about the labels used as lines.  The 3D label is being set to 1 px high,
-        '   so you’re really only using the grey part of it.  Using BorderStyle.Fixed3D seems
+        '   so youâ€™re really only using the grey part of it.  Using BorderStyle.Fixed3D seems
         '   to fire an extra resize OnHandleCreated.  The simple solution is to use BorderStyle.None 
         '   and BackColor = SystemColors.ControlDark.
 
