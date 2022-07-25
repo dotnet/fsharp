@@ -8999,7 +8999,7 @@ and GenMethodForBinding
     // Do not push the attributes to the method for events and properties
     let ilAttrsCompilerGenerated =
         if v.IsCompilerGenerated || v.GetterOrSetterIsCompilerGenerated then
-            [ g.CompilerGeneratedAttribute ]
+            [ g.CompilerGeneratedAttribute; g.DebuggerNonUserCodeAttribute ]
         else
             []
 

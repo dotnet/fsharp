@@ -45,6 +45,7 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
                         instance int32  get_Age() cil managed
                 {
                   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+                  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
 
                   .maxstack  8
                   IL_0000:  ldarg.0
@@ -56,6 +57,7 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
                         instance void  set_Age(int32 v) cil managed
                 {
                   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+                  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
 
                   .maxstack  8
                   IL_0000:  ldarg.0
@@ -86,6 +88,7 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
                         get_Age() cil managed
                 {
                   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+                  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
 
                   .maxstack  8
                   IL_0000:  volatile.
@@ -104,6 +107,7 @@ module ``Auto-generated accessors have CompilerGenerated attribute`` =
                         set_Age(int32 v) cil managed
                 {
                   .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+                  .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
 
                   .maxstack  8
                   IL_0000:  volatile.
