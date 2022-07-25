@@ -1654,7 +1654,7 @@ type SynModuleDecl =
 type SynOpenDeclTarget =
 
     /// A 'open' declaration
-    | ModuleOrNamespace of longId: LongIdent * range: range
+    | ModuleOrNamespace of longId: SynLongIdent * range: range
 
     /// A 'open type' declaration
     | Type of typeName: SynType * range: range
