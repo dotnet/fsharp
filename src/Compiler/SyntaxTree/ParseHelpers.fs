@@ -813,7 +813,7 @@ let mkSynMemberDefnGetSet
     | _ -> []
 
 // The last element of elementTypes does not have a star or slash
-let mkTupleOrDivide (isStruct: bool) (elementTypes: TupleTypeSegment list) : SynType =
+let mkSynTypeTuple (isStruct: bool) (elementTypes: TupleTypeSegment list) : SynType =
     let range =
         match elementTypes with
         | [] -> Range.Zero

@@ -97,3 +97,29 @@ let ``SynType.Tuple in measure type with leading slash`` () =
         assertRange (2, 21) (2, 22) mSlash
         assertRange (2, 21) (2, 29) mTuple
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+    
+[<Test>]
+let ``SynType.Tuple in measure type with start and slash`` () =
+    let parseResults = 
+        getParseResults
+            """
+[<Measure>] type R = X * Y / Z
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Types(typeDefns = [
+            SynTypeDefn(typeRepr =
+                SynTypeDefnRepr.Simple(simpleRepr =
+                    SynTypeDefnSimpleRepr.TypeAbbrev(rhsType =
+                        SynType.Tuple(false, [ TupleTypeSegment.Type (TypeName "X")
+                                               TupleTypeSegment.Star msStar
+                                               TupleTypeSegment.Type (TypeName "Y")
+                                               TupleTypeSegment.Slash msSlash
+                                               TupleTypeSegment.Type (TypeName "Z") ], mTuple))))
+        ])
+    ]) ])) ->
+        assertRange (2, 23) (2, 24) msStar
+        assertRange (2, 21) (2, 30) mTuple
+        assertRange (2, 27) (2, 28) msSlash
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

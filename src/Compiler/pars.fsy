@@ -5032,7 +5032,7 @@ topTupleType:
      { let t, argInfo = $1
        let path = TupleTypeSegment.Type t :: (List.map fst $3)
        let mdata = argInfo :: (List.choose snd $3)
-       mkTupleOrDivide false path, mdata }
+       mkSynTypeTuple false path, mdata }
 
   | topAppType                 
      { let ty, mdata = $1 in ty, [mdata] }
@@ -5088,19 +5088,19 @@ tupleType:
   | appType STAR tupleOrQuotTypeElements 
     { let mStar = rhs parseState 2
       let path = TupleTypeSegment.Type $1 :: TupleTypeSegment.Star mStar :: $3
-      mkTupleOrDivide false path }
+      mkSynTypeTuple false path }
 
   | INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
       let mSlash = rhs parseState 1
       let path = TupleTypeSegment.Slash mSlash :: $2
-      mkTupleOrDivide false path }
+      mkSynTypeTuple false path }
 
   | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
       let mSlash = rhs parseState 2
       let path = TupleTypeSegment.Type $1 :: TupleTypeSegment.Slash mSlash :: $3
-      mkTupleOrDivide false path }
+      mkSynTypeTuple false path }
 
   | appType %prec prec_tuptyp_prefix 
     { $1 }
@@ -5252,13 +5252,13 @@ atomType:
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  rparen 
     { let mStar = rhs parseState 4
       let path = TupleTypeSegment.Type $3 :: TupleTypeSegment.Star mStar :: $5
-      mkTupleOrDivide true path }
+      mkSynTypeTuple true path }
 
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  recover
     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
       let mStar = rhs parseState 4
       let path = TupleTypeSegment.Type $3 :: TupleTypeSegment.Star mStar :: $5
-      mkTupleOrDivide true path }
+      mkSynTypeTuple true path }
 
   | STRUCT LPAREN appType STAR recover
     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
