@@ -4,7 +4,6 @@ Imports EnvDTE
 Imports Microsoft.VisualBasic
 
 Imports System
-Imports System.IO
 Imports System.Collections
 Imports System.ComponentModel
 Imports System.Diagnostics
