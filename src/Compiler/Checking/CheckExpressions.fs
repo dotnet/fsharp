@@ -4809,7 +4809,6 @@ and TcTypes cenv newOk checkConstraints occ env tpenv args =
     List.mapFold (TcTypeAndRecover cenv newOk checkConstraints occ env) tpenv args
 
 and TcTypesAsTuple cenv newOk checkConstraints occ env tpenv (args: TupleTypeSegment list) m =
-    // check if any is a slash, if so, errorR(Error(FSComp.SR.tcUnexpectedSlashInType(), m))  
     let hasASlash =
         args
         |> List.exists(function | TupleTypeSegment.Slash _ -> true | _ -> false)
@@ -4828,13 +4827,6 @@ and TcTypesAsTuple cenv newOk checkConstraints occ env tpenv (args: TupleTypeSeg
 
 // Type-check a list of measures separated by juxtaposition, * or /
 and TcMeasuresAsTuple cenv newOk checkConstraints occ env (tpenv: UnscopedTyparEnv) (args: TupleTypeSegment list) m =
-    // go over the path, and pattern 
-    // x * y
-    // x / y
-    // / second
-    // * / *
-    // [ Slash ; Type]
-    
     let rec gather (args: TupleTypeSegment list) tpenv acc =
         match args with
         | [] -> acc, tpenv
@@ -4847,15 +4839,7 @@ and TcMeasuresAsTuple cenv newOk checkConstraints occ env (tpenv: UnscopedTyparE
         | TupleTypeSegment.Slash _ :: TupleTypeSegment.Type ty :: args ->
             let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
             gather args tpenv (Measure.Prod(acc, Measure.Inv ms1))
-        | _ -> failwith "Not expected scenario"
-
-    // let rec gather args tpenv isquot acc =
-    //     match args with
-    //     | [] -> acc, tpenv
-    //     | (nextisquot, ty) :: args ->
-    //         let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
-    //         gather args tpenv nextisquot (if isquot then Measure.Prod(acc, Measure.Inv ms1) else Measure.Prod(acc, ms1))
-    
+        | _ -> failwith "inpossible"
     gather args tpenv Measure.One
 
 and TcTypesOrMeasures optKinds cenv newOk checkConstraints occ env tpenv args m =
