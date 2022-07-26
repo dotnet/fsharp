@@ -1137,15 +1137,15 @@ let TryGetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
 let canGenMethodDef (tdef: ILTypeDef) cenv (mdef: ILMethodDef) =
     if not cenv.referenceAssemblyOnly then
         true
-    // If the method is part of attribute type, generate get_* and set_* methods for it, consider the following case:
+    // If the method is part of attribute type, generate get_* and set_* methods and .ctors for it, consider the following case:
     //      [<AttributeUsage(AttributeTargets.All)>]
     //      type PublicWithInternalSetterPropertyAttribute() =
     //          inherit Attribute()
     //          member val internal Prop1 : int = 0 with get, set
     //      [<PublicWithInternalSetterPropertyAttribute(Prop1=4)>]
     //      type ClassPublicWithAttributes() = class end
-    
-    // TODO: add comment why constructors of attributes should always be included in the reference assembly.
+
+    // We want to generate pretty much everything for attributes, because of serialization scenarios, and the fact that non-visible constructors, properties and fields can still be part of reference assembly.
     // Example: NoDynamicInvocationAttribute has an internal constructor, which should be included in the reference assembly.
     else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsClassInitializer) then
         true
