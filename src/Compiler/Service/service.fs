@@ -1081,12 +1081,8 @@ type BackgroundCompiler
 
             let otherFlags = defaultArg otherFlags extraFlags
 
-            let useSimpleResolution =
-#if ENABLE_MONO_SUPPORT
-                runningOnMono || otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
-#else
-                true
-#endif
+            let useSimpleResolution = otherFlags |> Array.exists (fun x -> x = "--simpleresolution")
+
             let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
 
             let applyCompilerOptions tcConfigB =

@@ -2081,12 +2081,14 @@ FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String get_FileName(
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String[] DependencyFiles
 FSharp.Compiler.CodeAnalysis.FSharpParseFileResults: System.String[] get_DependencyFiles()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean ApplyLineDirectives
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean CompilingFSharpCore
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(FSharp.Compiler.CodeAnalysis.FSharpParsingOptions)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(System.Object)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean IsExe
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean IsInteractive
+FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_ApplyLineDirectives()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_CompilingFSharpCore()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_IsExe()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_IsInteractive()
@@ -2108,8 +2110,6 @@ FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String ToString()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String get_LangVersionText()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String[] SourceFiles
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: System.String[] get_SourceFiles()
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean ApplyLineDirectives
-FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Boolean get_ApplyLineDirectives()
 FSharp.Compiler.CodeAnalysis.FSharpParsingOptions: Void .ctor(System.String[], Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.String], FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions, System.String, Boolean, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Boolean, Boolean)
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext
 FSharp.Compiler.CodeAnalysis.FSharpProjectContext: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions ProjectOptions
@@ -7884,10 +7884,10 @@ FSharp.Compiler.Syntax.SynModuleSigDecl: Int32 Tag
 FSharp.Compiler.Syntax.SynModuleSigDecl: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynModuleSigDecl: System.String ToString()
 FSharp.Compiler.Syntax.SynOpenDeclTarget
+FSharp.Compiler.Syntax.SynOpenDeclTarget+ModuleOrNamespace: FSharp.Compiler.Syntax.SynLongIdent get_longId()
+FSharp.Compiler.Syntax.SynOpenDeclTarget+ModuleOrNamespace: FSharp.Compiler.Syntax.SynLongIdent longId
 FSharp.Compiler.Syntax.SynOpenDeclTarget+ModuleOrNamespace: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynOpenDeclTarget+ModuleOrNamespace: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynOpenDeclTarget+ModuleOrNamespace: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident] get_longId()
-FSharp.Compiler.Syntax.SynOpenDeclTarget+ModuleOrNamespace: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident] longId
 FSharp.Compiler.Syntax.SynOpenDeclTarget+Tags: Int32 ModuleOrNamespace
 FSharp.Compiler.Syntax.SynOpenDeclTarget+Tags: Int32 Type
 FSharp.Compiler.Syntax.SynOpenDeclTarget+Type: FSharp.Compiler.Syntax.SynType get_typeName()
@@ -7898,7 +7898,7 @@ FSharp.Compiler.Syntax.SynOpenDeclTarget: Boolean IsModuleOrNamespace
 FSharp.Compiler.Syntax.SynOpenDeclTarget: Boolean IsType
 FSharp.Compiler.Syntax.SynOpenDeclTarget: Boolean get_IsModuleOrNamespace()
 FSharp.Compiler.Syntax.SynOpenDeclTarget: Boolean get_IsType()
-FSharp.Compiler.Syntax.SynOpenDeclTarget: FSharp.Compiler.Syntax.SynOpenDeclTarget NewModuleOrNamespace(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.Ident], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynOpenDeclTarget: FSharp.Compiler.Syntax.SynOpenDeclTarget NewModuleOrNamespace(FSharp.Compiler.Syntax.SynLongIdent, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynOpenDeclTarget: FSharp.Compiler.Syntax.SynOpenDeclTarget NewType(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynOpenDeclTarget: FSharp.Compiler.Syntax.SynOpenDeclTarget+ModuleOrNamespace
 FSharp.Compiler.Syntax.SynOpenDeclTarget: FSharp.Compiler.Syntax.SynOpenDeclTarget+Tags

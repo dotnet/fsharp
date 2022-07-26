@@ -24,6 +24,7 @@
     <IsShipping>true</IsShipping>
     <OldToolsVersion>2.0</OldToolsVersion>
     <ProjectGuid>{FCFB214C-462E-42B3-91CA-FC557EFEE74F}</ProjectGuid>
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
   <ItemGroup>
     <Import Include="Microsoft.VisualBasic" />

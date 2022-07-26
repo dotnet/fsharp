@@ -22,7 +22,7 @@ let test s b =
 
   
 let format_uint64 outc formatc width left_justify add_zeros num_prefix_if_pos (n:uint64) = 
-  let _ = match formatc with 'd' | 'i' | 'u' -> 10UL | 'o' -> 8UL | 'x' | 'X' -> 16UL in
+  let _ = match formatc with 'd' | 'i' | 'u' -> 10UL | 'o' -> 8UL | 'x' | 'X'-> 16UL | _ -> failwith "invalid value" in
   failwith "hello"
 
 
@@ -4122,9 +4122,14 @@ module SetTests = begin
       let xs = randomInts nx |> check in
       let ys = randomInts ny |> check in
       (* time union ops *)
-      let t0 = time (fun () -> rapp2 n union0 xs ys) in
-      let t1 = time (fun () -> rapp2 n union1 xs ys) in
-      test "vwnwer" (Set.toList (union0 xs ys |> check) = Set.toList (union1 xs ys |> check));
+      let t0 = time (fun () -> rapp2 n union0 xs ys)
+      let t1 = time (fun () -> rapp2 n union1 xs ys)
+
+      let lst0 = Set.toList (union0 xs ys |> check)
+      let lst1 = Set.toList (union1 xs ys |> check)
+      let listsNotEqual = not( List.exists2(fun a b -> a <> b) lst0 lst1)
+
+      test "vwnwer-e" (listsNotEqual)
       printf "-- Union times: (fold = %.6f) (divquonq = %.6f) with t0 = %f on sizes %8d,%-8d and x %d\n" (t0/t0) (t1/t0) t0 nx ny n;
 
       let test_fold() =

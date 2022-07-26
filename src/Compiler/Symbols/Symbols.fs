@@ -2794,7 +2794,7 @@ type FSharpOpenDeclaration(target: SynOpenDeclTarget, range: range option, modul
 
     member _.LongId = 
         match target with 
-        | SynOpenDeclTarget.ModuleOrNamespace(longId, _) -> longId
+        | SynOpenDeclTarget.ModuleOrNamespace(longId, _) -> longId.LongIdent
         | SynOpenDeclTarget.Type(synType, _) ->
             let rec get ty = 
                 match ty with 
