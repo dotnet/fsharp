@@ -20,11 +20,11 @@ module reference =
     let ``EscapeChars01a`` () =
         source
         |> asFs
-        |> withOptions ["-r:\".\No\nNewLine\""]
+        |> withOptions ["-r:\".\No" + System.Environment.NewLine + "NewLine\""]
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 213, Line 1, Col 1, Line 1, Col 1, "'\".\No\nNewLine\"' is not a valid assembly name")
+            (Warning 213, Line 1, Col 1, Line 1, Col 1, "'\".\No" + System.Environment.NewLine + "NewLine\"' is not a valid assembly name")
         ]
 
 
