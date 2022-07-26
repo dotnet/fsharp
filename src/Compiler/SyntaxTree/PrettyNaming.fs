@@ -747,6 +747,9 @@ let IsLogicalInfixOpName logicalName =
         // COLON_COLON
         (s = "::")
         ||
+        // PARENTHESES
+        (s = parenGet)
+        ||
         // PLUS_MINUS_OP, MINUS
         afterSkipStarts plusMinus
         ||
