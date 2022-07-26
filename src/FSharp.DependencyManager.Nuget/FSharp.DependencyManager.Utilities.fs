@@ -308,7 +308,9 @@ module internal Utilities =
                     // Use enabled feeds only (see NuGet.Commands.ListSourceRunner.Run) and strip off the flags.
                     if source.Length > 0 && source.[0] = 'E' then
                         let pos = source.IndexOf(" ")
-                        if pos >= 0 then "i", source.Substring(pos).Trim()
+
+                        if pos >= 0 then
+                            "i", source.Substring(pos).Trim()
         }
 
     let computeSha256HashOfBytes (bytes: byte[]) : byte[] = SHA256.Create().ComputeHash(bytes)

@@ -476,8 +476,8 @@ module ParsedInput =
                             ]
                             |> pick expr
 
-                        | SynExpr.DotGet (exprLeft, dotm, lidwd, _m) ->
-                            let afterDotBeforeLid = mkRange dotm.FileName dotm.End lidwd.Range.Start
+                        | SynExpr.DotGet (exprLeft, mDot, lidwd, _m) ->
+                            let afterDotBeforeLid = mkRange mDot.FileName mDot.End lidwd.Range.Start
 
                             [
                                 dive exprLeft exprLeft.Range traverseSynExpr
@@ -1539,7 +1539,9 @@ module ParsedInput =
                     None
 
                 override this.VisitModuleOrNamespace(_, SynModuleOrNamespace (longId = longId; range = range)) =
-                    if rangeContainsPos range pos then path <- path @ longId
+                    if rangeContainsPos range pos then
+                        path <- path @ longId
+
                     None // we should traverse the rest of the AST to find the smallest module
             }
 
@@ -1916,7 +1918,9 @@ module ParsedInput =
             List.iter walkAttribute attrs
             List.iter walkTyparDecl typars
             List.iter walkTypeConstraint constraints
-            if isTypeExtensionOrAlias then addLongIdent longIdent
+
+            if isTypeExtensionOrAlias then
+                addLongIdent longIdent
 
         and walkTypeDefnRepr inp =
             match inp with

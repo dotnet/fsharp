@@ -333,17 +333,10 @@ let evaluateSession (argv: string[]) =
                 new ThreadExceptionEventHandler(fun _ args -> fsiSession.ReportUnhandledException args.Exception)
             )
 
-            let runningOnMono =
-                try
-                    System.Type.GetType("Mono.Runtime") <> null
-                with e ->
-                    false
-
-            if not runningOnMono then
-                try
-                    TrySetUnhandledExceptionMode()
-                with _ ->
-                    ()
+            try
+                TrySetUnhandledExceptionMode()
+            with _ ->
+                ()
 
             fsiWinFormsLoop.Value |> Option.iter (fun l -> l.LCID <- fsiSession.LCID)
 #endif
@@ -411,8 +404,10 @@ let MainMain argv =
          || x = "/shadowcopyreferences+"
          || x = "--shadowcopyreferences+")
 
-    if AppDomain.CurrentDomain.IsDefaultAppDomain()
-       && argv |> Array.exists isShadowCopy then
+    if
+        AppDomain.CurrentDomain.IsDefaultAppDomain()
+        && argv |> Array.exists isShadowCopy
+    then
         let setupInformation = AppDomain.CurrentDomain.SetupInformation
         setupInformation.ShadowCopyFiles <- "true"
         let helper = AppDomain.CreateDomain("FSI_Domain", null, setupInformation)

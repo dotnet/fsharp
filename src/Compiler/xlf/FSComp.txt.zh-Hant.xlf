@@ -192,6 +192,11 @@
         <target state="translated">具有多個泛型具現化的介面</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
+        <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
+        <target state="new">Allow lowercase DU when RequireQualifiedAccess attribute</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureMLCompatRevisions">
         <source>ML compatibility revisions</source>
         <target state="translated">ML 相容性修訂</target>
@@ -450,6 +455,11 @@
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
         <target state="translated">顯示語言版本允許的值，指定 'latest' 或 'preview' 等語言版本</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsPdbMatchesOutputFileName">
+        <source>The pdb output file name cannot match the build output filename use --pdb:filename.pdb</source>
+        <target state="new">The pdb output file name cannot match the build output filename use --pdb:filename.pdb</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -5072,16 +5082,6 @@
         <target state="translated">要內嵌於可攜式 PDB 檔案中的來源連結資訊檔案</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsEmbeddedSourceRequirePortablePDBs">
-        <source>--embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">僅在發出可攜式 PDB 時才支援 --embed 參數 (--debug:portable 或 --debug:embedded)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsSourceLinkRequirePortablePDBs">
-        <source>--sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">僅在發出可攜式 PDB 時才支援 --sourcelink 參數 (--debug:portable 或 --debug:embedded)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="srcFileTooLarge">
         <source>Source file is too large to embed in a portable PDB</source>
         <target state="translated">來源檔案過大，無法內嵌於可攜式 PDB 中</target>
@@ -6137,21 +6137,6 @@
         <target state="translated">擴充成員無法提供運算子多載。請考慮將運算子改成定義為類型定義的一部分。</target>
         <note />
       </trans-unit>
-      <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
-        <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">MDB 檔案的名稱必須是 &lt;組件檔名稱&gt;.mdb。會略過 --pdb 選項。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteMDBMemberMissing">
-        <source>MDB generation failed. Could not find compatible member {0}</source>
-        <target state="translated">MDB 產生失敗。找不到相容的成員 {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteErrorCreatingMdb">
-        <source>Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</source>
-        <target state="translated">無法產生 MDB 偵錯資訊。無法從 'Mono.CompilerServices.SymbolWriter.dll' 組件載入 'MonoSymbolWriter' 類型。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnionCaseNameConflictsWithGeneratedType">
         <source>The union case named '{0}' conflicts with the generated type '{1}'</source>
         <target state="translated">名為 '{0}' 的聯集與產生的類型 '{1}' 衝突</target>
@@ -6425,11 +6410,6 @@
       <trans-unit id="fscAssemblyWildcardAndDeterminism">
         <source>An {0} specified version '{1}', but this value is a wildcard, and you have requested a deterministic build, these are in conflict.</source>
         <target state="translated">{0} 已指定版本 '{1}'，但這個值為萬用字元，且您已要求確定性組建，所以發生衝突。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
-        <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">確定性組建僅支援可攜式 PDB (--debug:portable 或 --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -8055,11 +8035,6 @@
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
         <target state="translated">將實體路徑對應至來源路徑名稱，由編譯器輸出</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fscPathMapDebugRequiresPortablePdb">
-        <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">--pathmap 只能搭配可攜式 PDB 使用 (--debug:portable 或 --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">
