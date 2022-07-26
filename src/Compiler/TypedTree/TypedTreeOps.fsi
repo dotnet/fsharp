@@ -2582,7 +2582,8 @@ val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr 
 
 /// Recognise an integer for-loop expression
 val (|IntegerForLoopExpr|_|):
-    Expr -> (DebugPointAtFor * DebugPointAtInOrTo * ForLoopStyle * Expr * Expr * Val * Expr * Expr option * range) option
+    Expr ->
+        (DebugPointAtFor * DebugPointAtInOrTo * ForLoopStyle * Expr * Expr * Val * Expr * Expr option * range) option
 
 /// Recognise a try-with expression
 val (|TryWithExpr|_|):
