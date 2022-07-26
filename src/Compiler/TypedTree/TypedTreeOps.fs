@@ -1522,6 +1522,9 @@ let mkWhile (g: TcGlobals) (spWhile, marker, guardExpr, bodyExpr, m) =
 let mkIntegerForLoop (g: TcGlobals) (spFor, spIn, v, startExpr, dir, finishExpr, bodyExpr: Expr, m) = 
     Expr.Op (TOp.IntegerForLoop (spFor, spIn, dir), [], [mkDummyLambda g (startExpr, g.int_ty) ;mkDummyLambda g (finishExpr, g.int_ty);mkLambda bodyExpr.Range v (bodyExpr, g.unit_ty)], m)
 
+let mkIntegerForLoopWithStep (g: TcGlobals) (spFor, spIn, v, startExpr, stepExpr: Expr, finishExpr, bodyExpr: Expr, m) = 
+    Expr.Op (TOp.IntegerForLoop (spFor, spIn, FSharpForLoopWithStep), [], [mkDummyLambda g (startExpr, g.int_ty) ;mkDummyLambda g (finishExpr, g.int_ty);mkLambda bodyExpr.Range v (bodyExpr, g.unit_ty); mkDummyLambda g (stepExpr, g.int_ty)], m)
+
 let mkTryWith g (bodyExpr, filterVal, filterExpr: Expr, handlerVal, handlerExpr: Expr, m, ty, spTry, spWith) = 
     Expr.Op (TOp.TryWith (spTry, spWith), [ty], [mkDummyLambda g (bodyExpr, ty);mkLambda filterExpr.Range filterVal (filterExpr, ty);mkLambda handlerExpr.Range handlerVal (handlerExpr, ty)], m)
 
@@ -9713,11 +9716,11 @@ let (|RangeInt32Step|_|) g expr =
     match expr with 
     // detect 'n .. m' 
     | Expr.App (Expr.Val (vf, _, _), _, [tyarg], [startExpr;finishExpr], _)
-         when valRefEq g vf g.range_op_vref && typeEquiv g tyarg g.int_ty -> Some(startExpr, 1, finishExpr)
+         when valRefEq g vf g.range_op_vref && typeEquiv g tyarg g.int_ty -> Some(startExpr, mkOne g (range()), finishExpr)
     
     // detect (RangeInt32 startExpr N finishExpr), the inlined/compiled form of 'n .. m' and 'n .. N .. m'
-    | Expr.App (Expr.Val (vf, _, _), _, [], [startExpr; Int32Expr n; finishExpr], _)
-         when valRefEq g vf g.range_int32_op_vref -> Some(startExpr, n, finishExpr)
+    | Expr.App (Expr.Val (vf, _, _), _, [], [startExpr; stepExpr; finishExpr], _)
+         when valRefEq g vf g.range_int32_op_vref -> Some(startExpr, stepExpr, finishExpr)
 
     | _ -> None
 
@@ -9758,8 +9761,8 @@ let (|CompiledForEachExpr|_|) g expr =
 
 let (|CompiledInt32RangeForEachExpr|_|) g expr = 
     match expr with
-    | CompiledForEachExpr g (_, RangeInt32Step g (startExpr, step, finishExpr), elemVar, bodyExpr, ranges) ->
-        Some (startExpr, step, finishExpr, elemVar, bodyExpr, ranges)
+    | CompiledForEachExpr g (_, RangeInt32Step g (startExpr, stepExpr, finishExpr), elemVar, bodyExpr, ranges) ->
+        Some (startExpr, stepExpr, finishExpr, elemVar, bodyExpr, ranges)
         | _ -> None
     | _ -> None
 
@@ -9773,12 +9776,16 @@ type OptimizeForExpressionOptions =
 
 let DetectAndOptimizeForEachExpression g option expr =
     match option, expr with
-    | _, CompiledInt32RangeForEachExpr g (startExpr, (1 | -1 as step), finishExpr, elemVar, bodyExpr, ranges) -> 
+    | _, CompiledInt32RangeForEachExpr g (startExpr, Int32Expr step, finishExpr, elemVar, bodyExpr, ranges) when step = 1 || step = -1 -> 
 
            let _mBody, spFor, spIn, _mFor, _mIn, _spInWhile, mWholeExpr = ranges
            let spFor = match spFor with DebugPointAtBinding.Yes mFor -> DebugPointAtFor.Yes mFor | _ -> DebugPointAtFor.No
            mkFastForLoop g (spFor, spIn, mWholeExpr, elemVar, startExpr, (step = 1), finishExpr, bodyExpr)
+    | _, CompiledInt32RangeForEachExpr g (startExpr, stepExpr, finishExpr, elemVar, bodyExpr, ranges) ->
 
+           let _mBody, spFor, spIn, _mFor, _mIn, _spInWhile, mWholeExpr = ranges
+           let spFor = match spFor with DebugPointAtBinding.Yes mFor -> DebugPointAtFor.Yes mFor | _ -> DebugPointAtFor.No
+           mkIntegerForLoopWithStep g (spFor, spIn, elemVar, startExpr, stepExpr, finishExpr, bodyExpr, mWholeExpr)
     | OptimizeAllForExpressions, CompiledForEachExpr g (enumerableTy, enumerableExpr, elemVar, bodyExpr, ranges) ->
 
          let mBody, spFor, spIn, mFor, mIn, spInWhile, mWholeExpr = ranges
@@ -9982,7 +9989,9 @@ let (|TryFinallyExpr|_|) expr =
 let (|IntegerForLoopExpr|_|) expr = 
     match expr with 
     | Expr.Op (TOp.IntegerForLoop (sp1, sp2, style), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [v], e3, _, _)], m) ->
-        Some (sp1, sp2, style, e1, e2, v, e3, m)
+        Some (sp1, sp2, style, e1, e2, v, e3, None, m)
+    | Expr.Op (TOp.IntegerForLoop (sp1, sp2, style), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [v], e3, _, _); Expr.Lambda (_, _, _, [_], stepExpr, _, _)], m) ->
+        Some (sp1, sp2, style, e1, e2, v, e3, Some stepExpr, m)
     | _ -> None
 
 let (|TryWithExpr|_|) expr =

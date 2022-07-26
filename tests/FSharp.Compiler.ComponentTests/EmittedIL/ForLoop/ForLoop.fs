@@ -130,3 +130,163 @@ module ForLoop =
         compilation
         |> verifyCompilation
 
+    [<Fact>]
+    let ``Strided integer for loops should not allocate a RangeInt32 enumerator``() =
+        FSharp """
+module ForLoops
+
+let loop1 () =
+    let s = System.Random().Next(2, 2) // avoid constant step optimization
+    for i in 0..s..10 do
+        System.Console.WriteLine i
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static void  loop1() cil managed
+  {
+
+    .maxstack  5
+    .locals init (int32 V_0,
+             int32 V_1,
+             int32 V_2,
+             int32 V_3)
+    IL_0000:  newobj     instance void [mscorlib]System.Random::.ctor()
+    IL_0005:  ldc.i4.2
+    IL_0006:  ldc.i4.2
+    IL_0007:  callvirt   instance int32 [mscorlib]System.Random::Next(int32,
+                                                                      int32)
+    IL_000c:  stloc.0
+    IL_000d:  ldc.i4.0
+    IL_000e:  stloc.3
+    IL_000f:  ldloc.0
+    IL_0010:  stloc.2
+    IL_0011:  ldloc.2
+    IL_0012:  brtrue.s   IL_0024
+
+    IL_0014:  ldstr      "The step of a range cannot be zero."
+    IL_0019:  ldstr      "step"
+    IL_001e:  newobj     instance void [mscorlib]System.ArgumentException::.ctor(string,
+                                                                                 string)
+    IL_0023:  throw
+
+    IL_0024:  ldc.i4.s   10
+    IL_0026:  stloc.1
+    IL_0027:  ldloc.1
+    IL_0028:  ldloc.3
+    IL_0029:  blt.s      IL_002f
+
+    IL_002b:  ldloc.2
+    IL_002c:  ldc.i4.0
+    IL_002d:  bgt.s      IL_0037
+
+    IL_002f:  ldloc.1
+    IL_0030:  ldloc.3
+    IL_0031:  bgt.s      IL_0051
+
+    IL_0033:  ldloc.2
+    IL_0034:  ldc.i4.0
+    IL_0035:  bge.s      IL_0051
+
+    IL_0037:  ldloc.3
+    IL_0038:  call       void [mscorlib]System.Console::WriteLine(int32)
+    IL_003d:  ldloc.3
+    IL_003e:  ldloc.2
+    IL_003f:  add
+    IL_0040:  stloc.3
+    IL_0041:  ldloc.3
+    IL_0042:  ldloc.1
+    IL_0043:  ble.s      IL_0049
+
+    IL_0045:  ldloc.2
+    IL_0046:  ldc.i4.0
+    IL_0047:  bgt.s      IL_0051
+
+    IL_0049:  ldloc.3
+    IL_004a:  ldloc.1
+    IL_004b:  bge.s      IL_0037
+
+    IL_004d:  ldloc.2
+    IL_004e:  ldc.i4.0
+    IL_004f:  bge.s      IL_0037
+
+    IL_0051:  ret
+  }""" ]
+
+    [<Fact>]
+    let ``Strided integer for loops with constant step should be optimized``() =
+        FSharp """
+module ForLoops
+
+let loop2 () =
+    for i in 0..2..10 do
+        System.Console.WriteLine i
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static void  loop2() cil managed
+  {
+
+    .maxstack  4
+    .locals init (int32 V_0,
+             int32 V_1)
+    IL_0000:  ldc.i4.0
+    IL_0001:  stloc.1
+    IL_0002:  ldc.i4.s   10
+    IL_0004:  stloc.0
+    IL_0005:  ldloc.0
+    IL_0006:  ldloc.1
+    IL_0007:  blt.s      IL_0017
+
+    IL_0009:  ldloc.1
+    IL_000a:  call       void [mscorlib]System.Console::WriteLine(int32)
+    IL_000f:  ldloc.1
+    IL_0010:  ldc.i4.2
+    IL_0011:  add
+    IL_0012:  stloc.1
+    IL_0013:  ldloc.1
+    IL_0014:  ldloc.0
+    IL_0015:  ble.s      IL_0009
+
+    IL_0017:  ret
+  }""" ]
+
+    [<Fact>]
+    let ``Strided integer for loops with constant negative step should be optimized``() =
+        FSharp """
+module ForLoops
+
+let loop2 () =
+    for i in 10 .. -2 .. 1 do
+        System.Console.WriteLine i
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL ["""
+  .method public static void  loop2() cil managed
+  {
+
+    .maxstack  4
+    .locals init (int32 V_0,
+             int32 V_1)
+    IL_0000:  ldc.i4.s   10
+    IL_0002:  stloc.1
+    IL_0003:  ldc.i4.1
+    IL_0004:  stloc.0
+    IL_0005:  ldloc.0
+    IL_0006:  ldloc.1
+    IL_0007:  bgt.s      IL_0017
+
+    IL_0009:  ldloc.1
+    IL_000a:  call       void [mscorlib]System.Console::WriteLine(int32)
+    IL_000f:  ldloc.1
+    IL_0010:  ldc.i4.2
+    IL_0011:  sub
+    IL_0012:  stloc.1
+    IL_0013:  ldloc.1
+    IL_0014:  ldloc.0
+    IL_0015:  bge.s      IL_0009
+
+    IL_0017:  ret
+  }""" ]

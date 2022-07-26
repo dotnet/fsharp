@@ -97,6 +97,11 @@
         <target state="translated">Tür kısıtlaması uyumsuzluğu. \n    '{0}'    \ntürü şu türle uyumlu değil:\n    '{1}'    {2}\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="StepCannotBeZero">
+        <source>The step of a range cannot be zero.</source>
+        <target state="translated">Aralığın adımı sıfır olamaz.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
         <target state="translated">Büyük harfli değişken tanımlayıcıları desenlerde genel olarak kullanılmamalıdır. Bunlar, eksik bir açık bildirimin veya yanlış yazılmış bir desen adının göstergesi olabilirler.</target>

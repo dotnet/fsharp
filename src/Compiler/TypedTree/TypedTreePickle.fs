@@ -2520,7 +2520,7 @@ and p_op x st =
                                      -> p_byte 18 st; p_tup11 p_bool p_bool p_bool p_bool p_vrefFlags p_bool p_bool p_ILMethodRef p_tys p_tys p_tys (a1, a2, a3, a4, a5, a7, a8, a9, b, c, d) st
     | TOp.Array                      -> p_byte 19 st
     | TOp.While _                    -> p_byte 20 st
-    | TOp.IntegerForLoop (_, _, dir)            -> p_byte 21 st; p_int (match dir with FSharpForLoopUp -> 0 | CSharpForLoopUp -> 1 | FSharpForLoopDown -> 2) st
+    | TOp.IntegerForLoop (_, _, dir)            -> p_byte 21 st; p_int (match dir with FSharpForLoopUp -> 0 | CSharpForLoopUp -> 1 | FSharpForLoopDown -> 2 | FSharpForLoopWithStep -> 3) st
     | TOp.Bytes bytes                -> p_byte 22 st; p_bytes bytes st
     | TOp.TryWith _                 -> p_byte 23 st
     | TOp.TryFinally _               -> p_byte 24 st
@@ -2585,7 +2585,7 @@ and u_op st =
             TOp.ILCall (a1, a2, a3, a4, a5, a7, a8, a9, b, c, d)
     | 19 -> TOp.Array
     | 20 -> TOp.While (DebugPointAtWhile.No, NoSpecialWhileLoopMarker)
-    | 21 -> let dir = match u_int st with 0 -> FSharpForLoopUp | 1 -> CSharpForLoopUp | 2 -> FSharpForLoopDown | _ -> failwith "unknown for loop"
+    | 21 -> let dir = match u_int st with 0 -> FSharpForLoopUp | 1 -> CSharpForLoopUp | 2 -> FSharpForLoopDown | 3 -> FSharpForLoopWithStep | _ -> failwith "unknown for loop"
             TOp.IntegerForLoop (DebugPointAtFor.No, DebugPointAtInOrTo.No, dir)
     | 22 -> TOp.Bytes (u_bytes st)
     | 23 -> TOp.TryWith (DebugPointAtTry.No, DebugPointAtWith.No)

@@ -97,6 +97,11 @@
         <target state="translated">型の制約が一致しません。次の型\n    '{0}'    \nは次の型と互換性がありません\n    '{1}'    {2}\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="StepCannotBeZero">
+        <source>The step of a range cannot be zero.</source>
+        <target state="translated">範囲のステップをゼロにすることはできません。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
         <target state="translated">通常、大文字の変数識別子はパターンに使用できません。また、欠落している open 宣言か、つづりが間違っているパターン名を示す可能性があります。</target>

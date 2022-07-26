@@ -97,6 +97,11 @@
         <target state="translated">Neshoda v omezení typu. Typ \n    {0}    \nnení kompatibilní s typem\n    {1}.    {2}\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="StepCannotBeZero">
+        <source>The step of a range cannot be zero.</source>
+        <target state="translated">Krok rozsahu nemůže být nula.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
         <target state="translated">Identifikátory proměnných psané velkými písmeny se ve vzorech obecně nedoporučují. Můžou označovat chybějící otevřenou deklaraci nebo špatně napsaný název vzoru.</target>

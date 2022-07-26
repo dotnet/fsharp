@@ -97,6 +97,11 @@
         <target state="translated">類型條件約束不符。類型\n    '{0}'    \n不相容於類型\n    '{1}'    {2}\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="StepCannotBeZero">
+        <source>The step of a range cannot be zero.</source>
+        <target state="translated">範圍步驟不能為零。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
         <target state="translated">通常不應在樣式中使用大寫的變數識別碼。這可能表示缺少公開宣告或樣式名稱拼字錯誤。</target>

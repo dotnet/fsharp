@@ -97,6 +97,11 @@
         <target state="translated">Niezgodność ograniczeń typów. Typ \n    „{0}”    \nnie jest zgodny z typem\n    „{1}”    {2}\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="StepCannotBeZero">
+        <source>The step of a range cannot be zero.</source>
+        <target state="translated">Wartością kroku w zakresie nie może być zero.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
         <target state="translated">Identyfikatory zmiennych pisane wielkimi literami nie powinny być na ogół używane we wzorcach i mogą oznaczać brak deklaracji otwierającej lub błąd pisowni w nazwie wzorca.</target>

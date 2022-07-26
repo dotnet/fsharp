@@ -1110,4 +1110,7 @@
   <data name="NotUpperCaseConstructorWithoutRQA" xml:space="preserve">
     <value>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</value>
   </data>
+  <data name="StepCannotBeZero" xml:space="preserve">
+    <value>The step of a range cannot be zero.</value>
+  </data>
 </root>

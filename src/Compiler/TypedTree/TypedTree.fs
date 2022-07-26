@@ -4975,7 +4975,10 @@ type ForLoopStyle =
     | FSharpForLoopUp 
 
     /// Evaluate start and end once, loop down
-    | FSharpForLoopDown 
+    | FSharpForLoopDown
+
+    /// Evaluate start, step, and end once
+    | FSharpForLoopWithStep
 
     /// Evaluate start once and end multiple times, loop up
     | CSharpForLoopUp

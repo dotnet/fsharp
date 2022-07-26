@@ -3606,6 +3606,9 @@ type ForLoopStyle =
     /// Evaluate start type end once, loop down
     | FSharpForLoopDown
 
+    /// Evaluate start, step, and end once
+    | FSharpForLoopWithStep
+
     /// Evaluate start once type end multiple times, loop up
     | CSharpForLoopUp
 

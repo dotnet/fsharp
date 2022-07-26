@@ -481,8 +481,8 @@ type LowerStateMachine(g: TcGlobals) =
 
             // The expanded code for state machines may use for loops, however the
             // body must be synchronous.
-            | IntegerForLoopExpr (sp1, sp2, style, e1, e2, v, e3, m) ->
-                ConvertResumableIntegerForLoop env pcValInfo (sp1, sp2, style, e1, e2, v, e3, m)
+            | IntegerForLoopExpr (sp1, sp2, style, e1, e2, v, e3, step, m) ->
+                ConvertResumableIntegerForLoop env pcValInfo (sp1, sp2, style, e1, e2, v, e3, step, m)
 
             // The expanded code for state machines may use try/with....
             | TryWithExpr (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m) ->
@@ -673,13 +673,14 @@ type LowerStateMachine(g: TcGlobals) =
                 |> Result.Ok
         | Result.Error err, _ | _, Result.Error err -> Result.Error err
 
-    and ConvertResumableIntegerForLoop env pcValInfo (spFor, spTo, style, e1, e2, v, e3, m) =
+    and ConvertResumableIntegerForLoop env pcValInfo (spFor, spTo, style, e1, e2, v, e3, e4, m) =
         if sm_verbose then printfn "IntegerForLoopExpr" 
         let res1 = ConvertResumableCode env pcValInfo e1
         let res2 = ConvertResumableCode env pcValInfo e2
         let res3 = ConvertResumableCode env pcValInfo e3
-        match res1, res2, res3 with 
-        | Result.Ok res1, Result.Ok res2, Result.Ok res3 ->
+        let res4 = Option.map (ConvertResumableCode env pcValInfo) e4
+        match res1, res2, res3, res4 with 
+        | Result.Ok res1, Result.Ok res2, Result.Ok res3, None ->
             let eps = res1.entryPoints @ res2.entryPoints @ res3.entryPoints
             if eps.Length > 0 then 
                 Result.Error(FSComp.SR.reprResumableCodeContainsFastIntegerForLoop())
@@ -705,7 +706,34 @@ type LowerStateMachine(g: TcGlobals) =
                   thisVars = res1.thisVars @ res2.thisVars @ res3.thisVars
                   resumableVars = emptyFreeVars (* eps is empty, hence synchronous, no capture *) }
                 |> Result.Ok
-        | Result.Error err, _, _ | _, Result.Error err, _ | _, _, Result.Error err -> Result.Error err
+        | Result.Ok res1, Result.Ok res2, Result.Ok res3, Some(Result.Ok res4) ->
+            let eps = res1.entryPoints @ res2.entryPoints @ res3.entryPoints @ res4.entryPoints
+            if eps.Length > 0 then 
+                Result.Error(FSComp.SR.reprResumableCodeContainsFastIntegerForLoop())
+            else
+                { phase1 = mkIntegerForLoopWithStep g (spFor, spTo, v, res1.phase1, res4.phase1, res2.phase1, res3.phase1, m)
+                  phase2 = (fun ctxt -> 
+                      let e1R = res1.phase2 ctxt
+                      let e2R = res2.phase2 ctxt
+                      let e3R = res3.phase2 ctxt
+                      let e4R = res4.phase2 ctxt
+
+                      // Clear the pcVal on backward branch, causing jump tables at entry to nested try-blocks to not activate
+                      let e3R2 = 
+                          match pcValInfo with
+                          | None -> e3R
+                          | Some ((pcVal, _), _) -> 
+                              mkCompGenThenDoSequential m 
+                                  e3R 
+                                  (mkValSet m (mkLocalValRef pcVal) (mkZero g m))
+
+                      mkIntegerForLoopWithStep g (spFor, spTo, v, e1R, e4R, e2R, e3R2, m))
+                  entryPoints= eps
+                  stateVars = res1.stateVars @ res2.stateVars @ res3.stateVars @res4.stateVars
+                  thisVars = res1.thisVars @ res2.thisVars @ res3.thisVars @res3.thisVars
+                  resumableVars = emptyFreeVars (* eps is empty, hence synchronous, no capture *) }
+                |> Result.Ok
+        | Result.Error err, _, _, _ | _, Result.Error err, _, _ | _, _, Result.Error err, _ | _, _, _, Some(Result.Error err) -> Result.Error err
 
     and ConvertResumableTryWith env pcValInfo (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m) =
         if sm_verbose then printfn "TryWithExpr" 

@@ -97,6 +97,11 @@
         <target state="translated">Die Typeinschränkungen stimmen nicht überein. Der Typ \n    "{0}"    \nist nicht mit folgendem Typ kompatibel:\n    "{1}"    {2}\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="StepCannotBeZero">
+        <source>The step of a range cannot be zero.</source>
+        <target state="translated">Der Schritt eines Bereichs darf nicht null sein.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
         <target state="translated">Variablenbezeichner in Großbuchstaben sollten im Allgemeinen nicht in Mustern verwendet werden und können ein Hinweis auf eine fehlende open-Deklaration oder einen falsch geschriebenen Musternamen sein.</target>

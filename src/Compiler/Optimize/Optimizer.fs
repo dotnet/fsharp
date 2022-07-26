@@ -2540,7 +2540,10 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
         OptimizeWhileLoop cenv { env with disableMethodSplitting=true } (spWhile, marker, e1, e2, m) 
 
     | TOp.IntegerForLoop (spFor, spTo, dir), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [v], e3, _, _)] -> 
-        OptimizeFastIntegerForLoop cenv { env with disableMethodSplitting=true } (spFor, spTo, v, e1, dir, e2, e3, m) 
+        OptimizeFastIntegerForLoop cenv { env with disableMethodSplitting=true } (spFor, spTo, v, e1, dir, e2, e3, None, m) 
+
+    | TOp.IntegerForLoop (spFor, spTo, dir), _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [v], e3, _, _);Expr.Lambda (_, _, _, [_], e4, _, _)] -> 
+        OptimizeFastIntegerForLoop cenv { env with disableMethodSplitting=true } (spFor, spTo, v, e1, dir, e2, e3, Some e4, m) 
 
     | TOp.TryFinally (spTry, spFinally), [resty], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] -> 
         OptimizeTryFinally cenv env (spTry, spFinally, e1, e2, m, resty)
@@ -2733,11 +2736,17 @@ and TryOptimizeUnionCaseGet cenv _env (e1info, cspec, _tys, n, m) =
     | _ -> None
 
 /// Optimize/analyze a for-loop
-and OptimizeFastIntegerForLoop cenv env (spFor, spTo, v, e1, dir, e2, e3, m) =
+and OptimizeFastIntegerForLoop cenv env (spFor, spTo, v, e1, dir, e2, e3, stepExpr, m) =
     let g = cenv.g
 
     let e1R, e1info = OptimizeExpr cenv env e1 
     let e2R, e2info = OptimizeExpr cenv env e2 
+    let e4R, e4info = 
+        match stepExpr with
+        | Some step -> 
+            let e4R, e4info = OptimizeExpr cenv env step
+            Some e4R, Some e4info
+        | None -> None, None
     let env = BindInternalValToUnknown cenv v env 
     let e3R, e3info = OptimizeExpr cenv env e3 
     // Try to replace F#-style loops with C# style loops that recompute their bounds but which are compiled more efficiently by the JITs, e.g.
@@ -2747,12 +2756,12 @@ and OptimizeFastIntegerForLoop cenv env (spFor, spTo, v, e1, dir, e2, e3, m) =
         match dir, e2R with 
         // detect upwards for loops with bounds of the form "arr.Length - 1" and convert them to a C#-style for loop
         | FSharpForLoopUp, Expr.Op (TOp.ILAsm ([ (AI_sub | AI_sub_ovf)], _), _, [Expr.Op (TOp.ILAsm ([ I_ldlen; (AI_conv DT_I4)], _), _, [arre], _); Expr.Const (Const.Int32 1, _, _)], _) 
-                  when not (snd(OptimizeExpr cenv env arre)).HasEffect -> 
+                  when not (snd(OptimizeExpr cenv env arre)).HasEffect ->
 
             mkLdlen g e2R.Range arre, CSharpForLoopUp
 
         | FSharpForLoopUp, Expr.Op (TOp.ILAsm ([ (AI_sub | AI_sub_ovf)], _), _, [Expr.Op (TOp.ILCall(_,_,_,_,_,_,_, mth, _,_,_), _, [arre], _) as lenOp; Expr.Const (Const.Int32 1, _, _)], _) 
-                  when 
+                  when
                         mth.Name = "get_Length" && (mth.DeclaringTypeRef.FullName = "System.Span`1" || mth.DeclaringTypeRef.FullName = "System.ReadOnlySpan`1") 
                         && not (snd(OptimizeExpr cenv env arre)).HasEffect -> 
 
@@ -2767,13 +2776,18 @@ and OptimizeFastIntegerForLoop cenv env (spFor, spTo, v, e1, dir, e2, e3, m) =
         | _ ->
             e2R, dir
  
-    let einfos = [e1info;e2info;e3info] 
+    let einfos = [e1info;e2info;e3info; match e4info with Some e4i -> e4i | None -> ()] 
     let eff = OrEffects einfos 
     (* neither bounds nor body has an effect, and loops always terminate, hence eliminate the loop *)
     if cenv.settings.EliminateForLoop && not eff then 
         mkUnit g m, { TotalSize=0; FunctionSize=0; HasEffect=false; MightMakeCriticalTailcall=false; Info=UnknownValue }
     else
-        let exprR = mkIntegerForLoop g (spFor, spTo, v, e1R, dir, e2R, e3R, m) 
+        let exprR = 
+            match e4R with 
+            | Some e4R ->
+                mkIntegerForLoopWithStep g (spFor, spTo, v, e1R, e4R, e2R, e3R, m) 
+            | None ->
+                mkIntegerForLoop g (spFor, spTo, v, e1R, dir, e2R, e3R, m) 
         exprR, { TotalSize=AddTotalSizes einfos + forAndWhileLoopSize
                  FunctionSize=AddFunctionSizes einfos + forAndWhileLoopSize
                  HasEffect=eff

@@ -165,6 +165,10 @@ val mkWhile: TcGlobals -> DebugPointAtWhile * SpecialWhileLoopMarker * Expr * Ex
 val mkIntegerForLoop:
     TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * Val * Expr * ForLoopStyle * Expr * Expr * range -> Expr
 
+/// Build a 'for' loop expression with step
+val mkIntegerForLoopWithStep:
+    TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * Val * Expr * Expr * Expr * Expr * range -> Expr
+
 /// Build a 'try/with' expression
 val mkTryWith:
     TcGlobals ->
@@ -2578,7 +2582,7 @@ val (|WhileExpr|_|): Expr -> (DebugPointAtWhile * SpecialWhileLoopMarker * Expr 
 
 /// Recognise an integer for-loop expression
 val (|IntegerForLoopExpr|_|):
-    Expr -> (DebugPointAtFor * DebugPointAtInOrTo * ForLoopStyle * Expr * Expr * Val * Expr * range) option
+    Expr -> (DebugPointAtFor * DebugPointAtInOrTo * ForLoopStyle * Expr * Expr * Val * Expr * Expr option * range) option
 
 /// Recognise a try-with expression
 val (|TryWithExpr|_|):

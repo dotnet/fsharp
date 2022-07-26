@@ -97,6 +97,11 @@
         <target state="translated">형식 제약 조건이 일치하지 않습니다. \n    '{0}'    \n형식이\n    '{1}' 형식과 호환되지 않습니다.    {2}\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="StepCannotBeZero">
+        <source>The step of a range cannot be zero.</source>
+        <target state="translated">범위의 단계는 0일 수 없습니다.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
         <target state="translated">일반적으로 대문자 변수 식별자는 패턴에 사용하지 말아야 합니다. 이러한 식별자는 열려 있는 선언이 없거나 철자가 잘못된 패턴 이름을 나타낼 수 있습니다.</target>

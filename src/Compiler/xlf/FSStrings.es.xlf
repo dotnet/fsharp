@@ -97,6 +97,11 @@
         <target state="translated">No coinciden las restricciones de tipo. El tipo \n    '{0}'    \nno es compatible con el tipo\n    '{1}'    {2}\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="StepCannotBeZero">
+        <source>The step of a range cannot be zero.</source>
+        <target state="translated">El paso de un intervalo no puede ser cero.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
         <target state="translated">En general, los identificadores de variables en mayúscula no deben usarse en patrones y pueden indicar una declaración abierta que falta o un nombre de patrón mal escrito.</target>
