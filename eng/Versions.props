@@ -56,7 +56,7 @@
   <PropertyGroup>
     <VSMajorVersion>17</VSMajorVersion>
     <VSMinorVersion>3</VSMinorVersion>
-    <VSGeneralVersion>$(VSMajorVersion).5</VSGeneralVersion>
+    <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
   </PropertyGroup>
