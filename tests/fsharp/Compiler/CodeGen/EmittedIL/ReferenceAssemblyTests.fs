@@ -194,7 +194,9 @@ module Nested =
       .method public hidebysig specialname 
                  instance int32  get_x() cil managed
       {
-        
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+
         .maxstack  8
         IL_0000:  ldnull
         IL_0001:  throw
@@ -222,7 +224,8 @@ module Nested =
       .method public hidebysig virtual final 
                  instance int32  CompareTo(class ReferenceAssembly/Nested/Test obj) cil managed
       {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         
         .maxstack  8
         IL_0000:  ldnull
@@ -232,7 +235,8 @@ module Nested =
       .method public hidebysig virtual final 
                  instance int32  CompareTo(object obj) cil managed
       {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         
         .maxstack  8
         IL_0000:  ldnull
@@ -243,7 +247,8 @@ module Nested =
                  instance int32  CompareTo(object obj,
                                            class [runtime]System.Collections.IComparer comp) cil managed
       {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         
         .maxstack  8
         IL_0000:  ldnull
@@ -253,7 +258,8 @@ module Nested =
       .method public hidebysig virtual final 
                  instance int32  GetHashCode(class [runtime]System.Collections.IEqualityComparer comp) cil managed
       {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         
         .maxstack  8
         IL_0000:  ldnull
@@ -263,7 +269,8 @@ module Nested =
       .method public hidebysig virtual final 
                  instance int32  GetHashCode() cil managed
       {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         
         .maxstack  8
         IL_0000:  ldnull
@@ -274,7 +281,8 @@ module Nested =
                  instance bool  Equals(object obj,
                                        class [runtime]System.Collections.IEqualityComparer comp) cil managed
       {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         
         .maxstack  8
         IL_0000:  ldnull
@@ -284,7 +292,8 @@ module Nested =
       .method public hidebysig virtual final 
                  instance bool  Equals(class ReferenceAssembly/Nested/Test obj) cil managed
       {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         
         .maxstack  8
         IL_0000:  ldnull
@@ -294,7 +303,8 @@ module Nested =
       .method public hidebysig virtual final 
                  instance bool  Equals(object obj) cil managed
       {
-        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         
         .maxstack  8
         IL_0000:  ldnull
@@ -529,7 +539,9 @@ type MySecondaryAttribute() =
     .method assembly hidebysig specialname 
                instance int32  get_Prop1() cil managed
     {
-      
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+
       .maxstack  8
       IL_0000:  ldnull
       IL_0001:  throw
@@ -538,7 +550,9 @@ type MySecondaryAttribute() =
     .method assembly hidebysig specialname 
                instance void  set_Prop1(int32 v) cil managed
     {
-      
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+
       .maxstack  8
       IL_0000:  ldnull
       IL_0001:  throw
@@ -564,7 +578,9 @@ type MySecondaryAttribute() =
     .method assembly hidebysig specialname 
                instance int32  get_Prop1() cil managed
     {
-      
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+
       .maxstack  8
       IL_0000:  ldnull
       IL_0001:  throw
@@ -573,7 +589,9 @@ type MySecondaryAttribute() =
     .method assembly hidebysig specialname 
                instance void  set_Prop1(int32 v) cil managed
     {
-      
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+
       .maxstack  8
       IL_0000:  ldnull
       IL_0001:  throw
@@ -670,6 +688,8 @@ type MType() =
     .method public hidebysig specialname 
                instance int32  get_PubProp1() cil managed
     {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       
       .maxstack  8
       IL_0000:  ldnull
@@ -679,6 +699,8 @@ type MType() =
     .method public hidebysig specialname 
                instance void  set_PubProp1(int32 v) cil managed
     {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       
       .maxstack  8
       IL_0000:  ldnull
