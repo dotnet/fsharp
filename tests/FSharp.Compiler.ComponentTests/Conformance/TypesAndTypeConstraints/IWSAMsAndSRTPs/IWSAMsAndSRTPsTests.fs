@@ -520,3 +520,92 @@ module ``Nominal type after or`` =
         |> asExe
         |> compileAndRun
         |> shouldSucceed
+
+module ``Active patterns`` =
+
+    let library =
+        FSharp """
+        module Potato.Lib
+            type IPotato<'T when 'T :> IPotato<'T>> =
+                static abstract member IsGood: 'T -> bool
+                static abstract member op_Equality: 'T * 'T -> bool
+
+            type Potato() =
+                interface IPotato<Potato> with
+                    static member IsGood c = true
+                    static member op_Equality (a, b) = false
+
+            type Rock() =
+                interface IPotato<Rock> with
+                    static member IsGood c = false
+                    static member op_Equality (a, b) = false
+            """
+        |> withLangVersionPreview
+        |> withName "Potato"
+        |> withOptions ["--nowarn:3535"]
+
+    [<Fact>]
+    let ``Using IWSAM in active pattern`` () =
+        FSharp """
+            module Potato.Test
+
+            open Lib
+
+            let (|GoodPotato|_|) (x : 'T when 'T :> IPotato<'T>) = if 'T.IsGood x then Some () else None
+
+            match Potato() with GoodPotato -> () | _ -> failwith "Unexpected result"
+            match Rock() with GoodPotato -> failwith "Unexpected result" | _ -> ()
+            """
+        |> withReferences [library]
+        |> withLangVersionPreview
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> verifyIL [
+            """
+             .method public specialname static class [FSharp.Core]Microsoft.FSharp.Core.FSharpOption`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+                      '|GoodPotato|_|'<(class [Potato]Potato.Lib/IPotato`1<!!T>) T>(!!T x) cil managed
+              {
+
+                .maxstack  8
+                IL_0000:  ldarg.0
+                IL_0001:  constrained. !!T
+                IL_0007:  call       bool class [Potato]Potato.Lib/IPotato`1<!!T>::IsGood(!0)
+                IL_000c:  brfalse.s  IL_0015
+            """
+        ]
+
+    [<Fact>]
+    let ``Using IWSAM equality in active pattern uses generic equality intrinsic`` () =
+        FSharp """
+            module Potato.Test
+
+            open Lib
+
+            let (|IsEqual|IsNonEqual|) (x: 'T when IPotato<'T>, y: 'T when IPotato<'T>) =
+                match x with
+                | x when x = y -> IsEqual
+                | _ -> IsNonEqual
+
+            match Potato(), Potato() with
+            | IsEqual -> failwith "Unexpected result"
+            | IsNonEqual -> ()
+            """
+        |> withReferences [library]
+        |> withLangVersionPreview
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
+        |> verifyIL [
+            """
+            .method public specialname static class [FSharp.Core]Microsoft.FSharp.Core.FSharpChoice`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
+                  '|IsEqual|IsNonEqual|'<(class [Potato]Potato.Lib/IPotato`1<!!T>) T>(!!T x,
+                                                                                      !!T y) cil managed
+            {
+
+            .maxstack  8
+            IL_0000:  ldarg.0
+            IL_0001:  ldarg.1
+            IL_0002:  call       bool [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives/HashCompare::GenericEqualityIntrinsic<!!0>(!!0,
+
+            """
+        ]
