@@ -375,10 +375,7 @@ let main _ = 0
     [<Fact>]
 #endif
     let ``F# can call interface with static abstract method`` () =
-
-        let inputFilePath = CompilerAssert.GenerateFsInputPath()
-        let outputFilePath = CompilerAssert.GenerateDllOutputPath()
-        let fsharpSource =
+        FSharp
             """
 #nowarn "3535"
 namespace Tests
@@ -405,7 +402,6 @@ module Test =
             failwith "incorrect value"
         0
 """
-        FSharpWithInputAndOutputPath fsharpSource inputFilePath outputFilePath
         |> asExe
         |> withLangVersionPreview
         |> compileAndRun
@@ -527,3 +523,53 @@ module Test =
 
 }
             """ ]
+
+#if !NETCOREAPP
+    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
+#else
+    [<Fact>]
+#endif
+    let ``C# can call constrained method defined in F#`` () =
+        let FSharpLib =
+            FSharp """
+            namespace MyNamespace
+
+                type IFoo<'T> =
+                    static abstract Foo: 'T * 'T -> 'T
+
+                module Stuff =
+                    let F<'T when 'T :> IFoo<'T>>(x: 'T, y: 'T) =
+                        'T.Foo(x, y)
+                """
+                |> withLangVersionPreview
+                |> withName "FsLibAssembly"
+                |> withOptions ["--nowarn:3535"]
+
+        CSharp """
+        namespace MyNamespace {
+
+            class Potato : IFoo<Potato>
+            {
+                public Potato(int x) => this.x = x;
+
+                public int x;
+
+                public static Potato Foo(Potato x, Potato y) => new Potato(x.x + y.x);
+
+                public static void Main(string[] args)
+                {
+                    var x = new Potato(4);
+                    var y = new Potato(9);
+                    var z = Stuff.F(x, y);
+                    if (z.x != 13)
+                    {
+                        throw new System.Exception("incorrect value");
+                    }
+                }
+            }
+        }
+        """
+        |> withReferences [FSharpLib]
+        |> withName "CsProgram"
+        |> compileExeAndRun
+        |> shouldSucceed

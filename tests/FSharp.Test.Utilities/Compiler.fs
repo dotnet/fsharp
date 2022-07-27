@@ -85,6 +85,7 @@ module rec Compiler =
             Source:          SourceCodeFileKind
             LangVersion:     CSharpLanguageVersion
             TargetFramework: TargetFramework
+            OutputType:      CompileOutput
             OutputDirectory: DirectoryInfo option
             Name:            string option
             References:      CompilationUnit list
@@ -210,7 +211,8 @@ module rec Compiler =
             Source          = source
             LangVersion     = CSharpLanguageVersion.CSharp9
             TargetFramework = TargetFramework.Current
-            OutputDirectory= None
+            OutputType      = Library
+            OutputDirectory = None
             Name            = None
             References      = []
         }
@@ -460,7 +462,8 @@ module rec Compiler =
 
     let asExe (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
-        | FS fs -> FS { fs with OutputType = CompileOutput.Exe }
+        | FS x -> FS { x with OutputType = Exe }
+        | CS x -> CS { x with OutputType = Exe }
         | _ -> failwith "TODO: Implement where applicable."
 
     let withPlatform (platform:ExecutionPlatform) (cUnit: CompilationUnit) : CompilationUnit =
@@ -565,22 +568,37 @@ module rec Compiler =
         let compilation = Compilation.CreateFromSources([fs.Source] @ fs.AdditionalSources, output, options, references, name, outputDirectory)
         compileFSharpCompilation compilation fs.IgnoreWarnings (FS fs)
 
-    let private compileCSharpCompilation (compilation: CSharpCompilation) csSource : CompilationResult =
-        let outputPath = tryCreateTemporaryDirectory()
-        Directory.CreateDirectory(outputPath) |> ignore
-        let fileName = compilation.AssemblyName
-        let output = Path.Combine(outputPath, Path.ChangeExtension(fileName, ".dll"))
-        let cmplResult = compilation.Emit (output)
+    let toErrorInfo (d: Diagnostic) =
+        let span = d.Location.GetMappedLineSpan().Span
+        let number = d.Id |> Seq.where Char.IsDigit |> String.Concat |> int
+
+        { Error =
+            match d.Severity with
+            | DiagnosticSeverity.Error -> Error
+            | DiagnosticSeverity.Warning -> Warning
+            | DiagnosticSeverity.Info -> Information
+            | DiagnosticSeverity.Hidden -> Hidden
+            | x -> failwith $"Unknown severity {x}"
+            |> (|>) number
+          Range =
+            { StartLine = span.Start.Line
+              StartColumn = span.Start.Character
+              EndLine = span.End.Line
+              EndColumn = span.End.Character }
+          Message = d.GetMessage() }
+
+    let private compileCSharpCompilation (compilation: CSharpCompilation) csSource (filePath : string) dependencies : CompilationResult =
+        let cmplResult = compilation.Emit filePath
         let result =
             { OutputPath   = None
-              Dependencies = []
+              Dependencies = dependencies
               Adjust       = 0
-              Diagnostics  = []
+              Diagnostics  = cmplResult.Diagnostics |> Seq.map toErrorInfo |> Seq.toList
               Output       = None
               Compilation  = CS csSource }
 
         if cmplResult.Success then
-            CompilationResult.Success { result with OutputPath  = Some output }
+            CompilationResult.Success { result with OutputPath  = Some filePath }
         else
             CompilationResult.Failure result
 
@@ -595,9 +613,12 @@ module rec Compiler =
             | None -> DirectoryInfo(tryCreateTemporaryDirectory())
 
         let additionalReferences =
-            match processReferences csSource.References outputDirectory with
-            | [] -> ImmutableArray.Empty
-            | r  -> (List.map (asMetadataReference (CS csSource)) r).ToImmutableArray().As<MetadataReference>()
+            processReferences csSource.References outputDirectory
+            |> List.map (asMetadataReference (CS csSource))
+
+        let additionalMetadataReferences = additionalReferences.ToImmutableArray().As<MetadataReference>()
+
+        let additionalReferencePaths = [for r in additionalReferences -> r.FilePath]
 
         let references = TargetFrameworkUtil.getReferences csSource.TargetFramework
 
@@ -608,14 +629,22 @@ module rec Compiler =
             | CSharpLanguageVersion.Preview -> LanguageVersion.Preview
             | _ -> LanguageVersion.Default
 
+        let outputKind, extension =
+            match csSource.OutputType with
+            | Exe -> OutputKind.ConsoleApplication, "exe"
+            | Library -> OutputKind.DynamicallyLinkedLibrary, "dll"
+
         let cmpl =
           CSharpCompilation.Create(
             name,
             [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
-            references.As<MetadataReference>().AddRange additionalReferences,
-            CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
+            references.As<MetadataReference>().AddRange additionalMetadataReferences,
+            CSharpCompilationOptions outputKind)
 
-        compileCSharpCompilation cmpl csSource
+        let filename = Path.ChangeExtension(cmpl.AssemblyName, extension)
+        let filePath = Path.Combine(outputDirectory.FullName, filename)
+
+        compileCSharpCompilation cmpl csSource filePath additionalReferencePaths
 
     let compile (cUnit: CompilationUnit) : CompilationResult =
         match cUnit with

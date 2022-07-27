@@ -472,7 +472,7 @@ module rec CompilerAssertHelpers =
 
             compilationRefs, deps
 
-    let rec compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
+    let compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
 
         let compilationRefs, deps = evaluateReferences outputDirectory disposals ignoreWarnings cmpl
         let isExe, sources, options, name =
@@ -494,7 +494,7 @@ module rec CompilerAssertHelpers =
 
         res, (deps @ deps2)
 
-    let rec compileCompilation ignoreWarnings (cmpl: Compilation) f =
+    let compileCompilation ignoreWarnings (cmpl: Compilation) f =
         let disposals = ResizeArray()
         try
             let outputDirectory = DirectoryInfo(tryCreateTemporaryDirectory())
@@ -510,10 +510,10 @@ module rec CompilerAssertHelpers =
     let rec returnCompilation (cmpl: Compilation) ignoreWarnings =
         let outputDirectory =
             match cmpl with
-            | Compilation(_, _, _, _, _, Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
-            | Compilation(_, _, _, _, _, _) -> DirectoryInfo(tryCreateTemporaryDirectory())
+            | Compilation(outputDirectory = Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
+            | Compilation _ -> DirectoryInfo(tryCreateTemporaryDirectory())
 
-        outputDirectory.Create() |> ignore
+        outputDirectory.Create()
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
 
     let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
