@@ -1285,11 +1285,6 @@ let advancedFlagsFsc tcConfigB =
             Some(FSComp.SR.optsStaticlink ())
         )
 
-#if ENABLE_MONO_SUPPORT
-        if runningOnMono then
-            CompilerOption("resident", tagFile, OptionUnit(fun () -> ()), None, Some(FSComp.SR.optsResident ()))
-#endif
-
         CompilerOption("pdb", tagString, OptionString(fun s -> tcConfigB.debugSymbolFile <- Some s), None, Some(FSComp.SR.optsPdb ()))
 
         CompilerOption(

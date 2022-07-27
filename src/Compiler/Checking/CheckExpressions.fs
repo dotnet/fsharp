@@ -8028,7 +8028,7 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
     let m = cleanSynArg.Range
     let rec check overallTyOpt resultOpt expr (delayed: DelayedItem list) =
         match expr with
-        | LongOrSingleIdent (false, SynLongIdent(longId, _, _), _, _) ->
+        | LongOrSingleIdent (false, SynLongIdent(longId, _, trivia), _, _) ->
 
             let ad = env.eAccessRights
             let result = defaultArg resultOpt (List.last longId)
@@ -8036,12 +8036,16 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
             // Demangle back to source operator name if the lengths in the ranges indicate the
             // original source range matches exactly
             let result =
-                if IsMangledOpName result.idText then
-                    let demangled = DecompileOpName result.idText
-                    if demangled.Length = result.idRange.EndColumn - result.idRange.StartColumn then
-                        ident(demangled, result.idRange)
+                match List.tryLast trivia |> Option.bind id with
+                | Some (IdentTrivia.OriginalNotation(text = text))
+                | Some (IdentTrivia.OriginalNotationWithParen(text = text)) -> ident(text, result.idRange)
+                | _ ->
+                    if IsMangledOpName result.idText then
+                        let demangled = DecompileOpName result.idText
+                        if demangled.Length = result.idRange.EndColumn - result.idRange.StartColumn then
+                            ident(demangled, result.idRange)
+                        else result
                     else result
-                else result
 
             // Nameof resolution resolves to a symbol and in general we make that the same symbol as
             // would resolve if the long ident was used as an expression at the given location.

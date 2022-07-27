@@ -17,6 +17,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.FindSymbols
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Navigation
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.LanguageServices.ProjectSystem
@@ -96,25 +97,26 @@ module internal MetadataAsSource =
 type internal FSharpMetadataAsSourceService() =
 
     let serviceProvider = ServiceProvider.GlobalProvider
-    let projs = System.Collections.Concurrent.ConcurrentDictionary<string, IWorkspaceProjectContext>()
+    let projs = System.Collections.Concurrent.ConcurrentDictionary<string, IFSharpWorkspaceProjectContext>()
 
     let createMetadataProjectContext (projInfo: ProjectInfo) (docInfo: DocumentInfo) =
         let componentModel = Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
-        let projectContextFactory = componentModel.GetService<IWorkspaceProjectContextFactory>()
-        let projectContext = projectContextFactory.CreateProjectContext(LanguageNames.FSharp, projInfo.Id.ToString(), projInfo.FilePath, Guid.NewGuid(), null, null)
+        let projectContextFactory = componentModel.GetService<IFSharpWorkspaceProjectContextFactory>()
+
+        let projectContext = projectContextFactory.CreateProjectContext(projInfo.FilePath, projInfo.Id.ToString())
         projectContext.DisplayName <- projInfo.Name
-        projectContext.AddSourceFile(docInfo.FilePath, sourceCodeKind = SourceCodeKind.Regular)
-        
+        projectContext.AddSourceFile(docInfo.FilePath, SourceCodeKind.Regular)
+
         for metaRef in projInfo.MetadataReferences do
             match metaRef with
             | :? PortableExecutableReference as peRef ->
-                projectContext.AddMetadataReference(peRef.FilePath, MetadataReferenceProperties.Assembly)
+                projectContext.AddMetadataReference(peRef.FilePath)
             | _ ->
                 ()
 
         projectContext
 
-    let clear filePath (projectContext: IWorkspaceProjectContext) =
+    let clear filePath (projectContext: IFSharpWorkspaceProjectContext) =
         projs.TryRemove(filePath) |> ignore
         projectContext.Dispose()
         try

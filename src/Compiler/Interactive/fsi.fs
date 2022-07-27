@@ -828,10 +828,9 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
                 fsiConsoleOutput: FsiConsoleOutput) =
 
     let mutable enableConsoleKeyProcessing =
-       // Mono on Win32 doesn't implement correct console processing
-       not (runningOnMono && Environment.OSVersion.Platform = PlatformID.Win32NT)
+       not (Environment.OSVersion.Platform = PlatformID.Win32NT)
 
-    let mutable gui        = not runningOnMono // override via "--gui", on by default except when on Mono
+    let mutable gui        = true           // override via "--gui" on by default
 #if DEBUG
     let mutable showILCode = false // show modul il code
 #endif
@@ -1645,7 +1644,7 @@ type internal FsiDynamicCompiler(
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
         let fragName = textOfLid prefixPath
-        let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, runningOnMono, tcConfig, topCustomAttrs, optimizedImpls, fragName, ilxGenerator)
+        let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, tcConfig, topCustomAttrs, optimizedImpls, fragName, ilxGenerator)
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
         codegenResults, optEnv, fragName
 
@@ -2345,16 +2344,16 @@ type internal FsiInterruptController(
 //
 // For information about contexts, see the Assembly.LoadFrom(String) method overload.
 
-module internal MagicAssemblyResolution =
+type internal MagicAssemblyResolution () =
 
     // See bug 5501 for details on decision to use UnsafeLoadFrom here.
     // Summary:
     //  It is an explicit user trust decision to load an assembly with #r. Scripts are not run automatically (for example, by double-clicking in explorer).
     //  We considered setting loadFromRemoteSources in fsi.exe.config but this would transitively confer unsafe loading to the code in the referenced
     //  assemblies. Better to let those assemblies decide for themselves which is safer.
-    let private assemblyLoadFrom (path:string) = Assembly.UnsafeLoadFrom(path)
+    static let assemblyLoadFrom (path:string) = Assembly.UnsafeLoadFrom(path)
 
-    let ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) =
+    static member private ResolveAssemblyCore (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) =
 
         try
             // Grab the name of the assembly
@@ -2362,12 +2361,8 @@ module internal MagicAssemblyResolution =
             let simpleAssemName = fullAssemName.Split([| ',' |]).[0]
             if progress then fsiConsoleOutput.uprintfn "ATTEMPT MAGIC LOAD ON ASSEMBLY, simpleAssemName = %s" simpleAssemName // "Attempting to load a dynamically required assembly in response to an AssemblyResolve event by using known static assembly references..."
 
-            // Special case: Mono Windows Forms attempts to load an assembly called something like "Windows.Forms.resources"
-            // We can't resolve this, so don't try.
-            // REVIEW: Suggest 4481, delete this special case.
-            if (runningOnMono && simpleAssemName.EndsWith(".resources",StringComparison.OrdinalIgnoreCase)) ||
-               simpleAssemName.EndsWith(".XmlSerializers", StringComparison.OrdinalIgnoreCase) ||
-               (runningOnMono && simpleAssemName = "UIAutomationWinforms") then null
+            if simpleAssemName.EndsWith(".XmlSerializers", StringComparison.OrdinalIgnoreCase) ||
+               simpleAssemName = "UIAutomationWinforms" then null
             else
                 match fsiDynamicCompiler.FindDynamicAssembly(simpleAssemName) with
                 | Some asm -> asm
@@ -2451,7 +2446,22 @@ module internal MagicAssemblyResolution =
             stopProcessingRecovery e range0
             null
 
-    let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) =
+    [<ThreadStatic; DefaultValue>]
+    static val mutable private resolving: bool
+
+    static member private ResolveAssembly (ctok, m, tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput, fullAssemName: string) =
+
+        //Eliminate recursive calls to Resolve which can happen via our callout to msbuild resolution
+        if MagicAssemblyResolution.resolving then
+            null
+        else
+            try
+                MagicAssemblyResolution.resolving <- true
+                MagicAssemblyResolution.ResolveAssemblyCore (ctok, m, tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput, fullAssemName)
+            finally
+                MagicAssemblyResolution.resolving <- false
+
+    static member Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) =
 
         let rangeStdin0 = rangeN stdinMockFileName 0
 
@@ -2459,7 +2469,7 @@ module internal MagicAssemblyResolution =
             // Explanation: our understanding is that magic assembly resolution happens
             // during compilation. So we recover the CompilationThreadToken here.
             let ctok = AssumeCompilationThreadWithoutEvidence ()
-            ResolveAssembly (ctok, rangeStdin0, tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput, args.Name))
+            MagicAssemblyResolution.ResolveAssembly (ctok, rangeStdin0, tcConfigB, tcImports, fsiDynamicCompiler, fsiConsoleOutput, args.Name))
 
         AppDomain.CurrentDomain.add_AssemblyResolve(resolveAssembly)
 
@@ -3125,26 +3135,7 @@ type FsiInteractionProcessor
                 with e -> stopProcessingRecovery e range0;
 
             finally
-                if progress then fprintfn fsiConsoleOutput.Out "- READER: Exiting process because of failure/exit on  stdinReaderThread";
-                // REVIEW: On some flavors of Mono, calling exit may freeze the process if we're using the WinForms event handler
-                // Basically, on Mono 2.6.3, the GUI thread may be left dangling on exit.  At that point:
-                //   -- System.Environment.Exit will cause the process to stop responding
-                //   -- Calling Application.Exit() will leave the GUI thread up and running, creating a Zombie process
-                //   -- Calling Abort() on the Main thread or the GUI thread will have no effect, and the process will remain unresponsive
-                // Also, even the the GUI thread is up and running, the WinForms event loop will be listed as closed
-                // In this case, killing the process is harmless, since we've already cleaned up after ourselves and FSI is responding
-                // to an error.  (CTRL-C is handled elsewhere.)
-                // We'll only do this if we're running on Mono, "--gui" is specified and our input is piped in from stdin, so it's still
-                // fairly constrained.
-#if FX_NO_WINFORMS
                 exit 1
-#else
-                if runningOnMono && fsiOptions.Gui then
-                    System.Environment.ExitCode <- 1
-                    Process.GetCurrentProcess().Kill()
-                else
-                    exit 1
-#endif
 
         ),Name="StdinReaderThread")
 
@@ -3242,7 +3233,7 @@ type FsiCompilationException(message: string, errorInfos: FSharpDiagnostic[] opt
 /// text input, writing to the given text output and error writers.
 type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter, fsiCollectible: bool, legacyReferenceResolver: LegacyReferenceResolver option) =
 
-    do if not runningOnMono then UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
+    do UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
 
     // Explanation: When FsiEvaluationSession.Create is called we do a bunch of processing. For fsi.exe
     // and fsiAnyCpu.exe there are no other active threads at this point, so we can assume this is the
@@ -3253,14 +3244,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let ctokStartup = AssumeCompilationThreadWithoutEvidence ()
 
     let timeReporter = FsiTimeReporter(outWriter)
-
-    //----------------------------------------------------------------------------
-    // Console coloring
-    //----------------------------------------------------------------------------
-
-    // Testing shows "console coloring" is broken on some Mono configurations (e.g. Mono 2.4 Suse LiveCD).
-    // To support fsi usage, the console coloring is switched off by default on Mono.
-    do if runningOnMono then enableConsoleColoring <- false
 
     //----------------------------------------------------------------------------
     // tcConfig - build the initial config
@@ -3662,7 +3645,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         // We later switch to doing interaction-by-interaction processing on the "event loop" thread
         let ctokRun = AssumeCompilationThreadWithoutEvidence ()
 
-        if not runningOnMono && fsiOptions.IsInteractiveServer then
+        if fsiOptions.IsInteractiveServer then
             SpawnInteractiveServer (fsi, fsiOptions, fsiConsoleOutput)
 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Interactive
