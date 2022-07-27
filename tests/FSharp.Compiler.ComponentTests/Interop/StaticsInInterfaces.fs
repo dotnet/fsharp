@@ -570,6 +570,7 @@ module Test =
         }
         """
         |> withReferences [FSharpLib]
+        |> withCSharpLanguageVersion CSharpLanguageVersion.Preview
         |> withName "CsProgram"
         |> compileExeAndRun
         |> shouldSucceed
