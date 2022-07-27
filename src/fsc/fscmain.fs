@@ -13,16 +13,38 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CompilerConfig
+open FSharp.Compiler.Diagnostics.Activity
 open FSharp.Compiler.Driver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Text
+open System.Diagnostics
+open OpenTelemetry
+open OpenTelemetry.Resources
+open OpenTelemetry.Trace
 
 [<Dependency("FSharp.Compiler.Service", LoadHint.Always)>]
 do ()
 
 [<EntryPoint>]
-let main (argv) =
+let main(argv) =
+
+    // eventually this would need to only export to the OLTP collector, and even then only if configured. always-on is no good.
+    // when this configuration becomes opt-in, we'll also need to safely check activities around every StartActivity call, because those could
+    // be null
+    use tracerProvider =
+        Sdk.CreateTracerProviderBuilder()
+           .AddSource(activitySourceName)
+           .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName ="fsc", serviceVersion = "42.42.42.42"))
+           .AddOtlpExporter()
+           .AddZipkinExporter()
+           .Build();
+    use mainActivity = activitySource.StartActivity("main")
+
+    let forceCleanup() =
+        mainActivity.Dispose()
+        activitySource.Dispose()
+        tracerProvider.Dispose()
 
     let compilerName =
         // the 64 bit desktop version of the compiler is name fscAnyCpu.exe, all others are fsc.exe
@@ -67,6 +89,7 @@ let main (argv) =
             let stats = ILBinaryReader.GetStatistics()
 
             AppDomain.CurrentDomain.ProcessExit.Add(fun _ ->
+                forceCleanup()
                 printfn
                     "STATS: #ByteArrayFile = %d, #MemoryMappedFileOpen = %d, #MemoryMappedFileClosed = %d, #RawMemoryFile = %d, #WeakByteArrayFile = %d"
                     stats.byteFileCount
@@ -81,6 +104,7 @@ let main (argv) =
         let quitProcessExiter =
             { new Exiter with
                 member _.Exit(n) =
+                    forceCleanup()
                     try
                         exit n
                     with _ ->

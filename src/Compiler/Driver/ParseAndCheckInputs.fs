@@ -4,6 +4,7 @@
 module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System
+open System.Diagnostics
 open System.IO
 open System.Collections.Generic
 
@@ -21,6 +22,7 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.Diagnostics.Activity
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IO
@@ -1290,7 +1292,9 @@ let CheckOneInput
     }
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
-let TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt) tcState inp =
+let TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt) tcState (inp: ParsedInput) =
+    use tcOneInputActivity = activitySource.StartActivity("CheckOneInput")
+    tcOneInputActivity.AddTag("inputName", inp.FileName) |> ignore<_>
     // 'use' ensures that the warning handler is restored at the end
     use unwindEL =
         PushDiagnosticsLoggerPhaseUntilUnwind(fun oldLogger ->
@@ -1339,6 +1343,7 @@ let CheckClosedInputSetFinish (declaredImpls: CheckedImplFile list, tcState) =
     tcState, declaredImpls, ccuContents
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
+    use tcActivity = activitySource.StartActivity("CheckClosedInputSet")
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
         (tcState, inputs)

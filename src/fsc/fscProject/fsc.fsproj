@@ -4,7 +4,7 @@
 
   <PropertyGroup >
     <TargetFrameworks Condition="'$(ProtoTargetFramework)' != ''">$(ProtoTargetFramework)</TargetFrameworks>
-    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net472;net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(ProtoTargetFramework)' == ''">net6.0;net472;</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
     <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
   </PropertyGroup>

@@ -3,6 +3,11 @@
 namespace FSharp.Compiler.Diagnostics
 
 open System
+open System.Diagnostics
+
+module Activity = 
+    val activitySourceName: string
+    val activitySource: ActivitySource
 
 type internal LogCompilerFunctionId =
     | Service_ParseAndCheckFileInProject = 1
