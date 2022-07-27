@@ -514,7 +514,7 @@ module Test =
     IL_0021:  beq.s      IL_002e
 
     IL_0023:  ldstr      "incorrect value"
-    IL_0028:  call       class [runtime]System.Exception [FSharp.Core]Microsoft.FSharp.Core.Operators::Failure(string)
+    IL_0028:  newobj     instance void [netstandard]System.Exception::.ctor(string)
     IL_002d:  throw
 
     IL_002e:  ldc.i4.0
