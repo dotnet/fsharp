@@ -813,7 +813,7 @@ module PrintTypes =
                     | None -> argTys, retTy
                 | _ ->
                     argTys, retTy
-                
+
             let stat = layoutMemberFlags memFlags
             let tys = ListSet.setify (typeEquiv g) tys
             let tysL = 
@@ -1026,10 +1026,10 @@ module PrintTypes =
             else
                 bracketL coreL --- nmL
 
-    let layoutTrait denv traitInfo = 
+    let layoutTrait denv traitInfo =
         layoutTraitWithInfo denv SimplifyTypes.typeSimplificationInfo0 traitInfo
 
-    let layoutTyparConstraint denv (tp, tpc) = 
+    let layoutTyparConstraint denv (tp, tpc) =
         match layoutConstraintWithInfo denv SimplifyTypes.typeSimplificationInfo0 (tp, tpc) with 
         | h :: _ -> h 
         | [] -> emptyL
@@ -1148,7 +1148,7 @@ module PrintTypes =
         let cxsL = layoutConstraintsWithInfo denv env env.postfixConstraints
         layoutTypeWithInfoAndPrec denv env 2 ty --- cxsL
 
-    let prettyLayoutOfTrait denv traitInfo = 
+    let prettyLayoutOfTrait denv traitInfo =
         let compgenId = SyntaxTreeOps.mkSynId Range.range0 unassignedTyparName
         let fakeTypar = Construct.NewTypar (TyparKind.Type, TyparRigidity.Flexible, SynTypar(compgenId, TyparStaticReq.None, true), false, TyparDynamicReq.No, [], false, false)
         fakeTypar.SetConstraints [TyparConstraint.MayResolveMember(traitInfo, Range.range0)]
@@ -1161,7 +1161,7 @@ module PrintTypes =
              sepListL emptyL (layoutConstraintWithInfo denv env cx)
         | [] -> emptyL
 
-    let prettyLayoutOfTypeNoConstraints denv ty = 
+    let prettyLayoutOfTypeNoConstraints denv ty =
         let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
         layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 ty
 
@@ -1381,9 +1381,9 @@ module PrintTastMemberOrVals =
     let prettyLayoutOfValOrMemberNoInst denv infoReader v =
         prettyLayoutOfValOrMember denv infoReader emptyTyparInst v |> snd
 
-let layoutTrait denv x = x |> PrintTypes.layoutTrait denv 
+let layoutTrait denv x = x |> PrintTypes.layoutTrait denv
 
-let layoutTyparConstraint denv x = x |> PrintTypes.layoutTyparConstraint denv 
+let layoutTyparConstraint denv x = x |> PrintTypes.layoutTyparConstraint denv
 
 let outputType denv os x = x |> PrintTypes.layoutType denv |> bufferL os
 
@@ -2650,4 +2650,3 @@ let minimalStringOfType denv ty =
     let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
     let denvMin = { denv with showInferenceTyparAnnotations=false; showStaticallyResolvedTyparAnnotations=false }
     showL (PrintTypes.layoutTypeWithInfoAndPrec denvMin SimplifyTypes.typeSimplificationInfo0 2 ty)
-

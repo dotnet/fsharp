@@ -31,32 +31,7 @@ type CreateFSharpManifestResourceName public () =
         let fileName, linkFileName, rootNamespace =
             match this.UseStandardResourceNames with
             | true -> fileName, linkFileName, rootNamespace
-            | false ->
-                let runningOnMono =
-                    try
-                        System.Type.GetType("Mono.Runtime") <> null
-                    with e ->
-                        false
-
-                let fileName =
-                    if
-                        not runningOnMono
-                        || fileName.EndsWith(".resources", StringComparison.OrdinalIgnoreCase)
-                    then
-                        fileName
-                    else
-                        Path.GetFileName(fileName)
-
-                let linkFileName =
-                    if
-                        not runningOnMono
-                        || linkFileName.EndsWith(".resources", StringComparison.OrdinalIgnoreCase)
-                    then
-                        linkFileName
-                    else
-                        Path.GetFileName(linkFileName)
-
-                fileName, linkFileName, ""
+            | false -> fileName, linkFileName, ""
 
         let embeddedFileName =
             match linkFileName with

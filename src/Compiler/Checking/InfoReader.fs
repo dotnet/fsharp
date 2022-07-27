@@ -1145,7 +1145,13 @@ let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
             let normalizedName = ilminfo.ILName.Replace(".", "#")
 
             Some (ccuFileName, "M:"+actualTypeName+"."+normalizedName+genArity+XmlDocArgsEnc g (formalTypars, fmtps) args)
-    | DefaultStructCtor _ -> None
+
+    | DefaultStructCtor(g, ty) ->
+        match tryTcrefOfAppTy g ty with
+        | ValueSome tcref ->
+            Some(None, $"M:{tcref.CompiledRepresentationForNamedType.FullName}.#ctor")
+        | _ -> None
+
 #if !NO_TYPEPROVIDERS
     | ProvidedMeth _ -> None
 #endif

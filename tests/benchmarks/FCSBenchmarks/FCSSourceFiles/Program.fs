@@ -929,6 +929,6 @@ type CompilerService() =
             )
 
 [<EntryPoint>]
-let main _ =
-    BenchmarkRunner.Run<CompilerService>() |> ignore
+let main args =
+    BenchmarkSwitcher.FromAssembly(typeof<CompilerService>.Assembly).Run(args) |> ignore
     0

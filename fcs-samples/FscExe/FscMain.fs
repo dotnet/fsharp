@@ -8,7 +8,6 @@ open System.IO
 open System.Reflection
 open System.Runtime.CompilerServices
 open FSharp.Compiler.SourceCodeServices
-open FSharp.Compiler.AbstractIL.Utils // runningOnMono
 open FSharp.Compiler.AbstractIL.Library
 open FSharp.Compiler.ErrorLogger
 
@@ -51,17 +50,9 @@ module FSharpResidentCompiler =
         static let userName = Environment.GetEnvironmentVariable (if onWindows then "USERNAME" else "USER") 
         // Use different base channel names on mono and CLR as a CLR remoting process can't talk
         // to a mono server
-        static let baseChannelName = 
-            if runningOnMono then 
-                "FSCChannelMono" 
-            else 
-                "FSCChannel"
+        static let baseChannelName = "FSCChannel"
         static let channelName = baseChannelName + "_" +  domainName + "_" + userName
-        static let serverName = 
-            if runningOnMono then 
-                "FSCServerMono" 
-            else
-                "FSCSever"
+        static let serverName = "FSCSever"
         static let mutable serverExists = true
         
         let outputCollector = new OutputCollector()
@@ -119,30 +110,8 @@ module FSharpResidentCompiler =
             ChannelServices.RegisterChannel(chan,false);
             RemotingServices.Marshal(server,serverName)  |> ignore
 
-            // On Unix, the file permissions of the implicit socket need to be set correctly to make this
-            // private to the user.
-            if runningOnMono then 
-              try 
-                  let monoPosix = System.Reflection.Assembly.Load(new System.Reflection.AssemblyName("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756"))
-                  let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo") 
-                  let socketName = Path.Combine(FileSystem.GetTempPathShim(), channelName)
-                  let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box socketName |],System.Globalization.CultureInfo.InvariantCulture)
-                  // Add 0x00000180 (UserReadWriteExecute) to the access permissions on Unix
-                  monoUnixFileInfo.InvokeMember("set_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| box 0x00000180 |],System.Globalization.CultureInfo.InvariantCulture) |> ignore
-#if DEBUG
-                  if !progress then printfn "server: good, set permissions on socket name '%s'"  socketName
-                  let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box socketName |],System.Globalization.CultureInfo.InvariantCulture)
-                  let currPermissions = monoUnixFileInfo.InvokeMember("get_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| |],System.Globalization.CultureInfo.InvariantCulture) |> unbox<int>
-                  if !progress then printfn "server: currPermissions = '%o' (octal)"  currPermissions
-#endif
-              with e -> 
-#if DEBUG
-                  printfn "server: failed to set permissions on socket, perhaps on windows? Is is not needed there."  
-#endif
-                  ()
-                  // Fail silently
             server.Run()
-            
+
         static member private ConnectToServer() =
             Activator.GetObject(typeof<FSharpCompilationServer>,"ipc://" + channelName + "/" + serverName) 
             :?> FSharpCompilationServer 
@@ -164,27 +133,11 @@ module FSharpResidentCompiler =
                     Some client
                 with _ ->
                     if !progress then printfn "client: error while creating client, starting client instead"
-                    let procInfo = 
-                        if runningOnMono then
-                            let shellName, useShellExecute = 
-                                match System.Environment.GetEnvironmentVariable("FSC_MONO") with 
-                                | null -> 
-                                    if onWindows then 
-                                        // e.g. "C:\Program Files\Mono-2.6.1\lib\mono\2.0\mscorlib.dll" --> "C:\Program Files\Mono-2.6.1\bin\mono.exe"
-                                        Path.Combine(Path.GetDirectoryName (typeof<Object>.Assembly.Location), @"..\..\..\bin\mono.exe"), false
-                                    else
-                                        "mono-sgen", true
-                                | path -> path, true
-                                     
-                            ProcessStartInfo(FileName = shellName,
-                                             Arguments = fscServerExe + " /server",
-                                             CreateNoWindow = true,
-                                             UseShellExecute = useShellExecute)
-                         else
-                            ProcessStartInfo(FileName=fscServerExe,
-                                             Arguments = "/server",
-                                             CreateNoWindow = true,
-                                             UseShellExecute = false)
+                    let procInfo =
+                        ProcessStartInfo(FileName=fscServerExe,
+                                         Arguments = "/server",
+                                         CreateNoWindow = true,
+                                         UseShellExecute = false)
                     let cmdProcess = new Process(StartInfo=procInfo)
 
                     //let exitE = cmdProcess.Exited |> Observable.map (fun x -> x)
@@ -261,7 +214,7 @@ module Driver =
             System.Console.ReadKey() |> ignore
       
 #if RESIDENT_COMPILER
-        if runningOnMono && hasArgument "resident" argv then 
+        if hasArgument "resident" argv then 
             let argv = stripArgument "resident" argv
 
             let fscServerExe = typeof<TypeInThisAssembly>.Assembly.Location
@@ -272,10 +225,6 @@ module Driver =
                 let errors, exitCode = FSharpChecker.Create().Compile (argv)  |> Async.RunSynchronously
                 for error in errors do eprintfn "%s" (error.ToString())
                 exitCode
-
-        elif runningOnMono && hasArgument "server" argv then 
-            FSharpResidentCompiler.FSharpCompilationServer.RunServer()        
-            0
 #endif        
         else
             let errors, exitCode = FSharpChecker.Create().Compile (argv) |> Async.RunSynchronously
@@ -289,12 +238,6 @@ do ()
 let main(argv) =
     System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-
-//#if NO_HEAPTERMINATION
-//#else
-//    if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
-//    Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
-//#endif
 
     try 
         Driver.main(Array.append [| "fsc.exe" |] argv); 

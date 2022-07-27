@@ -1389,11 +1389,10 @@ type SynTypeDefnSig =
     /// The information for a type definition in a signature
     | SynTypeDefnSig of
         typeInfo: SynComponentInfo *
-        equalsRange: range option *
         typeRepr: SynTypeDefnSigRepr *
-        withKeyword: range option *
         members: SynMemberSig list *
-        range: range
+        range: range *
+        trivia: SynTypeDefnSigTrivia
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -1662,7 +1661,7 @@ type SynModuleDecl =
 type SynOpenDeclTarget =
 
     /// A 'open' declaration
-    | ModuleOrNamespace of longId: LongIdent * range: range
+    | ModuleOrNamespace of longId: SynLongIdent * range: range
 
     /// A 'open type' declaration
     | Type of typeName: SynType * range: range

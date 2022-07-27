@@ -467,6 +467,11 @@
         <target state="translated">Zobrazte si povolené hodnoty verze jazyka a pak zadejte požadovanou verzi, například latest nebo preview.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsPdbMatchesOutputFileName">
+        <source>The pdb output file name cannot match the build output filename use --pdb:filename.pdb</source>
+        <target state="new">The pdb output file name cannot match the build output filename use --pdb:filename.pdb</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
         <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
@@ -5132,16 +5137,6 @@
         <target state="translated">Informační soubor zdrojového odkazu, který se má vložit do souboru PDB typu Portable</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsEmbeddedSourceRequirePortablePDBs">
-        <source>--embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Přepínač --embed se podporuje jenom při generování souboru PDB typu Portable (--debug:portable nebo --debug:embedded).</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsSourceLinkRequirePortablePDBs">
-        <source>--sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Přepínač --sourcelink se podporuje jenom při generování souboru PDB typu Portable (--debug:portable nebo --debug:embedded).</target>
-        <note />
-      </trans-unit>
       <trans-unit id="srcFileTooLarge">
         <source>Source file is too large to embed in a portable PDB</source>
         <target state="translated">Zdrojový soubor je příliš velký pro vložený do souboru PDB typu Portable.</target>
@@ -6197,21 +6192,6 @@
         <target state="translated">Členové rozšíření nemůžou poskytovat přetížení operátorů. Zvažte možnost definovat místo toho operátor v definici typu.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
-        <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">Název souboru MDB musí být &lt;název-souboru-sestavení&gt;.mdb. Parametr --pdb se bude ignorovat.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteMDBMemberMissing">
-        <source>MDB generation failed. Could not find compatible member {0}</source>
-        <target state="translated">Generování souboru MDB selhalo. Nenašel se kompatibilní člen {0}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteErrorCreatingMdb">
-        <source>Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</source>
-        <target state="translated">Nedají se vygenerovat ladicí informace MDB. Načtení typu MonoSymbolWriter ze sestavení Mono.CompilerServices.SymbolWriter.dll selhalo.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnionCaseNameConflictsWithGeneratedType">
         <source>The union case named '{0}' conflicts with the generated type '{1}'</source>
         <target state="translated">Případ typu union s názvem {0} koliduje s generovaným typem {1}.</target>
@@ -6485,11 +6465,6 @@
       <trans-unit id="fscAssemblyWildcardAndDeterminism">
         <source>An {0} specified version '{1}', but this value is a wildcard, and you have requested a deterministic build, these are in conflict.</source>
         <target state="translated">Zadaná verze {0} je {1}, ale tato hodnota představuje zástupný znak a vy jste požádali o deterministické sestavení, což je v konfliktu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
-        <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Deterministické buildy podporují jenom přenositelné soubory PDB (--debug:portable nebo --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -8115,11 +8090,6 @@
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
         <target state="translated">Mapuje fyzické cesty na názvy zdrojových cest z výstupu kompilátoru.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fscPathMapDebugRequiresPortablePdb">
-        <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Parametr --pathmap se může používat jenom s přenositelnými soubory PDB (--debug:portable nebo --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">

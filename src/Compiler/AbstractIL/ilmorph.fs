@@ -266,12 +266,31 @@ let morphILTypeDefs f (tdefs: ILTypeDefs) =
 
 let morphILLocals f locals = List.map (morphILLocal f) locals
 
+let morphILDebugImport fs debugImport =
+    let _, f = fs
+
+    match debugImport with
+    | ILDebugImport.ImportType ty -> ILDebugImport.ImportType(f ty)
+    | ILDebugImport.ImportNamespace _ns -> debugImport
+
+let morphILDebugImports fs ilDebugImports =
+    ilDebugImports |> Array.map (morphILDebugImport fs)
+
 let ilmbody_instr2instr_ty2ty fs (ilmbody: ILMethodBody) =
-    let finstr, fTyInCtxt = fs
+    let _, fTyInCtxt = fs
 
     { ilmbody with
-        Code = code_instr2instr_ty2ty (finstr, fTyInCtxt) ilmbody.Code
+        Code = code_instr2instr_ty2ty fs ilmbody.Code
         Locals = morphILLocals fTyInCtxt ilmbody.Locals
+        DebugImports =
+            match ilmbody.DebugImports with
+            | None -> None
+            | Some imports ->
+                Some(
+                    { imports with
+                        Imports = morphILDebugImports fs imports.Imports
+                    }
+                )
     }
 
 let morphILMethodBody fMethBody (x: MethodBody) =

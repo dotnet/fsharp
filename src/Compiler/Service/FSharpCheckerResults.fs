@@ -2072,6 +2072,7 @@ type internal TypeCheckInfo
 type FSharpParsingOptions =
     {
         SourceFiles: string[]
+        ApplyLineDirectives: bool
         ConditionalDefines: string list
         DiagnosticOptions: FSharpDiagnosticOptions
         LangVersionText: string
@@ -2088,6 +2089,7 @@ type FSharpParsingOptions =
     static member Default =
         {
             SourceFiles = Array.empty
+            ApplyLineDirectives = false
             ConditionalDefines = []
             DiagnosticOptions = FSharpDiagnosticOptions.Default
             LangVersionText = LanguageVersion.Default.VersionText
@@ -2100,6 +2102,7 @@ type FSharpParsingOptions =
     static member FromTcConfig(tcConfig: TcConfig, sourceFiles, isInteractive: bool) =
         {
             SourceFiles = sourceFiles
+            ApplyLineDirectives = tcConfig.applyLineDirectives
             ConditionalDefines = tcConfig.conditionalDefines
             DiagnosticOptions = tcConfig.diagnosticsOptions
             LangVersionText = tcConfig.langVersion.VersionText
@@ -2112,6 +2115,7 @@ type FSharpParsingOptions =
     static member FromTcConfigBuilder(tcConfigB: TcConfigBuilder, sourceFiles, isInteractive: bool) =
         {
             SourceFiles = sourceFiles
+            ApplyLineDirectives = tcConfigB.applyLineDirectives
             ConditionalDefines = tcConfigB.conditionalDefines
             DiagnosticOptions = tcConfigB.diagnosticsOptions
             LangVersionText = tcConfigB.langVersion.VersionText
@@ -2220,12 +2224,15 @@ module internal ParseAndCheckFile =
         // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
         // TODO(pathmap): expose PathMap on the service API, and thread it through here
         let lexargs =
-            mkLexargs (conditionalDefines, indentationSyntaxStatus, lexResourceManager, [], errHandler.DiagnosticsLogger, PathMap.empty)
-
-        let lexargs =
-            { lexargs with
-                applyLineDirectives = false
-            }
+            mkLexargs (
+                conditionalDefines,
+                indentationSyntaxStatus,
+                lexResourceManager,
+                [],
+                errHandler.DiagnosticsLogger,
+                PathMap.empty,
+                options.ApplyLineDirectives
+            )
 
         let tokenizer =
             LexFilter.LexFilter(indentationSyntaxStatus, options.CompilingFSharpCore, Lexer.token lexargs true, lexbuf)

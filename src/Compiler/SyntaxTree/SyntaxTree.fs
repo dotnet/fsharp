@@ -1224,11 +1224,10 @@ type SynTypeDefnSig =
 
     | SynTypeDefnSig of
         typeInfo: SynComponentInfo *
-        equalsRange: range option *
         typeRepr: SynTypeDefnSigRepr *
-        withKeyword: range option *
         members: SynMemberSig list *
-        range: range
+        range: range *
+        trivia: SynTypeDefnSigTrivia
 
     member this.Range =
         match this with
@@ -1479,7 +1478,7 @@ type SynModuleDecl =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynOpenDeclTarget =
 
-    | ModuleOrNamespace of longId: LongIdent * range: range
+    | ModuleOrNamespace of longId: SynLongIdent * range: range
 
     | Type of typeName: SynType * range: range
 

@@ -392,12 +392,7 @@ module MainModuleBuilder =
                     yield! codegenResults.ilAssemAttrs
 
                     if Option.isSome pdbfile then
-                        tcGlobals.mkDebuggableAttributeV2 (
-                            tcConfig.jitTracking,
-                            tcConfig.ignoreSymbolStoreSequencePoints,
-                            disableJitOptimizations,
-                            false (* enableEnC *)
-                        )
+                        tcGlobals.mkDebuggableAttributeV2 (tcConfig.jitTracking, disableJitOptimizations, false (* enableEnC *) )
                     yield! reflectedDefinitionAttrs
                 ]
 
@@ -419,7 +414,6 @@ module MainModuleBuilder =
                         CustomAttrsStored = storeILCustomAttrs manifestAttrs
                         DisableJitOptimizations = disableJitOptimizations
                         JitTracking = tcConfig.jitTracking
-                        IgnoreSymbolStoreSequencePoints = tcConfig.ignoreSymbolStoreSequencePoints
                         SecurityDeclsStored = storeILSecurityDecls secDecls
                     }
 
@@ -586,7 +580,6 @@ module MainModuleBuilder =
                 not (tcConfig.target.IsExe)
                 || not (tcConfig.includewin32manifest)
                 || not (tcConfig.win32res = "")
-                || runningOnMono
             then
                 ""
             // otherwise, include the default manifest
@@ -610,7 +603,7 @@ module MainModuleBuilder =
                     ILNativeResource.Out av
                 if not (tcConfig.win32res = "") then
                     ILNativeResource.Out(FileSystem.OpenFileForReadShim(tcConfig.win32res).ReadAllBytes())
-                if tcConfig.includewin32manifest && not (win32Manifest = "") && not runningOnMono then
+                if tcConfig.includewin32manifest && not (win32Manifest = "") then
                     ILNativeResource.Out
                         [|
                             yield! ResFileFormat.ResFileHeader()
