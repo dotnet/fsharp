@@ -24,7 +24,7 @@ usage()
   echo ""
   echo "Test actions:"
   echo "  --testcoreclr              Run unit tests on .NET Core (short: --test, -t)"
-  echo "  --test_component_tests     Run FSharp.Compiler.ComponentTests on .NET Core"
+  echo "  --testcomponenttests      Run FSharp.Compiler.ComponentTests on .NET Core"
   echo ""
   echo "Advanced settings:"
   echo "  --ci                       Building in CI"
