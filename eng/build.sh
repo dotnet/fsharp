@@ -8,31 +8,31 @@ set -u
 usage()
 {
   echo "Common settings:"
-  echo "  --configuration <value>    Build configuration: 'Debug' or 'Release' (short: -c)"
-  echo "  --verbosity <value>        Msbuild verbosity: q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic] (short: -v)"
-  echo "  --binaryLog                Create MSBuild binary log (short: -bl)"
+  echo "  --configuration <value>        Build configuration: 'Debug' or 'Release' (short: -c)"
+  echo "  --verbosity <value>            Msbuild verbosity: q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic] (short: -v)"
+  echo "  --binaryLog                    Create MSBuild binary log (short: -bl)"
   echo ""
   echo "Actions:"
-  echo "  --bootstrap                Force the build of the bootstrap compiler"
-  echo "  --restore                  Restore projects required to build (short: -r)"
-  echo "  --norestore                Don't restore projects required to build"
-  echo "  --build                    Build all projects (short: -b)"
-  echo "  --rebuild                  Rebuild all projects"
-  echo "  --pack                     Build nuget packages"
-  echo "  --publish                  Publish build artifacts"
-  echo "  --help                     Print help and exit"
+  echo "  --bootstrap                    Force the build of the bootstrap compiler"
+  echo "  --restore                      Restore projects required to build (short: -r)"
+  echo "  --norestore                    Don't restore projects required to build"
+  echo "  --build                        Build all projects (short: -b)"
+  echo "  --rebuild                      Rebuild all projects"
+  echo "  --pack                         Build nuget packages"
+  echo "  --publish                      Publish build artifacts"
+  echo "  --help                         Print help and exit"
   echo ""
   echo "Test actions:"
-  echo "  --testcoreclr              Run unit tests on .NET Core (short: --test, -t)"
-  echo "  --testcomponenttests      Run FSharp.Compiler.ComponentTests on .NET Core"
+  echo "  --testcoreclr                  Run unit tests on .NET Core (short: --test, -t)"
+  echo "  --testCompilerComponentTests   Run FSharp.Compiler.ComponentTests on .NET Core"
   echo ""
   echo "Advanced settings:"
-  echo "  --ci                       Building in CI"
-  echo "  --docker                   Run in a docker container if applicable"
-  echo "  --skipAnalyzers            Do not run analyzers during build operations"
-  echo "  --skipBuild                Do not run the build"
-  echo "  --prepareMachine           Prepare machine for CI run, clean up processes after build"
-  echo "  --sourceBuild              Simulate building for source-build"
+  echo "  --ci                           Building in CI"
+  echo "  --docker                       Run in a docker container if applicable"
+  echo "  --skipAnalyzers                Do not run analyzers during build operations"
+  echo "  --skipBuild                    Do not run the build"
+  echo "  --prepareMachine               Prepare machine for CI run, clean up processes after build"
+  echo "  --sourceBuild                  Simulate building for source-build"
   echo ""
   echo "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -55,7 +55,7 @@ rebuild=false
 pack=false
 publish=false
 test_core_clr=false
-test_component_tests=false
+test_compilercomponent_tests=false
 configuration="Debug"
 verbosity='minimal'
 binary_log=false
@@ -123,8 +123,8 @@ while [[ $# > 0 ]]; do
     --testcoreclr|--test|-t)
       test_core_clr=true
       ;;
-    --testcomponenttests)
-      test_component_tests=true
+    --testcompilercomponenttests)
+      test_compilercomponent_tests=true
       ;;
     --ci)
       ci=true
@@ -321,7 +321,7 @@ if [[ "$test_core_clr" == true ]]; then
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
 fi
 
-if [[ "$test_component_tests" == true ]]; then
+if [[ "$test_compilercomponent_tests" == true ]]; then
   coreclrtestframework=net6.0
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
 fi
