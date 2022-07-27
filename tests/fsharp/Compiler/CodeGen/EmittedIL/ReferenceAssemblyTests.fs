@@ -690,7 +690,7 @@ type MType() =
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
-      
+
       .maxstack  8
       IL_0000:  ldnull
       IL_0001:  throw
@@ -701,7 +701,7 @@ type MType() =
     {
       .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
-      
+
       .maxstack  8
       IL_0000:  ldnull
       IL_0001:  throw
@@ -744,5 +744,143 @@ type MType() =
     } 
 
   } """
+        ]
+
+    [<Test>]
+    let ``Internal constructor is emitted for attribute`` () =
+        FSharp """
+module ReferenceAssembly
+
+open System
+[<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
+[<Sealed>]
+type CustomAttribute(smth: bool) =
+    inherit Attribute()
+    internal new () = CustomAttribute(false)
+    member _.Something = smth
+
+type Person(name : string, age : int) =
+    [<Custom(true)>]
+    member val Name = name with get, set
+    [<Custom>]
+    member val Age = age with get, set
+    """
+        |> withOptions ["--refonly"]
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """.class auto ansi serializable sealed nested public CustomAttribute
+            extends [runtime]System.Attribute
+  {
+    .custom instance void [runtime]System.AttributeUsageAttribute::.ctor(valuetype [runtime]System.AttributeTargets) = ( 01 00 C0 00 00 00 01 00 54 02 0D 41 6C 6C 6F 77
+                                                                                                                                          4D 75 6C 74 69 70 6C 65 00 )
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.SealedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
+    .field assembly bool smth
+    .method public specialname rtspecialname
+               instance void  .ctor(bool smth) cil managed
+    {
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }
+
+    .method assembly specialname rtspecialname
+               instance void  .ctor() cil managed
+    {
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }
+
+    .method public hidebysig specialname
+               instance bool  get_Something() cil managed
+    {
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }
+
+  }
+
+  .class auto ansi serializable nested public Person
+            extends [runtime]System.Object
+  {
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 )
+    .method public specialname rtspecialname
+               instance void  .ctor(string name,
+                                    int32 age) cil managed
+    {
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }
+
+    .method public hidebysig specialname
+               instance string  get_Name() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }
+
+    .method public hidebysig specialname
+               instance void  set_Name(string v) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }
+
+    .method public hidebysig specialname
+               instance int32  get_Age() cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }
+
+    .method public hidebysig specialname
+               instance void  set_Age(int32 v) cil managed
+    {
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
+
+      .maxstack  8
+      IL_0000:  ldnull
+      IL_0001:  throw
+    }
+
+    .property instance bool Something()
+    {
+      .get instance bool ReferenceAssembly/CustomAttribute::get_Something()
+    }
+    .property instance string Name()
+    {
+      .custom instance void ReferenceAssembly/CustomAttribute::.ctor(bool) = ( 01 00 01 00 00 )
+      .set instance void ReferenceAssembly/Person::set_Name(string)
+      .get instance string ReferenceAssembly/Person::get_Name()
+    }
+    .property instance int32 Age()
+    {
+      .custom instance void ReferenceAssembly/CustomAttribute::.ctor() = ( 01 00 00 00 )
+      .set instance void ReferenceAssembly/Person::set_Age(int32)
+      .get instance int32 ReferenceAssembly/Person::get_Age()
+    }
+  }"""
         ]
     // TODO: Add tests for internal functions, types, interfaces, abstract types (with and without IVTs), (private, internal, public) fields, properties (+ different visibility for getters and setters), events.
