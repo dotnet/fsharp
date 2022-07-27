@@ -24,6 +24,7 @@ usage()
   echo ""
   echo "Test actions:"
   echo "  --testcoreclr              Run unit tests on .NET Core (short: --test, -t)"
+  echo "  --test_component_tests     Run FSharp.Compiler.ComponentTests on .NET Core"
   echo ""
   echo "Advanced settings:"
   echo "  --ci                       Building in CI"
@@ -54,7 +55,7 @@ rebuild=false
 pack=false
 publish=false
 test_core_clr=false
-
+test_component_tests=false
 configuration="Debug"
 verbosity='minimal'
 binary_log=false
@@ -121,6 +122,9 @@ while [[ $# > 0 ]]; do
       ;;
     --testcoreclr|--test|-t)
       test_core_clr=true
+      ;;
+    --testcomponenttests)
+      test_component_tests=true
       ;;
     --ci)
       ci=true
@@ -315,6 +319,11 @@ if [[ "$test_core_clr" == true ]]; then
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
+fi
+
+if [[ "$test_component_tests" == true ]]; then
+  coreclrtestframework=net6.0
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
 fi
 
 ExitWithExitCode 0
