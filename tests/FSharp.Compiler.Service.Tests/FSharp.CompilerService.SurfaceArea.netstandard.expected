@@ -7495,10 +7495,12 @@ FSharp.Compiler.Syntax.SynMemberDefn: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynMemberDefn: System.String ToString()
 FSharp.Compiler.Syntax.SynMemberFlags
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean Equals(System.Object)
+FSharp.Compiler.Syntax.SynMemberFlags: Boolean GetterOrSetterIsCompilerGenerated
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean IsDispatchSlot
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean IsFinal
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean IsInstance
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean IsOverrideOrExplicitImpl
+FSharp.Compiler.Syntax.SynMemberFlags: Boolean get_GetterOrSetterIsCompilerGenerated()
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean get_IsDispatchSlot()
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean get_IsFinal()
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean get_IsInstance()
@@ -7509,7 +7511,7 @@ FSharp.Compiler.Syntax.SynMemberFlags: FSharp.Compiler.SyntaxTrivia.SynMemberFla
 FSharp.Compiler.Syntax.SynMemberFlags: FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia get_Trivia()
 FSharp.Compiler.Syntax.SynMemberFlags: Int32 GetHashCode()
 FSharp.Compiler.Syntax.SynMemberFlags: System.String ToString()
-FSharp.Compiler.Syntax.SynMemberFlags: Void .ctor(Boolean, Boolean, Boolean, Boolean, FSharp.Compiler.Syntax.SynMemberKind, FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia)
+FSharp.Compiler.Syntax.SynMemberFlags: Void .ctor(Boolean, Boolean, Boolean, Boolean, Boolean, FSharp.Compiler.Syntax.SynMemberKind, FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia)
 FSharp.Compiler.Syntax.SynMemberKind
 FSharp.Compiler.Syntax.SynMemberKind+Tags: Int32 ClassConstructor
 FSharp.Compiler.Syntax.SynMemberKind+Tags: Int32 Constructor
