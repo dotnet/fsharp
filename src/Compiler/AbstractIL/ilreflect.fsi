@@ -9,7 +9,7 @@ open System.Reflection.Emit
 open FSharp.Compiler.AbstractIL.IL
 
 val mkDynamicAssemblyAndModule:
-    assemblyName: string * optimize: bool * debugInfo: bool * collectible: bool -> AssemblyBuilder * ModuleBuilder
+    assemblyName: string * optimize: bool * collectible: bool -> AssemblyBuilder * ModuleBuilder
 
 type cenv =
     { ilg: ILGlobals
