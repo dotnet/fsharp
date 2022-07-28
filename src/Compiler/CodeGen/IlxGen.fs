@@ -4957,32 +4957,15 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, st
     if isFSharpStyle then
         GenExpr cenv cgbuf eenvinner e2 Continue
         EmitSetLocal cgbuf finishIdx
-        EmitGetLocal cgbuf g.ilg.typ_Int32 finishIdx
-        GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
+
+        if stepByOne then
+            EmitGetLocal cgbuf g.ilg.typ_Int32 finishIdx
+            GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
 
     match dir with
     | FSharpForLoopUp -> CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_blt, finish.CodeLabel))
     | FSharpForLoopDown -> CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bgt, finish.CodeLabel))
-    | FSharpForLoopWithStep ->
-        match stepConst with
-        | Some stepC -> CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp((if stepC > 0 then BI_blt else BI_bgt), finish.CodeLabel))
-        | None ->
-            let testPassed = CG.GenerateDelayMark cgbuf "testPassed"
-            CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_blt, testPassed.CodeLabel))
-
-            EmitGetLocal cgbuf g.ilg.typ_Int32 stepIdx
-            CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int32 ]) (mkLdcInt32 0)
-            CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bgt, inner.CodeLabel))
-
-            CG.SetMarkToHere cgbuf testPassed
-            EmitGetLocal cgbuf g.ilg.typ_Int32 finishIdx
-            GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
-            CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bgt, finish.CodeLabel))
-
-            EmitGetLocal cgbuf g.ilg.typ_Int32 stepIdx
-            CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int32 ]) (mkLdcInt32 0)
-            CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bge, finish.CodeLabel))
-
+    | FSharpForLoopWithStep
     | CSharpForLoopUp -> CG.EmitInstr cgbuf (pop 0) Push0 (I_br test.CodeLabel)
 
     cgbuf.EmitStartOfHiddenCode()

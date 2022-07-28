@@ -1366,12 +1366,12 @@ module Patterns =
         checkTypesSR (typeof<int>) (v.Type) "for" (SR.GetString(SR.QtmmLoopBodyMustBeLambdaTakingInteger))
         checkTypesSR (typeof<int>) (typeOf lowerBound) "lowerBound" (SR.GetString(SR.QtmmLowerUpperBoundMustBeInt))
         checkTypesSR (typeof<int>) (typeOf upperBound) "upperBound" (SR.GetString(SR.QtmmLowerUpperBoundMustBeInt))
+
         match step with
         | Some stepExpr ->
             checkTypesSR (typeof<int>) (typeOf stepExpr) "step" (SR.GetString(SR.QtmmLoopBodyMustBeLambdaTakingInteger))
             mkFE4 ForIntegerRangeLoopOp (lowerBound, stepExpr, upperBound, mkLambda (v, body))
-        | None ->
-            mkFE3 ForIntegerRangeLoopOp (lowerBound, upperBound, mkLambda (v, body))
+        | None -> mkFE3 ForIntegerRangeLoopOp (lowerBound, upperBound, mkLambda (v, body))
 
     let mkWhileLoop (guard, body) =
         checkTypesSR (typeof<bool>) (typeOf guard) "guard" (SR.GetString(SR.QtmmGuardMustBeBool))
