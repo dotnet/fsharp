@@ -8,12 +8,6 @@ open System
 
 module ``Required and init-only properties`` =
 
-    let withCSharpLanguageVersion (ver: CSharpLanguageVersion) (cUnit: CompilationUnit) : CompilationUnit =
-        match cUnit with
-        | CS cs -> CS { cs with LangVersion = ver }
-        | _ -> failwith "Only supported in C#"
-
-
     let csharpBaseClass = 
         CSharp """
     namespace RequiredAndInitOnlyProperties
@@ -379,6 +373,92 @@ let main _ =
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
+
+    #if !NETCOREAPP
+    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
+    #else
+    [<Fact>]
+    #endif
+    let ``F# should only be able to explicitly call constructors which set SetsRequiredMembersAttribute`` () =
+
+        let csharpLib =
+            CSharp """
+        // Until we move to .NET7 runtime (or use experimental)
+        namespace System.Runtime.CompilerServices
+        {
+            [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+            public sealed class RequiredMemberAttribute : Attribute { }
+            [AttributeUsage(AttributeTargets.All, AllowMultiple = true, Inherited = false)]
+            public sealed class CompilerFeatureRequiredAttribute : Attribute
+            {
+                public CompilerFeatureRequiredAttribute(string featureName)
+                {
+                    FeatureName = featureName;
+                }
+                public string FeatureName { get; }
+                public bool IsOptional { get; init; }
+                public const string RefStructs = nameof(RefStructs);
+                public const string RequiredMembers = nameof(RequiredMembers);
+            }
+        }
+
+        namespace System.Diagnostics.CodeAnalysis
+        {
+            [AttributeUsage(AttributeTargets.Constructor, AllowMultiple=false, Inherited=false)]
+            public sealed class SetsRequiredMembersAttribute : Attribute {}
+        }
+        
+        namespace RequiredAndInitOnlyProperties
+        {
+            using System.Runtime.CompilerServices;
+            using System.Diagnostics.CodeAnalysis;
+
+            public sealed class RAIO
+            {
+                public required int GetSet { get; set; }
+                public required int GetInit { get; init; }
+                [SetsRequiredMembers]
+                public RAIO(int foo) {} // Should be legal to call any constructor which does have "SetsRequiredMembersAttribute"
+                public RAIO(int foo, int bar) {} // Should be illegal to call any constructor which does not have "SetsRequiredMembersAttribute"
+            }
+
+        }""" |> withCSharpLanguageVersion CSharpLanguageVersion.Preview |> withName "csLib"
+
+        let fsharpSource =
+            """
+    open System
+    open RequiredAndInitOnlyProperties
+
+    [<EntryPoint>]
+    let main _ =
+        let _raio = RAIO(1)
+        0
+    """
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compileAndRun
+        |> shouldSucceed
+        |> ignore
+
+        let fsharpSource2 =
+            """
+    open System
+    open RequiredAndInitOnlyProperties
+
+    [<EntryPoint>]
+    let main _ =
+        let _raio = RAIO(1,2)
+        0
+    """
+        FSharp fsharpSource2
+        |> asExe
+        |> withLangVersionPreview
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Error 3545, Line 7, Col 21, Line 7, Col 30, "The following required properties have to be initalized:" + Environment.NewLine + "   property RAIO.GetSet: int with get, set" + Environment.NewLine + "   property RAIO.GetInit: int with get, set")
 
 #if !NETCOREAPP
     [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]

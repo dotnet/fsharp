@@ -9014,6 +9014,7 @@ and TcLookupThen cenv overallTy env tpenv mObjExpr objExpr objExprTy longId dela
         // To get better warnings we special case some of the few known mutate-a-struct method names
         let mutates = (if methodName = "MoveNext" || methodName = "GetNextArg" then DefinitelyMutates else PossiblyMutates)
 
+        // Check if we have properties with "init-only" setters, which we try to call after init is done.
         CheckInitProperties g (List.head minfos) methodName mItem
 
 #if !NO_TYPEPROVIDERS

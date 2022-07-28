@@ -154,6 +154,11 @@ let private GetInstantiationForPropertyVal g (ty, vref) =
     let memberParentTypars, memberMethodTypars, _retTy, parentTyArgs = AnalyzeTypeOfMemberVal false g (ty, vref)
     CombineMethInsts memberParentTypars memberMethodTypars parentTyArgs (generalizeTypars memberMethodTypars)
 
+let private HasExternalInit (mref: ILMethodRef) : bool =
+    match mref.ReturnType with
+    | ILType.Modified(_, cls, _) -> cls.FullName = "System.Runtime.CompilerServices.IsExternalInit"
+    | _ -> false
+
 /// Describes the sequence order of the introduction of an extension method. Extension methods that are introduced
 /// later through 'open' get priority in overload resolution.
 type ExtensionMethodPriority = uint64
@@ -938,10 +943,7 @@ type MethInfo =
     /// Indicates, wheter this method has `IsExternalInit` modreq.
     member x.HasExternalInit =
         match x with
-        | ILMeth (_, ilMethInfo, _) ->
-            match ilMethInfo.ILMethodRef.ReturnType with
-            | ILType.Modified(_, cls, _) -> cls.FullName = "System.Runtime.CompilerServices.IsExternalInit"
-            | _ -> false
+        | ILMeth (_, ilMethInfo, _) -> HasExternalInit ilMethInfo.ILMethodRef
         | _ -> false
 
     /// Indicates if this method is an extension member that is read-only.
@@ -1581,11 +1583,8 @@ type ILPropInfo =
 
     /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
     member x.IsSetterInitOnly =
-        assert x.HasSetter
         if x.HasSetter then
-            match x.SetterMethod.ILMethodRef.ReturnType with
-            | ILType.Modified(_, cls, _) -> cls.FullName = "System.Runtime.CompilerServices.IsExternalInit"
-            | _ -> false
+            HasExternalInit x.SetterMethod.ILMethodRef
         else
             false
 
