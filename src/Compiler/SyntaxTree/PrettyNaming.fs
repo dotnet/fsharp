@@ -746,14 +746,10 @@ let IsLogicalInfixOpName logicalName =
         ||
         // COLON_COLON
         (s = "::")
-        ||
-        (s = qmark)
-        ||
-        (s = qmarkSet)
-        ||
-        (s = parenGet)
-        ||
-        (s = parenSet)
+        || (s = qmark)
+        || (s = qmarkSet)
+        || (s = parenGet)
+        || (s = parenSet)
         ||
         // PLUS_MINUS_OP, MINUS
         afterSkipStarts plusMinus
