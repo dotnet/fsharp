@@ -1505,7 +1505,7 @@ let CheckInitProperties (g: TcGlobals) (minfo: MethInfo) methodName mItem =
 
 let CheckRequiredProps (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minfo: MethInfo) finalAssignedItemSetters mMethExpr =
     // Make sure, if apparent type has any required properties, they all are in the `finalAssignedItemSetters`.
-    // If if is a constructor, and it is not marked with `SetsRequiredMembersAttributeAttribute`, then:
+    // If it is a constructor, and it is not marked with `SetsRequiredMembersAttributeAttribute`, then:
     // 1. Get all properties of the type.
     // 2. Check if any of them has `IsRequired` set.
     //      2.1. If there are none, proceed as usual
