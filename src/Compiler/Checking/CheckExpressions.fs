@@ -1511,21 +1511,23 @@ let CheckRequiredProps (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minfo: Me
     //      2.1. If there are none, proceed as usual
     //      2.2. If there are any, make sure all of them (or their setters) are in `finalAssignedItemSetters`.
     // 3. If some are missing, produce a diagnostic which missing ones.
-    if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && minfo.IsConstructor then
+    if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport)
+        && minfo.IsConstructor
+        && not (TryFindILAttribute g.attrib_SetsRequiredMembersAttribute (minfo.GetCustomAttrs())) then
+
         let requiredProps =
             [
-                if not (TryFindILAttribute g.attrib_SetsRequiredMembersAttribute (minfo.GetCustomAttrs())) then
-                    let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g cenv.amap range0 minfo.ApparentEnclosingType
-                    for prop in props do
-                        if prop.IsRequired then
-                           prop
+                let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g cenv.amap range0 minfo.ApparentEnclosingType
+                for prop in props do
+                    if prop.IsRequired then
+                        prop
              ]
-        
+
         if requiredProps.Length > 0 then
-            let setterPropNames = 
+            let setterPropNames =
                 finalAssignedItemSetters
                 |> List.choose (function | AssignedItemSetter(_, AssignedPropSetter (pinfo, _, _), _) -> Some pinfo.PropertyName  | _ -> None)
-            
+
             let missingProps =
                 requiredProps
                 |> List.filter (fun pinfo -> not (List.contains pinfo.PropertyName setterPropNames))
