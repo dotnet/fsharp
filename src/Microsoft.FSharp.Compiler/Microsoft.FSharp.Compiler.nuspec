@@ -4,7 +4,7 @@
         $CommonMetadataElements$
         <language>en-US</language>
         <dependencies>
-            <group targetFramework=".net7.0" />
+            <group targetFramework=".NET7.0" />
         </dependencies>
         <contentFiles>
             <files include="any\any\default.win32manifest"                       buildAction="Content" copyToOutput="true" flatten="false" />
