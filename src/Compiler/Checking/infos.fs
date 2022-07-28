@@ -1583,10 +1583,7 @@ type ILPropInfo =
 
     /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
     member x.IsSetterInitOnly =
-        if x.HasSetter then
-            HasExternalInit x.SetterMethod.ILMethodRef
-        else
-            false
+        x.HasSetter && HasExternalInit x.SetterMethod.ILMethodRef
 
     /// Indicates if the IL property is static
     member x.IsStatic = (x.RawMetadata.CallingConv = ILThisConvention.Static)
