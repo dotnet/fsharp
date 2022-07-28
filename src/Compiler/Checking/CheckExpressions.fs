@@ -4649,7 +4649,7 @@ and TcNestedAppType cenv newOk checkConstraints occ env tpenv synLeftTy synLongI
     | _ ->
         error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), m))
 
-and TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct (args: TupleTypeSegment list) m =
+and TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct (args: SynTupleTypeSegment list) m =
     let tupInfo = mkTupInfo isStruct
     if isStruct then
         let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
@@ -4658,7 +4658,7 @@ and TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct (args
         let isMeasure =
             match kindOpt with
             | Some TyparKind.Measure -> true
-            | None -> args |> List.exists(function | TupleTypeSegment.Slash _ -> true | _ -> false)
+            | None -> args |> List.exists(function | SynTupleTypeSegment.Slash _ -> true | _ -> false)
             | Some _ -> false
     
         if isMeasure then
@@ -4670,7 +4670,7 @@ and TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct (args
 
 and TcAnonRecdType cenv newOk checkConstraints occ env tpenv isStruct args m =
     let tupInfo = mkTupInfo isStruct
-    let tup = args |> List.map (fun (_, t) -> TupleTypeSegment.Type t)
+    let tup = args |> List.map (fun (_, t) -> SynTupleTypeSegment.Type t)
     let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv tup m
     let unsortedFieldIds = args |> List.map fst |> List.toArray
     let anonInfo = AnonRecdTypeInfo.Create(cenv.thisCcu, tupInfo, unsortedFieldIds)
@@ -4808,10 +4808,10 @@ and TcAnonTypeOrMeasure kindOpt _cenv rigid dyn newOk m =
 and TcTypes cenv newOk checkConstraints occ env tpenv args =
     List.mapFold (TcTypeAndRecover cenv newOk checkConstraints occ env) tpenv args
 
-and TcTypesAsTuple cenv newOk checkConstraints occ env tpenv (args: TupleTypeSegment list) m =
+and TcTypesAsTuple cenv newOk checkConstraints occ env tpenv (args: SynTupleTypeSegment list) m =
     let hasASlash =
         args
-        |> List.exists(function | TupleTypeSegment.Slash _ -> true | _ -> false)
+        |> List.exists(function | SynTupleTypeSegment.Slash _ -> true | _ -> false)
         
     if hasASlash then errorR(Error(FSComp.SR.tcUnexpectedSlashInType(), m))
     
@@ -4821,22 +4821,22 @@ and TcTypesAsTuple cenv newOk checkConstraints occ env tpenv (args: TupleTypeSeg
     | [ty] -> let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv ty in [ty], tpenv
     | ty :: args ->
         let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv ty
-        let args = List.map TupleTypeSegment.Type args
+        let args = List.map SynTupleTypeSegment.Type args
         let tys, tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
         ty :: tys, tpenv
 
 // Type-check a list of measures separated by juxtaposition, * or /
-and TcMeasuresAsTuple cenv newOk checkConstraints occ env (tpenv: UnscopedTyparEnv) (args: TupleTypeSegment list) m =
-    let rec gather (args: TupleTypeSegment list) tpenv acc =
+and TcMeasuresAsTuple cenv newOk checkConstraints occ env (tpenv: UnscopedTyparEnv) (args: SynTupleTypeSegment list) m =
+    let rec gather (args: SynTupleTypeSegment list) tpenv acc =
         match args with
         | [] -> acc, tpenv
-        | TupleTypeSegment.Type ty :: args ->
+        | SynTupleTypeSegment.Type ty :: args ->
             let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
             gather args tpenv ms1
-        | TupleTypeSegment.Star _ :: TupleTypeSegment.Type ty :: args ->
+        | SynTupleTypeSegment.Star _ :: SynTupleTypeSegment.Type ty :: args ->
             let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
             gather args tpenv (Measure.Prod(acc, ms1))
-        | TupleTypeSegment.Slash _ :: TupleTypeSegment.Type ty :: args ->
+        | SynTupleTypeSegment.Slash _ :: SynTupleTypeSegment.Type ty :: args ->
             let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
             gather args tpenv (Measure.Prod(acc, Measure.Inv ms1))
         | _ -> failwith "inpossible"

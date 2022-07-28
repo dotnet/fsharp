@@ -370,16 +370,16 @@ type SynTyparDecls =
         | SinglePrefix (range = range) -> range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
-type TupleTypeSegment =
+type SynTupleTypeSegment =
     | Type of typeName: SynType
     | Star of range: range
     | Slash of range: range
 
     member this.Range =
         match this with
-        | TupleTypeSegment.Type t -> t.Range
-        | TupleTypeSegment.Star (range = range)
-        | TupleTypeSegment.Slash (range = range) -> range
+        | SynTupleTypeSegment.Type t -> t.Range
+        | SynTupleTypeSegment.Star (range = range)
+        | SynTupleTypeSegment.Slash (range = range) -> range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynType =
@@ -404,7 +404,7 @@ type SynType =
         greaterRange: range option *
         range: range
 
-    | Tuple of isStruct: bool * path: TupleTypeSegment list * range: range
+    | Tuple of isStruct: bool * path: SynTupleTypeSegment list * range: range
 
     | AnonRecd of isStruct: bool * fields: (Ident * SynType) list * range: range
 
