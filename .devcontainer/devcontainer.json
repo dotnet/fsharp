@@ -20,9 +20,6 @@
 
     // Add the IDs of extensions you want installed when the container is created.
     "extensions": [
-        "ms-vscode.test-adapter-converter",
-        "hbenl.vscode-test-explorer",
-        "formulahendry.dotnet-test-explorer",
         "ms-dotnettools.csharp",
         "Ionide.Ionide-fsharp",
         "tintoy.msbuild-project-tools"

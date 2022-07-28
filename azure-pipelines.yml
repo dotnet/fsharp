@@ -12,6 +12,8 @@ trigger:
     exclude:
     - .github/*
     - docs/
+    - .vscode/*
+    - .devcontainer/*
     - tests/scripts/
     - attributions.md
     - CODE_OF_CONDUCT.md
