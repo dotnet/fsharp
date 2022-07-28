@@ -24,12 +24,12 @@
         "Ionide.Ionide-fsharp",
         "tintoy.msbuild-project-tools"
     ],
-    "onCreateCommand": [
-        "/bin/bash",
-        "-c",
-        "./build.sh",
-        "-c",
-        "Debug"
-    ],
+    //"onCreateCommand": [ // It is a bit buggy in codespaces, so for now, need to run it manually.
+    //    "/bin/bash",
+    //    "-c",
+    //    "./build.sh",
+    //    "-c",
+    //    "Debug"
+    //],
     "waitFor": "onCreateCommand"
 }
