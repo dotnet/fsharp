@@ -11,7 +11,8 @@
     <DefineConstants>$(DefineConstants);LOCALIZATION_FSBUILD</DefineConstants>
     <NoWarn>NU1701;FS0075</NoWarn>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <LangVersion>6.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
+    <LangVersion>6.0</LangVersion>
+    <Configurations>Debug;Release;Proto</Configurations>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -60,7 +61,7 @@
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" IncludeAssets="compile" ExcludeAssets="all" PrivateAssets="all" />
   </ItemGroup>
 
-  <ItemGroup  Condition="'$(Configuration)' != 'Proto' or '$(DotNetBuildFromSource)' == 'true'">
+  <ItemGroup Condition="'$(Configuration)' != 'Proto' or '$(DotNetBuildFromSource)' == 'true'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
