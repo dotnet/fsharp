@@ -345,4 +345,4 @@ val normalizeTupleExpr: exprs: SynExpr list -> commas: range list -> SynExpr lis
 
 val desugarGetSetMembers: memberDefns: SynMemberDefns -> SynMemberDefns
 
-val getTypeFromTuplePath: path: TupleTypeSegment list -> SynType list
+val getTypeFromTuplePath: path: SynTupleTypeSegment list -> SynType list

@@ -428,7 +428,7 @@ type SynTyparDecls =
     member Range: range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
-type TupleTypeSegment =
+type SynTupleTypeSegment =
     | Type of typeName: SynType
     | Star of range: range
     | Slash of range: range
@@ -465,7 +465,7 @@ type SynType =
 
     /// F# syntax: type * ... * type
     /// F# syntax: struct (type * ... * type)
-    | Tuple of isStruct: bool * path: TupleTypeSegment list * range: range
+    | Tuple of isStruct: bool * path: SynTupleTypeSegment list * range: range
 
     /// F# syntax: {| id: type; ...; id: type |}
     /// F# syntax: struct {| id: type; ...; id: type |}

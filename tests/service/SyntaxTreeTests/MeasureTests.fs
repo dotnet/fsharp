@@ -67,9 +67,9 @@ let ``SynType.Tuple in measure type with no slashes`` () =
             SynTypeDefn(typeRepr =
                 SynTypeDefnRepr.Simple(simpleRepr =
                     SynTypeDefnSimpleRepr.TypeAbbrev(rhsType =
-                        SynType.Tuple(false, [ TupleTypeSegment.Type (TypeName "Y")
-                                               TupleTypeSegment.Star mStar
-                                               TupleTypeSegment.Type (TypeName "Z") ], mTuple))))
+                        SynType.Tuple(false, [ SynTupleTypeSegment.Type (TypeName "Y")
+                                               SynTupleTypeSegment.Star mStar
+                                               SynTupleTypeSegment.Type (TypeName "Z") ], mTuple))))
         ])
     ]) ])) ->
         assertRange (2, 23) (2, 24) mStar
@@ -90,8 +90,8 @@ let ``SynType.Tuple in measure type with leading slash`` () =
             SynTypeDefn(typeRepr =
                 SynTypeDefnRepr.Simple(simpleRepr =
                     SynTypeDefnSimpleRepr.TypeAbbrev(rhsType =
-                        SynType.Tuple(false, [ TupleTypeSegment.Slash mSlash
-                                               TupleTypeSegment.Type (TypeName "second") ], mTuple))))
+                        SynType.Tuple(false, [ SynTupleTypeSegment.Slash mSlash
+                                               SynTupleTypeSegment.Type (TypeName "second") ], mTuple))))
         ])
     ]) ])) ->
         assertRange (2, 21) (2, 22) mSlash
@@ -112,11 +112,11 @@ let ``SynType.Tuple in measure type with start and slash`` () =
             SynTypeDefn(typeRepr =
                 SynTypeDefnRepr.Simple(simpleRepr =
                     SynTypeDefnSimpleRepr.TypeAbbrev(rhsType =
-                        SynType.Tuple(false, [ TupleTypeSegment.Type (TypeName "X")
-                                               TupleTypeSegment.Star msStar
-                                               TupleTypeSegment.Type (TypeName "Y")
-                                               TupleTypeSegment.Slash msSlash
-                                               TupleTypeSegment.Type (TypeName "Z") ], mTuple))))
+                        SynType.Tuple(false, [ SynTupleTypeSegment.Type (TypeName "X")
+                                               SynTupleTypeSegment.Star msStar
+                                               SynTupleTypeSegment.Type (TypeName "Y")
+                                               SynTupleTypeSegment.Slash msSlash
+                                               SynTupleTypeSegment.Type (TypeName "Z") ], mTuple))))
         ])
     ]) ])) ->
         assertRange (2, 23) (2, 24) msStar
