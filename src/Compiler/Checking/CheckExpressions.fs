@@ -1503,7 +1503,7 @@ let CheckInitProperties (g: TcGlobals) (minfo: MethInfo) methodName mItem =
         if minfo.HasExternalInit then
             errorR (Error (FSComp.SR.tcSetterForInitOnlyPropertyCannotBeCalled1 methodName, mItem))
 
-let CheckRequiredProps (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minfo: MethInfo) finalAssignedItemSetters mMethExpr =
+let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minfo: MethInfo) finalAssignedItemSetters mMethExpr =
     // Make sure, if apparent type has any required properties, they all are in the `finalAssignedItemSetters`.
     // If it is a constructor, and it is not marked with `SetsRequiredMembersAttributeAttribute`, then:
     // 1. Get all properties of the type.
@@ -9773,8 +9773,8 @@ and TcMethodApplication
     let setterExprPrebinders, callExpr3 =
         let expr = callExpr2b
 
-        CheckRequiredProps g env cenv finalCalledMethInfo finalAssignedItemSetters mMethExpr
-                    
+        CheckRequiredProperties g env cenv finalCalledMethInfo finalAssignedItemSetters mMethExpr
+
         if isCheckingAttributeCall then
             [], expr
         elif isNil finalAssignedItemSetters then

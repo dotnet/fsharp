@@ -1207,7 +1207,7 @@ type ILAttributes(array: ILAttribute[]) =
 
     member _.AsList() = array |> Array.toList
 
-    static member internal Empty = ILAttributes([||])
+    static member val internal Empty = ILAttributes([||])
 
 [<NoEquality; NoComparison>]
 type ILAttributesStored =
