@@ -18,7 +18,12 @@ let setupCompilation compilation =
     |> withLangVersionPreview
     |> withReferences [typesModule]
 
+
+#if !NETCOREAPP
+[<Theory(Skip = "IWSAMs are not supported by NET472.")>]
+#else
 [<Theory; Directory(__SOURCE_DIRECTORY__ + "/testFiles")>]
+#endif
 let ``IWSAM test files`` compilation =
     compilation
     |> setupCompilation
@@ -290,7 +295,11 @@ module Negative =
         |> withDiagnosticMessage "A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments"
         |> ignore
 
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
     [<Fact>]
+    #endif
     let ``IWSAM warning`` () =
         Fsx "let fExpectAWarning(x: Types.ISinOperator<'T>) = ()"
         |> withReferences [typesModule]
@@ -328,7 +337,11 @@ module InvocationBehavior =
         |> shouldFail
         |> withErrorMessage "This function takes too many arguments, or is used in a context where a function is not expected"
 
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
     [<Fact>]
+    #endif
     let ``IWSAM Delegate conversion works`` () =
         Fsx
             """
@@ -345,7 +358,11 @@ module InvocationBehavior =
         |> compileAndRun
         |> shouldSucceed
 
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
     [<Fact>]
+    #endif
     let ``IWSAM Expression conversion works`` () =
         Fsx
             """
@@ -390,7 +407,6 @@ module ``Implicit conversion`` =
 
                 type ICanBeInt<'T when 'T :> ICanBeInt<'T>> =
                     static abstract op_Implicit: 'T -> int
-                    //static abstract TakeInt: int -> int
 
                 type C(c: int) =
                     member _.Value = c
@@ -405,7 +421,11 @@ module ``Implicit conversion`` =
         |> withLangVersionPreview
         |> withOptions ["--nowarn:3535"]
 
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
     [<Fact>]
+    #endif
     let ``Function implicit conversion not supported on constrained type`` () =
         Fsx
             """
@@ -419,7 +439,11 @@ module ``Implicit conversion`` =
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'int'\\s+but here has type\\s+''T'"
 
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
     [<Fact>]
+    #endif
     let ``Method implicit conversion not supported on constrained type`` () =
         Fsx
             """
@@ -433,7 +457,11 @@ module ``Implicit conversion`` =
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'int'\\s+but here has type\\s+''T'"
 
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
     [<Fact>]
+    #endif
     let ``Function explicit conversion works on constrained type`` () =
         Fsx
             """
@@ -446,7 +474,11 @@ module ``Implicit conversion`` =
         |> compile
         |> shouldSucceed
 
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
     [<Fact>]
+    #endif
     let ``Method explicit conversion works on constrained type`` () =
         Fsx
             """
@@ -544,7 +576,11 @@ module ``Active patterns`` =
         |> withName "Potato"
         |> withOptions ["--nowarn:3535"]
 
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
     [<Fact>]
+    #endif
     let ``Using IWSAM in active pattern`` () =
         FSharp """
             module Potato.Test
@@ -574,7 +610,11 @@ module ``Active patterns`` =
             """
         ]
 
+    #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+    #else
     [<Fact>]
+    #endif
     let ``Using IWSAM equality in active pattern uses generic equality intrinsic`` () =
         FSharp """
             module Potato.Test
