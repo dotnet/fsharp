@@ -28,6 +28,7 @@
     <Compile Include="Async.fs" />
     <Compile Include="Conditions.fs" />
     <Compile Include="Collections.fs" />
+    <Compile Include="ForLoops.fs" />
     <Compile Include="Benchmarks.fs" />
     <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="CS\MicroPerfCSharp.csproj" />

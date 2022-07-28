@@ -14,5 +14,5 @@ module Main =
         printfn "Running benchmarks..."
         //let results = BenchmarkRunner.Run<Benchmarks>()
         //let results = BenchmarkRunner.Run<Async.AsyncWhileMemoryBench>()
-        let results = BenchmarkRunner.Run<Collections.CollectionsBenchmark>()
+        let results = BenchmarkRunner.Run<ForLoops.ForLoopBenchmark>()
         0  
