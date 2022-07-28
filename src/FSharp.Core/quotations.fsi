@@ -1439,6 +1439,16 @@ module Patterns =
     [<CompiledName("ForIntegerRangeLoopPattern")>]
     val (|ForIntegerRangeLoop|_|): input: Expr -> (Var * Expr * Expr * Expr) option
 
+    /// <summary>An active pattern to recognize expressions that represent loops over integer ranges with non-one step</summary>
+    ///
+    /// <param name="input">The input expression to match against.</param>
+    ///
+    /// <returns>When successful, the pattern binds the value, start, step, finish and body of the input expression</returns>
+    ///
+    /// <example-tbd></example-tbd>
+    [<CompiledName("ForIntegerRangeLoopWithStepPattern")>]
+    val (|ForIntegerRangeLoopWithStep|_|): input: Expr -> (Var * Expr * Expr * Expr * Expr) option
+
     /// <summary>An active pattern to recognize expressions that represent while loops </summary>
     ///
     /// <param name="input">The input expression to match against.</param>

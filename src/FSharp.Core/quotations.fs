@@ -422,6 +422,8 @@ and [<CompiledName("FSharpExpr"); StructuredFormatDisplay("{DebugText}")>] Expr(
         | CombTerm (AddressSetOp, args) -> combL "AddressSet" (exprs args)
         | CombTerm (ForIntegerRangeLoopOp, [ e1; e2; E (LambdaTerm (v, e3)) ]) ->
             combL "ForIntegerRangeLoop" [ varL v; expr e1; expr e2; expr e3 ]
+        | CombTerm (ForIntegerRangeLoopOp, [ e1; e2; E (LambdaTerm (v, e3)); step ]) ->
+            combL "ForIntegerRangeLoop" [ varL v; expr e1; expr step; expr e2; expr e3 ]
         | CombTerm (WhileLoopOp, args) -> combL "WhileLoop" (exprs args)
         | CombTerm (TryFinallyOp, args) -> combL "TryFinally" (exprs args)
         | CombTerm (TryWithOp, [ e1; Lambda (v1, e2); Lambda (v2, e3) ]) ->
@@ -552,6 +554,11 @@ module Patterns =
     let (|Comb3|_|) (E x) =
         match x with
         | CombTerm (k, [ x1; x2; x3 ]) -> Some(k, x1, x2, x3)
+        | _ -> None
+
+    let (|Comb4|_|) (E x) =
+        match x with
+        | CombTerm (k, [ x1; x2; x3; x4 ]) -> Some(k, x1, x2, x3, x4)
         | _ -> None
 
     [<CompiledName("VarPattern")>]
@@ -720,6 +727,12 @@ module Patterns =
     let (|ForIntegerRangeLoop|_|) input =
         match input with
         | Comb3 (ForIntegerRangeLoopOp, e1, e2, Lambda (v, e3)) -> Some(v, e1, e2, e3)
+        | _ -> None
+
+    [<CompiledName("ForIntegerRangeLoopWithStepPattern")>]
+    let (|ForIntegerRangeLoopWithStep|_|) input =
+        match input with
+        | Comb4 (ForIntegerRangeLoopOp, e1, e2, Lambda (v, e3), step) -> Some(v, e1, step, e2, e3)
         | _ -> None
 
     [<CompiledName("WhileLoopPattern")>]
@@ -969,6 +982,9 @@ module Patterns =
 
     let mkFE3 op (x, y, z) =
         E(CombTerm(op, [ (x :> Expr); (y :> Expr); (z :> Expr) ]))
+
+    let mkFE4 op (x, y, z, a) =
+        E(CombTerm(op, [ (x :> Expr); (y :> Expr); (z :> Expr); (a :> Expr) ]))
 
     let mkOp v () =
         v
@@ -1346,11 +1362,16 @@ module Patterns =
         | true -> mkFEN (StaticMethodCallWOp(minfo, minfoW, nWitnesses)) args
         | false -> invalidArg "minfo" (SR.GetString(SR.QnonStaticNoReceiverObject))
 
-    let mkForLoop (v: Var, lowerBound, upperBound, body) =
+    let mkForLoop (v: Var, lowerBound, step, upperBound, body) =
+        checkTypesSR (typeof<int>) (v.Type) "for" (SR.GetString(SR.QtmmLoopBodyMustBeLambdaTakingInteger))
         checkTypesSR (typeof<int>) (typeOf lowerBound) "lowerBound" (SR.GetString(SR.QtmmLowerUpperBoundMustBeInt))
         checkTypesSR (typeof<int>) (typeOf upperBound) "upperBound" (SR.GetString(SR.QtmmLowerUpperBoundMustBeInt))
-        checkTypesSR (typeof<int>) (v.Type) "for" (SR.GetString(SR.QtmmLoopBodyMustBeLambdaTakingInteger))
-        mkFE3 ForIntegerRangeLoopOp (lowerBound, upperBound, mkLambda (v, body))
+        match step with
+        | Some stepExpr ->
+            checkTypesSR (typeof<int>) (typeOf stepExpr) "step" (SR.GetString(SR.QtmmLoopBodyMustBeLambdaTakingInteger))
+            mkFE4 ForIntegerRangeLoopOp (lowerBound, stepExpr, upperBound, mkLambda (v, body))
+        | None ->
+            mkFE3 ForIntegerRangeLoopOp (lowerBound, upperBound, mkLambda (v, body))
 
     let mkWhileLoop (guard, body) =
         checkTypesSR (typeof<bool>) (typeOf guard) "guard" (SR.GetString(SR.QtmmGuardMustBeBool))
@@ -2630,7 +2651,10 @@ type Expr with
         mkIfThenElse (guard, thenExpr, elseExpr)
 
     static member ForIntegerRangeLoop(loopVariable, start: Expr, endExpr: Expr, body: Expr) =
-        mkForLoop (loopVariable, start, endExpr, body)
+        mkForLoop (loopVariable, start, None, endExpr, body)
+
+    static member ForIntegerRangeLoop(loopVariable, start: Expr, step: Expr, endExpr: Expr, body: Expr) =
+        mkForLoop (loopVariable, start, Some step, endExpr, body)
 
     static member FieldGet(fieldInfo: FieldInfo) =
         checkNonNull "fieldInfo" fieldInfo
@@ -3034,7 +3058,8 @@ module ExprShape =
             | AddressOfOp, [ e1 ] -> mkAddressOf e1
             | VarSetOp, [ E (VarTerm v); e ] -> mkVarSet (v, e)
             | AddressSetOp, [ e1; e2 ] -> mkAddressSet (e1, e2)
-            | ForIntegerRangeLoopOp, [ e1; e2; E (LambdaTerm (v, e3)) ] -> mkForLoop (v, e1, e2, e3)
+            | ForIntegerRangeLoopOp, [ e1; e2; E (LambdaTerm (v, e3)) ] -> mkForLoop (v, e1, None, e2, e3)
+            | ForIntegerRangeLoopOp, [ e1; e2; E (LambdaTerm (v, e3)); e4 ] -> mkForLoop (v, e1, Some e4, e2, e3)
             | WhileLoopOp, [ e1; e2 ] -> mkWhileLoop (e1, e2)
             | TryFinallyOp, [ e1; e2 ] -> mkTryFinally (e1, e2)
             | TryWithOp, [ e1; Lambda (v1, e2); Lambda (v2, e3) ] -> mkTryWith (e1, v1, e2, v2, e3)

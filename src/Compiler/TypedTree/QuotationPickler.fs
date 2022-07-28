@@ -210,6 +210,8 @@ let mkSequential (e1, e2) = CombExpr(SeqOp, [], [e1;e2])
 
 let mkIntegerForLoop (x1, x2, x3) = CombExpr(ForLoopOp, [], [x1;x2;x3])
 
+let mkIntegerForLoopWithStep (x1, x2, x3, x4) = CombExpr(ForLoopOp, [], [x1;x2;x3;x4])
+
 let mkWhileLoop (e1, e2) = CombExpr(WhileLoopOp, [], [e1;e2])
 
 let mkTryFinally(e1, e2) = CombExpr(TryFinallyOp, [], [e1;e2])
