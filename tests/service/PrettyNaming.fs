@@ -4,42 +4,39 @@ open FSharp.Compiler.Syntax.PrettyNaming
 open FsUnit
 open NUnit.Framework
 
-[<Test>]
-let ``words in operator name should not be considered as mangled infix operator`` () =
-    IsLogicalInfixOpName "$foo hoo"
+// words in operator name
+[<TestCase "$foo hoo">]
+[<TestCase "@foo hoo">]
+// typo in operator name
+[<TestCase "op_Nagation">]
+// invalid operator name
+[<TestCase "op_Dollarfoo">]
+[<TestCase "foo">]
+[<TestCase "$foo">]
+// random symbols
+[<TestCase "$">]
+// operator display representations
+[<TestCase "+">]
+[<TestCase "[]">]
+[<TestCase "::">]
+[<TestCase "~++">]
+[<TestCase ".. ..">]
+// not infix operators
+[<TestCase "op_Splice">]
+[<TestCase "op_SpliceUntyped">]
+let ``IsLogicalInfixOpName detects bad logical names`` logicalName =
+    IsLogicalInfixOpName logicalName
     |> should equal false
 
-    IsLogicalInfixOpName "@foo hoo"
-    |> should equal false
-
-[<Test>]
-let ``typo in mangled operator name should not be considered as mangled infix operator`` () =
-    IsLogicalInfixOpName "op_Nagation"
-    |> should equal false
-
-[<Test>]
-let ``valid mangled operator name should be considered as mangled infix operator`` () =
-    IsLogicalInfixOpName "op_Addition"
+[<TestCase "op_Addition">]
+[<TestCase "op_Append">]
+[<TestCase "op_ColonColon">]
+[<TestCase "op_BitwiseOr">]
+[<TestCase "op_GreaterThanOrEqual">]
+[<TestCase "op_Dynamic">]
+[<TestCase "op_ArrayLookup">]
+[<TestCase "op_DynamicAssignment">]
+[<TestCase "op_ArrayAssign">]
+let ``IsLogicalInfixOpName detects good logical names`` logicalName =
+    IsLogicalInfixOpName logicalName
     |> should equal true
-    
-    IsLogicalInfixOpName "op_Append"
-    |> should equal true
-
-[<Test>]
-let ``invalid mangled operator name should not be considered as mangled infix operator`` () =
-    IsLogicalInfixOpName "op_Dollarfoo"
-    |> should equal false
-    
-    IsLogicalInfixOpName "foo"
-    |> should equal false
-
-[<Test>]
-let ``symbols in mangled operator name should not be considered as mangled infix operator`` () =
-    IsLogicalInfixOpName "$foo"
-    |> should equal false
-    
-    IsLogicalInfixOpName "$"
-    |> should equal false
-
-    IsLogicalInfixOpName "+"
-    |> should equal false

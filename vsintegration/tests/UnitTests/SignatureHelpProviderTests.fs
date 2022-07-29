@@ -475,7 +475,7 @@ derp
         assertSignatureHelpForFunctionApplication fileContents marker 2 0 "f"
 
     [<Test>]
-    let ``function application with function as parameter second parameter``() : unit =
+    let ``function application with function as second parameter 1``() : unit =
         let fileContents = """
 let derp (f: int -> int -> int) x = f x 1
 let add x y = x + y
@@ -485,7 +485,7 @@ derp add
         assertSignatureHelpForFunctionApplication fileContents marker 2 1 "x"
 
     [<Test>]
-    let ``function application with function as parameter 2``() : unit =
+    let ``function application with function as second parameter 2``() : unit =
         let fileContents = """
 let f (derp: int -> int) x = derp x
 """
@@ -493,7 +493,7 @@ let f (derp: int -> int) x = derp x
         assertSignatureHelpForFunctionApplication fileContents marker 1 0 "arg0"
 
     [<Test>]
-    let ``function application with curried function as parameter ``() : unit =
+    let ``function application with curried function as parameter``() : unit =
         let fileContents = """
 let f (derp: int -> int -> int) x = derp x 
 """
