@@ -204,7 +204,3 @@ Foo.fs
 
   let SomeFunction a b = a + b // compiled name of parameters is x, y - warning emitted
 ```
-
-
-
-
