@@ -9,9 +9,6 @@ module ObjInference =
 
     let warningCases =
         [
-            // TODO: for this case, we're definitely emitting the warning (according to the debugger),
-            // but somehow it's not showing up in the output?
-            """let f<'b> () : 'b = (let a = failwith "" in unbox a)""", 1, 1, 1, 1
             "let f() = ([] = [])", 1, 17, 1, 19
             """System.Object.ReferenceEquals(null, "hello") |> ignore""", 1, 31, 1, 35
             """System.Object.ReferenceEquals("hello", null) |> ignore""", 1, 40, 1, 44
@@ -28,8 +25,26 @@ module ObjInference =
         |> shouldFail
         |> withSingleDiagnostic (Warning 3525, Line line1, Col col1, Line line2, Col col2, message)
 
+    [<Fact>]
+    let ``Three types refined to obj are all warned`` () =
+        FSharp """let f<'b> () : 'b = (let a = failwith "" in unbox a)"""
+        |> withErrorRanges
+        |> withWarnOn 3525
+        |> typecheck
+        |> shouldFail
+        |> withDiagnostics
+            [
+                // The `failwith ""` case
+                Warning 3525, Line 1, Col 30, Line 1, Col 41, message
+                // The `unbox a` case
+                Warning 3525, Line 1, Col 45, Line 1, Col 52, message
+                // The `unbox` case
+                Warning 3525, Line 1, Col 45, Line 1, Col 50, message
+            ]
+
     let noWarningCases =
         [
+            // TODO: this test is failing, it thinks `x` was inferred as obj even though it wasn't
             "let add x y = x + y" // inferred as int
             "let f x = string x" // inferred as generic 'a -> string
             "let f() = ([] = ([] : obj list))" // obj is inferred, but is annotated
