@@ -983,6 +983,9 @@ type TcGlobals(
         tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
         tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
         tryFindSysAttrib "System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
+        tryFindSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
                               ] |> List.choose (Option.map (fun x -> x.TyconRef))
 
   override _.ToString() = "<TcGlobals>"
@@ -1425,6 +1428,9 @@ type TcGlobals(
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
   member val attrib_ComponentModelEditorBrowsableAttribute = findSysAttrib "System.ComponentModel.EditorBrowsableAttribute"
+  member val attrib_CompilerFeatureRequiredAttribute       = findSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
+  member val attrib_SetsRequiredMembersAttribute           = findSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
+  member val attrib_RequiredMemberAttribute                = findSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst
 
