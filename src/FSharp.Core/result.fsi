@@ -124,12 +124,12 @@ module Result =
     ///
     /// <example id="defaultWith-1">
     /// <code lang="fsharp">
-    /// Ok 1 |> Result.defaultWith (fun () -> 99) // evaluates to 1
-    /// Error 2 |> Result.defaultWith (fun () -> 99) // evaluates to 99
+    /// Ok 1 |> Result.defaultWith (fun error -> 99) // evaluates to 1
+    /// Error 2 |> Result.defaultWith (fun error -> 99) // evaluates to 99
     /// </code>
     /// </example>
     [<CompiledName("DefaultWith")>]
-    val defaultWith: defThunk: (unit -> 'T) -> result: Result<'T, 'Error> -> 'T
+    val defaultWith: defThunk: ('Error -> 'T) -> result: Result<'T, 'Error> -> 'T
 
     /// <summary><c>count inp</c> evaluates to <c>match inp with Error _ -> 0 | Ok _ -> 1</c>.</summary>
     ///
