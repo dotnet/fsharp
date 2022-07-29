@@ -370,6 +370,18 @@ type SynTyparDecls =
         | SinglePrefix (range = range) -> range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynTupleTypeSegment =
+    | Type of typeName: SynType
+    | Star of range: range
+    | Slash of range: range
+
+    member this.Range =
+        match this with
+        | SynTupleTypeSegment.Type t -> t.Range
+        | SynTupleTypeSegment.Star (range = range)
+        | SynTupleTypeSegment.Slash (range = range) -> range
+
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynType =
 
     | LongIdent of longDotId: SynLongIdent
@@ -392,7 +404,7 @@ type SynType =
         greaterRange: range option *
         range: range
 
-    | Tuple of isStruct: bool * elementTypes: (bool * SynType) list * range: range
+    | Tuple of isStruct: bool * path: SynTupleTypeSegment list * range: range
 
     | AnonRecd of isStruct: bool * fields: (Ident * SynType) list * range: range
 
@@ -1047,6 +1059,9 @@ type SynMemberFlags =
 
         IsFinal: bool
 
+        // This is not persisted in pickling
+        GetterOrSetterIsCompilerGenerated: bool
+
         MemberKind: SynMemberKind
 
         Trivia: SynMemberFlagsTrivia
@@ -1059,6 +1074,7 @@ type SynMemberFlags =
             && this.IsDispatchSlot = other.IsDispatchSlot
             && this.IsOverrideOrExplicitImpl = other.IsOverrideOrExplicitImpl
             && this.IsFinal = other.IsFinal
+            && this.GetterOrSetterIsCompilerGenerated = other.GetterOrSetterIsCompilerGenerated
             && this.MemberKind = other.MemberKind
         | _ -> false
 
@@ -1067,6 +1083,7 @@ type SynMemberFlags =
         + hash this.IsDispatchSlot
         + hash this.IsOverrideOrExplicitImpl
         + hash this.IsFinal
+        + hash this.GetterOrSetterIsCompilerGenerated
         + hash this.MemberKind
 
 [<StructuralEquality; NoComparison; RequireQualifiedAccess>]
@@ -1471,7 +1488,7 @@ type SynModuleDecl =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynOpenDeclTarget =
 
-    | ModuleOrNamespace of longId: LongIdent * range: range
+    | ModuleOrNamespace of longId: SynLongIdent * range: range
 
     | Type of typeName: SynType * range: range
 
