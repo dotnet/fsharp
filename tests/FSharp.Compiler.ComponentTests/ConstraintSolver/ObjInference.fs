@@ -5,26 +5,30 @@ open FSharp.Test.Compiler
 
 module ObjInference =
 
-    let failureCases =
+    let message = "A type inference variable has been implicitly inferred to have type `obj`. Consider adding explicit type annotations. This warning is off by default and has been explicitly enabled for this project. You may suppress this warning by using #nowarn \"3525\"."
+
+    let warningCases =
         [
             // TODO: for this case, we're definitely emitting the warning (according to the debugger),
             // but somehow it's not showing up in the output?
             """let f<'b> () : 'b = (let a = failwith "" in unbox a)""", 1, 1, 1, 1
             "let f() = ([] = [])", 1, 17, 1, 19
+            """System.Object.ReferenceEquals(null, "hello") |> ignore""", 1, 31, 1, 35
+            """System.Object.ReferenceEquals("hello", null) |> ignore""", 1, 40, 1, 44
         ]
         |> List.map (fun (str, line1, col1, line2, col2) -> [| box str ; line1 ; col1 ; line2 ; col2 |])
 
     [<Theory>]
-    [<MemberData(nameof(failureCases))>]
-    let ``Warning is emitted when top type Obj is inferred``(code: string, line1: int, col1: int, line2: int, col2: int) =
+    [<MemberData(nameof(warningCases))>]
+    let ``Warning is emitted when type Obj is inferred``(code: string, line1: int, col1: int, line2: int, col2: int) =
         FSharp code
         |> withErrorRanges
         |> withWarnOn 3525
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3525, Line line1, Col col1, Line line2, Col col2, "A type was not refined away from `obj`, which may be unintended. Consider adding explicit type annotations.")
+        |> withSingleDiagnostic (Warning 3525, Line line1, Col col1, Line line2, Col col2, message)
 
-    let successCases =
+    let noWarningCases =
         [
             "let add x y = x + y" // inferred as int
             "let f x = string x" // inferred as generic 'a -> string
@@ -37,24 +41,22 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
         |> List.map Array.singleton
 
     [<Theory>]
-    [<MemberData(nameof(successCases))>]
+    [<MemberData(nameof(noWarningCases))>]
     let ``Warning does not fire unless required``(code: string) =
         FSharp code
         |> withWarnOn 3525
         |> typecheck
         |> shouldSucceed
 
-    let nullSuccessCases =
+    let nullNoWarningCases =
         [
-            """System.Object.ReferenceEquals("hello", null)"""
             """System.Object.ReferenceEquals("hello", (null: string))"""
-            """System.Object.ReferenceEquals(null, "hello")"""
             """System.Object.ReferenceEquals((null: string), "hello")"""
         ]
         |> List.map Array.singleton
 
     [<Theory>]
-    [<MemberData(nameof(nullSuccessCases))>]
+    [<MemberData(nameof(nullNoWarningCases))>]
     let ``Don't warn on an explicit null``(expr: string) =
         sprintf "%s |> ignore" expr
         |> FSharp
@@ -63,7 +65,7 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
         |> shouldSucceed
 
     [<Theory>]
-    [<MemberData(nameof(nullSuccessCases))>]
+    [<MemberData(nameof(nullNoWarningCases))>]
     let ``Don't warn on an explicit null, inside quotations``(expr: string) =
         sprintf "<@ %s @> |> ignore" expr
         |> FSharp
@@ -71,14 +73,14 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
         |> typecheck
         |> shouldSucceed
 
-    let quotationSuccessCases =
+    let quotationNoWarningCases =
         [
             "<@ List.map ignore [1;2;3] @>"
         ]
         |> List.map Array.singleton
 
     [<Theory>]
-    [<MemberData(nameof(quotationSuccessCases))>]
+    [<MemberData(nameof(quotationNoWarningCases))>]
     let ``Don't warn inside quotations of acceptable code``(expr: string) =
         sprintf "%s |> ignore" expr
         |> FSharp
@@ -88,9 +90,9 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
 
     [<Fact>]
     let ``Warn when the error appears inside a quotation``() =
-        sprintf "<@ [] = [] @> |> ignore"
+        "<@ [] = [] @> |> ignore"
         |> FSharp
         |> withWarnOn 3525
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3525, Line 1, Col 9, Line 1, Col 11, "A type was not refined away from `obj`, which may be unintended. Consider adding explicit type annotations.")
+        |> withSingleDiagnostic (Warning 3525, Line 1, Col 9, Line 1, Col 11, message)
