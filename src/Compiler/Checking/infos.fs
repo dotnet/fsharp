@@ -22,6 +22,8 @@ open FSharp.Compiler.Xml
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
+open FSharp.Compiler.AbstractIL
+
 #endif
 
 //-------------------------------------------------------------------------
@@ -151,6 +153,11 @@ let private GetInstantiationForMemberVal g isCSharpExt (ty, vref, methTyArgs: Ty
 let private GetInstantiationForPropertyVal g (ty, vref) =
     let memberParentTypars, memberMethodTypars, _retTy, parentTyArgs = AnalyzeTypeOfMemberVal false g (ty, vref)
     CombineMethInsts memberParentTypars memberMethodTypars parentTyArgs (generalizeTypars memberMethodTypars)
+
+let private HasExternalInit (mref: ILMethodRef) : bool =
+    match mref.ReturnType with
+    | ILType.Modified(_, cls, _) -> cls.FullName = "System.Runtime.CompilerServices.IsExternalInit"
+    | _ -> false
 
 /// Describes the sequence order of the introduction of an extension method. Extension methods that are introduced
 /// later through 'open' get priority in overload resolution.
@@ -933,6 +940,12 @@ type MethInfo =
         | FSMeth _ -> false // F# defined methods not supported yet. Must be a language feature.
         | _ -> false
 
+    /// Indicates, wheter this method has `IsExternalInit` modreq.
+    member x.HasExternalInit =
+        match x with
+        | ILMeth (_, ilMethInfo, _) -> HasExternalInit ilMethInfo.ILMethodRef
+        | _ -> false
+
     /// Indicates if this method is an extension member that is read-only.
     /// An extension member is considered read-only if the first argument is a read-only byref (inref) type.
     member x.IsReadOnlyExtensionMember (amap: ImportMap, m) =
@@ -1052,6 +1065,12 @@ type MethInfo =
             if x.IsInstance then [ ImportProvidedType amap m (mi.PApply((fun mi -> mi.DeclaringType), m)) ] // find the type of the 'this' argument
             else []
 #endif
+
+    /// Get custom attributes for method (only applicable for IL methods)
+    member x.GetCustomAttrs() =
+        match x with
+        | ILMeth(_, ilMethInfo, _) -> ilMethInfo.RawMetadata.CustomAttrs
+        | _ -> ILAttributes.Empty
 
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
     member x.GetParamAttribs(amap, m) =
@@ -1562,6 +1581,10 @@ type ILPropInfo =
     /// Indicates if the IL property has a 'set' method
     member x.HasSetter = Option.isSome x.RawMetadata.SetMethod
 
+    /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
+    member x.IsSetterInitOnly =
+        x.HasSetter && HasExternalInit x.SetterMethod.ILMethodRef
+
     /// Indicates if the IL property is static
     member x.IsStatic = (x.RawMetadata.CallingConv = ILThisConvention.Static)
 
@@ -1574,6 +1597,9 @@ type ILPropInfo =
     member x.IsNewSlot =
         (x.HasGetter && x.GetterMethod.IsNewSlot) ||
         (x.HasSetter && x.SetterMethod.IsNewSlot)
+
+    /// Indicates if the property is required, i.e. has RequiredMemberAttribute applied.
+    member x.IsRequired = TryFindILAttribute x.TcGlobals.attrib_RequiredMemberAttribute x.RawMetadata.CustomAttrs
 
     /// Get the names and types of the indexer arguments associated with the IL property.
     ///
@@ -1686,6 +1712,22 @@ type PropInfo =
         | FSProp(_, _, _, x) -> Option.isSome x
 #if !NO_TYPEPROVIDERS
         | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> pi.CanWrite), m)
+#endif
+
+    member x.IsSetterInitOnly =
+        match x with
+        | ILProp ilpinfo -> ilpinfo.IsSetterInitOnly
+        | FSProp _ -> false
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp _ -> false
+#endif
+
+    member x.IsRequired =
+        match x with
+        | ILProp ilpinfo -> ilpinfo.IsRequired
+        | FSProp _ -> false
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp _ -> false
 #endif
 
     /// Indicates if this is an extension member

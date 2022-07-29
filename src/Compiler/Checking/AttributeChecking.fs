@@ -21,6 +21,8 @@ open FSharp.Compiler.TypeHierarchy
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
 open FSharp.Core.CompilerServices
+open Features
+
 #endif
 
 exception ObsoleteWarning of string * range
@@ -229,22 +231,36 @@ let MethInfoHasAttribute g m attribSpec minfo  =
         |> Option.isSome
 
 
+let private CheckCompilerFeatureRequiredAttribute (g: TcGlobals) cattrs msg m =
+    // In some cases C# will generate both ObsoleteAttribute and CompilerFeatureRequiredAttribute.
+    // Specifically, when default constructor is generated for class with any reqired members in them.
+    // ObsoleteAttribute should be ignored if CompilerFeatureRequiredAttribute is present, and its name is "RequiredMembers".
+    let (AttribInfo(tref,_)) = g.attrib_CompilerFeatureRequiredAttribute
+    match TryDecodeILAttribute tref cattrs with
+    | Some([ILAttribElem.String (Some featureName) ], _) when featureName = "RequiredMembers" ->
+        CompleteD
+    | _ ->
+        ErrorD (ObsoleteError(msg, m))
+
 /// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
-let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m = 
+let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
-    match TryDecodeILAttribute tref cattrs with 
-    | Some ([ILAttribElem.String (Some msg) ], _) when not isByrefLikeTyconRef -> 
+    match TryDecodeILAttribute tref cattrs with
+    | Some ([ILAttribElem.String (Some msg) ], _) when not isByrefLikeTyconRef ->
             WarnD(ObsoleteWarning(msg, m))
-    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef -> 
-        if isError then 
-            ErrorD (ObsoleteError(msg, m))
-        else 
+    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef ->
+        if isError then
+            if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) then
+                CheckCompilerFeatureRequiredAttribute g cattrs msg m
+            else
+                ErrorD (ObsoleteError(msg, m))
+        else
             WarnD (ObsoleteWarning(msg, m))
-    | Some ([ILAttribElem.String None ], _) when not isByrefLikeTyconRef -> 
+    | Some ([ILAttribElem.String None ], _) when not isByrefLikeTyconRef ->
         WarnD(ObsoleteWarning("", m))
-    | Some _ when not isByrefLikeTyconRef -> 
+    | Some _ when not isByrefLikeTyconRef ->
         WarnD(ObsoleteWarning("", m))
-    | _ -> 
+    | _ ->
         CompleteD
 
 let langVersionPrefix = "--langversion:preview"
