@@ -393,15 +393,18 @@ type internal FxResolver
             // val it: string = ".NETCoreApp,Version=v6.0"
             let vlabel = "Version=v"
             let name = System.AppContext.TargetFrameworkName
-            let arr = name.Split([|','|], 2)
-            if arr.Length <> 2 || not (arr[1].StartsWith(vlabel)) then
+            let arr = name.Split([| ',' |], 2)
+
+            if arr.Length <> 2 || not (arr[ 1 ].StartsWith(vlabel)) then
                 None
             else
-                let fwName, fwVersion = arr[0], arr[1].Replace(vlabel, "")
+                let fwName, fwVersion = arr[0], arr[ 1 ].Replace(vlabel, "")
+
                 match fwName with
-                | ".NETCoreApp" -> Some ("net" + fwVersion)
-                | ".NETFramework" -> Some ("net" + fwVersion.Replace(".", ""))
+                | ".NETCoreApp" -> Some("net" + fwVersion)
+                | ".NETFramework" -> Some("net" + fwVersion.Replace(".", ""))
                 | _ -> None
+
         match runningTfmOpt with
         | Some tfm -> tfm
         | _ -> if isRunningOnCoreClr then "net7.0" else "net472"
@@ -813,21 +816,29 @@ type internal FxResolver
                     if isRunningOnCoreClr then
                         // Use reflection to get the value for rid
                         let rinfoType: Type option =
-                            Option.ofObj (Type.GetType("System.Runtime.InteropServices.RuntimeInformation, System.Runtime.InteropServices.RuntimeInformation", false))
+                            Option.ofObj (
+                                Type.GetType(
+                                    "System.Runtime.InteropServices.RuntimeInformation, System.Runtime.InteropServices.RuntimeInformation",
+                                    false
+                                )
+                            )
 
                         let ridProperty: PropertyInfo option =
                             match rinfoType with
                             | None -> None
-                            | Some t -> Option.ofObj (t.GetProperty("RuntimeIdentifier", BindingFlags.Public  ||| BindingFlags.Static))
+                            | Some t -> Option.ofObj (t.GetProperty("RuntimeIdentifier", BindingFlags.Public ||| BindingFlags.Static))
+
                         match ridProperty with
                         | None -> None
-                        | Some p -> Some (string (p.GetValue(null)))
+                        | Some p -> Some(string (p.GetValue(null)))
                     else
                         None
+
                 match rid with
                 | Some rid -> rid
                 | None ->
                     let processArchitecture = RuntimeInformation.ProcessArchitecture
+
                     let baseRid =
                         if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
                             "win"
