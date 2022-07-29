@@ -858,8 +858,8 @@
         <note />
       </trans-unit>
       <trans-unit id="typrelNeverRefinedAwayFromTop">
-        <source>A type was not refined away from `obj`, which may be unintended. Consider adding explicit type annotations.</source>
-        <target state="new">A type was not refined away from `obj`, which may be unintended. Consider adding explicit type annotations.</target>
+        <source>A type inference variable has been implicitly inferred to have type `obj`. Consider adding explicit type annotations. This warning is off by default and has been explicitly enabled for this project. You may suppress this warning by using #nowarn \"3524\".</source>
+        <target state="new">A type inference variable has been implicitly inferred to have type `obj`. Consider adding explicit type annotations. This warning is off by default and has been explicitly enabled for this project. You may suppress this warning by using #nowarn \"3524\".</target>
         <note />
       </trans-unit>
       <trans-unit id="undefinedNameFieldConstructorOrMemberWhenTypeIsKnown">
