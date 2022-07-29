@@ -376,8 +376,7 @@ type ILStrongNameSigner =
         | PublicKeySigner _
         | PublicKeyOptionsSigner _
         | KeyPair _ -> ()
-        | KeyContainer _ ->
-            failWithContainerSigningUnsupportedOnThisPlatform ()
+        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
 
     member s.IsFullySigned =
         match s with
@@ -386,8 +385,7 @@ type ILStrongNameSigner =
             let _, usePublicSign = pko
             usePublicSign
         | KeyPair _ -> true
-        | KeyContainer _ ->
-            failWithContainerSigningUnsupportedOnThisPlatform ()
+        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
 
     member s.PublicKey =
         match s with
@@ -396,8 +394,7 @@ type ILStrongNameSigner =
             let pk, _ = pko
             pk
         | KeyPair kp -> signerGetPublicKeyForKeyPair kp
-        | KeyContainer _ ->
-            failWithContainerSigningUnsupportedOnThisPlatform ()
+        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
 
     member s.SignatureSize =
         let pkSignatureSize pk =
@@ -413,13 +410,11 @@ type ILStrongNameSigner =
             let pk, _ = pko
             pkSignatureSize pk
         | KeyPair kp -> pkSignatureSize (signerGetPublicKeyForKeyPair kp)
-        | KeyContainer _ ->
-            failWithContainerSigningUnsupportedOnThisPlatform ()
+        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
 
     member s.SignFile file =
         match s with
         | PublicKeySigner _ -> ()
         | PublicKeyOptionsSigner _ -> ()
         | KeyPair kp -> signerSignFileWithKeyPair file kp
-        | KeyContainer _ ->
-            failWithContainerSigningUnsupportedOnThisPlatform ()
+        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
