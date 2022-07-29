@@ -157,28 +157,6 @@ module internal FSharpEnvironment =
         else
             None
 
-#if FX_NO_SYSTEM_CONFIGURATION
-    let internal tryAppConfig (_appConfigKey: string) = None
-#else
-    let internal tryAppConfig (_appConfigKey: string) =
-        let locationFromAppConfig =
-            System.Configuration.ConfigurationSettings.AppSettings.[_appConfigKey]
-#if DEBUG
-        Debug.Print(sprintf "Considering _appConfigKey %s which has value '%s'" _appConfigKey locationFromAppConfig)
-#endif
-        if String.IsNullOrEmpty(locationFromAppConfig) then
-            None
-        else
-            let exeAssemblyFolder =
-                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-
-            let locationFromAppConfig =
-                locationFromAppConfig.Replace("{exepath}", exeAssemblyFolder)
-#if DEBUG
-            Debug.Print(sprintf "Using path %s" locationFromAppConfig)
-#endif
-            Some locationFromAppConfig
-#endif
 
     // The default location of FSharp.Core.dll and fsc.exe based on the version of fsc.exe that is running
     // Used for
@@ -195,30 +173,23 @@ module internal FSharpEnvironment =
             match Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN") with
             | result when not (String.IsNullOrWhiteSpace result) -> Some result
             | _ ->
-                // FSharp.Compiler support setting an appKey for compiler location. I've never seen this used.
-                let result = tryAppConfig "fsharp-compiler-location"
+                let safeExists f =
+                    (try
+                        File.Exists(f)
+                     with _ ->
+                         false)
 
-                match result with
-                | Some _ -> result
-                | None ->
+                // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
+                match probePoint with
+                | Some p when safeExists (Path.Combine(p, "FSharp.Core.dll")) -> Some p
+                | _ ->
+                    let fallback () =
+                        let d = Assembly.GetExecutingAssembly()
+                        Some(Path.GetDirectoryName d.Location)
 
-                    let safeExists f =
-                        (try
-                            File.Exists(f)
-                         with _ ->
-                             false)
-
-                    // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
-                    match probePoint with
-                    | Some p when safeExists (Path.Combine(p, "FSharp.Core.dll")) -> Some p
-                    | _ ->
-                        let fallback () =
-                            let d = Assembly.GetExecutingAssembly()
-                            Some(Path.GetDirectoryName d.Location)
-
-                        match tryCurrentDomain () with
-                        | None -> fallback ()
-                        | Some path -> Some path
+                    match tryCurrentDomain () with
+                    | None -> fallback ()
+                    | Some path -> Some path
         with e ->
             None
 

@@ -12,10 +12,8 @@
       <PropertyGroup>
         <DefineConstants>$(DefineConstants);NETSTANDARD</DefineConstants>
         <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-        <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONFIGURATION</DefineConstants>
         <DefineConstants>$(DefineConstants);FX_NO_WIN_REGISTRY</DefineConstants>
         <DefineConstants>$(DefineConstants);FX_NO_WINFORMS</DefineConstants>
-        <DefineConstants>$(DefineConstants);FX_RESHAPED_REFEMIT</DefineConstants>
         <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
       </PropertyGroup>
     </Otherwise>
