@@ -388,22 +388,31 @@ type internal FxResolver
     // On-demand because (a) some FxResolver are ephemeral (b) we want to avoid recomputation
     let tryGetRunningTfm =
         let runningTfmOpt =
-            // Compute TFM from AppContext.TargetFrameworkName
-            // let x = AppContext.TargetFrameworkName
-            // val it: string = ".NETCoreApp,Version=v6.0"
-            let vlabel = "Version=v"
-            let name = System.AppContext.TargetFrameworkName
-            let arr = name.Split([| ',' |], 2)
+            let getTfmNumber (v: string) =
+                let arr = v.Split([| '.' |], 3)
+                arr[0] + "." + arr[1]
 
-            if arr.Length <> 2 || not (arr[ 1 ].StartsWith(vlabel)) then
-                None
-            else
-                let fwName, fwVersion = arr[0], arr[ 1 ].Replace(vlabel, "")
+            // Compute TFM from System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription
+            // System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;;
+            // val it: string = ".NET 6.0.7"
+            // val it: string = ".NET Framework 4.8.4515.0"
+            let name = RuntimeInformation.FrameworkDescription
+            let arr = name.Split([| ' ' |], 3)
 
-                match fwName with
-                | ".NETCoreApp" -> Some("net" + fwVersion)
-                | ".NETFramework" -> Some("net" + fwVersion.Replace(".", ""))
-                | _ -> None
+            match arr[0], arr[1] with
+            | ".NET", "Core" when arr.Length >= 3 -> Some("netcoreapp" + (getTfmNumber arr[2]))
+
+            | ".NET", "Framework" when arr.Length >= 3 ->
+                if arr[ 2 ].StartsWith("4.8") then
+                    Some "net48"
+                else
+                    Some "net472"
+
+            | ".NET", "Native" -> None
+
+            | ".NET", _ when arr.Length >= 2 -> Some("net" + (getTfmNumber arr[1]))
+
+            | _ -> None
 
         match runningTfmOpt with
         | Some tfm -> tfm
