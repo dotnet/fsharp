@@ -15,6 +15,48 @@ module ExtraTopLevelOperators =
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Quotations
 
+    /// <summary>Print to <c>stdout</c>.</summary>
+    ///
+    /// <param name="text">The string to print.</param>
+    ///
+    /// <example id="print-1">Using interpolated strings:
+    /// <code lang="fsharp">
+    /// print $"Write three = {1+2}"
+    /// </code>
+    /// After evaluation the text <c>"Write three = 3"</c> is written to <c>stdout</c>
+    /// </example>
+    /// <example id="print-2">Using pipeline operator:
+    /// <code lang="fsharp">
+    /// "1"
+    /// |> String.replicate 4
+    /// |> print
+    /// </code>
+    /// After evaluation the text <c>"1111"</c> is written to <c>stdout</c>
+    /// </example>
+    [<CompiledName("Print")>]
+    val print: text: string -> unit
+
+    /// <summary>Print to <c>stdout</c> and adds a newline.</summary>
+    ///
+    /// <param name="text">The string to print.</param>
+    ///
+    /// <example id="println-1">Using interpolated strings:
+    /// <code lang="fsharp">
+    /// println $"Write three = {1+2}"
+    /// println $"Write four = {2+2}"
+    /// </code>
+    /// After evaluation the two lines are written to <c>stdout</c>.
+    /// </example>
+    /// <example id="println-2">Using pipeline operator:
+    /// <code lang="fsharp">
+    /// "hello " + "world"
+    /// |> println
+    /// </code>
+    /// After evaluation the text <c>"hello world"</c> is written to <c>stdout</c>
+    /// </example>
+    [<CompiledName("PrintLine")>]
+    val println: text: string -> unit
+
     /// <summary>Print to <c>stdout</c> using the given format.</summary>
     ///
     /// <param name="format">The formatter.</param>

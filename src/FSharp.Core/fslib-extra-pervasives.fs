@@ -325,6 +325,14 @@ module ExtraTopLevelOperators =
     let eprintfn format =
         Printf.eprintfn format
 
+    [<CompiledName "Print">]
+    let print (text: string) =
+        Console.Out.Write text
+
+    [<CompiledName "PrintLine">]
+    let println (text: string) =
+        Console.Out.WriteLine text
+
     [<CompiledName("FailWith")>]
     let failwith s =
         raise (Failure s)
