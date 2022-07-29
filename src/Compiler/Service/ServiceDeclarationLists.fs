@@ -202,7 +202,7 @@ module DeclarationListHelpers =
             let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout v
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
-                wordL (tagActivePatternCase apref.LogicalName |> mkNav v.DefinitionRange) ^^
+                wordL (tagActivePatternCase apref.DisplayName |> mkNav v.DefinitionRange) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv prettyTy
 

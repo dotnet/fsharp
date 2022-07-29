@@ -4,39 +4,66 @@ open FSharp.Compiler.Syntax.PrettyNaming
 open FsUnit
 open NUnit.Framework
 
-// words in operator name
-[<TestCase "$foo hoo">]
-[<TestCase "@foo hoo">]
-// typo in operator name
-[<TestCase "op_Nagation">]
 // invalid operator name
-[<TestCase "op_Dollarfoo">]
-[<TestCase "foo">]
-[<TestCase "$foo">]
-// random symbols
-[<TestCase "$">]
+[<TestCase ("op_Dollarfoo", false)>]
+// random stuff
+[<TestCase ("foo", false)>]
 // operator display representations
-[<TestCase "+">]
-[<TestCase "[]">]
-[<TestCase "::">]
-[<TestCase "~++">]
-[<TestCase ".. ..">]
+[<TestCase ("~%%", false)>]
+[<TestCase ("~%", false)>]
 // not infix operators
-[<TestCase "op_Splice">]
-[<TestCase "op_SpliceUntyped">]
-let ``IsLogicalInfixOpName detects bad logical names`` logicalName =
-    IsLogicalInfixOpName logicalName
-    |> should equal false
+[<TestCase ("op_BitwiseOr", false)>]
+[<TestCase ("op_Equality", false)>]
+// valid logical names
+[<TestCase ("op_Splice", true)>]
+[<TestCase ("op_SpliceUntyped", true)>]
+let ``IsLogicalPrefixOperator`` logicalName result =
+    IsLogicalPrefixOperator logicalName
+    |> should equal result
 
-[<TestCase "op_Addition">]
-[<TestCase "op_Append">]
-[<TestCase "op_ColonColon">]
-[<TestCase "op_BitwiseOr">]
-[<TestCase "op_GreaterThanOrEqual">]
-[<TestCase "op_Dynamic">]
-[<TestCase "op_ArrayLookup">]
-[<TestCase "op_DynamicAssignment">]
-[<TestCase "op_ArrayAssign">]
-let ``IsLogicalInfixOpName detects good logical names`` logicalName =
+// empty string
+[<TestCase ("", false)>]
+// invalid opearators
+[<TestCase ("op_Dynamic", false)>]
+[<TestCase ("op_RangeStep", false)>]
+// display representation
+[<TestCase ("?<-", false)>]
+// correction option
+[<TestCase ("op_DynamicAssignment", true)>]
+let ``IsLogicalTernaryOperator`` logicalName result =
+    IsLogicalTernaryOperator logicalName
+    |> should equal result
+
+// words in operator name
+[<TestCase ("$foo hoo", false)>]
+[<TestCase ("@foo hoo", false)>]
+// typo in operator name
+[<TestCase ("op_Nagation", false)>]
+// invalid operator name
+[<TestCase ("op_Dollarfoo", false)>]
+[<TestCase ("foo", false)>]
+[<TestCase ("$foo", false)>]
+// random symbols
+[<TestCase ("$", false)>]
+// operator display representations
+[<TestCase ("+", false)>]
+[<TestCase ("[]", false)>]
+[<TestCase ("::", false)>]
+[<TestCase ("~++", false)>]
+[<TestCase (".. ..", false)>]
+// not infix operators
+[<TestCase ("op_Splice", false)>]
+[<TestCase ("op_SpliceUntyped", false)>]
+// valid logical names
+[<TestCase ("op_Addition", true)>]
+[<TestCase ("op_Append", true)>]
+[<TestCase ("op_ColonColon", true)>]
+[<TestCase ("op_BitwiseOr", true)>]
+[<TestCase ("op_GreaterThanOrEqual", true)>]
+[<TestCase ("op_Dynamic", true)>]
+[<TestCase ("op_ArrayLookup", true)>]
+[<TestCase ("op_DynamicAssignment", true)>]
+[<TestCase ("op_ArrayAssign", true)>]
+let ``IsLogicalInfixOpName`` logicalName result =
     IsLogicalInfixOpName logicalName
-    |> should equal true
+    |> should equal result
