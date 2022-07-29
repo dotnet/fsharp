@@ -12,11 +12,12 @@ open Microsoft.FSharp.Control
 module Observable =
 
     let inline protect f succeed fail =
-        match (try
-                   Choice1Of2(f ())
-               with e ->
-                   Choice2Of2 e)
-            with
+        match
+            (try
+                Choice1Of2(f ())
+             with e ->
+                 Choice2Of2 e)
+        with
         | Choice1Of2 x -> (succeed x)
         | Choice2Of2 e -> (fail e)
 
@@ -34,7 +35,8 @@ module Observable =
         interface IObserver<'T> with
 
             member x.OnNext value =
-                if not stopped then x.Next value
+                if not stopped then
+                    x.Next value
 
             member x.OnError e =
                 if not stopped then
@@ -166,7 +168,8 @@ module Observable =
                     source1.Subscribe
                         { new IObserver<'T> with
                             member x.OnNext(v) =
-                                if not stopped then observer.OnNext v
+                                if not stopped then
+                                    observer.OnNext v
 
                             member x.OnError(e) =
                                 if not stopped then
@@ -186,7 +189,8 @@ module Observable =
                     source2.Subscribe
                         { new IObserver<'T> with
                             member x.OnNext(v) =
-                                if not stopped then observer.OnNext v
+                                if not stopped then
+                                    observer.OnNext v
 
                             member x.OnError(e) =
                                 if not stopped then

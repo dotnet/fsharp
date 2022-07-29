@@ -12,6 +12,9 @@ trigger:
     exclude:
     - .github/*
     - docs/
+    - .vscode/*
+    - .devcontainer/*
+    - tests/scripts/
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md
@@ -56,6 +59,12 @@ variables:
     value: .NETCore
   - name: VisualStudioDropName
     value: Products/$(System.TeamProject)/$(Build.Repository.Name)/$(Build.SourceBranchName)/$(Build.BuildNumber)
+  - name: Codeql.Enabled
+    value: true
+  - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
+    - name: _DotNetValidationArtifactsCategory
+      value: .NETCoreValidation
+    - group: DotNet-FSharp-SDLValidation-Params
   - ${{ if and(eq(variables['System.TeamProject'], 'public'), eq(variables['Build.Reason'], 'PullRequest')) }}:
     - name: RunningAsPullRequest
       value: true
@@ -271,7 +280,7 @@ stages:
         - job: Windows
           pool:
             # The PR build definition sets this variable:
-            #   WindowsMachineQueueName=Build.Windows.10.Amd64.VS2019.Open
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
             # and there is an alternate build definition that sets this to a queue that is always scouting the
             # next preview of Visual Studio.
             name: NetCore1ESPool-Public
@@ -564,6 +573,21 @@ stages:
       enableSymbolValidation: false
       # SourceLink improperly looks for generated files.  See https://github.com/dotnet/arcade/issues/3069
       enableSourceLinkValidation: false
+      # Enable SDL validation, passing through values from the 'DotNet-FSharp-SDLValidation-Params' group.
+      SDLValidationParameters:
+        enable: true
+        params: >-
+          -SourceToolsList @("policheck","credscan")
+          -TsaInstanceURL $(_TsaInstanceURL)
+          -TsaProjectName $(_TsaProjectName)
+          -TsaNotificationEmail $(_TsaNotificationEmail)
+          -TsaCodebaseAdmin $(_TsaCodebaseAdmin)
+          -TsaBugAreaPath $(_TsaBugAreaPath)
+          -TsaIterationPath $(_TsaIterationPath)
+          -TsaRepositoryName "FSharp"
+          -TsaCodebaseName "FSharp-GitHub"
+          -TsaPublish $True
+          -PoliCheckAdditionalRunConfigParams @("UserExclusionPath < $(Build.SourcesDirectory)/eng/policheck_exclusions.xml")
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                   VS Insertion                                                      #
@@ -571,8 +595,8 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev17.0
-      insertTargetBranch: rel/d17.0
+      componentBranchName: refs/heads/release/dev17.2
+      insertTargetBranch: rel/d17.2
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'

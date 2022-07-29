@@ -1060,10 +1060,13 @@ module CoreTests =
         let rawFileErr = tryCreateTemporaryFileName ()
         ``fsi <a >b 2>c`` "%s --nologo --preferreduilang:en-US %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
 
-        // REM REVIEW: want to normalise CWD paths, not suppress them.
-        let ``findstr /v`` text = Seq.filter (fun (s: string) -> not <| s.Contains(text))
-        let removeCDandHelp from' to' =
-            File.ReadLines from' |> (``findstr /v`` cfg.Directory) |> (``findstr /v`` "--help' for options") |> (fun lines -> File.WriteAllLines(getfullpath cfg to', lines))
+        let removeCDandHelp fromFile toFile =
+            File.ReadAllLines fromFile
+            |> Array.filter (fun s -> not (s.Contains(cfg.Directory)))
+            |> Array.filter (fun s -> not (s.Contains("--help' for options")))
+            |> Array.filter (fun s -> not (s.Contains("[Loading")))
+            |> Array.filter (fun s -> not (s.Contains("Binding session")))
+            |> (fun lines -> File.WriteAllLines(getfullpath cfg toFile, lines))
 
         removeCDandHelp rawFileOut diffFileOut
         removeCDandHelp rawFileErr diffFileErr
@@ -1114,7 +1117,7 @@ module CoreTests =
          runPrintingTest "--use:preludePrintSize1000.fsx" "output.1000"
 
     [<Test>]
-    let ``printing-width-200`` () =
+    let ``printing-width-200`` () =  
          runPrintingTest "--use:preludePrintSize200.fsx" "output.200"
 
     [<Test>]
@@ -3358,6 +3361,36 @@ module GeneratedSignatureTests =
 
     [<Test>]
     let ``measures-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``nestedModule-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/nestedModule" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``recursiveNestedModule-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/recursiveNestedModule" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``nestedModuleInNamespace-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/nestedModuleInNamespace" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``classStructInterface-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/classStructInterface" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``typeAugmentation-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/typeAugmentation" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``typeAliasPrimitives-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/typeAliasPrimitives" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``functionTypes-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/functionTypes" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``unionWithFunctionType-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/unionWithFunctionType" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``mixCurriedTupled-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/mixCurriedTupled" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``zeroConstraint-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/zeroConstraint" FSC_NETFX_TEST_GENERATED_SIGNATURE
 #endif
 
 #if !NETCOREAPP

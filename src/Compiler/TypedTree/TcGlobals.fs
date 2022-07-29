@@ -564,8 +564,8 @@ type TcGlobals(
 
   let tryDecodeTupleTy tupInfo l =
       match l with
-      | [t1;t2;t3;t4;t5;t6;t7;marker] ->
-          match marker with
+      | [t1;t2;t3;t4;t5;t6;t7;markerTy] ->
+          match markerTy with
           | TType_app(tcref, [t8], _) when tyconRefEq tcref v_ref_tuple1_tcr -> mkRawRefTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
           | TType_app(tcref, [t8], _) when tyconRefEq tcref v_struct_tuple1_tcr -> mkRawStructTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
           | TType_tuple (_structness2, t8plus) -> TType_tuple (tupInfo, [t1;t2;t3;t4;t5;t6;t7] @ t8plus) |> Some
@@ -983,6 +983,9 @@ type TcGlobals(
         tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
         tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
         tryFindSysAttrib "System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
+        tryFindSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
                               ] |> List.choose (Option.map (fun x -> x.TyconRef))
 
   override _.ToString() = "<TcGlobals>"
@@ -1425,6 +1428,9 @@ type TcGlobals(
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
   member val attrib_ComponentModelEditorBrowsableAttribute = findSysAttrib "System.ComponentModel.EditorBrowsableAttribute"
+  member val attrib_CompilerFeatureRequiredAttribute       = findSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
+  member val attrib_SetsRequiredMembersAttribute           = findSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
+  member val attrib_RequiredMemberAttribute                = findSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst
 
@@ -1743,11 +1749,10 @@ type TcGlobals(
   member _.mkDebuggableAttribute jitOptimizerDisabled =
       mkILCustomAttribute (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
 
-  member _.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
+  member _.mkDebuggableAttributeV2(jitTracking, jitOptimizerDisabled, enableEnC) =
         let debuggingMode =
             (if jitTracking then 1 else 0) |||
             (if jitOptimizerDisabled then 256 else 0) |||
-            (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
             (if enableEnC then 4 else 0)
         let tref_DebuggableAttribute_DebuggingModes = mkILTyRefInTyRef (tref_DebuggableAttribute, tname_DebuggableAttribute_DebuggingModes)
         mkILCustomAttribute
@@ -1758,6 +1763,8 @@ type TcGlobals(
   member internal _.CompilerGlobalState = Some compilerGlobalState
 
   member _.CompilerGeneratedAttribute = mkCompilerGeneratedAttribute ()
+
+  member _.DebuggerNonUserCodeAttribute = mkDebuggerNonUserCodeAttribute ()
 
   member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
       mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])
@@ -1779,7 +1786,7 @@ type TcGlobals(
             [ arg0Ty; arg1Ty ],
             Some retTy ->
                [vara; varb; varc], [ varaTy; varbTy ], varcTy, [ arg0Ty; arg1Ty; retTy ]
-          | ("UnaryNegationDynamic" | "CheckedUnaryNegationDynamic" | "LogicalNotDynamic" | "ExplicitDynamic"),
+          | ("UnaryNegationDynamic" | "CheckedUnaryNegationDynamic" | "LogicalNotDynamic" | "ExplicitDynamic" | "CheckedExplicitDynamic"),
             [ arg0Ty ],
             Some retTy ->
                [vara; varb ], [ varaTy ], varbTy, [ arg0Ty; retTy ]
@@ -1832,11 +1839,11 @@ type TcGlobals(
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, lower, None, Some nm, [vara], ([[varaTy]], varaTy))
         let tyargs = [aty]
         Some (info, tyargs, argExprs)
-    | "get_Item", [arrTy; _], Some rty, [_; _] when isArrayTy g arrTy ->
-        Some (g.array_get_info, [rty], argExprs)
-    | "set_Item", [arrTy; _; ety], _, [_; _; _] when isArrayTy g arrTy ->
-        Some (g.array_set_info, [ety], argExprs)
-    | "get_Item", [sty; _; _], _, [_; _] when isStringTy g sty ->
+    | "get_Item", [arrTy; _], Some retTy, [_; _] when isArrayTy g arrTy ->
+        Some (g.array_get_info, [retTy], argExprs)
+    | "set_Item", [arrTy; _; elemTy], _, [_; _; _] when isArrayTy g arrTy ->
+        Some (g.array_set_info, [elemTy], argExprs)
+    | "get_Item", [stringTy; _; _], _, [_; _] when isStringTy g stringTy ->
         Some (g.getstring_info, [], argExprs)
     | "op_UnaryPlus", [aty], _, [_] ->
         // Call Operators.id

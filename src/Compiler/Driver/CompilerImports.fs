@@ -402,7 +402,8 @@ type TcConfig with
                     seq {
                         yield! tcConfig.GetSearchPathsForLibraryFiles()
 
-                        if isHashRReference m then Path.GetDirectoryName(m.FileName)
+                        if isHashRReference m then
+                            Path.GetDirectoryName(m.FileName)
                     }
 
                 let resolved = TryResolveFileUsingPaths(searchPaths, m, nm)
@@ -450,30 +451,15 @@ type TcConfig with
                 raise (FileNameNotResolved(nm, searchMessage, m))
             | CcuLoadFailureAction.ReturnNone -> None
 
-    member tcConfig.MsBuildResolve(references, mode, errorAndWarningRange, showMessages) =
+    member tcConfig.MsBuildResolve(references, _, errorAndWarningRange, showMessages) =
         let logMessage showMessages =
             if showMessages && tcConfig.showReferenceResolutions then
                 (fun (message: string) -> printfn "%s" message)
             else
                 ignore
 
-        let logDiagnostic showMessages =
-            (fun isError code message ->
-                if showMessages && mode = ResolveAssemblyReferenceMode.ReportErrors then
-                    if isError then
-                        errorR (MSBuildReferenceResolutionError(code, message, errorAndWarningRange))
-                    else
-                        match code with
-                        // These are warnings that mean 'not resolved' for some assembly.
-                        // Note that we don't get to know the name of the assembly that couldn't be resolved.
-                        // Ignore these and rely on the logic below to emit an error for each unresolved reference.
-                        | "MSB3246" // Resolved file has a bad image, no metadata, or is otherwise inaccessible.
-                        | "MSB3106" -> ()
-                        | _ ->
-                            if code = "MSB3245" then
-                                errorR (MSBuildReferenceResolutionWarning(code, message, errorAndWarningRange))
-                            else
-                                warning (MSBuildReferenceResolutionWarning(code, message, errorAndWarningRange)))
+        let logDiagnostic _ =
+            (fun (_: bool) (_: string) (_: string) -> ())
 
         let targetProcessorArchitecture =
             match tcConfig.platform with
@@ -592,8 +578,10 @@ type TcConfig with
 
             // O(N^2) here over a small set of referenced assemblies.
             let IsResolved (originalName: string) =
-                if resultingResolutions
-                   |> List.exists (fun resolution -> resolution.originalReference.Text = originalName) then
+                if
+                    resultingResolutions
+                    |> List.exists (fun resolution -> resolution.originalReference.Text = originalName)
+                then
                     true
                 else
                     // MSBuild resolution may have unified the result of two duplicate references. Try to re-resolve now.
@@ -615,8 +603,10 @@ type TcConfig with
 
             // If mode=Speculative, then we haven't reported any errors.
             // We report the error condition by returning an empty list of resolutions
-            if mode = ResolveAssemblyReferenceMode.Speculative
-               && unresolvedReferences.Length > 0 then
+            if
+                mode = ResolveAssemblyReferenceMode.Speculative
+                && unresolvedReferences.Length > 0
+            then
                 [], unresolved
             else
                 resultingResolutions, unresolved
@@ -736,7 +726,8 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
 
                             resolutions.Length = 1
 
-                    if found then asm
+                    if found then
+                        asm
 
             if tcConfig.implicitlyReferenceDotNetAssemblies then
                 let references, _useDotNetFramework =
@@ -1097,7 +1088,9 @@ and [<Sealed>] TcImports
     let mutable disposed = false // this doesn't need locking, it's only for debugging
     let mutable tcGlobals = None // this doesn't need locking, it's set during construction of the TcImports
 
-    let CheckDisposed () = if disposed then assert false
+    let CheckDisposed () =
+        if disposed then
+            assert false
 
     let dispose () =
         CheckDisposed()
@@ -1116,8 +1109,11 @@ and [<Sealed>] TcImports
             let unsuccessful =
                 [
                     for ccuThunk, func in contents do
-                        if ccuThunk.IsUnresolvedReference then func ()
-                        if ccuThunk.IsUnresolvedReference then (ccuThunk, func)
+                        if ccuThunk.IsUnresolvedReference then
+                            func ()
+
+                        if ccuThunk.IsUnresolvedReference then
+                            (ccuThunk, func)
                 ]
 
             ccuThunks <- ResizeArray unsuccessful)
@@ -1352,7 +1348,7 @@ and [<Sealed>] TcImports
                 tcImports.RegisterDll dllinfo
 
                 let ccuContents =
-                    Construct.NewCcuContents ilScopeRef m ilShortAssemName (Construct.NewEmptyModuleOrNamespaceType Namespace)
+                    Construct.NewCcuContents ilScopeRef m ilShortAssemName (Construct.NewEmptyModuleOrNamespaceType(Namespace true))
 
                 let ccuData: CcuData =
                     {
@@ -1597,11 +1593,11 @@ and [<Sealed>] TcImports
                         ILScopeRef.Local,
                         injectedNamespace
                         |> List.rev
-                        |> List.map (fun n -> (n, ModuleOrNamespaceKind.Namespace))
+                        |> List.map (fun n -> (n, ModuleOrNamespaceKind.Namespace true))
                     )
 
                 let mid = ident (next, rangeStartup)
-                let mty = Construct.NewEmptyModuleOrNamespaceType Namespace
+                let mty = Construct.NewEmptyModuleOrNamespaceType(Namespace true)
 
                 let newNamespace =
                     Construct.NewModuleOrNamespace (Some cpath) taccessPublic mid XmlDoc.Empty [] (MaybeLazy.Strict mty)

@@ -13,7 +13,6 @@
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
-    <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);USE_SHIPPED_FSCORE</DefineConstants>
     <OtherFlags>$(OtherFlags) --extraoptimizationloops:1 --times</OtherFlags>
     <!-- 1182: Unused variables -->
@@ -22,8 +21,6 @@
     <OtherFlags>$(OtherFlags) --warnon:3218</OtherFlags>
     <!-- 3390: xmlDocBadlyFormed -->
     <OtherFlags>$(OtherFlags) --warnon:3390</OtherFlags>
-    <!-- 3524: typrelNeverRefinedAwayFromTop -->
-    <OtherFlags>$(OtherFlags) --warnon:3524</OtherFlags>
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
@@ -92,6 +89,7 @@
     <InternalsVisibleTo Include="FSharp.Tests.FSharpSuite" />
     <InternalsVisibleTo Include="LanguageServiceProfiling" />
     <InternalsVisibleTo Include="FSharp.Compiler.Benchmarks" />
+    <InternalsVisibleTo Include="HistoricalBenchmark" />
   </ItemGroup>
 
   <ItemGroup>
@@ -338,6 +336,8 @@
     <Compile Include="Checking\CheckPatterns.fs" />
     <Compile Include="Checking\CheckComputationExpressions.fsi" />
     <Compile Include="Checking\CheckComputationExpressions.fs" />
+    <Compile Include="Checking\CheckIncrementalClasses.fsi" />
+    <Compile Include="Checking\CheckIncrementalClasses.fs" />
     <Compile Include="Checking\CheckDeclarations.fsi" />
     <Compile Include="Checking\CheckDeclarations.fs" />
     <Compile Include="Optimize\Optimizer.fsi" />
@@ -465,9 +465,9 @@
     <Compile Include="Service\ServiceStructure.fs" />
     <Compile Include="Service\ServiceAnalysis.fsi" />
     <Compile Include="Service\ServiceAnalysis.fs" />
+    <Compile Include="Interactive\ControlledExecution.fs" />
     <Compile Include="Interactive\fsi.fsi" />
     <Compile Include="Interactive\fsi.fs" />
-
     <!-- A legacy resolver used to help with scripting diagnostics in the Visual Studio tools -->
     <Compile Include="Legacy\LegacyMSBuildReferenceResolver.fsi" Condition="'$(MonoPackaging)' != 'true'" />
     <Compile Include="Legacy\LegacyMSBuildReferenceResolver.fs" Condition="'$(MonoPackaging)' != 'true'" />

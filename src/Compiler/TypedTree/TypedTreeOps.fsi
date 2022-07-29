@@ -845,7 +845,7 @@ val isDimensionless: TcGlobals -> TType -> bool
 // TType modifications and comparisons
 //---------------------------------------------------------------------------
 
-val stripMeasuresFromTType: TcGlobals -> TType -> TType
+val stripMeasuresFromTy: TcGlobals -> TType -> TType
 
 //-------------------------------------------------------------------------
 // Equivalence of types (up to substitution of type variables in the left-hand type)
@@ -1284,7 +1284,11 @@ val mkRepackageRemapping: SignatureRepackageInfo -> Remap
 
 /// Wrap one module or namespace implementation in a 'namespace N' outer wrapper
 val wrapModuleOrNamespaceContentsInNamespace:
-    Ident -> CompilationPath -> ModuleOrNamespaceContents -> ModuleOrNamespaceContents
+    isModule: bool ->
+    id: Ident ->
+    cpath: CompilationPath ->
+    mexpr: ModuleOrNamespaceContents ->
+        ModuleOrNamespaceContents
 
 /// Wrap one module or namespace definition in a 'namespace N' outer wrapper
 val wrapModuleOrNamespaceTypeInNamespace:
@@ -1399,14 +1403,23 @@ val JoinTyparStaticReq: TyparStaticReq -> TyparStaticReq -> TyparStaticReq
 /// Layout for internal compiler debugging purposes
 module DebugPrint =
 
+    /// A global flag indicating whether debug output should include ValReprInfo
+    val mutable layoutValReprInfo: bool
+
+    /// A global flag indicating whether debug output should include stamps of Val and Entity
+    val mutable layoutStamps: bool
+
     /// A global flag indicating whether debug output should include ranges
-    val layoutRanges: bool ref
+    val mutable layoutRanges: bool
+
+    /// A global flag indicating whether debug output should include type information
+    val mutable layoutTypes: bool
 
     /// Convert a type to a string for debugging purposes
     val showType: TType -> string
 
     /// Convert an expression to a string for debugging purposes
-    val showExpr: TcGlobals -> Expr -> string
+    val showExpr: Expr -> string
 
     /// Debug layout for a reference to a value
     val valRefL: ValRef -> Layout
@@ -1415,7 +1428,7 @@ module DebugPrint =
     val unionCaseRefL: UnionCaseRef -> Layout
 
     /// Debug layout for an value definition at its binding site
-    val valAtBindL: TcGlobals -> Val -> Layout
+    val valAtBindL: Val -> Layout
 
     /// Debug layout for an integer
     val intL: int -> Layout
@@ -1441,32 +1454,26 @@ module DebugPrint =
     /// Debug layout for a method slot signature
     val slotSigL: SlotSig -> Layout
 
-    /// Debug layout for the type signature of a module or namespace definition
-    val entityTypeL: TcGlobals -> ModuleOrNamespaceType -> Layout
-
     /// Debug layout for a module or namespace definition
-    val entityL: TcGlobals -> ModuleOrNamespace -> Layout
-
-    /// Debug layout for the type of a value
-    val typeOfValL: Val -> Layout
+    val entityL: ModuleOrNamespace -> Layout
 
     /// Debug layout for a binding of an expression to a value
-    val bindingL: TcGlobals -> Binding -> Layout
+    val bindingL: Binding -> Layout
 
     /// Debug layout for an expression
-    val exprL: TcGlobals -> Expr -> Layout
+    val exprL: Expr -> Layout
 
     /// Debug layout for a type definition
-    val tyconL: TcGlobals -> Tycon -> Layout
+    val tyconL: Tycon -> Layout
 
     /// Debug layout for a decision tree
-    val decisionTreeL: TcGlobals -> DecisionTree -> Layout
+    val decisionTreeL: DecisionTree -> Layout
 
     /// Debug layout for an implementation file
-    val implFileL: TcGlobals -> CheckedImplFile -> Layout
+    val implFileL: CheckedImplFile -> Layout
 
     /// Debug layout for a list of implementation files
-    val implFilesL: TcGlobals -> CheckedImplFile list -> Layout
+    val implFilesL: CheckedImplFile list -> Layout
 
     /// Debug layout for class and record fields
     val recdFieldRefL: RecdFieldRef -> Layout
@@ -1657,6 +1664,9 @@ val underlyingTypeOfEnumTy: TcGlobals -> TType -> TType
 
 /// If the input type is an enum type, then convert to its underlying type, otherwise return the input type
 val normalizeEnumTy: TcGlobals -> TType -> TType
+
+/// Determine if TyconRef is to a struct type
+val isStructTyconRef: TyconRef -> bool
 
 /// Determine if a type is a struct type
 val isStructTy: TcGlobals -> TType -> bool

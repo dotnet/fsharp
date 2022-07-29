@@ -498,7 +498,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         let findBreakPoints () =
             let checkRange m =
                 [
-                    if isMatchRange m && not m.IsSynthetic then yield m
+                    if isMatchRange m && not m.IsSynthetic then
+                        yield m
                 ]
 
             let walkBindSeqPt sp =
@@ -559,7 +560,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | _ -> false
 
                     // This extends the range of the implicit debug point for 'do expr' range to include the 'do'
-                    if extendDebugPointForDo then yield! checkRange m
+                    if extendDebugPointForDo then
+                        yield! checkRange m
 
                     let useImplicitDebugPoint =
                         match spInfo with
@@ -885,6 +887,14 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | SynMemberDefn.AutoProperty (synExpr = synExpr) -> yield! walkExpr true synExpr
                         | SynMemberDefn.ImplicitCtor (_, _, _, _, _, m) -> yield! checkRange m
                         | SynMemberDefn.Member (bind, _) -> yield! walkBind bind
+                        | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
+                            match getBinding, setBinding with
+                            | None, None -> ()
+                            | None, Some binding
+                            | Some binding, None -> yield! walkBind binding
+                            | Some getBinding, Some setBinding ->
+                                yield! walkBind getBinding
+                                yield! walkBind setBinding
                         | SynMemberDefn.Interface(members = Some membs) ->
                             for m in membs do
                                 yield! walkMember m
@@ -936,9 +946,10 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                 if pos.Column = 0 then
                     // we have a breakpoint that was set with mouse at line start
-                    match locations
-                          |> List.filter (fun m -> m.StartLine = m.EndLine && pos.Line = m.StartLine)
-                        with
+                    match
+                        locations
+                        |> List.filter (fun m -> m.StartLine = m.EndLine && pos.Line = m.StartLine)
+                    with
                     | [] ->
                         match locations |> List.filter (fun m -> rangeContainsPos m pos) with
                         | [] ->

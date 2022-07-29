@@ -3,44 +3,44 @@
 
 > val repeatId: string = "B"
 
-namespace FSI_0004
-  val x1: int
-  val x2: string
-  val x3: 'a option
-  val x4: int option
-  val x5: 'a list
-  val x6: int list
-  val x7: System.Windows.Forms.Form
-  val x8: int[,]
-  val x9: Lazy<string>
-  type ClassInFile1 =
-    new: unit -> ClassInFile1
+module FSI_0004.TestLoadFile
+val x1: int
+val x2: string
+val x3: 'a option
+val x4: int option
+val x5: 'a list
+val x6: int list
+val x7: System.Windows.Forms.Form
+val x8: int[,]
+val x9: Lazy<string>
+type ClassInFile1 =
+  new: unit -> ClassInFile1
 
-namespace FSI_0005
-  val x1: int
-  val x2: string
-  val x3: 'a option
-  val x4: int option
-  val x5: 'a list
-  val x6: int list
-  val x7: System.Windows.Forms.Form
-  val x8: int[,]
-  val x9: Lazy<string>
-  type ClassInFile1 =
-    new: unit -> ClassInFile1
+module FSI_0005.TestLoadFile
+val x1: int
+val x2: string
+val x3: 'a option
+val x4: int option
+val x5: 'a list
+val x6: int list
+val x7: System.Windows.Forms.Form
+val x8: int[,]
+val x9: Lazy<string>
+type ClassInFile1 =
+  new: unit -> ClassInFile1
 
-namespace FSI_0005
-  val x1: int
-  val x2: string
-  val x3: 'a option
-  val x4: int option
-  val x5: 'a list
-  val x6: int list
-  val x7: System.Windows.Forms.Form
-  val x8: int[,]
-  val x9: Lazy<string>
-  type ClassInFile2 =
-    new: unit -> ClassInFile2
+module FSI_0005.TestLoadFile2
+val x1: int
+val x2: string
+val x3: 'a option
+val x4: int option
+val x5: 'a list
+val x6: int list
+val x7: System.Windows.Forms.Form
+val x8: int[,]
+val x9: Lazy<string>
+type ClassInFile2 =
+  new: unit -> ClassInFile2
 
 > val x1: seq<string>
 val x2: seq<string>
@@ -4092,7 +4092,8 @@ type 'a T4063 = | AT4063 of 'a
 > type internal T2 =
   { x: int }
 
-> type internal T3
+> type internal T3 =
+  class end
 
 > type internal T4 =
   new: unit -> T4
@@ -4125,7 +4126,8 @@ type 'a T4063 = | AT4063 of 'a
 > type internal T2 =
   private { x: int }
 
-> type private T3
+> type private T3 =
+  class end
 
 > type private T4 =
   new: unit -> T4
@@ -4920,7 +4922,8 @@ val x1564_A3: int = 3
     | B
   type T2 =
     { x: int }
-  type T3
+  type T3 =
+    class end
   type T4 =
     new: unit -> T4
   type T5 =
@@ -4943,7 +4946,8 @@ val x1564_A3: int = 3
             | B
   type T12 =
     private { x: int }
-  type private T13
+  type private T13 =
+    class end
   type private T14 =
     new: unit -> T14
 module internal PrivateM =
@@ -4958,7 +4962,8 @@ module internal PrivateM =
     | B
   type T2 =
     { x: int }
-  type T3
+  type T3 =
+    class end
   type T4 =
     new: unit -> T4
   type T5 =
@@ -4981,7 +4986,8 @@ module internal PrivateM =
             | B
   type T12 =
     private { x: int }
-  type private T13
+  type private T13 =
+    class end
   type private T14 =
     new: unit -> T14
 
@@ -6162,37 +6168,37 @@ val x: optionRecord = { x = null }
     TwoFields2: obj
   }
 
-> type Int32 with
+> type System.Int32 with
   member ExtrinsicExtensionProperty: int
-type Int32 with
+type System.Int32 with
   member ExtrinsicExtensionMethod: unit -> int
 
 > val ``value with spaces in name`` : bool = true
 
 > val functionWhichTakesLongNameMixedParameters:
   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int *
-  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int
-  -> ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int *
-     dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int
-    -> int
+  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int ->
+    ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int *
+    dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int ->
+      int
 
 > val functionWhichTakesLongNameTupledParameters:
   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int *
   bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int *
   ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int *
-  ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int
-    -> int
+  ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int ->
+    int
 
 > val functionWhichTakesLongNameCurriedParameters:
-  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int
-  -> bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int
-  -> cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int
-  -> dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int
-    -> int
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int ->
+    bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int ->
+    cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int ->
+    dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int ->
+    int
 
 > val functionWhichTakesMixedLengthCurriedParametersA:
-  a: 'a -> b: 'b -> c: 'c -> ddddddddddddddddddddddddddddddddddddddddddddd: 'd
-    -> int
+  a: 'a ->
+    b: 'b -> c: 'c -> ddddddddddddddddddddddddddddddddddddddddddddd: 'd -> int
 
 > val functionWhichTakesMixedLengthCurriedParametersB:
   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: 'a -> b: 'b -> c: 'c -> d: 'd -> int
@@ -6304,5 +6310,58 @@ val ShortName: string = "hi"
                          B = "a" }]
 
 > val list2: int list = [1]
+
+module FSI_0316.
+       D27805741a339047ef3ed7a2ca8faae3c17e6ef2371984011e49a6c9c3286641
+
+{"ImmutableField0":6}
+type R1 =
+  { ImmutableField0: int }
+val it: unit = ()
+
+> val it: R1 = { ImmutableField0 = 7 }
+
+> {"MutableField1":8}
+type R2 =
+  { mutable MutableField1: int }
+val it: unit = ()
+
+> val it: R2 = { MutableField1 = 9 }
+
+> {"AnonRecordField2":10}
+val it: unit = ()
+
+> val it: {| AnonRecordField2: int |} = { AnonRecordField2 = 11 }
+
+module FSI_0323.Project.fsproj
+
+type R3 =
+  { ImmutableField3: int }
+val test3a: string = "{"ImmutableField3":12}"
+
+> val test3b: R3 = { ImmutableField3 = 12 }
+
+> val test3c: string = "{"ImmutableField3":13}"
+
+> val test3d: R3 = { ImmutableField3 = 13 }
+
+> type R4 =
+  { mutable MutableField4: int }
+val test4a: string = "{"MutableField4":15}"
+
+> val test4b: R4 = { MutableField4 = 15 }
+
+> val test4c: string = "{"MutableField4":16}"
+
+> val test4d: R4 = { MutableField4 = 16 }
+
+> type R5 = {| AnonRecordField5: int |}
+val test5a: string = "{"AnonRecordField5":17}"
+
+> val test5b: R5 = { AnonRecordField5 = 17 }
+
+> val test5c: string = "{"AnonRecordField5":18}"
+
+> val test5d: R5 = { AnonRecordField5 = 18 }
 
 > > > 

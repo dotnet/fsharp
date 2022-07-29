@@ -10,6 +10,9 @@ open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
+#if !USE_SHIPPED_FSCORE
+open FSharp.Core.CompilerServices.StateMachineHelpers
+#endif
 
 [<AutoOpen>]
 module internal PervasiveAutoOpens =
@@ -63,24 +66,6 @@ module internal PervasiveAutoOpens =
     /// Per the docs the threshold for the Large Object Heap is 85000 bytes: https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/large-object-heap#how-an-object-ends-up-on-the-large-object-heap-and-how-gc-handles-them
     /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
     let LOH_SIZE_THRESHOLD_BYTES = 80_000
-
-    let runningOnMono =
-#if ENABLE_MONO_SUPPORT
-        // Officially supported way to detect if we are running on Mono.
-        // See http://www.mono-project.com/FAQ:_Technical
-        // "How can I detect if am running in Mono?" section
-        try
-            Type.GetType "Mono.Runtime" <> null
-        with _ ->
-            // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
-            // that is not reliable.
-            // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is
-            // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get
-            // their issue fixed but we need to be robust here anyway.
-            false
-#else
-        false
-#endif
 
     type String with
 
@@ -196,7 +181,8 @@ module Array =
             let mutable i = 0
 
             while eq && i < len do
-                if not (inp[i] === res[i]) then eq <- false
+                if not (inp[i] === res[i]) then
+                    eq <- false
 
                 i <- i + 1
 
@@ -885,51 +871,27 @@ type ValueOrCancelled<'TResult> =
 /// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.
 /// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.
 [<Struct>]
-type Cancellable<'TResult> = Cancellable of (CancellationToken -> ValueOrCancelled<'TResult>)
+type Cancellable<'T> = Cancellable of (CancellationToken -> ValueOrCancelled<'T>)
 
 module Cancellable =
 
     /// Run a cancellable computation using the given cancellation token
-    let run (ct: CancellationToken) (Cancellable oper) =
+    let inline run (ct: CancellationToken) (Cancellable oper) =
         if ct.IsCancellationRequested then
             ValueOrCancelled.Cancelled(OperationCanceledException ct)
         else
             oper ct
 
-    /// Bind the result of a cancellable computation
-    let inline bind f comp1 =
-        Cancellable(fun ct ->
-            match run ct comp1 with
-            | ValueOrCancelled.Value v1 -> run ct (f v1)
-            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
-
-    /// Map the result of a cancellable computation
-    let inline map f oper =
-        Cancellable(fun ct ->
-            match run ct oper with
-            | ValueOrCancelled.Value res -> ValueOrCancelled.Value(f res)
-            | ValueOrCancelled.Cancelled err -> ValueOrCancelled.Cancelled err)
-
-    /// Return a simple value as the result of a cancellable computation
-    let inline ret x =
-        Cancellable(fun _ -> ValueOrCancelled.Value x)
-
-    /// Fold a cancellable computation along a sequence of inputs
     let fold f acc seq =
         Cancellable(fun ct ->
-            (ValueOrCancelled.Value acc, seq)
-            ||> Seq.fold (fun acc x ->
+            let mutable acc = ValueOrCancelled.Value acc
+
+            for x in seq do
                 match acc with
-                | ValueOrCancelled.Value accv -> run ct (f accv x)
-                | res -> res))
+                | ValueOrCancelled.Value accv -> acc <- run ct (f accv x)
+                | ValueOrCancelled.Cancelled _ -> ()
 
-    /// Iterate a cancellable computation over a collection
-    let inline each f seq =
-        fold (fun acc x -> f x |> map (fun y -> (y :: acc))) [] seq |> map List.rev
-
-    /// Delay a cancellable computation
-    let inline delay (f: unit -> Cancellable<'T>) =
-        Cancellable(fun ct -> let (Cancellable g) = f () in g ct)
+            acc)
 
     /// Run the computation in a mode where it may not be cancelled. The computation never results in a
     /// ValueOrCancelled.Cancelled.
@@ -960,61 +922,118 @@ module Cancellable =
     let canceled () =
         Cancellable(fun ct -> ValueOrCancelled.Cancelled(OperationCanceledException ct))
 
-    /// Catch exceptions in a computation
-    let inline catch comp =
-        let (Cancellable f) = comp
-
-        Cancellable(fun ct ->
-            try
-                match f ct with
-                | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
-                | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
-            with err ->
-                ValueOrCancelled.Value(Choice2Of2 err))
-
-    /// Implement try/finally for a cancellable computation
-    let inline tryFinally comp compensation =
-        catch comp
-        |> bind (fun res ->
-            compensation ()
-
-            match res with
-            | Choice1Of2 r -> ret r
-            | Choice2Of2 err -> raise err)
-
-    /// Implement try/with for a cancellable computation
-    let inline tryWith comp handler =
-        catch comp
-        |> bind (fun res ->
-            match res with
-            | Choice1Of2 r -> ret r
-            | Choice2Of2 err -> handler err)
-
 type CancellableBuilder() =
 
-    member inline _.BindReturn(comp, k) = Cancellable.map k comp
+    member inline _.Delay([<InlineIfLambda>] f) =
+        Cancellable(fun ct ->
+            let (Cancellable g) = f ()
+            g ct)
 
-    member inline _.Bind(comp, k) = Cancellable.bind k comp
+    member inline _.Bind(comp, [<InlineIfLambda>] k) =
+        Cancellable(fun ct ->
+#if !USE_SHIPPED_FSCORE
+            __debugPoint ""
+#endif
 
-    member inline _.Return v = Cancellable.ret v
+            match Cancellable.run ct comp with
+            | ValueOrCancelled.Value v1 -> Cancellable.run ct (k v1)
+            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
+
+    member inline _.BindReturn(comp, [<InlineIfLambda>] k) =
+        Cancellable(fun ct ->
+#if !USE_SHIPPED_FSCORE
+            __debugPoint ""
+#endif
+
+            match Cancellable.run ct comp with
+            | ValueOrCancelled.Value v1 -> ValueOrCancelled.Value(k v1)
+            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
+
+    member inline _.Combine(comp1, comp2) =
+        Cancellable(fun ct ->
+#if !USE_SHIPPED_FSCORE
+            __debugPoint ""
+#endif
+
+            match Cancellable.run ct comp1 with
+            | ValueOrCancelled.Value () -> Cancellable.run ct comp2
+            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
+
+    member inline _.TryWith(comp, [<InlineIfLambda>] handler) =
+        Cancellable(fun ct ->
+#if !USE_SHIPPED_FSCORE
+            __debugPoint ""
+#endif
+
+            let compRes =
+                try
+                    match Cancellable.run ct comp with
+                    | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
+                    | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
+                with err ->
+                    ValueOrCancelled.Value(Choice2Of2 err)
+
+            match compRes with
+            | ValueOrCancelled.Value res ->
+                match res with
+                | Choice1Of2 r -> ValueOrCancelled.Value r
+                | Choice2Of2 err -> Cancellable.run ct (handler err)
+            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
+
+    member inline _.Using(resource, [<InlineIfLambda>] comp) =
+        Cancellable(fun ct ->
+#if !USE_SHIPPED_FSCORE
+            __debugPoint ""
+#endif
+            let body = comp resource
+
+            let compRes =
+                try
+                    match Cancellable.run ct body with
+                    | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
+                    | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
+                with err ->
+                    ValueOrCancelled.Value(Choice2Of2 err)
+
+            match compRes with
+            | ValueOrCancelled.Value res ->
+                (resource :> IDisposable).Dispose()
+
+                match res with
+                | Choice1Of2 r -> ValueOrCancelled.Value r
+                | Choice2Of2 err -> raise err
+            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
+
+    member inline _.TryFinally(comp, [<InlineIfLambda>] compensation) =
+        Cancellable(fun ct ->
+#if !USE_SHIPPED_FSCORE
+            __debugPoint ""
+#endif
+
+            let compRes =
+                try
+                    match Cancellable.run ct comp with
+                    | ValueOrCancelled.Value res -> ValueOrCancelled.Value(Choice1Of2 res)
+                    | ValueOrCancelled.Cancelled exn -> ValueOrCancelled.Cancelled exn
+                with err ->
+                    ValueOrCancelled.Value(Choice2Of2 err)
+
+            match compRes with
+            | ValueOrCancelled.Value res ->
+                compensation ()
+
+                match res with
+                | Choice1Of2 r -> ValueOrCancelled.Value r
+                | Choice2Of2 err -> raise err
+            | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
+
+    member inline _.Return v =
+        Cancellable(fun _ -> ValueOrCancelled.Value v)
 
     member inline _.ReturnFrom(v: Cancellable<'T>) = v
 
-    member inline _.Combine(e1, e2) = e1 |> Cancellable.bind (fun () -> e2)
-
-    member inline _.For(es, f) = es |> Cancellable.each f
-
-    member inline _.TryWith(comp, handler) = Cancellable.tryWith comp handler
-
-    member inline _.Using(resource, comp) =
-        Cancellable.tryFinally (comp resource) (fun () -> (resource :> IDisposable).Dispose())
-
-    member inline _.TryFinally(comp, compensation) =
-        Cancellable.tryFinally comp compensation
-
-    member inline _.Delay f = Cancellable.delay f
-
-    member inline _.Zero() = Cancellable.ret ()
+    member inline _.Zero() =
+        Cancellable(fun _ -> ValueOrCancelled.Value())
 
 [<AutoOpen>]
 module CancellableAutoOpens =
@@ -1046,9 +1065,11 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
     let table = new ConcurrentDictionary<'T, 'U>(keyComparer)
 
     member t.Apply x =
-        if (match canMemoize with
-            | None -> true
-            | Some f -> f x) then
+        if
+            (match canMemoize with
+             | None -> true
+             | Some f -> f x)
+        then
             match table.TryGetValue x with
             | true, res -> res
             | _ ->

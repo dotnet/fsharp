@@ -215,6 +215,22 @@ type SynTypeDefnTrivia =
 
     static member Zero: SynTypeDefnTrivia
 
+/// Represents additional information for SynTypeDefnSig
+[<NoEquality; NoComparison>]
+type SynTypeDefnSigTrivia =
+    {
+        /// The syntax range of the `type` keyword.
+        TypeKeyword: range option
+
+        /// The syntax range of the `=` token.
+        EqualsRange: range option
+
+        /// The syntax range of the `with` keyword
+        WithKeyword: range option
+    }
+
+    static member Zero: SynTypeDefnSigTrivia
+
 /// Represents additional information for SynBinding
 [<NoEquality; NoComparison>]
 type SynBindingTrivia =
@@ -324,3 +340,28 @@ type SynValSigTrivia =
     }
 
     static member Zero: SynValSigTrivia
+
+/// Represents additional information for SynType.Fun
+[<NoEquality; NoComparison>]
+type SynTypeFunTrivia =
+    {
+        /// The syntax range of the `->` token.
+        ArrowRange: range
+    }
+
+/// Represents additional information for SynMemberDefn.GetSetMember
+[<NoEquality; NoComparison>]
+type SynMemberGetSetTrivia =
+    {
+        /// The syntax range of the `with` keyword
+        WithKeyword: range
+
+        /// The syntax range of the `get` keyword
+        GetKeyword: range option
+
+        /// The syntax range of the `and` keyword
+        AndKeyword: range option
+
+        /// The syntax range of the `set` keyword
+        SetKeyword: range option
+    }

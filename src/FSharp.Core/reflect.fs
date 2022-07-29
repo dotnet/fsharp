@@ -1172,10 +1172,12 @@ type FSharpType =
         // No assembly passed therefore just get framework local version of Tuple
         let asm = typeof<System.Tuple>.Assembly
 
-        if types
-           |> Array.exists (function
-               | null -> true
-               | _ -> false) then
+        if
+            types
+            |> Array.exists (function
+                | null -> true
+                | _ -> false)
+        then
             invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
 
         mkTupleType false asm types
@@ -1183,10 +1185,12 @@ type FSharpType =
     static member MakeTupleType(asm: Assembly, types: Type[]) =
         checkNonNull "types" types
 
-        if types
-           |> Array.exists (function
-               | null -> true
-               | _ -> false) then
+        if
+            types
+            |> Array.exists (function
+                | null -> true
+                | _ -> false)
+        then
             invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
 
         mkTupleType false asm types
@@ -1194,10 +1198,12 @@ type FSharpType =
     static member MakeStructTupleType(asm: Assembly, types: Type[]) =
         checkNonNull "types" types
 
-        if types
-           |> Array.exists (function
-               | null -> true
-               | _ -> false) then
+        if
+            types
+            |> Array.exists (function
+                | null -> true
+                | _ -> false)
+        then
             invalidArg "types" (SR.GetString(SR.nullsNotAllowedInArray))
 
         mkTupleType true asm types

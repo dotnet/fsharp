@@ -19,10 +19,10 @@ module ObjInference =
     let ``Warning is emitted when top type Obj is inferred``(code: string, line1: int, col1: int, line2: int, col2: int) =
         FSharp code
         |> withErrorRanges
-        |> withWarnOn 3524
+        |> withWarnOn 3525
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3524, Line line1, Col col1, Line line2, Col col2, "A type was not refined away from `obj`, which may be unintended. Consider adding explicit type annotations.")
+        |> withSingleDiagnostic (Warning 3525, Line line1, Col col1, Line line2, Col col2, "A type was not refined away from `obj`, which may be unintended. Consider adding explicit type annotations.")
 
     let successCases =
         [
@@ -40,7 +40,7 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
     [<MemberData(nameof(successCases))>]
     let ``Warning does not fire unless required``(code: string) =
         FSharp code
-        |> withWarnOn 3524
+        |> withWarnOn 3525
         |> typecheck
         |> shouldSucceed
 
@@ -58,7 +58,7 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
     let ``Don't warn on an explicit null``(expr: string) =
         sprintf "%s |> ignore" expr
         |> FSharp
-        |> withWarnOn 3524
+        |> withWarnOn 3525
         |> typecheck
         |> shouldSucceed
 
@@ -67,7 +67,7 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
     let ``Don't warn on an explicit null, inside quotations``(expr: string) =
         sprintf "<@ %s @> |> ignore" expr
         |> FSharp
-        |> withWarnOn 3524
+        |> withWarnOn 3525
         |> typecheck
         |> shouldSucceed
 
@@ -82,7 +82,7 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
     let ``Don't warn inside quotations of acceptable code``(expr: string) =
         sprintf "%s |> ignore" expr
         |> FSharp
-        |> withWarnOn 3524
+        |> withWarnOn 3525
         |> typecheck
         |> shouldSucceed
 
@@ -90,7 +90,7 @@ let f () = x = x |> ignore""" // measure is inferred as 1, but that's not covere
     let ``Warn when the error appears inside a quotation``() =
         sprintf "<@ [] = [] @> |> ignore"
         |> FSharp
-        |> withWarnOn 3524
+        |> withWarnOn 3525
         |> typecheck
         |> shouldFail
-        |> withSingleDiagnostic (Warning 3524, Line 1, Col 9, Line 1, Col 11, "A type was not refined away from `obj`, which may be unintended. Consider adding explicit type annotations.")
+        |> withSingleDiagnostic (Warning 3525, Line 1, Col 9, Line 1, Col 11, "A type was not refined away from `obj`, which may be unintended. Consider adding explicit type annotations.")

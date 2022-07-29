@@ -39,7 +39,7 @@ type IlxUnionHasHelpers =
     | SpecialFSharpListHelpers
     | SpecialFSharpOptionHelpers
 
-type IlxUnionRef = IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionCase[] * bool (* hasHelpers: *)  * IlxUnionHasHelpers
+type IlxUnionRef = IlxUnionRef of boxity: ILBoxity * ILTypeRef * IlxUnionCase[] * bool (* hasHelpers: *) * IlxUnionHasHelpers
 
 type IlxUnionSpec =
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
@@ -75,7 +75,7 @@ type IlxClosureApps =
 let rec instAppsAux n inst apps =
     match apps with
     | Apps_tyapp (ty, rest) -> Apps_tyapp(instILTypeAux n inst ty, instAppsAux n inst rest)
-    | Apps_app (dty, rest) -> Apps_app(instILTypeAux n inst dty, instAppsAux n inst rest)
+    | Apps_app (domainTy, rest) -> Apps_app(instILTypeAux n inst domainTy, instAppsAux n inst rest)
     | Apps_done retTy -> Apps_done(instILTypeAux n inst retTy)
 
 let rec instLambdasAux n inst lambdas =

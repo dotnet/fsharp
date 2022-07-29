@@ -45,6 +45,8 @@ module WordL =
     let keywordFalse = wordL TaggedText.keywordFalse
     let bar = wordL TaggedText.bar
     let keywordStruct = wordL TaggedText.keywordStruct
+    let keywordClass = wordL TaggedText.keywordClass
+    let keywordInterface = wordL TaggedText.keywordInterface
     let keywordInherit = wordL TaggedText.keywordInherit
     let keywordBegin = wordL TaggedText.keywordBegin
     let keywordEnd = wordL TaggedText.keywordEnd
@@ -202,5 +204,5 @@ module LayoutRender =
 
     let toArray layout =
         let output = ResizeArray()
-        renderL (taggedTextListR (fun tt -> output.Add(tt))) layout |> ignore
+        renderL (taggedTextListR output.Add) layout |> ignore
         output.ToArray()

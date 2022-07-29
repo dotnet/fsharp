@@ -1118,11 +1118,6 @@ type VarArgMethodData =
 type PEReader =
     {
         fileName: string
-#if FX_NO_PDB_READER
-        pdb: obj option
-#else
-        pdb: (PdbReader * (string -> ILSourceDocument)) option
-#endif
         entryPointToken: TableName * int
         pefile: BinaryFile
         textSegmentPhysicalLoc: int32
@@ -1379,7 +1374,8 @@ let seekReadGuidIdx (ctxt: ILMetadataReader) mdv (addr: byref<int>) = seekReadId
 let seekReadBlobIdx (ctxt: ILMetadataReader) mdv (addr: byref<int>) = seekReadIdx ctxt.blobsBigness mdv &addr
 
 let seekReadModuleRow (ctxt: ILMetadataReader) mdv idx =
-    if idx = 0 then failwith "cannot read Module table row 0"
+    if idx = 0 then
+        failwith "cannot read Module table row 0"
 
     let mutable addr = ctxt.rowAddr TableNames.Module idx
     let generation = seekReadUInt16Adv mdv &addr
@@ -1846,7 +1842,9 @@ let getDataEndPointsDelayed (pectxt: PEReader) ctxtH =
             |> List.sort
 
 let rvaToData (ctxt: ILMetadataReader) (pectxt: PEReader) nm rva =
-    if rva = 0x0 then failwith "rva is zero"
+    if rva = 0x0 then
+        failwith "rva is zero"
+
     let start = pectxt.anyV2P (nm, rva)
     let endPoints = (Lazy.force ctxt.dataEndPoints)
 
@@ -1965,7 +1963,7 @@ and seekReadAssemblyManifest (ctxt: ILMetadataReader) pectxt idx =
         Retargetable = 0 <> (flags &&& 0x100)
         DisableJitOptimizations = 0 <> (flags &&& 0x4000)
         JitTracking = 0 <> (flags &&& 0x8000)
-        IgnoreSymbolStoreSequencePoints = 0 <> (flags &&& 0x2000)
+        IgnoreSymbolStoreSequencePoints = false
     }
 
 and seekReadAssemblyRef (ctxt: ILMetadataReader) idx = ctxt.seekReadAssemblyRef idx
@@ -2565,7 +2563,8 @@ and sigptrGetTy (ctxt: ILMetadataReader) numTypars bytes sigptr =
         let ccByte, sigptr = sigptrGetByte bytes sigptr
         let generic, cc = byteAsCallConv ccByte
 
-        if generic then failwith "fptr sig may not be generic"
+        if generic then
+            failwith "fptr sig may not be generic"
 
         let struct (numparams, sigptr) = sigptrGetZInt32 bytes sigptr
         let retTy, sigptr = sigptrGetTy ctxt numTypars bytes sigptr
@@ -2923,7 +2922,7 @@ and seekReadMethod (ctxt: ILMetadataReader) mdv numTypars (idx: int) =
         else
             match ctxt.pectxtCaptured with
             | None -> methBodyNotAvailable
-            | Some pectxt -> seekReadMethodRVA pectxt ctxt (idx, nm, internalcall, noinline, aggressiveinline, numTypars) codeRVA
+            | Some pectxt -> seekReadMethodRVA pectxt ctxt (nm, noinline, aggressiveinline, numTypars) codeRVA
 
     ILMethodDef(
         name = nm,
@@ -3082,16 +3081,15 @@ and seekReadEvents (ctxt: ILMetadataReader) numTypars tidx =
             let mdv = ctxt.mdfile.GetView()
 
             match
-                seekReadOptionalIndexedRow
-                    (
-                        ctxt.getNumRows TableNames.EventMap,
-                        (fun i -> i, seekReadEventMapRow ctxt mdv i),
-                        (fun (_, row) -> fst row),
-                        compare tidx,
-                        false,
-                        (fun (i, row) -> (i, snd row))
-                    )
-                with
+                seekReadOptionalIndexedRow (
+                    ctxt.getNumRows TableNames.EventMap,
+                    (fun i -> i, seekReadEventMapRow ctxt mdv i),
+                    (fun (_, row) -> fst row),
+                    compare tidx,
+                    false,
+                    (fun (i, row) -> (i, snd row))
+                )
+            with
             | None -> []
             | Some (rowNum, beginEventIdx) ->
                 let endEventIdx =
@@ -3150,16 +3148,15 @@ and seekReadProperties (ctxt: ILMetadataReader) numTypars tidx =
             let mdv = ctxt.mdfile.GetView()
 
             match
-                seekReadOptionalIndexedRow
-                    (
-                        ctxt.getNumRows TableNames.PropertyMap,
-                        (fun i -> i, seekReadPropertyMapRow ctxt mdv i),
-                        (fun (_, row) -> fst row),
-                        compare tidx,
-                        false,
-                        (fun (i, row) -> (i, snd row))
-                    )
-                with
+                seekReadOptionalIndexedRow (
+                    ctxt.getNumRows TableNames.PropertyMap,
+                    (fun i -> i, seekReadPropertyMapRow ctxt mdv i),
+                    (fun (_, row) -> fst row),
+                    compare tidx,
+                    false,
+                    (fun (i, row) -> (i, snd row))
+                )
+            with
             | None -> []
             | Some (rowNum, beginPropIdx) ->
                 let endPropIdx =
@@ -3357,7 +3354,7 @@ and seekReadImplMap (ctxt: ILMetadataReader) nm midx =
                 }
         )
 
-and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numTypars (sz: int) start seqpoints =
+and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numTypars (sz: int) start =
     let labelsOfRawOffsets = Dictionary<_, _>(sz / 2)
     let ilOffsetsOfLabels = Dictionary<_, _>(sz / 2)
 
@@ -3401,7 +3398,7 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numTypars (sz: int) start s
             else
                 lastb
 
-    let mutable seqPointsRemaining = seqpoints
+    let mutable seqPointsRemaining = []
 
     while curr < sz do
         // registering "+string !curr+" as start of an instruction")
@@ -3592,17 +3589,21 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numTypars (sz: int) start s
                     curr <- curr + 4
                     (* REVIEW: this incorrectly labels all MemberRef tokens as ILMethod's: we should go look at the MemberRef sig to determine if it is a field or method *)
                     let token_info =
-                        if tab = TableNames.Method
-                           || tab = TableNames.MemberRef (* REVIEW: generics or tab = TableNames.MethodSpec *) then
+                        if
+                            tab = TableNames.Method
+                            || tab = TableNames.MemberRef (* REVIEW: generics or tab = TableNames.MethodSpec *)
+                        then
                             let (MethodData (enclTy, cc, nm, argTys, retTy, methInst)) =
                                 seekReadMethodDefOrRefNoVarargs ctxt numTypars (uncodedTokenToMethodDefOrRef (tab, idx))
 
                             ILToken.ILMethod(mkILMethSpecInTy (enclTy, cc, nm, argTys, retTy, methInst))
                         elif tab = TableNames.Field then
                             ILToken.ILField(seekReadFieldDefAsFieldSpec ctxt idx)
-                        elif tab = TableNames.TypeDef
-                             || tab = TableNames.TypeRef
-                             || tab = TableNames.TypeSpec then
+                        elif
+                            tab = TableNames.TypeDef
+                            || tab = TableNames.TypeRef
+                            || tab = TableNames.TypeSpec
+                        then
                             ILToken.ILType(seekReadTypeDefOrRef ctxt numTypars AsObject [] (uncodedTokenToTypeDefOrRefOrSpec (tab, idx)))
                         else
                             failwith "bad token for ldtoken"
@@ -3640,36 +3641,11 @@ and seekReadTopCode (ctxt: ILMetadataReader) pev mdv numTypars (sz: int) start s
     markAsInstructionStart curr ibuf.Count
     // Build the function that maps from raw labels (offsets into the bytecode stream) to indexes in the AbsIL instruction stream
     let lab2pc = ilOffsetsOfLabels
-
-    // Some offsets used in debug info refer to the end of an instruction, rather than the
-    // start of the subsequent instruction. But all labels refer to instruction starts,
-    // apart from a final label which refers to the end of the method. This function finds
-    // the start of the next instruction referred to by the raw offset.
-    let raw2nextLab rawOffset =
-        let isInstrStart x =
-            match labelsOfRawOffsets.TryGetValue x with
-            | true, lab -> ilOffsetsOfLabels.ContainsKey lab
-            | _ -> false
-
-        if isInstrStart rawOffset then
-            rawToLabel rawOffset
-        elif isInstrStart (rawOffset + 1) then
-            rawToLabel (rawOffset + 1)
-        else
-            failwith (
-                "the bytecode raw offset "
-                + string rawOffset
-                + " did not refer either to the start or end of an instruction"
-            )
-
     let instrs = ibuf.ToArray()
-    instrs, rawToLabel, lab2pc, raw2nextLab
 
-#if FX_NO_PDB_READER
-and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (_idx, nm, _internalcall, noinline, aggressiveinline, numTypars) rva =
-#else
-and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _internalcall, noinline, aggressiveinline, numTypars) rva =
-#endif
+    instrs, rawToLabel, lab2pc
+
+and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (nm, noinline, aggressiveinline, numTypars) rva =
     lazy
         let pev = pectxt.pefile.GetView()
         let baseRVA = pectxt.anyV2P ("method rva", rva)
@@ -3680,7 +3656,8 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
         let isFatFormat = (b &&& e_CorILMethod_FormatMask) = e_CorILMethod_FatFormat
 
         if not isTinyFormat && not isFatFormat then
-            if logging then failwith "unknown format"
+            if logging then
+                failwith "unknown format"
 
             MethodBody.Abstract
         else
@@ -3694,91 +3671,14 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                     //    -- a list of locals, marked with the raw offsets (actually closures which accept the resolution function that maps raw offsets to labels)
                     //    -- an overall range for the method
                     //    -- the sequence points for the method
-                    let localPdbInfos, methRangePdbInfo, seqpoints =
-#if FX_NO_PDB_READER
-                        [], None, []
-#else
-                        match pectxt.pdb with
-                        | None -> [], None, []
-                        | Some (pdbr, get_doc) ->
-                            try
-
-                                let pdbm = pdbReaderGetMethod pdbr (uncodedToken TableNames.Method idx)
-                                let sps = pdbMethodGetDebugPoints pdbm
-                                (* let roota, rootb = pdbScopeGetOffsets rootScope in *)
-                                let seqpoints =
-                                    let arr =
-                                        sps
-                                        |> Array.map (fun sp ->
-                                            // It is VERY annoying to have to call GetURL for the document for
-                                            // each sequence point. This appears to be a short coming of the PDB
-                                            // reader API. They should return an index into the array of documents for the reader
-                                            let sourcedoc = get_doc (pdbDocumentGetURL sp.pdbSeqPointDocument)
-
-                                            let source =
-                                                ILDebugPoint.Create(
-                                                    document = sourcedoc,
-                                                    line = sp.pdbSeqPointLine,
-                                                    column = sp.pdbSeqPointColumn,
-                                                    endLine = sp.pdbSeqPointEndLine,
-                                                    endColumn = sp.pdbSeqPointEndColumn
-                                                )
-
-                                            (sp.pdbSeqPointOffset, source))
-
-                                    Array.sortInPlaceBy fst arr
-
-                                    Array.toList arr
-
-                                let rec scopes scp =
-                                    let a, b = pdbScopeGetOffsets scp
-                                    let lvs = pdbScopeGetLocals scp
-
-                                    let ilvs =
-                                        lvs
-                                        |> Array.toList
-                                        |> List.filter (fun l ->
-                                            let k, _idx = pdbVariableGetAddressAttributes l
-                                            k = 1 (* ADDR_IL_OFFSET *) )
-
-                                    let ilinfos: ILLocalDebugMapping list =
-                                        ilvs
-                                        |> List.map (fun ilv ->
-                                            let _k, idx = pdbVariableGetAddressAttributes ilv
-                                            let n = pdbVariableGetName ilv
-                                            { LocalIndex = idx; LocalName = n })
-
-                                    let thisOne =
-                                        (fun raw2nextLab ->
-                                            {
-                                                Range = (raw2nextLab a, raw2nextLab b)
-                                                DebugMappings = ilinfos
-                                            }: ILLocalDebugInfo)
-
-                                    let others =
-                                        List.foldBack (scopes >> (@)) (Array.toList (pdbScopeGetChildren scp)) []
-
-                                    thisOne :: others
-
-                                let localPdbInfos =
-                                    [] (* <REVIEW> scopes fail for mscorlib </REVIEW> scopes rootScope *)
-                                // REVIEW: look through sps to get ranges? Use GetRanges?? Change AbsIL??
-                                (localPdbInfos, None, seqpoints)
-                            with e ->
-                                // "* Warning: PDB info for method "+nm+" could not be read and will be ignored: "+e.Message
-                                [], None, []
-#endif
-
                     if isTinyFormat then
                         let codeBase = baseRVA + 1
                         let codeSize = (int32 b >>>& 2)
                         // tiny format for "+nm+", code size = " + string codeSize)
-                        let instrs, _, lab2pc, raw2nextLab =
-                            seekReadTopCode ctxt pev mdv numTypars codeSize codeBase seqpoints
+                        let instrs, _, lab2pc = seekReadTopCode ctxt pev mdv numTypars codeSize codeBase
 
                         // Convert the linear code format to the nested code format
-                        let localPdbInfos2 = List.map (fun f -> f raw2nextLab) localPdbInfos
-                        let code = buildILCode nm lab2pc instrs [] localPdbInfos2
+                        let code = buildILCode nm lab2pc instrs [] []
 
                         {
                             IsZeroInit = false
@@ -3787,7 +3687,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                             AggressiveInlining = aggressiveinline
                             Locals = List.empty
                             Code = code
-                            DebugRange = methRangePdbInfo
+                            DebugRange = None
                             DebugImports = None
                         }
 
@@ -3811,8 +3711,8 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                         // fat format for "+nm+", code size = " + string codeSize+", hasMoreSections = "+(if hasMoreSections then "true" else "false")+", b = "+string b)
 
                         // Read the method body
-                        let instrs, rawToLabel, lab2pc, raw2nextLab =
-                            seekReadTopCode ctxt pev mdv numTypars codeSize codeBase seqpoints
+                        let instrs, rawToLabel, lab2pc =
+                            seekReadTopCode ctxt pev mdv numTypars codeSize codeBase
 
                         // Read all the sections that follow the method body.
                         // These contain the exception clauses.
@@ -3923,17 +3823,10 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                             moreSections <- (sectionFlag &&& e_CorILMethod_Sect_MoreSects) <> 0x0uy
                             nextSectionBase <- sectionBase + sectionSize
 
-                        // Convert the linear code format to the nested code format
-                        if logging then dprintn "doing localPdbInfos2"
-
-                        let localPdbInfos2 = List.map (fun f -> f raw2nextLab) localPdbInfos
+                        let code = buildILCode nm lab2pc instrs seh []
 
                         if logging then
-                            dprintn "done localPdbInfos2, checking code..."
-
-                        let code = buildILCode nm lab2pc instrs seh localPdbInfos2
-
-                        if logging then dprintn "done checking code."
+                            dprintn "done checking code."
 
                         {
                             IsZeroInit = initlocals
@@ -3942,7 +3835,7 @@ and seekReadMethodRVA (pectxt: PEReader) (ctxt: ILMetadataReader) (idx, nm, _int
                             AggressiveInlining = aggressiveinline
                             Locals = locals
                             Code = code
-                            DebugRange = methRangePdbInfo
+                            DebugRange = None
                             DebugImports = None
                         }
             )
@@ -4150,40 +4043,6 @@ and seekReadTopExportedTypes (ctxt: ILMetadataReader) =
             ]
     )
 
-#if !FX_NO_PDB_READER
-let getPdbReader pdbDirPath fileName =
-    match pdbDirPath with
-    | None -> None
-    | Some pdbpath ->
-        try
-            let pdbr = pdbReadOpen fileName pdbpath
-            let pdbdocs = pdbReaderGetDocuments pdbr
-
-            let tab = new Dictionary<_, _>(Array.length pdbdocs)
-
-            pdbdocs
-            |> Array.iter (fun pdbdoc ->
-                let url = pdbDocumentGetURL pdbdoc
-
-                tab.[url] <-
-                    ILSourceDocument.Create(
-                        language = Some(pdbDocumentGetLanguage pdbdoc),
-                        vendor = Some(pdbDocumentGetLanguageVendor pdbdoc),
-                        documentType = Some(pdbDocumentGetType pdbdoc),
-                        file = url
-                    ))
-
-            let docfun url =
-                match tab.TryGetValue url with
-                | true, doc -> doc
-                | _ -> failwith ("Document with URL " + url + " not found in list of documents in the PDB file")
-
-            Some(pdbr, docfun)
-        with e ->
-            dprintn ("* Warning: PDB file could not be read and will be ignored: " + e.Message)
-            None
-#endif
-
 // Note, pectxtEager and pevEager must not be captured by the results of this function
 let openMetadataReader
     (
@@ -4254,10 +4113,10 @@ let openMetadataReader
         | Some positions -> positions
 
     let tablesStreamPhysLoc, _tablesStreamSize =
-        match tryFindStream [| 0x23; 0x7e |] (* #~ *)  with
+        match tryFindStream [| 0x23; 0x7e |] (* #~ *) with
         | Some res -> res
         | None ->
-            match tryFindStream [| 0x23; 0x2d |] (* #-: at least one DLL I've seen uses this! *)  with
+            match tryFindStream [| 0x23; 0x2d |] (* #-: at least one DLL I've seen uses this! *) with
             | Some res -> res
             | None ->
                 let firstStreamOffset = seekReadInt32 mdv (streamHeadersStart + 0)
@@ -4668,7 +4527,7 @@ let openMetadataReader
 // read of the AbsIL module.
 // ----------------------------------------------------------------------
 
-let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, noFileOnDisk) =
+let openPEFileReader (fileName, pefile: BinaryFile, noFileOnDisk) =
     let pev = pefile.GetView()
     (* MSDOS HEADER *)
     let peSignaturePhysLoc = seekReadInt32 pev 0x3c
@@ -4934,24 +4793,9 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, noFileOnDisk) =
         dprintn (fileName + ": nativeResourcesSize = " + string nativeResourcesSize)
 
     let metadataPhysLoc = anyV2P ("metadata", metadataAddr)
-    //-----------------------------------------------------------------------
-    // Set up the PDB reader so we can read debug info for methods.
-    // ----------------------------------------------------------------------
-#if FX_NO_PDB_READER
-    let pdb =
-        ignore pdbDirPath
-        None
-#else
-    let pdb =
-        if runningOnMono then
-            None
-        else
-            getPdbReader pdbDirPath fileName
-#endif
 
     let pectxt: PEReader =
         {
-            pdb = pdb
             textSegmentPhysicalLoc = textSegmentPhysicalLoc
             textSegmentPhysicalSize = textSegmentPhysicalSize
             dataSegmentPhysicalLoc = dataSegmentPhysicalLoc
@@ -4984,29 +4828,19 @@ let openPEFileReader (fileName, pefile: BinaryFile, pdbDirPath, noFileOnDisk) =
          alignPhys,
          imageBaseReal)
 
-    (metadataPhysLoc, metadataSize, peinfo, pectxt, pev, pdb)
+    (metadataPhysLoc, metadataSize, peinfo, pectxt, pev)
 
-let openPE (fileName, pefile, pdbDirPath, reduceMemoryUsage, noFileOnDisk) =
-    let metadataPhysLoc, _metadataSize, peinfo, pectxt, pev, pdb =
-        openPEFileReader (fileName, pefile, pdbDirPath, noFileOnDisk)
+let openPE (fileName, pefile, reduceMemoryUsage, noFileOnDisk) =
+    let metadataPhysLoc, _metadataSize, peinfo, pectxt, pev =
+        openPEFileReader (fileName, pefile, noFileOnDisk)
 
     let ilModule, ilAssemblyRefs =
         openMetadataReader (fileName, pefile, metadataPhysLoc, peinfo, pectxt, pev, Some pectxt, reduceMemoryUsage)
 
-    ilModule, ilAssemblyRefs, pdb
+    ilModule, ilAssemblyRefs
 
 let openPEMetadataOnly (fileName, peinfo, pectxtEager, pevEager, mdfile: BinaryFile, reduceMemoryUsage) =
     openMetadataReader (fileName, mdfile, 0, peinfo, pectxtEager, pevEager, None, reduceMemoryUsage)
-
-let ClosePdbReader pdb =
-#if FX_NO_PDB_READER
-    ignore pdb
-    ()
-#else
-    match pdb with
-    | Some (pdbr, _) -> pdbReadClose pdbr
-    | None -> ()
-#endif
 
 type ILReaderMetadataSnapshot = obj * nativeint * int
 type ILReaderTryGetMetadataSnapshot = (* path: *) string (* snapshotTimeStamp: *)  * DateTime -> ILReaderMetadataSnapshot option
@@ -5037,11 +4871,11 @@ type ILModuleReader =
     inherit IDisposable
 
 [<Sealed>]
-type ILModuleReaderImpl(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRef list>, dispose: unit -> unit) =
+type ILModuleReaderImpl(ilModule: ILModuleDef, ilAssemblyRefs: Lazy<ILAssemblyRef list>) =
     interface ILModuleReader with
         member x.ILModuleDef = ilModule
         member x.ILAssemblyRefs = ilAssemblyRefs.Force()
-        member x.Dispose() = dispose ()
+        member x.Dispose() = ()
 
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
 type ILModuleReaderCacheKey = ILModuleReaderCacheKey of string * DateTime * bool * ReduceMemoryFlag * MetadataOnlyFlag
@@ -5073,8 +4907,10 @@ let stableFileHeuristicApplies fileName =
 let createByteFileChunk opts fileName chunk =
     // If we're trying to reduce memory usage then we are willing to go back and re-read the binary, so we can use
     // a weakly-held handle to an array of bytes.
-    if opts.reduceMemoryUsage = ReduceMemoryFlag.Yes
-       && stableFileHeuristicApplies fileName then
+    if
+        opts.reduceMemoryUsage = ReduceMemoryFlag.Yes
+        && stableFileHeuristicApplies fileName
+    then
         WeakByteFile(fileName, chunk) :> BinaryFile
     else
         let bytes =
@@ -5109,10 +4945,10 @@ let getBinaryFile fileName useMemoryMappedFile =
 let OpenILModuleReaderFromBytes fileName assemblyContents options =
     let pefile = ByteFile(fileName, assemblyContents) :> BinaryFile
 
-    let ilModule, ilAssemblyRefs, pdb =
-        openPE (fileName, pefile, options.pdbDirPath, (options.reduceMemoryUsage = ReduceMemoryFlag.Yes), true)
+    let ilModule, ilAssemblyRefs =
+        openPE (fileName, pefile, (options.reduceMemoryUsage = ReduceMemoryFlag.Yes), true)
 
-    new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb)) :> ILModuleReader
+    new ILModuleReaderImpl(ilModule, ilAssemblyRefs) :> ILModuleReader
 
 let OpenILModuleReaderFromStream fileName (peStream: Stream) options =
     let peReader =
@@ -5120,10 +4956,10 @@ let OpenILModuleReaderFromStream fileName (peStream: Stream) options =
 
     let pefile = PEFile(fileName, peReader) :> BinaryFile
 
-    let ilModule, ilAssemblyRefs, pdb =
-        openPE (fileName, pefile, options.pdbDirPath, (options.reduceMemoryUsage = ReduceMemoryFlag.Yes), true)
+    let ilModule, ilAssemblyRefs =
+        openPE (fileName, pefile, (options.reduceMemoryUsage = ReduceMemoryFlag.Yes), true)
 
-    new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb)) :> ILModuleReader
+    new ILModuleReaderImpl(ilModule, ilAssemblyRefs) :> ILModuleReader
 
 let ClearAllILModuleReaderCache () =
     ilModuleReaderCache1.Clear(ILModuleReaderCache1LockToken())
@@ -5187,7 +5023,7 @@ let OpenILModuleReader fileName opts =
                 //
                 let ilModuleReader =
                     // Check if we are doing metadataOnly reading (the most common case in both the compiler and IDE)
-                    if not runningOnMono && metadataOnly then
+                    if metadataOnly then
 
                         // See if tryGetMetadata gives us a BinaryFile for the metadata section alone.
                         let mdfileOpt =
@@ -5200,8 +5036,8 @@ let OpenILModuleReader fileName opts =
                         let disposer, pefileEager = getBinaryFile fullPath false
                         use _disposer = disposer
 
-                        let metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager, _pdb =
-                            openPEFileReader (fullPath, pefileEager, None, false)
+                        let metadataPhysLoc, metadataSize, peinfo, pectxtEager, pevEager =
+                            openPEFileReader (fullPath, pefileEager, false)
 
                         let mdfile =
                             match mdfileOpt with
@@ -5213,16 +5049,15 @@ let OpenILModuleReader fileName opts =
                         let ilModule, ilAssemblyRefs =
                             openPEMetadataOnly (fullPath, peinfo, pectxtEager, pevEager, mdfile, reduceMemoryUsage)
 
-                        new ILModuleReaderImpl(ilModule, ilAssemblyRefs, ignore)
+                        new ILModuleReaderImpl(ilModule, ilAssemblyRefs)
                     else
                         // If we are not doing metadata-only, then just go ahead and read all the bytes and hold them either strongly or weakly
                         // depending on the heuristic
                         let pefile = createByteFileChunk opts fullPath None
 
-                        let ilModule, ilAssemblyRefs, _pdb =
-                            openPE (fullPath, pefile, None, reduceMemoryUsage, false)
+                        let ilModule, ilAssemblyRefs = openPE (fullPath, pefile, reduceMemoryUsage, false)
 
-                        new ILModuleReaderImpl(ilModule, ilAssemblyRefs, ignore)
+                        new ILModuleReaderImpl(ilModule, ilAssemblyRefs)
 
                 let ilModuleReader = ilModuleReader :> ILModuleReader
 
@@ -5244,17 +5079,15 @@ let OpenILModuleReader fileName opts =
                 // multi-proc build. So use memory mapping, but only for stable files. Other files
                 // still use an in-memory ByteFile
                 let pefile =
-                    if not runningOnMono && (alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath) then
+                    if alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath then
                         let _, pefile = getBinaryFile fullPath false
                         pefile
                     else
                         createByteFileChunk opts fullPath None
 
-                let ilModule, ilAssemblyRefs, pdb =
-                    openPE (fullPath, pefile, opts.pdbDirPath, reduceMemoryUsage, false)
+                let ilModule, ilAssemblyRefs = openPE (fullPath, pefile, reduceMemoryUsage, false)
 
-                let ilModuleReader =
-                    new ILModuleReaderImpl(ilModule, ilAssemblyRefs, (fun () -> ClosePdbReader pdb))
+                let ilModuleReader = new ILModuleReaderImpl(ilModule, ilAssemblyRefs)
 
                 let ilModuleReader = ilModuleReader :> ILModuleReader
 

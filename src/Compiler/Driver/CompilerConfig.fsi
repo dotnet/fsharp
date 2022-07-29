@@ -255,6 +255,8 @@ type TcConfigBuilder =
 
         mutable inputCodePage: int option
 
+        mutable clearResultsCache: bool
+
         mutable embedResources: string list
 
         mutable diagnosticsOptions: FSharpDiagnosticOptions
@@ -346,8 +348,6 @@ type TcConfigBuilder =
         mutable embedSourceList: string list
 
         mutable sourceLink: string
-
-        mutable ignoreSymbolStoreSequencePoints: bool
 
         mutable internConstantStrings: bool
 
@@ -464,6 +464,9 @@ type TcConfigBuilder =
         /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
         mutable noConditionalErasure: bool
 
+        /// Take '#line' into account? Defaults to true
+        mutable applyLineDirectives: bool
+
         mutable pathMap: PathMap
 
         mutable langVersion: LanguageVersion
@@ -566,6 +569,8 @@ type TcConfig =
 
     member inputCodePage: int option
 
+    member clearResultsCache: bool
+
     member embedResources: string list
 
     member diagnosticsOptions: FSharpDiagnosticOptions
@@ -657,8 +662,6 @@ type TcConfig =
     member embedSourceList: string list
 
     member sourceLink: string
-
-    member ignoreSymbolStoreSequencePoints: bool
 
     member internConstantStrings: bool
 
@@ -795,6 +798,9 @@ type TcConfig =
 
     /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
     member noConditionalErasure: bool
+
+    /// Take '#line' into account? Defaults to true
+    member applyLineDirectives: bool
 
     /// if true - 'let mutable x = Span.Empty', the value 'x' is a stack referring span. Used for internal testing purposes only until we get true stack spans.
     member internalTestSpanStackReferring: bool

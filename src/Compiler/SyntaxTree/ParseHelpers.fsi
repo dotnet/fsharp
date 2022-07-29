@@ -156,3 +156,24 @@ val grabXmlDoc: parseState: IParseState * optAttributes: SynAttributeList list *
 
 val ParseAssemblyCodeType:
     s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILType
+
+val reportParseErrorAt: range -> (int * string) -> unit
+
+val raiseParseErrorAt: range -> (int * string) -> 'a
+
+val mkSynMemberDefnGetSet:
+    parseState: IParseState ->
+    opt_inline: bool ->
+    mWith: range ->
+    classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * SynReturnInfo option * range option * SynExpr * range) list ->
+    mAnd: range option ->
+    mWhole: range ->
+    propertyNameBindingPat: SynPat ->
+    optPropertyType: SynReturnInfo option ->
+    visNoLongerUsed: SynAccess option ->
+    memFlagsBuilder: (SynMemberKind -> SynMemberFlags) ->
+    attrs: SynAttributeList list ->
+    rangeStart: range ->
+        SynMemberDefn list
+
+val mkSynTypeTuple: isStruct: bool -> elementTypes: SynTupleTypeSegment list -> SynType

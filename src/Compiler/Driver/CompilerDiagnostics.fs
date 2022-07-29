@@ -17,6 +17,7 @@ open FSharp.Compiler
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
 open FSharp.Compiler.CheckDeclarations
+open FSharp.Compiler.CheckIncrementalClasses
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.ConstraintSolver
@@ -123,6 +124,7 @@ let GetRangeOfDiagnostic (diagnostic: PhasedDiagnostic) =
         | LetRecCheckedAtRuntime m
         | UpperCaseIdentifierInPattern m
         | NotUpperCaseConstructor m
+        | NotUpperCaseConstructorWithoutRQA m
         | RecursiveUseCheckedAtRuntime (_, _, m)
         | LetRecEvaluatedOutOfOrder (_, _, _, m)
         | DiagnosticWithText (_, _, m)
@@ -269,6 +271,7 @@ let GetDiagnosticNumber (diagnostic: PhasedDiagnostic) =
         | UseOfAddressOfOperator _ -> 51
         | DefensiveCopyWarning _ -> 52
         | NotUpperCaseConstructor _ -> 53
+        | NotUpperCaseConstructorWithoutRQA _ -> 53
         | TypeIsImplicitlyAbstract _ -> 54
         // 55 cannot be reused
         | DeprecatedThreadStaticBindingWarning _ -> 56
@@ -376,7 +379,7 @@ let IsWarningOrInfoEnabled (diagnostic, severity) n level specificWarnOn =
     | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
     | 3390 -> false // xmlDocBadlyFormed - off by default
     | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
-    | 3524 -> false // typrelNeverRefinedAwayFromTop - off by default
+    | 3525 -> false // typrelNeverRefinedAwayFromTop - off by default
     | _ ->
         (severity = FSharpDiagnosticSeverity.Info)
         || (severity = FSharpDiagnosticSeverity.Warning
@@ -435,6 +438,7 @@ let ErrorFromApplyingDefault2E () = Message("ErrorFromApplyingDefault2", "")
 let ErrorsFromAddingSubsumptionConstraintE () = Message("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
 let UpperCaseIdentifierInPatternE () = Message("UpperCaseIdentifierInPattern", "")
 let NotUpperCaseConstructorE () = Message("NotUpperCaseConstructor", "")
+let NotUpperCaseConstructorWithoutRQAE () = Message("NotUpperCaseConstructorWithoutRQA", "")
 let FunctionExpectedE () = Message("FunctionExpected", "")
 let BakedInMemberConstraintNameE () = Message("BakedInMemberConstraintName", "%s")
 let BadEventTransformationE () = Message("BadEventTransformation", "")
@@ -771,6 +775,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | NotUpperCaseConstructor _ -> os.AppendString(NotUpperCaseConstructorE().Format)
 
+        | NotUpperCaseConstructorWithoutRQA _ -> os.AppendString(NotUpperCaseConstructorWithoutRQAE().Format)
+
         | ErrorFromAddingConstraint (_, e, _) -> OutputExceptionR os e
 
 #if !NO_TYPEPROVIDERS
@@ -895,7 +901,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | ParameterlessStructCtor _ -> os.AppendString(ParameterlessStructCtorE().Format)
 
-        | InterfaceNotRevealed (denv, ity, _) -> os.AppendString(InterfaceNotRevealedE().Format(NicePrint.minimalStringOfType denv ity))
+        | InterfaceNotRevealed (denv, intfTy, _) ->
+            os.AppendString(InterfaceNotRevealedE().Format(NicePrint.minimalStringOfType denv intfTy))
 
         | NotAFunctionButIndexer (_, _, name, _, _, old) ->
             if old then
@@ -1207,11 +1214,15 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             if showParserStackOnParseError then
                 printfn "parser stack:"
 
-                for rps in ctxt.ReducibleProductions do
+                let rps =
+                    ctxt.ReducibleProductions
+                    |> List.map (fun rps -> rps |> List.map (fun rp -> rp, Parser.prodIdxToNonTerminal rp))
+
+                for rps in rps do
                     printfn "   ----"
                     //printfn "   state %d" state
-                    for rp in rps do
-                        printfn "       non-terminal %+A (idx %d): ... " (Parser.prodIdxToNonTerminal rp) rp
+                    for rp, nonTerminalId in rps do
+                        printfn $"       non-terminal %+A{nonTerminalId} (idx {rp}): ... "
 #endif
 
             match ctxt.CurrentToken with
@@ -1497,7 +1508,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
                     |> List.exists (function
                         | TType_app (maybeUnit, [], _) ->
                             match maybeUnit.TypeAbbrev with
-                            | Some ttype when isUnitTy g ttype -> true
+                            | Some ty when isUnitTy g ty -> true
                             | _ -> false
                         | _ -> false)
 
@@ -1669,7 +1680,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             | Some (cex, false) -> os.AppendString(MatchIncomplete2E().Format cex)
             | Some (cex, true) -> os.AppendString(MatchIncomplete3E().Format cex)
 
-            if isComp then os.AppendString(MatchIncomplete4E().Format)
+            if isComp then
+                os.AppendString(MatchIncomplete4E().Format)
 
         | PatternMatchCompilation.EnumMatchIncomplete (isComp, cexOpt, _) ->
             os.AppendString(EnumMatchIncomplete1E().Format)
@@ -1679,11 +1691,12 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             | Some (cex, false) -> os.AppendString(MatchIncomplete2E().Format cex)
             | Some (cex, true) -> os.AppendString(MatchIncomplete3E().Format cex)
 
-            if isComp then os.AppendString(MatchIncomplete4E().Format)
+            if isComp then
+                os.AppendString(MatchIncomplete4E().Format)
 
         | PatternMatchCompilation.RuleNeverMatched _ -> os.AppendString(RuleNeverMatchedE().Format)
 
-        | ValNotMutable (_, valRef, _) -> os.AppendString(ValNotMutableE().Format(valRef.DisplayName))
+        | ValNotMutable (_, vref, _) -> os.AppendString(ValNotMutableE().Format(vref.DisplayName))
 
         | ValNotLocal _ -> os.AppendString(ValNotLocalE().Format)
 
@@ -1691,7 +1704,9 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | ObsoleteWarning (s, _) ->
             os.AppendString(Obsolete1E().Format)
-            if s <> "" then os.AppendString(Obsolete2E().Format s)
+
+            if s <> "" then
+                os.AppendString(Obsolete2E().Format s)
 
         | Experimental (s, _) -> os.AppendString(ExperimentalE().Format s)
 
@@ -1986,7 +2001,8 @@ let CollectFormattedDiagnostics
                     // Show prefix only for real files. Otherwise, we just want a truncated error like:
                     //      parse error FS0031: blah blah
                     if
-                        not (equals m range0) && not (equals m rangeStartup)
+                        not (equals m range0)
+                        && not (equals m rangeStartup)
                         && not (equals m rangeCmdArgs)
                     then
                         let file = file.Replace("/", "\\")

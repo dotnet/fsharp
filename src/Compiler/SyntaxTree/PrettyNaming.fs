@@ -527,7 +527,8 @@ let DoesIdentifierNeedBackticks (name: string) : bool =
 /// A utility to help determine if an identifier needs to be quoted
 let AddBackticksToIdentifierIfNeeded (name: string) : string =
     if
-        DoesIdentifierNeedBackticks name && not (name.StartsWithOrdinal("`"))
+        DoesIdentifierNeedBackticks name
+        && not (name.StartsWithOrdinal("`"))
         && not (name.EndsWithOrdinal("`"))
     then
         "``" + name + "``"
@@ -584,6 +585,8 @@ let ConvertValNameToDisplayLayout isBaseVal nonOpLayout name =
         else
             leftL (TaggedText.tagPunctuation "(")
             ^^ wordL (TaggedText.tagOperator nm) ^^ rightL (TaggedText.tagPunctuation ")")
+    elif name = "get_Zero" then
+        ConvertNameToDisplayLayout nonOpLayout "Zero"
     else
         ConvertNameToDisplayLayout nonOpLayout name
 
@@ -820,7 +823,10 @@ let TryDemangleGenericNameAndPos (n: string) =
 
         while res && i < n.Length do
             let char = n[i]
-            if not (char >= '0' && char <= '9') then res <- false
+
+            if not (char >= '0' && char <= '9') then
+                res <- false
+
             i <- i + 1
 
         if res then ValueSome pos else ValueNone

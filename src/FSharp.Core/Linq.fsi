@@ -88,4 +88,4 @@ module LeafExpressionConverter =
     val SubstHelperRaw: Expr * Var[] * obj[] -> Expr
 
     val internal (|SpecificCallToMethod|_|):
-        System.RuntimeMethodHandle -> (Expr -> (Expr option * Type list * Expr list) option)
+        System.RuntimeMethodHandle -> (Expr -> (Expr option * Reflection.MethodInfo * Expr list) option)

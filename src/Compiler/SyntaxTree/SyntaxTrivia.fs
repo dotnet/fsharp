@@ -138,6 +138,21 @@ type SynTypeDefnTrivia =
         }
 
 [<NoEquality; NoComparison>]
+type SynTypeDefnSigTrivia =
+    {
+        TypeKeyword: range option
+        EqualsRange: range option
+        WithKeyword: range option
+    }
+
+    static member Zero: SynTypeDefnSigTrivia =
+        {
+            TypeKeyword = None
+            EqualsRange = None
+            WithKeyword = None
+        }
+
+[<NoEquality; NoComparison>]
 type SynBindingTrivia =
     {
         LetKeyword: range option
@@ -230,3 +245,15 @@ type SynValSigTrivia =
             WithKeyword = None
             EqualsRange = None
         }
+
+[<NoEquality; NoComparison>]
+type SynTypeFunTrivia = { ArrowRange: range }
+
+[<NoEquality; NoComparison>]
+type SynMemberGetSetTrivia =
+    {
+        WithKeyword: range
+        GetKeyword: range option
+        AndKeyword: range option
+        SetKeyword: range option
+    }

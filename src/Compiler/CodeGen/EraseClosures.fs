@@ -500,9 +500,11 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
             // nb. should combine the term and type abstraction cases for
             // to allow for term and type variables to be mixed in a single
             // application.
-            if (match laterStruct with
-                | Lambdas_return _ -> false
-                | _ -> true) then
+            if
+                (match laterStruct with
+                 | Lambdas_return _ -> false
+                 | _ -> true)
+            then
 
                 let nowStruct =
                     List.foldBack (fun x y -> Lambdas_forall(x, y)) tyargsl (Lambdas_return nowReturnTy)
@@ -622,9 +624,11 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
             let nowReturnTy = mkTyOfLambdas cenv laterStruct
 
             // CASE 2a - Too Many Term Arguments or Remaining Type arguments - Split the Closure Class in Two
-            if (match laterStruct with
-                | Lambdas_return _ -> false
-                | _ -> true) then
+            if
+                (match laterStruct with
+                 | Lambdas_return _ -> false
+                 | _ -> true)
+            then
                 let nowStruct =
                     List.foldBack (fun l r -> Lambdas_lambda(l, r)) nowParams (Lambdas_return nowReturnTy)
 

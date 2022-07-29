@@ -12,6 +12,7 @@ open FsUnit
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Position
 open NUnit.Framework
@@ -152,12 +153,12 @@ let rec getParenTypes (synType: SynType): SynType list =
           yield synType
           yield! getParenTypes innerType
 
-      | SynType.Fun (argType, returnType, _) ->
+      | SynType.Fun (argType = argType; returnType = returnType) ->
           yield! getParenTypes argType
           yield! getParenTypes returnType
 
-      | SynType.Tuple (_, types, _) ->
-          for _, synType in types do
+      | SynType.Tuple(path = segment) ->
+          for synType in getTypeFromTuplePath segment do
               yield! getParenTypes synType
 
       | SynType.AnonRecd (_, fields, _) ->
@@ -256,8 +257,7 @@ type T =
         with get () = x
         and set (value) = x <- value
 """
-        getTypeMemberRange source |> shouldEqual [ (3, 4), (5, 36)
-                                                   (3, 4), (5, 36) ]
+        getTypeMemberRange source |> shouldEqual [ (3, 4), (5, 36) ]
 
 
     [<Test>]

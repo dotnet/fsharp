@@ -7,6 +7,11 @@
         <target state="translated">加载文件 .\n 中有一条或多条信息性消息</target>
         <note />
       </trans-unit>
+      <trans-unit id="NotUpperCaseConstructorWithoutRQA">
+        <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
+        <target state="new">Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
         <target state="translated">符号 "..^"</target>
