@@ -123,6 +123,7 @@ module internal FSharpEnvironment =
             |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
             [|
+                "net7.0"
                 "net6.0"
                 "net5.0"
                 "netcoreapp3.1"
