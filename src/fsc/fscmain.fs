@@ -60,7 +60,6 @@ let main (argv) =
             System.Console.ReadLine() |> ignore
 
         // Set up things for the --times testing flag
-#if !FX_NO_APP_DOMAINS
         let timesFlag = argv |> Array.exists (fun x -> x = "/times" || x = "--times")
 
         if timesFlag then
@@ -74,7 +73,6 @@ let main (argv) =
                     stats.memoryMapFileClosedCount
                     stats.rawMemoryFileCount
                     stats.weakByteFileCount)
-#endif
 
         // This object gets invoked when two many errors have been accumulated, or an abort-on-error condition
         // has been reached (e.g. type checking failed, so don't proceed to optimization).

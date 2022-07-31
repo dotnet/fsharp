@@ -212,11 +212,8 @@ let evaluateSession (argv: string[]) =
         //#if USE_FSharp_Compiler_Interactive_Settings
         let fsiObjOpt =
             let defaultFSharpBinariesDir =
-#if FX_NO_APP_DOMAINS
                 System.AppContext.BaseDirectory
-#else
-                System.AppDomain.CurrentDomain.BaseDirectory
-#endif
+
             // We use LoadFrom to make sure we get the copy of this assembly from the right load context
             let fsiAssemblyPath =
                 Path.Combine(defaultFSharpBinariesDir, "FSharp.Compiler.Interactive.Settings.dll")
@@ -381,7 +378,6 @@ let MainMain argv =
                     ()
         }
 
-#if !FX_NO_APP_DOMAINS
     let timesFlag = argv |> Array.exists (fun x -> x = "/times" || x = "--times")
 
     if timesFlag then
@@ -395,7 +391,6 @@ let MainMain argv =
                 stats.memoryMapFileClosedCount
                 stats.rawMemoryFileCount
                 stats.weakByteFileCount)
-#endif
 
 #if FSI_SHADOW_COPY_REFERENCES
     let isShadowCopy x =

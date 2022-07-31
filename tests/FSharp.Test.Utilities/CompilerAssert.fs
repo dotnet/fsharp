@@ -11,9 +11,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
-#if FX_NO_APP_DOMAINS
 open System.Runtime.Loader
-#endif
 open FSharp.Test.Utilities
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
@@ -256,7 +254,6 @@ module rec CompilerAssertHelpers =
             yield Array.empty<string>
     |]
 
-#if FX_NO_APP_DOMAINS
     let executeBuiltApp assembly deps =
         let ctxt = AssemblyLoadContext("ContextName", true)
         try
@@ -272,35 +269,6 @@ module rec CompilerAssertHelpers =
             (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
         finally
             ctxt.Unload()
-#else
-    type Worker () =
-        inherit MarshalByRefObject()
-
-        member x.ExecuteTestCase assemblyPath (deps: string[]) =
-            AppDomain.CurrentDomain.add_AssemblyResolve(ResolveEventHandler(fun _ args ->
-                deps
-                |> Array.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = args.Name)
-                |> Option.bind (fun x -> if FileSystem.FileExistsShim x then Some x else None)
-                |> Option.map Assembly.LoadFile
-                |> Option.defaultValue null))
-            let asm = Assembly.LoadFrom(assemblyPath)
-            let entryPoint = asm.EntryPoint
-            let args = mkDefaultArgs entryPoint
-            (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
-
-    let adSetup =
-        let setup = new System.AppDomainSetup ()
-        let directory = Path.GetDirectoryName(typeof<Worker>.Assembly.Location)
-        setup.ApplicationBase <- directory
-        setup
-
-    let executeBuiltApp assembly deps =
-        let ad = AppDomain.CreateDomain((Guid()).ToString(), null, adSetup)
-        let worker =
-            use _ = new AlreadyLoadedAppDomainResolver()
-            (ad.CreateInstanceFromAndUnwrap(typeof<Worker>.Assembly.CodeBase, typeof<Worker>.FullName)) :?> Worker
-        worker.ExecuteTestCase assembly (deps |> Array.ofList) |>ignore
-#endif
 
     let defaultProjectOptions =
         {

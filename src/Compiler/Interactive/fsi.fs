@@ -3462,10 +3462,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     /// A host calls this to get the active language ID if provided by fsi-server-lcid
     member _.LCID = fsiOptions.FsiLCID
 
-#if FX_NO_APP_DOMAINS
-    member _.ReportUnhandledException (exn:exn) = ignore exn; ()
-#else
-
     /// A host calls this to report an unhandled exception in a standard way, e.g. an exception on the GUI thread gets printed to stderr
     member x.ReportUnhandledException exn = x.ReportUnhandledExceptionSafe true exn
 
@@ -3529,7 +3525,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
                         else
                             reraise()
                 )
-#endif
 
     member _.PartialAssemblySignatureUpdated = fsiInteractionProcessor.PartialAssemblySignatureUpdated
 
@@ -3655,13 +3650,12 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
             fsiInteractionProcessor.LoadDummyInteraction(ctokStartup, diagnosticsLogger)
             if progress then fprintfn fsiConsoleOutput.Out "MAIN: got initial state, creating form";
 
-#if !FX_NO_APP_DOMAINS
             // Route background exceptions to the exception handlers
             AppDomain.CurrentDomain.UnhandledException.Add (fun args ->
                 match args.ExceptionObject with
                 | :? System.Exception as err -> x.ReportUnhandledExceptionSafe false err
                 | _ -> ())
-#endif
+
             fsiInteractionProcessor.LoadInitialFiles(ctokRun, diagnosticsLogger)
             fsiInteractionProcessor.StartStdinReadAndProcessThread(diagnosticsLogger)
 

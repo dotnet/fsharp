@@ -2516,12 +2516,7 @@ let buildModuleFragment cenv emEnv (modB: ModuleBuilder) (m: ILModuleDef) =
 // test hook
 //----------------------------------------------------------------------------
 let defineDynamicAssemblyAndLog (asmName, flags, asmDir: string) =
-#if FX_NO_APP_DOMAINS
     let asmB = AssemblyBuilder.DefineDynamicAssembly(asmName, flags)
-#else
-    let currentDom = System.AppDomain.CurrentDomain
-    let asmB = currentDom.DefineDynamicAssembly(asmName, flags, asmDir)
-#endif
     if logRefEmitCalls then
         printfn "open System"
         printfn "open System.Reflection"
