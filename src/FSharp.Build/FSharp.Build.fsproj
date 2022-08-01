@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
@@ -10,9 +11,7 @@
     <DefineConstants>$(DefineConstants);LOCALIZATION_FSBUILD</DefineConstants>
     <NoWarn>NU1701;FS0075</NoWarn>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <LangVersion>5.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
-    <LangVersion>6.0</LangVersion>
-    <Configurations>Debug;Release;Proto</Configurations>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
+    <LangVersion>6.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -61,7 +60,7 @@
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" IncludeAssets="compile" ExcludeAssets="all" PrivateAssets="all" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)' != 'Proto' or '$(DotNetBuildFromSource)' == 'true'">
+  <ItemGroup  Condition="'$(Configuration)' != 'Proto' or '$(DotNetBuildFromSource)' == 'true'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
@@ -73,4 +72,5 @@
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
+
 </Project>
