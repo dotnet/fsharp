@@ -492,13 +492,24 @@ module Test =
     ()
 
 [<Test>]
-let ``Exceptions with backticks``() =
+let ``Display names for exceptions with backticks preserve backticks``() =
     let code = """
 exception SomeError of ``thing wi$$th space``: string
 """
-    let expected = "argument ``thing with space``: string"
+    let expected = "``thing with space``"
+
+    let actual = GetQuickInfoTextFromCode code
+    StringAssert.Contains(expected, actual)
+    ()
+
+[<Test>]
+let ``Display names for anonymous records with backticks preserve backticks``() =
+    let code = """
+type R = {| ``thing wi$$th space``: string |}
+"""
+    let expected = "``thing with space``"
 
     let actual = GetQuickInfoTextFromCode code
 
-    Assert.AreEqual(expected, actual)
+    StringAssert.Contains(expected, actual)
     ()
