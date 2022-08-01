@@ -763,6 +763,7 @@ let ImplementStaticMemberFlags trivia k : SynMemberFlags =
         IsDispatchSlot = false
         IsOverrideOrExplicitImpl = true
         IsFinal = false
+        GetterOrSetterIsCompilerGenerated = false
         Trivia = trivia
     }
 

@@ -950,8 +950,7 @@ module internal DescriptionListsImpl =
             )
 
 
-    /// Select the items that participate in a MethodGroup.  This is almost identical to SelectMethodGroupItems and
-    // should be merged, and indeed is only used on the 
+    /// Select the items that participate in a MethodGroup.
     let SelectMethodGroupItems g m item =
         match item with 
         | Item.CtorGroup(nm, cinfos) -> List.map (fun minfo -> Item.CtorGroup(nm, [minfo])) cinfos 

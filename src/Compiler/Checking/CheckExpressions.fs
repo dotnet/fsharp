@@ -8799,10 +8799,7 @@ and TcTraitItemThen cenv overallTy env objOpt traitInfo tpenv mItem delayed =
 
     match traitInfo.SupportTypes with
     | tys when tys.Length > 1 ->
-    //| (t0 :: (_ :: _) as rest) ->
         error(Error (FSComp.SR.tcTraitHasMultipleSupportTypes(traitInfo.MemberDisplayNameCore), mItem))
-        //for ty in rest do
-        //    UnifyTypes cenv env mItem t0 ty
     | _ -> ()
 
     match objOpt, traitInfo.MemberFlags.IsInstance with
