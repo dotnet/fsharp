@@ -503,11 +503,27 @@ exception SomeError of ``thing wi$$th space``: string
     ()
 
 [<Test>]
-let ``Display names for anonymous records with backticks preserve backticks``() =
+let ``Display names for anonymous record fields with backticks preserve backticks``() =
     let code = """
 type R = {| ``thing wi$$th space``: string |}
 """
     let expected = "``thing with space``"
+
+    let actual = GetQuickInfoTextFromCode code
+
+    StringAssert.Contains(expected, actual)
+    ()
+   
+[<Test>]
+let ``Display names identifiers for active patterns with backticks preserve backticks``() =
+    let code = """
+let (|``Thing with space``|_|) x = if x % 2 = 0 then Some (x/2) else None
+
+match 4 with
+| ``Thing wi$$th space`` _ -> "yes"
+| _ -> "no"
+"""
+    let expected = "``Thing with space``"
 
     let actual = GetQuickInfoTextFromCode code
 
