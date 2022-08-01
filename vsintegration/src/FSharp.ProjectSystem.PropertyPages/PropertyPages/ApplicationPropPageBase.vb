@@ -329,7 +329,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                 '  create the Image.
                 Try
                     Dim IconContents As Byte() = IO.File.ReadAllBytes(path)
-                    Dim IconStream As New IO.MemoryStream(IconContents, 0, IconContents.Length)
+                    Dim IconStream As New System.IO.MemoryStream(IconContents, 0, IconContents.Length)
                     ApplicationIconPictureBox.Image = IconToImage(New Icon(IconStream), ApplicationIconPictureBox.ClientSize)
                 Catch ex As Exception
                     Common.RethrowIfUnrecoverable(ex, True)

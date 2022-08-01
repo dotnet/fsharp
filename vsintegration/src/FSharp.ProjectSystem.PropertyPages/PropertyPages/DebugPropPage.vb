@@ -507,7 +507,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             If sInitialDirectory = "" Then
                 Try
                     sInitialDirectory = Path.Combine(GetDebugPathProjectPath(), GetSelectedConfigOutputPath())
-                Catch ex As IO.IOException
+                Catch ex As System.IO.IOException
                     'Ignore
                 Catch ex As Exception
                     Common.RethrowIfUnrecoverable(ex)
