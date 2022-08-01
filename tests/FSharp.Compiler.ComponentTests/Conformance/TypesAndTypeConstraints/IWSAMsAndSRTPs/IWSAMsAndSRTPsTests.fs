@@ -33,11 +33,10 @@ let ``IWSAM test files`` compilation =
 [<Theory>]
 [<InlineData("let inline f0 (x: ^T) = x",
              "val inline f0: x: ^T -> ^T")>]
-// TODO: fix this:
-//[<InlineData("""
-//             let inline f0 (x: ^T) = x
-//             let g0 (x: 'T) = f0 x""",
-//             "val g0: x: 'T -> 'T")>]
+[<InlineData("""
+             let inline f0 (x: ^T) = x
+             let g0 (x: 'T) = f0 x""",
+             "val g0: x: 'T -> 'T")>]
 
 [<InlineData("let inline f1 (x: ^T) = (^T : (static member A: int) ())",
              "val inline f1: x: ^T -> int when ^T: (static member A: int)")>]
@@ -68,6 +67,7 @@ let ``IWSAM test files`` compilation =
 let ``Check static type parameter inference`` code expectedSignature =
     FSharp code
     |> ignoreWarnings
+    |> withLangVersionPreview
     |> signaturesShouldContain expectedSignature
 
 
