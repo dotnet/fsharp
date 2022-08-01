@@ -435,6 +435,9 @@ type MethInfo =
     /// Receiver must be a struct type.
     member IsReadOnly: bool
 
+    /// Indicates, wheter this method has `IsExternalInit` modreq.
+    member HasExternalInit: bool
+
     /// Indicates if the enclosing type for the method is a value type.
     ///
     /// For an extension method, this indicates if the method extends a struct type.
@@ -504,6 +507,9 @@ type MethInfo =
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with a method.
     /// An instance method returns one object argument.
     member GetObjArgTypes: amap: ImportMap * m: range * minst: TypeInst -> TType list
+
+    /// Get custom attributes for method (only applicable for IL methods)
+    member GetCustomAttrs: unit -> ILAttributes
 
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
     member GetParamAttribs: amap: ImportMap * m: range -> ParamAttribs list list
@@ -706,6 +712,9 @@ type ILPropInfo =
     /// Get the declaring IL type of the IL property, including any generic instantiation
     member ILTypeInfo: ILTypeInfo
 
+    /// Is the property requied (has the RequiredMemberAttribute).
+    member IsRequired: bool
+
     /// Indicates if the IL property is logically a 'newslot', i.e. hides any previous slots of the same name.
     member IsNewSlot: bool
 
@@ -797,6 +806,12 @@ type PropInfo =
 
     /// Indicates if this property has an associated setter method.
     member HasSetter: bool
+
+    /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
+    member IsSetterInitOnly: bool
+
+    /// Is the property requied (has the RequiredMemberAttribute).
+    member IsRequired: bool
 
     member ImplementedSlotSignatures: SlotSig list
 

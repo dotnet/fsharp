@@ -162,7 +162,7 @@
     .method public strict virtual instance string 
             ToString() cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       27 (0x1b)
       .maxstack  8
       IL_0000:  ldstr      "%+A"
@@ -177,7 +177,8 @@
     .method public hidebysig virtual final 
             instance int32  CompareTo(valuetype StructUnion01/U obj) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       76 (0x4c)
       .maxstack  5
       .locals init (int32 V_0,
@@ -237,7 +238,8 @@
     .method public hidebysig virtual final 
             instance int32  CompareTo(object obj) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       13 (0xd)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -251,7 +253,8 @@
             instance int32  CompareTo(object obj,
                                       class [System.Runtime]System.Collections.IComparer comp) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       71 (0x47)
       .maxstack  5
       .locals init (valuetype StructUnion01/U V_0,
@@ -310,7 +313,8 @@
     .method public hidebysig virtual final 
             instance int32  GetHashCode(class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       50 (0x32)
       .maxstack  7
       .locals init (int32 V_0)
@@ -353,7 +357,8 @@
     .method public hidebysig virtual final 
             instance int32  GetHashCode() cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       12 (0xc)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -366,7 +371,8 @@
             instance bool  Equals(object obj,
                                   class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       52 (0x34)
       .maxstack  4
       .locals init (valuetype StructUnion01/U V_0)
@@ -402,7 +408,8 @@
     .method public hidebysig virtual final 
             instance bool  Equals(valuetype StructUnion01/U obj) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       35 (0x23)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -427,7 +434,8 @@
     .method public hidebysig virtual final 
             instance bool  Equals(object obj) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       23 (0x17)
       .maxstack  8
       IL_0000:  ldarg.1

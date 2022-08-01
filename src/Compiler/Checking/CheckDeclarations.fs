@@ -4033,6 +4033,7 @@ module TcDeclarations =
                         let fldId = ident (CompilerGeneratedName id.idText, mMemberPortion)
                         let headPatIds = if isStatic then [id] else [ident ("__", mMemberPortion);id]
                         let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [], None, mMemberPortion)
+                        let memberFlags kind = Some { memberFlags kind with GetterOrSetterIsCompilerGenerated = true }
 
                         match propKind, mGetSetOpt with 
                         | SynMemberKind.PropertySet, Some m -> errorR(Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSetNotJustSet(), m))
@@ -4047,7 +4048,7 @@ module TcDeclarations =
                                     let rhsExpr = SynExpr.Ident fldId
                                     let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                                     let attribs = mkAttributeList attribs mMemberPortion
-                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
+                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, memberFlags, SynBindingTrivia.Zero)
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield getter
                             | _ -> ()
@@ -4060,7 +4061,7 @@ module TcDeclarations =
                                     let headPat = SynPat.LongIdent (SynLongIdent(headPatIds, [], List.replicate headPatIds.Length None), None, Some noInferredTypars, SynArgPats.Pats [mkSynPatVar None vId], None, mMemberPortion)
                                     let rhsExpr = mkSynAssign (SynExpr.Ident fldId) (SynExpr.Ident vId)
                                     //let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
-                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], Some memberFlagsForSet, SynBindingTrivia.Zero)
+                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, None, rhsExpr, rhsExpr.Range, [], [], memberFlagsForSet, SynBindingTrivia.Zero)
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield setter 
                             | _ -> ()]

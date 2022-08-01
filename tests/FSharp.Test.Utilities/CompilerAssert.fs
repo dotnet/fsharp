@@ -309,10 +309,11 @@ module rec CompilerAssertHelpers =
             SourceFiles = [|"test.fs"|]
             OtherOptions =
                 let assemblies = TargetFrameworkUtil.currentReferences |> Array.map (fun x -> sprintf "-r:%s" x)
+                let defaultOptions =  Array.append [|"--preferreduilang:en-US"; "--noframework"; "--warn:5"|] assemblies
 #if NETCOREAPP
-                Array.append [|"--preferreduilang:en-US"; "--targetprofile:netcore"; "--noframework"; "--simpleresolution"; "--warn:5"|] assemblies
+                Array.append [|"--targetprofile:netcore"|] defaultOptions
 #else
-                Array.append [|"--preferreduilang:en-US"; "--targetprofile:mscorlib"; "--noframework"; "--warn:5"|] assemblies
+                Array.append [|"--targetprofile:mscorlib"|] defaultOptions
 #endif
             ReferencedProjects = [||]
             IsIncompleteTypeCheckEnvironment = false

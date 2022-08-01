@@ -1500,6 +1500,44 @@ let CheckForAbnormalOperatorNames (cenv: cenv) (idRange: range) coreDisplayName 
                 warning(StandardOperatorRedefinitionWarning(FSComp.SR.tcInvalidMemberNameFixedTypes opName, idRange))
         | Other -> ()
 
+let CheckInitProperties (g: TcGlobals) (minfo: MethInfo) methodName mItem =
+    if g.langVersion.SupportsFeature(LanguageFeature.InitPropertiesSupport) then
+        // Check, wheter this method has external init, emit an error diagnostic in this case.
+        if minfo.HasExternalInit then
+            errorR (Error (FSComp.SR.tcSetterForInitOnlyPropertyCannotBeCalled1 methodName, mItem))
+
+let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minfo: MethInfo) finalAssignedItemSetters mMethExpr =
+    // Make sure, if apparent type has any required properties, they all are in the `finalAssignedItemSetters`.
+    // If it is a constructor, and it is not marked with `SetsRequiredMembersAttributeAttribute`, then:
+    // 1. Get all properties of the type.
+    // 2. Check if any of them has `IsRequired` set.
+    //      2.1. If there are none, proceed as usual
+    //      2.2. If there are any, make sure all of them (or their setters) are in `finalAssignedItemSetters`.
+    // 3. If some are missing, produce a diagnostic which missing ones.
+    if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport)
+        && minfo.IsConstructor
+        && not (TryFindILAttribute g.attrib_SetsRequiredMembersAttribute (minfo.GetCustomAttrs())) then
+
+        let requiredProps =
+            [
+                let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g cenv.amap range0 minfo.ApparentEnclosingType
+                for prop in props do
+                    if prop.IsRequired then
+                        prop
+             ]
+
+        if requiredProps.Length > 0 then
+            let setterPropNames =
+                finalAssignedItemSetters
+                |> List.choose (function | AssignedItemSetter(_, AssignedPropSetter (pinfo, _, _), _) -> Some pinfo.PropertyName  | _ -> None)
+
+            let missingProps =
+                requiredProps
+                |> List.filter (fun pinfo -> not (List.contains pinfo.PropertyName setterPropNames))
+            if missingProps.Length > 0 then
+                let details = NicePrint.multiLineStringOfPropInfos g cenv.amap mMethExpr env.DisplayEnv missingProps
+                errorR(Error(FSComp.SR.tcMissingRequiredMembers details, mMethExpr))
+
 let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRecInfo, vscheme, attrs, xmlDoc, konst, isGeneratedEventVal) =
 
     let g = cenv.g
@@ -4584,8 +4622,8 @@ and TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ (iwsam: WarnOnIWSAM)
     | SynType.LongIdentApp (synLeftTy, synLongId, _, args, _commas, _, m) ->
         TcNestedAppType cenv newOk checkConstraints occ iwsam env tpenv synLeftTy synLongId args m
 
-    | SynType.Tuple(isStruct, args, m) ->
-        TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct args m
+    | SynType.Tuple(isStruct, segments, m) ->
+        TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct segments m
 
     | SynType.AnonRecd(_, [],m) ->
         error(Error((FSComp.SR.tcAnonymousTypeInvalidInDeclaration()), m))
@@ -4711,8 +4749,7 @@ and TcNestedAppType cenv newOk checkConstraints occ iwsam env tpenv synLeftTy sy
     | _ ->
         error(Error(FSComp.SR.tcTypeHasNoNestedTypes(), m))
 
-and TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct args m =
-
+and TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct (args: SynTupleTypeSegment list) m =
     let tupInfo = mkTupInfo isStruct
     if isStruct then
         let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
@@ -4721,8 +4758,9 @@ and TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct args 
         let isMeasure =
             match kindOpt with
             | Some TyparKind.Measure -> true
-            | None -> List.exists (fun (isquot,_) -> isquot) args | _ -> false
-
+            | None -> args |> List.exists(function | SynTupleTypeSegment.Slash _ -> true | _ -> false)
+            | Some _ -> false
+    
         if isMeasure then
             let ms,tpenv = TcMeasuresAsTuple cenv newOk checkConstraints occ env tpenv args m
             TType_measure ms,tpenv
@@ -4732,7 +4770,7 @@ and TcTupleType kindOpt cenv newOk checkConstraints occ env tpenv isStruct args 
 
 and TcAnonRecdType cenv newOk checkConstraints occ env tpenv isStruct args m =
     let tupInfo = mkTupInfo isStruct
-    let tup = args |> List.map snd |> List.map (fun x -> (false, x))
+    let tup = args |> List.map (fun (_, t) -> SynTupleTypeSegment.Type t)
     let argsR,tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv tup m
     let unsortedFieldIds = args |> List.map fst |> List.toArray
     let anonInfo = AnonRecdTypeInfo.Create(cenv.thisCcu, tupInfo, unsortedFieldIds)
@@ -4870,25 +4908,39 @@ and TcAnonTypeOrMeasure kindOpt _cenv rigid dyn newOk m =
 and TcTypes cenv newOk checkConstraints occ iwsam env tpenv args =
     List.mapFold (TcTypeAndRecover cenv newOk checkConstraints occ iwsam env) tpenv args
 
-and TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m =
+and TcTypesAsTuple cenv newOk checkConstraints occ env tpenv (args: SynTupleTypeSegment list) m =
+    let hasASlash =
+        args
+        |> List.exists(function | SynTupleTypeSegment.Slash _ -> true | _ -> false)
+        
+    if hasASlash then errorR(Error(FSComp.SR.tcUnexpectedSlashInType(), m))
+    
+    let args : SynType list = getTypeFromTuplePath args
     match args with
     | [] -> error(InternalError("empty tuple type", m))
-    | [(_, ty)] -> let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv ty in [ty], tpenv
-    | (isquot, ty) :: args ->
+    | [ty] -> let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv ty in [ty], tpenv
+    | ty :: args ->
         let ty, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv ty
+        let args = List.map SynTupleTypeSegment.Type args
         let tys, tpenv = TcTypesAsTuple cenv newOk checkConstraints occ env tpenv args m
-        if isquot then errorR(Error(FSComp.SR.tcUnexpectedSlashInType(), m))
         ty :: tys, tpenv
 
 // Type-check a list of measures separated by juxtaposition, * or /
-and TcMeasuresAsTuple cenv newOk checkConstraints occ env (tpenv: UnscopedTyparEnv) args m =
-    let rec gather args tpenv isquot acc =
+and TcMeasuresAsTuple cenv newOk checkConstraints occ env (tpenv: UnscopedTyparEnv) (args: SynTupleTypeSegment list) m =
+    let rec gather (args: SynTupleTypeSegment list) tpenv acc =
         match args with
         | [] -> acc, tpenv
-        | (nextisquot, ty) :: args ->
+        | SynTupleTypeSegment.Type ty :: args ->
             let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
-            gather args tpenv nextisquot (if isquot then Measure.Prod(acc, Measure.Inv ms1) else Measure.Prod(acc, ms1))
-    gather args tpenv false Measure.One
+            gather args tpenv ms1
+        | SynTupleTypeSegment.Star _ :: SynTupleTypeSegment.Type ty :: args ->
+            let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
+            gather args tpenv (Measure.Prod(acc, ms1))
+        | SynTupleTypeSegment.Slash _ :: SynTupleTypeSegment.Type ty :: args ->
+            let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
+            gather args tpenv (Measure.Prod(acc, Measure.Inv ms1))
+        | _ -> failwith "inpossible"
+    gather args tpenv Measure.One
 
 and TcTypesOrMeasures optKinds cenv newOk checkConstraints occ env tpenv args m =
     match optKinds with
@@ -9179,6 +9231,9 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
         // To get better warnings we special case some of the few known mutate-a-struct method names
         let mutates = (if methodName = "MoveNext" || methodName = "GetNextArg" then DefinitelyMutates else PossiblyMutates)
 
+        // Check if we have properties with "init-only" setters, which we try to call after init is done.
+        CheckInitProperties g (List.head minfos) methodName mItem
+
 #if !NO_TYPEPROVIDERS
         match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyArgsOpt, mExprAndItem, mItem) with
         | Some minfoAfterStaticArguments ->
@@ -9225,6 +9280,10 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
                 if isNil meths then error (Error (FSComp.SR.tcPropertyIsNotReadable nm, mItem))
                 TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mExprAndItem mItem nm ad PossiblyMutates true meths afterResolution NormalValUse args atomicFlag None delayed
             else
+
+                if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly then
+                    errorR (Error (FSComp.SR.tcInitOnlyPropertyCannotBeSet1 nm, mItem))
+
                 let args = if pinfo.IsIndexer then args else []
                 let mut = (if isStructTy g (tyOfExpr g objExpr) then DefinitelyMutates else PossiblyMutates)
                 TcMethodApplicationThen cenv env overallTy None tpenv tyArgsOpt objArgs mStmt mItem nm ad mut true meths afterResolution NormalValUse (args @ [expr2]) atomicFlag None []
@@ -9955,6 +10014,9 @@ and TcMethodApplication
     // Handle post-hoc property assignments
     let setterExprPrebinders, callExpr3 =
         let expr = callExpr2b
+
+        CheckRequiredProperties g env cenv finalCalledMethInfo finalAssignedItemSetters mMethExpr
+
         if isCheckingAttributeCall then
             [], expr
         elif isNil finalAssignedItemSetters then
@@ -9966,7 +10028,7 @@ and TcMethodApplication
             // Build the expression that mutates the properties on the result of the call
             let setterExprPrebinders, propSetExpr =
                 (mkUnit g mMethExpr, finalAssignedItemSetters) ||> List.mapFold (fun acc assignedItemSetter ->
-                        let argExprPrebinder, action, m = TcSetterArgExpr cenv env denv objExpr ad assignedItemSetter
+                        let argExprPrebinder, action, m = TcSetterArgExpr cenv env denv objExpr ad assignedItemSetter finalCalledMethInfo.IsConstructor
                         argExprPrebinder, mkCompGenSequential m acc action)
 
             // now put them together
@@ -10014,7 +10076,8 @@ and TcMethodApplication
 /// For Method(X = expr) 'X' can be a property, IL Field or F# record field
 and TcSetterArgExpr cenv env denv objExpr ad assignedSetter =
     let g = cenv.g
-    let (AssignedItemSetter(id, setter, CallerArg(callerArgTy, m, isOptCallerArg, argExpr))) = assignedSetter
+    let (AssignedItemSetter(id, setter, callerArg)) = assignedSetter
+    let (CallerArg(callerArgTy, m, isOptCallerArg, argExpr)) = callerArg
 
     if isOptCallerArg then
         error(Error(FSComp.SR.tcInvalidOptionalAssignmentToPropertyOrField(), m))
@@ -10022,6 +10085,10 @@ and TcSetterArgExpr cenv env denv objExpr ad assignedSetter =
     let argExprPrebinder, action, defnItem =
         match setter with
         | AssignedPropSetter (propStaticTyOpt, pinfo, pminfo, pminst) ->
+
+            if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) && pinfo.IsSetterInitOnly && not calledFromConstructor then
+                errorR (Error (FSComp.SR.tcInitOnlyPropertyCannotBeSet1 pinfo.PropertyName, m))
+
             MethInfoChecks g cenv.amap true None [objExpr] ad m pminfo
             let calledArgTy = List.head (List.head (pminfo.GetParamTypes(cenv.amap, m, pminst)))
             let tcVal = LightweightTcValForUsingInBuildMethodCall g
