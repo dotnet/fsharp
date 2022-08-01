@@ -428,38 +428,77 @@ module Test =
     Assert.AreEqual(expected, quickInfo)
     ()
 
-[<TestCase """
+[<Test>]
+let ``Automation.LetBindings.InModule``() =
+    let code = """
 namespace FsTest
 
 module Test =
     let fu$$nc x = ()
-""">]
-[<TestCase """
+"""
+    let expectedSignature = "val func: x: 'a -> unit"
+
+    let tooltip = GetQuickInfoTextFromCode code
+
+    StringAssert.StartsWith(expectedSignature, tooltip)
+    ()
+
+[<Test>]
+let ``Automation.LetBindings.InClass``() =
+    let code = """
 namespace FsTest
 
 module Test =
     type T() =
         let fu$$nc x = ()
-""">]
-[<TestCase """
+"""
+    let expectedSignature = "val func: x: 'a -> unit"
+
+    let tooltip = GetQuickInfoTextFromCode code
+
+    StringAssert.StartsWith(expectedSignature, tooltip)
+
+[<Test >]
+let ``Automation.LetBindings.StaticLet``() =
+    let code = """
 namespace FsTest
 
 module Test =
     type T() =
         static let fu$$nc x = ()
-""">]
-[<TestCase """
+"""
+    let expectedSignature = "val func: x: 'a -> unit"
+
+    let tooltip = GetQuickInfoTextFromCode code
+
+    StringAssert.StartsWith(expectedSignature, tooltip)
+    ()
+
+[<Test>]
+let ``Automation.LetBindings.InDoBinding``() =
+    let code = """
 namespace FsTest
 
 module Test =
     do
         let fu$$nc x = ()
         ()
-""">]
-let ``Automation.LetBindings`` code =
+"""
     let expectedSignature = "val func: x: 'a -> unit"
 
     let tooltip = GetQuickInfoTextFromCode code
 
     StringAssert.StartsWith(expectedSignature, tooltip)
+    ()
+
+[<Test>]
+let ``Exceptions with backticks``() =
+    let code = """
+exception SomeError of ``thing wi$$th space``: string
+"""
+    let expected = "argument ``thing with space``: string"
+
+    let actual = GetQuickInfoTextFromCode code
+
+    Assert.AreEqual(expected, actual)
     ()
