@@ -1,3 +1,6 @@
+open System.Runtime.InteropServices
+
+
 module Test1 =
     type C1() =
         static member X(p: C1 byref) = p
@@ -52,5 +55,9 @@ module Test6 =
     let inline callX6<'T when 'T : (static member X: 'T byref -> 'T byref)> (x: 'T byref)  = &'T.X &x
     let mutable c6 = C6()
     let g6 () = callX6<C6> &c6
-#endif
 
+// No out args allows
+module Test7 =
+
+    let inline callX2<'T when 'T : (static member X: [<Out>] 'T byref -> bool)> () = ()
+#endif
