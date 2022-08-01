@@ -658,3 +658,61 @@ module ``Active patterns`` =
 
             """
         ]
+
+module ``Suppression of System Numerics interfaces on unitized types`` =
+
+    [<Fact(Skip = "Solution needs to be updated to .NET 7")>]
+    let Baseline () =
+        Fsx """
+            open System.Numerics
+            let f (x: 'T when 'T :> IMultiplyOperators<'T,'T,'T>) = x;;
+            f 3.0 |> ignore"""
+        |> withLangVersionPreview
+        |> compile
+        |> shouldSucceed
+
+    [<Theory(Skip = "Solution needs to be updated to .NET 7")>]
+    [<InlineData("IAdditionOperators", 3)>]
+    [<InlineData("IAdditiveIdentity", 2)>]
+    [<InlineData("IBinaryFloatingPointIeee754", 1)>]
+    [<InlineData("IBinaryNumber", 1)>]
+    [<InlineData("IBitwiseOperators", 3)>]
+    [<InlineData("IComparisonOperators", 2)>]
+    [<InlineData("IDecrementOperators", 1)>]
+    [<InlineData("IDivisionOperators", 3)>]
+    [<InlineData("IEqualityOperators", 2)>]
+    [<InlineData("IExponentialFunctions", 1)>]
+    [<InlineData("IFloatingPoint", 1)>]
+    [<InlineData("IFloatingPointIeee754", 1)>]
+    [<InlineData("IHyperbolicFunctions", 1)>]
+    [<InlineData("IIncrementOperators", 1)>]
+    [<InlineData("ILogarithmicFunctions", 1)>]
+    [<InlineData("IMinMaxValue", 1)>]
+    [<InlineData("IModulusOperators", 3)>]
+    [<InlineData("IMultiplicativeIdentity", 2)>]
+    [<InlineData("IMultiplyOperators", 3)>]
+    [<InlineData("INumber", 1)>]
+    [<InlineData("INumberBase", 1)>]
+    [<InlineData("IPowerFunctions", 1)>]
+    [<InlineData("IRootFunctions", 1)>]
+    [<InlineData("ISignedNumber", 1)>]
+    [<InlineData("ISubtractionOperators", 3)>]
+    [<InlineData("ITrigonometricFunctions", 1)>]
+    [<InlineData("IUnaryNegationOperators", 2)>]
+    [<InlineData("IUnaryPlusOperators", 2)>]
+    let ``Unitized type shouldn't be compatible with System.Numerics.I*`` name paramCount =
+        let typeParams = Seq.replicate paramCount "'T" |> String.concat ","
+        let genericType = $"{name}<{typeParams}>"
+        let potatoParams = Seq.replicate paramCount "float<potato>" |> String.concat ","
+        let potatoType = $"{name}<{potatoParams}>"
+        Fsx $"""
+            open System.Numerics
+
+            [<Measure>] type potato
+
+            let f (x: 'T when {genericType}) = x;;
+            f 3.0<potato> |> ignore"""
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorMessage $"The type 'float<potato>' is not compatible with the type '{potatoType}'"
