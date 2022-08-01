@@ -259,14 +259,14 @@ type internal FSharpPackage() as this =
                     solutionEventsOpt <- Some(solutionEvents)
                     solution.AdviseSolutionEvents(solutionEvents) |> ignore
                     
-                    let projectContextFactory = this.ComponentModel.GetService<FSharpWorkspaceProjectContextFactory>()
+                    let projectContextFactory = this.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
                     let miscFilesWorkspace = this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
                     let _singleFileWorkspaceMap = 
                         new SingleFileWorkspaceMap(
                             FSharpMiscellaneousFileService(
                                 workspace,
                                 miscFilesWorkspace,
-                                projectContextFactory
+                                FSharpWorkspaceProjectContextFactory(projectContextFactory)
                             ),
                             rdt)
                     let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)

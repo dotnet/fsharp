@@ -12,7 +12,6 @@ open System.IO
 open System.Linq
 open System.Runtime.CompilerServices
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
@@ -22,10 +21,10 @@ open Microsoft.VisualStudio.Shell.Interop
 [<Sealed>]
 type internal LegacyProjectWorkspaceMap(solution: IVsSolution, 
                                         projectInfoManager: FSharpProjectOptionsManager,
-                                        projectContextFactory: FSharpWorkspaceProjectContextFactory) as this =
+                                        projectContextFactory: IWorkspaceProjectContextFactory) as this =
 
     let invalidPathChars = set (Path.GetInvalidPathChars())
-    let optionsAssociation = ConditionalWeakTable<IFSharpWorkspaceProjectContext, string[]>()
+    let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
     let isPathWellFormed (path: string) = not (String.IsNullOrWhiteSpace path) && path |> Seq.forall (fun c -> not (Set.contains c invalidPathChars))
 
     let projectDisplayNameOf projectFileName =
@@ -41,7 +40,7 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
 
     /// Sync the Roslyn information for the project held in 'projectContext' to match the information given by 'site'.
     /// Also sync the info in ProjectInfoManager if necessary.
-    member this.SyncLegacyProject(projectContext: FSharpWorkspaceProjectContext, site: IProjectSite) =
+    member this.SyncLegacyProject(projectContext: IWorkspaceProjectContext, site: IProjectSite) =
         let wellFormedFilePathSetIgnoreCase (paths: seq<string>) =
             HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
 
@@ -59,7 +58,7 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
         
         for file in updatedFiles do
             if not(originalFiles.Contains(file)) then
-                projectContext.AddSourceFile(file, SourceCodeKind.Regular)
+                projectContext.AddSourceFile(file)
 
         for file in originalFiles do
             if not(updatedFiles.Contains(file)) then
@@ -73,7 +72,7 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
 
         for ref in updatedRefs do
             if not(originalRefs.Contains(ref)) then
-                projectContext.AddMetadataReference(ref)
+                projectContext.AddMetadataReference(ref, MetadataReferenceProperties.Assembly)
 
         for ref in originalRefs do
             if not(updatedRefs.Contains(ref)) then
@@ -91,7 +90,7 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
             //projectContext.SetOptions(String.concat " " updatedOptions)
             for file in updatedFiles do
                 projectContext.RemoveSourceFile(file)
-                projectContext.AddSourceFile(file, SourceCodeKind.Regular)
+                projectContext.AddSourceFile(file)
 
             // Record the last seen options as an associated value
             if ok then optionsAssociation.Remove(projectContext) |> ignore
@@ -120,6 +119,7 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
 
             let projectContext = 
                 projectContextFactory.CreateProjectContext(
+                    FSharpConstants.FSharpLanguageName,
                     projectDisplayName,
                     projectFileName,
                     projectGuid,
@@ -131,7 +131,7 @@ type internal LegacyProjectWorkspaceMap(solution: IVsSolution,
             // Sync IProjectSite --> projectContext, and IProjectSite --> ProjectInfoManage
             this.SyncLegacyProject(projectContext, site)
 
-            site.BuildErrorReporter <- Some (projectContext.BuildErrorReporter)
+            site.BuildErrorReporter <- Some (projectContext :?> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
 
             // TODO: consider forceUpdate = false here.  forceUpdate=true may be causing repeated computation?
             site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 

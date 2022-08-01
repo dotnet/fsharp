@@ -4,7 +4,6 @@ Imports EnvDTE
 Imports Microsoft.VisualBasic
 
 Imports System
-Imports System.IO
 Imports System.Collections
 Imports System.ComponentModel
 Imports System.Diagnostics
@@ -188,8 +187,8 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                 sFileName = ""
                 sInitialDirectory = ""
             Else
-                sFileName = Path.GetFileName(sInitialDirectory)
-                sInitialDirectory = Path.GetDirectoryName(sInitialDirectory)
+                sFileName = System.IO.Path.GetFileName(sInitialDirectory)
+                sInitialDirectory = System.IO.Path.GetDirectoryName(sInitialDirectory)
             End If
 
             Dim fileNames As ArrayList = Common.Utils.GetFilesViaBrowse(ServiceProvider, Me.Handle, sInitialDirectory, SR.GetString(SR.PPG_AddExistingFilesTitle), _
@@ -313,13 +312,13 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             End If
 
             ' Verify all the characters in the path are valid 
-            If path.IndexOfAny(System.IO.Path.GetInvalidPathChars()) >= 0 Then
+            If path.IndexOfAny(IO.Path.GetInvalidPathChars()) >= 0 Then
                 ShowErrorMessage(SR.GetString(SR.PPG_Application_CantAddIcon))
                 Return False
             End If
 
-            If Not System.IO.Path.IsPathRooted(path) Then
-                path = System.IO.Path.Combine(GetProjectPath(), path)
+            If Not IO.Path.IsPathRooted(path) Then
+                path = IO.Path.Combine(GetProjectPath(), path)
             End If
 
             If System.IO.File.Exists(path) Then
@@ -329,7 +328,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                 '  create the Image.
                 Try
                     Dim IconContents As Byte() = IO.File.ReadAllBytes(path)
-                    Dim IconStream As New MemoryStream(IconContents, 0, IconContents.Length)
+                    Dim IconStream As New IO.MemoryStream(IconContents, 0, IconContents.Length)
                     ApplicationIconPictureBox.Image = IconToImage(New Icon(IconStream), ApplicationIconPictureBox.ClientSize)
                 Catch ex As Exception
                     Common.RethrowIfUnrecoverable(ex, True)
@@ -414,7 +413,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Protected Sub AddIconsFromProjectItem(ByVal ProjectItem As EnvDTE.ProjectItem, ByVal ApplicationIconCombobox As ComboBox)
             For Index As Short = 1 To ProjectItem.FileCount
                 Dim FileName As String = ProjectItem.FileNames(Index)
-                Dim ext As String = Path.GetExtension(FileName)
+                Dim ext As String = System.IO.Path.GetExtension(FileName)
                 If ext.Equals(".ico", StringComparison.OrdinalIgnoreCase) Then
                     ApplicationIconCombobox.Items.Add(GetProjectRelativeFilePath(FileName))
                 End If
@@ -528,7 +527,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Protected Sub AddManifestsFromProjectItem(ByVal ProjectItem As EnvDTE.ProjectItem, ByVal ApplicationManifestCombobox As ComboBox)
             For Index As Short = 1 To ProjectItem.FileCount
                 Dim FileName As String = ProjectItem.FileNames(Index)
-                Dim ext As String = Path.GetExtension(FileName)
+                Dim ext As String = System.IO.Path.GetExtension(FileName)
                 If ext.Equals(".manifest", StringComparison.OrdinalIgnoreCase) Then
                     ApplicationManifestCombobox.Items.Add(GetProjectRelativeFilePath(FileName))
                 End If

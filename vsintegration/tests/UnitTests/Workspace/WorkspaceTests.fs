@@ -11,7 +11,6 @@ open System.Collections.Immutable
 open System.Threading
 open Microsoft.VisualStudio.Composition
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
@@ -185,10 +184,6 @@ module WorkspaceTests =
 
         interface IFSharpWorkspaceProjectContext with
 
-            member _.get_DisplayName() : string = ""
-
-            member _.set_DisplayName(value: string) : unit = ()
-
             member _.Dispose(): unit = ()
 
             member _.FilePath: string = mainProj.FilePath
@@ -265,13 +260,10 @@ module WorkspaceTests =
 
                 mainProj <- solution.GetProject(currentProj.Id)
 
-            member _.AddMetadataReference(_: string): unit = ()
-            member _.AddSourceFile(_: string, _: SourceCodeKind): unit = ()
-
     type TestFSharpWorkspaceProjectContextFactory(workspace: Workspace, miscFilesWorkspace: Workspace) =
                 
         interface IFSharpWorkspaceProjectContextFactory with
-            member _.CreateProjectContext(filePath: string, uniqueName: string): IFSharpWorkspaceProjectContext =
+            member _.CreateProjectContext(filePath: string): IFSharpWorkspaceProjectContext =
                 match miscFilesWorkspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) |> Seq.tryExactlyOne with
                 | Some docId ->
                     let doc = miscFilesWorkspace.CurrentSolution.GetDocument(docId)

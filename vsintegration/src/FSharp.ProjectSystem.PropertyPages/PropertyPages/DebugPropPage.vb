@@ -22,7 +22,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Private m_controlGroup As Control()()
 
         'PERF: A note about the labels used as lines.  The 3D label is being set to 1 px high,
-        '   so youâ€™re really only using the grey part of it.  Using BorderStyle.Fixed3D seems
+        '   so you’re really only using the grey part of it.  Using BorderStyle.Fixed3D seems
         '   to fire an extra resize OnHandleCreated.  The simple solution is to use BorderStyle.None 
         '   and BackColor = SystemColors.ControlDark.
 
@@ -507,7 +507,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             If sInitialDirectory = "" Then
                 Try
                     sInitialDirectory = Path.Combine(GetDebugPathProjectPath(), GetSelectedConfigOutputPath())
-                Catch ex As IOException
+                Catch ex As IO.IOException
                     'Ignore
                 Catch ex As Exception
                     Common.RethrowIfUnrecoverable(ex)
