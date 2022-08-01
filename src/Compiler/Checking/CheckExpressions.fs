@@ -1529,7 +1529,7 @@ let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minf
         if requiredProps.Length > 0 then
             let setterPropNames =
                 finalAssignedItemSetters
-                |> List.choose (function | AssignedItemSetter(_, AssignedPropSetter (pinfo, _, _), _) -> Some pinfo.PropertyName  | _ -> None)
+                |> List.choose (function | AssignedItemSetter(_, AssignedPropSetter (_, pinfo, _, _), _) -> Some pinfo.PropertyName  | _ -> None)
 
             let missingProps =
                 requiredProps
@@ -10071,7 +10071,7 @@ and TcMethodApplication
     (callExpr6, finalAttributeAssignedNamedItems, delayed), tpenv
 
 /// For Method(X = expr) 'X' can be a property, IL Field or F# record field
-and TcSetterArgExpr cenv env denv objExpr ad assignedSetter =
+and TcSetterArgExpr cenv env denv objExpr ad assignedSetter calledFromConstructor =
     let g = cenv.g
     let (AssignedItemSetter(id, setter, callerArg)) = assignedSetter
     let (CallerArg(callerArgTy, m, isOptCallerArg, argExpr)) = callerArg
