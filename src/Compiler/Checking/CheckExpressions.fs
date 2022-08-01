@@ -3065,18 +3065,20 @@ type ApplicableExpr =
            // the function-valued expression
            expr: Expr *
            // is this the first in an application series
-           isFirst: bool
+           isFirst: bool *
+           // Is this a traitCall, where we don't build a lambda
+           traitCallInfo: (Val list * Expr) option
 
     member x.Range =
-        let (ApplicableExpr (_, expr, _)) = x
+        let (ApplicableExpr (_, expr, _, _)) = x
         expr.Range
 
     member x.Type =
         match x with
-        | ApplicableExpr (cenv, expr, _) -> tyOfExpr cenv.g expr
+        | ApplicableExpr (cenv, expr, _, _) -> tyOfExpr cenv.g expr
 
     member x.SupplyArgument(expr2, m) =
-        let (ApplicableExpr (cenv, funcExpr, first)) = x
+        let (ApplicableExpr (cenv, funcExpr, first, traitCallInfo)) = x
         let g = cenv.g
 
         let combinedExpr =
@@ -3086,16 +3088,24 @@ type ApplicableExpr =
                        (not (isForallTy g funcExpr0Ty) || isFunTy g (applyTys g funcExpr0Ty (tyargs0, args0))) ->
                 Expr.App (funcExpr0, funcExpr0Ty, tyargs0, args0@[expr2], unionRanges m0 m)
             | _ ->
-                Expr.App (funcExpr, tyOfExpr g funcExpr, [], [expr2], m)
+                // Trait calls do not build a lambda if applied immediately to a tuple of arguments or a unit argument
+                match traitCallInfo, tryDestRefTupleExpr expr2 with
+                | Some (vs, traitCall), exprs when vs.Length = exprs.Length ->
+                    mkLetsBind m (mkCompGenBinds vs exprs) traitCall
+                | _ ->
+                    Expr.App (funcExpr, tyOfExpr g funcExpr, [], [expr2], m)
 
-        ApplicableExpr(cenv, combinedExpr, false)
+        ApplicableExpr(cenv, combinedExpr, false, None)
 
     member x.Expr =
-        let (ApplicableExpr (_, expr, _)) = x
+        let (ApplicableExpr (_, expr, _, _)) = x
         expr
 
 let MakeApplicableExprNoFlex cenv expr =
-    ApplicableExpr (cenv, expr, true)
+    ApplicableExpr (cenv, expr, true, None)
+
+let MakeApplicableExprForTraitCall cenv expr traitCallInfo =
+    ApplicableExpr (cenv, expr, true, Some traitCallInfo)
 
 /// This function reverses the effect of condensation for a named function value (indeed it can
 /// work for any expression, though we only invoke it immediately after a call to TcVal).
@@ -3141,7 +3151,7 @@ let MakeApplicableExprWithFlex cenv (env: TcEnv) expr =
         curriedActualTys |> List.exists (List.exists (isByrefTy g)) ||
         curriedActualTys |> List.forall (List.forall (isNonFlexibleTy g))) then
 
-        ApplicableExpr (cenv, expr, true)
+        ApplicableExpr (cenv, expr, true, None)
     else
         let curriedFlexibleTys =
             curriedActualTys |> List.mapSquared (fun actualTy ->
@@ -3154,7 +3164,7 @@ let MakeApplicableExprWithFlex cenv (env: TcEnv) expr =
 
         // Create a coercion to represent the expansion of the application
         let expr = mkCoerceExpr (expr, mkIteratedFunTy g (List.map (mkRefTupledTy g) curriedFlexibleTys) retTy, m, exprTy)
-        ApplicableExpr (cenv, expr, true)
+        ApplicableExpr (cenv, expr, true, None)
 
 ///  Checks, warnings and constraint assertions for downcasts
 let TcRuntimeTypeTest isCast isOperator cenv denv m tgtTy srcTy =
@@ -3969,19 +3979,19 @@ let buildApp cenv expr resultTy arg m =
     match expr, arg with
 
     // Special rule for building applications of the 'x && y' operator
-    | ApplicableExpr(_, Expr.App (Expr.Val (vref, _, _), _, _, [x0], _), _), _
+    | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [x0], _)), _
          when valRefEq g vref g.and_vref
            || valRefEq g vref g.and2_vref ->
         MakeApplicableExprNoFlex cenv (mkLazyAnd g m x0 arg), resultTy
 
     // Special rule for building applications of the 'x || y' operator
-    | ApplicableExpr(_, Expr.App (Expr.Val (vref, _, _), _, _, [x0], _), _), _
+    | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [x0], _)), _
          when valRefEq g vref g.or_vref
            || valRefEq g vref g.or2_vref ->
         MakeApplicableExprNoFlex cenv (mkLazyOr g m x0 arg ), resultTy
 
     // Special rule for building applications of the 'reraise' operator
-    | ApplicableExpr(_, Expr.App (Expr.Val (vref, _, _), _, _, [], _), _), _
+    | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [], _)), _
          when valRefEq g vref g.reraise_vref ->
 
         // exprTy is of type: "unit -> 'a". Break it and store the 'a type here, used later as return type.
@@ -3989,7 +3999,7 @@ let buildApp cenv expr resultTy arg m =
 
     // Special rules for NativePtr.ofByRef to generalize result.
     // See RFC FS-1053.md
-    | ApplicableExpr(_, Expr.App (Expr.Val (vref, _, _), _, _, [], _), _), _
+    | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [], _)), _
          when (valRefEq g vref g.nativeptr_tobyref_vref) ->
 
         let argTy = NewInferenceType g
@@ -4000,7 +4010,7 @@ let buildApp cenv expr resultTy arg m =
     // address of an expression.
     //
     // See also RFC FS-1053.md
-    | ApplicableExpr(_, Expr.App (Expr.Val (vref, _, _), _, _, [], _), _), _
+    | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [], _)), _
          when valRefEq g vref g.addrof_vref ->
 
         let wrap, e1a', readonly, _writeonly = mkExprAddrOfExpr g true false AddressOfOp arg (Some vref) m
@@ -4025,7 +4035,7 @@ let buildApp cenv expr resultTy arg m =
 
     // Special rules for building applications of the &&expr' operators, which gets the
     // address of an expression.
-    | ApplicableExpr(_, Expr.App (Expr.Val (vref, _, _), _, _, [], _), _), _
+    | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [], _)), _
          when valRefEq g vref g.addrof2_vref ->
 
         warning(UseOfAddressOfOperator m)
@@ -8055,7 +8065,7 @@ and Propagate cenv (overallTy: OverallTy) (env: TcEnv) tpenv (expr: ApplicableEx
                 // See RFC FS-1053.md
                 let isAddrOf =
                     match expr with
-                    | ApplicableExpr(_, Expr.App (Expr.Val (vref, _, _), _, _, [], _), _)
+                    | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [], _))
                         when (valRefEq g vref g.addrof_vref ||
                               valRefEq g vref g.nativeptr_tobyref_vref) -> true
                     | _ -> false
@@ -8347,9 +8357,9 @@ and TcApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg synLeftE
             | _ -> ()
 
         match leftExpr with
-        | ApplicableExpr(_, NameOfExpr g _, _) when g.langVersion.SupportsFeature LanguageFeature.NameOf ->
+        | ApplicableExpr(expr=NameOfExpr g _) when g.langVersion.SupportsFeature LanguageFeature.NameOf ->
             let replacementExpr = TcNameOfExpr cenv env tpenv synArg
-            TcDelayed cenv overallTy env tpenv mExprAndArg (ApplicableExpr(cenv, replacementExpr, true)) g.string_ty ExprAtomicFlag.Atomic delayed
+            TcDelayed cenv overallTy env tpenv mExprAndArg (ApplicableExpr(cenv, replacementExpr, true, None)) g.string_ty ExprAtomicFlag.Atomic delayed
         | _ ->
             // Notice the special case 'seq { ... }'. In this case 'seq' is actually a function in the F# library.
             // Set a flag in the syntax tree to say we noticed a leading 'seq'
@@ -8360,7 +8370,7 @@ and TcApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg synLeftE
                 match synArg with
                 | SynExpr.ComputationExpr (false, comp, m) when 
                         (match leftExpr with
-                         | ApplicableExpr(_, Expr.Op(TOp.Coerce, _, [SeqExpr g], _), _) -> true
+                         | ApplicableExpr(expr=Expr.Op(TOp.Coerce, _, [SeqExpr g], _)) -> true
                          | _ -> false) ->
                     SynExpr.ComputationExpr (true, comp, m)
                 | _ -> synArg
@@ -8371,8 +8381,8 @@ and TcApplicationThen cenv (overallTy: OverallTy) env tpenv mExprAndArg synLeftE
                 // will have debug points on "f expr1" and "g expr2"
                 let env =
                     match leftExpr with
-                    | ApplicableExpr(_, Expr.Val (vref, _, _), _)
-                    | ApplicableExpr(_, Expr.App (Expr.Val (vref, _, _), _, _, [_], _), _)
+                    | ApplicableExpr(expr=Expr.Val (vref, _, _))
+                    | ApplicableExpr(expr=Expr.App (Expr.Val (vref, _, _), _, _, [_], _))
                          when valRefEq g vref g.and_vref
                            || valRefEq g vref g.and2_vref 
                            || valRefEq g vref g.or_vref
@@ -8826,24 +8836,29 @@ and TcTraitItemThen cenv overallTy env objOpt traitInfo tpenv mItem delayed =
                 mkCompGenLet mItem objVal objExpr, [objValExpr]
 
     // Build a lambda for the trait call
-    let expr =
+    let applicableExpr, exprTy =
         // Empty arguments indicates a non-indexer property constraint
         match argTys with 
         | [] ->
-            Expr.Op (TOp.TraitCall traitInfo, [], objArgs, mItem)
+            let expr = Expr.Op (TOp.TraitCall traitInfo, [], objArgs, mItem)
+            let exprTy = tyOfExpr g expr
+            let applicableExpr = MakeApplicableExprNoFlex cenv expr
+            applicableExpr, exprTy
         | _ ->
             let vs, ves = argTys |> List.mapi (fun i ty -> mkCompGenLocal mItem ("arg" + string i) ty) |> List.unzip
-            let expr = Expr.Op (TOp.TraitCall traitInfo, [], objArgs@ves, mItem)
-            let v, body = MultiLambdaToTupledLambda g vs expr
-            mkLambda mItem v (body, retTy)
+            let traitCall = Expr.Op (TOp.TraitCall traitInfo, [], objArgs@ves, mItem)
+            let v, body = MultiLambdaToTupledLambda g vs traitCall
+            let expr = mkLambda mItem v (body, retTy)
+            let exprTy = tyOfExpr g expr
+            let applicableExpr = MakeApplicableExprForTraitCall cenv expr (vs, traitCall)
+            applicableExpr, exprTy
 
     // Propagate the types from the known application structure 
-    let applicableExpr = MakeApplicableExprNoFlex cenv expr
 
-    Propagate cenv overallTy env tpenv applicableExpr (tyOfExpr g expr) delayed
+    Propagate cenv overallTy env tpenv applicableExpr exprTy delayed
 
     // Check and apply the arguments
-    let resExpr, tpenv = TcDelayed cenv overallTy env tpenv mItem applicableExpr (tyOfExpr g expr) ExprAtomicFlag.NonAtomic delayed
+    let resExpr, tpenv = TcDelayed cenv overallTy env tpenv mItem applicableExpr exprTy ExprAtomicFlag.NonAtomic delayed
 
     // Aply the wrapper to pre-evaluate the object if any
     wrapper resExpr, tpenv
