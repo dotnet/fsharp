@@ -883,4 +883,103 @@ type Person(name : string, age : int) =
     }
   }"""
         ]
+
+    [<Test>]
+    let ``Internal constructor is emitted for attribute (with fsi)`` () =
+        let fsSig =
+            Fsi """
+namespace Microsoft.FSharp.Core
+    open System
+    [<AttributeUsage (AttributeTargets.Method ||| AttributeTargets.Property,AllowMultiple=false)>]  
+    [<Sealed>]
+    type NoDynamicInvocationAttribute =
+        inherit Attribute
+        new: unit -> NoDynamicInvocationAttribute
+        internal new: isLegacy: bool -> NoDynamicInvocationAttribute
+
+    module Operators = 
+        [<CompiledName("GetId")>]
+        val inline id: value: 'T -> 'T
+            """
+
+        let fsSource =
+            FsSource """
+namespace Microsoft.FSharp.Core
+    open System
+    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
+    [<Sealed>]
+    type NoDynamicInvocationAttribute(isLegacy: bool) =
+        inherit Attribute()
+        new () = NoDynamicInvocationAttribute(false)
+        member _.IsLegacy = isLegacy
+
+    module Operators =
+        [<NoDynamicInvocation(isLegacy=true)>]
+        [<CompiledName("GetId")>]
+        let inline id (value: 'T) = value
+            """
+        fsSig
+        |> withOptions ["--refonly"]
+        |> withAdditionalSourceFile fsSource
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """
+.class public auto ansi serializable sealed Microsoft.FSharp.Core.NoDynamicInvocationAttribute
+extends [runtime]System.Attribute
+{
+  .custom instance void [runtime]System.AttributeUsageAttribute::.ctor(valuetype [runtime]System.AttributeTargets) = ( 01 00 C0 00 00 00 01 00 54 02 0D 41 6C 6C 6F 77   
+                                                                                                                              4D 75 6C 74 69 70 6C 65 00 )                      
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.SealedAttribute::.ctor() = ( 01 00 00 00 ) 
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
+  .field assembly bool isLegacy
+  .method assembly specialname rtspecialname 
+   instance void  .ctor(bool isLegacy) cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+  } 
+
+  .method public specialname rtspecialname 
+   instance void  .ctor() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+  } 
+
+  .method assembly hidebysig specialname 
+   instance bool  get_IsLegacy() cil managed
+  {
+    
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+  } 
+
+  .property instance bool IsLegacy()
+  {
+    .get instance bool Microsoft.FSharp.Core.NoDynamicInvocationAttribute::get_IsLegacy()
+  } 
+} 
+
+.class public abstract auto ansi sealed Microsoft.FSharp.Core.Operators
+extends [runtime]System.Object
+{
+  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
+  .method public static !!T  GetId<T>(!!T 'value') cil managed
+  {
+    .custom instance void Microsoft.FSharp.Core.NoDynamicInvocationAttribute::.ctor(bool) = ( 01 00 01 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationSourceNameAttribute::.ctor(string) = ( 01 00 02 69 64 00 00 )                            
+    
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+  } 
+
+} """ ]
     // TODO: Add tests for internal functions, types, interfaces, abstract types (with and without IVTs), (private, internal, public) fields, properties (+ different visibility for getters and setters), events.
