@@ -36,7 +36,7 @@ module ExtraTopLevelOperators =
     [<CompiledName("Print")>]
     val print: text: string -> unit
 
-    /// <summary>Print to the console and adds a newline.</summary>
+    /// <summary>Print to the console and add a newline.</summary>
     ///
     /// <param name="text">The string to print.</param>
     ///
