@@ -452,6 +452,11 @@ module rec Compiler =
     let withRefOut (name:string) (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ $"--refout:{name}" ] "withNoInterfaceData is only supported for F#" cUnit
 
+    let withCSharpLanguageVersion (ver: CSharpLanguageVersion) (cUnit: CompilationUnit) : CompilationUnit =
+        match cUnit with
+        | CS cs -> CS { cs with LangVersion = ver }
+        | _ -> failwith "Only supported in C#"
+
     let asLibrary (cUnit: CompilationUnit) : CompilationUnit =
         match cUnit with
         | FS fs -> FS { fs with OutputType = CompileOutput.Library }

@@ -175,3 +175,5 @@ val mkSynMemberDefnGetSet:
     attrs: SynAttributeList list ->
     rangeStart: range ->
         SynMemberDefn list
+
+val mkSynTypeTuple: isStruct: bool -> elementTypes: SynTupleTypeSegment list -> SynType

@@ -811,3 +811,15 @@ let mkSynMemberDefnGetSet
                 []
         | _ -> []
     | _ -> []
+
+// The last element of elementTypes does not have a star or slash
+let mkSynTypeTuple (isStruct: bool) (elementTypes: SynTupleTypeSegment list) : SynType =
+    let range =
+        match elementTypes with
+        | [] -> Range.Zero
+        | head :: tail ->
+
+            (head.Range, tail)
+            ||> List.fold (fun acc segment -> unionRanges acc segment.Range)
+
+    SynType.Tuple(isStruct, elementTypes, range)

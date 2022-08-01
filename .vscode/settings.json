@@ -16,7 +16,7 @@
         "*.fs": "${capture}.fsi"
     },
     "FSharp.suggestGitignore": false,
-    "FSharp.enableMSBuildProjectGraph": false,
+    "FSharp.enableMSBuildProjectGraph": true,
     "FSharp.workspacePath": "FSharp.Compiler.Service.sln",
     "FSharp.workspaceModePeekDeepLevel": 1,
     "FSharp.enableBackgroundServices": false,
@@ -34,7 +34,7 @@
     "csharp.suppressDotnetInstallWarning": true,
     "csharp.suppressDotnetRestoreNotification": true,
     "csharp.suppressHiddenDiagnostics": true,
-    "omnisharp.autoStart": false,
+    "omnisharp.autoStart": true,
     "omnisharp.defaultLaunchSolution": "FSharp.Compiler.Service.sln",
     "omnisharp.enableMsBuildLoadProjectsOnDemand": true,
     "omnisharp.disableMSBuildDiagnosticWarning": true,
@@ -45,10 +45,6 @@
     "powershell.promptToUpdatePowerShell": false,
     "powershell.integratedConsole.showOnStartup": false,
     "powershell.startAutomatically": false,
-    "dotnet-test-explorer.testProjectPath": "tests/+(FSharp.Compiler.Service.Tests|FSharp.Compiler.UnitTests|FSharp.Core.UnitTests|FSharp.Build.UnitTests|FSharp.Compiler.ComponentTests)/*Tests.fsproj",
-    "dotnet-test-explorer.addProblems": true,
-    "dotnet-test-explorer.autoWatch": false,
-    "dotnet-test-explorer.treeMode": "merged",
     "testExplorer.useNativeTesting": true,
     "markdownlint.config": {
         "MD028": false,
