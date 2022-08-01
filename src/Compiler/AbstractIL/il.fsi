@@ -855,6 +855,8 @@ type ILAttributes =
 
     member AsList: unit -> ILAttribute list
 
+    static member internal Empty: ILAttributes
+
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
 [<NoEquality; NoComparison>]
 type ILAttributesStored

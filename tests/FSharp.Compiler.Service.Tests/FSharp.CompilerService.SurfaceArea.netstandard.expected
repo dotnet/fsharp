@@ -7506,10 +7506,12 @@ FSharp.Compiler.Syntax.SynMemberDefn: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynMemberDefn: System.String ToString()
 FSharp.Compiler.Syntax.SynMemberFlags
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean Equals(System.Object)
+FSharp.Compiler.Syntax.SynMemberFlags: Boolean GetterOrSetterIsCompilerGenerated
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean IsDispatchSlot
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean IsFinal
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean IsInstance
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean IsOverrideOrExplicitImpl
+FSharp.Compiler.Syntax.SynMemberFlags: Boolean get_GetterOrSetterIsCompilerGenerated()
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean get_IsDispatchSlot()
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean get_IsFinal()
 FSharp.Compiler.Syntax.SynMemberFlags: Boolean get_IsInstance()
@@ -7520,7 +7522,7 @@ FSharp.Compiler.Syntax.SynMemberFlags: FSharp.Compiler.SyntaxTrivia.SynMemberFla
 FSharp.Compiler.Syntax.SynMemberFlags: FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia get_Trivia()
 FSharp.Compiler.Syntax.SynMemberFlags: Int32 GetHashCode()
 FSharp.Compiler.Syntax.SynMemberFlags: System.String ToString()
-FSharp.Compiler.Syntax.SynMemberFlags: Void .ctor(Boolean, Boolean, Boolean, Boolean, FSharp.Compiler.Syntax.SynMemberKind, FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia)
+FSharp.Compiler.Syntax.SynMemberFlags: Void .ctor(Boolean, Boolean, Boolean, Boolean, Boolean, FSharp.Compiler.Syntax.SynMemberKind, FSharp.Compiler.SyntaxTrivia.SynMemberFlagsTrivia)
 FSharp.Compiler.Syntax.SynMemberKind
 FSharp.Compiler.Syntax.SynMemberKind+Tags: Int32 ClassConstructor
 FSharp.Compiler.Syntax.SynMemberKind+Tags: Int32 Constructor
@@ -8318,6 +8320,34 @@ FSharp.Compiler.Syntax.SynStringKind: Int32 GetHashCode(System.Collections.IEqua
 FSharp.Compiler.Syntax.SynStringKind: Int32 Tag
 FSharp.Compiler.Syntax.SynStringKind: Int32 get_Tag()
 FSharp.Compiler.Syntax.SynStringKind: System.String ToString()
+FSharp.Compiler.Syntax.SynTupleTypeSegment
+FSharp.Compiler.Syntax.SynTupleTypeSegment+Slash: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynTupleTypeSegment+Slash: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynTupleTypeSegment+Star: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynTupleTypeSegment+Star: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynTupleTypeSegment+Tags: Int32 Slash
+FSharp.Compiler.Syntax.SynTupleTypeSegment+Tags: Int32 Star
+FSharp.Compiler.Syntax.SynTupleTypeSegment+Tags: Int32 Type
+FSharp.Compiler.Syntax.SynTupleTypeSegment+Type: FSharp.Compiler.Syntax.SynType get_typeName()
+FSharp.Compiler.Syntax.SynTupleTypeSegment+Type: FSharp.Compiler.Syntax.SynType typeName
+FSharp.Compiler.Syntax.SynTupleTypeSegment: Boolean IsSlash
+FSharp.Compiler.Syntax.SynTupleTypeSegment: Boolean IsStar
+FSharp.Compiler.Syntax.SynTupleTypeSegment: Boolean IsType
+FSharp.Compiler.Syntax.SynTupleTypeSegment: Boolean get_IsSlash()
+FSharp.Compiler.Syntax.SynTupleTypeSegment: Boolean get_IsStar()
+FSharp.Compiler.Syntax.SynTupleTypeSegment: Boolean get_IsType()
+FSharp.Compiler.Syntax.SynTupleTypeSegment: FSharp.Compiler.Syntax.SynTupleTypeSegment NewSlash(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynTupleTypeSegment: FSharp.Compiler.Syntax.SynTupleTypeSegment NewStar(FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynTupleTypeSegment: FSharp.Compiler.Syntax.SynTupleTypeSegment NewType(FSharp.Compiler.Syntax.SynType)
+FSharp.Compiler.Syntax.SynTupleTypeSegment: FSharp.Compiler.Syntax.SynTupleTypeSegment+Slash
+FSharp.Compiler.Syntax.SynTupleTypeSegment: FSharp.Compiler.Syntax.SynTupleTypeSegment+Star
+FSharp.Compiler.Syntax.SynTupleTypeSegment: FSharp.Compiler.Syntax.SynTupleTypeSegment+Tags
+FSharp.Compiler.Syntax.SynTupleTypeSegment: FSharp.Compiler.Syntax.SynTupleTypeSegment+Type
+FSharp.Compiler.Syntax.SynTupleTypeSegment: FSharp.Compiler.Text.Range Range
+FSharp.Compiler.Syntax.SynTupleTypeSegment: FSharp.Compiler.Text.Range get_Range()
+FSharp.Compiler.Syntax.SynTupleTypeSegment: Int32 Tag
+FSharp.Compiler.Syntax.SynTupleTypeSegment: Int32 get_Tag()
+FSharp.Compiler.Syntax.SynTupleTypeSegment: System.String ToString()
 FSharp.Compiler.Syntax.SynTypar
 FSharp.Compiler.Syntax.SynTypar: Boolean get_isCompGen()
 FSharp.Compiler.Syntax.SynTypar: Boolean isCompGen
@@ -8488,8 +8518,8 @@ FSharp.Compiler.Syntax.SynType+Tuple: Boolean get_isStruct()
 FSharp.Compiler.Syntax.SynType+Tuple: Boolean isStruct
 FSharp.Compiler.Syntax.SynType+Tuple: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynType+Tuple: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.SynType+Tuple: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.Boolean,FSharp.Compiler.Syntax.SynType]] elementTypes
-FSharp.Compiler.Syntax.SynType+Tuple: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.Boolean,FSharp.Compiler.Syntax.SynType]] get_elementTypes()
+FSharp.Compiler.Syntax.SynType+Tuple: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTupleTypeSegment] get_path()
+FSharp.Compiler.Syntax.SynType+Tuple: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTupleTypeSegment] path
 FSharp.Compiler.Syntax.SynType+Var: FSharp.Compiler.Syntax.SynTypar get_typar()
 FSharp.Compiler.Syntax.SynType+Var: FSharp.Compiler.Syntax.SynTypar typar
 FSharp.Compiler.Syntax.SynType+Var: FSharp.Compiler.Text.Range get_range()
@@ -8548,7 +8578,7 @@ FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewParen(FSharp.C
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewStaticConstant(FSharp.Compiler.Syntax.SynConst, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewStaticConstantExpr(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewStaticConstantNamed(FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewTuple(Boolean, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.Boolean,FSharp.Compiler.Syntax.SynType]], FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewTuple(Boolean, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTupleTypeSegment], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewVar(FSharp.Compiler.Syntax.SynTypar, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType NewWithGlobalConstraints(FSharp.Compiler.Syntax.SynType, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynTypeConstraint], FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynType: FSharp.Compiler.Syntax.SynType+Anon

@@ -192,6 +192,11 @@
         <target state="new">static abstract interface members</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureInitProperties">
+        <source>support for consuming init properties</source>
+        <target state="new">support for consuming init properties</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">interfejsy z wieloma ogólnymi wystąpieniami</target>
@@ -260,6 +265,11 @@
       <trans-unit id="featureRelaxWhitespace2">
         <source>whitespace relaxation v2</source>
         <target state="translated">łagodzenie odstępów wer 2</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureRequiredProperties">
+        <source>support for required properties</source>
+        <target state="new">support for required properties</target>
         <note />
       </trans-unit>
       <trans-unit id="featureResumableStateMachines">
@@ -727,6 +737,11 @@
         <target state="translated">W tym wyrażeniu jest używana bezwzględna konwersja "{0}" w celu przekonwertowania typu "{1}" na typ "{2}". Zobacz https://aka.ms/fsharp-implicit-convs. To ostrzeżenie można wyłączyć przy użyciu polecenia "#nowarn \" 3391 \ ".</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
+        <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
         <source>The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</source>
         <target state="translated">Atrybut "InlineIfLambda" może być używany tylko w przypadku parametrów funkcji z podkreśleniem metod, których typ to funkcja lub typ delegata języka F #.</target>
@@ -795,6 +810,11 @@
       <trans-unit id="tcLiteralFieldAssignmentWithArg">
         <source>Cannot assign '{0}' to a value marked literal</source>
         <target state="translated">Nie można przypisać elementu „{0}” do wartości oznaczonej jako literał</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMissingRequiredMembers">
+        <source>The following required properties have to be initalized:{0}</source>
+        <target state="new">The following required properties have to be initalized:{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
@@ -875,6 +895,11 @@
       <trans-unit id="tcResumableCodeNotSupported">
         <source>Using resumable code or resumable state machines requires /langversion:preview</source>
         <target state="translated">Używanie kodu z możliwością wznowienia lub automatów stanów z możliwością wznowienia wymaga parametru /langversion: wersja zapoznawcza</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
+        <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
