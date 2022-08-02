@@ -296,13 +296,28 @@ module Negative =
     [<InlineData("let inline f_TraitWithOut<'T when 'T : (static member StaticMethod: x: outref<int> -> int) >() = ()")>]
     [<InlineData("let inline f_TraitWithParamArray<'T when 'T : (static member StaticMethod: [<System.ParamArray>] x: int[] -> int) >() = ()")>]
     [<InlineData("let inline f_TraitWithCallerName<'T when 'T : (static member StaticMethod: [<System.Runtime.CompilerServices.CallerMemberNameAttribute>] x: int[] -> int) >() = ()")>]
-    let ``Trait warning`` code =
+    [<InlineData("""
+        open System.Runtime.InteropServices
+        let inline callX2<'T when 'T : (static member X: [<Out>] Name: 'T byref -> bool)> () = ()""")>]
+    let ``Trait warning or error`` code =
+        let errorMessage = "A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments"
+
         Fsx code
+        |> withLangVersion60
         |> compile
         |> shouldFail
         |> withWarningCode 3532
-        |> withDiagnosticMessage "A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments"
+        |> withDiagnosticMessage errorMessage
         |> ignore
+
+        Fsx code
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withErrorCode 3532
+        |> withDiagnosticMessage errorMessage
+        |> ignore
+
 
     #if !NETCOREAPP
     [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
@@ -472,7 +487,9 @@ module ``SRTP byref tests`` =
         |> compileExeAndRun
         |> shouldSucceed
 
-    // Trait constraints that involve byref returns currently can never be satisfied by any method. No other warning is given.
+    // NOTE: Trait constraints that involve byref returns currently can never be satisfied by any method. No other warning is given.
+    // This is a bug that may be fixed in the future.
+    // These tests are pinning down current behavior.
     [<Fact>]
     let ``Byref returns not allowed`` () =
         Fsx """
@@ -501,17 +518,6 @@ module ``SRTP byref tests`` =
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'byref<C6>'\\s+but here has type\\s+'C6'"
-
-    [<Fact>]
-    let ``No out args allowed`` () =
-        Fsx """
-        open System.Runtime.InteropServices
-
-        let inline callX2<'T when 'T : (static member X: [<Out>] Name: 'T byref -> bool)> () = ()
-        """
-        |> compile
-        |> shouldFail
-        |> withDiagnosticMessage "A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments"
 
 
 module ``Implicit conversion`` =
