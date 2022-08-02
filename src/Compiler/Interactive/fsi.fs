@@ -994,11 +994,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
         if tcConfigB.utf8output then
             let prev = Console.OutputEncoding
             Console.OutputEncoding <- Encoding.UTF8
-#if FX_NO_APP_DOMAINS
-            ignore prev
-#else
             System.AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> Console.OutputEncoding <- prev)
-#endif
     do
         let firstArg =
             match sourceFiles with
