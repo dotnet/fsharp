@@ -397,14 +397,121 @@ module InvocationBehavior =
         |> shouldSucceed
 
     [<Fact>]
-    let ``SRTP Byref can't be passed with new syntax`` () =
+    let ``SRTP Byref can be passed with new syntax`` () =
         Fsx "let inline f_TraitWithByref<'T when 'T : ( static member TryParse: string * byref<int> -> bool) >() =
                 let mutable result = 0
                 'T.TryParse(\"42\", &result)"
         |> compile
+        |> shouldSucceed
+
+
+module ``SRTP byref tests`` =
+
+    [<Fact>]
+    let ``Call with old syntax`` () =
+        Fsx """
+        type C1() =
+            static member X(p: C1 byref) = p
+
+        let inline callX<'T when 'T : (static member X: 'T byref -> 'T)> (x: 'T byref) = (^T: (static member X : 'T byref -> 'T) (&x))
+
+        let mutable c1 = C1()
+        let g1 = callX<C1> &c1
+
+        if g1 <> c1 then
+            failwith "Unexpected result"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Call with new syntax`` () =
+        Fsx """
+        type C2() =
+            static member X(p: C2 byref) = p
+
+        let inline callX2<'T when 'T : (static member X: 'T byref -> 'T)> (x: 'T byref) = 'T.X &x
+        let mutable c2 = C2()
+        let g2 = callX2<C2> &c2
+
+        if g2 <> c2 then
+            failwith "Unexpected result"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Call with tuple`` () =
+        Fsx """
+
+        type C3() =
+            static member X(p: C3 byref, n: int) = p
+
+        let inline callX3<'T when 'T : (static member X: 'T byref * int -> 'T)> (x: 'T byref) = 'T.X (&x, 3)
+        let mutable c3 = C3()
+        let g3 = callX3<C3> &c3
+
+        if g3 <> c3 then
+            failwith "Unexpected result"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    [<Fact>]
+    let test4 () =
+        Fsx """
+        type C4() =
+            static member X() = C4()
+
+        let inline callX4<'T when 'T : (static member X: unit -> 'T)> ()  = 'T.X ()
+        let g4 = callX4<C4> ()
+
+        if g4.GetType() <> typeof<C4> then
+            failwith "Unexpected result"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+
+    // Trait constraints that involve byref returns currently can never be satisfied by any method. No other warning is given.
+    [<Fact>]
+    let ``Byref returns not allowed`` () =
+        Fsx """
+        type C5() =
+            static member X(p: C5 byref) = &p
+
+        let inline callX5<'T when 'T : (static member X: 'T byref -> 'T byref)> (x: 'T byref)  = 'T.X &x
+        let mutable c5 = C5()
+        let g5 () = callX5<C5> &c5
+        """
+        |> compile
         |> shouldFail
-        |> withDiagnosticMessageMatches "A type instantiation involves a byref type. This is not permitted by the rules of Common IL."
-        |> withDiagnosticMessageMatches "The address of the variable 'result' cannot be used at this point"
+        |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'byref<C5>'\\s+but here has type\\s+'C5'"
+
+    [<Fact>]
+    let ``Byref returns not allowed pt. 2`` () =
+        Fsx """
+        type C6() =
+            static member X(p: C6 byref) = &p
+
+        // NOTE: you can declare trait call which returns the address of the thing provided, you just can't satisfy the constraint
+        let inline callX6<'T when 'T : (static member X: 'T byref -> 'T byref)> (x: 'T byref)  = &'T.X &x
+        let mutable c6 = C6()
+        let g6 () = callX6<C6> &c6
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'byref<C6>'\\s+but here has type\\s+'C6'"
+
+    [<Fact>]
+    let ``No out args allowed`` () =
+        Fsx """
+        open System.Runtime.InteropServices
+
+        let inline callX2<'T when 'T : (static member X: [<Out>] Name: 'T byref -> bool)> () = ()
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnosticMessage "A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments"
 
 
 module ``Implicit conversion`` =
