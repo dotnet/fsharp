@@ -768,7 +768,8 @@ let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 
 let inputFileFlagsFsiBase (_tcConfigB: TcConfigBuilder) =
     [
-        if FSharpEnvironment.isRunningOnCoreClr then yield CompilerOption("usesdkrefs", tagNone, OptionSwitch(SetUseSdkSwitch _tcConfigB), None, Some(FSComp.SR.useSdkRefs ()))
+        if FSharpEnvironment.isRunningOnCoreClr then
+            yield CompilerOption("usesdkrefs", tagNone, OptionSwitch(SetUseSdkSwitch _tcConfigB), None, Some(FSComp.SR.useSdkRefs ()))
     ]
 
 let inputFileFlagsFsi (tcConfigB: TcConfigBuilder) =
