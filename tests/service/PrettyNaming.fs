@@ -28,7 +28,7 @@ let ``IsLogicalPrefixOperator`` logicalName result =
 [<TestCase ("op_RangeStep", false)>]
 // display representation
 [<TestCase ("?<-", false)>]
-// correction option
+// correct option
 [<TestCase ("op_DynamicAssignment", true)>]
 let ``IsLogicalTernaryOperator`` logicalName result =
     IsLogicalTernaryOperator logicalName

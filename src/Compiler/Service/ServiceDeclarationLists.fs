@@ -669,7 +669,7 @@ module internal DescriptionListsImpl =
                     // This is good enough as we don't provide ways to display info for the second curried argument
                     let firstCurriedParamDatas = 
                         firstCurriedArgInfo
-                        |> List.map  ParamNameAndType.FromArgInfo
+                        |> List.map ParamNameAndType.FromArgInfo
                         |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
 
                     // Adjust the return type so it only strips the first argument
