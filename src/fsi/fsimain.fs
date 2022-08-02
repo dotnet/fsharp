@@ -211,8 +211,7 @@ let evaluateSession (argv: string[]) =
 
         //#if USE_FSharp_Compiler_Interactive_Settings
         let fsiObjOpt =
-            let defaultFSharpBinariesDir =
-                System.AppContext.BaseDirectory
+            let defaultFSharpBinariesDir = System.AppContext.BaseDirectory
 
             // We use LoadFrom to make sure we get the copy of this assembly from the right load context
             let fsiAssemblyPath =
