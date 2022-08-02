@@ -28,7 +28,7 @@ type DirectoryAttribute(dir: string) =
         result
 
     let dirInfo = normalizePathSeparator (Path.GetFullPath(dir))
-    let outputDirectory methodName (filename: string) =
+    let outputDirectory methodName extraDirectory =
         // If the executing assembly has 'artifacts\bin' in it's path then we are operating normally in the CI or dev tests
         // Thus the output directory will be in a subdirectory below where we are executing.
         // The subdirectory will be relative to the source directory containing the test source file,
@@ -51,10 +51,7 @@ type DirectoryAttribute(dir: string) =
                     let testPaths = dirInfo.Replace(testRoot, "").Split('/')
                     testPaths[0] <- "tests"
                     Path.Combine(testPaths)
-                let normalizedFilename =
-                    filename.Substring(0, filename.Length - 3) // remove .fs
-                    |> normalizeName
-                let n = Path.Combine(testlibraryLocation, testSourceDirectory.Trim('/'), normalizeName methodName, normalizedFilename)
+                let n = Path.Combine(testlibraryLocation, testSourceDirectory.Trim('/'), normalizeName methodName, extraDirectory)
                 let outputDirectory = new DirectoryInfo(n)
                 Some outputDirectory
             else
@@ -72,8 +69,14 @@ type DirectoryAttribute(dir: string) =
         | true -> Some (File.ReadAllText path)
         | _ -> None
 
-    let createCompilationUnit path filename methodName =
-        let outputDirectory = outputDirectory methodName filename
+    let createCompilationUnit path (filename: string) methodName multipleFiles =
+        // if there are multiple files being processed, add extra directory for each test to avoid reference file conflicts
+        let extraDirectory =
+            if multipleFiles then
+                filename.Substring(0, filename.Length - 3) // remove .fs
+                |> normalizeName
+            else ""
+        let outputDirectory = outputDirectory methodName extraDirectory
         let outputDirectoryPath =
             match outputDirectory with
             | Some path -> path.FullName
@@ -157,6 +160,8 @@ type DirectoryAttribute(dir: string) =
             if not <| FileSystem.FileExistsShim(f) then
                 failwithf "Requested file \"%s\" not found.\nAll files: %A.\nIncludes:%A." f allFiles includes
 
+        let multipleFiles = fsFiles |> Array.length > 1
+
         fsFiles
-        |> Array.map (fun fs -> createCompilationUnit dirInfo fs method.Name)
+        |> Array.map (fun fs -> createCompilationUnit dirInfo fs method.Name multipleFiles)
         |> Seq.map (fun c -> [| c |])
