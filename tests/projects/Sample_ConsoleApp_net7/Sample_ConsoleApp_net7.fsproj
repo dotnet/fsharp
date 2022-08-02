@@ -8,6 +8,9 @@
 
   <PropertyGroup>
     <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../artifacts/bin/fsc/Debug/net6.0/fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../artifacts/bin/fsc/Debug/net6.0/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+    <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
+    <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
   </PropertyGroup>
 
   <ItemGroup>
