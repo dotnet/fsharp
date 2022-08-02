@@ -175,7 +175,7 @@ module DeclarationListHelpers =
                 wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
                 NicePrint.layoutTyconRef denv ucinfo.TyconRef ^^
                 sepL (tagPunctuation ".") ^^
-                wordL (tagUnionCase (DecompileOpName uc.Id.idText) |> mkNav uc.DefinitionRange) ^^
+                wordL (tagUnionCase (ConvertValLogicalNameToDisplayNameCore uc.Id.idText) |> mkNav uc.DefinitionRange) ^^
                 RightL.colon ^^
                 (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv infoReader ucinfo.TyconRef recd ^^ WordL.arrow) ^^
                 NicePrint.layoutType denv unionTy
@@ -196,14 +196,13 @@ module DeclarationListHelpers =
         // Active pattern tags 
         | Item.ActivePatternCase apref -> 
             let v = apref.ActivePatternVal
-            // Format the type parameters to get e.g. ('a -> 'a) rather than ('?1234 -> '?1234)
             let vTauTy = v.TauType
             // REVIEW: use _cxs here
             let (prettyTyparInst, prettyTy), _cxs = PrettyTypes.PrettifyInstAndType denv.g (item.TyparInstantiation, vTauTy)
             let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout v
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
-                wordL (tagActivePatternCase apref.Name |> mkNav v.DefinitionRange) ^^
+                wordL (tagActivePatternCase apref.DisplayName |> mkNav v.DefinitionRange) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv prettyTy
 
@@ -224,14 +223,14 @@ module DeclarationListHelpers =
 
         | Item.RecdField rfinfo when rfinfo.TyconRef.IsFSharpException ->
             let ty, _ = PrettyTypes.PrettifyType g rfinfo.FieldType
-            let id = rfinfo.RecdField.Id
+            let id = rfinfo.DisplayName
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
-                wordL (tagParameter id.idText) ^^
+                wordL (tagParameter id) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv ty
             let layout = toArray layout
-            ToolTipElement.Single (layout, xml, paramName = id.idText)
+            ToolTipElement.Single (layout, xml, paramName = id)
 
         // F# record field names
         | Item.RecdField rfinfo ->
@@ -430,7 +429,7 @@ module DeclarationListHelpers =
 
         | Item.AnonRecdField(anon, argTys, i, _) -> 
             let argTy = argTys[i]
-            let nm = anon.SortedNames[i]
+            let nm = anon.DisplayNameByIdx i
             let argTy, _ = PrettyTypes.PrettifyType g argTy
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoAnonRecdField())) ^^
@@ -441,7 +440,7 @@ module DeclarationListHelpers =
             ToolTipElement.Single (layout, FSharpXmlDoc.None)
             
         // Named parameters
-        | Item.ArgName (id, argTy, _) -> 
+        | Item.ArgName (Some id, argTy, _, _) -> 
             let argTy, _ = PrettyTypes.PrettifyType g argTy
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
@@ -655,10 +654,10 @@ module internal DescriptionListsImpl =
                 // in this case use old approach and return only information about types
                 getPrettyParamsOfTypes ()
 
-            | Some valRefInfo ->
+            | Some valReprInfo ->
                 // ValReprInfo will exist for top-level syntactic functions
                 // per spec: binding is considered to define a syntactic function if it is either a function or its immediate right-hand-side is a anonymous function
-                let _, argInfos,  lastRetTy, _ = GetTopValTypeInFSharpForm  g valRefInfo vref.Type m
+                let _, argInfos,  lastRetTy, _ = GetTopValTypeInFSharpForm  g valReprInfo vref.Type m
                 match argInfos with
                 | [] -> 
                     // handles cases like 'let foo = List.map'
@@ -700,7 +699,7 @@ module internal DescriptionListsImpl =
             let args, resTy = stripFunTy denv.g vTauTy 
 
             let apinfo = Option.get (TryGetActivePatternInfo v)
-            let aparity = apinfo.Names.Length
+            let aparity = apinfo.ActiveTags.Length
             
             let caseTy = if aparity <= 1 then resTy else (argsOfAppTy g resTy)[apref.CaseIndex]
 
@@ -918,7 +917,10 @@ module internal DescriptionListsImpl =
 [<Sealed>]
 type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility,
                                kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
+
     member _.Name = textInDeclList
+
+    member _.NameInList = textInDeclList
 
     member _.NameInCode = textInCode
 
