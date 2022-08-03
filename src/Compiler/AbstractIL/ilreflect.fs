@@ -162,6 +162,7 @@ type TypeBuilder with
     member typB.CreateTypeAndLog() =
         if logRefEmitCalls then
             printfn "typeBuilder%d.CreateType()" (abs <| hash typB)
+
         typB.CreateTypeInfo().AsType()
 
     member typB.DefineNestedTypeAndLog(name, attrs) =
@@ -2546,6 +2547,7 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, collectible) =
             AssemblyBuilderAccess.RunAndCollect
         else
             AssemblyBuilderAccess.Run
+
     let asmB = defineDynamicAssemblyAndLog (asmName, asmAccess, asmDir)
 
     if not optimize then
