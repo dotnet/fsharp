@@ -316,8 +316,8 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         | Item.ActivePatternResult (apinfo, ty, n, _) ->
              FSharpActivePatternCase(cenv, apinfo, ty, n, None, item) :> _
 
-        | Item.ArgName(id, ty, argOwner) ->
-            FSharpParameter(cenv, id, ty, argOwner) :> _
+        | Item.ArgName(id, ty, argOwner, m) ->
+            FSharpParameter(cenv, id, ty, argOwner, m) :> _
 
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) ->
             FSharpMemberOrFunctionOrValue(cenv, V vref, item) :> _
@@ -1298,7 +1298,7 @@ type FSharpActivePatternGroup(cenv, apinfo:ActivePatternInfo, ty, valOpt) =
 
     member _.Name = valOpt |> Option.map (fun vref -> vref.LogicalName)
 
-    member _.Names = makeReadOnlyCollection apinfo.Names
+    member _.Names = makeReadOnlyCollection apinfo.ActiveTags
 
     member _.IsTotal = apinfo.IsTotal
 
@@ -2025,7 +2025,14 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                     // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                     // either .NET or F# parameters
                     let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }
-                    yield FSharpParameter(cenv, pty, argInfo, None, x.DeclarationLocationOpt, isParamArrayArg, isInArg, isOutArg, optArgInfo.IsOptional, false) ] 
+                    let m =
+                        match nmOpt with
+                        | Some v -> v.idRange
+                        | None ->
+
+                        defaultArg x.DeclarationLocationOpt range0
+
+                    yield FSharpParameter(cenv, pty, argInfo, None, m, isParamArrayArg, isInArg, isOutArg, optArgInfo.IsOptional, false) ] 
               |> makeReadOnlyCollection  ]
            |> makeReadOnlyCollection
 
@@ -2037,7 +2044,13 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 // INCOMPLETENESS: Attribs is empty here, so we can't look at attributes for
                 // either .NET or F# parameters
                         let argInfo: ArgReprInfo = { Name=nmOpt; Attribs= [] }
-                        yield FSharpParameter(cenv, pty, argInfo, None, x.DeclarationLocationOpt, isParamArrayArg, isInArg, isOutArg, optArgInfo.IsOptional, false) ] 
+                        let m =
+                            match nmOpt with
+                            | Some v -> v.idRange
+                            | None ->
+
+                            defaultArg x.DeclarationLocationOpt range0
+                        yield FSharpParameter(cenv, pty, argInfo, None, m, isParamArrayArg, isInArg, isOutArg, optArgInfo.IsOptional, false) ] 
                    |> makeReadOnlyCollection ]
              |> makeReadOnlyCollection
 
@@ -2052,9 +2065,10 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                         if isRefTupleTy cenv.g ty
                         then tryDestRefTupleTy cenv.g ty
                         else [ty]
+                    let m = defaultArg x.DeclarationLocationOpt range0
                     yield
                       allArguments
-                      |> List.map (fun arg -> FSharpParameter(cenv, arg, ValReprInfo.unnamedTopArg1, x.DeclarationLocationOpt))
+                      |> List.map (fun arg -> FSharpParameter(cenv, arg, ValReprInfo.unnamedTopArg1, m))
                       |> makeReadOnlyCollection ]
                 |> makeReadOnlyCollection
             else makeReadOnlyCollection []
@@ -2069,40 +2083,51 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                         let isInArg = HasFSharpAttribute cenv.g cenv.g.attrib_InAttribute argInfo.Attribs && isByrefTy cenv.g argTy
                         let isOutArg = HasFSharpAttribute cenv.g cenv.g.attrib_OutAttribute argInfo.Attribs && isByrefTy cenv.g argTy
                         let isOptionalArg = HasFSharpAttribute cenv.g cenv.g.attrib_OptionalArgumentAttribute argInfo.Attribs
-                        yield FSharpParameter(cenv, argTy, argInfo, None, x.DeclarationLocationOpt, isParamArrayArg, isInArg, isOutArg, isOptionalArg, false) ] 
+                        let m =
+                            match argInfo.Name with
+                            | Some v -> v.idRange
+                            | None -> defaultArg x.DeclarationLocationOpt range0
+                        yield FSharpParameter(cenv, argTy, argInfo, None, m, isParamArrayArg, isInArg, isOutArg, isOptionalArg, false) ] 
                    |> makeReadOnlyCollection ]
              |> makeReadOnlyCollection
 
     member x.ReturnParameter = 
         checkIsResolved()
         match d with 
-        | E e -> 
+        | E einfo -> 
             // INCOMPLETENESS: Attribs is empty here, so we can't look at return attributes for .NET or F# methods
+            let m = defaultArg x.DeclarationLocationOpt range0
             let retTy = 
-                try PropTypeOfEventInfo cenv.infoReader range0 AccessibleFromSomewhere e
+                try PropTypeOfEventInfo cenv.infoReader m AccessibleFromSomewhere einfo
                 with _ -> 
                     // For non-standard events, just use the delegate type as the ReturnParameter type
-                    e.GetDelegateType(cenv.amap, range0)
-            FSharpParameter(cenv, retTy, ValReprInfo.unnamedRetVal, x.DeclarationLocationOpt) 
+                    einfo.GetDelegateType(cenv.amap, m)
+            FSharpParameter(cenv, retTy, ValReprInfo.unnamedRetVal, m) 
 
-        | P p -> 
+        | P pinfo -> 
             // INCOMPLETENESS: Attribs is empty here, so we can't look at return attributes for .NET or F# methods
-            let retTy = p.GetPropertyType(cenv.amap, range0)
-            FSharpParameter(cenv, retTy, ValReprInfo.unnamedRetVal, x.DeclarationLocationOpt) 
-        | M m | C m -> 
+            let m = defaultArg x.DeclarationLocationOpt range0
+            let retTy = pinfo.GetPropertyType(cenv.amap, m)
+            FSharpParameter(cenv, retTy, ValReprInfo.unnamedRetVal, m) 
+
+        | M minfo | C minfo -> 
             // INCOMPLETENESS: Attribs is empty here, so we can't look at return attributes for .NET or F# methods
-            let retTy = m.GetFSharpReturnType(cenv.amap, range0, m.FormalMethodInst)
-            FSharpParameter(cenv, retTy, ValReprInfo.unnamedRetVal, x.DeclarationLocationOpt) 
+            let m = defaultArg x.DeclarationLocationOpt range0
+            let retTy = minfo.GetFSharpReturnType(cenv.amap, m, minfo.FormalMethodInst)
+            FSharpParameter(cenv, retTy, ValReprInfo.unnamedRetVal, m) 
+
         | V v -> 
         match v.ValReprInfo with 
         | None ->
             let _, tau = v.GeneralizedType
             let _argTysl, retTy = stripFunTy cenv.g tau
-            FSharpParameter(cenv, retTy, ValReprInfo.unnamedRetVal, x.DeclarationLocationOpt)
+            let m = defaultArg x.DeclarationLocationOpt range0
+            FSharpParameter(cenv, retTy, ValReprInfo.unnamedRetVal, m)
         | Some (ValReprInfo(_typars, argInfos, retInfo)) -> 
             let tau = v.TauType
-            let _c, retTy = GetTopTauTypeInFSharpForm cenv.g argInfos tau range0
-            FSharpParameter(cenv, retTy, retInfo, x.DeclarationLocationOpt) 
+            let m = defaultArg x.DeclarationLocationOpt range0
+            let _c, retTy = GetTopTauTypeInFSharpForm cenv.g argInfos tau m
+            FSharpParameter(cenv, retTy, retInfo, m) 
 
 
     override _.Attributes = 
@@ -2293,8 +2318,9 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 let paramTy = GenWitnessTy cenv.g witnessInfo
                 let nm = String.uncapitalize witnessInfo.MemberName
                 let nm = if used.Contains nm then nm + string i else nm
-                let argReprInfo : ArgReprInfo = { Attribs=[]; Name=Some (mkSynId x.DeclarationLocation nm) }
-                let p = FSharpParameter(cenv, paramTy, argReprInfo, None, None, false, false, false, false, true)
+                let m = x.DeclarationLocation
+                let argReprInfo : ArgReprInfo = { Attribs=[]; Name=Some (mkSynId m nm) }
+                let p = FSharpParameter(cenv, paramTy, argReprInfo, None, m, false, false, false, false, true)
                 p, (used.Add nm, i + 1))
             |> fst
         let witnessMethName = ExtraWitnessMethodName x.CompiledName
@@ -2389,7 +2415,7 @@ type FSharpType(cenv, ty:TType) =
     member _.ProvidedArguments = 
         let typeName, argNamesAndValues = 
             try 
-                PrettyNaming.demangleProvidedTypeName typeLogicalName 
+                PrettyNaming.DemangleProvidedTypeName typeLogicalName 
             with PrettyNaming.InvalidMangledStaticArg piece -> 
                 error(Error(FSComp.SR.etProvidedTypeReferenceInvalidText(piece), range0)) 
 *)
@@ -2598,7 +2624,8 @@ type FSharpStaticParameter(cenv, sp: Tainted< TypeProviders.ProvidedParameterInf
                               protect <| fun () -> 
                                 let paramTy = Import.ImportProvidedType cenv.amap m (sp.PApply((fun x -> x.ParameterType), m))
                                 let nm = sp.PUntaint((fun p -> p.Name), m)
-                                Item.ArgName((mkSynId m nm, paramTy, None))), 
+                                let id = mkSynId m nm
+                                Item.ArgName(Some id, paramTy, None, m)), 
                          (fun _ _ _ -> true))
 
     member _.Name = 
@@ -2634,39 +2661,29 @@ type FSharpStaticParameter(cenv, sp: Tainted< TypeProviders.ProvidedParameterInf
         "static parameter " + x.Name 
 #endif
 
-type FSharpParameter(cenv, paramTy: TType, topArgInfo: ArgReprInfo, ownerOpt, ownerRangeOpt, isParamArrayArg, isInArg, isOutArg, isOptionalArg, isWitnessArg) = 
+type FSharpParameter(cenv, paramTy: TType, topArgInfo: ArgReprInfo, ownerOpt, m: range, isParamArrayArg, isInArg, isOutArg, isOptionalArg, isWitnessArg) = 
     inherit FSharpSymbol(cenv, 
-                         (fun () -> 
-                            let m = defaultArg ownerRangeOpt range0
-                            let id = match topArgInfo.Name with | Some id -> id | None -> mkSynId m ""
-                            Item.ArgName(id, paramTy, ownerOpt)), 
+                         (fun () -> Item.ArgName(topArgInfo.Name, paramTy, ownerOpt, m)), 
                          (fun _ _ _ -> true))
 
-    new (cenv, id, ty, container) =
-        let argInfo: ArgReprInfo = { Name = Some id; Attribs = [] }
-        FSharpParameter(cenv, ty, argInfo, container, None, false, false, false, false, false)
+    new (cenv, idOpt, ty, ownerOpt, m) =
+        let argInfo: ArgReprInfo = { Name = idOpt; Attribs = [] }
+        FSharpParameter(cenv, ty, argInfo, ownerOpt, m, false, false, false, false, false)
 
-    new (cenv, ty, argInfo: ArgReprInfo, ownerRangeOpt) =
-        FSharpParameter(cenv, ty, argInfo, None, ownerRangeOpt, false, false, false, false, false)
+    new (cenv, ty, argInfo: ArgReprInfo, m: range) =
+        FSharpParameter(cenv, ty, argInfo, None, m, false, false, false, false, false)
 
     member _.Name = match topArgInfo.Name with None -> None | Some v -> Some v.idText
 
     member _.cenv: SymbolEnv = cenv
 
-    member _.AdjustType ty = FSharpParameter(cenv, ty, topArgInfo, ownerOpt, ownerRangeOpt, isParamArrayArg, isInArg, isOutArg, isOptionalArg, isWitnessArg)
+    member _.AdjustType ty = FSharpParameter(cenv, ty, topArgInfo, ownerOpt, m, isParamArrayArg, isInArg, isOutArg, isOptionalArg, isWitnessArg)
 
     member _.Type: FSharpType = FSharpType(cenv, paramTy)
 
     member _.V = paramTy
 
-    member _.DeclarationLocation =
-        match topArgInfo.Name with
-        | Some v -> v.idRange
-        | None ->
-
-        match ownerRangeOpt with
-        | Some m  -> m
-        | None -> range0
+    member _.DeclarationLocation = m
 
     member _.Owner =
         match ownerOpt with
