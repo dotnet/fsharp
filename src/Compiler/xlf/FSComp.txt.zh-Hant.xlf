@@ -2202,7 +2202,7 @@
         <target state="translated">成員 '{0}' 的使用方式無效。系統推斷 '{1}' 在其定義之前已在 '{2}' 或附近使用過。這是無效的向前參考。</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoByrefAsTopValue">
+      <trans-unit id="chkNoByrefAsValRepr">
         <source>A byref typed value would be stored here. Top-level let-bound byref values are not permitted.</source>
         <target state="translated">ByRef 類型的值將儲存在這裡。不允許最上層 LET 繫結的 ByRef 值。</target>
         <note />

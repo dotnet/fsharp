@@ -319,7 +319,7 @@ type IncrClassReprInfo =
                     InVar isCtorArg
             | valReprInfo -> 
                 //dprintfn "Representing %s as a method %s" v.LogicalName name
-                let tps, _, argInfos, _, _ = GetTopValTypeInCompiledForm g valReprInfo 0 v.Type v.Range
+                let tps, _, argInfos, _, _ = GetValReprTypeInCompiledForm g valReprInfo 0 v.Type v.Range
 
                 let valSynInfo = SynValInfo(argInfos |> List.mapSquared (fun (_, argInfo) -> SynArgInfo([], false, argInfo.Name)), SynInfo.unnamedRetVal)
                 let memberFlags = (if isStatic then StaticMemberFlags else NonVirtualMemberFlags) SynMemberFlagsTrivia.Zero SynMemberKind.Member
@@ -328,7 +328,7 @@ type IncrClassReprInfo =
 
                 let copyOfTyconTypars = ctorInfo.GetNormalizedInstanceCtorDeclaredTypars cenv env.DisplayEnv ctorInfo.TyconRef.Range
                 
-                AdjustValToTopVal v (Parent tcref) valReprInfo
+                AdjustValToValRepr v (Parent tcref) valReprInfo
 
                 // Add the 'this' pointer on to the function
                 let memberTauTy, valReprInfo = 

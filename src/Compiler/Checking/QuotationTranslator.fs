@@ -323,7 +323,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                 // This is an application of a module value or extension member
                 let arities = arityOfVal vref.Deref
                 let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
-                let tps, witnessInfos, curriedArgInfos, retTy, _ = GetTopValTypeInCompiledForm g arities numEnclosingTypars vref.Type m
+                let tps, witnessInfos, curriedArgInfos, retTy, _ = GetValReprTypeInCompiledForm g arities numEnclosingTypars vref.Type m
                 false, tps, witnessInfos, curriedArgInfos, retTy
 
         // Compute the object arguments as they appear in a compiled call
@@ -385,7 +385,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                 let subCall =
                     if isMember then
 
-                        let parentTyconR = ConvTyconRef cenv vref.TopValDeclaringEntity m
+                        let parentTyconR = ConvTyconRef cenv vref.ValReprDeclaringEntity m
                         let isNewObj = isNewObj || valUseFlags || isSelfInit
                         // The signature types are w.r.t. to the formal context
                         let envinner = BindFormalTypars env tps
@@ -1264,7 +1264,7 @@ let ConvExprPublic cenv suppressWitnesses e =
 
 let ConvMethodBase cenv env (methName, v: Val) =
     let m = v.Range
-    let parentTyconR = ConvTyconRef cenv v.TopValDeclaringEntity m
+    let parentTyconR = ConvTyconRef cenv v.ValReprDeclaringEntity m
 
     match v.MemberInfo with
     | Some vspr when not v.IsExtensionMember ->
@@ -1300,7 +1300,7 @@ let ConvMethodBase cenv env (methName, v: Val) =
     | _ when v.IsExtensionMember ->
 
         let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
-        let tps, witnessInfos, argInfos, retTy, _ = GetTopValTypeInCompiledForm cenv.g v.ValReprInfo.Value numEnclosingTypars v.Type v.Range
+        let tps, witnessInfos, argInfos, retTy, _ = GetValReprTypeInCompiledForm cenv.g v.ValReprInfo.Value numEnclosingTypars v.Type v.Range
         let argTys = argInfos |> List.concat |> List.map fst
         let envinner = BindFormalTypars env tps
         let witnessArgTysR = ConvTypes cenv envinner m (GenWitnessTys cenv.g witnessInfos)
@@ -1317,7 +1317,7 @@ let ConvMethodBase cenv env (methName, v: Val) =
 
     | _ ->
         let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
-        let tps, witnessInfos, _argInfos, _retTy, _ = GetTopValTypeInCompiledForm cenv.g v.ValReprInfo.Value numEnclosingTypars v.Type v.Range
+        let tps, witnessInfos, _argInfos, _retTy, _ = GetValReprTypeInCompiledForm cenv.g v.ValReprInfo.Value numEnclosingTypars v.Type v.Range
         let envinner = BindFormalTypars env tps
         let witnessArgTysR = ConvTypes cenv envinner m (GenWitnessTys cenv.g witnessInfos)
         let nWitnesses = witnessArgTysR.Length

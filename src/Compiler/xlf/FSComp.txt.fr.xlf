@@ -2202,7 +2202,7 @@
         <target state="translated">Le membre '{0}' est utilisé de manière incorrecte. Une utilisation de '{1}' a été déduite avant sa définition au niveau ou à proximité de '{2}'. Il s'agit d'une référence anticipée non valide.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoByrefAsTopValue">
+      <trans-unit id="chkNoByrefAsValRepr">
         <source>A byref typed value would be stored here. Top-level let-bound byref values are not permitted.</source>
         <target state="translated">Une valeur typée byref doit être stockée ici. Les valeurs byref liées à let de niveau supérieur ne sont pas autorisées.</target>
         <note />

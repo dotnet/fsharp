@@ -1360,13 +1360,13 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
 
     let tps, witnessInfos, curriedArgInfos, returnTy, retInfo =
         assert vref.ValReprInfo.IsSome
-        GetTopValTypeInCompiledForm g vref.ValReprInfo.Value numEnclosingTypars vref.Type m
+        GetValReprTypeInCompiledForm g vref.ValReprInfo.Value numEnclosingTypars vref.Type m
 
     let tyenvUnderTypars = TypeReprEnv.Empty.ForTypars tps
     let flatArgInfos = List.concat curriedArgInfos
     let isCtor = (memberInfo.MemberFlags.MemberKind = SynMemberKind.Constructor)
     let cctor = (memberInfo.MemberFlags.MemberKind = SynMemberKind.ClassConstructor)
-    let parentTcref = vref.TopValDeclaringEntity
+    let parentTcref = vref.ValReprDeclaringEntity
     let parentTypars = parentTcref.TyparsNoRange
     let numParentTypars = parentTypars.Length
 
@@ -1538,7 +1538,7 @@ let ComputeStorageForFSharpFunctionOrFSharpExtensionMember (cenv: cenv) cloc val
     let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
 
     let tps, witnessInfos, curriedArgInfos, returnTy, retInfo =
-        GetTopValTypeInCompiledForm g valReprInfo numEnclosingTypars vref.Type m
+        GetValReprTypeInCompiledForm g valReprInfo numEnclosingTypars vref.Type m
 
     let tyenvUnderTypars = TypeReprEnv.Empty.ForTypars tps
     let methodArgTys, paramInfos = curriedArgInfos |> List.concat |> List.unzip
@@ -1568,7 +1568,7 @@ let IsFSharpValCompiledAsMethod g (v: Val) =
     | Some valReprInfo ->
         not (isUnitTy g v.Type && not v.IsMemberOrModuleBinding && not v.IsMutable)
         && not v.IsCompiledAsStaticPropertyWithoutField
-        && match GetTopValTypeInFSharpForm g valReprInfo v.Type v.Range with
+        && match GetValReprTypeInFSharpForm g valReprInfo v.Type v.Range with
            | [], [], _, _ when not v.IsMember -> false
            | _ -> true
 
@@ -1577,7 +1577,7 @@ let IsFSharpValCompiledAsMethod g (v: Val) =
 /// If it's a function or is polymorphic, then it gets represented as a
 /// method (possibly and instance method). Otherwise it gets represented as a
 /// static field and property.
-let ComputeStorageForTopVal
+let ComputeStorageForValRepr
     (
         cenv,
         g,
@@ -1593,7 +1593,7 @@ let ComputeStorageForTopVal
     else
         let valReprInfo =
             match vref.ValReprInfo with
-            | None -> error (InternalError("ComputeStorageForTopVal: no arity found for " + showL (valRefL vref), vref.Range))
+            | None -> error (InternalError("ComputeStorageForValRepr: no arity found for " + showL (valRefL vref), vref.Range))
             | Some a -> a
 
         let m = vref.Range
@@ -1611,9 +1611,9 @@ let ComputeStorageForTopVal
 
             // Determine when a static field is required.
             //
-            // REVIEW: This call to GetTopValTypeInFSharpForm is only needed to determine if this is a (type) function or a value
+            // REVIEW: This call to GetValReprTypeInFSharpForm is only needed to determine if this is a (type) function or a value
             // We should just look at the arity
-            match GetTopValTypeInFSharpForm g valReprInfo vref.Type vref.Range with
+            match GetValReprTypeInFSharpForm g valReprInfo vref.Type vref.Range with
             | [], [], returnTy, _ when not vref.IsMember ->
                 ComputeStorageForFSharpValue cenv g cloc optIntraAssemblyInfo optShadowLocal isInteractive returnTy vref m
             | _ ->
@@ -1622,17 +1622,17 @@ let ComputeStorageForTopVal
                 | _ -> ComputeStorageForFSharpFunctionOrFSharpExtensionMember cenv cloc valReprInfo vref m
 
 /// Determine how an F#-declared value, function or member is represented, if it is in the assembly being compiled.
-let ComputeAndAddStorageForLocalTopVal (cenv, g, intraAssemblyFieldTable, isInteractive, optShadowLocal) cloc (v: Val) eenv =
+let ComputeAndAddStorageForLocalValRepr (cenv, g, intraAssemblyFieldTable, isInteractive, optShadowLocal) cloc (v: Val) eenv =
     let storage =
-        ComputeStorageForTopVal(cenv, g, Some intraAssemblyFieldTable, isInteractive, optShadowLocal, mkLocalValRef v, cloc)
+        ComputeStorageForValRepr(cenv, g, Some intraAssemblyFieldTable, isInteractive, optShadowLocal, mkLocalValRef v, cloc)
 
     AddStorageForVal g (v, notlazy storage) eenv
 
 /// Determine how an F#-declared value, function or member is represented, if it is an external assembly.
-let ComputeStorageForNonLocalTopVal cenv g cloc modref (v: Val) =
+let ComputeStorageForNonLocalValRepr cenv g cloc modref (v: Val) =
     match v.ValReprInfo with
-    | None -> error (InternalError("ComputeStorageForNonLocalTopVal, expected an arity for " + v.LogicalName, v.Range))
-    | Some _ -> ComputeStorageForTopVal(cenv, g, None, false, NoShadowLocal, mkNestedValRef modref v, cloc)
+    | None -> error (InternalError("ComputeStorageForNonLocalValRepr, expected an arity for " + v.LogicalName, v.Range))
+    | Some _ -> ComputeStorageForValRepr(cenv, g, None, false, NoShadowLocal, mkNestedValRef modref v, cloc)
 
 /// Determine how all the F#-declared top level values, functions and members are represented, for an external module or namespace.
 let rec AddStorageForNonLocalModuleOrNamespaceRef cenv g cloc acc (modref: ModuleOrNamespaceRef) (modul: ModuleOrNamespace) =
@@ -1649,7 +1649,7 @@ let rec AddStorageForNonLocalModuleOrNamespaceRef cenv g cloc acc (modref: Modul
 
     let acc =
         (acc, modul.ModuleOrNamespaceType.AllValsAndMembers)
-        ||> Seq.fold (fun acc v -> AddStorageForVal g (v, lazy (ComputeStorageForNonLocalTopVal cenv g cloc modref v)) acc)
+        ||> Seq.fold (fun acc v -> AddStorageForVal g (v, lazy (ComputeStorageForNonLocalValRepr cenv g cloc modref v)) acc)
 
     acc
 
@@ -1673,7 +1673,7 @@ let AddStorageForExternalCcu cenv g eenv (ccu: CcuThunk) =
             let eref = ERefNonLocalPreResolved ccu.Contents (mkNonLocalEntityRef ccu [||])
 
             (eenv, ccu.Contents.ModuleOrNamespaceType.AllValsAndMembers)
-            ||> Seq.fold (fun acc v -> AddStorageForVal g (v, lazy (ComputeStorageForNonLocalTopVal cenv g cloc eref v)) acc)
+            ||> Seq.fold (fun acc v -> AddStorageForVal g (v, lazy (ComputeStorageForNonLocalValRepr cenv g cloc eref v)) acc)
 
         eenv
 
@@ -1779,7 +1779,7 @@ and AddBindingsForModuleBinding allocVal cloc x eenv =
         AddBindingsForModuleContents allocVal cloc eenv mdef
 
 /// Record how constructs are represented, for the values and functions defined in a module or namespace fragment.
-and AddBindingsForModuleTopVals _g allocVal _cloc eenv vs = List.foldBack allocVal vs eenv
+and AddBindingsForModuleValReprs _g allocVal _cloc eenv vs = List.foldBack allocVal vs eenv
 
 /// Put the partial results for a generated fragment (i.e. a part of a CCU generated by FSI)
 /// into the stored results for the whole CCU.
@@ -1799,7 +1799,7 @@ let AddIncrementalLocalAssemblyFragmentToIlxGenEnv
     let cloc = CompLocForFragment fragName ccu
 
     let allocVal =
-        ComputeAndAddStorageForLocalTopVal(cenv, g, intraAssemblyInfo, true, NoShadowLocal)
+        ComputeAndAddStorageForLocalValRepr(cenv, g, intraAssemblyInfo, true, NoShadowLocal)
 
     (eenv, implFiles)
     ||> List.fold (fun eenv implFile ->
@@ -4188,7 +4188,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
 
          match storage with
          | Method (valReprInfo, vref, _, _, _, _, _, _, _, _, _, _) ->
-             (let tps, argTys, _, _ = GetTopValTypeInFSharpForm g valReprInfo vref.Type m
+             (let tps, argTys, _, _ = GetValReprTypeInFSharpForm g valReprInfo vref.Type m
               tps.Length = tyargs.Length && argTys.Length <= curriedArgs.Length)
          | _ -> false)
         ->
@@ -4203,7 +4203,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
             let actualRetTy = applyTys cenv.g vref.Type (tyargs, nowArgs)
 
             let _, witnessInfos, curriedArgInfos, returnTy, _ =
-                GetTopValTypeInCompiledForm cenv.g valReprInfo ctps.Length vref.Type m
+                GetValReprTypeInCompiledForm cenv.g valReprInfo ctps.Length vref.Type m
 
             let mspec =
                 let generateWitnesses = ComputeGenerateWitnesses g eenv
@@ -8142,7 +8142,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
     // The initialization code for static 'let' and 'do' bindings gets compiled into the initialization .cctor for the whole file
     | _ when
         vspec.IsClassConstructor
-        && isNil vspec.TopValDeclaringEntity.TyparsNoRange
+        && isNil vspec.ValReprDeclaringEntity.TyparsNoRange
         && not isStateVar
         ->
         let tps, _, _, _, cctorBody, _ =
@@ -9569,9 +9569,9 @@ and AllocValForBind cenv cgbuf (scopeMarks: Mark * Mark) eenv (TBind (v, repr, _
     | None ->
         let repr, eenv = AllocLocalVal cenv cgbuf v eenv (Some repr) scopeMarks
         Some repr, eenv
-    | Some _ -> None, AllocTopValWithinExpr cenv cgbuf (snd scopeMarks) eenv.cloc v eenv
+    | Some _ -> None, AllocValReprWithinExpr cenv cgbuf (snd scopeMarks) eenv.cloc v eenv
 
-and AllocTopValWithinExpr cenv cgbuf endMark cloc v eenv =
+and AllocValReprWithinExpr cenv cgbuf endMark cloc v eenv =
     let g = cenv.g
 
     // decide whether to use a shadow local or not
@@ -9592,7 +9592,7 @@ and AllocTopValWithinExpr cenv cgbuf endMark cloc v eenv =
         else
             NoShadowLocal, eenv
 
-    ComputeAndAddStorageForLocalTopVal (cenv, g, cenv.intraAssemblyInfo, cenv.options.isInteractive, optShadowLocal) cloc v eenv
+    ComputeAndAddStorageForLocalValRepr (cenv, g, cenv.intraAssemblyInfo, cenv.options.isInteractive, optShadowLocal) cloc v eenv
 
 //--------------------------------------------------------------------------
 // Generate stack save/restore and assertions - pulled into letrec by alloc*
@@ -9829,7 +9829,7 @@ and GenImplFileContents cenv cgbuf qname lazyInitInfo eenv mty def =
 
         // Allocate all the values, including any shadow locals for static fields
         let eenv =
-            AddBindingsForModuleContents (AllocTopValWithinExpr cenv cgbuf endMark) eenv.cloc eenv def
+            AddBindingsForModuleContents (AllocValReprWithinExpr cenv cgbuf endMark) eenv.cloc eenv def
 
         let _eenvEnd = GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenv def
         ())
@@ -10140,7 +10140,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
     // We add the module type all over again. Note no shadow locals for static fields needed here since they are only relevant to the main/.cctor
     let eenvafter =
         let allocVal =
-            ComputeAndAddStorageForLocalTopVal(cenv, g, cenv.intraAssemblyInfo, cenv.options.isInteractive, NoShadowLocal)
+            ComputeAndAddStorageForLocalValRepr(cenv, g, cenv.intraAssemblyInfo, cenv.options.isInteractive, NoShadowLocal)
 
         AddBindingsForLocalModuleType allocVal clocCcu eenv signature
 
@@ -11440,7 +11440,7 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
 
                          LocalScope "module" cgbuf (fun (_, endMark) ->
                              let eenv =
-                                 AddBindingsForModuleContents (AllocTopValWithinExpr cenv cgbuf endMark) eenv.cloc eenv mexpr
+                                 AddBindingsForModuleContents (AllocValReprWithinExpr cenv cgbuf endMark) eenv.cloc eenv mexpr
 
                              let _eenvEnv = GenModuleOrNamespaceContents cenv cgbuf qname lazyInitInfo eenv mexpr
                              ())),

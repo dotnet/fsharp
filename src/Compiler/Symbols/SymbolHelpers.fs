@@ -707,7 +707,7 @@ module internal SymbolHelpers =
         | Item.Value vref | Item.CustomBuilder (_, vref) -> 
             let v = vref.Deref
             if v.IsModuleBinding && v.HasDeclaringEntity then
-                let tyconRef = v.TopValDeclaringEntity
+                let tyconRef = v.ValReprDeclaringEntity
                 let paramsString =
                     match v.Typars with
                     |   [] -> ""

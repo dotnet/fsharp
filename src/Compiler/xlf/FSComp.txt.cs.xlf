@@ -2202,7 +2202,7 @@
         <target state="translated">Člen {0} je použitý neplatným způsobem. Použití členu {1} se odvozuje před jeho definicí na pozici {2} nebo blízko ní. To je neplatný dopředný odkaz.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoByrefAsTopValue">
+      <trans-unit id="chkNoByrefAsValRepr">
         <source>A byref typed value would be stored here. Top-level let-bound byref values are not permitted.</source>
         <target state="translated">Hodnota typu ByRef by se uložila tady. Hodnoty ByRef s vazbou na let na nejvyšší úrovni nejsou povolené.</target>
         <note />

@@ -2007,7 +2007,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
 
     // Check accessibility
     if (v.IsMemberOrModuleBinding || v.IsMember) && not v.IsIncrClassGeneratedMember then 
-        let access =  AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.TopValDeclaringEntity.CompilationPath) v.Accessibility
+        let access =  AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.ValReprDeclaringEntity.CompilationPath) v.Accessibility
         CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv cenv.infoReader vref) access v.Range v.Type
     
     let env = if v.IsConstructor && not v.IsIncrClassConstructor then { env with ctorLimitedZone=true } else env
@@ -2017,7 +2017,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         // Check top-level let-bound values
         match bind.Var.ValReprInfo with
         | Some info when info.HasNoArgs -> 
-            CheckForByrefLikeType cenv env v.Range v.Type (fun () -> errorR(Error(FSComp.SR.chkNoByrefAsTopValue(), v.Range)))
+            CheckForByrefLikeType cenv env v.Range v.Type (fun () -> errorR(Error(FSComp.SR.chkNoByrefAsValRepr(), v.Range)))
         | _ -> ()
 
         match v.PublicPath with
@@ -2035,7 +2035,7 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
                // Also check the enclosing type for members - for historical reasons, in the TAST member values 
                // are stored in the entity that encloses the type, hence we will not have noticed the ReflectedDefinition
                // on the enclosing type at this point.
-               HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute v.TopValDeclaringEntity.Attribs) then 
+               HasFSharpAttribute g g.attrib_ReflectedDefinitionAttribute v.ValReprDeclaringEntity.Attribs) then 
 
                 if v.IsInstanceMember && v.MemberApparentEntity.IsStructOrEnumTycon then
                     errorR(Error(FSComp.SR.chkNoReflectedDefinitionOnStructMember(), v.Range))
@@ -2135,7 +2135,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
           match v.DeclaringEntity with 
           | ParentNone -> () // this case can happen after error recovery from earlier error
           | Parent _ -> 
-            let tcref = v.TopValDeclaringEntity 
+            let tcref = v.ValReprDeclaringEntity 
             let hasDefaultAugmentation = 
                 tcref.IsUnionTycon &&
                 match TryFindFSharpAttribute g g.attrib_DefaultAugmentationAttribute tcref.Attribs with
@@ -2483,7 +2483,7 @@ let CheckEntityDefn cenv env (tycon: Entity) =
     for vref in abstractSlotValsOfTycons [tycon] do 
         match vref.ValReprInfo with 
         | Some valReprInfo -> 
-            let tps, argTysl, retTy, _ = GetTopValTypeInFSharpForm g valReprInfo vref.Type m
+            let tps, argTysl, retTy, _ = GetValReprTypeInFSharpForm g valReprInfo vref.Type m
             let env = BindTypars g env tps
             for argTys in argTysl do 
                 for argTy, _ in argTys do 

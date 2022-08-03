@@ -2202,7 +2202,7 @@
         <target state="translated">メンバー '{0}' の使用方法に誤りがあります。'{2}' またはその付近の定義の前に '{1}' の使用が推論されました。これは無効な前方参照です。</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoByrefAsTopValue">
+      <trans-unit id="chkNoByrefAsValRepr">
         <source>A byref typed value would be stored here. Top-level let-bound byref values are not permitted.</source>
         <target state="translated">byref 型の値がここに保存されます。トップレベルの let-bound byref 値は許可されていません。</target>
         <note />

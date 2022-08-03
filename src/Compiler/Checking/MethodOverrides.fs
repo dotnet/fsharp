@@ -927,9 +927,9 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
         | ty, None -> 
             GetIntrinsicMethInfosOfType infoReader (Some memberName.idText) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides bindm ty
     let dispatchSlots = minfos |> List.filter (fun minfo -> minfo.IsDispatchSlot)
-    let topValSynArities = SynInfo.AritiesOfArgs valSynData
-    let topValSynArities = if List.isEmpty topValSynArities then topValSynArities else topValSynArities.Tail
-    let dispatchSlotsArityMatch = dispatchSlots |> List.filter (fun minfo -> minfo.NumArgs = topValSynArities) 
+    let valReprSynArities = SynInfo.AritiesOfArgs valSynData
+    let valReprSynArities = if List.isEmpty valReprSynArities then valReprSynArities else valReprSynArities.Tail
+    let dispatchSlotsArityMatch = dispatchSlots |> List.filter (fun minfo -> minfo.NumArgs = valReprSynArities) 
     dispatchSlots, dispatchSlotsArityMatch 
 
 /// Get the properties relevant to determining if a uniquely-identified-override exists based on the syntactic information 

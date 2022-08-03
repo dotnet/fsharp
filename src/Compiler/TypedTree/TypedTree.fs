@@ -2820,10 +2820,10 @@ type Val =
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member x.TopValDeclaringEntity = 
+    member x.ValReprDeclaringEntity = 
         match x.DeclaringEntity with 
         | Parent tcref -> tcref
-        | ParentNone -> error(InternalError("TopValDeclaringEntity: does not have a parent", x.Range))
+        | ParentNone -> error(InternalError("ValReprDeclaringEntity: does not have a parent", x.Range))
 
     member x.HasDeclaringEntity = 
         match x.DeclaringEntity with 
@@ -3925,7 +3925,7 @@ type ValRef =
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member x.TopValDeclaringEntity = x.Deref.TopValDeclaringEntity
+    member x.ValReprDeclaringEntity = x.Deref.ValReprDeclaringEntity
 
     // Can be false for members after error recovery
     member x.HasDeclaringEntity = x.Deref.HasDeclaringEntity

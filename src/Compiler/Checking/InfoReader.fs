@@ -1029,11 +1029,11 @@ let GetXmlDocSigOfScopedValRef g (tcref: TyconRef) (vref: ValRef) =
     let ccuFileName = libFileOfEntityRef tcref
     let v = vref.Deref
     if v.XmlDocSig = "" && v.HasDeclaringEntity then
-        let ap = buildAccessPath vref.TopValDeclaringEntity.CompilationPathOpt
+        let ap = buildAccessPath vref.ValReprDeclaringEntity.CompilationPathOpt
         let path =
-            if vref.TopValDeclaringEntity.IsModule then
+            if vref.ValReprDeclaringEntity.IsModule then
                 let sep = if ap.Length > 0 then "." else ""
-                ap + sep + vref.TopValDeclaringEntity.CompiledName
+                ap + sep + vref.ValReprDeclaringEntity.CompiledName
             else
                 ap
         v.XmlDocSig <- XmlDocSigOfVal g false path v
@@ -1096,7 +1096,7 @@ let GetXmlDocSigOfValRef g (vref: ValRef) =
         let ccuFileName = vref.nlr.Ccu.FileName
         let v = vref.Deref
         if v.XmlDocSig = "" && v.HasDeclaringEntity then
-            v.XmlDocSig <- XmlDocSigOfVal g false vref.TopValDeclaringEntity.CompiledRepresentationForNamedType.Name v
+            v.XmlDocSig <- XmlDocSigOfVal g false vref.ValReprDeclaringEntity.CompiledRepresentationForNamedType.Name v
         Some (ccuFileName, v.XmlDocSig)
     else 
         match vref.ApparentEnclosingEntity with

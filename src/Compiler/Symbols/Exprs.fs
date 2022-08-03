@@ -453,7 +453,7 @@ module FSharpExprConvert =
             | _ -> 
                 // This is an application of a module value or extension member
                 let arities = arityOfVal vref.Deref 
-                let tps, curriedArgInfos, _, _ = GetTopValTypeInFSharpForm g arities vref.Type m
+                let tps, curriedArgInfos, _, _ = GetValReprTypeInFSharpForm g arities vref.Type m
                 false, tps, curriedArgInfos
 
         // Compute the object arguments as they appear in a compiled call

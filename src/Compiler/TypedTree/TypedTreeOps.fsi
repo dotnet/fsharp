@@ -749,14 +749,14 @@ val destTopForallTy: TcGlobals -> ValReprInfo -> TType -> Typars * TType
 
 val GetTopTauTypeInFSharpForm: TcGlobals -> ArgReprInfo list list -> TType -> range -> CurriedArgInfos * TType
 
-val GetTopValTypeInFSharpForm:
+val GetValReprTypeInFSharpForm:
     TcGlobals -> ValReprInfo -> TType -> range -> Typars * CurriedArgInfos * TType * ArgReprInfo
 
 val IsCompiledAsStaticProperty: TcGlobals -> Val -> bool
 
 val IsCompiledAsStaticPropertyWithField: TcGlobals -> Val -> bool
 
-val GetTopValTypeInCompiledForm:
+val GetValReprTypeInCompiledForm:
     TcGlobals ->
     ValReprInfo ->
     int ->
@@ -2343,7 +2343,7 @@ val mkAnonRecd: TcGlobals -> range -> AnonRecdTypeInfo -> Ident[] -> Exprs -> TT
 
 val AdjustValForExpectedArity: TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
 
-val AdjustValToTopVal: Val -> ParentRef -> ValReprInfo -> unit
+val AdjustValToValRepr: Val -> ParentRef -> ValReprInfo -> unit
 
 val LinearizeTopMatch: TcGlobals -> ParentRef -> Expr -> Expr
 

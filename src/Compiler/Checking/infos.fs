@@ -118,14 +118,14 @@ let private AnalyzeTypeOfMemberVal isCSharpExt g (ty, vref: ValRef) =
 /// Get the object type for a member value which is an extension method  (C#-style or F#-style)
 let private GetObjTypeOfInstanceExtensionMethod g (vref: ValRef) =
     let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
-    let _, _, curriedArgInfos, _, _ = GetTopValTypeInCompiledForm g vref.ValReprInfo.Value numEnclosingTypars vref.Type vref.Range
+    let _, _, curriedArgInfos, _, _ = GetValReprTypeInCompiledForm g vref.ValReprInfo.Value numEnclosingTypars vref.Type vref.Range
     curriedArgInfos.Head.Head |> fst
 
 /// Get the object type for a member value, which might be a C#-style extension method
 let private GetArgInfosOfMember isCSharpExt g (vref: ValRef) =
     if isCSharpExt then
         let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
-        let _, _, curriedArgInfos, _, _ = GetTopValTypeInCompiledForm g vref.ValReprInfo.Value numEnclosingTypars vref.Type vref.Range
+        let _, _, curriedArgInfos, _, _ = GetValReprTypeInCompiledForm g vref.ValReprInfo.Value numEnclosingTypars vref.Type vref.Range
         [ curriedArgInfos.Head.Tail ]
     else
         ArgInfosOfMember  g vref
@@ -596,7 +596,7 @@ type MethInfo =
     member x.DeclaringTyconRef   =
         match x with
         | ILMeth(_, ilminfo, _) when x.IsExtensionMember  -> ilminfo.DeclaringTyconRef
-        | FSMeth(_, _, vref, _) when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.TopValDeclaringEntity
+        | FSMeth(_, _, vref, _) when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.ValReprDeclaringEntity
         | _ -> x.ApparentEnclosingTyconRef
 
     /// Get the information about provided static parameters, if any
@@ -1666,7 +1666,7 @@ type PropInfo =
     /// holding the value for the extension method.
     member x.DeclaringTyconRef   =
         match x.ArbitraryValRef with
-        | Some vref when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.TopValDeclaringEntity
+        | Some vref when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.ValReprDeclaringEntity
         | _ -> x.ApparentEnclosingTyconRef
 
     /// Try to get an arbitrary F# ValRef associated with the member. This is to determine if the member is virtual, amongst other things.
@@ -2114,7 +2114,7 @@ type EventInfo =
     /// holding the value for the extension method.
     member x.DeclaringTyconRef =
         match x.ArbitraryValRef with
-        | Some vref when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.TopValDeclaringEntity
+        | Some vref when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.ValReprDeclaringEntity
         | _ -> x.ApparentEnclosingTyconRef
 
     /// Indicates if this event has an associated XML comment authored in this assembly.

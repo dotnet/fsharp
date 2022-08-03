@@ -2122,7 +2122,7 @@ type Val =
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member TopValDeclaringEntity: EntityRef
+    member ValReprDeclaringEntity: EntityRef
 
     /// Get the generic type parameters for the value
     member Typars: Typars
@@ -2830,7 +2830,7 @@ type ValRef =
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member TopValDeclaringEntity: EntityRef
+    member ValReprDeclaringEntity: EntityRef
 
     /// Dereference the ValRef to a Val option.
     member TryDeref: Val voption

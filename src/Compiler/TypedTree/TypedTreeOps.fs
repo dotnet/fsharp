@@ -1751,7 +1751,7 @@ let destTopForallTy g (ValReprInfo (ntps, _, _)) ty =
     let tps = NormalizeDeclaredTyparsForEquiRecursiveInference g tps
     tps, tau
 
-let GetTopValTypeInFSharpForm g (ValReprInfo(_, argInfos, retInfo) as valReprInfo) ty m =
+let GetValReprTypeInFSharpForm g (ValReprInfo(_, argInfos, retInfo) as valReprInfo) ty m =
     let tps, tau = destTopForallTy g valReprInfo ty
     let curriedArgTys, returnTy = GetTopTauTypeInFSharpForm g argInfos tau m
     tps, curriedArgTys, returnTy, retInfo
@@ -1759,7 +1759,7 @@ let GetTopValTypeInFSharpForm g (ValReprInfo(_, argInfos, retInfo) as valReprInf
 let IsCompiledAsStaticProperty g (v: Val) =
     match v.ValReprInfo with
     | Some valReprInfoValue ->
-         match GetTopValTypeInFSharpForm g valReprInfoValue v.Type v.Range with 
+         match GetValReprTypeInFSharpForm g valReprInfoValue v.Type v.Range with 
          | [], [], _, _ when not v.IsMember -> true
          | _ -> false
     | _ -> false
@@ -2464,7 +2464,7 @@ let valsOfBinds (binds: Bindings) = binds |> List.map (fun b -> b.Var)
 // Pull apart the type for an F# value that represents an object model method. Do not strip off a 'unit' argument.
 // Review: Should GetMemberTypeInFSharpForm have any other direct callers? 
 let GetMemberTypeInFSharpForm g (memberFlags: SynMemberFlags) arities ty m = 
-    let tps, argInfos, retTy, retInfo = GetTopValTypeInFSharpForm g arities ty m
+    let tps, argInfos, retTy, retInfo = GetValReprTypeInFSharpForm g arities ty m
 
     let argInfos = 
         if memberFlags.IsInstance then 
@@ -2513,8 +2513,8 @@ let CountEnclosingTyparsOfActualParentOfVal (v: Val) =
         elif not v.IsMember then 0
         else v.MemberApparentEntity.TyparsNoRange.Length
 
-let GetTopValTypeInCompiledForm g valReprInfo numEnclosingTypars ty m =
-    let tps, paramArgInfos, retTy, retInfo = GetTopValTypeInFSharpForm g valReprInfo ty m
+let GetValReprTypeInCompiledForm g valReprInfo numEnclosingTypars ty m =
+    let tps, paramArgInfos, retTy, retInfo = GetValReprTypeInFSharpForm g valReprInfo ty m
     let witnessInfos = GetTraitWitnessInfosOfTypars g numEnclosingTypars tps
     // Eliminate lone single unit arguments
     let paramArgInfos = 
@@ -8111,7 +8111,7 @@ let MakeArgsForTopArgs _g m argTysl tpenv =
 
 let AdjustValForExpectedArity g m (vref: ValRef) flags valReprInfo =
 
-    let tps, argTysl, retTy, _ = GetTopValTypeInFSharpForm g valReprInfo vref.Type m
+    let tps, argTysl, retTy, _ = GetValReprTypeInFSharpForm g valReprInfo vref.Type m
     let tpsR = copyTypars tps
     let tyargsR = List.map mkTyparTy tpsR
     let tpenv = bindTypars tps tyargsR emptyTyparInst
@@ -8213,7 +8213,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                 match stripExpr exprWithActualTy with 
                 | ExprValWithPossibleTypeInst(vref, _, _, _) when vref.ValReprInfo.IsSome -> 
 
-                    let _, argTysl, _, _ = GetTopValTypeInFSharpForm g vref.ValReprInfo.Value vref.Type expr.Range
+                    let _, argTysl, _, _ = GetValReprTypeInFSharpForm g vref.ValReprInfo.Value vref.Type expr.Range
                     argTysl |> List.mapi (fun i argTys -> 
                         argTys |> List.mapi (fun j (_, argInfo) -> 
                              match argInfo.Name with 
@@ -8469,7 +8469,7 @@ let NormalizeAndAdjustPossibleSubsumptionExprs g inputExpr =
 let etaExpandTypeLambda g m tps (tm, ty) = 
     if isNil tps then tm else mkTypeLambda m tps (mkApps g ((tm, ty), [(List.map mkTyparTy tps)], [], m), ty)
 
-let AdjustValToTopVal (tmp: Val) parent valData =
+let AdjustValToValRepr (tmp: Val) parent valData =
     tmp.SetValReprInfo (Some valData)
     tmp.SetDeclaringEntity parent
     tmp.SetIsMemberOrModuleBinding()
@@ -8501,7 +8501,7 @@ let LinearizeTopMatchAux g parent (spBind, m, tree, targets, m2, ty) =
         let tmpTy = mkRefTupledVarsTy g vs
         let tmp, tmpe = mkCompGenLocal m "matchResultHolder" tmpTy
 
-        AdjustValToTopVal tmp parent ValReprInfo.emptyValData
+        AdjustValToValRepr tmp parent ValReprInfo.emptyValData
 
         let newTg = TTarget (fvs, mkRefTupledVars g m fvs, None)
         let fixup (TTarget (tvs, tx, flags)) = 
@@ -8629,7 +8629,7 @@ let XmlDocSigOfVal g full path (v: Val) =
     let parentTypars, methTypars, cxs, argInfos, retTy, prefix, path, name = 
 
         // CLEANUP: this is one of several code paths that treat module values and members 
-        // separately when really it would be cleaner to make sure GetTopValTypeInFSharpForm, GetMemberTypeInFSharpForm etc.
+        // separately when really it would be cleaner to make sure GetValReprTypeInFSharpForm, GetMemberTypeInFSharpForm etc.
         // were lined up so code paths like this could be uniform
     
         match v.MemberInfo with 
@@ -8648,7 +8648,7 @@ let XmlDocSigOfVal g full path (v: Val) =
                 | SynMemberKind.PropertySet
                 | SynMemberKind.PropertyGet -> "P:", v.PropertyName
 
-            let path = if v.HasDeclaringEntity then prependPath path v.TopValDeclaringEntity.CompiledName else path
+            let path = if v.HasDeclaringEntity then prependPath path v.ValReprDeclaringEntity.CompiledName else path
 
             let parentTypars, methTypars = 
                 match PartitionValTypars g v with
@@ -8661,7 +8661,7 @@ let XmlDocSigOfVal g full path (v: Val) =
             // Regular F# values and extension members 
             let w = arityOfVal v
             let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
-            let tps, witnessInfos, argInfos, retTy, _ = GetTopValTypeInCompiledForm g w numEnclosingTypars v.Type v.Range
+            let tps, witnessInfos, argInfos, retTy, _ = GetValReprTypeInCompiledForm g w numEnclosingTypars v.Type v.Range
             let name = v.CompiledName g.CompilerGlobalState
             let prefix =
                 if w.NumCurriedArgs = 0 && isNil tps then "P:"
@@ -8969,7 +8969,7 @@ let isComInteropTy g ty =
 let ValSpecIsCompiledAsInstance g (v: Val) =
     match v.MemberInfo with 
     | Some membInfo -> 
-        // Note it doesn't matter if we pass 'v.TopValDeclaringEntity' or 'v.MemberApparentEntity' here. 
+        // Note it doesn't matter if we pass 'v.ValReprDeclaringEntity' or 'v.MemberApparentEntity' here. 
         // These only differ if the value is an extension member, and in that case MemberIsCompiledAsInstance always returns 
         // false anyway 
         MemberIsCompiledAsInstance g v.MemberApparentEntity v.IsExtensionMember membInfo v.Attribs  
@@ -9639,7 +9639,7 @@ let GetTypeOfIntrinsicMemberInCompiledForm g (vref: ValRef) =
         // Check if the thing is really an instance member compiled as a static member
         // If so, the object argument counts as a normal argument in the compiled form
         if membInfo.MemberFlags.IsInstance && not (ValRefIsCompiledAsInstanceMember g vref) then 
-            let _, origArgInfos, _, _ = GetTopValTypeInFSharpForm g valReprInfo vref.Type vref.Range
+            let _, origArgInfos, _, _ = GetValReprTypeInFSharpForm g valReprInfo vref.Type vref.Range
             match origArgInfos with
             | [] -> 
                 errorR(InternalError("value does not have a valid member type", vref.Range))
