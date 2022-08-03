@@ -4013,7 +4013,7 @@ let ``Test project28 all symbols in signature`` () =
         ("FSharpEntity", "Use", "T:M.Use");
         ("FSharpMemberOrFunctionOrValue", "``.ctor``", "M:M.Use.#ctor");
         ("FSharpMemberOrFunctionOrValue", "Test", "M:M.Use.Test``1(``0)");
-        ("FSharpGenericParameter", "?", "")|]
+        ("FSharpGenericParameter", "``?``", "")|]
     |> Array.iter (fun x ->
         if xmlDocSigs |> Array.exists (fun y -> x = y) |> not then
             failwithf "%A does not exist in the collection." x

@@ -728,7 +728,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     let checkForBinaryApp comp = 
         match comp with 
         | StripApps(SingleIdent nm, [StripApps(SingleIdent nm2, args); arg2]) when 
-                  IsMangledInfixOperator nm.idText && 
+                  IsLogicalInfixOpName nm.idText && 
                   (match tryExpectedArgCountForCustomOperator nm2 with Some n -> n > 0 | _ -> false) &&
                   not (List.isEmpty args) -> 
             let estimatedRangeOfIntendedLeftAndRightArguments = unionRanges (List.last args).Range arg2.Range
@@ -876,8 +876,12 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 SynExpr.Sequential (DebugPointAtSequential.SuppressNeither, true, l, (arbExpr(caption, l.Range.EndRange)), l.Range)
 
             let mkOverallExprGivenVarSpaceExpr, varSpaceInner =
+
                 let isNullableOp opId =
-                    match DecompileOpName opId with "?=" | "=?" | "?=?" -> true | _ -> false
+                    match ConvertValLogicalNameToDisplayNameCore opId with
+                    | "?=" | "=?" | "?=?" -> true
+                    | _ -> false
+
                 match secondResultPatOpt, keySelectorsOpt with 
                 // groupJoin 
                 | Some secondResultPat, Some relExpr when customOperationIsLikeGroupJoin nm -> 
@@ -889,7 +893,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                     | BinOpExpr (opId, l, r) ->
                         if isNullableOp opId.idText then 
                             // When we cannot resolve NullableOps, recommend the relevant namespace to be added
-                            errorR(Error(FSComp.SR.cannotResolveNullableOperators(DecompileOpName opId.idText), relExpr.Range))
+                            errorR(Error(FSComp.SR.cannotResolveNullableOperators(ConvertValLogicalNameToDisplayNameCore opId.idText), relExpr.Range))
                         else
                             errorR(Error(FSComp.SR.tcInvalidRelationInJoin(nm.idText), relExpr.Range))
                         let l = wrapInArbErrSequence l "_keySelector1"
@@ -911,7 +915,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                     | BinOpExpr (opId, l, r) ->
                         if isNullableOp opId.idText then
                             // When we cannot resolve NullableOps, recommend the relevant namespace to be added
-                            errorR(Error(FSComp.SR.cannotResolveNullableOperators(DecompileOpName opId.idText), relExpr.Range))
+                            errorR(Error(FSComp.SR.cannotResolveNullableOperators(ConvertValLogicalNameToDisplayNameCore opId.idText), relExpr.Range))
                         else
                             errorR(Error(FSComp.SR.tcInvalidRelationInJoin(nm.idText), relExpr.Range))
                         // this is not correct JoinRelation but it is still binary operation

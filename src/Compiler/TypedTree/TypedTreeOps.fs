@@ -4073,7 +4073,7 @@ module DebugPrint =
         leftL (tagText "<") ^^ intL tpNames.Length ^^ sepL (tagText ">[") ^^ commaListL (List.map intL ns) ^^ rightL (tagText "]")
 
     let valL (v: Val) =
-        let vsL = wordL (tagText (DecompileOpName v.LogicalName)) |> stampL v.Stamp
+        let vsL = wordL (tagText (ConvertValLogicalNameToDisplayNameCore v.LogicalName)) |> stampL v.Stamp
         let vsL = vsL -- layoutAttribs v.Attribs
         vsL
 
@@ -9134,7 +9134,7 @@ let TryGetActivePatternInfo (vref: ValRef) =
        ActivePatternInfoOfValName vref.DisplayNameCoreMangled vref.Range
 
 type ActivePatternElemRef with 
-    member x.Name = 
+    member x.LogicalName = 
         let (APElemRef(_, vref, n, _)) = x
         match TryGetActivePatternInfo vref with
         | None -> error(InternalError("not an active pattern name", vref.Range))
@@ -9142,6 +9142,10 @@ type ActivePatternElemRef with
             let nms = apinfo.ActiveTags
             if n < 0 || n >= List.length nms then error(InternalError("name_of_apref: index out of range for active pattern reference", vref.Range))
             List.item n nms
+
+    member x.DisplayNameCore = x.LogicalName
+
+    member x.DisplayName = x.LogicalName |> ConvertLogicalNameToDisplayName
 
 let mkChoiceTyconRef (g: TcGlobals) m n = 
      match n with 
@@ -9164,7 +9168,10 @@ let mkChoiceCaseRef g m n i =
      mkUnionCaseRef (mkChoiceTyconRef g m n) ("Choice"+string (i+1)+"Of"+string n)
 
 type ActivePatternInfo with 
-    member x.Names = x.ActiveTags
+
+    member x.DisplayNameCoreByIdx idx = x.ActiveTags[idx]
+
+    member x.DisplayNameByIdx idx = x.ActiveTags[idx] |> ConvertLogicalNameToDisplayName
 
     member apinfo.ResultType g m retTys isStruct = 
         let choicety = mkChoiceTy g m retTys

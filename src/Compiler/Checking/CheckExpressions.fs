@@ -1342,19 +1342,19 @@ let MakeMemberDataAndMangledNameForMemberVal(g, tcref, isExtrinsic, attrs, implS
         else
             List.foldBack (fun x -> qualifiedMangledNameOfTyconRef (tcrefOfAppTy g x)) intfSlotTys logicalName
 
-    if not isCompGen && IsMangledOpName id.idText && IsMangledInfixOperator id.idText then
+    if not isCompGen && IsLogicalInfixOpName id.idText then
         let m = id.idRange
-        let name = DecompileOpName id.idText
+        let name = ConvertValLogicalNameToDisplayNameCore id.idText
         // Check symbolic members. Expect valSynData implied arity to be [[2]].
         match SynInfo.AritiesOfArgs valSynData with
         | [] | [0] -> warning(Error(FSComp.SR.memberOperatorDefinitionWithNoArguments name, m))
         | n :: otherArgs ->
-            let opTakesThreeArgs = IsTernaryOperator name
+            let opTakesThreeArgs = IsLogicalTernaryOperator name
             if n<>2 && not opTakesThreeArgs then warning(Error(FSComp.SR.memberOperatorDefinitionWithNonPairArgument(name, n), m))
             if n<>3 && opTakesThreeArgs then warning(Error(FSComp.SR.memberOperatorDefinitionWithNonTripleArgument(name, n), m))
             if not (isNil otherArgs) then warning(Error(FSComp.SR.memberOperatorDefinitionWithCurriedArguments name, m))
 
-    if isExtrinsic && IsMangledOpName id.idText then
+    if isExtrinsic && IsLogicalOpName id.idText then
         warning(Error(FSComp.SR.tcMemberOperatorDefinitionInExtrinsic(), id.idRange))
 
     PrelimMemberInfo(memberInfo, logicalName, compiledName)
@@ -1474,7 +1474,7 @@ let CheckForAbnormalOperatorNames (cenv: cenv) (idRange: range) coreDisplayName 
     if (idRange.EndColumn - idRange.StartColumn <= 5) &&
         not g.compilingFSharpCore
     then
-        let opName = DecompileOpName coreDisplayName
+        let opName = ConvertValLogicalNameToDisplayNameCore coreDisplayName
         let isMember = memberInfoOpt.IsSome
         match opName with
         | Relational ->
@@ -4293,7 +4293,7 @@ let rec TcTyparConstraint ridx cenv newOk checkConstraints occ (env: TcEnv) tpen
             | CheckCxs -> ()
         | AppTy g (_tcref, selfTy :: _rest) when isTyparTy g selfTy && isInterfaceTy g tyR ->
             AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace tyR selfTy
-        | _ -> 
+        | _ ->
             errorR(Error(FSComp.SR.tcInvalidSelfConstraint(), m))
         tpenv
 
@@ -4371,8 +4371,8 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv synMemberSig m =
                             errorR(Error(FSComp.SR.tcTraitMayNotUseComplexThings(), m))
                         else
                             warning(Error(FSComp.SR.tcTraitMayNotUseComplexThings(), m))
-                        
-            let item = Item.ArgName (id, memberConstraintTy, None)
+
+            let item = Item.ArgName (Some id, memberConstraintTy, None, id.idRange)
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.AccessRights)
 
             TTrait(tys, logicalCompiledName, memberFlags, argTys, returnTy, ref None), tpenv
@@ -4975,7 +4975,7 @@ and TcStaticConstantParameter cenv (env: TcEnv) tpenv kind (StripParenTypes v) i
     let record ttype =
         match idOpt with
         | Some id ->
-            let item = Item.ArgName (id, ttype, Some container)
+            let item = Item.ArgName (Some id, ttype, Some container, id.idRange)
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.AccessRights)
         | _ -> ()
 
@@ -5309,7 +5309,7 @@ and TcPatLongIdentActivePatternCase warnOnUpper cenv (env: TcEnv) vFlags patEnv 
 
     let activePatArgsAsSynExprs = List.map ConvSynPatToSynExpr activePatArgsAsSynPats
 
-    let activePatResTys = NewInferenceTypes g apinfo.Names
+    let activePatResTys = NewInferenceTypes g apinfo.ActiveTags
     let activePatType = apinfo.OverallType g m ty activePatResTys isStructRetTy
 
     let delayed =
@@ -5570,7 +5570,7 @@ and TcExprThen cenv overallTy env tpenv isArg synExpr delayed =
     // Part of 'T.Ident
     | SynExpr.Typar (typar, m) ->
         TcTyparExprThen cenv overallTy env tpenv typar m delayed
-    
+
     //  ^expr
     | SynExpr.IndexFromEnd (rightExpr, m) ->
         errorR(Error(FSComp.SR.tcTraitInvocationShouldUseTick(), m))
@@ -6009,7 +6009,7 @@ and TcExprUndelayed cenv (overallTy: OverallTy) env tpenv (synExpr: SynExpr) =
     // Part of 'T.Ident
     | SynExpr.Typar (typar, m) ->
         TcTyparExprThen cenv overallTy env tpenv typar m []
-    
+
     | SynExpr.IndexFromEnd (rightExpr, m) ->
         errorR(Error(FSComp.SR.tcTraitInvocationShouldUseTick(), m))
         let adjustedExpr = ParseHelpers.adjustHatPrefixToTyparLookup m rightExpr
@@ -6479,13 +6479,13 @@ and TcTyparExprThen cenv overallTy env tpenv synTypar m delayed =
         let ty = mkTyparTy tp
         let item, _rest = ResolveLongIdentInType cenv.tcSink cenv.nameResolver env.NameEnv LookupKind.Expr ident.idRange ad ident IgnoreOverrides TypeNameResolutionInfo.Default ty
         let delayed3 =
-            match rest with 
+            match rest with
             | [] -> delayed2
             | _ -> DelayedDotLookup (rest, m2) :: delayed2
         CallNameResolutionSink cenv.tcSink (ident.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.AccessRights)
         TcItemThen cenv overallTy env tpenv ([], item, mExprAndLongId, [], AfterResolution.DoNothing) (Some ty) delayed3
         //TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed item mItem rest afterResolution
-    | _ -> 
+    | _ ->
         let (SynTypar(_, q, _)) = synTypar
         let msg =
             match q with
@@ -6493,15 +6493,15 @@ and TcTyparExprThen cenv overallTy env tpenv synTypar m delayed =
             | TyparStaticReq.HeadType -> FSComp.SR.parsIncompleteTyparExpr2()
         error (Error(msg, m))
 
-and (|IndexArgOptionalFromEnd|) (cenv: cenv) indexArg = 
+and (|IndexArgOptionalFromEnd|) (cenv: cenv) indexArg =
     match indexArg with
     | SynExpr.IndexFromEnd (a, m) ->
-        if not (cenv.g.langVersion.SupportsFeature LanguageFeature.FromEndSlicing) then 
+        if not (cenv.g.langVersion.SupportsFeature LanguageFeature.FromEndSlicing) then
             errorR (Error(FSComp.SR.fromEndSlicingRequiresVFive(), m))
         (a, true, m)
     | _ -> (indexArg, false, indexArg.Range)
 
-and DecodeIndexArg cenv indexArg = 
+and DecodeIndexArg cenv indexArg =
     match indexArg with
     | SynExpr.IndexRange (info1, _opm, info2, m1, m2, _) ->
         let info1 = 
@@ -8213,8 +8213,8 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
                 | Some (IdentTrivia.OriginalNotation(text = text))
                 | Some (IdentTrivia.OriginalNotationWithParen(text = text)) -> ident(text, result.idRange)
                 | _ ->
-                    if IsMangledOpName result.idText then
-                        let demangled = DecompileOpName result.idText
+                    if IsLogicalOpName result.idText then
+                        let demangled = ConvertValLogicalNameToDisplayNameCore result.idText
                         if demangled.Length = result.idRange.EndColumn - result.idRange.StartColumn then
                             ident(demangled, result.idRange)
                         else result
@@ -8531,7 +8531,7 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen cenv overallTy env item tp
     let mkConstrApp, argTys, argNames =
         match item with
         | Item.ActivePatternResult(apinfo, _apOverallTy, n, _) ->
-            let aparity = apinfo.Names.Length
+            let aparity = apinfo.ActiveTags.Length
             match aparity with
             | 0 | 1 ->
                 let mkConstrApp _mArgs = function [arg] -> arg | _ -> error(InternalError("ApplyUnionCaseOrExn", mItem))
@@ -8823,7 +8823,7 @@ and TcTraitItemThen cenv overallTy env objOpt traitInfo tpenv mItem delayed =
     //     (Compute()).SomeMethod(3)  -->
     //       let obj = Compute() in (fun arg -> SomeMethod(arg)) 3
     let wrapper, objArgs =
-        match argTys with 
+        match argTys with
         | [] ->
             id, Option.toList objOpt
         | _ ->
@@ -8838,7 +8838,7 @@ and TcTraitItemThen cenv overallTy env objOpt traitInfo tpenv mItem delayed =
     // Build a lambda for the trait call
     let applicableExpr, exprTy =
         // Empty arguments indicates a non-indexer property constraint
-        match argTys with 
+        match argTys with
         | [] ->
             let expr = Expr.Op (TOp.TraitCall traitInfo, [], objArgs, mItem)
             let exprTy = tyOfExpr g expr
@@ -8853,7 +8853,7 @@ and TcTraitItemThen cenv overallTy env objOpt traitInfo tpenv mItem delayed =
             let applicableExpr = MakeApplicableExprForTraitCall cenv expr (vs, traitCall)
             applicableExpr, exprTy
 
-    // Propagate the types from the known application structure 
+    // Propagate the types from the known application structure
 
     Propagate cenv overallTy env tpenv applicableExpr exprTy delayed
 
@@ -8865,8 +8865,8 @@ and TcTraitItemThen cenv overallTy env objOpt traitInfo tpenv mItem delayed =
 
 and TcImplicitOpItemThen cenv overallTy env id sln tpenv mItem delayed =
     let g = cenv.g
-    let isPrefix = IsPrefixOperator id.idText
-    let isTernary = IsTernaryOperator id.idText
+    let isPrefix = IsLogicalPrefixOperator id.idText
+    let isTernary = IsLogicalTernaryOperator id.idText
 
     let argData =
         if isPrefix then
@@ -9988,7 +9988,13 @@ and TcMethodApplication
         match assignedArg.NamedArgIdOpt with
         | None -> ()
         | Some id ->
-            let item = Item.ArgName (defaultArg assignedArg.CalledArg.NameOpt id, assignedArg.CalledArg.CalledArgumentType, Some(ArgumentContainer.Method finalCalledMethInfo))
+            let idOpt = Some (defaultArg assignedArg.CalledArg.NameOpt id)
+            let m =
+                match assignedArg.CalledArg.NameOpt with
+                | Some id -> id.idRange
+                | None -> id.idRange
+            let container = ArgumentContainer.Method finalCalledMethInfo
+            let item = Item.ArgName (idOpt, assignedArg.CalledArg.CalledArgumentType, Some container, m)
             CallNameResolutionSink cenv.tcSink (id.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ad))
 
     /// STEP 6. Build the call expression, then adjust for byref-returns, out-parameters-as-tuples, post-hoc property assignments, methods-as-first-class-value,
@@ -11412,12 +11418,12 @@ and AnalyzeRecursiveStaticMemberOrValDecl
     // name for the member and the information about which type it is augmenting
 
     match tcrefContainerInfo, memberFlagsOpt with
-    | Some(MemberOrValContainerInfo(tcref, intfSlotTyOpt, _, _, declaredTyconTypars)), Some memberFlags 
+    | Some(MemberOrValContainerInfo(tcref, intfSlotTyOpt, _, _, declaredTyconTypars)), Some memberFlags
         when (match memberFlags.MemberKind with
               | SynMemberKind.Member -> true
-              | SynMemberKind.PropertyGet -> true 
-              | SynMemberKind.PropertySet -> true 
-              | SynMemberKind.PropertyGetSet -> true 
+              | SynMemberKind.PropertyGet -> true
+              | SynMemberKind.PropertySet -> true
+              | SynMemberKind.PropertyGetSet -> true
               | _ -> false) &&
              not memberFlags.IsInstance &&
              memberFlags.IsOverrideOrExplicitImpl ->

@@ -428,51 +428,62 @@ module Test =
     Assert.AreEqual(expected, quickInfo)
     ()
 
-[<TestCase """
+[<Test>]
+let ``Automation.LetBindings.Module``() =
+    let code = """
 namespace FsTest
 
 module Test =
     let fu$$nc x = ()
-""">]
-let ``Automation.LetBindings.Module`` code =
+"""
     let expectedSignature = "val func: x: 'a -> unit"
-    let tooltip = GetQuickInfoTextFromCode code
-    StringAssert.StartsWith(expectedSignature, tooltip)
 
-[<TestCase """
+    let tooltip = GetQuickInfoTextFromCode code
+
+    StringAssert.StartsWith(expectedSignature, tooltip)
+    ()
+
+[<Test>]
+let ``Automation.LetBindings.InsideType.Instance``() =
+    let code = """
 namespace FsTest
 
 module Test =
     type T() =
         let fu$$nc x = ()
-""">]
-[<Test>]
-let ``Automation.LetBindings.InsideType.Instance`` code =
+"""
     let expectedSignature = "val func: x: 'a -> unit"
+
     let tooltip = GetQuickInfoTextFromCode code
+
     StringAssert.StartsWith(expectedSignature, tooltip)
 
-[<TestCase """
+[<Test >]
+let ``Automation.LetBindings.InsideType.Static``() =
+    let code = """
 namespace FsTest
 
 module Test =
     type T() =
         static let fu$$nc x = ()
-""">]
-let ``Automation.LetBindings.InsideType.Static`` code =
+"""
     let expectedSignature = "val func: x: 'a -> unit"
-    let tooltip = GetQuickInfoTextFromCode code
-    StringAssert.StartsWith(expectedSignature, tooltip)
 
-[<TestCase """
+    let tooltip = GetQuickInfoTextFromCode code
+
+    StringAssert.StartsWith(expectedSignature, tooltip)
+    ()
+
+[<Test>]
+let ``Automation.LetBindings``() =
+    let code = """
 namespace FsTest
 
 module Test =
     do
         let fu$$nc x = ()
         ()
-""">]
-let ``Automation.LetBindings`` code =
+"""
     let expectedSignature = "val func: x: 'a -> unit"
     let tooltip = GetQuickInfoTextFromCode code
     StringAssert.StartsWith(expectedSignature, tooltip)
@@ -529,3 +540,42 @@ let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticMethod: unit 
     let tooltip = GetQuickInfoTextFromCode code
     StringAssert.StartsWith(expectedSignature, tooltip)
 
+
+[<Test>]
+let ``Display names for exceptions with backticks preserve backticks``() =
+    let code = """
+exception SomeError of ``thing wi$$th space``: string
+"""
+    let expected = "``thing with space``"
+
+    let actual = GetQuickInfoTextFromCode code
+    StringAssert.Contains(expected, actual)
+    ()
+
+[<Test>]
+let ``Display names for anonymous record fields with backticks preserve backticks``() =
+    let code = """
+type R = {| ``thing wi$$th space``: string |}
+"""
+    let expected = "``thing with space``"
+
+    let actual = GetQuickInfoTextFromCode code
+
+    StringAssert.Contains(expected, actual)
+    ()
+
+[<Test>]
+let ``Display names identifiers for active patterns with backticks preserve backticks``() =
+    let code = """
+let (|``Thing with space``|_|) x = if x % 2 = 0 then Some (x/2) else None
+
+match 4 with
+| ``Thing wi$$th space`` _ -> "yes"
+| _ -> "no"
+"""
+    let expected = "``Thing with space``"
+
+    let actual = GetQuickInfoTextFromCode code
+
+    StringAssert.Contains(expected, actual)
+    ()

@@ -121,7 +121,17 @@ type Item =
     | ImplicitOp of Ident * TraitConstraintSln option ref
 
     /// Represents the resolution of a name to a named argument
-    | ArgName of Ident * TType * ArgumentContainer option
+    //
+    // In the FCS API, Item.ArgName corresponds to FSharpParameter symbols.
+    // Not all parameters have names, e.g. for 'g' in this:
+    //
+    //    let f (g: int -> int) x = ...
+    //
+    // then the symbol for 'g' reports FSharpParameters via CurriedParameterGroups
+    // based on analyzing the type of g as a function type.
+    //
+    // For these parameters, the identifier will be missing.
+    | ArgName of ident: Ident option * argType: TType * container: ArgumentContainer option * range: range
 
     /// Represents the resolution of a name to a named property setter
     | SetterArg of Ident * Item
