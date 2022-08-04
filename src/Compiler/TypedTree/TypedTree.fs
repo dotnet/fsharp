@@ -2812,7 +2812,7 @@ type Val =
             | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_xmldocsig = v }
 
     /// The parent type or module, if any (None for expression bindings and parameters)
-    member x.DeclaringEntity = 
+    member x.TryDeclaringEntity = 
         match x.val_opt_data with
         | Some optData -> optData.val_declaring_entity
         | _ -> ParentNone
@@ -2820,13 +2820,13 @@ type Val =
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member x.TopValDeclaringEntity = 
-        match x.DeclaringEntity with 
+    member x.DeclaringEntity = 
+        match x.TryDeclaringEntity with 
         | Parent tcref -> tcref
-        | ParentNone -> error(InternalError("TopValDeclaringEntity: does not have a parent", x.Range))
+        | ParentNone -> error(InternalError("DeclaringEntity: does not have a parent", x.Range))
 
     member x.HasDeclaringEntity = 
-        match x.DeclaringEntity with 
+        match x.TryDeclaringEntity with 
         | Parent _ -> true
         | ParentNone -> false
             
@@ -2848,7 +2848,7 @@ type Val =
     member x.ApparentEnclosingEntity = 
         match x.MemberInfo with 
         | Some membInfo -> Parent(membInfo.ApparentEnclosingEntity)
-        | None -> x.DeclaringEntity
+        | None -> x.TryDeclaringEntity
 
     /// Get the public path to the value, if any? Should be set if and only if
     /// IsMemberOrModuleBinding is set.
@@ -2862,7 +2862,7 @@ type Val =
     //   - in ilxgen.fs: as a boolean to detect public values for saving quotations 
     //   - in MakeExportRemapping, to build non-local references for values
     member x.PublicPath = 
-        match x.DeclaringEntity with 
+        match x.TryDeclaringEntity with 
         | Parent eref -> 
             match eref.PublicPath with 
             | None -> None
@@ -3777,7 +3777,7 @@ type ValRef =
     member x.Accessibility = x.Deref.Accessibility
 
     /// The parent type or module, if any (None for expression bindings and parameters)
-    member x.DeclaringEntity = x.Deref.DeclaringEntity
+    member x.TryDeclaringEntity = x.Deref.TryDeclaringEntity
 
     /// Get the apparent parent entity for the value, i.e. the entity under with which the
     /// value is associated. For extension members this is the nominal type the member extends.
@@ -3925,7 +3925,7 @@ type ValRef =
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member x.TopValDeclaringEntity = x.Deref.TopValDeclaringEntity
+    member x.DeclaringEntity = x.Deref.DeclaringEntity
 
     // Can be false for members after error recovery
     member x.HasDeclaringEntity = x.Deref.HasDeclaringEntity
