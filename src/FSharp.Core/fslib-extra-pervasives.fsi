@@ -15,9 +15,7 @@ module ExtraTopLevelOperators =
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Quotations
 
-    /// <summary>Print to <c>stdout</c>.</summary>
-    ///
-    /// <remarks><c>stdout</c> in most cases prints to the console.</remarks>
+    /// <summary>Print to <c>stdout</c>. <c>stdout</c> in most cases prints to the console.</summary>
     ///
     /// <param name="text">The string to print.</param>
     ///
@@ -38,9 +36,7 @@ module ExtraTopLevelOperators =
     [<CompiledName("Print")>]
     val print: text: string -> unit
 
-    /// <summary>Print to <c>stdout</c> and add a newline.</summary>
-    ///
-    /// <remarks><c>stdout</c> in most cases prints to the console.</remarks>
+    /// <summary>Print to <c>stdout</c> and add a newline. <c>stdout</c> in most cases prints to the console.</summary>
     ///
     /// <param name="text">The string to print.</param>
     ///
