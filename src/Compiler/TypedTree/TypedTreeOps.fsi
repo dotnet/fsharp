@@ -749,14 +749,14 @@ val destTopForallTy: TcGlobals -> ValReprInfo -> TType -> Typars * TType
 
 val GetTopTauTypeInFSharpForm: TcGlobals -> ArgReprInfo list list -> TType -> range -> CurriedArgInfos * TType
 
-val GetTopValTypeInFSharpForm:
+val GetValReprTypeInFSharpForm:
     TcGlobals -> ValReprInfo -> TType -> range -> Typars * CurriedArgInfos * TType * ArgReprInfo
 
 val IsCompiledAsStaticProperty: TcGlobals -> Val -> bool
 
 val IsCompiledAsStaticPropertyWithField: TcGlobals -> Val -> bool
 
-val GetTopValTypeInCompiledForm:
+val GetValReprTypeInCompiledForm:
     TcGlobals ->
     ValReprInfo ->
     int ->
@@ -1167,8 +1167,8 @@ val freeVarsAllPublic: FreeVars -> bool
 /// Compute the type of an expression from the expression itself
 val tyOfExpr: TcGlobals -> Expr -> TType
 
-/// A flag to govern whether arity inference should be type-directed or syntax-directed when
-/// inferring an arity from a lambda expression.
+/// A flag to govern whether ValReprInfo inference should be type-directed or syntax-directed when
+/// inferring from a lambda expression.
 [<RequireQualifiedAccess>]
 type AllowTypeDirectedDetupling =
     | Yes
@@ -1178,15 +1178,15 @@ type AllowTypeDirectedDetupling =
 val stripTopLambda: Expr * TType -> Typars * Val list list * Expr * TType
 
 /// Given a lambda expression, extract the ValReprInfo for its arguments and other details
-val InferArityOfExpr:
+val InferValReprInfoOfExpr:
     TcGlobals -> AllowTypeDirectedDetupling -> TType -> Attribs list list -> Attribs -> Expr -> ValReprInfo
 
 /// Given a lambda binding, extract the ValReprInfo for its arguments and other details
-val InferArityOfExprBinding: TcGlobals -> AllowTypeDirectedDetupling -> Val -> Expr -> ValReprInfo
+val InferValReprInfoOfBinding: TcGlobals -> AllowTypeDirectedDetupling -> Val -> Expr -> ValReprInfo
 
 /// Mutate a value to indicate it should be considered a local rather than a module-bound definition
 // REVIEW: this mutation should not be needed
-val setValHasNoArity: Val -> Val
+val ClearValReprInfo: Val -> Val
 
 /// Indicate what should happen to value definitions when copying expressions
 type ValCopyFlag =
@@ -1385,7 +1385,7 @@ val IterateRecursiveFixups:
 val MultiLambdaToTupledLambda: TcGlobals -> Val list -> Expr -> Val * Expr
 
 /// Given a lambda expression, adjust it to have be one or two lambda expressions (fun a -> (fun b -> ...))
-/// where the first has the given arity.
+/// where the first has the given arguments.
 val AdjustArityOfLambdaBody: TcGlobals -> int -> Val list -> Expr -> Val list * Expr
 
 /// Make an application expression, doing beta reduction by introducing let-bindings
@@ -2341,9 +2341,9 @@ val mkAnyAnonRecdTy: TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
 
 val mkAnonRecd: TcGlobals -> range -> AnonRecdTypeInfo -> Ident[] -> Exprs -> TType list -> Expr
 
-val AdjustValForExpectedArity: TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
+val AdjustValForExpectedValReprInfo: TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
 
-val AdjustValToTopVal: Val -> ParentRef -> ValReprInfo -> unit
+val AdjustValToHaveValReprInfo: Val -> ParentRef -> ValReprInfo -> unit
 
 val LinearizeTopMatch: TcGlobals -> ParentRef -> Expr -> Expr
 

@@ -4,14 +4,10 @@
 
   <Choose>
     <When Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' ">
-      <PropertyGroup>
-        <DefineConstants Condition="'$(MonoPackaging)' == 'true'">$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
-      </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
         <DefineConstants>$(DefineConstants);NETSTANDARD</DefineConstants>
-        <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
         <DefineConstants>$(DefineConstants);FX_NO_WINFORMS</DefineConstants>
         <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
       </PropertyGroup>

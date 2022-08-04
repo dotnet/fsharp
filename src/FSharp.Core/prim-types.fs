@@ -5117,9 +5117,6 @@ namespace Microsoft.FSharp.Core
             [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
             [<assembly: System.CLSCompliant(true)>]
             [<assembly: System.Security.SecurityTransparent>] // assembly is fully transparent
-#if !CROSS_PLATFORM_COMPILER
-            [<assembly: System.Security.SecurityRules(System.Security.SecurityRuleSet.Level2)>] // v4 transparency; soon to be the default, but not yet
-#endif
             do ()
 
 #if FX_NO_MONITOR_REPORTS_LOCKTAKEN

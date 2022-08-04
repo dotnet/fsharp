@@ -1219,7 +1219,7 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
             if Option.isSome eventInfoOpt then 
                 None 
             else 
-                tryDestTopLambda g amap valReprInfo (delFuncExpr, delFuncTy)        
+                tryDestLambdaWithValReprInfo g amap valReprInfo (delFuncExpr, delFuncTy)        
 
         match lambdaContents with 
         | None -> 
@@ -1244,7 +1244,7 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
             delArgVals, expr
             
         | Some _ -> 
-            let _, _, _, vsl, body, _ = IteratedAdjustArityOfLambda g amap valReprInfo delFuncExpr
+            let _, _, _, vsl, body, _ = IteratedAdjustLambdaToMatchValReprInfo g amap valReprInfo delFuncExpr
             List.concat vsl, body
             
     let meth = TObjExprMethod(slotsig, [], [], [delArgVals], expr, m)

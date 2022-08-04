@@ -1307,7 +1307,7 @@ type FSharpActivePatternGroup(cenv, apinfo:ActivePatternInfo, ty, valOpt) =
     member _.DeclaringEntity = 
         valOpt 
         |> Option.bind (fun vref -> 
-            match vref.DeclaringEntity with 
+            match vref.TryDeclaringEntity with 
             | ParentNone -> None
             | Parent tcref -> Some (FSharpEntity(cenv, tcref)))
 
@@ -1652,7 +1652,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | P p -> FSharpEntity(cenv, p.DeclaringTyconRef) |> Some
         | M m | C m -> FSharpEntity(cenv, m.DeclaringTyconRef) |> Some
         | V v -> 
-        match v.DeclaringEntity with 
+        match v.TryDeclaringEntity with 
         | ParentNone -> None
         | Parent p -> FSharpEntity(cenv, p) |> Some
 
@@ -1994,7 +1994,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | Some (_, docsig) -> docsig
             | _ -> ""
         | V v ->
-            match v.DeclaringEntity with 
+            match v.TryDeclaringEntity with 
             | Parent entityRef -> 
                 match GetXmlDocSigOfScopedValRef cenv.g entityRef v with
                 | Some (_, docsig) -> docsig
@@ -2306,7 +2306,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | V vref  ->
                 let arities = arityOfVal vref.Deref
                 let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
-                let _tps, witnessInfos, _curriedArgInfos, _retTy, _ = GetTopValTypeInCompiledForm cenv.g arities numEnclosingTypars vref.Type vref.DefinitionRange
+                let _tps, witnessInfos, _curriedArgInfos, _retTy, _ = GetValReprTypeInCompiledForm cenv.g arities numEnclosingTypars vref.Type vref.DefinitionRange
                 witnessInfos
             | E _ | P _ | M _ | C _ -> []
         match witnessInfos with 
