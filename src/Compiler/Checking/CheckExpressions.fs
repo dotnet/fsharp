@@ -12016,7 +12016,7 @@ and TcLetrecBindings overridesOK cenv env tpenv (binds, bindsm, scopem) =
 // Bind specifications of values
 //-------------------------------------------------------------------------
 
-let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memFlagsOpt, tpenv, synValSig) =
+let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind : DeclKind, memFlagsOpt, tpenv, synValSig) =
 
     let g = cenv.g
 
