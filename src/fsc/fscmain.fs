@@ -90,8 +90,7 @@ let main (argv) =
             }
 
         // Get the handler for legacy resolution of references via MSBuild.
-        let legacyReferenceResolver =
-            LegacyMSBuildReferenceResolver.getResolver ()
+        let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
 
         // Perform the main compilation.
         //

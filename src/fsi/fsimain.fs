@@ -253,8 +253,7 @@ let evaluateSession (argv: string[]) =
                     None
 #endif
 
-        let legacyReferenceResolver =
-            LegacyMSBuildReferenceResolver.getResolver ()
+        let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
 
         // Update the configuration to include 'StartServer', WinFormsEventLoop and 'GetOptionalConsoleReadLine()'
         let rec fsiConfig =
