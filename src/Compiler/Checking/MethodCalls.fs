@@ -1244,7 +1244,7 @@ let BuildNewDelegateExpr (eventInfoOpt: EventInfo option, g, amap, delegateTy, d
             delArgVals, expr
             
         | Some _ -> 
-            let _, _, _, vsl, body, _ = IteratedAdjustLambdaToValReprInfo g amap valReprInfo delFuncExpr
+            let _, _, _, vsl, body, _ = IteratedAdjustLambdaToMatchValReprInfo g amap valReprInfo delFuncExpr
             List.concat vsl, body
             
     let meth = TObjExprMethod(slotsig, [], [], [delArgVals], expr, m)

@@ -8143,7 +8143,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
         && not isStateVar
         ->
         let tps, _, _, _, cctorBody, _ =
-            IteratedAdjustLambdaToValReprInfo g cenv.amap vspec.ValReprInfo.Value rhsExpr
+            IteratedAdjustLambdaToMatchValReprInfo g cenv.amap vspec.ValReprInfo.Value rhsExpr
 
         let eenv = EnvForTypars tps eenv
         CommitStartScope cgbuf startMarkOpt
@@ -8152,7 +8152,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
     | Method (valReprInfo, _, mspec, mspecW, _, ctps, mtps, curriedArgInfos, paramInfos, witnessInfos, argTys, retInfo) when not isStateVar ->
 
         let methLambdaTypars, methLambdaCtorThisValOpt, methLambdaBaseValOpt, methLambdaCurriedVars, methLambdaBody, methLambdaBodyTy =
-            IteratedAdjustLambdaToValReprInfo g cenv.amap valReprInfo rhsExpr
+            IteratedAdjustLambdaToMatchValReprInfo g cenv.amap valReprInfo rhsExpr
 
         let methLambdaVars = List.concat methLambdaCurriedVars
 

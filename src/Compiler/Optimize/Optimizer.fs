@@ -3738,7 +3738,7 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
     | Expr.Lambda (lambdaId, _, _, _, _, m, _)  
     | Expr.TyLambda (lambdaId, _, _, m, _) ->
         let env = { env with methEnv = { pipelineCount = 0 }}
-        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = IteratedAdjustLambdaToValReprInfo g cenv.amap valReprInfo expr
+        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = IteratedAdjustLambdaToMatchValReprInfo g cenv.amap valReprInfo expr
         let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v, valReprInfo)) }
         let env = Option.foldBack (BindInternalValToUnknown cenv) ctorThisValOpt env
         let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
