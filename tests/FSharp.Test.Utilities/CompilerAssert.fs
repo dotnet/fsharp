@@ -11,9 +11,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
-#if FX_NO_APP_DOMAINS
 open System.Runtime.Loader
-#endif
 open FSharp.Test.Utilities
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
@@ -256,7 +254,7 @@ module rec CompilerAssertHelpers =
             yield Array.empty<string>
     |]
 
-#if FX_NO_APP_DOMAINS
+#if NETCOREAPP
     let executeBuiltApp assembly deps =
         let ctxt = AssemblyLoadContext("ContextName", true)
         try
