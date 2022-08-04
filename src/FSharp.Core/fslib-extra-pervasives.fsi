@@ -15,7 +15,9 @@ module ExtraTopLevelOperators =
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Quotations
 
-    /// <summary>Print to the console.</summary>
+    /// <summary>Print to <c>stdout</c>.</summary>
+    ///
+    /// <remarks><c>stdout</c> in most cases prints to the console.</remarks>
     ///
     /// <param name="text">The string to print.</param>
     ///
@@ -23,7 +25,7 @@ module ExtraTopLevelOperators =
     /// <code lang="fsharp">
     /// print $"Write three = {1+2}"
     /// </code>
-    /// After evaluation the text <c>"Write three = 3"</c> is written to the console.
+    /// After evaluation the text <c>"Write three = 3"</c> is written to <c>stdout</c>.
     /// </example>
     /// <example id="print-2">Using pipeline operator:
     /// <code lang="fsharp">
@@ -31,12 +33,14 @@ module ExtraTopLevelOperators =
     /// |> String.replicate 4
     /// |> print
     /// </code>
-    /// After evaluation the text <c>"1111"</c> is written to the console.
+    /// After evaluation the text <c>"1111"</c> is written to <c>stdout</c>.
     /// </example>
     [<CompiledName("Print")>]
     val print: text: string -> unit
 
-    /// <summary>Print to the console and add a newline.</summary>
+    /// <summary>Print to <c>stdout</c> and add a newline.</summary>
+    ///
+    /// <remarks><c>stdout</c> in most cases prints to the console.</remarks>
     ///
     /// <param name="text">The string to print.</param>
     ///
@@ -45,14 +49,14 @@ module ExtraTopLevelOperators =
     /// println $"Write three = {1+2}"
     /// println $"Write four = {2+2}"
     /// </code>
-    /// After evaluation the two lines are written to the console.
+    /// After evaluation the two lines are written to <c>stdout</c>.
     /// </example>
     /// <example id="println-2">Using pipeline operator:
     /// <code lang="fsharp">
     /// "hello " + "world"
     /// |> println
     /// </code>
-    /// After evaluation the text <c>"hello world"</c> is written to the console.
+    /// After evaluation the text <c>"hello world"</c> is written to <c>stdout</c>.
     /// </example>
     [<CompiledName("PrintLine")>]
     val println: text: string -> unit
