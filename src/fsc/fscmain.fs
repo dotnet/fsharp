@@ -91,11 +91,7 @@ let main (argv) =
 
         // Get the handler for legacy resolution of references via MSBuild.
         let legacyReferenceResolver =
-#if CROSS_PLATFORM_COMPILER
-            SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
-#else
             LegacyMSBuildReferenceResolver.getResolver ()
-#endif
 
         // Perform the main compilation.
         //
