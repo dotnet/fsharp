@@ -1593,7 +1593,14 @@ let ComputeStorageForValWithValReprInfo
     else
         let valReprInfo =
             match vref.ValReprInfo with
-            | None -> error (InternalError("ComputeStorageForValWithValReprInfo: no ValReprInfo found for " + showL (valRefL vref), vref.Range))
+            | None ->
+                error (
+                    InternalError(
+                        "ComputeStorageForValWithValReprInfo: no ValReprInfo found for "
+                        + showL (valRefL vref),
+                        vref.Range
+                    )
+                )
             | Some a -> a
 
         let m = vref.Range
@@ -1682,7 +1689,11 @@ let rec AddBindingsForLocalModuleOrNamespaceType allocVal cloc eenv (mty: Module
     let eenv =
         List.fold
             (fun eenv submodul ->
-                AddBindingsForLocalModuleOrNamespaceType allocVal (CompLocForSubModuleOrNamespace cloc submodul) eenv submodul.ModuleOrNamespaceType)
+                AddBindingsForLocalModuleOrNamespaceType
+                    allocVal
+                    (CompLocForSubModuleOrNamespace cloc submodul)
+                    eenv
+                    submodul.ModuleOrNamespaceType)
             eenv
             mty.ModuleAndNamespaceDefinitions
 
@@ -1758,12 +1769,17 @@ let rec AddBindingsForModuleOrNamespaceContents allocVal cloc eenv x =
     | TMDefRec (_isRec, _opens, tycons, mbinds, _) ->
         // Virtual don't have 'let' bindings and must be added to the environment
         let eenv = List.foldBack (AddBindingsForTycon allocVal cloc) tycons eenv
-        let eenv = List.foldBack (AddBindingsForModuleOrNamespaceBinding allocVal cloc) mbinds eenv
+
+        let eenv =
+            List.foldBack (AddBindingsForModuleOrNamespaceBinding allocVal cloc) mbinds eenv
+
         eenv
     | TMDefLet (bind, _) -> allocVal cloc bind.Var eenv
     | TMDefDo _ -> eenv
     | TMDefOpens _ -> eenv
-    | TMDefs mdefs -> (eenv, mdefs) ||> List.fold (AddBindingsForModuleOrNamespaceContents allocVal cloc)
+    | TMDefs mdefs ->
+        (eenv, mdefs)
+        ||> List.fold (AddBindingsForModuleOrNamespaceContents allocVal cloc)
 
 /// Record how constructs are represented, for a module or namespace.
 and AddBindingsForModuleOrNamespaceBinding allocVal cloc x eenv =
