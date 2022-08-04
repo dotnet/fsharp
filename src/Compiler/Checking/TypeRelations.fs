@@ -270,21 +270,27 @@ let destLambdaWithValReprInfo g amap valReprInfo (lambdaExpr, ty) =
     | None -> error(Error(FSComp.SR.typrelInvalidValue(), lambdaExpr.Range))
     | Some res -> res
     
-let IteratedAdjustLambdaToValReprInfoBody g arities vsl body  =
+let IteratedAdjustArityOfLambdaBody g arities vsl body  =
       (arities, vsl, ([], body)) |||> List.foldBack2 (fun arities vs (allvs, body) -> 
           let vs, body = AdjustArityOfLambdaBody g arities vs body
           vs :: allvs, body)
 
-/// Do AdjustArityOfLambdaBody for a series of  
-/// iterated lambdas, producing one method.  
+/// Do IteratedAdjustArityOfLambdaBody for a series of iterated lambdas, producing one method.  
 /// The required iterated function arity (List.length valReprInfo) must be identical 
 /// to the iterated function arity of the input lambda (List.length vsl) 
-let IteratedAdjustLambdaToValReprInfo g amap valReprInfo e =
-    let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destLambdaWithValReprInfo g amap valReprInfo (e, tyOfExpr g e)
+let IteratedAdjustLambdaToMatchValReprInfo g amap valReprInfo lambdaExpr =
+
+    let lambdaExprTy = tyOfExpr g lambdaExpr
+
+    let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destLambdaWithValReprInfo g amap valReprInfo (lambdaExpr, lambdaExprTy)
+
     let arities = valReprInfo.AritiesOfArgs
+
     if arities.Length <> vsl.Length then 
-        errorR(InternalError(sprintf "IteratedAdjustLambdaToValReprInfo, List.length arities = %d, List.length vsl = %d" arities.Length vsl.Length, body.Range))
-    let vsl, body = IteratedAdjustLambdaToValReprInfoBody g arities vsl body
+        errorR(InternalError(sprintf "IteratedAdjustLambdaToMatchValReprInfo, #arities = %d, #vsl = %d" arities.Length vsl.Length, body.Range))
+
+    let vsl, body = IteratedAdjustArityOfLambdaBody g arities vsl body
+
     tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy
 
 /// "Single Feasible Type" inference
@@ -292,5 +298,3 @@ let IteratedAdjustLambdaToValReprInfo g amap valReprInfo e =
 let FindUniqueFeasibleSupertype g amap m ty1 ty2 =  
     let supertypes = Option.toList (GetSuperTypeOfType g amap m ty2) @ (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2)
     supertypes |> List.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce) 
-    
-
