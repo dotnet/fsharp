@@ -2202,7 +2202,7 @@
         <target state="translated">Element członkowski „{0}” jest używany w nieprawidłowy sposób. Użycie „{1}” zostało wywnioskowane przed jego definicją w „{2}” lub w pobliżu tego miejsca. Jest to nieprawidłowe odwołanie w przód.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoByrefAsValRepr">
+      <trans-unit id="chkNoByrefAsTopValue">
         <source>A byref typed value would be stored here. Top-level let-bound byref values are not permitted.</source>
         <target state="translated">Może tutaj być przechowywana wartość typu byref. Wartości typu byref najwyższego poziomu wiązane słowem kluczowym let są niedozwolone.</target>
         <note />

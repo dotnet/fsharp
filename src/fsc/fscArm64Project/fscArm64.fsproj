@@ -3,7 +3,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472</TargetFrameworks>
+    <TargetFramework>net472</TargetFramework>
     <PlatformTarget>arm64</PlatformTarget>
     <TargetExt>.exe</TargetExt>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>

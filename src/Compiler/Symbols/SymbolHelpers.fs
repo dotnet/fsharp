@@ -686,7 +686,7 @@ module internal SymbolHelpers =
         let getKeywordForMethInfo (minfo : MethInfo) =
             match minfo with 
             | FSMeth(_, _, vref, _) ->
-                match vref.DeclaringEntity with
+                match vref.TryDeclaringEntity with
                 | Parent tcref ->
                     (tcref |> ticksAndArgCountTextOfTyconRef) + "." + vref.CompiledName g.CompilerGlobalState |> Some
                 | ParentNone -> None
@@ -707,7 +707,7 @@ module internal SymbolHelpers =
         | Item.Value vref | Item.CustomBuilder (_, vref) -> 
             let v = vref.Deref
             if v.IsModuleBinding && v.HasDeclaringEntity then
-                let tyconRef = v.ValReprDeclaringEntity
+                let tyconRef = v.DeclaringEntity
                 let paramsString =
                     match v.Typars with
                     |   [] -> ""
@@ -777,7 +777,7 @@ module internal SymbolHelpers =
             | FSProp(_, _, Some vref, _) 
             | FSProp(_, _, _, Some vref) -> 
                 // per spec, extension members in F1 keywords are qualified with definition class
-                match vref.DeclaringEntity with 
+                match vref.TryDeclaringEntity with 
                 | Parent tcref ->
                     (tcref |> ticksAndArgCountTextOfTyconRef)+"."+vref.PropertyName|> Some                     
                 | ParentNone -> None
@@ -800,7 +800,7 @@ module internal SymbolHelpers =
                 match pinfo.ArbitraryValRef with 
                 | Some vref ->
                    // per spec, members in F1 keywords are qualified with definition class
-                   match vref.DeclaringEntity with 
+                   match vref.TryDeclaringEntity with 
                    | Parent tcref -> (tcref |> ticksAndArgCountTextOfTyconRef)+"."+vref.PropertyName|> Some                     
                    | ParentNone -> None
                 | None -> None
@@ -811,7 +811,7 @@ module internal SymbolHelpers =
             match minfos with 
             | [] -> None
             | FSMeth(_, _, vref, _) :: _ ->
-                   match vref.DeclaringEntity with
+                   match vref.TryDeclaringEntity with
                    | Parent tcref -> (tcref |> ticksAndArgCountTextOfTyconRef) + ".#ctor"|> Some
                    | ParentNone -> None
 #if !NO_TYPEPROVIDERS

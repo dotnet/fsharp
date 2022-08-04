@@ -1029,11 +1029,11 @@ let GetXmlDocSigOfScopedValRef g (tcref: TyconRef) (vref: ValRef) =
     let ccuFileName = libFileOfEntityRef tcref
     let v = vref.Deref
     if v.XmlDocSig = "" && v.HasDeclaringEntity then
-        let ap = buildAccessPath vref.ValReprDeclaringEntity.CompilationPathOpt
+        let ap = buildAccessPath vref.DeclaringEntity.CompilationPathOpt
         let path =
-            if vref.ValReprDeclaringEntity.IsModule then
+            if vref.DeclaringEntity.IsModule then
                 let sep = if ap.Length > 0 then "." else ""
-                ap + sep + vref.ValReprDeclaringEntity.CompiledName
+                ap + sep + vref.DeclaringEntity.CompiledName
             else
                 ap
         v.XmlDocSig <- XmlDocSigOfVal g false path v
@@ -1061,7 +1061,7 @@ let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
     | ILMeth (g, ilminfo, _) ->            
         let actualTypeName = ilminfo.DeclaringTyconRef.CompiledRepresentationForNamedType.FullName
         let fmtps = ilminfo.FormalMethodTypars            
-        let genArity = if fmtps.Length=0 then "" else sprintf "``%d" fmtps.Length
+        let genericArity = if fmtps.Length=0 then "" else sprintf "``%d" fmtps.Length
 
         match TryFindMetadataInfoOfExternalEntityRef infoReader m ilminfo.DeclaringTyconRef  with 
         | None -> None
@@ -1079,7 +1079,7 @@ let GetXmlDocSigOfMethInfo (infoReader: InfoReader)  m (minfo: MethInfo) =
             // qualified name of the String constructor would be "System.String.#ctor".
             let normalizedName = ilminfo.ILName.Replace(".", "#")
 
-            Some (ccuFileName, "M:"+actualTypeName+"."+normalizedName+genArity+XmlDocArgsEnc g (formalTypars, fmtps) args)
+            Some (ccuFileName, "M:"+actualTypeName+"."+normalizedName+genericArity+XmlDocArgsEnc g (formalTypars, fmtps) args)
 
     | DefaultStructCtor(g, ty) ->
         match tryTcrefOfAppTy g ty with
@@ -1096,7 +1096,7 @@ let GetXmlDocSigOfValRef g (vref: ValRef) =
         let ccuFileName = vref.nlr.Ccu.FileName
         let v = vref.Deref
         if v.XmlDocSig = "" && v.HasDeclaringEntity then
-            v.XmlDocSig <- XmlDocSigOfVal g false vref.ValReprDeclaringEntity.CompiledRepresentationForNamedType.Name v
+            v.XmlDocSig <- XmlDocSigOfVal g false vref.DeclaringEntity.CompiledRepresentationForNamedType.Name v
         Some (ccuFileName, v.XmlDocSig)
     else 
         match vref.ApparentEnclosingEntity with

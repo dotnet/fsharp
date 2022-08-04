@@ -182,8 +182,10 @@ module DispatchSlotChecking =
         // Dissect the type. The '0' indicates there are no enclosing generic class type parameters relevant here.
         let tps, _, argInfos, retTy, _ = GetMemberTypeInMemberForm g memberFlags arityInfo 0 ty id.idRange
         let argTys = argInfos |> List.mapSquared fst
+
         // Dissect the implementation
-        let _, ctorThisValOpt, baseValOpt, vsl, rhsExpr, _ = destTopLambda g amap arityInfo (rhsExpr, ty)
+        let _, ctorThisValOpt, baseValOpt, vsl, rhsExpr, _ = destLambdaWithValReprInfo g amap arityInfo (rhsExpr, ty)
+
         assert ctorThisValOpt.IsNone
 
         // Drop 'this'

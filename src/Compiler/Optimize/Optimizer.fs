@@ -3738,7 +3738,7 @@ and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy =
     | Expr.Lambda (lambdaId, _, _, _, _, m, _)  
     | Expr.TyLambda (lambdaId, _, _, m, _) ->
         let env = { env with methEnv = { pipelineCount = 0 }}
-        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = IteratedAdjustArityOfLambda g cenv.amap valReprInfo expr
+        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = IteratedAdjustLambdaToValReprInfo g cenv.amap valReprInfo expr
         let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v, valReprInfo)) }
         let env = Option.foldBack (BindInternalValToUnknown cenv) ctorThisValOpt env
         let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
@@ -4043,7 +4043,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         let exprOptimized, einfo = 
             let env = if vref.IsCompilerGenerated && Option.isSome env.latestBoundId then env else {env with latestBoundId=Some vref.Id} 
             let cenv = if vref.InlineInfo.MustInline then { cenv with optimizing=false} else cenv 
-            let arityInfo = InferArityOfExprBinding g AllowTypeDirectedDetupling.No vref expr
+            let arityInfo = InferValReprInfoOfBinding g AllowTypeDirectedDetupling.No vref expr
             let exprOptimized, einfo = OptimizeLambdas (Some vref) cenv env arityInfo expr vref.Type 
             let size = localVarSize 
             exprOptimized, {einfo with FunctionSize=einfo.FunctionSize+size; TotalSize = einfo.TotalSize+size} 
@@ -4083,7 +4083,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                
                (vref.InlineInfo = ValInline.Never) ||
                // MarshalByRef methods may not be inlined
-               (match vref.DeclaringEntity with 
+               (match vref.TryDeclaringEntity with 
                 | Parent tcref -> 
                     match g.system_MarshalByRefObject_tcref with
                     | None -> false

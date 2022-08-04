@@ -2202,7 +2202,7 @@
         <target state="translated">成员“{0}”的使用方式无效。在“{2}”处或其附近给出定义之前，已推理使用了“{1}”。这是无效的前向引用。</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoByrefAsValRepr">
+      <trans-unit id="chkNoByrefAsTopValue">
         <source>A byref typed value would be stored here. Top-level let-bound byref values are not permitted.</source>
         <target state="translated">将在此处存储 byref 类型化值。不允许使用顶级的 let 绑定的 byref 值。</target>
         <note />

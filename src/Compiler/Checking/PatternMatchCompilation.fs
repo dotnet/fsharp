@@ -1219,7 +1219,7 @@ let CompilePatternBasic
 
              let v, vExpr = mkCompGenLocal m "typeTestResult" tgtTy
              if origInputVal.IsMemberOrModuleBinding then
-                 AdjustValToValRepr v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                 AdjustValToHaveValReprInfo v origInputVal.TryDeclaringEntity ValReprInfo.emptyValData
              let argExpr = GetSubExprOfInput subexpr
              let appExpr = mkIsInst tgtTy argExpr mMatch
              Some vExpr, Some(mkInvisibleBind v appExpr)
@@ -1239,7 +1239,7 @@ let CompilePatternBasic
              | None -> Some addrExp, None
              | Some (v, e) ->
                  if origInputVal.IsMemberOrModuleBinding then
-                     AdjustValToValRepr v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                     AdjustValToHaveValReprInfo v origInputVal.TryDeclaringEntity ValReprInfo.emptyValData
                  Some addrExp, Some (mkInvisibleBind v e)
 
 
@@ -1255,7 +1255,7 @@ let CompilePatternBasic
              let ucaseTy = (mkProvenUnionCaseTy g.cons_ucref tinst)
              let v, vExpr = mkCompGenLocal m "unionTestResult" ucaseTy
              if origInputVal.IsMemberOrModuleBinding then
-                 AdjustValToValRepr v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                 AdjustValToHaveValReprInfo v origInputVal.DeclaringEntity ValReprInfo.emptyValData
              let argExpr = GetSubExprOfInput subexpr
              let appExpr = mkIsInst ucaseTy argExpr mMatch
              Some vExpr, Some (mkInvisibleBind v appExpr)
@@ -1276,11 +1276,11 @@ let CompilePatternBasic
              | None -> 
                 let v, vExpr = mkCompGenLocal m ("activePatternResult" + string (newUnique())) resTy
                 if origInputVal.IsMemberOrModuleBinding then
-                    AdjustValToValRepr v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                    AdjustValToHaveValReprInfo v origInputVal.TryDeclaringEntity ValReprInfo.emptyValData
                 Some vExpr, Some(mkInvisibleBind v addrExp)
              | Some (v, e) ->
                  if origInputVal.IsMemberOrModuleBinding then
-                     AdjustValToValRepr v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                     AdjustValToHaveValReprInfo v origInputVal.TryDeclaringEntity ValReprInfo.emptyValData
                  Some addrExp, Some (mkInvisibleBind v e)
 
           | _ -> None, None

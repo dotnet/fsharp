@@ -596,7 +596,7 @@ type MethInfo =
     member x.DeclaringTyconRef   =
         match x with
         | ILMeth(_, ilminfo, _) when x.IsExtensionMember  -> ilminfo.DeclaringTyconRef
-        | FSMeth(_, _, vref, _) when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.ValReprDeclaringEntity
+        | FSMeth(_, _, vref, _) when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.DeclaringEntity
         | _ -> x.ApparentEnclosingTyconRef
 
     /// Get the information about provided static parameters, if any
@@ -1666,7 +1666,7 @@ type PropInfo =
     /// holding the value for the extension method.
     member x.DeclaringTyconRef   =
         match x.ArbitraryValRef with
-        | Some vref when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.ValReprDeclaringEntity
+        | Some vref when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.DeclaringEntity
         | _ -> x.ApparentEnclosingTyconRef
 
     /// Try to get an arbitrary F# ValRef associated with the member. This is to determine if the member is virtual, amongst other things.
@@ -2114,7 +2114,7 @@ type EventInfo =
     /// holding the value for the extension method.
     member x.DeclaringTyconRef =
         match x.ArbitraryValRef with
-        | Some vref when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.ValReprDeclaringEntity
+        | Some vref when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.DeclaringEntity
         | _ -> x.ApparentEnclosingTyconRef
 
     /// Indicates if this event has an associated XML comment authored in this assembly.

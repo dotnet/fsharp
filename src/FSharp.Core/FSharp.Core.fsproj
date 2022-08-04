@@ -36,7 +36,6 @@
     <IsPackable>true</IsPackable>
     <PackageDescription>FSharp.Core redistributables from F# Tools version $(FSProductVersionPrefix) For F# $(FSLanguageVersion).  Contains code from the F# Software Foundation.</PackageDescription>
     <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Core-$(FSCoreReleaseNotesVersion)</PackageReleaseNotes>
-    <Configurations>Debug;Release;Proto</Configurations>
   </PropertyGroup>
 
   <ItemGroup>

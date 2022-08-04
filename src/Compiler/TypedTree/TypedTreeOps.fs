@@ -5318,7 +5318,7 @@ type AllowTypeDirectedDetupling = Yes | No
 
 // This is used to infer arities of expressions 
 // i.e. base the chosen arity on the syntactic expression shape and type of arguments 
-let InferArityOfExpr g allowTypeDirectedDetupling ty partialArgAttribsL retAttribs expr = 
+let InferValReprInfoOfExpr g allowTypeDirectedDetupling ty partialArgAttribsL retAttribs expr = 
     let rec stripLambda_notypes e = 
         match stripDebugPoints e with 
         | Expr.Lambda (_, _, _, vs, b, _, _) -> 
@@ -5363,10 +5363,10 @@ let InferArityOfExpr g allowTypeDirectedDetupling ty partialArgAttribsL retAttri
     let info = ValReprInfo (ValReprInfo.InferTyparInfo tps, curriedArgInfos, retInfo)
     if ValReprInfo.IsEmpty info then ValReprInfo.emptyValData else info
 
-let InferArityOfExprBinding g allowTypeDirectedDetupling (v: Val) expr = 
+let InferValReprInfoOfBinding g allowTypeDirectedDetupling (v: Val) expr = 
     match v.ValReprInfo with
     | Some info -> info
-    | None -> InferArityOfExpr g allowTypeDirectedDetupling v.Type [] [] expr
+    | None -> InferValReprInfoOfExpr g allowTypeDirectedDetupling v.Type [] [] expr
 
 //-------------------------------------------------------------------------
 // Check if constraints are satisfied that allow us to use more optimized
@@ -5404,7 +5404,7 @@ let underlyingTypeOfEnumTy (g: TcGlobals) ty =
         | None -> error(InternalError("no 'value__' field found for enumeration type " + tycon.LogicalName, tycon.Range))
 
 // CLEANUP NOTE: Get rid of this mutation. 
-let setValHasNoArity (f: Val) = 
+let ClearValReprInfo (f: Val) = 
     f.SetValReprInfo None; f
 
 //--------------------------------------------------------------------------
@@ -5550,7 +5550,7 @@ and remapValData ctxt tmenv (d: ValData) =
     let ty = d.val_type
     let valReprInfo = d.ValReprInfo
     let tyR = ty |> remapPossibleForallTyImpl ctxt tmenv
-    let declaringEntityR = d.DeclaringEntity |> remapParentRef tmenv
+    let declaringEntityR = d.TryDeclaringEntity |> remapParentRef tmenv
     let reprInfoR = d.ValReprInfo |> Option.map (remapValReprInfo ctxt tmenv)
     let memberInfoR = d.MemberInfo |> Option.map (remapMemberInfo ctxt d.val_range valReprInfo ty tyR tmenv)
     let attribsR = d.Attribs |> remapAttribs ctxt tmenv
@@ -8109,7 +8109,7 @@ let MakeArgsForTopArgs _g m argTysl tpenv =
                | Some id -> id.idText
             fst (mkCompGenLocal m nm ty)))
 
-let AdjustValForExpectedArity g m (vref: ValRef) flags valReprInfo =
+let AdjustValForExpectedValReprInfo g m (vref: ValRef) flags valReprInfo =
 
     let tps, argTysl, retTy, _ = GetValReprTypeInFSharpForm g valReprInfo vref.Type m
     let tpsR = copyTypars tps
@@ -8469,7 +8469,7 @@ let NormalizeAndAdjustPossibleSubsumptionExprs g inputExpr =
 let etaExpandTypeLambda g m tps (tm, ty) = 
     if isNil tps then tm else mkTypeLambda m tps (mkApps g ((tm, ty), [(List.map mkTyparTy tps)], [], m), ty)
 
-let AdjustValToValRepr (tmp: Val) parent valData =
+let AdjustValToHaveValReprInfo (tmp: Val) parent valData =
     tmp.SetValReprInfo (Some valData)
     tmp.SetDeclaringEntity parent
     tmp.SetIsMemberOrModuleBinding()
@@ -8501,7 +8501,7 @@ let LinearizeTopMatchAux g parent (spBind, m, tree, targets, m2, ty) =
         let tmpTy = mkRefTupledVarsTy g vs
         let tmp, tmpe = mkCompGenLocal m "matchResultHolder" tmpTy
 
-        AdjustValToValRepr tmp parent ValReprInfo.emptyValData
+        AdjustValToHaveValReprInfo tmp parent ValReprInfo.emptyValData
 
         let newTg = TTarget (fvs, mkRefTupledVars g m fvs, None)
         let fixup (TTarget (tvs, tx, flags)) = 
@@ -8517,7 +8517,7 @@ let LinearizeTopMatchAux g parent (spBind, m, tree, targets, m2, ty) =
                 let ty = v.Type
                 let rhs = etaExpandTypeLambda g m v.Typars (itemsProj vtys i tmpe, ty)
                 // update the arity of the value 
-                v.SetValReprInfo (Some (InferArityOfExpr g AllowTypeDirectedDetupling.Yes ty [] [] rhs))
+                v.SetValReprInfo (Some (InferValReprInfoOfExpr g AllowTypeDirectedDetupling.Yes ty [] [] rhs))
                 // This binding is deliberately non-sticky - any sequence point for 'rhs' goes on 'rhs' _after_ the binding has been evaluated
                 mkInvisibleBind v rhs) in (* vi = proj tmp *)
         mkCompGenLet m
@@ -8648,7 +8648,7 @@ let XmlDocSigOfVal g full path (v: Val) =
                 | SynMemberKind.PropertySet
                 | SynMemberKind.PropertyGet -> "P:", v.PropertyName
 
-            let path = if v.HasDeclaringEntity then prependPath path v.ValReprDeclaringEntity.CompiledName else path
+            let path = if v.HasDeclaringEntity then prependPath path v.DeclaringEntity.CompiledName else path
 
             let parentTypars, methTypars = 
                 match PartitionValTypars g v with
@@ -8969,7 +8969,7 @@ let isComInteropTy g ty =
 let ValSpecIsCompiledAsInstance g (v: Val) =
     match v.MemberInfo with 
     | Some membInfo -> 
-        // Note it doesn't matter if we pass 'v.ValReprDeclaringEntity' or 'v.MemberApparentEntity' here. 
+        // Note it doesn't matter if we pass 'v.DeclaringEntity' or 'v.MemberApparentEntity' here. 
         // These only differ if the value is an extension member, and in that case MemberIsCompiledAsInstance always returns 
         // false anyway 
         MemberIsCompiledAsInstance g v.MemberApparentEntity v.IsExtensionMember membInfo v.Attribs  

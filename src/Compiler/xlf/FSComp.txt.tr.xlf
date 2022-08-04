@@ -2202,7 +2202,7 @@
         <target state="translated">{0}' üyesi geçersiz bir biçimde kullanılmış. '{1}' kullanımı, '{2}' konumunda veya yakınındaki tanımından önce çıkarılmış. Bu geçersiz bir ileriye doğru başvurudur.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkNoByrefAsValRepr">
+      <trans-unit id="chkNoByrefAsTopValue">
         <source>A byref typed value would be stored here. Top-level let-bound byref values are not permitted.</source>
         <target state="translated">Türü byref olarak belirtilmiş bir değer buraya depolanacaktı. Üst düzeyde let ile bağlanmış byref değerlerine izin verilmez.</target>
         <note />

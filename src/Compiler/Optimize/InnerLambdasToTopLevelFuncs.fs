@@ -219,8 +219,8 @@ module Pass1_DetermineTLRAndArities =
        let fArities = List.filter (fun (v, _) -> not (Zset.contains v rejectS)) fArities
        (*-*)
        let tlrS = Zset.ofList valOrder (List.map fst fArities)
-       let valReprS = xinfo.TopLevelBindings                     (* genuinely top level *)
-       let valReprS = Zset.filter (IsMandatoryNonTopLevel g >> not) valReprS     (* restrict *)
+       let topValS = xinfo.TopLevelBindings                     (* genuinely top level *)
+       let topValS = Zset.filter (IsMandatoryNonTopLevel g >> not) topValS     (* restrict *)
        (* REPORT MISSED CASES *)
 #if DEBUG
        if verboseTLR then
@@ -232,7 +232,7 @@ module Pass1_DetermineTLRAndArities =
 #if DEBUG
        if verboseTLR then DumpArity arityM
 #endif
-       tlrS, valReprS, arityM
+       tlrS, topValS, arityM
 
 (* NOTES:
    For constants,
@@ -692,7 +692,7 @@ exception AbortTLR of range
 ///         and TBIND(asubEnvi = aenvFor(v)) for each (asubEnvi, v) in cmap(subEnvk) ranging over required subEnvk.
 /// where
 ///   aenvFor(v) = aenvi where (v, aenvi) in cmap.
-let FlatEnvPacks g fclassM valReprS declist (reqdItemsMap: Zmap<BindingGroupSharingSameReqdItems, ReqdItemsForDefn>) =
+let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupSharingSameReqdItems, ReqdItemsForDefn>) =
    let fclassOf f = Zmap.force f fclassM ("fclassM", nameOfVal)
    let packEnv carrierMaps (fc: BindingGroupSharingSameReqdItems) =
        if verboseTLR then dprintf "\ntlr: packEnv fc=%A\n" fc
@@ -739,7 +739,7 @@ let FlatEnvPacks g fclassM valReprS declist (reqdItemsMap: Zmap<BindingGroupShar
 
        let vals = vals |> List.filter (fun v -> not (isByrefLikeTy g v.Range v.Type))
        // Remove values which have been labelled TLR, no need to close over these
-       let vals = vals |> List.filter (Zset.memberOf valReprS >> not)
+       let vals = vals |> List.filter (Zset.memberOf topValS >> not)
 
        // Carrier sets cannot include constrained polymorphic values. We can't just take such a value out, so for the moment
        // we'll just abandon TLR altogether and give a warning about this condition.
@@ -758,7 +758,7 @@ let FlatEnvPacks g fclassM valReprS declist (reqdItemsMap: Zmap<BindingGroupShar
        let aenvs = Zmap.values cmap
        let pack = cmapPairs |> List.map (fun (v, aenv) -> mkInvisibleBind aenv (exprForVal env.m v))
        let unpack =
-           let unpackCarrier (v, aenv) = mkInvisibleBind (setValHasNoArity v) (exprForVal env.m aenv)
+           let unpackCarrier (v, aenv) = mkInvisibleBind (ClearValReprInfo v) (exprForVal env.m aenv)
            let unpackSubenv f =
                let subCMap = carrierMapFor f
                let vaenvs = Zmap.toList subCMap
@@ -801,9 +801,9 @@ let FlatEnvPacks g fclassM valReprS declist (reqdItemsMap: Zmap<BindingGroupShar
 /// Scope for optimization env packing here.
 /// For now, pass all environments via arguments since aiming to eliminate allocations.
 /// Later, package as tuples if arg lists get too long.
-let ChooseReqdItemPackings g fclassM valReprS  declist reqdItemsMap =
+let ChooseReqdItemPackings g fclassM topValS  declist reqdItemsMap =
     if verboseTLR then dprintf "ChooseReqdItemPackings------\n"
-    let envPackM = FlatEnvPacks g fclassM valReprS  declist reqdItemsMap
+    let envPackM = FlatEnvPacks g fclassM topValS  declist reqdItemsMap
     envPackM
 
 //-------------------------------------------------------------------------
@@ -857,7 +857,7 @@ module Pass4_RewriteAssembly =
          g: TcGlobals
          stackGuard: StackGuard
          tlrS: Zset<Val>
-         valReprS: Zset<Val>
+         topValS: Zset<Val>
          arityM: Zmap<Val, int>
          fclassM: Zmap<Val, BindingGroupSharingSameReqdItems>
          recShortCallS: Zset<Val>
@@ -950,7 +950,7 @@ module Pass4_RewriteAssembly =
     let AdjustBindToValRepr g (TBind(v, repr, _)) =
         match v.ValReprInfo with
         | None -> 
-            v.SetValReprInfo (Some (InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v repr ))
+            v.SetValReprInfo (Some (InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes v repr ))
             // Things that don't have an arity from type inference but are top-level are compiler-generated
             v.SetIsCompilerGenerated(true)
         | Some _ -> ()
@@ -979,7 +979,7 @@ module Pass4_RewriteAssembly =
 
             // REVIEW: is this mutation really, really necessary? 
             // Why are we applying TLR if the thing already has an arity? 
-            let fOrig = setValHasNoArity fOrig
+            let fOrig = ClearValReprInfo fOrig
 
             let fBind =
                  mkMultiLambdaBind g fOrig letSeqPtOpt m tps vss
@@ -1028,7 +1028,7 @@ module Pass4_RewriteAssembly =
         | Some envp -> envp.ep_pack // environment pack bindings
 
     let forceTopBindToHaveArity penv (bind: Binding) =
-        if penv.valReprS.Contains(bind.Var) then AdjustBindToValRepr penv.g bind
+        if penv.topValS.Contains(bind.Var) then AdjustBindToValRepr penv.g bind
 
     let TransBindings xisRec penv (binds: Bindings) =
         let tlrBs, nonTlrBs = binds |> List.partition (fun b -> Zset.contains b.Var penv.tlrS)
@@ -1344,13 +1344,13 @@ let RecreateUniqueBounds g expr =
 let MakeTopLevelRepresentationDecisions ccu g expr =
    try
       // pass1: choose the f to be TLR with arity(f)
-      let tlrS, valReprS, arityM = Pass1_DetermineTLRAndArities.DetermineTLRAndArities g expr
+      let tlrS, topValS, arityM = Pass1_DetermineTLRAndArities.DetermineTLRAndArities g expr
 
       // pass2: determine the typar/freevar closures, f->fclass and fclass declist
       let reqdItemsMap, fclassM, declist, recShortCallS = Pass2_DetermineReqdItems.DetermineReqdItems (tlrS, arityM) expr
 
       // pass3
-      let envPackM = ChooseReqdItemPackings g fclassM valReprS  declist reqdItemsMap
+      let envPackM = ChooseReqdItemPackings g fclassM topValS  declist reqdItemsMap
       let fHatM = CreateNewValuesForTLR g tlrS arityM fclassM envPackM
 
       // pass4: rewrite
@@ -1360,7 +1360,7 @@ let MakeTopLevelRepresentationDecisions ccu g expr =
               { ccu = ccu
                 g = g
                 tlrS = tlrS
-                valReprS = valReprS
+                topValS = topValS
                 arityM = arityM
                 fclassM = fclassM
                 recShortCallS = recShortCallS

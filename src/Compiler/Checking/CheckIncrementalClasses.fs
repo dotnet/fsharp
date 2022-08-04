@@ -245,7 +245,7 @@ type IncrClassReprInfo =
         if isUnitTy g v.Type then 
             false
         else 
-            let arity = InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v bind.Expr 
+            let arity = InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes v bind.Expr 
             not arity.HasNoArgs && not v.IsMutable
 
 
@@ -292,7 +292,7 @@ type IncrClassReprInfo =
                 warning (Error(FSComp.SR.chkUnusedValue(v.DisplayName), v.Range))
 
         let repr = 
-            match InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v bind.Expr with 
+            match InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes v bind.Expr with 
             | arity when arity.HasNoArgs || v.IsMutable -> 
                 // all mutable variables are forced into fields, since they may escape into closures within the implicit constructor
                 // e.g. 
@@ -328,7 +328,7 @@ type IncrClassReprInfo =
 
                 let copyOfTyconTypars = ctorInfo.GetNormalizedInstanceCtorDeclaredTypars cenv env.DisplayEnv ctorInfo.TyconRef.Range
                 
-                AdjustValToValRepr v (Parent tcref) valReprInfo
+                AdjustValToHaveValReprInfo v (Parent tcref) valReprInfo
 
                 // Add the 'this' pointer on to the function
                 let memberTauTy, valReprInfo = 
@@ -403,7 +403,7 @@ type IncrClassReprInfo =
                 
         | InMethod(isStatic, methodVal, valReprInfo), _ -> 
             //dprintfn "Rewriting application of %s to be call to method %s" v.LogicalName methodVal.LogicalName
-            let expr, exprTy = AdjustValForExpectedArity g m (mkLocalValRef methodVal) NormalValUse valReprInfo 
+            let expr, exprTy = AdjustValForExpectedValReprInfo g m (mkLocalValRef methodVal) NormalValUse valReprInfo 
             // Prepend the the type arguments for the class
             let tyargs = tinst @ tyargs 
             let thisArgs =
