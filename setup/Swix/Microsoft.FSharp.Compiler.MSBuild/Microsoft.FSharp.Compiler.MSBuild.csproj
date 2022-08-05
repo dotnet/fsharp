@@ -49,7 +49,7 @@
 folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools\%(_XlfLanguages.Identity)"
   file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Build.resources.dll"
   file source="$(BinariesFolder)FSharp.Compiler.Interactive.Settings\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Compiler.Interactive.Settings.resources.dll"
-  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\$(TargetFramework)\%(_XlfLanguages.Identity)\FSharp.Compiler.Service.resources.dll"
+  file source="$(BinariesFolder)FSharp.Compiler.Service\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Compiler.Service.resources.dll"
   file source="$(BinariesFolder)FSharp.Core\$(Configuration)\netstandard2.0\%(_XlfLanguages.Identity)\FSharp.Core.resources.dll"
 ]]>
       </_Line>
