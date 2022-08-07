@@ -357,6 +357,11 @@
         <target state="translated">Palavra-chave para especificar um literal constante como um argumento de parâmetro de tipo nos Provedores de Tipo.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionTypeTest">
+        <source>Used to check if an object is of the given type in a pattern or binding.</source>
+        <target state="new">Used to check if an object is of the given type in a pattern or binding.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">uma cadeia de caracteres de byte não pode ser interpolada</target>

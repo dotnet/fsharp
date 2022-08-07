@@ -1442,6 +1442,7 @@ keywordDescriptionThen,"Used in conditional expressions. Also used to perform si
 keywordDescriptionTo,"Used in for loops to indicate a range."
 keywordDescriptionTry,"Used to introduce a block of code that might generate an exception. Used together with with or finally."
 keywordDescriptionType,"Used to declare a class, record, structure, discriminated union, enumeration type, unit of measure, or type abbreviation."
+keywordDescriptionTypeTest,"Used to check if an object is of the given type in a pattern or binding."
 keywordDescriptionUpcast,"Used to convert to a type that is higher in the inheritance chain."
 keywordDescriptionUse,"Used instead of let for values that implement IDisposable"
 keywordDescriptionUseBang,"Used instead of let! in computation expressions for computation expression results that implement IDisposable."

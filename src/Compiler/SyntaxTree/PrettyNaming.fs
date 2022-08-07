@@ -244,6 +244,7 @@ let keywordsWithDescription: (string * string) list =
         "->", FSComp.SR.keywordDescriptionRightArrow ()
         "<-", FSComp.SR.keywordDescriptionLeftArrow ()
         ":>", FSComp.SR.keywordDescriptionCast ()
+        ":?", FSComp.SR.keywordDescriptionTypeTest ()
         ":?>", FSComp.SR.keywordDescriptionDynamicCast ()
         "<@", FSComp.SR.keywordDescriptionTypedQuotation ()
         "@>", FSComp.SR.keywordDescriptionTypedQuotation ()

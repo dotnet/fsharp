@@ -357,6 +357,11 @@
         <target state="translated">상수 리터럴을 형식 공급자의 형식 매개 변수 인수로 지정하는 키워드입니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionTypeTest">
+        <source>Used to check if an object is of the given type in a pattern or binding.</source>
+        <target state="new">Used to check if an object is of the given type in a pattern or binding.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">바이트 문자열을 보간하지 못할 수 있습니다.</target>
