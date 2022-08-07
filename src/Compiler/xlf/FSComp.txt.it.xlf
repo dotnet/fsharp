@@ -7442,7 +7442,7 @@
         <target state="translated">Indica un metodo per il quale non esiste alcuna implementazione nel tipo in cui viene dichiarato oppure che è virtuale e per il quale esiste un'implementazione predefinita.</target>
         <note />
       </trans-unit>
-      <trans-unit id="keyworkDescriptionAnd">
+      <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
         <target state="translated">Usata in binding ricorsivi reciproci, dichiarazioni di proprietà e con più vincoli su parametri generici.</target>
         <note />

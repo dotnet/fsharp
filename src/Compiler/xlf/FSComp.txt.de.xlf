@@ -7442,7 +7442,7 @@
         <target state="translated">Gibt eine Methode an, die entweder im Typ, in dem sie deklariert wird, über keine Implementierung verfügt oder die virtuell ist und über eine Standardimplementierung verfügt.</target>
         <note />
       </trans-unit>
-      <trans-unit id="keyworkDescriptionAnd">
+      <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
         <target state="translated">Wird in gegenseitig rekursiven Bindungen, in Eigenschaftendeklarationen und bei mehreren Beschränkungen in Bezug auf generische Parameter verwendet.</target>
         <note />

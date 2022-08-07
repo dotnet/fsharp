@@ -7442,7 +7442,7 @@
         <target state="translated">Обозначает метод, который не имеет реализации в типе, в котором он объявлен, или является виртуальным и имеет реализацию по умолчанию.</target>
         <note />
       </trans-unit>
-      <trans-unit id="keyworkDescriptionAnd">
+      <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
         <target state="translated">Используется во взаимно рекурсивных привязках, объявлениях свойств и с несколькими ограничениями для универсальных параметров.</target>
         <note />
