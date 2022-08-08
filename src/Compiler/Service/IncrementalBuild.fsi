@@ -48,7 +48,7 @@ module internal IncrementalBuilderEventTesting =
 type internal TcInfo =
     {
         tcState: TcState
-        tcEnvAtEndOfFile: CheckExpressions.TcEnv
+        tcEnvAtEndOfFile: CheckTypes.TcEnv
 
         /// Disambiguation table for module names
         moduleNamesDict: ModuleNamesDict

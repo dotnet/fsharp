@@ -2,6 +2,7 @@
 
 open Internal.Utilities.Collections
 open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckTypes
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
