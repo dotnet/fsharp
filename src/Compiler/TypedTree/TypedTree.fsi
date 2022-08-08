@@ -771,7 +771,7 @@ type Entity =
 
 type EntityData = Entity
 
-/// Represents the parent entity of a type definition, if any
+/// Represents the declaring entity of a type definition, if any
 type ParentRef =
     | Parent of parent: EntityRef
     | ParentNone
@@ -1939,7 +1939,7 @@ type Val =
     member DebugText: string
 
     /// The parent type or module, if any (None for expression bindings type parameters)
-    member DeclaringEntity: ParentRef
+    member TryDeclaringEntity: ParentRef
 
     /// Range of the definition (implementation) of the value, used by Visual Studio
     member DefinitionRange: range
@@ -2144,7 +2144,7 @@ type Val =
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member TopValDeclaringEntity: EntityRef
+    member DeclaringEntity: EntityRef
 
     /// Get the generic type parameters for the value
     member Typars: Typars
@@ -2672,8 +2672,8 @@ type ValRef =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
 
-    /// The parent type or module, if any (None for expression bindings type parameters)
-    member DeclaringEntity: ParentRef
+    /// The parent type or module, if any (ParentNone for expression bindings type parameters)
+    member TryDeclaringEntity: ParentRef
 
     member DefinitionRange: range
 
@@ -2852,7 +2852,9 @@ type ValRef =
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member TopValDeclaringEntity: EntityRef
+    ///
+    /// This may fail for expression-bound values and parameters.
+    member DeclaringEntity: EntityRef
 
     /// Dereference the ValRef to a Val option.
     member TryDeref: Val voption

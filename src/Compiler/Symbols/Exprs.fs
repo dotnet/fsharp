@@ -449,7 +449,7 @@ module FSharpExprConvert =
             | _ -> 
                 // This is an application of a module value or extension member
                 let arities = arityOfVal vref.Deref 
-                let tps, curriedArgInfos, _, _ = GetTopValTypeInFSharpForm g arities vref.Type m
+                let tps, curriedArgInfos, _, _ = GetValReprTypeInFSharpForm g arities vref.Type m
                 false, tps, curriedArgInfos
 
         // Compute the object arguments as they appear in a compiled call
@@ -472,7 +472,7 @@ module FSharpExprConvert =
                 | None -> failwith ("no arity information found for F# value "+vref.LogicalName)
                 | Some a -> a 
 
-            let expr, exprTy = AdjustValForExpectedArity g m vref vFlags valReprInfo 
+            let expr, exprTy = AdjustValForExpectedValReprInfo g m vref vFlags valReprInfo 
             let splitCallExpr = MakeApplicationAndBetaReduce g (expr, exprTy, [tyargs], curriedArgs, m)
             // tailcall
             ConvExprPrimLinear cenv env splitCallExpr contF
@@ -1024,7 +1024,7 @@ module FSharpExprConvert =
                         enclosingEntity.ModuleOrNamespaceType.AllValsAndMembers 
                         |> Seq.filter (fun v -> 
                             (v.CompiledName g.CompilerGlobalState) = vName &&
-                                match v.DeclaringEntity with
+                                match v.TryDeclaringEntity with
                                 | Parent p -> p.PublicPath = enclosingEntity.PublicPath
                                 | _ -> false 
                         ) |> List.ofSeq
@@ -1352,8 +1352,8 @@ and FSharpImplementationFileContents(cenv, mimpl) =
     let rec getBind (bind: Binding) = 
         let v = bind.Var
         assert v.IsCompiledAsTopLevel
-        let valReprInfo = InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v bind.Expr
-        let tps, _ctorThisValOpt, _baseValOpt, vsl, body, _bodyty = IteratedAdjustArityOfLambda g cenv.amap valReprInfo bind.Expr
+        let valReprInfo = InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes v bind.Expr
+        let tps, _ctorThisValOpt, _baseValOpt, vsl, body, _bodyty = IteratedAdjustLambdaToMatchValReprInfo g cenv.amap valReprInfo bind.Expr
         let v = FSharpMemberOrFunctionOrValue(cenv, mkLocalValRef v)
         let gps = v.GenericParameters
         let vslR = List.mapSquared (FSharpExprConvert.ConvVal cenv) vsl 

@@ -452,7 +452,7 @@ type DeclKind =
 
     | ExpressionBinding
 
-    static member IsModuleOrMemberOrExtensionBinding x =
+    member x.IsModuleOrMemberOrExtensionBinding =
         match x with
         | ModuleOrMemberBinding -> true
         | IntrinsicExtensionBinding -> true
@@ -461,7 +461,7 @@ type DeclKind =
         | ObjectExpressionOverrideBinding -> false
         | ExpressionBinding -> false
 
-    static member MustHaveArity x = DeclKind.IsModuleOrMemberOrExtensionBinding x
+    member x.MustHaveValReprInfo = x.IsModuleOrMemberOrExtensionBinding
 
     member x.CanBeDllImport =
         match x with
@@ -472,11 +472,9 @@ type DeclKind =
         | ObjectExpressionOverrideBinding -> false
         | ExpressionBinding -> false
 
-    static member IsAccessModifierPermitted x = DeclKind.IsModuleOrMemberOrExtensionBinding x
+    member x.IsAccessModifierPermitted = x.IsModuleOrMemberOrExtensionBinding
 
-    static member ImplicitlyStatic x = DeclKind.IsModuleOrMemberOrExtensionBinding x
-
-    static member AllowedAttribTargets (memberFlagsOpt: SynMemberFlags option) x =
+    member x.AllowedAttribTargets (memberFlagsOpt: SynMemberFlags option) =
         match x with
         | ModuleOrMemberBinding | ObjectExpressionOverrideBinding ->
             match memberFlagsOpt with
@@ -492,7 +490,7 @@ type DeclKind =
         | ExpressionBinding -> enum 0 // indicates attributes not allowed on expression 'let' bindings
 
     // Note: now always true
-    static member CanGeneralizeConstrainedTypars x =
+    member x.CanGeneralizeConstrainedTypars =
         match x with
         | ModuleOrMemberBinding -> true
         | IntrinsicExtensionBinding -> true
@@ -501,7 +499,7 @@ type DeclKind =
         | ObjectExpressionOverrideBinding -> true
         | ExpressionBinding -> true
 
-    static member ConvertToLinearBindings x =
+    member x.IsConvertToLinearBindings =
         match x with
         | ModuleOrMemberBinding -> true
         | IntrinsicExtensionBinding -> true
@@ -510,7 +508,7 @@ type DeclKind =
         | ObjectExpressionOverrideBinding -> true
         | ExpressionBinding -> false
 
-    static member CanOverrideOrImplement x =
+    member x.CanOverrideOrImplement =
         match x with
         | ModuleOrMemberBinding -> OverridesOK
         | IntrinsicExtensionBinding -> WarnOnOverrides
@@ -993,7 +991,7 @@ let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
                 if propRef.IsPropertyGetterMethod then
                     let propertyName = propRef.PropertyName
                     let hasCorrespondingSetter =
-                        match propRef.DeclaringEntity with
+                        match propRef.TryDeclaringEntity with
                         | Parent entityRef ->
                             entityRef.MembersOfFSharpTyconSorted
                             |> List.exists (fun vref -> vref.IsPropertySetterMethod && vref.PropertyName = propertyName)
@@ -1443,12 +1441,12 @@ let CombineVisibilityAttribs vis1 vis2 m =
         vis1
     | _ -> vis2
 
-let ComputeAccessAndCompPath env declKindOpt m vis overrideVis actualParent =
+let ComputeAccessAndCompPath env (declKindOpt: DeclKind option) m vis overrideVis actualParent =
     let accessPath = env.eAccessPath
     let accessModPermitted =
         match declKindOpt with
         | None -> true
-        | Some declKind -> DeclKind.IsAccessModifierPermitted declKind
+        | Some declKind -> declKind.IsAccessModifierPermitted
 
     if Option.isSome vis && not accessModPermitted then
         errorR(Error(FSComp.SR.tcMultipleVisibilityAttributesWithLet(), m))
@@ -1865,14 +1863,14 @@ let ComputeIsTyFunc(id: Ident, hasDeclaredTypars, arityInfo: ValReprInfo option)
      | None -> error(Error(FSComp.SR.tcExplicitTypeParameterInvalid(), id.idRange))
      | Some info -> info.NumCurriedArgs = 0)
 
-let UseSyntacticArity declKind typeScheme prelimValReprInfo =
+let UseSyntacticValReprInfo (declKind: DeclKind) typeScheme prelimValReprInfo =
     let valReprInfo = InferGenericArityFromTyScheme typeScheme prelimValReprInfo
-    if DeclKind.MustHaveArity declKind then
+    if declKind.MustHaveValReprInfo then
         Some valReprInfo, None
     else
         None, Some valReprInfo
 
-/// Combine the results of InferSynValData and InferArityOfExpr.
+/// Combine the results of InferSynValData and InferValReprInfoOfExpr.
 //
 // The F# spec says that we infer arities from declaration forms and types.
 //
@@ -1884,7 +1882,7 @@ let UseSyntacticArity declKind typeScheme prelimValReprInfo =
 //     let f = (fun (x: int*int) y -> 1)   // gets arity [2;1]
 //
 // Some of this arity inference is purely syntax directed and done in InferSynValData in ast.fs
-// Some is done by InferArityOfExpr.
+// Some is done by InferValReprInfoOfExpr.
 //
 // However, there are some corner cases in this specification. In particular, consider
 //   let f () () = 1             // [0;1] or [0;0]? Answer: [0;1]
@@ -1905,7 +1903,7 @@ let UseSyntacticArity declKind typeScheme prelimValReprInfo =
 //    { new Base<unit> with
 //        member x.M(v: unit) = () }
 //
-let CombineSyntacticAndInferredArities g rhsExpr prelimScheme =
+let CombineSyntacticAndInferredValReprInfo g rhsExpr prelimScheme =
     let (PrelimVal2(_, typeScheme, partialValReprInfoOpt, memberInfoOpt, isMutable, _, _, ArgAndRetAttribs(argAttribs, retAttribs), _, _, _)) = prelimScheme
     match partialValReprInfoOpt with
     | None -> Some(PrelimValReprInfo([], ValReprInfo.unnamedRetVal))
@@ -1923,7 +1921,7 @@ let CombineSyntacticAndInferredArities g rhsExpr prelimScheme =
             else
 
                 let (ValReprInfo (_, curriedArgInfosFromExpression, _)) =
-                    InferArityOfExpr g AllowTypeDirectedDetupling.Yes (GeneralizedTypeForTypeScheme typeScheme) argAttribs retAttribs rhsExpr
+                    InferValReprInfoOfExpr g AllowTypeDirectedDetupling.Yes (GeneralizedTypeForTypeScheme typeScheme) argAttribs retAttribs rhsExpr
 
                 // Choose between the syntactic arity and the expression-inferred arity
                 // If the syntax specifies an eliminated unit arg, then use that
@@ -1946,31 +1944,32 @@ let CombineSyntacticAndInferredArities g rhsExpr prelimScheme =
 
         Some partialArityInfo
 
-let BuildValScheme declKind partialArityInfoOpt prelimScheme =
+let BuildValScheme (declKind: DeclKind) partialValReprInfoOpt prelimScheme =
     let (PrelimVal2(id, typeScheme, _, memberInfoOpt, isMutable, inlineFlag, baseOrThis, _, vis, isCompGen, hasDeclaredTypars)) = prelimScheme
     let valReprInfoOpt =
-        partialArityInfoOpt
+        partialValReprInfoOpt
         |> Option.map (InferGenericArityFromTyScheme typeScheme)
 
     let valReprInfo, valReprInfoForDisplay =
-        if DeclKind.MustHaveArity declKind then
+        if declKind.MustHaveValReprInfo then
             valReprInfoOpt, None
         else
             None, valReprInfoOpt
+
     let isTyFunc = ComputeIsTyFunc(id, hasDeclaredTypars, valReprInfo)
     ValScheme(id, typeScheme, valReprInfo, valReprInfoForDisplay, memberInfoOpt, isMutable, inlineFlag, baseOrThis, vis, isCompGen, false, isTyFunc, hasDeclaredTypars)
 
-let UseCombinedArity g declKind rhsExpr prelimScheme =
-    let partialArityInfoOpt = CombineSyntacticAndInferredArities g rhsExpr prelimScheme
-    BuildValScheme declKind partialArityInfoOpt prelimScheme
+let UseCombinedValReprInfo g declKind rhsExpr prelimScheme =
+    let partialValReprInfoOpt = CombineSyntacticAndInferredValReprInfo g rhsExpr prelimScheme
+    BuildValScheme declKind partialValReprInfoOpt prelimScheme
 
-let UseNoArity prelimScheme =
+let UseNoValReprInfo prelimScheme =
     BuildValScheme ExpressionBinding None prelimScheme
 
 /// Make and publish the Val nodes for a collection of simple (non-generic) value specifications
 let MakeAndPublishSimpleVals cenv env names =
     let tyschemes = DontGeneralizeVals names
-    let valSchemes = NameMap.map UseNoArity tyschemes
+    let valSchemes = NameMap.map UseNoValReprInfo tyschemes
     let values = MakeAndPublishVals cenv env (ParentNone, false, ExpressionBinding, ValNotInRecScope, valSchemes, [], XmlDoc.Empty, None)
     let vspecMap = NameMap.map fst values
     values, vspecMap
@@ -2332,10 +2331,11 @@ module GeneralizationHelpers =
 
         | _ -> false
 
-    let CanGeneralizeConstrainedTyparsForDecl declKind =
-        if DeclKind.CanGeneralizeConstrainedTypars declKind
-        then CanGeneralizeConstrainedTypars
-        else DoNotGeneralizeConstrainedTypars
+    let CanGeneralizeConstrainedTyparsForDecl (declKind: DeclKind) =
+        if declKind.CanGeneralizeConstrainedTypars then
+            CanGeneralizeConstrainedTypars
+        else
+            DoNotGeneralizeConstrainedTypars
 
     /// Recursively knock out typars we can't generalize.
     /// For non-generalized type variables be careful to iteratively knock out
@@ -3658,7 +3658,7 @@ type PreInitializationGraphEliminationBinding =
 /// Check for safety and determine if we need to insert lazy thunks
 let EliminateInitializationGraphs
       g
-      mustHaveArity
+      mustHaveValReprInfo
       denv
       (bindings: 'Bindings list)
       (iterBindings: (PreInitializationGraphEliminationBinding list -> unit) -> 'Bindings list -> unit)
@@ -3836,12 +3836,16 @@ let EliminateInitializationGraphs
                 let fty = mkFunTy g g.unit_ty ty
                 let flazy, felazy = mkCompGenLocal m v.LogicalName fty 
                 let frhs = mkUnitDelayLambda g m e
-                if mustHaveArity then flazy.SetValReprInfo (Some(InferArityOfExpr g AllowTypeDirectedDetupling.Yes fty [] [] frhs))
+
+                if mustHaveValReprInfo then
+                    flazy.SetValReprInfo (Some(InferValReprInfoOfExpr g AllowTypeDirectedDetupling.Yes fty [] [] frhs))
 
                 let vlazy, velazy = mkCompGenLocal m v.LogicalName vTy
                 let vrhs = (mkLazyDelayed g m ty felazy)
 
-                if mustHaveArity then vlazy.SetValReprInfo (Some(InferArityOfExpr g AllowTypeDirectedDetupling.Yes vTy [] [] vrhs))
+                if mustHaveValReprInfo then
+                    vlazy.SetValReprInfo (Some(InferValReprInfoOfExpr g AllowTypeDirectedDetupling.Yes vTy [] [] vrhs))
+
                 for (fixupPoint, _) in fixupPoints do
                     fixupPoint.Value <- mkLazyForce g fixupPoint.Value.Range ty velazy
 
@@ -4357,7 +4361,7 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv synMemberSig m =
         | [ValSpecResult(_, _, id, _, _, memberConstraintTy, prelimValReprInfo, _)] ->
             let memberConstraintTypars, _ = tryDestForallTy g memberConstraintTy
             let valReprInfo = TranslatePartialValReprInfo memberConstraintTypars prelimValReprInfo
-            let _, _, curriedArgInfos, returnTy, _ = GetTopValTypeInCompiledForm g valReprInfo 0 memberConstraintTy m
+            let _, _, curriedArgInfos, returnTy, _ = GetValReprTypeInCompiledForm g valReprInfo 0 memberConstraintTy m
             //if curriedArgInfos.Length > 1 then  error(Error(FSComp.SR.tcInvalidConstraint(), m))
             let argTys = List.concat curriedArgInfos
             let argTys = List.map fst argTys
@@ -6911,7 +6915,7 @@ and TcRecordConstruction cenv (overallTy: TType) env tpenv withExprInfoOpt objTy
 // TcObjectExpr
 //-------------------------------------------------------------------------
 
-and GetNameAndArityOfObjExprBinding _cenv _env b =
+and GetNameAndSynValInfoOfObjExprBinding _cenv _env b =
     let (NormalizedBinding (_, _, _, _, _, _, _, valSynData, pat, rhsExpr, mBinding, _)) = b
     let (SynValData(memberFlagsOpt, valSynInfo, _)) = valSynData
     match pat, memberFlagsOpt with
@@ -6957,7 +6961,7 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implTy: TType) virtNameAndArit
             else ""
 
         // Compute the argument counts of the member arguments
-        let _, synValInfo = GetNameAndArityOfObjExprBinding cenv env bind
+        let _, synValInfo = GetNameAndSynValInfoOfObjExprBinding cenv env bind
         let arity =
             match SynInfo.AritiesOfArgs synValInfo with
             | _ :: x :: _ -> x
@@ -7086,7 +7090,7 @@ and ComputeObjectExprOverrides cenv (env: TcEnv) tpenv impls =
                [ for binding in binds do
                      let (NormalizedBinding(_, _, _, _, bindingSynAttribs, _, _, valSynData, _, _, _, _)) = binding
                      let (SynValData(memberFlagsOpt, _, _)) = valSynData
-                     let attrTgt = DeclKind.AllowedAttribTargets memberFlagsOpt ObjectExpressionOverrideBinding
+                     let attrTgt = ObjectExpressionOverrideBinding.AllowedAttribTargets memberFlagsOpt
                      let bindingAttribs = TcAttributes cenv env attrTgt bindingSynAttribs
                      yield binding, bindingAttribs
                      for extraBinding in EventDeclarationNormalization.GenerateExtraBindings cenv (bindingAttribs, binding) do
@@ -7101,7 +7105,7 @@ and ComputeObjectExprOverrides cenv (env: TcEnv) tpenv impls =
                 //dprintfn "vkey = %A" vkey
                 (vkey, virt))
 
-            let bindNameAndSynInfoPairs = binds |> List.map (GetNameAndArityOfObjExprBinding cenv env)
+            let bindNameAndSynInfoPairs = binds |> List.map (GetNameAndSynValInfoOfObjExprBinding cenv env)
             let bindNames = bindNameAndSynInfoPairs |> List.map fst
             let bindKeys =
                 bindNameAndSynInfoPairs |> List.map (fun (name, valSynData) ->
@@ -8234,7 +8238,6 @@ and TcNameOfExpr cenv env tpenv (synArg: SynExpr) =
                 | Result (_, item, _, _, _ as res)
                     when
                          (match item with
-                          | Item.Types _
                           | Item.DelegateCtor _
                           | Item.CtorGroup _
                           | Item.FakeInterfaceCtor _ -> false
@@ -10519,7 +10522,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
         let envinner = {envinner with eCallerMemberName = callerName }
 
-        let attrTgt = DeclKind.AllowedAttribTargets memberFlagsOpt declKind
+        let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt
 
         let isFixed, rhsExpr, overallPatTy, overallExprTy =
             match rhsExpr with
@@ -10674,7 +10677,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         // Don't do this for lambdas, because we always check for suppression for all lambda bodies in TcIteratedLambdas
         let rhsExprChecked, tpenv =
             let atTopNonLambdaDefn =
-                DeclKind.IsModuleOrMemberOrExtensionBinding declKind &&
+                declKind.IsModuleOrMemberOrExtensionBinding &&
                 (match rhsExpr with SynExpr.Lambda _ -> false | _ -> true) &&
                 synExprContainsError rhsExpr
 
@@ -11059,7 +11062,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
         // REVIEW: this scopes generalized type variables. Ensure this is handled properly
         // on all other paths.
         let tpenv = HideUnscopedTypars generalizedTypars tpenv
-        let valSchemes = NameMap.map (UseCombinedArity g declKind rhsExpr) prelimValSchemes2
+        let valSchemes = NameMap.map (UseCombinedValReprInfo g declKind rhsExpr) prelimValSchemes2
         let values = MakeAndPublishVals cenv env (altActualParent, false, declKind, ValNotInRecScope, valSchemes, attrs, xmlDoc, literalValue)
         let checkedPat = tcPatPhase2 (TcPatPhase2Input (values, true))
         let prelimRecValues = NameMap.map fst values
@@ -11107,8 +11110,8 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
 
                 // If the overall declaration is declaring statics or a module value, then force the patternInputTmp to also
                 // have representation as module value.
-                if DeclKind.MustHaveArity declKind then
-                    AdjustValToTopVal tmp altActualParent (InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes tmp rhsExpr)
+                if declKind.MustHaveValReprInfo then
+                    AdjustValToHaveValReprInfo tmp altActualParent (InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes tmp rhsExpr)
 
                 tmp, checkedPat
 
@@ -11126,7 +11129,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
             let matchExpr = CompilePatternForMatch cenv env m m true ThrowIncompleteMatchException (patternInputTmp, generalizedTypars, Some rhsExpr) clauses tauTy bodyExprTy
 
             let matchExpr =
-                if DeclKind.ConvertToLinearBindings declKind then
+                if declKind.IsConvertToLinearBindings then
                     LinearizeTopMatch g altActualParent matchExpr
                 else
                     matchExpr
@@ -11157,10 +11160,10 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (synBinds, synBinds
 ///   So let bindings could contain a fork at a match construct, with one branch being the match failure.
 ///   If bindings are linearised, then this fork is pushed to the RHS.
 ///   In this case, the let bindings type check to a sequence of bindings.
-and TcLetBindings cenv env containerInfo declKind tpenv (binds, bindsm, scopem) =
+and TcLetBindings cenv env containerInfo (declKind: DeclKind) tpenv (binds, bindsm, scopem) =
     let g = cenv.g
 
-    assert(DeclKind.ConvertToLinearBindings declKind)
+    assert declKind.IsConvertToLinearBindings
     let mkf, env, tpenv = TcLetBinding cenv false env containerInfo declKind tpenv (binds, bindsm, scopem)
     let unite = mkUnit g bindsm
     let expr, _ = mkf (unite, g.unit_ty)
@@ -11675,7 +11678,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     let (SynValData(memberFlagsOpt, valSynInfo, thisIdOpt)) = valSynData
     let (ContainerInfo(altActualParent, tcrefContainerInfo)) = containerInfo
 
-    let attrTgt = DeclKind.AllowedAttribTargets memberFlagsOpt declKind
+    let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt
 
     // Check the attributes on the declaration
     let bindingAttribs = TcAttributes cenv env attrTgt bindingSynAttribs
@@ -11712,7 +11715,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     // NOTE: top arity, type and typars get fixed-up after inference
     let prelimTyscheme = GeneralizedType(enclosingDeclaredTypars@declaredTypars, ty)
     let prelimValReprInfo = TranslateSynValInfo mBinding (TcAttributes cenv envinner) valSynInfo
-    let valReprInfo, valReprInfoForDisplay = UseSyntacticArity declKind prelimTyscheme prelimValReprInfo
+    let valReprInfo, valReprInfoForDisplay = UseSyntacticValReprInfo declKind prelimTyscheme prelimValReprInfo
     let hasDeclaredTypars = not (List.isEmpty declaredTypars)
     let prelimValScheme = ValScheme(bindingId, prelimTyscheme, valReprInfo, valReprInfoForDisplay, memberInfoOpt, false, inlineFlag, NormalVal, vis, false, false, false, hasDeclaredTypars)
 
@@ -12091,7 +12094,7 @@ and TcLetrecGeneralizeBinding cenv denv generalizedTypars (pgrbind: PreGeneraliz
     let prelimVal1 = PrelimVal1(vspec.Id, explicitTyparInfo, tau, Some prelimValReprInfo, memberInfoOpt, false, inlineFlag, NormalVal, argAttribs, vis, isCompGen)
     let prelimVal2 = GeneralizeVal cenv denv enclosingDeclaredTypars generalizedTypars prelimVal1
 
-    let valscheme = UseCombinedArity g declKind expr prelimVal2
+    let valscheme = UseCombinedValReprInfo g declKind expr prelimVal2
     AdjustRecType vspec valscheme
 
     { ValScheme = valscheme
@@ -12258,14 +12261,16 @@ and TcLetrecBindings overridesOK cenv env tpenv (binds, bindsm, scopem) =
     // Now eliminate any initialization graphs
     let binds =
         let bindsWithoutLaziness = vxbinds
-        let mustHaveArity =
+        let mustHaveValReprInfo =
             match uncheckedRecBinds with
             | [] -> false
-            | rbind :: _ -> DeclKind.MustHaveArity rbind.RecBindingInfo.DeclKind
+            | rbind :: _ -> rbind.RecBindingInfo.DeclKind.MustHaveValReprInfo
 
         let results =
            EliminateInitializationGraphs
-             g mustHaveArity env.DisplayEnv
+             g
+             mustHaveValReprInfo
+             env.DisplayEnv
              bindsWithoutLaziness
              //(fun
              (fun doBindings bindings -> doBindings bindings)
@@ -12282,7 +12287,7 @@ and TcLetrecBindings overridesOK cenv env tpenv (binds, bindsm, scopem) =
 // Bind specifications of values
 //-------------------------------------------------------------------------
 
-let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memFlagsOpt, tpenv, synValSig) =
+let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind : DeclKind, memFlagsOpt, tpenv, synValSig) =
 
     let g = cenv.g
 
@@ -12293,7 +12298,7 @@ let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memF
 
     let canInferTypars = GeneralizationHelpers.ComputeCanInferExtraGeneralizableTypars (containerInfo.ParentRef, synCanInferTypars, memFlagsOpt)
 
-    let attrTgt = DeclKind.AllowedAttribTargets memFlagsOpt declKind
+    let attrTgt = declKind.AllowedAttribTargets memFlagsOpt
 
     let attrs = TcAttributes cenv env attrTgt synAttrs
     let newOk = if canInferTypars then NewTyparsOK else NoNewTypars

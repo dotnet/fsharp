@@ -480,24 +480,7 @@ type DeclKind =
     /// A binding in an expression
     | ExpressionBinding
 
-    static member IsModuleOrMemberOrExtensionBinding: DeclKind -> bool
-
-    static member MustHaveArity: DeclKind -> bool
-
-    member CanBeDllImport: bool
-
-    static member IsAccessModifierPermitted: DeclKind -> bool
-
-    static member ImplicitlyStatic: DeclKind -> bool
-
-    static member AllowedAttribTargets: SynMemberFlags option -> DeclKind -> AttributeTargets
-
-    // Note: now always true
-    static member CanGeneralizeConstrainedTypars: DeclKind -> bool
-
-    static member ConvertToLinearBindings: DeclKind -> bool
-
-    static member CanOverrideOrImplement: DeclKind -> OverridesOK
+    member CanOverrideOrImplement: OverridesOK
 
 /// Indicates whether a syntactic type is allowed to include new type variables
 /// not declared anywhere, e.g. `let f (x: 'T option) = x.Value`
@@ -752,7 +735,7 @@ val CompilePatternForMatchClauses:
 /// The functions must iterate the actual bindings and process them to the overall result.
 val EliminateInitializationGraphs:
     g: TcGlobals ->
-    mustHaveArity: bool ->
+    mustHaveValReprInfo: bool ->
     denv: DisplayEnv ->
     bindings: 'Binding list ->
     iterBindings: ((PreInitializationGraphEliminationBinding list -> unit) -> 'Binding list -> unit) ->
@@ -996,7 +979,7 @@ val TcMatchPattern:
 
 val (|BinOpExpr|_|): SynExpr -> (Ident * SynExpr * SynExpr) option
 
-/// Check a set of let bindings
+/// Check a set of let bindings in a class or module
 val TcLetBindings:
     cenv: TcFileState ->
     env: TcEnv ->

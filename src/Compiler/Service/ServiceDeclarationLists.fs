@@ -699,7 +699,7 @@ module internal DescriptionListsImpl =
             | Some valReprInfo ->
                 // ValReprInfo will exist for top-level syntactic functions
                 // per spec: binding is considered to define a syntactic function if it is either a function or its immediate right-hand-side is a anonymous function
-                let _, argInfos,  lastRetTy, _ = GetTopValTypeInFSharpForm  g valReprInfo vref.Type m
+                let _, argInfos,  lastRetTy, _ = GetValReprTypeInFSharpForm  g valReprInfo vref.Type m
                 match argInfos with
                 | [] -> 
                     // handles cases like 'let foo = List.map'
