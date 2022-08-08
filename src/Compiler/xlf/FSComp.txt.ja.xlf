@@ -357,6 +357,11 @@
         <target state="translated">定数リテラルを型プロバイダーの型パラメーター引数として指定するキーワード。</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionTypeTest">
+        <source>Used to check if an object is of the given type in a pattern or binding.</source>
+        <target state="new">Used to check if an object is of the given type in a pattern or binding.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">バイト文字列は補間されていない可能性があります</target>
@@ -7442,7 +7447,7 @@
         <target state="translated">宣言された型に実装がないメソッド、または既定の実装がある仮想のメソッドを示します。</target>
         <note />
       </trans-unit>
-      <trans-unit id="keyworkDescriptionAnd">
+      <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
         <target state="translated">相互に再帰的なバインディング、プロパティの宣言、およびジェネリック パラメーターの複数の制約に使用します。</target>
         <note />

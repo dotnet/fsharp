@@ -357,6 +357,11 @@
         <target state="translated">Tür Sağlayıcılarında tür parametresi bağımsız değişkeni olarak sabit değişmez değeri belirtmek için anahtar sözcük.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionTypeTest">
+        <source>Used to check if an object is of the given type in a pattern or binding.</source>
+        <target state="new">Used to check if an object is of the given type in a pattern or binding.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">bir bayt dizesi, düz metin arasına kod eklenerek kullanılamaz</target>
@@ -7442,7 +7447,7 @@
         <target state="translated">İçinde bildirildiği türde hiç uygulaması olmayan veya sanal olup varsayılan uygulaması olan bir metodu belirtir.</target>
         <note />
       </trans-unit>
-      <trans-unit id="keyworkDescriptionAnd">
+      <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
         <target state="translated">Karşılıklı yinelemeli bağlamalarda, özellik bildirimlerinde ve genel parametreler üzerinde birden çok kısıtlamayla kullanılır.</target>
         <note />

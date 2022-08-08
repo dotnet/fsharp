@@ -357,6 +357,11 @@
         <target state="translated">Mot clé permettant de spécifier une constante littérale en tant qu'argument de paramètre de type dans les fournisseurs de types.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionTypeTest">
+        <source>Used to check if an object is of the given type in a pattern or binding.</source>
+        <target state="new">Used to check if an object is of the given type in a pattern or binding.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
         <source>a byte string may not be interpolated</source>
         <target state="translated">une chaîne d'octets ne peut pas être interpolée</target>
@@ -7442,7 +7447,7 @@
         <target state="translated">Indique une méthode qui n'a aucune implémentation dans le type dans lequel elle est déclarée, ou qui est virtuelle avec une implémentation par défaut.</target>
         <note />
       </trans-unit>
-      <trans-unit id="keyworkDescriptionAnd">
+      <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
         <target state="translated">Utilisé dans les liaisons mutuellement récursives, dans les déclarations de propriété et avec plusieurs contraintes sur des paramètres génériques.</target>
         <note />
