@@ -63,7 +63,6 @@
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)' != 'Proto'">
   <ItemGroup Condition="'$(Configuration)' != 'Proto' or '$(DotNetBuildFromSource)' == 'true'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>

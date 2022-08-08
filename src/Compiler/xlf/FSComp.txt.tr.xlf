@@ -317,6 +317,11 @@
         <target state="translated">IFormattable veya FormattableString türü olarak kullanılan düz metin arasına kod eklenmiş dizeler '%' belirticilerini kullanamaz. Yalnızca '{{expr}}', '{{expr,3}}' veya '{{expr:N5}}' gibi .NET stili düz metin arasına kod ekleme işlemleri kullanılabilir.</target>
         <note />
       </trans-unit>
+      <trans-unit id="forPercentAInReflectionFreeCode">
+        <source>The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</source>
+        <target state="new">The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
         <target state="translated"> - {0}</target>
@@ -480,6 +485,11 @@
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
         <target state="new">Produce a reference assembly with the specified file path.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsReflectionFree">
+        <source>Disable implicit generation of constructs using reflection</source>
+        <target state="new">Disable implicit generation of constructs using reflection</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">

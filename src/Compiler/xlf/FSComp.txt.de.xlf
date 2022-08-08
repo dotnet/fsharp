@@ -317,6 +317,11 @@
         <target state="translated">Interpolierte Zeichenfolgen, die als Typ "IFormattable" oder "FormattableString" verwendet werden, dürfen keine Spezifizierer vom Typ "%" verwenden. Es dürfen nur Interpolanten im .NET-Format wie "{{expr}}", "{{expr,3}}" oder "{{expr:N5}}" verwendet werden.</target>
         <note />
       </trans-unit>
+      <trans-unit id="forPercentAInReflectionFreeCode">
+        <source>The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</source>
+        <target state="new">The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
         <target state="translated"> - {0}</target>
@@ -480,6 +485,11 @@
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
         <target state="new">Produce a reference assembly with the specified file path.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsReflectionFree">
+        <source>Disable implicit generation of constructs using reflection</source>
+        <target state="new">Disable implicit generation of constructs using reflection</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">

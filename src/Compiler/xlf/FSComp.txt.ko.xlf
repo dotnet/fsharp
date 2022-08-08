@@ -317,6 +317,11 @@
         <target state="translated">형식 IFormattable 또는 형식 FormattableString으로 사용된 보간 문자열은 '%' 지정자를 사용할 수 없으며 '{{expr}}', '{{expr,3}}' 또는 '{{expr:N5}}' 등의 .NET 스타일 인터폴란드를 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="forPercentAInReflectionFreeCode">
+        <source>The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</source>
+        <target state="new">The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
         <target state="translated"> - {0}</target>
@@ -480,6 +485,11 @@
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
         <target state="new">Produce a reference assembly with the specified file path.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsReflectionFree">
+        <source>Disable implicit generation of constructs using reflection</source>
+        <target state="new">Disable implicit generation of constructs using reflection</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
