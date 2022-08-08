@@ -468,7 +468,6 @@ type TcConfigBuilder =
         mutable embedSourceList: string list
         mutable sourceLink: string
 
-        mutable ignoreSymbolStoreSequencePoints: bool
         mutable internConstantStrings: bool
         mutable extraOptimizationIterations: int
 
@@ -568,6 +567,8 @@ type TcConfigBuilder =
 
         mutable noConditionalErasure: bool
 
+        mutable applyLineDirectives: bool
+
         mutable pathMap: PathMap
 
         mutable langVersion: LanguageVersion
@@ -645,7 +646,7 @@ type TcConfigBuilder =
             outputFile = None
             platform = None
             prefer32Bit = false
-            useSimpleResolution = runningOnMono
+            useSimpleResolution = false
             target = CompilerTarget.ConsoleExe
             debuginfo = false
             testFlagEmitFeeFeeAs100001 = false
@@ -690,7 +691,6 @@ type TcConfigBuilder =
             embedAllSource = false
             embedSourceList = []
             sourceLink = ""
-            ignoreSymbolStoreSequencePoints = false
             internConstantStrings = true
             extraOptimizationIterations = 0
 
@@ -743,6 +743,7 @@ type TcConfigBuilder =
             internalTestSpanStackReferring = false
             noConditionalErasure = false
             pathMap = PathMap.empty
+            applyLineDirectives = true
             langVersion = LanguageVersion.Default
             implicitIncludeDir = implicitIncludeDir
             defaultFSharpBinariesDir = defaultFSharpBinariesDir
@@ -839,13 +840,7 @@ type TcConfigBuilder =
             if tcConfigB.debuginfo then
                 Some(
                     match tcConfigB.debugSymbolFile with
-                    | None -> getDebugFileName outfile tcConfigB.portablePDB
-#if ENABLE_MONO_SUPPORT
-                    | Some _ when runningOnMono ->
-                        // On Mono, the name of the debug file has to be "<assemblyname>.mdb" so specifying it explicitly is an error
-                        warning (Error(FSComp.SR.ilwriteMDBFileNameCannotBeChangedWarning (), rangeCmdArgs))
-                        getDebugFileName outfile tcConfigB.portablePDB
-#endif
+                    | None -> getDebugFileName outfile
                     | Some f -> f
                 )
             elif (tcConfigB.debugSymbolFile <> None) && (not tcConfigB.debuginfo) then
@@ -1097,14 +1092,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             with e ->
                 // We no longer expect the above to fail but leaving this just in case
                 error (Error(FSComp.SR.buildErrorOpeningBinaryFile (fileName, e.Message), rangeStartup))
-        | None ->
-#if !ENABLE_MONO_SUPPORT
-            // TODO: we have to get msbuild out of this
-            if data.useSimpleResolution then
-                None, ""
-            else
-#endif
-            None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
+        | None -> None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
 
     let makePathAbsolute path =
         ComputeMakePathAbsolute data.implicitIncludeDir path
@@ -1152,30 +1140,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         | _ -> ()
 
                     | LegacyResolutionEnvironment.EditingOrCompilation _ ->
-#if ENABLE_MONO_SUPPORT
-                        if runningOnMono then
-                            // Default compilation-time references on Mono
-                            //
-                            // On Mono, the default references come from the implementation assemblies.
-                            // This is because we have had trouble reliably using MSBuild APIs to compute DotNetFrameworkReferenceAssembliesRootDirectory on Mono.
-                            yield runtimeRoot
-
-                            if FileSystem.DirectoryExistsShim runtimeRootFacades then
-                                yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
-
-                            if FileSystem.DirectoryExistsShim runtimeRootWPF then
-                                yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
-                            // On Mono we also add a default reference to the 4.5-api and 4.5-api/Facades directories.
-                            let runtimeRootApi = runtimeRootWithoutSlash + "-api"
-                            let runtimeRootApiFacades = Path.Combine(runtimeRootApi, "Facades")
-
-                            if FileSystem.DirectoryExistsShim runtimeRootApi then
-                                yield runtimeRootApi
-
-                            if FileSystem.DirectoryExistsShim runtimeRootApiFacades then
-                                yield runtimeRootApiFacades
-                        else
-#endif
                         // Default compilation-time references on .NET Framework
                         //
                         // This is the normal case for "fsc.exe a.fs". We refer to the reference assemblies folder.
@@ -1276,7 +1240,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.embedSourceList = data.embedSourceList
     member _.sourceLink = data.sourceLink
     member _.packageManagerLines = data.packageManagerLines
-    member _.ignoreSymbolStoreSequencePoints = data.ignoreSymbolStoreSequencePoints
     member _.internConstantStrings = data.internConstantStrings
     member _.extraOptimizationIterations = data.extraOptimizationIterations
     member _.win32icon = data.win32icon
@@ -1331,6 +1294,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
     member _.internalTestSpanStackReferring = data.internalTestSpanStackReferring
     member _.noConditionalErasure = data.noConditionalErasure
+    member _.applyLineDirectives = data.applyLineDirectives
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
 
     static member Create(builder, validate) =

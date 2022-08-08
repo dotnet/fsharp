@@ -344,3 +344,5 @@ val mkDynamicArgExpr: expr: SynExpr -> SynExpr
 val normalizeTupleExpr: exprs: SynExpr list -> commas: range list -> SynExpr list * range List
 
 val desugarGetSetMembers: memberDefns: SynMemberDefns -> SynMemberDefns
+
+val getTypeFromTuplePath: path: SynTupleTypeSegment list -> SynType list

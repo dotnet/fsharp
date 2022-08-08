@@ -291,7 +291,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString ItemKeyTags.parameters
             writeType false vref.Type
 
-            match vref.DeclaringEntity with
+            match vref.TryDeclaringEntity with
             | ParentNone -> writeChar '%'
             | Parent eref -> writeEntityRef eref
 
@@ -308,7 +308,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
                 writeString ItemKeyTags.itemProperty
                 writeString vref.PropertyName
 
-                match vref.DeclaringEntity with
+                match vref.TryDeclaringEntity with
                 | ParentRef.Parent parent -> writeEntityRef parent
                 | _ -> ()
             else

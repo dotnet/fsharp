@@ -1203,10 +1203,11 @@ type ILAttribute =
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes(array: ILAttribute[]) =
+    member _.AsArray() = array
 
-    member x.AsArray() = array
+    member _.AsList() = array |> Array.toList
 
-    member x.AsList() = array |> Array.toList
+    static member val internal Empty = ILAttributes([||])
 
 [<NoEquality; NoComparison>]
 type ILAttributesStored =
@@ -4207,7 +4208,7 @@ let mkILSimpleModule
             AssemblyLongevity = ILAssemblyLongevity.Unspecified
             DisableJitOptimizations = 0 <> (flags &&& 0x4000)
             JitTracking = (0 <> (flags &&& 0x8000)) // always turn these on
-            IgnoreSymbolStoreSequencePoints = (0 <> (flags &&& 0x2000))
+            IgnoreSymbolStoreSequencePoints = false
             Retargetable = (0 <> (flags &&& 0x100))
             ExportedTypes = exportedTypes
             EntrypointElsewhere = None

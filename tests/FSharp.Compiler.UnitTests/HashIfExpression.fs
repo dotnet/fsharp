@@ -57,11 +57,12 @@ type public HashIfExpression() =
                     member _.ErrorCount = errors.Count
             }
 
-        let lightSyntax = IndentationAwareSyntaxStatus(true, false)
+        let indentationSyntaxStatus = IndentationAwareSyntaxStatus(true, false)
         let resourceManager = LexResourceManager ()
         let defines = []
+        let applyLineDirectives = true
         let startPos = Position.Empty
-        let args = mkLexargs (defines, lightSyntax, resourceManager, [], diagnosticsLogger, PathMap.empty)
+        let args = mkLexargs (defines, indentationSyntaxStatus, resourceManager, [], diagnosticsLogger, PathMap.empty, applyLineDirectives)
 
         DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLogger
 

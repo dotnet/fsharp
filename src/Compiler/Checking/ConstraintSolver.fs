@@ -428,7 +428,7 @@ let isFpTy g ty =
 
 /// decimal or decimal<_>
 let isDecimalTy g ty = 
-    typeEquivAux EraseMeasures g g.decimal_ty ty 
+    typeEquivAux EraseMeasures g g.decimal_ty ty
 
 let IsNonDecimalNumericOrIntegralEnumType g ty = IsIntegerOrIntegerEnumTy g ty || isFpTy g ty
 
@@ -443,7 +443,7 @@ let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g 
 let IsCharOrStringType g ty = isCharTy g ty || isStringTy g ty
 
 /// Checks the argument type for a built-in solution to an op_Addition, op_Subtraction or op_Modulus constraint.
-let IsAddSubModType nm g ty = IsNumericOrIntegralEnumType g ty || (nm = "op_Addition" && IsCharOrStringType g ty)
+let IsAddSubModType nm g ty = IsNumericOrIntegralEnumType g ty || (nm = "op_Addition" && IsCharOrStringType g ty) || (nm = "op_Subtraction" && isCharTy g ty)
 
 /// Checks the argument type for a built-in solution to a bitwise operator constraint
 let IsBitwiseOpType g ty = IsIntegerOrIntegerEnumTy g ty || (isEnumTy g ty)
@@ -1601,25 +1601,30 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           do! SolveTypeEqualsTypeKeepAbbrevs csenv ndeep m2 trace retTy argTy
           return TTraitBuiltIn
 
-      | _, _, false, "op_Explicit", [argTy] 
-          when (// The input type. 
+      // Conversions from non-decimal numbers / strings / chars to non-decimal numbers / chars are built-in
+      | _, _, false, "op_Explicit", [argTy]
+          when (// The input type.
                 (IsNonDecimalNumericOrIntegralEnumType g argTy || isStringTy g argTy || isCharTy g argTy) &&
                 // The output type
-                (IsNonDecimalNumericOrIntegralEnumType g retTy || isCharTy g retTy) && 
-                // Exclusion: IntPtr and UIntPtr do not support .Parse() from string 
-                not (isStringTy g argTy && isNativeIntegerTy g retTy) &&
-                // Exclusion: No conversion from char to decimal
-                not (isCharTy g argTy && isDecimalTy g retTy)) -> 
+                (IsNonDecimalNumericOrIntegralEnumType g retTy || isCharTy g retTy)) ->
 
           return TTraitBuiltIn
 
-
-      | _, _, false, "op_Explicit", [argTy] 
-          when (// The input type. 
-                (IsNumericOrIntegralEnumType g argTy || isStringTy g argTy) &&
+      // Conversions from (including decimal) numbers / strings / chars to decimals are built-in
+      | _, _, false, "op_Explicit", [argTy]
+          when (// The input type.
+                (IsNumericOrIntegralEnumType g argTy || isStringTy g argTy || isCharTy g argTy) &&
                 // The output type
-                (isDecimalTy g retTy)) -> 
+                (isDecimalTy g retTy)) ->
+          return TTraitBuiltIn
 
+      // Conversions from decimal numbers to native integers are built-in
+      // The rest of decimal conversions are handled via op_Explicit lookup on System.Decimal (which also looks for op_Implicit)
+      | _, _, false, "op_Explicit", [argTy]
+          when (// The input type.
+                (isDecimalTy g argTy) &&
+                // The output type
+                (isNativeIntegerTy g retTy)) ->
           return TTraitBuiltIn
 
       | [], _, false, "Pow", [argTy1; argTy2] 
@@ -1684,9 +1689,9 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
           match minfos, recdPropSearch, anonRecdPropSearch with 
           | [], None, None when MemberConstraintIsReadyForStrongResolution csenv traitInfo ->
               if tys |> List.exists (isFunTy g) then 
-                  return! ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenFunction(DecompileOpName nm), m, m2)) 
+                  return! ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenFunction(ConvertValLogicalNameToDisplayNameCore nm), m, m2)) 
               elif tys |> List.exists (isAnyTupleTy g) then 
-                  return! ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenTuple(DecompileOpName nm), m, m2)) 
+                  return! ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenTuple(ConvertValLogicalNameToDisplayNameCore nm), m, m2)) 
               else
                   match nm, argTys with 
                   | "op_Explicit", [argTy] ->
@@ -1698,7 +1703,7 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                          match tys with 
                          | [ty] -> NicePrint.minimalStringOfType denv ty
                          | _ -> tys |> List.map (NicePrint.minimalStringOfType denv) |> String.concat ", "
-                      let opName = DecompileOpName nm
+                      let opName = ConvertValLogicalNameToDisplayNameCore nm
                       let err = 
                           match opName with 
                           | "?>="  | "?>"  | "?<="  | "?<"  | "?="  | "?<>" 
@@ -1752,9 +1757,9 @@ and SolveMemberConstraint (csenv: ConstraintSolverEnv) ignoreUnresolvedOverload 
                   if isInstance <> memFlags.IsInstance then 
                       return!
                           if isInstance then
-                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsNotStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (DecompileOpName nm), nm), m, m2 ))
+                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsNotStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (ConvertValLogicalNameToDisplayNameCore nm), nm), m, m2 ))
                           else
-                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (DecompileOpName nm), nm), m, m2 ))
+                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsStatic((NicePrint.minimalStringOfType denv minfo.ApparentEnclosingType), (ConvertValLogicalNameToDisplayNameCore nm), nm), m, m2 ))
                   else 
                       do! CheckMethInfoAttributes g m None minfo
                       return TTraitSolved (minfo, calledMeth.CalledTyArgs)

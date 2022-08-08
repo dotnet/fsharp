@@ -200,14 +200,30 @@ type public FSharpProjectContext =
 
 /// Options used to determine active --define conditionals and other options relevant to parsing files in a project
 type public FSharpParsingOptions =
-    { SourceFiles: string[]
-      ConditionalDefines: string list
-      DiagnosticOptions: FSharpDiagnosticOptions
-      LangVersionText: string
-      IsInteractive: bool
-      IndentationAwareSyntax: bool option
-      CompilingFSharpCore: bool
-      IsExe: bool }
+    {
+        SourceFiles: string[]
+
+        /// Indicates if the ranges returned by parsing should have '#line' directives applied to them.
+        /// When compiling code, this should usually be 'true'.  For editing tools, this is usually 'false.
+        /// The default for FSharpParsingOptions.ApplyLineDirectives is 'false'.  The default for
+        /// FSharpParsingOptions arising from FSharpProjectOptions will be 'true' unless '--ignorelinedirectives' is used in the
+        /// parameters from which these are derived.
+        ApplyLineDirectives: bool
+
+        ConditionalDefines: string list
+
+        DiagnosticOptions: FSharpDiagnosticOptions
+
+        LangVersionText: string
+
+        IsInteractive: bool
+
+        IndentationAwareSyntax: bool option
+
+        CompilingFSharpCore: bool
+
+        IsExe: bool
+    }
 
     static member Default: FSharpParsingOptions
 

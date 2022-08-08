@@ -826,7 +826,7 @@ moduleSpfn:
 
   | opt_attributes opt_declVisibility typeKeyword tyconSpfn tyconSpfnList
       { if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-        let (SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, _xmlDoc, d, d2, d3), equalsRange, typeRepr, withKeyword, members, range)) = $4
+        let (SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, _xmlDoc, d, d2, d3), typeRepr, members, range, trivia)) = $4
         _xmlDoc.MarkAsInvalid()
         let attrs = $1 @ cas
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
@@ -834,7 +834,8 @@ moduleSpfn:
             (d3, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             |> unionRanges range
             |> unionRangeWithXmlDoc xmlDoc
-        let tc = SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), equalsRange, typeRepr,  withKeyword, members, mDefn)
+        let trivia = { trivia with TypeKeyword = Some (rhs parseState 3) }
+        let tc = (SynTypeDefnSig(SynComponentInfo(attrs, a, cs, b, xmlDoc, d, d2, d3), typeRepr, members, mDefn, trivia))
         let m = (mDefn, $5) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range) |> unionRanges (rhs parseState 3)
         SynModuleSigDecl.Types (tc :: $5, m) }
 
@@ -901,18 +902,18 @@ tyconSpfnList:
   | AND tyconSpfn tyconSpfnList
      { let xmlDoc = grabXmlDoc(parseState, [], 1)
        let tyconSpfn =
-           let (SynTypeDefnSig(componentInfo, equalsRange, typeRepr, withKeyword, members, range)) = $2
+           let (SynTypeDefnSig(componentInfo, typeRepr, members, range, trivia)) = $2
            let (SynComponentInfo(a, typars, c, lid, _xmlDoc, fixity, vis, mLongId)) = componentInfo
            if xmlDoc.IsEmpty then
                if _xmlDoc.IsEmpty then $2 else
                let range = unionRangeWithXmlDoc _xmlDoc range
-               SynTypeDefnSig(componentInfo, equalsRange, typeRepr, withKeyword, members, range)
+               SynTypeDefnSig(componentInfo, typeRepr, members, range, trivia)
 
            else
                _xmlDoc.MarkAsInvalid()
                let range = unionRangeWithXmlDoc xmlDoc range
                let componentInfo = SynComponentInfo (a, typars, c, lid, xmlDoc, fixity, vis, mLongId)
-               SynTypeDefnSig(componentInfo, equalsRange, typeRepr, withKeyword, members, range)
+               SynTypeDefnSig(componentInfo, typeRepr, members, range, trivia)
        tyconSpfn :: $3 }
 
   |
@@ -936,7 +937,8 @@ tyconSpfn:
                 | Some mWithKwd -> unionRanges range mWithKwd
             | decls ->
                 (range, decls) ||> unionRangeWithListBy (fun (s: SynMemberSig) -> s.Range)
-        SynTypeDefnSig($1, None, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m), mWithKwd, members, m) }
+        let trivia: SynTypeDefnSigTrivia = { TypeKeyword = None; EqualsRange = None; WithKeyword = mWithKwd }
+        SynTypeDefnSig($1, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m), members, m, trivia) }
 
 
 /* The right-hand-side of a type definition in a signature */
@@ -968,7 +970,8 @@ tyconSpfnRhs:
      { (fun mLhs nameInfo mEquals augmentation -> 
            let declRange = unionRanges mLhs $1.Range
            let mWhole = (declRange, augmentation) ||> unionRangeWithListBy (fun (mem: SynMemberSig) -> mem.Range)
-           SynTypeDefnSig(nameInfo, mEquals, SynTypeDefnSigRepr.Simple ($1, $1.Range), None, augmentation, mWhole)) }
+           let trivia: SynTypeDefnSigTrivia = { TypeKeyword = None; WithKeyword = None; EqualsRange = mEquals }
+           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.Simple ($1, $1.Range), augmentation, mWhole, trivia)) }
 
   | tyconClassSpfn 
      {  let needsCheck, (kind, decls) = $1
@@ -985,7 +988,8 @@ tyconSpfnRhs:
            
            let declRange = unionRanges nameRange objectModelRange
            let mWhole = (declRange, augmentation) ||> unionRangeWithListBy (fun (mem: SynMemberSig) -> mem.Range)
-           SynTypeDefnSig(nameInfo, mEquals, SynTypeDefnSigRepr.ObjectModel (kind, decls, objectModelRange), None, augmentation, mWhole)) }
+           let trivia: SynTypeDefnSigTrivia = { TypeKeyword = None; WithKeyword = None; EqualsRange = mEquals }
+           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (kind, decls, objectModelRange), augmentation, mWhole, trivia)) }
 
   | DELEGATE OF topType
      { let m = lhs parseState 
@@ -994,7 +998,8 @@ tyconSpfnRhs:
        (fun nameRange nameInfo mEquals augmentation -> 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            let mWhole = unionRanges nameRange m
-           SynTypeDefnSig(nameInfo, mEquals, SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), None, [], mWhole)) }
+           let trivia: SynTypeDefnSigTrivia = { TypeKeyword = None; WithKeyword = None; EqualsRange = mEquals }
+           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), [], mWhole, trivia)) }
 
 
 /* The right-hand-side of an object type definition in a signature */
@@ -1427,7 +1432,7 @@ moduleDefn:
 openDecl:
   /* 'open' declarations */
   | OPEN path
-      { SynOpenDeclTarget.ModuleOrNamespace($2.LongIdent, (rhs parseState 2)) }
+      { SynOpenDeclTarget.ModuleOrNamespace($2, (rhs parseState 2)) }
 
   | OPEN typeKeyword appType
       { SynOpenDeclTarget.Type($3, (rhs parseState 3)) }
@@ -1493,7 +1498,7 @@ namedModuleDefnBlock:
      { Choice1Of2 $1.LongIdent }
 
 
-/* A module definition that inccludes a 'begin'...'end' (rarely used in F# with #light syntax) */ 
+/* A module definition that includes a 'begin'...'end' (rarely used in F# with #light syntax) */ 
 wrappedNamedModuleDefn:
   | structOrBegin moduleDefnsOrExprPossiblyEmpty END 
      { $2 }
@@ -1675,7 +1680,7 @@ tyconDefn:
        let mWhole = (declRange, members)
                     ||> unionRangeWithListBy (fun (mem:SynMemberDefn) -> mem.Range)
                     |> unionRangeWithXmlDoc xmlDoc
-       let trivia = { TypeKeyword = None; EqualsRange = Some mEquals; WithKeyword = mWith }
+       let trivia: SynTypeDefnTrivia = { TypeKeyword = None; EqualsRange = Some mEquals; WithKeyword = mWith }
        SynTypeDefn($1, tcDefRepr, members, Some memberCtorPattern, mWhole, trivia) }
 
 
@@ -2008,7 +2013,7 @@ atomicPatternLongIdent:
   | GLOBAL DOT pathOp
      { let globalIdent = ident(MangledGlobalName, rhs parseState 1)
        let mDot = rhs parseState 2
-       None, prependIdentInLongIdentWithTrivia (SynIdent(globalIdent, None)) mDot $3 }
+       None, prependIdentInLongIdentWithTrivia (SynIdent(globalIdent, (Some (IdentTrivia.OriginalNotation "global")))) mDot $3 }
 
   | pathOp
      { (None, $1) }
@@ -5024,17 +5029,23 @@ topType:
 
 topTupleType:
   | topAppType STAR topTupleTypeElements 
-     { let ty, mdata = $1 in let tys, mdatas = List.unzip $3 in (SynType.Tuple(false, List.map (fun ty -> (false, ty)) (ty :: tys), lhs parseState)), (mdata :: mdatas) }
+     { let t, argInfo = $1
+       let path = SynTupleTypeSegment.Type t :: (List.map fst $3)
+       let mdata = argInfo :: (List.choose snd $3)
+       mkSynTypeTuple false path, mdata }
 
   | topAppType                 
      { let ty, mdata = $1 in ty, [mdata] }
 
 topTupleTypeElements:
   | topAppType STAR topTupleTypeElements       
-     { $1 :: $3 }
+     { let t, argInfo = $1
+       let mStar = rhs parseState 2
+       (SynTupleTypeSegment.Type t, Some argInfo) :: (SynTupleTypeSegment.Star mStar, None) :: $3 }
 
   | topAppType %prec prec_toptuptyptail_prefix 
-     { [$1] }
+     { let t, argInfo = $1
+       [ SynTupleTypeSegment.Type t, Some argInfo ] }
 
 topAppType:
   | attributes appType COLON appType 
@@ -5075,29 +5086,37 @@ typEOF:
 
 tupleType:
   | appType STAR tupleOrQuotTypeElements 
-    { SynType.Tuple(false, (false, $1) :: $3, lhs parseState) }
+    { let mStar = rhs parseState 2
+      let path = SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Star mStar :: $3
+      mkSynTypeTuple false path }
 
   | INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-      SynType.Tuple(false, (true, SynType.StaticConstant (SynConst.Int32 1, lhs parseState)) :: $2, lhs parseState) }
+      let mSlash = rhs parseState 1
+      let path = SynTupleTypeSegment.Slash mSlash :: $2
+      mkSynTypeTuple false path }
 
   | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-      SynType.Tuple(false, (true, $1) :: $3, lhs parseState) }
+      let mSlash = rhs parseState 2
+      let path = SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Slash mSlash :: $3
+      mkSynTypeTuple false path }
 
   | appType %prec prec_tuptyp_prefix 
     { $1 }
 
 tupleOrQuotTypeElements:
   | appType STAR tupleOrQuotTypeElements              
-    { (false, $1) :: $3 }
+    { let mStar = rhs parseState 2
+      SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Star mStar :: $3 }
 
   | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements 
     { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-      (true, $1) :: $3 }
+      let mSlash = rhs parseState 2
+      SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Slash mSlash :: $3 }
 
   | appType %prec prec_tuptyptail_prefix 
-    { [(false, $1)] }
+    { [ SynTupleTypeSegment.Type $1 ] }
 
 appTypeCon:
   | path %prec prec_atomtyp_path 
@@ -5231,11 +5250,15 @@ atomType:
        SynType.Paren ($2, lhs parseState) }
 
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  rparen 
-    { SynType.Tuple(true, (false, $3) :: $5, lhs parseState) }
+    { let mStar = rhs parseState 4
+      let path = SynTupleTypeSegment.Type $3 :: SynTupleTypeSegment.Star mStar :: $5
+      mkSynTypeTuple true path }
 
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  recover
     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
-      SynType.Tuple(true, (false, $3) :: $5, lhs parseState) }
+      let mStar = rhs parseState 4
+      let path = SynTupleTypeSegment.Type $3 :: SynTupleTypeSegment.Star mStar :: $5
+      mkSynTypeTuple true path }
 
   | STRUCT LPAREN appType STAR recover
     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
@@ -5440,7 +5463,7 @@ ident:
 /* A A.B.C path used to an identifier */
 path: 
   | GLOBAL
-      { SynLongIdent([ident(MangledGlobalName, rhs parseState 1)], [], [None]) }
+      { SynLongIdent([ident(MangledGlobalName, rhs parseState 1)], [], [Some (IdentTrivia.OriginalNotation "global")]) }
 
   | ident  
      { SynLongIdent([$1], [], [None]) }

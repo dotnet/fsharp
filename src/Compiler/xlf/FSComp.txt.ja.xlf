@@ -187,6 +187,11 @@
         <target state="translated">インデックス作成とスライス用の expr[idx] 表記</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureInitProperties">
+        <source>support for consuming init properties</source>
+        <target state="new">support for consuming init properties</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
         <source>interfaces with multiple generic instantiation</source>
         <target state="translated">複数のジェネリックのインスタンス化を含むインターフェイス</target>
@@ -257,6 +262,11 @@
         <target state="translated">whitespace relaxation v2</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRequiredProperties">
+        <source>support for required properties</source>
+        <target state="new">support for required properties</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">再開可能なステート マシン</target>
@@ -305,11 +315,6 @@
       <trans-unit id="forFormatInvalidForInterpolated4">
         <source>Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{{expr}}', '{{expr,3}}' or '{{expr:N5}}' may be used.</source>
         <target state="translated">IFormattable 型または FormattableString 型として使用される補間された文字列では、'%' 指定子を使用できません。'{{expr}}'、'{{expr,3}}'、'{{expr:N5}}' などの .NET 形式の補間のみ使用できます。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="forPercentAInReflectionFreeCode">
-        <source>The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</source>
-        <target state="new">The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</target>
         <note />
       </trans-unit>
       <trans-unit id="formatDashItem">
@@ -462,9 +467,9 @@
         <target state="translated">言語バージョンで許可された値を表示し、'最新' や 'プレビュー' などの言語バージョンを指定する</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsReflectionFree">
-        <source>Disable implicit generation of constructs using reflection</source>
-        <target state="new">Disable implicit generation of constructs using reflection</target>
+      <trans-unit id="optsPdbMatchesOutputFileName">
+        <source>The pdb output file name cannot match the build output filename use --pdb:filename.pdb</source>
+        <target state="new">The pdb output file name cannot match the build output filename use --pdb:filename.pdb</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -712,6 +717,11 @@
         <target state="translated">この式では、暗黙的な変換 '{0}' を使用して、型 '{1}' を型 '{2}' に変換しています。https://aka.ms/fsharp-implicit-convs をご確認ください。'#nowarn\"3391\" を使用して、この警告を無効にできる可能性があります。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
+        <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
         <source>The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</source>
         <target state="translated">'InlineIfLambda' 属性を使用できるのは、型が関数または F# デリゲート型であるメソッドのインライン関数のパラメーターに対してのみです。</target>
@@ -775,6 +785,11 @@
       <trans-unit id="tcLiteralFieldAssignmentWithArg">
         <source>Cannot assign '{0}' to a value marked literal</source>
         <target state="translated">リテラルとしてマークされた値に '{0}' を割り当てることはできません</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMissingRequiredMembers">
+        <source>The following required properties have to be initalized:{0}</source>
+        <target state="new">The following required properties have to be initalized:{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
@@ -855,6 +870,11 @@
       <trans-unit id="tcResumableCodeNotSupported">
         <source>Using resumable code or resumable state machines requires /langversion:preview</source>
         <target state="translated">再開可能なコードまたは再開可能なステート マシンを使用するには、/langversion:preview が必要です</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
+        <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
@@ -5087,16 +5107,6 @@
         <target state="translated">移植可能な PDB ファイルに埋め込むソース リンク情報ファイル</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsEmbeddedSourceRequirePortablePDBs">
-        <source>--embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">--embed スイッチは、移植可能な PDB の生成時にのみサポートされます (--debug:portable または --debug:embedded)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsSourceLinkRequirePortablePDBs">
-        <source>--sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">--sourcelink スイッチは、移植可能な PDB の生成時にのみサポートされます (--debug:portable または --debug:embedded)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="srcFileTooLarge">
         <source>Source file is too large to embed in a portable PDB</source>
         <target state="translated">ソース ファイルが大きすぎるので、移植可能な PDB 内に埋め込めません</target>
@@ -6152,21 +6162,6 @@
         <target state="translated">拡張メンバーでは演算子のオーバーロードを実行できません。代わりに型定義の一部として演算子を定義してください。</target>
         <note />
       </trans-unit>
-      <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
-        <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">MDB ファイルの名前は &lt;assembly-file-name&gt;.mdb でなければなりません、--pdb オプションは無視されます。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteMDBMemberMissing">
-        <source>MDB generation failed. Could not find compatible member {0}</source>
-        <target state="translated">MDB を生成できませんでした。互換性のあるメンバー {0} が見つかりませんでした</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteErrorCreatingMdb">
-        <source>Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</source>
-        <target state="translated">MDB デバッグ情報を生成できません。'Mono.CompilerServices.SymbolWriter.dll' アセンブリから 'MonoSymbolWriter' 型を読み込むことができませんでした。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnionCaseNameConflictsWithGeneratedType">
         <source>The union case named '{0}' conflicts with the generated type '{1}'</source>
         <target state="translated">{0}' という名前の共用体ケースが、生成された型 '{1}' と競合します</target>
@@ -6440,11 +6435,6 @@
       <trans-unit id="fscAssemblyWildcardAndDeterminism">
         <source>An {0} specified version '{1}', but this value is a wildcard, and you have requested a deterministic build, these are in conflict.</source>
         <target state="translated">{0} によりバージョン '{1}' が指定されましたが、この値はワイルドカードです。決定論的なビルドを要求しているため、これらの指定は矛盾しています。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
-        <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">決定論的ビルドは、ポータブル PDB のみをサポートします (--debug:portable または --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -8070,11 +8060,6 @@
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
         <target state="translated">物理パスをコンパイラ出力のソース パス名にマップします</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fscPathMapDebugRequiresPortablePdb">
-        <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">--pathmap は、ポータブル PDB でのみ使用できます (--debug:portable または --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">

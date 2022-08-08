@@ -13,30 +13,30 @@ type ManglingNamesOfProvidedTypesWithSingleParameter() =
     [<Fact>]
     member this.MangleWithNonDefaultValue() = 
         let mangled = 
-            PrettyNaming.computeMangledNameWithoutDefaultArgValues("MyNamespace.Test", [| "xyz" |], [| "Foo", Some "abc" |])
+            PrettyNaming.ComputeMangledNameWithoutDefaultArgValues("MyNamespace.Test", [| "xyz" |], [| "Foo", Some "abc" |])
         Assert.shouldBe "MyNamespace.Test,Foo=\"xyz\"" mangled
     
     [<Fact>]
     member this.MangleWithDefaultValue() = 
         let mangled = 
-            PrettyNaming.computeMangledNameWithoutDefaultArgValues("MyNamespace.Test", [| "xyz" |], [| "Foo", Some "xyz" |])
+            PrettyNaming.ComputeMangledNameWithoutDefaultArgValues("MyNamespace.Test", [| "xyz" |], [| "Foo", Some "xyz" |])
         Assert.shouldBe "MyNamespace.Test" mangled
     
     [<Fact>]
     member this.DemangleNonDefaultValue() = 
-        let name, parameters = PrettyNaming.demangleProvidedTypeName "MyNamespace.Test,Foo=\"xyz\""
+        let name, parameters = PrettyNaming.DemangleProvidedTypeName "MyNamespace.Test,Foo=\"xyz\""
         Assert.shouldBe "MyNamespace.Test" name
         Assert.shouldBeEquivalentTo [| "Foo", "xyz" |] parameters
     
     [<Fact>]
     member this.DemangleDefaultValue() = 
-        let name, parameters = PrettyNaming.demangleProvidedTypeName "MyNamespace.Test,"
+        let name, parameters = PrettyNaming.DemangleProvidedTypeName "MyNamespace.Test,"
         Assert.shouldBe "MyNamespace.Test" name
         Assert.shouldBeEquivalentTo [||] parameters
 
     [<Fact>]
     member this.DemangleNewDefaultValue() = 
-        let name, parameters = PrettyNaming.demangleProvidedTypeName "MyNamespace.Test"
+        let name, parameters = PrettyNaming.DemangleProvidedTypeName "MyNamespace.Test"
         Assert.shouldBe "MyNamespace.Test" name
         Assert.shouldBeEquivalentTo [||] parameters
 
@@ -46,7 +46,7 @@ type ManglingNamesOfProvidedTypesWithMultipleParameter() =
     [<Fact>]
     member this.MangleWithNonDefaultValue() = 
         let mangled = 
-            PrettyNaming.computeMangledNameWithoutDefaultArgValues 
+            PrettyNaming.ComputeMangledNameWithoutDefaultArgValues 
                 ("MyNamespace.Test", [| "xyz"; "abc" |], 
                     [| "Foo", Some "foo"
                        "Foo2", Some "foo2" |])
@@ -55,7 +55,7 @@ type ManglingNamesOfProvidedTypesWithMultipleParameter() =
     [<Fact>]
     member this.MangleWithDefaultValue() = 
         let mangled = 
-            PrettyNaming.computeMangledNameWithoutDefaultArgValues 
+            PrettyNaming.ComputeMangledNameWithoutDefaultArgValues 
                 ("MyNamespace.Test", [| "xyz"; "abc" |], 
                     [| "Foo", Some "xyz"
                        "Foo2", Some "abc" |])
@@ -63,7 +63,7 @@ type ManglingNamesOfProvidedTypesWithMultipleParameter() =
     
     [<Fact>]
     member this.DemangleMultiParameter() = 
-        let name, parameters = PrettyNaming.demangleProvidedTypeName "TestType,Foo=\"xyz\",Foo2=\"abc\""
+        let name, parameters = PrettyNaming.DemangleProvidedTypeName "TestType,Foo=\"xyz\",Foo2=\"abc\""
         Assert.shouldBe "TestType" name
         Assert.shouldBe([| "Foo", "xyz"
                            "Foo2", "abc" |], parameters)

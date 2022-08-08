@@ -11,9 +11,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
-#if FX_NO_APP_DOMAINS
 open System.Runtime.Loader
-#endif
 open FSharp.Test.Utilities
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
@@ -256,7 +254,7 @@ module rec CompilerAssertHelpers =
             yield Array.empty<string>
     |]
 
-#if FX_NO_APP_DOMAINS
+#if NETCOREAPP
     let executeBuiltApp assembly deps =
         let ctxt = AssemblyLoadContext("ContextName", true)
         try
@@ -309,10 +307,11 @@ module rec CompilerAssertHelpers =
             SourceFiles = [|"test.fs"|]
             OtherOptions =
                 let assemblies = TargetFrameworkUtil.currentReferences |> Array.map (fun x -> sprintf "-r:%s" x)
+                let defaultOptions =  Array.append [|"--preferreduilang:en-US"; "--noframework"; "--warn:5"|] assemblies
 #if NETCOREAPP
-                Array.append [|"--preferreduilang:en-US"; "--targetprofile:netcore"; "--noframework"; "--simpleresolution"; "--warn:5"|] assemblies
+                Array.append [|"--targetprofile:netcore"|] defaultOptions
 #else
-                Array.append [|"--preferreduilang:en-US"; "--targetprofile:mscorlib"; "--noframework"; "--warn:5"|] assemblies
+                Array.append [|"--targetprofile:mscorlib"|] defaultOptions
 #endif
             ReferencedProjects = [||]
             IsIncompleteTypeCheckEnvironment = false

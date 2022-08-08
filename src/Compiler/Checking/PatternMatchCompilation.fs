@@ -1219,7 +1219,7 @@ let CompilePatternBasic
 
              let v, vExpr = mkCompGenLocal m "typeTestResult" tgtTy
              if origInputVal.IsMemberOrModuleBinding then
-                 AdjustValToTopVal v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                 AdjustValToHaveValReprInfo v origInputVal.TryDeclaringEntity ValReprInfo.emptyValData
              let argExpr = GetSubExprOfInput subexpr
              let appExpr = mkIsInst tgtTy argExpr mMatch
              Some vExpr, Some(mkInvisibleBind v appExpr)
@@ -1239,7 +1239,7 @@ let CompilePatternBasic
              | None -> Some addrExp, None
              | Some (v, e) ->
                  if origInputVal.IsMemberOrModuleBinding then
-                     AdjustValToTopVal v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                     AdjustValToHaveValReprInfo v origInputVal.TryDeclaringEntity ValReprInfo.emptyValData
                  Some addrExp, Some (mkInvisibleBind v e)
 
 
@@ -1255,7 +1255,7 @@ let CompilePatternBasic
              let ucaseTy = (mkProvenUnionCaseTy g.cons_ucref tinst)
              let v, vExpr = mkCompGenLocal m "unionTestResult" ucaseTy
              if origInputVal.IsMemberOrModuleBinding then
-                 AdjustValToTopVal v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                 AdjustValToHaveValReprInfo v origInputVal.DeclaringEntity ValReprInfo.emptyValData
              let argExpr = GetSubExprOfInput subexpr
              let appExpr = mkIsInst ucaseTy argExpr mMatch
              Some vExpr, Some (mkInvisibleBind v appExpr)
@@ -1276,11 +1276,11 @@ let CompilePatternBasic
              | None -> 
                 let v, vExpr = mkCompGenLocal m ("activePatternResult" + string (newUnique())) resTy
                 if origInputVal.IsMemberOrModuleBinding then
-                    AdjustValToTopVal v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                    AdjustValToHaveValReprInfo v origInputVal.TryDeclaringEntity ValReprInfo.emptyValData
                 Some vExpr, Some(mkInvisibleBind v addrExp)
              | Some (v, e) ->
                  if origInputVal.IsMemberOrModuleBinding then
-                     AdjustValToTopVal v origInputVal.DeclaringEntity ValReprInfo.emptyValData
+                     AdjustValToHaveValReprInfo v origInputVal.TryDeclaringEntity ValReprInfo.emptyValData
                  Some addrExp, Some (mkInvisibleBind v e)
 
           | _ -> None, None
@@ -1328,7 +1328,7 @@ let CompilePatternBasic
                  let discrim' =
                      match discrim with
                      | DecisionTreeTest.ActivePatternCase(_pexp, resTys, isStructRetTy, _apatVrefOpt, idx, apinfo) ->
-                         let aparity = apinfo.Names.Length
+                         let aparity = apinfo.ActiveTags.Length
                          let total = apinfo.IsTotal
                          if not total && aparity > 1 then
                              error(Error(FSComp.SR.patcPartialActivePatternsGenerateOneResult(), m))
@@ -1410,7 +1410,7 @@ let CompilePatternBasic
                     // Total active patterns always return choice values
                     let hasParam = (match apatVrefOpt with None -> true | Some (vref, _) -> doesActivePatternHaveFreeTypars g vref)
                     if (hasParam && i = iInvestigated) || (discrimsEq g discrim (Option.get (getDiscrimOfPattern patAtActive))) then
-                        let aparity = apinfo.Names.Length
+                        let aparity = apinfo.ActiveTags.Length
                         let subAccess j tpinst _e' =
                             assert inpExprOpt.IsSome
                             if aparity <= 1 then

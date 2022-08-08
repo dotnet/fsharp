@@ -108,7 +108,7 @@ module internal SymbolHelpers =
         | Item.CtorGroup(_, minfos) -> minfos |> List.tryPick (rangeOfMethInfo g preferFlag)
         | Item.ActivePatternResult(APInfo _, _, _, m) -> Some m
         | Item.SetterArg (_, item) -> rangeOfItem g preferFlag item
-        | Item.ArgName (id, _, _) -> Some id.idRange
+        | Item.ArgName (_, _, _, m) -> Some m
         | Item.CustomOperation (_, _, implOpt) -> implOpt |> Option.bind (rangeOfMethInfo g preferFlag)
         | Item.ImplicitOp (_, {contents = Some(TraitConstraintSln.FSMethSln(_, vref, _))}) -> Some vref.Range
         | Item.ImplicitOp _ -> None
@@ -167,7 +167,7 @@ module internal SymbolHelpers =
                 |> Option.bind ccuOfValRef
                 |> Option.orElseWith (fun () -> pinfo.DeclaringTyconRef |> computeCcuOfTyconRef))
 
-        | Item.ArgName (_, _, Some (ArgumentContainer.Method minfo)) ->
+        | Item.ArgName (_, _, Some (ArgumentContainer.Method minfo), _) ->
             ccuOfMethInfo g minfo
 
         | Item.MethodGroup(_, minfos, _)
@@ -180,7 +180,7 @@ module internal SymbolHelpers =
         | Item.Types(_, tys) ->
             tys |> List.tryPick (tryNiceEntityRefOfTyOption >> Option.bind computeCcuOfTyconRef)
 
-        | Item.ArgName (_, _, Some (ArgumentContainer.Type eref)) ->
+        | Item.ArgName (_, _, Some (ArgumentContainer.Type eref), _) ->
             computeCcuOfTyconRef eref
 
         | Item.ModuleOrNamespaces erefs 
@@ -290,7 +290,7 @@ module internal SymbolHelpers =
         | Item.CtorGroup(_, minfo :: _) ->
             mkXmlComment (GetXmlDocSigOfMethInfo infoReader  m minfo)
 
-        | Item.ArgName(_, _, Some argContainer) -> 
+        | Item.ArgName(_, _, Some argContainer, _) -> 
             match argContainer with 
             | ArgumentContainer.Method minfo -> mkXmlComment (GetXmlDocSigOfMethInfo infoReader m minfo)
             | ArgumentContainer.Type tcref -> mkXmlComment (GetXmlDocSigOfEntityRef infoReader m tcref)
@@ -494,10 +494,10 @@ module internal SymbolHelpers =
         | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) 
         | Item.Value vref | Item.CustomBuilder (_, vref) -> fullDisplayTextOfValRef vref
         | Item.UnionCase (ucinfo, _) -> fullDisplayTextOfUnionCaseRef  ucinfo.UnionCaseRef
-        | Item.ActivePatternResult(apinfo, _ty, idx, _) -> apinfo.Names[idx]
-        | Item.ActivePatternCase apref -> FullNameOfItem g (Item.Value apref.ActivePatternVal)  + "." + apref.Name 
+        | Item.ActivePatternResult(apinfo, _ty, idx, _) -> apinfo.DisplayNameByIdx idx
+        | Item.ActivePatternCase apref -> FullNameOfItem g (Item.Value apref.ActivePatternVal)  + "." + apref.DisplayName 
         | Item.ExnCase ecref -> fullDisplayTextOfExnRef ecref 
-        | Item.AnonRecdField(anon, _argTys, i, _) -> anon.SortedNames[i]
+        | Item.AnonRecdField(anon, _argTys, i, _) -> anon.DisplayNameByIdx i
         | Item.RecdField rfinfo -> fullDisplayTextOfRecdFieldRef  rfinfo.RecdFieldRef
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> buildString (fun os -> NicePrint.outputType denv os finfo.ApparentEnclosingType; bprintf os ".%s" finfo.FieldName)
@@ -517,8 +517,8 @@ module internal SymbolHelpers =
         | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
             if definiteNamespace then fullDisplayTextOfModRef modref else modref.DisplayName
-        | Item.TypeVar (id, _) -> id
-        | Item.ArgName (id, _, _) -> id.idText
+        | Item.TypeVar _
+        | Item.ArgName _ -> item.DisplayName
         | Item.SetterArg (_, item) -> FullNameOfItem g item
         | Item.ImplicitOp(id, _) -> id.idText
         | Item.UnionCaseField (UnionCaseInfo (_, ucref), fieldIndex) -> ucref.FieldByIndex(fieldIndex).DisplayName
@@ -583,7 +583,7 @@ module internal SymbolHelpers =
             else
                 GetXmlCommentForItemAux None infoReader m item
 
-        | Item.ArgName (_, _, argContainer) -> 
+        | Item.ArgName (_, _, argContainer, _) -> 
             let xmldoc = 
                 match argContainer with
                 | Some(ArgumentContainer.Method minfo) ->
@@ -686,7 +686,7 @@ module internal SymbolHelpers =
         let getKeywordForMethInfo (minfo : MethInfo) =
             match minfo with 
             | FSMeth(_, _, vref, _) ->
-                match vref.DeclaringEntity with
+                match vref.TryDeclaringEntity with
                 | Parent tcref ->
                     (tcref |> ticksAndArgCountTextOfTyconRef) + "." + vref.CompiledName g.CompilerGlobalState |> Some
                 | ParentNone -> None
@@ -707,7 +707,7 @@ module internal SymbolHelpers =
         | Item.Value vref | Item.CustomBuilder (_, vref) -> 
             let v = vref.Deref
             if v.IsModuleBinding && v.HasDeclaringEntity then
-                let tyconRef = v.TopValDeclaringEntity
+                let tyconRef = v.DeclaringEntity
                 let paramsString =
                     match v.Typars with
                     |   [] -> ""
@@ -777,7 +777,7 @@ module internal SymbolHelpers =
             | FSProp(_, _, Some vref, _) 
             | FSProp(_, _, _, Some vref) -> 
                 // per spec, extension members in F1 keywords are qualified with definition class
-                match vref.DeclaringEntity with 
+                match vref.TryDeclaringEntity with 
                 | Parent tcref ->
                     (tcref |> ticksAndArgCountTextOfTyconRef)+"."+vref.PropertyName|> Some                     
                 | ParentNone -> None
@@ -800,7 +800,7 @@ module internal SymbolHelpers =
                 match pinfo.ArbitraryValRef with 
                 | Some vref ->
                    // per spec, members in F1 keywords are qualified with definition class
-                   match vref.DeclaringEntity with 
+                   match vref.TryDeclaringEntity with 
                    | Parent tcref -> (tcref |> ticksAndArgCountTextOfTyconRef)+"."+vref.PropertyName|> Some                     
                    | ParentNone -> None
                 | None -> None
@@ -811,7 +811,7 @@ module internal SymbolHelpers =
             match minfos with 
             | [] -> None
             | FSMeth(_, _, vref, _) :: _ ->
-                   match vref.DeclaringEntity with
+                   match vref.TryDeclaringEntity with
                    | Parent tcref -> (tcref |> ticksAndArgCountTextOfTyconRef) + ".#ctor"|> Some
                    | ParentNone -> None
 #if !NO_TYPEPROVIDERS
