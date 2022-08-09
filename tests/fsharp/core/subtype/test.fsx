@@ -2462,7 +2462,7 @@ module TestStructMatching1 =
 
     let toName (x: obj) =
         match x with
-        | :? int when false -> "A"
+        | :? int when false -> "A" // note: "when false" used so type test succeeds but proceed to next type test
         | :? IComparable -> "B"
         | _ -> "other"
 
@@ -2475,7 +2475,7 @@ module TestStructMatching2 =
 
     let toName (x: obj) =
         match x with
-        | :? DateTime when false -> "A"
+        | :? DateTime when false -> "A" // note: "when false" used so type test succeeds but proceed to next type test
         | :? IComparable -> "B"
         | _ -> "other"
 
@@ -2488,7 +2488,7 @@ module TestStructMatching3 =
 
     let toName (x: obj) =
         match x with
-        | :? IComparable when false-> "A"
+        | :? IComparable when false -> "A" // note: "when false" used so type test succeeds but proceed to next type test
         | :? DateTime -> "B"
         | _ -> "other"
 
