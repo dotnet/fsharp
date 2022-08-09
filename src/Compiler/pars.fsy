@@ -5030,7 +5030,8 @@ topType:
 topTupleType:
   | topAppType STAR topTupleTypeElements 
      { let t, argInfo = $1
-       let path = SynTupleTypeSegment.Type t :: (List.map fst $3)
+       let mStar = rhs parseState 2
+       let path = SynTupleTypeSegment.Type t :: SynTupleTypeSegment.Star mStar :: (List.map fst $3)
        let mdata = argInfo :: (List.choose snd $3)
        mkSynTypeTuple false path, mdata }
 
