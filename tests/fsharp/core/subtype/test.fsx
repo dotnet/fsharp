@@ -2458,6 +2458,45 @@ module TestSubtypeMatching13 =
     check "cnwcki4d3" (toName (C())) "IA"
     check "cnwcki4d4" (toName (obj())) "other"
 
+module TestStructMatching1 =
+
+    let toName (x: obj) =
+        match x with
+        | :? int when false -> "A"
+        | :? IComparable -> "B"
+        | _ -> "other"
+
+    check "cnwcki4cewweq1" (toName 1) "B"
+    check "cnwcki4cewweq2" (toName "a") "B"
+    check "cnwcki4cewweq3" (toName System.DateTime.Now) "B"
+    check "cnwcki4cewweq4" (toName (obj())) "other"
+
+module TestStructMatching2 =
+
+    let toName (x: obj) =
+        match x with
+        | :? DateTime when false -> "A"
+        | :? IComparable -> "B"
+        | _ -> "other"
+
+    check "cnwcki4cewweq1" (toName 1) "B"
+    check "cnwcki4cewweq2" (toName "a") "B"
+    check "cnwcki4cewweq3" (toName System.DateTime.Now) "B"
+    check "cnwcki4cewweq4" (toName (obj())) "other"
+
+module TestStructMatching3 =
+
+    let toName (x: obj) =
+        match x with
+        | :? IComparable when false-> "A"
+        | :? DateTime -> "B"
+        | _ -> "other"
+
+    check "cnwcki4cewweq1" (toName 1) "other"
+    check "cnwcki4cewweq2" (toName "a") "other"
+    check "cnwcki4cewweq3" (toName System.DateTime.Now) "B"
+    check "cnwcki4cewweq4" (toName (obj())) "other"
+
 #if !NETCOREAPP
 module TestConverter =
     open System

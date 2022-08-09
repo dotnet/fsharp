@@ -493,7 +493,7 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     if TypeDefinitelySubsumesTypeNoCoercion 0 g amap m tgtTy2 tgtTy1 then
         Implication.Succeeds
 
-    //  A successful type test on a sealed type implies all non-related types fail
+    //  A successful type test on a sealed type (tgtTy1) implies all non-related types fail (tgtTy2)
     //
     // Example:
     //     match x with 
@@ -522,7 +522,7 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     // Here on 'null' input the first pattern succeeds, and the second pattern will also succeed
     elif isSealedTy g tgtTy1 &&
          not (TypeNullIsTrueValue g tgtTy1) &&
-         not (TypeDefinitelySubsumesTypeNoCoercion 0 g amap m tgtTy2 tgtTy1) then
+         not (TypeFeasiblySubsumesType 0 g amap m tgtTy2 CanCoerce tgtTy1) then
         Implication.Fails
 
     //  A successful type test on an unsealed class type implies type tests on unrelated non-interface types always fail
@@ -561,7 +561,7 @@ let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     else
         Implication.Nothing
 
-/// Work out what one successful type test implies about another type test
+/// Work out what one failing type test implies about another type test
 let computeWhatFailingTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     let tgtTy1 = stripTyEqnsWrtErasure EraseAll g tgtTy1
     let tgtTy2 = stripTyEqnsWrtErasure EraseAll g tgtTy2
