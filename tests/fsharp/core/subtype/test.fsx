@@ -1838,7 +1838,7 @@ module SRTPFix =
     let inline fmap (f : ^a -> ^b) (a : ^c) =
       fmap_instance<CFunctor, _, _, _, _> (f, a)
 
-    let inline replace (a : ^a) (f : ^b) : ^a0 when (CFunctor or  ^b) : (static member replace :  ^a *  ^b ->  ^a0) =
+    let inline replace (a : ^a) (f : ^b) : ^a0 when (CFunctor or  ^b) : (static member replace :  ^a *  ^b -> ^a0) =
       replace_instance<CFunctor, _, _, _> (a, f)
 
     (*

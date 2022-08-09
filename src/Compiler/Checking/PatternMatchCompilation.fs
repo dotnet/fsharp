@@ -1063,11 +1063,11 @@ let CompilePatternBasic
                     | Some (ediCaptureMethInfo, ediThrowMethInfo) ->
                         let edi, _ =
                             BuildMethodCall tcVal g amap NeverMutates mMatch false
-                               ediCaptureMethInfo ValUseFlag.NormalValUse [] [] [ (exprForVal mMatch origInputVal) ]
+                               ediCaptureMethInfo ValUseFlag.NormalValUse [] [] [ (exprForVal mMatch origInputVal) ] None
 
                         let e, _ =
                             BuildMethodCall tcVal g amap NeverMutates mMatch false
-                                ediThrowMethInfo ValUseFlag.NormalValUse [] [edi] [ ]
+                                ediThrowMethInfo ValUseFlag.NormalValUse [] [edi] [ ] None
 
                         mkCompGenSequential mMatch e (mkDefault (mMatch, resultTy))
 

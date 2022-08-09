@@ -468,7 +468,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         match info with 
                         | None -> false
                         | Some args -> 
-                            args |> List.exists (fun (isParamArrayArg, _isInArg, isOutArg, optArgInfo, _callerInfo, _reflArgInfo) -> isParamArrayArg || isOutArg || optArgInfo.IsOptional))
+                            args |> List.exists (fun (ParamAttribs(isParamArrayArg, _isInArg, isOutArg, optArgInfo, _callerInfo, _reflArgInfo)) -> isParamArrayArg || isOutArg || optArgInfo.IsOptional))
                 else
                     false
 

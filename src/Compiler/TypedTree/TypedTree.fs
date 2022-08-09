@@ -300,8 +300,8 @@ type TyparFlags(flags: int32) =
         TyparFlags((if isFromError then                0b00000000000000010 else 0) |||
                    (if isCompGen   then                0b00000000000000100 else 0) |||
                    (match staticReq with
-                     | TyparStaticReq.None                  -> 0b00000000000000000
-                     | TyparStaticReq.HeadType            -> 0b00000000000001000) |||
+                     | TyparStaticReq.None          -> 0b00000000000000000
+                     | TyparStaticReq.HeadType      -> 0b00000000000001000) |||
                    (match rigidity with
                      | TyparRigidity.Rigid          -> 0b00000000000000000
                      | TyparRigidity.WillBeRigid    -> 0b00000000000100000
@@ -375,6 +375,9 @@ type TyparFlags(flags: int32) =
                       TyparFlags(flags |||    0b00010000000000000)
                   else
                       TyparFlags(flags &&& ~~~0b00010000000000000)
+
+    member x.WithStaticReq staticReq =  
+        TyparFlags(x.Kind, x.Rigidity, x.IsFromError, x.IsCompilerGenerated, staticReq, x.DynamicReq, x.EqualityConditionalOn, x.ComparisonConditionalOn) 
 
     /// Get the flags as included in the F# binary metadata. We pickle this as int64 to allow for future expansion
     member x.PickledBits = flags       
@@ -2266,22 +2269,33 @@ type Typar =
     member x.SetIdent id = x.typar_id <- id
 
     /// Sets the rigidity of a type variable
-    member x.SetRigidity b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, b, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+    member x.SetRigidity b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, b, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
 
     /// Sets whether a type variable is compiler generated
-    member x.SetCompilerGenerated b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, b, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+    member x.SetCompilerGenerated b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, b, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
 
     /// Sets whether a type variable has a static requirement
-    member x.SetStaticReq b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, b, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+    member x.SetStaticReq b =
+        x.typar_flags <- x.typar_flags.WithStaticReq(b)
 
     /// Sets whether a type variable is required at runtime
-    member x.SetDynamicReq b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, b, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+    member x.SetDynamicReq b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, b, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
 
     /// Sets whether the equality constraint of a type definition depends on this type variable 
-    member x.SetEqualityDependsOn b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, b, flags.ComparisonConditionalOn) 
+    member x.SetEqualityDependsOn b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, b, flags.ComparisonConditionalOn) 
 
     /// Sets whether the comparison constraint of a type definition depends on this type variable 
-    member x.SetComparisonDependsOn b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b) 
+    member x.SetComparisonDependsOn b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b) 
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -2341,7 +2355,7 @@ type TyparConstraint =
     
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitWitnessInfo = 
-    | TraitWitnessInfo of TTypes * string * SynMemberFlags * TTypes * TType option
+    | TraitWitnessInfo of tys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTy: TType option
     
     /// Get the member name associated with the member constraint.
     member x.MemberName = (let (TraitWitnessInfo(_, b, _, _, _)) = x in b)
@@ -2352,7 +2366,7 @@ type TraitWitnessInfo =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TTrait(" + x.MemberName + ")"
+    override x.ToString() = "TraitWitnessInfo(" + x.MemberName + ")"
     
 /// The specification of a member constraint that must be solved 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -2360,23 +2374,23 @@ type TraitConstraintInfo =
 
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of tys: TTypes * memberName: string * _memFlags: SynMemberFlags * argTys: TTypes * returnTy: TType option * solution: TraitConstraintSln option ref 
+    | TTrait of tys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTyOpt: TType option * solution: TraitConstraintSln option ref 
 
-    /// Get the key associated with the member constraint.
-    member x.TraitKey = (let (TTrait(a, b, c, d, e, _)) = x in TraitWitnessInfo(a, b, c, d, e))
+    /// Get the types that may provide solutions for the traits
+    member x.SupportTypes = (let (TTrait(tys, _, _, _, _, _)) = x in tys)
 
-    /// Get the member name associated with the member constraint.
-    member x.MemberName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
+    /// Get the logical member name associated with the member constraint.
+    member x.MemberLogicalName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
 
     /// Get the member flags associated with the member constraint.
     member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _)) = x in flags)
 
-    /// Get the argument types recorded in the member constraint. This includes the object instance type for
-    /// instance members.
-    member x.ArgumentTypes = (let (TTrait(_, _, _, argTys, _, _)) = x in argTys)
+    member x.CompiledObjectAndArgumentTypes = (let (TTrait(_, _, _, objAndArgTys, _, _)) = x in objAndArgTys)
 
-    /// Get the return type recorded in the member constraint.
-    member x.ReturnType = (let (TTrait(_, _, _, _, ty, _)) = x in ty)
+    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f))
+
+    /// Get the optional return type recorded in the member constraint.
+    member x.CompiledReturnType = (let (TTrait(_, _, _, _, retTy, _)) = x in retTy)
 
     /// Get or set the solution of the member constraint during inference
     member x.Solution 
@@ -2386,7 +2400,7 @@ type TraitConstraintInfo =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TTrait(" + x.MemberName + ")"
+    override x.ToString() = "TTrait(" + x.MemberLogicalName + ")"
     
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -2398,7 +2412,8 @@ type TraitConstraintSln =
     ///    ty -- the type and its instantiation
     ///    vref -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation 
-    | FSMethSln of ty: TType * vref: ValRef * minst: TypeInst 
+    ///    staticTyOpt -- the static type governing a static virtual call, if any
+    | FSMethSln of ty: TType * vref: ValRef * minst: TypeInst * staticTyOpt: TType option
 
     /// FSRecdFieldSln(tinst, rfref, isSetProp)
     ///
@@ -2418,7 +2433,8 @@ type TraitConstraintSln =
     ///    extOpt -- information about an extension member, if any
     ///    ilMethodRef -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation 
-    | ILMethSln of ty: TType * extOpt: ILTypeRef option * ilMethodRef: ILMethodRef * minst: TypeInst    
+    ///    staticTyOpt -- the static type governing a static virtual call, if any
+    | ILMethSln of ty: TType * extOpt: ILTypeRef option * ilMethodRef: ILMethodRef * minst: TypeInst * staticTyOpt: TType option
 
     /// ClosedExprSln expr
     ///
@@ -4951,7 +4967,7 @@ type TOp =
         | Return -> "Return"
         | Goto n -> "Goto(" + string n + ")"
         | Label n -> "Label(" + string n + ")"
-        | TraitCall info -> "TraitCall(" + info.MemberName + ")"
+        | TraitCall info -> "TraitCall(" + info.MemberLogicalName + ")"
         | LValueOp (op, vref) -> sprintf "%+A(%s)" op vref.LogicalName
         | ILCall (_,_,_,_,_,_,_,ilMethRef,_,_,_) -> "ILCall(" + ilMethRef.ToString() + ",..)"
 

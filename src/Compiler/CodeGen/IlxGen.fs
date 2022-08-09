@@ -1392,7 +1392,7 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
         // Find the 'this' argument type if any
         let thisTy, flatArgInfos =
             if isCtor then
-                (GetFSharpViewOfReturnType g returnTy), flatArgInfos
+                GetFSharpViewOfReturnType g returnTy, flatArgInfos
             else
                 match flatArgInfos with
                 | [] -> error (InternalError("This instance method '" + vref.LogicalName + "' has no arguments", m))
@@ -1411,22 +1411,20 @@ let GetMethodSpecForMemberVal cenv (memberInfo: ValMemberInfo) (vref: ValRef) =
 
             warning (InternalError(msg, m))
         else
-            List.iter2
-                (fun gtp ty2 ->
-                    if not (typeEquiv g (mkTyparTy gtp) ty2) then
-                        warning (
-                            InternalError(
-                                "CodeGen check: type checking did not quantify the correct type variables for this method: generalization list contained "
-                                + gtp.Name
-                                + "#"
-                                + string gtp.Stamp
-                                + " and list from 'this' pointer contained "
-                                + (showL (typeL ty2)),
-                                m
-                            )
-                        ))
-                ctps
-                thisArgTys
+            (ctps, thisArgTys)
+            ||> List.iter2 (fun gtp ty2 ->
+                if not (typeEquiv g (mkTyparTy gtp) ty2) then
+                    warning (
+                        InternalError(
+                            "CodeGen check: type checking did not quantify the correct type variables for this method: generalization list contained "
+                            + gtp.Name
+                            + "#"
+                            + string gtp.Stamp
+                            + " and list from 'this' pointer contained "
+                            + (showL (typeL ty2)),
+                            m
+                        )
+                    ))
 
         let methodArgTys, paramInfos = List.unzip flatArgInfos
 
@@ -3988,7 +3986,8 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr =
 
 and GenWitnessArgFromTraitInfo cenv cgbuf eenv m traitInfo =
     let g = cenv.g
-    let storage = TryStorageForWitness g eenv traitInfo.TraitKey
+    let witnessInfo = traitInfo.GetWitnessInfo()
+    let storage = TryStorageForWitness g eenv witnessInfo
 
     match storage with
     | None ->
@@ -4004,7 +4003,8 @@ and GenWitnessArgFromTraitInfo cenv cgbuf eenv m traitInfo =
             let eenv = { eenv with suppressWitnesses = true }
             GenExpr cenv cgbuf eenv arg Continue
     | Some storage ->
-        let ty = GenWitnessTy g traitInfo.TraitKey
+        let witnessInfo = traitInfo.GetWitnessInfo()
+        let ty = GenWitnessTy g witnessInfo
         GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv m eenv.tyenv ty) storage None
 
 and GenWitnessArgFromWitnessInfo cenv cgbuf eenv m witnessInfo =
@@ -4286,13 +4286,15 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
                 else
                     Normalcall
 
-            let useICallVirt = virtualCall || useCallVirt cenv boxity mspec isBaseCall
+            let useICallVirt =
+                (virtualCall || useCallVirt cenv boxity mspec isBaseCall)
+                && mspec.MethodRef.CallingConv.IsInstance
 
             let callInstr =
                 match valUseFlags with
                 | PossibleConstrainedCall ty ->
                     let ilThisTy = GenType cenv m eenv.tyenv ty
-                    I_callconstraint(isTailCall, ilThisTy, mspec, None)
+                    I_callconstraint(useICallVirt, isTailCall, ilThisTy, mspec, None)
                 | _ ->
                     if newobj then I_newobj(mspec, None)
                     elif useICallVirt then I_callvirt(isTailCall, mspec, None)
@@ -5357,7 +5359,10 @@ and GenILCall
     let ilMethArgTys = GenTypeArgs cenv m eenv.tyenv methArgTys
     let ilReturnTys = GenTypes cenv m eenv.tyenv returnTys
     let ilMethSpec = mkILMethSpec (ilMethRef, boxity, ilEnclArgTys, ilMethArgTys)
-    let useICallVirt = virt || useCallVirt cenv boxity ilMethSpec isBaseCall
+
+    let useICallVirt =
+        (virt || useCallVirt cenv boxity ilMethSpec isBaseCall)
+        && ilMethRef.CallingConv.IsInstance
 
     // Load the 'this' pointer to pass to the superclass constructor. This argument is not
     // in the expression tree since it can't be treated like an ordinary value
@@ -5373,7 +5378,7 @@ and GenILCall
             match ccallInfo with
             | Some objArgTy ->
                 let ilObjArgTy = GenType cenv m eenv.tyenv objArgTy
-                I_callconstraint(tail, ilObjArgTy, ilMethSpec, None)
+                I_callconstraint(useICallVirt, tail, ilObjArgTy, ilMethSpec, None)
             | None ->
                 if useICallVirt then
                     I_callvirt(tail, ilMethSpec, None)
@@ -5408,14 +5413,16 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
 
     let witness =
         if generateWitnesses then
-            TryStorageForWitness g eenv traitInfo.TraitKey
+            let witnessInfo = traitInfo.GetWitnessInfo()
+            TryStorageForWitness g eenv witnessInfo
         else
             None
 
     match witness with
     | Some storage ->
 
-        let ty = GenWitnessTy g traitInfo.TraitKey
+        let witnessInfo = traitInfo.GetWitnessInfo()
+        let ty = GenWitnessTy g witnessInfo
         let argExprs = if argExprs.Length = 0 then [ mkUnit g m ] else argExprs
         GenGetStorageAndSequel cenv cgbuf eenv m (ty, GenType cenv m eenv.tyenv ty) storage (Some([], argExprs, m, sequel))
 
@@ -5424,13 +5431,13 @@ and GenTraitCall (cenv: cenv) cgbuf eenv (traitInfo: TraitConstraintInfo, argExp
         // If witnesses are available, we should now always find trait witnesses in scope
         assert not generateWitnesses
 
-        let minfoOpt =
+        let exprOpt =
             CommitOperationResult(ConstraintSolver.CodegenWitnessExprForTraitConstraint cenv.tcVal g cenv.amap m traitInfo argExprs)
 
-        match minfoOpt with
+        match exprOpt with
         | None ->
             let exnArg =
-                mkString g m (FSComp.SR.ilDynamicInvocationNotSupported (traitInfo.MemberName))
+                mkString g m (FSComp.SR.ilDynamicInvocationNotSupported (traitInfo.MemberLogicalName))
 
             let exnExpr = MakeNotSupportedExnExpr cenv eenv (exnArg, m)
             let replacementExpr = mkThrow m (tyOfExpr g expr) exnExpr
@@ -5671,7 +5678,7 @@ and GenFormalSlotsig m cenv eenv slotsig =
     let ilRet = GenFormalReturnType m cenv eenvForSlotSig returnTy
     ilTy, ilParams, ilRet
 
-and GenOverridesSpec cenv eenv slotsig m =
+and GenOverridesSpec cenv eenv slotsig m isInstance =
     let (TSlotSig (nameOfOverridenMethod, _, _, methodTypars, _, _)) = slotsig
 
     let ilOverrideTy, ilOverrideParams, ilOverrideRet =
@@ -5679,10 +5686,16 @@ and GenOverridesSpec cenv eenv slotsig m =
 
     let ilOverrideTyRef = ilOverrideTy.TypeRef
 
+    let callingConv =
+        if isInstance then
+            ILCallingConv.Instance
+        else
+            ILCallingConv.Static
+
     let ilOverrideMethRef =
         mkILMethRef (
             ilOverrideTyRef,
-            ILCallingConv.Instance,
+            callingConv,
             nameOfOverridenMethod,
             List.length (DropErasedTypars methodTypars),
             typesOfILParams ilOverrideParams,
@@ -5745,8 +5758,8 @@ and GenNameOfOverridingMethod cenv (useMethodImpl, slotsig) =
     else
         nameOfOverridenMethod
 
-and GenMethodImpl cenv eenv (useMethodImpl, slotsig) m =
-    let ilOverridesSpec = GenOverridesSpec cenv eenv slotsig m
+and GenMethodImpl cenv eenv (useMethodImpl, slotsig) m isInstance =
+    let ilOverridesSpec = GenOverridesSpec cenv eenv slotsig m isInstance
 
     let nameOfOverridingMethod = GenNameOfOverridingMethod cenv (useMethodImpl, slotsig)
 
@@ -5763,13 +5776,22 @@ and GenMethodImpl cenv eenv (useMethodImpl, slotsig) m =
         let ilOverrideMethGenericArgs = mkILFormalGenericArgs 0 ilOverrideMethGenericParams
 
         let ilOverrideBy =
-            mkILInstanceMethSpecInTy (
-                ilTyForOverriding,
-                nameOfOverridingMethod,
-                typesOfILParams ilParamsOfOverridingMethod,
-                ilReturnOfOverridingMethod.Type,
-                ilOverrideMethGenericArgs
-            )
+            if isInstance then
+                mkILInstanceMethSpecInTy (
+                    ilTyForOverriding,
+                    nameOfOverridingMethod,
+                    typesOfILParams ilParamsOfOverridingMethod,
+                    ilReturnOfOverridingMethod.Type,
+                    ilOverrideMethGenericArgs
+                )
+            else
+                mkILStaticMethSpecInTy (
+                    ilTyForOverriding,
+                    nameOfOverridingMethod,
+                    typesOfILParams ilParamsOfOverridingMethod,
+                    ilReturnOfOverridingMethod.Type,
+                    ilOverrideMethGenericArgs
+                )
 
         {
             Overrides = ilOverridesSpec
@@ -5792,7 +5814,9 @@ and fixupMethodImplFlags (mdef: ILMethodDef) =
     )
         .WithNewSlot
 
-and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod =
+and fixupStaticAbstractSlotFlags (mdef: ILMethodDef) = mdef.WithHideBySig(true)
+
+and GenObjectExprMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod =
     let g = cenv.g
 
     let (TObjExprMethod (slotsig, attribs, methTyparsOfOverridingMethod, methParams, methBodyExpr, m)) =
@@ -5832,11 +5856,12 @@ and GenObjectMethod cenv eenvinner (cgbuf: CodeGenBuffer) useMethodImpl tmethod 
             CodeGenMethodForExpr cenv cgbuf.mgbuf ([], nameOfOverridenMethod, eenvForMeth, 0, selfArgOpt, methBodyExpr, sequel)
 
         let nameOfOverridingMethod, methodImplGenerator =
-            GenMethodImpl cenv eenvinner (useMethodImpl, slotsig) methBodyExpr.Range
+            GenMethodImpl cenv eenvinner (useMethodImpl, slotsig) methBodyExpr.Range true
 
         let mdef =
             mkILGenericVirtualMethod (
                 nameOfOverridingMethod,
+                ILCallingConv.Instance,
                 ILMemberAccess.Public,
                 GenGenericParams cenv eenvUnderTypars methTyparsOfOverridingMethod,
                 ilParamsOfOverridingMethod,
@@ -6018,7 +6043,13 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                     (ilArgTys, argVals)
                     ||> List.map2 (fun ty v -> mkILParamNamed (v.LogicalName, ty))
 
-                mkILNonGenericVirtualMethod (imethName, ILMemberAccess.Public, ilParams, mkILReturn ilRetTy, MethodBody.IL(notlazy ilCode))
+                mkILNonGenericVirtualInstanceMethod (
+                    imethName,
+                    ILMemberAccess.Public,
+                    ilParams,
+                    mkILReturn ilRetTy,
+                    MethodBody.IL(notlazy ilCode)
+                )
         ]
 
     let mimpls =
@@ -6039,7 +6070,9 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                     | _ -> error (InternalError(sprintf "expected method %s not found" imethName, m))
 
                 let slotsig = implementedMeth.GetSlotSig(amap, m)
-                let ilOverridesSpec = GenOverridesSpec cenv eenvinner slotsig m
+
+                let ilOverridesSpec =
+                    GenOverridesSpec cenv eenvinner slotsig m mdef.CallingConv.IsInstance
 
                 let ilOverrideBy =
                     mkILInstanceMethSpecInTy (ilCloTy, imethName, mdef.ParameterTypes, mdef.Return.Type, [])
@@ -6223,7 +6256,7 @@ and GenObjectExpr cenv cgbuf eenvouter objExpr (baseType, baseValOpt, basecall, 
     let genMethodAndOptionalMethodImpl tmethod useMethodImpl =
         [
             for (useMethodImpl, methodImplGeneratorFunction, methTyparsOfOverridingMethod), mdef in
-                GenObjectMethod cenv eenvinner cgbuf useMethodImpl tmethod do
+                GenObjectExprMethod cenv eenvinner cgbuf useMethodImpl tmethod do
                 let mimpl =
                     (if useMethodImpl then
                          Some(methodImplGeneratorFunction (ilTyForOverriding, methTyparsOfOverridingMethod))
@@ -6374,7 +6407,7 @@ and GenSequenceExpr
                      GenSequel cenv eenv.cloc cgbuf Return),
                  m)
 
-        mkILNonGenericVirtualMethod (
+        mkILNonGenericVirtualInstanceMethod (
             "GetFreshEnumerator",
             ILMemberAccess.Public,
             [],
@@ -6387,13 +6420,19 @@ and GenSequenceExpr
         let ilCode =
             CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "Close", eenvinner, 1, None, closeExpr, discardAndReturnVoid)
 
-        mkILNonGenericVirtualMethod ("Close", ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL(lazy ilCode))
+        mkILNonGenericVirtualInstanceMethod ("Close", ILMemberAccess.Public, [], mkILReturn ILType.Void, MethodBody.IL(lazy ilCode))
 
     let checkCloseMethod =
         let ilCode =
             CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "get_CheckClose", eenvinner, 1, None, checkCloseExpr, Return)
 
-        mkILNonGenericVirtualMethod ("get_CheckClose", ILMemberAccess.Public, [], mkILReturn g.ilg.typ_Bool, MethodBody.IL(lazy ilCode))
+        mkILNonGenericVirtualInstanceMethod (
+            "get_CheckClose",
+            ILMemberAccess.Public,
+            [],
+            mkILReturn g.ilg.typ_Bool,
+            MethodBody.IL(lazy ilCode)
+        )
 
     let generateNextMethod =
         // the 'next enumerator' byref arg is at arg position 1
@@ -6406,13 +6445,19 @@ and GenSequenceExpr
         let ilCode =
             MethodBody.IL(lazy (CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "GenerateNext", eenvinner, 2, None, generateNextExpr, Return)))
 
-        mkILNonGenericVirtualMethod ("GenerateNext", ILMemberAccess.Public, ilParams, ilReturn, ilCode)
+        mkILNonGenericVirtualInstanceMethod ("GenerateNext", ILMemberAccess.Public, ilParams, ilReturn, ilCode)
 
     let lastGeneratedMethod =
         let ilCode =
             CodeGenMethodForExpr cenv cgbuf.mgbuf ([], "get_LastGenerated", eenvinner, 1, None, exprForValRef m currvref, Return)
 
-        mkILNonGenericVirtualMethod ("get_LastGenerated", ILMemberAccess.Public, [], mkILReturn ilCloSeqElemTy, MethodBody.IL(lazy ilCode))
+        mkILNonGenericVirtualInstanceMethod (
+            "get_LastGenerated",
+            ILMemberAccess.Public,
+            [],
+            mkILReturn ilCloSeqElemTy,
+            MethodBody.IL(lazy ilCode)
+        )
         |> AddNonUserCompilerGeneratedAttribs g
 
     let ilCtorBody =
@@ -6608,6 +6653,7 @@ and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr
         [
             mkILGenericVirtualMethod (
                 "DirectInvoke",
+                ILCallingConv.Instance,
                 ILMemberAccess.Assembly,
                 ilDirectGenericParams,
                 ilDirectWitnessParams,
@@ -7095,26 +7141,76 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod (slotsig, _attribs
     CG.EmitInstr cgbuf (pop 2) (Push [ ilCtxtDelTy ]) (I_newobj(ilDelegeeCtorMethOuter, None))
     GenSequel cenv eenvouter.cloc cgbuf sequel
 
-/// Generate statically-resolved conditionals used for type-directed optimizations.
-and GenStaticOptimization cenv cgbuf eenv (constraints, e2, e3, _m) sequel =
-    // Note: during IlxGen, even if answer is StaticOptimizationAnswer.Unknown we discard the static optimization
-    // This means 'when ^T : ^T' is discarded if not resolved.
-    //
-    // This doesn't apply when witnesses are available. In that case, "when ^T : ^T" is resolved as 'Yes',
-    // this is because all the uses of "when ^T : ^T" in FSharp.Core (e.g. for are for deciding between the
-    // witness-based implementation and the legacy dynamic implementation, e.g.
-    //
-    //    let inline ( * ) (x: ^T) (y: ^U) : ^V =
-    //         MultiplyDynamic<(^T),(^U),(^V)>  x y
-    //         ...
-    //         when ^T : ^T = ((^T or ^U): (static member (*) : ^T * ^U -> ^V) (x,y))
-    //
-    // When witnesses are not available we use the dynamic implementation.
+/// Used to search FSharp.Core implementations of "^T : ^T" and decide whether the conditional activates
+and ExprIsTraitCall expr =
+    match expr with
+    | Expr.Op (TOp.TraitCall _, _, _, _) -> true
+    | _ -> false
+
+/// Used to search FSharp.Core implementations of "^T : ^T" and decide whether the conditional activates
+and ExprIndicatesGenericStaticConstrainedCall g expr =
+    match expr with
+    | Expr.Val (vref, PossibleConstrainedCall ty, _) ->
+        vref.IsMember
+        && not vref.MemberInfo.Value.MemberFlags.IsInstance
+        && isTyparTy g ty
+    | Expr.Op (TOp.ILCall (valUseFlag = PossibleConstrainedCall ty; ilMethRef = ilMethRef), _, _, _) ->
+        not ilMethRef.CallingConv.IsInstance && isTyparTy g ty
+    | _ -> false
+
+/// Used to search FSharp.Core implementations of "^T : ^T" and decide whether the conditional activates
+and ExprRequiresWitness cenv m expr =
+    let g = cenv.g
+
+    match expr with
+    | Expr.Op (TOp.TraitCall (traitInfo), _, _, _) ->
+        ConstraintSolver.CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs cenv.tcVal g cenv.amap m traitInfo
+        |> CommitOperationResult
+    | _ -> false
+
+/// Generate statically-resolved conditionals used for type-directed optimizations in FSharp.Core only.
+and GenStaticOptimization cenv cgbuf eenv (staticConditions, e2, e3, m) sequel =
+    let g = cenv.g
 
     let e =
+        // See 'decideStaticOptimizationConstraint'
+        //
+        // For ^T : ^T we can additionally decide the conditional positively if either
+        //   1. we're in code generating witnesses
+        //   2. e2 uses a trait call of some kind
+        //   2. e2 doesn't require a witness
         let generateWitnesses = ComputeGenerateWitnesses cenv.g eenv
 
-        if DecideStaticOptimizations cenv.g constraints generateWitnesses = StaticOptimizationAnswer.Yes then
+        let canDecideTyparEqn =
+            let usesTraitOrConstrainedCall =
+                (false, e2)
+                ||> FoldExpr
+                        { ExprFolder0 with
+                            exprIntercept =
+                                (fun _exprF noInterceptF z expr ->
+                                    z
+                                    || ExprIsTraitCall expr
+                                    || ExprIndicatesGenericStaticConstrainedCall g expr
+                                    || noInterceptF false expr)
+                        }
+
+            if usesTraitOrConstrainedCall then
+                if generateWitnesses then
+                    true
+                else
+                    let requiresWitness =
+                        (false, e2)
+                        ||> FoldExpr
+                                { ExprFolder0 with
+                                    exprIntercept =
+                                        (fun _exprF noInterceptF z expr -> z || ExprRequiresWitness cenv m expr || noInterceptF false expr)
+                                }
+
+                    not requiresWitness
+            else
+                false
+
+        if DecideStaticOptimizations cenv.g staticConditions canDecideTyparEqn = StaticOptimizationAnswer.Yes then
             e2
         else
             e3
@@ -9096,7 +9192,6 @@ and GenMethodForBinding
         let mdef =
             match v.MemberInfo with
             | Some memberInfo when not v.IsExtensionMember ->
-
                 let ilMethTypars = ilTypars |> List.skip mspec.DeclaringType.GenericArgs.Length
 
                 if memberInfo.MemberFlags.MemberKind = SynMemberKind.Constructor then
@@ -9121,8 +9216,16 @@ and GenMethodForBinding
                 else
                     let mdef =
                         if not compileAsInstance then
-                            mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
+                            if not memberInfo.MemberFlags.IsOverrideOrExplicitImpl then
+                                mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
+                            else // We want to get potential fixups and hidebysig for abstract statics:
+                                let flagFixups = [ fixupStaticAbstractSlotFlags ]
 
+                                let mdef =
+                                    mkILStaticMethod (ilMethTypars, mspec.Name, access, ilParams, ilReturn, ilMethodBody)
+
+                                let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
+                                mdef
                         elif
                             (memberInfo.MemberFlags.IsDispatchSlot && memberInfo.IsImplemented)
                             || memberInfo.MemberFlags.IsOverrideOrExplicitImpl
@@ -9130,8 +9233,22 @@ and GenMethodForBinding
 
                             let flagFixups = ComputeFlagFixupsForMemberBinding cenv v
 
+                            let cconv =
+                                if memberInfo.MemberFlags.IsInstance then
+                                    ILCallingConv.Instance
+                                else
+                                    ILCallingConv.Static
+
                             let mdef =
-                                mkILGenericVirtualMethod (mspec.Name, ILMemberAccess.Public, ilMethTypars, ilParams, ilReturn, ilMethodBody)
+                                mkILGenericVirtualMethod (
+                                    mspec.Name,
+                                    cconv,
+                                    ILMemberAccess.Public,
+                                    ilMethTypars,
+                                    ilParams,
+                                    ilReturn,
+                                    ilMethodBody
+                                )
 
                             let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
 
@@ -10181,7 +10298,7 @@ and GenEqualsOverrideCallingIComparable cenv (tcref: TyconRef, ilThisTy, _ilThat
             mkLdarg0
             mkLdarg 1us
             if tcref.IsStructOrEnumTycon then
-                I_callconstraint(Normalcall, ilThisTy, mspec, None)
+                I_callconstraint(true, Normalcall, ilThisTy, mspec, None)
             else
                 I_callvirt(Normalcall, mspec, None)
             mkLdcInt32 0
@@ -10191,7 +10308,7 @@ and GenEqualsOverrideCallingIComparable cenv (tcref: TyconRef, ilThisTy, _ilThat
     let ilMethodBody =
         mkMethodBody (true, [], 2, nonBranchingInstrsToCode ilInstrs, None, None)
 
-    mkILNonGenericVirtualMethod (
+    mkILNonGenericVirtualInstanceMethod (
         "Equals",
         ILMemberAccess.Public,
         [ mkILParamNamed ("obj", g.ilg.typ_Object) ],
@@ -10274,6 +10391,7 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
         let mdef =
             mkILGenericVirtualMethod (
                 vref.CompiledName g.CompilerGlobalState,
+                mspec.CallingConv,
                 ILMemberAccess.Public,
                 ilMethTypars,
                 ilParams,
@@ -10284,15 +10402,8 @@ and GenAbstractBinding cenv eenv tref (vref: ValRef) =
         let mdef = fixupVirtualSlotFlags mdef
 
         let mdef =
-            if mdef.IsVirtual then
-                mdef
-                    .WithFinal(memberInfo.MemberFlags.IsFinal)
-                    .WithAbstract(memberInfo.MemberFlags.IsDispatchSlot)
-            else
-                mdef
-
-        let mdef =
             mdef
+                .WithFinal(memberInfo.MemberFlags.IsFinal)
                 .WithPreserveSig(hasPreserveSigImplFlag)
                 .WithSynchronized(hasSynchronizedImplFlag)
                 .WithNoInlining(hasNoInliningFlag)
@@ -10395,7 +10506,7 @@ and GenPrintingMethod cenv eenv methName ilThisTy m =
                     mkMethodBody (true, [], 2, nonBranchingInstrsToCode ilInstrs, None, eenv.imports)
 
                 let mdef =
-                    mkILNonGenericVirtualMethod (methName, ILMemberAccess.Public, [], mkILReturn g.ilg.typ_String, ilMethodBody)
+                    mkILNonGenericVirtualInstanceMethod (methName, ILMemberAccess.Public, [], mkILReturn g.ilg.typ_String, ilMethodBody)
 
                 let mdef = mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ])
                 yield mdef
@@ -10494,7 +10605,6 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                                     match vref.ValReprInfo with
                                     | Some _ ->
-
                                         let memberParentTypars, memberMethodTypars =
                                             match PartitionValRefTypars g vref with
                                             | Some (_, memberParentTypars, memberMethodTypars, _, _) ->
@@ -10505,11 +10615,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                                         let eenvUnderTypars = EnvForTypars memberParentTypars eenv
 
                                         let _, methodImplGenerator =
-                                            GenMethodImpl cenv eenvUnderTypars (useMethodImpl, slotsig) m
+                                            GenMethodImpl cenv eenvUnderTypars (useMethodImpl, slotsig) m memberInfo.MemberFlags.IsInstance
 
                                         if useMethodImpl then
                                             yield methodImplGenerator (ilThisTy, memberMethodTypars)
-
                                     | _ -> ()
                 ]
 

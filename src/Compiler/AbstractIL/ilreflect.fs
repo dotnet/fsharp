@@ -1391,9 +1391,10 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
         emitSilverlightCheck ilG
         emitInstrCall cenv emEnv ilG OpCodes.Callvirt tail mspec varargs
 
-    | I_callconstraint (tail, ty, mspec, varargs) ->
+    | I_callconstraint (callvirt, tail, ty, mspec, varargs) ->
         ilG.Emit(OpCodes.Constrained, convType cenv emEnv ty)
-        emitInstrCall cenv emEnv ilG OpCodes.Callvirt tail mspec varargs
+        let instr = if callvirt then OpCodes.Callvirt else OpCodes.Call
+        emitInstrCall cenv emEnv ilG instr tail mspec varargs
 
     | I_calli (tail, callsig, None) ->
         emitInstrTail cenv ilG tail (fun () ->
