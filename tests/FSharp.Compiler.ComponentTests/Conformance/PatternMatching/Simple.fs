@@ -65,7 +65,7 @@ module Simple =
     [<Theory>]
     [<InlineData("DateTime", "DateTime.Now")>]
     [<InlineData("int", "1")>]
-    [<InlineData("Guid", "Guid.NewGuid()")>]
+    [<InlineData("Guid", "(Guid.NewGuid())")>]
     [<InlineData("Char", "'1'")>]
     [<InlineData("Byte", "0x1")>]
     [<InlineData("Decimal", "1m")>]
