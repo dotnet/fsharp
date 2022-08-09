@@ -474,7 +474,7 @@ let computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy2 =
 let computeWhatFailingNullTestImpliesAboutTypeTest _g _tgtTy2 =
     Implication.Nothing
 
-/// Work out what one successful type test (on tgtTy1) implies about another type test (against tgtTy2)
+/// Work out what one successful type test (against tgtTy1) implies about another type test (against tgtTy2)
 /// for the same input value.
 let computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 =
     let tgtTy1 = stripTyEqnsWrtErasure EraseAll g tgtTy1
