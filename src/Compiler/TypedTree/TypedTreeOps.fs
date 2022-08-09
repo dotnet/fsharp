@@ -11,7 +11,6 @@ open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Rational
 
-open FSharp.Compiler.AbstractIL 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DiagnosticsLogger
@@ -285,10 +284,10 @@ and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, slnCell)) =
         | Some sln -> 
             let sln = 
                 match sln with 
-                | ILMethSln(ty, extOpt, ilMethRef, minst) ->
-                     ILMethSln(remapTypeAux tyenv ty, extOpt, ilMethRef, remapTypesAux tyenv minst)  
-                | FSMethSln(ty, vref, minst) ->
-                     FSMethSln(remapTypeAux tyenv ty, remapValRef tyenv vref, remapTypesAux tyenv minst)  
+                | ILMethSln(ty, extOpt, ilMethRef, minst, staticTyOpt) ->
+                     ILMethSln(remapTypeAux tyenv ty, extOpt, ilMethRef, remapTypesAux tyenv minst, Option.map (remapTypeAux tyenv) staticTyOpt)  
+                | FSMethSln(ty, vref, minst, staticTyOpt) ->
+                     FSMethSln(remapTypeAux tyenv ty, remapValRef tyenv vref, remapTypesAux tyenv minst, Option.map (remapTypeAux tyenv) staticTyOpt)  
                 | FSRecdFieldSln(tinst, rfref, isSet) ->
                      FSRecdFieldSln(remapTypesAux tyenv tinst, remapRecdFieldRef tyenv.tyconRefRemap rfref, isSet)  
                 | FSAnonRecdFieldSln(anonInfo, tinst, n) ->
@@ -326,7 +325,7 @@ and copyAndRemapAndBindTyparsFull remapAttrib tyenv tps =
     match tps with 
     | [] -> tps, tyenv 
     | _ -> 
-      let tpsR = copyTypars tps
+      let tpsR = copyTypars false tps
       let tyenv = { tyenv with tpinst = bindTypars tps (generalizeTypars tpsR) tyenv.tpinst } 
       (tps, tpsR) ||> List.iter2 (fun tporig tp -> 
          tp.SetConstraints (remapTyparConstraintsAux tyenv tporig.Constraints)
@@ -972,7 +971,7 @@ type TypeEquivEnv with
 let rec traitsAEquivAux erasureFlag g aenv traitInfo1 traitInfo2 =
    let (TTrait(tys1, nm, mf1, argTys, retTy, _)) = traitInfo1
    let (TTrait(tys2, nm2, mf2, argTys2, retTy2, _)) = traitInfo2
-   mf1 = mf2 &&
+   mf1.IsInstance = mf2.IsInstance &&
    nm = nm2 &&
    ListSet.equals (typeAEquivAux erasureFlag g aenv) tys1 tys2 &&
    returnTypesAEquivAux erasureFlag g aenv retTy retTy2 &&
@@ -981,7 +980,7 @@ let rec traitsAEquivAux erasureFlag g aenv traitInfo1 traitInfo2 =
 and traitKeysAEquivAux erasureFlag g aenv witnessInfo1 witnessInfo2 =
    let (TraitWitnessInfo(tys1, nm, mf1, argTys, retTy)) = witnessInfo1
    let (TraitWitnessInfo(tys2, nm2, mf2, argTys2, retTy2)) = witnessInfo2
-   mf1 = mf2 &&
+   mf1.IsInstance = mf2.IsInstance &&
    nm = nm2 &&
    ListSet.equals (typeAEquivAux erasureFlag g aenv) tys1 tys2 &&
    returnTypesAEquivAux erasureFlag g aenv retTy retTy2 &&
@@ -2263,13 +2262,15 @@ and accFreeInWitnessArg opts (TraitWitnessInfo(tys, _nm, _mf, argTys, retTy)) ac
 
 and accFreeInTraitSln opts sln acc = 
     match sln with 
-    | ILMethSln(ty, _, _, minst) ->
-         accFreeInType opts ty 
-            (accFreeInTypes opts minst acc)
-    | FSMethSln(ty, vref, minst) ->
-         accFreeInType opts ty 
+    | ILMethSln(ty, _, _, minst, staticTyOpt) ->
+        Option.foldBack (accFreeInType opts) staticTyOpt
+            (accFreeInType opts ty 
+                (accFreeInTypes opts minst acc))
+    | FSMethSln(ty, vref, minst, staticTyOpt) ->
+        Option.foldBack (accFreeInType opts) staticTyOpt
+         (accFreeInType opts ty 
             (accFreeValRefInTraitSln opts vref  
-               (accFreeInTypes opts minst acc))
+               (accFreeInTypes opts minst acc)))
     | FSAnonRecdFieldSln(_anonInfo, tinst, _n) ->
          accFreeInTypes opts tinst acc
     | FSRecdFieldSln(tinst, _rfref, _isSet) ->
@@ -2487,22 +2488,133 @@ let checkMemberVal membInfo arity m =
 let checkMemberValRef (vref: ValRef) =
     checkMemberVal vref.MemberInfo vref.ValReprInfo vref.Range
      
+let GetFSharpViewOfReturnType (g: TcGlobals) retTy =
+    match retTy with 
+    | None -> g.unit_ty
+    | Some retTy -> retTy
+
+type TraitConstraintInfo with
+    member traitInfo.GetReturnType(g: TcGlobals) =
+        GetFSharpViewOfReturnType g traitInfo.CompiledReturnType
+
+    member traitInfo.GetObjectType() =
+        match traitInfo.MemberFlags.IsInstance, traitInfo.CompiledObjectAndArgumentTypes with
+        | true, objTy :: _ ->
+            Some objTy
+        | _ ->
+            None
+
+    // For static property traits:
+    //      ^T: (static member Zero: ^T)
+    // The inner representation is 
+    //      TraitConstraintInfo([^T], get_Zero, Property, Static, [], ^T)
+    // and this returns
+    //      []
+    //
+    // For the logically equivalent static get_property traits (i.e. the property as a get_ method)
+    //      ^T: (static member get_Zero: unit -> ^T)
+    // The inner representation is 
+    //      TraitConstraintInfo([^T], get_Zero, Member, Static, [], ^T)
+    // and this returns
+    //      []
+    //
+    // For instance property traits
+    //      ^T: (member Length: int)
+    // The inner TraitConstraintInfo representation is
+    //      TraitConstraintInfo([^T], get_Length, Property, Instance, [], int)
+    // and this returns
+    //      []
+    //
+    // For the logically equivalent instance get_property traits (i.e. the property as a get_ method)
+    //      ^T: (member get_Length: unit -> int)
+    // The inner TraitConstraintInfo representation is
+    //      TraitConstraintInfo([^T], get_Length, Method, Instance, [^T], int)
+    // and this returns
+    //      []
+    //
+    // For index property traits
+    //      ^T: (member Item: int -> int with get)
+    // The inner TraitConstraintInfo representation is
+    //      TraitConstraintInfo([^T], get_Item, Property, Instance, [^T; int], int)
+    // and this returns
+    //      [int]
+    member traitInfo.GetCompiledArgumentTypes() =
+        match traitInfo.MemberFlags.IsInstance, traitInfo.CompiledObjectAndArgumentTypes with
+        | true, _ :: argTys ->
+            argTys
+        | _, argTys ->
+            argTys
+
+    // For static property traits:
+    //      ^T: (static member Zero: ^T)
+    // The inner representation is 
+    //      TraitConstraintInfo([^T], get_Zero, PropertyGet, Static, [], ^T)
+    // and this returns
+    //      []
+    //
+    // For the logically equivalent static get_property traits (i.e. the property as a get_ method)
+    //      ^T: (static member get_Zero: unit -> ^T)
+    // The inner representation is 
+    //      TraitConstraintInfo([^T], get_Zero, Member, Static, [], ^T)
+    // and this returns
+    //      [unit]
+    //
+    // For instance property traits
+    //      ^T: (member Length: int)
+    // The inner TraitConstraintInfo representation is
+    //      TraitConstraintInfo([^T], get_Length, PropertyGet, Instance, [^T], int)
+    // and this views the constraint as if it were
+    //      []
+    //
+    // For the logically equivalent instance get_property traits (i.e. the property as a get_ method)
+    //      ^T: (member get_Length: unit -> int)
+    // The inner TraitConstraintInfo representation is
+    //      TraitConstraintInfo([^T], get_Length, Member, Instance, [^T], int)
+    // and this returns
+    //      [unit]
+    //
+    // For index property traits
+    //      (member Item: int -> int with get)
+    // The inner TraitConstraintInfo representation is
+    //      TraitConstraintInfo([^T], get_Item, PropertyGet, [^T; int], int)
+    // and this returns
+    //      [int]
+    member traitInfo.GetLogicalArgumentTypes(g: TcGlobals) =
+        match traitInfo.GetCompiledArgumentTypes(), traitInfo.MemberFlags.MemberKind with
+        | [], SynMemberKind.Member -> [g.unit_ty]
+        | argTys, _ -> argTys
+
+    member traitInfo.MemberDisplayNameCore =
+        let traitName0 = traitInfo.MemberLogicalName
+        match traitInfo.MemberFlags.MemberKind with
+        | SynMemberKind.PropertyGet
+        | SynMemberKind.PropertySet ->
+            match PrettyNaming.TryChopPropertyName traitName0 with
+            | Some nm -> nm
+            | None -> traitName0
+        | _ -> traitName0
+
+    /// Get the key associated with the member constraint.
+    member traitInfo.GetWitnessInfo() =
+        let (TTrait(tys, nm, memFlags, objAndArgTys, rty, _)) = traitInfo
+        TraitWitnessInfo(tys, nm, memFlags, objAndArgTys, rty)
+
 /// Get information about the trait constraints for a set of typars.
 /// Put these in canonical order.
 let GetTraitConstraintInfosOfTypars g (tps: Typars) = 
     [ for tp in tps do 
-            for cx in tp.Constraints do
+        for cx in tp.Constraints do
             match cx with 
-            | TyparConstraint.MayResolveMember(traitInfo, _) -> yield traitInfo 
+            | TyparConstraint.MayResolveMember(traitInfo, _) -> traitInfo 
             | _ -> () ]
     |> ListSet.setify (traitsAEquiv g TypeEquivEnv.Empty)
-    |> List.sortBy (fun traitInfo -> traitInfo.MemberName, traitInfo.ArgumentTypes.Length)
+    |> List.sortBy (fun traitInfo -> traitInfo.MemberLogicalName, traitInfo.GetCompiledArgumentTypes().Length)
 
 /// Get information about the runtime witnesses needed for a set of generalized typars
 let GetTraitWitnessInfosOfTypars g numParentTypars typars = 
     let typs = typars |> List.skip numParentTypars
     let cxs = GetTraitConstraintInfosOfTypars g typs
-    cxs |> List.map (fun cx -> cx.TraitKey)
+    cxs |> List.map (fun cx -> cx.GetWitnessInfo())
 
 /// Count the number of type parameters on the enclosing type
 let CountEnclosingTyparsOfActualParentOfVal (v: Val) = 
@@ -2607,12 +2719,6 @@ let ArgInfosOfMemberVal g (v: Val) =
 let ArgInfosOfMember g (vref: ValRef) = 
     ArgInfosOfMemberVal g vref.Deref
 
-let GetFSharpViewOfReturnType (g: TcGlobals) retTy =
-    match retTy with 
-    | None -> g.unit_ty
-    | Some retTy -> retTy
-
-
 /// Get the property "type" (getter return type) for an F# value that represents a getter or setter
 /// of an object model property.
 let ReturnTypeOfPropertyVal g (v: Val) = 
@@ -2674,7 +2780,7 @@ let isTTyparCoercesToType = function TyparConstraint.CoercesTo _ -> true | _ -> 
 let prefixOfStaticReq s =
     match s with 
     | TyparStaticReq.None -> "'"
-    | TyparStaticReq.HeadType -> " ^"
+    | TyparStaticReq.HeadType -> "^"
 
 let prefixOfInferenceTypar (typar: Typar) =  
   if typar.Rigidity <> TyparRigidity.Rigid then "_" else ""
@@ -2796,7 +2902,6 @@ module PrettyTypes =
     // Badly formed code may instantiate rigid declared typars to types.
     // Hence we double check here that the thing is really a type variable
     let safeDestAnyParTy orig g ty = match tryAnyParTy g ty with ValueNone -> orig | ValueSome x -> x
-    let tee f x = f x x
 
     let foldUnurriedArgInfos f z (x: UncurriedArgInfos) = List.fold (fold1Of2 f) z x
     let mapUnurriedArgInfos f (x: UncurriedArgInfos) = List.map (map1Of2 f) x
@@ -2922,6 +3027,7 @@ module SimplifyTypes =
         { singletons = singletons
           inplaceConstraints = Zmap.ofList typarOrder inplace
           postfixConstraints = postfix }
+
     let CollectInfo simplify tys cxs = 
         categorizeConstraints simplify (accTyparCountsMulti emptyTyparCounts tys) cxs 
 
@@ -5418,11 +5524,23 @@ type StaticOptimizationAnswer =
     | No = -1y
     | Unknown = 0y
 
-let decideStaticOptimizationConstraint g c haveWitnesses = 
+// Most static optimization conditionals in FSharp.Core are
+//   ^T : tycon
+//
+// These decide positively if ^T is nominal and identical to tycon.
+// These decide negatively if ^T is nominal and different to tycon.
+//
+// The "special" static optimization conditionals
+//    ^T : ^T 
+//    'T : 'T 
+// are used as hacks in FSharp.Core as follows:
+//    ^T : ^T  --> used in (+), (-) etc. to guard witness-invoking implementations added in F# 5
+//    'T : 'T  --> used in FastGenericEqualityComparer, FastGenericComparer to guard struct/tuple implementations 
+//
+// canDecideTyparEqn is set to true in IlxGen when the witness-invoking implementation can be used.
+let decideStaticOptimizationConstraint g c canDecideTyparEqn = 
     match c with 
-    // When witnesses are available in generic code during codegen, "when ^T : ^T" resolves StaticOptimizationAnswer.Yes
-    // This doesn't apply to "when 'T : 'T" use for "FastGenericEqualityComparer" and others.
-    | TTyconEqualsTycon (a, b) when haveWitnesses && typeEquiv g a b && (match tryDestTyparTy g a with ValueSome tp -> tp.StaticReq = TyparStaticReq.HeadType | _ -> false) ->
+    | TTyconEqualsTycon (a, b) when canDecideTyparEqn && typeEquiv g a b && isTyparTy g a ->
          StaticOptimizationAnswer.Yes
     | TTyconEqualsTycon (a, b) ->
         // Both types must be nominal for a definite result
@@ -5459,13 +5577,13 @@ let decideStaticOptimizationConstraint g c haveWitnesses =
        | ValueSome tcref1 -> if tcref1.IsStructOrEnumTycon then StaticOptimizationAnswer.Yes else StaticOptimizationAnswer.No
        | ValueNone -> StaticOptimizationAnswer.Unknown
             
-let rec DecideStaticOptimizations g cs haveWitnesses = 
+let rec DecideStaticOptimizations g cs canDecideTyparEqn = 
     match cs with 
     | [] -> StaticOptimizationAnswer.Yes
     | h :: t -> 
-        let d = decideStaticOptimizationConstraint g h haveWitnesses
+        let d = decideStaticOptimizationConstraint g h canDecideTyparEqn
         if d = StaticOptimizationAnswer.No then StaticOptimizationAnswer.No 
-        elif d = StaticOptimizationAnswer.Yes then DecideStaticOptimizations g t haveWitnesses
+        elif d = StaticOptimizationAnswer.Yes then DecideStaticOptimizations g t canDecideTyparEqn
         else StaticOptimizationAnswer.Unknown
 
 let mkStaticOptimizationExpr g (cs, e1, e2, m) = 
@@ -6409,14 +6527,16 @@ let rec tyOfExpr g expr =
         | TOp.LValueOp (LByrefGet, v) -> destByrefTy g v.Type
         | TOp.LValueOp (LAddrOf readonly, v) -> mkByrefTyWithFlag g readonly v.Type
         | TOp.RefAddrGet readonly -> (match tinst with [ty] -> mkByrefTyWithFlag g readonly ty | _ -> failwith "bad TOp.RefAddrGet node")      
-        | TOp.TraitCall traitInfo -> GetFSharpViewOfReturnType g traitInfo.ReturnType
+        | TOp.TraitCall traitInfo -> traitInfo.GetReturnType(g)
         | TOp.Reraise -> (match tinst with [rtn_ty] -> rtn_ty | _ -> failwith "bad TOp.Reraise node")
         | TOp.Goto _ | TOp.Label _ | TOp.Return -> 
             //assert false
             //errorR(InternalError("unexpected goto/label/return in tyOfExpr", m))
             // It doesn't matter what type we return here. This is only used in free variable analysis in the code generator
             g.unit_ty
-    | Expr.WitnessArg (traitInfo, _m) -> GenWitnessTy g traitInfo.TraitKey
+    | Expr.WitnessArg (traitInfo, _m) ->
+        let witnessInfo = traitInfo.GetWitnessInfo()
+        GenWitnessTy g witnessInfo
 
 //--------------------------------------------------------------------------
 // Make applications
@@ -7545,8 +7665,6 @@ let mkCallToInt16Operator (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrins
 
 let mkCallToUInt16Operator (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint16_operator_info, [[ty]], [e1], m)
 
-let mkCallToIntOperator (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int_operator_info, [[ty]], [e1], m)
-
 let mkCallToInt32Operator (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.int32_operator_info, [[ty]], [e1], m)
 
 let mkCallToUInt32Operator (g: TcGlobals) m ty e1 = mkApps g (typedExprForIntrinsic g m g.uint32_operator_info, [[ty]], [e1], m)
@@ -8112,7 +8230,7 @@ let MakeArgsForTopArgs _g m argTysl tpenv =
 let AdjustValForExpectedValReprInfo g m (vref: ValRef) flags valReprInfo =
 
     let tps, argTysl, retTy, _ = GetValReprTypeInFSharpForm g valReprInfo vref.Type m
-    let tpsR = copyTypars tps
+    let tpsR = copyTypars false tps
     let tyargsR = List.map mkTyparTy tpsR
     let tpenv = bindTypars tps tyargsR emptyTyparInst
     let rtyR = instType tpenv retTy
@@ -8923,10 +9041,11 @@ let CompileAsEvent g attrs = HasFSharpAttribute g g.attrib_CLIEventAttribute att
 
 let MemberIsCompiledAsInstance g parent isExtensionMember (membInfo: ValMemberInfo) attrs =
     // All extension members are compiled as static members
-    if isExtensionMember then false
-    // Anything implementing a dispatch slot is compiled as an instance member
-    elif membInfo.MemberFlags.IsOverrideOrExplicitImpl then true
-    elif not (isNil membInfo.ImplementedSlotSigs) then true
+    if isExtensionMember then
+        false
+    // Abstract slots, overrides and interface impls are all true to IsInstance
+    elif membInfo.MemberFlags.IsDispatchSlot || membInfo.MemberFlags.IsOverrideOrExplicitImpl || not (isNil membInfo.ImplementedSlotSigs) then
+        membInfo.MemberFlags.IsInstance
     else 
         // Otherwise check attributes to see if there is an explicit instance or explicit static flag
         let explicitInstance, explicitStatic = 
@@ -10240,3 +10359,4 @@ let isFSharpExceptionTy g ty =
     match tryTcrefOfAppTy g ty with
     | ValueSome tcref -> tcref.IsFSharpException
     | _ -> false
+
