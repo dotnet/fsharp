@@ -2497,6 +2497,33 @@ module TestStructMatching3 =
     check "cnwcki4cewweq3" (toName System.DateTime.Now) "B"
     check "cnwcki4cewweq4" (toName (obj())) "other"
 
+module TestStructMatching4 =
+
+    let toName (x: obj) =
+        match x with
+        | :? IFormattable when false -> "A" // note: "when false" used so type test succeeds but proceed to next type test
+        | :? DateTime -> "B"
+        | _ -> "other"
+
+    check "cnwcki4cewweq1" (toName 1) "other"
+    check "cnwcki4cewweq2" (toName "a") "other"
+    check "cnwcki4cewweq3" (toName System.DateTime.Now) "B"
+    check "cnwcki4cewweq4" (toName (obj())) "other"
+
+module TestStructMatching5 =
+
+    let toName (x: obj) =
+        match x with
+        | :? IFormattable when false -> "A" // note: "when false" used so type test succeeds but proceed to next type test
+        | :? Guid -> "B"
+        | _ -> "other"
+
+    check "cnwcki4cewweq11" (toName 1) "other"
+    check "cnwcki4cewweq22" (toName "a") "other"
+    check "cnwcki4cewweq33" (toName System.DateTime.Now) "other"
+    check "cnwcki4cewweq34" (toName (System.Guid())) "B"
+    check "cnwcki4cewweq45" (toName (obj())) "other"
+
 #if !NETCOREAPP
 module TestConverter =
     open System
