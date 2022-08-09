@@ -60,3 +60,28 @@ module Simple =
         |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
+
+
+    [<Theory>]
+    [<InlineData("DateTime", "DateTime.Now")>]
+    [<InlineData("int", "1")>]
+    [<InlineData("Guid", "Guid.NewGuid()")>]
+    [<InlineData("Char", "'1'")>]
+    [<InlineData("Byte", "0x1")>]
+    [<InlineData("Decimal", "1m")>]
+    let ``Test type matching for subtypes and interfaces`` typ value =
+        Fsx $"""
+open System
+let classify (o: obj) =
+    match o with
+    | :? {typ} as d when d = Unchecked.defaultof<_> -> "default"
+    | :? IFormattable -> "formattable"
+    | _ -> "not a {typ}"
+
+let res = classify {value}
+if res <> "formattable" then
+    failwith $"Unexpected result: {{res}}"
+         """
+         |> asExe
+         |> compileAndRun
+         |> shouldSucceed
