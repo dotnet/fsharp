@@ -332,6 +332,8 @@ type SynTypeConstraint =
 
     | WhereTyparIsDelegate of typar: SynTypar * typeArgs: SynType list * range: range
 
+    | WhereSelfConstrained of selfConstraint: SynType * range: range
+
     member x.Range =
         match x with
         | WhereTyparIsValueType (range = range)
@@ -345,6 +347,7 @@ type SynTypeConstraint =
         | WhereTyparSupportsMember (range = range)
         | WhereTyparIsEnum (range = range)
         | WhereTyparIsDelegate (range = range) -> range
+        | WhereSelfConstrained (range = range) -> range
 
 [<RequireQualifiedAccess>]
 type SynTyparDecls =
@@ -595,6 +598,8 @@ type SynExpr =
         range: range *
         trivia: SynExprIfThenElseTrivia
 
+    | Typar of typar: SynTypar * range: range
+
     | Ident of ident: Ident
 
     | LongIdent of isOptional: bool * longDotId: SynLongIdent * altNameRefCell: SynSimplePatAlternativeIdInfo ref option * range: range
@@ -635,7 +640,7 @@ type SynExpr =
 
     | AddressOf of isByref: bool * expr: SynExpr * opRange: range * range: range
 
-    | TraitCall of supportTys: SynTypar list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
+    | TraitCall of supportTys: SynType list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
 
     | JoinIn of lhsExpr: SynExpr * lhsRange: range * rhsExpr: SynExpr * range: range
 
@@ -769,6 +774,7 @@ type SynExpr =
         | SynExpr.InterpolatedString (range = m)
         | SynExpr.Dynamic (range = m) -> m
         | SynExpr.Ident id -> id.idRange
+        | SynExpr.Typar (range = m) -> m
         | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
 
     member e.RangeWithoutAnyExtraDot =
@@ -1417,7 +1423,8 @@ type SynMemberDefn =
         ident: Ident *
         typeOpt: SynType option *
         propKind: SynMemberKind *
-        memberFlags: (SynMemberKind -> SynMemberFlags) *
+        memberFlags: SynMemberFlags *
+        memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         equalsRange: range *

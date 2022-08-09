@@ -42,6 +42,8 @@ type LanguageFeature =
     | RequiredPropertiesSupport
     | InitPropertiesSupport
     | LowercaseDUWhenRequireQualifiedAccess
+    | InterfacesWithAbstractStaticMembers
+    | SelfTypeConstraints
 
 /// LanguageVersion management
 type LanguageVersion =

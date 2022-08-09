@@ -626,17 +626,23 @@ let instrs () =
         i_stsfld, I_field_instr(volatilePrefix (fun x fspec -> I_stsfld(x, fspec)))
         i_ldflda, I_field_instr(noPrefixes I_ldflda)
         i_ldsflda, I_field_instr(noPrefixes I_ldsflda)
-        i_call, I_method_instr(tailPrefix (fun tl (mspec, y) -> I_call(tl, mspec, y)))
+        (i_call,
+         I_method_instr(
+             constraintOrTailPrefix (fun (c, tl) (mspec, y) ->
+                 match c with
+                 | Some ty -> I_callconstraint(false, tl, ty, mspec, y)
+                 | None -> I_call(tl, mspec, y))
+         ))
         i_ldftn, I_method_instr(noPrefixes (fun (mspec, _y) -> I_ldftn mspec))
         i_ldvirtftn, I_method_instr(noPrefixes (fun (mspec, _y) -> I_ldvirtftn mspec))
         i_newobj, I_method_instr(noPrefixes I_newobj)
-        i_callvirt,
-        I_method_instr(
-            constraintOrTailPrefix (fun (c, tl) (mspec, y) ->
-                match c with
-                | Some ty -> I_callconstraint(tl, ty, mspec, y)
-                | None -> I_callvirt(tl, mspec, y))
-        )
+        (i_callvirt,
+         I_method_instr(
+             constraintOrTailPrefix (fun (c, tl) (mspec, y) ->
+                 match c with
+                 | Some ty -> I_callconstraint(true, tl, ty, mspec, y)
+                 | None -> I_callvirt(tl, mspec, y))
+         ))
         i_leave_s, I_unconditional_i8_instr(noPrefixes (fun x -> I_leave x))
         i_br_s, I_unconditional_i8_instr(noPrefixes I_br)
         i_leave, I_unconditional_i32_instr(noPrefixes (fun x -> I_leave x))

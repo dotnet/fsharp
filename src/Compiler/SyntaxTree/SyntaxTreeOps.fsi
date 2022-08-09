@@ -296,9 +296,11 @@ val ClassCtorMemberFlags: trivia: SynMemberFlagsTrivia -> SynMemberFlags
 
 val OverrideMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
 
-val AbstractMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+val AbstractMemberFlags: isInstance: bool -> trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
 
 val StaticMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+
+val ImplementStaticMemberFlags: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
 
 val MemberSynMemberFlagsTrivia: mMember: range -> SynMemberFlagsTrivia
 
@@ -311,6 +313,11 @@ val DefaultSynMemberFlagsTrivia: mDefault: range -> SynMemberFlagsTrivia
 val AbstractSynMemberFlagsTrivia: mAbstract: range -> SynMemberFlagsTrivia
 
 val AbstractMemberSynMemberFlagsTrivia: mAbstract: range -> mMember: range -> SynMemberFlagsTrivia
+
+val StaticAbstractSynMemberFlagsTrivia: mStatic: range -> mAbstract: range -> SynMemberFlagsTrivia
+
+val StaticAbstractMemberSynMemberFlagsTrivia:
+    mStatic: range -> mAbstract: range -> mMember: range -> SynMemberFlagsTrivia
 
 val inferredTyparDecls: SynValTyparDecls
 

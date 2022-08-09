@@ -649,6 +649,8 @@ module SyntaxTraversal =
 
                 | SynExpr.LongIdent (_, _longIdent, _altNameRefCell, _range) -> None
 
+                | SynExpr.Typar (_typar, _range) -> None
+
                 | SynExpr.LongIdentSet (_longIdent, synExpr, _range) -> traverseSynExpr synExpr
 
                 | SynExpr.DotGet (synExpr, _dotm, _longIdent, _range) -> traverseSynExpr synExpr
