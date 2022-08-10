@@ -827,7 +827,11 @@ let convAlternativeDef
         | SpecialFSharpListHelpers ->
 
             let baseTesterMeths, baseTesterProps =
-                if ilg.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible && cud.HasHelpers = AllHelpers then [], []
+                if
+                    ilg.langVersion.SupportsFeature LanguageFeature.UnionIsPropertiesVisible
+                    && cud.HasHelpers = AllHelpers
+                then
+                    [], []
                 elif cud.UnionCases.Length <= 1 then
                     [], []
                 elif repr.RepresentOneAlternativeAsNull info then

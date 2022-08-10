@@ -854,7 +854,8 @@ val PublishTypeDefn: cenv: TcFileState -> env: TcEnv -> mspec: Tycon -> unit
 val PublishValueDefn: cenv: TcFileState -> env: TcEnv -> declKind: DeclKind -> vspec: Val -> unit
 
 /// Publish a value definition to the module/namespace type accumulator.
-val PublishValueDefnMaybeInclCompilerGenerated: cenv: TcFileState -> env: TcEnv -> inclCompilerGenerated: bool -> declKind: DeclKind -> vspec: Val -> unit
+val PublishValueDefnMaybeInclCompilerGenerated:
+    cenv: TcFileState -> env: TcEnv -> inclCompilerGenerated: bool -> declKind: DeclKind -> vspec: Val -> unit
 
 /// Mark a typar as no longer being an inference type variable
 val SetTyparRigid: DisplayEnv -> range -> Typar -> unit

@@ -313,7 +313,7 @@ val mkRecdFieldSetViaExprAddr: Expr * RecdFieldRef * TypeInst * Expr * range -> 
 val mkUnionCaseTagGetViaExprAddr: Expr * TyconRef * TypeInst * range -> Expr
 
 /// Make an expression which tests that a union value is of a particular union case.
-val mkUnionCaseTest: TcGlobals -> Expr * UnionCaseRef  * TypeInst * range -> Expr
+val mkUnionCaseTest: TcGlobals -> Expr * UnionCaseRef * TypeInst * range -> Expr
 
 /// Make a 'TOp.UnionCaseProof' expression, which proves a union value is over a particular case (used only for ref-unions, not struct-unions)
 val mkUnionCaseProof: Expr * UnionCaseRef * TypeInst * range -> Expr
