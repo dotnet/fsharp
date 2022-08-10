@@ -525,27 +525,27 @@ module rec CompilerAssertHelpers =
         use outWriter = new StringWriter (stdout)
         use errWriter = new StringWriter (stderr)
 
-        let succeeded =
+        let succeeded, exn =
             try
                 try
                     Console.SetOut outWriter
                     Console.SetError errWriter
                     func ()
-                    true
+                    true, None
                 with e ->
                     let errorMessage = if e.InnerException <> null then e.InnerException.ToString() else e.ToString()
                     stderr.Append errorMessage |> ignore
-                    false
+                    false, Some e
             finally
                 Console.SetOut out
                 Console.SetError err
                 outWriter.Close()
                 errWriter.Close()
 
-        succeeded, stdout.ToString(), stderr.ToString()
+        succeeded, stdout.ToString(), stderr.ToString(), exn
 
     let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
-        let succeeded, stdout, stderr = executeBuiltApp outputFilePath deps
+        let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps
         let exitCode = if succeeded then 0 else -1
         exitCode, stdout, stderr
 
@@ -677,7 +677,8 @@ Updated automatically, please check diffs in your pull request, changes must be 
                     Assert.Fail errors
                 onOutput output
             else
-                executeBuiltApp outputFilePath deps |> ignore)
+                let _succeeded, _stdout, _stderr, exn = executeBuiltApp outputFilePath deps 
+                exn |> Option.iter raise)
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
         CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))
