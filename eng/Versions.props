@@ -13,9 +13,9 @@
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <!-- F# Version components -->
-    <FSMajorVersion>6</FSMajorVersion>
+    <FSMajorVersion>7</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>6</FSBuildVersion>
+    <FSBuildVersion>0</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -30,8 +30,8 @@
     <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).0.0</FSCoreVersion>
     <!-- -->
     <!-- FSharp.Compiler.Service version -->
-    <FCSMajorVersion>41</FCSMajorVersion>
-    <FCSMinorVersion>0</FCSMinorVersion>
+    <FCSMajorVersion>42</FCSMajorVersion>
+    <FCSMinorVersion>7</FCSMinorVersion>
     <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
@@ -39,7 +39,7 @@
     <FSharpCompilerServiceReleaseNotesVersion>$(FCSMajorVersion)$(FCSMinorVersion)$(FCSBuildVersion)</FSharpCompilerServiceReleaseNotesVersion>
     <!-- -->
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersionValue>6.0.3</FSharpCoreShippedPackageVersionValue>
+    <FSharpCoreShippedPackageVersionValue>6.0.5</FSharpCoreShippedPackageVersionValue>
     <!-- -->
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
