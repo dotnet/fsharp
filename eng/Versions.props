@@ -32,7 +32,7 @@
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>42</FCSMajorVersion>
     <FCSMinorVersion>7</FCSMinorVersion>
-    <FCSBuildVersion>$(FSBuildVersion)</FCSBuildVersion>
+    <FCSBuildVersion>100</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
     <FSharpCompilerServiceVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion).$(FCSRevisionVersion)</FSharpCompilerServiceVersion>
