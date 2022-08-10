@@ -613,7 +613,7 @@
     .method public strict virtual instance string 
             ToString() cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       22 (0x16)
       .maxstack  8
       IL_0000:  ldstr      "%+A"
@@ -627,7 +627,8 @@
     .method public hidebysig virtual final 
             instance int32  CompareTo(class Match01/Test1 obj) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       24 (0x18)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -660,7 +661,8 @@
     .method public hidebysig virtual final 
             instance int32  CompareTo(object obj) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       13 (0xd)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -674,7 +676,8 @@
             instance int32  CompareTo(object obj,
                                       class [System.Runtime]System.Collections.IComparer comp) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       32 (0x20)
       .maxstack  6
       .locals init (class Match01/Test1 V_0)
@@ -708,7 +711,8 @@
     .method public hidebysig virtual final 
             instance int32  GetHashCode(class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       167 (0xa7)
       .maxstack  7
       .locals init (int32 V_0,
@@ -819,7 +823,8 @@
     .method public hidebysig virtual final 
             instance int32  GetHashCode() cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       12 (0xc)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -832,7 +837,8 @@
             instance bool  Equals(object obj,
                                   class [System.Runtime]System.Collections.IEqualityComparer comp) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       209 (0xd1)
       .maxstack  4
       .locals init (class Match01/Test1 V_0,
@@ -941,7 +947,8 @@
     .method public hidebysig virtual final 
             instance bool  Equals(class Match01/Test1 obj) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       200 (0xc8)
       .maxstack  4
       .locals init (int32 V_0,
@@ -1046,7 +1053,8 @@
     .method public hidebysig virtual final 
             instance bool  Equals(object obj) cil managed
     {
-      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       // Code size       20 (0x14)
       .maxstack  4
       .locals init (class Match01/Test1 V_0)
@@ -1106,7 +1114,8 @@
                                                   class Match01/Test1 obj,
                                                   class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
   {
-    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
     // Code size       268 (0x10c)
     .maxstack  5
     .locals init (int32 V_0,
@@ -1242,7 +1251,8 @@
                                                       class Match01/Test1 objTemp,
                                                       class [FSharp.Core]Microsoft.FSharp.Core.Unit unitVar) cil managed
   {
-    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [System.Runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+    .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
     // Code size       253 (0xfd)
     .maxstack  5
     .locals init (int32 V_0,

@@ -36,11 +36,11 @@ let DecideEscapes syntacticArgs body =
     frees.FreeLocals |> Zset.filter isMutableEscape 
 
 /// Find all the mutable locals that escape a lambda expression, ignoring the arguments to the lambda
-let DecideLambda exprF cenv topValInfo expr exprTy z = 
+let DecideLambda exprF cenv valReprInfo expr exprTy z = 
     match stripDebugPoints expr with 
     | Expr.Lambda _
     | Expr.TyLambda _ ->
-        let _tps, ctorThisValOpt, baseValOpt, vsl, body, _bodyty = destTopLambda cenv.g cenv.amap topValInfo (expr, exprTy) 
+        let _tps, ctorThisValOpt, baseValOpt, vsl, body, _bodyty = destLambdaWithValReprInfo cenv.g cenv.amap valReprInfo (expr, exprTy) 
         let snoc = fun x y -> y :: x
         let args = List.concat vsl
         let args = Option.fold snoc args baseValOpt
@@ -78,14 +78,14 @@ let DecideExpr cenv exprF noInterceptF z expr  =
     let g = cenv.g
     match stripDebugPoints expr with 
     | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _, m, bodyTy) -> 
-        let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
+        let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
         let ty = mkMultiLambdaTy g m argvs bodyTy 
-        DecideLambda (Some exprF) cenv topValInfo expr ty z
+        DecideLambda (Some exprF) cenv valReprInfo expr ty z
 
     | Expr.TyLambda (_, tps, _, _m, bodyTy)  -> 
-        let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
+        let valReprInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
         let ty = mkForallTyIfNeeded tps bodyTy 
-        DecideLambda (Some exprF)  cenv topValInfo expr ty z
+        DecideLambda (Some exprF)  cenv valReprInfo expr ty z
 
     | Expr.Obj (_, _, baseValOpt, superInitCall, overrides, iimpls, _m) -> 
         let CheckMethod z (TObjExprMethod(_, _attribs, _tps, vs, body, _m)) = 
@@ -111,8 +111,8 @@ let DecideExpr cenv exprF noInterceptF z expr  =
 
 /// Find all the mutable locals that escape a binding
 let DecideBinding cenv z (TBind(v, expr, _m) as bind) = 
-    let topValInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData 
-    DecideLambda None cenv topValInfo expr v.Type z 
+    let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData 
+    DecideLambda None cenv valReprInfo expr v.Type z 
 
 /// Find all the mutable locals that escape a set of bindings
 let DecideBindings cenv z binds = (z, binds) ||> List.fold (DecideBinding cenv)

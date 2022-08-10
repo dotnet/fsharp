@@ -160,7 +160,7 @@ module DispatchSlotChecking =
                 let belongsToReqdTy = 
                     match overrideBy.MemberInfo.Value.ImplementedSlotSigs with
                     | [] -> false
-                    | ss :: _ -> isInterfaceTy g ss.ImplementedType && typeEquiv g reqdTy ss.ImplementedType
+                    | ss :: _ -> isInterfaceTy g ss.DeclaringType && typeEquiv g reqdTy ss.DeclaringType
                 if belongsToReqdTy then 
                     CanImplementAnyInterfaceSlot
                 else
@@ -178,12 +178,14 @@ module DispatchSlotChecking =
         Override(implKind, overrideBy.MemberApparentEntity, mkSynId overrideBy.Range nm, memberMethodTypars, memberToParentInst, argTys, retTy, isFakeEventProperty, overrideBy.IsCompilerGenerated)
 
     /// Get the override information for an object expression method being used to implement dispatch slots
-    let GetObjectExprOverrideInfo g amap (implty, id: Ident, memberFlags, ty, arityInfo, bindingAttribs, rhsExpr) = 
+    let GetObjectExprOverrideInfo g amap (implTy, id: Ident, memberFlags, ty, arityInfo, bindingAttribs, rhsExpr) = 
         // Dissect the type. The '0' indicates there are no enclosing generic class type parameters relevant here.
         let tps, _, argInfos, retTy, _ = GetMemberTypeInMemberForm g memberFlags arityInfo 0 ty id.idRange
         let argTys = argInfos |> List.mapSquared fst
+
         // Dissect the implementation
-        let _, ctorThisValOpt, baseValOpt, vsl, rhsExpr, _ = destTopLambda g amap arityInfo (rhsExpr, ty)
+        let _, ctorThisValOpt, baseValOpt, vsl, rhsExpr, _ = destLambdaWithValReprInfo g amap arityInfo (rhsExpr, ty)
+
         assert ctorThisValOpt.IsNone
 
         // Drop 'this'
@@ -192,13 +194,13 @@ module DispatchSlotChecking =
             // Check for empty variable list from a () arg
             let vs = if List.isSingleton vs && argInfos.IsEmpty then [] else vs
             let implKind = 
-                if isInterfaceTy g implty then 
+                if isInterfaceTy g implTy then 
                     CanImplementAnyInterfaceSlot 
                 else 
                     CanImplementAnyClassHierarchySlot
                     //CanImplementAnySlot  <<----- Change to this to enable implicit interface implementation
             let isFakeEventProperty = CompileAsEvent g bindingAttribs
-            let overrideByInfo = Override(implKind, tcrefOfAppTy g implty, id, tps, [], argTys, retTy, isFakeEventProperty, false)
+            let overrideByInfo = Override(implKind, tcrefOfAppTy g implTy, id, tps, [], argTys, retTy, isFakeEventProperty, false)
             overrideByInfo, (baseValOpt, thisv, vs, bindingAttribs, rhsExpr)
         | _ -> 
             error(InternalError("Unexpected shape for object expression override", id.idRange))
@@ -344,7 +346,7 @@ module DispatchSlotChecking =
 
             // Always try to raise a target runtime error if we have a DIM.
             if reqdSlot.HasDefaultInterfaceImplementation then
-                checkLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
+                checkLanguageFeatureRuntimeAndRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
 
             let maybeResolvedSlot =
                 NameMultiMap.find dispatchSlot.LogicalName overridesKeyed 
@@ -741,6 +743,8 @@ module DispatchSlotChecking =
             yield SlotImplSet(dispatchSlots, dispatchSlotsKeyed, availPriorOverrides, reqdProperties) ]
 
 
+    let IsStaticAbstractImpl (overrideBy: ValRef) = (not overrideBy.IsInstanceMember) && overrideBy.IsOverrideOrExplicitImpl
+
     /// Check that a type definition implements all its required interfaces after processing all declarations 
     /// within a file.
     let CheckImplementationRelationAtEndOfInferenceScope (infoReader : InfoReader, denv, nenv, sink, tycon: Tycon, isImplementation) =
@@ -749,7 +753,7 @@ module DispatchSlotChecking =
         let amap = infoReader.amap
 
         let tcaug = tycon.TypeContents        
-        let interfaces = tycon.ImmediateInterfacesOfFSharpTycon |> List.map (fun (ity, _compgen, m) -> (ity, m))
+        let interfaces = tycon.ImmediateInterfacesOfFSharpTycon |> List.map (fun (intfTy, _compgen, m) -> (intfTy, m))
 
         let overallTy = generalizedTyconRef g (mkLocalTyconRef tycon)
 
@@ -765,10 +769,14 @@ module DispatchSlotChecking =
         let allImpls = List.zip allReqdTys slotImplSets
 
         // Find the methods relevant to implementing the abstract slots listed under the reqdType being checked.
+        //
+        // Methods that are
+        //   - Not static OR Static in the interface
+        //   - override/default
         let allImmediateMembersThatMightImplementDispatchSlots = 
             allImmediateMembers |> List.filter (fun overrideBy -> 
-                overrideBy.IsInstanceMember   &&  // exclude static
-                overrideBy.IsVirtualMember &&  // exclude non virtual (e.g. keep override/default). [4469]
+                (overrideBy.IsInstanceMember || IsStaticAbstractImpl overrideBy) &&
+                overrideBy.IsVirtualMember &&
                 not overrideBy.IsDispatchSlotMember)
 
         let mustOverrideSomething reqdTy (overrideBy: ValRef) =
@@ -780,9 +788,9 @@ module DispatchSlotChecking =
            | [] -> 
                 // Are we looking at the implementation of the class hierarchy? If so include all the override members
                 not (isInterfaceTy g reqdTy)
-           | ss -> 
-                 ss |> List.forall (fun ss -> 
-                     let ty = ss.ImplementedType
+           | slotSigs -> 
+                 slotSigs |> List.forall (fun slotSig -> 
+                     let ty = slotSig.DeclaringType
                      if isInterfaceTy g ty then 
                          // Is this a method impl listed under the reqdTy?
                          typeEquiv g ty reqdTy
@@ -916,10 +924,16 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
            && not tycon.IsFSharpDelegateTycon then 
 
             DispatchSlotChecking.CheckImplementationRelationAtEndOfInferenceScope (infoReader, denv, nenv, sink, tycon, isImplementation) 
-    
+
 /// Get the methods relevant to determining if a uniquely-identified-override exists based on the syntactic information 
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 
-let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, valSynData) =
+let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName: Ident, bindm, typToSearchForAbstractMembers, valSynData, memberFlags: SynMemberFlags) =
+
+    let g = infoReader.g
+    if not memberFlags.IsInstance && memberFlags.IsOverrideOrExplicitImpl then
+        checkLanguageFeatureRuntimeAndRecover infoReader LanguageFeature.InterfacesWithAbstractStaticMembers bindm
+        checkLanguageFeatureAndRecover g.langVersion LanguageFeature.InterfacesWithAbstractStaticMembers bindm
+
     let minfos = 
         match typToSearchForAbstractMembers with 
         | _, Some(SlotImplSet(_, dispatchSlotsKeyed, _, _)) -> 
@@ -927,10 +941,17 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
         | ty, None -> 
             GetIntrinsicMethInfosOfType infoReader (Some memberName.idText) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides bindm ty
     let dispatchSlots = minfos |> List.filter (fun minfo -> minfo.IsDispatchSlot)
-    let topValSynArities = SynInfo.AritiesOfArgs valSynData
-    let topValSynArities = if List.isEmpty topValSynArities then topValSynArities else topValSynArities.Tail
-    let dispatchSlotsArityMatch = dispatchSlots |> List.filter (fun minfo -> minfo.NumArgs = topValSynArities) 
-    dispatchSlots, dispatchSlotsArityMatch 
+    let valReprSynArities = SynInfo.AritiesOfArgs valSynData
+
+    // We only return everything if it's empty or if it's a non-instance member.
+    // If it's an instance member, we are getting rid of `this` (by only taking tail).
+    let valReprSynArities =
+        if List.isEmpty valReprSynArities || (not memberFlags.IsInstance) then
+            valReprSynArities
+        else
+            valReprSynArities.Tail
+    let dispatchSlotsArityMatch = dispatchSlots |> List.filter (fun minfo -> minfo.NumArgs = valReprSynArities) 
+    dispatchSlots, dispatchSlotsArityMatch
 
 /// Get the properties relevant to determining if a uniquely-identified-override exists based on the syntactic information 
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does 

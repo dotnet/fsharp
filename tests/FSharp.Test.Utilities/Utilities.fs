@@ -7,6 +7,7 @@ open System.IO
 open System.Reflection
 open System.Collections.Immutable
 open System.Diagnostics
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
@@ -14,7 +15,6 @@ open TestFramework
 open NUnit.Framework
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
-
 module Utilities =
 
     type Async with

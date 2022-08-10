@@ -69,7 +69,7 @@
       <NgenArchitecture>All</NgenArchitecture>
       <NgenPriority>2</NgenPriority>
       <Private>True</Private>
-      <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
     </ProjectReference>
 
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj">
@@ -188,7 +188,7 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.ProjectSystem.PropertyPages\FSharp.ProjectSystem.PropertyPages.vbproj">
       <Project>{FCFB214C-462E-42B3-91CA-FC557EFEE74F}</Project>
       <Name>FSharp.PropertiesPages</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bPkgDefProjectOutputGroup%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Ngen>true</Ngen>
       <NgenArchitecture>All</NgenArchitecture>

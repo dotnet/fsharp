@@ -26,8 +26,10 @@ let main (argv) =
 
     let compilerName =
         // the 64 bit desktop version of the compiler is name fscAnyCpu.exe, all others are fsc.exe
-        if Environment.Is64BitProcess
-           && typeof<obj>.Assembly.GetName().Name <> "System.Private.CoreLib" then
+        if
+            Environment.Is64BitProcess
+            && typeof<obj>.Assembly.GetName().Name <> "System.Private.CoreLib"
+        then
             "fscAnyCpu.exe"
         else
             "fsc.exe"
@@ -58,7 +60,6 @@ let main (argv) =
             System.Console.ReadLine() |> ignore
 
         // Set up things for the --times testing flag
-#if !FX_NO_APP_DOMAINS
         let timesFlag = argv |> Array.exists (fun x -> x = "/times" || x = "--times")
 
         if timesFlag then
@@ -72,7 +73,6 @@ let main (argv) =
                     stats.memoryMapFileClosedCount
                     stats.rawMemoryFileCount
                     stats.weakByteFileCount)
-#endif
 
         // This object gets invoked when two many errors have been accumulated, or an abort-on-error condition
         // has been reached (e.g. type checking failed, so don't proceed to optimization).
@@ -88,12 +88,7 @@ let main (argv) =
             }
 
         // Get the handler for legacy resolution of references via MSBuild.
-        let legacyReferenceResolver =
-#if CROSS_PLATFORM_COMPILER
-            SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
-#else
-            LegacyMSBuildReferenceResolver.getResolver ()
-#endif
+        let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
 
         // Perform the main compilation.
         //

@@ -25,7 +25,7 @@ open Internal.Utilities.Text.Parsing
 /// information about the grammar at the point where the error occurred, e.g. what tokens
 /// are valid to shift next at that point in the grammar. This information is processed in CompileOps.fs.
 [<NoEquality; NoComparison>]
-exception SyntaxError of obj (* ParseErrorContext<_> *)  * range: range
+exception SyntaxError of obj (* ParseErrorContext<_> *) * range: range
 
 exception IndentationProblem of string * range
 
@@ -811,3 +811,49 @@ let mkSynMemberDefnGetSet
                 []
         | _ -> []
     | _ -> []
+
+//  Input Text               Precedence by Parser        Adjustment
+//
+//  ^T.Ident                 ^(T.Ident)                  (^T).Ident
+//  ^T.Ident[idx]            ^(T.Ident[idx])             (^T).Ident[idx]
+//  ^T.Ident.[idx]           ^(T.Ident.[idx])            (^T).Ident.[idx]
+//  ^T.Ident.Ident2          ^(T.Ident.Ident2)           (^T).Ident.Ident2
+//  ^T.Ident(args).Ident3    ^(T.Ident(args).Ident3)     (^T).Ident(args).Ident3
+//  ^T.(+)(args)             ^(T.(+)(args))              (^T).(+)(args).Ident3
+let adjustHatPrefixToTyparLookup mFull rightExpr =
+    let rec take inp =
+        match inp with
+        | SynExpr.Ident (typarIdent)
+        | SynExpr.LongIdent (false, SynLongIdent ([ typarIdent ], _, _), None, _) ->
+            let typar = SynTypar(typarIdent, TyparStaticReq.HeadType, false)
+            SynExpr.Typar(typar, mFull)
+        | SynExpr.LongIdent (false, SynLongIdent ((typarIdent :: items), (dotm :: dots), (_ :: itemTrivias)), None, _) ->
+            let typar = SynTypar(typarIdent, TyparStaticReq.HeadType, false)
+            let lookup = SynLongIdent(items, dots, itemTrivias)
+            SynExpr.DotGet(SynExpr.Typar(typar, mFull), dotm, lookup, mFull)
+        | SynExpr.App (isAtomic, false, funcExpr, argExpr, m) ->
+            let funcExpr2 = take funcExpr
+            SynExpr.App(isAtomic, false, funcExpr2, argExpr, unionRanges funcExpr2.Range m)
+        | SynExpr.DotGet (leftExpr, dotm, lookup, m) ->
+            let leftExpr2 = take leftExpr
+            SynExpr.DotGet(leftExpr2, dotm, lookup, m)
+        | SynExpr.DotIndexedGet (leftExpr, indexArg, dotm, m) ->
+            let leftExpr2 = take leftExpr
+            SynExpr.DotIndexedGet(leftExpr2, indexArg, dotm, m)
+        | _ ->
+            reportParseErrorAt mFull (FSComp.SR.parsIncompleteTyparExpr2 ())
+            arbExpr ("hatExpr1", mFull)
+
+    take rightExpr
+
+// The last element of elementTypes does not have a star or slash
+let mkSynTypeTuple (isStruct: bool) (elementTypes: SynTupleTypeSegment list) : SynType =
+    let range =
+        match elementTypes with
+        | [] -> Range.Zero
+        | head :: tail ->
+
+            (head.Range, tail)
+            ||> List.fold (fun acc segment -> unionRanges acc segment.Range)
+
+    SynType.Tuple(isStruct, elementTypes, range)

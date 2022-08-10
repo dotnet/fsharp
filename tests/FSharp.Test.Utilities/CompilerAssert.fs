@@ -11,9 +11,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
-#if FX_NO_APP_DOMAINS
 open System.Runtime.Loader
-#endif
 open FSharp.Test.Utilities
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
@@ -256,7 +254,7 @@ module rec CompilerAssertHelpers =
             yield Array.empty<string>
     |]
 
-#if FX_NO_APP_DOMAINS
+#if NETCOREAPP
     let executeBuiltApp assembly deps =
         let ctxt = AssemblyLoadContext("ContextName", true)
         try
@@ -309,10 +307,11 @@ module rec CompilerAssertHelpers =
             SourceFiles = [|"test.fs"|]
             OtherOptions =
                 let assemblies = TargetFrameworkUtil.currentReferences |> Array.map (fun x -> sprintf "-r:%s" x)
+                let defaultOptions =  Array.append [|"--preferreduilang:en-US"; "--noframework"; "--warn:5"|] assemblies
 #if NETCOREAPP
-                Array.append [|"--preferreduilang:en-US"; "--targetprofile:netcore"; "--noframework"; "--simpleresolution"; "--warn:5"|] assemblies
+                Array.append [|"--targetprofile:netcore"|] defaultOptions
 #else
-                Array.append [|"--preferreduilang:en-US"; "--targetprofile:mscorlib"; "--noframework"; "--warn:5"|] assemblies
+                Array.append [|"--targetprofile:mscorlib"|] defaultOptions
 #endif
             ReferencedProjects = [||]
             IsIncompleteTypeCheckEnvironment = false
@@ -472,7 +471,7 @@ module rec CompilerAssertHelpers =
 
             compilationRefs, deps
 
-    let rec compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
+    let compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
 
         let compilationRefs, deps = evaluateReferences outputDirectory disposals ignoreWarnings cmpl
         let isExe, sources, options, name =
@@ -494,7 +493,7 @@ module rec CompilerAssertHelpers =
 
         res, (deps @ deps2)
 
-    let rec compileCompilation ignoreWarnings (cmpl: Compilation) f =
+    let compileCompilation ignoreWarnings (cmpl: Compilation) f =
         let disposals = ResizeArray()
         try
             let outputDirectory = DirectoryInfo(tryCreateTemporaryDirectory())
@@ -510,10 +509,10 @@ module rec CompilerAssertHelpers =
     let rec returnCompilation (cmpl: Compilation) ignoreWarnings =
         let outputDirectory =
             match cmpl with
-            | Compilation(_, _, _, _, _, Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
-            | Compilation(_, _, _, _, _, _) -> DirectoryInfo(tryCreateTemporaryDirectory())
+            | Compilation(outputDirectory = Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
+            | Compilation _ -> DirectoryInfo(tryCreateTemporaryDirectory())
 
-        outputDirectory.Create() |> ignore
+        outputDirectory.Create()
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
 
     let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
@@ -624,10 +623,14 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member DefaultProjectOptions = defaultProjectOptions
 
     static member GenerateFsInputPath() =
-        Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".fs"))
+        let path = Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".fs"))
+        printfn $"input path = {path}"
+        path
 
     static member GenerateDllOutputPath() =
-        Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".dll"))
+        let path = Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".dll"))
+        printfn $"output path = {path}"
+        path
 
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false

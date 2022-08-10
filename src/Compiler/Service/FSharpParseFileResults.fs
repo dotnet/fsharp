@@ -16,7 +16,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
 module SourceFileImpl =
-    let IsInterfaceFile file =
+    let IsSignatureFile file =
         let ext = Path.GetExtension file
         0 = String.Compare(".fsi", ext, StringComparison.OrdinalIgnoreCase)
 
@@ -498,7 +498,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
         let findBreakPoints () =
             let checkRange m =
                 [
-                    if isMatchRange m && not m.IsSynthetic then yield m
+                    if isMatchRange m && not m.IsSynthetic then
+                        yield m
                 ]
 
             let walkBindSeqPt sp =
@@ -559,7 +560,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | _ -> false
 
                     // This extends the range of the implicit debug point for 'do expr' range to include the 'do'
-                    if extendDebugPointForDo then yield! checkRange m
+                    if extendDebugPointForDo then
+                        yield! checkRange m
 
                     let useImplicitDebugPoint =
                         match spInfo with
@@ -606,6 +608,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | SynExpr.LibraryOnlyILAssembly _
                         | SynExpr.LibraryOnlyStaticOptimization _
                         | SynExpr.Null _
+                        | SynExpr.Typar _
                         | SynExpr.Ident _
                         | SynExpr.ImplicitZero _
                         | SynExpr.Const _
@@ -944,9 +947,10 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                 if pos.Column = 0 then
                     // we have a breakpoint that was set with mouse at line start
-                    match locations
-                          |> List.filter (fun m -> m.StartLine = m.EndLine && pos.Line = m.StartLine)
-                        with
+                    match
+                        locations
+                        |> List.filter (fun m -> m.StartLine = m.EndLine && pos.Line = m.StartLine)
+                    with
                     | [] ->
                         match locations |> List.filter (fun m -> rangeContainsPos m pos) with
                         | [] ->

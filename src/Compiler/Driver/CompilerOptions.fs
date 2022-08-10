@@ -288,9 +288,11 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
     let getSwitchOpt (opt: string) =
         // if opt is a switch, strip the  '+' or '-'
-        if opt <> "--"
-           && opt.Length > 1
-           && (opt.EndsWithOrdinal("+") || opt.EndsWithOrdinal("-")) then
+        if
+            opt <> "--"
+            && opt.Length > 1
+            && (opt.EndsWithOrdinal("+") || opt.EndsWithOrdinal("-"))
+        then
             opt[0 .. opt.Length - 2]
         else
             opt
@@ -368,7 +370,10 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                 | CompilerOption (s, _, OptionString f, d, _) as compilerOption :: _ when optToken = s ->
                     reportDeprecatedOption d
                     let oa = getOptionArg compilerOption argString
-                    if oa <> "" then f (getOptionArg compilerOption oa)
+
+                    if oa <> "" then
+                        f (getOptionArg compilerOption oa)
+
                     t
                 | CompilerOption (s, _, OptionInt f, d, _) as compilerOption :: _ when optToken = s ->
                     reportDeprecatedOption d
@@ -638,37 +643,17 @@ let SetTarget (tcConfigB: TcConfigBuilder) (s: string) =
 let SetDebugSwitch (tcConfigB: TcConfigBuilder) (dtype: string option) (s: OptionSwitch) =
     match dtype with
     | Some s ->
-        match s with
-        | "portable" ->
-            tcConfigB.portablePDB <- true
-            tcConfigB.embeddedPDB <- false
-            tcConfigB.jitTracking <- true
-            tcConfigB.ignoreSymbolStoreSequencePoints <- true
-        | "pdbonly" ->
-            tcConfigB.portablePDB <- false
-            tcConfigB.embeddedPDB <- false
-            tcConfigB.jitTracking <- false
-        | "embedded" ->
-            tcConfigB.portablePDB <- true
-            tcConfigB.embeddedPDB <- true
-            tcConfigB.jitTracking <- true
-            tcConfigB.ignoreSymbolStoreSequencePoints <- true
-#if FX_NO_PDB_WRITER
-        // When building on the coreclr, full means portable
-        | "full" ->
-            tcConfigB.portablePDB <- true
-            tcConfigB.embeddedPDB <- false
-            tcConfigB.jitTracking <- true
-#else
-        | "full" ->
-            tcConfigB.portablePDB <- false
-            tcConfigB.embeddedPDB <- false
-            tcConfigB.jitTracking <- true
-#endif
+        tcConfigB.portablePDB <- true
+        tcConfigB.jitTracking <- true
 
+        match s with
+        | "full"
+        | "pdbonly"
+        | "portable" -> tcConfigB.embeddedPDB <- false
+        | "embedded" -> tcConfigB.embeddedPDB <- true
         | _ -> error (Error(FSComp.SR.optsUnrecognizedDebugType s, rangeCmdArgs))
     | None ->
-        tcConfigB.portablePDB <- false
+        tcConfigB.portablePDB <- s = OptionSwitch.On
         tcConfigB.embeddedPDB <- false
         tcConfigB.jitTracking <- s = OptionSwitch.On
 
@@ -722,7 +707,6 @@ let PrintOptionInfo (tcConfigB: TcConfigBuilder) =
     printfn "  localOptUser . . . . . : %+A" tcConfigB.optSettings.localOptUser
     printfn "  crossAssemblyOptimizationUser . . : %+A" tcConfigB.optSettings.crossAssemblyOptimizationUser
     printfn "  lambdaInlineThreshold  : %+A" tcConfigB.optSettings.lambdaInlineThreshold
-    printfn "  ignoreSymStoreSeqPts . : %+A" tcConfigB.ignoreSymbolStoreSequencePoints
     printfn "  doDetuple  . . . . . . : %+A" tcConfigB.doDetuple
     printfn "  doTLR  . . . . . . . . : %+A" tcConfigB.doTLR
     printfn "  doFinalSimplify. . . . : %+A" tcConfigB.doFinalSimplify
@@ -783,13 +767,10 @@ let compilerToolFlagAbbrev (tcConfigB: TcConfigBuilder) =
 let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 
 let inputFileFlagsFsiBase (_tcConfigB: TcConfigBuilder) =
-#if NETSTANDARD
     [
-        CompilerOption("usesdkrefs", tagNone, OptionSwitch(SetUseSdkSwitch _tcConfigB), None, Some(FSComp.SR.useSdkRefs ()))
+        if FSharpEnvironment.isRunningOnCoreClr then
+            yield CompilerOption("usesdkrefs", tagNone, OptionSwitch(SetUseSdkSwitch _tcConfigB), None, Some(FSComp.SR.useSdkRefs ()))
     ]
-#else
-    List.empty<CompilerOption>
-#endif
 
 let inputFileFlagsFsi (tcConfigB: TcConfigBuilder) =
     List.append (inputFileFlagsBoth tcConfigB) (inputFileFlagsFsiBase tcConfigB)
@@ -1234,7 +1215,9 @@ let noFrameworkFlag isFsc tcConfigB =
         tagNone,
         OptionUnit(fun () ->
             tcConfigB.implicitlyReferenceDotNetAssemblies <- false
-            if isFsc then tcConfigB.implicitlyResolveAssemblies <- false),
+
+            if isFsc then
+                tcConfigB.implicitlyResolveAssemblies <- false),
         None,
         Some(FSComp.SR.optsNoframework ())
     )
@@ -1298,11 +1281,6 @@ let advancedFlagsFsc tcConfigB =
             None,
             Some(FSComp.SR.optsStaticlink ())
         )
-
-#if ENABLE_MONO_SUPPORT
-        if runningOnMono then
-            CompilerOption("resident", tagFile, OptionUnit(fun () -> ()), None, Some(FSComp.SR.optsResident ()))
-#endif
 
         CompilerOption("pdb", tagString, OptionString(fun s -> tcConfigB.debugSymbolFile <- Some s), None, Some(FSComp.SR.optsPdb ()))
 
@@ -1390,6 +1368,7 @@ let editorSpecificFlags (tcConfigB: TcConfigBuilder) =
         CompilerOption("exename", tagNone, OptionString(fun s -> tcConfigB.exename <- Some s), None, None)
         CompilerOption("maxerrors", tagInt, OptionInt(fun n -> tcConfigB.maxErrors <- n), None, None)
         CompilerOption("noconditionalerasure", tagNone, OptionUnit(fun () -> tcConfigB.noConditionalErasure <- true), None, None)
+        CompilerOption("ignorelinedirectives", tagNone, OptionUnit(fun () -> tcConfigB.applyLineDirectives <- false), None, None)
     ]
 
 let internalFlags (tcConfigB: TcConfigBuilder) =
