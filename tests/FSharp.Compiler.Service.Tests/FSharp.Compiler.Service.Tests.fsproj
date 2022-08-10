@@ -24,6 +24,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
     <Compile Include="..\fsharp\TestHelpers.fs" Link="TestHelpers.fs" />
+    <Compile Include="ProjectInfoHelpers.fs" Condition="'$(TargetFramework)' == 'net6.0'" />
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="SurfaceArea.netstandard.fs" />
     <Compile Include="..\service\FsUnit.fs">
@@ -173,7 +174,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="17.2.0" Condition="'$(TargetFramework)' == 'net6.0'" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="NuGet.Frameworks" Version="6.2.1" Condition="'$(TargetFramework)' == 'net6.0'" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Ionide.ProjInfo" Version="0.59.2" Condition="'$(TargetFramework)' == 'net6.0'" />
     <ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
     <ProjectReference Include="..\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
