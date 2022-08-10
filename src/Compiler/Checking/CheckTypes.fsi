@@ -27,24 +27,25 @@ type SafeInitData =
 
 /// Represents information about object constructors
 type CtorInfo =
-    { /// Object model constructors have a very specific form to satisfy .NET limitations.
-      /// For "new = \arg. { new C with ... }"
-      ///     ctor = 3 indicates about to type check "\arg. (body)",
-      ///     ctor = 2 indicates about to type check "body"
-      ///     ctor = 1 indicates actually type checking the body expression
-      /// 0 indicates everywhere else, including auxiliary expressions such expr1 in "let x = expr1 in { new ... }"
-      /// REVIEW: clean up this rather odd approach ...
-      ctorShapeCounter: int
+    {
+        /// Object model constructors have a very specific form to satisfy .NET limitations.
+        /// For "new = \arg. { new C with ... }"
+        ///     ctor = 3 indicates about to type check "\arg. (body)",
+        ///     ctor = 2 indicates about to type check "body"
+        ///     ctor = 1 indicates actually type checking the body expression
+        /// 0 indicates everywhere else, including auxiliary expressions such expr1 in "let x = expr1 in { new ... }"
+        /// REVIEW: clean up this rather odd approach ...
+        ctorShapeCounter: int
 
-      /// A handle to the ref cell to hold results of 'this' for 'type X() as x = ...' and 'new() as x = ...' constructs
-      /// in case 'x' is used in the arguments to the 'inherits' call.
-      safeThisValOpt: Val option
+        /// A handle to the ref cell to hold results of 'this' for 'type X() as x = ...' and 'new() as x = ...' constructs
+        /// in case 'x' is used in the arguments to the 'inherits' call.
+        safeThisValOpt: Val option
 
-      /// A handle to the boolean ref cell to hold success of initialized 'this' for 'type X() as x = ...' constructs
-      safeInitInfo: SafeInitData
+        /// A handle to the boolean ref cell to hold success of initialized 'this' for 'type X() as x = ...' constructs
+        safeInitInfo: SafeInitData
 
-      /// Is the an implicit constructor or an explicit one?
-      ctorIsImplicit: bool
+        /// Is the an implicit constructor or an explicit one?
+        ctorIsImplicit: bool
     }
 
 /// Represents an item in the environment that may restrict the automatic generalization of later
@@ -62,7 +63,6 @@ type UngeneralizableItem =
     member internal CachedFreeLocalTycons: FreeTycons
 
     member internal CachedFreeTraitSolutions: FreeLocals
-
 
 /// Represents the type environment at a particular scope. Includes the name
 /// resolution environment, the ungeneralizable items from earlier in the scope
