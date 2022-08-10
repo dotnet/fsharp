@@ -20,6 +20,7 @@ open System.Text
 open System.Threading
 
 open FSharp.Compiler.AbstractIL.Diagnostics
+open FSharp.Compiler.Features
 open Internal.Utilities.Library
 open Internal.Utilities
 
@@ -3335,7 +3336,8 @@ type ILGlobals
     (
         primaryScopeRef: ILScopeRef,
         assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list,
-        fsharpCoreAssemblyScopeRef: ILScopeRef
+        fsharpCoreAssemblyScopeRef: ILScopeRef,
+        langVersion: LanguageVersion
     ) =
 
     let assembliesThatForwardToPrimaryAssembly =
@@ -3397,14 +3399,16 @@ type ILGlobals
         || assembliesThatForwardToPrimaryAssembly
            |> Array.exists aref.EqualsIgnoringVersion
 
+    member _.langVersion = langVersion
+
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
     override x.ToString() = "<ILGlobals>"
 
-let mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef) =
-    ILGlobals(primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef)
+let mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef, langVersion) =
+    ILGlobals(primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef, langVersion)
 
 let mkNormalCall mspec = I_call(Normalcall, mspec, None)
 
@@ -4702,7 +4706,7 @@ let DummyFSharpCoreScopeRef =
     ILScopeRef.Assembly asmRef
 
 let PrimaryAssemblyILGlobals =
-    mkILGlobals (ILScopeRef.PrimaryAssembly, [], DummyFSharpCoreScopeRef)
+    mkILGlobals (ILScopeRef.PrimaryAssembly, [], DummyFSharpCoreScopeRef, LanguageVersion("default"))
 
 let rec decodeCustomAttrElemType bytes sigptr x =
     match x with

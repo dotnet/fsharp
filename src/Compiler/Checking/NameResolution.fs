@@ -3985,7 +3985,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
             not minfo.IsExtensionMember &&
             match minfo.LogicalName with
             | "GetType"  -> false
-            | "GetHashCode"  -> isObjTy g minfo.ApparentEnclosingType && not (AugmentWithHashCompare.TypeDefinitelyHasEquality g ty)
+            | "GetHashCode"  -> isObjTy g minfo.ApparentEnclosingType && not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
             | "ToString" -> false
             | "Equals" ->
                 if not (isObjTy g minfo.ApparentEnclosingType) then
@@ -3993,7 +3993,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                     false
                 elif minfo.IsInstance then
                     // System.Object has only one instance Equals method and we want to suppress it unless Augment.TypeDefinitelyHasEquality is true
-                    not (AugmentWithHashCompare.TypeDefinitelyHasEquality g ty)
+                    not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
                 else
                     // System.Object has only one static Equals method and we always want to suppress it
                     true
@@ -4721,7 +4721,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                     not minfo.IsExtensionMember &&
                     match minfo.LogicalName with
                     | "GetType"  -> false
-                    | "GetHashCode"  -> isObjTy g minfo.ApparentEnclosingType && not (AugmentWithHashCompare.TypeDefinitelyHasEquality g ty)
+                    | "GetHashCode"  -> isObjTy g minfo.ApparentEnclosingType && not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
                     | "ToString" -> false
                     | "Equals" ->
                         if not (isObjTy g minfo.ApparentEnclosingType) then
@@ -4729,7 +4729,7 @@ let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics ty (
                             false
                         elif minfo.IsInstance then
                             // System.Object has only one instance Equals method and we want to suppress it unless Augment.TypeDefinitelyHasEquality is true
-                            not (AugmentWithHashCompare.TypeDefinitelyHasEquality g ty)
+                            not (AugmentTypeDefinitions.TypeDefinitelyHasEquality g ty)
                         else
                             // System.Object has only one static Equals method and we always want to suppress it
                             true

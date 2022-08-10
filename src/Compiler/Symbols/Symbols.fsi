@@ -822,6 +822,9 @@ type FSharpMemberOrFunctionOrValue =
     /// Get an associated setter method of the property
     member SetterMethod: FSharpMemberOrFunctionOrValue
 
+    /// Indicates if the property or getter method is part of a IsABC union case tester implied by a union case definition
+    member IsUnionCaseTester: bool
+
     /// Get an associated add method of an event
     member EventAddMethod: FSharpMemberOrFunctionOrValue
 

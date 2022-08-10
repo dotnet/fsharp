@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 ///  Generate the hash/compare functions we add to user-defined types by default.
-module internal FSharp.Compiler.AugmentWithHashCompare
+module internal FSharp.Compiler.AugmentTypeDefinitions
  
 open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL
@@ -60,6 +60,8 @@ let mkEqualsWithComparerTy g ty = mkFunTy g (mkThisTy g ty) (mkFunTy g (mkRefTup
 let mkHashTy             g ty = mkFunTy g (mkThisTy g ty) (mkFunTy g g.unit_ty g.int_ty)
 
 let mkHashWithComparerTy g ty = mkFunTy g (mkThisTy g ty) (mkFunTy g g.IEqualityComparer_ty g.int_ty)
+
+let mkIsCaseTy           g ty = mkFunTy g (mkThisTy g ty) (mkFunTy g g.unit_ty g.bool_ty)
 
 //-------------------------------------------------------------------------
 // Polymorphic comparison
@@ -861,14 +863,14 @@ let slotImplMethod (final, c, slotsig) : ValMemberInfo =
     IsImplemented=false
     ApparentEnclosingEntity=c} 
 
-let nonVirtualMethod c : ValMemberInfo = 
+let nonVirtualMethod mk c : ValMemberInfo = 
   { ImplementedSlotSigs=[]
     MemberFlags={ IsInstance=true 
                   IsDispatchSlot=false
                   IsFinal=false
                   IsOverrideOrExplicitImpl=false
                   GetterOrSetterIsCompilerGenerated=false
-                  MemberKind=SynMemberKind.Member
+                  MemberKind=mk
                   Trivia=SynMemberFlagsTrivia.Zero}
     IsImplemented=false
     ApparentEnclosingEntity=c} 
@@ -879,35 +881,45 @@ let unaryArg = [ ValReprInfo.unnamedTopArg ]
 
 let tupArg = [ [ ValReprInfo.unnamedTopArg1; ValReprInfo.unnamedTopArg1 ] ]
 
-let mkValSpec g (tcref: TyconRef) ty vis slotsig methn valTy argData = 
-    let m = tcref.Range 
+let mkValSpecAux g m (tcref: TyconRef) ty vis slotsig methn valTy argData isGetter isCompGen =
     let tps = tcref.Typars m
-    let membInfo = 
-        match slotsig with 
-        | None -> nonVirtualMethod tcref 
-        | Some slotsig -> 
-            let final = isUnionTy g ty || isRecdTy g ty || isStructTy g ty 
+    let membInfo =
+        match slotsig with
+        | None ->
+            let mk = if isGetter then SynMemberKind.PropertyGet else SynMemberKind.Member
+            nonVirtualMethod mk tcref
+        | Some slotsig ->
+            let final = isUnionTy g ty || isRecdTy g ty || isStructTy g ty
             slotImplMethod(final, tcref, slotsig)
     let inl = ValInline.Optional
     let args = ValReprInfo.unnamedTopArg :: argData
-    let valReprInfo = Some (ValReprInfo (ValReprInfo.InferTyparInfo tps, args, ValReprInfo.unnamedRetVal)) 
-    Construct.NewVal (methn, m, None, valTy, Immutable, true, valReprInfo, vis, ValNotInRecScope, Some membInfo, NormalVal, [], inl, XmlDoc.Empty, true, false, false, false, false, false, None, Parent tcref) 
+    let valReprInfo = Some (ValReprInfo (ValReprInfo.InferTyparInfo tps, args, ValReprInfo.unnamedRetVal))
+    Construct.NewVal (methn, m, None, valTy, Immutable, isCompGen, valReprInfo, vis, ValNotInRecScope, Some membInfo, NormalVal, [], inl, XmlDoc.Empty, true, false, false, false, false, false, None, Parent tcref) 
 
-let MakeValsForCompareAugmentation g (tcref: TyconRef) = 
+let mkValSpec g (tcref: TyconRef) ty vis slotsig methn valTy argData isGetter =
+    mkValSpecAux g tcref.Range tcref ty vis slotsig methn valTy argData isGetter true
+
+// Unlike other generated items, the 'IsABC' propeties are visible, not considered compiler-generated
+let mkImpliedValSpec g m tcref ty vis slotsig methn valTy argData isGetter =
+    let v = mkValSpecAux g m tcref ty vis slotsig methn valTy argData isGetter false
+    v.SetIsImplied()
+    v
+
+let MakeValsForCompareAugmentation g (tcref: TyconRef) =
     let m = tcref.Range
     let _, ty = mkMinimalTy g tcref
     let tps = tcref.Typars m
     let vis = tcref.TypeReprAccessibility
 
-    mkValSpec g tcref ty vis (Some(mkIComparableCompareToSlotSig g)) "CompareTo" (tps +-> (mkCompareObjTy g ty)) unaryArg, 
-    mkValSpec g tcref ty vis (Some(mkGenericIComparableCompareToSlotSig g ty)) "CompareTo" (tps +-> (mkCompareTy g ty)) unaryArg
-    
+    mkValSpec g tcref ty vis (Some(mkIComparableCompareToSlotSig g)) "CompareTo" (tps +-> (mkCompareObjTy g ty)) unaryArg false,
+    mkValSpec g tcref ty vis (Some(mkGenericIComparableCompareToSlotSig g ty)) "CompareTo" (tps +-> (mkCompareTy g ty)) unaryArg false
+
 let MakeValsForCompareWithComparerAugmentation g (tcref: TyconRef) =
     let m = tcref.Range
     let _, ty = mkMinimalTy g tcref
     let tps = tcref.Typars m
     let vis = tcref.TypeReprAccessibility
-    mkValSpec g tcref ty vis (Some(mkIStructuralComparableCompareToSlotSig g)) "CompareTo" (tps +-> (mkCompareWithComparerTy g ty)) tupArg
+    mkValSpec g tcref ty vis (Some(mkIStructuralComparableCompareToSlotSig g)) "CompareTo" (tps +-> (mkCompareWithComparerTy g ty)) tupArg false
 
 let MakeValsForEqualsAugmentation g (tcref: TyconRef) = 
     let m = tcref.Range
@@ -915,17 +927,17 @@ let MakeValsForEqualsAugmentation g (tcref: TyconRef) =
     let vis = tcref.TypeReprAccessibility
     let tps = tcref.Typars m
 
-    let objEqualsVal = mkValSpec g tcref ty vis (Some(mkEqualsSlotSig g)) "Equals" (tps +-> (mkEqualsObjTy g ty)) unaryArg
-    let nocEqualsVal = mkValSpec g tcref ty vis (if tcref.Deref.IsFSharpException then None else Some(mkGenericIEquatableEqualsSlotSig g ty)) "Equals" (tps +-> (mkEqualsTy g ty)) unaryArg
+    let objEqualsVal = mkValSpec g tcref ty vis (Some(mkEqualsSlotSig g)) "Equals" (tps +-> (mkEqualsObjTy g ty)) unaryArg false
+    let nocEqualsVal = mkValSpec g tcref ty vis (if tcref.Deref.IsFSharpException then None else Some(mkGenericIEquatableEqualsSlotSig g ty)) "Equals" (tps +-> (mkEqualsTy g ty)) unaryArg false
     objEqualsVal, nocEqualsVal
-    
+
 let MakeValsForEqualityWithComparerAugmentation g (tcref: TyconRef) =
     let _, ty = mkMinimalTy g tcref
     let vis = tcref.TypeReprAccessibility
     let tps = tcref.Typars tcref.Range
-    let objGetHashCodeVal = mkValSpec g tcref ty vis (Some(mkGetHashCodeSlotSig g)) "GetHashCode" (tps +-> (mkHashTy g ty)) unitArg
-    let withcGetHashCodeVal = mkValSpec g tcref ty vis (Some(mkIStructuralEquatableGetHashCodeSlotSig g)) "GetHashCode" (tps +-> (mkHashWithComparerTy g ty)) unaryArg
-    let withcEqualsVal  = mkValSpec g tcref ty vis (Some(mkIStructuralEquatableEqualsSlotSig g)) "Equals" (tps +-> (mkEqualsWithComparerTy g ty)) tupArg
+    let objGetHashCodeVal = mkValSpec g tcref ty vis (Some(mkGetHashCodeSlotSig g)) "GetHashCode" (tps +-> (mkHashTy g ty)) unitArg false
+    let withcGetHashCodeVal = mkValSpec g tcref ty vis (Some(mkIStructuralEquatableGetHashCodeSlotSig g)) "GetHashCode" (tps +-> (mkHashWithComparerTy g ty)) unaryArg false
+    let withcEqualsVal  = mkValSpec g tcref ty vis (Some(mkIStructuralEquatableEqualsSlotSig g)) "Equals" (tps +-> (mkEqualsWithComparerTy g ty)) tupArg false
     objGetHashCodeVal, withcGetHashCodeVal, withcEqualsVal
 
 let MakeBindingsForCompareAugmentation g (tycon: Tycon) = 
@@ -1094,3 +1106,32 @@ let rec TypeDefinitelyHasEquality g ty =
                    (tinst, tcref.TyparsNoRange) 
                    ||> List.lengthsEqAndForall2 (fun ty tp -> not tp.EqualityConditionalOn || TypeDefinitelyHasEquality  g ty)
                | _ -> false
+
+let MakeValsForUnionAugmentation g (tcref: TyconRef) =
+    let m = tcref.Range
+    let _, tmty = mkMinimalTy g tcref
+    let vis = tcref.TypeReprAccessibility
+    let tps = tcref.Typars m
+
+    tcref.UnionCasesAsList
+    |> List.map (fun uc ->
+        // Unlike other generated items, the 'IsABC' propeties are visible, not considered compiler-generated
+        let v = mkImpliedValSpec g uc.Range tcref tmty vis None ("get_Is" + uc.CompiledName) (tps +-> (mkIsCaseTy g tmty)) unitArg true
+        g.AddValGeneratedAttributes v m
+        v
+    )
+
+let MakeBindingsForUnionAugmentation g (tycon: Tycon) (vals: ValRef list) =
+    let tcref = mkLocalTyconRef tycon
+    let m = tycon.Range
+    let tps = tycon.Typars m
+    let tinst, ty = mkMinimalTy g tcref
+    let thisv, thise = mkThisVar g m ty
+    let unitv, _ = mkCompGenLocal m "unitArg" g.unit_ty
+
+    (tcref.UnionCasesAsRefList, vals)
+    ||> List.map2 (fun ucr v ->
+        let isdata = mkUnionCaseTest g (thise, ucr, tinst, m)
+        let expr = mkLambdas g m tps [thisv;unitv] (isdata, g.bool_ty)
+        mkCompGenBind v.Deref expr
+    )

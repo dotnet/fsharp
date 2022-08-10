@@ -158,16 +158,22 @@ module CoreTests =
     let ``namespaceAttributes-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/namespaces" FSC_OPTIMIZED
 
     [<Test>]
-    let ``unicode2-FSC_DEBUG`` () = singleTestBuildAndRun "core/unicode" FSC_DEBUG // TODO: fails on coreclr
+    let ``namespaces-FSC_DEBUG`` () = singleTestBuildAndRunVersion "core/namespaces" FSC_DEBUG "preview"
 
     [<Test>]
-    let ``unicode2-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/unicode" FSC_OPTIMIZED // TODO: fails on coreclr
+    let ``namespaces-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/namespaces" FSC_OPTIMIZED "preview"
 
     [<Test>]
     let ``unicode2-FSI`` () = singleTestBuildAndRun "core/unicode" FSI
 
     [<Test>]
+    let ``unicode2-FSC_DEBUG`` () = singleTestBuildAndRun "core/unicode" FSC_DEBUG
+
+    [<Test>]
     let ``lazy test-FSC_DEBUG`` () = singleTestBuildAndRun "core/lazy" FSC_DEBUG
+
+    [<Test>]
+    let ``unicode2-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/unicode" FSC_OPTIMIZED
 
     [<Test>]
     let ``lazy test-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/lazy" FSC_OPTIMIZED

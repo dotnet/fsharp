@@ -803,6 +803,15 @@ type MethInfo =
         | ProvidedMeth(_, mi, _, m) -> [mi.PUntaint((fun mi -> mi.GetParameters().Length), m)] // Why is this a list? Answer: because the method might be curried
 #endif
 
+    /// Indicates if the property is a IsABC union case tester implied by a union case definition
+    member x.IsUnionCaseTester =
+        let tcref = x.ApparentEnclosingTyconRef
+        tcref.IsUnionTycon &&
+        x.LogicalName.StartsWith("get_Is") &&
+        match x.ArbitraryValRef with 
+        | Some v -> v.IsImplied
+        | None -> false
+
     member x.IsCurried = x.NumArgs.Length > 1
 
     /// Does the method appear to the user as an instance method?
@@ -1985,6 +1994,11 @@ type PropInfo =
         | ProvidedProp(_, pi1, _), ProvidedProp(_, pi2, _) -> ProvidedPropertyInfo.TaintedEquals (pi1, pi2)
 #endif
         | _ -> false
+
+    /// Indicates if the property is a IsABC union case tester implied by a union case definition
+    member x.IsUnionCaseTester =
+        x.HasGetter &&
+        x.GetterMethod.IsUnionCaseTester
 
     /// Calculates a hash code of property info. Must be compatible with ItemsAreEffectivelyEqual relation.
     member pi.ComputeHashCode() =

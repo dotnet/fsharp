@@ -886,12 +886,12 @@ let FinalTypeDefinitionChecksAtEndOfInferenceScope (infoReader: InfoReader, nenv
        not tycon.IsFSharpInterfaceTycon
      then
         (* Warn when we're doing this for class types *)
-        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tycon then
+        if AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithEquals g tycon then
             warning(Error(FSComp.SR.typrelTypeImplementsIComparableShouldOverrideObjectEquals(tycon.DisplayName), tycon.Range))
         else
             warning(Error(FSComp.SR.typrelTypeImplementsIComparableDefaultObjectEqualsProvided(tycon.DisplayName), tycon.Range))
 
-    AugmentWithHashCompare.CheckAugmentationAttribs isImplementation g amap tycon
+    AugmentTypeDefinitions.CheckAugmentationAttribs isImplementation g amap tycon
     // Check some conditions about generic comparison and hashing. We can only check this condition after we've done the augmentation 
     if isImplementation 
 #if !NO_TYPEPROVIDERS

@@ -2186,7 +2186,7 @@ let CheckModuleBinding cenv env (TBind(v, e, _) as bind) =
 
                 // Default augmentation contains the nasty 'Is<UnionCase>' etc.
                 let prefix = "Is"
-                if nm.StartsWithOrdinal prefix && hasDefaultAugmentation then
+                if not v.IsImplied && nm.StartsWithOrdinal prefix && hasDefaultAugmentation then
                     match tcref.GetUnionCaseByName(nm[prefix.Length ..]) with 
                     | Some uc -> error(NameClash(nm, kind, v.DisplayName, v.Range, FSComp.SR.chkUnionCaseDefaultAugmentation(), uc.DisplayName, uc.Range))
                     | None -> ()

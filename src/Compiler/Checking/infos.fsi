@@ -420,6 +420,9 @@ type MethInfo =
     /// Indicates if this is an IL method.
     member IsILMethod: bool
 
+    /// Indicates if the method is a get_IsABC union case tester implied by a union case definition
+    member IsUnionCaseTester: bool
+
     /// Does the method appear to the user as an instance method?
     member IsInstance: bool
 
@@ -817,6 +820,9 @@ type PropInfo =
     member IsRequired: bool
 
     member ImplementedSlotSignatures: SlotSig list
+
+    /// Indicates if the property is a IsABC union case tester implied by a union case definition
+    member IsUnionCaseTester: bool
 
     /// Indicates if this property is marked 'override' and thus definitely overrides another property.
     member IsDefiniteFSharpOverride: bool

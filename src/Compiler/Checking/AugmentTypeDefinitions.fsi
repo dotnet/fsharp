@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Generate the hash/compare functions we add to user-defined types by default.
-module internal FSharp.Compiler.AugmentWithHashCompare
+module internal FSharp.Compiler.AugmentTypeDefinitions
 
 open FSharp.Compiler
 open FSharp.Compiler.TypedTree
@@ -34,3 +34,7 @@ val MakeBindingsForEqualityWithComparerAugmentation: TcGlobals -> Tycon -> Bindi
 /// This predicate can be used once type inference is complete, before then it is an approximation
 /// that doesn't assert any new constraints
 val TypeDefinitelyHasEquality: TcGlobals -> TType -> bool
+
+val MakeValsForUnionAugmentation: TcGlobals -> TyconRef -> Val list
+
+val MakeBindingsForUnionAugmentation: TcGlobals -> Tycon -> ValRef list -> Binding list
