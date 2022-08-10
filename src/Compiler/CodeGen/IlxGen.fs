@@ -2197,15 +2197,15 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                     (mkAppTy g.system_GenericIEquatable_tcref [ ty ], true, m)
                 ]
 
-            let vspec1, vspec2 = AugmentWithHashCompare.MakeValsForEqualsAugmentation g tcref
+            let vspec1, vspec2 = AugmentTypeDefinitions.MakeValsForEqualsAugmentation g tcref
 
             let evspec1, evspec2, evspec3 =
-                AugmentWithHashCompare.MakeValsForEqualityWithComparerAugmentation g tcref
+                AugmentTypeDefinitions.MakeValsForEqualityWithComparerAugmentation g tcref
 
-            let cvspec1, cvspec2 = AugmentWithHashCompare.MakeValsForCompareAugmentation g tcref
+            let cvspec1, cvspec2 = AugmentTypeDefinitions.MakeValsForCompareAugmentation g tcref
 
             let cvspec3 =
-                AugmentWithHashCompare.MakeValsForCompareWithComparerAugmentation g tcref
+                AugmentTypeDefinitions.MakeValsForCompareWithComparerAugmentation g tcref
 
             tcaug.SetCompare(mkLocalValRef cvspec1, mkLocalValRef cvspec2)
             tcaug.SetCompareWith(mkLocalValRef cvspec3)
@@ -2248,10 +2248,10 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
             let extraBindings =
                 [
-                    yield! AugmentWithHashCompare.MakeBindingsForCompareAugmentation g tycon
-                    yield! AugmentWithHashCompare.MakeBindingsForCompareWithComparerAugmentation g tycon
-                    yield! AugmentWithHashCompare.MakeBindingsForEqualityWithComparerAugmentation g tycon
-                    yield! AugmentWithHashCompare.MakeBindingsForEqualsAugmentation g tycon
+                    yield! AugmentTypeDefinitions.MakeBindingsForCompareAugmentation g tycon
+                    yield! AugmentTypeDefinitions.MakeBindingsForCompareWithComparerAugmentation g tycon
+                    yield! AugmentTypeDefinitions.MakeBindingsForEqualityWithComparerAugmentation g tycon
+                    yield! AugmentTypeDefinitions.MakeBindingsForEqualsAugmentation g tycon
                 ]
 
             let optimizedExtraBindings =

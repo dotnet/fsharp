@@ -308,8 +308,8 @@
     <Compile Include="Checking\InfoReader.fs" />
     <Compile Include="Checking\NicePrint.fsi" />
     <Compile Include="Checking\NicePrint.fs" />
-    <Compile Include="Checking\AugmentWithHashCompare.fsi" />
-    <Compile Include="Checking\AugmentWithHashCompare.fs" />
+    <Compile Include="Checking\AugmentTypeDefinitions.fsi" />
+    <Compile Include="Checking\AugmentTypeDefinitions.fs" />
     <Compile Include="Checking\NameResolution.fsi" />
     <Compile Include="Checking\NameResolution.fs" />
     <Compile Include="Checking\SignatureConformance.fsi" />
