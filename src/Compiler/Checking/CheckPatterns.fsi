@@ -2,7 +2,7 @@
 
 module internal FSharp.Compiler.CheckPatterns
 
-open FSharp.Compiler.CheckTypes
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.PatternMatchCompilation

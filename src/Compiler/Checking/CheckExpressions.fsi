@@ -20,13 +20,11 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
-open FSharp.Compiler.CheckTypes
+open FSharp.Compiler.CheckBasics
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
 #endif
-
-val InitialImplicitCtorInfo: unit -> CtorInfo
 
 //-------------------------------------------------------------------------
 // Some of the exceptions arising from type checking. These should be moved to
@@ -127,6 +125,14 @@ val TcFieldInit: range -> ILFieldInit -> Const
 
 val LightweightTcValForUsingInBuildMethodCall:
     g: TcGlobals -> vref: ValRef -> vrefFlags: ValUseFlag -> vrefTypeInst: TTypes -> m: range -> Expr * TType
+
+
+/// Indicates whether a syntactic type is allowed to include new type variables
+/// not declared anywhere, e.g. `let f (x: 'T option) = x.Value`
+type ImplicitlyBoundTyparsAllowed =
+    | NewTyparsOKButWarnIfNotRigid
+    | NewTyparsOK
+    | NoNewTypars
 
 //-------------------------------------------------------------------------
 // The rest are all helpers needed for declaration checking (CheckDeclarations.fs)

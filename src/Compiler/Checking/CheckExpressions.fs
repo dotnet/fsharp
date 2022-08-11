@@ -17,7 +17,7 @@ open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CompilerGlobalState
-open FSharp.Compiler.CheckTypes
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
@@ -157,18 +157,6 @@ let ComputeAccessRights eAccessPath eInternalsVisibleCompPaths eFamilyType =
 // that may be able to access "protected" members.
 //-------------------------------------------------------------------------
 
-let InitialExplicitCtorInfo (safeThisValOpt, safeInitInfo) =
-    { ctorShapeCounter = 3
-      safeThisValOpt = safeThisValOpt
-      safeInitInfo = safeInitInfo
-      ctorIsImplicit = false}
-
-let InitialImplicitCtorInfo () =
-    { ctorShapeCounter = 0
-      safeThisValOpt = None
-      safeInitInfo = NoSafeInitInfo
-      ctorIsImplicit = true }
-
 let EnterFamilyRegion tcref env =
     let eFamilyType = Some tcref
     { env with
@@ -185,11 +173,15 @@ let ExitFamilyRegion env =
             eFamilyType = eFamilyType }
 
 let AreWithinCtorShape env = match env.eCtorInfo with None -> false | Some ctorInfo -> ctorInfo.ctorShapeCounter > 0
+
 let AreWithinImplicitCtor env = match env.eCtorInfo with None -> false | Some ctorInfo -> ctorInfo.ctorIsImplicit
+
 let GetCtorShapeCounter env = match env.eCtorInfo with None -> 0 | Some ctorInfo -> ctorInfo.ctorShapeCounter
+
 let GetRecdInfo env = match env.eCtorInfo with None -> RecdExpr | Some ctorInfo -> if ctorInfo.ctorShapeCounter = 1 then RecdExprIsObjInit else RecdExpr
 
 let AdjustCtorShapeCounter f env = {env with eCtorInfo = Option.map (fun ctorInfo -> { ctorInfo with ctorShapeCounter = f ctorInfo.ctorShapeCounter }) env.eCtorInfo }
+
 let ExitCtorShapeRegion env = AdjustCtorShapeCounter (fun _ -> 0) env
 
 /// Add a type to the TcEnv, i.e. register it as ungeneralizable.
@@ -3906,6 +3898,13 @@ let GetInstanceMemberThisVariable (vspec: Val, expr) =
     else
         None
 
+/// Indicates whether a syntactic type is allowed to include new type variables
+/// not declared anywhere, e.g. `let f (x: 'T option) = x.Value`
+type ImplicitlyBoundTyparsAllowed =
+    | NewTyparsOKButWarnIfNotRigid
+    | NewTyparsOK
+    | NoNewTypars
+
 //-------------------------------------------------------------------------
 // Checking types and type constraints
 //-------------------------------------------------------------------------
@@ -5110,7 +5109,7 @@ and TcExprOfUnknownTypeThen (cenv: cenv) env tpenv synExpr delayed =
 /// This is used to typecheck legitimate 'main body of constructor' expressions
 and TcExprThatIsCtorBody safeInitInfo (cenv: cenv) overallTy env tpenv synExpr =
     let g = cenv.g
-    let env = {env with eCtorInfo = Some (InitialExplicitCtorInfo safeInitInfo) }
+    let env = {env with eCtorInfo = Some (CtorInfo.InitialExplicit safeInitInfo) }
     let expr, tpenv = TcExpr cenv overallTy env tpenv synExpr
     let expr = CheckAndRewriteObjectCtor g env expr
     expr, tpenv

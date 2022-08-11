@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.CheckTypes
+module internal FSharp.Compiler.CheckBasics
 
 open System.Collections.Generic
 
@@ -138,6 +138,19 @@ type CtorInfo =
       ctorIsImplicit: bool
     }
 
+    static member InitialExplicit (safeThisValOpt, safeInitInfo) =
+        { ctorShapeCounter = 3
+          safeThisValOpt = safeThisValOpt
+          safeInitInfo = safeInitInfo
+          ctorIsImplicit = false}
+
+    static member InitialImplicit () =
+        { ctorShapeCounter = 0
+          safeThisValOpt = None
+          safeInitInfo = NoSafeInitInfo
+          ctorIsImplicit = true }
+
+
 /// Represents an item in the environment that may restrict the automatic generalization of later
 /// declarations because it refers to type inference variables. As type inference progresses
 /// these type inference variables may get solved.
@@ -237,13 +250,6 @@ type TcEnv =
     member tenv.AccessRights = tenv.eAccessRights
 
     override tenv.ToString() = "TcEnv(...)"
-
-/// Indicates whether a syntactic type is allowed to include new type variables
-/// not declared anywhere, e.g. `let f (x: 'T option) = x.Value`
-type ImplicitlyBoundTyparsAllowed =
-    | NewTyparsOKButWarnIfNotRigid
-    | NewTyparsOK
-    | NoNewTypars
 
 /// Represents the compilation environment for typechecking a single file in an assembly.
 [<NoEquality; NoComparison>]

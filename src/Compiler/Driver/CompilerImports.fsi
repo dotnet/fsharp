@@ -8,7 +8,7 @@ open System
 open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.CheckTypes
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.DiagnosticsLogger

@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module internal FSharp.Compiler.CheckTypes
+module internal FSharp.Compiler.CheckBasics
 
 open System.Collections.Generic
 open Internal.Utilities.Library
@@ -47,6 +47,10 @@ type CtorInfo =
         /// Is the an implicit constructor or an explicit one?
         ctorIsImplicit: bool
     }
+
+    static member InitialExplicit: safeThisValOpt: Val option * safeInitInfo: SafeInitData -> CtorInfo
+
+    static member InitialImplicit: unit -> CtorInfo
 
 /// Represents an item in the environment that may restrict the automatic generalization of later
 /// declarations because it refers to type inference variables. As type inference progresses
@@ -322,10 +326,3 @@ type TcFileState =
         tcArrayOrListSequenceExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
         tcComputationExpression: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> range * Expr * TType * SynExpr -> Expr * UnscopedTyparEnv) ->
             TcFileState
-
-/// Indicates whether a syntactic type is allowed to include new type variables
-/// not declared anywhere, e.g. `let f (x: 'T option) = x.Value`
-type ImplicitlyBoundTyparsAllowed =
-    | NewTyparsOKButWarnIfNotRigid
-    | NewTyparsOK
-    | NoNewTypars
