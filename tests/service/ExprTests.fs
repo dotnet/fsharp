@@ -774,7 +774,11 @@ let ``Test Unoptimized Declarations Project1`` () =
          "let downwardForLoop(unitVar0) = let mutable a: Microsoft.FSharp.Core.int = 1 in (for-loop; a) @ (79,16--79,17)";
          "let quotationTest1(unitVar0) = quote(Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),1,1)) @ (83,24--83,35)";
          "let quotationTest2(v) = quote(Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),ExtraTopLevelOperators.SpliceExpression<Microsoft.FSharp.Core.int> (v),1)) @ (84,24--84,36)";
-         "type RecdType"; "type UnionType"; "type ClassWithEventsAndProperties";
+         "type RecdType"; "type UnionType";
+         "member get_IsCase1(this) (unitArg) = (if this.IsCase1 then True else False) @ (87,5--87,14)";
+         "member get_IsCase2(this) (unitArg) = (if this.IsCase2 then True else False) @ (87,5--87,14)";
+         "member get_IsCase3(this) (unitArg) = (if this.IsCase3 then True else False) @ (87,5--87,14)";
+         "type ClassWithEventsAndProperties";
          "member .ctor(unitVar0) = (new Object(); (this.ev <- new FSharpEvent`1(()); ())) @ (89,5--89,33)";
          "member .cctor(unitVar) = (sev <- new FSharpEvent`1(()); ()) @ (91,11--91,35)";
          "member get_InstanceProperty(x) (unitVar1) = (x.ev.Trigger(1); 1) @ (92,32--92,48)";
@@ -909,7 +913,11 @@ let ``Test Optimized Declarations Project1`` () =
          "let downwardForLoop(unitVar0) = let mutable a: Microsoft.FSharp.Core.int = 1 in (for-loop; a) @ (79,16--79,17)";
          "let quotationTest1(unitVar0) = quote(Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),1,1)) @ (83,24--83,35)";
          "let quotationTest2(v) = quote(Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),ExtraTopLevelOperators.SpliceExpression<Microsoft.FSharp.Core.int> (v),1)) @ (84,24--84,36)";
-         "type RecdType"; "type UnionType"; "type ClassWithEventsAndProperties";
+         "type RecdType"; "type UnionType";
+         "member get_IsCase1(this) (unitArg) = (if this.IsCase1 then True else False) @ (87,5--87,14)";
+         "member get_IsCase2(this) (unitArg) = (if this.IsCase2 then True else False) @ (87,5--87,14)";
+         "member get_IsCase3(this) (unitArg) = (if this.IsCase3 then True else False) @ (87,5--87,14)";
+         "type ClassWithEventsAndProperties";
          "member .ctor(unitVar0) = (new Object(); (this.ev <- new FSharpEvent`1(()); ())) @ (89,5--89,33)";
          "member .cctor(unitVar) = (sev <- new FSharpEvent`1(()); ()) @ (91,11--91,35)";
          "member get_InstanceProperty(x) (unitVar1) = (x.ev.Trigger(1); 1) @ (92,32--92,48)";
@@ -3408,7 +3416,9 @@ let ``Test ProjectForWitnesses2`` () =
          "member get_Zero(unitVar0) = {x = 0; y = 0} @ (6,25--6,37)";
          "member Neg(p) = {x = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int> (fun arg0_0 -> LanguagePrimitives.UnaryNegationDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0),p.x); y = Operators.op_UnaryNegation<Microsoft.FSharp.Core.int> (fun arg0_0 -> LanguagePrimitives.UnaryNegationDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0),p.y)} @ (7,34--7,56)";
          "member op_Addition(p1,p2) = {x = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),p1.x,p2.x); y = Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),p1.y,p2.y)} @ (8,33--8,68)";
-         "type MyNumber"; "member get_Zero(unitVar0) = MyNumber(0) @ (12,25--12,35)";
+         "type MyNumber";
+         "member get_IsMyNumber(this) (unitArg) = (if this.IsMyNumber then True else False) @ (10,5--10,13)";
+         "member get_Zero(unitVar0) = MyNumber(0) @ (12,25--12,35)";
          "member op_Addition(_arg1,_arg2) = let x: Microsoft.FSharp.Core.int = _arg1.Item in let y: Microsoft.FSharp.Core.int = _arg2.Item in MyNumber(Operators.op_Addition<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.AdditionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),x,y)) @ (13,23--13,33)";
          "member DivideByInt(_arg3,i) = let x: Microsoft.FSharp.Core.int = _arg3.Item in MyNumber(Operators.op_Division<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (fun arg0_0 -> fun arg1_0 -> LanguagePrimitives.DivisionDynamic<Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int,Microsoft.FSharp.Core.int> (arg0_0,arg1_0),x,i)) @ (15,31--15,41)";
          "type MyNumberWrapper"]
