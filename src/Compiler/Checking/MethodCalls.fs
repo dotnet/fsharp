@@ -279,16 +279,28 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
 
     // Adhoc int32 --> int64
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-       g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn), None
+        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn), None
 
     // Adhoc int32 --> nativeint
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.nativeint_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-       g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn), None
+        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn), None
 
     // Adhoc int32 --> float64
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-       g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn), None
+        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn), None
 
+    elif g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop && isMethodArg && isNullableTy g reqdTy && not (isNullableTy g actualTy) then 
+        let underlyingTy = destNullableTy g reqdTy
+        // shortcut
+        if typeEquiv g underlyingTy actualTy then
+            actualTy, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn), None
+        else
+            let adjustedTy, _, _ = AdjustRequiredTypeForTypeDirectedConversions infoReader ad isMethodArg isConstraint underlyingTy actualTy m
+            if typeEquiv g adjustedTy actualTy then 
+                actualTy, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn), None
+            else 
+                reqdTy, TypeDirectedConversionUsed.No, None
+    
     // Adhoc based on op_Implicit, perhaps returing a new equational type constraint to 
     // eliminate articifical constrained type variables.
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
@@ -352,9 +364,8 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
 
                 // If inference has worked out it's a struct (e.g. an int) then use this
                 elif isStructTy g callerArgTy then
-                    let calledArgTy2 = destNullableTy g calledArgTy
-                    AdjustRequiredTypeForTypeDirectedConversions infoReader ad true false calledArgTy2 callerArgTy m
-
+                    AdjustRequiredTypeForTypeDirectedConversions infoReader ad true false calledArgTy callerArgTy m
+                
                 // If neither and we are at the end of overload resolution then use the Nullable
                 elif enforceNullableOptionalsKnownTypes then 
                     calledArgTy, TypeDirectedConversionUsed.No, None
@@ -1305,6 +1316,16 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReade
 
        mkCallToDoubleOperator g m actualTy expr
 
+   elif g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop &&
+        isNullableTy g reqdTy && not (isNullableTy g actualTy) then
+
+       let underlyingTy = destNullableTy g reqdTy
+       let adjustedExpr = AdjustExprForTypeDirectedConversions tcVal g amap infoReader ad underlyingTy actualTy m expr
+       let adjustedActualTy = tyOfExpr g adjustedExpr
+       
+       let minfo = GetIntrinsicConstructorInfosOfType infoReader m reqdTy |> List.head
+       let callerArgExprCoerced = mkCoerceIfNeeded g underlyingTy adjustedActualTy adjustedExpr
+       MakeMethInfoCall amap m minfo [] [callerArgExprCoerced] None
    else
        match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
        | Some (minfo, staticTy, _) -> 
@@ -1313,9 +1334,7 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReade
            let callExpr, _ = BuildMethodCall tcVal g amap Mutates.NeverMutates m false minfo ValUseFlag.NormalValUse [] [] [expr] staticTyOpt
            assert (let resTy = tyOfExpr g callExpr in typeEquiv g reqdTy resTy)
            callExpr
-       | None -> mkCoerceIfNeeded g reqdTy actualTy expr
-       // TODO: consider Nullable
-       
+       | None -> mkCoerceIfNeeded g reqdTy actualTy expr 
 
 // Handle adhoc argument conversions
 let AdjustCallerArgExpr tcVal (g: TcGlobals) amap infoReader ad isOutArg calledArgTy (reflArgInfo: ReflectedArgInfo) callerArgTy m callerArgExpr = 
@@ -1450,17 +1469,6 @@ let GetDefaultExpressionForOptionalArg tcFieldInit g (calledArg: CalledArg) eCal
     let callerArg = CallerArg(calledArgTy, mMethExpr, false, expr)
     preBinder, { NamedArgIdOpt = None; CalledArg = calledArg; CallerArg = callerArg }
 
-let MakeNullableExprIfNeeded (infoReader: InfoReader) calledArgTy callerArgTy callerArgExpr m =
-    let g = infoReader.g
-    let amap = infoReader.amap
-    if isNullableTy g callerArgTy then 
-        callerArgExpr
-    else
-        let calledNonOptTy = destNullableTy g calledArgTy 
-        let minfo = GetIntrinsicConstructorInfosOfType infoReader m calledArgTy |> List.head
-        let callerArgExprCoerced = mkCoerceIfNeeded g calledNonOptTy callerArgTy callerArgExpr
-        MakeMethInfoCall amap m minfo [] [callerArgExprCoerced] None
-
 // Adjust all the optional arguments, filling in values for defaults, 
 let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader) ad (assignedArg: AssignedCalledArg<_>) =
     let g = infoReader.g
@@ -1492,14 +1500,9 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
             | NotOptional ->
                 //  T --> Nullable<T> widening at callsites
                 if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
-                if isNullableTy g calledArgTy then 
-                    if isNullableTy g callerArgTy then
-                        callerArgExpr
-                    else
-                        let calledNonOptTy = destNullableTy g calledArgTy
-                        let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
-                        let callerArgTy2 = tyOfExpr g callerArgExpr2
-                        MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy2 callerArgExpr2 m
+                if isNullableTy g calledArgTy then
+                    // AdjustCallerArgExpr later on will deal with the nullable conversion
+                    callerArgExpr 
                 else
                     failwith "unreachable" // see case above
             
@@ -1521,21 +1524,8 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
                         // This should be unreachable but the error will be reported elsewhere
                         callerArgExpr
                 else
-                    if isNullableTy g calledArgTy  then 
-                        if isNullableTy g callerArgTy then
-                            // CSharpMethod(x=b) when 'x' has nullable type
-                            // CSharpMethod(x=b) when both 'x' and 'b' have nullable type --> CSharpMethod(x=b)
-                            callerArgExpr
-                        else
-                            // CSharpMethod(x=b) when 'x' has nullable type and 'b' does not --> CSharpMethod(x=Nullable(b))
-                            let calledNonOptTy = destNullableTy g calledArgTy
-                            let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
-                            let callerArgTy2 = tyOfExpr g callerArgExpr2
-                            MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy2 callerArgExpr2 m
-                    else 
-                        // CSharpMethod(x=b) --> CSharpMethod(?x=b)
-                        let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledArgTy reflArgInfo callerArgTy m callerArgExpr
-                        callerArgExpr2
+                    // AdjustCallerArgExpr later on will deal with any nullable conversion
+                    callerArgExpr
 
             | CalleeSide -> 
                 if isOptCallerArg then 

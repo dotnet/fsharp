@@ -350,9 +350,6 @@ val MakeMethInfoCall:
     staticTyOpt: TType option ->
         Expr
 
-// Make an expression to construct a System.Nullable<'T> from callerArgExpr if callerArgTy is not Nullable<'T> yet.
-val MakeNullableExprIfNeeded: infoReader: InfoReader -> calledArgTy: TType -> callerArgTy: TType -> callerArgExpr: Expr -> m: range -> Expr
-
 /// Build an expression that calls a given method info.
 /// This is called after overload resolution, and also to call other
 /// methods such as 'setters' for properties.
