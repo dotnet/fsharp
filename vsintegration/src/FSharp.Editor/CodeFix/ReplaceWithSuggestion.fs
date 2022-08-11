@@ -46,7 +46,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
             let declInfo = checkFileResults.GetDeclarationListInfo(Some parseFileResults, fcsCaretLineNumber, lineText, partialName)
             let addNames (addToBuffer:string -> unit) = 
                 for item in declInfo.Items do
-                    addToBuffer item.Name
+                    addToBuffer item.NameInList
 
             let diagnostics =
                 context.Diagnostics
@@ -54,7 +54,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider
                 |> Seq.toImmutableArray
 
             for suggestion in CompilerDiagnostics.GetSuggestedNames addNames unresolvedIdentifierText do
-                let replacement = PrettyNaming.AddBackticksToIdentifierIfNeeded suggestion
+                let replacement = PrettyNaming.NormalizeIdentifierBackticks suggestion
                 let codeFix =
                     CodeFixHelpers.createTextChangeCodeFix(
                         CompilerDiagnostics.GetErrorMessage (FSharpDiagnosticKind.ReplaceWithSuggestion suggestion),

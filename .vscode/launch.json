@@ -23,7 +23,7 @@
             "internalConsoleOptions": "neverOpen",
             "suppressJITOptimizations": true,
             "stopAtEntry": false,
-            "justMyCode": false,
+            "justMyCode": true,
             "enableStepFiltering": true,
             "symbolOptions": {
                 "searchMicrosoftSymbolServer": true,
@@ -73,7 +73,7 @@
                     "enabled": true
                 }
             },
-            "justMyCode": false,
+            "justMyCode": true,
             "enableStepFiltering": false,
         }
     ]

@@ -12,6 +12,9 @@ trigger:
     exclude:
     - .github/*
     - docs/
+    - .vscode/*
+    - .devcontainer/*
+    - tests/scripts/
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md
@@ -584,6 +587,7 @@ stages:
           -TsaRepositoryName "FSharp"
           -TsaCodebaseName "FSharp-GitHub"
           -TsaPublish $True
+          -PoliCheckAdditionalRunConfigParams @("UserExclusionPath < $(Build.SourcesDirectory)/eng/policheck_exclusions.xml")
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                   VS Insertion                                                      #

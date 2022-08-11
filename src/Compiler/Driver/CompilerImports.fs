@@ -9,6 +9,7 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
+open System.Reflection
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -231,19 +232,15 @@ let OpenILBinary (fileName, reduceMemoryUsage, pdbDirPath, shadowCopyReferences,
         }
 
     let location =
-#if FX_NO_APP_DOMAINS
         // In order to use memory mapped files on the shadow copied version of the Assembly, we `preload the assembly
         // We swallow all exceptions so that we do not change the exception contract of this API
-        if shadowCopyReferences then
+        if shadowCopyReferences && not isRunningOnCoreClr then
             try
-                System.Reflection.Assembly.ReflectionOnlyLoadFrom(fileName).Location
+                Assembly.ReflectionOnlyLoadFrom(fileName).Location
             with _ ->
                 fileName
         else
-#else
-        ignore shadowCopyReferences
-#endif
-        fileName
+            fileName
 
     AssemblyReader.GetILModuleReader(location, opts)
 
@@ -314,7 +311,7 @@ type ImportedBinary =
         FileName: string
         RawMetadata: IRawFSharpAssemblyData
 #if !NO_TYPEPROVIDERS
-        ProviderGeneratedAssembly: System.Reflection.Assembly option
+        ProviderGeneratedAssembly: Assembly option
         IsProviderGenerated: bool
         ProviderGeneratedStaticLinkMap: ProvidedAssemblyStaticLinkingMap option
 #endif
@@ -402,7 +399,8 @@ type TcConfig with
                     seq {
                         yield! tcConfig.GetSearchPathsForLibraryFiles()
 
-                        if isHashRReference m then Path.GetDirectoryName(m.FileName)
+                        if isHashRReference m then
+                            Path.GetDirectoryName(m.FileName)
                     }
 
                 let resolved = TryResolveFileUsingPaths(searchPaths, m, nm)
@@ -417,7 +415,7 @@ type TcConfig with
                             resolvedPath = resolved
                             prepareToolTip =
                                 (fun () ->
-                                    let fusionName = System.Reflection.AssemblyName.GetAssemblyName(resolved).ToString()
+                                    let fusionName = AssemblyName.GetAssemblyName(resolved).ToString()
                                     let line (append: string) = append.Trim(' ') + "\n"
                                     line resolved + line fusionName)
                             sysdir = sysdir
@@ -450,30 +448,15 @@ type TcConfig with
                 raise (FileNameNotResolved(nm, searchMessage, m))
             | CcuLoadFailureAction.ReturnNone -> None
 
-    member tcConfig.MsBuildResolve(references, mode, errorAndWarningRange, showMessages) =
+    member tcConfig.MsBuildResolve(references, _, errorAndWarningRange, showMessages) =
         let logMessage showMessages =
             if showMessages && tcConfig.showReferenceResolutions then
                 (fun (message: string) -> printfn "%s" message)
             else
                 ignore
 
-        let logDiagnostic showMessages =
-            (fun isError code message ->
-                if showMessages && mode = ResolveAssemblyReferenceMode.ReportErrors then
-                    if isError then
-                        errorR (MSBuildReferenceResolutionError(code, message, errorAndWarningRange))
-                    else
-                        match code with
-                        // These are warnings that mean 'not resolved' for some assembly.
-                        // Note that we don't get to know the name of the assembly that couldn't be resolved.
-                        // Ignore these and rely on the logic below to emit an error for each unresolved reference.
-                        | "MSB3246" // Resolved file has a bad image, no metadata, or is otherwise inaccessible.
-                        | "MSB3106" -> ()
-                        | _ ->
-                            if code = "MSB3245" then
-                                errorR (MSBuildReferenceResolutionWarning(code, message, errorAndWarningRange))
-                            else
-                                warning (MSBuildReferenceResolutionWarning(code, message, errorAndWarningRange)))
+        let logDiagnostic _ =
+            (fun (_: bool) (_: string) (_: string) -> ())
 
         let targetProcessorArchitecture =
             match tcConfig.platform with
@@ -592,8 +575,10 @@ type TcConfig with
 
             // O(N^2) here over a small set of referenced assemblies.
             let IsResolved (originalName: string) =
-                if resultingResolutions
-                   |> List.exists (fun resolution -> resolution.originalReference.Text = originalName) then
+                if
+                    resultingResolutions
+                    |> List.exists (fun resolution -> resolution.originalReference.Text = originalName)
+                then
                     true
                 else
                     // MSBuild resolution may have unified the result of two duplicate references. Try to re-resolve now.
@@ -615,8 +600,10 @@ type TcConfig with
 
             // If mode=Speculative, then we haven't reported any errors.
             // We report the error condition by returning an empty list of resolutions
-            if mode = ResolveAssemblyReferenceMode.Speculative
-               && unresolvedReferences.Length > 0 then
+            if
+                mode = ResolveAssemblyReferenceMode.Speculative
+                && unresolvedReferences.Length > 0
+            then
                 [], unresolved
             else
                 resultingResolutions, unresolved
@@ -736,7 +723,8 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
 
                             resolutions.Length = 1
 
-                    if found then asm
+                    if found then
+                        asm
 
             if tcConfig.implicitlyReferenceDotNetAssemblies then
                 let references, _useDotNetFramework =
@@ -1097,7 +1085,9 @@ and [<Sealed>] TcImports
     let mutable disposed = false // this doesn't need locking, it's only for debugging
     let mutable tcGlobals = None // this doesn't need locking, it's set during construction of the TcImports
 
-    let CheckDisposed () = if disposed then assert false
+    let CheckDisposed () =
+        if disposed then
+            assert false
 
     let dispose () =
         CheckDisposed()
@@ -1116,8 +1106,11 @@ and [<Sealed>] TcImports
             let unsuccessful =
                 [
                     for ccuThunk, func in contents do
-                        if ccuThunk.IsUnresolvedReference then func ()
-                        if ccuThunk.IsUnresolvedReference then (ccuThunk, func)
+                        if ccuThunk.IsUnresolvedReference then
+                            func ()
+
+                        if ccuThunk.IsUnresolvedReference then
+                            (ccuThunk, func)
                 ]
 
             ccuThunks <- ResizeArray unsuccessful)
@@ -1692,7 +1685,7 @@ and [<Sealed>] TcImports
                     tcConfig.ResolveLibWithDirectories(CcuLoadFailureAction.RaiseError, primaryAssemblyRef)
                     |> Option.get
                 // MSDN: this method causes the file to be opened and closed, but the assembly is not added to this domain
-                let name = System.Reflection.AssemblyName.GetAssemblyName(resolution.resolvedPath)
+                let name = AssemblyName.GetAssemblyName(resolution.resolvedPath)
                 name.Version
 
             let typeProviderEnvironment =
@@ -2196,7 +2189,7 @@ and [<Sealed>] TcImports
                 tryFile (assemblyName + ".exe") |> ignore
 
 #if !NO_TYPEPROVIDERS
-    member tcImports.TryFindProviderGeneratedAssemblyByName(ctok, assemblyName: string) : System.Reflection.Assembly option =
+    member tcImports.TryFindProviderGeneratedAssemblyByName(ctok, assemblyName: string) : Assembly option =
         // The assembly may not be in the resolutions, but may be in the load set including EST injected assemblies
         match tcImports.TryFindDllInfo(ctok, range0, assemblyName, lookupOnly = true) with
         | Some res ->

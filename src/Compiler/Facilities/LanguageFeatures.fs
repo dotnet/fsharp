@@ -49,6 +49,11 @@ type LanguageFeature =
     | DelegateTypeNameResolutionFix
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
+    | RequiredPropertiesSupport
+    | InitPropertiesSupport
+    | LowercaseDUWhenRequireQualifiedAccess
+    | InterfacesWithAbstractStaticMembers
+    | SelfTypeConstraints
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -111,6 +116,11 @@ type LanguageVersion(versionText) =
                 LanguageFeature.BetterExceptionPrinting, previewVersion
                 LanguageFeature.ReallyLongLists, previewVersion
                 LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, previewVersion
+                LanguageFeature.RequiredPropertiesSupport, previewVersion
+                LanguageFeature.InitPropertiesSupport, previewVersion
+                LanguageFeature.LowercaseDUWhenRequireQualifiedAccess, previewVersion
+                LanguageFeature.InterfacesWithAbstractStaticMembers, previewVersion
+                LanguageFeature.SelfTypeConstraints, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -210,6 +220,11 @@ type LanguageVersion(versionText) =
         | LanguageFeature.DelegateTypeNameResolutionFix -> FSComp.SR.featureDelegateTypeNameResolutionFix ()
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()
         | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
+        | LanguageFeature.RequiredPropertiesSupport -> FSComp.SR.featureRequiredProperties ()
+        | LanguageFeature.InitPropertiesSupport -> FSComp.SR.featureInitProperties ()
+        | LanguageFeature.LowercaseDUWhenRequireQualifiedAccess -> FSComp.SR.featureLowercaseDUWhenRequireQualifiedAccess ()
+        | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureInterfacesWithAbstractStaticMembers ()
+        | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

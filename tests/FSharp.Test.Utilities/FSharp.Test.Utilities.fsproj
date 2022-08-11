@@ -26,6 +26,7 @@
     <Compile Include="Compiler.fs" />
     <Compile Include="Peverifier.fs" />
     <Compile Include="DirectoryAttribute.fs" />
+    <Compile Include="ReflectionHelper.fs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -45,6 +46,7 @@
     <PackageReference Include="xunit" Version="$(XUnitVersion)" />
     <PackageReference Include="FluentAssertions" Version="$(FluentAssertionsVersion)" />
   </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Net.Compilers" Version="$(MicrosoftNetCompilersVersion)" />
     <PackageReference Include="Microsoft.NETCore.ILDAsm" Version="$(MicrosoftNETCoreILDAsmVersion)" />

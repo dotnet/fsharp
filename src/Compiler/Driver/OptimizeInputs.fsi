@@ -38,7 +38,6 @@ val CreateIlxAssemblyGenerator:
 val GenerateIlxCode:
     ilxBackend: IlxGenBackend *
     isInteractiveItExpr: bool *
-    isInteractiveOnMono: bool *
     tcConfig: TcConfig *
     topAttrs: TopAttribs *
     optimizedImpls: CheckedAssemblyAfterOptimization *

@@ -15,6 +15,7 @@
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <NoWarn>$(NoWarn);FS0988</NoWarn> <!-- "program does nothing" warning -->
+    <EnablePreviewFeatures>true</EnablePreviewFeatures> <!-- allow testing of static methods in interfaces on .NET 6  -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -83,15 +84,18 @@
     <Compile Include="Conformance\StructTypes\StructTypes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes\CheckingSyntacticTypes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes\LogicalPropertiesOfTypes.fs" />
+    <Compile Include="Conformance\TypesAndTypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs" />
     <Compile Include="Conformance\UnionTypes\UnionTypes.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Basic.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Diagnostics.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Parsing.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\TypeChecker.fs" />
+    <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
     <Compile Include="EmittedIL\StringFormatAndInterpolation.fs" />
+    <Compile Include="EmittedIL\StructGettersReadOnly.fs" />
     <Compile Include="EmittedIL\TailCalls.fs" />
     <Compile Include="EmittedIL\TupleElimination.fs" />
     <Compile Include="EmittedIL\TypeTestsInPatternMatching.fs" />
@@ -154,17 +158,25 @@
     <Compile Include="Language\CodeQuotationTests.fs" />
     <Compile Include="Language\ComputationExpressionTests.fs" />
     <Compile Include="Language\CastingTests.fs" />
+    <Compile Include="Language\NameofTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
     <Compile Include="Interop\SimpleInteropTests.fs" />
-    <Compile Include="Interop\StaticsInInterfaces.fs" />
+	<Compile Include="Interop\RequiredAndInitOnlyProperties.fs" />
+	<Compile Include="Interop\StaticsInInterfaces.fs" />
     <Compile Include="Interop\VisibilityTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
     <Compile Include="CompilerOptions\fsc\langversion.fs" />
     <Compile Include="CompilerOptions\fsc\noframework.fs" />
     <Compile Include="CompilerOptions\fsc\platform.fs" />
-    <Compile Include="CompilerOptions\fsc\times.fs" />
+    <Compile Include="CompilerOptions\fsc\reference.fs" />
     <Compile Include="CompilerOptions\fsc\warn.fs" />
     <Compile Include="CompilerOptions\fsc\warnon.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
@@ -180,12 +192,6 @@
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="**\*.bsl">
       <Link>%(RelativeDir)\BaseLine\%(Filename)%(Extension)</Link>
-    </None>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-    </None>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
     </None>
   </ItemGroup>
   <ItemGroup>

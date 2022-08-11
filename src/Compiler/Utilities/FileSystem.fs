@@ -127,7 +127,8 @@ type ByteArrayMemory(bytes: byte[], offset, length) =
             ByteArrayMemory(Array.empty, 0, 0) :> ByteMemory
 
     override _.CopyTo stream =
-        if length > 0 then stream.Write(bytes, offset, length)
+        if length > 0 then
+            stream.Write(bytes, offset, length)
 
     override _.Copy(srcOffset, dest, destOffset, count) =
         checkCount count
@@ -360,9 +361,6 @@ module MemoryMappedFileExtensions =
 
         if length = 0L then
             None
-        else if runningOnMono then
-            // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/1024
-            None
         else
             // Try to create a memory mapped file and copy the contents of the given bytes to it.
             // If this fails, then we clean up and return None.
@@ -412,7 +410,8 @@ module internal FileSystemUtils =
     let checkSuffix (path: string) (suffix: string) = path.EndsWithOrdinalIgnoreCase(suffix)
 
     let hasExtensionWithValidate (validate: bool) (s: string) =
-        if validate then (checkPathForIllegalChars s)
+        if validate then
+            (checkPathForIllegalChars s)
 
         let sLen = s.Length
 
@@ -437,7 +436,8 @@ module internal FileSystemUtils =
         Path.GetFileName(path)
 
     let fileNameWithoutExtensionWithValidate (validate: bool) path =
-        if validate then checkPathForIllegalChars path
+        if validate then
+            checkPathForIllegalChars path
 
         Path.GetFileNameWithoutExtension(path)
 
@@ -533,7 +533,7 @@ type DefaultFileSystem() as this =
         //   -  Running on mono, since its MemoryMappedFile implementation throws when "mapName" is not provided (is null).
         //      (See: https://github.com/mono/mono/issues/10245)
 
-        if runningOnMono || (not useMemoryMappedFile) then
+        if not useMemoryMappedFile then
             fileStream :> Stream
         else
             let mmf =
@@ -563,7 +563,8 @@ type DefaultFileSystem() as this =
 
             let stream = new MemoryMappedStream(mmf, length)
 
-            if not stream.CanRead then invalidOp "Cannot read file"
+            if not stream.CanRead then
+                invalidOp "Cannot read file"
 
             stream :> Stream
 
@@ -881,7 +882,8 @@ type internal ByteStream =
     }
 
     member b.ReadByte() =
-        if b.pos >= b.max then failwith "end of stream"
+        if b.pos >= b.max then
+            failwith "end of stream"
 
         let res = b.bytes[b.pos]
         b.pos <- b.pos + 1
@@ -948,7 +950,8 @@ type internal ByteBuffer =
 
             Bytes.blit old 0 buf.bbArray 0 buf.bbCurrent
 
-            if buf.useArrayPool then ArrayPool.Shared.Return old
+            if buf.useArrayPool then
+                ArrayPool.Shared.Return old
 
     member buf.AsMemory() =
         buf.CheckDisposed()
