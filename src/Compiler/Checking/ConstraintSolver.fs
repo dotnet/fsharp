@@ -2695,21 +2695,21 @@ and AddWrappedContextualSubsumptionReport (csenv: ConstraintSolverEnv) ndeep m c
     | _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, csenv.eContextInfo, m)))
 
 /// Assert a subtype constraint
-and SolveTypeSubsumesTypeWithWrappedContextualReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 wrapper =
+and SolveTypeSubsumesTypeWithWrappedContextualReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln origTy1 ty1 ty2 wrapper =
     // Due to the legacy of the change https://github.com/dotnet/fsharp/pull/1650, 
     // when doing nested, speculative overload resolution, we ignore failed member constraints and continue.  The
     // constraint is not recorded for later solution.
     if csenv.IsSpeculativeForMethodOverloading then
         IgnoreFailedMemberConstraintResolution
             (fun () -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m trace cxsln ty1 ty2)
-            (fun res -> AddWrappedContextualSubsumptionReport csenv ndeep m cxsln ty1 ty2 res wrapper)
+            (fun res -> AddWrappedContextualSubsumptionReport csenv ndeep m cxsln (defaultArg origTy1 ty1) ty2 res wrapper)
     else
         PostponeOnFailedMemberConstraintResolution csenv trace
             (fun csenv -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m trace cxsln ty1 ty2)
-            (fun res -> AddWrappedContextualSubsumptionReport csenv ndeep m cxsln ty1 ty2 res wrapper)
+            (fun res -> AddWrappedContextualSubsumptionReport csenv ndeep m cxsln (defaultArg origTy1 ty1) ty2 res wrapper)
        
-and SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 =
-    SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep m trace cxsln ty1 ty2 id
+and SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln origTy1 ty1 ty2 =
+    SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep m trace cxsln origTy1 ty1 ty2 id
 
 and SolveTypeEqualsTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln actualTy expectedTy = 
     TryD
@@ -2740,7 +2740,7 @@ and ArgsMustSubsumeOrConvert
     match usesTDC with 
     | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
     | TypeDirectedConversionUsed.No -> ()
-    do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArg.CallerArgumentType
+    do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerArg.CallerArgumentType
     if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerArg.CallerArgumentType) then 
         return! ErrorD(Error(FSComp.SR.csMethodExpectsParams(), m))
     else 
@@ -2771,7 +2771,7 @@ and ArgsMustSubsumeOrConvertWithContextualReport
         match usesTDC with 
         | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
-        do! SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep  m trace cxsln calledArgTy callerArgTy (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg))  
+        do! SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerArgTy (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg))  
         return usesTDC
     }
 
@@ -2783,7 +2783,7 @@ and TypesEquiv csenv ndeep trace cxsln ty1 ty2 =
 
 and TypesMustSubsume (csenv: ConstraintSolverEnv) ndeep trace cxsln m calledArgTy callerArgTy = 
     trackErrors {
-        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArgTy 
+        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln None calledArgTy callerArgTy 
         return TypeDirectedConversionUsed.No
     }
 
@@ -2798,7 +2798,7 @@ and ReturnTypesMustSubsumeOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace 
         match usesTDC with 
         | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
-        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln reqdTy actualTy 
+        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln None reqdTy actualTy 
         return usesTDC
     }
 
@@ -3519,7 +3519,7 @@ let AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv css m extraRigidTypars
 
 let AddCxTypeMustSubsumeType contextInfo denv css m trace ty1 ty2 = 
     let csenv = MakeConstraintSolverEnv contextInfo css m denv
-    SolveTypeSubsumesTypeWithReport csenv 0 m trace None ty1 ty2
+    SolveTypeSubsumesTypeWithReport csenv 0 m trace None None ty1 ty2
     |> RaiseOperationResult
 
 let AddCxMethodConstraint denv css m trace traitInfo  =
