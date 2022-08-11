@@ -711,7 +711,7 @@ module AddAugmentationDeclarations =
         if AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithCompare g tycon && scSet.Contains tycon.Stamp then 
             let tcref = mkLocalTyconRef tycon
             let tcaug = tycon.TypeContents
-            let ty = if tcref.Deref.IsExceptionDecl then g.exn_ty else generalizedTyconRef g tcref
+            let ty = if tcref.Deref.IsFSharpException then g.exn_ty else generalizedTyconRef g tcref
             let m = tycon.Range
             let genericIComparableTy = mkAppTy g.system_GenericIComparable_tcref [ty]
 
@@ -734,7 +734,7 @@ module AddAugmentationDeclarations =
 
                 PublishInterface cenv env.DisplayEnv tcref m true g.mk_IStructuralComparable_ty
                 PublishInterface cenv env.DisplayEnv tcref m true g.mk_IComparable_ty
-                if not tycon.IsExceptionDecl && not hasExplicitGenericIComparable then 
+                if not tycon.IsFSharpException && not hasExplicitGenericIComparable then 
                     PublishInterface cenv env.DisplayEnv tcref m true genericIComparableTy
                 tcaug.SetCompare (mkLocalValRef cvspec1, mkLocalValRef cvspec2)
                 tcaug.SetCompareWith (mkLocalValRef cvspec3)
@@ -793,7 +793,7 @@ module AddAugmentationDeclarations =
         if AugmentTypeDefinitions.TyconIsCandidateForAugmentationWithEquals g tycon then 
             let tcref = mkLocalTyconRef tycon
             let tcaug = tycon.TypeContents
-            let ty = if tcref.Deref.IsExceptionDecl then g.exn_ty else generalizedTyconRef g tcref
+            let ty = if tcref.Deref.IsFSharpException then g.exn_ty else generalizedTyconRef g tcref
             let m = tycon.Range
 
             // Note: tycon.HasOverride only gives correct results after we've done the type augmentation 
@@ -810,7 +810,7 @@ module AddAugmentationDeclarations =
 
                  let vspec1, vspec2 = AugmentTypeDefinitions.MakeValsForEqualsAugmentation g tcref
                  tcaug.SetEquals (mkLocalValRef vspec1, mkLocalValRef vspec2)
-                 if not tycon.IsExceptionDecl then 
+                 if not tycon.IsFSharpException then 
                     PublishInterface cenv env.DisplayEnv tcref m true (mkAppTy g.system_GenericIEquatable_tcref [ty])
                  PublishValueDefn cenv env ModuleOrMemberBinding vspec1
                  PublishValueDefn cenv env ModuleOrMemberBinding vspec2
@@ -4295,13 +4295,13 @@ module TcDeclarations =
         // Representation-hidden types with members and interfaces are written 'type X = ...' 
         | SynTypeDefnSigRepr.Simple(SynTypeDefnSimpleRepr.None _ as repr, _) when not (isNil extraMembers) -> 
             let isAtOriginalTyconDefn = false
-            let repr = SynTypeDefnSimpleRepr.Exception exnRepr
             let tyconCore = MutRecDefnsPhase1DataForTycon (synTyconInfo, repr, implements1, false, false, isAtOriginalTyconDefn)
             tyconCore, (synTyconInfo, extraMembers)
-
+            
         | SynTypeDefnSigRepr.Exception exnRepr -> 
             let isAtOriginalTyconDefn = true
-            let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, SynTypeDefnSimpleRepr.Exception exnRepr, implements1, false, false, isAtOriginalTyconDefn)
+            let repr = SynTypeDefnSimpleRepr.Exception exnRepr
+            let core = MutRecDefnsPhase1DataForTycon(synTyconInfo, repr, implements1, false, false, isAtOriginalTyconDefn)
             core, (synTyconInfo, extraMembers)
 
         | SynTypeDefnSigRepr.Simple(repr, _) -> 
@@ -4314,7 +4314,7 @@ module TcDeclarations =
         let g = cenv.g
         (envMutRec, mutRecDefns) ||> MutRecShapes.mapWithEnv 
             // Do this for the members in each 'type' declaration 
-            (fun envForDecls ((tyconCore, (synTyconInfo, members), innerParent), tyconOpt, _fixupFinalAttrs, _, extraValSpecs) -> 
+            (fun envForDecls ((tyconCore, (synTyconInfo, members), innerParent), tyconOpt, _fixupFinalAttrs, _, _extraValSpecs) -> 
                 let tpenv = emptyUnscopedTyparEnv
                 let (MutRecDefnsPhase1DataForTycon (isAtOriginalTyconDefn=isAtOriginalTyconDefn)) = tyconCore
                 let (SynComponentInfo(_, TyparsAndConstraints (typars, cs1), cs2, longPath, _, _, _, m)) = synTyconInfo

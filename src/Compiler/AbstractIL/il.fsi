@@ -4,6 +4,7 @@
 
 module rec FSharp.Compiler.AbstractIL.IL
 
+open FSharp.Compiler.Features
 open FSharp.Compiler.IO
 open System.Collections.Generic
 open System.Reflection
