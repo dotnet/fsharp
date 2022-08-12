@@ -14,12 +14,26 @@ type DU2 =
     | a of int
     | B of string
     | C
+    | ``D`` of bool
+    | ``d`` of string * int
 
 [<RequireQualifiedAccess>]
 type DU3 = | a
 
 [<RequireQualifiedAccess>]
 type DU4 = a
+
+[<RequireQualifiedAccess>]
+type DU5 = ``a``
+
+[<RequireQualifiedAccess>]
+type DU6 = ``A``
+
+[<RequireQualifiedAccess>]
+type DU7 = | ``a``
+
+[<RequireQualifiedAccess>]
+type DU8 = | ``A``
 
 [<RequireQualifiedAccess>]
 type du1 = du1 of string
