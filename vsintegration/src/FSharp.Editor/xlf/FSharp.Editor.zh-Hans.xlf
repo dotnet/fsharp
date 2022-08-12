@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
-        <target state="new">Use triple quoted string interpolation.</target>
+        <target state="translated">使用三引号字符串内插。</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">
