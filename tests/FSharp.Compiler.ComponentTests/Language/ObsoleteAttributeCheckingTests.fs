@@ -11,7 +11,6 @@ module ObsoleteAttributeCheckingTests =
 open System
 
 type C() =
-  
     [<Obsolete("Use B instead", true)>]
     member _.Update() = ()
 
@@ -20,24 +19,37 @@ let c = C()
         |> ignoreWarnings
         |> compile
         |> shouldSucceed
-
+        
     [<Fact>]
-    let ``Obsolete attribute is taken into account when used on type and and instantiate the type`` () =
+    let ``Obsolete attribute warning taken into account when used instantiating a type`` () =
         Fsx """
 open System
-
-[<Obsolete("Use B instead", true)>]
+[<Obsolete("Use B instead")>]
 type C() =
-  
     member _.Update() = ()
 
 let c = C()
         """
-        |> ignoreWarnings
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 9, Col 9, Line 9, Col 10, "This construct is deprecated. Use B instead")
+            (Warning 44, Line 7, Col 9, Line 7, Col 10, "This construct is deprecated. Use B instead")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute error taken into account when used instantiating a type`` () =
+        Fsx """
+open System
+[<Obsolete("Use B instead", true)>]
+type C() =
+    member _.Update() = ()
+
+let c = C()
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 7, Col 9, Line 7, Col 10, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -495,9 +507,111 @@ b.text("Hello 2") |> ignore
         |> withDiagnostics [
             (Error 101, Line 16, Col 1, Line 16, Col 7, "This construct is deprecated. Use B instead")
         ]
+    
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in one the record properties`` () =
+        Fsx """
+open System
+type MyType = { [<Obsolete("Deprecated Field", true)>] DeprecatedField: string ; JustField: string }
+let a = { DeprecatedField= "23" ; JustField = "" } 
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 4, Col 9, Line 4, Col 51, "This construct is deprecated. Deprecated Field")
+        ]
         
     [<Fact>]
-    let ``Obsolete attribute is taken into account when used on an C# struct`` () =
+    let ``Obsolete attribute warning is taken into account when used in one the record properties`` () =
+        Fsx """
+open System
+type MyType = { [<Obsolete("Deprecated Field")>] DeprecatedField: string ; JustField: string }
+let a = { DeprecatedField= "23" ; JustField = "" } 
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 4, Col 9, Line 4, Col 51, "This construct is deprecated. Deprecated Field")
+        ]
+    
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used in one the class with a setter`` () =
+        Fsx """
+type Class1() =
+  let mutable internalValue = 1
+  member _.A with get () = internalValue
+  [<System.Obsolete("member A is deprecated")>] member _.A with set (v: int) = internalValue <- v
+
+let class1 = new Class1()
+let value1 = class1.A
+let value2 = class1.A <- 12
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 9, Col 14, Line 9, Col 22, "This construct is deprecated. member A is deprecated");
+            (Warning 44, Line 9, Col 14, Line 9, Col 28, "This construct is deprecated. member A is deprecated")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in one the class with a setter`` () =
+        Fsx """
+type Class1() =
+  let mutable internalValue = 1
+  member _.A with get () = internalValue
+  [<System.Obsolete("member A is deprecated", true)>] member _.A with set (v: int) = internalValue <- v
+
+let class1 = new Class1()
+let value1 = class1.A
+let value2 = class1.A <- 12
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 14, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used in one the class with a getter`` () =
+        Fsx """
+type Class1() =
+  let mutable internalValue = 1
+  [<System.Obsolete("member A is deprecated")>] member _.A with get () = internalValue
+  member _.A with set (v: int) = internalValue <- v
+
+let class1 = new Class1()
+let value1 = class1.A
+let value2 = class1.A <- 12
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+           (Warning 44, Line 8, Col 14, Line 8, Col 22, "This construct is deprecated. member A is deprecated");
+           (Warning 44, Line 9, Col 14, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in one the class with a getter`` () =
+        Fsx """
+type Class1() =
+  let mutable internalValue = 1
+  [<System.Obsolete("member A is deprecated", true)>] member _.A with get () = internalValue
+  member _.A with set (v: int) = internalValue <- v
+
+let class1 = new Class1()
+let value1 = class1.A
+let value2 = class1.A <- 12
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 8, Col 14, Line 8, Col 22, "This construct is deprecated. member A is deprecated")
+            (Error 101, Line 9, Col 14, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used on an C# struct`` () =
         let CSLib =
             CSharp """
 using System;
@@ -519,4 +633,271 @@ let s1: ObsoleteStruct = ObsoleteStruct()
         |> withDiagnostics [
             (Warning 44, Line 3, Col 9, Line 3, Col 23, "This construct is deprecated. Struct is obsolete");
             (Warning 44, Line 3, Col 26, Line 3, Col 40, "This construct is deprecated. Struct is obsolete")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used on an C# struct`` () =
+        let CSLib =
+            CSharp """
+using System;
+[Obsolete("Struct is obsolete", true)]
+public struct ObsoleteStruct
+{
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ObsoleteStruct.FS
+let s1: ObsoleteStruct = ObsoleteStruct()
+        """ |> withReferences [CSLib]
+
+        app
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 3, Col 9, Line 3, Col 23, "This construct is deprecated. Struct is obsolete");
+            (Error 101, Line 3, Col 26, Line 3, Col 40, "This construct is deprecated. Struct is obsolete")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used on an C# class`` () =
+        let CSLib =
+            CSharp """
+using System;
+[Obsolete("Class is obsolete")]
+public class ObsoleteClass
+{
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ObsoleteClass.FS
+let c1: ObsoleteClass = null
+let c2 = ObsoleteClass()
+        """ |> withReferences [CSLib]
+
+        app
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 3, Col 9, Line 3, Col 22, "This construct is deprecated. Class is obsolete");
+            (Warning 44, Line 4, Col 10, Line 4, Col 23, "This construct is deprecated. Class is obsolete")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used on an C# class`` () =
+        let CSLib =
+            CSharp """
+using System;
+[Obsolete("Class is obsolete", true)]
+public class ObsoleteClass
+{
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ObsoleteClass.FS
+let c1: ObsoleteClass = null
+let c2 = ObsoleteClass()
+        """ |> withReferences [CSLib]
+
+        app
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 3, Col 9, Line 3, Col 22, "This construct is deprecated. Class is obsolete");
+            (Error 101, Line 4, Col 10, Line 4, Col 23, "This construct is deprecated. Class is obsolete")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used on an C# interface`` () =
+        let CSLib =
+            CSharp """
+using System;
+[Obsolete("Interface is obsolete")]
+public interface IObsoleteInterface
+{
+    int P { get; }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ObsoleteInterface.FS
+let i1: IObsoleteInterface = null
+let i2 = { new IObsoleteInterface with
+             member this.P = 1 }
+        """ |> withReferences [CSLib]
+
+        app
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 3, Col 9, Line 3, Col 27, "This construct is deprecated. Interface is obsolete");
+            (Warning 44, Line 4, Col 16, Line 4, Col 34, "This construct is deprecated. Interface is obsolete")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used on an C# interface`` () =
+        let CSLib =
+            CSharp """
+using System;
+[Obsolete("Interface is obsolete", true)]
+public interface IObsoleteInterface
+{
+    int P { get; }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ObsoleteInterface.FS
+let i1: IObsoleteInterface = null
+let i2 = { new IObsoleteInterface with
+             member this.P = 1 }
+        """ |> withReferences [CSLib]
+
+        app
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 3, Col 9, Line 3, Col 27, "This construct is deprecated. Interface is obsolete");
+            (Error 101, Line 4, Col 16, Line 4, Col 34, "This construct is deprecated. Interface is obsolete")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used on an C# delegate`` () =
+        let CSLib =
+            CSharp """
+using System;
+[Obsolete("Delegate is obsolete")]
+public delegate void ObsoleteDelegate();
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ObsoleteDelegate.FS
+let d1: ObsoleteDelegate = null
+let d2 = ObsoleteDelegate(fun _ -> ())
+let d3 = new ObsoleteDelegate(fun _ -> ())
+        """ |> withReferences [CSLib]
+
+        app
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 3, Col 9, Line 3, Col 25, "This construct is deprecated. Delegate is obsolete");
+            (Warning 44, Line 4, Col 10, Line 4, Col 26, "This construct is deprecated. Delegate is obsolete");
+            (Warning 44, Line 4, Col 10, Line 4, Col 39, "This construct is deprecated. Delegate is obsolete");
+            (Warning 44, Line 5, Col 14, Line 5, Col 30, "This construct is deprecated. Delegate is obsolete");
+            (Warning 44, Line 5, Col 10, Line 5, Col 43, "This construct is deprecated. Delegate is obsolete")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used on an C# delegate`` () =
+        let CSLib =
+            CSharp """
+using System;
+[Obsolete("Delegate is obsolete", true)]
+public delegate void ObsoleteDelegate();
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ObsoleteDelegate.FS
+let d1: ObsoleteDelegate = null
+let d2 = ObsoleteDelegate(fun _ -> ())
+let d3 = new ObsoleteDelegate(fun _ -> ())
+        """ |> withReferences [CSLib]
+
+        app
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 3, Col 9, Line 3, Col 25, "This construct is deprecated. Delegate is obsolete");
+            (Error 101, Line 4, Col 10, Line 4, Col 26, "This construct is deprecated. Delegate is obsolete");
+            (Error 101, Line 5, Col 14, Line 5, Col 30, "This construct is deprecated. Delegate is obsolete")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used on an C# static fields and methods`` () =
+        let CSLib =
+            CSharp """
+using System;
+public class Class
+{
+    [Obsolete("Field is obsolete")] public static readonly int ObsoleteField = 1;
+
+    [Obsolete("Method is obsolete")]
+    public static void ObsoleteMethod()
+    {
+    }
+
+    [Obsolete("Property is obsolete")] public static int ObsoleteProperty => 1;
+
+    [Obsolete("Event is obsolete")] public static event EventHandler ObsoleteEvent;
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module StaticFieldAndMethods.FS
+Class.ObsoleteField |> ignore
+Class.ObsoleteMethod()
+Class.ObsoleteProperty |> ignore
+Class.ObsoleteEvent |> ignore
+        """ |> withReferences [CSLib]
+
+        app
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 3, Col 1, Line 3, Col 20, "This construct is deprecated. Field is obsolete");
+            (Warning 44, Line 4, Col 1, Line 4, Col 21, "This construct is deprecated. Method is obsolete");
+            (Warning 44, Line 5, Col 1, Line 5, Col 23, "This construct is deprecated. Property is obsolete")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used on an C# static fields and methods`` () =
+        let CSLib =
+            CSharp """
+using System;
+public class Class
+{
+    [Obsolete("Field is obsolete", true)] public static readonly int ObsoleteField = 1;
+
+    [Obsolete("Method is obsolete", true)]
+    public static void ObsoleteMethod()
+    {
+    }
+
+    [Obsolete("Property is obsolete", true)] public static int ObsoleteProperty => 1;
+
+    [Obsolete("Event is obsolete", true)] public static event EventHandler ObsoleteEvent;
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module StaticFieldAndMethods.FS
+Class.ObsoleteField |> ignore
+Class.ObsoleteMethod()
+Class.ObsoleteProperty |> ignore
+Class.ObsoleteEvent |> ignore
+        """ |> withReferences [CSLib]
+
+        app
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 3, Col 1, Line 3, Col 20, "This construct is deprecated. Field is obsolete");
+            (Error 101, Line 4, Col 1, Line 4, Col 21, "This construct is deprecated. Method is obsolete");
+            (Error 101, Line 5, Col 1, Line 5, Col 23, "This construct is deprecated. Property is obsolete")
         ]
