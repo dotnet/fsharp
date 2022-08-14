@@ -112,15 +112,15 @@ type LanguageVersion(versionText) =
                 LanguageFeature.DelegateTypeNameResolutionFix, languageVersion60
 
                 // F# 7.0
-                LanguageFeature.MLCompatRevisions, previewVersion
-                LanguageFeature.BetterExceptionPrinting, previewVersion
-                LanguageFeature.ReallyLongLists, previewVersion
-                LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, previewVersion
-                LanguageFeature.RequiredPropertiesSupport, previewVersion
-                LanguageFeature.InitPropertiesSupport, previewVersion
-                LanguageFeature.LowercaseDUWhenRequireQualifiedAccess, previewVersion
-                LanguageFeature.InterfacesWithAbstractStaticMembers, previewVersion
-                LanguageFeature.SelfTypeConstraints, previewVersion
+                LanguageFeature.MLCompatRevisions, languageVersion70
+                LanguageFeature.BetterExceptionPrinting, languageVersion70
+                LanguageFeature.ReallyLongLists, languageVersion70
+                LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, languageVersion70
+                LanguageFeature.RequiredPropertiesSupport, languageVersion70
+                LanguageFeature.InitPropertiesSupport, languageVersion70
+                LanguageFeature.LowercaseDUWhenRequireQualifiedAccess, languageVersion70
+                LanguageFeature.InterfacesWithAbstractStaticMembers, languageVersion70
+                LanguageFeature.SelfTypeConstraints, languageVersion70
 
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion

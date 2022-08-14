@@ -9,13 +9,13 @@ open FSharp.Test.Compiler
 let typesModule =
     FSharp (loadSourceFromFile (Path.Combine(__SOURCE_DIRECTORY__,  "Types.fs")))
     |> withName "Types"
-    |> withLangVersionPreview
+    |> withLangVersion70
     |> withOptions ["--nowarn:3535"]
 
 let setupCompilation compilation =
     compilation
     |> asExe
-    |> withLangVersionPreview
+    |> withLangVersion70
     |> withReferences [typesModule]
 
 
@@ -67,7 +67,7 @@ let ``IWSAM test files`` compilation =
 let ``Check static type parameter inference`` code expectedSignature =
     FSharp code
     |> ignoreWarnings
-    |> withLangVersionPreview
+    |> withLangVersion70
     |> signaturesShouldContain expectedSignature
 
 
@@ -311,7 +311,7 @@ module Negative =
         |> ignore
 
         Fsx code
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> compile
         |> shouldFail
         |> withErrorCode 3532
@@ -540,7 +540,7 @@ module ``Implicit conversion`` =
 
                 let add1 (x: int) = x + 1
             """
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withOptions ["--nowarn:3535"]
 
     #if !NETCOREAPP
@@ -556,7 +556,7 @@ module ``Implicit conversion`` =
                 add1(a)
             """
         |> withReferences [library]
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'int'\\s+but here has type\\s+''T'"
@@ -574,7 +574,7 @@ module ``Implicit conversion`` =
                 C.TakeInt(a)
             """
         |> withReferences [library]
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "This expression was expected to have type\\s+'int'\\s+but here has type\\s+''T'"
@@ -592,7 +592,7 @@ module ``Implicit conversion`` =
                 add1(int(a))
             """
         |> withReferences [library]
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> compile
         |> shouldSucceed
 
@@ -609,7 +609,7 @@ module ``Implicit conversion`` =
                 C.TakeInt(int(a))
             """
         |> withReferences [library]
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> compile
         |> shouldSucceed
 
@@ -631,7 +631,7 @@ module ``Nominal type after or`` =
             if not (callX "A" (C()) = "A OK") then
                 failwith "Unexpected result"
             """
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -645,7 +645,7 @@ module ``Nominal type after or`` =
 
             let inline callX (x: 'T) (y: C) = ((C or ^T): (static member X : 'T * C -> string) (x, y));;
             """
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> compile
         |> shouldFail
         |> withDiagnosticMessageMatches "Unexpected keyword 'static' in binding"
@@ -670,7 +670,7 @@ module ``Nominal type after or`` =
             if not (callX2 (C()) (D()) = "C") then
                 failwith "Unexpected result"
             """
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -694,7 +694,7 @@ module ``Active patterns`` =
                     static member IsGood c = false
                     static member op_Equality (a, b) = false
             """
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withName "Potato"
         |> withOptions ["--nowarn:3535"]
 
@@ -715,7 +715,7 @@ module ``Active patterns`` =
             match Rock() with GoodPotato -> failwith "Unexpected result" | _ -> ()
             """
         |> withReferences [library]
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> compileExeAndRun
         |> shouldSucceed
         |> verifyIL [
@@ -753,7 +753,7 @@ module ``Active patterns`` =
             | IsNonEqual -> ()
             """
         |> withReferences [library]
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> asExe
         |> compileAndRun
         |> shouldSucceed
@@ -780,7 +780,7 @@ module ``Suppression of System Numerics interfaces on unitized types`` =
             open System.Numerics
             let f (x: 'T when 'T :> IMultiplyOperators<'T,'T,'T>) = x;;
             f 3.0 |> ignore"""
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> compile
         |> shouldSucceed
 
@@ -825,7 +825,7 @@ module ``Suppression of System Numerics interfaces on unitized types`` =
 
             let f (x: 'T when {genericType}) = x;;
             f 3.0<potato> |> ignore"""
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> compile
         |> shouldFail
         |> withErrorMessage $"The type 'float<potato>' is not compatible with the type '{potatoType}'"

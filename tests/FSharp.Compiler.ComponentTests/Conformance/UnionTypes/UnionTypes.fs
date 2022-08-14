@@ -521,7 +521,7 @@ module UnionTypes =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LowercaseWhenRequireQualifiedAccess.fsx"|])>]
     let ``LowercaseWhenRequireQualifiedAccess_fs in preview`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> verifyCompileAndRun
         |> shouldSucceed
 
@@ -529,7 +529,7 @@ module UnionTypes =
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_LowercaseWhenRequireQualifiedAccess.fsx"|])>]
     let ``E_LowercaseWhenRequireQualifiedAccess_fs in preview`` compilation =
         compilation
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [

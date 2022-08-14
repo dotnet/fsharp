@@ -569,7 +569,7 @@ b.text("Hello 2") |> ignore
         ignore newChildCopy
     """
         FSharp fsharpSource
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpBaseClass]
         |> compile
         |> shouldSucceed

@@ -106,7 +106,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpOperators]
         |> compileAndRun
         |> shouldSucceed
@@ -142,7 +142,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -194,7 +194,7 @@ type MyRepeatSequence2() =
         static member Next(other: MyRepeatSequence2) : MyRepeatSequence2 = MyRepeatSequence2.Next(other)
 """
         Fsx fsharpSource
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compile
         |> shouldSucceed
@@ -312,7 +312,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -339,7 +339,7 @@ let main _ = 0
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> compileAndRun
         |> shouldSucceed
 
@@ -365,7 +365,7 @@ let main _ = 0
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> compileAndRun
         |> shouldSucceed
 
@@ -403,7 +403,7 @@ module Test =
         0
 """
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> compileAndRun
         |> shouldSucceed
         |> verifyIL [
@@ -541,7 +541,7 @@ module Test =
                     let F<'T when 'T :> IFoo<'T>>(x: 'T, y: 'T) =
                         'T.Foo(x, y)
                 """
-                |> withLangVersionPreview
+                |> withLangVersion70
                 |> withName "FsLibAssembly"
                 |> withOptions ["--nowarn:3535"]
 

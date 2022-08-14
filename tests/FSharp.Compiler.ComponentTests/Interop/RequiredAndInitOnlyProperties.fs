@@ -78,7 +78,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -113,7 +113,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -148,7 +148,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -178,7 +178,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -207,7 +207,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -239,7 +239,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -270,7 +270,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -302,7 +302,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -333,7 +333,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -369,7 +369,7 @@ let main _ =
 """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -436,7 +436,7 @@ let main _ =
     """
         FSharp fsharpSource
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compileAndRun
         |> shouldSucceed
@@ -454,7 +454,7 @@ let main _ =
     """
         FSharp fsharpSource2
         |> asExe
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpLib]
         |> compile
         |> shouldFail
@@ -480,7 +480,7 @@ type RAIOFS() =
 """
         FSharp fsharpSource
         |> asLibrary
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> compile
         |> shouldFail
         |> withErrorCode 39
