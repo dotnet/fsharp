@@ -7,7 +7,7 @@ open Xunit
 open FsCheck
 open Utils
 
-let smallerSizeCheck testable = Check.One({ Config.QuickThrowOnFailure with EndSize = 25 }, testable)
+let smallerSizeCheck testable = Check.One(Config.QuickThrowOnFailure.WithEndSize 25, testable)
 
 /// helper function that creates labeled FsCheck properties for equality comparisons
 let consistency name sqs ls arr =
