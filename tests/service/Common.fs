@@ -85,8 +85,8 @@ let mkProjectCommandLineArgsSilent (dllName, fileNames) =
         yield "--define:DEBUG"
 #if NETCOREAPP
         yield "--targetprofile:netcore"
-        yield "--langversion:preview"
 #endif
+        yield "--langversion:preview"
         yield "--optimize-"
         yield "--out:" + dllName
         yield "--doc:test.xml"

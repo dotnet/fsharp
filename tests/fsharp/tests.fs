@@ -152,12 +152,6 @@ module CoreTests =
     let ``innerpoly-FSI`` () = singleTestBuildAndRun "core/innerpoly" FSI
 
     [<Test>]
-    let ``namespaceAttributes-FSC_DEBUG`` () = singleTestBuildAndRun "core/namespaces" FSC_DEBUG
-
-    [<Test>]
-    let ``namespaceAttributes-FSC_OPTIMIZED`` () = singleTestBuildAndRun "core/namespaces" FSC_OPTIMIZED
-
-    [<Test>]
     let ``namespaces-FSC_DEBUG`` () = singleTestBuildAndRunVersion "core/namespaces" FSC_DEBUG "preview"
 
     [<Test>]
