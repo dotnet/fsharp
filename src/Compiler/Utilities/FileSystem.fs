@@ -530,7 +530,7 @@ type DefaultFileSystem() as this =
 
         // We want to use mmaped files only when:
         //   -  Opening large binary files (no need to use for source or resource files really)
-        //   -  Running on mono, since its MemoryMappedFile implementation throws when "mapName" is not provided (is null).
+        //   -  Not running on mono, since its MemoryMappedFile implementation throws when "mapName" is not provided (is null).
         //      (See: https://github.com/mono/mono/issues/10245)
 
         if not useMemoryMappedFile then
@@ -542,12 +542,12 @@ type DefaultFileSystem() as this =
                         MemoryMappedFile.CreateNew(
                             null,
                             length,
-                            MemoryMappedFileAccess.Read,
+                            MemoryMappedFileAccess.ReadWrite,
                             MemoryMappedFileOptions.None,
                             HandleInheritability.None
                         )
 
-                    use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.Read)
+                    use stream = mmf.CreateViewStream(0L, length, MemoryMappedFileAccess.ReadWrite)
                     fileStream.CopyTo(stream)
                     fileStream.Dispose()
                     mmf
