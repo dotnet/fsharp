@@ -530,8 +530,6 @@ type DefaultFileSystem() as this =
 
         // We want to use mmaped files only when:
         //   -  Opening large binary files (no need to use for source or resource files really)
-        //   -  Not running on mono, since its MemoryMappedFile implementation throws when "mapName" is not provided (is null).
-        //      (See: https://github.com/mono/mono/issues/10245)
 
         if not useMemoryMappedFile then
             fileStream :> Stream
