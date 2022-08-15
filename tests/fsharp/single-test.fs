@@ -105,6 +105,11 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
                 "FSharp.Core"
         (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/bin/"  + compiler + "/" + configuration + "/netstandard2.0/FSharp.Core.dll")
 
+    let langver, options =
+        match languageVersion with
+        | "supports-ml" -> "5.0", "--mlcompatibility"
+        | v -> v, ""
+
     let computeSourceItems addDirectory addCondition (compileItem:CompileItem) sources =
         let computeInclude src =
             let fileName = if addDirectory then Path.Combine(pc.SourceDirectory, src) else src
@@ -142,6 +147,7 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
     <DebugSymbols>$(DEBUG)</DebugSymbols>
     <DebugType>portable</DebugType>
     <LangVersion>$(LANGUAGEVERSION)</LangVersion>
+    <OtherFlags>$(OTHERFLAGS)</OtherFlags>
     <Optimize>$(OPTIMIZE)</Optimize>
     <SignAssembly>false</SignAssembly>
     <DefineConstants Condition=""'$(OutputType)' == 'Script' and '$(FSharpTestCompilerVersion)' == 'coreclr'"">NETCOREAPP</DefineConstants>
@@ -196,7 +202,8 @@ let generateProjectArtifacts (pc:ProjectConfiguration) outputType (targetFramewo
         |> replaceTokens "$(OPTIMIZE)" optimize
         |> replaceTokens "$(DEBUG)" debug
         |> replaceTokens "$(TARGETFRAMEWORK)" targetFramework
-        |> replaceTokens "$(LANGUAGEVERSION)" languageVersion
+        |> replaceTokens "$(LANGUAGEVERSION)" langver
+        |> replaceTokens "$(OTHERFLAGS)" options
         |> replaceTokens "$(RestoreFromArtifactsPath)" (Path.GetFullPath(__SOURCE_DIRECTORY__) + "/../../artifacts/packages/" + configuration)
     generateProjBody
 
@@ -376,10 +383,17 @@ let singleTestBuildAndRunVersion dir p version =
 
 let singleVersionedNegTest (cfg: TestConfig) version testname =
 
+    let options =
+        match version with
+        | "supports-ml" -> "--langversion:5.0 --mlcompatibility"
+        | "supports-ml*" -> "--mlcompatibility"
+        | v when not (String.IsNullOrEmpty(v)) -> $"--langversion:{v}"
+        | _ -> ""
+
     let cfg = {
         cfg with
-            fsc_flags = sprintf "%s %s --preferreduilang:en-US --define:NEGATIVE" cfg.fsc_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
-            fsi_flags = sprintf "%s --preferreduilang:en-US %s" cfg.fsi_flags (if not (String.IsNullOrEmpty(version)) then "--langversion:" + version else "")
+            fsc_flags = sprintf "%s %s --preferreduilang:en-US --define:NEGATIVE" cfg.fsc_flags options
+            fsi_flags = sprintf "%s --preferreduilang:en-US %s" cfg.fsi_flags options
             }
 
     // REM == Set baseline (fsc vs vs, in case the vs baseline exists)
