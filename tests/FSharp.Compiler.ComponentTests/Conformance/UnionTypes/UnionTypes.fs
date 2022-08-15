@@ -60,8 +60,8 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 53, Line 9, Col 12, Line 9, Col 13, "Discriminated union cases and exception labels must be uppercase identifiers")
-            (Error 53, Line 10, Col 12, Line 10, Col 13, "Discriminated union cases and exception labels must be uppercase identifiers")
+            (Error 53, Line 9, Col 12, Line 9, Col 13, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute")
+            (Error 53, Line 10, Col 12, Line 10, Col 13, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute")
         ]
 
     //SOURCE=E_BeginWithUppercase02.fsx SCFLAGS="--test:ErrorRanges"                              # E_BeginWithUppercase02.fsx
@@ -102,8 +102,8 @@ module UnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 883, Line 7, Col 8, Line 7, Col 13, "Invalid namespace, module, type or union case name")
-            (Error 53, Line 11, Col 18, Line 11, Col 19, "Discriminated union cases and exception labels must be uppercase identifiers")
-            (Error 53, Line 12, Col 18, Line 12, Col 19, "Discriminated union cases and exception labels must be uppercase identifiers")
+            (Error 53, Line 11, Col 18, Line 11, Col 19, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute")
+            (Error 53, Line 12, Col 18, Line 12, Col 19, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute")
         ]
 
     //SOURCE=E_GenericFunctionValuedStaticProp01.fs SCFLAGS="--test:ErrorRanges --warnaserror-"   # E_GenericFunctionValuedStaticProp01.fs
@@ -205,7 +205,7 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 53, Line 7, Col 13, Line 7, Col 17, "Discriminated union cases and exception labels must be uppercase identifiers")
+            (Error 53, Line 7, Col 13, Line 7, Col 17, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute")
         ]
 
     //SOURCE=E_Overload_Equals.fs SCFLAGS="--test:ErrorRanges"                                    # E_Overload_Equals.fs
@@ -471,6 +471,7 @@ module UnionTypes =
     let ``SampleFromSpec01b_fsx`` compilation =
         compilation
         |> withOcamlCompat
+        |> withLangVersion50
         |> verifyCompileAndRun
         |> shouldSucceed
 

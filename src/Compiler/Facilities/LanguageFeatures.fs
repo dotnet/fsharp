@@ -112,6 +112,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.DelegateTypeNameResolutionFix, languageVersion60
 
                 // F# 7.0
+                LanguageFeature.FromEndSlicing, languageVersion70
                 LanguageFeature.MLCompatRevisions, languageVersion70
                 LanguageFeature.BetterExceptionPrinting, languageVersion70
                 LanguageFeature.ReallyLongLists, languageVersion70
@@ -123,7 +124,6 @@ type LanguageVersion(versionText) =
                 LanguageFeature.SelfTypeConstraints, languageVersion70
 
                 // F# preview
-                LanguageFeature.FromEndSlicing, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")

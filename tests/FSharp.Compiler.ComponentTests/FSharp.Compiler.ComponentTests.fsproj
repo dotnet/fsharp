@@ -3,6 +3,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+	  
     <TargetFrameworks>net472;net6.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
     <OutputType>Library</OutputType>
@@ -15,8 +16,13 @@
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <NoWarn>$(NoWarn);FS0988</NoWarn> <!-- "program does nothing" warning -->
-    <EnablePreviewFeatures>true</EnablePreviewFeatures> <!-- allow testing of static methods in interfaces on .NET 6  -->
-  </PropertyGroup>
+    <DefineConstants Condition="'$(Configuration)'=='release'">$(DefineConstants);RELEASE</DefineConstants>
+    <DefineConstants Condition="'$(Configuration)'=='debug'">$(DefineConstants);DEBUG</DefineConstants>
+    <!-- allow testing of static methods in interfaces on .NET 6  -->
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <!-- allow testing of static methods in interfaces on .NET 6  -->
+  
+</PropertyGroup>
 
   <ItemGroup>
     <Compile Include="Conformance\BasicGrammarElements\OperatorNames\OperatorNames.fs" />
