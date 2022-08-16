@@ -21,7 +21,7 @@ let private getOptionsFromOptionBlocks blocks =
     List.collect GetOptionsOfBlock blocks
 
 [<Test>] // controls https://github.com/dotnet/fsharp/issues/13549
-let ``Console only options are filtered out for fsc in the VS context`` () =
+let ``Console-only options are filtered out for fsc in the VS context`` () =
     // just a random thing to make things work
     let builder = TcConfigBuilder.CreateNew(
         null,
