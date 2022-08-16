@@ -2161,7 +2161,7 @@ let GetCoreFscCompilerOptions (tcConfigB: TcConfigBuilder) =
     ]
 
 /// The core/common options used by the F# VS Language Service.
-/// Filter out OptionHelp which does printing then exit. This is not wanted in the context of VS!!
+/// Filter out OptionConsoleOnly which do printing then exit (e.g --help or --version). This is not wanted in the context of VS!
 let GetCoreServiceCompilerOptions (tcConfigB: TcConfigBuilder) =
     let isConsoleOnlyOption =
         function
