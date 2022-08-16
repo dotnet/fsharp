@@ -59,7 +59,7 @@ type OptionSpec =
     | OptionStringList of (string -> unit)
     | OptionStringListSwitch of (string -> OptionSwitch -> unit)
     | OptionUnit of (unit -> unit)
-    | OptionHelp of (CompilerOptionBlock list -> unit) // like OptionUnit, but given the "options"
+    | OptionConsoleOnly of (CompilerOptionBlock list -> unit)
     | OptionGeneral of (string list -> bool) * (string list -> string list) // Applies? * (ApplyReturningResidualArgs)
 
 and CompilerOption =
@@ -95,7 +95,7 @@ let compilerOptionUsage (CompilerOption (s, tag, spec, _, _)) =
     | OptionUnit _
     | OptionSet _
     | OptionClear _
-    | OptionHelp _ -> sprintf "--%s" s
+    | OptionConsoleOnly _ -> sprintf "--%s" s
     | OptionStringList _ -> sprintf "--%s:%s" s tag
     | OptionIntList _ -> sprintf "--%s:%s" s tag
     | OptionSwitch _ -> sprintf "--%s[+|-]" s
@@ -186,7 +186,7 @@ let dumpCompilerOption prefix (CompilerOption (str, _, spec, _, _)) =
     | OptionUnit _ -> printf "OptionUnit"
     | OptionSet _ -> printf "OptionSet"
     | OptionClear _ -> printf "OptionClear"
-    | OptionHelp _ -> printf "OptionHelp"
+    | OptionConsoleOnly _ -> printf "OptionConsoleOnly"
     | OptionStringList _ -> printf "OptionStringList"
     | OptionIntList _ -> printf "OptionIntList"
     | OptionSwitch _ -> printf "OptionSwitch"
@@ -347,7 +347,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
             let rec attempt l =
                 match l with
-                | CompilerOption (s, _, OptionHelp f, d, _) :: _ when optToken = s && argString = "" ->
+                | CompilerOption (s, _, OptionConsoleOnly f, d, _) :: _ when optToken = s && argString = "" ->
                     reportDeprecatedOption d
                     f blocks
                     t
@@ -1983,13 +1983,13 @@ let displayVersion tcConfigB =
 let miscFlagsBoth tcConfigB =
     [
         CompilerOption("nologo", tagNone, OptionUnit(fun () -> tcConfigB.showBanner <- false), None, Some(FSComp.SR.optsNologo ()))
-        CompilerOption("version", tagNone, OptionUnit(fun () -> displayVersion tcConfigB), None, Some(FSComp.SR.optsVersion ()))
+        CompilerOption("version", tagNone, OptionConsoleOnly(fun _ -> displayVersion tcConfigB), None, Some(FSComp.SR.optsVersion ()))
     ]
 
 let miscFlagsFsc tcConfigB =
     miscFlagsBoth tcConfigB
     @ [
-        CompilerOption("help", tagNone, OptionHelp(fun blocks -> displayHelpFsc tcConfigB blocks), None, Some(FSComp.SR.optsHelp ()))
+        CompilerOption("help", tagNone, OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks), None, Some(FSComp.SR.optsHelp ()))
         CompilerOption("@<file>", tagNone, OptionUnit ignore, None, Some(FSComp.SR.optsResponseFile ()))
     ]
 
@@ -2045,7 +2045,7 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "?",
             tagNone,
-            OptionHelp(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2053,7 +2053,7 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "help",
             tagNone,
-            OptionHelp(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2061,7 +2061,7 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "full-help",
             tagNone,
-            OptionHelp(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2103,7 +2103,7 @@ let PostProcessCompilerArgs (abbrevArgs: string Set) (args: string[]) =
 
 let testingAndQAFlags _tcConfigB =
     [
-        CompilerOption("dumpAllCommandLineOptions", tagNone, OptionHelp(fun blocks -> DumpCompilerOptionBlocks blocks), None, None) // "Command line options")
+        CompilerOption("dumpAllCommandLineOptions", tagNone, OptionConsoleOnly(fun blocks -> DumpCompilerOptionBlocks blocks), None, None) // "Command line options")
     ]
 
 // Core compiler options, overview
@@ -2163,12 +2163,12 @@ let GetCoreFscCompilerOptions (tcConfigB: TcConfigBuilder) =
 /// The core/common options used by the F# VS Language Service.
 /// Filter out OptionHelp which does printing then exit. This is not wanted in the context of VS!!
 let GetCoreServiceCompilerOptions (tcConfigB: TcConfigBuilder) =
-    let isHelpOption =
+    let isConsoleOnlyOption =
         function
-        | CompilerOption (_, _, OptionHelp _, _, _) -> true
+        | CompilerOption (_, _, OptionConsoleOnly _, _, _) -> true
         | _ -> false
 
-    List.map (FilterCompilerOptionBlock(isHelpOption >> not)) (GetCoreFscCompilerOptions tcConfigB)
+    List.map (FilterCompilerOptionBlock(isConsoleOnlyOption >> not)) (GetCoreFscCompilerOptions tcConfigB)
 
 /// The core/common options used by fsi.exe. [note, some additional options are added in fsi.fs].
 let GetCoreFsiCompilerOptions (tcConfigB: TcConfigBuilder) =

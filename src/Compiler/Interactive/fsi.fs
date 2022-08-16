@@ -948,12 +948,12 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
         ]);
        PublicOptions(FSComp.SR.optsHelpBannerMisc(),
         [   CompilerOption("help", tagNone,
-                                 OptionHelp (displayHelpFsi tcConfigB), None, Some (FSIstrings.SR.fsiHelp()))
+                                 OptionConsoleOnly (displayHelpFsi tcConfigB), None, Some (FSIstrings.SR.fsiHelp()))
         ]);
        PrivateOptions(
-        [   CompilerOption("?", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
-            CompilerOption("help", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
-            CompilerOption("full-help", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
+        [   CompilerOption("?", tagNone, OptionConsoleOnly (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
+            CompilerOption("help", tagNone, OptionConsoleOnly (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
+            CompilerOption("full-help", tagNone, OptionConsoleOnly (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
         ]);
        PublicOptions(FSComp.SR.optsHelpBannerAdvanced(),
         [CompilerOption("exec",                 "", OptionUnit (fun () -> interact <- false), None, Some (FSIstrings.SR.fsiExec()))
