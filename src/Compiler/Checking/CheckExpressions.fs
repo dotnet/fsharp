@@ -9704,12 +9704,9 @@ and TcMethodApplication
             let expr = mkLetsBind mMethExpr outArgTmpBinds expr
             expr, tyOfExpr g expr
 
-    // Subsumption or conversion to return type
-    let callExpr2b = TcAdjustExprForTypeDirectedConversions cenv returnTy exprTy env mMethExpr callExpr2
-
     // Handle post-hoc property assignments
-    let setterExprPrebinders, callExpr3 =
-        let expr = callExpr2b
+    let setterExprPrebinders, callExpr2b =
+        let expr = callExpr2
 
         CheckRequiredProperties g env cenv finalCalledMethInfo finalAssignedItemSetters mMethExpr
 
@@ -9730,6 +9727,9 @@ and TcMethodApplication
             // now put them together
             let expr = mkCompGenLet mMethExpr objv expr (mkCompGenSequential mMethExpr propSetExpr objExpr)
             setterExprPrebinders, expr
+
+    // Subsumption or conversion to return type
+    let callExpr3 = TcAdjustExprForTypeDirectedConversions cenv returnTy exprTy env mMethExpr callExpr2b
 
     // Build the lambda expression if any, if the method is used as a first-class value
     let callExpr4 =

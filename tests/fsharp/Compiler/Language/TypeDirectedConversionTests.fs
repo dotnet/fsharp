@@ -227,3 +227,47 @@ let test(): System.Nullable<float> = 1
     'System.Nullable<float>'    
 but here has type
     'int'    """
+
+    [<Test>]
+    let ``Passing an argument in nested method call property setter works``() =
+        CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize-"|],
+            """
+module Test
+
+type Input<'T>(_v: 'T) =
+    static member op_Implicit(value: 'T): Input<'T> = Input<'T>(value)
+
+type OtherArgs() =
+    member val Name: string = Unchecked.defaultof<_> with get,set
+type SomeArgs() =
+    member val OtherArgs: Input<OtherArgs> = Unchecked.defaultof<_> with get, set
+    
+let test() =
+    SomeArgs(OtherArgs = OtherArgs(Name = "test"))
+"""
+         ,
+        (fun verifier -> verifier.VerifyIL [
+        """
+  .method public static class Test/SomeArgs 
+          test() cil managed
+  {
+    
+    .maxstack  5
+    .locals init (class Test/SomeArgs V_0,
+             class Test/OtherArgs V_1)
+    IL_0000:  newobj     instance void Test/SomeArgs::.ctor()
+    IL_0005:  stloc.0
+    IL_0006:  ldloc.0
+    IL_0007:  newobj     instance void Test/OtherArgs::.ctor()
+    IL_000c:  stloc.1
+    IL_000d:  ldloc.1
+    IL_000e:  ldstr      "test"
+    IL_0013:  callvirt   instance void Test/OtherArgs::set_Name(string)
+    IL_0018:  ldloc.1
+    IL_0019:  call       class Test/Input`1<!0> class Test/Input`1<class Test/OtherArgs>::op_Implicit(!0)
+    IL_001e:  callvirt   instance void Test/SomeArgs::set_OtherArgs(class Test/Input`1<class Test/OtherArgs>)
+    IL_0023:  ldloc.0
+    IL_0024:  ret
+  } 
+            """
+        ]))
