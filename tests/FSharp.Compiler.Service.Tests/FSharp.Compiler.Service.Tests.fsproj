@@ -174,8 +174,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Build" Version="$(MicrosoftBuildFrameworkVersion)" Condition="'$(TargetFramework)' == 'net6.0'" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildFrameworkVersion)" Condition="'$(TargetFramework)' == 'net6.0'" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildFrameworkVersion)" Condition="'$(TargetFramework)' == 'net6.0'" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildFrameworkVersion)" Condition="'$(TargetFramework)' == 'net6.0'" ExcludeAssets="runtime" PrivateAssets="all" />
-    <PackageReference Include="NuGet.Frameworks" Version="$(NuGetFrameworksVersion)" Condition="'$(TargetFramework)' == 'net6.0'" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="NuGet.Frameworks" Version="$(NuGetFrameworksVersion)" Condition="'$(TargetFramework)' == 'net6.0'" />
     <PackageReference Include="Ionide.ProjInfo" Version="$(IonideProjInfoVersion)" Condition="'$(TargetFramework)' == 'net6.0'" />
     <ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
