@@ -204,13 +204,9 @@ module CompileHelpers =
         // Create an assembly builder
         let assemblyName = AssemblyName(Path.GetFileNameWithoutExtension outfile)
         let flags = AssemblyBuilderAccess.Run
-#if FX_NO_APP_DOMAINS
         let assemblyBuilder = System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(assemblyName, flags)
         let moduleBuilder = assemblyBuilder.DefineDynamicModule("IncrementalModule")
-#else
-        let assemblyBuilder = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, flags)
-        let moduleBuilder = assemblyBuilder.DefineDynamicModule("IncrementalModule", debugInfo)
-#endif
+
         // Omit resources in dynamic assemblies, because the module builder is constructed without a file name the module
         // is tagged as transient and as such DefineManifestResource will throw an invalid operation if resources are present.
         //

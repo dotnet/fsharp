@@ -93,7 +93,7 @@ Some of the projects using the F# Compiler Services are:
 * [**F# in Visual Studio**](https://github.com/dotnet/fsharp/)
 * [**F# in Visual Studio for Mac**](https://github.com/mono/monodevelop/tree/master/main/external/fsharpbinding)
 * [**FsAutoComplete**](https://github.com/fsharp/FsAutoComplete)
-* [**F# in JetBrains Rider**](https://www.jetbrains.com/help/rider/F_Sharp.html)
+* [**F# in JetBrains Rider**](https://github.com/JetBrains/resharper-fsharp)
 * [**F# in .NET Interactive Notebooks**](https://github.com/dotnet/interactive)
 * [**Fantomas**](https://github.com/fsprojects/fantomas/) - Source code formatting for F#
 * [**FSharpLint**](https://fsprojects.github.io/FSharpLint/) - Lint tool for F#

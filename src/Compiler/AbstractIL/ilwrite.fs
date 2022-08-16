@@ -1137,14 +1137,17 @@ let TryGetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
 let canGenMethodDef (tdef: ILTypeDef) cenv (mdef: ILMethodDef) =
     if not cenv.referenceAssemblyOnly then
         true
-    // If the method is part of attribute type, generate get_* and set_* methods for it, consider the following case:
+    // If the method is part of attribute type, generate get_* and set_* methods and .ctors for it, consider the following case:
     //      [<AttributeUsage(AttributeTargets.All)>]
     //      type PublicWithInternalSetterPropertyAttribute() =
     //          inherit Attribute()
     //          member val internal Prop1 : int = 0 with get, set
     //      [<PublicWithInternalSetterPropertyAttribute(Prop1=4)>]
     //      type ClassPublicWithAttributes() = class end
-    else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsConstructor) && (not mdef.IsClassInitializer) then
+
+    // We want to generate pretty much everything for attributes, because of serialization scenarios, and the fact that non-visible constructors, properties and fields can still be part of reference assembly.
+    // Example: NoDynamicInvocationAttribute has an internal constructor, which should be included in the reference assembly.
+    else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsClassInitializer) then
         true
     else
         match mdef.Access with
@@ -1919,10 +1922,11 @@ module Codebuf =
             emitTailness cenv codebuf tl
             emitMethodSpecInstr cenv codebuf env i_callvirt (mspec, varargs)
             //emitAfterTailcall codebuf tl
-        | I_callconstraint (tl, ty, mspec, varargs) ->
+        | I_callconstraint (callvirt, tl, ty, mspec, varargs) ->
             emitTailness cenv codebuf tl
             emitConstrained cenv codebuf env ty
-            emitMethodSpecInstr cenv codebuf env i_callvirt (mspec, varargs)
+            let instr = if callvirt then i_callvirt else i_call
+            emitMethodSpecInstr cenv codebuf env instr (mspec, varargs)
             //emitAfterTailcall codebuf tl
         | I_newobj (mspec, varargs) ->
             emitMethodSpecInstr cenv codebuf env i_newobj (mspec, varargs)

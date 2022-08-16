@@ -649,6 +649,8 @@ module SyntaxTraversal =
 
                 | SynExpr.LongIdent (_, _longIdent, _altNameRefCell, _range) -> None
 
+                | SynExpr.Typar (_typar, _range) -> None
+
                 | SynExpr.LongIdentSet (_longIdent, synExpr, _range) -> traverseSynExpr synExpr
 
                 | SynExpr.DotGet (synExpr, _dotm, _longIdent, _range) -> traverseSynExpr synExpr
@@ -819,7 +821,7 @@ module SyntaxTraversal =
                 | SynType.Array (_, ty, _) -> traverseSynType path ty
                 | SynType.StaticConstantNamed (ty1, ty2, _)
                 | SynType.MeasureDivide (ty1, ty2, _) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
-                | SynType.Tuple (_, tys, _) -> tys |> List.map snd |> List.tryPick (traverseSynType path)
+                | SynType.Tuple (path = segments) -> getTypeFromTuplePath segments |> List.tryPick (traverseSynType path)
                 | SynType.StaticConstantExpr (expr, _) -> traverseSynExpr [] expr
                 | SynType.Anon _ -> None
                 | _ -> None

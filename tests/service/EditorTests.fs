@@ -89,7 +89,7 @@ let ``Intro test`` () =
     // Get declarations (autocomplete) for a location
     let partialName = { QualifyingIdents = []; PartialIdent = "msg"; EndColumn = 22; LastDotPos = None }
     let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines[6], partialName, (fun _ -> []))
-    CollectionAssert.AreEquivalent(stringMethods,[ for item in decls.Items -> item.Name ])
+    CollectionAssert.AreEquivalent(stringMethods,[ for item in decls.Items -> item.NameInList ])
     // Get overloads of the String.Concat method
     let methods = typeCheckResults.GetMethods(5, 27, inputLines[4], Some ["String"; "Concat"])
 
@@ -280,7 +280,7 @@ let ``Expression typing test`` () =
     //
     for col in 42..43 do
         let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 2, inputLines[1], PartialLongName.Empty(col), (fun _ -> []))
-        let autoCompleteSet = set [ for item in decls.Items -> item.Name ]
+        let autoCompleteSet = set [ for item in decls.Items -> item.NameInList ]
         autoCompleteSet |> shouldEqual (set stringMethods)
 
 // The underlying problem is that the parser error recovery doesn't include _any_ information for
@@ -301,8 +301,8 @@ type Test() =
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines[3], PartialLongName.Empty(20), (fun _ -> []))
-    let item = decls.Items |> Array.tryFind (fun d -> d.Name = "abc")
-    decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
+    let item = decls.Items |> Array.tryFind (fun d -> d.NameInList = "abc")
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "abc") |> shouldEqual true
 
 [<Test>]
 let ``Find function from member 2`` () =
@@ -318,8 +318,8 @@ type Test() =
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines[3], PartialLongName.Empty(21), (fun _ -> []))
-    let item = decls.Items |> Array.tryFind (fun d -> d.Name = "abc")
-    decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
+    let item = decls.Items |> Array.tryFind (fun d -> d.NameInList = "abc")
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "abc") |> shouldEqual true
 
 [<Test>]
 let ``Find function from var`` () =
@@ -335,7 +335,7 @@ type Test() =
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines[3], PartialLongName.Empty(14), (fun _ -> []))
-    decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "abc") |> shouldEqual true
 
 
 [<Test>]
@@ -355,7 +355,7 @@ type B(bar) =
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines[6], PartialLongName.Empty(17), (fun _ -> []))
-    decls.Items |> Seq.exists (fun d -> d.Name = "bar") |> shouldEqual true
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "bar") |> shouldEqual true
 
 
 
@@ -378,7 +378,7 @@ type B(bar) =
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
     let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 9, inputLines[8], PartialLongName.Empty(7), (fun _ -> []))
-    decls.Items |> Seq.exists (fun d -> d.Name = "bar") |> shouldEqual true
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "bar") |> shouldEqual true
 
 
 [<Test; Ignore("SKIPPED: see #139")>]
@@ -1909,3 +1909,4 @@ do let x = 1 in ()
     | ToolTipText [ToolTipElement.Group [data]] ->
         data.MainDescription |> Array.map (fun text -> text.Text) |> String.concat "" |> shouldEqual "val x: int"
     | elements -> failwith $"Tooltip elements: {elements}"
+
