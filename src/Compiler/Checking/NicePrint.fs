@@ -180,7 +180,7 @@ module internal PrintUtilities =
         let isArray = not prefix && isArrayTyconRef denv.g tcref
         let demangled = 
             if isArray then
-                tcref.DisplayNameCore // no backticks for arrays "int[]"
+                "array"
             else
                 let name =
                     if denv.includeStaticParametersInTypeNames then 
@@ -198,11 +198,7 @@ module internal PrintUtilities =
             tagEntityRefName denv tcref demangled
             |> mkNav tcref.DefinitionRange
 
-        let tyconTextL =
-            if isArray then
-                tyconTagged |> rightL
-            else
-                tyconTagged |> wordL
+        let tyconTextL = tyconTagged |> wordL
 
         if denv.shortTypeNames then 
             tyconTextL
