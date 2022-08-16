@@ -17,7 +17,7 @@ module ExtraTopLevelOperators =
 
     /// <summary>Print to <c>stdout</c>. <c>stdout</c> in most cases prints to the console.</summary>
     ///
-    /// <param name="text">The value to print.</param>
+    /// <param name="text">The string to print.</param>
     ///
     /// <example id="print-1">Using interpolated strings:
     /// <code lang="fsharp">
@@ -34,11 +34,11 @@ module ExtraTopLevelOperators =
     /// After evaluation the text <c>"1111"</c> is written to <c>stdout</c>.
     /// </example>
     [<CompiledName("Print")>]
-    val print<'T>: text: 'T -> unit
+    val print: text: string -> unit
 
     /// <summary>Print to <c>stdout</c> and add a newline. <c>stdout</c> in most cases prints to the console.</summary>
     ///
-    /// <param name="text">The value to print.</param>
+    /// <param name="text">The string to print.</param>
     ///
     /// <example id="println-1">Using interpolated strings:
     /// <code lang="fsharp">
@@ -55,7 +55,7 @@ module ExtraTopLevelOperators =
     /// After evaluation the text <c>"hello world"</c> is written to <c>stdout</c>.
     /// </example>
     [<CompiledName("PrintLine")>]
-    val println<'T>: text: 'T -> unit
+    val println: text: string -> unit
 
     /// <summary>Print to <c>stdout</c> using the given format.</summary>
     ///
