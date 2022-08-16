@@ -17,7 +17,7 @@ module InterpolatedStringsTests =
 
     [<Fact>]
     let ``Interpolated String with hole properly typechecks with explicit type on binding`` () =
-        Fsx """ let a:byte = $"string" """
+        Fsx """ let a:byte = $"strin{'g'}" """
         |> compile
         |> shouldFail
         |> withSingleDiagnostic (Error 1, Line 1, Col 15, Line 1, Col 24, "This expression was expected to have type" + Environment.NewLine + "    'byte'    " + Environment.NewLine + "but here has type" + Environment.NewLine + "    'string'    ")
