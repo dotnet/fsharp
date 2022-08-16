@@ -609,6 +609,43 @@ let value2 = class1.A <- 12
             (Error 101, Line 8, Col 14, Line 8, Col 22, "This construct is deprecated. member A is deprecated")
             (Error 101, Line 9, Col 14, Line 9, Col 22, "This construct is deprecated. member A is deprecated")
         ]
+    
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when a module is is marked as [<AutoOpen>] but not when calling a function`` () =
+        Fsx """
+[<System.Obsolete("This is obsolete")>]
+[<AutoOpen>]
+module MyModule =
+    let testFun () = printfn "test"
+
+open MyModule
+
+testFun ()
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 7, Col 6, Line 7, Col 14, "This construct is deprecated. This is obsolete")
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when a module is is marked as [<AutoOpen>] but not when calling a function`` () =
+        Fsx """
+[<System.Obsolete("This is obsolete", true)>]
+[<AutoOpen>]
+module MyModule =
+    let testFun () = printfn "test"
+
+open MyModule
+
+testFun ()
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 7, Col 6, Line 7, Col 14, "This construct is deprecated. This is obsolete")
+        ]
         
     [<Fact>]
     let ``Obsolete attribute warning is taken into account when used on an C# struct`` () =
