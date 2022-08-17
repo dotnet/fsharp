@@ -21,3 +21,13 @@ module InterpolatedStringsTests =
         |> compile
         |> shouldFail
         |> withSingleDiagnostic (Error 1, Line 1, Col 15, Line 1, Col 28, "This expression was expected to have type" + Environment.NewLine + "    'byte'    " + Environment.NewLine + "but here has type" + Environment.NewLine + "    'string'    ")
+
+    [<Fact>]
+    let ``Interpolated String without holes properly typeckecks with explicit type on binding`` () = 
+        Fsx """
+let a: obj = $"string"
+let b: System.IComparable = $"string"
+let c: System.IFormattable = $"string"
+        """
+        |> compile
+        |> shouldSucceed
