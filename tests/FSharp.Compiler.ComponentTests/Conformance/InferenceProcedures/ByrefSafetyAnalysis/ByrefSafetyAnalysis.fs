@@ -135,7 +135,7 @@ module ByrefSafetyAnalysis =
         |> shouldFail
         |> withDiagnostics [
             (Warning 1178, Line 8, Col 6, Line 8, Col 17, "The struct, record or union type 'DUWithByref' is not structurally comparable because the type 'byref<int>' does not satisfy the 'comparison' constraint. Consider adding the 'NoComparison' attribute to the type 'DUWithByref' to clarify that the type is not comparable")
-            (Error 412, Line 9, Col 18, Line 9, Col 28, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
+            (Error 412, Line 9, Col 18, Line 9, Col 18, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
             (Error 437, Line 8, Col 6, Line 8, Col 17, "A type would store a byref typed value. This is not permitted by Common IL.")
             (Error 412, Line 9, Col 7, Line 9, Col 8, "A type instantiation involves a byref type. This is not permitted by the rules of Common IL.")
         ]
