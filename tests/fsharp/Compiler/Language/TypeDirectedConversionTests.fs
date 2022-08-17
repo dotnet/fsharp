@@ -229,6 +229,84 @@ but here has type
     'int'    """
 
     [<Test>]
+    let ``Overloading on System.Nullable and Result both work without error``() =
+        CompilerAssert.Pass
+            """
+module Test
+    
+type M() =
+    static member A(n: System.Nullable<'T>) = ()
+    static member A(r: Result<'T, 'TError>) = ()
+
+let test() =
+    M.A(System.Nullable 3)
+    M.A(Result<int, string>.Ok 3)
+"""     
+    
+    [<Test>]
+    let ``Overloading on System.Nullable<int>, System.Nullable<'T> and int all work without error``() =
+        CompilerAssert.Pass
+            """
+module Test
+    
+type M() =
+    static member A(n: System.Nullable<'T>) = ()
+    static member A(n: System.Nullable<int>) = ()
+    static member A(n: int) = ()
+
+let test() =
+    M.A(System.Nullable 3)
+    M.A(System.Nullable 3.)
+    M.A(3)
+"""
+
+    [<Test>]
+    let ``Picking overload for typar does not favor any form of System.Nullable nor produce ambiguity warnings``() =
+        CompilerAssert.TypeCheckSingleError
+            """
+module Test
+    
+type M() =
+    static member A(n: System.Nullable<'T>) = ()
+//    static member A(n: System.Nullable<float>) = ()
+    static member A(n: System.Nullable<int>) = ()
+    static member A(n: int) = ()
+
+let test(x: 'T) =
+    M.A(x)
+"""
+         FSharpDiagnosticSeverity.Warning
+         64
+         (11, 5, 11, 11)
+         """This construct causes code to be less generic than indicated by the type annotations. The type variable 'T has been constrained to be type 'int'."""
+
+    [<Test>]
+    let ``Ambiguous overload for typar does not pick System.Nullable<'T>``() =
+        CompilerAssert.TypeCheckSingleError
+            """
+module Test
+    
+type M() =
+    static member A(n: System.Nullable<'T>) = ()
+    static member A(n: int) = ()
+    static member A(n: float) = ()
+
+let test(x: 'T) =
+    M.A(x)
+"""
+         FSharpDiagnosticSeverity.Error
+         41
+         (10, 5, 10, 11)
+         """A unique overload for method 'A' could not be determined based on type information prior to this program point. A type annotation may be needed.
+
+Known type of argument: 'T
+
+Candidates:
+ - static member M.A: n: System.Nullable<'T> -> unit when 'T: (new: unit -> 'T) and 'T: struct and 'T :> System.ValueType
+ - static member M.A: n: float -> unit
+ - static member M.A: n: int -> unit"""
+    
+    [<Test>]
     let ``Passing an argument in nested method call property setter works``() =
         CompilerAssert.CompileLibraryAndVerifyILWithOptions([|"--optimize-"|],
             """
