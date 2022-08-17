@@ -173,7 +173,7 @@ let IsIdentifierPartCharacter c =
 let keywordsWithDescription: (string * string) list =
     [
         "abstract", FSComp.SR.keywordDescriptionAbstract ()
-        "and", FSComp.SR.keyworkDescriptionAnd ()
+        "and", FSComp.SR.keywordDescriptionAnd ()
         "as", FSComp.SR.keywordDescriptionAs ()
         "assert", FSComp.SR.keywordDescriptionAssert ()
         "base", FSComp.SR.keywordDescriptionBase ()
@@ -244,6 +244,7 @@ let keywordsWithDescription: (string * string) list =
         "->", FSComp.SR.keywordDescriptionRightArrow ()
         "<-", FSComp.SR.keywordDescriptionLeftArrow ()
         ":>", FSComp.SR.keywordDescriptionCast ()
+        ":?", FSComp.SR.keywordDescriptionTypeTest ()
         ":?>", FSComp.SR.keywordDescriptionDynamicCast ()
         "<@", FSComp.SR.keywordDescriptionTypedQuotation ()
         "@>", FSComp.SR.keywordDescriptionTypedQuotation ()
@@ -358,7 +359,7 @@ let IsOperatorDisplayName (name: string) =
 //IsOperatorDisplayName "(  )" // false
 //IsOperatorDisplayName "( +)" // false
 
-let IsMangledOpName (name: string) = name.StartsWithOrdinal(opNamePrefix)
+let IsPossibleOpName (name: string) = name.StartsWithOrdinal(opNamePrefix)
 
 /// Compiles a custom operator into a mangled operator name.
 /// For example, "!%" becomes "op_DereferencePercent".
@@ -432,7 +433,7 @@ let CompileOpName op =
 /// For example, "op_DereferencePercent" becomes "!%".
 /// This function should only be used for mangled names of custom operators
 /// if a mangled name potentially represents a built-in operator,
-/// use the 'DecompileOpName' function instead.
+/// use the 'ConvertValLogicalNameToDisplayNameCore' function instead.
 let decompileCustomOpName =
     // Memoize this operation. Custom operators are typically used more than once
     // so this avoids repeating decompilation.
@@ -510,11 +511,11 @@ let standardOpsDecompile =
 
     ops
 
-let DecompileOpName opName =
+let ConvertValLogicalNameToDisplayNameCore opName =
     match standardOpsDecompile.TryGetValue opName with
     | true, res -> res
     | false, _ ->
-        if IsMangledOpName opName then
+        if IsPossibleOpName opName then
             decompileCustomOpName opName
         else
             opName
@@ -545,15 +546,15 @@ let NormalizeIdentifierBackticks (name: string) : string =
 
     AddBackticksToIdentifierIfNeeded s
 
-let ConvertNameToDisplayName name = AddBackticksToIdentifierIfNeeded name
+let ConvertLogicalNameToDisplayName name = AddBackticksToIdentifierIfNeeded name
 
-let ConvertValNameToDisplayName isBaseVal name =
+let ConvertValLogicalNameToDisplayName isBaseVal name =
     if isBaseVal && name = "base" then
         "base"
-    elif IsUnencodedOpName name || IsMangledOpName name || IsActivePatternName name then
-        let nm = DecompileOpName name
+    elif IsUnencodedOpName name || IsPossibleOpName name || IsActivePatternName name then
+        let nm = ConvertValLogicalNameToDisplayNameCore name
         // Check for no decompilation, e.g. op_Implicit, op_NotAMangledOpName, op_A-B
-        if IsMangledOpName name && (nm = name) then
+        if IsPossibleOpName name && (nm = name) then
             AddBackticksToIdentifierIfNeeded nm
         // Add parentheses for multiply-like symbols, with spacing to avoid confusion with comments
         elif nm <> "*" && (nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*") then
@@ -562,31 +563,33 @@ let ConvertValNameToDisplayName isBaseVal name =
         else
             "(" + nm + ")"
     else
-        ConvertNameToDisplayName name
+        ConvertLogicalNameToDisplayName name
 
-let ConvertNameToDisplayLayout nonOpLayout name =
+let ConvertLogicalNameToDisplayLayout nonOpLayout name =
     if DoesIdentifierNeedBackticks name then
         leftL (TaggedText.tagPunctuation "``")
         ^^ wordL (TaggedText.tagOperator name) ^^ rightL (TaggedText.tagPunctuation "``")
     else
         nonOpLayout name
 
-let ConvertValNameToDisplayLayout isBaseVal nonOpLayout name =
+let ConvertValLogicalNameToDisplayLayout isBaseVal nonOpLayout name =
     if isBaseVal && name = "base" then
         nonOpLayout "base"
-    elif IsUnencodedOpName name || IsMangledOpName name || IsActivePatternName name then
-        let nm = DecompileOpName name
+    elif IsUnencodedOpName name || IsPossibleOpName name || IsActivePatternName name then
+        let nm = ConvertValLogicalNameToDisplayNameCore name
         // Check for no decompilation, e.g. op_Implicit, op_NotAMangledOpName, op_A-B
-        if IsMangledOpName name && (nm = name) then
-            ConvertNameToDisplayLayout nonOpLayout name
+        if IsPossibleOpName name && (nm = name) then
+            ConvertLogicalNameToDisplayLayout nonOpLayout name
         elif nm.StartsWithOrdinal "*" || nm.EndsWithOrdinal "*" then
             wordL (TaggedText.tagPunctuation "(")
             ^^ wordL (TaggedText.tagOperator nm) ^^ wordL (TaggedText.tagPunctuation ")")
         else
             leftL (TaggedText.tagPunctuation "(")
             ^^ wordL (TaggedText.tagOperator nm) ^^ rightL (TaggedText.tagPunctuation ")")
+    elif name = "get_Zero" then
+        ConvertLogicalNameToDisplayLayout nonOpLayout "Zero"
     else
-        ConvertNameToDisplayLayout nonOpLayout name
+        ConvertLogicalNameToDisplayLayout nonOpLayout name
 
 let opNameCons = CompileOpName "::"
 
@@ -654,12 +657,16 @@ let IsValidPrefixOperatorDefinitionName s =
         | '!' -> s <> "!="
         | _ -> false
 
-let IsPrefixOperator s =
-    if String.IsNullOrEmpty s then
+let IsLogicalPrefixOperator logicalName =
+    if String.IsNullOrEmpty logicalName then
         false
     else
-        let s = DecompileOpName s
-        IsValidPrefixOperatorDefinitionName s
+        let displayName = ConvertValLogicalNameToDisplayNameCore logicalName
+        displayName <> logicalName && IsValidPrefixOperatorDefinitionName displayName
+
+let IsLogicalTernaryOperator logicalName =
+    let displayName = ConvertValLogicalNameToDisplayNameCore logicalName
+    displayName <> logicalName && (displayName = qmarkSet)
 
 let IsPunctuation s =
     if String.IsNullOrEmpty s then
@@ -686,8 +693,6 @@ let IsPunctuation s =
         | ">]" -> true
         | _ -> false
 
-let IsTernaryOperator s = (DecompileOpName s = qmarkSet)
-
 /// EQUALS, INFIX_COMPARE_OP, LESS, GREATER
 let relational = [| "="; "!="; "<"; ">"; "$" |]
 
@@ -710,8 +715,8 @@ let ignoredChars = [| '.'; '?' |]
 // The lexer defines the strings that lead to those tokens.
 //------
 // This function recognises these "infix operator" names.
-let IsMangledInfixOperator mangled = (* where mangled is assumed to be a compiled name *)
-    let s = DecompileOpName mangled
+let IsLogicalInfixOpName logicalName =
+    let s = ConvertValLogicalNameToDisplayNameCore logicalName
     let skipIgnoredChars = s.TrimStart(ignoredChars)
 
     let afterSkipStartsWith prefix =
@@ -721,7 +726,7 @@ let IsMangledInfixOperator mangled = (* where mangled is assumed to be a compile
         Array.exists afterSkipStartsWith prefixes
     // The following conditions follow the declExpr infix clauses.
     // The test corresponds to the lexer definition for the token.
-    s <> mangled
+    s <> logicalName
     && ((s = // COLON_EQUALS
         ":=")
         ||
@@ -742,6 +747,10 @@ let IsMangledInfixOperator mangled = (* where mangled is assumed to be a compile
         ||
         // COLON_COLON
         (s = "::")
+        || (s = qmark)
+        || (s = qmarkSet)
+        || (s = parenGet)
+        || (s = parenSet)
         ||
         // PLUS_MINUS_OP, MINUS
         afterSkipStarts plusMinus
@@ -751,6 +760,11 @@ let IsMangledInfixOperator mangled = (* where mangled is assumed to be a compile
         ||
         // INFIX_STAR_STAR_OP
         (s = "**"))
+
+let IsLogicalOpName (logicalName: string) =
+    IsLogicalPrefixOperator logicalName
+    || IsLogicalInfixOpName logicalName
+    || IsLogicalTernaryOperator logicalName
 
 let (|Control|Equality|Relational|Indexer|FixedTypes|Other|) opName =
     match opName with
@@ -963,7 +977,7 @@ let ActivePatternInfoOfValName nm (m: range) =
 
             [ (nm, m1) ]
 
-    let nm = DecompileOpName nm
+    let nm = ConvertValLogicalNameToDisplayNameCore nm
 
     if IsActivePatternName nm then
         // Skip the '|' at each end when recovering ranges
@@ -997,7 +1011,7 @@ let tryDemangleStaticStringArg (mangledText: string) =
 exception InvalidMangledStaticArg of string
 
 /// Demangle the static parameters
-let demangleProvidedTypeName (typeLogicalName: string) =
+let DemangleProvidedTypeName (typeLogicalName: string) =
     if typeLogicalName.Contains "," then
         let pieces = splitAroundQuotation typeLogicalName ','
 
@@ -1014,7 +1028,7 @@ let demangleProvidedTypeName (typeLogicalName: string) =
         typeLogicalName, [||]
 
 /// Mangle the static parameters for a provided type or method
-let mangleProvidedTypeName (typeLogicalName, nonDefaultArgs) =
+let MangleProvidedTypeName (typeLogicalName, nonDefaultArgs) =
     let nonDefaultArgsText =
         nonDefaultArgs |> Array.map mangleStaticStringArg |> String.concat ","
 
@@ -1024,7 +1038,7 @@ let mangleProvidedTypeName (typeLogicalName, nonDefaultArgs) =
         typeLogicalName + "," + nonDefaultArgsText
 
 /// Mangle the static parameters for a provided type or method
-let computeMangledNameWithoutDefaultArgValues (nm, staticArgs, defaultArgValues) =
+let ComputeMangledNameWithoutDefaultArgValues (nm, staticArgs, defaultArgValues) =
     let nonDefaultArgs =
         (staticArgs, defaultArgValues)
         ||> Array.zip
@@ -1035,7 +1049,7 @@ let computeMangledNameWithoutDefaultArgValues (nm, staticArgs, defaultArgValues)
             | Some v when v = actualArgValue -> None
             | _ -> Some(defaultArgName, actualArgValue))
 
-    mangleProvidedTypeName (nm, nonDefaultArgs)
+    MangleProvidedTypeName(nm, nonDefaultArgs)
 
 let outArgCompilerGeneratedName = "outArg"
 

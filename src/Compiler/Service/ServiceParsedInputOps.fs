@@ -16,7 +16,7 @@ open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
 module SourceFileImpl =
-    let IsInterfaceFile file =
+    let IsSignatureFile file =
         let ext = Path.GetExtension file
         0 = String.Compare(".fsi", ext, StringComparison.OrdinalIgnoreCase)
 
@@ -611,6 +611,7 @@ module ParsedInput =
                 List.tryPick walkType ts |> Option.orElseWith (fun () -> walkMemberSig sign)
             | SynTypeConstraint.WhereTyparIsEnum (t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
             | SynTypeConstraint.WhereTyparIsDelegate (t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
+            | SynTypeConstraint.WhereSelfConstrained (ts, _) -> walkType ts
 
         and walkPatWithKind (kind: EntityKind option) pat =
             match pat with
@@ -661,7 +662,7 @@ module ParsedInput =
                     None
             | SynType.App (ty, _, types, _, _, _, _) -> walkType ty |> Option.orElseWith (fun () -> List.tryPick walkType types)
             | SynType.LongIdentApp (_, _, _, types, _, _, _) -> List.tryPick walkType types
-            | SynType.Tuple (_, ts, _) -> ts |> List.tryPick (fun (_, t) -> walkType t)
+            | SynType.Tuple (path = segments) -> getTypeFromTuplePath segments |> List.tryPick walkType
             | SynType.Array (_, t, _) -> walkType t
             | SynType.Fun (argType = t1; returnType = t2) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.WithGlobalConstraints (t, _, _) -> walkType t
@@ -830,7 +831,7 @@ module ParsedInput =
             | SynExpr.DoBang (e, _) -> walkExprWithKind parentKind e
 
             | SynExpr.TraitCall (ts, sign, e, _) ->
-                List.tryPick walkTypar ts
+                List.tryPick walkType ts
                 |> Option.orElseWith (fun () -> walkMemberSig sign)
                 |> Option.orElseWith (fun () -> walkExprWithKind parentKind e)
 
@@ -1615,6 +1616,7 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparSupportsMember (ts, sign, _) ->
                 List.iter walkType ts
                 walkMemberSig sign
+            | SynTypeConstraint.WhereSelfConstrained (ty, _) -> walkType ty
 
         and walkPat pat =
             match pat with
@@ -1669,7 +1671,7 @@ module ParsedInput =
                 walkType ty
                 List.iter walkType types
             | SynType.LongIdentApp (_, _, _, types, _, _, _) -> List.iter walkType types
-            | SynType.Tuple (_, ts, _) -> ts |> List.iter (fun (_, t) -> walkType t)
+            | SynType.Tuple (path = segment) -> getTypeFromTuplePath segment |> List.iter walkType
             | SynType.WithGlobalConstraints (t, typeConstraints, _) ->
                 walkType t
                 List.iter walkTypeConstraint typeConstraints
@@ -1802,7 +1804,7 @@ module ParsedInput =
 
                 walkExpr e2
             | SynExpr.TraitCall (ts, sign, e, _) ->
-                List.iter walkTypar ts
+                List.iter walkType ts
                 walkMemberSig sign
                 walkExpr e
             | SynExpr.Const (SynConst.Measure (_, _, m), _) -> walkMeasure m

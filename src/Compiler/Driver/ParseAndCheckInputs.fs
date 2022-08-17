@@ -14,7 +14,7 @@ open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
@@ -563,7 +563,15 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
 
         // Set up the initial lexer arguments
         let lexargs =
-            mkLexargs (tcConfig.conditionalDefines, indentationSyntaxStatus, lexResourceManager, [], diagnosticsLogger, tcConfig.pathMap)
+            mkLexargs (
+                tcConfig.conditionalDefines,
+                indentationSyntaxStatus,
+                lexResourceManager,
+                [],
+                diagnosticsLogger,
+                tcConfig.pathMap,
+                tcConfig.applyLineDirectives
+            )
 
         // Set up the initial lexer arguments
         let shortFilename = SanitizeFileName fileName tcConfig.implicitIncludeDir

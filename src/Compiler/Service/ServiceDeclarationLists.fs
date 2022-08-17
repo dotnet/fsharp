@@ -153,7 +153,7 @@ module DeclarationListHelpers =
         let denv = SimplerDisplayEnv denv 
         let xml = GetXmlCommentForItem infoReader m item.Item
         match item.Item with
-        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) -> 
+        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(vref=vref)) }) -> 
             // operator with solution
             FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv { item with Item = Item.Value vref }
 
@@ -175,7 +175,7 @@ module DeclarationListHelpers =
                 wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
                 NicePrint.layoutTyconRef denv ucinfo.TyconRef ^^
                 sepL (tagPunctuation ".") ^^
-                wordL (tagUnionCase (DecompileOpName uc.Id.idText) |> mkNav uc.DefinitionRange) ^^
+                wordL (tagUnionCase (ConvertValLogicalNameToDisplayNameCore uc.Id.idText) |> mkNav uc.DefinitionRange) ^^
                 RightL.colon ^^
                 (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv infoReader ucinfo.TyconRef recd ^^ WordL.arrow) ^^
                 NicePrint.layoutType denv unionTy
@@ -196,14 +196,13 @@ module DeclarationListHelpers =
         // Active pattern tags 
         | Item.ActivePatternCase apref -> 
             let v = apref.ActivePatternVal
-            // Format the type parameters to get e.g. ('a -> 'a) rather than ('?1234 -> '?1234)
             let vTauTy = v.TauType
             // REVIEW: use _cxs here
             let (prettyTyparInst, prettyTy), _cxs = PrettyTypes.PrettifyInstAndType denv.g (item.TyparInstantiation, vTauTy)
             let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout v
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
-                wordL (tagActivePatternCase apref.Name |> mkNav v.DefinitionRange) ^^
+                wordL (tagActivePatternCase apref.DisplayName |> mkNav v.DefinitionRange) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv prettyTy
 
@@ -224,14 +223,14 @@ module DeclarationListHelpers =
 
         | Item.RecdField rfinfo when rfinfo.TyconRef.IsFSharpException ->
             let ty, _ = PrettyTypes.PrettifyType g rfinfo.FieldType
-            let id = rfinfo.RecdField.Id
+            let id = rfinfo.DisplayName
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
-                wordL (tagParameter id.idText) ^^
+                wordL (tagParameter id) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv ty
             let layout = toArray layout
-            ToolTipElement.Single (layout, xml, paramName = id.idText)
+            ToolTipElement.Single (layout, xml, paramName = id)
 
         // F# record field names
         | Item.RecdField rfinfo ->
@@ -385,6 +384,12 @@ module DeclarationListHelpers =
             let layout = NicePrint.prettyLayoutOfTypar denv typar
             ToolTipElement.Single (toArray layout, xml)
 
+        // Traits
+        | Item.Trait traitInfo ->
+            let denv = { denv with shortConstraints = false}
+            let layout = NicePrint.prettyLayoutOfTrait denv traitInfo
+            ToolTipElement.Single (toArray layout, xml)
+
         // F# Modules and namespaces
         | Item.ModuleOrNamespaces(modref :: _ as modrefs) -> 
             //let os = StringBuilder()
@@ -430,7 +435,7 @@ module DeclarationListHelpers =
 
         | Item.AnonRecdField(anon, argTys, i, _) -> 
             let argTy = argTys[i]
-            let nm = anon.SortedNames[i]
+            let nm = anon.DisplayNameByIdx i
             let argTy, _ = PrettyTypes.PrettifyType g argTy
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoAnonRecdField())) ^^
@@ -441,7 +446,7 @@ module DeclarationListHelpers =
             ToolTipElement.Single (layout, FSharpXmlDoc.None)
             
         // Named parameters
-        | Item.ArgName (id, argTy, _) -> 
+        | Item.ArgName (Some id, argTy, _, _) -> 
             let argTy, _ = PrettyTypes.PrettifyType g argTy
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
@@ -454,8 +459,44 @@ module DeclarationListHelpers =
         | Item.SetterArg (_, item) -> 
             FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv (ItemWithNoInst item)
 
-        |  _ -> 
-            ToolTipElement.None
+        | Item.ArgName (None, _, _, _)
+    
+        // TODO: give a decent tooltip for implicit operators that include the resolution of the operator
+        //
+        //type C() = 
+        //    static member (++++++) (x: C, y: C) = C()
+        //
+        //let f (x: C) =
+        //    x ++++++ x
+        //
+        // Here hovering over "++++++" in "f" could give a tooltip saying what the thing is and what it has resolved to.
+        //
+        //
+        | Item.ImplicitOp _ 
+
+        // TODO: consider why we aren't getting Item.Types for generic type parameters
+        //    let F<'T>() = new System.Collections.Generic.List<'T>()
+        | Item.Types (_, [TType_var _]) 
+
+        // TODO: consider why we aren't getting Item.Types for units of measure
+        | Item.Types (_, [TType_measure _]) 
+
+        // TODO: consider whether we ever get Item.Types with more than one element
+        | Item.Types (_, _ :: _ :: _) 
+
+        // We don't expect Item.Types with an anonymous record type, function types etc.
+        | Item.Types (_, [TType_anon _]) 
+        | Item.Types (_, [TType_fun _]) 
+        | Item.Types (_, [TType_forall _]) 
+        | Item.Types (_, [TType_tuple _]) 
+        | Item.Types (_, [TType_ucase _]) 
+
+        // We don't expect these cases
+        | Item.Types (_, []) 
+        | Item.Property (_, []) 
+        | Item.UnqualifiedType []
+        | Item.ModuleOrNamespaces []
+        | Item.CustomOperation (_, _, None) ->  ToolTipElement.None 
 
     /// Format the structured version of a tooltip for an item
     let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item = 
@@ -655,10 +696,10 @@ module internal DescriptionListsImpl =
                 // in this case use old approach and return only information about types
                 getPrettyParamsOfTypes ()
 
-            | Some valRefInfo ->
+            | Some valReprInfo ->
                 // ValReprInfo will exist for top-level syntactic functions
                 // per spec: binding is considered to define a syntactic function if it is either a function or its immediate right-hand-side is a anonymous function
-                let _, argInfos,  lastRetTy, _ = GetTopValTypeInFSharpForm  g valRefInfo vref.Type m
+                let _, argInfos,  lastRetTy, _ = GetValReprTypeInFSharpForm  g valReprInfo vref.Type m
                 match argInfos with
                 | [] -> 
                     // handles cases like 'let foo = List.map'
@@ -700,7 +741,7 @@ module internal DescriptionListsImpl =
             let args, resTy = stripFunTy denv.g vTauTy 
 
             let apinfo = Option.get (TryGetActivePatternInfo v)
-            let aparity = apinfo.Names.Length
+            let aparity = apinfo.ActiveTags.Length
             
             let caseTy = if aparity <= 1 then resTy else (argsOfAppTy g resTy)[apref.CaseIndex]
 
@@ -748,6 +789,14 @@ module internal DescriptionListsImpl =
             // for display as part of the method group
             prettyParams, prettyRetTyL
 
+        | Item.Trait traitInfo -> 
+            let paramDatas =
+                [ for pty in traitInfo.GetLogicalArgumentTypes(g) do
+                    ParamData(false, false, false, OptionalArgInfo.NotOptional, CallerInfo.NoCallerInfo, None, ReflectedArgInfo.None, pty) ]
+            let retTy = traitInfo.GetReturnType(g)
+            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInstantiation paramDatas retTy
+            prettyParams, prettyRetTyL
+
         | Item.CustomBuilder (_, vref) -> 
             PrettyParamsAndReturnTypeOfItem infoReader m denv { item with Item = Item.Value vref }
 
@@ -786,7 +835,19 @@ module internal DescriptionListsImpl =
             // for display as part of the method group
             prettyParams, prettyRetTyL
 
-        |  _ -> 
+        | Item.CustomOperation _ // TODO: consider whether this should report parameter help
+        | Item.ActivePatternResult _  // TODO: consider whether this should report parameter help
+        | Item.UnqualifiedType _
+        | Item.UnionCaseField _
+        | Item.Types _
+        | Item.SetterArg _
+        | Item.NewDef _
+        | Item.ModuleOrNamespaces _
+        | Item.ImplicitOp _
+        | Item.ArgName _
+        | Item.MethodGroup(_, [], _)
+        | Item.CtorGroup(_,[])
+        | Item.Property(_,[]) -> 
             [], emptyL
 
 
@@ -840,7 +901,9 @@ module internal DescriptionListsImpl =
                   else FSharpGlyph.Variable
             | Item.Types(_, ty :: _) -> typeToGlyph (stripTyEqns denv.g ty)    
             | Item.UnionCase _
-            | Item.ActivePatternCase _ -> FSharpGlyph.EnumMember   
+            | Item.ActivePatternResult _
+            | Item.ImplicitOp _
+            | Item.ActivePatternCase _ -> FSharpGlyph.EnumMember
             | Item.ExnCase _ -> FSharpGlyph.Exception   
             | Item.AnonRecdField _ -> FSharpGlyph.Field
             | Item.RecdField _ -> FSharpGlyph.Field
@@ -854,6 +917,7 @@ module internal DescriptionListsImpl =
             | Item.CustomOperation _ -> FSharpGlyph.Method
             | Item.MethodGroup (_, minfos, _) when minfos |> List.forall (fun minfo -> minfo.IsExtensionMember) -> FSharpGlyph.ExtensionMethod
             | Item.MethodGroup _ -> FSharpGlyph.Method
+            | Item.Trait _ -> FSharpGlyph.Method
             | Item.TypeVar _ -> FSharpGlyph.TypeParameter
             | Item.Types _  -> FSharpGlyph.Class
             | Item.UnqualifiedType (tcref :: _) -> 
@@ -875,17 +939,23 @@ module internal DescriptionListsImpl =
                 else FSharpGlyph.Class
             | Item.ModuleOrNamespaces(modref :: _) -> 
                   if modref.IsNamespace then FSharpGlyph.NameSpace else FSharpGlyph.Module
-            | Item.ArgName _ -> FSharpGlyph.Variable
+            | Item.NewDef _
+            | Item.ArgName _
             | Item.SetterArg _ -> FSharpGlyph.Variable
-            | _ -> FSharpGlyph.Error)
+
+            // These empty lists are not expected to occur
+            | Item.ModuleOrNamespaces []
+            | Item.UnqualifiedType [] ->
+                FSharpGlyph.Error
+            )
 
 
-    /// Get rid of groups of overloads an replace them with single items.
-    /// (This looks like it is doing the a similar thing as FlattenItems, this code 
-    /// duplication could potentially be removed)
-    let AnotherFlattenItems g m item =
+    /// Select the items that participate in a MethodGroup.
+    let SelectMethodGroupItems g m item =
         match item with 
         | Item.CtorGroup(nm, cinfos) -> List.map (fun minfo -> Item.CtorGroup(nm, [minfo])) cinfos 
+        | Item.Trait traitInfo ->
+            if traitInfo.GetLogicalArgumentTypes(g).IsEmpty then [] else [item]
         | Item.FakeInterfaceCtor _
         | Item.DelegateCtor _ -> [item]
         | Item.NewDef _ 
@@ -908,17 +978,29 @@ module internal DescriptionListsImpl =
             [item] 
 #endif
         | Item.MethodGroup(nm, minfos, orig) -> minfos |> List.map (fun minfo -> Item.MethodGroup(nm, [minfo], orig)) 
-        | Item.CustomOperation(_name, _helpText, _minfo) -> [item]
-        | Item.TypeVar _ -> []
-        | Item.CustomBuilder _ -> []
-        | _ -> []
-
+        | Item.CustomOperation _ -> [item]
+        // These are not items that can participate in a method group
+        | Item.TypeVar _
+        | Item.CustomBuilder _
+        | Item.ActivePatternCase _
+        | Item.AnonRecdField _
+        | Item.ArgName _
+        | Item.ImplicitOp _
+        | Item.ModuleOrNamespaces _
+        | Item.SetterArg _
+        | Item.Types _
+        | Item.UnionCaseField _
+        | Item.UnqualifiedType _
+        | Item.ActivePatternResult _ -> []
 
 /// An intellisense declaration
 [<Sealed>]
 type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility,
                                kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
+
     member _.Name = textInDeclList
+
+    member _.NameInList = textInDeclList
 
     member _.NameInCode = textInCode
 
@@ -1179,7 +1261,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
                | true, res -> yield! res
                | false, _ ->
 #endif
-                let flatItems = AnotherFlattenItems g  m item.Item
+                let flatItems = SelectMethodGroupItems g  m item.Item
 
                 let methods = 
                     flatItems |> Array.ofList |> Array.map (fun flatItem -> 
@@ -1226,4 +1308,3 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
         MethodGroup(name, methods)
 
     static member internal Empty = empty
-

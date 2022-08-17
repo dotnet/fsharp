@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureDelegateTypeNameResolutionFix">
         <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
-        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
+        <target state="translated">opravit překlad názvů typů delegátů, viz https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
-        <target state="new">give error on deprecated access of construct with RequireQualifiedAccess attribute</target>
+        <target state="translated">chyba při zastaralém přístupu konstruktoru s atributem RequireQualifiedAccess</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -185,6 +185,16 @@
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">Notace expr[idx] pro indexování a vytváření řezů</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
+        <source>static abstract interface members</source>
+        <target state="new">static abstract interface members</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInitProperties">
+        <source>support for consuming init properties</source>
+        <target state="new">support for consuming init properties</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -239,7 +249,7 @@
       </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
-        <target state="new">list literals of any size</target>
+        <target state="translated">vypsat literály libovolné velikosti</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
@@ -257,9 +267,19 @@
         <target state="translated">relaxace whitespace v2</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRequiredProperties">
+        <source>support for required properties</source>
+        <target state="new">support for required properties</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">obnovitelné stavové stroje</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureSelfTypeConstraints">
+        <source>self type constraints</source>
+        <target state="new">self type constraints</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
@@ -309,7 +329,7 @@
       </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
-        <target state="translated"> – {0}</target>
+        <target state="translated"> - {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
@@ -345,6 +365,11 @@
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">Klíčové slovo, které specifikuje konstantní literál jako argument parametru typu v poskytovatelích typů</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionTypeTest">
+        <source>Used to check if an object is of the given type in a pattern or binding.</source>
+        <target state="new">Used to check if an object is of the given type in a pattern or binding.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
@@ -439,17 +464,17 @@
       </trans-unit>
       <trans-unit id="optsClearResultsCache">
         <source>Clear the package manager results cache</source>
-        <target state="new">Clear the package manager results cache</target>
+        <target state="translated">Vymazat mezipaměť výsledků správce balíčků</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
-        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
+        <target state="translated">Neplatné použití generování referenčního sestavení, nepoužívejte --staticlink ani --refonly a --refout společně.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
-        <target state="new">Invalid reference assembly path'</target>
+        <target state="translated">Neplatná cesta k referenčnímu sestavení</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -457,14 +482,19 @@
         <target state="translated">Zobrazte si povolené hodnoty verze jazyka a pak zadejte požadovanou verzi, například latest nebo preview.</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsPdbMatchesOutputFileName">
+        <source>The pdb output file name cannot match the build output filename use --pdb:filename.pdb</source>
+        <target state="new">The pdb output file name cannot match the build output filename use --pdb:filename.pdb</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
-        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <target state="translated">Vytvoří referenční sestavení místo úplného sestavení jako primární výstup.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
-        <target state="new">Produce a reference assembly with the specified file path.</target>
+        <target state="translated">Vytvoří referenční sestavení se zadanou cestou k souboru.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -522,9 +552,19 @@
         <target state="translated">Neočekávaný token v definici typu. Za typem {0} se očekává =.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsIncompleteTyparExpr1">
+        <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
+        <target state="new">Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsIncompleteTyparExpr2">
+        <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
+        <target state="new">Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
         <source>Expecting expression</source>
-        <target state="new">Expecting expression</target>
+        <target state="translated">Byl očekáván výraz.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -604,7 +644,7 @@
       </trans-unit>
       <trans-unit id="reprStateMachineNotCompilableNoAlternative">
         <source>This state machine is not statically compilable and no alternative is available. {0}. Use an 'if __useResumableCode then &lt;state-machine&gt; else &lt;alternative&gt;' to give an alternative.</source>
-        <target state="translated">Tento stavový stroj není staticky kompilovatelný a není k dispozici žádná alternativa. {0}. Pokud chcete zadat alternativu, použijte „if __useResumableCode“ then &lt;state-machine&gt; else &lt;alternative&gt;“.</target>
+        <target state="translated">Tento stavový stroj není staticky kompilovatelný a není k dispozici žádná alternativa. {0}. Pokud chcete zadat alternativu, použijte if __useResumableCode“ then &lt;state-machine&gt; else &lt;alternative&gt;“.</target>
         <note />
       </trans-unit>
       <trans-unit id="scriptSdkNotDetermined">
@@ -634,7 +674,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this record expression.</source>
-        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <target state="translated">Pole {0} se v tomto výrazu záznamu vyskytuje vícekrát.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
@@ -659,7 +699,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this anonymous record type.</source>
-        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
+        <target state="translated">Pole {0} se v tomto anonymním typu záznamu vyskytuje vícekrát.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -702,6 +742,11 @@
         <target state="translated">Tento výraz používá implicitní převod {0} pro převod typu {1} na typ {2}. Přečtěte si téma https://aka.ms/fsharp-implicit-convs. Toto upozornění může být vypnuté pomocí '#nowarn \"3391\".</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
+        <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
         <source>The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</source>
         <target state="translated">Atribut InlineIfLambda je možné použít pouze u parametrů vložených funkcí metod s typem funkce nebo typem delegáta F#.</target>
@@ -725,6 +770,11 @@
       <trans-unit id="tcInvalidResumableConstruct">
         <source>The construct '{0}' may only be used in valid resumable code.</source>
         <target state="translated">Konstruktor {0} je možné použít jenom v platném obnovitelném kódu.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidSelfConstraint">
+        <source>Invalid constraint. Valid constraint forms include \"'T :&gt; ISomeInterface\" for interface constraints and \"SomeConstrainingType&lt;'T&gt;\" for self-constraints. See https://aka.ms/fsharp-type-constraints.</source>
+        <target state="new">Invalid constraint. Valid constraint forms include \"'T :&gt; ISomeInterface\" for interface constraints and \"SomeConstrainingType&lt;'T&gt;\" for self-constraints. See https://aka.ms/fsharp-type-constraints.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
@@ -765,6 +815,11 @@
       <trans-unit id="tcLiteralFieldAssignmentWithArg">
         <source>Cannot assign '{0}' to a value marked literal</source>
         <target state="translated">K hodnotě označené jako literál se {0} nedá přiřadit.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMissingRequiredMembers">
+        <source>The following required properties have to be initalized:{0}</source>
+        <target state="new">The following required properties have to be initalized:{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
@@ -847,14 +902,54 @@
         <target state="translated">Použití obnovitelného kódu nebo obnovitelných stavových strojů vyžaduje /langversion:preview.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
+        <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">Tento výraz implicitně převede typ {0} na typ {1}. Přečtěte si téma https://aka.ms/fsharp-implicit-convs.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTraitHasMultipleSupportTypes">
+        <source>The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</source>
+        <target state="new">The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTraitInvocationShouldUseTick">
+        <source>Invocation of a static constraint should use \"'T.Ident\" and not \"^T.Ident\", even for statically resolved type parameters.</source>
+        <target state="new">Invocation of a static constraint should use \"'T.Ident\" and not \"^T.Ident\", even for statically resolved type parameters.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTraitIsNotStatic">
+        <source>Trait '{0}' is not static</source>
+        <target state="new">Trait '{0}' is not static</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTraitIsStatic">
+        <source>Trait '{0}' is static</source>
+        <target state="new">Trait '{0}' is static</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTraitMayNotUseComplexThings">
+        <source>A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</source>
+        <target state="new">A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
         <source>Invalid interpolated string. {0}</source>
         <target state="translated">Neplatný interpolovaný řetězec. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
+        <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
+        <target state="new">'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
+        <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
+        <target state="new">Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -1194,12 +1289,12 @@
       </trans-unit>
       <trans-unit id="buildInvalidHashrDirective">
         <source>Invalid directive. Expected '#r \"&lt;file-or-assembly&gt;\"'.</source>
-        <target state="translated">Neplatná direktiva. Očekávalo se #r \"&lt;soubor-nebo-sestavení&gt;\".</target>
+        <target state="translated">Neplatná direktiva. Očekávalo se #r \"&lt;file-or-assembly&gt;\".</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashloadDirective">
         <source>Invalid directive. Expected '#load \"&lt;file&gt;\" ... \"&lt;file&gt;\"'.</source>
-        <target state="translated">Neplatná direktiva. Očekávalo se #load \"&lt;soubor&gt;\" ... \"&lt;soubor&gt;\"'.</target>
+        <target state="translated">Neplatná direktiva. Očekávalo se #load \"&lt;soubor&gt;\" ... \"&lt;soubor&gt;\".</target>
         <note />
       </trans-unit>
       <trans-unit id="buildInvalidHashtimeDirective">
@@ -1529,7 +1624,7 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">Definice {0} pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože typ implementace není zapečetěný, ale signatura uvádí, že je. Zvažte možnost přidat k implementaci atribut [&lt;Sealed&gt;].</target>
+        <target state="translated">{0}Definice pro typ {1} v signatuře a implementaci nejsou kompatibilní, protože typ implementace není zapečetěný, ale signatura uvádí, že je. Zvažte možnost přidat k implementaci atribut [&lt;Sealed&gt;].</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
@@ -3019,12 +3114,12 @@
       </trans-unit>
       <trans-unit id="parsIncompleteIf">
         <source>Incomplete conditional. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">Neúplná podmínka. Očekávaná notace je if &lt;výraz&gt; then &lt;výraz&gt; nebo if &lt;výraz&gt; then &lt;výraz&gt; else &lt;výraz&gt;.</target>
+        <target state="translated">Neúplná podmínka. Očekávalo se if &lt;výraz&gt; then &lt;výraz&gt; nebo if &lt;výraz&gt; then &lt;výraz&gt; else &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsAssertIsNotFirstClassValue">
         <source>'assert' may not be used as a first class value. Use 'assert &lt;expr&gt;' instead.</source>
-        <target state="translated">assert nejde použít jako první hodnotu třídy. Použijte místo toho assert &lt;výraz&gt;.</target>
+        <target state="translated">assert nejde použít jako hodnotu první třídy. Použijte místo toho assert &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIdentifierExpected">
@@ -3125,11 +3220,6 @@
       <trans-unit id="parsUnexpectedIntegerLiteralForUnitOfMeasure">
         <source>Unexpected integer literal in unit-of-measure expression</source>
         <target state="translated">Neočekávaný celočíselný literál ve výrazu měrné jednotky</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsUnexpectedTypeParameter">
-        <source>Syntax error: unexpected type parameter specification</source>
-        <target state="translated">Chyba syntaxe: neočekávaná specifikace parametru typu</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMismatchedQuotationName">
@@ -5024,7 +5114,7 @@
       </trans-unit>
       <trans-unit id="optsPlatform">
         <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="needs-review-translation">Omezuje platformy, na kterých je možné tento kód spustit: x86, Itanium, x64, anycpu32bitpreferred a anycpu. Výchozí je anycpu.</target>
+        <target state="translated">Omezuje platformy, na kterých je možné tento kód spustit: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, nebo anycpu. Výchozí je anycpu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5075,16 +5165,6 @@
       <trans-unit id="optsSourceLink">
         <source>Source link information file to embed in the portable PDB file</source>
         <target state="translated">Informační soubor zdrojového odkazu, který se má vložit do souboru PDB typu Portable</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsEmbeddedSourceRequirePortablePDBs">
-        <source>--embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Přepínač --embed se podporuje jenom při generování souboru PDB typu Portable (--debug:portable nebo --debug:embedded).</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsSourceLinkRequirePortablePDBs">
-        <source>--sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Přepínač --sourcelink se podporuje jenom při generování souboru PDB typu Portable (--debug:portable nebo --debug:embedded).</target>
         <note />
       </trans-unit>
       <trans-unit id="srcFileTooLarge">
@@ -5319,7 +5399,7 @@
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
         <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
-        <target state="needs-review-translation">Nerozpoznaná platforma {0}. Platné hodnoty jsou x86, x64, Itanium, anycpu32bitpreferred a anycpu.</target>
+        <target state="translated">Nerozpoznaná platforma {0}, platné hodnoty jsou x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred a anycpu. Výchozí hodnota je anycpu.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">
@@ -5834,7 +5914,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
-        <target state="new">Toto není platný číselný literál. Mezi platné číselné literály patří 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</target>
+        <target state="translated">Toto není platný číselný literál. Platné číselné literály zahrnují hodnoty 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">
@@ -6142,21 +6222,6 @@
         <target state="translated">Členové rozšíření nemůžou poskytovat přetížení operátorů. Zvažte možnost definovat místo toho operátor v definici typu.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
-        <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">Název souboru MDB musí být &lt;název-souboru-sestavení&gt;.mdb. Parametr --pdb se bude ignorovat.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteMDBMemberMissing">
-        <source>MDB generation failed. Could not find compatible member {0}</source>
-        <target state="translated">Generování souboru MDB selhalo. Nenašel se kompatibilní člen {0}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteErrorCreatingMdb">
-        <source>Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</source>
-        <target state="translated">Nedají se vygenerovat ladicí informace MDB. Načtení typu MonoSymbolWriter ze sestavení Mono.CompilerServices.SymbolWriter.dll selhalo.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnionCaseNameConflictsWithGeneratedType">
         <source>The union case named '{0}' conflicts with the generated type '{1}'</source>
         <target state="translated">Případ typu union s názvem {0} koliduje s generovaným typem {1}.</target>
@@ -6430,11 +6495,6 @@
       <trans-unit id="fscAssemblyWildcardAndDeterminism">
         <source>An {0} specified version '{1}', but this value is a wildcard, and you have requested a deterministic build, these are in conflict.</source>
         <target state="translated">Zadaná verze {0} je {1}, ale tato hodnota představuje zástupný znak a vy jste požádali o deterministické sestavení, což je v konfliktu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
-        <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Deterministické buildy podporují jenom přenositelné soubory PDB (--debug:portable nebo --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -6869,7 +6929,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileFor">
         <source>Unexpected end of input in 'for' expression. Expected 'for &lt;pat&gt; in &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">Neočekávaný konec vstupu ve výrazu for. Očekávaná notace je for &lt;vzor&gt; in &lt;výraz&gt; do &lt;výraz&gt;'.</target>
+        <target state="translated">Neočekávaný konec vstupu ve výrazu for. Očekávaná notace je for &lt;vzor&gt; in &lt;výraz&gt; do &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileWith">
@@ -6884,7 +6944,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileElse">
         <source>Unexpected end of input in 'else' branch of conditional expression. Expected 'if &lt;expr&gt; then &lt;expr&gt;' or 'if &lt;expr&gt; then &lt;expr&gt; else &lt;expr&gt;'.</source>
-        <target state="translated">Neočekávaný konec vstup ve větvi else podmíněného výrazu. Očekávalo se if &lt;výraz&gt; then &lt;výraz&gt; nebo if &lt;výraz&gt; then &lt;výraz&gt; else &lt;výraz&gt;.</target>
+        <target state="translated">Neočekávaný konec vstupu ve větvi else podmíněného výrazu. Očekávalo se if &lt;výraz&gt; then &lt;výraz&gt; nebo if &lt;výraz&gt; then &lt;výraz&gt; else &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsUnexpectedEndOfFileFunBody">
@@ -6949,7 +7009,7 @@
       </trans-unit>
       <trans-unit id="parsWhileDoExpected">
         <source>Missing 'do' in 'while' expression. Expected 'while &lt;expr&gt; do &lt;expr&gt;'.</source>
-        <target state="translated">Chybí do ve výrazu while. Očekávalo se while &lt;výraz&gt; do &lt;výraz&gt;'.</target>
+        <target state="translated">Chybí do ve výrazu while. Očekávalo se while &lt;výraz&gt; do &lt;výraz&gt;.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsForDoExpected">
@@ -7442,7 +7502,7 @@
         <target state="translated">Označuje metodu, která buď nemá implementaci v typu, ve kterém je deklarovaná, nebo která je virtuální a má výchozí implementaci.</target>
         <note />
       </trans-unit>
-      <trans-unit id="keyworkDescriptionAnd">
+      <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
         <target state="translated">Používá se ve vzájemně rekurzivních vazbách, v deklaracích vlastností a s několika omezeními u generických parametrů.</target>
         <note />
@@ -8060,11 +8120,6 @@
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
         <target state="translated">Mapuje fyzické cesty na názvy zdrojových cest z výstupu kompilátoru.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fscPathMapDebugRequiresPortablePdb">
-        <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Parametr --pathmap se může používat jenom s přenositelnými soubory PDB (--debug:portable nebo --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">

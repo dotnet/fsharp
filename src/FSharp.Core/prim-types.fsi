@@ -1542,6 +1542,10 @@ namespace Microsoft.FSharp.Core
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         val ExplicitDynamic: value: 'T -> 'U
 
+        /// <summary>A compiler intrinsic that implements dynamic invocations related to checked conversion operators.</summary>
+        [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
+        val CheckedExplicitDynamic : value:'T -> 'U
+
         /// <summary>A compiler intrinsic that implements dynamic invocations related to the '&lt;' operator.</summary>
         [<CompilerMessage("This function is for use by dynamic invocations of F# code and should not be used directly", 1204, IsHidden=true)>]
         val LessThanDynamic: x: 'T1 -> y: 'T2 -> 'U

@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
-        <target state="new">Use triple quoted string interpolation.</target>
+        <target state="translated">삼중 따옴표로 묶인 분자열 보간을 사용합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">

@@ -652,8 +652,8 @@ let diff normalize path1 path2 =
                 if x >= 0 then line.Substring(x+cwd.Length) else line
             else line
 
-        let line1 = normalizePath lines1[i]
-        let line2 = normalizePath lines2[i]
+        let line1 = lines1[i] |> normalizePath
+        let line2 = lines2[i] |> normalizePath
 
         if line1 <> line2 then
             append <| sprintf "diff between [%s] and [%s]" path1 path2

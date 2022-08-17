@@ -289,6 +289,11 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
                         for x in project.ProjectReferences do
                             "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath
 
+                        // In the IDE we always ignore all #line directives for all purposes.  This means
+                        // IDE features work correctly within generated source files, but diagnostics are
+                        // reported in the IDE with respect to the generated source, and will not unify with
+                        // diagnostics from the build.
+                        "--ignorelinedirectives"
                     |]
 
                 let! ver = project.GetDependentVersionAsync(ct) |> Async.AwaitTask
@@ -509,6 +514,7 @@ type internal FSharpProjectOptionsManager
             | Some (_, parsingOptions, _) -> parsingOptions
             | _ ->
                 { FSharpParsingOptions.Default with
+                    ApplyLineDirectives = false
                     IsInteractive = CompilerEnvironment.IsScriptFile document.Name
                 }
         CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions     
@@ -526,10 +532,10 @@ type internal FSharpProjectOptionsManager
 
     /// Get the options for a document or project relevant for syntax processing.
     /// Quicker it doesn't need to recompute the exact project options for a script.
-    member _.TryGetQuickParsingOptionsForEditingDocumentOrProject(document:Document) = 
-        match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
+    member this.TryGetQuickParsingOptionsForEditingDocumentOrProject(documentId: DocumentId, path: string) = 
+        match reactor.TryGetCachedOptionsByProjectId(documentId.ProjectId) with
         | Some (_, parsingOptions, _) -> parsingOptions
-        | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile document.Name }
+        | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile path }
 
     member _.SetCommandLineOptions(projectId, sourcePaths, options: ImmutableArray<string>) =
         reactor.SetCommandLineOptions(projectId, sourcePaths, options.ToArray())

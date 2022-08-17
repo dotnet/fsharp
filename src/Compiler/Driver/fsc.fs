@@ -300,20 +300,6 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, lcidFromCodePage, argv)
     // This is where flags are interpreted by the command line fsc.exe.
     ParseCompilerOptions(collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
 
-    if not (tcConfigB.portablePDB || tcConfigB.embeddedPDB) then
-        if tcConfigB.embedAllSource || (tcConfigB.embedSourceList |> isNil |> not) then
-            error (Error(FSComp.SR.optsEmbeddedSourceRequirePortablePDBs (), rangeCmdArgs))
-
-        if not (String.IsNullOrEmpty(tcConfigB.sourceLink)) then
-            error (Error(FSComp.SR.optsSourceLinkRequirePortablePDBs (), rangeCmdArgs))
-
-    if tcConfigB.debuginfo && not tcConfigB.portablePDB then
-        if tcConfigB.deterministic then
-            error (Error(FSComp.SR.fscDeterministicDebugRequiresPortablePdb (), rangeCmdArgs))
-
-        if tcConfigB.pathMap <> PathMap.empty then
-            error (Error(FSComp.SR.fscPathMapDebugRequiresPortablePdb (), rangeCmdArgs))
-
     let inputFiles = List.rev inputFilesRef
 
     // Check if we have a codepage from the console
@@ -1153,7 +1139,6 @@ let main4
         GenerateIlxCode(
             codegenBackend,
             Option.isSome dynamicAssemblyCreator,
-            false,
             tcConfig,
             topAttrs,
             optimizedImpls,
