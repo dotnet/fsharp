@@ -6,15 +6,14 @@ open System.Collections.Immutable
 open NUnit.Framework
 open FSharp.Test
 open FSharp.Test.Utilities
-open FSharp.Test.Compiler
-open FSharp.Compiler.Diagnostics
 open Microsoft.CodeAnalysis
 
 [<TestFixture>]
 module OptionalInteropTests =
 
-    [<Test>]
-    let ``C# method with an optional parameter and called with an option type should compile`` () =
+    [<TestCase("5.0")>]
+    [<TestCase("latest")>]
+    let ``C# method with an optional parameter and called with an option type should compile`` langVersion =
         let csSrc =
             """
 using Microsoft.FSharp.Core;
@@ -145,6 +144,10 @@ Test.MethodTakingNullables(6, y="aaaaaa", d=Nullable 8.0) |> ignore
 Test.MethodTakingNullables(6, y="aaaaaa", d=Nullable ()) |> ignore
 Test.MethodTakingNullables(Nullable (), y="aaaaaa", d=8.0) |> ignore
 Test.MethodTakingNullables(Nullable 6, y="aaaaaa", d=8.0) |> ignore
+
+Test.OverloadedMethodTakingNullableOptionalsWithDefaults(x = 6) |> ignore
+Test.OverloadedMethodTakingNullables(6, "aaaaaa", 8.0) |> ignore
+Test.OverloadedMethodTakingNullableOptionals(x = 6) |> ignore
             """
 
         let fsharpCoreAssembly =
@@ -155,5 +158,6 @@ Test.MethodTakingNullables(Nullable 6, y="aaaaaa", d=8.0) |> ignore
             CompilationUtil.CreateCSharpCompilation(csSrc, CSharpLanguageVersion.CSharp8, TargetFramework.NetCoreApp31, additionalReferences = ImmutableArray.CreateRange [fsharpCoreAssembly])
             |> CompilationReference.Create
 
-        let fs = Compilation.Create(fsSrc, CompileOutput.Exe, options = [|"--langversion:5.0"|], cmplRefs = [cs])
+        let fs = Compilation.Create(fsSrc, CompileOutput.Exe, options = [| $"--langversion:{langVersion}" |], cmplRefs = [cs])
         CompilerAssert.Compile fs
+
