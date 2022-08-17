@@ -1267,11 +1267,6 @@
         <target state="translated">Não foi possível resolver o assembly '{0}'</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
-        <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">Não foi possível resolver o assembly '{0}' requerido por '{1}'</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
         <source>Error opening binary file '{0}': {1}</source>
         <target state="translated">Erro ao abrir o arquivo binário '{0}': {1}</target>

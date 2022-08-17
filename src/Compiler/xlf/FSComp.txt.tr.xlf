@@ -1267,11 +1267,6 @@
         <target state="translated">'{0}' bütünleştirilmiş kodu çözümlenemedi</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
-        <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">{1}' tarafından istenen '{0}' bütünleştirilmiş kodu çözümlenemedi</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
         <source>Error opening binary file '{0}': {1}</source>
         <target state="translated">{0}': {1} ikili dosyasını açma işleminde hata</target>

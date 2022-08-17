@@ -1644,8 +1644,6 @@ type ParsedSigFileFragment =
 type ParsedScriptInteraction =
     | Definitions of defns: SynModuleDecl list * range: range
 
-    | HashDirective of hashDirective: ParsedHashDirective * range: range
-
 [<NoEquality; NoComparison>]
 type ParsedImplFile = ParsedImplFile of hashDirectives: ParsedHashDirective list * fragments: ParsedImplFileFragment list
 

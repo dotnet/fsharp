@@ -1834,8 +1834,6 @@ type ParsedSigFileFragment =
 type ParsedScriptInteraction =
     | Definitions of defns: SynModuleDecl list * range: range
 
-    | HashDirective of hashDirective: ParsedHashDirective * range: range
-
 /// Represents a parsed implementation file made up of fragments
 [<NoEquality; NoComparison>]
 type ParsedImplFile =

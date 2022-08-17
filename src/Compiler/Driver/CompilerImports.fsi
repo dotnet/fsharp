@@ -207,13 +207,12 @@ type TcImports =
     static member BuildTcImports:
         tcConfigP: TcConfigProvider * dependencyProvider: DependencyProvider -> NodeCode<TcGlobals * TcImports>
 
-/// Process #r in F# Interactive.
+/// Process a group of #r in F# Interactive.
 /// Adds the reference to the tcImports and add the ccu to the type checking environment.
-val RequireDLL:
+val RequireReferences:
     ctok: CompilationThreadToken *
     tcImports: TcImports *
     tcEnv: TcEnv *
     thisAssemblyName: string *
-    referenceRange: range *
-    file: string ->
-        TcEnv * (ImportedBinary list * ImportedAssembly list)
+    resolutions: AssemblyResolution list ->
+        TcEnv * ImportedAssembly list
