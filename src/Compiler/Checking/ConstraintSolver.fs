@@ -2738,7 +2738,7 @@ and ArgsMustSubsumeOrConvert
         msg csenv.DisplayEnv
     | None -> ()
     match usesTDC with 
-    | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
+    | TypeDirectedConversionUsed.Yes(warn, _) -> do! WarnD(warn csenv.DisplayEnv)
     | TypeDirectedConversionUsed.No -> ()
     do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerArg.CallerArgumentType
     if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerArg.CallerArgumentType) then 
@@ -2769,7 +2769,7 @@ and ArgsMustSubsumeOrConvertWithContextualReport
             msg csenv.DisplayEnv
         | None -> ()
         match usesTDC with 
-        | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
+        | TypeDirectedConversionUsed.Yes(warn, _) -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
         do! SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerArgTy (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg))  
         return usesTDC
@@ -2796,7 +2796,7 @@ and ReturnTypesMustSubsumeOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace 
             msg csenv.DisplayEnv
         | None -> ()
         match usesTDC with 
-        | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
+        | TypeDirectedConversionUsed.Yes(warn, _) -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
         do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln None reqdTy actualTy 
         return usesTDC
@@ -2813,7 +2813,7 @@ and ArgsEquivOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace cxsln isConst
             msg csenv.DisplayEnv
         | None -> ()
         match usesTDC with 
-        | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
+        | TypeDirectedConversionUsed.Yes(warn, _) -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
         if not (typeEquiv csenv.g calledArgTy callerArgTy) then 
             return! ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(), m))
@@ -3222,6 +3222,10 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
 
         // Prefer methods that don't use type-directed conversion
         let c = compare (match usesTDC1 with TypeDirectedConversionUsed.No -> 1 | _ -> 0) (match usesTDC2 with TypeDirectedConversionUsed.No -> 1 | _ -> 0)
+        if c <> 0 then c else
+            
+        // Prefer methods that need less type-directed conversion
+        let c = compare (match usesTDC1 with TypeDirectedConversionUsed.Yes(_, false) -> 1 | _ -> 0) (match usesTDC2 with TypeDirectedConversionUsed.Yes(_, false) -> 1 | _ -> 0)
         if c <> 0 then c else
 
         // Prefer methods that don't give "this code is less generic" warnings

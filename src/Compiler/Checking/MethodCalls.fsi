@@ -119,7 +119,7 @@ type CallerArgs<'T> =
 /// has been used in F# code
 [<RequireQualifiedAccess>]
 type TypeDirectedConversionUsed =
-    | Yes of (DisplayEnv -> exn)
+    | Yes of (DisplayEnv -> exn) * isDoubleConversion: bool
     | No
 
     static member Combine: TypeDirectedConversionUsed -> TypeDirectedConversionUsed -> TypeDirectedConversionUsed
