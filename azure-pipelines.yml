@@ -105,7 +105,7 @@ stages:
         - job: Full_Signed
           pool:
             name: NetCore1ESPool-Svc-Internal
-            demands: ImageOverride -equals Build.Windows.Amd64.VS2022
+            demands: ImageOverride -equals windows.vs2022.amd64
           timeoutInMinutes: 300
           variables:
           - group: DotNet-Blob-Feed
