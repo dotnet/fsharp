@@ -883,7 +883,7 @@ Microsoft.FSharp.Core.CompilerServices.TypeProviderConfig: System.String[] get_R
 Microsoft.FSharp.Core.CompilerServices.TypeProviderConfig: System.Version SystemRuntimeAssemblyVersion
 Microsoft.FSharp.Core.CompilerServices.TypeProviderConfig: System.Version get_SystemRuntimeAssemblyVersion()
 Microsoft.FSharp.Core.CompilerServices.TypeProviderConfig: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[System.String,System.Boolean])
-Microsoft.FSharp.Core.CompilerServices.TypeProviderConfig: Void set_IsHostedExecution(Boolean)
+Microsoft.FSharp.Core.CompilerServices.TypeProviderConfig: Void .ctor(Microsoft.FSharp.Core.FSharpFunc`2[System.String,System.Boolean], Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.String[]])Microsoft.FSharp.Core.CompilerServices.TypeProviderConfig: Void set_IsHostedExecution(Boolean)
 Microsoft.FSharp.Core.CompilerServices.TypeProviderConfig: Void set_IsInvalidationSupported(Boolean)
 Microsoft.FSharp.Core.CompilerServices.TypeProviderConfig: Void set_ReferencedAssemblies(System.String[])
 Microsoft.FSharp.Core.CompilerServices.TypeProviderConfig: Void set_ResolutionFolder(System.String)
