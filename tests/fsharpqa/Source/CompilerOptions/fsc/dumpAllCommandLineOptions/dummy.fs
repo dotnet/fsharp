@@ -99,7 +99,6 @@
 //<Expects status="success">section='NoSection                ' ! option=I                              kind=OptionStringList</Expects>
 //<Expects status="success">section='NoSection                ' ! option=o                              kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=a                              kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=\?                             kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='NoSection                ' ! option=help                           kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='NoSection                ' ! option=full-help                      kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='NoSection                ' ! option=light                          kind=OptionUnit</Expects>
@@ -114,7 +113,6 @@
 //<Expects status="success">section='NoSection                ' ! option=compiling-fslib                kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=compiling-fslib-20             kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=compiling-fslib-40             kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=version                        kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='NoSection                ' ! option=local-optimize                 kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=no-local-optimize              kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=cross-optimize                 kind=OptionUnit</Expects>

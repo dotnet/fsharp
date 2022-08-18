@@ -88,7 +88,6 @@
 //<Expects status="success">section='NoSection                ' ! option=dumpAllCommandLineOptions      kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='- INPUT FILES -          ' ! option=--                             kind=OptionRest</Expects>
 //<Expects status="success">section='- MISCELLANEOUS -        ' ! option=help                           kind=OptionConsoleOnly</Expects>
-//<Expects status="success">section='NoSection                ' ! option=\?                             kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='NoSection                ' ! option=help                           kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='NoSection                ' ! option=full-help                      kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=exec                           kind=OptionUnit</Expects>
@@ -139,6 +138,8 @@
 //<Expects status="notin">section='NoSection                ' ! option=compiling-fslib                kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=compiling-fslib-20             kind=OptionString</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=version                        kind=OptionConsoleOnly</Expects>
+//<Expects status="notin">section='NoSection                ' ! option=compiling-fslib-20     kind=OptionString</Expects>
+//<Expects status="notin">section='NoSection                ' ! option=version                        kind=OptionString</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=local-optimize                 kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=no-local-optimize              kind=OptionUnit</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=cross-optimize                 kind=OptionUnit</Expects>
