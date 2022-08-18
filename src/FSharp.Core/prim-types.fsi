@@ -4589,7 +4589,7 @@ namespace Microsoft.FSharp.Core
         /// <example id="keyvalue-example">
         /// <code lang="fsharp">
         /// let kv = System.Collections.Generic.KeyValuePair(42, "the answer")
-        /// match kv with
+        /// match kv with // evaluates to "found it"
         /// | KeyValue (42, v) -> "found it"
         /// | KeyValue (k, v) -> "keep waiting"
         /// </code>
