@@ -17,4 +17,8 @@
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis" Version="$(MicrosoftCodeAnalysisVersion)" />
+  </ItemGroup>
+
 </Project>
