@@ -2952,8 +2952,16 @@ type FsiInteractionProcessor
     let ExecuteParsedInteraction (ctok, istate, synInteraction, diagnosticsLogger: DiagnosticsLogger, lastResult: FsiValue option, cancellationToken: CancellationToken)  =
         let status = ExecuteParsedInteractionInGroups (ctok, istate, synInteraction, diagnosticsLogger, lastResult, cancellationToken)
         ProcessStepStatus status lastResult (fun lastResult istate -> 
-            let istate = fsiDynamicCompiler.ProcessDelayedDependencyManagerText(ctok, istate, lexResourceManager, diagnosticsLogger)
-            istate, Completed lastResult)
+            let rec loop istate =
+                if fsiDynamicCompiler.HasDelayedDependencyManagerText then
+                    let istate = fsiDynamicCompiler.ProcessDelayedDependencyManagerText(ctok, istate, lexResourceManager, diagnosticsLogger)
+                    loop istate
+                elif fsiDynamicCompiler.HasDelayedReferences then
+                    let istate = fsiDynamicCompiler.ProcessDelayedReferences (ctok, istate)
+                    loop istate
+                else
+                    istate, Completed lastResult
+            loop istate)
 
     /// Execute a single parsed interaction on the parser/execute thread.
     let mainThreadProcessAction ctok action istate =
