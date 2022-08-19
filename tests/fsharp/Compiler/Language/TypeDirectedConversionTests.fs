@@ -284,6 +284,55 @@ let test(x: 'T) =
          """This construct causes code to be less generic than indicated by the type annotations. The type variable 'T has been constrained to be type 'int'."""
 
     [<Test>]
+    let ``Picking overload for typar fails when incompatible types are part of the candidate set``() =
+        CompilerAssert.TypeCheckWithErrors
+            """
+module Test
+    
+type M() =
+    static member A(n: System.Nullable<'T>) = ()
+    static member A(n: System.Nullable<float>) = ()
+    static member A(n: System.Nullable<int>) = ()
+    static member A(n: int) = ()
+
+let test(x: 'T) =
+    M.A(x)
+    
+type M2() =
+    static member A(n: System.Nullable<float>) = ()
+    static member A(n: System.Nullable<int>) = ()
+    static member A(n: int) = ()
+
+let test2(x: 'T) =
+    M2.A(x)
+"""
+         [|
+             (FSharpDiagnosticSeverity.Error,
+             41,
+             (11, 5, 11, 11),
+             """A unique overload for method 'A' could not be determined based on type information prior to this program point. A type annotation may be needed.
+
+Known type of argument: 'T
+
+Candidates:
+ - static member M.A: n: System.Nullable<'T> -> unit when 'T: (new: unit -> 'T) and 'T: struct and 'T :> System.ValueType
+ - static member M.A: n: System.Nullable<float> -> unit
+ - static member M.A: n: System.Nullable<int> -> unit
+ - static member M.A: n: int -> unit""")
+             (FSharpDiagnosticSeverity.Error,
+             41,
+             (19, 5, 19, 12),
+             """A unique overload for method 'A' could not be determined based on type information prior to this program point. A type annotation may be needed.
+
+Known type of argument: 'T
+
+Candidates:
+ - static member M2.A: n: System.Nullable<float> -> unit
+ - static member M2.A: n: System.Nullable<int> -> unit
+ - static member M2.A: n: int -> unit""")   
+         |]
+    
+    [<Test>]
     let ``Ambiguous overload for typar does not pick System.Nullable<'T>``() =
         CompilerAssert.TypeCheckSingleError
             """

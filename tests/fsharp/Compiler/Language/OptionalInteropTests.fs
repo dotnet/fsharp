@@ -12,7 +12,7 @@ open Microsoft.CodeAnalysis
 module OptionalInteropTests =
 
     [<TestCase("5.0")>]
-    [<TestCase("latest")>]
+    [<TestCase("preview")>]
     let ``C# method with an optional parameter and called with an option type should compile`` langVersion =
         let csSrc =
             """

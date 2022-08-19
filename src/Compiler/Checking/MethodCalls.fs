@@ -236,7 +236,7 @@ type TypeDirectedConversion =
 
 [<RequireQualifiedAccess>]
 type TypeDirectedConversionUsed =
-    | Yes of (DisplayEnv -> exn) * isDoubleConversion: bool
+    | Yes of (DisplayEnv -> exn) * isTwoStepConversion: bool
     | No
     static member Combine a b =
         match a, b with 
