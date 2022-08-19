@@ -127,7 +127,7 @@ let CreateTypeProvider (
         let e =
 #if FSHARPCORE_USE_PACKAGE
             TypeProviderConfig(systemRuntimeContainsType,
-                getReferencedAssemblies,
+                ReferencedAssemblies=getReferencedAssemblies(),
                 ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
                 RuntimeAssembly=runtimeAssemblyPath, 
                 TemporaryFolder=resolutionEnvironment.TemporaryFolder, 
@@ -136,7 +136,7 @@ let CreateTypeProvider (
                 SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
 #else
             TypeProviderConfig(systemRuntimeContainsType,
-                ReferencedAssemblies=getReferencedAssemblies(),
+                getReferencedAssemblies,
                 ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
                 RuntimeAssembly=runtimeAssemblyPath, 
                 TemporaryFolder=resolutionEnvironment.TemporaryFolder, 
