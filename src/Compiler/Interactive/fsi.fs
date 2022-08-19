@@ -3080,7 +3080,7 @@ type FsiInteractionProcessor
 
             let rec run istate =
                 let status = processor.ParseAndExecuteInteractionFromLexbuf ((fun f istate -> f ctok istate), istate, tokenizer, diagnosticsLogger)
-                ProcessStepStatus status None (fun _ _ ->
+                ProcessStepStatus status None (fun _ istate ->
                     run istate)
 
             run istate
