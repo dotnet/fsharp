@@ -18,3 +18,30 @@ let ``Very basic signature test`` () =
 let ``Value with int array return type`` implementation expectedSignature =
     FSharp implementation
     |> signaturesShouldContain expectedSignature
+
+[<Fact>]
+let ``2 dimensional array`` () =
+    FSharp "let a : int[,] = failwith \"todo\""
+    |> signaturesShouldContain "val a: int array2d"
+
+[<Fact>]
+let ``3 dimensional array`` () =
+    FSharp "let a : int[,,] = failwith \"todo\""
+    |> signaturesShouldContain "val a: int array3d"
+
+[<Fact>]
+let ``4 dimensional array`` () =
+    FSharp "let a : int[,,,] = failwith \"todo\""
+    |> signaturesShouldContain "val a: int array4d"
+
+[<Fact>]
+let ``5 till 32 dimensional array`` () =
+    [ 5 .. 32 ]
+    |> List.iter (fun idx ->
+        let arrayType =
+            [ 1 .. idx ]
+            |> List.fold (fun acc _ -> $"array<{acc}>") "int"
+
+        FSharp $"let a : {arrayType} = failwith \"todo\""
+        |> signaturesShouldContain $"val a: int array{idx}d"
+    )
