@@ -243,6 +243,26 @@ let test() =
     M.A(Result<int, string>.Ok 3)
 """     
     
+
+    [<Test>]
+    let ``Overloading on System.Nullable and Result produces a builtin conversion warning when Nullable is picked``() =
+        CompilerAssert.TypeCheckSingleErrorWithOptions
+            [| "--warnon:3389" |]
+            """
+module Test
+    
+type M() =
+    static member A(n: System.Nullable<int>) = ()
+    static member A(r: Result<'T, 'TError>) = ()
+
+let test() =
+    M.A(3)
+"""     
+            FSharpDiagnosticSeverity.Warning
+            3389
+            (9, 9, 9, 10)
+            """This expression uses a built-in implicit conversion to convert type 'int' to type 'System.Nullable<int>'. See https://aka.ms/fsharp-implicit-convs."""
+    
     [<Test>]
     let ``Overloading on System.Nullable<int>, System.Nullable<'T> and int all work without error``() =
         CompilerAssert.RunScript
@@ -403,7 +423,7 @@ let test() =
         ]))
 
     [<Test>]
-    let ``Test retrieving an argument set in nested method call property setter works``() =
+    let ``Test retrieving an argument provided in a nested method call property setter works``() =
         CompilerAssert.RunScript
             """
 type Input<'T>(v: 'T) =
