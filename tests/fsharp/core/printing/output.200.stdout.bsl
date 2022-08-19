@@ -2009,6 +2009,9 @@ val ShortName: string = "hi"
 
 > val list2: int list = [1]
 
+
+--> Referenced 'C:/Users/dsyme/.nuget/packages/newtonsoft.json/13.0.1/lib/net45/Newtonsoft.Json.dll' (file may be locked by F# Interactive process)
+
 module FSI_0317.
        D27805741a339047ef3ed7a2ca8faae3c17e6ef2371984011e49a6c9c3286641
 
@@ -2030,6 +2033,36 @@ val it: unit = ()
 val it: unit = ()
 
 > val it: {| AnonRecordField2: int |} = { AnonRecordField2 = 11 }
+
+
+--> Referenced 'C:/Users/dsyme/.nuget/packages/microsoft.bcl.asyncinterfaces/6.0.0/lib/net461/Microsoft.Bcl.AsyncInterfaces.dll' (file may be locked by F# Interactive process)
+
+
+--> Referenced 'C:/Users/dsyme/.nuget/packages/newtonsoft.json/13.0.1/lib/net45/Newtonsoft.Json.dll' (file may be locked by F# Interactive process)
+
+
+--> Referenced 'C:/Users/dsyme/.nuget/packages/system.buffers/4.5.1/lib/net461/System.Buffers.dll' (file may be locked by F# Interactive process)
+
+
+--> Referenced 'C:/Users/dsyme/.nuget/packages/system.memory/4.5.4/lib/net461/System.Memory.dll' (file may be locked by F# Interactive process)
+
+
+--> Referenced 'C:/Users/dsyme/.nuget/packages/system.numerics.vectors/4.5.0/lib/net46/System.Numerics.Vectors.dll' (file may be locked by F# Interactive process)
+
+
+--> Referenced 'C:/Users/dsyme/.nuget/packages/system.runtime.compilerservices.unsafe/6.0.0/lib/net461/System.Runtime.CompilerServices.Unsafe.dll' (file may be locked by F# Interactive process)
+
+
+--> Referenced 'C:/Users/dsyme/.nuget/packages/system.text.encodings.web/6.0.0/lib/net461/System.Text.Encodings.Web.dll' (file may be locked by F# Interactive process)
+
+
+--> Referenced 'C:/Users/dsyme/.nuget/packages/system.text.json/6.0.5/lib/net461/System.Text.Json.dll' (file may be locked by F# Interactive process)
+
+
+--> Referenced 'C:/Users/dsyme/.nuget/packages/system.threading.tasks.extensions/4.5.4/lib/net461/System.Threading.Tasks.Extensions.dll' (file may be locked by F# Interactive process)
+
+
+--> Referenced 'C:/Users/dsyme/.nuget/packages/system.valuetuple/4.5.0/lib/net47/System.ValueTuple.dll' (file may be locked by F# Interactive process)
 
 module FSI_0324.Project.fsproj
 

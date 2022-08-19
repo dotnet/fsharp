@@ -1641,8 +1641,7 @@ type ParsedSigFileFragment =
         trivia: SynModuleOrNamespaceSigTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
-type ParsedScriptInteraction =
-    | Definitions of defns: SynModuleDecl list * range: range
+type ParsedScriptInteraction = Definitions of defns: SynModuleDecl list * range: range
 
 [<NoEquality; NoComparison>]
 type ParsedImplFile = ParsedImplFile of hashDirectives: ParsedHashDirective list * fragments: ParsedImplFileFragment list

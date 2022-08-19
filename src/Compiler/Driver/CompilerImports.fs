@@ -1042,32 +1042,34 @@ type TcImportsSafeDisposal
 // can be assumed to be shipped in all F# tooling where type providers have to load). After that,
 // once all type providers are updated, we will no longer need to have this fixed facade.
 
-/// This acts as a stable type supporting the 
+/// This acts as a stable type supporting the
 type TcImportsDllInfoFacade = { FileName: string }
 
 type TcImportsWeakFacade(tciLock: TcImportsLock, tcImportsWeak: WeakReference<TcImports>) =
-    
+
     let mutable dllInfos: TcImportsDllInfoFacade list = []
 
     // The name of these fields must not change, see above
-    do assert (nameof(dllInfos) = "dllInfos")
+    do assert (nameof (dllInfos) = "dllInfos")
 
     member _.SetDllInfos(value: ImportedBinary list) =
         tciLock.AcquireLock(fun tcitok ->
             RequireTcImportsLock(tcitok, dllInfos)
-            
+
             let infos =
-                [ for x in value do 
-                       let info = { FileName = x.FileName }
-                       // The name of this field must not change, see above
-                       assert (nameof(info.FileName) = "FileName")
-                       info ]
+                [
+                    for x in value do
+                        let info = { FileName = x.FileName }
+                        // The name of this field must not change, see above
+                        assert (nameof (info.FileName) = "FileName")
+                        info
+                ]
 
             dllInfos <- infos)
 
     member this.Base: TcImportsWeakFacade option =
         // The name of this property msut not change, see above
-        assert (nameof(this.Base) = "Base")
+        assert (nameof (this.Base) = "Base")
 
         match tcImportsWeak.TryGetTarget() with
         | true, tcImports ->
@@ -1290,13 +1292,13 @@ and [<Sealed>] TcImports
                 | None -> None
 
         match look tcImports with
-        | Some res -> ResolvedImportedAssembly (res, m)
+        | Some res -> ResolvedImportedAssembly(res, m)
         | None ->
             tcImports.ImplicitLoadIfAllowed(ctok, m, assemblyName, lookupOnly)
 
             match look tcImports with
-            | Some res -> ResolvedImportedAssembly (res, m)
-            | None -> UnresolvedImportedAssembly (assemblyName, m)
+            | Some res -> ResolvedImportedAssembly(res, m)
+            | None -> UnresolvedImportedAssembly(assemblyName, m)
 
     member tcImports.FindCcu(ctok, m, assemblyName, lookupOnly) =
         CheckDisposed()
@@ -1735,7 +1737,7 @@ and [<Sealed>] TcImports
                 let tcImports = tcImportsWeak
 
                 // The name of this captured value must not change, see comments on TcImportsWeakFacade above
-                assert (nameof(tcImports) = "tcImports")
+                assert (nameof (tcImports) = "tcImports")
 
                 let mutable systemRuntimeContainsTypeRef =
                     (fun typeName -> tcImports.SystemRuntimeContainsType typeName)
@@ -1964,7 +1966,7 @@ and [<Sealed>] TcImports
             ccuinfo.TypeProviders <-
                 tcImports.ImportTypeProviderExtensions(ctok, tcConfig, fileName, ilScopeRef, attrs, ccu.Contents, invalidateCcu, m)
 #endif
-            [ ResolvedImportedAssembly (ccuinfo, m) ]
+            [ ResolvedImportedAssembly(ccuinfo, m) ]
 
         phase2
 
@@ -2104,7 +2106,9 @@ and [<Sealed>] TcImports
 #if !NO_TYPEPROVIDERS
             ccuRawDataAndInfos |> List.iter (fun (_, _, phase2) -> phase2 ())
 #endif
-            ccuRawDataAndInfos |> List.map p23 |> List.map (fun asm -> ResolvedImportedAssembly (asm, m))
+            ccuRawDataAndInfos
+            |> List.map p23
+            |> List.map (fun asm -> ResolvedImportedAssembly(asm, m))
 
         phase2
 
@@ -2553,8 +2557,7 @@ let RequireReferences (ctok, tcImports: TcImports, tcEnv, thisAssemblyName, reso
         ccuinfos
         |> List.map (function
             | ResolvedImportedAssembly (asm, m) -> asm, m
-            | UnresolvedImportedAssembly (assemblyName, m) ->
-                error (Error(FSComp.SR.buildCouldNotResolveAssembly (assemblyName), m)))
+            | UnresolvedImportedAssembly (assemblyName, m) -> error (Error(FSComp.SR.buildCouldNotResolveAssembly (assemblyName), m)))
 
     let g = tcImports.GetTcGlobals()
     let amap = tcImports.GetImportMap()
