@@ -245,20 +245,23 @@ let test() =
     
     [<Test>]
     let ``Overloading on System.Nullable<int>, System.Nullable<'T> and int all work without error``() =
-        CompilerAssert.Pass
+        CompilerAssert.RunScript
             """
-module Test
-    
+let assertTrue x =
+    (x || failwith "Unexpected overload") |> ignore
+
 type M() =
-    static member A(n: System.Nullable<'T>) = ()
-    static member A(n: System.Nullable<int>) = ()
-    static member A(n: int) = ()
+    static member A(n: System.Nullable<'T>) = 1
+    static member A(n: System.Nullable<int>) = 2
+    static member A(n: int) = 3
 
 let test() =
-    M.A(System.Nullable 3)
-    M.A(System.Nullable 3.)
-    M.A(3)
-"""
+    M.A(System.Nullable 3.) = 1 |> assertTrue
+    M.A(System.Nullable 3) = 2 |> assertTrue
+    M.A(3) = 3 |> assertTrue
+    
+test()
+        """ []
 
     [<Test>]
     let ``Picking overload for typar does not favor any form of System.Nullable nor produce ambiguity warnings``() =
@@ -349,3 +352,22 @@ let test() =
   } 
             """
         ]))
+
+    [<Test>]
+    let ``Test retrieving an argument set in nested method call property setter works``() =
+        CompilerAssert.RunScript
+            """
+type Input<'T>(v: 'T) =
+    member _.Value = v
+    static member op_Implicit(value: 'T): Input<'T> = Input<'T>(value)
+
+type OtherArgs() =
+    member val Name: string = Unchecked.defaultof<_> with get,set
+type SomeArgs() =
+    member val OtherArgs: Input<OtherArgs> = Unchecked.defaultof<_> with get, set
+    
+let test() =
+    SomeArgs(OtherArgs = OtherArgs(Name = "test"))
+    
+if not (test().OtherArgs.Value.Name = "test") then failwith "Unexpected value was returned after setting Name"
+        """ []
