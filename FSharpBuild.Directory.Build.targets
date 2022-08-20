@@ -22,6 +22,35 @@
     </NoneSubstituteText>
   </ItemDefinitionGroup>
 
+  <!-- Workaround https://github.com/dotnet/fsharp/issues/13730 by setting DOTNET_gcServer=1 when running compiler from .NET SDK -->
+  <UsingTask
+    TaskName="SetEnvironmentVariableTask"
+    TaskFactory="RoslynCodeTaskFactory"
+    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+
+    <ParameterGroup>
+      <Name ParameterType="System.String" Required="true" />
+      <Value ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+
+    <Task>
+      <Using Namespace="System" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+          Environment.SetEnvironmentVariable(Name, Value);
+        ]]>
+      </Code>
+    </Task>
+
+  </UsingTask>
+  <Target Name="SetGcServerWhenRunningSdkCompiler" BeforeTargets="CoreCompile"  Condition="'$(Configuration)' == 'Proto' OR '$(DisableCompilerRedirection)'=='true'">
+    <SetEnvironmentVariableTask Name="DOTNET_gcServer" Value="1" />
+  </Target>
+  <Target Name="UnsetGcServerAfterRunningSdkCompiler" AfterTargets="CoreCompile"  Condition="'$(Configuration)' == 'Proto' OR '$(DisableCompilerRedirection)'=='true'">
+    <SetEnvironmentVariableTask Name="DOTNET_gcServer" Value="0" />
+  </Target>
+  <!-- End workaround-->
+
   <Target Name="NoneSubstituteTextFiles"
           Inputs="@(NoneSubstituteText)"
           Outputs="@(NoneSubstituteText->'$(IntermediateOutputPath)%(Filename)%(Extension)')"
