@@ -69,6 +69,7 @@
     <Compile Include="Conformance\DeclarationElements\ModuleAbbreviations\ModuleAbbreviations.fs" />
     <Compile Include="Conformance\DeclarationElements\UseBindings\UseBindings.fs" />
     <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication\BasicApplication.fs" />
+    <Compile Include="Conformance\Expressions\ApplicationExpressions\BasicApplication\ThomasTest.fs" />
     <Compile Include="Conformance\Expressions\BindingExpressions\BindingExpressions.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs" />
     <Compile Include="Conformance\Expressions\ControlFlowExpressions\SequenceIteration\SequenceIteration.fs" />
