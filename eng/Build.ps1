@@ -425,6 +425,18 @@ try {
 
     [System.Environment]::SetEnvironmentVariable('DOTNET_ROLL_FORWARD_TO_PRERELEASE', '1', [System.EnvironmentVariableTarget]::User)
 
+    # Workaround https://github.com/dotnet/fsharp/issues/13730
+    $env:DOTNET_gcServer = "1"
+    Write-Host "* "
+    Write-Host "******************** NOTE ************************"
+    Write-Host "* DOTNET_gcServer=1 is set within this build script"
+    Write-Host "* to get the .NET 7 preview 7 F# compiler efficient."
+    Write-Host "* "
+    Write-Host "* See https://github.com/dotnet/fsharp/issues/13730"
+    Write-Host "* "
+    Write-Host "* Be aware of this when analyzing any performance issues"
+    Write-Host "**************************************************"
+    Write-Host "* "
 
     Process-Arguments
 
