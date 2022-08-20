@@ -5449,6 +5449,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.LongIdent _
     | SynExpr.App _
     | SynExpr.Dynamic _
+    | SynExpr.DotLambda _
     | SynExpr.DotGet _ ->
         error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
 
@@ -8586,6 +8587,7 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.TypeTest (synExpr, _, _)
         | SynExpr.Upcast (synExpr, _, _)
         | SynExpr.DotGet (synExpr, _, _, _)
+        | SynExpr.DotLambda (synExpr, _, _, _)
         | SynExpr.Downcast (synExpr, _, _)
         | SynExpr.InferredUpcast (synExpr, _)
         | SynExpr.InferredDowncast (synExpr, _)

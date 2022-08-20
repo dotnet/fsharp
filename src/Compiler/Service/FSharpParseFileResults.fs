@@ -627,6 +627,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | SynExpr.Assert (e, _)
                         | SynExpr.Fixed (e, _)
                         | SynExpr.DotGet (e, _, _, _)
+                        | SynExpr.DotLambda (e, _, _, _)
                         | SynExpr.LongIdentSet (_, e, _)
                         | SynExpr.New (_, _, e, _)
                         | SynExpr.TypeApp (e, _, _, _, _, _, _)

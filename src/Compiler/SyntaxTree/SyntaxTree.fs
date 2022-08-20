@@ -610,6 +610,8 @@ type SynExpr =
     | LongIdentSet of longDotId: SynLongIdent * expr: SynExpr * range: range
 
     | DotGet of expr: SynExpr * rangeOfDot: range * longDotId: SynLongIdent * range: range
+    
+    | DotLambda of expr: SynExpr * rangeOfDot: range * longDotId: SynLongIdent * range: range
 
     | DotSet of targetExpr: SynExpr * longDotId: SynLongIdent * rhsExpr: SynExpr * range: range
 
@@ -748,6 +750,7 @@ type SynExpr =
         | SynExpr.DotIndexedGet (range = m)
         | SynExpr.DotIndexedSet (range = m)
         | SynExpr.DotGet (range = m)
+        | SynExpr.DotLambda (range=m)
         | SynExpr.DotSet (range = m)
         | SynExpr.Set (range = m)
         | SynExpr.DotNamedIndexedPropertySet (range = m)

@@ -4332,6 +4332,10 @@ atomicExpr:
         let lhsm = rhs2 parseState 1 2
         SynExpr.Typar(typar, lhsm), false }
 
+ | UNDERSCORE DOT atomicExprQualification 
+      { let arg1 = SynExpr.Ident (ident("a", rhs parseState 1))
+        $3 arg1 (lhs parseState) (rhs parseState 2), false }
+        
   | atomicExpr DOT atomicExprQualification 
       { let arg1, hpa1 = $1 
         $3 arg1 (lhs parseState) (rhs parseState 2), hpa1 }
