@@ -5449,7 +5449,6 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.LongIdent _
     | SynExpr.App _
     | SynExpr.Dynamic _
-    | SynExpr.DotLambda _
     | SynExpr.DotGet _ ->
         error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
 
@@ -5468,7 +5467,14 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcNonControlFlowExpr env <| fun env ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcConstExpr cenv overallTy env m tpenv synConst
-
+    | SynExpr.DotLambda (SynLongIdent(lid, dots, trivia), m) ->
+    
+        let svar = mkSynCompGenSimplePatVar (mkSynId m "unitVar")
+        let longIdent = SynExpr.LongIdent(false, SynLongIdent((mkSynId m "unitVar")::lid, dots, None::trivia), None, m)
+        let lambda = SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ], m), longIdent, None, m, SynExprLambdaTrivia.Zero)
+        
+        TcIteratedLambdas cenv true env overallTy Set.empty tpenv lambda
+    //    TcIteratedLambda
     | SynExpr.Lambda _ ->
         TcIteratedLambdas cenv true env overallTy Set.empty tpenv synExpr
 
@@ -8587,7 +8593,6 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.TypeTest (synExpr, _, _)
         | SynExpr.Upcast (synExpr, _, _)
         | SynExpr.DotGet (synExpr, _, _, _)
-        | SynExpr.DotLambda (synExpr, _, _, _)
         | SynExpr.Downcast (synExpr, _, _)
         | SynExpr.InferredUpcast (synExpr, _)
         | SynExpr.InferredDowncast (synExpr, _)
@@ -8601,6 +8606,7 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.Const _
         | SynExpr.Typar _
         | SynExpr.LongIdent _
+        | SynExpr.DotLambda _
         | SynExpr.Dynamic _ -> true
 
         | SynExpr.Tuple (_, synExprs, _, _)

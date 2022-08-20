@@ -16,9 +16,47 @@ module ThomasTests =
         
     [<Fact>]
     let ``Fails`` () =
-        Fsx """ let x = "a" in a |> _.Length"""
+        Fsx """ let x = "a" in x |> _.Length"""
         |> compile
         |> shouldSucceed
+        
+    [<Fact>]
+    let ``Types`` () =
+        Fsx """
+let a : (string -> _) = _.Length
+let b = _.ToString()
+let c = _.ToString().Length
+//let c = _.ToString()[0]
+"""
+        |> compile
+        |> shouldSucceed
+        
+    [<Fact>]
+    let ``Failing`` () =
+                Fsx """
+            let rec GenericHashParamObj (iec : IEqualityComparer) (x: obj) : int =
+                  match x with 
+                  | null -> 0 
+                  | (:? System.Array as a) -> 
+                      match a with 
+                      | :? (obj[]) as oa -> GenericHashObjArray iec oa 
+                      | :? (byte[]) as ba -> GenericHashByteArray ba 
+                      | :? (int[]) as ba -> GenericHashInt32Array ba 
+                      | :? (int64[]) as ba -> GenericHashInt64Array ba 
+                      | _ -> GenericHashArbArray iec a 
+                  | :? IStructuralEquatable as a ->    
+                      a.GetHashCode(iec)
+                  | _ -> 
+                      x.GetHashCode()
+                """ |> compile |> shouldSucceed
+        
+        
+    //     
+    // [<Fact>]
+    // let ``Fails2`` () =
+    //     
+    //     """ let x = "a" in a |> _.Length"""
+    //     |> getParseResults
 //     [<Fact>]
 //     let ``Regression: Empty Interpolated String properly typechecks with explicit type on binding`` () =
 //         Fsx """ let a:byte = $"string" """

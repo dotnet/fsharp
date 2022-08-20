@@ -611,7 +611,7 @@ type SynExpr =
 
     | DotGet of expr: SynExpr * rangeOfDot: range * longDotId: SynLongIdent * range: range
     
-    | DotLambda of expr: SynExpr * rangeOfDot: range * longDotId: SynLongIdent * range: range
+    | DotLambda of longDotId: SynLongIdent * range: range
 
     | DotSet of targetExpr: SynExpr * longDotId: SynLongIdent * rhsExpr: SynExpr * range: range
 

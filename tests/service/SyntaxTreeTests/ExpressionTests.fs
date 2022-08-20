@@ -5,6 +5,12 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open NUnit.Framework
 
+open Xunit
+[<Fact>]
+let ``Thomas`` () =
+    let ast = """_.ToString.ToString "b" """ |> getParseResults
+    Assert.Fail (ast.ToString())
+    
 [<Test>]
 let ``SynExpr.Do contains the range of the do keyword`` () =
     let ast = """let a =
