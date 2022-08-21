@@ -319,3 +319,36 @@ module ModuleDefinitions =
         |> withReferences [libFoo2; libFoo1]
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Regression: compilation error with private types in namespace used in a different file`` () =
+        let types =
+            """
+            namespace FsErrorRepro
+
+            type private Blah = { Number: int }
+            """
+        let example =
+            """
+            [<RequireQualifiedAccess>]
+            module FsErrorRepro.Example
+
+            let dummy (blahNum: int) =
+                let blah : Blah = { Number = blahNum }
+                printf $"%i{blah.Number}"
+            """
+        let program =
+            """
+            module FsErrorRepro.Main
+
+            [<EntryPoint>]
+            let main _ = 
+                Example.dummy 15
+                0
+            """
+
+        FSharp types
+        |> withAdditionalSourceFiles [SourceCodeFileKind.Create("example.fs", example)
+                                      SourceCodeFileKind.Create("program.fs", program)]
+        |> compile
+        |> shouldSucceed
