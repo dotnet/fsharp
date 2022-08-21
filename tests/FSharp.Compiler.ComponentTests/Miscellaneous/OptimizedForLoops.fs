@@ -19,3 +19,9 @@ module OptimizedForLoops =
         compilation
         |> compileExeAndRun
         |> shouldSucceed
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NearMaxForLoops.fs"|])>]
+    let ``Optimized loops with values near Int32 MaxValue should match OperatorIntrinsics RangeInt32 behavior`` compilation =
+        compilation
+        |> compileExeAndRun
+        |> shouldSucceed

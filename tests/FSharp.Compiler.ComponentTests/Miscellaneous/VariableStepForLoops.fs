@@ -1,10 +1,10 @@
 ﻿// 1020100 test cases
 let test n step m =
-    let expected = seq { n .. step .. m}
+    let expected = seq { n .. step .. m }
     let actual = ResizeArray()
     for i in n .. step .. m do
         actual.Add i
-    Seq.forall2 (=) actual expected
+    Seq.length expected = actual.Count && Seq.forall2 (=) actual expected
 
 let ns = [ -50 .. 50 ]
 let ms = [ -50 .. 50 ]
