@@ -27,6 +27,7 @@ let setupCompilation compilation =
 let ``IWSAM test files`` compilation =
     compilation
     |> setupCompilation
+    |> withLangVersionPreview
     |> compileAndRun
     |> shouldSucceed
 
