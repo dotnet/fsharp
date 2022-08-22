@@ -1903,55 +1903,63 @@ type internal FsiDynamicCompiler(
         let breakStatement = SynExpr.App (ExprAtomicFlag.Atomic, false, methCall, args, m)
         SynModuleDecl.Expr(breakStatement, m)
 
-    // References are collected across a group of #r declarations and only actually added to the interactive
-    // state once all are collected.
-    member _.AddDelayedReference (ctok, m, path) =
-        if FileSystem.IsInvalidPathShim(path) then
-            error(Error(FSIstrings.SR.fsiInvalidAssembly(path),m))
+    /// Resolve and register an assembly reference, delaying the actual addition of the reference
+    /// to tcImports until a whole set of references has been collected.
+    ///
+    /// That is, references are collected across a group of #r declarations and only added to the
+    /// tcImports state once all are collected.
+    member _.AddDelayedReference (ctok, path, show, m) =
 
-        // Check the file can be resolved before calling requireDLLReference
+        // Check the file can be resolved
+        if FileSystem.IsInvalidPathShim(path) then
+            error(Error(FSIstrings.SR.fsiInvalidAssembly(path), m))
+
+        // Do the resolution
         let resolutions =
             tcImports.ResolveAssemblyReference(ctok, AssemblyReference(m,path,None), ResolveAssemblyReferenceMode.ReportErrors)
 
-        delayedReferences.Add((m, path, resolutions ))
+        // Delay the addition of the assembly to the interactive state
+        delayedReferences.Add((path, resolutions, show, m))
 
+    /// Indicates if there are delayed assembly additions to be processed.
     member _.HasDelayedReferences = delayedReferences.Count > 0
 
+    /// Process any delayed assembly additions.
     member _.ProcessDelayedReferences (ctok, istate) =
+
+        // Grab the dealyed assembly reference additions
         let refs = delayedReferences |> Seq.toList
         delayedReferences.Clear()
         
-        //printfn "--- start reference group ----"
-        for (m, path, _) in refs do
-            //printfn $"{path}"
-            if FileSystem.IsInvalidPathShim(path) then
-                error(Error(FSIstrings.SR.fsiInvalidAssembly(path),m))
-        //printfn "--- end reference group ----"
+        // Print the explicit assembly resolutions. Only for explicit '#r' in direct inputs, not those
+        // in #load files. This means those resulting from nuget package resolution are not shown.
+        for (_, resolutions, show, _) in refs do
+            if show then
+                for ar in resolutions do
+                    let format =
+                        if tcConfigB.shadowCopyReferences then
+                            let resolvedPath = ar.resolvedPath.ToUpperInvariant()
+                            let fileTime = FileSystem.GetLastWriteTimeShim(resolvedPath)
+                            match reportedAssemblies.TryGetValue resolvedPath with
+                            | false, _ ->
+                                reportedAssemblies.Add(resolvedPath, fileTime)
+                                FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
+                            | true, time when time <> fileTime ->
+                                FSIstrings.SR.fsiDidAHashrWithStaleWarning(ar.resolvedPath)
+                            | _ ->
+                                FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
+                        else
+                            FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
 
-        // Check the file can be resolved before calling requireDLLReference
+                    fsiConsoleOutput.uprintnfnn "%s" format
+
+        // Collect the overall resolutions
         let resolutions =
-            [ for (_, _, resolutions) in refs do
+            [ for (_, resolutions, _, _) in refs do
                 yield! resolutions ]
 
-        for ar in resolutions do
-            let format =
-                if tcConfigB.shadowCopyReferences then
-                    let resolvedPath = ar.resolvedPath.ToUpperInvariant()
-                    let fileTime = FileSystem.GetLastWriteTimeShim(resolvedPath)
-                    match reportedAssemblies.TryGetValue resolvedPath with
-                    | false, _ ->
-                        reportedAssemblies.Add(resolvedPath, fileTime)
-                        FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
-                    | true, time when time <> fileTime ->
-                        FSIstrings.SR.fsiDidAHashrWithStaleWarning(ar.resolvedPath)
-                    | _ ->
-                        FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
-                else
-                    FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
-
-            fsiConsoleOutput.uprintnfnn "%s" format
-
-        for (m, path, _) in refs do
+        // Add then to the config.
+        for (path, _, _, m) in refs do
             tcConfigB.AddReferencedAssemblyByPath(m, path)
 
         let tcState = istate.tcState
@@ -1960,7 +1968,7 @@ type internal FsiDynamicCompiler(
             try
                 RequireReferences (ctok, tcImports, tcState.TcEnvFromImpls, dynamicCcuName, resolutions)
             with _ ->
-                for (m, path, _) in refs do
+                for (path, _, _, m) in refs do
                     tcConfigB.RemoveReferencedAssemblyByPath(m,path)
                 reraise()
 
@@ -2040,7 +2048,7 @@ type internal FsiDynamicCompiler(
                         reraise ()
             )
 
-    member fsiDynamicCompiler.PartiallyProcessReferenceDirective (ctok, istate, directive, path, m) =
+    member fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective (ctok, istate, directiveKind, path, show, m) =
         let dm = fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
         match dm with
         | Null, Null ->
@@ -2049,13 +2057,13 @@ type internal FsiDynamicCompiler(
 
         | _, NonNull dependencyManager ->
             if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                fsiDynamicCompiler.AddDelayedDependencyManagerText(dependencyManager, directive, m, path)
+                fsiDynamicCompiler.AddDelayedDependencyManagerText(dependencyManager, directiveKind, m, path)
                 istate, Completed None
             else
                 errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
                 istate, Completed None
 
-        | _, _ when directive = Directive.Include ->
+        | _, _ when directiveKind = Directive.Include ->
             errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
             istate, Completed None
 
@@ -2064,23 +2072,23 @@ type internal FsiDynamicCompiler(
                 if String.IsNullOrWhiteSpace(p) then ""
                 else p
 
-            fsiDynamicCompiler.AddDelayedReference(ctok, m, path)
+            fsiDynamicCompiler.AddDelayedReference(ctok, path, show, m)
 
             istate, Completed None
 
     /// Scrape #r, #I and package manager commands from a #load
-    member fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate: FsiDynamicCompilerState, sourceFile, inp) =
+    member fsiDynamicCompiler.ProcessMetaCommandsFromParsedInputAsInteractiveCommands(ctok, istate: FsiDynamicCompilerState, sourceFile, input) =
         WithImplicitHome
            (tcConfigB, directoryName sourceFile)
            (fun () ->
                ProcessMetaCommandsFromInput
                    ((fun st (m,nm) -> tcConfigB.TurnWarningOff(m,nm); st),
                     (fun st (m, path, directive) ->
-                        let st, _ = fsiDynamicCompiler.PartiallyProcessReferenceDirective (ctok, st, directive, path, m)
+                        let st, _ = fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective (ctok, st, directive, path, false, m)
                         st
                     ),
                     (fun _ _ -> ()))
-                   (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
+                   (tcConfigB, input, Path.GetDirectoryName sourceFile, istate))
 
     member fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, sourceFiles, lexResourceManager, diagnosticsLogger: DiagnosticsLogger) =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
@@ -2128,7 +2136,7 @@ type internal FsiDynamicCompiler(
                 |> List.unzip
 
             diagnosticsLogger.AbortOnError(fsiConsoleOutput);
-            let istate = (istate, sourceFiles, inputs) |||> List.fold2 (fun istate sourceFile input -> fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, input))
+            let istate = (istate, sourceFiles, inputs) |||> List.fold2 (fun istate sourceFile input -> fsiDynamicCompiler.ProcessMetaCommandsFromParsedInputAsInteractiveCommands(ctok, istate, sourceFile, input))
 
             let istate = fsiDynamicCompiler.ProcessDelayedReferences (ctok, istate)
 
@@ -2737,10 +2745,10 @@ type FsiInteractionProcessor
             istate, Completed None
 
         | ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveArguments [path], m) ->
-            fsiDynamicCompiler.PartiallyProcessReferenceDirective (ctok, istate, Directive.Resolution, path, m)
+            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective (ctok, istate, Directive.Resolution, path, true, m)
 
         | ParsedHashDirective("i", ParsedHashDirectiveArguments [path], m) ->
-            fsiDynamicCompiler.PartiallyProcessReferenceDirective (ctok, istate, Directive.Include, path, m)
+            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective (ctok, istate, Directive.Include, path, true, m)
 
         | ParsedHashDirective("I", ParsedHashDirectiveArguments [path], m) ->
             tcConfigB.AddIncludePath (m, path, tcConfigB.implicitIncludeDir)
