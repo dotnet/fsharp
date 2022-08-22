@@ -23,25 +23,6 @@ module ``Required and init-only properties`` =
 
     let csharpRBaseClass = 
         CSharp """
-    // Until we move to .NET7 runtime (or use experimental)
-    namespace System.Runtime.CompilerServices
-    {
-        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
-        public sealed class RequiredMemberAttribute : Attribute { }
-        [AttributeUsage(AttributeTargets.All, AllowMultiple = true, Inherited = false)]
-        public sealed class CompilerFeatureRequiredAttribute : Attribute
-        {
-            public CompilerFeatureRequiredAttribute(string featureName)
-            {
-                FeatureName = featureName;
-            }
-            public string FeatureName { get; }
-            public bool IsOptional { get; init; }
-            public const string RefStructs = nameof(RefStructs);
-            public const string RequiredMembers = nameof(RequiredMembers);
-        }
-    }
-    
     namespace RequiredAndInitOnlyProperties
     {
         public sealed class RAIO
@@ -382,32 +363,7 @@ let main _ =
     let ``F# should only be able to explicitly call constructors which set SetsRequiredMembersAttribute`` () =
 
         let csharpLib =
-            CSharp """
-        // Until we move to .NET7 runtime (or use experimental)
-        namespace System.Runtime.CompilerServices
-        {
-            [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
-            public sealed class RequiredMemberAttribute : Attribute { }
-            [AttributeUsage(AttributeTargets.All, AllowMultiple = true, Inherited = false)]
-            public sealed class CompilerFeatureRequiredAttribute : Attribute
-            {
-                public CompilerFeatureRequiredAttribute(string featureName)
-                {
-                    FeatureName = featureName;
-                }
-                public string FeatureName { get; }
-                public bool IsOptional { get; init; }
-                public const string RefStructs = nameof(RefStructs);
-                public const string RequiredMembers = nameof(RequiredMembers);
-            }
-        }
-
-        namespace System.Diagnostics.CodeAnalysis
-        {
-            [AttributeUsage(AttributeTargets.Constructor, AllowMultiple=false, Inherited=false)]
-            public sealed class SetsRequiredMembersAttribute : Attribute {}
-        }
-        
+            CSharp """        
         namespace RequiredAndInitOnlyProperties
         {
             using System.Runtime.CompilerServices;
@@ -459,3 +415,25 @@ let main _ =
         |> compile
         |> shouldFail
         |> withSingleDiagnostic (Error 3545, Line 7, Col 21, Line 7, Col 30, "The following required properties have to be initalized:" + Environment.NewLine + "   property RAIO.GetSet: int with get, set" + Environment.NewLine + "   property RAIO.GetInit: int with get, set")
+
+#if !NETCOREAPP
+    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
+#else
+    [<Fact>]
+#endif
+    let ``F# should produce a warning if RequiredMemberAttribute is specified`` () =
+        let fsharpSource =
+            """
+namespace FooBarBaz
+open System
+open System.Runtime.CompilerServices
+type RAIOFS() =
+    [<RequiredMember>]
+    member val GetSet = 0 with get, set
+"""
+        FSharp fsharpSource
+        |> asLibrary
+        |> withLangVersionPreview
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 202, Line 6, Col 7, Line 6, Col 21, "This attribute is currently unsupported by the F# compiler. Applying it will not achieve its intended effect.")
