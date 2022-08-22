@@ -334,27 +334,35 @@ type StringBuilder with
 // Imperative Graphs
 //---------------------------------------------------------------------------
 
-type GraphNode<'Data, 'Id> = { nodeId: 'Id; nodeData: 'Data; mutable nodeNeighbours: GraphNode<'Data, 'Id> list }
+type GraphNode<'NodeData, 'NodeId, 'EdgeData> =
+    { nodeId: 'NodeId
+      nodeData: 'NodeData
+      mutable nodeNeighbours: (GraphNode<'NodeData, 'NodeId, 'EdgeData> * 'EdgeData) list }
 
-type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
-         (nodeIdentity: 'Data -> 'Id,
-          nodes: 'Data list,
-          edges: ('Data * 'Data) list) =
+type Graph<'NodeData, 'NodeId, 'EdgeData when 'NodeId: comparison>
+         (nodeIdentity: 'NodeData -> 'NodeId,
+          nodes: 'NodeData list,
+          edges: ('NodeData * 'NodeData * 'EdgeData) list) =
 
-    let edges = edges |> List.map (fun (v1, v2) -> nodeIdentity v1, nodeIdentity v2)
+    let edges = edges |> List.map (fun (v1, v2, ed) -> nodeIdentity v1, nodeIdentity v2, ed)
     let nodes = nodes |> List.map (fun d -> nodeIdentity d, { nodeId = nodeIdentity d; nodeData=d; nodeNeighbours=[] })
     let tab = Map.ofList nodes
     let nodes = List.map snd nodes
     do for node in nodes do
-        node.nodeNeighbours <- edges |> List.filter (fun (x, _y) -> x = node.nodeId) |> List.map (fun (_, nodeId) -> tab[nodeId])
+        node.nodeNeighbours <-
+            edges
+            |> List.filter (fun (x, _y, _) -> x = node.nodeId)
+            |> List.map (fun (_, nodeId, edgeData) -> tab[nodeId], edgeData)
 
-    member g.GetNodeData nodeId = tab[nodeId].nodeData
+    let rec trace f path node =
+        if path |> List.exists (fun (id, _) -> id |> nodeIdentity |> (=) node.nodeId) then f (List.rev path)
+        else node.nodeNeighbours |> List.iter (fun (neighbour, edgeData) -> trace f ((node.nodeData, edgeData) :: path) neighbour)
 
-    member g.IterateCycles f =
-        let rec trace path node =
-            if List.exists (nodeIdentity >> (=) node.nodeId) path then f (List.rev path)
-            else List.iter (trace (node.nodeData :: path)) node.nodeNeighbours
-        List.iter (fun node -> trace [] node) nodes
+    member _.IterateCyclesFrom node f =
+        trace f [] tab[nodeIdentity node]
+
+    member _.IterateCycles f =
+        List.iter (trace f []) nodes
 
 //---------------------------------------------------------------------------
 // In some cases we play games where we use 'null' as a more efficient representation

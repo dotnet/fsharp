@@ -3481,15 +3481,14 @@ module EstablishTypeDefinitionCores =
             | None -> []
             | Some ty -> accInAbbrevType ty []
 
-        let edges = List.collect edgesFrom tycons
-        let graph = Graph<Tycon, Stamp> ((fun tycon -> tycon.Stamp), tycons, edges)
+        let edges = tycons |> List.collect edgesFrom |> List.map (fun (n1,n2) -> n1, n2, ())
+        let graph = Graph<Tycon, Stamp, unit> ((fun tycon -> tycon.Stamp), tycons, edges)
         graph.IterateCycles (fun path -> 
-            let tycon = path.Head 
+            let tycon, _ = path.Head 
             // The thing is cyclic. Set the abbreviation and representation to be "None" to stop later VS crashes
             tycon.SetTypeAbbrev None
             tycon.entity_tycon_repr <- TNoRepr
             errorR(Error(FSComp.SR.tcTypeDefinitionIsCyclic(), tycon.Range)))
-
 
     /// Check that a set of type definitions is free of inheritance cycles
     let TcTyconDefnCore_CheckForCyclicStructsAndInheritance (cenv: cenv) tycons =
@@ -3626,10 +3625,10 @@ module EstablishTypeDefinitionCores =
                 // Note: only the nominal type counts 
                 List.foldBack insertEdgeToType tycon.ImmediateInterfaceTypesOfFSharpTycon acc
             acc
-        let edges = (List.collect edgesFrom tycons)
-        let graph = Graph<Tycon, Stamp> ((fun tc -> tc.Stamp), tycons, edges)
+        let edges = List.collect edgesFrom tycons |> List.map (fun (d1, d2) -> d1, d2, ())
+        let graph = Graph<Tycon, Stamp, unit> ((fun tc -> tc.Stamp), tycons, edges)
         graph.IterateCycles (fun path -> 
-            let tycon = path.Head 
+            let tycon, _ = path.Head 
             // The thing is cyclic. Set the abbreviation and representation to be "None" to stop later VS crashes
             tycon.SetTypeAbbrev None
             tycon.entity_tycon_repr <- TNoRepr

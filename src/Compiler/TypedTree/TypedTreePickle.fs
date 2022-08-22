@@ -1062,7 +1062,9 @@ let rec u_ILType st =
 
 and u_ILTypes st = u_list u_ILType st
 
-and u_ILCallSig = u_wrap (fun (a, b, c) -> {CallingConv=a; ArgTypes=b; ReturnType=c}) (u_tup3 u_ILCallConv u_ILTypes u_ILType)
+and u_ILCallSig st =
+    let a, b, c = u_tup3 u_ILCallConv u_ILTypes u_ILType st
+    { CallingConv=a; ArgTypes=b; ReturnType=c }
 
 and u_ILTypeSpec st = let a, b = u_tup2 u_ILTypeRef u_ILTypes st in ILTypeSpec.Create(a, b)
 

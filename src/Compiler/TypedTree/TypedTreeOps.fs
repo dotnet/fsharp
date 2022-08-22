@@ -1560,6 +1560,10 @@ type ValHash<'T> =
         | true, v -> Some v
         | _ -> None
 
+    member ht.ContainsVal (v: Val) = 
+        let (ValHash t) = ht
+        t.ContainsKey v.Stamp
+
     member ht.Add (v: Val, x) = 
         let (ValHash t) = ht
         t[v.Stamp] <- x

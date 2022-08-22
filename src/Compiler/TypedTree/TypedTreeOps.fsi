@@ -435,6 +435,8 @@ type ValHash<'T> =
 
     member Add: Val * 'T -> unit
 
+    member ContainsVal: Val -> bool
+
     static member Create: unit -> ValHash<'T>
 
 /// Maps Val's to list of T based on stamp keys

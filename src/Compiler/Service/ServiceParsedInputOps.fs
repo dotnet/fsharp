@@ -635,7 +635,7 @@ module ParsedInput =
             | SynPat.QuoteExpr (e, _) -> walkExpr e
             | _ -> None
 
-        and walkPat = walkPatWithKind None
+        and walkPat pat = walkPatWithKind None pat
 
         and walkBinding bind =
             let (SynBinding (attributes = Attributes attrs; headPat = pat; returnInfo = returnInfo; expr = e)) =
@@ -908,7 +908,9 @@ module ParsedInput =
 
             | _ -> None
 
-        and walkEnumCase (SynEnumCase(attributes = Attributes attrs)) = List.tryPick walkAttribute attrs
+        and walkEnumCase ecase =
+            let (SynEnumCase(attributes = Attributes attrs)) = ecase
+            List.tryPick walkAttribute attrs
 
         and walkUnionCaseType inp =
             match inp with

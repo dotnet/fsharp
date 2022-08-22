@@ -3318,11 +3318,22 @@ let ConvertArbitraryExprToEnumerable (cenv: cenv) ty (env: TcEnv) (expr: Expr) =
 //-------------------------------------------------------------------------
 
 type InitializationGraphAnalysisState =
-    | Top
-    | InnerTop
-    | DefinitelyStrict
-    | MaybeLazy
-    | DefinitelyLazy
+    /// Indicates the code is executed as part of initialization of the bindings.
+    ///
+    ///    isBinding: is this the binding itself, e.g.
+    ///        let x = <expr>
+    ///
+    ///    mutationFixable: is on a path to a valid immediate mutation
+    ///    fixup, e.g. a mutable record field.
+    ///
+    ///        let x = (..., <expr>, ...)
+    ///        let x = { ..., F = <expr>, ... }
+    ///        let x = UnionCase (... <expr>, ...)
+    | Eager of isBinding: bool * isMutationFixable: bool
+
+    | MaybeDelayed
+
+    | DefinitelyDelayed
 
 type PreInitializationGraphEliminationBinding =
     { FixupPoints: RecursiveUseFixupPoints
@@ -3346,151 +3357,245 @@ let EliminateInitializationGraphs
         hash
 
     // The output of the analysis
-    let mutable outOfOrder = false
-    let mutable runtimeChecks = false
+    let mutable outOfOrderReported = false
+    let mutable runtimeChecksReported = false
     let mutable directRecursiveData = false
-    let mutable reportedEager = false
-    let mutable definiteDependencies = []
+    let mutable eagerDependencies = []
+    let mutable allDependencies = []
 
-    let rec stripChooseAndExpr e =
-        match stripDebugPoints (stripExpr e) with
-        | Expr.TyChoose (_, b, _) -> stripChooseAndExpr b
-        | e -> e
+    let rec stripChooseAndExpr expr =
+        match stripDebugPoints (stripExpr expr) with
+        | Expr.TyChoose (_, body, _) -> stripChooseAndExpr body
+        | _ -> expr
 
-    let availIfInOrder = ValHash<_>.Create()
     let check boundv expr =
-        let strict = function
-            | MaybeLazy -> MaybeLazy
-            | DefinitelyLazy -> DefinitelyLazy
-            | Top | DefinitelyStrict | InnerTop -> DefinitelyStrict
-        let lzy = function
-            | Top | InnerTop | DefinitelyLazy -> DefinitelyLazy
-            | MaybeLazy | DefinitelyStrict -> MaybeLazy
-        let fixable = function
-            | Top | InnerTop -> InnerTop
-            | DefinitelyStrict -> DefinitelyStrict
-            | MaybeLazy -> MaybeLazy
-            | DefinitelyLazy -> DefinitelyLazy
 
-        let rec CheckExpr st e =
-            match stripChooseAndExpr e with
-              // Expressions with some lazy parts
-            | Expr.Lambda (_, _, _, _, b, _, _) -> checkDelayed st b
+        /// Used for sub-expressions that are eagerly evaluated but not
+        /// on a mutation-fixable path, e.g. each expression of an application
+        ///     let boundv = <expr> <expr>
+        let eager st =
+            match st with
+            | MaybeDelayed -> MaybeDelayed
+            | Eager _ -> Eager (false, false)
+            | DefinitelyDelayed -> DefinitelyDelayed
 
-            // Type-lambdas are analyzed as if they are strict.
+        /// Used for subexpressions on the mutation-fixable paths in the immediate structure of the bindings
+        ///   e.g. 
+        ///     let boundv = { F = boundv }
+        /// for mutable 'F'. 
+        let eagerFixable st =
+            match st with
+            | Eager (isBinding, isFixable) -> Eager (false, isBinding || isFixable)
+            | st -> st
+
+        /// Used for the bodies of object-expression methods for classes that may be executed as part of the object's initialization
+        /// The object leaks and in theory the base constructor can call the overridden methods.
+        let overrideMethodDelayed st =
+            match st with
+            | MaybeDelayed
+            | Eager _ -> MaybeDelayed
+            | DefinitelyDelayed -> DefinitelyDelayed
+
+        /// Used for the bodies of lambda expressions.
+        let lambdaDelayed st =
+            match st with
+            | MaybeDelayed
+            | Eager (false, _) -> MaybeDelayed
+            // let rec f x = <delayed>, the only place we produce DefinitelyDelayed
+            | Eager (true, _) -> DefinitelyDelayed
+            | DefinitelyDelayed -> DefinitelyDelayed
+
+        let rec CheckExpr st expr =
+            match stripChooseAndExpr expr with
+
+            // Expressions with some lazy parts
+            | Expr.Lambda (_, _, _, _, body, _, _) ->
+                CheckExpr (lambdaDelayed st) body
+
+            // Lone type-lambdas (type-functions) are analyzed as if they are eager.
             //
             // This is a design decision (See bug 6496), so that generalized recursive bindings such as
             //   let rec x = x
             // are analyzed. Although we give type "x: 'T" to these, from the users point of view
             // any use of "x" will result in an infinite recursion. Type instantiation is implicit in F#
             // because of type inference, which makes it reasonable to check generic bindings strictly.
-            | Expr.TyLambda (_, _, b, _, _) -> CheckExpr st b
+            | Expr.TyLambda (_, _, body, _, _) ->
+                CheckExpr st body
 
-            | Expr.Obj (_, ty, _, e, overrides, extraImpls, _) ->
+            | Expr.Obj (_, ty, _, ctorCall, overrides, extraImpls, _) ->
                 // NOTE: we can't fixup recursive references inside delegates since the closure delegee of a delegate is not accessible 
                 // from outside. Object expressions implementing interfaces can, on the other hand, be fixed up. See FSharp 1.0 bug 1469 
                 if isInterfaceTy g ty then 
-                    List.iter (fun (TObjExprMethod(_, _, _, _, e, _)) -> checkDelayed st e) overrides
-                    List.iter (snd >> List.iter (fun (TObjExprMethod(_, _, _, _, e, _)) -> checkDelayed st e)) extraImpls
+                    overrides |> List.iter (fun (TObjExprMethod(methodBodyExpr=body)) -> CheckExpr (lambdaDelayed st) body)
+                    extraImpls |> List.iter (snd >> List.iter (fun (TObjExprMethod(methodBodyExpr=body)) -> CheckExpr (lambdaDelayed st) body))
                 else
-                    CheckExpr (strict st) e
-                    List.iter (fun (TObjExprMethod(_, _, _, _, e, _)) -> CheckExpr (lzy (strict st)) e) overrides
-                    List.iter (snd >> List.iter (fun (TObjExprMethod(_, _, _, _, e, _)) -> CheckExpr (lzy (strict st)) e)) extraImpls
+                    CheckExpr (eager st) ctorCall
+                    overrides |> List.iter (fun (TObjExprMethod(methodBodyExpr=body)) -> CheckExpr (overrideMethodDelayed st) body)
+                    extraImpls |> List.iter (snd >> List.iter (fun (TObjExprMethod(methodBodyExpr=body)) -> CheckExpr (overrideMethodDelayed st) body))
 
               // Expressions where fixups may be needed
             | Expr.Val (v, _, m) -> CheckValRef st v m
 
-             // Expressions where subparts may be fixable
+            // Expressions on a fixable path
             | Expr.Op ((TOp.Tuple _ | TOp.UnionCase _ | TOp.Recd _), _, args, _) ->
-                List.iter (CheckExpr (fixable st)) args
+                args |> List.iter (CheckExpr (eagerFixable st))
 
-              // Composite expressions
+            // Composite expressions
             | Expr.Const _ -> ()
-            | Expr.LetRec (binds, e, _, _) ->
-                binds |> List.iter (CheckBinding (strict st))
-                CheckExpr (strict st) e
-            | Expr.Let (bind, e, _, _) ->
-                CheckBinding (strict st) bind
-                CheckExpr (strict st) e
-            | Expr.Match (_, _, pt, targets, _, _) ->
-                CheckDecisionTree (strict st) pt
-                Array.iter (CheckDecisionTreeTarget (strict st)) targets
-            | Expr.App (expr1, _, _, args, _) ->
-                CheckExpr (strict st) expr1
-                List.iter (CheckExpr (strict st)) args
-          // Binary expressions
+            | Expr.LetRec (binds, body, _, _) ->
+                binds |> List.iter (CheckBinding (eager st))
+                CheckExpr (eager st) body
+
+            | Expr.Let (bind, body, _, _) ->
+                CheckBinding (eager st) bind
+                CheckExpr (eager st) body
+
+            | Expr.Match (_, _, dtree, targets, _, _) ->
+                CheckDecisionTree (eager st) dtree
+                for target in targets do
+                    CheckDecisionTreeTarget (eager st) target
+
+            | Expr.App (funcExpr, _, _, args, _) ->
+                CheckExpr (eager st) funcExpr
+                args |> List.iter (CheckExpr (eager st))
+
             | Expr.Sequential (expr1, expr2, _, _)
             | Expr.StaticOptimization (_, expr1, expr2, _) ->
-                 CheckExpr (strict st) expr1; CheckExpr (strict st) expr2
-          // n-ary expressions
-            | Expr.Op (op, _, args, m) -> CheckExprOp st op m; List.iter (CheckExpr (strict st)) args
-          // misc
-            | Expr.Link eref -> CheckExpr st eref.Value
-            | Expr.DebugPoint (_, expr2) -> CheckExpr st expr2
-            | Expr.TyChoose (_, b, _) -> CheckExpr st b
+                CheckExpr (eager st) expr1
+                CheckExpr (eager st) expr2
+
+            | Expr.Op (op, _, args, m) ->
+                CheckExprOp st op m
+                for arg in args do
+                    CheckExpr (eager st) arg
+
+            | Expr.Link eref ->
+                CheckExpr st eref.Value
+
+            | Expr.DebugPoint (_, innerExpr) ->
+                CheckExpr st innerExpr
+
+            | Expr.TyChoose (_, body, _) ->
+                CheckExpr st body
+
             | Expr.Quote _ -> ()
-            | Expr.WitnessArg (_witnessInfo, _m) -> ()
+            | Expr.WitnessArg _ -> ()
 
-        and CheckBinding st (TBind(_, e, _)) = CheckExpr st e 
+        and CheckBinding st (TBind(_, rhsExpr, _)) =
+            CheckExpr st rhsExpr
 
-        and CheckDecisionTree st dt =
-            match dt with
-            | TDSwitch(expr1, csl, dflt, _) -> CheckExpr st expr1; List.iter (fun (TCase(_, d)) -> CheckDecisionTree st d) csl; Option.iter (CheckDecisionTree st) dflt
-            | TDSuccess (es, _) -> es |> List.iter (CheckExpr st)
-            | TDBind(bind, e) -> CheckBinding st bind; CheckDecisionTree st e
+        and CheckDecisionTree st tree =
+            match tree with
+            | TDSwitch(inputExpr, cases, dflt, _) ->
+                CheckExpr st inputExpr
+                for (TCase(_, subTree)) in cases do
+                    CheckDecisionTree st subTree
+                Option.iter (CheckDecisionTree st) dflt
+            
+            | TDSuccess (es, _) ->
+                es |> List.iter (CheckExpr st)
 
-        and CheckDecisionTreeTarget st (TTarget(_, e, _)) = CheckExpr st e
+            | TDBind(bind, subTree) ->
+                CheckBinding st bind
+                CheckDecisionTree st subTree
+
+        and CheckDecisionTreeTarget st (TTarget(_, targetExpr, _)) =
+            CheckExpr st targetExpr
 
         and CheckExprOp st op m =
             match op with
-            | TOp.LValueOp (_, lvr) -> CheckValRef (strict st) lvr m
+            | TOp.LValueOp (_, lvr) -> CheckValRef (eager st) lvr m
             | _ -> ()
 
         and CheckValRef st (v: ValRef) m =
-            match st with
-            | MaybeLazy ->
-                if recursiveVals.TryFind v.Deref |> Option.isSome then
-                    warning (RecursiveUseCheckedAtRuntime (denv, v, m))
-                    if not reportedEager then
-                      (warning (LetRecCheckedAtRuntime m); reportedEager <- true)
-                    runtimeChecks <- true
-
-            | Top | DefinitelyStrict ->
-                if recursiveVals.TryFind v.Deref |> Option.isSome then
-                    if availIfInOrder.TryFind v.Deref |> Option.isNone then
-                        warning (LetRecEvaluatedOutOfOrder (denv, boundv, v, m))
-                        outOfOrder <- true
-                        if not reportedEager then
-                          (warning (LetRecCheckedAtRuntime m); reportedEager <- true)
-                    definiteDependencies <- (boundv, v) :: definiteDependencies
-            | InnerTop ->
-                if recursiveVals.TryFind v.Deref |> Option.isSome then
+            if recursiveVals.ContainsVal v.Deref then
+                match st with
+                // An eager recursive reference at a place eligible for direct mutable fixup
+                | Eager (_, true) ->
                     directRecursiveData <- true
-            | DefinitelyLazy -> ()
-        and checkDelayed st b =
-            match st with
-            | MaybeLazy | DefinitelyStrict -> CheckExpr MaybeLazy b
-            | DefinitelyLazy | Top | InnerTop -> ()
 
+                // An eager recursive reference at a place ineligible for direct mutable fixup
+                | Eager (_, false) ->
+                    //if not (availIfInOrder.ContainsVal v.Deref) then
+                    //    warning (LetRecEvaluatedOutOfOrder (denv, boundv, v, m))
+                    //    outOfOrderReported <- true
+                    //    ReportPossibleEager m
+                    eagerDependencies <- (boundv, v, m) :: eagerDependencies
+                    allDependencies <- (boundv, v, m) :: allDependencies
 
-        CheckExpr Top expr
+                // A possibly-eager recursive reference
+                | MaybeDelayed ->
+                    //if not (availIfInOrder.ContainsVal v.Deref) then
+                    //    warning (RecursiveUseCheckedAtRuntime (denv, v, m))
+                    //    ReportPossibleEager m
+                    //    runtimeChecksReported <- true
+                    allDependencies <- (boundv, v, m) :: allDependencies
 
+                | DefinitelyDelayed ->
+                    allDependencies <- (boundv, v, m) :: allDependencies
+
+        CheckExpr (Eager (true, false)) expr
 
     // Check the bindings one by one, each w.r.t. the previously available set of binding
-    begin
-        let checkBind (pgrbind: PreInitializationGraphEliminationBinding) =
-            let (TBind(v, e, _)) = pgrbind.Binding
-            check (mkLocalValRef v) e
-            availIfInOrder.Add(v, 1)
-        bindings |> iterBindings (List.iter checkBind)
-    end
+    let checkBind (pgrbind: PreInitializationGraphEliminationBinding) =
+        let (TBind(v, rhsExpr, _)) = pgrbind.Binding
+        check (mkLocalValRef v) rhsExpr
 
-    // ddg = definiteDependencyGraph
+    bindings |> iterBindings (List.iter checkBind)
+
     let ddgNodes = recursiveVals.Values |> Seq.toList |> List.map mkLocalValRef
-    let ddg = Graph<ValRef, Stamp>((fun v -> v.Stamp), ddgNodes, definiteDependencies )
-    ddg.IterateCycles (fun path -> error (LetRecUnsound (denv, path, path.Head.Range)))
 
-    let requiresLazyBindings = runtimeChecks || outOfOrder
+    let orderedEagerDependencies =
+        [ yield! eagerDependencies
+          for (n1, n2) in ddgNodes |> List.pairwise do 
+              yield (n2, n1, n2.DefinitionRange) ]
+
+    let orderedEagerDependencyGraph = Graph<ValRef, Stamp, range>((fun v -> v.Stamp), ddgNodes, orderedEagerDependencies)
+
+    orderedEagerDependencyGraph.IterateCycles (fun path ->
+        if not outOfOrderReported then
+            let (boundv,m) = path.Head
+            let (fwdv, m) =
+                path 
+                |> List.pairwise
+                |> List.tryPick (fun ((n1, m), (n2, _)) -> if n1.Stamp > n2.Stamp then Some (n1, m) else None)
+                |> Option.defaultValue (boundv,m)
+            warning (LetRecEvaluatedOutOfOrder (denv, boundv, fwdv, m))
+            outOfOrderReported <- true)
+
+    let eagerDependencyGraph = Graph<ValRef, Stamp, range>((fun v -> v.Stamp), ddgNodes, eagerDependencies)
+
+    eagerDependencyGraph.IterateCycles (fun path ->
+        error (LetRecUnsound (denv, List.map fst path, (fst path.Head).Range)))
+
+    let orderedAllDependencies =
+        [ yield! allDependencies
+          for (n1, n2) in ddgNodes |> List.pairwise do 
+              yield (n2, n1, n2.DefinitionRange) ]
+
+    // Look for cycles amongst all dependencies originating in the eager bindings.
+    let orderedAllDependencyGraph = Graph<ValRef, Stamp, range>((fun v -> v.Stamp), ddgNodes, orderedAllDependencies)
+
+    bindings |> iterBindings (fun pgrbinds ->
+        for pgrbind in pgrbinds do
+            let (TBind(boundv, rhsExpr, _)) = pgrbind.Binding
+            match stripChooseAndExpr rhsExpr with 
+            | Expr.Lambda _ 
+            | Expr.TyLambda _ -> ()
+            | _ ->
+                orderedAllDependencyGraph.IterateCyclesFrom (mkLocalValRef boundv) (fun path ->
+                    if not runtimeChecksReported then
+                        let (boundv, m) = path.Head
+                        let (fwdv, m) =
+                            path 
+                            |> List.pairwise
+                            |> List.tryPick (fun ((n1, m), (n2, _)) -> if n1.Stamp > n2.Stamp then Some (n1, m) else None)
+                            |> Option.defaultValue (boundv,m)
+                        warning (RecursiveUseCheckedAtRuntime (denv, fwdv, m))
+                        warning (LetRecCheckedAtRuntime m)
+                        runtimeChecksReported <- true))
+
+    let requiresLazyBindings = runtimeChecksReported || outOfOrderReported
     if directRecursiveData && requiresLazyBindings then
         error(Error(FSComp.SR.tcInvalidMixtureOfRecursiveForms(), bindsm))
 
@@ -3514,7 +3619,7 @@ let EliminateInitializationGraphs
                     flazy.SetValReprInfo (Some(InferValReprInfoOfExpr g AllowTypeDirectedDetupling.Yes fty [] [] frhs))
 
                 let vlazy, velazy = mkCompGenLocal m v.LogicalName vTy
-                let vrhs = (mkLazyDelayed g m ty felazy)
+                let vrhs = mkLazyDelayed g m ty felazy
 
                 if mustHaveValReprInfo then
                     vlazy.SetValReprInfo (Some(InferValReprInfoOfExpr g AllowTypeDirectedDetupling.Yes vTy [] [] vrhs))

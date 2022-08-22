@@ -11,7 +11,7 @@ open FSharp.Core.UnitTests.LibraryTestFx
 open Xunit
 
 open Microsoft.FSharp.Reflection
-
+#nowarn "40"
 (*
 [Test Strategy]
 Make sure each method works on:
@@ -69,7 +69,7 @@ module FSharpModule =
 type FSharpValueTests() =
     
     // global variables
-    let rec record1 : RecordType = { field1 = "field1"; field2 = Some(record1); field3 = ( fun () -> (record1, "")  )}
+    let rec record1 : RecordType = { field1 = "field1"; field2 = Some(Unchecked.defaultof<_>); field3 = ( fun () -> (record1, "")  )}
     let record2 : RecordType = { field1 = "field2"; field2 = Some(record1); field3 = ( fun () -> (record1, "")  )}
     
     // global variables
@@ -871,7 +871,8 @@ type FSharpValueTests() =
 type FSharpTypeTests() =    
     
     // instance for member _.ObjectEquals
-    let rec recordtype1 : RecordType = { field1 = "field1"; field2 = Some(recordtype1); field3 = ( fun () -> (recordtype1, "")  )}
+    let rec recordtype0 : RecordType = { field1 = "field0"; field2 = None; field3 = ( fun () -> (recordtype0, "")  )}
+    let rec recordtype1 : RecordType = { field1 = "field1"; field2 = Some(Unchecked.defaultof<_>); field3 = ( fun () -> (recordtype0, "")  )}
     let recordtype2 : RecordType = { field1 = "field2"; field2 = Some(recordtype1); field3 = ( fun () -> (recordtype1, "")  )}
     let rec genericRecordType1 : GenericRecordType<string, int> = { field1 = "field1"; field2 = 1; field3 = ( fun () -> genericRecordType1 )}
     let genericRecordType2 : GenericRecordType<string, int> = { field1 = "field1"; field2 = 1; field3 = ( fun () -> genericRecordType1 )}

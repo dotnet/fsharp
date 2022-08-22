@@ -237,11 +237,15 @@ type StringBuilder with
     /// Like Append, but returns unit
     member AppendString: value: string -> unit
 
-type Graph<'Data, 'Id when 'Id: comparison> =
+type Graph<'NodeData, 'NodeId, 'EdgeData when 'NodeId: comparison> =
 
-    new: nodeIdentity: ('Data -> 'Id) * nodes: 'Data list * edges: ('Data * 'Data) list -> Graph<'Data, 'Id>
-    member GetNodeData: nodeId: 'Id -> 'Data
-    member IterateCycles: f: ('Data list -> unit) -> unit
+    new:
+        nodeIdentity: ('NodeData -> 'NodeId) * nodes: 'NodeData list * edges: ('NodeData * 'NodeData * 'EdgeData) list ->
+            Graph<'NodeData, 'NodeId, 'EdgeData>
+
+    member IterateCycles: f: (('NodeData * 'EdgeData) list -> unit) -> unit
+
+    member IterateCyclesFrom: node: 'NodeData -> f: (('NodeData * 'EdgeData) list -> unit) -> unit
 
 /// In some cases we play games where we use 'null' as a more efficient representation
 /// in F#. The functions below are used to give initial values to mutable fields.

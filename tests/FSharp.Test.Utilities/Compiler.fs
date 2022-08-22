@@ -666,7 +666,7 @@ module rec Compiler =
         | _ ->
             failwith "Compilation has errors."
 
-    let getAssembly = getAssemblyInBytes >> Assembly.Load
+    let getAssembly result = result |> getAssemblyInBytes |> Assembly.Load
 
     let withPeReader func compilationResult =
         let bytes = getAssemblyInBytes compilationResult
@@ -773,9 +773,9 @@ module rec Compiler =
                 else
                     CompilationResult.Failure executionResult
 
-    let compileAndRun = compile >> run
+    let compileAndRun compilation = compilation |> compile |> run
 
-    let compileExeAndRun = asExe >> compileAndRun
+    let compileExeAndRun compilation = compilation |> asExe |> compileAndRun
 
     let private evalFSharp (fs: FSharpCompilationSource) : CompilationResult =
         let source = fs.Source.GetSourceText |> Option.defaultValue ""
@@ -942,7 +942,7 @@ module rec Compiler =
 
         cUnit
 
-    let verifyBaselines = verifyBaseline >> verifyILBaseline
+    let verifyBaselines compilation = compilation |> verifyBaseline |> verifyILBaseline
 
     type ImportScope = { Kind: ImportDefinitionKind; Name: string }
 
