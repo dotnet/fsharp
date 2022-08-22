@@ -1,0 +1,6 @@
+{
+  "rollForwardOnNoCandidateFx": 2,
+  "configProperties": {
+      "System.GC.Server": true
+    }
+}
