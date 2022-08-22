@@ -1054,6 +1054,13 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
                 Some(FSComp.SR.optsCrossoptimize ())
             )
 
+            CompilerOption(
+                "reflectionfree",
+                tagNone,
+                OptionUnit(fun () -> tcConfigB.useReflectionFreeCodeGen <- true),
+                None,
+                Some(FSComp.SR.optsReflectionFree ())
+            )
         ]
 
     if isFsi then debug @ codegen else debug @ embed @ codegen

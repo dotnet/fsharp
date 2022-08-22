@@ -893,13 +893,17 @@ module rec Compiler =
 
         cUnit
 
-    let verifyIL (il: string list) (result: CompilationResult) : unit =
+    let private doILCheck func (il: string list) result =
         match result with
         | CompilationResult.Success s ->
             match s.OutputPath with
             | None -> failwith "Operation didn't produce any output!"
-            | Some p -> ILChecker.checkIL p il
+            | Some p -> func p il
         | CompilationResult.Failure _ -> failwith "Result should be \"Success\" in order to get IL."
+
+    let verifyIL = doILCheck ILChecker.checkIL
+
+    let verifyILNotPresent = doILCheck ILChecker.checkILNotPresent
 
     let verifyILBinary (il: string list) (dll: string)= ILChecker.checkIL dll il
 

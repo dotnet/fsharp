@@ -2410,6 +2410,7 @@ and [<Sealed>] TcImports
                     tcConfig.implicitIncludeDir,
                     tcConfig.mlCompatibility,
                     tcConfig.isInteractive,
+                    tcConfig.useReflectionFreeCodeGen,
                     tryFindSysTypeCcu,
                     tcConfig.emitDebugInfoInQuotations,
                     tcConfig.noDebugAttributes,
