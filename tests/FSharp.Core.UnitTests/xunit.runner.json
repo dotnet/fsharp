@@ -1,5 +1,5 @@
 ﻿{
-  "$schema": "https://xunit.net/schema/current/xunit.runner.schema.json",
+    "$schema": "https://xunit.net/schema/current/xunit.runner.schema.json",
     "appDomain": "ifAvailable",
     "shadowCopy": false,
     "parallelizeTestCollections": false,

@@ -14,9 +14,11 @@ module ``PseudoCustomAttributes Test Cases`` =
         |> compileAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyAlgorithmId_001.fs"|])>]
-    let ``PseudoCustomAttributes - AssemblyAlgorithmId_001_fs`` compilation =
-        ``PseudoCustomAttributes - Compile and Run`` compilation
+    let ``PseudoCustomAttributes - Fail to compile`` compilation =
+        compilation
+        |> asExe
+        |> compile
+        |> shouldFail
 
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"AssemblyCompany_001.fs"|])>]
     let ``PseudoCustomAttributes - AssemblyCompany_001_fs`` compilation =

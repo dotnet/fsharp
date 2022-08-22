@@ -527,6 +527,9 @@ type TcConfigBuilder =
         /// If true, strip away data that would not be of use to end users, but is useful to us for debugging
         mutable noDebugAttributes: bool
 
+        /// If true, do not emit ToString implementations for unions, records, structs, exceptions
+        mutable useReflectionFreeCodeGen: bool
+
         /// If true, indicates all type checking and code generation is in the context of fsi.exe
         isInteractive: bool
 
@@ -730,6 +733,7 @@ type TcConfigBuilder =
             pause = false
             alwaysCallVirt = true
             noDebugAttributes = false
+            useReflectionFreeCodeGen = false
             emitDebugInfoInQuotations = false
             exename = None
             shadowCopyReferences = false
@@ -1279,6 +1283,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.pause = data.pause
     member _.alwaysCallVirt = data.alwaysCallVirt
     member _.noDebugAttributes = data.noDebugAttributes
+    member _.useReflectionFreeCodeGen = data.useReflectionFreeCodeGen
     member _.isInteractive = data.isInteractive
     member _.isInvalidationSupported = data.isInvalidationSupported
     member _.emitDebugInfoInQuotations = data.emitDebugInfoInQuotations

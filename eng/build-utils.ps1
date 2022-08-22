@@ -251,9 +251,9 @@ function Make-BootstrapBuild() {
     }
     Exec-Console $dotnetExe $args
 
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\net6.0" -Destination "$dir\fslex" -Force -Recurse
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\net6.0" -Destination "$dir\fsyacc" -Force  -Recurse
-    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\net6.0" -Destination "$dir\AssemblyCheck" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\net7.0" -Destination "$dir\fslex" -Force -Recurse
+    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\net7.0" -Destination "$dir\fsyacc" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\net7.0" -Destination "$dir\AssemblyCheck" -Force  -Recurse
 
     # prepare compiler
     $protoProject = "`"$RepoRoot\proto.sln`""

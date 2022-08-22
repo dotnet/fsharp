@@ -327,6 +327,11 @@
         <target state="translated">W interpolowanych ciągach używanych jako typ IFormattable lub FormattableString nie można używać specyfikatorów „%”. Można używać tylko operatorów interpolacji, takich jak „{{expr}}”, „{{expr,3}}” lub „{{expr:N5}}”.</target>
         <note />
       </trans-unit>
+      <trans-unit id="forPercentAInReflectionFreeCode">
+        <source>The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</source>
+        <target state="new">The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
         <target state="translated"> - {0}</target>
@@ -495,6 +500,11 @@
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
         <target state="translated">Utwórz zestaw odwołania z określoną ścieżką pliku.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsReflectionFree">
+        <source>Disable implicit generation of constructs using reflection</source>
+        <target state="new">Disable implicit generation of constructs using reflection</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">

@@ -3,9 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	  
-    <TargetFrameworks>net472;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -185,6 +184,7 @@
     <Compile Include="CompilerOptions\fsc\noframework.fs" />
     <Compile Include="CompilerOptions\fsc\platform.fs" />
     <Compile Include="CompilerOptions\fsc\reference.fs" />
+    <Compile Include="CompilerOptions\fsc\reflectionfree.fs" />
     <Compile Include="CompilerOptions\fsc\warn.fs" />
     <Compile Include="CompilerOptions\fsc\warnon.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />

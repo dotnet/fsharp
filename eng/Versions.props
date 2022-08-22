@@ -94,7 +94,7 @@
     <SystemIoCompressionVersion>4.3.0</SystemIoCompressionVersion>
     <SystemLinqExpressionsVersion>4.3.0</SystemLinqExpressionsVersion>
     <SystemLinqQueryableVersion>4.3.0</SystemLinqQueryableVersion>
-    <SystemMemoryVersion>4.5.4</SystemMemoryVersion>
+    <SystemMemoryVersion>4.5.5</SystemMemoryVersion>
     <SystemNetRequestsVersion>4.3.0</SystemNetRequestsVersion>
     <SystemNetSecurityVersion>4.3.1</SystemNetSecurityVersion>
     <SystemReflectionEmitVersion>4.3.0</SystemReflectionEmitVersion>
