@@ -179,6 +179,7 @@
     <Compile Include="CompilerOptions\fsc\noframework.fs" />
     <Compile Include="CompilerOptions\fsc\platform.fs" />
     <Compile Include="CompilerOptions\fsc\reference.fs" />
+    <Compile Include="CompilerOptions\fsc\reflectionfree.fs" />
     <Compile Include="CompilerOptions\fsc\warn.fs" />
     <Compile Include="CompilerOptions\fsc\warnon.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />

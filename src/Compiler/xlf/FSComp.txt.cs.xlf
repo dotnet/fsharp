@@ -327,6 +327,11 @@
         <target state="translated">Interpolované řetězce, které se používají jako typ IFormattable nebo FormattableString, nemůžou používat specifikátory %. Použít je možné jen interpolované výrazy ve stylu .NET, třeba {{expr}}, {{expr,3}} nebo {{expr:N5}}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="forPercentAInReflectionFreeCode">
+        <source>The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</source>
+        <target state="new">The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
         <target state="translated"> - {0}</target>
@@ -495,6 +500,11 @@
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
         <target state="translated">Vytvoří referenční sestavení se zadanou cestou k souboru.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsReflectionFree">
+        <source>Disable implicit generation of constructs using reflection</source>
+        <target state="new">Disable implicit generation of constructs using reflection</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">

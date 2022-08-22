@@ -40,6 +40,8 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
                                          names output by the compiler
 --crossoptimize[+|-]                     Enable or disable cross-module
                                          optimizations
+--reflectionfree                         Disable implicit generation of
+                                         constructs using reflection
 
 
 		- ERRORS AND WARNINGS -
