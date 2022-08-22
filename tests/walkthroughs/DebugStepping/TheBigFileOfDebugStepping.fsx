@@ -190,6 +190,19 @@ let ListExpressionSteppingTest8 () =
             yield x 
         ]
 
+let ListExpressionSteppingTest9 () = 
+    [ for x in 1..2..4 do
+        match x with 
+        | 1 -> 
+            printfn "hello"
+            yield x 
+        | 3 -> 
+            printfn "hello"
+            yield x 
+        | _ -> 
+            yield x 
+        ]
+
 let SeqExpressionSteppingTest1 () = 
     seq { yield 1 }
 
@@ -842,6 +855,7 @@ ListExpressionSteppingTest5()
 ListExpressionSteppingTest6()
 ListExpressionSteppingTest7()
 ListExpressionSteppingTest8()
+ListExpressionSteppingTest9()
 SeqExpressionSteppingTest1()|> Seq.length
 SeqExpressionSteppingTest2()|> Seq.length
 SeqExpressionSteppingTest3()|> Seq.length
@@ -1072,6 +1086,24 @@ module ForLoopRegularCode =
             printfn $"hello, x = {x}"
             printfn $"hello, x = {x}"
 
+    let testSimpleForEachIntRangeLoopWithVariableStepAndOneStatement (start, step, stop) =
+        for x in start .. step .. stop do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachIntRangeLoopWithVariableStepAndTwoStatements (start, step, stop) =
+        for x in start .. step .. stop do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachIntRangeLoopWithConstantStepAndOneStatement (start, stop) =
+        for x in start .. 3 .. stop do
+            printfn $"hello, x = {x}"
+
+    let testSimpleForEachIntRangeLoopWithConstantStepAndTwoStatements (start, stop) =
+        for x in start .. 3 .. stop do
+            printfn $"hello, x = {x}"
+            printfn $"hello, x = {x}"
+
     let testSimpleForEachIntLoopWithOneStatement (start, stop) =
         for x = start to stop do
             printfn $"hello, x = {x}"
@@ -1102,6 +1134,10 @@ module ForLoopRegularCode =
     testSimpleForEachIntRangeLoopWithTwoStatements (1, 3)
     testSimpleForEachIntRangeLoopDownWithOneStatement (1, 3)
     testSimpleForEachIntRangeLoopDownWithTwoStatements (1, 3)
+    testSimpleForEachIntRangeLoopWithVariableStepAndOneStatement (1, 3, 10)
+    testSimpleForEachIntRangeLoopWithVariableStepAndTwoStatements (1, 3, 10)
+    testSimpleForEachIntRangeLoopWithConstantStepAndOneStatement (1, 10)
+    testSimpleForEachIntRangeLoopWithConstantStepAndTwoStatements (1, 10)
     testSimpleForEachIntLoopWithOneStatement (1, 3)
     testSimpleForEachIntLoopWithTwoStatements (1, 3)
     testSimpleForEachIntLoopDownWithOneStatement (1, 3)
@@ -1175,6 +1211,24 @@ module ForLoopInGeneratedList =
             printfn $"hello, x = {x}"
             yield x + 1 ]
 
+    let testSimpleListEachIntRangeLoopWithVariableStepAndOneStatement (start, step, stop) =
+        [ for x in start .. step .. stop do
+            yield x + 1 ]
+
+    let testSimpleListEachIntRangeLoopWithVariableStepAndTwoStatements (start, step, stop) =
+        [ for x in start .. step .. stop do
+            printfn $"hello, x = {x}"
+            yield x + 1 ]
+
+    let testSimpleListEachIntRangeLoopWithConstantStepAndOneStatement (start, stop) =
+        [ for x in start .. 3 .. stop do
+            yield x + 1 ]
+
+    let testSimpleListEachIntRangeLoopWithConstantStepAndTwoStatements (start, stop) =
+        [ for x in start .. 3 .. stop do
+            printfn $"hello, x = {x}"
+            yield x + 1 ]
+
     let testSimpleListEachIntLoopWithOneStatement (start, stop) =
         [ for x = start to stop do
             yield x + 1 ]
@@ -1205,6 +1259,10 @@ module ForLoopInGeneratedList =
     testSimpleListEachIntRangeLoopWithTwoStatements (1, 3)
     testSimpleListEachIntRangeLoopDownWithOneStatement (1, 3)
     testSimpleListEachIntRangeLoopDownWithTwoStatements (1, 3)
+    testSimpleListEachIntRangeLoopWithVariableStepAndOneStatement (1, 3, 10)
+    testSimpleListEachIntRangeLoopWithVariableStepAndTwoStatements (1, 3, 10)
+    testSimpleListEachIntRangeLoopWithConstantStepAndOneStatement (1, 10)
+    testSimpleListEachIntRangeLoopWithConstantStepAndTwoStatements (1, 10)
     testSimpleListEachIntLoopWithOneStatement (1, 3)
     testSimpleListEachIntLoopWithTwoStatements (1, 3)
     testSimpleListEachIntLoopDownWithOneStatement (1, 3)
@@ -1317,6 +1375,36 @@ module ForLoopTaskCode =
             return 1
         }
 
+    let testSimpleTaskEachIntRangeLoopDownWithVariableStepAndOneStatement (start, step, stop) =
+        task {
+            for x in start .. step .. stop do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachIntRangeLoopDownWithVariableStepAndTwoStatements (start, step, stop) =
+        task {
+            for x in start .. step .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachIntRangeLoopDownWithConstantStepAndOneStatement (start, stop) =
+        task {
+            for x in start .. 3 .. stop do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleTaskEachIntRangeLoopDownWithConstantStepAndTwoStatements (start, stop) =
+        task {
+            for x in start .. 3 .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
     let testSimpleTaskEachIntLoopWithOneStatement (start, stop) =
         task {
             for x = start to stop do
@@ -1359,6 +1447,10 @@ module ForLoopTaskCode =
     testSimpleTaskEachIntRangeLoopWithTwoStatements (1, 3) |> fun t -> t.Result
     testSimpleTaskEachIntRangeLoopDownWithOneStatement (1, 3) |> fun t -> t.Result
     testSimpleTaskEachIntRangeLoopDownWithTwoStatements (1, 3) |> fun t -> t.Result
+    testSimpleTaskEachIntRangeLoopDownWithVariableStepAndOneStatement (1, 3, 10) |> fun t -> t.Result
+    testSimpleTaskEachIntRangeLoopDownWithVariableStepAndTwoStatements (1, 3, 10) |> fun t -> t.Result
+    testSimpleTaskEachIntRangeLoopDownWithConstantStepAndOneStatement (1, 10) |> fun t -> t.Result
+    testSimpleTaskEachIntRangeLoopDownWithConstantStepAndTwoStatements (1, 10) |> fun t -> t.Result
     testSimpleTaskEachIntLoopWithOneStatement (1, 3) |> fun t -> t.Result
     testSimpleTaskEachIntLoopWithTwoStatements (1, 3) |> fun t -> t.Result
     testSimpleTaskEachIntLoopDownWithOneStatement (1, 3) |> fun t -> t.Result
@@ -1475,6 +1567,36 @@ module ForLoopSeqCode =
             yield 1
         }
 
+    let testSimpleSeqEachIntRangeLoopDownWithVariableStepAndOneStatement (start, step, stop) =
+        seq {
+            for x in start .. step .. stop do
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachIntRangeLoopDownWithVariableStepAndTwoStatements (start, step, stop) =
+        seq {
+            for x in start .. step .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachIntRangeLoopDownWithConstantStepAndOneStatement (start, stop) =
+        seq {
+            for x in start .. 3 .. stop do
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
+    let testSimpleSeqEachIntRangeLoopDownWithConstantStepAndTwoStatements (start, stop) =
+        seq {
+            for x in start .. 3 .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            yield 1
+        }
+
     let testSimpleSeqEachIntLoopWithOneStatement (start, stop) =
         seq {
             for x = start to stop do
@@ -1517,6 +1639,10 @@ module ForLoopSeqCode =
     testSimpleSeqEachIntRangeLoopWithTwoStatements (1, 3) |> Seq.toList
     testSimpleSeqEachIntRangeLoopDownWithOneStatement (1, 3) |> Seq.toList
     testSimpleSeqEachIntRangeLoopDownWithTwoStatements (1, 3) |> Seq.toList
+    testSimpleSeqEachIntRangeLoopDownWithVariableStepAndOneStatement (1, 3, 10) |> Seq.toList
+    testSimpleSeqEachIntRangeLoopDownWithVariableStepAndTwoStatements (1, 3, 10) |> Seq.toList
+    testSimpleSeqEachIntRangeLoopDownWithConstantStepAndOneStatement (1, 10) |> Seq.toList
+    testSimpleSeqEachIntRangeLoopDownWithConstantStepAndTwoStatements (1, 10) |> Seq.toList
     testSimpleSeqEachIntLoopWithOneStatement (1, 3) |> Seq.toList
     testSimpleSeqEachIntLoopWithTwoStatements (1, 3) |> Seq.toList
     testSimpleSeqEachIntLoopDownWithOneStatement (1, 3) |> Seq.toList
@@ -1633,6 +1759,36 @@ module ForLoopAsyncCode =
             return 1
         }
 
+    let testSimpleAsyncEachIntRangeLoopDownWithVariableStepAndOneStatement (start, step, stop) =
+        async {
+            for x in start .. step .. stop do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachIntRangeLoopDownWithVariableStepAndTwoStatements (start, step, stop) =
+        async {
+            for x in start .. step .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachIntRangeLoopDownWithConstantStepAndOneStatement (start, stop) =
+        async {
+            for x in start .. 3 .. stop do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleAsyncEachIntRangeLoopDownWithConstantStepAndTwoStatements (start, stop) =
+        async {
+            for x in start .. 3 .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
     let testSimpleAsyncEachIntLoopWithOneStatement (start, stop) =
         async {
             for x = start to stop do
@@ -1675,6 +1831,10 @@ module ForLoopAsyncCode =
     testSimpleAsyncEachIntRangeLoopWithTwoStatements (1, 3) |> Async.RunSynchronously
     testSimpleAsyncEachIntRangeLoopDownWithOneStatement (1, 3) |> Async.RunSynchronously
     testSimpleAsyncEachIntRangeLoopDownWithTwoStatements (1, 3) |> Async.RunSynchronously
+    testSimpleAsyncEachIntRangeLoopDownWithVariableStepAndOneStatement (1, 3, 10) |> Async.RunSynchronously
+    testSimpleAsyncEachIntRangeLoopDownWithVariableStepAndTwoStatements (1, 3, 10) |> Async.RunSynchronously
+    testSimpleAsyncEachIntRangeLoopDownWithConstantStepAndOneStatement (1, 10) |> Async.RunSynchronously
+    testSimpleAsyncEachIntRangeLoopDownWithConstantStepAndTwoStatements (1, 10) |> Async.RunSynchronously
     testSimpleAsyncEachIntLoopWithOneStatement (1, 3) |> Async.RunSynchronously
     testSimpleAsyncEachIntLoopWithTwoStatements (1, 3) |> Async.RunSynchronously
     testSimpleAsyncEachIntLoopDownWithOneStatement (1, 3) |> Async.RunSynchronously
@@ -2021,6 +2181,36 @@ module ForLoopCancellableCode =
             return 1
         }
 
+    let testSimpleCancellableEachIntRangeLoopDownWithVariableStepAndOneStatement (start, step, stop) =
+        cancellable {
+            for x in start .. step .. stop do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachIntRangeLoopDownWithVariableStepAndTwoStatements (start, step, stop) =
+        cancellable {
+            for x in start .. step .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachIntRangeLoopDownWithConstantStepAndOneStatement (start, stop) =
+        cancellable {
+            for x in start .. 3 .. stop do
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
+    let testSimpleCancellableEachIntRangeLoopDownWithConstantStepAndTwoStatements (start, stop) =
+        cancellable {
+            for x in start .. 3 .. stop do
+                printfn $"hello, x = {x}"
+                printfn $"hello, x = {x}"
+            return 1
+        }
+
     let testSimpleCancellableEachIntLoopWithOneStatement (start, stop) =
         cancellable {
             for x = start to stop do
@@ -2063,6 +2253,10 @@ module ForLoopCancellableCode =
     testSimpleCancellableEachIntRangeLoopWithTwoStatements (1, 3) |> Cancellable.runWithoutCancellation
     testSimpleCancellableEachIntRangeLoopDownWithOneStatement (1, 3) |> Cancellable.runWithoutCancellation
     testSimpleCancellableEachIntRangeLoopDownWithTwoStatements (1, 3) |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachIntRangeLoopDownWithVariableStepAndOneStatement (1, 3, 10) |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachIntRangeLoopDownWithVariableStepAndTwoStatements (1, 3, 10) |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachIntRangeLoopDownWithConstantStepAndOneStatement (1, 10) |> Cancellable.runWithoutCancellation
+    testSimpleCancellableEachIntRangeLoopDownWithConstantStepAndTwoStatements (1, 10) |> Cancellable.runWithoutCancellation
     testSimpleCancellableEachIntLoopWithOneStatement (1, 3) |> Cancellable.runWithoutCancellation
     testSimpleCancellableEachIntLoopWithTwoStatements (1, 3) |> Cancellable.runWithoutCancellation
     testSimpleCancellableEachIntLoopDownWithOneStatement (1, 3) |> Cancellable.runWithoutCancellation
