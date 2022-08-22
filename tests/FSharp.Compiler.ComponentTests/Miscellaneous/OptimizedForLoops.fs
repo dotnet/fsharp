@@ -25,3 +25,9 @@ module OptimizedForLoops =
         compilation
         |> compileExeAndRun
         |> shouldSucceed
+
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForLoopsInTasks.fs"|])>]
+    let ``Optimized loops should work with resumable code`` compilation =
+        compilation
+        |> compileExeAndRun
+        |> shouldSucceed
