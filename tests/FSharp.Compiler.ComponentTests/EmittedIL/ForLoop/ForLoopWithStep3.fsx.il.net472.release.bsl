@@ -42,13 +42,13 @@
   // WARNING: managed resource file FSharpOptimizationData.ForLoopWithStep3 created
 }
 .module ForLoopWithStep3.exe
-// MVID: {62E35ED9-5EC8-08E2-A745-0383D95EE362}
+// MVID: {63030EDE-5EC8-08E2-A745-0383DE0E0363}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000001DEBDF10000
+// Image base: 0x000001FCDB5E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -61,7 +61,7 @@
                                         !!b m) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
-    // Code size       60 (0x3c)
+    // Code size       65 (0x41)
     .maxstack  7
     .locals init (int32 V_0,
              int32 V_1,
@@ -95,10 +95,14 @@
     IL_0035:  sub
     IL_0036:  stloc.1
     IL_0037:  ldloc.1
-    IL_0038:  ldloc.0
-    IL_0039:  bge.s      IL_0008
+    IL_0038:  ldc.i4.s   10
+    IL_003a:  bgt.s      IL_0040
 
-    IL_003b:  ret
+    IL_003c:  ldloc.1
+    IL_003d:  ldloc.0
+    IL_003e:  bge.s      IL_0008
+
+    IL_0040:  ret
   } // end of method ForLoopWithStep3::loop
 
 } // end of class ForLoopWithStep3
