@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <RuntimeIdentifiers>win-x86;win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
@@ -67,25 +67,25 @@
 
   <ItemGroup>
     <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\mscorlib.dll" LogicalName="net6.01.mscorlib.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\System.dll" LogicalName="net6.01.System.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+     <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\System.Core.dll" LogicalName="net6.01.System.Core.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\System.Console.dll" LogicalName="net6.01.System.Console.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\System.Runtime.dll" LogicalName="net6.01.System.Runtime.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\System.Dynamic.Runtime.dll" LogicalName="net6.01.System.Runtime.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="$(PkgMicrosoft_NETCore_App_Ref)\ref\net6.0\netstandard.dll" LogicalName="net6.01.netstandard.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup />

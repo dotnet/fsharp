@@ -41,7 +41,7 @@ module Commands =
 
     // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
     // returns exit code, stdio and stderr as string arrays
-    let executeProcess pathToExe arguments workingDir timeout =
+    let executeProcess pathToExe arguments workingDir (timeout:int) =
         match pathToExe with
         | Some path ->
             let errorsList = ResizeArray()
@@ -298,9 +298,9 @@ let config configurationName envVars =
     let fsiArchitecture = "net472"
     let peverifyArchitecture = "net472"
 #else
-    let fscArchitecture = "net6.0"
-    let fsiArchitecture = "net6.0"
-    let peverifyArchitecture = "net6.0"
+    let fscArchitecture = "net7.0"
+    let fsiArchitecture = "net7.0"
+    let peverifyArchitecture = "net7.0"
 #endif
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
     let artifactsPath = repoRoot ++ "artifacts"

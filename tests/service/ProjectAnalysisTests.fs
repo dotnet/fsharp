@@ -2221,7 +2221,9 @@ let ``Test Project13 all symbols`` () =
                 "type System.IFormattable"
                 "type System.IConvertible"
 #if NETCOREAPP
+                "type System.IParsable<System.DateTime>";
                 "type System.ISpanFormattable"
+                "type System.ISpanParsable<System.DateTime>"
 #endif
                 "type System.Runtime.Serialization.ISerializable"
                 "type System.IComparable<System.DateTime>"

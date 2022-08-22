@@ -459,28 +459,3 @@ let main _ =
         |> compile
         |> shouldFail
         |> withSingleDiagnostic (Error 3545, Line 7, Col 21, Line 7, Col 30, "The following required properties have to be initalized:" + Environment.NewLine + "   property RAIO.GetSet: int with get, set" + Environment.NewLine + "   property RAIO.GetInit: int with get, set")
-
-#if !NETCOREAPP
-    [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
-#else
-    [<Fact>]
-#endif
-    let ``F# should produce a warning if RequiredMemberAttribute is specified`` () =
-        // TODO: This test will start failing with different reason when we will move to .NET7, since RequiredMemberArgument will be in System.Runtime.*.dll.
-        // It will needs to be fixed then.
-        let fsharpSource =
-            """
-namespace FooBarBaz
-open System
-open System.Runtime.CompilerServices
-
-type RAIOFS() =
-    [<RequiredMember>]
-    member val GetSet = 0 with get, set
-"""
-        FSharp fsharpSource
-        |> asLibrary
-        |> withLangVersionPreview
-        |> compile
-        |> shouldFail
-        |> withErrorCode 39
