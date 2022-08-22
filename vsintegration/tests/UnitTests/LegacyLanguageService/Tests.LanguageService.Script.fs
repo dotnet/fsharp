@@ -160,7 +160,7 @@ type UsingMSBuild() as this =
                                        "#r \"Nonexistent\""
                                        ]
         let (project, _) = createSingleFileFsxFromLines code
-        AssertExactlyCountErrorSeenContaining(project, "Nonexistent", 2)   // ...and not an error on the first line.
+        AssertExactlyCountErrorSeenContaining(project, "Nonexistent", 1)   // ...and not an error on the first line.
         
     [<Test>]
     member public this.``Fsx.InvalidHashLoad.ShouldBeASquiggle.Bug3012``() =  

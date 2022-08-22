@@ -1374,7 +1374,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">정의 대상 개체에 대한 재귀 참조는 런타임에 지연된 참조를 사용하여 초기화 적합성이 확인됩니다. 멤버 또는 '&lt;ctor-expr&gt; then &lt;expr&gt;' 형식의 후행 식 내에 자기 참조를 배치하세요.</target>
+        <target state="translated">정의되는 객체에 대한 재귀 참조는 지연 참조를 사용하여 런타임에 초기화 건전성을 확인합니다. 자체 참조를 구성원 또는 '&lt;ctor-expr&gt; 다음 &lt;expr&gt;' 형식의 후행 식에 배치하는 것을 고려하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">

@@ -680,7 +680,7 @@ signatureFile:
 moduleIntro: 
   | moduleKeyword opt_attributes opt_access opt_rec path
       { if not (isNil $2) then
-            parseState.LexBuffer.CheckLanguageFeatureErrorRecover LanguageFeature.AttributesToRightOfModuleKeyword <| rhs parseState 4
+            parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AttributesToRightOfModuleKeyword (rhs parseState 4)
         let mModule = rhs parseState 1
         mModule, $4, $5.LongIdent, $3, $2 }
 
@@ -994,7 +994,9 @@ tyconSpfnRhs:
   | DELEGATE OF topType
      { let m = lhs parseState 
        let ty, arity = $3
-       let invoke = SynMemberSig.Member(SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero), AbstractMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member, m) 
+       let flags = AbstractMemberFlags true SynMemberFlagsTrivia.Zero SynMemberKind.Member
+       let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero)
+       let invoke = SynMemberSig.Member(valSig, flags, m) 
        (fun nameRange nameInfo mEquals augmentation -> 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            let mWhole = unionRanges nameRange m
@@ -1081,9 +1083,10 @@ classMemberSpfn:
                match optLiteralValue with
                | None -> m
                | Some e -> unionRanges m e.Range
-       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, mWhole, { ValKeyword = None; WithKeyword = mWith; EqualsRange = mEquals })
-       let _, flags = $3 
-       SynMemberSig.Member(valSpfn, flags (getSetAdjuster arity), mWhole) }
+       let trivia = { ValKeyword = None; WithKeyword = mWith; EqualsRange = mEquals }
+       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, mWhole, trivia)
+       let flags = $3 (getSetAdjuster arity)
+       SynMemberSig.Member(valSpfn, flags, mWhole) }
 
   | opt_attributes opt_declVisibility interfaceMember appType  
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
@@ -1156,13 +1159,7 @@ classMemberSpfnGetSetElements:
 
 memberSpecFlags: 
   | memberFlags { $1 }  
-  | ABSTRACT
-      { let mAbstract = rhs parseState 1
-        (false, AbstractMemberFlags(AbstractSynMemberFlagsTrivia mAbstract)) }
-  | ABSTRACT MEMBER
-      { let mAbstract = rhs parseState 1
-        let mMember = rhs parseState 2
-        (false, AbstractMemberFlags(AbstractMemberSynMemberFlagsTrivia mAbstract mMember)) }
+  | abstractMemberFlags { $1 }
 
 
 /* Part of an exception definition in a signature file */
@@ -1598,16 +1595,16 @@ memberFlags:
   | STATIC MEMBER 
       { let mStatic = rhs parseState 1
         let mMember = rhs parseState 2
-        (true, StaticMemberFlags(StaticMemberSynMemberFlagsTrivia mStatic mMember)) }  
+        StaticMemberFlags(StaticMemberSynMemberFlagsTrivia mStatic mMember) }  
   | MEMBER
       { let mMember = rhs parseState 1
-        (false, NonVirtualMemberFlags(MemberSynMemberFlagsTrivia mMember)) }
+        NonVirtualMemberFlags(MemberSynMemberFlagsTrivia mMember) }
   | OVERRIDE
       { let mOverride = rhs parseState 1
-        (false, OverrideMemberFlags(OverrideSynMemberFlagsTrivia mOverride)) }
+        OverrideMemberFlags(OverrideSynMemberFlagsTrivia mOverride) }
   | DEFAULT
       { let mDefault = rhs parseState 1
-        (false, OverrideMemberFlags(DefaultSynMemberFlagsTrivia mDefault)) }
+        OverrideMemberFlags(DefaultSynMemberFlagsTrivia mDefault) }
 
 /* The name of a type in a signature or implementation, possibly with type parameters and constraints */
 typeNameInfo: 
@@ -1743,8 +1740,9 @@ tyconDefnRhs:
      { let m = lhs parseState 
        let ty, arity = $3
        (fun nameRange augmentation -> 
-           let valSpfn = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero) 
-           let invoke = SynMemberDefn.AbstractSlot(valSpfn, AbstractMemberFlags SynMemberFlagsTrivia.Zero SynMemberKind.Member, m) 
+           let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero) 
+           let flags = AbstractMemberFlags true SynMemberFlagsTrivia.Zero SynMemberKind.Member
+           let invoke = SynMemberDefn.AbstractSlot(valSig, flags, m) 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            SynTypeDefnRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), []) }
 
@@ -1841,6 +1839,7 @@ classDefnMemberGetSet:
 classDefnMemberGetSetElements: 
   | classDefnMemberGetSetElement 
      { [$1], None  }
+
   | classDefnMemberGetSetElement AND classDefnMemberGetSetElement
      { let mAnd = rhs parseState 2
        [$1;$3], Some mAnd }
@@ -1877,16 +1876,34 @@ memberCore:
        let optPropertyType = $3
        mkSynMemberDefnGetSet parseState $1 mWith classDefnMemberGetSetElements mAnd mWhole propertyNameBindingPat optPropertyType }
 
-
 abstractMemberFlags: 
   | ABSTRACT
       { let mAbstract = rhs parseState 1
-        AbstractSynMemberFlagsTrivia mAbstract } 
-  | ABSTRACT MEMBER 
+        AbstractMemberFlags true (AbstractSynMemberFlagsTrivia mAbstract) }
+
+  | ABSTRACT MEMBER
       { let mAbstract = rhs parseState 1
         let mMember = rhs parseState 2
-        AbstractMemberSynMemberFlagsTrivia mAbstract mMember } 
+        AbstractMemberFlags true (AbstractMemberSynMemberFlagsTrivia mAbstract mMember) }
 
+  | STATIC ABSTRACT
+      { let mWhole = rhs2 parseState 1 2
+        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.InterfacesWithAbstractStaticMembers mWhole
+        if parseState.LexBuffer.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
+            warning(Error(FSComp.SR.tcUsingInterfacesWithStaticAbstractMethods(), mWhole))
+        let mStatic = rhs parseState 1
+        let mAbstract = rhs parseState 2
+        AbstractMemberFlags false (StaticAbstractSynMemberFlagsTrivia mStatic mAbstract) }
+
+  | STATIC ABSTRACT MEMBER
+      { let mWhole = rhs2 parseState 1 2
+        parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.InterfacesWithAbstractStaticMembers mWhole
+        if parseState.LexBuffer.SupportsFeature LanguageFeature.InterfacesWithAbstractStaticMembers then
+            warning(Error(FSComp.SR.tcUsingInterfacesWithStaticAbstractMethods(), mWhole))
+        let mStatic = rhs parseState 1
+        let mAbstract = rhs parseState 2
+        let mMember = rhs parseState 3
+        AbstractMemberFlags false (StaticAbstractMemberSynMemberFlagsTrivia mStatic mAbstract mMember) }
 
 /* A member definition */
 classDefnMember:
@@ -1902,7 +1919,7 @@ classDefnMember:
      { let rangeStart = rhs parseState 1
        if Option.isSome $2 then
            errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-       let _, flags = $3
+       let flags = $3
        $4 $2 flags $1 rangeStart }
        
   | opt_attributes opt_declVisibility interfaceMember appType opt_interfaceImplDefn  
@@ -1926,8 +1943,9 @@ classDefnMember:
            | Some m2 -> unionRanges m m2
            |> unionRangeWithXmlDoc doc
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
-       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWhole, { ValKeyword = None; WithKeyword = mWith; EqualsRange = None })
-       [ SynMemberDefn.AbstractSlot(valSpfn, AbstractMemberFlags $3 (getSetAdjuster arity), mWhole) ] }
+       let trivia = { ValKeyword = None; WithKeyword = mWith; EqualsRange = None }
+       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWhole, trivia)
+       [ SynMemberDefn.AbstractSlot(valSpfn, $3 (getSetAdjuster arity), mWhole) ] }
        
   | opt_attributes opt_declVisibility inheritsDefn
      {  if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalOnInherit(), rhs parseState 1))
@@ -1948,8 +1966,8 @@ classDefnMember:
      { let rangeStart = rhs parseState 1 
        if Option.isSome $2 then
            errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       let isStatic, flags = $3
-       $4 $1 isStatic flags rangeStart }
+       let flags = $3
+       $4 $1 flags rangeStart }
 
   | opt_attributes opt_declVisibility NEW  atomicPattern optAsSpec EQUALS typedSequentialExprBlock opt_ODECLEND
      {  let mWholeBindLhs = rhs2 parseState 1 (if Option.isSome $5 then 5 else 4)
@@ -1989,11 +2007,13 @@ autoPropsDefnDecl:
        let mEquals = rhs parseState 6
        if $2 then
            errorR (Error (FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 3))
-       (fun attribs isStatic flags rangeStart ->
+       (fun attribs flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
            let memberRange = unionRanges rangeStart $7.Range |> unionRangeWithXmlDoc xmlDoc
-           [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, flags, xmlDoc, $3, mEquals, $7, mWith, mGetSetOpt, memberRange) ]) }
-
+           let memberFlags = flags SynMemberKind.Member
+           let memberFlagsForSet = flags SynMemberKind.PropertySet
+           let isStatic = not memberFlags.IsInstance
+           [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, memberFlags, memberFlagsForSet, xmlDoc, $3, mEquals, $7, mWith, mGetSetOpt, memberRange) ]) }
 
 /* An optional type on an auto-property definition */
 opt_typ:
@@ -2152,28 +2172,32 @@ objectImplementationMembers:
 
 /* One member in an object expression or interface implementation */
 objectImplementationMember: 
-  | opt_attributes memberOrOverride memberCore opt_ODECLEND
+  | opt_attributes staticMemberOrMemberOrOverride memberCore opt_ODECLEND
      { let rangeStart = rhs parseState 1
-       $3 None (OverrideMemberFlags $2) $1 rangeStart }
+       $3 None $2 $1 rangeStart }
 
-  | opt_attributes memberOrOverride autoPropsDefnDecl opt_ODECLEND
+  | opt_attributes staticMemberOrMemberOrOverride autoPropsDefnDecl opt_ODECLEND
      { let rangeStart = rhs parseState 1
-       $3 $1 false (OverrideMemberFlags $2) rangeStart }
+       $3 $1 $2 rangeStart }
 
-  | opt_attributes memberOrOverride error 
+  | opt_attributes staticMemberOrMemberOrOverride error 
       { [] } 
 
   | opt_attributes error memberCore opt_ODECLEND 
       { [] }
 
 
-memberOrOverride: 
+staticMemberOrMemberOrOverride:
+  | STATIC MEMBER
+      { let mStatic = rhs parseState 1
+        let mMember = rhs parseState 2
+        ImplementStaticMemberFlags(StaticMemberSynMemberFlagsTrivia mStatic mMember) }  
   | MEMBER 
       { let mMember = rhs parseState 1
-        MemberSynMemberFlagsTrivia mMember } 
+        OverrideMemberFlags(MemberSynMemberFlagsTrivia mMember) }
   | OVERRIDE 
       { let mOverride = rhs parseState 1
-        OverrideSynMemberFlagsTrivia mOverride }
+        OverrideMemberFlags(OverrideSynMemberFlagsTrivia mOverride) }
 
 
 /* The core of the right-hand-side of a simple type definition */
@@ -2369,7 +2393,7 @@ typeConstraint:
      { let tp = $1
        SynTypeConstraint.WhereTyparSupportsMember([ SynType.Var(tp, tp.Range) ], $4, lhs parseState) }
 
-  | LPAREN typarAlts rparen COLON LPAREN classMemberSpfn rparen 
+  | LPAREN typeAlts rparen COLON LPAREN classMemberSpfn rparen 
      { SynTypeConstraint.WhereTyparSupportsMember(List.rev($2), $6, lhs parseState) }
 
   | typar COLON DELEGATE typeArgsNoHpaDeprecated
@@ -2390,8 +2414,11 @@ typeConstraint:
        | "unmanaged" -> SynTypeConstraint.WhereTyparIsUnmanaged($1, lhs parseState)
        | nm -> raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsUnexpectedIdentifier(nm)) }
 
-typarAlts:
-  | typarAlts OR appType
+  | appType
+     { SynTypeConstraint.WhereSelfConstrained($1, lhs parseState) }
+
+typeAlts:
+  | typeAlts OR appType
      { $3 :: $1 }
 
   | appType
@@ -3963,7 +3990,7 @@ declExpr:
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression(">")) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 ">" (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
-  | declExpr INFIX_AT_HAT_OP OBLOCKEND_COMING_SOON
+  | declExpr INFIX_AT_HAT_OP OBLOCKEND_COMING_SOON  %prec infix_at_hat_op_binary
      { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnfinishedExpression($2)) 
        exprFromParseError(mkSynInfix (rhs parseState 2) $1 $2 (arbExpr("declExprInfix", (rhs parseState 3).StartRange))) }
 
@@ -4015,13 +4042,6 @@ declExpr:
   | STAR 
       { let m = rhs parseState 1
         SynExpr.IndexRange(None, m, None, m, m, m) }
-
-  | INFIX_AT_HAT_OP declExpr
-    { if not (parseState.LexBuffer.SupportsFeature LanguageFeature.FromEndSlicing) then 
-        raiseParseErrorAt (rhs parseState 1) (FSComp.SR.fromEndSlicingRequiresVFive())
-      if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidPrefixOperator())
-      let m = (rhs2 parseState 1 2)
-      SynExpr.IndexFromEnd($2, m) }
 
   | minusExpr %prec expr_prefix_plus_minus { $1 }
 
@@ -4215,6 +4235,11 @@ tupleExpr:
         [arbExpr ("tupleExpr4", commaRange.EndRange); arbExpr ("tupleExpr5", commaRange.StartRange)], [commaRange] }
 
 minusExpr: 
+  | INFIX_AT_HAT_OP minusExpr
+    { if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidPrefixOperator())
+      let m = (rhs2 parseState 1 2)
+      SynExpr.IndexFromEnd($2, m) }
+
   | MINUS minusExpr   %prec expr_prefix_plus_minus
       { mkSynPrefix (rhs parseState 1) (unionRanges (rhs parseState 1) $2.Range) "~-" $2 }
 
@@ -4263,7 +4288,7 @@ appExpr:
   | appExpr argExpr %prec expr_app
       { SynExpr.App (ExprAtomicFlag.NonAtomic, false, $1, $2, unionRanges $1.Range $2.Range)  }
 
-  | atomicExpr 
+  | atomicExpr
       { let arg, _ = $1 
         arg }
 
@@ -4300,6 +4325,12 @@ atomicExpr:
       { let arg2, hpa2 = $2 
         if not (IsValidPrefixOperatorUse $1) then reportParseErrorAt arg2.Range (FSComp.SR.parsInvalidPrefixOperator())
         mkSynPrefixPrim (rhs parseState 1) (unionRanges (rhs parseState 1) arg2.Range) $1 arg2, hpa2 }
+
+  | QUOTE ident
+      { let id = mkSynId (lhs parseState) ($2).idText
+        let typar = SynTypar(id, TyparStaticReq.None, false)
+        let lhsm = rhs2 parseState 1 2
+        SynExpr.Typar(typar, lhsm), false }
 
   | atomicExpr DOT atomicExprQualification 
       { let arg1, hpa1 = $1 
@@ -4547,7 +4578,7 @@ parenExpr:
         //arbExpr("parenExpr2", mLhs)  }  
 
 parenExprBody:
-  | staticallyKnownHeadTypars COLON LPAREN classMemberSpfn rparen  typedSequentialExpr 
+  | typars COLON LPAREN classMemberSpfn rparen  typedSequentialExpr 
       { (fun m -> SynExpr.TraitCall ($1, $4, $6, m)) } /* disambiguate: x $a.id(x) */
 
   | typedSequentialExpr
@@ -4556,19 +4587,19 @@ parenExprBody:
   | inlineAssemblyExpr 
       { $1 }
 
-staticallyKnownHeadTypars:
-  | staticallyKnownHeadTypar 
-      { [$1] }
+typars:
+  | typar 
+      { [SynType.Var($1, rhs parseState 1)] }
 
-  | LPAREN staticallyKnownHeadTyparAlts rparen 
+  | LPAREN typarAlts rparen 
       { List.rev $2 }
 
-staticallyKnownHeadTyparAlts:
-  | staticallyKnownHeadTyparAlts OR staticallyKnownHeadTypar
+typarAlts:
+  | typarAlts OR appType
       {$3 :: $1}
 
-  | staticallyKnownHeadTypar
-      { [$1] }
+  | typar
+      { [SynType.Var($1, rhs parseState 1)] }
 
 braceExpr:
   | LBRACE braceExprBody rbrace 
@@ -5029,17 +5060,24 @@ topType:
 
 topTupleType:
   | topAppType STAR topTupleTypeElements 
-     { let ty, mdata = $1 in let tys, mdatas = List.unzip $3 in (SynType.Tuple(false, List.map (fun ty -> (false, ty)) (ty :: tys), lhs parseState)), (mdata :: mdatas) }
+     { let t, argInfo = $1
+       let mStar = rhs parseState 2
+       let path = SynTupleTypeSegment.Type t :: SynTupleTypeSegment.Star mStar :: (List.map fst $3)
+       let mdata = argInfo :: (List.choose snd $3)
+       mkSynTypeTuple false path, mdata }
 
   | topAppType                 
      { let ty, mdata = $1 in ty, [mdata] }
 
 topTupleTypeElements:
   | topAppType STAR topTupleTypeElements       
-     { $1 :: $3 }
+     { let t, argInfo = $1
+       let mStar = rhs parseState 2
+       (SynTupleTypeSegment.Type t, Some argInfo) :: (SynTupleTypeSegment.Star mStar, None) :: $3 }
 
   | topAppType %prec prec_toptuptyptail_prefix 
-     { [$1] }
+     { let t, argInfo = $1
+       [ SynTupleTypeSegment.Type t, Some argInfo ] }
 
 topAppType:
   | attributes appType COLON appType 
@@ -5080,29 +5118,37 @@ typEOF:
 
 tupleType:
   | appType STAR tupleOrQuotTypeElements 
-    { SynType.Tuple(false, (false, $1) :: $3, lhs parseState) }
+    { let mStar = rhs parseState 2
+      let path = SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Star mStar :: $3
+      mkSynTypeTuple false path }
 
   | INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-      SynType.Tuple(false, (true, SynType.StaticConstant (SynConst.Int32 1, lhs parseState)) :: $2, lhs parseState) }
+      let mSlash = rhs parseState 1
+      let path = SynTupleTypeSegment.Slash mSlash :: $2
+      mkSynTypeTuple false path }
 
   | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-      SynType.Tuple(false, (true, $1) :: $3, lhs parseState) }
+      let mSlash = rhs parseState 2
+      let path = SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Slash mSlash :: $3
+      mkSynTypeTuple false path }
 
   | appType %prec prec_tuptyp_prefix 
     { $1 }
 
 tupleOrQuotTypeElements:
   | appType STAR tupleOrQuotTypeElements              
-    { (false, $1) :: $3 }
+    { let mStar = rhs parseState 2
+      SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Star mStar :: $3 }
 
   | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements 
     { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
-      (true, $1) :: $3 }
+      let mSlash = rhs parseState 2
+      SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Slash mSlash :: $3 }
 
   | appType %prec prec_tuptyptail_prefix 
-    { [(false, $1)] }
+    { [ SynTupleTypeSegment.Type $1 ] }
 
 appTypeCon:
   | path %prec prec_atomtyp_path 
@@ -5236,11 +5282,15 @@ atomType:
        SynType.Paren ($2, lhs parseState) }
 
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  rparen 
-    { SynType.Tuple(true, (false, $3) :: $5, lhs parseState) }
+    { let mStar = rhs parseState 4
+      let path = SynTupleTypeSegment.Type $3 :: SynTupleTypeSegment.Star mStar :: $5
+      mkSynTypeTuple true path }
 
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  recover
     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
-      SynType.Tuple(true, (false, $3) :: $5, lhs parseState) }
+      let mStar = rhs parseState 4
+      let path = SynTupleTypeSegment.Type $3 :: SynTupleTypeSegment.Star mStar :: $5
+      mkSynTypeTuple true path }
 
   | STRUCT LPAREN appType STAR recover
     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
@@ -5429,12 +5479,8 @@ typar:
      {  let id = mkSynId (lhs parseState) ($2).idText
         SynTypar(id, TyparStaticReq.None, false) }
 
-  | staticallyKnownHeadTypar 
-     { $1 }
-
-staticallyKnownHeadTypar: 
   | INFIX_AT_HAT_OP ident 
-    {  if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedTypeParameter());
+    {  if $1 <> "^" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.tcUnexpectedSymbolInTypeExpression($1));
        let id = mkSynId (lhs parseState) ($2).idText
        SynTypar(id, TyparStaticReq.HeadType, false) }
 

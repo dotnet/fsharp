@@ -144,7 +144,7 @@
       </trans-unit>
       <trans-unit id="featureDelegateTypeNameResolutionFix">
         <source>fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</source>
-        <target state="new">fix to resolution of delegate type names, see https://github.com/dotnet/fsharp/issues/10228</target>
+        <target state="translated">Informationen zur Problembehebung bezüglich der Auflösung von Delegattypnamen finden Sie unter https://github.com/dotnet/fsharp/issues/10228</target>
         <note />
       </trans-unit>
       <trans-unit id="featureDiscardUseValue">
@@ -159,7 +159,7 @@
       </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
-        <target state="new">give error on deprecated access of construct with RequireQualifiedAccess attribute</target>
+        <target state="translated">Beim veralteten Zugriff auf das Konstrukt mit dem RequireQualifiedAccess-Attribut wird ein Fehler ausgegeben.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureExpandedMeasurables">
@@ -185,6 +185,16 @@
       <trans-unit id="featureIndexerNotationWithoutDot">
         <source>expr[idx] notation for indexing and slicing</source>
         <target state="translated">expr[idx]-Notation zum Indizieren und Aufteilen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
+        <source>static abstract interface members</source>
+        <target state="new">static abstract interface members</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInitProperties">
+        <source>support for consuming init properties</source>
+        <target state="new">support for consuming init properties</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -239,7 +249,7 @@
       </trans-unit>
       <trans-unit id="featureReallyLongList">
         <source>list literals of any size</source>
-        <target state="new">list literals of any size</target>
+        <target state="translated">Literale beliebiger Größe auflisten</target>
         <note />
       </trans-unit>
       <trans-unit id="featureRefCellNotationInformationals">
@@ -257,9 +267,19 @@
         <target state="translated">whitespace relaxation v2</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureRequiredProperties">
+        <source>support for required properties</source>
+        <target state="new">support for required properties</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureResumableStateMachines">
         <source>resumable state machines</source>
         <target state="translated">Fortsetzbarer Zustand-Maschinen</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureSelfTypeConstraints">
+        <source>self type constraints</source>
+        <target state="new">self type constraints</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
@@ -307,9 +327,14 @@
         <target state="translated">Interpolierte Zeichenfolgen, die als Typ "IFormattable" oder "FormattableString" verwendet werden, dürfen keine Spezifizierer vom Typ "%" verwenden. Es dürfen nur Interpolanten im .NET-Format wie "{{expr}}", "{{expr,3}}" oder "{{expr:N5}}" verwendet werden.</target>
         <note />
       </trans-unit>
+      <trans-unit id="forPercentAInReflectionFreeCode">
+        <source>The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</source>
+        <target state="new">The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="formatDashItem">
         <source> - {0}</source>
-        <target state="translated"> - {0}</target>
+        <target state="translated"> – {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="fromEndSlicingRequiresVFive">
@@ -345,6 +370,11 @@
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">Schlüsselwort, um ein konstantes Literal als Typparameterargument in Typanbietern anzugeben.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionTypeTest">
+        <source>Used to check if an object is of the given type in a pattern or binding.</source>
+        <target state="new">Used to check if an object is of the given type in a pattern or binding.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
@@ -439,17 +469,17 @@
       </trans-unit>
       <trans-unit id="optsClearResultsCache">
         <source>Clear the package manager results cache</source>
-        <target state="new">Clear the package manager results cache</target>
+        <target state="translated">Löschen Sie den Ergebniscache des Paketmanagers</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
-        <target state="new">Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</target>
+        <target state="translated">Ungültige Verwendung der Ausgabe einer Referenzassembly. Verwenden Sie nicht "--staticlink" oder "--refonly" und "--refout" zusammen.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
-        <target state="new">Invalid reference assembly path'</target>
+        <target state="translated">Ungültiger Referenzassemblypfad"</target>
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
@@ -464,12 +494,17 @@
       </trans-unit>
       <trans-unit id="optsRefOnly">
         <source>Produce a reference assembly, instead of a full assembly, as the primary output</source>
-        <target state="new">Produce a reference assembly, instead of a full assembly, as the primary output</target>
+        <target state="translated">Erstellen einer Referenzassembly anstelle einer vollständigen Assembly als primäre Ausgabe</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOut">
         <source>Produce a reference assembly with the specified file path.</source>
-        <target state="new">Produce a reference assembly with the specified file path.</target>
+        <target state="translated">Erstellen Sie eine Referenzassembly mit dem angegebenen Dateipfad.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsReflectionFree">
+        <source>Disable implicit generation of constructs using reflection</source>
+        <target state="new">Disable implicit generation of constructs using reflection</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -527,9 +562,19 @@
         <target state="translated">Unerwartetes Token in Typdefinition. Nach Typ "{0}" wurde "=" erwartet.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsIncompleteTyparExpr1">
+        <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
+        <target state="new">Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsIncompleteTyparExpr2">
+        <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
+        <target state="new">Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsExpectingExpressionInTuple">
         <source>Expecting expression</source>
-        <target state="new">Expecting expression</target>
+        <target state="translated">Ausdruck wird erwartet</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -639,7 +684,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this record expression.</source>
-        <target state="new">The field '{0}' appears multiple times in this record expression.</target>
+        <target state="translated">Das Feld "{0}" ist in diesem Datensatzausdruck mehrmals vorhanden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAnonRecdFieldNameDifferent">
@@ -664,7 +709,7 @@
       </trans-unit>
       <trans-unit id="tcAnonRecdTypeDuplicateFieldId">
         <source>The field '{0}' appears multiple times in this anonymous record type.</source>
-        <target state="new">The field '{0}' appears multiple times in this anonymous record type.</target>
+        <target state="translated">Das Feld "{0}" ist in diesem anonymen Datensatztyp mehrmals vorhanden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcAugmentationsCannotHaveAttributes">
@@ -707,6 +752,11 @@
         <target state="translated">Dieser Ausdruck verwendet die implizite Konvertierung "{0}", um den Typ "{1}" in den Typ "{2}" zu konvertieren. Siehe https://aka.ms/fsharp-implicit-convs. Diese Warnung kann durch "#nowarn \" 3391 \ " deaktiviert werden.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
+        <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
         <source>The 'InlineIfLambda' attribute may only be used on parameters of inlined functions of methods whose type is a function or F# delegate type.</source>
         <target state="translated">Das "InlineIfLambda-Attribut" darf nur für Parameter von Inlinefunktionen von Methoden verwendet werden, deren Typ ein Funktions-oder F #-Delegattyp ist.</target>
@@ -730,6 +780,11 @@
       <trans-unit id="tcInvalidResumableConstruct">
         <source>The construct '{0}' may only be used in valid resumable code.</source>
         <target state="translated">Das Konstrukt "{0}" darf nur in einem gültigen fortsetzbaren Code verwendet werden.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcInvalidSelfConstraint">
+        <source>Invalid constraint. Valid constraint forms include \"'T :&gt; ISomeInterface\" for interface constraints and \"SomeConstrainingType&lt;'T&gt;\" for self-constraints. See https://aka.ms/fsharp-type-constraints.</source>
+        <target state="new">Invalid constraint. Valid constraint forms include \"'T :&gt; ISomeInterface\" for interface constraints and \"SomeConstrainingType&lt;'T&gt;\" for self-constraints. See https://aka.ms/fsharp-type-constraints.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
@@ -770,6 +825,11 @@
       <trans-unit id="tcLiteralFieldAssignmentWithArg">
         <source>Cannot assign '{0}' to a value marked literal</source>
         <target state="translated">"{0}" kann keinem als Literal markierten Wert zugewiesen werden.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcMissingRequiredMembers">
+        <source>The following required properties have to be initalized:{0}</source>
+        <target state="new">The following required properties have to be initalized:{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
@@ -852,14 +912,54 @@
         <target state="translated">Die Verwendung von Fortsetzbarem Code oder fortsetzbaren Zustandscomputern erfordert /langversion:preview</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
+        <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
+        <target state="new">Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">Dieser Ausdruck konvertiert den Typ "{0}" implizit in den Typ "{1}". Siehe https://aka.ms/fsharp-implicit-convs.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcTraitHasMultipleSupportTypes">
+        <source>The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</source>
+        <target state="new">The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTraitInvocationShouldUseTick">
+        <source>Invocation of a static constraint should use \"'T.Ident\" and not \"^T.Ident\", even for statically resolved type parameters.</source>
+        <target state="new">Invocation of a static constraint should use \"'T.Ident\" and not \"^T.Ident\", even for statically resolved type parameters.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTraitIsNotStatic">
+        <source>Trait '{0}' is not static</source>
+        <target state="new">Trait '{0}' is not static</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTraitIsStatic">
+        <source>Trait '{0}' is static</source>
+        <target state="new">Trait '{0}' is static</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcTraitMayNotUseComplexThings">
+        <source>A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</source>
+        <target state="new">A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
         <source>Invalid interpolated string. {0}</source>
         <target state="translated">Ungültige interpolierte Zeichenfolge. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
+        <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
+        <target state="new">'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
+        <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
+        <target state="new">Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -1434,7 +1534,7 @@
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityGenericParametersAreDifferentKinds">
         <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \nThe generic parameters in the signature and implementation have different kinds. Perhaps there is a missing [&lt;Measure&gt;] attribute.</source>
-        <target state="translated">Das Modul "{0}" enthält\n {1} \nDie Signatur gibt aber Folgendes an:\n {2} \nDie generischen Parameter in der Signatur und in der Implementierung haben einen unterschiedlichen Typ. Möglicherweise fehlt ein [&lt;Measure&gt;]-Attribut.</target>
+        <target state="translated">Das Modul „{0}“ enthält\n    {1}    \n, die Signatur gibt aber Folgendes an:\n    {2}.    \nDie generischen Parameter in der Signatur und in der Implementierung haben einen unterschiedlichen Typ. Möglicherweise fehlt ein [&lt;Measure&gt;]-Attribut.</target>
         <note />
       </trans-unit>
       <trans-unit id="ValueNotContainedMutabilityAritiesDiffer">
@@ -1529,22 +1629,22 @@
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is sealed but the signature implies it is not. Consider adding the [&lt;Sealed&gt;] attribute to the signature.</source>
-        <target state="translated">Die {0}-Definitionen für den Typ "{1}" in der Signatur und in der Implementierung sind nicht kompatibel, weil der Implementierungstyp versiegelt ist, laut Signatur aber nicht versiegelt sein sollte. Fügen Sie der Signatur ggf. das [&lt;Sealed&gt;]-Attribut hinzu.</target>
+        <target state="translated">Die {0}-Definitionen für den Typ „{1}“ in der Signatur und in der Implementierung sind nicht kompatibel, weil der Implementierungstyp versiegelt ist, laut Signatur aber nicht versiegelt sein sollte. Fügen Sie der Signatur ggf. das [&lt;Sealed&gt;]-Attribut hinzu.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsNotSealed">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation type is not sealed but signature implies it is. Consider adding the [&lt;Sealed&gt;] attribute to the implementation.</source>
-        <target state="translated">Die {0}-Definitionen für den Typ "{1}" in der Signatur und in der Implementierung sind nicht kompatibel, weil der Implementierungstyp nicht versiegelt ist, laut Signatur aber versiegelt sein sollte. Fügen Sie der Implementierung ggf. das [&lt;Sealed&gt;]-Attribut hinzu.</target>
+        <target state="translated">Die {0}-Definitionen für den Typ „{1}“ in der Signatur und in der Implementierung sind nicht kompatibel, weil der Implementierungstyp nicht versiegelt ist, laut Signatur aber versiegelt sein sollte. Fügen Sie der Implementierung ggf. das [&lt;Sealed&gt;]-Attribut hinzu.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleImplementationIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the implementation is an abstract class but the signature is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the signature.</source>
-        <target state="translated">Die {0} Definitionen für den Typ "{1}" in der Signatur und in der Implementierung sind nicht kompatibel, weil es sich bei der Implementierung um eine abstrakte Klasse handelt, bei der Signatur hingegen nicht. Fügen Sie der Signatur ggf. das [&lt;AbstractClass&gt;]-Attribut hinzu.</target>
+        <target state="translated">Die {0}-Definitionen für den Typ „{1}“ in der Signatur und in der Implementierung sind nicht kompatibel, weil es sich bei der Implementierung um eine abstrakte Klasse handelt, bei der Signatur hingegen nicht. Fügen Sie der Signatur ggf. das [&lt;AbstractClass&gt;]-Attribut hinzu.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleSignatureIsAbstract">
         <source>The {0} definitions for type '{1}' in the signature and implementation are not compatible because the signature is an abstract class but the implementation is not. Consider adding the [&lt;AbstractClass&gt;] attribute to the implementation.</source>
-        <target state="translated">Die {0}-Definitionen für den Typ "{1}" in der Signatur und Implementierung sind nicht kompatibel, da es sich bei der Signatur um eine abstrakte Klasse handelt, bei der Implementierung jedoch nicht. Fügen Sie das [&lt;AbstractClass&gt;]-Attribut zur Implementierung hinzu.</target>
+        <target state="translated">Die {0}-Definitionen für den Typ „{1}“ in der Signatur und Implementierung sind nicht kompatibel, da es sich bei der Signatur um eine abstrakte Klasse handelt, bei der Implementierung jedoch nicht. Fügen Sie das [&lt;AbstractClass&gt;]-Attribut zur Implementierung hinzu.</target>
         <note />
       </trans-unit>
       <trans-unit id="DefinitionsInSigAndImplNotCompatibleTypesHaveDifferentBaseTypes">
@@ -1944,12 +2044,12 @@
       </trans-unit>
       <trans-unit id="augRefEqCantHaveObjEquals">
         <source>A type with attribute 'ReferenceEquality' cannot have an explicit implementation of 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' or 'System.Collections.IStructuralEquatable'</source>
-        <target state="translated">Ein Typ mit dem Attribut "ReferenceEquality" darf keine explizite Implementierung von "Object.Equals(obj)", "System.IEquatable&lt;_&gt;" oder "System.Collections.IStructuralEquatable" aufweisen.</target>
+        <target state="translated">Ein Typ mit dem Attribut „ReferenceEquality“ darf keine explizite Implementierung von „Object.Equals(obj)“, „System.IEquatable&lt;_&gt;“ oder „System.Collections.IStructuralEquatable“ aufweisen.</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomEqNeedsObjEquals">
         <source>A type with attribute 'CustomEquality' must have an explicit implementation of at least one of 'Object.Equals(obj)', 'System.IEquatable&lt;_&gt;' or 'System.Collections.IStructuralEquatable'</source>
-        <target state="translated">Ein Typ mit dem CustomEquality-Attribut erfordert die explizite Implementierung von "Object.Equals(obj)" , "System.IEquatable&lt;_&gt;" und/oder " System.Collections.IStructuralEquatable".</target>
+        <target state="translated">Ein Typ mit dem CustomEquality-Attribut erfordert die explizite Implementierung von „Object.Equals(obj)“, „System.IEquatable&lt;_&gt;“ und/oder „ System.Collections.IStructuralEquatable“.</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomCompareNeedsIComp">
@@ -1964,7 +2064,7 @@
       </trans-unit>
       <trans-unit id="augNoCompCantImpIComp">
         <source>A type with attribute 'NoComparison' should not usually have an explicit implementation of 'System.IComparable', 'System.IComparable&lt;_&gt;' or 'System.Collections.IStructuralComparable'. Disable this warning if this is intentional for interoperability purposes</source>
-        <target state="translated">Ein Typ mit dem NoComparison-Attribut sollte in der Regel keine explizite Implementierung von "System.IComparable" , "System.IComparable&lt;_&gt;" oder "System.Collections.IStructuralComparable" aufweisen. Deaktivieren Sie diese Warnung, wenn diese Implementierung aus Interoperabilitätsgründen beabsichtigt ist.</target>
+        <target state="translated">Ein Typ mit dem NoComparison-Attribut sollte in der Regel keine explizite Implementierung von „System.IComparable“, „System.IComparable&lt;_&gt;“ oder „System.Collections.IStructuralComparable“ aufweisen. Deaktivieren Sie diese Warnung, wenn diese Implementierung aus Interoperabilitätsgründen beabsichtigt ist.</target>
         <note />
       </trans-unit>
       <trans-unit id="augCustomEqNeedsNoCompOrCustomComp">
@@ -3132,11 +3232,6 @@
         <target state="translated">Unerwartetes Integer-Literal in Maßeinheitenausdruck.</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsUnexpectedTypeParameter">
-        <source>Syntax error: unexpected type parameter specification</source>
-        <target state="translated">Syntaxfehler: Unerwartete Typparameterangabe.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsMismatchedQuotationName">
         <source>Mismatched quotation operator name, beginning with '{0}'</source>
         <target state="translated">Anführungszeichen-Operatorname stimmt nicht überein, beginnt mit "{0}".</target>
@@ -3224,7 +3319,7 @@
       </trans-unit>
       <trans-unit id="tcParameterRequiresName">
         <source>A parameter with attributes must also be given a name, e.g. '[&lt;Attribute&gt;] Name : Type'</source>
-        <target state="translated">Ein Parameter mit Attributen muss auch einen Namen besitzen, z.B. "[&lt;Attribute&gt;] Name : Type"</target>
+        <target state="translated">Ein Parameter mit Attributen muss auch einen Namen besitzen, z. B. "[&lt;Attribute&gt;] Name : Type"</target>
         <note />
       </trans-unit>
       <trans-unit id="tcReturnValuesCannotHaveNames">
@@ -3359,7 +3454,7 @@
       </trans-unit>
       <trans-unit id="tcTypeParametersInferredAreNotStable">
         <source>The type parameters inferred for this value are not stable under the erasure of type abbreviations. This is due to the use of type abbreviations which drop or reorder type parameters, e.g. \n\ttype taggedInt&lt;'a&gt; = int or\n\ttype swap&lt;'a,'b&gt; = 'b * 'a.\nConsider declaring the type parameters for this value explicitly, e.g.\n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x).</source>
-        <target state="translated">Die für diesen Wert per Rückschluss abgeleiteten Typparameter sind beim Löschen von Typabkürzungen nicht stabil. Dies ist auf die Verwendung von Typabkürzungen zurückzuführen, die Typparameter löschen oder neu anordnen, z.B. "\n\ttype taggedInt&lt;'a&gt; = int" oder "\n\ttype swap&lt;'a,'b&gt; = 'b * 'a".\nDeklarieren Sie die Typparameter für diesen Wert explizit, z.B. "\n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x)".</target>
+        <target state="translated">Die für diesen Wert per Rückschluss abgeleiteten Typparameter sind beim Löschen von Typabkürzungen nicht stabil. Dies ist auf die Verwendung von Typabkürzungen zurückzuführen, die Typparameter löschen oder neu anordnen, z. B. "\n\ttype taggedInt&lt;'a&gt; = int" oder "\n\ttype swap&lt;'a,'b&gt; = 'b * 'a".\nDeklarieren Sie die Typparameter für diesen Wert explizit, z. B. "\n\tlet f&lt;'a,'b&gt; ((x,y) : swap&lt;'b,'a&gt;) : swap&lt;'a,'b&gt; = (y,x)".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcExplicitTypeParameterInvalid">
@@ -3504,7 +3599,7 @@
       </trans-unit>
       <trans-unit id="tcTypeCannotBeEnumerated">
         <source>The type '{0}' is not a type whose values can be enumerated with this syntax, i.e. is not compatible with either seq&lt;_&gt;, IEnumerable&lt;_&gt; or IEnumerable and does not have a GetEnumerator method</source>
-        <target state="translated">Die Werte des Typs "{0}" können nicht mit dieser Syntax enumeriert werden, d.h., er ist nicht mit "seq&lt;_&gt;, IEnumerable&lt;_&gt;" oder "IEnumerable" kompatibel und besitzt keine GetEnumerator-Methode.</target>
+        <target state="translated">Die Werte des Typs "{0}" können nicht mit dieser Syntax enumeriert werden, d. h., er ist nicht mit "seq&lt;_&gt;, IEnumerable&lt;_&gt;" oder "IEnumerable" kompatibel und besitzt keine GetEnumerator-Methode.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidMixtureOfRecursiveForms">
@@ -4424,7 +4519,7 @@
       </trans-unit>
       <trans-unit id="tcStaticValFieldsMustBeMutableAndPrivate">
         <source>Static 'val' fields in types must be mutable, private and marked with the '[&lt;DefaultValue&gt;]' attribute. They are initialized to the 'null' or 'zero' value for their type. Consider also using a 'static let mutable' binding in a class type.</source>
-        <target state="translated">Statische "val"-Felder in Typen müssen änderbar, privat und mit dem "[&lt;DefaultValue&gt;]"-Attribut gekennzeichnet sein. Sie werden mit dem "NULL"- oder "0"-Wert ihres Typs initalisiert. Verwenden Sie eine "static let mutable"-Bindung in einem Klassentyp.</target>
+        <target state="translated">Statische "val"-Felder in Typen müssen änderbar, privat und mit dem "[&lt;DefaultValue&gt;]"-Attribut gekennzeichnet sein. Sie werden mit dem "NULL"- oder "0"-Wert ihres Typs initialisiert. Verwenden Sie eine "static let mutable"-Bindung in einem Klassentyp.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldRequiresName">
@@ -4654,7 +4749,7 @@
       </trans-unit>
       <trans-unit id="tcTypeAbbreviationHasTypeParametersMissingOnType">
         <source>This type abbreviation has one or more declared type parameters that do not appear in the type being abbreviated. Type abbreviations must use all declared type parameters in the type being abbreviated. Consider removing one or more type parameters, or use a concrete type definition that wraps an underlying type, such as 'type C&lt;'a&gt; = C of ...'.</source>
-        <target state="translated">Für diese Typabkürzung ist mindestens ein Typparameter deklariert, der in dem abgekürzten Typ nicht erscheint. Typabkürzungen müssen alle deklarierten Typparameter im abgekürzten Typ verwenden. Entfernen Sie mindestens einen Typparameter, oder verwenden Sie eine konkrete Typdefinition, die einen zugrundeliegenden Typ umschließt, z.B. "type C&lt;'a&gt; = C of ...".</target>
+        <target state="translated">Für diese Typabkürzung ist mindestens ein Typparameter deklariert, der in dem abgekürzten Typ nicht erscheint. Typabkürzungen müssen alle deklarierten Typparameter im abgekürzten Typ verwenden. Entfernen Sie mindestens einen Typparameter, oder verwenden Sie eine konkrete Typdefinition, die einen zugrundeliegenden Typ umschließt, z. B. "type C&lt;'a&gt; = C of ...".</target>
         <note />
       </trans-unit>
       <trans-unit id="tcStructsInterfacesEnumsDelegatesMayNotInheritFromOtherTypes">
@@ -5029,7 +5124,7 @@
       </trans-unit>
       <trans-unit id="optsPlatform">
         <source>Limit which platforms this code can run on: x86, x64, Arm, Arm64, Itanium, anycpu32bitpreferred, or anycpu. The default is anycpu.</source>
-        <target state="needs-review-translation">Schränken Sie ein, auf welchen Plattformen dieser Code ausgeführt werden kann: "x86", "Itanium", "x64", "anycpu32bitpreferred" oder "anycpu". Der Standard ist "anycpu".</target>
+        <target state="translated">Schränken Sie ein, auf welchen Plattformen dieser Code ausgeführt werden kann: "x86", "x64", "Arm", "Arm64", "Itanium", "anycpu32bitpreferred" oder "anycpu". Der Standard ist "anycpu".</target>
         <note />
       </trans-unit>
       <trans-unit id="optsNoOpt">
@@ -5079,7 +5174,7 @@
       </trans-unit>
       <trans-unit id="optsSourceLink">
         <source>Source link information file to embed in the portable PDB file</source>
-        <target state="translated">Die Datei mit Quelllinkinformationen, die in die portierbare PDB-Datei eingebettet werden soll</target>
+        <target state="translated">Die Datei mit Informationen zur Quellverknüpfung, die in die portierbare PDB-Datei eingebettet werden soll</target>
         <note />
       </trans-unit>
       <trans-unit id="srcFileTooLarge">
@@ -5314,7 +5409,7 @@
       </trans-unit>
       <trans-unit id="optsUnknownPlatform">
         <source>Unrecognized platform '{0}', valid values are 'x86', 'x64', 'Arm', 'Arm64', 'Itanium', 'anycpu32bitpreferred', and 'anycpu'. The default is anycpu.</source>
-        <target state="needs-review-translation">Unbekannte Plattform "{0}", gültige Werte sind "x86", "x64", "Itanium", "anycpu32bitpreferred" und "anycpu".</target>
+        <target state="translated">Unbekannte Plattform "{0}". Gültige Werte sind "x86", "x64", "Arm", "Arm64", "Itanium", "anycpu32bitpreferred" und "anycpu". Der Standardwert ist "anycpu".</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInternalNoDescription">
@@ -5829,7 +5924,7 @@
       </trans-unit>
       <trans-unit id="lexInvalidNumericLiteral">
         <source>This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</source>
-        <target state="new">Dies ist kein gültiges numerisches Literal. Unter anderem sind die folgenden numerischen Literale gültig: 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).</target>
+        <target state="translated">Dies ist kein gültiges numerisches Literal. Unter anderem sind die folgenden numerischen Literale gültig: 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).</target>
         <note />
       </trans-unit>
       <trans-unit id="lexInvalidByteLiteral">
@@ -6014,12 +6109,12 @@
       </trans-unit>
       <trans-unit id="parsNonAdjacentTypars">
         <source>Remove spaces between the type name and type parameter, e.g. \"type C&lt;'T&gt;\", not type \"C   &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="translated">Entfernen Sie die Leerzeichen zwischen dem Typnamen und dem Typparameter, z.B. "\"type C&lt;'T&gt;\"", statt "type \"C   &lt;'T&gt;\"". Typparameter müssen direkt an den Typnamen angeschlossen werden.</target>
+        <target state="translated">Entfernen Sie die Leerzeichen zwischen dem Typnamen und dem Typparameter, z. B. "\"type C&lt;'T&gt;\"", statt "type \"C   &lt;'T&gt;\"". Typparameter müssen direkt an den Typnamen angeschlossen werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAdjacentTyargs">
         <source>Remove spaces between the type name and type parameter, e.g. \"C&lt;'T&gt;\", not \"C &lt;'T&gt;\". Type parameters must be placed directly adjacent to the type name.</source>
-        <target state="translated">Entfernen Sie die Leerzeichen zwischen dem Typnamen und Typparameter, z.B. "\"C&lt;'T&gt;\"" statt "\"C &lt;'T&gt;\"". Typparameter müssen direkt an den Typnamen angeschlossen werden.</target>
+        <target state="translated">Entfernen Sie die Leerzeichen zwischen dem Typnamen und Typparameter, z. B. "\"C&lt;'T&gt;\"" statt "\"C &lt;'T&gt;\"". Typparameter müssen direkt an den Typnamen angeschlossen werden.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNonAtomicType">
@@ -6049,7 +6144,7 @@
       </trans-unit>
       <trans-unit id="tcParameterInferredByref">
         <source>The parameter '{0}' was inferred to have byref type. Parameters of byref type must be given an explicit type annotation, e.g. 'x1: byref&lt;int&gt;'. When used, a byref parameter is implicitly dereferenced.</source>
-        <target state="translated">Der Parameter "{0}" wurde mit dem Typ "byref" abgeleitet. Parametern vom Typ "byref" muss eine explizite Typanmerkung hinzugefügt werden, z.B. "x1: byref&lt;int&gt;". Wenn ein byref-Parameter verwendet wird, wird dieser explizit dereferenziert.</target>
+        <target state="translated">Der Parameter "{0}" wurde mit dem Typ "byref" abgeleitet. Parametern vom Typ "byref" muss eine explizite Typanmerkung hinzugefügt werden, z. B. "x1: byref&lt;int&gt;". Wenn ein byref-Parameter verwendet wird, wird dieser explizit dereferenziert.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNonUniformMemberUse">
@@ -6114,7 +6209,7 @@
       </trans-unit>
       <trans-unit id="activePatternChoiceHasFreeTypars">
         <source>Active pattern '{0}' has a result type containing type variables that are not determined by the input. The common cause is a when a result case is not mentioned, e.g. 'let (|A|B|) (x:int) = A x'. This can be fixed with a type constraint, e.g. 'let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x'</source>
-        <target state="translated">Das aktive Muster "{0}" weist einen Ergebnistyp auf, der Typvariablen enthält, die nicht durch die Eingabe festgelegt werden. Häufig liegt die Ursache darin, dass kein Ergebnisfall erwähnt wird, z.B. "let (|A|B|) (x:int) = A x". Dies kann mit einer Typbeschränkung behoben werden, z.B. "let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x".</target>
+        <target state="translated">Das aktive Muster „{0}“ weist einen Ergebnistyp auf, der Typvariablen enthält, die nicht durch die Eingabe festgelegt werden. Häufig liegt die Ursache darin, dass kein Ergebnisfall erwähnt wird, z. B. „let (|A|B|) (x:int) = A x“. Dies kann mit einer Typbeschränkung behoben werden, z. B. „let (|A|B|) (x:int) : Choice&lt;int,unit&gt; = A x“.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilFieldHasOffsetForSequentialLayout">
@@ -6209,7 +6304,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString">
         <source>Unexpected quotation operator '&lt;@' in type definition. If you intend to pass a verbatim string as a static argument to a type provider, put a space between the '&lt;' and '@' characters.</source>
-        <target state="translated">Unerwarteter Anführungszeichen-Operator "&lt; @" in der Typdefinition. Wenn eine ausführliche Zeichenfolge als statisches Argument an einen Typanbieter übergeben werden soll, fügen Sie zwischen den Zeichen "&lt;" und "@" eine Leerstelle ein.</target>
+        <target state="translated">Unerwarteter Anführungszeichenoperator "&lt;@" in der Typdefinition. Wenn eine ausführliche Zeichenfolge als statisches Argument an einen Typanbieter übergeben werden soll, fügen Sie zwischen den Zeichen "&lt;" und "@" eine Leerstelle ein.</target>
         <note />
       </trans-unit>
       <trans-unit id="parsErrorParsingAsOperatorName">
@@ -6714,7 +6809,7 @@
       </trans-unit>
       <trans-unit id="etStaticParameterRequiresAValue">
         <source>The static parameter '{0}' of the provided type or method '{1}' requires a value. Static parameters to type providers may be optionally specified using named arguments, e.g. '{2}&lt;{3}=...&gt;'.</source>
-        <target state="translated">Der statische Parameter "{0}" vom angegebenen Typ "{1}" erfordert einen Wert. Statische Parameter zu Typanbietern können optional angegeben werden mithilfe von benannten Argumenten, z. b. "{2}&lt;{3}=...&gt;".</target>
+        <target state="translated">Der statische Parameter "{0}" vom angegebenen Typ "{1}" erfordert einen Wert. Statische Parameter zu Typanbietern können optional angegeben werden mithilfe von benannten Argumenten, z. B. "{2}&lt;{3}=...&gt;".</target>
         <note />
       </trans-unit>
       <trans-unit id="etNoStaticParameterWithName">
@@ -6999,7 +7094,7 @@
       </trans-unit>
       <trans-unit id="chkNoByrefsOfByrefs">
         <source>Type '{0}' is illegal because in byref&lt;T&gt;, T cannot contain byref types.</source>
-        <target state="translated">Der Typ "{0}" ist nicht zulässig, da "T" in "byref&lt;T&gt;" keine byref-Typen enthalten kann.</target>
+        <target state="translated">Der Typ „{0}“ ist nicht zulässig, da „T“ in „byref&lt;T&gt;“ keine byref-Typen enthalten kann.</target>
         <note />
       </trans-unit>
       <trans-unit id="tastopsMaxArrayThirtyTwo">
@@ -7417,7 +7512,7 @@
         <target state="translated">Gibt eine Methode an, die entweder im Typ, in dem sie deklariert wird, über keine Implementierung verfügt oder die virtuell ist und über eine Standardimplementierung verfügt.</target>
         <note />
       </trans-unit>
-      <trans-unit id="keyworkDescriptionAnd">
+      <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
         <target state="translated">Wird in gegenseitig rekursiven Bindungen, in Eigenschaftendeklarationen und bei mehreren Beschränkungen in Bezug auf generische Parameter verwendet.</target>
         <note />
@@ -7864,7 +7959,7 @@
       </trans-unit>
       <trans-unit id="tcByrefReturnImplicitlyDereferenced">
         <source>A byref pointer returned by a function or method is implicitly dereferenced as of F# 4.5. To acquire the return value as a pointer, use the address-of operator, e.g. '&amp;f(x)' or '&amp;obj.Method(arg1, arg2)'.</source>
-        <target state="translated">Ein byref-Zeiger, der von einer Funktion oder Methode zurückgegeben wird, wird explizit als von F# 4.5 stammend dereferenziert. Verwenden Sie den Operator (z.B. "&amp;f(x)" oder "&amp;obj.Method(arg1, arg2)"), um den Rückgabewert als Zeiger abzurufen.</target>
+        <target state="translated">Ein byref-Zeiger, der von einer Funktion oder Methode zurückgegeben wird, wird explizit als von F# 4.5 stammend dereferenziert. Verwenden Sie den Operator (z. B. "&amp;f(x)" oder "&amp;obj.Method(arg1, arg2)"), um den Rückgabewert als Zeiger abzurufen.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcByRefLikeNotStruct">

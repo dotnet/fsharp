@@ -3,8 +3,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net472;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <!-- Workaround to get rid of:
         error NU1505: Duplicate 'PackageDownload' items found.
         Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
@@ -38,6 +38,7 @@
     <Compile Include="..\service\Symbols.fs">
       <Link>Symbols.fs</Link>
     </Compile>
+    <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
     <Compile Include="..\service\SyntaxTreeTests\TypeTests.fs">
       <Link>SyntaxTree\TypeTests.fs</Link>
     </Compile>

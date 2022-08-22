@@ -15,7 +15,7 @@
     <!-- F# Version components -->
     <FSMajorVersion>6</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>5</FSBuildVersion>
+    <FSBuildVersion>6</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -32,7 +32,7 @@
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>41</FCSMajorVersion>
     <FCSMinorVersion>0</FCSMinorVersion>
-    <FCSBuildVersion>5</FCSBuildVersion>
+    <FCSBuildVersion>6</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
     <FSharpCompilerServiceVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion).$(FCSRevisionVersion)</FSharpCompilerServiceVersion>
@@ -55,7 +55,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <VSMajorVersion>17</VSMajorVersion>
-    <VSMinorVersion>1</VSMinorVersion>
+    <VSMinorVersion>3</VSMinorVersion>
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
@@ -93,7 +93,7 @@
     <SystemIoCompressionVersion>4.3.0</SystemIoCompressionVersion>
     <SystemLinqExpressionsVersion>4.3.0</SystemLinqExpressionsVersion>
     <SystemLinqQueryableVersion>4.3.0</SystemLinqQueryableVersion>
-    <SystemMemoryVersion>4.5.4</SystemMemoryVersion>
+    <SystemMemoryVersion>4.5.5</SystemMemoryVersion>
     <SystemNetRequestsVersion>4.3.0</SystemNetRequestsVersion>
     <SystemNetSecurityVersion>4.3.1</SystemNetSecurityVersion>
     <SystemReflectionEmitVersion>4.3.0</SystemReflectionEmitVersion>
@@ -201,7 +201,7 @@
     <MicroBuildCoreSentinelVersion>1.0.0</MicroBuildCoreSentinelVersion>
     <MicroBuildPluginsSwixBuildVersion>1.1.33</MicroBuildPluginsSwixBuildVersion>
     <!-- other packages -->
-    <FsCheckVersion>3.0.0-alpha4</FsCheckVersion>
+    <FsCheckVersion>2.16.5</FsCheckVersion>
     <FSharpDataTypeProvidersVersion>4.3.0.0</FSharpDataTypeProvidersVersion>
     <MicrosoftCompositionVersion>1.0.30</MicrosoftCompositionVersion>
     <MicrosoftMSXMLVersion>8.0.0</MicrosoftMSXMLVersion>

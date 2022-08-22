@@ -1975,7 +1975,7 @@ Microsoft.FSharp.Core.ResultModule: Microsoft.FSharp.Collections.FSharpList`1[T]
 Microsoft.FSharp.Core.ResultModule: Microsoft.FSharp.Core.FSharpOption`1[T] ToOption[T,TError](Microsoft.FSharp.Core.FSharpResult`2[T,TError])
 Microsoft.FSharp.Core.ResultModule: Microsoft.FSharp.Core.FSharpValueOption`1[T] ToValueOption[T,TError](Microsoft.FSharp.Core.FSharpResult`2[T,TError])
 Microsoft.FSharp.Core.ResultModule: T DefaultValue[T,TError](T, Microsoft.FSharp.Core.FSharpResult`2[T,TError])
-Microsoft.FSharp.Core.ResultModule: T DefaultWith[T,TError](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,T], Microsoft.FSharp.Core.FSharpResult`2[T,TError])
+Microsoft.FSharp.Core.ResultModule: T DefaultWith[TError,T](Microsoft.FSharp.Core.FSharpFunc`2[TError,T], Microsoft.FSharp.Core.FSharpResult`2[T,TError])
 Microsoft.FSharp.Core.ResultModule: TState FoldBack[T,TError,TState](Microsoft.FSharp.Core.FSharpFunc`2[T,Microsoft.FSharp.Core.FSharpFunc`2[TState,TState]], Microsoft.FSharp.Core.FSharpResult`2[T,TError], TState)
 Microsoft.FSharp.Core.ResultModule: TState Fold[T,TError,TState](Microsoft.FSharp.Core.FSharpFunc`2[TState,Microsoft.FSharp.Core.FSharpFunc`2[T,TState]], TState, Microsoft.FSharp.Core.FSharpResult`2[T,TError])
 Microsoft.FSharp.Core.ResultModule: T[] ToArray[T,TError](Microsoft.FSharp.Core.FSharpResult`2[T,TError])

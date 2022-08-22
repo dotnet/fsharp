@@ -1309,7 +1309,7 @@
       </trans-unit>
       <trans-unit id="DeprecatedThreadStaticBindingWarning">
         <source>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</source>
-        <target state="translated">Vazby let, které jsou statické na úrovni vlákna nebo kontextu, jsou zastaralé. Použijte místo nich deklaraci ve třídě v podobě static val mutable &lt;ident&gt; : &lt;typ&gt;. Přidáním atributu DefaultValue do této deklarace můžete určit, že se bude hodnota v každém novém vláknu inicializovat na výchozí hodnotu.</target>
+        <target state="translated">Vazby let, které jsou statické na úrovni vlákna nebo kontextu, jsou zastaralé. Použijte místo nich deklaraci ve třídě v podobě static val mutable &lt;ident&gt; : &lt;type&gt;. Přidáním atributu DefaultValue do této deklarace můžete určit, že se bude hodnota v každém novém vláknu inicializovat na výchozí hodnotu.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionValueUnexpected">

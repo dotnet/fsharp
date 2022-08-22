@@ -32,7 +32,7 @@
 //<Expects status="success">section='- LANGUAGE -             ' ! option=define                         kind=OptionString</Expects>
 //<Expects status="success">section='- LANGUAGE -             ' ! option=mlcompatibility                kind=OptionUnit</Expects>
 //<Expects status="success">section='- MISCELLANEOUS -        ' ! option=nologo                         kind=OptionUnit</Expects>
-//<Expects status="success">section='- MISCELLANEOUS -        ' ! option=help                           kind=OptionHelp</Expects>
+//<Expects status="success">section='- MISCELLANEOUS -        ' ! option=help                           kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=codepage                       kind=OptionInt</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=utf8output                     kind=OptionUnit</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=fullpaths                      kind=OptionUnit</Expects>
@@ -99,9 +99,8 @@
 //<Expects status="success">section='NoSection                ' ! option=I                              kind=OptionStringList</Expects>
 //<Expects status="success">section='NoSection                ' ! option=o                              kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=a                              kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=\?                              kind=OptionHelp</Expects>
-//<Expects status="success">section='NoSection                ' ! option=help                           kind=OptionHelp</Expects>
-//<Expects status="success">section='NoSection                ' ! option=full-help                      kind=OptionHelp</Expects>
+//<Expects status="success">section='NoSection                ' ! option=help                           kind=OptionConsoleOnly</Expects>
+//<Expects status="success">section='NoSection                ' ! option=full-help                      kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='NoSection                ' ! option=light                          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=indentation-syntax             kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=no-indentation-syntax          kind=OptionUnit</Expects>
@@ -114,7 +113,6 @@
 //<Expects status="success">section='NoSection                ' ! option=compiling-fslib                kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=compiling-fslib-20             kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=compiling-fslib-40             kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=version                        kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=local-optimize                 kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=no-local-optimize              kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=cross-optimize                 kind=OptionUnit</Expects>
@@ -130,7 +128,7 @@
 //<Expects status="success">section='NoSection                ' ! option=Ooff                           kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=ml-keywords                    kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=gnu-style-errors               kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=dumpAllCommandLineOptions      kind=OptionHelp</Expects>
+//<Expects status="success">section='NoSection                ' ! option=dumpAllCommandLineOptions      kind=OptionConsoleOnly</Expects>
 
 // The following ones are for FSI.EXE only
 

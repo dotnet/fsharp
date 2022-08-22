@@ -9,10 +9,6 @@ open System.Reflection
 open System.Runtime.InteropServices
 open Microsoft.FSharp.Core
 
-#if !FX_NO_WIN_REGISTRY
-open Microsoft.Win32
-#endif
-
 #nowarn "44" // ConfigurationSettings is obsolete but the new stuff is horribly complicated.
 
 module internal FSharpEnvironment =
@@ -47,16 +43,6 @@ module internal FSharpEnvironment =
     let isRunningOnCoreClr =
         typeof<obj>.Assembly.FullName.StartsWith ("System.Private.CoreLib", StringComparison.InvariantCultureIgnoreCase)
 
-#if !FX_NO_WIN_REGISTRY
-    [<DllImport("Advapi32.dll", CharSet = CharSet.Unicode, BestFitMapping = false)>]
-    extern uint32 RegOpenKeyExW(UIntPtr _hKey, string _lpSubKey, uint32 _ulOptions, int _samDesired, UIntPtr& _phkResult)
-
-    [<DllImport("Advapi32.dll", CharSet = CharSet.Unicode, BestFitMapping = false)>]
-    extern uint32 RegQueryValueExW(UIntPtr _hKey, string _lpValueName, uint32 _lpReserved, uint32& _lpType, IntPtr _lpData, int& _lpchData)
-
-    [<DllImport("Advapi32.dll")>]
-    extern uint32 RegCloseKey(UIntPtr _hKey)
-#endif
     module Option =
         /// Convert string into Option string where null and String.Empty result in None
         let ofString s =
@@ -67,88 +53,6 @@ module internal FSharpEnvironment =
     let maxPath = 260
     let maxDataLength = (System.Text.UTF32Encoding()).GetMaxByteCount(maxPath)
 
-#if !FX_NO_WIN_REGISTRY
-    let KEY_WOW64_DEFAULT = 0x0000
-    let KEY_WOW64_32KEY = 0x0200
-    let HKEY_LOCAL_MACHINE = UIntPtr(0x80000002u)
-    let KEY_QUERY_VALUE = 0x1
-    let REG_SZ = 1u
-
-    let GetDefaultRegistryStringValueViaDotNet (subKey: string) =
-        Option.ofString (
-            try
-                downcast Microsoft.Win32.Registry.GetValue("HKEY_LOCAL_MACHINE\\" + subKey, null, null)
-            with e ->
-#if DEBUG
-                Debug.Assert(false, sprintf "Failed in GetDefaultRegistryStringValueViaDotNet: %s" (e.ToString()))
-#endif
-                null
-        )
-
-    let Get32BitRegistryStringValueViaPInvoke (subKey: string) =
-        Option.ofString (
-            try
-                // 64 bit flag is not available <= Win2k
-                let options =
-                    let hasWow6432Node =
-                        use x = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Wow6432Node")
-                        x <> null
-
-                    try
-                        match hasWow6432Node with
-                        | true -> KEY_WOW64_32KEY
-                        | false -> KEY_WOW64_DEFAULT
-                    with _ ->
-                        KEY_WOW64_DEFAULT
-
-                let mutable hkey = UIntPtr.Zero
-                let pathResult = Marshal.AllocCoTaskMem(maxDataLength)
-
-                try
-                    let res =
-                        RegOpenKeyExW(HKEY_LOCAL_MACHINE, subKey, 0u, KEY_QUERY_VALUE ||| options, &hkey)
-
-                    if res = 0u then
-                        let mutable uType = REG_SZ
-                        let mutable cbData = maxDataLength
-
-                        let res = RegQueryValueExW(hkey, null, 0u, &uType, pathResult, &cbData)
-
-                        if (res = 0u && cbData > 0 && cbData <= maxDataLength) then
-                            Marshal.PtrToStringUni(pathResult, (cbData - 2) / 2)
-                        else
-                            null
-                    else
-                        null
-                finally
-                    if hkey <> UIntPtr.Zero then RegCloseKey(hkey) |> ignore
-
-                    if pathResult <> IntPtr.Zero then
-                        Marshal.FreeCoTaskMem(pathResult)
-            with e ->
-#if DEBUG
-                Debug.Assert(false, sprintf "Failed in Get32BitRegistryStringValueViaPInvoke: %s" (e.ToString()))
-#endif
-                null
-        )
-
-    let is32Bit = IntPtr.Size = 4
-
-    let tryRegKey (subKey: string) =
-
-        if is32Bit then
-            let s = GetDefaultRegistryStringValueViaDotNet(subKey)
-            // If we got here AND we're on a 32-bit OS then we can validate that Get32BitRegistryStringValueViaPInvoke(...) works
-            // by comparing against the result from GetDefaultRegistryStringValueViaDotNet(...)
-#if DEBUG
-            let viaPinvoke = Get32BitRegistryStringValueViaPInvoke(subKey)
-            Debug.Assert((s = viaPinvoke), sprintf "32bit path: pi=%A def=%A" viaPinvoke s)
-#endif
-            s
-        else
-            Get32BitRegistryStringValueViaPInvoke(subKey)
-#endif
-
     let internal tryCurrentDomain () =
         let pathFromCurrentDomain = AppDomain.CurrentDomain.BaseDirectory
 
@@ -157,28 +61,6 @@ module internal FSharpEnvironment =
         else
             None
 
-#if FX_NO_SYSTEM_CONFIGURATION
-    let internal tryAppConfig (_appConfigKey: string) = None
-#else
-    let internal tryAppConfig (_appConfigKey: string) =
-        let locationFromAppConfig =
-            System.Configuration.ConfigurationSettings.AppSettings.[_appConfigKey]
-#if DEBUG
-        Debug.Print(sprintf "Considering _appConfigKey %s which has value '%s'" _appConfigKey locationFromAppConfig)
-#endif
-        if String.IsNullOrEmpty(locationFromAppConfig) then
-            None
-        else
-            let exeAssemblyFolder =
-                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-
-            let locationFromAppConfig =
-                locationFromAppConfig.Replace("{exepath}", exeAssemblyFolder)
-#if DEBUG
-            Debug.Print(sprintf "Using path %s" locationFromAppConfig)
-#endif
-            Some locationFromAppConfig
-#endif
 
     // The default location of FSharp.Core.dll and fsc.exe based on the version of fsc.exe that is running
     // Used for
@@ -195,69 +77,25 @@ module internal FSharpEnvironment =
             match Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN") with
             | result when not (String.IsNullOrWhiteSpace result) -> Some result
             | _ ->
-                // FSharp.Compiler support setting an appKey for compiler location. I've never seen this used.
-                let result = tryAppConfig "fsharp-compiler-location"
+                let safeExists f =
+                    (try
+                        File.Exists(f)
+                     with _ ->
+                         false)
 
-                match result with
-                | Some _ -> result
-                | None ->
+                // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
+                match probePoint with
+                | Some p when safeExists (Path.Combine(p, "FSharp.Core.dll")) -> Some p
+                | _ ->
+                    let fallback () =
+                        let d = Assembly.GetExecutingAssembly()
+                        Some(Path.GetDirectoryName d.Location)
 
-                    let safeExists f =
-                        (try
-                            File.Exists(f)
-                         with _ ->
-                             false)
-
-                    // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
-                    match probePoint with
-                    | Some p when safeExists (Path.Combine(p, "FSharp.Core.dll")) -> Some p
-                    | _ ->
-                        let fallback () =
-                            let d = Assembly.GetExecutingAssembly()
-                            Some(Path.GetDirectoryName d.Location)
-
-                        match tryCurrentDomain () with
-                        | None -> fallback ()
-                        | Some path -> Some path
+                    match tryCurrentDomain () with
+                    | None -> fallback ()
+                    | Some path -> Some path
         with e ->
             None
-
-#if !FX_NO_WIN_REGISTRY
-    // Apply the given function to the registry entry corresponding to the subKey.
-    // The reg key is disposed at the end of the scope.
-    let useKey subKey f =
-        let key = Registry.LocalMachine.OpenSubKey subKey
-
-        try
-            f key
-        finally
-            match key with
-            | null -> ()
-            | _ -> key.Dispose()
-
-    // Check if the framework version 4.5 or above is installed at the given key entry
-    let IsNetFx45OrAboveInstalledAt subKey =
-        try
-            useKey subKey (fun regKey ->
-                match regKey with
-                | null -> false
-                | _ -> regKey.GetValue("Release", 0) :?> int |> (fun s -> s >= 0x50000)) // 0x50000 implies 4.5.0
-        with _ ->
-            false
-
-    // Check if the framework version 4.5 or above is installed
-    let IsNetFx45OrAboveInstalled =
-        IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Client"
-        || IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full"
-
-    // Check if the running framework version is 4.5 or above.
-    // Use the presence of v4.5.x in the registry to distinguish between 4.0 and 4.5
-    let IsRunningOnNetFx45OrAbove =
-        let version = new Version(versionOf<System.Int32>)
-        let major = version.Major
-        major > 4 || (major = 4 && IsNetFx45OrAboveInstalled)
-
-#endif
 
     // Specify the tooling-compatible fragments of a path such as:
     //     typeproviders/fsharp41/net461/MyProvider.DesignTime.dll
@@ -285,6 +123,7 @@ module internal FSharpEnvironment =
             |]
         elif typeof<obj>.Assembly.GetName().Name = "System.Private.CoreLib" then
             [|
+                "net7.0"
                 "net6.0"
                 "net5.0"
                 "netcoreapp3.1"

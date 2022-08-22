@@ -300,8 +300,8 @@ type TyparFlags(flags: int32) =
         TyparFlags((if isFromError then                0b00000000000000010 else 0) |||
                    (if isCompGen   then                0b00000000000000100 else 0) |||
                    (match staticReq with
-                     | TyparStaticReq.None                  -> 0b00000000000000000
-                     | TyparStaticReq.HeadType            -> 0b00000000000001000) |||
+                     | TyparStaticReq.None          -> 0b00000000000000000
+                     | TyparStaticReq.HeadType      -> 0b00000000000001000) |||
                    (match rigidity with
                      | TyparRigidity.Rigid          -> 0b00000000000000000
                      | TyparRigidity.WillBeRigid    -> 0b00000000000100000
@@ -375,6 +375,9 @@ type TyparFlags(flags: int32) =
                       TyparFlags(flags |||    0b00010000000000000)
                   else
                       TyparFlags(flags &&& ~~~0b00010000000000000)
+
+    member x.WithStaticReq staticReq =  
+        TyparFlags(x.Kind, x.Rigidity, x.IsFromError, x.IsCompilerGenerated, staticReq, x.DynamicReq, x.EqualityConditionalOn, x.ComparisonConditionalOn) 
 
     /// Get the flags as included in the F# binary metadata. We pickle this as int64 to allow for future expansion
     member x.PickledBits = flags       
@@ -472,6 +475,7 @@ exception UndefinedName of
 
 exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
 
+[<CustomEquality;NoComparison>]
 type ModuleOrNamespaceKind = 
 
     /// Indicates that a module is compiled to a class with the "Module" suffix added. 
@@ -485,6 +489,22 @@ type ModuleOrNamespaceKind =
         /// Indicates that the sourcecode had a namespace.
         /// If false, this namespace was implicitly constructed during type checking. 
         isExplicit: bool
+        
+    override this.Equals other =
+        match other with
+        | :? ModuleOrNamespaceKind as kind ->
+            match this, kind with
+            | FSharpModuleWithSuffix, FSharpModuleWithSuffix
+            | ModuleOrType, ModuleOrType
+            | Namespace _, Namespace _ -> true
+            | _ -> false
+        | _ -> false
+
+    override this.GetHashCode () =
+        match this with
+        | FSharpModuleWithSuffix -> 0
+        | ModuleOrType -> 1
+        | Namespace _ -> 2
 
 /// A public path records where a construct lives within the global namespace
 /// of a CCU.
@@ -686,7 +706,7 @@ type Entity =
 #if !NO_TYPEPROVIDERS
     member x.IsStaticInstantiationTycon = 
         x.IsProvidedErasedTycon &&
-            let _nm, args = demangleProvidedTypeName x.LogicalName
+            let _nm, args = DemangleProvidedTypeName x.LogicalName
             args.Length > 0 
 #endif
 
@@ -697,7 +717,7 @@ type Entity =
         if x.IsModuleOrNamespace then x.DemangledModuleOrNamespaceName 
 #if !NO_TYPEPROVIDERS
         elif x.IsProvidedErasedTycon then 
-            let nm, args = demangleProvidedTypeName nm
+            let nm, args = DemangleProvidedTypeName nm
             if withStaticParameters && args.Length > 0 then 
                 nm + "<" + String.concat "," (Array.map snd args) + ">"
             else
@@ -710,7 +730,7 @@ type Entity =
             | tps -> 
                 let nm = DemangleGenericTypeName nm
                 let isArray = nm.StartsWithOrdinal("[") && nm.EndsWithOrdinal("]")
-                let nm = if coreName || isArray then nm else ConvertNameToDisplayName nm
+                let nm = if coreName || isArray then nm else ConvertLogicalNameToDisplayName nm
                 if withUnderscoreTypars then
                     let typarNames = tps |> List.map (fun _  -> "_")
                     nm + "<" + String.concat "," typarNames + ">"
@@ -1680,18 +1700,18 @@ type UnionCase =
     ///
     /// Backticks and parens are not added for non-identifiers.
     ///
-    /// Note logical names op_Nil and op_ConsCons become [] and :: respectively.
-    member uc.DisplayNameCore = uc.LogicalName |> DecompileOpName
+    /// Note logical names op_Nil and op_ColonColon become [] and :: respectively.
+    member uc.DisplayNameCore = uc.LogicalName |> ConvertValLogicalNameToDisplayNameCore
 
     /// Get the display name of the union case
     ///
     /// Backticks and parens are added for non-identifiers.
     ///
-    /// Note logical names op_Nil and op_ConsCons become ([]) and (::) respectively.
-    member uc.DisplayName = uc.LogicalName |> ConvertValNameToDisplayName false
+    /// Note logical names op_Nil and op_ColonColon become ([]) and (::) respectively.
+    member uc.DisplayName = uc.LogicalName |> ConvertValLogicalNameToDisplayName false
 
     /// Get the name of the case in generated IL code.
-    /// Note logical names `op_Nil` and `op_ConsCons` become `Empty` and `Cons` respectively.
+    /// Note logical names `op_Nil` and `op_ColonColon` become `Empty` and `Cons` respectively.
     /// This is because this is how ILX union code gen expects to see them.
     member uc.CompiledName =
         let idText = uc.Id.idText
@@ -1803,7 +1823,7 @@ type RecdField =
     member v.DisplayNameCore = v.LogicalName
 
     /// Name of the field 
-    member v.DisplayName = v.DisplayNameCore |> ConvertNameToDisplayName
+    member v.DisplayName = v.DisplayNameCore |> ConvertLogicalNameToDisplayName
 
       /// Indicates a compiler generated field, not visible to Intellisense or name resolution 
     member v.IsCompilerGenerated = v.rfield_secret
@@ -2266,22 +2286,33 @@ type Typar =
     member x.SetIdent id = x.typar_id <- id
 
     /// Sets the rigidity of a type variable
-    member x.SetRigidity b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, b, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+    member x.SetRigidity b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, b, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
 
     /// Sets whether a type variable is compiler generated
-    member x.SetCompilerGenerated b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, b, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+    member x.SetCompilerGenerated b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, b, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
 
     /// Sets whether a type variable has a static requirement
-    member x.SetStaticReq b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, b, flags.DynamicReq, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+    member x.SetStaticReq b =
+        x.typar_flags <- x.typar_flags.WithStaticReq(b)
 
     /// Sets whether a type variable is required at runtime
-    member x.SetDynamicReq b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, b, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
+    member x.SetDynamicReq b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, b, flags.EqualityConditionalOn, flags.ComparisonConditionalOn) 
 
     /// Sets whether the equality constraint of a type definition depends on this type variable 
-    member x.SetEqualityDependsOn b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, b, flags.ComparisonConditionalOn) 
+    member x.SetEqualityDependsOn b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, b, flags.ComparisonConditionalOn) 
 
     /// Sets whether the comparison constraint of a type definition depends on this type variable 
-    member x.SetComparisonDependsOn b = let flags = x.typar_flags in x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b) 
+    member x.SetComparisonDependsOn b =
+        let flags = x.typar_flags
+        x.typar_flags <- TyparFlags(flags.Kind, flags.Rigidity, flags.IsFromError, flags.IsCompilerGenerated, flags.StaticReq, flags.DynamicReq, flags.EqualityConditionalOn, b) 
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -2341,7 +2372,7 @@ type TyparConstraint =
     
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitWitnessInfo = 
-    | TraitWitnessInfo of TTypes * string * SynMemberFlags * TTypes * TType option
+    | TraitWitnessInfo of tys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTy: TType option
     
     /// Get the member name associated with the member constraint.
     member x.MemberName = (let (TraitWitnessInfo(_, b, _, _, _)) = x in b)
@@ -2352,7 +2383,7 @@ type TraitWitnessInfo =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TTrait(" + x.MemberName + ")"
+    override x.ToString() = "TraitWitnessInfo(" + x.MemberName + ")"
     
 /// The specification of a member constraint that must be solved 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
@@ -2360,23 +2391,23 @@ type TraitConstraintInfo =
 
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of tys: TTypes * memberName: string * _memFlags: SynMemberFlags * argTys: TTypes * returnTy: TType option * solution: TraitConstraintSln option ref 
+    | TTrait of tys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTyOpt: TType option * solution: TraitConstraintSln option ref 
 
-    /// Get the key associated with the member constraint.
-    member x.TraitKey = (let (TTrait(a, b, c, d, e, _)) = x in TraitWitnessInfo(a, b, c, d, e))
+    /// Get the types that may provide solutions for the traits
+    member x.SupportTypes = (let (TTrait(tys, _, _, _, _, _)) = x in tys)
 
-    /// Get the member name associated with the member constraint.
-    member x.MemberName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
+    /// Get the logical member name associated with the member constraint.
+    member x.MemberLogicalName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
 
     /// Get the member flags associated with the member constraint.
     member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _)) = x in flags)
 
-    /// Get the argument types recorded in the member constraint. This includes the object instance type for
-    /// instance members.
-    member x.ArgumentTypes = (let (TTrait(_, _, _, argTys, _, _)) = x in argTys)
+    member x.CompiledObjectAndArgumentTypes = (let (TTrait(_, _, _, objAndArgTys, _, _)) = x in objAndArgTys)
 
-    /// Get the return type recorded in the member constraint.
-    member x.ReturnType = (let (TTrait(_, _, _, _, ty, _)) = x in ty)
+    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f))
+
+    /// Get the optional return type recorded in the member constraint.
+    member x.CompiledReturnType = (let (TTrait(_, _, _, _, retTy, _)) = x in retTy)
 
     /// Get or set the solution of the member constraint during inference
     member x.Solution 
@@ -2386,7 +2417,7 @@ type TraitConstraintInfo =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TTrait(" + x.MemberName + ")"
+    override x.ToString() = "TTrait(" + x.MemberLogicalName + ")"
     
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison (* ; StructuredFormatDisplay("{DebugText}") *) >]
@@ -2398,7 +2429,8 @@ type TraitConstraintSln =
     ///    ty -- the type and its instantiation
     ///    vref -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation 
-    | FSMethSln of ty: TType * vref: ValRef * minst: TypeInst 
+    ///    staticTyOpt -- the static type governing a static virtual call, if any
+    | FSMethSln of ty: TType * vref: ValRef * minst: TypeInst * staticTyOpt: TType option
 
     /// FSRecdFieldSln(tinst, rfref, isSetProp)
     ///
@@ -2418,7 +2450,8 @@ type TraitConstraintSln =
     ///    extOpt -- information about an extension member, if any
     ///    ilMethodRef -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation 
-    | ILMethSln of ty: TType * extOpt: ILTypeRef option * ilMethodRef: ILMethodRef * minst: TypeInst    
+    ///    staticTyOpt -- the static type governing a static virtual call, if any
+    | ILMethSln of ty: TType * extOpt: ILTypeRef option * ilMethodRef: ILMethodRef * minst: TypeInst * staticTyOpt: TType option
 
     /// ClosedExprSln expr
     ///
@@ -2783,6 +2816,10 @@ type Val =
     ///
     /// Note: this is true for the overrides generated by hash/compare augmentations
     member x.IsCompilerGenerated = x.val_flags.IsCompilerGenerated
+
+    /// Indicates that this value's getter or setter are generated by the compiler
+    member x.GetterOrSetterIsCompilerGenerated =
+        x.MemberInfo |> Option.exists (fun m -> m.MemberFlags.GetterOrSetterIsCompilerGenerated = true)
     
     /// Get the declared attributes for the value
     member x.Attribs = 
@@ -2808,7 +2845,7 @@ type Val =
             | _ -> x.val_opt_data <- Some { Val.NewEmptyValOptData() with val_xmldocsig = v }
 
     /// The parent type or module, if any (None for expression bindings and parameters)
-    member x.DeclaringEntity = 
+    member x.TryDeclaringEntity = 
         match x.val_opt_data with
         | Some optData -> optData.val_declaring_entity
         | _ -> ParentNone
@@ -2816,13 +2853,13 @@ type Val =
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member x.TopValDeclaringEntity = 
-        match x.DeclaringEntity with 
+    member x.DeclaringEntity = 
+        match x.TryDeclaringEntity with 
         | Parent tcref -> tcref
-        | ParentNone -> error(InternalError("TopValDeclaringEntity: does not have a parent", x.Range))
+        | ParentNone -> error(InternalError("DeclaringEntity: does not have a parent", x.Range))
 
     member x.HasDeclaringEntity = 
-        match x.DeclaringEntity with 
+        match x.TryDeclaringEntity with 
         | Parent _ -> true
         | ParentNone -> false
             
@@ -2844,7 +2881,7 @@ type Val =
     member x.ApparentEnclosingEntity = 
         match x.MemberInfo with 
         | Some membInfo -> Parent(membInfo.ApparentEnclosingEntity)
-        | None -> x.DeclaringEntity
+        | None -> x.TryDeclaringEntity
 
     /// Get the public path to the value, if any? Should be set if and only if
     /// IsMemberOrModuleBinding is set.
@@ -2858,7 +2895,7 @@ type Val =
     //   - in ilxgen.fs: as a boolean to detect public values for saving quotations 
     //   - in MakeExportRemapping, to build non-local references for values
     member x.PublicPath = 
-        match x.DeclaringEntity with 
+        match x.TryDeclaringEntity with 
         | Parent eref -> 
             match eref.PublicPath with 
             | None -> None
@@ -2973,7 +3010,7 @@ type Val =
     ///
     /// Note: here "Core" means "without added backticks or parens"
     member x.DisplayNameCore = 
-        x.DisplayNameCoreMangled |> DecompileOpName
+        x.DisplayNameCoreMangled |> ConvertValLogicalNameToDisplayNameCore
 
     /// The full text for the value to show in error messages and to use in code.
     /// This includes backticks, parens etc.
@@ -2986,7 +3023,7 @@ type Val =
     ///   - If this is a base value  --> base
     ///   - If this is a value named ``base`` --> ``base``
     member x.DisplayName = 
-        ConvertValNameToDisplayName x.IsBaseVal x.DisplayNameCoreMangled
+        ConvertValLogicalNameToDisplayName x.IsBaseVal x.DisplayNameCoreMangled
 
     member x.SetValRec b = x.val_flags <- x.val_flags.WithRecursiveValInfo b 
 
@@ -3773,7 +3810,7 @@ type ValRef =
     member x.Accessibility = x.Deref.Accessibility
 
     /// The parent type or module, if any (None for expression bindings and parameters)
-    member x.DeclaringEntity = x.Deref.DeclaringEntity
+    member x.TryDeclaringEntity = x.Deref.TryDeclaringEntity
 
     /// Get the apparent parent entity for the value, i.e. the entity under with which the
     /// value is associated. For extension members this is the nominal type the member extends.
@@ -3921,7 +3958,7 @@ type ValRef =
     /// Get the actual parent entity for the value (a module or a type), i.e. the entity under which the
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
-    member x.TopValDeclaringEntity = x.Deref.TopValDeclaringEntity
+    member x.DeclaringEntity = x.Deref.DeclaringEntity
 
     // Can be false for members after error recovery
     member x.HasDeclaringEntity = x.Deref.HasDeclaringEntity
@@ -4010,7 +4047,7 @@ type RecdFieldRef =
     member x.FieldName = let (RecdFieldRef(_, id)) = x in id
 
     /// Get the name of the field, with backticks added for non-identifier names
-    member x.DisplayName = x.FieldName |> ConvertNameToDisplayName
+    member x.DisplayName = x.FieldName |> ConvertLogicalNameToDisplayName
 
     /// Get the Entity for the type containing this union case
     member x.Tycon = x.TyconRef.Deref
@@ -4184,6 +4221,10 @@ type AnonRecdTypeInfo =
 
     member x.IsLinked = (match x.SortedIds with null -> true | _ -> false)
     
+    member x.DisplayNameCoreByIdx idx = x.SortedNames[idx]
+
+    member x.DisplayNameByIdx idx = x.SortedNames[idx] |> ConvertLogicalNameToDisplayName
+
 [<RequireQualifiedAccess>] 
 type TupInfo = 
     /// Some constant, e.g. true or false for tupInfo
@@ -4943,7 +4984,7 @@ type TOp =
         | Return -> "Return"
         | Goto n -> "Goto(" + string n + ")"
         | Label n -> "Label(" + string n + ")"
-        | TraitCall info -> "TraitCall(" + info.MemberName + ")"
+        | TraitCall info -> "TraitCall(" + info.MemberLogicalName + ")"
         | LValueOp (op, vref) -> sprintf "%+A(%s)" op vref.LogicalName
         | ILCall (_,_,_,_,_,_,_,ilMethRef,_,_,_) -> "ILCall(" + ilMethRef.ToString() + ",..)"
 
@@ -5958,4 +5999,3 @@ type Construct() =
             let pos = Position.mkPos line (max 0 (column - 1)) 
             mkRange filePath pos pos |> Some
 #endif
-

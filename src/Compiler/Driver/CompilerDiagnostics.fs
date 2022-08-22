@@ -610,7 +610,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
                     for value in buffer do
                         os.AppendLine() |> ignore
                         os.AppendString "   "
-                        os.AppendString(DecompileOpName value)
+                        os.AppendString(ConvertValLogicalNameToDisplayNameCore value)
 
     let rec OutputExceptionR (os: StringBuilder) error =
 
@@ -788,12 +788,13 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | UnresolvedOverloading (denv, callerArgs, failure, m) ->
 
+            let g = denv.g
             // extract eventual information (return type and type parameters)
             // from ConstraintTraitInfo
             let knownReturnType, genericParameterTypes =
                 match failure with
                 | NoOverloadsFound(cx = Some cx)
-                | PossibleCandidates(cx = Some cx) -> cx.ReturnType, cx.ArgumentTypes
+                | PossibleCandidates(cx = Some cx) -> Some(cx.GetReturnType(g)), cx.GetCompiledArgumentTypes()
                 | _ -> None, []
 
             // prepare message parts (known arguments, known return type, known generic parameters)
@@ -937,12 +938,12 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | Duplicate (k, s, _) ->
             if k = "member" then
-                os.AppendString(Duplicate1E().Format(DecompileOpName s))
+                os.AppendString(Duplicate1E().Format(ConvertValLogicalNameToDisplayNameCore s))
             else
-                os.AppendString(Duplicate2E().Format k (DecompileOpName s))
+                os.AppendString(Duplicate2E().Format k (ConvertValLogicalNameToDisplayNameCore s))
 
         | UndefinedName (_, k, id, suggestionsF) ->
-            os.AppendString(k (DecompileOpName id.idText))
+            os.AppendString(k (ConvertValLogicalNameToDisplayNameCore id.idText))
             suggestNames suggestionsF id.idText
 
         | InternalUndefinedItemRef (f, smr, ccuName, s) ->
@@ -954,11 +955,11 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
         | FieldsFromDifferentTypes (_, fref1, fref2, _) ->
             os.AppendString(FieldsFromDifferentTypesE().Format fref1.FieldName fref2.FieldName)
 
-        | VarBoundTwice id -> os.AppendString(VarBoundTwiceE().Format(DecompileOpName id.idText))
+        | VarBoundTwice id -> os.AppendString(VarBoundTwiceE().Format(ConvertValLogicalNameToDisplayNameCore id.idText))
 
         | Recursion (denv, id, ty1, ty2, _) ->
             let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-            os.AppendString(RecursionE().Format (DecompileOpName id.idText) ty1 ty2 tpcs)
+            os.AppendString(RecursionE().Format (ConvertValLogicalNameToDisplayNameCore id.idText) ty1 ty2 tpcs)
 
         | InvalidRuntimeCoercion (denv, ty1, ty2, _) ->
             let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
@@ -1648,7 +1649,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
         | DiagnosticWithText (_, s, _) -> os.AppendString s
 
         | DiagnosticWithSuggestions (_, s, _, idText, suggestionF) ->
-            os.AppendString(DecompileOpName s)
+            os.AppendString(ConvertValLogicalNameToDisplayNameCore s)
             suggestNames suggestionF idText
 
         | InternalError (s, _)

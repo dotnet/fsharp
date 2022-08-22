@@ -57,9 +57,13 @@ this file.
       <FSharpPreferNetFrameworkTools>  boolean: true or false === default value true
 
       Suggest that the compiler used be the 64 Bit compiler.  On computers without Visual Studio this property is ignored.
+      <FSharpPreferAnyCpuTools>      boolean: true or false === default value true
       <FSharpPrefer64BitTools>      boolean: true or false === default value true
 
-      If Shim helpers are present then the values are valid and set by the Microsoft.FSharp.Helpers.props
+      These are stupidly complex for performance reasons:
+        Arm64 is faster than AnyCpu on an Arm64 machine
+
+      On Windows Arm64 default to Arm64 build, otherwise default to AnyCpu.
     -->
 
     <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true'">
@@ -67,9 +71,13 @@ this file.
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true' and '$(FSharpPreferNetFrameworkTools)' == 'true'">
+
+        <FSharpPreferAnyCpuTools Condition="'$(FSharpPreferAnyCpuTools)' == '' and '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' == 'Arm64'">false</FSharpPreferAnyCpuTools>
+        <FSharpPreferAnyCpuTools Condition="'$(FSharpPreferAnyCpuTools)' == '' and '$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture)' != 'Arm64'">$(FSharpPrefer64BitTools)</FSharpPreferAnyCpuTools>
         <FscToolPath>$(Fsc_NetFramework_ToolPath)</FscToolPath>
-        <FscToolExe Condition="'$(FSharpPrefer64BitTools)' != 'false'">$(Fsc_NetFramework_AnyCpu_ToolExe)</FscToolExe>
-        <FscToolExe Condition="'$(FSharpPrefer64BitTools)' == 'false'">$(Fsc_NetFramework_PlatformSpecific_ToolExe)</FscToolExe>
+        <FscToolExe Condition="'$(FSharpPreferAnyCpuTools)' != 'false'">$(Fsc_NetFramework_AnyCpu_ToolExe)</FscToolExe>
+        <FscToolExe Condition="'$(FSharpPreferAnyCpuTools)' == 'false'">$(Fsc_NetFramework_PlatformSpecific_ToolExe)</FscToolExe>
+
         <DotnetFscCompilerPath></DotnetFscCompilerPath>
     </PropertyGroup>
 
@@ -336,6 +344,7 @@ this file.
               LCID="$(LCID)"
               NoFramework="true"
               Optimize="$(Optimize)"
+              ReflectionFree="$(ReflectionFree)"
               OtherFlags="$(FscOtherFlags)"
               OutputAssembly="@(IntermediateAssembly)"
               OutputRefAssembly="@(IntermediateRefAssembly)"

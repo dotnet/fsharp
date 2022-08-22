@@ -132,7 +132,7 @@ type internal FSharpCodeLensService
                         | :? NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
                             let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
                             h.Click.Add (fun _ -> 
-                                navigation.NavigateTo nav.Range)
+                                navigation.NavigateTo(nav.Range, CancellationToken.None))
                             h :> Documents.Inline
                         | _ -> run :> _
                     FSharpDependencyObjectExtensions.SetTextProperties (inl, actualProperties)
