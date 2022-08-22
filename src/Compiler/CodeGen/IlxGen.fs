@@ -5003,8 +5003,8 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, st
     // FSharpForLoopUp: if v <> e2 + 1 then goto .inner
     // FSharpForLoopDown: if v <> e2 - 1 then goto .inner
     // FSharpForLoopWithStep: if (step > 0 && v <= e2) || (step < 0 && v >= e2) then goto .inner (variable step)
-    // FSharpForLoopWithStep: if v <= e2 then goto .inner (constant step > 0)
-    // FSharpForLoopWithStep: if v >= e2 then goto .inner (constant step < 0)
+    // FSharpForLoopWithStep: if v <= e2 && v >= e1 then goto .inner (constant step > 0)
+    // FSharpForLoopWithStep: if v >= e2 && v <= e1 then goto .inner (constant step < 0)
     // CSharpStyle: if v < e2 then goto .inner
     match spTo with
     | DebugPointAtInOrTo.Yes spStart -> CG.EmitDebugPoint cgbuf spStart
@@ -5023,13 +5023,19 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, st
         |> GenSequel cenv eenv.cloc cgbuf
 
     | FSharpForLoopWithStep _ ->
-        EmitGetLocal cgbuf g.ilg.typ_Int32 finishIdx
 
         match stepConst with
         | Some sc ->
             let pos = sc > 0
+
+            GenExpr cenv cgbuf eenv e1 Continue
+            CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp((if pos then BI_blt else BI_bgt), finish.CodeLabel))
+
+            GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
+            EmitGetLocal cgbuf g.ilg.typ_Int32 finishIdx
             CmpThenBrOrContinue(pop 2, [ I_brcmp((if pos then BI_ble else BI_bge), inner.CodeLabel) ])
         | None ->
+            EmitGetLocal cgbuf g.ilg.typ_Int32 finishIdx
             let testPassed = CG.GenerateDelayMark cgbuf "testPassed"
             CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_ble, testPassed.CodeLabel))
 
