@@ -526,6 +526,7 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Build.UnitTests\FSharp.Build.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Build.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Core.UnitTests\FSharp.Core.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Core.UnitTests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\"
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.CheckerTests\FSharp.Compiler.CheckerTests.fsproj" -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.CheckerTests\"
     }
 
     if ($testFSharpQA) {

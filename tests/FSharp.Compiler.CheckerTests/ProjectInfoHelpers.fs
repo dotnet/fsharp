@@ -1,9 +1,10 @@
-﻿module Tests.Service.ProjectInfoHelpers
+﻿module Tests.ProjectInfoHelpers
 
 open System.IO
 open FSharp.Compiler.CodeAnalysis
 open Ionide.ProjInfo
 open Ionide.ProjInfo.Types
+open Xunit.Abstractions
 
 // Source code taken from https://github.com/ionide/proj-info/blob/main/src/Ionide.ProjInfo.FCS/Library.fs
 
@@ -80,13 +81,24 @@ let rec private mapToFSharpProjectOptions (projectOptions: ProjectOptions) (allK
 
     makeFCSOptions (makeProjectReference isKnownProject (fun p -> mapToFSharpProjectOptions p allKnownProjects)) projectOptions
 
-let mkFSharpProjectOptions (fsprojPath: string) : FSharpProjectOptions array =
+let private mkFSharpProjectOptionsImpl (logger: ITestOutputHelper option) (fsprojPath: string) : FSharpProjectOptions array =
     let fi = FileInfo(fsprojPath)
     let toolsPath = Init.init fi.Directory None
     let loader = WorkspaceLoader.Create(toolsPath, [])
-    use subscription = loader.Notifications.Subscribe(printfn "%A")
 
-    let projects =
-        loader.LoadProjects([ fsprojPath ]) |> mapManyOptions |> Seq.toArray
+    use subscription =
+        match logger with
+        | None ->
+            { new System.IDisposable with
+                member _.Dispose() = ()
+            }
+        | Some logger -> loader.Notifications.Subscribe(string >> logger.WriteLine)
 
+    let projects = loader.LoadProjects([ fsprojPath ]) |> mapManyOptions |> Seq.toArray
     projects
+
+let mkFSharpProjectOptions (fsprojPath: string) : FSharpProjectOptions array =
+    mkFSharpProjectOptionsImpl None fsprojPath
+
+let mkFSharpProjectOptionsWithLogger (logger: ITestOutputHelper) (fsprojPath: string) : FSharpProjectOptions array =
+    mkFSharpProjectOptionsImpl (Some logger) fsprojPath
