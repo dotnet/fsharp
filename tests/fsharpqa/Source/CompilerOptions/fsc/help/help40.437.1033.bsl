@@ -24,7 +24,7 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          run on: x86, x64, Arm, Arm64,
                                          Itanium, anycpu32bitpreferred, or
                                          anycpu. The default is anycpu.
---compressmetadata                       Compress interface and optimization
+--compressmetadata[+|-]                  Compress interface and optimization
                                          data files
 --nooptimizationdata                     Only include optimization
                                          information essential for
