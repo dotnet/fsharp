@@ -156,14 +156,18 @@ type public Fsc() as this =
 
         // NoInterfaceData
         if noInterfaceData then
-            builder.AppendSwitch("--noInterfaceData")
+            builder.AppendSwitch("--nointerfacedata")
 
         // NoOptimizationData
         if noOptimizationData then
-            builder.AppendSwitch("--noOptimizationData")
+            builder.AppendSwitch("--nooptimizationdata")
 
         // BaseAddress
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
+
+        // CompressMetadata
+        if compressMetadata then
+            builder.AppendSwitch("--compressmetadata")
 
         // DefineConstants
         for item in defineConstants do
@@ -369,6 +373,11 @@ type public Fsc() as this =
         with get () = compilerTools
         and set (a) = compilerTools <- a
 
+    // CompressMetadata
+    member _.CompressMetadata
+        with get () = compressMetadata
+        and set (v) = compressMetadata <- v
+
     // -g: Produce debug file. Disables optimizations if a -O flag is not given.
     member _.DebugSymbols
         with get () = debugSymbols
@@ -450,7 +459,7 @@ type public Fsc() as this =
         and set (b) = noFramework <- b
 
     // --nointerfacedata
-    member _.NoInterfaceDataData
+    member _.NoInterfaceData
         with get () = noInterfaceData
         and set (b) = noInterfaceData <- b
 

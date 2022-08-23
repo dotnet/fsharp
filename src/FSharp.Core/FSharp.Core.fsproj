@@ -41,8 +41,7 @@
 
   <!--  The FSharp.Core dll provides a referencable public interface -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(CompressAllMetadata)' != 'true'">
-      <OptimizationData>file</OptimizationData>
-      <InterfaceData>file</InterfaceData>
+      <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <ItemGroup>

@@ -22,8 +22,8 @@
 
   <!--  The fsc application does not provide a referencable public interface  -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <OptimizationData>none</OptimizationData>
-      <InterfaceData>none</InterfaceData>
+      <NoOptimizationData>true</NoOptimizationData>
+      <NoInterfaceData>true</NoInterfaceData>
   </PropertyGroup>
 
   <ItemGroup>

@@ -83,16 +83,14 @@
     <DefineConstants>$(DefineConstants);TESTING_ON_LINUX</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup>
-      <OptimizationData>file</OptimizationData>
-      <InterfaceData>file</InterfaceData>
-  </PropertyGroup>
 
   <!-- CompressAllMetadata is a switch set by the CI to do a test pass where we compress the metadata for the assemblies -->
   <!-- We don't compress the proto-compiler yet, because no shipped compiler, and the arcade compiler don't yet support compression -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto' or '$(CompressAllMetadata)' != 'true'">
+      <CompressMetadata>false</CompressMetadata>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(CompressAllMetadata)' == 'true'">
-      <OptimizationData>compress</OptimizationData>
-      <InterfaceData>compress</InterfaceData>
+      <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <!-- SDK targets override -->

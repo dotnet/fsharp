@@ -26,8 +26,7 @@
 
   <!--  The fsi application does not provide a referencable public interface  -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <OptimizationData>none</OptimizationData>
-      <InterfaceData>none</InterfaceData>
+      <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <ItemGroup>

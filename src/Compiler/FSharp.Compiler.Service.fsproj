@@ -29,8 +29,7 @@
 
   <!--  The FSharp.Compiler.Service dll provides a referencable public interface for tool builders -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <OptimizationData>compress</OptimizationData>
-      <InterfaceData>compress</InterfaceData>
+      <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <PropertyGroup>
