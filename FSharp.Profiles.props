@@ -14,8 +14,4 @@
     </Otherwise>
   </Choose>
 
-  <PropertyGroup>
-     <!-- Override the setting for the Arcase UserRuntimeConfig for fsc on .NET Core -->
-    <UserRuntimeConfig Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' AND '$(OutputType)' == 'Exe' AND '$(AssemblyName)' == 'fsc'">$(MSBuildThisFileDirectory)src\fsc\runtimeconfig.template.json</UserRuntimeConfig>
-  </PropertyGroup>
 </Project>
