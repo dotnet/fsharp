@@ -63,7 +63,9 @@ type ManglingNamesOfProvidedTypesWithMultipleParameter() =
     
     [<Fact>]
     member this.DemangleMultiParameter() = 
+        let smashtogether arr = arr |> Seq.fold(fun acc (f,s) -> acc + $"-{f}-{s}") ""
         let name, parameters = PrettyNaming.DemangleProvidedTypeName "TestType,Foo=\"xyz\",Foo2=\"abc\""
         Assert.shouldBe "TestType" name
-        Assert.shouldBe([| "Foo", "xyz"
-                           "Foo2", "abc" |], parameters)
+        let parameters = smashtogether parameters
+        let expected = smashtogether [| "Foo", "xyz"; "Foo2", "abc" |]
+        Assert.shouldBe expected parameters

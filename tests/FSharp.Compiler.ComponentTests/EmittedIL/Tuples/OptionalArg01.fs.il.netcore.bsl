@@ -7,7 +7,7 @@
 .assembly extern System.Runtime
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly extern FSharp.Core
 {
@@ -17,7 +17,7 @@
 .assembly extern System.Collections
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly OptionalArg01
 {
@@ -26,14 +26,14 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.OptionalArg01
 {
-  // Offset: 0x00000000 Length: 0x0000049B
+  // Offset: 0x00000000 Length: 0x00000497
   // WARNING: managed resource file FSharpSignatureData.OptionalArg01 created
 }
 .mresource public FSharpOptimizationData.OptionalArg01
@@ -42,13 +42,13 @@
   // WARNING: managed resource file FSharpOptimizationData.OptionalArg01 created
 }
 .module OptionalArg01.exe
-// MVID: {624CEE83-1E6F-95CC-A745-038383EE4C62}
+// MVID: {63000B04-F3D9-4E0B-A745-0383040B0063}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000002154A2E0000
+// Image base: 0x000001AEAA550000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -633,4 +633,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net6.0\tests\EmittedIL\Tuples\OptionalArg01_fs\OptionalArg01.res
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net7.0\tests\EmittedIL\Tuples\OptionalArg01_fs\OptionalArg01.res
