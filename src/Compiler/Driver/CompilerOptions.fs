@@ -90,6 +90,7 @@ let compilerOptionUsage (CompilerOption (s, tag, spec, _, _)) =
             ""
         else
             s (* s="flag" for "--flag" options. s="--" for "--" option. Adjust printing here for "--" case. *)
+
     match spec with
     | OptionUnit _
     | OptionSet _
@@ -130,7 +131,7 @@ let PrintCompilerOption print (CompilerOption (_s, _tag, _spec, _, help) as comp
     //   flagWidth chars - for flags description or padding on continuation lines.
     //   single space    - space.
     //   description     - words upto but excluding the final character of the line.
-    print $"{compilerOptionUsage compilerOption, 40}"
+    print $"{compilerOptionUsage compilerOption, -40}"
 
     let printWord column (word: string) =
         // Have printed upto column.
@@ -138,7 +139,7 @@ let PrintCompilerOption print (CompilerOption (_s, _tag, _spec, _, help) as comp
         // Returns the column printed to (suited to folding).
         if column + 1 (*space*) + word.Length >= lineWidth then // NOTE: "equality" ensures final character of the line is never printed
             print "\n"
-            print $"{word, -40}"
+            print $"{String.Empty, -40} {word}"
             flagWidth + 1 + word.Length
         else
             print $" {word}"
