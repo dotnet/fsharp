@@ -26,7 +26,7 @@ let private getBuilder() =
         Range.Zero)
 
 [<Test>]
-let ``Blah1`` () =
+let ``Help is displayed correctly`` () =
     let builder = getBuilder()
     let blocks = GetCoreFscCompilerOptions builder
     
@@ -38,7 +38,7 @@ let ``Blah1`` () =
     ()
 
 [<Test>]
-let ``Blah2`` () =
+let ``Version is displayed correctly`` () =
     let builder = getBuilder()
 
     let fileName = $"{Guid.NewGuid()}"
@@ -49,5 +49,8 @@ let ``Blah2`` () =
 
     let output = File.ReadAllText fileName
 
-    ()
+    Assert.That(
+        output, 
+        Does.Match(@"Microsoft \(R\) F# Compiler version \d+\.\d+\.\d+\.\d+ for F# \d+\.\d+"))
 
+    ()
