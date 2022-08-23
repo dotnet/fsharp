@@ -310,7 +310,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                             let y(*MInt[]*) : int []    = [| 1; 2; 3 |]
                             """
         this.AssertQuickInfoContainsAtStartOfMarker(fileContents, "x(*MIntArray1*)", "int array")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "y(*MInt[]*)", "int[]")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "y(*MInt[]*)", "int array")
         
     //Verify no quickinfo -- link name string have 
     [<Test>]
@@ -601,7 +601,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let t = new N.T.M(*Marker*)()"""
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
-         "N.T.M() : int[]",
+         "N.T.M() : int array",
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithEmptyComment.dll")])
     
 
@@ -2070,7 +2070,7 @@ query."
              ["type Random =";
               "  new: unit -> unit + 1 overload"
               "  member Next: unit -> int + 2 overloads";  
-              "  member NextBytes: buffer: byte[] -> unit";
+              "  member NextBytes: buffer: byte array -> unit";
               "  member NextDouble: unit -> float"]
             )
 
