@@ -31,10 +31,10 @@ let ``Help is displayed correctly`` () =
     let blocks = GetCoreFscCompilerOptions builder
     let fileName = $"{Guid.NewGuid()}"
     let expectedHelp = File.ReadAllText $"{__SOURCE_DIRECTORY__}/expected-help-output.txt"
-    
     let print text = File.AppendAllText(fileName, text)
     let exit() = ()
-    displayHelpFsc builder blocks print exit
+
+    DisplayHelpFsc builder blocks print exit
 
     let help = File.ReadAllText fileName
     // contains instead of equals
@@ -47,10 +47,10 @@ let ``Version is displayed correctly`` () =
     let builder = getBuilder()
     let fileName = $"{Guid.NewGuid()}"
     let expectedVersionPattern = @"Microsoft \(R\) F# Compiler version \d+\.\d+\.\d+\.\d+ for F# \d+\.\d+"
-
     let print text = File.AppendAllText(fileName, text)
     let exit() = ()
-    displayVersion builder print exit
+
+    DisplayVersion builder print exit
 
     let version = File.ReadAllText fileName
     Assert.That(version, Does.Match expectedVersionPattern)
