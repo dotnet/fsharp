@@ -11,7 +11,7 @@ let ``SourceIdentifier as ParsedHashDirectiveArgument`` () =
             "#I __SOURCE_DIRECTORY__"
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.HashDirective(ParsedHashDirective("I", [ ParsedHashDirectiveArgument.SourceIdentifier(c,_,m) ] , _), _)
     ]) ])) ->
         Assert.AreEqual("__SOURCE_DIRECTORY__", c)
@@ -25,7 +25,7 @@ let ``Regular String as ParsedHashDirectiveArgument`` () =
             "#I \"/tmp\""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.HashDirective(ParsedHashDirective("I", [ ParsedHashDirectiveArgument.String(v, SynStringKind.Regular, m) ] , _), _)
     ]) ])) ->
         Assert.AreEqual("/tmp", v)
@@ -39,7 +39,7 @@ let ``Verbatim String as ParsedHashDirectiveArgument`` () =
             "#I @\"C:\\Temp\""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.HashDirective(ParsedHashDirective("I", [ ParsedHashDirectiveArgument.String(v, SynStringKind.Verbatim, m) ] , _), _)
     ]) ])) ->
         Assert.AreEqual("C:\\Temp", v)
@@ -53,7 +53,7 @@ let ``Triple quote String as ParsedHashDirectiveArgument`` () =
             "#nowarn \"\"\"40\"\"\""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.HashDirective(ParsedHashDirective("nowarn", [ ParsedHashDirectiveArgument.String(v, SynStringKind.TripleQuote, m) ] , _), _)
     ]) ])) ->
         Assert.AreEqual("40", v)

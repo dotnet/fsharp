@@ -973,7 +973,8 @@ module SyntaxTraversal =
             visitor.VisitBinding(origPath, defaultTraverse, b)
 
         match parseTree with
-        | ParsedInput.ImplFile (ParsedImplFileInput (modules = l)) ->
+        | ParsedInput.ImplFile file ->
+            let l = file.Contents
             let fileRange =
 #if DEBUG
                 match l with

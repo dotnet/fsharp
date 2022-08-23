@@ -5297,7 +5297,7 @@ let CheckOneImplFile
 
 
 /// Check an entire signature file
-let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile; modules = sigFileFrags)) = 
+let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (sigFile: ParsedSigFileInput) = 
  cancellable {     
     let cenv = 
         cenv.Create 
@@ -5311,8 +5311,8 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
 
     let envinner, moduleTyAcc = MakeInitialEnv tcEnv 
 
-    let specs = [ for x in sigFileFrags -> SynModuleSigDecl.NamespaceFragment x ]
-    let! tcEnv = TcSignatureElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None specs
+    let specs = [ for x in sigFile.Contents -> SynModuleSigDecl.NamespaceFragment x ]
+    let! tcEnv = TcSignatureElements cenv ParentNone sigFile.QualifiedName.Range envinner PreXmlDoc.Empty None specs
     
     let sigFileType = moduleTyAcc.Value
     
@@ -5320,7 +5320,7 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
         try
             sigFileType |> IterTyconsOfModuleOrNamespaceType (fun tycon ->
                 FinalTypeDefinitionChecksAtEndOfInferenceScope(cenv.infoReader, tcEnv.NameEnv, cenv.tcSink, false, tcEnv.DisplayEnv, tycon))
-        with exn -> errorRecovery exn qualNameOfFile.Range
+        with exn -> errorRecovery exn sigFile.QualifiedName.Range
 
     return (tcEnv, sigFileType, cenv.createsGeneratedProvidedTypes)
  }

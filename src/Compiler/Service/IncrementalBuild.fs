@@ -475,7 +475,7 @@ type BoundModel private (tcConfig: TcConfig,
 
                     IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
                     let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
-                    let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
+                    let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
                     use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
                     beforeFileChecked.Trigger fileName
@@ -519,8 +519,8 @@ type BoundModel private (tcConfig: TcConfig,
                             tcDependencyFiles = fileName :: prevTcDependencyFiles
                             sigNameOpt =
                                 match input with
-                                | ParsedInput.SigFile(ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
-                                    Some(fileName, qualName)
+                                | ParsedInput.SigFile sigFile ->
+                                    Some(sigFile.FileName, sigFile.QualifiedName)
                                 | _ ->
                                     None
                         }

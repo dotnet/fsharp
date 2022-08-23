@@ -54,8 +54,6 @@ val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string * Depe
 /// Process the #nowarn in an input and integrate them into the TcConfig
 val ApplyNoWarnsToTcConfig: TcConfig * ParsedInput * string -> TcConfig
 
-val GetScopedPragmasForInput: input: ParsedInput -> ScopedPragma list
-
 /// Parse one input stream
 val ParseOneInputStream:
     tcConfig: TcConfig *
@@ -132,8 +130,6 @@ type TcState =
     member NextStateAfterIncrementalFragment: TcEnv -> TcState
 
     member CreatesGeneratedProvidedTypes: bool
-
-    member RemoveImpl: QualifiedNameOfFile -> TcState
 
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv * OpenDeclaration list -> TcState
