@@ -72,7 +72,7 @@ let decompressResource (r: ILResource) =
     ByteStorage.FromByteArray(decompressed.ToArray()).GetByteMemory()
 
 let GetResourceNameAndSignatureDataFunc (r: ILResource) =
-    let getResourceTypeAndName (r: ILResource) =
+    let resourceType, ccuName =
         if r.Name.StartsWithOrdinal FSharpSignatureDataResourceName then
             FSharpSignatureDataResourceName, String.dropPrefix r.Name FSharpSignatureDataResourceName
         elif r.Name.StartsWithOrdinal FSharpSignatureCompressDataResourceName then
@@ -82,15 +82,13 @@ let GetResourceNameAndSignatureDataFunc (r: ILResource) =
         else
             failwith "GetSignatureDataResourceName"
 
-    let resourceType, ccuName = getResourceTypeAndName r
-
     if resourceType = FSharpSignatureCompressDataResourceName then
         ccuName, (fun () -> decompressResource (r))
     else
         ccuName, (fun () -> r.GetBytes())
 
 let GetResourceNameAndOptimizationDataFunc (r: ILResource) =
-    let getResourceTypeAndName (r: ILResource) =
+    let resourceType, ccuName =
         if r.Name.StartsWithOrdinal FSharpOptimizationDataResourceName then
             FSharpOptimizationDataResourceName, String.dropPrefix r.Name FSharpOptimizationDataResourceName
         elif r.Name.StartsWithOrdinal FSharpOptimizationCompressDataResourceName then
@@ -99,8 +97,6 @@ let GetResourceNameAndOptimizationDataFunc (r: ILResource) =
             FSharpOptimizationDataResourceName2, String.dropPrefix r.Name FSharpOptimizationDataResourceName2
         else
             failwith "GetOptimizationDataResourceName"
-
-    let resourceType, ccuName = getResourceTypeAndName r
 
     if resourceType = FSharpOptimizationCompressDataResourceName then
         ccuName, (fun () -> decompressResource (r))
