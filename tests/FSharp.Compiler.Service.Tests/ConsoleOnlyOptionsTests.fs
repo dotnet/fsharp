@@ -25,12 +25,14 @@ let ``Blah1`` () =
         None,
         Range.Zero)
 
-    let blocks = GetCoreServiceCompilerOptions builder
+    let blocks = GetCoreFscCompilerOptions builder
     
-    use sw = new StreamWriter(@"C:\code\text.txt")
-    let print = fprintfn sw
+    use writer = new StreamWriter @"C:\code\text.txt"
+    let print = fprintfn writer
     let exit() = ()
-    let result = displayHelpFsc builder blocks print exit
-    sw.Close()
+
+    displayHelpFsc builder blocks print exit
+
+    writer.Close()
     ()
 
