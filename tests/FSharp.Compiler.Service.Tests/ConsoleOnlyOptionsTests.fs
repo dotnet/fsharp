@@ -37,7 +37,7 @@ let ``Help is displayed correctly`` () =
     displayHelpFsc builder blocks print exit
 
     let help = File.ReadAllText fileName
-    // contains instead of equal
+    // contains instead of equals
     // as we don't control the 1st line of the output (the version)
     // it's tested separately
     StringAssert.Contains(expectedHelp, help)

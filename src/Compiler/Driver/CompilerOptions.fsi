@@ -46,7 +46,7 @@ and CompilerOptionBlock =
 val PrintCompilerOptionBlocks: 
     CompilerOptionBlock list 
     -> print: (string -> unit)
-    -> unit // for printing usage
+    -> unit
 
 val DumpCompilerOptionBlocks: CompilerOptionBlock list -> unit // for QA
 
@@ -60,14 +60,14 @@ val DisplayBannerText:
     -> print: (string -> unit)
     -> unit
 
-val displayHelpFsc: 
+val DisplayHelpFsc: 
     tcConfigB: TcConfigBuilder 
     -> blocks: CompilerOptionBlock list 
     -> print: (string -> unit) 
     -> exit: (unit -> 'a)
     -> 'a
 
-val displayVersion:
+val DisplayVersion:
     tcConfigB: TcConfigBuilder 
     -> print: (string -> unit)
     -> exit: (unit -> 'a)
