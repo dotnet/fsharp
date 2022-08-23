@@ -55,12 +55,12 @@ let (++) x s = x @ [ s ]
 
 let IsSignatureDataResource (r: ILResource) =
     r.Name.StartsWithOrdinal FSharpSignatureDataResourceName
-    || r.Name.StartsWithOrdinal FSharpSignatureCompressDataResourceName
+    || r.Name.StartsWithOrdinal FSharpSignatureCompressedDataResourceName
     || r.Name.StartsWithOrdinal FSharpSignatureDataResourceName2
 
 let IsOptimizationDataResource (r: ILResource) =
     r.Name.StartsWithOrdinal FSharpOptimizationDataResourceName
-    || r.Name.StartsWithOrdinal FSharpOptimizationCompressDataResourceName
+    || r.Name.StartsWithOrdinal FSharpOptimizationCompressedDataResourceName
     || r.Name.StartsWithOrdinal FSharpOptimizationDataResourceName2
 
 let decompressResource (r: ILResource) =
@@ -75,14 +75,14 @@ let GetResourceNameAndSignatureDataFunc (r: ILResource) =
     let resourceType, ccuName =
         if r.Name.StartsWithOrdinal FSharpSignatureDataResourceName then
             FSharpSignatureDataResourceName, String.dropPrefix r.Name FSharpSignatureDataResourceName
-        elif r.Name.StartsWithOrdinal FSharpSignatureCompressDataResourceName then
-            FSharpSignatureCompressDataResourceName, String.dropPrefix r.Name FSharpSignatureCompressDataResourceName
+        elif r.Name.StartsWithOrdinal FSharpSignatureCompressedDataResourceName then
+            FSharpSignatureCompressedDataResourceName, String.dropPrefix r.Name FSharpSignatureCompressedDataResourceName
         elif r.Name.StartsWithOrdinal FSharpSignatureDataResourceName2 then
             FSharpSignatureDataResourceName2, String.dropPrefix r.Name FSharpSignatureDataResourceName2
         else
             failwith "GetSignatureDataResourceName"
 
-    if resourceType = FSharpSignatureCompressDataResourceName then
+    if resourceType = FSharpSignatureCompressedDataResourceName then
         ccuName, (fun () -> decompressResource (r))
     else
         ccuName, (fun () -> r.GetBytes())
@@ -91,14 +91,14 @@ let GetResourceNameAndOptimizationDataFunc (r: ILResource) =
     let resourceType, ccuName =
         if r.Name.StartsWithOrdinal FSharpOptimizationDataResourceName then
             FSharpOptimizationDataResourceName, String.dropPrefix r.Name FSharpOptimizationDataResourceName
-        elif r.Name.StartsWithOrdinal FSharpOptimizationCompressDataResourceName then
-            FSharpOptimizationCompressDataResourceName, String.dropPrefix r.Name FSharpOptimizationCompressDataResourceName
+        elif r.Name.StartsWithOrdinal FSharpOptimizationCompressedDataResourceName then
+            FSharpOptimizationCompressedDataResourceName, String.dropPrefix r.Name FSharpOptimizationCompressedDataResourceName
         elif r.Name.StartsWithOrdinal FSharpOptimizationDataResourceName2 then
             FSharpOptimizationDataResourceName2, String.dropPrefix r.Name FSharpOptimizationDataResourceName2
         else
             failwith "GetOptimizationDataResourceName"
 
-    if resourceType = FSharpOptimizationCompressDataResourceName then
+    if resourceType = FSharpOptimizationCompressedDataResourceName then
         ccuName, (fun () -> decompressResource (r))
     else
         ccuName, (fun () -> r.GetBytes())
@@ -151,7 +151,7 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
     // don't complain when they see the resource.
     let rName, compress =
         if tcConfig.compressMetadata then
-            FSharpSignatureCompressDataResourceName, true
+            FSharpSignatureCompressedDataResourceName, true
         elif ccu.AssemblyName = getFSharpCoreLibraryName then
             FSharpSignatureDataResourceName2, false
         else
@@ -187,7 +187,7 @@ let WriteOptimizationData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu: 
     // don't complain when they see the resource.
     let rName, compress =
         if tcConfig.compressMetadata then
-            FSharpOptimizationCompressDataResourceName, true
+            FSharpOptimizationCompressedDataResourceName, true
         elif ccu.AssemblyName = getFSharpCoreLibraryName then
             FSharpOptimizationDataResourceName2, false
         else

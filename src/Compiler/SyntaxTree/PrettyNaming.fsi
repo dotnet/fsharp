@@ -271,9 +271,9 @@ val internal FSharpOptimizationDataResourceName: string
 
 val internal FSharpSignatureDataResourceName: string
 
-val internal FSharpOptimizationCompressDataResourceName: string
+val internal FSharpOptimizationCompressedDataResourceName: string
 
-val internal FSharpSignatureCompressDataResourceName: string
+val internal FSharpSignatureCompressedDataResourceName: string
 
 val internal FSharpOptimizationDataResourceName2: string
 
