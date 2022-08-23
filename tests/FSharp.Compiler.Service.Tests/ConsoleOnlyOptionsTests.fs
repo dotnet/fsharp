@@ -27,12 +27,10 @@ let ``Blah1`` () =
 
     let blocks = GetCoreFscCompilerOptions builder
     
-    use writer = new StreamWriter @"C:\code\text.txt"
-    let print = fprintfn writer
+    let print line = File.AppendAllLines(@"C:\code\text.txt", [line])
     let exit() = ()
 
     displayHelpFsc builder blocks print exit
 
-    writer.Close()
     ()
 

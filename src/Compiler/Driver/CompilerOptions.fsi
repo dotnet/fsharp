@@ -54,13 +54,13 @@ val ParseCompilerOptions: (string -> unit) * CompilerOptionBlock list * string l
 
 val DisplayBannerText:
     tcConfigB: TcConfigBuilder
-    -> print: (Printf.TextWriterFormat<string -> unit> -> string -> unit)
+    -> print: (string -> unit)
     -> unit
 
 val displayHelpFsc: 
     tcConfigB: TcConfigBuilder 
     -> blocks: CompilerOptionBlock list 
-    -> print: (Printf.TextWriterFormat<string -> unit> -> string -> unit) 
+    -> print: (string -> unit) 
     -> exit: (unit -> 'a)
     -> 'a
 

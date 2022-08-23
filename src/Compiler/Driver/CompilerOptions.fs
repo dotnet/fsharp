@@ -152,11 +152,11 @@ let PrintCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOp
     let _finalColumn = Array.fold printWord flagWidth words
     printfn "" (* newline *)
 
-let PrintPublicOptions (heading, opts) =
+let PrintPublicOptions (heading, opts) print =
     if not (isNil opts) then
-        printfn ""
-        printfn ""
-        printfn "\t\t%s" heading
+        print ""
+        print ""
+        print $"\t\t{heading}"
         List.iter PrintCompilerOption opts
 
 let PrintCompilerOptionBlocks blocks =
@@ -173,7 +173,7 @@ let PrintCompilerOptionBlocks blocks =
             let headingOptions =
                 publicBlocks |> List.filter (fun (h2, _) -> heading = h2) |> List.collect snd
 
-            PrintPublicOptions(heading, headingOptions)
+            PrintPublicOptions(heading, headingOptions) Console.WriteLine
             Set.add heading doneHeadings
 
     List.fold consider Set.empty publicBlocks |> ignore<Set<string>>
@@ -1972,10 +1972,10 @@ let deprecatedFlagsFsc tcConfigB =
 // OptionBlock: Miscellaneous options
 //-----------------------------------
 
-let DisplayBannerText tcConfigB (print: Printf.TextWriterFormat<string -> unit> -> string -> unit) =
+let DisplayBannerText tcConfigB (print: string -> unit) =
     if tcConfigB.showBanner then
-        (print "%s" tcConfigB.productNameForBannerText
-         print "%s" (FSComp.SR.optsCopyright ()))
+        (print tcConfigB.productNameForBannerText
+         print (FSComp.SR.optsCopyright ()))
 
 /// FSC only help. (FSI has it's own help function).
 let displayHelpFsc tcConfigB (blocks: CompilerOptionBlock list) print exit =
@@ -1996,7 +1996,7 @@ let miscFlagsBoth tcConfigB =
 let miscFlagsFsc tcConfigB =
     miscFlagsBoth tcConfigB
     @ [
-        CompilerOption("help", tagNone, OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks printfn (exit 0)), None, Some(FSComp.SR.optsHelp ()))
+        CompilerOption("help", tagNone, OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks Console.WriteLine (exit 0)), None, Some(FSComp.SR.optsHelp ()))
         CompilerOption("@<file>", tagNone, OptionUnit ignore, None, Some(FSComp.SR.optsResponseFile ()))
     ]
 
@@ -2052,7 +2052,7 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "?",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks printfn (exit 0)),
+            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks Console.WriteLine (exit 0)),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2060,7 +2060,7 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "help",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks printfn (exit 0)),
+            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks Console.WriteLine (exit 0)),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2068,7 +2068,7 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "full-help",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks printfn (exit 0)),
+            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks Console.WriteLine (exit 0)),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
