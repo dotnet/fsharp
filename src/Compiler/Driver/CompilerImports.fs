@@ -119,7 +119,7 @@ let PickleToResource inMem file (g: TcGlobals) compress scope rName p x =
     let file = PathMap.apply g.pathMap file
 
     let bytes =
-        let bytes = pickleObjWithDanglingCcus inMem file g scope p x
+        use bytes = pickleObjWithDanglingCcus inMem file g scope p x
 
         if compress then
             let raw = new MemoryStream(bytes.AsMemory().ToArray())
