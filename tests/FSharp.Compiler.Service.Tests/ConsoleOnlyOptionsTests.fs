@@ -2,17 +2,17 @@
 
 module FSharp.Compiler.Service.Tests.ConsoleOnlyOptionsTests
 
-open FSharp.Compiler.Text
-open NUnit.Framework
+open System
 open System.IO
+open FSharp.Compiler.Text
+open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerOptions
 open Internal.Utilities
-open FSharp.Compiler.AbstractIL.ILBinaryReader
-open System
+open NUnit.Framework
 
+// just a random thing to make things work
 let private getBuilder() =
-    // just a random thing to make things work
     TcConfigBuilder.CreateNew(
         null,
         FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value,
@@ -37,9 +37,10 @@ let ``Help is displayed correctly`` () =
     displayHelpFsc builder blocks print exit
 
     let help = File.ReadAllText fileName
-    Assert.AreEqual(expectedHelp, help)
-    
-    ()
+    // contains instead of equal
+    // as we don't control the 1st line of the output (the version)
+    // it's tested separately
+    StringAssert.Contains(expectedHelp, help)
 
 [<Test>]
 let ``Version is displayed correctly`` () =
