@@ -1672,6 +1672,9 @@ type internal FsiDynamicCompiler(
         let ilxGenerator = istate.ilxGenerator
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
+        let eagerFormat diag =
+            EagerlyFormatDiagnostic tcConfig.flatErrors true diag
+
         // Typecheck. The lock stops the type checker running at the same time as the
         // server intellisense implementation (which is currently incomplete and #if disabled)
         let tcState, topCustomAttrs, declaredImpls, tcEnvAtEndOfLastInput =
@@ -1684,8 +1687,7 @@ type internal FsiDynamicCompiler(
                     tcGlobals,
                     Some prefixPath,
                     tcState, 
-                    StopProcessingExiter(),
-                    (fun _ -> CapturingDiagnosticsLogger("FsiProcessInputsLogger")),
+                    eagerFormat,
                     inputs)
             )
 

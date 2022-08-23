@@ -331,12 +331,17 @@ let AssertFalseDiagnosticsLogger =
         member _.ErrorCount = (* assert false; *) 0
     }
 
-type CapturingDiagnosticsLogger(nm) =
+type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
     inherit DiagnosticsLogger(nm)
     let mutable errorCount = 0
     let diagnostics = ResizeArray()
 
     override _.DiagnosticSink(diagnostic, severity) =
+        let diagnostic =
+            match eagerFormat with
+            | None -> diagnostic
+            | Some f -> f diagnostic
+
         if severity = FSharpDiagnosticSeverity.Error then
             errorCount <- errorCount + 1
 

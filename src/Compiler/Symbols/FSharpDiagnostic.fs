@@ -190,21 +190,15 @@ module DiagnosticHelpers =
              ReportDiagnosticAsWarning options (diagnostic, severity) ||
              ReportDiagnosticAsInfo options (diagnostic, severity) then 
 
-            let oneDiagnostic diagnostic =
-                [ // We use the first line of the file as a fallbackRange for reporting unexpected errors.
-                  // Not ideal, but it's hard to see what else to do.
-                  let fallbackRange = rangeN mainInputFileName 1
-                  let diagnostic = FSharpDiagnostic.CreateFromExceptionAndAdjustEof (diagnostic, severity, fallbackRange, fileInfo, suggestNames)
-                  let fileName = diagnostic.Range.FileName
-                  if allErrors || fileName = mainInputFileName || fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation then
-                      yield diagnostic ]
+            let diagnostic = StripRelatedDiagnostics diagnostic 
 
-            let mainDiagnostic, relatedDiagnostics = SplitRelatedDiagnostics diagnostic 
-
-            yield! oneDiagnostic mainDiagnostic
-
-            for e in relatedDiagnostics do 
-                yield! oneDiagnostic e ]
+            // We use the first line of the file as a fallbackRange for reporting unexpected errors.
+            // Not ideal, but it's hard to see what else to do.
+            let fallbackRange = rangeN mainInputFileName 1
+            let diagnostic = FSharpDiagnostic.CreateFromExceptionAndAdjustEof (diagnostic, severity, fallbackRange, fileInfo, suggestNames)
+            let fileName = diagnostic.Range.FileName
+            if allErrors || fileName = mainInputFileName || fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation then
+                yield diagnostic ]
 
     let CreateDiagnostics (options, allErrors, mainInputFileName, diagnostics, suggestNames) = 
         let fileInfo = (Int32.MaxValue, Int32.MaxValue)

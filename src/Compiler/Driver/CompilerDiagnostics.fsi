@@ -53,8 +53,13 @@ val GetRangeOfDiagnostic: diagnostic: PhasedDiagnostic -> range option
 /// Get the number associated with an error
 val GetDiagnosticNumber: diagnostic: PhasedDiagnostic -> int
 
-/// Split errors into a "main" error and a set of associated errors
-val SplitRelatedDiagnostics: diagnostic: PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagnostic list
+/// Rewrite a diagnostic stripping TargetInvocationException from any exceptions inside it
+///
+/// TODO: this routine probably isn't necessary
+val StripRelatedDiagnostics: diagnostic: PhasedDiagnostic -> PhasedDiagnostic
+
+/// Eagerly format a PhasedDiagnostic to a DiagnosticWithText
+val EagerlyFormatDiagnostic: flattenErrors: bool -> suggestNames: bool -> diagnostic: PhasedDiagnostic -> PhasedDiagnostic
 
 /// Output an error to a buffer
 val OutputPhasedDiagnostic:

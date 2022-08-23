@@ -727,38 +727,6 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
         errorRecovery exn rangeStartup
         EmptyParsedInput(fileName, isLastCompiland)
 
-(*
-let ProcessInParallel
-    (
-        workSpecs,
-        diagnosticsLogger: DiagnosticsLogger,
-        exiter: Exiter,
-        createDiagnosticsLogger: Exiter -> CapturingDiagnosticsLogger
-    ) =
-
-    let workSpecs =
-        workSpecs
-        |> Array.ofList
-
-    let results =
-        try
-            try
-                workSpecs
-                |> ArrayParallel.mapi (fun i work ->
-                    work ()
-                    )
-            finally
-                for logger in capturingDiagnosticLoggers do
-                    logger.CommitDelayedDiagnostics diagnosticsLogger
-        with StopProcessing ->
-            if exitCode > 0 then
-                exiter.Exit exitCode
-            else
-                reraise()
-
-    results |> List.ofArray
-*)
-
 /// Prepare to process inputs independently, e.g. partially in parallel.
 ///
 /// To do this we create one CapturingDiagnosticLogger for each input and
@@ -771,35 +739,24 @@ let ProcessInParallel
 /// NOTE: this needs to be improved to commit diagnotics as soon as possible
 ///
 /// NOTE: If StopProcessing is raised by any piece of work then the overall function raises StopProcessing.
-let UseMultipleDiagnosticLoggers
-    (inputs, exiter: Exiter, diagnosticsLogger, createDiagnosticsLogger: Exiter -> CapturingDiagnosticsLogger)
-    f
-    =
-    let delayedExiter = StopProcessingExiter()
+let UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, eagerFormat) f =
 
     // Check input files and create delayed error loggers before we try to parallel parse.
-    let capturingDiagnosticLoggers =
-        inputs |> List.map (fun _ -> createDiagnosticsLogger delayedExiter)
+    let delayLoggers =
+        inputs |> List.map (fun _ -> CapturingDiagnosticsLogger("TcDiagnosticsLogger", ?eagerFormat=eagerFormat))
 
     try
-        try
-            f (List.zip inputs capturingDiagnosticLoggers)
-        finally
-            for logger in capturingDiagnosticLoggers do
-                logger.CommitDelayedDiagnostics diagnosticsLogger
-    with StopProcessing ->
-        if delayedExiter.ExitCode > 0 then
-            exiter.Exit delayedExiter.ExitCode
-        else
-            reraise ()
+        f (List.zip inputs delayLoggers)
+    finally
+        for logger in delayLoggers do
+            logger.CommitDelayedDiagnostics diagnosticsLogger
 
 let ParseInputFilesInParallel
     (
         tcConfig: TcConfig,
         lexResourceManager,
         sourceFiles,
-        diagnosticsLogger: DiagnosticsLogger,
-        createDiagnosticsLogger: Exiter -> CapturingDiagnosticsLogger,
+        delayLogger: DiagnosticsLogger,
         retryLocked
     ) =
 
@@ -810,13 +767,13 @@ let ParseInputFilesInParallel
 
     let sourceFiles = List.zip sourceFiles isLastCompiland
 
-    UseMultipleDiagnosticLoggers (sourceFiles, exiter, diagnosticsLogger, createDiagnosticsLogger) (fun sourceFilesWithCapturingLoggers ->
-        sourceFilesWithCapturingLoggers
-        |> ListParallel.map (fun ((fileName, isLastCompiland), capturingDiagnosticLogger) ->
+    UseMultipleDiagnosticLoggers (sourceFiles, delayLogger, None) (fun sourceFilesWithDelayLoggers ->
+        sourceFilesWithDelayLoggers
+        |> ListParallel.map (fun ((fileName, isLastCompiland), delayLogger) ->
             let directoryName = Path.GetDirectoryName fileName
 
             let input =
-                parseInputFileAux (tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), capturingDiagnosticLogger, retryLocked)
+                parseInputFileAux (tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), delayLogger, retryLocked)
 
             (input, directoryName)))
 
@@ -842,7 +799,6 @@ let ParseInputFiles
         sourceFiles,
         diagnosticsLogger: DiagnosticsLogger,
         exiter: Exiter,
-        createDiagnosticsLogger: Exiter -> CapturingDiagnosticsLogger,
         retryLocked
     ) =
     try
@@ -852,8 +808,6 @@ let ParseInputFiles
                 lexResourceManager,
                 sourceFiles,
                 diagnosticsLogger,
-                exiter,
-                createDiagnosticsLogger,
                 retryLocked
             )
         else
@@ -1500,8 +1454,7 @@ let CheckMultipleInputsInParallel
         tcGlobals,
         prefixPathOpt,
         tcState,
-        exiter,
-        createDiagnosticsLogger,
+        eagerFormat,
         inputs
     ) =
 
@@ -1509,7 +1462,11 @@ let CheckMultipleInputsInParallel
 
     // We create one CapturingDiagnosticLogger for each file we are processing and
     // ensure the diagnostics are presented in deterministic order.
-    UseMultipleDiagnosticLoggers (inputs, exiter, diagnosticsLogger, createDiagnosticsLogger) (fun inputsWithLoggers ->
+    //
+    // eagerFormat is used to format diagnostics as they are emitted, just as they would be in the command-line
+    // compiler. This is necessary because some formatting of diagnostics is dependent on the
+    // type inference state at precisely the time the diagnostic is emitted.
+    UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, Some eagerFormat) (fun inputsWithLoggers ->
 
         // Equip loggers to locally filter w.r.t. scope pragmas in each input
         let inputsWithLoggers =
@@ -1617,8 +1574,7 @@ let CheckClosedInputSet
         tcGlobals,
         prefixPathOpt,
         tcState,
-        exiter,
-        createDiagnosticsLogger,
+        eagerFormat,
         inputs
     ) =
 
@@ -1638,8 +1594,7 @@ let CheckClosedInputSet
                 tcGlobals,
                 prefixPathOpt,
                 tcState,
-                exiter,
-                createDiagnosticsLogger,
+                eagerFormat,
                 inputs
             )
         else

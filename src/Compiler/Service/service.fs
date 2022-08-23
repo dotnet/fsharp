@@ -86,13 +86,9 @@ module CompileHelpers =
         let diagnostics = ResizeArray<_>()
 
         let diagnosticSink isError exn =
-            let main, related = SplitRelatedDiagnostics exn
+            let diag = StripRelatedDiagnostics exn
 
-            let oneDiagnostic e =
-                diagnostics.Add(FSharpDiagnostic.CreateFromException(e, isError, range0, true)) // Suggest names for errors
-
-            oneDiagnostic main
-            List.iter oneDiagnostic related
+            diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, range0, true)) // Suggest names for errors
 
         let diagnosticsLogger =
             { new DiagnosticsLogger("CompileAPI") with
@@ -106,8 +102,8 @@ module CompileHelpers =
             }
 
         let loggerProvider =
-            { new DiagnosticsLoggerProvider() with
-                member _.CreateDiagnosticsLoggerUpToMaxErrors(_tcConfigBuilder, _exiter) = diagnosticsLogger
+            { new DiagnosticsLoggerProvider with
+                member _.CreateLogger(_tcConfigB, _exiter) = diagnosticsLogger
             }
 
         diagnostics, diagnosticsLogger, loggerProvider

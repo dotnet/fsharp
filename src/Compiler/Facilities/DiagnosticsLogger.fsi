@@ -199,11 +199,12 @@ val DiscardErrorsLogger: DiagnosticsLogger
 /// Represents a DiagnosticsLogger that ignores diagnostics and asserts
 val AssertFalseDiagnosticsLogger: DiagnosticsLogger
 
-/// Represents a DiagnosticsLogger that captures all diagnostics
+/// Represents a DiagnosticsLogger that captures all diagnostics, optionally formatting them
+/// eagerly.
 type CapturingDiagnosticsLogger =
     inherit DiagnosticsLogger
 
-    new: nm: string -> CapturingDiagnosticsLogger
+    new: nm: string * ?eagerFormat: (PhasedDiagnostic -> PhasedDiagnostic) -> CapturingDiagnosticsLogger
 
     member CommitDelayedDiagnostics: diagnosticsLogger: DiagnosticsLogger -> unit
 

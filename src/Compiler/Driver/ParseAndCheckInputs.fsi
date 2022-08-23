@@ -102,7 +102,7 @@ val ParseInputFiles:
     lexResourceManager: Lexhelp.LexResourceManager *
     sourceFiles: string list *
     diagnosticsLogger: DiagnosticsLogger *
-    createDiagnosticsLogger: (Exiter -> CapturingDiagnosticsLogger) *
+    exiter: Exiter *
     retryLocked: bool ->
         (ParsedInput * string) list
 
@@ -163,19 +163,18 @@ val CheckClosedInputSet:
     tcGlobals: TcGlobals *
     prefixPathOpt: LongIdent option *
     tcState: TcState *
-    exiter: Exiter *
-    createDiagnosticsLogger: (Exiter -> CapturingDiagnosticsLogger) *
+    eagerFormat: (PhasedDiagnostic -> PhasedDiagnostic) *
     inputs: ParsedInput list ->
         TcState * TopAttribs * CheckedImplFile list * TcEnv
 
 /// Check a single input and finish the checking
 val CheckOneInputAndFinish:
     checkForErrors: (unit -> bool) *
-    TcConfig *
-    TcImports *
-    TcGlobals *
-    LongIdent option *
-    NameResolution.TcResultsSink *
-    TcState *
-    ParsedInput ->
+    tcConfig: TcConfig *
+    tcImports: TcImports *
+    tcGlobals: TcGlobals *
+    prefixPathOpt: LongIdent option *
+    tcSink: NameResolution.TcResultsSink *
+    tcState: TcState *
+    input: ParsedInput ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile list * ModuleOrNamespaceType list) * TcState>

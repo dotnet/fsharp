@@ -384,41 +384,37 @@ let IsWarningOrInfoEnabled (diagnostic, severity) n level specificWarnOn =
         || (severity = FSharpDiagnosticSeverity.Warning
             && level >= GetWarningLevel diagnostic)
 
-let SplitRelatedDiagnostics (diagnostic: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list =
-    let ToPhased exn =
-        {
-            Exception = exn
-            Phase = diagnostic.Phase
-        }
+let ToPhased phase exn =
+    {
+        Exception = exn
+        Phase = phase
+    }
 
-    let rec SplitRelatedException exn =
-        match exn with
-        | ErrorFromAddingTypeEquation (g, denv, ty1, ty2, exn2, m) ->
-            let diag2, related = SplitRelatedException exn2
-            ErrorFromAddingTypeEquation(g, denv, ty1, ty2, diag2.Exception, m) |> ToPhased, related
-        | ErrorFromApplyingDefault (g, denv, tp, defaultType, exn2, m) ->
-            let diag2, related = SplitRelatedException exn2
+let rec StripRelatedException phase exn =
+    match exn with
+    | ErrorFromAddingTypeEquation (g, denv, ty1, ty2, exn2, m) ->
+        let diag2 = StripRelatedException phase exn2
+        ErrorFromAddingTypeEquation(g, denv, ty1, ty2, diag2.Exception, m) |> ToPhased phase
+    | ErrorFromApplyingDefault (g, denv, tp, defaultType, exn2, m) ->
+        let diag2 = StripRelatedException phase exn2
+        ErrorFromApplyingDefault(g, denv, tp, defaultType, diag2.Exception, m)
+        |> ToPhased phase
+    | ErrorsFromAddingSubsumptionConstraint (g, denv, ty1, ty2, exn2, contextInfo, m) ->
+        let diag2 = StripRelatedException phase exn2
+        ErrorsFromAddingSubsumptionConstraint(g, denv, ty1, ty2, diag2.Exception, contextInfo, m)
+        |> ToPhased phase
+    | ErrorFromAddingConstraint (x, exn2, m) ->
+        let diag2 = StripRelatedException phase exn2
+        ErrorFromAddingConstraint(x, diag2.Exception, m) |> ToPhased phase
+    | WrappedError (exn2, m) ->
+        let diag2 = StripRelatedException phase exn2
+        WrappedError(diag2.Exception, m) |> ToPhased phase
+    // Strip TargetInvocationException wrappers
+    | :? TargetInvocationException as exn -> StripRelatedException phase exn.InnerException
+    | _ -> ToPhased phase exn
 
-            ErrorFromApplyingDefault(g, denv, tp, defaultType, diag2.Exception, m)
-            |> ToPhased,
-            related
-        | ErrorsFromAddingSubsumptionConstraint (g, denv, ty1, ty2, exn2, contextInfo, m) ->
-            let diag2, related = SplitRelatedException exn2
-
-            ErrorsFromAddingSubsumptionConstraint(g, denv, ty1, ty2, diag2.Exception, contextInfo, m)
-            |> ToPhased,
-            related
-        | ErrorFromAddingConstraint (x, exn2, m) ->
-            let diag2, related = SplitRelatedException exn2
-            ErrorFromAddingConstraint(x, diag2.Exception, m) |> ToPhased, related
-        | WrappedError (exn2, m) ->
-            let diag2, related = SplitRelatedException exn2
-            WrappedError(diag2.Exception, m) |> ToPhased, related
-        // Strip TargetInvocationException wrappers
-        | :? TargetInvocationException as exn -> SplitRelatedException exn.InnerException
-        | _ -> ToPhased exn, []
-
-    SplitRelatedException diagnostic.Exception
+let StripRelatedDiagnostics (diagnostic: PhasedDiagnostic) =
+    StripRelatedException diagnostic.Phase diagnostic.Exception
 
 let Message (name, format) = DeclareResourceString(name, format)
 
@@ -1890,6 +1886,17 @@ let OutputPhasedDiagnostic (os: StringBuilder) (diagnostic: PhasedDiagnostic) (f
 
     os.AppendString text
 
+/// Eagerly format a PhasedDiagnostic to a DiagnosticWithText
+let EagerlyFormatDiagnostic (flattenErrors: bool) (suggestNames: bool) (diagnostic: PhasedDiagnostic) =
+    match GetRangeOfDiagnostic diagnostic with
+    | Some m ->
+        let os = StringBuilder()
+        OutputPhasedDiagnostic os diagnostic flattenErrors suggestNames
+        let message = os.ToString()
+        DiagnosticWithText(GetDiagnosticNumber diagnostic, message, m)
+        |> ToPhased diagnostic.Phase
+    | None -> diagnostic
+
 let SanitizeFileName fileName implicitIncludeDir =
     // The assert below is almost ok, but it fires in two cases:
     //  - fsi.exe sometimes passes "stdin" as a dummy file name
@@ -2032,11 +2039,6 @@ let CollectFormattedDiagnostics
         let errors = ResizeArray()
 
         let report diagnostic =
-            let OutputWhere diagnostic =
-                match GetRangeOfDiagnostic diagnostic with
-                | Some m -> Some(outputWhere (showFullPaths, diagnosticStyle) m)
-                | None -> None
-
             let OutputCanonicalInformation (subcategory, errorNumber) : FormattedDiagnosticCanonicalInformation =
                 let message =
                     match severity with
@@ -2057,15 +2059,19 @@ let CollectFormattedDiagnostics
                     TextRepresentation = text
                 }
 
-            let mainError, relatedErrors = SplitRelatedDiagnostics diagnostic
-            let where = OutputWhere mainError
+            let diag = StripRelatedDiagnostics diagnostic
+
+            let where =
+                match GetRangeOfDiagnostic diag with
+                | Some m -> Some(outputWhere (showFullPaths, diagnosticStyle) m)
+                | None -> None
 
             let canonical =
-                OutputCanonicalInformation(diagnostic.Subcategory(), GetDiagnosticNumber mainError)
+                OutputCanonicalInformation(diagnostic.Subcategory(), GetDiagnosticNumber diag)
 
             let message =
                 let os = StringBuilder()
-                OutputPhasedDiagnostic os mainError flattenErrors suggestNames
+                OutputPhasedDiagnostic os diag flattenErrors suggestNames
                 os.ToString()
 
             let entry: FormattedDiagnosticDetailedInfo =
@@ -2076,36 +2082,6 @@ let CollectFormattedDiagnostics
                 }
 
             errors.Add(FormattedDiagnostic.Long(severity, entry))
-
-            let OutputRelatedError (diagnostic: PhasedDiagnostic) =
-                match diagnosticStyle with
-                // Give a canonical string when --vserror.
-                | DiagnosticStyle.VisualStudio ->
-                    let relWhere = OutputWhere mainError // mainError?
-
-                    let relCanonical =
-                        OutputCanonicalInformation(diagnostic.Subcategory(), GetDiagnosticNumber mainError) // Use main error for code
-
-                    let relMessage =
-                        let os = StringBuilder()
-                        OutputPhasedDiagnostic os diagnostic flattenErrors suggestNames
-                        os.ToString()
-
-                    let entry: FormattedDiagnosticDetailedInfo =
-                        {
-                            Location = relWhere
-                            Canonical = relCanonical
-                            Message = relMessage
-                        }
-
-                    errors.Add(FormattedDiagnostic.Long(severity, entry))
-
-                | _ ->
-                    let os = StringBuilder()
-                    OutputPhasedDiagnostic os diagnostic flattenErrors suggestNames
-                    errors.Add(FormattedDiagnostic.Short(severity, os.ToString()))
-
-            relatedErrors |> List.iter OutputRelatedError
 
         match diagnostic with
 #if !NO_TYPEPROVIDERS
@@ -2122,7 +2098,7 @@ let CollectFormattedDiagnostics
 
 /// used by fsc.exe and fsi.exe, but not by VS
 /// prints error and related errors to the specified StringBuilder
-let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, diagnosticStyle, severity) os (diagnostic: PhasedDiagnostic) =
+let OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, diagnosticStyle, severity) os (diagnostic: PhasedDiagnostic) =
 
     // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
     let errors =
