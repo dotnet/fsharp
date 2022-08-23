@@ -159,7 +159,7 @@ let PrintPublicOptions (heading, opts) print =
         print $"\t\t{heading}"
         List.iter PrintCompilerOption opts
 
-let PrintCompilerOptionBlocks blocks =
+let PrintCompilerOptionBlocks blocks print =
     let publicBlocks =
         blocks
         |> List.choose (function
@@ -173,7 +173,7 @@ let PrintCompilerOptionBlocks blocks =
             let headingOptions =
                 publicBlocks |> List.filter (fun (h2, _) -> heading = h2) |> List.collect snd
 
-            PrintPublicOptions(heading, headingOptions) Console.WriteLine
+            PrintPublicOptions(heading, headingOptions) print
             Set.add heading doneHeadings
 
     List.fold consider Set.empty publicBlocks |> ignore<Set<string>>
@@ -1980,7 +1980,7 @@ let DisplayBannerText tcConfigB (print: string -> unit) =
 /// FSC only help. (FSI has it's own help function).
 let displayHelpFsc tcConfigB (blocks: CompilerOptionBlock list) print exit =
     DisplayBannerText tcConfigB print
-    PrintCompilerOptionBlocks blocks
+    PrintCompilerOptionBlocks blocks print
     exit()
 
 let displayVersion tcConfigB =

@@ -885,7 +885,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
         DisplayBannerText tcConfigB Console.WriteLine;
         fprintfn fsiConsoleOutput.Out ""
         fprintfn fsiConsoleOutput.Out "%s" (FSIstrings.SR.fsiUsage(executableFileNameWithoutExtension.Value))
-        PrintCompilerOptionBlocks blocks
+        PrintCompilerOptionBlocks blocks Console.WriteLine
         exit 0
 
     // option tags
