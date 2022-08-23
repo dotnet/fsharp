@@ -27,6 +27,6 @@ let ``Blah1`` () =
 
     let blocks = GetCoreServiceCompilerOptions builder
     
-    let result = displayHelpFsc builder blocks
+    let result = displayHelpFsc builder blocks printfn
     ()
 
