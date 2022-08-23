@@ -61,6 +61,7 @@ val displayHelpFsc:
     tcConfigB: TcConfigBuilder 
     -> blocks: CompilerOptionBlock list 
     -> print: (Printf.TextWriterFormat<string -> unit> -> string -> unit) 
+    -> exit: (unit -> 'a)
     -> 'a
 
 val displayVersion: TcConfigBuilder -> 'a
