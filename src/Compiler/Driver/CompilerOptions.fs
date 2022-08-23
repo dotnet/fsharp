@@ -156,7 +156,7 @@ let PrintPublicOptions (heading, opts) print =
     if not (isNil opts) then
         print "\n"
         print "\n"
-        print $"\n\t\t{heading}"
+        print $"\t\t{heading}\n"
         List.iter PrintCompilerOption opts
 
 let PrintCompilerOptionBlocks blocks print =
@@ -1974,8 +1974,8 @@ let deprecatedFlagsFsc tcConfigB =
 
 let DisplayBannerText tcConfigB print =
     if tcConfigB.showBanner then
-        (print $"\n{tcConfigB.productNameForBannerText}"
-         print $"\n{FSComp.SR.optsCopyright ()}")
+        (print $"{tcConfigB.productNameForBannerText}\n"
+         print $"{FSComp.SR.optsCopyright ()}\n")
 
 /// FSC only help. (FSI has it's own help function).
 let displayHelpFsc tcConfigB (blocks: CompilerOptionBlock list) print exit =
