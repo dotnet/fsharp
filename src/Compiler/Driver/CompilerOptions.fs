@@ -1972,7 +1972,7 @@ let deprecatedFlagsFsc tcConfigB =
 // OptionBlock: Miscellaneous options
 //-----------------------------------
 
-let DisplayBannerText (tcConfigB: TcConfigBuilder) (print: Printf.TextWriterFormat<string -> unit> -> string -> unit) : unit =
+let DisplayBannerText tcConfigB (print: Printf.TextWriterFormat<string -> unit> -> string -> unit) =
     if tcConfigB.showBanner then
         (print "%s" tcConfigB.productNameForBannerText
          print "%s" (FSComp.SR.optsCopyright ()))
