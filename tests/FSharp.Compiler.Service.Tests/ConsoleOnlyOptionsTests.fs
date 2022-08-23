@@ -29,28 +29,27 @@ let private getBuilder() =
 let ``Help is displayed correctly`` () =
     let builder = getBuilder()
     let blocks = GetCoreFscCompilerOptions builder
+    let fileName = $"{Guid.NewGuid()}"
+    let expectedHelp = File.ReadAllText $"{__SOURCE_DIRECTORY__}/expected-help-output.txt"
     
-    let print text = File.AppendAllText(@"C:\code\text.txt", text)
+    let print text = File.AppendAllText(fileName, text)
     let exit() = ()
-
     displayHelpFsc builder blocks print exit
 
+    let help = File.ReadAllText fileName
+    Assert.AreEqual(expectedHelp, help)
+    
     ()
 
 [<Test>]
 let ``Version is displayed correctly`` () =
     let builder = getBuilder()
-
     let fileName = $"{Guid.NewGuid()}"
+    let expectedVersionPattern = @"Microsoft \(R\) F# Compiler version \d+\.\d+\.\d+\.\d+ for F# \d+\.\d+"
+
     let print text = File.AppendAllText(fileName, text)
     let exit() = ()
-
     displayVersion builder print exit
 
-    let output = File.ReadAllText fileName
-
-    Assert.That(
-        output, 
-        Does.Match(@"Microsoft \(R\) F# Compiler version \d+\.\d+\.\d+\.\d+ for F# \d+\.\d+"))
-
-    ()
+    let version = File.ReadAllText fileName
+    Assert.That(version, Does.Match expectedVersionPattern)

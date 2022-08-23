@@ -20,6 +20,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="expected-help-output.txt">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
     <Compile Include="..\fsharp\TestHelpers.fs" Link="TestHelpers.fs" />
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="SurfaceArea.netstandard.fs" />
@@ -167,6 +170,8 @@
       <Link>Program.fs</Link>
     </Compile>
   </ItemGroup>
+
+  <ItemGroup />
 
   <ItemGroup>
     <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
