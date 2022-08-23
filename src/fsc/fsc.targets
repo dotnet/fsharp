@@ -22,7 +22,7 @@
 
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)fscmain.fs" />
-    <NoneSubstituteText Include="$(MSBuildThisFileDirectory)App.config" Condition="'$(TargetFramework)' == 'net472'">
+    <NoneSubstituteText Include="$(MSBuildThisFileDirectory)App.config">
       <Pattern1>{{FSCoreVersion}}</Pattern1>
       <Replacement1>$(FSCoreVersion)</Replacement1>
     </NoneSubstituteText>
