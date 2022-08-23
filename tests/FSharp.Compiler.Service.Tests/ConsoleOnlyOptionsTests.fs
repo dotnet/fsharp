@@ -27,7 +27,7 @@ let ``Blah1`` () =
 
     let blocks = GetCoreFscCompilerOptions builder
     
-    let print line = File.AppendAllLines(@"C:\code\text.txt", [line])
+    let print text = File.AppendAllText(@"C:\code\text.txt", text)
     let exit() = ()
 
     displayHelpFsc builder blocks print exit
