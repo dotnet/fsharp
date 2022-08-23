@@ -52,7 +52,7 @@ val FilterCompilerOptionBlock: (CompilerOption -> bool) -> CompilerOptionBlock -
 /// Parse and process a set of compiler options
 val ParseCompilerOptions: (string -> unit) * CompilerOptionBlock list * string list -> unit
 
-val DisplayBannerText: TcConfigBuilder -> unit
+val DisplayBannerText: TcConfigBuilder -> (Printf.TextWriterFormat<string -> unit> -> string -> unit) -> unit
 
 val GetCoreFscCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 

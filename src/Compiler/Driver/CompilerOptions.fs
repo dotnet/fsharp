@@ -1972,14 +1972,14 @@ let deprecatedFlagsFsc tcConfigB =
 // OptionBlock: Miscellaneous options
 //-----------------------------------
 
-let DisplayBannerText tcConfigB =
+let DisplayBannerText (tcConfigB: TcConfigBuilder) (print: Printf.TextWriterFormat<string -> unit> -> string -> unit) : unit =
     if tcConfigB.showBanner then
-        (printfn "%s" tcConfigB.productNameForBannerText
-         printfn "%s" (FSComp.SR.optsCopyright ()))
+        (print "%s" tcConfigB.productNameForBannerText
+         print "%s" (FSComp.SR.optsCopyright ()))
 
 /// FSC only help. (FSI has it's own help function).
 let displayHelpFsc tcConfigB (blocks: CompilerOptionBlock list) =
-    DisplayBannerText tcConfigB
+    DisplayBannerText tcConfigB printfn
     PrintCompilerOptionBlocks blocks
     exit 0
 
