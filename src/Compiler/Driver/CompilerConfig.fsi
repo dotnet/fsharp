@@ -431,6 +431,8 @@ type TcConfigBuilder =
 
         mutable noDebugAttributes: bool
 
+        mutable useReflectionFreeCodeGen: bool
+
         /// If true, indicates all type checking and code generation is in the context of fsi.exe
         isInteractive: bool
 
@@ -740,6 +742,7 @@ type TcConfig =
     member alwaysCallVirt: bool
 
     member noDebugAttributes: bool
+    member useReflectionFreeCodeGen: bool
 
     /// If true, indicates all type checking and code generation is in the context of fsi.exe
     member isInteractive: bool

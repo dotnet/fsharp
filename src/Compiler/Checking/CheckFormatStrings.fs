@@ -444,6 +444,9 @@ let parseFormatStringInternal
                   parseLoop ((posi, NewInferenceType g) :: acc) (i, fragLine, startFragCol) fragments
 
               | 'A' ->
+                  if g.useReflectionFreeCodeGen then
+                      failwith (FSComp.SR.forPercentAInReflectionFreeCode())
+
                   match info.numPrefixIfPos with
                   | None     // %A has BindingFlags=Public, %+A has BindingFlags=Public | NonPublic
                   | Some '+' -> 
