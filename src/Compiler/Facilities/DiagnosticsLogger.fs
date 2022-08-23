@@ -487,7 +487,7 @@ module DiagnosticsLoggerExtensions =
         member x.ErrorRecoveryNoRange(exn: exn) = x.ErrorRecovery exn range0
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-let UseThreadBuildPhase (phase: BuildPhase) =
+let UseBuildPhase (phase: BuildPhase) =
     let oldBuildPhase = DiagnosticsThreadStatics.BuildPhaseUnchecked
     DiagnosticsThreadStatics.BuildPhase <- phase
 
@@ -520,7 +520,7 @@ let SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger =
 /// Use to reset error and warning handlers.
 type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: BuildPhase) =
     let unwindEL = UseDiagnosticsLogger diagnosticsLogger
-    let unwindBP = UseThreadBuildPhase buildPhase
+    let unwindBP = UseBuildPhase buildPhase
 
     member _.DiagnosticsLogger = diagnosticsLogger
     member _.BuildPhase = buildPhase

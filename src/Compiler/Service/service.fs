@@ -113,7 +113,7 @@ module CompileHelpers =
         diagnostics, diagnosticsLogger, loggerProvider
 
     let tryCompile diagnosticsLogger f =
-        use _ = UseThreadBuildPhase BuildPhase.Parse
+        use _ = UseBuildPhase BuildPhase.Parse
         use _ = UseDiagnosticsLogger diagnosticsLogger
 
         let exiter = StopProcessingExiter()

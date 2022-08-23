@@ -609,7 +609,7 @@ let main1
 
     // Parse sourceFiles
     ReportTime tcConfig "Parse inputs"
-    use unwindParsePhase = UseThreadBuildPhase BuildPhase.Parse
+    use unwindParsePhase = UseBuildPhase BuildPhase.Parse
 
     let createDiagnosticsLogger =
         (fun exiter -> diagnosticsLoggerProvider.CreateDelayAndForwardLogger(exiter) :> CapturingDiagnosticsLogger)
@@ -663,7 +663,7 @@ let main1
     // Build the initial type checking environment
     ReportTime tcConfig "Typecheck"
 
-    use unwindParsePhase = UseThreadBuildPhase BuildPhase.TypeCheck
+    use unwindParsePhase = UseBuildPhase BuildPhase.TypeCheck
 
     let tcEnv0, openDecls0 =
         GetInitialTcEnv(assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
@@ -828,7 +828,7 @@ let main1OfAst
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
 
-    use unwindParsePhase = UseThreadBuildPhase BuildPhase.Parse
+    use unwindParsePhase = UseBuildPhase BuildPhase.Parse
 
     let meta = Directory.GetCurrentDirectory()
 
@@ -850,7 +850,7 @@ let main1OfAst
 
     // Build the initial type checking environment
     ReportTime tcConfig "Typecheck"
-    use unwindParsePhase = UseThreadBuildPhase BuildPhase.TypeCheck
+    use unwindParsePhase = UseBuildPhase BuildPhase.TypeCheck
 
     let tcEnv0, openDecls0 =
         GetInitialTcEnv(assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
@@ -915,7 +915,7 @@ let main2
 
     generatedCcu.Contents.SetAttribs(generatedCcu.Contents.Attribs @ topAttrs.assemblyAttrs)
 
-    use unwindPhase = UseThreadBuildPhase BuildPhase.CodeGen
+    use unwindPhase = UseBuildPhase BuildPhase.CodeGen
     let signingInfo = ValidateKeySigningAttributes(tcConfig, tcGlobals, topAttrs)
 
     AbortOnError(diagnosticsLogger, exiter)
@@ -958,7 +958,7 @@ let main2
 
     // write interface, xmldoc
     ReportTime tcConfig "Write Interface File"
-    use _ = UseThreadBuildPhase BuildPhase.Output
+    use _ = UseBuildPhase BuildPhase.Output
 
     if tcConfig.printSignature || tcConfig.printAllSignatureFiles then
         InterfaceFileWriter.WriteInterfaceFile(tcGlobals, tcConfig, InfoReader(tcGlobals, tcImports.GetImportMap()), typedImplFiles)
@@ -1039,7 +1039,7 @@ let main3
 
     let optimizedImpls, optDataResources =
         // Perform optimization
-        use _ = UseThreadBuildPhase BuildPhase.Optimize
+        use _ = UseBuildPhase BuildPhase.Optimize
 
         let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
 
@@ -1127,7 +1127,7 @@ let main4
     let staticLinker = StaticLink(ctok, tcConfig, tcImports, ilGlobals)
 
     ReportTime tcConfig "TAST -> IL"
-    use _ = UseThreadBuildPhase BuildPhase.IlxGen
+    use _ = UseBuildPhase BuildPhase.IlxGen
 
     // Create the Abstract IL generator
     let ilxGenerator =
@@ -1217,7 +1217,7 @@ let main5
            ilSourceDocs))
     =
 
-    use _ = UseThreadBuildPhase BuildPhase.Output
+    use _ = UseBuildPhase BuildPhase.Output
 
     // Static linking, if any
     let ilxMainModule =
@@ -1251,7 +1251,7 @@ let main6
 
     ReportTime tcConfig "Write .NET Binary"
 
-    use _ = UseThreadBuildPhase BuildPhase.Output
+    use _ = UseBuildPhase BuildPhase.Output
     let outfile = tcConfig.MakePathAbsolute outfile
 
     DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent ctok

@@ -427,7 +427,7 @@ let ParseInput
     // #nowarn declarations for the file
     let delayLogger = CapturingDiagnosticsLogger("Parsing")
     use _ = UseDiagnosticsLogger delayLogger
-    use _ = UseThreadBuildPhase BuildPhase.Parse
+    use _ = UseBuildPhase BuildPhase.Parse
 
     let mutable scopedPragmas = []
 
@@ -550,7 +550,7 @@ let EmptyParsedInput (fileName, isLastCompiland) =
 
 /// Parse an input, drawing tokens from the LexBuffer
 let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileName, isLastCompiland, diagnosticsLogger) =
-    use unwindbuildphase = UseThreadBuildPhase BuildPhase.Parse
+    use unwindbuildphase = UseBuildPhase BuildPhase.Parse
 
     try
 
@@ -877,7 +877,7 @@ let ProcessMetaCommandsFromInput
     (tcConfig: TcConfigBuilder, inp: ParsedInput, pathOfMetaCommandSource, state0)
     =
 
-    use _ = UseThreadBuildPhase BuildPhase.Parse
+    use _ = UseBuildPhase BuildPhase.Parse
 
     let canHaveScriptMetaCommands =
         match inp with
@@ -1436,7 +1436,7 @@ let CheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcG
     use _ =
         UseTransformedDiagnosticsLogger(fun oldLogger -> DiagnosticsLoggerForInput(tcConfig, input, oldLogger))
 
-    use _ = UseThreadBuildPhase BuildPhase.TypeCheck
+    use _ = UseBuildPhase BuildPhase.TypeCheck
 
     RequireCompilationThread ctok
 
@@ -1527,7 +1527,7 @@ let CheckMultipleInputsInParallel
             |> List.toArray
             |> ArrayParallel.map (fun (partialResult, (_, logger)) ->
                 use _ = UseDiagnosticsLogger logger
-                use _ = UseThreadBuildPhase BuildPhase.TypeCheck
+                use _ = UseBuildPhase BuildPhase.TypeCheck
 
                 RequireCompilationThread ctok
 

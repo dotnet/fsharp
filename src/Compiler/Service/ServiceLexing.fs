@@ -1049,7 +1049,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
     // Scan a token starting with the given lexer state
     member x.ScanToken(lexState: FSharpTokenizerLexState) : FSharpTokenInfo option * FSharpTokenizerLexState =
 
-        use _ = UseThreadBuildPhase BuildPhase.Parse
+        use _ = UseBuildPhase BuildPhase.Parse
         use _ = UseDiagnosticsLogger DiscardErrorsLogger
 
         let indentationSyntaxStatus, lexcont = LexerStateEncoding.decodeLexInt lexState
@@ -1835,7 +1835,7 @@ module FSharpLexerImpl =
             else
                 lexer
 
-        use _ = UseThreadBuildPhase BuildPhase.Parse
+        use _ = UseBuildPhase BuildPhase.Parse
         use _ = UseDiagnosticsLogger DiscardErrorsLogger
 
         resetLexbufPos "" lexbuf

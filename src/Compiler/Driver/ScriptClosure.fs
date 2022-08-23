@@ -745,7 +745,7 @@ type LoadClosure with
             dependencyProvider
         ) =
 
-        use _ = UseThreadBuildPhase BuildPhase.Parse
+        use _ = UseBuildPhase BuildPhase.Parse
 
         ScriptPreprocessClosure.GetFullClosureOfScriptText(
             legacyReferenceResolver,
@@ -775,5 +775,5 @@ type LoadClosure with
             dependencyProvider
         ) =
 
-        use _ = UseThreadBuildPhase BuildPhase.Parse
+        use _ = UseBuildPhase BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptFiles(tcConfig, files, implicitDefines, lexResourceManager, dependencyProvider)

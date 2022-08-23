@@ -104,7 +104,7 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 [<Sealed>]
 type DiagnosticsScope()  = 
     let mutable diags = [] 
-    let unwindBP = UseThreadBuildPhase BuildPhase.TypeCheck
+    let unwindBP = UseBuildPhase BuildPhase.TypeCheck
     let unwindEL =        
         UseDiagnosticsLogger 
             { new DiagnosticsLogger("DiagnosticsScope") with 

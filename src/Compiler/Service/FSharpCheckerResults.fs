@@ -2246,7 +2246,7 @@ module internal ParseAndCheckFile =
         // Make sure there is an DiagnosticsLogger installed whenever we do stuff that might record errors, even if we ultimately ignore the errors
         let delayedLogger = CapturingDiagnosticsLogger("matchBraces")
         use _ = UseDiagnosticsLogger delayedLogger
-        use _ = UseThreadBuildPhase BuildPhase.Parse
+        use _ = UseBuildPhase BuildPhase.Parse
 
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "matchBraces", fileName)
 
@@ -2349,7 +2349,7 @@ module internal ParseAndCheckFile =
 
         use _ = UseDiagnosticsLogger errHandler.DiagnosticsLogger
 
-        use _ = UseThreadBuildPhase BuildPhase.Parse
+        use _ = UseBuildPhase BuildPhase.Parse
 
         let parseResult =
             usingLexbufForParsing (createLexbuf options.LangVersionText sourceText, fileName) (fun lexbuf ->
@@ -2508,7 +2508,7 @@ module internal ParseAndCheckFile =
 
             use _ = UseDiagnosticsLogger errHandler.DiagnosticsLogger
 
-            use _unwindBP = UseThreadBuildPhase BuildPhase.TypeCheck
+            use _unwindBP = UseBuildPhase BuildPhase.TypeCheck
 
             // Apply nowarns to tcConfig (may generate errors, so ensure diagnosticsLogger is installed)
             let tcConfig =

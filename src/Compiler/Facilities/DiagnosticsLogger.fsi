@@ -265,7 +265,7 @@ module DiagnosticsLoggerExtensions =
         member ErrorRecoveryNoRange: exn: exn -> unit
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val UseThreadBuildPhase: phase: BuildPhase -> IDisposable
+val UseBuildPhase: phase: BuildPhase -> IDisposable
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
 val UseTransformedDiagnosticsLogger: transformer: (DiagnosticsLogger -> #DiagnosticsLogger) -> IDisposable

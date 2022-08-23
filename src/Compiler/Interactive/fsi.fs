@@ -3049,7 +3049,7 @@ type FsiInteractionProcessor
 
     member _.EvalInteraction(ctok, sourceText, scriptFileName, diagnosticsLogger, ?cancellationToken) =
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
-        use _ = UseThreadBuildPhase BuildPhase.Interactive
+        use _ = UseBuildPhase BuildPhase.Interactive
         use _ = UseDiagnosticsLogger diagnosticsLogger
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
         let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, sourceText)
@@ -3066,7 +3066,7 @@ type FsiInteractionProcessor
         this.EvalInteraction (ctok, sourceText, scriptPath, diagnosticsLogger)
 
     member _.EvalExpression (ctok, sourceText, scriptFileName, diagnosticsLogger) =
-        use _unwind1 = UseThreadBuildPhase BuildPhase.Interactive
+        use _unwind1 = UseBuildPhase BuildPhase.Interactive
         use _unwind2 = UseDiagnosticsLogger diagnosticsLogger
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
         let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, sourceText)
@@ -3645,7 +3645,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         if fsiOptions.IsInteractiveServer then
             SpawnInteractiveServer (fsi, fsiOptions, fsiConsoleOutput)
 
-        use _ = UseThreadBuildPhase BuildPhase.Interactive
+        use _ = UseBuildPhase BuildPhase.Interactive
 
         if fsiOptions.Interact then
             // page in the type check env
