@@ -54,7 +54,7 @@ val ParseCompilerOptions: (string -> unit) * CompilerOptionBlock list * string l
 
 val DisplayBannerText: TcConfigBuilder -> (Printf.TextWriterFormat<string -> unit> -> string -> unit) -> unit
 
-val displayHelpFsc: TcConfigBuilder -> CompilerOptionBlock list -> 'a
+val displayHelpFsc: TcConfigBuilder -> CompilerOptionBlock list -> (Printf.TextWriterFormat<string -> unit> -> string -> unit) -> 'a
 
 val displayVersion: TcConfigBuilder -> 'a
 

@@ -1978,8 +1978,8 @@ let DisplayBannerText tcConfigB (print: Printf.TextWriterFormat<string -> unit> 
          print "%s" (FSComp.SR.optsCopyright ()))
 
 /// FSC only help. (FSI has it's own help function).
-let displayHelpFsc tcConfigB (blocks: CompilerOptionBlock list) =
-    DisplayBannerText tcConfigB printfn
+let displayHelpFsc tcConfigB (blocks: CompilerOptionBlock list) print =
+    DisplayBannerText tcConfigB print
     PrintCompilerOptionBlocks blocks
     exit 0
 
@@ -1996,7 +1996,7 @@ let miscFlagsBoth tcConfigB =
 let miscFlagsFsc tcConfigB =
     miscFlagsBoth tcConfigB
     @ [
-        CompilerOption("help", tagNone, OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks), None, Some(FSComp.SR.optsHelp ()))
+        CompilerOption("help", tagNone, OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks printfn), None, Some(FSComp.SR.optsHelp ()))
         CompilerOption("@<file>", tagNone, OptionUnit ignore, None, Some(FSComp.SR.optsResponseFile ()))
     ]
 
@@ -2052,7 +2052,7 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "?",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks printfn),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2060,7 +2060,7 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "help",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks printfn),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2068,7 +2068,7 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "full-help",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks printfn),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
