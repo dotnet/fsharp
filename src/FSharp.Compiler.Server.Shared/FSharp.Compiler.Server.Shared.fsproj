@@ -8,6 +8,12 @@
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
   </PropertyGroup>
 
+  <!--  The FSharp.Compiler.Server.Shared dll does not provide a referencable public interface  -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <OptimizationData>none</OptimizationData>
+      <InterfaceData>none</InterfaceData>
+  </PropertyGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="fsi" />
     <InternalsVisibleTo Include="fsiAnyCpu" />

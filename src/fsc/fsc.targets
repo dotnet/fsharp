@@ -20,6 +20,12 @@
     <UseAppHost Condition="'$(DotNetBuildFromSource)' == 'true'">false</UseAppHost>
   </PropertyGroup>
 
+  <!--  The fsc application does not provide a referencable public interface  -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <OptimizationData>none</OptimizationData>
+      <InterfaceData>none</InterfaceData>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)fscmain.fs" />
     <NoneSubstituteText Include="$(MSBuildThisFileDirectory)App.config">

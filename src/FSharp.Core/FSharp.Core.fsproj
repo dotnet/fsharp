@@ -39,6 +39,12 @@
     <Configurations>Debug;Release;Proto</Configurations>
   </PropertyGroup>
 
+  <!--  The FSharp.Core dll provides a referencable public interface -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(CompressAllMetadata)' != 'true'">
+      <OptimizationData>file</OptimizationData>
+      <InterfaceData>file</InterfaceData>
+  </PropertyGroup>
+
   <ItemGroup>
     <EmbeddedResource Update="FSCore.resx">
       <GenerateSource>true</GenerateSource>

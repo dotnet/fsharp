@@ -18,6 +18,12 @@
     <Configurations>Debug;Release;Proto</Configurations>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
   </PropertyGroup>
 
+  <!--  The FSharp.Build dll does not provide a referencable public interface although it's used for testing -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <OptimizationData>compress</OptimizationData>
+      <InterfaceData>compress</InterfaceData>
+  </PropertyGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
     <EmbeddedText Include="FSBuild.txt" />

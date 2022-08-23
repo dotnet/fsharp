@@ -9,6 +9,12 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
   </PropertyGroup>
 
+  <!--  The FSharp.Compiler.Interactive.Settings dll provides a referencable public interface to tool builders  -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <OptimizationData>compress</OptimizationData>
+      <InterfaceData>compress</InterfaceData>
+  </PropertyGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="fsi" />
     <InternalsVisibleTo Include="fsiAnyCpu" />

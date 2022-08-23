@@ -109,8 +109,8 @@
 //<Expects status="notin">section='- OUTPUT FILES -         ' ! option=doc                            kind=OptionString</Expects>
 //<Expects status="notin">section='- OUTPUT FILES -         ' ! option=keyfile                        kind=OptionString</Expects>
 //<Expects status="notin">section='- OUTPUT FILES -         ' ! option=platform                       kind=OptionString</Expects>
-//<Expects status="notin">section='- OUTPUT FILES -         ' ! option=nooptimizationdata             kind=OptionUnit</Expects>
-//<Expects status="notin">section='- OUTPUT FILES -         ' ! option=nointerfacedata                kind=OptionUnit</Expects>
+//<Expects status="notin">section='- OUTPUT FILES -         ' ! option=optimizationdata               kind=OptionString</Expects>
+//<Expects status="notin">section='- OUTPUT FILES -         ' ! option=interfacedata                  kind=OptionString</Expects>
 //<Expects status="notin">section='- OUTPUT FILES -         ' ! option=sig                            kind=OptionString</Expects>
 //<Expects status="notin">section='- RESOURCES -            ' ! option=win32res                       kind=OptionString</Expects>
 //<Expects status="notin">section='- RESOURCES -            ' ! option=win32manifest                  kind=OptionString</Expects>

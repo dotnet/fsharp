@@ -487,6 +487,11 @@
         <target state="translated">Dil sürümü için izin verilen değerleri görüntüleyin, dil sürümünü 'en son' veya 'önizleme' örneklerindeki gibi belirtin</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsOptimizationData">
+        <source>Specify included optimization information, the default is file. Important for distributed libraries.</source>
+        <target state="new">Specify included optimization information, the default is file. Important for distributed libraries.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsPdbMatchesOutputFileName">
         <source>The pdb output file name cannot match the build output filename use --pdb:filename.pdb</source>
         <target state="new">The pdb output file name cannot match the build output filename use --pdb:filename.pdb</target>
@@ -507,9 +512,24 @@
         <target state="new">Disable implicit generation of constructs using reflection</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsSignatureData">
+        <source>Include F# interface information, the default is file. Essential for distributing libraries.</source>
+        <target state="new">Include F# interface information, the default is file. Essential for distributing libraries.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
         <source>Supported language versions:</source>
         <target state="translated">Desteklenen dil sürümleri:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnknownOptimizationData">
+        <source>Invalid value '{0}' for --optimizationdata, valid value are: none, file, compress.</source>
+        <target state="new">Invalid value '{0}' for --optimizationdata, valid value are: none, file, compress.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsUnknownSignatureData">
+        <source>Invalid value '{0}' for --interfacedata, valid value are: none, file, compress."</source>
+        <target state="new">Invalid value '{0}' for --interfacedata, valid value are: none, file, compress."</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">

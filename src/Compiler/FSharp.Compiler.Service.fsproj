@@ -27,6 +27,12 @@
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
 
+  <!--  The FSharp.Compiler.Service dll provides a referencable public interface for tool builders -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <OptimizationData>compress</OptimizationData>
+      <InterfaceData>compress</InterfaceData>
+  </PropertyGroup>
+
   <PropertyGroup>
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>
     <FsLexOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsLexOutputFolder>
