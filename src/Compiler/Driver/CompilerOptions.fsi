@@ -67,7 +67,11 @@ val displayHelpFsc:
     -> exit: (unit -> 'a)
     -> 'a
 
-val displayVersion: TcConfigBuilder -> 'a
+val displayVersion:
+    tcConfigB: TcConfigBuilder 
+    -> print: (string -> unit)
+    -> exit: (unit -> 'a)
+    -> 'a
 
 val GetCoreFscCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 

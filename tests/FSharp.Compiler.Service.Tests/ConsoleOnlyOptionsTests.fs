@@ -9,11 +9,11 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerOptions
 open Internal.Utilities
 open FSharp.Compiler.AbstractIL.ILBinaryReader
+open System
 
-[<Test>]
-let ``Blah1`` () =
+let private getBuilder() =
     // just a random thing to make things work
-    let builder = TcConfigBuilder.CreateNew(
+    TcConfigBuilder.CreateNew(
         null,
         FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value,
         ReduceMemoryFlag.Yes,
@@ -25,12 +25,29 @@ let ``Blah1`` () =
         None,
         Range.Zero)
 
+[<Test>]
+let ``Blah1`` () =
+    let builder = getBuilder()
     let blocks = GetCoreFscCompilerOptions builder
     
     let print text = File.AppendAllText(@"C:\code\text.txt", text)
     let exit() = ()
 
     displayHelpFsc builder blocks print exit
+
+    ()
+
+[<Test>]
+let ``Blah2`` () =
+    let builder = getBuilder()
+
+    let fileName = $"{Guid.NewGuid()}"
+    let print text = File.AppendAllText(fileName, text)
+    let exit() = ()
+
+    displayVersion builder print exit
+
+    let output = File.ReadAllText fileName
 
     ()
 
