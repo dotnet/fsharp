@@ -2326,12 +2326,20 @@ module InferredSigPrinting =
             let outerPath = mspec.CompilationPath.AccessPath
 
             let denv =
-                innerPath
-                |> List.choose (fun (path, kind) ->
-                    match kind with
-                    | ModuleOrNamespaceKind.Namespace false -> None
-                    | _ -> Some path)
-                |> denv.AddOpenPath
+                match def with
+                | ModuleOrNamespaceContents.TMDefRec (tycons = []; bindings = bindings) ->
+                    let inline isModule b =
+                        match b with
+                        | ModuleOrNamespaceBinding.Module _ -> true
+                        | ModuleOrNamespaceBinding.Binding _ -> false
+
+                    // Don't add the path if it the current ModuleOrNamespace doesn't expose any types or bindings
+                    if List.forall isModule bindings then
+                        denv
+                    else
+                        denv.AddOpenPath (List.map fst innerPath)
+                | _ ->
+                    denv.AddOpenPath (List.map fst innerPath)
 
             if mspec.IsImplicitNamespace then
                 // The current mspec is a namespace that belongs to the `def` child (nested) module(s).                
