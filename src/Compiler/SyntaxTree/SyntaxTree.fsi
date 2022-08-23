@@ -1947,4 +1947,3 @@ type ParsedInput =
 
     /// Gets the #nowarn and other scoped pragmas
     member ScopedPragmas: ScopedPragma list
-

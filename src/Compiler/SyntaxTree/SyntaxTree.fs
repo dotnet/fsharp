@@ -1680,11 +1680,14 @@ type ParsedImplFileInput =
         flags: (bool * bool) *
         trivia: ParsedImplFileInputTrivia
 
-    member x.QualifiedName = (let (ParsedImplFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
+    member x.QualifiedName =
+        (let (ParsedImplFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
 
-    member x.ScopedPragmas = (let (ParsedImplFileInput (scopedPragmas = scopedPragmas)) = x in scopedPragmas)
+    member x.ScopedPragmas =
+        (let (ParsedImplFileInput (scopedPragmas = scopedPragmas)) = x in scopedPragmas)
 
-    member x.HashDirectives = (let (ParsedImplFileInput (hashDirectives = hashDirectives)) = x in hashDirectives)
+    member x.HashDirectives =
+        (let (ParsedImplFileInput (hashDirectives = hashDirectives)) = x in hashDirectives)
 
     member x.FileName = (let (ParsedImplFileInput (fileName = fileName)) = x in fileName)
 
@@ -1692,7 +1695,8 @@ type ParsedImplFileInput =
 
     member x.IsScript = (let (ParsedImplFileInput (isScript = isScript)) = x in isScript)
 
-    member x.IsLastCompiland = (let (ParsedImplFileInput (flags = (isLastCompiland, _))) = x in isLastCompiland)
+    member x.IsLastCompiland =
+        (let (ParsedImplFileInput (flags = (isLastCompiland, _))) = x in isLastCompiland)
 
     member x.IsExe = (let (ParsedImplFileInput (flags = (_, isExe))) = x in isExe)
 
@@ -1708,11 +1712,14 @@ type ParsedSigFileInput =
         contents: SynModuleOrNamespaceSig list *
         trivia: ParsedSigFileInputTrivia
 
-    member x.QualifiedName = (let (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
+    member x.QualifiedName =
+        (let (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
 
-    member x.ScopedPragmas = (let (ParsedSigFileInput (scopedPragmas = scopedPragmas)) = x in scopedPragmas)
+    member x.ScopedPragmas =
+        (let (ParsedSigFileInput (scopedPragmas = scopedPragmas)) = x in scopedPragmas)
 
-    member x.HashDirectives = (let (ParsedSigFileInput (hashDirectives = hashDirectives)) = x in hashDirectives)
+    member x.HashDirectives =
+        (let (ParsedSigFileInput (hashDirectives = hashDirectives)) = x in hashDirectives)
 
     member x.FileName = (let (ParsedSigFileInput (fileName = fileName)) = x in fileName)
 

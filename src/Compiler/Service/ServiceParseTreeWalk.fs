@@ -975,6 +975,7 @@ module SyntaxTraversal =
         match parseTree with
         | ParsedInput.ImplFile file ->
             let l = file.Contents
+
             let fileRange =
 #if DEBUG
                 match l with

@@ -506,10 +506,8 @@ let ReportParsingStatistics res =
     let flattenModImpl (SynModuleOrNamespace (decls = decls)) = flattenDefns decls
 
     match res with
-    | ParsedInput.SigFile sigFile ->
-        printfn "parsing yielded %d specs" (List.collect flattenModSpec sigFile.Contents).Length
-    | ParsedInput.ImplFile implFile ->
-        printfn "parsing yielded %d definitions" (List.collect flattenModImpl implFile.Contents).Length
+    | ParsedInput.SigFile sigFile -> printfn "parsing yielded %d specs" (List.collect flattenModSpec sigFile.Contents).Length
+    | ParsedInput.ImplFile implFile -> printfn "parsing yielded %d definitions" (List.collect flattenModImpl implFile.Contents).Length
 
 let EmptyParsedInput (fileName, isLastCompiland) =
     if FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
@@ -1233,7 +1231,17 @@ let AddCheckResultsToTcState
 
     ccuSigForFile, tcState
 
-let AddDummyCheckResultsToTcState (tcGlobals, amap, qualName: QualifiedNameOfFile, prefixPathOpt, tcSink, tcState: TcState, tcStateForImplFile: TcState, rootSig) =
+let AddDummyCheckResultsToTcState
+    (
+        tcGlobals,
+        amap,
+        qualName: QualifiedNameOfFile,
+        prefixPathOpt,
+        tcSink,
+        tcState: TcState,
+        tcStateForImplFile: TcState,
+        rootSig
+    ) =
     let hadSig = true
     let emptyImplFile = CreateEmptyDummyImplFile qualName rootSig
     let tcEnvAtEnd = tcStateForImplFile.TcEnvFromImpls
@@ -1345,7 +1353,8 @@ let CheckOneInputAux
                     let tcStateForImplFile = tcState
                     let qualNameOfFile = file.QualifiedName
                     let hadSig = true
-                    let priorErrors = checkForErrors()
+                    let priorErrors = checkForErrors ()
+
                     let ccuSigForFile, tcState =
                         AddCheckResultsToTcState
                             (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, rootSig)
@@ -1412,7 +1421,17 @@ let CheckOneInput
         match partialResult with
         | Choice1Of2 result -> return result, tcState
         | Choice2Of2 (amap, _conditionalDefines, rootSig, _priorErrors, file, tcStateForImplFile, _ccuSigForFile) ->
-            return AddDummyCheckResultsToTcState(tcGlobals, amap, file.QualifiedName, prefixPathOpt, tcSink, tcState, tcStateForImplFile, rootSig)
+            return
+                AddDummyCheckResultsToTcState(
+                    tcGlobals,
+                    amap,
+                    file.QualifiedName,
+                    prefixPathOpt,
+                    tcSink,
+                    tcState,
+                    tcStateForImplFile,
+                    rootSig
+                )
     }
 
 // Within a file, equip loggers to locally filter w.r.t. scope pragmas in each input
@@ -1501,7 +1520,7 @@ let CheckMultipleInputsInParallel
 
         // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
         // somewhere in the files processed prior to each one, or in the processing of this particular file.
-        let priorErrors = checkForErrors()
+        let priorErrors = checkForErrors ()
 
         // Do the first linear phase, checking all signatures and any implementation files that don't have a signature.
         // Implementation files that do have a signature will result in a Choice2Of2 indicating to next do some of the
@@ -1514,10 +1533,20 @@ let CheckMultipleInputsInParallel
                 let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
 
                 let partialResult, tcState =
-                    CheckOneInputAux(checkForErrors2, tcConfig, tcImports, tcGlobals, prefixPathOpt, TcResultsSink.NoSink, tcState, input, true)
+                    CheckOneInputAux(
+                        checkForErrors2,
+                        tcConfig,
+                        tcImports,
+                        tcGlobals,
+                        prefixPathOpt,
+                        TcResultsSink.NoSink,
+                        tcState,
+                        input,
+                        true
+                    )
                     |> Cancellable.runWithoutCancellation
 
-                let priorErrors = checkForErrors2()
+                let priorErrors = checkForErrors2 ()
                 partialResult, (tcState, priorErrors))
 
         // Do the parallel phase, checking all implementation files that did have a signature, in parallel.

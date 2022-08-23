@@ -210,8 +210,7 @@ module XmlDocParsing =
 
         and getXmlDocablesInput input =
             match input with
-            | ParsedInput.ImplFile file ->
-                file.Contents |> List.collect getXmlDocablesSynModuleOrNamespace
+            | ParsedInput.ImplFile file -> file.Contents |> List.collect getXmlDocablesSynModuleOrNamespace
             | ParsedInput.SigFile _ -> []
 
         // Get compiler options for the 'project' implied by a single script file
