@@ -5157,7 +5157,7 @@ let MakeInitialEnv env =
 /// Typecheck, then close the inference scope and then check the file meets its signature (if any)
 let CheckOneImplFile 
        // checkForErrors: A function to help us stop reporting cascading errors 
-       (g, niceNameGen, amap,
+       (g, amap,
         thisCcu,
         openDecls0,
         checkForErrors,
@@ -5173,7 +5173,7 @@ let CheckOneImplFile
 
     cancellable {
         let cenv = 
-            cenv.Create (g, isScript, niceNameGen, amap, thisCcu, false, Option.isSome rootSigOpt,
+            cenv.Create (g, isScript, amap, thisCcu, false, Option.isSome rootSigOpt,
                 conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
                 tcPat=TcPat,
                 tcSimplePats=TcSimplePats,
@@ -5291,17 +5291,17 @@ let CheckOneImplFile
 
         let implFile = CheckedImplFile (qualNameOfFile, scopedPragmas, implFileTy, implFileContents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
-        return (topAttrs, implFile, implFileTypePriorToSig, envAtEnd, cenv.createsGeneratedProvidedTypes)
+        return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes)
      } 
    
 
 
 /// Check an entire signature file
-let CheckOneSigFile (g, niceNameGen, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile; modules = sigFileFrags)) = 
+let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile; modules = sigFileFrags)) = 
  cancellable {     
     let cenv = 
         cenv.Create 
-            (g, false, niceNameGen, amap, thisCcu, true, false, conditionalDefines, tcSink,
+            (g, false, amap, thisCcu, true, false, conditionalDefines, tcSink,
              (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
              tcPat=TcPat,
              tcSimplePats=TcSimplePats,

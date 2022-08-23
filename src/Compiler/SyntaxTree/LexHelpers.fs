@@ -97,7 +97,7 @@ let mkLexargs
 
 /// Register the lexbuf and call the given function
 let reusingLexbufForParsing lexbuf f =
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+    use _ = UseThreadBuildPhase BuildPhase.Parse
     LexbufLocalXmlDocStore.ClearXmlDoc lexbuf
     LexbufCommentStore.ClearComments lexbuf
 

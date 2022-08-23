@@ -37,7 +37,7 @@ let main (argv) =
     Thread.CurrentThread.Name <- "F# Main Thread"
 
     // Set the initial phase to garbage collector to batch mode, which improves overall performance.
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+    use _ = UseThreadBuildPhase BuildPhase.Parameter
 
     // An SDL recommendation
     UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption()

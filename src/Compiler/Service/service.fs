@@ -113,13 +113,10 @@ module CompileHelpers =
         diagnostics, diagnosticsLogger, loggerProvider
 
     let tryCompile diagnosticsLogger f =
-        use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        use unwindEL_2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+        use _ = UseThreadBuildPhase BuildPhase.Parse
+        use _ = UseDiagnosticsLogger diagnosticsLogger
 
-        let exiter =
-            { new Exiter with
-                member x.Exit n = raise StopProcessing
-            }
+        let exiter = StopProcessingExiter()
 
         try
             f exiter

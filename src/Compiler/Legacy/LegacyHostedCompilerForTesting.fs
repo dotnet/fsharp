@@ -96,10 +96,7 @@ type internal InProcCompiler(legacyReferenceResolver) =
         let ctok = AssumeCompilationThreadWithoutEvidence ()
 
         let loggerProvider = InProcDiagnosticsLoggerProvider()
-        let mutable exitCode = 0
-        let exiter = 
-            { new Exiter with
-                 member _.Exit n = exitCode <- n; raise StopProcessing }
+        let exiter = StopProcessingExiter()
         try 
             CompileFromCommandLineArguments (
                 ctok, argv, legacyReferenceResolver,
@@ -111,14 +108,14 @@ type internal InProcCompiler(legacyReferenceResolver) =
             | StopProcessing -> ()
             | ReportedError _ 
             | WrappedError(ReportedError _,_)  ->
-                exitCode <- 1
+                exiter.ExitCode <- 1
                 ()
 
         let output: CompilationOutput =
             { Warnings = loggerProvider.CapturedWarnings
               Errors = loggerProvider.CapturedErrors }
 
-        exitCode = 0, output
+        (exiter.ExitCode = 0), output
 
 /// in-proc version of fsc.exe
 type internal FscCompiler(legacyReferenceResolver) =

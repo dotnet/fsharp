@@ -104,16 +104,16 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
 [<Sealed>]
 type DiagnosticsScope()  = 
     let mutable diags = [] 
-    let unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
+    let unwindBP = UseThreadBuildPhase BuildPhase.TypeCheck
     let unwindEL =        
-        PushDiagnosticsLoggerPhaseUntilUnwind (fun _oldLogger -> 
+        UseDiagnosticsLogger 
             { new DiagnosticsLogger("DiagnosticsScope") with 
 
                 member _.DiagnosticSink(diagnostic, severity) = 
                     let diagnostic = FSharpDiagnostic.CreateFromException(diagnostic, severity, range.Zero, false)
                     diags <- diagnostic :: diags
 
-                member _.ErrorCount = diags.Length })
+                member _.ErrorCount = diags.Length }
         
     member _.Errors = diags |> List.filter (fun error -> error.Severity = FSharpDiagnosticSeverity.Error)
 
@@ -126,7 +126,7 @@ type DiagnosticsScope()  =
     
     interface IDisposable with
         member _.Dispose() = 
-            unwindEL.Dispose() (* unwind pushes when DiagnosticsScope disposes *)
+            unwindEL.Dispose()
             unwindBP.Dispose()
 
     /// Used at entry points to FSharp.Compiler.Service (service.fsi) which manipulate symbols and

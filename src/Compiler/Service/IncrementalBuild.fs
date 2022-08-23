@@ -745,7 +745,6 @@ module IncrementalBuilderHelpers =
         unresolvedReferences, 
         dependencyProvider, 
         loadClosureOpt: LoadClosure option, 
-        niceNameGen, 
         basicDependencies,
         keepAssemblyContents,
         keepAllBackgroundResolutions,
@@ -794,7 +793,7 @@ module IncrementalBuilderHelpers =
           }
 
         let tcInitial, openDecls0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
-        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial, openDecls0)
+        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, tcInitial, openDecls0)
         let loadClosureErrors =
            [ match loadClosureOpt with
              | None -> ()
@@ -1541,7 +1540,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             setupConfigFromLoadClosure()
 
             let tcConfig = TcConfig.Create(tcConfigB, validate=true)
-            let niceNameGen = NiceNameGenerator()
             let outfile, _, assemblyName = tcConfigB.DecideNames sourceFiles
 
             // Resolve assemblies and create the framework TcImports. This is done when constructing the
@@ -1625,7 +1623,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     unresolvedReferences,
                     dependencyProvider,
                     loadClosureOpt,
-                    niceNameGen,
                     basicDependencies,
                     keepAssemblyContents,
                     keepAllBackgroundResolutions,

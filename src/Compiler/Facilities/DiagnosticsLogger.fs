@@ -159,7 +159,7 @@ let rec AttachRange m (exn: exn) =
         | UnresolvedPathReferenceNoRange (a, p) -> UnresolvedPathReference(a, p, m)
         | Failure msg -> InternalError(msg + " (Failure)", m)
         | :? ArgumentException as exn -> InternalError(exn.Message + " (ArgumentException)", m)
-        | notARangeDual -> notARangeDual
+        | _ -> exn
 
 type Exiter =
     abstract Exit: int -> 'T
@@ -172,8 +172,17 @@ let QuitProcessExiter =
             with _ ->
                 ()
 
-            FSComp.SR.elSysEnvExitDidntExit () |> failwith
+            failwith (FSComp.SR.elSysEnvExitDidntExit ())
     }
+
+type StopProcessingExiter() =
+
+    member val ExitCode = 0 with get, set
+
+    interface Exiter with
+        member exiter.Exit n = 
+            exiter.ExitCode <- n
+            raise StopProcessing
 
 /// Closed enumeration of build phases.
 [<RequireQualifiedAccess>]
@@ -303,6 +312,8 @@ type DiagnosticsLogger(nameForDebugging: string) =
     // The 'Impl' factoring enables a developer to place a breakpoint at the non-Impl
     // code just below and get a breakpoint for all error logger implementations.
     abstract DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+
+    member x.CheckForErrors() = (x.ErrorCount > 0)
 
     member _.DebugDisplay() =
         sprintf "DiagnosticsLogger(%s)" nameForDebugging
@@ -476,7 +487,7 @@ module DiagnosticsLoggerExtensions =
         member x.ErrorRecoveryNoRange(exn: exn) = x.ErrorRecovery exn range0
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-let PushThreadBuildPhaseUntilUnwind (phase: BuildPhase) =
+let UseThreadBuildPhase (phase: BuildPhase) =
     let oldBuildPhase = DiagnosticsThreadStatics.BuildPhaseUnchecked
     DiagnosticsThreadStatics.BuildPhase <- phase
 
@@ -486,14 +497,17 @@ let PushThreadBuildPhaseUntilUnwind (phase: BuildPhase) =
     }
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-let PushDiagnosticsLoggerPhaseUntilUnwind (diagnosticsLoggerTransformer: DiagnosticsLogger -> #DiagnosticsLogger) =
-    let oldDiagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-    DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLoggerTransformer oldDiagnosticsLogger
+let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #DiagnosticsLogger) =
+    let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+    DiagnosticsThreadStatics.DiagnosticsLogger <- transformer oldLogger
 
     { new IDisposable with
         member _.Dispose() =
-            DiagnosticsThreadStatics.DiagnosticsLogger <- oldDiagnosticsLogger
+            DiagnosticsThreadStatics.DiagnosticsLogger <- oldLogger
     }
+
+let UseDiagnosticsLogger newLogger =
+    UseTransformedDiagnosticsLogger (fun _ -> newLogger)
 
 let SetThreadBuildPhaseNoUnwind (phase: BuildPhase) =
     DiagnosticsThreadStatics.BuildPhase <- phase
@@ -505,8 +519,8 @@ let SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger =
 ///
 /// Use to reset error and warning handlers.
 type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: BuildPhase) =
-    let unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
-    let unwindBP = PushThreadBuildPhaseUntilUnwind buildPhase
+    let unwindEL = UseDiagnosticsLogger diagnosticsLogger
+    let unwindBP = UseThreadBuildPhase buildPhase
 
     member _.DiagnosticsLogger = diagnosticsLogger
     member _.BuildPhase = buildPhase

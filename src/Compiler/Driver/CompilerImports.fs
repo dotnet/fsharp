@@ -382,7 +382,7 @@ type TcConfig with
 
     member tcConfig.TryResolveLibWithDirectories(r: AssemblyReference) =
         let m, nm = r.Range, r.Text
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseThreadBuildPhase BuildPhase.Parameter
 
         // See if the language service has already produced the contents of the assembly for us, virtually
         match r.ProjectReference with
@@ -436,7 +436,7 @@ type TcConfig with
 
     member tcConfig.ResolveLibWithDirectories(ccuLoadFailureAction, r: AssemblyReference) =
         let m, nm = r.Range, r.Text
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseThreadBuildPhase BuildPhase.Parameter
 
         let rs =
             if IsExe nm || IsDLL nm || IsNetModule nm then
@@ -504,7 +504,7 @@ type TcConfig with
             mode: ResolveAssemblyReferenceMode
         ) : AssemblyResolution list * UnresolvedAssemblyReference list =
 
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseThreadBuildPhase BuildPhase.Parameter
 
         if tcConfig.useSimpleResolution then
             failwith "MSBuild resolution is not supported."
@@ -801,7 +801,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
         TcAssemblyResolutions.ResolveAssemblyReferences(tcConfig, references, knownUnresolved)
 
     static member GetAssemblyResolutionInformation(tcConfig: TcConfig) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseThreadBuildPhase BuildPhase.Parameter
         let assemblyList = TcAssemblyResolutions.GetAllDllReferences tcConfig
 
         let resolutions =

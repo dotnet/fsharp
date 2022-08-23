@@ -608,4 +608,14 @@ module ArrayParallel =
 
     let inline map f (arr: 'T []) =
         arr |> mapi (fun _ item -> f item)
+
+[<RequireQualifiedAccess>]
+module ListParallel =
+
+    let map f (xs: 'T list) =
+        xs
+        |> List.toArray
+        |> ArrayParallel.map f
+        |> Array.toList
+
    

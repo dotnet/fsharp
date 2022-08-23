@@ -77,7 +77,11 @@ val OutputDiagnosticContext:
 
 /// Get an error logger that filters the reporting of warnings based on scoped pragma information
 val GetDiagnosticsLoggerFilteringByScopedPragmas:
-    checkFile: bool * ScopedPragma list * FSharpDiagnosticOptions * DiagnosticsLogger -> DiagnosticsLogger
+    checkFile: bool *
+    scopedPragmas: ScopedPragma list *
+    diagnosticOptions: FSharpDiagnosticOptions *
+    diagnosticsLogger: DiagnosticsLogger ->
+        DiagnosticsLogger
 
 val SanitizeFileName: fileName: string -> implicitIncludeDir: string -> string
 

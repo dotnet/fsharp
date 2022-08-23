@@ -158,9 +158,9 @@ let TypeCheck
         tcConfig,
         tcImports,
         tcGlobals,
+        diagnosticsLoggerProvider: DiagnosticsLoggerProvider,
         diagnosticsLogger: DiagnosticsLogger,
         assemblyName,
-        niceNameGen,
         tcEnv0,
         openDecls0,
         inputs,
@@ -173,16 +173,21 @@ let TypeCheck
         let ccuName = assemblyName
 
         let tcInitialState =
-            GetInitialTcState(rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv0, openDecls0)
+            GetInitialTcState(rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, tcEnv0, openDecls0)
+
+        let createDiagnosticsLogger =
+            (fun exiter -> diagnosticsLoggerProvider.CreateDelayAndForwardLogger(exiter) :> CapturingDiagnosticsLogger)
 
         CheckClosedInputSet(
             ctok,
-            (fun () -> diagnosticsLogger.ErrorCount > 0),
+            diagnosticsLogger.CheckForErrors,
             tcConfig,
             tcImports,
             tcGlobals,
             None,
             tcInitialState,
+            exiter,
+            createDiagnosticsLogger,
             inputs
         )
     with exn ->
@@ -521,8 +526,7 @@ let main1
     let delayForFlagsLogger =
         diagnosticsLoggerProvider.CreateDelayAndForwardLogger exiter
 
-    let _unwindEL_1 =
-        PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> delayForFlagsLogger)
+    let _holder = UseDiagnosticsLogger delayForFlagsLogger
 
     // Share intern'd strings across all lexing/parsing
     let lexResourceManager = Lexhelp.LexResourceManager()
@@ -575,7 +579,7 @@ let main1
         diagnosticsLoggerProvider.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigB, exiter)
 
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
-    let _unwindEL_2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+    let _holder = UseDiagnosticsLogger diagnosticsLogger
 
     // Forward all errors from flags
     delayForFlagsLogger.CommitDelayedDiagnostics diagnosticsLogger
@@ -605,7 +609,7 @@ let main1
 
     // Parse sourceFiles
     ReportTime tcConfig "Parse inputs"
-    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+    use unwindParsePhase = UseThreadBuildPhase BuildPhase.Parse
 
     let createDiagnosticsLogger =
         (fun exiter -> diagnosticsLoggerProvider.CreateDelayAndForwardLogger(exiter) :> CapturingDiagnosticsLogger)
@@ -659,7 +663,7 @@ let main1
     // Build the initial type checking environment
     ReportTime tcConfig "Typecheck"
 
-    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
+    use unwindParsePhase = UseThreadBuildPhase BuildPhase.TypeCheck
 
     let tcEnv0, openDecls0 =
         GetInitialTcEnv(assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
@@ -673,9 +677,9 @@ let main1
             tcConfig,
             tcImports,
             tcGlobals,
+            diagnosticsLoggerProvider,
             diagnosticsLogger,
             assemblyName,
-            NiceNameGenerator(),
             tcEnv0,
             openDecls0,
             inputs,
@@ -782,8 +786,7 @@ let main1OfAst
     let delayForFlagsLogger =
         diagnosticsLoggerProvider.CreateDelayAndForwardLogger exiter
 
-    let _unwindEL_1 =
-        PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> delayForFlagsLogger)
+    let _holder = UseDiagnosticsLogger delayForFlagsLogger
 
     tcConfigB.conditionalDefines <- "COMPILED" :: tcConfigB.conditionalDefines
 
@@ -805,7 +808,7 @@ let main1OfAst
         diagnosticsLoggerProvider.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigB, exiter)
 
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
-    let _unwindEL_2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+    let _holder = UseDiagnosticsLogger diagnosticsLogger
 
     // Forward all errors from flags
     delayForFlagsLogger.CommitDelayedDiagnostics diagnosticsLogger
@@ -825,7 +828,7 @@ let main1OfAst
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
 
-    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+    use unwindParsePhase = UseThreadBuildPhase BuildPhase.Parse
 
     let meta = Directory.GetCurrentDirectory()
 
@@ -847,7 +850,7 @@ let main1OfAst
 
     // Build the initial type checking environment
     ReportTime tcConfig "Typecheck"
-    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
+    use unwindParsePhase = UseThreadBuildPhase BuildPhase.TypeCheck
 
     let tcEnv0, openDecls0 =
         GetInitialTcEnv(assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
@@ -859,9 +862,9 @@ let main1OfAst
             tcConfig,
             tcImports,
             tcGlobals,
+            diagnosticsLoggerProvider,
             diagnosticsLogger,
             assemblyName,
-            NiceNameGenerator(),
             tcEnv0,
             openDecls0,
             inputs,
@@ -912,7 +915,7 @@ let main2
 
     generatedCcu.Contents.SetAttribs(generatedCcu.Contents.Attribs @ topAttrs.assemblyAttrs)
 
-    use unwindPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.CodeGen
+    use unwindPhase = UseThreadBuildPhase BuildPhase.CodeGen
     let signingInfo = ValidateKeySigningAttributes(tcConfig, tcGlobals, topAttrs)
 
     AbortOnError(diagnosticsLogger, exiter)
@@ -930,7 +933,7 @@ let main2
 
         GetDiagnosticsLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
 
-    let _unwindEL_3 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+    let _holder = UseDiagnosticsLogger diagnosticsLogger
 
     // Try to find an AssemblyVersion attribute
     let assemVerFromAttrib =
@@ -955,7 +958,7 @@ let main2
 
     // write interface, xmldoc
     ReportTime tcConfig "Write Interface File"
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
+    use _ = UseThreadBuildPhase BuildPhase.Output
 
     if tcConfig.printSignature || tcConfig.printAllSignatureFiles then
         InterfaceFileWriter.WriteInterfaceFile(tcGlobals, tcConfig, InfoReader(tcGlobals, tcImports.GetImportMap()), typedImplFiles)
@@ -1036,7 +1039,7 @@ let main3
 
     let optimizedImpls, optDataResources =
         // Perform optimization
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Optimize
+        use _ = UseThreadBuildPhase BuildPhase.Optimize
 
         let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
 
@@ -1124,7 +1127,7 @@ let main4
     let staticLinker = StaticLink(ctok, tcConfig, tcImports, ilGlobals)
 
     ReportTime tcConfig "TAST -> IL"
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
+    use _ = UseThreadBuildPhase BuildPhase.IlxGen
 
     // Create the Abstract IL generator
     let ilxGenerator =
@@ -1214,7 +1217,7 @@ let main5
            ilSourceDocs))
     =
 
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
+    use _ = UseThreadBuildPhase BuildPhase.Output
 
     // Static linking, if any
     let ilxMainModule =
@@ -1248,7 +1251,7 @@ let main6
 
     ReportTime tcConfig "Write .NET Binary"
 
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
+    use _ = UseThreadBuildPhase BuildPhase.Output
     let outfile = tcConfig.MakePathAbsolute outfile
 
     DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent ctok

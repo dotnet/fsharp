@@ -196,7 +196,7 @@ module ScriptPreprocessClosure =
             match basicReferences with
             | None ->
                 let diagnosticsLogger = CapturingDiagnosticsLogger("ScriptDefaultReferences")
-                use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+                use _ = UseDiagnosticsLogger diagnosticsLogger
 
                 let references, useDotNetFramework =
                     tcConfigB.FxResolver.GetDefaultReferences useFsiAuxLib
@@ -451,7 +451,7 @@ module ScriptPreprocessClosure =
                     if IsScript fileName || parseRequired then
                         let parseResult, parseDiagnostics =
                             let diagnosticsLogger = CapturingDiagnosticsLogger("FindClosureParse")
-                            use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+                            use _ = UseDiagnosticsLogger diagnosticsLogger
 
                             let result =
                                 ParseScriptClosureInput(fileName, sourceText, tcConfig, codeContext, lexResourceManager, diagnosticsLogger)
@@ -459,7 +459,7 @@ module ScriptPreprocessClosure =
                             result, diagnosticsLogger.Diagnostics
 
                         let diagnosticsLogger = CapturingDiagnosticsLogger("FindClosureMetaCommands")
-                        use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+                        use _ = UseDiagnosticsLogger diagnosticsLogger
                         let pathOfMetaCommandSource = Path.GetDirectoryName fileName
                         let preSources = tcConfig.GetAvailableLoadedSources()
 
@@ -569,7 +569,7 @@ module ScriptPreprocessClosure =
         let references, unresolvedReferences, resolutionDiagnostics =
             let diagnosticsLogger = CapturingDiagnosticsLogger("GetLoadClosure")
 
-            use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+            use _ = UseDiagnosticsLogger diagnosticsLogger
 
             let references, unresolvedReferences =
                 TcAssemblyResolutions.GetAssemblyResolutionInformation(tcConfig)
@@ -745,7 +745,7 @@ type LoadClosure with
             dependencyProvider
         ) =
 
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+        use _ = UseThreadBuildPhase BuildPhase.Parse
 
         ScriptPreprocessClosure.GetFullClosureOfScriptText(
             legacyReferenceResolver,
@@ -775,5 +775,5 @@ type LoadClosure with
             dependencyProvider
         ) =
 
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+        use _ = UseThreadBuildPhase BuildPhase.Parse
         ScriptPreprocessClosure.GetFullClosureOfScriptFiles(tcConfig, files, implicitDefines, lexResourceManager, dependencyProvider)

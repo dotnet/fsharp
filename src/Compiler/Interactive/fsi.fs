@@ -800,7 +800,7 @@ type internal DiagnosticsLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, 
     override x.ErrorCount = errorCount
 
 type DiagnosticsLogger with
-    member x.CheckForErrors() = (x.ErrorCount > 0)
+
     /// A helper function to check if its time to abort
     member x.AbortOnError(fsiConsoleOutput:FsiConsoleOutput) =
         if x.ErrorCount > 0 then
@@ -1331,7 +1331,6 @@ type internal FsiDynamicCompiler(
         fsiOptions : FsiCommandLineOptions,
         fsiConsoleOutput : FsiConsoleOutput,
         fsiCollectible: bool,
-        niceNameGen,
         resolveAssemblyRef
     ) =
 
@@ -1676,7 +1675,19 @@ type internal FsiDynamicCompiler(
         // Typecheck. The lock stops the type checker running at the same time as the
         // server intellisense implementation (which is currently incomplete and #if disabled)
         let tcState, topCustomAttrs, declaredImpls, tcEnvAtEndOfLastInput =
-            lock tcLockObject (fun _ -> CheckClosedInputSet(ctok, diagnosticsLogger.CheckForErrors, tcConfig, tcImports, tcGlobals, Some prefixPath, tcState, inputs))
+            lock tcLockObject (fun _ ->
+                CheckClosedInputSet(
+                    ctok,
+                    diagnosticsLogger.CheckForErrors,
+                    tcConfig,
+                    tcImports,
+                    tcGlobals,
+                    Some prefixPath,
+                    tcState, 
+                    StopProcessingExiter(),
+                    (fun _ -> CapturingDiagnosticsLogger("FsiProcessInputsLogger")),
+                    inputs)
+            )
 
         let codegenResults, optEnv, fragName = ProcessTypedImpl(diagnosticsLogger, optEnv, tcState, tcConfig, isInteractiveItExpr, topCustomAttrs, prefixPath, isIncrementalFragment, declaredImpls, ilxGenerator)
 
@@ -2156,7 +2167,7 @@ type internal FsiDynamicCompiler(
         let tcEnv, openDecls0 = GetInitialTcEnv (dynamicCcuName, rangeStdin0, tcConfig, tcImports, tcGlobals)
         let ccuName = dynamicCcuName
 
-        let tcState = GetInitialTcState (rangeStdin0, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv, openDecls0)
+        let tcState = GetInitialTcState (rangeStdin0, ccuName, tcConfig, tcGlobals, tcImports, tcEnv, openDecls0)
 
         let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), tcState.Ccu)
 
@@ -3038,8 +3049,8 @@ type FsiInteractionProcessor
 
     member _.EvalInteraction(ctok, sourceText, scriptFileName, diagnosticsLogger, ?cancellationToken) =
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
-        use _unwind1 = PushThreadBuildPhaseUntilUnwind(BuildPhase.Interactive)
-        use _unwind2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+        use _ = UseThreadBuildPhase BuildPhase.Interactive
+        use _ = UseDiagnosticsLogger diagnosticsLogger
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
         let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, sourceText)
         let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)
@@ -3055,8 +3066,8 @@ type FsiInteractionProcessor
         this.EvalInteraction (ctok, sourceText, scriptPath, diagnosticsLogger)
 
     member _.EvalExpression (ctok, sourceText, scriptFileName, diagnosticsLogger) =
-        use _unwind1 = PushThreadBuildPhaseUntilUnwind(BuildPhase.Interactive)
-        use _unwind2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+        use _unwind1 = UseThreadBuildPhase BuildPhase.Interactive
+        use _unwind2 = UseDiagnosticsLogger diagnosticsLogger
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
         let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, sourceText)
         let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)
@@ -3361,8 +3372,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
       with e ->
           stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 
-    let niceNameGen = NiceNameGenerator()
-
     // Share intern'd strings across all lexing/parsing
     let lexResourceManager = LexResourceManager()
 
@@ -3382,7 +3391,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | Some resolvedPath -> Some (Choice1Of2 resolvedPath)
         | None -> None
 
-    let fsiDynamicCompiler = FsiDynamicCompiler(fsi, timeReporter, tcConfigB, tcLockObject, outWriter, tcImports, tcGlobals, fsiOptions, fsiConsoleOutput, fsiCollectible, niceNameGen, resolveAssemblyRef)
+    let fsiDynamicCompiler = FsiDynamicCompiler(fsi, timeReporter, tcConfigB, tcLockObject, outWriter, tcImports, tcGlobals, fsiOptions, fsiConsoleOutput, fsiCollectible, resolveAssemblyRef)
 
     let controlledExecution = ControlledExecution()
 
@@ -3636,7 +3645,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         if fsiOptions.IsInteractiveServer then
             SpawnInteractiveServer (fsi, fsiOptions, fsiConsoleOutput)
 
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Interactive
+        use _ = UseThreadBuildPhase BuildPhase.Interactive
 
         if fsiOptions.Interact then
             // page in the type check env

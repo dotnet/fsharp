@@ -115,7 +115,6 @@ val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlo
 /// Represents the incremental type checking state for a set of inputs
 [<Sealed>]
 type TcState =
-    member NiceNameGenerator: NiceNameGenerator
 
     /// The CcuThunk for the current assembly being checked
     member Ccu: CcuThunk
@@ -134,20 +133,21 @@ type TcState =
 
     member CreatesGeneratedProvidedTypes: bool
 
+    member RemoveImpl: QualifiedNameOfFile -> TcState
+
 /// Get the initial type checking state for a set of inputs
-val GetInitialTcState:
-    range * string * TcConfig * TcGlobals * TcImports * NiceNameGenerator * TcEnv * OpenDeclaration list -> TcState
+val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv * OpenDeclaration list -> TcState
 
 /// Check one input, returned as an Eventually computation
 val CheckOneInput:
     checkForErrors: (unit -> bool) *
-    TcConfig *
-    TcImports *
-    TcGlobals *
-    LongIdent option *
-    NameResolution.TcResultsSink *
-    TcState *
-    ParsedInput *
+    tcConfig: TcConfig *
+    tcImports: TcImports *
+    tcGlobals: TcGlobals *
+    prefixPathOpt: LongIdent option *
+    tcSink: NameResolution.TcResultsSink *
+    tcState: TcState *
+    input: ParsedInput *
     skipImplIfSigExists: bool ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
 
@@ -160,14 +160,16 @@ val CheckClosedInputSetFinish: CheckedImplFile list * TcState -> TcState * Check
 
 /// Check a closed set of inputs
 val CheckClosedInputSet:
-    CompilationThreadToken *
+    ctok: CompilationThreadToken *
     checkForErrors: (unit -> bool) *
-    TcConfig *
-    TcImports *
-    TcGlobals *
-    LongIdent option *
-    TcState *
-    ParsedInput list ->
+    tcConfig: TcConfig *
+    tcImports: TcImports *
+    tcGlobals: TcGlobals *
+    prefixPathOpt: LongIdent option *
+    tcState: TcState *
+    exiter: Exiter *
+    createDiagnosticsLogger: (Exiter -> CapturingDiagnosticsLogger) *
+    inputs: ParsedInput list ->
         TcState * TopAttribs * CheckedImplFile list * TcEnv
 
 /// Check a single input and finish the checking
