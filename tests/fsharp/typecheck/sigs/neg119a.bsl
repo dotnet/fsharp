@@ -1,5 +1,5 @@
 
-neg119.fs(40,20,40,22): typecheck error FS0071: Type constraint mismatch when applying the default type 'obj' for a type inference variable. No overloads match for method 'Return'.
+neg119a.fs(40,20,40,22): typecheck error FS0071: Type constraint mismatch when applying the default type 'obj' for a type inference variable. No overloads match for method 'Return'.
 
 Known return type: ((int -> int -> int) -> obj)
 
