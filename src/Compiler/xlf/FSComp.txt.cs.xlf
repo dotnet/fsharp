@@ -472,6 +472,11 @@
         <target state="translated">Vymazat mezipaměť výsledků správce balíčků</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsCompressMetadata">
+        <source>Compress interface and optimization data files</source>
+        <target state="new">Compress interface and optimization data files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
         <target state="translated">Neplatné použití generování referenčního sestavení, nepoužívejte --staticlink ani --refonly a --refout společně.</target>

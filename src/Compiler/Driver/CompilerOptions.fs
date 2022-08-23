@@ -923,6 +923,14 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
         )
 
         CompilerOption(
+            "compressmetadata",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.compressMetadata <- false),
+            None,
+            Some(FSComp.SR.optsCompressMetadata ())
+        )
+
+        CompilerOption(
             "nooptimizationdata",
             tagNone,
             OptionUnit(fun () -> tcConfigB.onlyEssentialOptimizationData <- true),

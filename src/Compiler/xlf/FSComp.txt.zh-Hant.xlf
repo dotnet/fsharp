@@ -472,6 +472,11 @@
         <target state="translated">清除封裝管理員結果快取</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsCompressMetadata">
+        <source>Compress interface and optimization data files</source>
+        <target state="new">Compress interface and optimization data files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
         <target state="translated">發出參考組件的使用無效，請勿同時使用 '--staticlink' 或 '--refonly' 和 '--refout'。</target>

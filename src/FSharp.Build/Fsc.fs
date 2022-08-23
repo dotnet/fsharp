@@ -27,6 +27,7 @@ type public Fsc() as this =
     let mutable codePage: string MaybeNull = null
     let mutable commandLineArgs: ITaskItem list = []
     let mutable compilerTools: ITaskItem[] = [||]
+    let mutable compressMetadata = false
     let mutable debugSymbols = false
     let mutable debugType: string MaybeNull = null
     let mutable defineConstants: ITaskItem[] = [||]
@@ -42,6 +43,8 @@ type public Fsc() as this =
     let mutable keyFile: string MaybeNull = null
     let mutable langVersion: string MaybeNull = null
     let mutable noFramework = false
+    let mutable noInterfaceData = false
+    let mutable noOptimizationData = false
     let mutable optimize: bool = true
     let mutable otherFlags: string MaybeNull = null
     let mutable outputAssembly: string MaybeNull = null
@@ -150,6 +153,14 @@ type public Fsc() as this =
         // NoFramework
         if noFramework then
             builder.AppendSwitch("--noframework")
+
+        // NoInterfaceData
+        if noInterfaceData then
+            builder.AppendSwitch("--noInterfaceData")
+
+        // NoOptimizationData
+        if noOptimizationData then
+            builder.AppendSwitch("--noOptimizationData")
 
         // BaseAddress
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
@@ -437,6 +448,16 @@ type public Fsc() as this =
     member _.NoFramework
         with get () = noFramework
         and set (b) = noFramework <- b
+
+    // --nointerfacedata
+    member _.NoInterfaceDataData
+        with get () = noInterfaceData
+        and set (b) = noInterfaceData <- b
+
+    // --nooptimizationdata
+    member _.NoOptimizationData
+        with get () = noOptimizationData
+        and set (b) = noOptimizationData <- b
 
     // --optimize
     member _.Optimize

@@ -472,6 +472,11 @@
         <target state="translated">パッケージ マネージャーの結果キャッシュをクリアする</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsCompressMetadata">
+        <source>Compress interface and optimization data files</source>
+        <target state="new">Compress interface and optimization data files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
         <target state="translated">参照アセンブリの生成の使用が無効です。'--staticlink'、または '--refonly' と '--refout' を同時に使用しないでください。</target>

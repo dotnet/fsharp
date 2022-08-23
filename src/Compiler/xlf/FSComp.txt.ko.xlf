@@ -472,6 +472,11 @@
         <target state="translated">패키지 관리자 결과 캐시 지우기</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsCompressMetadata">
+        <source>Compress interface and optimization data files</source>
+        <target state="new">Compress interface and optimization data files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
         <target state="translated">참조 어셈블리 내보내기를 잘못 사용했습니다. '--staticlink' 또는 '--refonly' 및 '--refout'을 함께 사용하지 마세요.</target>

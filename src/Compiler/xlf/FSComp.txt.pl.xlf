@@ -472,6 +472,11 @@
         <target state="translated">Wyczyść pamięć podręczną wyników menedżera pakietów</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsCompressMetadata">
+        <source>Compress interface and optimization data files</source>
+        <target state="new">Compress interface and optimization data files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
         <target state="translated">Nieprawidłowe użycie emitowania zestawu odwołania, nie używaj razem elementów „--staticlink” ani „--refonly” i „--refout”.</target>

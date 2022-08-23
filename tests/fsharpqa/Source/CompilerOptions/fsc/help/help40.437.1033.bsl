@@ -24,12 +24,16 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          run on: x86, x64, Arm, Arm64,
                                          Itanium, anycpu32bitpreferred, or
                                          anycpu. The default is anycpu.
---optimizationdata:{none|compress|file}  Specify included optimization
-                                         information, the default is file.
-                                         Important for distributed libraries.
---interfacedata:{none|compress|file}     Include F# interface information,
-                                         the default is file. Essential for
-                                         distributing libraries.
+--compressmetadata                       Compress interface and optimization
+                                         data files
+--nooptimizationdata                     Only include optimization
+                                         information essential for
+                                         implementing inlined constructs.
+                                         Inhibits cross-module inlining but
+                                         improves binary compatibility.
+--nointerfacedata                        Don't add a resource to the
+                                         generated assembly containing
+                                         F#-specific metadata
 --sig:<file>                             Print the inferred interface of the
                                          assembly to a file
 --allsigs                                Print the inferred interfaces of all

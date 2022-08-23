@@ -154,13 +154,12 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers
     // don't complain when they see the resource.
     let rName, compress =
-        match tcConfig.signatureData with
-        | SignatureDataOptions.Compress -> FSharpSignatureCompressDataResourceName, true
-        | _ ->
-            if ccu.AssemblyName = getFSharpCoreLibraryName then
-                FSharpSignatureDataResourceName2, false
-            else
-                FSharpSignatureDataResourceName, false
+        if tcConfig.compressMetadata then
+            FSharpSignatureCompressDataResourceName, true
+        elif ccu.AssemblyName = getFSharpCoreLibraryName then
+            FSharpSignatureDataResourceName2, false
+        else
+            FSharpSignatureDataResourceName, false
 
     let includeDir =
         if String.IsNullOrEmpty tcConfig.implicitIncludeDir then
@@ -191,13 +190,12 @@ let WriteOptimizationData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu: 
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers
     // don't complain when they see the resource.
     let rName, compress =
-        match tcConfig.optimizationData with
-        | OptimizationDataOptions.Compress -> FSharpOptimizationCompressDataResourceName, true
-        | _ ->
-            if ccu.AssemblyName = getFSharpCoreLibraryName then
-                FSharpOptimizationDataResourceName2, false
-            else
-                FSharpOptimizationDataResourceName, false
+        if tcConfig.compressMetadata then
+            FSharpOptimizationCompressDataResourceName, true
+        elif ccu.AssemblyName = getFSharpCoreLibraryName then
+            FSharpOptimizationDataResourceName2, false
+        else
+            FSharpOptimizationDataResourceName, false
 
     PickleToResource inMem fileName tcGlobals compress ccu (rName + ccu.AssemblyName) Optimizer.p_CcuOptimizationInfo modulInfo
 
@@ -220,7 +218,7 @@ let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapp
         let data = map2Of2 (Optimizer.RemapOptimizationInfo tcGlobals exportRemapping) data
 
         let ccu, optData =
-            if tcConfig.optimizationData = OptimizationDataOptions.None then
+            if tcConfig.onlyEssentialOptimizationData then
                 map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data
             else
                 data

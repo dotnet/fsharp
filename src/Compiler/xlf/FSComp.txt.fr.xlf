@@ -472,6 +472,11 @@
         <target state="translated">Effacer le cache des résultats du Gestionnaire de package</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsCompressMetadata">
+        <source>Compress interface and optimization data files</source>
+        <target state="new">Compress interface and optimization data files</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
         <target state="translated">Utilisation non valide de l’émission d’un assembly de référence. N’utilisez pas '--staticlink' ni '--refonly' et '--refout' ensemble.</target>
