@@ -47,19 +47,28 @@ exception DeprecatedCommandLineOptionNoDescription of string * range
 /// This exception is an old-style way of reporting a diagnostic
 exception InternalCommandLineOption of string * range
 
-/// Get the location associated with an error
-val GetRangeOfDiagnostic: diagnostic: PhasedDiagnostic -> range option
+type PhasedDiagnostic with
 
-/// Get the number associated with an error
-val GetDiagnosticNumber: diagnostic: PhasedDiagnostic -> int
+    /// Get the location associated with a diagnostic
+    member Range: range option
 
-/// Eagerly format a PhasedDiagnostic to a DiagnosticWithText
-val EagerlyFormatDiagnostic:
-    flattenErrors: bool -> suggestNames: bool -> diagnostic: PhasedDiagnostic -> PhasedDiagnostic
+    /// Get the number associated with a diagnostic
+    member Number: int
 
-/// Output an error to a buffer
-val OutputPhasedDiagnostic:
-    os: StringBuilder -> diagnostic: PhasedDiagnostic -> flattenErrors: bool -> suggestNames: bool -> unit
+    /// Eagerly format a PhasedDiagnostic return as a new PhasedDiagnostic requiring no formatting of types.
+    member EagerlyFormatCore: flattenErrors: bool * suggestNames: bool -> PhasedDiagnostic
+
+    /// Format the core of the diagnostic as a string. Doesn't include the range information.
+    member FormatCore: flattenErrors: bool * suggestNames: bool -> string
+
+    /// Indicates if we should report a diagnostic as a warning
+    member ReportAsInfo: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
+
+    /// Indicates if we should report a diagnostic as a warning
+    member ReportAsWarning: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
+
+    /// Indicates if we should report a warning as an error
+    member ReportAsError: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
 
 /// Output an error or warning to a buffer
 val OutputDiagnostic:
@@ -85,15 +94,6 @@ val GetDiagnosticsLoggerFilteringByScopedPragmas:
         DiagnosticsLogger
 
 val SanitizeFileName: fileName: string -> implicitIncludeDir: string -> string
-
-/// Indicates if we should report a diagnostic as a warning
-val ReportDiagnosticAsInfo: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
-
-/// Indicates if we should report a diagnostic as a warning
-val ReportDiagnosticAsWarning: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
-
-/// Indicates if we should report a warning as an error
-val ReportDiagnosticAsError: FSharpDiagnosticOptions -> (PhasedDiagnostic * FSharpDiagnosticSeverity) -> bool
 
 /// Used internally and in LegacyHostedCompilerForTesting
 [<RequireQualifiedAccess>]

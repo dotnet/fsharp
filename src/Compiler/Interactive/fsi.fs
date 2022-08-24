@@ -773,14 +773,14 @@ type internal DiagnosticsLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, 
 
     member _.ResetErrorCount() = errorCount <- 0
 
-    override x.DiagnosticSink(err, severity) =
-        if ReportDiagnosticAsError tcConfigB.diagnosticsOptions (err, severity) then
+    override _.DiagnosticSink(err, severity) =
+        if err.ReportAsError (tcConfigB.diagnosticsOptions, severity) then
             fsiStdinSyphon.PrintError(tcConfigB,err)
             errorCount <- errorCount + 1
             if tcConfigB.abortOnError then exit 1 (* non-zero exit code *)
             // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
             raise StopProcessing
-        elif ReportDiagnosticAsWarning tcConfigB.diagnosticsOptions (err, severity) then
+        elif err.ReportAsWarning (tcConfigB.diagnosticsOptions, severity) then
             DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
                 writeViaBuffer fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
@@ -788,7 +788,7 @@ type internal DiagnosticsLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, 
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
-        elif ReportDiagnosticAsInfo tcConfigB.diagnosticsOptions (err, severity) then
+        elif err.ReportAsInfo (tcConfigB.diagnosticsOptions, severity) then
             DoWithDiagnosticColor FSharpDiagnosticSeverity.Info (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
                 writeViaBuffer fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
@@ -797,7 +797,7 @@ type internal DiagnosticsLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, 
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
 
-    override x.ErrorCount = errorCount
+    override _.ErrorCount = errorCount
 
 type DiagnosticsLogger with
 
@@ -1672,8 +1672,8 @@ type internal FsiDynamicCompiler(
         let ilxGenerator = istate.ilxGenerator
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
-        let eagerFormat diag =
-            EagerlyFormatDiagnostic tcConfig.flatErrors true diag
+        let eagerFormat (diag: PhasedDiagnostic) =
+            diag.EagerlyFormatCore (tcConfig.flatErrors, true)
 
         // Typecheck. The lock stops the type checker running at the same time as the
         // server intellisense implementation (which is currently incomplete and #if disabled)

@@ -76,7 +76,7 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
     override _.ErrorCount = errors
 
     override x.DiagnosticSink(diagnostic, severity) =
-        if ReportDiagnosticAsError tcConfigB.diagnosticsOptions (diagnostic, severity) then
+        if diagnostic.ReportAsError (tcConfigB.diagnosticsOptions, severity) then
             if errors >= tcConfigB.maxErrors then
                 x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors ())
                 exiter.Exit 1
@@ -92,10 +92,10 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
                 Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (diagnostic.Exception.ToString()))
             | _ -> ()
 
-        elif ReportDiagnosticAsWarning tcConfigB.diagnosticsOptions (diagnostic, severity) then
+        elif diagnostic.ReportAsWarning (tcConfigB.diagnosticsOptions, severity) then
             x.HandleIssue(tcConfigB, diagnostic, FSharpDiagnosticSeverity.Warning)
 
-        elif ReportDiagnosticAsInfo tcConfigB.diagnosticsOptions (diagnostic, severity) then
+        elif diagnostic.ReportAsInfo (tcConfigB.diagnosticsOptions, severity) then
             x.HandleIssue(tcConfigB, diagnostic, severity)
 
 /// Create an error logger that counts and prints errors
@@ -170,8 +170,8 @@ let TypeCheck
         let tcInitialState =
             GetInitialTcState(rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, tcEnv0, openDecls0)
 
-        let eagerFormat diag =
-            EagerlyFormatDiagnostic tcConfig.flatErrors true diag
+        let eagerFormat (diag: PhasedDiagnostic) =
+            diag.EagerlyFormatCore (tcConfig.flatErrors, true)
 
         CheckClosedInputSet(
             ctok,

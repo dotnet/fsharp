@@ -77,12 +77,13 @@ exception DeprecatedCommandLineOptionNoDescription of string * range
 /// This exception is an old-style way of reporting a diagnostic
 exception InternalCommandLineOption of string * range
 
-let GetRangeOfDiagnostic (diagnostic: PhasedDiagnostic) =
-    let rec RangeFromException exn =
+type Exception with 
+
+    member exn.DiagnosticRange =
         match exn with
-        | ErrorFromAddingConstraint (_, exn2, _) -> RangeFromException exn2
+        | ErrorFromAddingConstraint (_, exn2, _) -> exn2.DiagnosticRange
 #if !NO_TYPEPROVIDERS
-        | TypeProviders.ProvidedTypeResolutionNoRange exn -> RangeFromException exn
+        | TypeProviders.ProvidedTypeResolutionNoRange exn -> exn.DiagnosticRange
         | TypeProviders.ProvidedTypeResolution (m, _)
 #endif
         | ReservedKeyword (_, m)
@@ -203,17 +204,13 @@ let GetRangeOfDiagnostic (diagnostic: PhasedDiagnostic) =
         | HashLoadedSourceHasIssues (_, _, _, m)
         | HashLoadedScriptConsideredSource m -> Some m
         // Strip TargetInvocationException wrappers
-        | :? System.Reflection.TargetInvocationException as e -> RangeFromException e.InnerException
+        | :? System.Reflection.TargetInvocationException as e -> e.InnerException.DiagnosticRange
 #if !NO_TYPEPROVIDERS
         | :? TypeProviderError as e -> e.Range |> Some
 #endif
-
         | _ -> None
 
-    RangeFromException diagnostic.Exception
-
-let GetDiagnosticNumber (diagnostic: PhasedDiagnostic) =
-    let rec GetFromException (exn: exn) =
+    member exn.DiagnosticNumber =
         match exn with
         // DO NOT CHANGE THESE NUMBERS
         | ErrorFromAddingTypeEquation _ -> 1
@@ -328,13 +325,10 @@ let GetDiagnosticNumber (diagnostic: PhasedDiagnostic) =
         | TypeProviders.ProvidedTypeResolution _ -> 103
 #endif
         | PatternMatchCompilation.EnumMatchIncomplete _ -> 104
-        // DO NOT CHANGE THE NUMBERS
 
         // Strip TargetInvocationException wrappers
-        | :? System.Reflection.TargetInvocationException as e -> GetFromException e.InnerException
-
-        | WrappedError (e, _) -> GetFromException e
-
+        | :? TargetInvocationException as e -> e.InnerException.DiagnosticNumber
+        | WrappedError (e, _) -> e.DiagnosticNumber
         | DiagnosticWithText (n, _, _) -> n
         | DiagnosticWithSuggestions (n, _, _, _, _) -> n
         | Failure _ -> 192
@@ -346,241 +340,293 @@ let GetDiagnosticNumber (diagnostic: PhasedDiagnostic) =
             fst (FSComp.SR.considerUpcast ("", ""))
         | _ -> 193
 
-    GetFromException diagnostic.Exception
 
-let GetWarningLevel diagnostic =
-    match diagnostic.Exception with
-    // Level 5 warnings
-    | RecursiveUseCheckedAtRuntime _
-    | LetRecEvaluatedOutOfOrder _
-    | DefensiveCopyWarning _ -> 5
+type PhasedDiagnostic with 
+    member x.Range =
+        x.Exception.DiagnosticRange
 
-    | DiagnosticWithText (n, _, _)
-    | DiagnosticWithSuggestions (n, _, _, _, _) ->
-        // 1178, tcNoComparisonNeeded1, "The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint..."
-        // 1178, tcNoComparisonNeeded2, "The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint...."
-        // 1178, tcNoEqualityNeeded1, "The struct, record or union type '%s' does not support structural equality because the type parameter %s does not satisfy the 'equality' constraint..."
-        // 1178, tcNoEqualityNeeded2, "The struct, record or union type '%s' does not support structural equality because the type '%s' does not satisfy the 'equality' constraint...."
-        if (n = 1178) then 5 else 2
-    // Level 2
-    | _ -> 2
+    member x.Number =
+       x.Exception.DiagnosticNumber
 
-let IsWarningOrInfoEnabled (diagnostic, severity) n level specificWarnOn =
-    List.contains n specificWarnOn
-    ||
-    // Some specific warnings/informational are never on by default, i.e. unused variable warnings
-    match n with
-    | 1182 -> false // chkUnusedValue - off by default
-    | 3180 -> false // abImplicitHeapAllocation - off by default
-    | 3186 -> false // pickleMissingDefinition - off by default
-    | 3366 -> false //tcIndexNotationDeprecated - currently off by default
-    | 3517 -> false // optFailedToInlineSuggestedValue - off by default
-    | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default
-    | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
-    | 3390 -> false // xmlDocBadlyFormed - off by default
-    | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
-    | _ ->
-        (severity = FSharpDiagnosticSeverity.Info)
-        || (severity = FSharpDiagnosticSeverity.Warning
-            && level >= GetWarningLevel diagnostic)
+    member x.WarningLevel =
+        match x.Exception with
+        // Level 5 warnings
+        | RecursiveUseCheckedAtRuntime _
+        | LetRecEvaluatedOutOfOrder _
+        | DefensiveCopyWarning _ -> 5
 
-let ToPhased phase exn = { Exception = exn; Phase = phase }
+        | DiagnosticWithText (n, _, _)
+        | DiagnosticWithSuggestions (n, _, _, _, _) ->
+            // 1178, tcNoComparisonNeeded1, "The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint..."
+            // 1178, tcNoComparisonNeeded2, "The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint...."
+            // 1178, tcNoEqualityNeeded1, "The struct, record or union type '%s' does not support structural equality because the type parameter %s does not satisfy the 'equality' constraint..."
+            // 1178, tcNoEqualityNeeded2, "The struct, record or union type '%s' does not support structural equality because the type '%s' does not satisfy the 'equality' constraint...."
+            if (n = 1178) then 5 else 2
+        // Level 2
+        | _ -> 2
 
-let Message (name, format) = DeclareResourceString(name, format)
+    member x.IsEnabled (severity, options) =
+        let level = options.WarnLevel
+        let specificWarnOn = options.WarnOn
+        let n = x.Number
+        List.contains n specificWarnOn
+        ||
+        // Some specific warnings/informational are never on by default, i.e. unused variable warnings
+        match n with
+        | 1182 -> false // chkUnusedValue - off by default
+        | 3180 -> false // abImplicitHeapAllocation - off by default
+        | 3186 -> false // pickleMissingDefinition - off by default
+        | 3366 -> false //tcIndexNotationDeprecated - currently off by default
+        | 3517 -> false // optFailedToInlineSuggestedValue - off by default
+        | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default
+        | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
+        | 3390 -> false // xmlDocBadlyFormed - off by default
+        | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
+        | _ ->
+            (severity = FSharpDiagnosticSeverity.Info)
+            || (severity = FSharpDiagnosticSeverity.Warning
+                && level >= x.WarningLevel)
 
-do FSComp.SR.RunStartupValidation()
-let SeeAlsoE () = Message("SeeAlso", "%s")
-let ConstraintSolverTupleDiffLengthsE () = Message("ConstraintSolverTupleDiffLengths", "%d%d")
-let ConstraintSolverInfiniteTypesE () = Message("ConstraintSolverInfiniteTypes", "%s%s")
-let ConstraintSolverMissingConstraintE () = Message("ConstraintSolverMissingConstraint", "%s")
-let ConstraintSolverTypesNotInEqualityRelation1E () = Message("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
-let ConstraintSolverTypesNotInEqualityRelation2E () = Message("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
-let ConstraintSolverTypesNotInSubsumptionRelationE () = Message("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
-let ErrorFromAddingTypeEquation1E () = Message("ErrorFromAddingTypeEquation1", "%s%s%s")
-let ErrorFromAddingTypeEquation2E () = Message("ErrorFromAddingTypeEquation2", "%s%s%s")
-let ErrorFromApplyingDefault1E () = Message("ErrorFromApplyingDefault1", "%s")
-let ErrorFromApplyingDefault2E () = Message("ErrorFromApplyingDefault2", "")
-let ErrorsFromAddingSubsumptionConstraintE () = Message("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
-let UpperCaseIdentifierInPatternE () = Message("UpperCaseIdentifierInPattern", "")
-let NotUpperCaseConstructorE () = Message("NotUpperCaseConstructor", "")
-let NotUpperCaseConstructorWithoutRQAE () = Message("NotUpperCaseConstructorWithoutRQA", "")
-let FunctionExpectedE () = Message("FunctionExpected", "")
-let BakedInMemberConstraintNameE () = Message("BakedInMemberConstraintName", "%s")
-let BadEventTransformationE () = Message("BadEventTransformation", "")
-let ParameterlessStructCtorE () = Message("ParameterlessStructCtor", "")
-let InterfaceNotRevealedE () = Message("InterfaceNotRevealed", "%s")
-let TyconBadArgsE () = Message("TyconBadArgs", "%s%d%d")
-let IndeterminateTypeE () = Message("IndeterminateType", "")
-let NameClash1E () = Message("NameClash1", "%s%s")
-let NameClash2E () = Message("NameClash2", "%s%s%s%s%s")
-let Duplicate1E () = Message("Duplicate1", "%s")
-let Duplicate2E () = Message("Duplicate2", "%s%s")
-let UndefinedName2E () = Message("UndefinedName2", "")
-let FieldNotMutableE () = Message("FieldNotMutable", "")
-let FieldsFromDifferentTypesE () = Message("FieldsFromDifferentTypes", "%s%s")
-let VarBoundTwiceE () = Message("VarBoundTwice", "%s")
-let RecursionE () = Message("Recursion", "%s%s%s%s")
-let InvalidRuntimeCoercionE () = Message("InvalidRuntimeCoercion", "%s%s%s")
-let IndeterminateRuntimeCoercionE () = Message("IndeterminateRuntimeCoercion", "%s%s")
-let IndeterminateStaticCoercionE () = Message("IndeterminateStaticCoercion", "%s%s")
-let StaticCoercionShouldUseBoxE () = Message("StaticCoercionShouldUseBox", "%s%s")
-let TypeIsImplicitlyAbstractE () = Message("TypeIsImplicitlyAbstract", "")
-let NonRigidTypar1E () = Message("NonRigidTypar1", "%s%s")
-let NonRigidTypar2E () = Message("NonRigidTypar2", "%s%s")
-let NonRigidTypar3E () = Message("NonRigidTypar3", "%s%s")
-let OBlockEndSentenceE () = Message("BlockEndSentence", "")
-let UnexpectedEndOfInputE () = Message("UnexpectedEndOfInput", "")
-let UnexpectedE () = Message("Unexpected", "%s")
-let NONTERM_interactionE () = Message("NONTERM.interaction", "")
-let NONTERM_hashDirectiveE () = Message("NONTERM.hashDirective", "")
-let NONTERM_fieldDeclE () = Message("NONTERM.fieldDecl", "")
-let NONTERM_unionCaseReprE () = Message("NONTERM.unionCaseRepr", "")
-let NONTERM_localBindingE () = Message("NONTERM.localBinding", "")
-let NONTERM_hardwhiteLetBindingsE () = Message("NONTERM.hardwhiteLetBindings", "")
-let NONTERM_classDefnMemberE () = Message("NONTERM.classDefnMember", "")
-let NONTERM_defnBindingsE () = Message("NONTERM.defnBindings", "")
-let NONTERM_classMemberSpfnE () = Message("NONTERM.classMemberSpfn", "")
-let NONTERM_valSpfnE () = Message("NONTERM.valSpfn", "")
-let NONTERM_tyconSpfnE () = Message("NONTERM.tyconSpfn", "")
-let NONTERM_anonLambdaExprE () = Message("NONTERM.anonLambdaExpr", "")
-let NONTERM_attrUnionCaseDeclE () = Message("NONTERM.attrUnionCaseDecl", "")
-let NONTERM_cPrototypeE () = Message("NONTERM.cPrototype", "")
-let NONTERM_objectImplementationMembersE () = Message("NONTERM.objectImplementationMembers", "")
-let NONTERM_ifExprCasesE () = Message("NONTERM.ifExprCases", "")
-let NONTERM_openDeclE () = Message("NONTERM.openDecl", "")
-let NONTERM_fileModuleSpecE () = Message("NONTERM.fileModuleSpec", "")
-let NONTERM_patternClausesE () = Message("NONTERM.patternClauses", "")
-let NONTERM_beginEndExprE () = Message("NONTERM.beginEndExpr", "")
-let NONTERM_recdExprE () = Message("NONTERM.recdExpr", "")
-let NONTERM_tyconDefnE () = Message("NONTERM.tyconDefn", "")
-let NONTERM_exconCoreE () = Message("NONTERM.exconCore", "")
-let NONTERM_typeNameInfoE () = Message("NONTERM.typeNameInfo", "")
-let NONTERM_attributeListE () = Message("NONTERM.attributeList", "")
-let NONTERM_quoteExprE () = Message("NONTERM.quoteExpr", "")
-let NONTERM_typeConstraintE () = Message("NONTERM.typeConstraint", "")
-let NONTERM_Category_ImplementationFileE () = Message("NONTERM.Category.ImplementationFile", "")
-let NONTERM_Category_DefinitionE () = Message("NONTERM.Category.Definition", "")
-let NONTERM_Category_SignatureFileE () = Message("NONTERM.Category.SignatureFile", "")
-let NONTERM_Category_PatternE () = Message("NONTERM.Category.Pattern", "")
-let NONTERM_Category_ExprE () = Message("NONTERM.Category.Expr", "")
-let NONTERM_Category_TypeE () = Message("NONTERM.Category.Type", "")
-let NONTERM_typeArgsActualE () = Message("NONTERM.typeArgsActual", "")
-let TokenName1E () = Message("TokenName1", "%s")
-let TokenName1TokenName2E () = Message("TokenName1TokenName2", "%s%s")
-let TokenName1TokenName2TokenName3E () = Message("TokenName1TokenName2TokenName3", "%s%s%s")
-let RuntimeCoercionSourceSealed1E () = Message("RuntimeCoercionSourceSealed1", "%s")
-let RuntimeCoercionSourceSealed2E () = Message("RuntimeCoercionSourceSealed2", "%s")
-let CoercionTargetSealedE () = Message("CoercionTargetSealed", "%s")
-let UpcastUnnecessaryE () = Message("UpcastUnnecessary", "")
-let TypeTestUnnecessaryE () = Message("TypeTestUnnecessary", "")
-let OverrideDoesntOverride1E () = Message("OverrideDoesntOverride1", "%s")
-let OverrideDoesntOverride2E () = Message("OverrideDoesntOverride2", "%s")
-let OverrideDoesntOverride3E () = Message("OverrideDoesntOverride3", "%s")
-let OverrideDoesntOverride4E () = Message("OverrideDoesntOverride4", "%s")
-let UnionCaseWrongArgumentsE () = Message("UnionCaseWrongArguments", "%d%d")
-let UnionPatternsBindDifferentNamesE () = Message("UnionPatternsBindDifferentNames", "")
-let RequiredButNotSpecifiedE () = Message("RequiredButNotSpecified", "%s%s%s")
-let UseOfAddressOfOperatorE () = Message("UseOfAddressOfOperator", "")
-let DefensiveCopyWarningE () = Message("DefensiveCopyWarning", "%s")
-let DeprecatedThreadStaticBindingWarningE () = Message("DeprecatedThreadStaticBindingWarning", "")
-let FunctionValueUnexpectedE () = Message("FunctionValueUnexpected", "%s")
-let UnitTypeExpectedE () = Message("UnitTypeExpected", "%s")
-let UnitTypeExpectedWithEqualityE () = Message("UnitTypeExpectedWithEquality", "%s")
-let UnitTypeExpectedWithPossiblePropertySetterE () = Message("UnitTypeExpectedWithPossiblePropertySetter", "%s%s%s")
-let UnitTypeExpectedWithPossibleAssignmentE () = Message("UnitTypeExpectedWithPossibleAssignment", "%s%s")
-let UnitTypeExpectedWithPossibleAssignmentToMutableE () = Message("UnitTypeExpectedWithPossibleAssignmentToMutable", "%s%s")
-let RecursiveUseCheckedAtRuntimeE () = Message("RecursiveUseCheckedAtRuntime", "")
-let LetRecUnsound1E () = Message("LetRecUnsound1", "%s")
-let LetRecUnsound2E () = Message("LetRecUnsound2", "%s%s")
-let LetRecUnsoundInnerE () = Message("LetRecUnsoundInner", "%s")
-let LetRecEvaluatedOutOfOrderE () = Message("LetRecEvaluatedOutOfOrder", "")
-let LetRecCheckedAtRuntimeE () = Message("LetRecCheckedAtRuntime", "")
-let SelfRefObjCtor1E () = Message("SelfRefObjCtor1", "")
-let SelfRefObjCtor2E () = Message("SelfRefObjCtor2", "")
-let VirtualAugmentationOnNullValuedTypeE () = Message("VirtualAugmentationOnNullValuedType", "")
-let NonVirtualAugmentationOnNullValuedTypeE () = Message("NonVirtualAugmentationOnNullValuedType", "")
-let NonUniqueInferredAbstractSlot1E () = Message("NonUniqueInferredAbstractSlot1", "%s")
-let NonUniqueInferredAbstractSlot2E () = Message("NonUniqueInferredAbstractSlot2", "")
-let NonUniqueInferredAbstractSlot3E () = Message("NonUniqueInferredAbstractSlot3", "%s%s")
-let NonUniqueInferredAbstractSlot4E () = Message("NonUniqueInferredAbstractSlot4", "")
-let Failure3E () = Message("Failure3", "%s")
-let Failure4E () = Message("Failure4", "%s")
-let MatchIncomplete1E () = Message("MatchIncomplete1", "")
-let MatchIncomplete2E () = Message("MatchIncomplete2", "%s")
-let MatchIncomplete3E () = Message("MatchIncomplete3", "%s")
-let MatchIncomplete4E () = Message("MatchIncomplete4", "")
-let RuleNeverMatchedE () = Message("RuleNeverMatched", "")
-let EnumMatchIncomplete1E () = Message("EnumMatchIncomplete1", "")
-let ValNotMutableE () = Message("ValNotMutable", "%s")
-let ValNotLocalE () = Message("ValNotLocal", "")
-let Obsolete1E () = Message("Obsolete1", "")
-let Obsolete2E () = Message("Obsolete2", "%s")
-let ExperimentalE () = Message("Experimental", "%s")
-let PossibleUnverifiableCodeE () = Message("PossibleUnverifiableCode", "")
-let DeprecatedE () = Message("Deprecated", "%s")
-let LibraryUseOnlyE () = Message("LibraryUseOnly", "")
-let MissingFieldsE () = Message("MissingFields", "%s")
-let ValueRestriction1E () = Message("ValueRestriction1", "%s%s%s")
-let ValueRestriction2E () = Message("ValueRestriction2", "%s%s%s")
-let ValueRestriction3E () = Message("ValueRestriction3", "%s")
-let ValueRestriction4E () = Message("ValueRestriction4", "%s%s%s")
-let ValueRestriction5E () = Message("ValueRestriction5", "%s%s%s")
-let RecoverableParseErrorE () = Message("RecoverableParseError", "")
-let ReservedKeywordE () = Message("ReservedKeyword", "%s")
-let IndentationProblemE () = Message("IndentationProblem", "%s")
-let OverrideInIntrinsicAugmentationE () = Message("OverrideInIntrinsicAugmentation", "")
-let OverrideInExtrinsicAugmentationE () = Message("OverrideInExtrinsicAugmentation", "")
-let IntfImplInIntrinsicAugmentationE () = Message("IntfImplInIntrinsicAugmentation", "")
-let IntfImplInExtrinsicAugmentationE () = Message("IntfImplInExtrinsicAugmentation", "")
-let UnresolvedReferenceNoRangeE () = Message("UnresolvedReferenceNoRange", "%s")
-let UnresolvedPathReferenceNoRangeE () = Message("UnresolvedPathReferenceNoRange", "%s%s")
-let HashIncludeNotAllowedInNonScriptE () = Message("HashIncludeNotAllowedInNonScript", "")
-let HashReferenceNotAllowedInNonScriptE () = Message("HashReferenceNotAllowedInNonScript", "")
-let HashDirectiveNotAllowedInNonScriptE () = Message("HashDirectiveNotAllowedInNonScript", "")
-let FileNameNotResolvedE () = Message("FileNameNotResolved", "%s%s")
-let AssemblyNotResolvedE () = Message("AssemblyNotResolved", "%s")
-let HashLoadedSourceHasIssues0E () = Message("HashLoadedSourceHasIssues0", "")
-let HashLoadedSourceHasIssues1E () = Message("HashLoadedSourceHasIssues1", "")
-let HashLoadedSourceHasIssues2E () = Message("HashLoadedSourceHasIssues2", "")
-let HashLoadedScriptConsideredSourceE () = Message("HashLoadedScriptConsideredSource", "")
-let InvalidInternalsVisibleToAssemblyName1E () = Message("InvalidInternalsVisibleToAssemblyName1", "%s%s")
-let InvalidInternalsVisibleToAssemblyName2E () = Message("InvalidInternalsVisibleToAssemblyName2", "%s")
-let LoadedSourceNotFoundIgnoringE () = Message("LoadedSourceNotFoundIgnoring", "%s")
-let MSBuildReferenceResolutionErrorE () = Message("MSBuildReferenceResolutionError", "%s%s")
-let TargetInvocationExceptionWrapperE () = Message("TargetInvocationExceptionWrapper", "%s")
+    member x.ReportAsInfo (options, severity) =
+        match severity with
+        | FSharpDiagnosticSeverity.Error -> false
+        | FSharpDiagnosticSeverity.Warning -> false
+        | FSharpDiagnosticSeverity.Info ->
+            x.IsEnabled (severity, options)
+            && not (List.contains x.Number options.WarnOff)
+        | FSharpDiagnosticSeverity.Hidden -> false
+
+    member x.ReportAsWarning (options, severity) =
+        match severity with
+        | FSharpDiagnosticSeverity.Error -> false
+
+        | FSharpDiagnosticSeverity.Warning ->
+            x.IsEnabled (severity, options)
+            && not (List.contains x.Number options.WarnOff)
+
+        // Informational become warning if explicitly on and not explicitly off
+        | FSharpDiagnosticSeverity.Info ->
+            let n = x.Number
+            List.contains n options.WarnOn && not (List.contains n options.WarnOff)
+
+        | FSharpDiagnosticSeverity.Hidden -> false
+
+    member x.ReportAsError (options, severity) =
+
+        match severity with
+        | FSharpDiagnosticSeverity.Error -> true
+
+        // Warnings become errors in some situations
+        | FSharpDiagnosticSeverity.Warning ->
+            let n = x.Number
+            x.IsEnabled (severity, options)
+            && not (List.contains n options.WarnAsWarn)
+            && ((options.GlobalWarnAsError && not (List.contains n options.WarnOff))
+                || List.contains n options.WarnAsError)
+
+        // Informational become errors if explicitly WarnAsError
+        | FSharpDiagnosticSeverity.Info ->
+            List.contains x.Number options.WarnAsError
+
+        | FSharpDiagnosticSeverity.Hidden -> false
+
+
+[<AutoOpen>]
+module OldStyleMessages =
+    let Message (name, format) = DeclareResourceString(name, format)
+
+    do FSComp.SR.RunStartupValidation()
+    let SeeAlsoE () = Message("SeeAlso", "%s")
+    let ConstraintSolverTupleDiffLengthsE () = Message("ConstraintSolverTupleDiffLengths", "%d%d")
+    let ConstraintSolverInfiniteTypesE () = Message("ConstraintSolverInfiniteTypes", "%s%s")
+    let ConstraintSolverMissingConstraintE () = Message("ConstraintSolverMissingConstraint", "%s")
+    let ConstraintSolverTypesNotInEqualityRelation1E () = Message("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
+    let ConstraintSolverTypesNotInEqualityRelation2E () = Message("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
+    let ConstraintSolverTypesNotInSubsumptionRelationE () = Message("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
+    let ErrorFromAddingTypeEquation1E () = Message("ErrorFromAddingTypeEquation1", "%s%s%s")
+    let ErrorFromAddingTypeEquation2E () = Message("ErrorFromAddingTypeEquation2", "%s%s%s")
+    let ErrorFromApplyingDefault1E () = Message("ErrorFromApplyingDefault1", "%s")
+    let ErrorFromApplyingDefault2E () = Message("ErrorFromApplyingDefault2", "")
+    let ErrorsFromAddingSubsumptionConstraintE () = Message("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
+    let UpperCaseIdentifierInPatternE () = Message("UpperCaseIdentifierInPattern", "")
+    let NotUpperCaseConstructorE () = Message("NotUpperCaseConstructor", "")
+    let NotUpperCaseConstructorWithoutRQAE () = Message("NotUpperCaseConstructorWithoutRQA", "")
+    let FunctionExpectedE () = Message("FunctionExpected", "")
+    let BakedInMemberConstraintNameE () = Message("BakedInMemberConstraintName", "%s")
+    let BadEventTransformationE () = Message("BadEventTransformation", "")
+    let ParameterlessStructCtorE () = Message("ParameterlessStructCtor", "")
+    let InterfaceNotRevealedE () = Message("InterfaceNotRevealed", "%s")
+    let TyconBadArgsE () = Message("TyconBadArgs", "%s%d%d")
+    let IndeterminateTypeE () = Message("IndeterminateType", "")
+    let NameClash1E () = Message("NameClash1", "%s%s")
+    let NameClash2E () = Message("NameClash2", "%s%s%s%s%s")
+    let Duplicate1E () = Message("Duplicate1", "%s")
+    let Duplicate2E () = Message("Duplicate2", "%s%s")
+    let UndefinedName2E () = Message("UndefinedName2", "")
+    let FieldNotMutableE () = Message("FieldNotMutable", "")
+    let FieldsFromDifferentTypesE () = Message("FieldsFromDifferentTypes", "%s%s")
+    let VarBoundTwiceE () = Message("VarBoundTwice", "%s")
+    let RecursionE () = Message("Recursion", "%s%s%s%s")
+    let InvalidRuntimeCoercionE () = Message("InvalidRuntimeCoercion", "%s%s%s")
+    let IndeterminateRuntimeCoercionE () = Message("IndeterminateRuntimeCoercion", "%s%s")
+    let IndeterminateStaticCoercionE () = Message("IndeterminateStaticCoercion", "%s%s")
+    let StaticCoercionShouldUseBoxE () = Message("StaticCoercionShouldUseBox", "%s%s")
+    let TypeIsImplicitlyAbstractE () = Message("TypeIsImplicitlyAbstract", "")
+    let NonRigidTypar1E () = Message("NonRigidTypar1", "%s%s")
+    let NonRigidTypar2E () = Message("NonRigidTypar2", "%s%s")
+    let NonRigidTypar3E () = Message("NonRigidTypar3", "%s%s")
+    let OBlockEndSentenceE () = Message("BlockEndSentence", "")
+    let UnexpectedEndOfInputE () = Message("UnexpectedEndOfInput", "")
+    let UnexpectedE () = Message("Unexpected", "%s")
+    let NONTERM_interactionE () = Message("NONTERM.interaction", "")
+    let NONTERM_hashDirectiveE () = Message("NONTERM.hashDirective", "")
+    let NONTERM_fieldDeclE () = Message("NONTERM.fieldDecl", "")
+    let NONTERM_unionCaseReprE () = Message("NONTERM.unionCaseRepr", "")
+    let NONTERM_localBindingE () = Message("NONTERM.localBinding", "")
+    let NONTERM_hardwhiteLetBindingsE () = Message("NONTERM.hardwhiteLetBindings", "")
+    let NONTERM_classDefnMemberE () = Message("NONTERM.classDefnMember", "")
+    let NONTERM_defnBindingsE () = Message("NONTERM.defnBindings", "")
+    let NONTERM_classMemberSpfnE () = Message("NONTERM.classMemberSpfn", "")
+    let NONTERM_valSpfnE () = Message("NONTERM.valSpfn", "")
+    let NONTERM_tyconSpfnE () = Message("NONTERM.tyconSpfn", "")
+    let NONTERM_anonLambdaExprE () = Message("NONTERM.anonLambdaExpr", "")
+    let NONTERM_attrUnionCaseDeclE () = Message("NONTERM.attrUnionCaseDecl", "")
+    let NONTERM_cPrototypeE () = Message("NONTERM.cPrototype", "")
+    let NONTERM_objectImplementationMembersE () = Message("NONTERM.objectImplementationMembers", "")
+    let NONTERM_ifExprCasesE () = Message("NONTERM.ifExprCases", "")
+    let NONTERM_openDeclE () = Message("NONTERM.openDecl", "")
+    let NONTERM_fileModuleSpecE () = Message("NONTERM.fileModuleSpec", "")
+    let NONTERM_patternClausesE () = Message("NONTERM.patternClauses", "")
+    let NONTERM_beginEndExprE () = Message("NONTERM.beginEndExpr", "")
+    let NONTERM_recdExprE () = Message("NONTERM.recdExpr", "")
+    let NONTERM_tyconDefnE () = Message("NONTERM.tyconDefn", "")
+    let NONTERM_exconCoreE () = Message("NONTERM.exconCore", "")
+    let NONTERM_typeNameInfoE () = Message("NONTERM.typeNameInfo", "")
+    let NONTERM_attributeListE () = Message("NONTERM.attributeList", "")
+    let NONTERM_quoteExprE () = Message("NONTERM.quoteExpr", "")
+    let NONTERM_typeConstraintE () = Message("NONTERM.typeConstraint", "")
+    let NONTERM_Category_ImplementationFileE () = Message("NONTERM.Category.ImplementationFile", "")
+    let NONTERM_Category_DefinitionE () = Message("NONTERM.Category.Definition", "")
+    let NONTERM_Category_SignatureFileE () = Message("NONTERM.Category.SignatureFile", "")
+    let NONTERM_Category_PatternE () = Message("NONTERM.Category.Pattern", "")
+    let NONTERM_Category_ExprE () = Message("NONTERM.Category.Expr", "")
+    let NONTERM_Category_TypeE () = Message("NONTERM.Category.Type", "")
+    let NONTERM_typeArgsActualE () = Message("NONTERM.typeArgsActual", "")
+    let TokenName1E () = Message("TokenName1", "%s")
+    let TokenName1TokenName2E () = Message("TokenName1TokenName2", "%s%s")
+    let TokenName1TokenName2TokenName3E () = Message("TokenName1TokenName2TokenName3", "%s%s%s")
+    let RuntimeCoercionSourceSealed1E () = Message("RuntimeCoercionSourceSealed1", "%s")
+    let RuntimeCoercionSourceSealed2E () = Message("RuntimeCoercionSourceSealed2", "%s")
+    let CoercionTargetSealedE () = Message("CoercionTargetSealed", "%s")
+    let UpcastUnnecessaryE () = Message("UpcastUnnecessary", "")
+    let TypeTestUnnecessaryE () = Message("TypeTestUnnecessary", "")
+    let OverrideDoesntOverride1E () = Message("OverrideDoesntOverride1", "%s")
+    let OverrideDoesntOverride2E () = Message("OverrideDoesntOverride2", "%s")
+    let OverrideDoesntOverride3E () = Message("OverrideDoesntOverride3", "%s")
+    let OverrideDoesntOverride4E () = Message("OverrideDoesntOverride4", "%s")
+    let UnionCaseWrongArgumentsE () = Message("UnionCaseWrongArguments", "%d%d")
+    let UnionPatternsBindDifferentNamesE () = Message("UnionPatternsBindDifferentNames", "")
+    let RequiredButNotSpecifiedE () = Message("RequiredButNotSpecified", "%s%s%s")
+    let UseOfAddressOfOperatorE () = Message("UseOfAddressOfOperator", "")
+    let DefensiveCopyWarningE () = Message("DefensiveCopyWarning", "%s")
+    let DeprecatedThreadStaticBindingWarningE () = Message("DeprecatedThreadStaticBindingWarning", "")
+    let FunctionValueUnexpectedE () = Message("FunctionValueUnexpected", "%s")
+    let UnitTypeExpectedE () = Message("UnitTypeExpected", "%s")
+    let UnitTypeExpectedWithEqualityE () = Message("UnitTypeExpectedWithEquality", "%s")
+    let UnitTypeExpectedWithPossiblePropertySetterE () = Message("UnitTypeExpectedWithPossiblePropertySetter", "%s%s%s")
+    let UnitTypeExpectedWithPossibleAssignmentE () = Message("UnitTypeExpectedWithPossibleAssignment", "%s%s")
+    let UnitTypeExpectedWithPossibleAssignmentToMutableE () = Message("UnitTypeExpectedWithPossibleAssignmentToMutable", "%s%s")
+    let RecursiveUseCheckedAtRuntimeE () = Message("RecursiveUseCheckedAtRuntime", "")
+    let LetRecUnsound1E () = Message("LetRecUnsound1", "%s")
+    let LetRecUnsound2E () = Message("LetRecUnsound2", "%s%s")
+    let LetRecUnsoundInnerE () = Message("LetRecUnsoundInner", "%s")
+    let LetRecEvaluatedOutOfOrderE () = Message("LetRecEvaluatedOutOfOrder", "")
+    let LetRecCheckedAtRuntimeE () = Message("LetRecCheckedAtRuntime", "")
+    let SelfRefObjCtor1E () = Message("SelfRefObjCtor1", "")
+    let SelfRefObjCtor2E () = Message("SelfRefObjCtor2", "")
+    let VirtualAugmentationOnNullValuedTypeE () = Message("VirtualAugmentationOnNullValuedType", "")
+    let NonVirtualAugmentationOnNullValuedTypeE () = Message("NonVirtualAugmentationOnNullValuedType", "")
+    let NonUniqueInferredAbstractSlot1E () = Message("NonUniqueInferredAbstractSlot1", "%s")
+    let NonUniqueInferredAbstractSlot2E () = Message("NonUniqueInferredAbstractSlot2", "")
+    let NonUniqueInferredAbstractSlot3E () = Message("NonUniqueInferredAbstractSlot3", "%s%s")
+    let NonUniqueInferredAbstractSlot4E () = Message("NonUniqueInferredAbstractSlot4", "")
+    let Failure3E () = Message("Failure3", "%s")
+    let Failure4E () = Message("Failure4", "%s")
+    let MatchIncomplete1E () = Message("MatchIncomplete1", "")
+    let MatchIncomplete2E () = Message("MatchIncomplete2", "%s")
+    let MatchIncomplete3E () = Message("MatchIncomplete3", "%s")
+    let MatchIncomplete4E () = Message("MatchIncomplete4", "")
+    let RuleNeverMatchedE () = Message("RuleNeverMatched", "")
+    let EnumMatchIncomplete1E () = Message("EnumMatchIncomplete1", "")
+    let ValNotMutableE () = Message("ValNotMutable", "%s")
+    let ValNotLocalE () = Message("ValNotLocal", "")
+    let Obsolete1E () = Message("Obsolete1", "")
+    let Obsolete2E () = Message("Obsolete2", "%s")
+    let ExperimentalE () = Message("Experimental", "%s")
+    let PossibleUnverifiableCodeE () = Message("PossibleUnverifiableCode", "")
+    let DeprecatedE () = Message("Deprecated", "%s")
+    let LibraryUseOnlyE () = Message("LibraryUseOnly", "")
+    let MissingFieldsE () = Message("MissingFields", "%s")
+    let ValueRestriction1E () = Message("ValueRestriction1", "%s%s%s")
+    let ValueRestriction2E () = Message("ValueRestriction2", "%s%s%s")
+    let ValueRestriction3E () = Message("ValueRestriction3", "%s")
+    let ValueRestriction4E () = Message("ValueRestriction4", "%s%s%s")
+    let ValueRestriction5E () = Message("ValueRestriction5", "%s%s%s")
+    let RecoverableParseErrorE () = Message("RecoverableParseError", "")
+    let ReservedKeywordE () = Message("ReservedKeyword", "%s")
+    let IndentationProblemE () = Message("IndentationProblem", "%s")
+    let OverrideInIntrinsicAugmentationE () = Message("OverrideInIntrinsicAugmentation", "")
+    let OverrideInExtrinsicAugmentationE () = Message("OverrideInExtrinsicAugmentation", "")
+    let IntfImplInIntrinsicAugmentationE () = Message("IntfImplInIntrinsicAugmentation", "")
+    let IntfImplInExtrinsicAugmentationE () = Message("IntfImplInExtrinsicAugmentation", "")
+    let UnresolvedReferenceNoRangeE () = Message("UnresolvedReferenceNoRange", "%s")
+    let UnresolvedPathReferenceNoRangeE () = Message("UnresolvedPathReferenceNoRange", "%s%s")
+    let HashIncludeNotAllowedInNonScriptE () = Message("HashIncludeNotAllowedInNonScript", "")
+    let HashReferenceNotAllowedInNonScriptE () = Message("HashReferenceNotAllowedInNonScript", "")
+    let HashDirectiveNotAllowedInNonScriptE () = Message("HashDirectiveNotAllowedInNonScript", "")
+    let FileNameNotResolvedE () = Message("FileNameNotResolved", "%s%s")
+    let AssemblyNotResolvedE () = Message("AssemblyNotResolved", "%s")
+    let HashLoadedSourceHasIssues0E () = Message("HashLoadedSourceHasIssues0", "")
+    let HashLoadedSourceHasIssues1E () = Message("HashLoadedSourceHasIssues1", "")
+    let HashLoadedSourceHasIssues2E () = Message("HashLoadedSourceHasIssues2", "")
+    let HashLoadedScriptConsideredSourceE () = Message("HashLoadedScriptConsideredSource", "")
+    let InvalidInternalsVisibleToAssemblyName1E () = Message("InvalidInternalsVisibleToAssemblyName1", "%s%s")
+    let InvalidInternalsVisibleToAssemblyName2E () = Message("InvalidInternalsVisibleToAssemblyName2", "%s")
+    let LoadedSourceNotFoundIgnoringE () = Message("LoadedSourceNotFoundIgnoring", "%s")
+    let MSBuildReferenceResolutionErrorE () = Message("MSBuildReferenceResolutionError", "%s%s")
+    let TargetInvocationExceptionWrapperE () = Message("TargetInvocationExceptionWrapper", "%s")
+
+    let getErrorString key = SR.GetString key
 
 #if DEBUG
 let mutable showParserStackOnParseError = false
 #endif
-
-let getErrorString key = SR.GetString key
 
 let (|InvalidArgument|_|) (exn: exn) =
     match exn with
     | :? ArgumentException as e -> Some e.Message
     | _ -> None
 
-let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSuggestNames: bool) =
+let OutputNameSuggestions (os: StringBuilder) canSuggestNames suggestionsF idText =
+    if canSuggestNames then
+        let buffer = DiagnosticResolutionHints.SuggestionBuffer idText
 
-    let suggestNames suggestionsF idText =
-        if canSuggestNames then
-            let buffer = DiagnosticResolutionHints.SuggestionBuffer idText
+        if not buffer.Disabled then
+            suggestionsF buffer.Add
 
-            if not buffer.Disabled then
-                suggestionsF buffer.Add
+            if not buffer.IsEmpty then
+                os.AppendString " "
+                os.AppendString(FSComp.SR.undefinedNameSuggestionsIntro ())
 
-                if not buffer.IsEmpty then
-                    os.AppendString " "
-                    os.AppendString(FSComp.SR.undefinedNameSuggestionsIntro ())
+                for value in buffer do
+                    os.AppendLine() |> ignore
+                    os.AppendString "   "
+                    os.AppendString(ConvertValLogicalNameToDisplayNameCore value)
 
-                    for value in buffer do
-                        os.AppendLine() |> ignore
-                        os.AppendString "   "
-                        os.AppendString(ConvertValLogicalNameToDisplayNameCore value)
+type Exception with
+    member exn.Output (os: StringBuilder, canSuggestNames) =
 
-    let rec OutputExceptionR (os: StringBuilder) error =
-
-        match error with
+        match exn with
         | ConstraintSolverTupleDiffLengths (_, tl1, tl2, m, m2) ->
             os.AppendString(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length)
 
@@ -691,15 +737,13 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
              | ContextInfo.NoContext -> false
              | _ -> true)
             ->
-            OutputExceptionR os e
+            e.Output (os, canSuggestNames)
 
-        | ErrorFromAddingTypeEquation (_,
-                                       _,
-                                       _,
-                                       _,
-                                       (ConstraintSolverTypesNotInSubsumptionRelation _
-                                       | ConstraintSolverError _ as e),
-                                       _) -> OutputExceptionR os e
+        | ErrorFromAddingTypeEquation (error = ConstraintSolverTypesNotInSubsumptionRelation _ as e) ->
+            e.Output (os, canSuggestNames)
+
+        | ErrorFromAddingTypeEquation (error = ConstraintSolverError _ as e) ->
+            e.Output (os, canSuggestNames)
 
         | ErrorFromAddingTypeEquation (g, denv, ty1, ty2, e, _) ->
             if not (typeEquiv g ty1 ty2) then
@@ -708,12 +752,12 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
                 if ty1 <> ty2 + tpcs then
                     os.AppendString(ErrorFromAddingTypeEquation2E().Format ty1 ty2 tpcs)
 
-            OutputExceptionR os e
+            e.Output (os, canSuggestNames)
 
         | ErrorFromApplyingDefault (_, denv, _, defaultType, e, _) ->
             let defaultType = NicePrint.minimalStringOfType denv defaultType
             os.AppendString(ErrorFromApplyingDefault1E().Format defaultType)
-            OutputExceptionR os e
+            e.Output (os, canSuggestNames)
             os.AppendString(ErrorFromApplyingDefault2E().Format)
 
         | ErrorsFromAddingSubsumptionConstraint (g, denv, ty1, ty2, e, contextInfo, _) ->
@@ -732,9 +776,9 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
                     if ty1 <> (ty2 + tpcs) then
                         os.AppendString(ErrorsFromAddingSubsumptionConstraintE().Format ty2 ty1 tpcs)
                     else
-                        OutputExceptionR os e
+                        e.Output (os, canSuggestNames)
                 else
-                    OutputExceptionR os e
+                    e.Output (os, canSuggestNames)
 
         | UpperCaseIdentifierInPattern _ -> os.AppendString(UpperCaseIdentifierInPatternE().Format)
 
@@ -742,12 +786,12 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | NotUpperCaseConstructorWithoutRQA _ -> os.AppendString(NotUpperCaseConstructorWithoutRQAE().Format)
 
-        | ErrorFromAddingConstraint (_, e, _) -> OutputExceptionR os e
+        | ErrorFromAddingConstraint (_, e, _) -> e.Output (os, canSuggestNames)
 
 #if !NO_TYPEPROVIDERS
         | TypeProviders.ProvidedTypeResolutionNoRange e
 
-        | TypeProviders.ProvidedTypeResolution (_, e) -> OutputExceptionR os e
+        | TypeProviders.ProvidedTypeResolution (_, e) -> e.Output (os, canSuggestNames)
 
         | :? TypeProviderError as e -> os.AppendString(e.ContextualErrorMessage)
 #endif
@@ -910,7 +954,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | UndefinedName (_, k, id, suggestionsF) ->
             os.AppendString(k (ConvertValLogicalNameToDisplayNameCore id.idText))
-            suggestNames suggestionsF id.idText
+            OutputNameSuggestions os canSuggestNames suggestionsF id.idText
 
         | InternalUndefinedItemRef (f, smr, ccuName, s) ->
             let _, errs = f (smr, ccuName, s)
@@ -1616,12 +1660,10 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | DiagnosticWithSuggestions (_, s, _, idText, suggestionF) ->
             os.AppendString(ConvertValLogicalNameToDisplayNameCore s)
-            suggestNames suggestionF idText
+            OutputNameSuggestions os canSuggestNames suggestionF idText
 
         | InternalError (s, _)
-
         | InvalidArgument s
-
         | Failure s as exn ->
             ignore exn // use the argument, even in non DEBUG
             let f1 = SR.GetString("Failure1")
@@ -1636,7 +1678,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             Debug.Assert(false, sprintf "Unexpected exception seen in compiler: %s\n%s" s (exn.ToString()))
 #endif
 
-        | WrappedError (exn, _) -> OutputExceptionR os exn
+        | WrappedError (e, _) ->
+            e.Output (os, canSuggestNames)
 
         | PatternMatchCompilation.MatchIncomplete (isComp, cexOpt, _) ->
             os.AppendString(MatchIncomplete1E().Format)
@@ -1791,17 +1834,17 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             os.AppendString(FSComp.SR.buildUnexpectedFileNameCharacter (fileName, string invalidChar) |> snd)
 
         | HashLoadedSourceHasIssues (infos, warnings, errors, _) ->
-            let Emit (l: exn list) = OutputExceptionR os (List.head l)
 
-            if isNil warnings && isNil errors then
-                os.AppendString(HashLoadedSourceHasIssues0E().Format)
-                Emit infos
-            elif isNil errors then
-                os.AppendString(HashLoadedSourceHasIssues1E().Format)
-                Emit warnings
-            else
+            match warnings, errors with
+            | _, e::_ ->
                 os.AppendString(HashLoadedSourceHasIssues2E().Format)
-                Emit errors
+                e.Output (os, canSuggestNames)
+            | e::_, _ ->
+                os.AppendString(HashLoadedSourceHasIssues1E().Format)
+                e.Output (os, canSuggestNames)
+            | [], [] -> 
+                os.AppendString(HashLoadedSourceHasIssues0E().Format)
+                infos.Head.Output (os, canSuggestNames)
 
         | HashLoadedScriptConsideredSource _ -> os.AppendString(HashLoadedScriptConsideredSourceE().Format)
 
@@ -1817,7 +1860,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
         | MSBuildReferenceResolutionError (code, message, _) -> os.AppendString(MSBuildReferenceResolutionErrorE().Format message code)
 
         // Strip TargetInvocationException wrappers
-        | :? System.Reflection.TargetInvocationException as exn -> OutputExceptionR os exn.InnerException
+        | :? TargetInvocationException as exn ->
+            exn.InnerException.Output (os, canSuggestNames)
 
         | :? FileNotFoundException as exn -> Printf.bprintf os "%s" exn.Message
 
@@ -1840,36 +1884,35 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
                 Debug.Assert(false, sprintf "Unknown exception seen in compiler: %s" (exn.ToString()))
 #endif
 
-    OutputExceptionR os diagnostic.Exception
-
-// remove any newlines and tabs
-let OutputPhasedDiagnostic (os: StringBuilder) (diagnostic: PhasedDiagnostic) (flattenErrors: bool) (suggestNames: bool) =
-    let buf = StringBuilder()
-
-    OutputPhasedErrorR buf diagnostic suggestNames
-
-    let text =
-        if flattenErrors then
-            NormalizeErrorString(buf.ToString())
-        else
-            buf.ToString()
-
-    os.AppendString text
-
 /// Eagerly format a PhasedDiagnostic to a DiagnosticWithText
-let EagerlyFormatDiagnostic (flattenErrors: bool) (suggestNames: bool) (diagnostic: PhasedDiagnostic) =
-    match GetRangeOfDiagnostic diagnostic with
-    | Some m ->
+type PhasedDiagnostic with
+
+    // remove any newlines and tabs
+    member x.OutputCore (os: StringBuilder, flattenErrors: bool, suggestNames: bool) =
+        let buf = StringBuilder()
+
+        x.Exception.Output(buf, suggestNames)
+
+        let text =
+            if flattenErrors then
+                NormalizeErrorString(buf.ToString())
+            else
+                buf.ToString()
+
+        os.AppendString text
+
+    member x.FormatCore (flattenErrors: bool, suggestNames: bool) =
         let os = StringBuilder()
+        x.OutputCore(os, flattenErrors, suggestNames)
+        os.ToString()
 
-        OutputPhasedDiagnostic os diagnostic flattenErrors suggestNames
-
-        let message = os.ToString()
-
-        DiagnosticWithText(GetDiagnosticNumber diagnostic, message, m)
-        |> ToPhased diagnostic.Phase
-
-    | None -> diagnostic
+    member x.EagerlyFormatCore (flattenErrors: bool, suggestNames: bool) =
+        match x.Range with
+        | Some m ->
+            let message = x.FormatCore (flattenErrors, suggestNames)
+            let exn = DiagnosticWithText(x.Number, message, m)
+            { Exception = exn; Phase = x.Phase }
+        | None -> x
 
 let SanitizeFileName fileName implicitIncludeDir =
     // The assert below is almost ok, but it fires in two cases:
@@ -1920,6 +1963,77 @@ type FormattedDiagnostic =
     | Short of FSharpDiagnosticSeverity * string
     | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo
 
+let FormatDiagnosticLocation (implicitIncludeDir, showFullPaths, diagnosticStyle) m : FormattedDiagnosticLocation =
+    if equals m rangeStartup || equals m rangeCmdArgs then
+        {
+            Range = m
+            TextRepresentation = ""
+            IsEmpty = true
+            File = ""
+        }
+    else
+        let file = m.FileName
+
+        let file =
+            if showFullPaths then
+                FileSystem.GetFullFilePathInDirectoryShim implicitIncludeDir file
+            else
+                SanitizeFileName file implicitIncludeDir
+
+        let text, m, file =
+            match diagnosticStyle with
+            | DiagnosticStyle.Emacs ->
+                let file = file.Replace("\\", "/")
+                (sprintf "File \"%s\", line %d, characters %d-%d: " file m.StartLine m.StartColumn m.EndColumn), m, file
+
+            // We're adjusting the columns here to be 1-based - both for parity with C# and for MSBuild, which assumes 1-based columns for error output
+            | DiagnosticStyle.Default ->
+                let file = file.Replace('/', Path.DirectorySeparatorChar)
+                let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) m.End
+                (sprintf "%s(%d,%d): " file m.StartLine m.StartColumn), m, file
+
+            // We may also want to change Test to be 1-based
+            | DiagnosticStyle.Test ->
+                let file = file.Replace("/", "\\")
+
+                let m =
+                    mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
+
+                sprintf "%s(%d,%d-%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
+
+            | DiagnosticStyle.Gcc ->
+                let file = file.Replace('/', Path.DirectorySeparatorChar)
+
+                let m =
+                    mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
+
+                sprintf "%s:%d:%d: " file m.StartLine m.StartColumn, m, file
+
+            // Here, we want the complete range information so Project Systems can generate proper squiggles
+            | DiagnosticStyle.VisualStudio ->
+                // Show prefix only for real files. Otherwise, we just want a truncated error like:
+                //      parse error FS0031: blah blah
+                if
+                    not (equals m range0)
+                    && not (equals m rangeStartup)
+                    && not (equals m rangeCmdArgs)
+                then
+                    let file = file.Replace("/", "\\")
+
+                    let m =
+                        mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
+
+                    sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
+                else
+                    "", m, file
+
+        {
+            Range = m
+            TextRepresentation = text
+            IsEmpty = false
+            File = file
+        }
+
 /// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
 let CollectFormattedDiagnostics
     (
@@ -1931,76 +2045,6 @@ let CollectFormattedDiagnostics
         diagnostic: PhasedDiagnostic,
         suggestNames: bool
     ) =
-    let outputWhere (showFullPaths, diagnosticStyle) m : FormattedDiagnosticLocation =
-        if equals m rangeStartup || equals m rangeCmdArgs then
-            {
-                Range = m
-                TextRepresentation = ""
-                IsEmpty = true
-                File = ""
-            }
-        else
-            let file = m.FileName
-
-            let file =
-                if showFullPaths then
-                    FileSystem.GetFullFilePathInDirectoryShim implicitIncludeDir file
-                else
-                    SanitizeFileName file implicitIncludeDir
-
-            let text, m, file =
-                match diagnosticStyle with
-                | DiagnosticStyle.Emacs ->
-                    let file = file.Replace("\\", "/")
-                    (sprintf "File \"%s\", line %d, characters %d-%d: " file m.StartLine m.StartColumn m.EndColumn), m, file
-
-                // We're adjusting the columns here to be 1-based - both for parity with C# and for MSBuild, which assumes 1-based columns for error output
-                | DiagnosticStyle.Default ->
-                    let file = file.Replace('/', Path.DirectorySeparatorChar)
-                    let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) m.End
-                    (sprintf "%s(%d,%d): " file m.StartLine m.StartColumn), m, file
-
-                // We may also want to change Test to be 1-based
-                | DiagnosticStyle.Test ->
-                    let file = file.Replace("/", "\\")
-
-                    let m =
-                        mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
-
-                    sprintf "%s(%d,%d-%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
-
-                | DiagnosticStyle.Gcc ->
-                    let file = file.Replace('/', Path.DirectorySeparatorChar)
-
-                    let m =
-                        mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
-
-                    sprintf "%s:%d:%d: " file m.StartLine m.StartColumn, m, file
-
-                // Here, we want the complete range information so Project Systems can generate proper squiggles
-                | DiagnosticStyle.VisualStudio ->
-                    // Show prefix only for real files. Otherwise, we just want a truncated error like:
-                    //      parse error FS0031: blah blah
-                    if
-                        not (equals m range0)
-                        && not (equals m rangeStartup)
-                        && not (equals m rangeCmdArgs)
-                    then
-                        let file = file.Replace("/", "\\")
-
-                        let m =
-                            mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
-
-                        sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
-                    else
-                        "", m, file
-
-            {
-                Range = m
-                TextRepresentation = text
-                IsEmpty = false
-                File = file
-            }
 
     match diagnostic.Exception with
     | ReportedError _ ->
@@ -2012,41 +2056,37 @@ let CollectFormattedDiagnostics
     | _ ->
         let errors = ResizeArray()
 
-        let report diagnostic =
-            let OutputCanonicalInformation (subcategory, errorNumber) : FormattedDiagnosticCanonicalInformation =
-                let message =
-                    match severity with
-                    | FSharpDiagnosticSeverity.Error -> "error"
-                    | FSharpDiagnosticSeverity.Warning -> "warning"
-                    | FSharpDiagnosticSeverity.Info
-                    | FSharpDiagnosticSeverity.Hidden -> "info"
+        let report (diagnostic: PhasedDiagnostic)  =
+            let where =
+                match diagnostic.Range with
+                | Some m ->
+                    FormatDiagnosticLocation (implicitIncludeDir, showFullPaths, diagnosticStyle) m
+                    |> Some
+                | None -> None
 
-                let text =
-                    match diagnosticStyle with
-                    // Show the subcategory for --vserrors so that we can fish it out in Visual Studio and use it to determine error stickiness.
-                    | DiagnosticStyle.VisualStudio -> sprintf "%s %s FS%04d: " subcategory message errorNumber
-                    | _ -> sprintf "%s FS%04d: " message errorNumber
+            let subcategory = diagnostic.Subcategory()
+            let errorNumber = diagnostic.Number
+            let message =
+                match severity with
+                | FSharpDiagnosticSeverity.Error -> "error"
+                | FSharpDiagnosticSeverity.Warning -> "warning"
+                | FSharpDiagnosticSeverity.Info
+                | FSharpDiagnosticSeverity.Hidden -> "info"
 
+            let text =
+                match diagnosticStyle with
+                // Show the subcategory for --vserrors so that we can fish it out in Visual Studio and use it to determine error stickiness.
+                | DiagnosticStyle.VisualStudio -> sprintf "%s %s FS%04d: " subcategory message errorNumber
+                | _ -> sprintf "%s FS%04d: " message errorNumber
+
+            let canonical : FormattedDiagnosticCanonicalInformation =
                 {
                     ErrorNumber = errorNumber
                     Subcategory = subcategory
                     TextRepresentation = text
                 }
 
-            let diag = StripRelatedDiagnostics diagnostic
-
-            let where =
-                match GetRangeOfDiagnostic diag with
-                | Some m -> Some(outputWhere (showFullPaths, diagnosticStyle) m)
-                | None -> None
-
-            let canonical =
-                OutputCanonicalInformation(diagnostic.Subcategory(), GetDiagnosticNumber diag)
-
-            let message =
-                let os = StringBuilder()
-                OutputPhasedDiagnostic os diag flattenErrors suggestNames
-                os.ToString()
+            let message = diagnostic.FormatCore (flattenErrors, suggestNames)
 
             let entry: FormattedDiagnosticDetailedInfo =
                 {
@@ -2057,16 +2097,12 @@ let CollectFormattedDiagnostics
 
             errors.Add(FormattedDiagnostic.Long(severity, entry))
 
-        match diagnostic with
+        match diagnostic.Exception with
 #if !NO_TYPEPROVIDERS
-        | {
-              Exception = :? TypeProviderError as tpe
-          } ->
-            tpe.Iter(fun exn ->
-                let newErr = { diagnostic with Exception = exn }
-                report newErr)
+        | :? TypeProviderError as tpe ->
+            tpe.Iter(fun exn -> report { diagnostic with Exception = exn })
 #endif
-        | x -> report x
+        | _ -> report diagnostic
 
         errors.ToArray()
 
@@ -2091,8 +2127,8 @@ let OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, diagnost
             os.AppendString details.Canonical.TextRepresentation
             os.AppendString details.Message
 
-let OutputDiagnosticContext prefix fileLineFunction os diagnostic =
-    match GetRangeOfDiagnostic diagnostic with
+let OutputDiagnosticContext prefix fileLineFunction os (diagnostic: PhasedDiagnostic) =
+    match diagnostic.Range with
     | None -> ()
     | Some m ->
         let fileName = m.FileName
@@ -2106,48 +2142,6 @@ let OutputDiagnosticContext prefix fileLineFunction os diagnostic =
             let iLen = if lineA = lineB then max (iB - iA) 1 else 1
             Printf.bprintf os "%s%s\n" prefix line
             Printf.bprintf os "%s%s%s\n" prefix (String.make iA '-') (String.make iLen '^')
-
-let ReportDiagnosticAsInfo options (diagnostic, severity) =
-    match severity with
-    | FSharpDiagnosticSeverity.Error -> false
-    | FSharpDiagnosticSeverity.Warning -> false
-    | FSharpDiagnosticSeverity.Info ->
-        let n = GetDiagnosticNumber diagnostic
-
-        IsWarningOrInfoEnabled (diagnostic, severity) n options.WarnLevel options.WarnOn
-        && not (List.contains n options.WarnOff)
-    | FSharpDiagnosticSeverity.Hidden -> false
-
-let ReportDiagnosticAsWarning options (diagnostic, severity) =
-    match severity with
-    | FSharpDiagnosticSeverity.Error -> false
-    | FSharpDiagnosticSeverity.Warning ->
-        let n = GetDiagnosticNumber diagnostic
-
-        IsWarningOrInfoEnabled (diagnostic, severity) n options.WarnLevel options.WarnOn
-        && not (List.contains n options.WarnOff)
-    // Informational become warning if explicitly on and not explicitly off
-    | FSharpDiagnosticSeverity.Info ->
-        let n = GetDiagnosticNumber diagnostic
-        List.contains n options.WarnOn && not (List.contains n options.WarnOff)
-    | FSharpDiagnosticSeverity.Hidden -> false
-
-let ReportDiagnosticAsError options (diagnostic, severity) =
-    match severity with
-    | FSharpDiagnosticSeverity.Error -> true
-    // Warnings become errors in some situations
-    | FSharpDiagnosticSeverity.Warning ->
-        let n = GetDiagnosticNumber diagnostic
-
-        IsWarningOrInfoEnabled (diagnostic, severity) n options.WarnLevel options.WarnOn
-        && not (List.contains n options.WarnAsWarn)
-        && ((options.GlobalWarnAsError && not (List.contains n options.WarnOff))
-            || List.contains n options.WarnAsError)
-    // Informational become errors if explicitly WarnAsError
-    | FSharpDiagnosticSeverity.Info ->
-        let n = GetDiagnosticNumber diagnostic
-        List.contains n options.WarnAsError
-    | FSharpDiagnosticSeverity.Hidden -> false
 
 //----------------------------------------------------------------------------
 // Scoped #nowarn pragmas
@@ -2169,14 +2163,14 @@ type DiagnosticsLoggerFilteringByScopedPragmas
     ) =
     inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedPragmas")
 
-    override _.DiagnosticSink(diagnostic, severity) =
+    override _.DiagnosticSink(diagnostic: PhasedDiagnostic, severity) =
         if severity = FSharpDiagnosticSeverity.Error then
             diagnosticsLogger.DiagnosticSink(diagnostic, severity)
         else
             let report =
-                let warningNum = GetDiagnosticNumber diagnostic
+                let warningNum = diagnostic.Number
 
-                match GetRangeOfDiagnostic diagnostic with
+                match diagnostic.Range with
                 | Some m ->
                     scopedPragmas
                     |> List.exists (fun pragma ->
@@ -2189,11 +2183,11 @@ type DiagnosticsLoggerFilteringByScopedPragmas
                 | None -> true
 
             if report then
-                if ReportDiagnosticAsError diagnosticOptions (diagnostic, severity) then
+                if diagnostic.ReportAsError (diagnosticOptions, severity) then
                     diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Error)
-                elif ReportDiagnosticAsWarning diagnosticOptions (diagnostic, severity) then
+                elif diagnostic.ReportAsWarning (diagnosticOptions, severity) then
                     diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Warning)
-                elif ReportDiagnosticAsInfo diagnosticOptions (diagnostic, severity) then
+                elif diagnostic.ReportAsInfo (diagnosticOptions, severity) then
                     diagnosticsLogger.DiagnosticSink(diagnostic, severity)
 
     override _.ErrorCount = diagnosticsLogger.ErrorCount

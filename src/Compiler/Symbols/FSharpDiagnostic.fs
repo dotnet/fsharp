@@ -71,10 +71,10 @@ type FSharpDiagnostic(m: range, severity: FSharpDiagnosticSeverity, message: str
         sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName s.Line (s.Column + 1) e.Line (e.Column + 1) subcategory severity message
 
     /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromException(diagnostic, severity, fallbackRange: range, suggestNames: bool) =
-        let m = match GetRangeOfDiagnostic diagnostic with Some m -> m | None -> fallbackRange 
-        let msg = buildString (fun buf -> OutputPhasedDiagnostic buf diagnostic false suggestNames)
-        let errorNum = GetDiagnosticNumber diagnostic
+    static member CreateFromException(diagnostic: PhasedDiagnostic, severity, fallbackRange: range, suggestNames: bool) =
+        let m = match diagnostic.Range with Some m -> m | None -> fallbackRange 
+        let msg = diagnostic.FormatCore(false, suggestNames)
+        let errorNum = diagnostic.Number
         FSharpDiagnostic(m, severity, msg, diagnostic.Subcategory(), errorNum, "FS")
 
     /// Decompose a warning or error into parts: position, severity, message, error number
@@ -165,12 +165,12 @@ type internal CompilationDiagnosticLogger (debugName: string, options: FSharpDia
     let diagnostics = ResizeArray<_>()
 
     override _.DiagnosticSink(diagnostic, severity) = 
-        if ReportDiagnosticAsError options (diagnostic, severity) then
+        if diagnostic.ReportAsError (options, severity) then
             diagnostics.Add(diagnostic, FSharpDiagnosticSeverity.Error)
             errorCount <- errorCount + 1
-        elif ReportDiagnosticAsWarning options (diagnostic, severity) then
+        elif diagnostic.ReportAsWarning (options, severity) then
             diagnostics.Add(diagnostic, FSharpDiagnosticSeverity.Warning)
-        elif ReportDiagnosticAsInfo options (diagnostic, severity) then
+        elif diagnostic.ReportAsInfo (options, severity) then
             diagnostics.Add(diagnostic, severity)
     
     override _.ErrorCount = errorCount
@@ -179,16 +179,16 @@ type internal CompilationDiagnosticLogger (debugName: string, options: FSharpDia
 
 module DiagnosticHelpers =                            
 
-    let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, fileInfo, diagnostic, severity, suggestNames) = 
+    let ReportDiagnostic (options: FSharpDiagnosticOptions, allErrors, mainInputFileName, fileInfo, diagnostic: PhasedDiagnostic, severity, suggestNames) = 
         [ let severity = 
-               if ReportDiagnosticAsError options (diagnostic, severity) then
+               if diagnostic.ReportAsError (options, severity) then
                    FSharpDiagnosticSeverity.Error
                else
                    severity
 
           if severity = FSharpDiagnosticSeverity.Error ||
-             ReportDiagnosticAsWarning options (diagnostic, severity) ||
-             ReportDiagnosticAsInfo options (diagnostic, severity) then 
+             diagnostic.ReportAsWarning (options, severity) ||
+             diagnostic.ReportAsInfo (options, severity) then 
 
             // We use the first line of the file as a fallbackRange for reporting unexpected errors.
             // Not ideal, but it's hard to see what else to do.
