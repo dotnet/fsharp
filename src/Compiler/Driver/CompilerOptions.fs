@@ -5,6 +5,7 @@
 module internal FSharp.Compiler.CompilerOptions
 
 open System
+open System.Diagnostics
 open System.IO
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -2241,8 +2242,8 @@ let PrintWholeAssemblyImplementation (tcConfig: TcConfig) outfile header expr =
 // ReportTime
 //----------------------------------------------------------------------------
 
-let mutable tPrev = None
-let mutable nPrev = None
+let mutable tPrev: (DateTime * DateTime * float * int[]) option = None
+let mutable nPrev: string option = None
 
 let ReportTime (tcConfig: TcConfig) descr =
 
@@ -2278,29 +2279,41 @@ let ReportTime (tcConfig: TcConfig) descr =
     if (tcConfig.showTimes || verbose) then
         // Note that timing calls are relatively expensive on the startup path so we don't
         // make this call unless showTimes has been turned on.
-        let timeNow =
-            System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
-
+        let p = Process.GetCurrentProcess()
+        let utNow = p.UserProcessorTime.TotalSeconds
+        let tNow = DateTime.Now
         let maxGen = GC.MaxGeneration
         let gcNow = [| for i in 0..maxGen -> GC.CollectionCount i |]
-        let ptime = System.Diagnostics.Process.GetCurrentProcess()
-        let wsNow = ptime.WorkingSet64 / 1000000L
+        let wsNow = p.WorkingSet64 / 1000000L
 
-        match tPrev, nPrev with
-        | Some (timePrev, gcPrev: int[]), Some prevDescr ->
-            let spanGC = [| for i in 0..maxGen -> GC.CollectionCount i - gcPrev[i] |]
-            dprintf "TIME: %4.1f Delta: %4.1f Mem: %3d" timeNow (timeNow - timePrev) wsNow
+        let tStart =
+            match tPrev, nPrev with
+            | Some (tStart, tPrev, utPrev, gcPrev), Some prevDescr ->
+                let spanGC = [| for i in 0..maxGen -> GC.CollectionCount i - gcPrev[i] |]
+                let t = tNow - tStart
+                let tDelta = tNow - tPrev
+                let utDelta = utNow - utPrev
 
-            dprintf
-                " G0: %3d G1: %2d G2: %2d [%s]\n"
-                spanGC[Operators.min 0 maxGen]
-                spanGC[Operators.min 1 maxGen]
-                spanGC[Operators.min 2 maxGen]
-                prevDescr
+                printf
+                    "Real: %4.1f Realdelta: %4.1f Cpu: %4.1f Cpudelta: %4.1f Mem: %3d"
+                    t.TotalSeconds
+                    tDelta.TotalSeconds
+                    utNow
+                    utDelta
+                    wsNow
 
-        | _ -> ()
+                printfn
+                    " G0: %3d G1: %2d G2: %2d [%s]"
+                    spanGC[Operators.min 0 maxGen]
+                    spanGC[Operators.min 1 maxGen]
+                    spanGC[Operators.min 2 maxGen]
+                    prevDescr
 
-        tPrev <- Some(timeNow, gcNow)
+                tStart
+
+            | _ -> DateTime.Now
+
+        tPrev <- Some(tStart, tNow, utNow, gcNow)
 
     nPrev <- Some descr
 
