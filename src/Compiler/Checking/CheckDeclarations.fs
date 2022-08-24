@@ -688,11 +688,10 @@ let TcOpenDecl (cenv: cenv) mOpenDecl scopem env target =
     | SynOpenDeclTarget.Type (synType, m) ->
         TcOpenTypeDecl cenv mOpenDecl scopem env (synType, m)
         
-let MakeSafeInitField (g: TcGlobals) env m isStatic = 
+let MakeSafeInitField (cenv: cenv) env m isStatic = 
     let id =
         // Ensure that we have an g.CompilerGlobalState
-        assert(g.CompilerGlobalState |> Option.isSome)
-        ident(g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName("init", m), m)
+        ident(cenv.niceNameGen.NiceNameGenerator.FreshCompilerGeneratedName("init", m), m)
     let taccess = TAccess [env.eAccessPath]
     Construct.NewRecdField isStatic None id false g.int_ty true true [] [] XmlDoc.Empty taccess true
 
@@ -1268,7 +1267,7 @@ module MutRecBindingChecking =
                                 | _ -> false)
 
                         if needsSafeStaticInit && hasStaticBindings then
-                            let rfield = MakeSafeInitField g envForDecls tcref.Range true
+                            let rfield = MakeSafeInitField cenv envForDecls tcref.Range true
                             SafeInitField(mkRecdFieldRef tcref rfield.LogicalName, rfield)
                         else
                             NoSafeInitInfo
@@ -2426,7 +2425,7 @@ module EstablishTypeDefinitionCores =
     let ComputeInstanceSafeInitInfo (cenv: cenv) env m thisTy = 
         let g = cenv.g
         if InstanceMembersNeedSafeInitCheck cenv m thisTy then 
-            let rfield = MakeSafeInitField g env m false
+            let rfield = MakeSafeInitField cenv env m false
             let tcref = tcrefOfAppTy g thisTy
             SafeInitField (mkRecdFieldRef tcref rfield.LogicalName, rfield)
         else
