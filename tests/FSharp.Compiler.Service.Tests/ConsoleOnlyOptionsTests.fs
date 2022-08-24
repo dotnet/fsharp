@@ -2,7 +2,6 @@
 
 module FSharp.Compiler.Service.Tests.ConsoleOnlyOptionsTests
 
-open System
 open System.IO
 open FSharp.Compiler.CompilerOptions
 open NUnit.Framework
@@ -12,14 +11,10 @@ open Tests.TestHelpers
 let ``Help is displayed correctly`` () =
     let builder = getArbitraryTcConfigBuilder()
     let blocks = GetCoreFscCompilerOptions builder
-    let fileName = $"{Guid.NewGuid()}"
     let expectedHelp = File.ReadAllText $"{__SOURCE_DIRECTORY__}/expected-help-output.txt"
-    let printer text = File.AppendAllText(fileName, text)
-    let exiter () = ()
 
-    DisplayHelpFsc printer exiter builder blocks
+    let help = GetHelpFsc builder blocks
 
-    let help = File.ReadAllText fileName
     // contains instead of equals
     // as we don't control the 1st line of the output (the version)
     // it's tested separately
