@@ -2,6 +2,7 @@
 
 module FSharp.Compiler.Service.Tests.ConsoleOnlyOptionsTests
 
+open System
 open System.IO
 open FSharp.Compiler.CompilerOptions
 open NUnit.Framework
@@ -18,7 +19,7 @@ let ``Help is displayed correctly`` () =
     // contains instead of equals
     // as we don't control the 1st line of the output (the version)
     // it's tested separately
-    StringAssert.Contains(expectedHelp, help)
+    StringAssert.Contains(expectedHelp, help.Replace("\r\n", Environment.NewLine))
 
 [<Test>]
 let ``Version is displayed correctly`` () =
