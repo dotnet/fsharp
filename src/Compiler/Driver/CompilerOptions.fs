@@ -1999,12 +1999,10 @@ let GetVersion tcConfigB =
 
 let displayHelpFsc config blocks = GetHelpFsc config blocks |> Console.Write
 
-let displayVersion = GetVersion >> Console.Write
-
 let miscFlagsBoth tcConfigB =
     [
         CompilerOption("nologo", tagNone, OptionUnit(fun () -> tcConfigB.showBanner <- false), None, Some(FSComp.SR.optsNologo ()))
-        CompilerOption("version", tagNone, OptionConsoleOnly(fun _ -> displayVersion tcConfigB; exit 0), None, Some(FSComp.SR.optsVersion ()))
+        CompilerOption("version", tagNone, OptionConsoleOnly(fun _ -> Console.Write (GetVersion tcConfigB); exit 0), None, Some(FSComp.SR.optsVersion ()))
     ]
 
 let miscFlagsFsc tcConfigB =
