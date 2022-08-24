@@ -186,7 +186,7 @@ let GetCompilerOptionBlocks blocks =
             let headingOptions =
                 publicBlocks |> List.filter (fun (h2, _) -> heading = h2) |> List.collect snd
 
-            let _ = sb.Append(getPublicOptions(heading, headingOptions))
+            let _ = sb.Append(getPublicOptions (heading, headingOptions))
             Set.add heading doneHeadings
 
     List.fold consider Set.empty publicBlocks |> ignore<Set<string>>
