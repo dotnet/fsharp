@@ -71,11 +71,7 @@ type PhasedDiagnostic with
     member ReportAsError: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
 
     /// Output all of a diagnostic to a buffer, including range
-    member Output:
-        buf: StringBuilder *
-        tcConfig: TcConfig *
-        severity: FSharpDiagnosticSeverity ->
-            unit
+    member Output: buf: StringBuilder * tcConfig: TcConfig * severity: FSharpDiagnosticSeverity -> unit
 
     /// Write extra context information for a diagnostic
     member WriteWithContext:
@@ -127,8 +123,5 @@ type FormattedDiagnostic =
 
 /// Used internally and in LegacyHostedCompilerForTesting
 val CollectFormattedDiagnostics:
-    tcConfig: TcConfig *
-    severity: FSharpDiagnosticSeverity *
-    PhasedDiagnostic *
-    suggestNames: bool ->
+    tcConfig: TcConfig * severity: FSharpDiagnosticSeverity * PhasedDiagnostic * suggestNames: bool ->
         FormattedDiagnostic[]

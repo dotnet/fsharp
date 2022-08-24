@@ -585,7 +585,7 @@ module ScriptPreprocessClosure =
                 (parseDiagnostics @ earlierDiagnostics @ metaDiagnostics @ resolutionDiagnostics)
             | _ -> [], [] // When no file existed.
 
-        let isRootRange (diagnostic: PhasedDiagnostic)=
+        let isRootRange (diagnostic: PhasedDiagnostic) =
             match diagnostic.Range with
             | Some m ->
                 // Return true if the error was *not* from a #load-ed file.

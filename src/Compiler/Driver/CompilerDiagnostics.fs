@@ -75,7 +75,7 @@ exception DeprecatedCommandLineOptionNoDescription of string * range
 /// This exception is an old-style way of reporting a diagnostic
 exception InternalCommandLineOption of string * range
 
-type Exception with 
+type Exception with
 
     member exn.DiagnosticRange =
         match exn with
@@ -338,13 +338,11 @@ type Exception with
             fst (FSComp.SR.considerUpcast ("", ""))
         | _ -> 193
 
+type PhasedDiagnostic with
 
-type PhasedDiagnostic with 
-    member x.Range =
-        x.Exception.DiagnosticRange
+    member x.Range = x.Exception.DiagnosticRange
 
-    member x.Number =
-       x.Exception.DiagnosticNumber
+    member x.Number = x.Exception.DiagnosticNumber
 
     member x.WarningLevel =
         match x.Exception with
@@ -363,10 +361,11 @@ type PhasedDiagnostic with
         // Level 2
         | _ -> 2
 
-    member x.IsEnabled (severity, options) =
+    member x.IsEnabled(severity, options) =
         let level = options.WarnLevel
         let specificWarnOn = options.WarnOn
         let n = x.Number
+
         List.contains n specificWarnOn
         ||
         // Some specific warnings/informational are never on by default, i.e. unused variable warnings
@@ -382,27 +381,22 @@ type PhasedDiagnostic with
         | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
         | _ ->
             (severity = FSharpDiagnosticSeverity.Info)
-            || (severity = FSharpDiagnosticSeverity.Warning
-                && level >= x.WarningLevel)
+            || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
 
     /// Indicates if a diagnostic should be reported as an informational
-    member x.ReportAsInfo (options, severity) =
+    member x.ReportAsInfo(options, severity) =
         match severity with
         | FSharpDiagnosticSeverity.Error -> false
         | FSharpDiagnosticSeverity.Warning -> false
-        | FSharpDiagnosticSeverity.Info ->
-            x.IsEnabled (severity, options)
-            && not (List.contains x.Number options.WarnOff)
+        | FSharpDiagnosticSeverity.Info -> x.IsEnabled(severity, options) && not (List.contains x.Number options.WarnOff)
         | FSharpDiagnosticSeverity.Hidden -> false
 
     /// Indicates if a diagnostic should be reported as a warning
-    member x.ReportAsWarning (options, severity) =
+    member x.ReportAsWarning(options, severity) =
         match severity with
         | FSharpDiagnosticSeverity.Error -> false
 
-        | FSharpDiagnosticSeverity.Warning ->
-            x.IsEnabled (severity, options)
-            && not (List.contains x.Number options.WarnOff)
+        | FSharpDiagnosticSeverity.Warning -> x.IsEnabled(severity, options) && not (List.contains x.Number options.WarnOff)
 
         // Informational become warning if explicitly on and not explicitly off
         | FSharpDiagnosticSeverity.Info ->
@@ -412,7 +406,7 @@ type PhasedDiagnostic with
         | FSharpDiagnosticSeverity.Hidden -> false
 
     /// Indicates if a diagnostic should be reported as an error
-    member x.ReportAsError (options, severity) =
+    member x.ReportAsError(options, severity) =
 
         match severity with
         | FSharpDiagnosticSeverity.Error -> true
@@ -420,17 +414,16 @@ type PhasedDiagnostic with
         // Warnings become errors in some situations
         | FSharpDiagnosticSeverity.Warning ->
             let n = x.Number
-            x.IsEnabled (severity, options)
+
+            x.IsEnabled(severity, options)
             && not (List.contains n options.WarnAsWarn)
             && ((options.GlobalWarnAsError && not (List.contains n options.WarnOff))
                 || List.contains n options.WarnAsError)
 
         // Informational become errors if explicitly WarnAsError
-        | FSharpDiagnosticSeverity.Info ->
-            List.contains x.Number options.WarnAsError
+        | FSharpDiagnosticSeverity.Info -> List.contains x.Number options.WarnAsError
 
         | FSharpDiagnosticSeverity.Hidden -> false
-
 
 [<AutoOpen>]
 module OldStyleMessages =
@@ -623,7 +616,8 @@ let OutputNameSuggestions (os: StringBuilder) canSuggestNames suggestionsF idTex
                     os.AppendString(ConvertValLogicalNameToDisplayNameCore value)
 
 type Exception with
-    member exn.Output (os: StringBuilder, canSuggestNames) =
+
+    member exn.Output(os: StringBuilder, canSuggestNames) =
 
         match exn with
         | ConstraintSolverTupleDiffLengths (_, tl1, tl2, m, m2) ->
@@ -736,13 +730,11 @@ type Exception with
              | ContextInfo.NoContext -> false
              | _ -> true)
             ->
-            e.Output (os, canSuggestNames)
+            e.Output(os, canSuggestNames)
 
-        | ErrorFromAddingTypeEquation (error = ConstraintSolverTypesNotInSubsumptionRelation _ as e) ->
-            e.Output (os, canSuggestNames)
+        | ErrorFromAddingTypeEquation(error = ConstraintSolverTypesNotInSubsumptionRelation _ as e) -> e.Output(os, canSuggestNames)
 
-        | ErrorFromAddingTypeEquation (error = ConstraintSolverError _ as e) ->
-            e.Output (os, canSuggestNames)
+        | ErrorFromAddingTypeEquation(error = ConstraintSolverError _ as e) -> e.Output(os, canSuggestNames)
 
         | ErrorFromAddingTypeEquation (g, denv, ty1, ty2, e, _) ->
             if not (typeEquiv g ty1 ty2) then
@@ -751,12 +743,12 @@ type Exception with
                 if ty1 <> ty2 + tpcs then
                     os.AppendString(ErrorFromAddingTypeEquation2E().Format ty1 ty2 tpcs)
 
-            e.Output (os, canSuggestNames)
+            e.Output(os, canSuggestNames)
 
         | ErrorFromApplyingDefault (_, denv, _, defaultType, e, _) ->
             let defaultType = NicePrint.minimalStringOfType denv defaultType
             os.AppendString(ErrorFromApplyingDefault1E().Format defaultType)
-            e.Output (os, canSuggestNames)
+            e.Output(os, canSuggestNames)
             os.AppendString(ErrorFromApplyingDefault2E().Format)
 
         | ErrorsFromAddingSubsumptionConstraint (g, denv, ty1, ty2, e, contextInfo, _) ->
@@ -775,9 +767,9 @@ type Exception with
                     if ty1 <> (ty2 + tpcs) then
                         os.AppendString(ErrorsFromAddingSubsumptionConstraintE().Format ty2 ty1 tpcs)
                     else
-                        e.Output (os, canSuggestNames)
+                        e.Output(os, canSuggestNames)
                 else
-                    e.Output (os, canSuggestNames)
+                    e.Output(os, canSuggestNames)
 
         | UpperCaseIdentifierInPattern _ -> os.AppendString(UpperCaseIdentifierInPatternE().Format)
 
@@ -785,12 +777,12 @@ type Exception with
 
         | NotUpperCaseConstructorWithoutRQA _ -> os.AppendString(NotUpperCaseConstructorWithoutRQAE().Format)
 
-        | ErrorFromAddingConstraint (_, e, _) -> e.Output (os, canSuggestNames)
+        | ErrorFromAddingConstraint (_, e, _) -> e.Output(os, canSuggestNames)
 
 #if !NO_TYPEPROVIDERS
         | TypeProviders.ProvidedTypeResolutionNoRange e
 
-        | TypeProviders.ProvidedTypeResolution (_, e) -> e.Output (os, canSuggestNames)
+        | TypeProviders.ProvidedTypeResolution (_, e) -> e.Output(os, canSuggestNames)
 
         | :? TypeProviderError as e -> os.AppendString(e.ContextualErrorMessage)
 #endif
@@ -1017,7 +1009,7 @@ type Exception with
 
             let tokenIdToText tid =
                 match tid with
-                | Parser.TOKEN_IDENT -> SR.GetString ("Parser.TOKEN.IDENT")
+                | Parser.TOKEN_IDENT -> SR.GetString("Parser.TOKEN.IDENT")
                 | Parser.TOKEN_BIGNUM
                 | Parser.TOKEN_INT8
                 | Parser.TOKEN_UINT8
@@ -1028,191 +1020,191 @@ type Exception with
                 | Parser.TOKEN_INT64
                 | Parser.TOKEN_UINT64
                 | Parser.TOKEN_UNATIVEINT
-                | Parser.TOKEN_NATIVEINT -> SR.GetString ("Parser.TOKEN.INT")
+                | Parser.TOKEN_NATIVEINT -> SR.GetString("Parser.TOKEN.INT")
                 | Parser.TOKEN_IEEE32
-                | Parser.TOKEN_IEEE64 -> SR.GetString ("Parser.TOKEN.FLOAT")
-                | Parser.TOKEN_DECIMAL -> SR.GetString ("Parser.TOKEN.DECIMAL")
-                | Parser.TOKEN_CHAR -> SR.GetString ("Parser.TOKEN.CHAR")
+                | Parser.TOKEN_IEEE64 -> SR.GetString("Parser.TOKEN.FLOAT")
+                | Parser.TOKEN_DECIMAL -> SR.GetString("Parser.TOKEN.DECIMAL")
+                | Parser.TOKEN_CHAR -> SR.GetString("Parser.TOKEN.CHAR")
 
-                | Parser.TOKEN_BASE -> SR.GetString ("Parser.TOKEN.BASE")
-                | Parser.TOKEN_LPAREN_STAR_RPAREN -> SR.GetString ("Parser.TOKEN.LPAREN.STAR.RPAREN")
-                | Parser.TOKEN_DOLLAR -> SR.GetString ("Parser.TOKEN.DOLLAR")
-                | Parser.TOKEN_INFIX_STAR_STAR_OP -> SR.GetString ("Parser.TOKEN.INFIX.STAR.STAR.OP")
-                | Parser.TOKEN_INFIX_COMPARE_OP -> SR.GetString ("Parser.TOKEN.INFIX.COMPARE.OP")
-                | Parser.TOKEN_COLON_GREATER -> SR.GetString ("Parser.TOKEN.COLON.GREATER")
-                | Parser.TOKEN_COLON_COLON -> SR.GetString ("Parser.TOKEN.COLON.COLON")
-                | Parser.TOKEN_PERCENT_OP -> SR.GetString ("Parser.TOKEN.PERCENT.OP")
-                | Parser.TOKEN_INFIX_AT_HAT_OP -> SR.GetString ("Parser.TOKEN.INFIX.AT.HAT.OP")
-                | Parser.TOKEN_INFIX_BAR_OP -> SR.GetString ("Parser.TOKEN.INFIX.BAR.OP")
-                | Parser.TOKEN_PLUS_MINUS_OP -> SR.GetString ("Parser.TOKEN.PLUS.MINUS.OP")
-                | Parser.TOKEN_PREFIX_OP -> SR.GetString ("Parser.TOKEN.PREFIX.OP")
-                | Parser.TOKEN_COLON_QMARK_GREATER -> SR.GetString ("Parser.TOKEN.COLON.QMARK.GREATER")
-                | Parser.TOKEN_INFIX_STAR_DIV_MOD_OP -> SR.GetString ("Parser.TOKEN.INFIX.STAR.DIV.MOD.OP")
-                | Parser.TOKEN_INFIX_AMP_OP -> SR.GetString ("Parser.TOKEN.INFIX.AMP.OP")
-                | Parser.TOKEN_AMP -> SR.GetString ("Parser.TOKEN.AMP")
-                | Parser.TOKEN_AMP_AMP -> SR.GetString ("Parser.TOKEN.AMP.AMP")
-                | Parser.TOKEN_BAR_BAR -> SR.GetString ("Parser.TOKEN.BAR.BAR")
-                | Parser.TOKEN_LESS -> SR.GetString ("Parser.TOKEN.LESS")
-                | Parser.TOKEN_GREATER -> SR.GetString ("Parser.TOKEN.GREATER")
-                | Parser.TOKEN_QMARK -> SR.GetString ("Parser.TOKEN.QMARK")
-                | Parser.TOKEN_QMARK_QMARK -> SR.GetString ("Parser.TOKEN.QMARK.QMARK")
-                | Parser.TOKEN_COLON_QMARK -> SR.GetString ("Parser.TOKEN.COLON.QMARK")
-                | Parser.TOKEN_INT32_DOT_DOT -> SR.GetString ("Parser.TOKEN.INT32.DOT.DOT")
-                | Parser.TOKEN_DOT_DOT -> SR.GetString ("Parser.TOKEN.DOT.DOT")
-                | Parser.TOKEN_DOT_DOT_HAT -> SR.GetString ("Parser.TOKEN.DOT.DOT")
-                | Parser.TOKEN_QUOTE -> SR.GetString ("Parser.TOKEN.QUOTE")
-                | Parser.TOKEN_STAR -> SR.GetString ("Parser.TOKEN.STAR")
-                | Parser.TOKEN_HIGH_PRECEDENCE_TYAPP -> SR.GetString ("Parser.TOKEN.HIGH.PRECEDENCE.TYAPP")
-                | Parser.TOKEN_COLON -> SR.GetString ("Parser.TOKEN.COLON")
-                | Parser.TOKEN_COLON_EQUALS -> SR.GetString ("Parser.TOKEN.COLON.EQUALS")
-                | Parser.TOKEN_LARROW -> SR.GetString ("Parser.TOKEN.LARROW")
-                | Parser.TOKEN_EQUALS -> SR.GetString ("Parser.TOKEN.EQUALS")
-                | Parser.TOKEN_GREATER_BAR_RBRACK -> SR.GetString ("Parser.TOKEN.GREATER.BAR.RBRACK")
-                | Parser.TOKEN_MINUS -> SR.GetString ("Parser.TOKEN.MINUS")
-                | Parser.TOKEN_ADJACENT_PREFIX_OP -> SR.GetString ("Parser.TOKEN.ADJACENT.PREFIX.OP")
-                | Parser.TOKEN_FUNKY_OPERATOR_NAME -> SR.GetString ("Parser.TOKEN.FUNKY.OPERATOR.NAME")
-                | Parser.TOKEN_COMMA -> SR.GetString ("Parser.TOKEN.COMMA")
-                | Parser.TOKEN_DOT -> SR.GetString ("Parser.TOKEN.DOT")
-                | Parser.TOKEN_BAR -> SR.GetString ("Parser.TOKEN.BAR")
-                | Parser.TOKEN_HASH -> SR.GetString ("Parser.TOKEN.HASH")
-                | Parser.TOKEN_UNDERSCORE -> SR.GetString ("Parser.TOKEN.UNDERSCORE")
-                | Parser.TOKEN_SEMICOLON -> SR.GetString ("Parser.TOKEN.SEMICOLON")
-                | Parser.TOKEN_SEMICOLON_SEMICOLON -> SR.GetString ("Parser.TOKEN.SEMICOLON.SEMICOLON")
-                | Parser.TOKEN_LPAREN -> SR.GetString ("Parser.TOKEN.LPAREN")
+                | Parser.TOKEN_BASE -> SR.GetString("Parser.TOKEN.BASE")
+                | Parser.TOKEN_LPAREN_STAR_RPAREN -> SR.GetString("Parser.TOKEN.LPAREN.STAR.RPAREN")
+                | Parser.TOKEN_DOLLAR -> SR.GetString("Parser.TOKEN.DOLLAR")
+                | Parser.TOKEN_INFIX_STAR_STAR_OP -> SR.GetString("Parser.TOKEN.INFIX.STAR.STAR.OP")
+                | Parser.TOKEN_INFIX_COMPARE_OP -> SR.GetString("Parser.TOKEN.INFIX.COMPARE.OP")
+                | Parser.TOKEN_COLON_GREATER -> SR.GetString("Parser.TOKEN.COLON.GREATER")
+                | Parser.TOKEN_COLON_COLON -> SR.GetString("Parser.TOKEN.COLON.COLON")
+                | Parser.TOKEN_PERCENT_OP -> SR.GetString("Parser.TOKEN.PERCENT.OP")
+                | Parser.TOKEN_INFIX_AT_HAT_OP -> SR.GetString("Parser.TOKEN.INFIX.AT.HAT.OP")
+                | Parser.TOKEN_INFIX_BAR_OP -> SR.GetString("Parser.TOKEN.INFIX.BAR.OP")
+                | Parser.TOKEN_PLUS_MINUS_OP -> SR.GetString("Parser.TOKEN.PLUS.MINUS.OP")
+                | Parser.TOKEN_PREFIX_OP -> SR.GetString("Parser.TOKEN.PREFIX.OP")
+                | Parser.TOKEN_COLON_QMARK_GREATER -> SR.GetString("Parser.TOKEN.COLON.QMARK.GREATER")
+                | Parser.TOKEN_INFIX_STAR_DIV_MOD_OP -> SR.GetString("Parser.TOKEN.INFIX.STAR.DIV.MOD.OP")
+                | Parser.TOKEN_INFIX_AMP_OP -> SR.GetString("Parser.TOKEN.INFIX.AMP.OP")
+                | Parser.TOKEN_AMP -> SR.GetString("Parser.TOKEN.AMP")
+                | Parser.TOKEN_AMP_AMP -> SR.GetString("Parser.TOKEN.AMP.AMP")
+                | Parser.TOKEN_BAR_BAR -> SR.GetString("Parser.TOKEN.BAR.BAR")
+                | Parser.TOKEN_LESS -> SR.GetString("Parser.TOKEN.LESS")
+                | Parser.TOKEN_GREATER -> SR.GetString("Parser.TOKEN.GREATER")
+                | Parser.TOKEN_QMARK -> SR.GetString("Parser.TOKEN.QMARK")
+                | Parser.TOKEN_QMARK_QMARK -> SR.GetString("Parser.TOKEN.QMARK.QMARK")
+                | Parser.TOKEN_COLON_QMARK -> SR.GetString("Parser.TOKEN.COLON.QMARK")
+                | Parser.TOKEN_INT32_DOT_DOT -> SR.GetString("Parser.TOKEN.INT32.DOT.DOT")
+                | Parser.TOKEN_DOT_DOT -> SR.GetString("Parser.TOKEN.DOT.DOT")
+                | Parser.TOKEN_DOT_DOT_HAT -> SR.GetString("Parser.TOKEN.DOT.DOT")
+                | Parser.TOKEN_QUOTE -> SR.GetString("Parser.TOKEN.QUOTE")
+                | Parser.TOKEN_STAR -> SR.GetString("Parser.TOKEN.STAR")
+                | Parser.TOKEN_HIGH_PRECEDENCE_TYAPP -> SR.GetString("Parser.TOKEN.HIGH.PRECEDENCE.TYAPP")
+                | Parser.TOKEN_COLON -> SR.GetString("Parser.TOKEN.COLON")
+                | Parser.TOKEN_COLON_EQUALS -> SR.GetString("Parser.TOKEN.COLON.EQUALS")
+                | Parser.TOKEN_LARROW -> SR.GetString("Parser.TOKEN.LARROW")
+                | Parser.TOKEN_EQUALS -> SR.GetString("Parser.TOKEN.EQUALS")
+                | Parser.TOKEN_GREATER_BAR_RBRACK -> SR.GetString("Parser.TOKEN.GREATER.BAR.RBRACK")
+                | Parser.TOKEN_MINUS -> SR.GetString("Parser.TOKEN.MINUS")
+                | Parser.TOKEN_ADJACENT_PREFIX_OP -> SR.GetString("Parser.TOKEN.ADJACENT.PREFIX.OP")
+                | Parser.TOKEN_FUNKY_OPERATOR_NAME -> SR.GetString("Parser.TOKEN.FUNKY.OPERATOR.NAME")
+                | Parser.TOKEN_COMMA -> SR.GetString("Parser.TOKEN.COMMA")
+                | Parser.TOKEN_DOT -> SR.GetString("Parser.TOKEN.DOT")
+                | Parser.TOKEN_BAR -> SR.GetString("Parser.TOKEN.BAR")
+                | Parser.TOKEN_HASH -> SR.GetString("Parser.TOKEN.HASH")
+                | Parser.TOKEN_UNDERSCORE -> SR.GetString("Parser.TOKEN.UNDERSCORE")
+                | Parser.TOKEN_SEMICOLON -> SR.GetString("Parser.TOKEN.SEMICOLON")
+                | Parser.TOKEN_SEMICOLON_SEMICOLON -> SR.GetString("Parser.TOKEN.SEMICOLON.SEMICOLON")
+                | Parser.TOKEN_LPAREN -> SR.GetString("Parser.TOKEN.LPAREN")
                 | Parser.TOKEN_RPAREN
                 | Parser.TOKEN_RPAREN_COMING_SOON
-                | Parser.TOKEN_RPAREN_IS_HERE -> SR.GetString ("Parser.TOKEN.RPAREN")
-                | Parser.TOKEN_LQUOTE -> SR.GetString ("Parser.TOKEN.LQUOTE")
-                | Parser.TOKEN_LBRACK -> SR.GetString ("Parser.TOKEN.LBRACK")
-                | Parser.TOKEN_LBRACE_BAR -> SR.GetString ("Parser.TOKEN.LBRACE.BAR")
-                | Parser.TOKEN_LBRACK_BAR -> SR.GetString ("Parser.TOKEN.LBRACK.BAR")
-                | Parser.TOKEN_LBRACK_LESS -> SR.GetString ("Parser.TOKEN.LBRACK.LESS")
-                | Parser.TOKEN_LBRACE -> SR.GetString ("Parser.TOKEN.LBRACE")
-                | Parser.TOKEN_BAR_RBRACK -> SR.GetString ("Parser.TOKEN.BAR.RBRACK")
-                | Parser.TOKEN_BAR_RBRACE -> SR.GetString ("Parser.TOKEN.BAR.RBRACE")
-                | Parser.TOKEN_GREATER_RBRACK -> SR.GetString ("Parser.TOKEN.GREATER.RBRACK")
+                | Parser.TOKEN_RPAREN_IS_HERE -> SR.GetString("Parser.TOKEN.RPAREN")
+                | Parser.TOKEN_LQUOTE -> SR.GetString("Parser.TOKEN.LQUOTE")
+                | Parser.TOKEN_LBRACK -> SR.GetString("Parser.TOKEN.LBRACK")
+                | Parser.TOKEN_LBRACE_BAR -> SR.GetString("Parser.TOKEN.LBRACE.BAR")
+                | Parser.TOKEN_LBRACK_BAR -> SR.GetString("Parser.TOKEN.LBRACK.BAR")
+                | Parser.TOKEN_LBRACK_LESS -> SR.GetString("Parser.TOKEN.LBRACK.LESS")
+                | Parser.TOKEN_LBRACE -> SR.GetString("Parser.TOKEN.LBRACE")
+                | Parser.TOKEN_BAR_RBRACK -> SR.GetString("Parser.TOKEN.BAR.RBRACK")
+                | Parser.TOKEN_BAR_RBRACE -> SR.GetString("Parser.TOKEN.BAR.RBRACE")
+                | Parser.TOKEN_GREATER_RBRACK -> SR.GetString("Parser.TOKEN.GREATER.RBRACK")
                 | Parser.TOKEN_RQUOTE_DOT _
-                | Parser.TOKEN_RQUOTE -> SR.GetString ("Parser.TOKEN.RQUOTE")
-                | Parser.TOKEN_RBRACK -> SR.GetString ("Parser.TOKEN.RBRACK")
+                | Parser.TOKEN_RQUOTE -> SR.GetString("Parser.TOKEN.RQUOTE")
+                | Parser.TOKEN_RBRACK -> SR.GetString("Parser.TOKEN.RBRACK")
                 | Parser.TOKEN_RBRACE
                 | Parser.TOKEN_RBRACE_COMING_SOON
-                | Parser.TOKEN_RBRACE_IS_HERE -> SR.GetString ("Parser.TOKEN.RBRACE")
-                | Parser.TOKEN_PUBLIC -> SR.GetString ("Parser.TOKEN.PUBLIC")
-                | Parser.TOKEN_PRIVATE -> SR.GetString ("Parser.TOKEN.PRIVATE")
-                | Parser.TOKEN_INTERNAL -> SR.GetString ("Parser.TOKEN.INTERNAL")
-                | Parser.TOKEN_CONSTRAINT -> SR.GetString ("Parser.TOKEN.CONSTRAINT")
-                | Parser.TOKEN_INSTANCE -> SR.GetString ("Parser.TOKEN.INSTANCE")
-                | Parser.TOKEN_DELEGATE -> SR.GetString ("Parser.TOKEN.DELEGATE")
-                | Parser.TOKEN_INHERIT -> SR.GetString ("Parser.TOKEN.INHERIT")
-                | Parser.TOKEN_CONSTRUCTOR -> SR.GetString ("Parser.TOKEN.CONSTRUCTOR")
-                | Parser.TOKEN_DEFAULT -> SR.GetString ("Parser.TOKEN.DEFAULT")
-                | Parser.TOKEN_OVERRIDE -> SR.GetString ("Parser.TOKEN.OVERRIDE")
-                | Parser.TOKEN_ABSTRACT -> SR.GetString ("Parser.TOKEN.ABSTRACT")
-                | Parser.TOKEN_CLASS -> SR.GetString ("Parser.TOKEN.CLASS")
-                | Parser.TOKEN_MEMBER -> SR.GetString ("Parser.TOKEN.MEMBER")
-                | Parser.TOKEN_STATIC -> SR.GetString ("Parser.TOKEN.STATIC")
-                | Parser.TOKEN_NAMESPACE -> SR.GetString ("Parser.TOKEN.NAMESPACE")
-                | Parser.TOKEN_OBLOCKBEGIN -> SR.GetString ("Parser.TOKEN.OBLOCKBEGIN")
-                | EndOfStructuredConstructToken -> SR.GetString ("Parser.TOKEN.OBLOCKEND")
+                | Parser.TOKEN_RBRACE_IS_HERE -> SR.GetString("Parser.TOKEN.RBRACE")
+                | Parser.TOKEN_PUBLIC -> SR.GetString("Parser.TOKEN.PUBLIC")
+                | Parser.TOKEN_PRIVATE -> SR.GetString("Parser.TOKEN.PRIVATE")
+                | Parser.TOKEN_INTERNAL -> SR.GetString("Parser.TOKEN.INTERNAL")
+                | Parser.TOKEN_CONSTRAINT -> SR.GetString("Parser.TOKEN.CONSTRAINT")
+                | Parser.TOKEN_INSTANCE -> SR.GetString("Parser.TOKEN.INSTANCE")
+                | Parser.TOKEN_DELEGATE -> SR.GetString("Parser.TOKEN.DELEGATE")
+                | Parser.TOKEN_INHERIT -> SR.GetString("Parser.TOKEN.INHERIT")
+                | Parser.TOKEN_CONSTRUCTOR -> SR.GetString("Parser.TOKEN.CONSTRUCTOR")
+                | Parser.TOKEN_DEFAULT -> SR.GetString("Parser.TOKEN.DEFAULT")
+                | Parser.TOKEN_OVERRIDE -> SR.GetString("Parser.TOKEN.OVERRIDE")
+                | Parser.TOKEN_ABSTRACT -> SR.GetString("Parser.TOKEN.ABSTRACT")
+                | Parser.TOKEN_CLASS -> SR.GetString("Parser.TOKEN.CLASS")
+                | Parser.TOKEN_MEMBER -> SR.GetString("Parser.TOKEN.MEMBER")
+                | Parser.TOKEN_STATIC -> SR.GetString("Parser.TOKEN.STATIC")
+                | Parser.TOKEN_NAMESPACE -> SR.GetString("Parser.TOKEN.NAMESPACE")
+                | Parser.TOKEN_OBLOCKBEGIN -> SR.GetString("Parser.TOKEN.OBLOCKBEGIN")
+                | EndOfStructuredConstructToken -> SR.GetString("Parser.TOKEN.OBLOCKEND")
                 | Parser.TOKEN_THEN
-                | Parser.TOKEN_OTHEN -> SR.GetString ("Parser.TOKEN.OTHEN")
+                | Parser.TOKEN_OTHEN -> SR.GetString("Parser.TOKEN.OTHEN")
                 | Parser.TOKEN_ELSE
-                | Parser.TOKEN_OELSE -> SR.GetString ("Parser.TOKEN.OELSE")
+                | Parser.TOKEN_OELSE -> SR.GetString("Parser.TOKEN.OELSE")
                 | Parser.TOKEN_LET _
-                | Parser.TOKEN_OLET _ -> SR.GetString ("Parser.TOKEN.OLET")
+                | Parser.TOKEN_OLET _ -> SR.GetString("Parser.TOKEN.OLET")
                 | Parser.TOKEN_OBINDER
-                | Parser.TOKEN_BINDER -> SR.GetString ("Parser.TOKEN.BINDER")
+                | Parser.TOKEN_BINDER -> SR.GetString("Parser.TOKEN.BINDER")
                 | Parser.TOKEN_OAND_BANG
-                | Parser.TOKEN_AND_BANG -> SR.GetString ("Parser.TOKEN.AND.BANG")
-                | Parser.TOKEN_ODO -> SR.GetString ("Parser.TOKEN.ODO")
-                | Parser.TOKEN_OWITH -> SR.GetString ("Parser.TOKEN.OWITH")
-                | Parser.TOKEN_OFUNCTION -> SR.GetString ("Parser.TOKEN.OFUNCTION")
-                | Parser.TOKEN_OFUN -> SR.GetString ("Parser.TOKEN.OFUN")
-                | Parser.TOKEN_ORESET -> SR.GetString ("Parser.TOKEN.ORESET")
-                | Parser.TOKEN_ODUMMY -> SR.GetString ("Parser.TOKEN.ODUMMY")
+                | Parser.TOKEN_AND_BANG -> SR.GetString("Parser.TOKEN.AND.BANG")
+                | Parser.TOKEN_ODO -> SR.GetString("Parser.TOKEN.ODO")
+                | Parser.TOKEN_OWITH -> SR.GetString("Parser.TOKEN.OWITH")
+                | Parser.TOKEN_OFUNCTION -> SR.GetString("Parser.TOKEN.OFUNCTION")
+                | Parser.TOKEN_OFUN -> SR.GetString("Parser.TOKEN.OFUN")
+                | Parser.TOKEN_ORESET -> SR.GetString("Parser.TOKEN.ORESET")
+                | Parser.TOKEN_ODUMMY -> SR.GetString("Parser.TOKEN.ODUMMY")
                 | Parser.TOKEN_DO_BANG
-                | Parser.TOKEN_ODO_BANG -> SR.GetString ("Parser.TOKEN.ODO.BANG")
-                | Parser.TOKEN_YIELD -> SR.GetString ("Parser.TOKEN.YIELD")
-                | Parser.TOKEN_YIELD_BANG -> SR.GetString ("Parser.TOKEN.YIELD.BANG")
-                | Parser.TOKEN_OINTERFACE_MEMBER -> SR.GetString ("Parser.TOKEN.OINTERFACE.MEMBER")
-                | Parser.TOKEN_ELIF -> SR.GetString ("Parser.TOKEN.ELIF")
-                | Parser.TOKEN_RARROW -> SR.GetString ("Parser.TOKEN.RARROW")
-                | Parser.TOKEN_SIG -> SR.GetString ("Parser.TOKEN.SIG")
-                | Parser.TOKEN_STRUCT -> SR.GetString ("Parser.TOKEN.STRUCT")
-                | Parser.TOKEN_UPCAST -> SR.GetString ("Parser.TOKEN.UPCAST")
-                | Parser.TOKEN_DOWNCAST -> SR.GetString ("Parser.TOKEN.DOWNCAST")
-                | Parser.TOKEN_NULL -> SR.GetString ("Parser.TOKEN.NULL")
-                | Parser.TOKEN_RESERVED -> SR.GetString ("Parser.TOKEN.RESERVED")
+                | Parser.TOKEN_ODO_BANG -> SR.GetString("Parser.TOKEN.ODO.BANG")
+                | Parser.TOKEN_YIELD -> SR.GetString("Parser.TOKEN.YIELD")
+                | Parser.TOKEN_YIELD_BANG -> SR.GetString("Parser.TOKEN.YIELD.BANG")
+                | Parser.TOKEN_OINTERFACE_MEMBER -> SR.GetString("Parser.TOKEN.OINTERFACE.MEMBER")
+                | Parser.TOKEN_ELIF -> SR.GetString("Parser.TOKEN.ELIF")
+                | Parser.TOKEN_RARROW -> SR.GetString("Parser.TOKEN.RARROW")
+                | Parser.TOKEN_SIG -> SR.GetString("Parser.TOKEN.SIG")
+                | Parser.TOKEN_STRUCT -> SR.GetString("Parser.TOKEN.STRUCT")
+                | Parser.TOKEN_UPCAST -> SR.GetString("Parser.TOKEN.UPCAST")
+                | Parser.TOKEN_DOWNCAST -> SR.GetString("Parser.TOKEN.DOWNCAST")
+                | Parser.TOKEN_NULL -> SR.GetString("Parser.TOKEN.NULL")
+                | Parser.TOKEN_RESERVED -> SR.GetString("Parser.TOKEN.RESERVED")
                 | Parser.TOKEN_MODULE
                 | Parser.TOKEN_MODULE_COMING_SOON
-                | Parser.TOKEN_MODULE_IS_HERE -> SR.GetString ("Parser.TOKEN.MODULE")
-                | Parser.TOKEN_AND -> SR.GetString ("Parser.TOKEN.AND")
-                | Parser.TOKEN_AS -> SR.GetString ("Parser.TOKEN.AS")
-                | Parser.TOKEN_ASSERT -> SR.GetString ("Parser.TOKEN.ASSERT")
-                | Parser.TOKEN_OASSERT -> SR.GetString ("Parser.TOKEN.ASSERT")
-                | Parser.TOKEN_ASR -> SR.GetString ("Parser.TOKEN.ASR")
-                | Parser.TOKEN_DOWNTO -> SR.GetString ("Parser.TOKEN.DOWNTO")
-                | Parser.TOKEN_EXCEPTION -> SR.GetString ("Parser.TOKEN.EXCEPTION")
-                | Parser.TOKEN_FALSE -> SR.GetString ("Parser.TOKEN.FALSE")
-                | Parser.TOKEN_FOR -> SR.GetString ("Parser.TOKEN.FOR")
-                | Parser.TOKEN_FUN -> SR.GetString ("Parser.TOKEN.FUN")
-                | Parser.TOKEN_FUNCTION -> SR.GetString ("Parser.TOKEN.FUNCTION")
-                | Parser.TOKEN_FINALLY -> SR.GetString ("Parser.TOKEN.FINALLY")
-                | Parser.TOKEN_LAZY -> SR.GetString ("Parser.TOKEN.LAZY")
-                | Parser.TOKEN_OLAZY -> SR.GetString ("Parser.TOKEN.LAZY")
-                | Parser.TOKEN_MATCH -> SR.GetString ("Parser.TOKEN.MATCH")
-                | Parser.TOKEN_MATCH_BANG -> SR.GetString ("Parser.TOKEN.MATCH.BANG")
-                | Parser.TOKEN_MUTABLE -> SR.GetString ("Parser.TOKEN.MUTABLE")
-                | Parser.TOKEN_NEW -> SR.GetString ("Parser.TOKEN.NEW")
-                | Parser.TOKEN_OF -> SR.GetString ("Parser.TOKEN.OF")
-                | Parser.TOKEN_OPEN -> SR.GetString ("Parser.TOKEN.OPEN")
-                | Parser.TOKEN_OR -> SR.GetString ("Parser.TOKEN.OR")
-                | Parser.TOKEN_VOID -> SR.GetString ("Parser.TOKEN.VOID")
-                | Parser.TOKEN_EXTERN -> SR.GetString ("Parser.TOKEN.EXTERN")
-                | Parser.TOKEN_INTERFACE -> SR.GetString ("Parser.TOKEN.INTERFACE")
-                | Parser.TOKEN_REC -> SR.GetString ("Parser.TOKEN.REC")
-                | Parser.TOKEN_TO -> SR.GetString ("Parser.TOKEN.TO")
-                | Parser.TOKEN_TRUE -> SR.GetString ("Parser.TOKEN.TRUE")
-                | Parser.TOKEN_TRY -> SR.GetString ("Parser.TOKEN.TRY")
+                | Parser.TOKEN_MODULE_IS_HERE -> SR.GetString("Parser.TOKEN.MODULE")
+                | Parser.TOKEN_AND -> SR.GetString("Parser.TOKEN.AND")
+                | Parser.TOKEN_AS -> SR.GetString("Parser.TOKEN.AS")
+                | Parser.TOKEN_ASSERT -> SR.GetString("Parser.TOKEN.ASSERT")
+                | Parser.TOKEN_OASSERT -> SR.GetString("Parser.TOKEN.ASSERT")
+                | Parser.TOKEN_ASR -> SR.GetString("Parser.TOKEN.ASR")
+                | Parser.TOKEN_DOWNTO -> SR.GetString("Parser.TOKEN.DOWNTO")
+                | Parser.TOKEN_EXCEPTION -> SR.GetString("Parser.TOKEN.EXCEPTION")
+                | Parser.TOKEN_FALSE -> SR.GetString("Parser.TOKEN.FALSE")
+                | Parser.TOKEN_FOR -> SR.GetString("Parser.TOKEN.FOR")
+                | Parser.TOKEN_FUN -> SR.GetString("Parser.TOKEN.FUN")
+                | Parser.TOKEN_FUNCTION -> SR.GetString("Parser.TOKEN.FUNCTION")
+                | Parser.TOKEN_FINALLY -> SR.GetString("Parser.TOKEN.FINALLY")
+                | Parser.TOKEN_LAZY -> SR.GetString("Parser.TOKEN.LAZY")
+                | Parser.TOKEN_OLAZY -> SR.GetString("Parser.TOKEN.LAZY")
+                | Parser.TOKEN_MATCH -> SR.GetString("Parser.TOKEN.MATCH")
+                | Parser.TOKEN_MATCH_BANG -> SR.GetString("Parser.TOKEN.MATCH.BANG")
+                | Parser.TOKEN_MUTABLE -> SR.GetString("Parser.TOKEN.MUTABLE")
+                | Parser.TOKEN_NEW -> SR.GetString("Parser.TOKEN.NEW")
+                | Parser.TOKEN_OF -> SR.GetString("Parser.TOKEN.OF")
+                | Parser.TOKEN_OPEN -> SR.GetString("Parser.TOKEN.OPEN")
+                | Parser.TOKEN_OR -> SR.GetString("Parser.TOKEN.OR")
+                | Parser.TOKEN_VOID -> SR.GetString("Parser.TOKEN.VOID")
+                | Parser.TOKEN_EXTERN -> SR.GetString("Parser.TOKEN.EXTERN")
+                | Parser.TOKEN_INTERFACE -> SR.GetString("Parser.TOKEN.INTERFACE")
+                | Parser.TOKEN_REC -> SR.GetString("Parser.TOKEN.REC")
+                | Parser.TOKEN_TO -> SR.GetString("Parser.TOKEN.TO")
+                | Parser.TOKEN_TRUE -> SR.GetString("Parser.TOKEN.TRUE")
+                | Parser.TOKEN_TRY -> SR.GetString("Parser.TOKEN.TRY")
                 | Parser.TOKEN_TYPE
                 | Parser.TOKEN_TYPE_COMING_SOON
-                | Parser.TOKEN_TYPE_IS_HERE -> SR.GetString ("Parser.TOKEN.TYPE")
-                | Parser.TOKEN_VAL -> SR.GetString ("Parser.TOKEN.VAL")
-                | Parser.TOKEN_INLINE -> SR.GetString ("Parser.TOKEN.INLINE")
-                | Parser.TOKEN_WHEN -> SR.GetString ("Parser.TOKEN.WHEN")
-                | Parser.TOKEN_WHILE -> SR.GetString ("Parser.TOKEN.WHILE")
-                | Parser.TOKEN_WITH -> SR.GetString ("Parser.TOKEN.WITH")
-                | Parser.TOKEN_IF -> SR.GetString ("Parser.TOKEN.IF")
-                | Parser.TOKEN_DO -> SR.GetString ("Parser.TOKEN.DO")
-                | Parser.TOKEN_GLOBAL -> SR.GetString ("Parser.TOKEN.GLOBAL")
-                | Parser.TOKEN_DONE -> SR.GetString ("Parser.TOKEN.DONE")
+                | Parser.TOKEN_TYPE_IS_HERE -> SR.GetString("Parser.TOKEN.TYPE")
+                | Parser.TOKEN_VAL -> SR.GetString("Parser.TOKEN.VAL")
+                | Parser.TOKEN_INLINE -> SR.GetString("Parser.TOKEN.INLINE")
+                | Parser.TOKEN_WHEN -> SR.GetString("Parser.TOKEN.WHEN")
+                | Parser.TOKEN_WHILE -> SR.GetString("Parser.TOKEN.WHILE")
+                | Parser.TOKEN_WITH -> SR.GetString("Parser.TOKEN.WITH")
+                | Parser.TOKEN_IF -> SR.GetString("Parser.TOKEN.IF")
+                | Parser.TOKEN_DO -> SR.GetString("Parser.TOKEN.DO")
+                | Parser.TOKEN_GLOBAL -> SR.GetString("Parser.TOKEN.GLOBAL")
+                | Parser.TOKEN_DONE -> SR.GetString("Parser.TOKEN.DONE")
                 | Parser.TOKEN_IN
-                | Parser.TOKEN_JOIN_IN -> SR.GetString ("Parser.TOKEN.IN")
-                | Parser.TOKEN_HIGH_PRECEDENCE_PAREN_APP -> SR.GetString ("Parser.TOKEN.HIGH.PRECEDENCE.PAREN.APP")
-                | Parser.TOKEN_HIGH_PRECEDENCE_BRACK_APP -> SR.GetString ("Parser.TOKEN.HIGH.PRECEDENCE.BRACK.APP")
-                | Parser.TOKEN_BEGIN -> SR.GetString ("Parser.TOKEN.BEGIN")
-                | Parser.TOKEN_END -> SR.GetString ("Parser.TOKEN.END")
+                | Parser.TOKEN_JOIN_IN -> SR.GetString("Parser.TOKEN.IN")
+                | Parser.TOKEN_HIGH_PRECEDENCE_PAREN_APP -> SR.GetString("Parser.TOKEN.HIGH.PRECEDENCE.PAREN.APP")
+                | Parser.TOKEN_HIGH_PRECEDENCE_BRACK_APP -> SR.GetString("Parser.TOKEN.HIGH.PRECEDENCE.BRACK.APP")
+                | Parser.TOKEN_BEGIN -> SR.GetString("Parser.TOKEN.BEGIN")
+                | Parser.TOKEN_END -> SR.GetString("Parser.TOKEN.END")
                 | Parser.TOKEN_HASH_LIGHT
                 | Parser.TOKEN_HASH_LINE
                 | Parser.TOKEN_HASH_IF
                 | Parser.TOKEN_HASH_ELSE
-                | Parser.TOKEN_HASH_ENDIF -> SR.GetString ("Parser.TOKEN.HASH.ENDIF")
-                | Parser.TOKEN_INACTIVECODE -> SR.GetString ("Parser.TOKEN.INACTIVECODE")
-                | Parser.TOKEN_LEX_FAILURE -> SR.GetString ("Parser.TOKEN.LEX.FAILURE")
-                | Parser.TOKEN_WHITESPACE -> SR.GetString ("Parser.TOKEN.WHITESPACE")
-                | Parser.TOKEN_COMMENT -> SR.GetString ("Parser.TOKEN.COMMENT")
-                | Parser.TOKEN_LINE_COMMENT -> SR.GetString ("Parser.TOKEN.LINE.COMMENT")
-                | Parser.TOKEN_STRING_TEXT -> SR.GetString ("Parser.TOKEN.STRING.TEXT")
-                | Parser.TOKEN_BYTEARRAY -> SR.GetString ("Parser.TOKEN.BYTEARRAY")
-                | Parser.TOKEN_STRING -> SR.GetString ("Parser.TOKEN.STRING")
-                | Parser.TOKEN_KEYWORD_STRING -> SR.GetString ("Parser.TOKEN.KEYWORD_STRING")
-                | Parser.TOKEN_EOF -> SR.GetString ("Parser.TOKEN.EOF")
-                | Parser.TOKEN_CONST -> SR.GetString ("Parser.TOKEN.CONST")
-                | Parser.TOKEN_FIXED -> SR.GetString ("Parser.TOKEN.FIXED")
-                | Parser.TOKEN_INTERP_STRING_BEGIN_END -> SR.GetString ("Parser.TOKEN.INTERP.STRING.BEGIN.END")
-                | Parser.TOKEN_INTERP_STRING_BEGIN_PART -> SR.GetString ("Parser.TOKEN.INTERP.STRING.BEGIN.PART")
-                | Parser.TOKEN_INTERP_STRING_PART -> SR.GetString ("Parser.TOKEN.INTERP.STRING.PART")
-                | Parser.TOKEN_INTERP_STRING_END -> SR.GetString ("Parser.TOKEN.INTERP.STRING.END")
+                | Parser.TOKEN_HASH_ENDIF -> SR.GetString("Parser.TOKEN.HASH.ENDIF")
+                | Parser.TOKEN_INACTIVECODE -> SR.GetString("Parser.TOKEN.INACTIVECODE")
+                | Parser.TOKEN_LEX_FAILURE -> SR.GetString("Parser.TOKEN.LEX.FAILURE")
+                | Parser.TOKEN_WHITESPACE -> SR.GetString("Parser.TOKEN.WHITESPACE")
+                | Parser.TOKEN_COMMENT -> SR.GetString("Parser.TOKEN.COMMENT")
+                | Parser.TOKEN_LINE_COMMENT -> SR.GetString("Parser.TOKEN.LINE.COMMENT")
+                | Parser.TOKEN_STRING_TEXT -> SR.GetString("Parser.TOKEN.STRING.TEXT")
+                | Parser.TOKEN_BYTEARRAY -> SR.GetString("Parser.TOKEN.BYTEARRAY")
+                | Parser.TOKEN_STRING -> SR.GetString("Parser.TOKEN.STRING")
+                | Parser.TOKEN_KEYWORD_STRING -> SR.GetString("Parser.TOKEN.KEYWORD_STRING")
+                | Parser.TOKEN_EOF -> SR.GetString("Parser.TOKEN.EOF")
+                | Parser.TOKEN_CONST -> SR.GetString("Parser.TOKEN.CONST")
+                | Parser.TOKEN_FIXED -> SR.GetString("Parser.TOKEN.FIXED")
+                | Parser.TOKEN_INTERP_STRING_BEGIN_END -> SR.GetString("Parser.TOKEN.INTERP.STRING.BEGIN.END")
+                | Parser.TOKEN_INTERP_STRING_BEGIN_PART -> SR.GetString("Parser.TOKEN.INTERP.STRING.BEGIN.PART")
+                | Parser.TOKEN_INTERP_STRING_PART -> SR.GetString("Parser.TOKEN.INTERP.STRING.PART")
+                | Parser.TOKEN_INTERP_STRING_END -> SR.GetString("Parser.TOKEN.INTERP.STRING.END")
                 | unknown ->
                     Debug.Assert(false, "unknown token tag")
                     let result = sprintf "%+A" unknown
@@ -1677,8 +1669,7 @@ type Exception with
             Debug.Assert(false, sprintf "Unexpected exception seen in compiler: %s\n%s" s (exn.ToString()))
 #endif
 
-        | WrappedError (e, _) ->
-            e.Output (os, canSuggestNames)
+        | WrappedError (e, _) -> e.Output(os, canSuggestNames)
 
         | PatternMatchCompilation.MatchIncomplete (isComp, cexOpt, _) ->
             os.AppendString(MatchIncomplete1E().Format)
@@ -1835,15 +1826,15 @@ type Exception with
         | HashLoadedSourceHasIssues (infos, warnings, errors, _) ->
 
             match warnings, errors with
-            | _, e::_ ->
+            | _, e :: _ ->
                 os.AppendString(HashLoadedSourceHasIssues2E().Format)
-                e.Output (os, canSuggestNames)
-            | e::_, _ ->
+                e.Output(os, canSuggestNames)
+            | e :: _, _ ->
                 os.AppendString(HashLoadedSourceHasIssues1E().Format)
-                e.Output (os, canSuggestNames)
-            | [], [] -> 
+                e.Output(os, canSuggestNames)
+            | [], [] ->
                 os.AppendString(HashLoadedSourceHasIssues0E().Format)
-                infos.Head.Output (os, canSuggestNames)
+                infos.Head.Output(os, canSuggestNames)
 
         | HashLoadedScriptConsideredSource _ -> os.AppendString(HashLoadedScriptConsideredSourceE().Format)
 
@@ -1859,8 +1850,7 @@ type Exception with
         | MSBuildReferenceResolutionError (code, message, _) -> os.AppendString(MSBuildReferenceResolutionErrorE().Format message code)
 
         // Strip TargetInvocationException wrappers
-        | :? TargetInvocationException as exn ->
-            exn.InnerException.Output (os, canSuggestNames)
+        | :? TargetInvocationException as exn -> exn.InnerException.Output(os, canSuggestNames)
 
         | :? FileNotFoundException as exn -> Printf.bprintf os "%s" exn.Message
 
@@ -1887,7 +1877,7 @@ type Exception with
 type PhasedDiagnostic with
 
     // remove any newlines and tabs
-    member x.OutputCore (os: StringBuilder, flattenErrors: bool, suggestNames: bool) =
+    member x.OutputCore(os: StringBuilder, flattenErrors: bool, suggestNames: bool) =
         let buf = StringBuilder()
 
         x.Exception.Output(buf, suggestNames)
@@ -1900,15 +1890,15 @@ type PhasedDiagnostic with
 
         os.AppendString text
 
-    member x.FormatCore (flattenErrors: bool, suggestNames: bool) =
+    member x.FormatCore(flattenErrors: bool, suggestNames: bool) =
         let os = StringBuilder()
         x.OutputCore(os, flattenErrors, suggestNames)
         os.ToString()
 
-    member x.EagerlyFormatCore (flattenErrors: bool, suggestNames: bool) =
+    member x.EagerlyFormatCore(flattenErrors: bool, suggestNames: bool) =
         match x.Range with
         | Some m ->
-            let message = x.FormatCore (flattenErrors, suggestNames)
+            let message = x.FormatCore(flattenErrors, suggestNames)
             let exn = DiagnosticWithText(x.Number, message, m)
             { Exception = exn; Phase = x.Phase }
         | None -> x
@@ -2034,13 +2024,7 @@ let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocatio
         }
 
 /// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
-let CollectFormattedDiagnostics
-    (
-        tcConfig: TcConfig,
-        severity: FSharpDiagnosticSeverity,
-        diagnostic: PhasedDiagnostic,
-        suggestNames: bool
-    ) =
+let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticSeverity, diagnostic: PhasedDiagnostic, suggestNames: bool) =
 
     match diagnostic.Exception with
     | ReportedError _ ->
@@ -2052,16 +2036,15 @@ let CollectFormattedDiagnostics
     | _ ->
         let errors = ResizeArray()
 
-        let report (diagnostic: PhasedDiagnostic)  =
+        let report (diagnostic: PhasedDiagnostic) =
             let where =
                 match diagnostic.Range with
-                | Some m ->
-                    FormatDiagnosticLocation tcConfig m
-                    |> Some
+                | Some m -> FormatDiagnosticLocation tcConfig m |> Some
                 | None -> None
 
             let subcategory = diagnostic.Subcategory()
             let errorNumber = diagnostic.Number
+
             let message =
                 match severity with
                 | FSharpDiagnosticSeverity.Error -> "error"
@@ -2075,14 +2058,14 @@ let CollectFormattedDiagnostics
                 | DiagnosticStyle.VisualStudio -> sprintf "%s %s FS%04d: " subcategory message errorNumber
                 | _ -> sprintf "%s FS%04d: " message errorNumber
 
-            let canonical : FormattedDiagnosticCanonicalInformation =
+            let canonical: FormattedDiagnosticCanonicalInformation =
                 {
                     ErrorNumber = errorNumber
                     Subcategory = subcategory
                     TextRepresentation = text
                 }
 
-            let message = diagnostic.FormatCore (tcConfig.flatErrors, suggestNames)
+            let message = diagnostic.FormatCore(tcConfig.flatErrors, suggestNames)
 
             let entry: FormattedDiagnosticDetailedInfo =
                 {
@@ -2095,8 +2078,7 @@ let CollectFormattedDiagnostics
 
         match diagnostic.Exception with
 #if !NO_TYPEPROVIDERS
-        | :? TypeProviderError as tpe ->
-            tpe.Iter(fun exn -> report { diagnostic with Exception = exn })
+        | :? TypeProviderError as tpe -> tpe.Iter(fun exn -> report { diagnostic with Exception = exn })
 #endif
         | _ -> report diagnostic
 
@@ -2106,11 +2088,10 @@ type PhasedDiagnostic with
 
     /// used by fsc.exe and fsi.exe, but not by VS
     /// prints error and related errors to the specified StringBuilder
-    member diagnostic.Output (buf, tcConfig: TcConfig, severity) =
+    member diagnostic.Output(buf, tcConfig: TcConfig, severity) =
 
         // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
-        let diagnostics =
-            CollectFormattedDiagnostics(tcConfig, severity, diagnostic, true)
+        let diagnostics = CollectFormattedDiagnostics(tcConfig, severity, diagnostic, true)
 
         for e in diagnostics do
             Printf.bprintf buf "\n"
@@ -2125,7 +2106,7 @@ type PhasedDiagnostic with
                 buf.AppendString details.Canonical.TextRepresentation
                 buf.AppendString details.Message
 
-    member diagnostic.OutputContext (buf, prefix, fileLineFunction) =
+    member diagnostic.OutputContext(buf, prefix, fileLineFunction) =
         match diagnostic.Range with
         | None -> ()
         | Some m ->
@@ -2141,11 +2122,10 @@ type PhasedDiagnostic with
                 Printf.bprintf buf "%s%s\n" prefix line
                 Printf.bprintf buf "%s%s%s\n" prefix (String.make iA '-') (String.make iLen '^')
 
-    member diagnostic.WriteWithContext (os, prefix, fileLineFunction, tcConfig, severity) =
+    member diagnostic.WriteWithContext(os, prefix, fileLineFunction, tcConfig, severity) =
         writeViaBuffer os (fun buf ->
-            diagnostic.OutputContext (buf, prefix, fileLineFunction)
-            diagnostic.Output (buf, tcConfig, severity)
-        )
+            diagnostic.OutputContext(buf, prefix, fileLineFunction)
+            diagnostic.Output(buf, tcConfig, severity))
 
 //----------------------------------------------------------------------------
 // Scoped #nowarn pragmas
@@ -2187,11 +2167,11 @@ type DiagnosticsLoggerFilteringByScopedPragmas
                 | None -> true
 
             if report then
-                if diagnostic.ReportAsError (diagnosticOptions, severity) then
+                if diagnostic.ReportAsError(diagnosticOptions, severity) then
                     diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Error)
-                elif diagnostic.ReportAsWarning (diagnosticOptions, severity) then
+                elif diagnostic.ReportAsWarning(diagnosticOptions, severity) then
                     diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Warning)
-                elif diagnostic.ReportAsInfo (diagnosticOptions, severity) then
+                elif diagnostic.ReportAsInfo(diagnosticOptions, severity) then
                     diagnosticsLogger.DiagnosticSink(diagnostic, severity)
 
     override _.ErrorCount = diagnosticsLogger.ErrorCount

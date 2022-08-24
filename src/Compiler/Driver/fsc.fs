@@ -77,7 +77,8 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
 
     override x.DiagnosticSink(diagnostic, severity) =
         let tcConfig = TcConfig.Create(tcConfigB, validate = false)
-        if diagnostic.ReportAsError (tcConfig.diagnosticsOptions, severity) then
+
+        if diagnostic.ReportAsError(tcConfig.diagnosticsOptions, severity) then
             if errors >= tcConfig.maxErrors then
                 x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors ())
                 exiter.Exit 1
@@ -93,10 +94,10 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
                 Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (diagnostic.Exception.ToString()))
             | _ -> ()
 
-        elif diagnostic.ReportAsWarning (tcConfig.diagnosticsOptions, severity) then
+        elif diagnostic.ReportAsWarning(tcConfig.diagnosticsOptions, severity) then
             x.HandleIssue(tcConfig, diagnostic, FSharpDiagnosticSeverity.Warning)
 
-        elif diagnostic.ReportAsInfo (tcConfig.diagnosticsOptions, severity) then
+        elif diagnostic.ReportAsInfo(tcConfig.diagnosticsOptions, severity) then
             x.HandleIssue(tcConfig, diagnostic, severity)
 
 /// Create an error logger that counts and prints errors
@@ -108,13 +109,7 @@ let ConsoleDiagnosticsLogger (tcConfigB: TcConfigBuilder, exiter: Exiter) =
 
         member _.HandleIssue(tcConfig, diagnostic, severity) =
             DoWithDiagnosticColor severity (fun () ->
-                writeViaBuffer stderr (fun buf ->
-                    diagnostic.Output(
-                        buf,
-                        tcConfig,
-                        severity
-                    )
-                )
+                writeViaBuffer stderr (fun buf -> diagnostic.Output(buf, tcConfig, severity))
                 stderr.WriteLine())
     }
     :> DiagnosticsLogger
@@ -169,7 +164,7 @@ let TypeCheck
             GetInitialTcState(rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, tcEnv0, openDecls0)
 
         let eagerFormat (diag: PhasedDiagnostic) =
-            diag.EagerlyFormatCore (tcConfig.flatErrors, true)
+            diag.EagerlyFormatCore(tcConfig.flatErrors, true)
 
         CheckClosedInputSet(
             ctok,
@@ -340,6 +335,7 @@ module InterfaceFileWriter =
                 NicePrint.layoutImpliedSignatureOfModuleOrNamespace true denv infoReader AccessibleFromSomewhere range0 mexpr
                 |> Display.squashTo 80
                 |> LayoutRender.showL
+
             Printf.fprintf os "%s\n\n" text
 
         let writeHeader filePath os =

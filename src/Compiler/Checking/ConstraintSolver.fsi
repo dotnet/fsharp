@@ -170,7 +170,13 @@ exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * 
 
 exception ConstraintSolverError of string * range * range
 
-exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * error: exn * range: range
+exception ErrorFromApplyingDefault of
+    tcGlobals: TcGlobals *
+    displayEnv: DisplayEnv *
+    Typar *
+    TType *
+    error: exn *
+    range: range
 
 exception ErrorFromAddingTypeEquation of
     tcGlobals: TcGlobals *
