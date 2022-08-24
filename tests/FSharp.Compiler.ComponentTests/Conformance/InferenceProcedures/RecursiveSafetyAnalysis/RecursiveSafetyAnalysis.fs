@@ -25,7 +25,7 @@ module RecursiveSafetyAnalysis =
         |> shouldFail
         |> withDiagnostics [
             (Error 953, Line 6, Col 6, Line 6, Col 15, "This type definition involves an immediate cyclic reference through an abbreviation")
-            (Error 1, Line 8, Col 25, Line 8, Col 34, "This expression was expected to have type    'bogusType'    but here has type    'Map<'a,'b>'")
+            (Error 1, Line 8, Col 25, Line 8, Col 34, "This expression was expected to have type\n    'bogusType'    \nbut here has type\n    'Map<'a,'b>'    ")
         ]
 
     // SOURCE=E_DuplicateRecursiveRecords.fs SCFLAGS="--test:ErrorRanges"          # E_DuplicateRecursiveRecords.fs
