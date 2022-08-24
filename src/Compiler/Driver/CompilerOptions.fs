@@ -158,12 +158,15 @@ let getCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOpti
     let _ = sb.Append $"{nl}"
     sb.ToString()
 
-let PrintPublicOptions (heading, opts) printer =
+let GetPublicOptions (heading, opts) =
+    let sb = StringBuilder()
     if not (isNil opts) then
-        printer $"{nl}"
-        printer $"{nl}"
-        printer $"\t\t{heading}{nl}"
-        List.iter (getCompilerOption >> printer) opts
+        let _ = sb.Append $"{nl}"
+        let _ = sb.Append $"{nl}"
+        let _ = sb.Append $"\t\t{heading}{nl}"
+        opts |> List.map getCompilerOption |> List.iter (sb.Append >> ignore)
+        sb.ToString()
+    else ""
 
 let PrintCompilerOptionBlocks blocks printer =
     let publicBlocks =
@@ -179,7 +182,7 @@ let PrintCompilerOptionBlocks blocks printer =
             let headingOptions =
                 publicBlocks |> List.filter (fun (h2, _) -> heading = h2) |> List.collect snd
 
-            PrintPublicOptions (heading, headingOptions) printer
+            printer (GetPublicOptions (heading, headingOptions))
             Set.add heading doneHeadings
 
     List.fold consider Set.empty publicBlocks |> ignore<Set<string>>
