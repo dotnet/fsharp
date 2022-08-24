@@ -13,9 +13,9 @@
   </PropertyGroup>
 
   <!--  The FSharp.DependencyManager.Nuget dll does not provide a referencable public interface although it's used for testing -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+  <!-- <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
       <CompressMetadata>true</CompressMetadata>
-  </PropertyGroup>
+  </PropertyGroup> -->
 
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
     <PropertyGroup>

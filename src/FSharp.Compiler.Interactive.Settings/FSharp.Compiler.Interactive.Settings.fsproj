@@ -10,9 +10,9 @@
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Interactive.Settings dll provides a referencable public interface to tool builders  -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+  <!-- <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
       <CompressMetadata>true</CompressMetadata>
-  </PropertyGroup>
+  </PropertyGroup> -->
 
   <ItemGroup>
     <InternalsVisibleTo Include="fsi" />

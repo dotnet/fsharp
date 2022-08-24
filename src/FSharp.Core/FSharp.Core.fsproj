@@ -40,9 +40,9 @@
   </PropertyGroup>
 
   <!--  The FSharp.Core dll provides a referencable public interface -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(CompressAllMetadata)' != 'true'">
+  <!-- <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(CompressAllMetadata)' != 'true'">
       <CompressMetadata>true</CompressMetadata>
-  </PropertyGroup>
+  </PropertyGroup> -->
 
   <ItemGroup>
     <EmbeddedResource Update="FSCore.resx">

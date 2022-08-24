@@ -25,9 +25,9 @@
   </PropertyGroup>
 
   <!--  The fsi application does not provide a referencable public interface  -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+  <!-- <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
       <CompressMetadata>true</CompressMetadata>
-  </PropertyGroup>
+  </PropertyGroup> -->
 
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)console.fs" />

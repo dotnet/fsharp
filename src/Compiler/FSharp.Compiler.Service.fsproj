@@ -28,9 +28,9 @@
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Service dll provides a referencable public interface for tool builders -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+  <!-- <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
       <CompressMetadata>true</CompressMetadata>
-  </PropertyGroup>
+  </PropertyGroup> -->
 
   <PropertyGroup>
     <FsYaccOutputFolder>$(IntermediateOutputPath)$(TargetFramework)\</FsYaccOutputFolder>

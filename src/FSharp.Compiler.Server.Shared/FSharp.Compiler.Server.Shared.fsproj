@@ -9,9 +9,9 @@
   </PropertyGroup>
 
   <!--  The FSharp.Compiler.Server.Shared dll does not provide a referencable public interface  -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+  <!-- <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
       <CompressMetadata>true</CompressMetadata>
-  </PropertyGroup>
+  </PropertyGroup> -->
 
   <ItemGroup>
     <InternalsVisibleTo Include="fsi" />
