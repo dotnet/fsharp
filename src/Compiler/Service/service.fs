@@ -85,15 +85,11 @@ module CompileHelpers =
     let mkCompilationDiagnosticsHandlers () =
         let diagnostics = ResizeArray<_>()
 
-        let diagnosticSink isError exn =
-            let diag = StripRelatedDiagnostics exn
-
-            diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, range0, true)) // Suggest names for errors
-
         let diagnosticsLogger =
             { new DiagnosticsLogger("CompileAPI") with
 
-                member _.DiagnosticSink(exn, isError) = diagnosticSink isError exn
+                member _.DiagnosticSink(diag, isError) =
+                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, range0, true)) // Suggest names for errors
 
                 member _.ErrorCount =
                     diagnostics

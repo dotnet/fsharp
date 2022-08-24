@@ -190,8 +190,6 @@ module DiagnosticHelpers =
              ReportDiagnosticAsWarning options (diagnostic, severity) ||
              ReportDiagnosticAsInfo options (diagnostic, severity) then 
 
-            let diagnostic = StripRelatedDiagnostics diagnostic 
-
             // We use the first line of the file as a fallbackRange for reporting unexpected errors.
             // Not ideal, but it's hard to see what else to do.
             let fallbackRange = rangeN mainInputFileName 1
