@@ -4,7 +4,7 @@ module FSharp.Compiler.Service.Tests.VisualStudioVersusConsoleContextTests
 
 open NUnit.Framework
 open FSharp.Compiler.CompilerOptions
-open Tests.TestHelpers
+open TestDoubles
 
 // copypasted from the CompilerOptions code,
 // not worth changing that code's accessibility just for this test

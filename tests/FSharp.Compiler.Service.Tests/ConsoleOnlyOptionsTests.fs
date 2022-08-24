@@ -6,7 +6,7 @@ open System
 open System.IO
 open FSharp.Compiler.CompilerOptions
 open NUnit.Framework
-open Tests.TestHelpers
+open TestDoubles
 
 [<Test>]
 let ``Help is displayed correctly`` () =
