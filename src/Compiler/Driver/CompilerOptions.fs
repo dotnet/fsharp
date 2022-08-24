@@ -1997,8 +1997,6 @@ let GetHelpFsc tcConfigB (blocks: CompilerOptionBlock list) =
 let GetVersion tcConfigB =
     $"{tcConfigB.productNameForBannerText}{nl}"
 
-let displayHelpFsc config blocks = GetHelpFsc config blocks |> Console.Write
-
 let miscFlagsBoth tcConfigB =
     [
         CompilerOption("nologo", tagNone, OptionUnit(fun () -> tcConfigB.showBanner <- false), None, Some(FSComp.SR.optsNologo ()))
@@ -2008,7 +2006,7 @@ let miscFlagsBoth tcConfigB =
 let miscFlagsFsc tcConfigB =
     miscFlagsBoth tcConfigB
     @ [
-        CompilerOption("help", tagNone, OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks; exit 0), None, Some(FSComp.SR.optsHelp ()))
+        CompilerOption("help", tagNone, OptionConsoleOnly(fun blocks -> Console.Write (GetHelpFsc tcConfigB blocks); exit 0), None, Some(FSComp.SR.optsHelp ()))
         CompilerOption("@<file>", tagNone, OptionUnit ignore, None, Some(FSComp.SR.optsResponseFile ()))
     ]
 
@@ -2064,7 +2062,7 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "?",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks; exit 0),
+            OptionConsoleOnly(fun blocks -> Console.Write (GetHelpFsc tcConfigB blocks); exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2072,7 +2070,7 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "help",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks; exit 0),
+            OptionConsoleOnly(fun blocks -> Console.Write (GetHelpFsc tcConfigB blocks); exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2080,7 +2078,7 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "full-help",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks; exit 0),
+            OptionConsoleOnly(fun blocks -> Console.Write (GetHelpFsc tcConfigB blocks); exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
