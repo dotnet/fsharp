@@ -12,13 +12,13 @@
         "Microsoft.VisualStudio.Component.FSharp"
       ]
     },
-    "xcopy-msbuild": "17.1.0"
+    "xcopy-msbuild": "17.2.1"
   },
   "native-tools": {
     "perl": "5.32.1.1"
   },
   "msbuild-sdks": {
     "Microsoft.DotNet.Arcade.Sdk": "7.0.0-beta.22423.2",
-    "Microsoft.DotNet.Helix.Sdk": "7.0.0-beta.22411.2"
+    "Microsoft.DotNet.Helix.Sdk": "7.0.0-beta.22423.2"
   }
 }
