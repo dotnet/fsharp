@@ -24,6 +24,11 @@
     <DefineConstants>$(DefineConstants);FSI_SHADOW_COPY_REFERENCES;FSI_SERVER</DefineConstants>
   </PropertyGroup>
 
+  <!--  The fsi application does not provide a referencable public interface  -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <CompressMetadata>true</CompressMetadata>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)console.fs" />
     <Compile Include="$(MSBuildThisFileDirectory)fsimain.fs" />
