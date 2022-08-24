@@ -1972,20 +1972,20 @@ let deprecatedFlagsFsc tcConfigB =
 // OptionBlock: Miscellaneous options
 //-----------------------------------
 
-let DisplayBannerText tcConfigB print =
+let DisplayBannerText tcConfigB printer =
     if tcConfigB.showBanner then
-        (print $"{tcConfigB.productNameForBannerText}\n"
-         print $"{FSComp.SR.optsCopyright ()}\n")
+        (printer $"{tcConfigB.productNameForBannerText}\n"
+         printer $"{FSComp.SR.optsCopyright ()}\n")
 
 /// FSC only help. (FSI has it's own help function).
-let DisplayHelpFsc print exit tcConfigB (blocks: CompilerOptionBlock list) =
-    DisplayBannerText tcConfigB print
-    PrintCompilerOptionBlocks blocks print
-    exit ()
+let DisplayHelpFsc printer exiter tcConfigB (blocks: CompilerOptionBlock list) =
+    DisplayBannerText tcConfigB printer
+    PrintCompilerOptionBlocks blocks printer
+    exiter ()
 
-let DisplayVersion print exit tcConfigB =
-    print $"{tcConfigB.productNameForBannerText}\n"
-    exit ()
+let DisplayVersion printer exiter tcConfigB =
+    printer $"{tcConfigB.productNameForBannerText}\n"
+    exiter ()
 
 let displayHelpFsc = DisplayHelpFsc Console.Write (fun () -> exit 0)
 
