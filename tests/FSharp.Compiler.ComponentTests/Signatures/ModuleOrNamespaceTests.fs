@@ -5,7 +5,7 @@ open Xunit
 open FsUnit
 open FSharp.Test.Compiler
 
-let inline private prependNewline v = String.Concat("\n", v)
+let private prependNewline v = String.Concat("\n", v)
 
 let equal x =
     let x =
