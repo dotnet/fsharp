@@ -10,7 +10,6 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\cliversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\codepage
 CompilerOptions01,NoMT				CompilerOptions\fsc\crossoptimize
 CompilerOptions01,NoMT				CompilerOptions\fsc\debug
-CompilerOptions01,NoMT				CompilerOptions\fsc\dumpAllCommandLineOptions
 CompilerOptions01,NoMT				CompilerOptions\fsc\flaterrors
 CompilerOptions02,NoMT				CompilerOptions\fsc\gccerrors
 CompilerOptions01,NoMT,help				CompilerOptions\fsc\help
