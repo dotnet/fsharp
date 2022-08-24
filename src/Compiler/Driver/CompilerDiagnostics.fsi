@@ -11,8 +11,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 
 #if DEBUG
-module internal CompilerService =
-    val showAssertForUnexpectedException: bool ref
+val showAssertForUnexpectedException: bool ref
 
 /// For extra diagnostics
 val mutable showParserStackOnParseError: bool
@@ -62,13 +61,13 @@ type PhasedDiagnostic with
     /// Format the core of the diagnostic as a string. Doesn't include the range information.
     member FormatCore: flattenErrors: bool * suggestNames: bool -> string
 
-    /// Indicates if we should report a diagnostic as a warning
+    /// Indicates if a diagnostic should be reported as an informational
     member ReportAsInfo: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
 
-    /// Indicates if we should report a diagnostic as a warning
+    /// Indicates if a diagnostic should be reported as a warning
     member ReportAsWarning: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
 
-    /// Indicates if we should report a warning as an error
+    /// Indicates if a diagnostic should be reported as an error
     member ReportAsError: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
 
     /// Output all of a diagnostic to a buffer, including range
@@ -87,7 +86,7 @@ type PhasedDiagnostic with
         severity: FSharpDiagnosticSeverity ->
             unit
 
-/// Get an error logger that filters the reporting of warnings based on scoped pragma information
+/// Get a diagnostics logger that filters the reporting of warnings based on scoped pragma information
 val GetDiagnosticsLoggerFilteringByScopedPragmas:
     checkFile: bool *
     scopedPragmas: ScopedPragma list *
@@ -95,6 +94,7 @@ val GetDiagnosticsLoggerFilteringByScopedPragmas:
     diagnosticsLogger: DiagnosticsLogger ->
         DiagnosticsLogger
 
+/// Remove 'implicitIncludeDir' from a file name before output
 val SanitizeFileName: fileName: string -> implicitIncludeDir: string -> string
 
 /// Used internally and in LegacyHostedCompilerForTesting
