@@ -164,7 +164,7 @@ let TypeCheck
             GetInitialTcState(rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, tcEnv0, openDecls0)
 
         let eagerFormat (diag: PhasedDiagnostic) =
-            diag.EagerlyFormatCore(tcConfig.flatErrors, true)
+            diag.EagerlyFormatCore true
 
         CheckClosedInputSet(
             ctok,

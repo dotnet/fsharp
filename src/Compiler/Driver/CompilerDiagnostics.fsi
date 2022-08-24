@@ -56,7 +56,7 @@ type PhasedDiagnostic with
     member Number: int
 
     /// Eagerly format a PhasedDiagnostic return as a new PhasedDiagnostic requiring no formatting of types.
-    member EagerlyFormatCore: flattenErrors: bool * suggestNames: bool -> PhasedDiagnostic
+    member EagerlyFormatCore: suggestNames: bool -> PhasedDiagnostic
 
     /// Format the core of the diagnostic as a string. Doesn't include the range information.
     member FormatCore: flattenErrors: bool * suggestNames: bool -> string

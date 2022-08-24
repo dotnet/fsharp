@@ -1671,7 +1671,7 @@ type internal FsiDynamicCompiler(
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
         let eagerFormat (diag: PhasedDiagnostic) =
-            diag.EagerlyFormatCore (tcConfig.flatErrors, true)
+            diag.EagerlyFormatCore true
 
         // Typecheck. The lock stops the type checker running at the same time as the
         // server intellisense implementation (which is currently incomplete and #if disabled)

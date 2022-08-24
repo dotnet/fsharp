@@ -599,8 +599,8 @@ let (|InvalidArgument|_|) (exn: exn) =
     | :? ArgumentException as e -> Some e.Message
     | _ -> None
 
-let OutputNameSuggestions (os: StringBuilder) canSuggestNames suggestionsF idText =
-    if canSuggestNames then
+let OutputNameSuggestions (os: StringBuilder) suggestNames suggestionsF idText =
+    if suggestNames then
         let buffer = DiagnosticResolutionHints.SuggestionBuffer idText
 
         if not buffer.Disabled then
@@ -617,7 +617,7 @@ let OutputNameSuggestions (os: StringBuilder) canSuggestNames suggestionsF idTex
 
 type Exception with
 
-    member exn.Output(os: StringBuilder, canSuggestNames) =
+    member exn.Output(os: StringBuilder, suggestNames) =
 
         match exn with
         | ConstraintSolverTupleDiffLengths (_, tl1, tl2, m, m2) ->
@@ -730,11 +730,11 @@ type Exception with
              | ContextInfo.NoContext -> false
              | _ -> true)
             ->
-            e.Output(os, canSuggestNames)
+            e.Output(os, suggestNames)
 
-        | ErrorFromAddingTypeEquation(error = ConstraintSolverTypesNotInSubsumptionRelation _ as e) -> e.Output(os, canSuggestNames)
+        | ErrorFromAddingTypeEquation(error = ConstraintSolverTypesNotInSubsumptionRelation _ as e) -> e.Output(os, suggestNames)
 
-        | ErrorFromAddingTypeEquation(error = ConstraintSolverError _ as e) -> e.Output(os, canSuggestNames)
+        | ErrorFromAddingTypeEquation(error = ConstraintSolverError _ as e) -> e.Output(os, suggestNames)
 
         | ErrorFromAddingTypeEquation (g, denv, ty1, ty2, e, _) ->
             if not (typeEquiv g ty1 ty2) then
@@ -743,12 +743,12 @@ type Exception with
                 if ty1 <> ty2 + tpcs then
                     os.AppendString(ErrorFromAddingTypeEquation2E().Format ty1 ty2 tpcs)
 
-            e.Output(os, canSuggestNames)
+            e.Output(os, suggestNames)
 
         | ErrorFromApplyingDefault (_, denv, _, defaultType, e, _) ->
             let defaultType = NicePrint.minimalStringOfType denv defaultType
             os.AppendString(ErrorFromApplyingDefault1E().Format defaultType)
-            e.Output(os, canSuggestNames)
+            e.Output(os, suggestNames)
             os.AppendString(ErrorFromApplyingDefault2E().Format)
 
         | ErrorsFromAddingSubsumptionConstraint (g, denv, ty1, ty2, e, contextInfo, _) ->
@@ -767,9 +767,9 @@ type Exception with
                     if ty1 <> (ty2 + tpcs) then
                         os.AppendString(ErrorsFromAddingSubsumptionConstraintE().Format ty2 ty1 tpcs)
                     else
-                        e.Output(os, canSuggestNames)
+                        e.Output(os, suggestNames)
                 else
-                    e.Output(os, canSuggestNames)
+                    e.Output(os, suggestNames)
 
         | UpperCaseIdentifierInPattern _ -> os.AppendString(UpperCaseIdentifierInPatternE().Format)
 
@@ -777,12 +777,12 @@ type Exception with
 
         | NotUpperCaseConstructorWithoutRQA _ -> os.AppendString(NotUpperCaseConstructorWithoutRQAE().Format)
 
-        | ErrorFromAddingConstraint (_, e, _) -> e.Output(os, canSuggestNames)
+        | ErrorFromAddingConstraint (_, e, _) -> e.Output(os, suggestNames)
 
 #if !NO_TYPEPROVIDERS
         | TypeProviders.ProvidedTypeResolutionNoRange e
 
-        | TypeProviders.ProvidedTypeResolution (_, e) -> e.Output(os, canSuggestNames)
+        | TypeProviders.ProvidedTypeResolution (_, e) -> e.Output(os, suggestNames)
 
         | :? TypeProviderError as e -> os.AppendString(e.ContextualErrorMessage)
 #endif
@@ -945,7 +945,7 @@ type Exception with
 
         | UndefinedName (_, k, id, suggestionsF) ->
             os.AppendString(k (ConvertValLogicalNameToDisplayNameCore id.idText))
-            OutputNameSuggestions os canSuggestNames suggestionsF id.idText
+            OutputNameSuggestions os suggestNames suggestionsF id.idText
 
         | InternalUndefinedItemRef (f, smr, ccuName, s) ->
             let _, errs = f (smr, ccuName, s)
@@ -1651,7 +1651,7 @@ type Exception with
 
         | DiagnosticWithSuggestions (_, s, _, idText, suggestionF) ->
             os.AppendString(ConvertValLogicalNameToDisplayNameCore s)
-            OutputNameSuggestions os canSuggestNames suggestionF idText
+            OutputNameSuggestions os suggestNames suggestionF idText
 
         | InternalError (s, _)
         | InvalidArgument s
@@ -1669,7 +1669,7 @@ type Exception with
             Debug.Assert(false, sprintf "Unexpected exception seen in compiler: %s\n%s" s (exn.ToString()))
 #endif
 
-        | WrappedError (e, _) -> e.Output(os, canSuggestNames)
+        | WrappedError (e, _) -> e.Output(os, suggestNames)
 
         | PatternMatchCompilation.MatchIncomplete (isComp, cexOpt, _) ->
             os.AppendString(MatchIncomplete1E().Format)
@@ -1828,13 +1828,13 @@ type Exception with
             match warnings, errors with
             | _, e :: _ ->
                 os.AppendString(HashLoadedSourceHasIssues2E().Format)
-                e.Output(os, canSuggestNames)
+                e.Output(os, suggestNames)
             | e :: _, _ ->
                 os.AppendString(HashLoadedSourceHasIssues1E().Format)
-                e.Output(os, canSuggestNames)
+                e.Output(os, suggestNames)
             | [], [] ->
                 os.AppendString(HashLoadedSourceHasIssues0E().Format)
-                infos.Head.Output(os, canSuggestNames)
+                infos.Head.Output(os, suggestNames)
 
         | HashLoadedScriptConsideredSource _ -> os.AppendString(HashLoadedScriptConsideredSourceE().Format)
 
@@ -1850,7 +1850,7 @@ type Exception with
         | MSBuildReferenceResolutionError (code, message, _) -> os.AppendString(MSBuildReferenceResolutionErrorE().Format message code)
 
         // Strip TargetInvocationException wrappers
-        | :? TargetInvocationException as exn -> exn.InnerException.Output(os, canSuggestNames)
+        | :? TargetInvocationException as exn -> exn.InnerException.Output(os, suggestNames)
 
         | :? FileNotFoundException as exn -> Printf.bprintf os "%s" exn.Message
 
@@ -1895,10 +1895,12 @@ type PhasedDiagnostic with
         x.OutputCore(os, flattenErrors, suggestNames)
         os.ToString()
 
-    member x.EagerlyFormatCore(flattenErrors: bool, suggestNames: bool) =
+    member x.EagerlyFormatCore(suggestNames: bool) =
         match x.Range with
         | Some m ->
-            let message = x.FormatCore(flattenErrors, suggestNames)
+            let buf = StringBuilder()
+            x.Exception.Output(buf, suggestNames)
+            let message = buf.ToString()
             let exn = DiagnosticWithText(x.Number, message, m)
             { Exception = exn; Phase = x.Phase }
         | None -> x
