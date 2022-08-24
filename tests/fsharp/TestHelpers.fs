@@ -1,7 +1,5 @@
 module Tests.TestHelpers
-
 open System.IO
-
 
 let assembleDiffMessage actual expected =
   
