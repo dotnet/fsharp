@@ -54,10 +54,7 @@ val ParseCompilerOptions: (string -> unit) * CompilerOptionBlock list * string l
 
 val GetBannerText: tcConfigB: TcConfigBuilder -> string
 
-val GetHelpFsc:
-    tcConfigB: TcConfigBuilder ->
-    blocks: CompilerOptionBlock list ->
-        string
+val GetHelpFsc: tcConfigB: TcConfigBuilder -> blocks: CompilerOptionBlock list -> string
 
 val GetVersion: tcConfigB: TcConfigBuilder -> string
 
