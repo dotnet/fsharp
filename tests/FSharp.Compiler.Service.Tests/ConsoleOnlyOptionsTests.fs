@@ -4,30 +4,13 @@ module FSharp.Compiler.Service.Tests.ConsoleOnlyOptionsTests
 
 open System
 open System.IO
-open FSharp.Compiler.Text
-open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerOptions
-open Internal.Utilities
 open NUnit.Framework
-
-// just a random thing to make things work
-let private getBuilder() =
-    TcConfigBuilder.CreateNew(
-        null,
-        FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value,
-        ReduceMemoryFlag.Yes,
-        Directory.GetCurrentDirectory(),
-        false,
-        false,
-        CopyFSharpCoreFlag.No,
-        (fun _ -> None),
-        None,
-        Range.Zero)
+open Tests.TestHelpers
 
 [<Test>]
 let ``Help is displayed correctly`` () =
-    let builder = getBuilder()
+    let builder = getArbitraryTcConfigBuilder()
     let blocks = GetCoreFscCompilerOptions builder
     let fileName = $"{Guid.NewGuid()}"
     let expectedHelp = File.ReadAllText $"{__SOURCE_DIRECTORY__}/expected-help-output.txt"
@@ -44,7 +27,7 @@ let ``Help is displayed correctly`` () =
 
 [<Test>]
 let ``Version is displayed correctly`` () =
-    let builder = getBuilder()
+    let builder = getArbitraryTcConfigBuilder()
     let fileName = $"{Guid.NewGuid()}"
     let expectedVersionPattern = @"Microsoft \(R\) F# Compiler version \d+\.\d+\.\d+\.\d+ for F# \d+\.\d+"
     let printer text = File.AppendAllText(fileName, text)
