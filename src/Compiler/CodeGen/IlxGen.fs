@@ -4921,7 +4921,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, st
 
     let stepConst =
         match stepExpr with
-        | Some(Expr.Const (Const.Int32 i, _, _)) when i <> 0 -> Some i
+        | Some (Expr.Const (Const.Int32 i, _, _)) when i <> 0 -> Some i
         | _ -> None
 
     let finishIdx, stepIdx, eenvinner =
@@ -4999,7 +4999,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, st
     //    v++ or v--
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
 
-    match stepExpr with 
+    match stepExpr with
     | None ->
         match dir with
         | FSharpForLoopUp
@@ -5034,7 +5034,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, st
 
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
 
-    match stepExpr with 
+    match stepExpr with
     | None ->
         match dir with
         | FSharpForLoopUp
@@ -5077,7 +5077,6 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, st
             CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int32 ]) (mkLdcInt32 0)
             CmpThenBrOrContinue(pop 2, [ I_brcmp(BI_bge, inner.CodeLabel) ])
         |> GenSequel cenv eenv.cloc cgbuf
-
 
     // .finish - loop-exit here
     CG.SetMarkToHere cgbuf finish
