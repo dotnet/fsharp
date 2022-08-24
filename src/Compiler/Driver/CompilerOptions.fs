@@ -2144,12 +2144,17 @@ let PostProcessCompilerArgs (abbrevArgs: string Set) (args: string[]) =
 
     Array.toList arga[0 .. (idx - 1)]
 
-// OptionBlock: QA options
+// OptionBlock: ex-QA options
 //------------------------
 
 let testingAndQAFlags _tcConfigB =
     [
-        CompilerOption("dumpAllCommandLineOptions", tagNone, OptionConsoleOnly(fun blocks -> DumpCompilerOptionBlocks blocks), None, None) // "Command line options")
+        CompilerOption(
+            "dumpAllCommandLineOptions",
+            tagNone,
+            OptionConsoleOnly(fun blocks -> DumpCompilerOptionBlocks blocks),
+            Some(DeprecatedCommandLineOptionNoDescription("--dumpAllCommandLineOptions", rangeCmdArgs)),
+            None)
     ]
 
 // Core compiler options, overview
