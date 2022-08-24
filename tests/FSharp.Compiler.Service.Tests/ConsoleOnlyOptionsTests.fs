@@ -28,12 +28,8 @@ let ``Help is displayed correctly`` () =
 [<Test>]
 let ``Version is displayed correctly`` () =
     let builder = getArbitraryTcConfigBuilder()
-    let fileName = $"{Guid.NewGuid()}"
     let expectedVersionPattern = @"Microsoft \(R\) F# Compiler version \d+\.\d+\.\d+\.\d+ for F# \d+\.\d+"
-    let printer text = File.AppendAllText(fileName, text)
-    let exiter () = ()
 
-    DisplayVersion printer exiter builder
+    let version = GetVersion builder
 
-    let version = File.ReadAllText fileName
     Assert.That(version, Does.Match expectedVersionPattern)

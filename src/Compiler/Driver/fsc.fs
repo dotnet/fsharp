@@ -544,7 +544,7 @@ let main1
 
     // Display the banner text, if necessary
     if not bannerAlreadyPrinted then
-        DisplayBannerText tcConfigB Console.Write
+        Console.Write (GetBannerText tcConfigB)
 
     // Create tcGlobals and frameworkTcImports
     let outfile, pdbfile, assemblyName =

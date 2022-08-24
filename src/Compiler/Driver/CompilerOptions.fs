@@ -1974,29 +1974,29 @@ let deprecatedFlagsFsc tcConfigB =
 // OptionBlock: Miscellaneous options
 //-----------------------------------
 
-let DisplayBannerText tcConfigB printer =
+let GetBannerText tcConfigB =
     if tcConfigB.showBanner then
-        (printer $"{tcConfigB.productNameForBannerText}{nl}"
-         printer $"{FSComp.SR.optsCopyright ()}{nl}")
+        $"{tcConfigB.productNameForBannerText}{nl}" +
+        $"{FSComp.SR.optsCopyright ()}{nl}"
+    else ""
 
 /// FSC only help. (FSI has it's own help function).
 let DisplayHelpFsc printer exiter tcConfigB (blocks: CompilerOptionBlock list) =
-    DisplayBannerText tcConfigB printer
+    printer (GetBannerText tcConfigB)
     PrintCompilerOptionBlocks blocks printer
     exiter ()
 
-let DisplayVersion printer exiter tcConfigB =
-    printer $"{tcConfigB.productNameForBannerText}{nl}"
-    exiter ()
+let GetVersion tcConfigB =
+    $"{tcConfigB.productNameForBannerText}{nl}"
 
 let displayHelpFsc = DisplayHelpFsc Console.Write (fun () -> exit 0)
 
-let displayVersion = DisplayVersion Console.Write (fun () -> exit 0)
+let displayVersion = GetVersion >> Console.Write
 
 let miscFlagsBoth tcConfigB =
     [
         CompilerOption("nologo", tagNone, OptionUnit(fun () -> tcConfigB.showBanner <- false), None, Some(FSComp.SR.optsNologo ()))
-        CompilerOption("version", tagNone, OptionConsoleOnly(fun _ -> displayVersion tcConfigB), None, Some(FSComp.SR.optsVersion ()))
+        CompilerOption("version", tagNone, OptionConsoleOnly(fun _ -> displayVersion tcConfigB; exit 0), None, Some(FSComp.SR.optsVersion ()))
     ]
 
 let miscFlagsFsc tcConfigB =
