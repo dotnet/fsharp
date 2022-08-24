@@ -210,7 +210,7 @@ stages:
           - name: _SignType
             value: Test
           pool:
-            name: NetCore1ESPool-Public
+            name: NetCore1ESPool-Svc-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 90
           steps:
@@ -283,7 +283,7 @@ stages:
             #   WindowsMachineQueueName=Windows.vs2022.amd64.open
             # and there is an alternate build definition that sets this to a queue that is always scouting the
             # next preview of Visual Studio.
-            name: NetCore1ESPool-Public
+            name: NetCore1ESPool-Svc-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
@@ -337,7 +337,7 @@ stages:
         # Mock official build
         - job: MockOfficial
           pool:
-            name: NetCore1ESPool-Public
+            name: NetCore1ESPool-Svc-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           steps:
           - checkout: self
@@ -428,7 +428,7 @@ stages:
         # End to end build
         - job: EndToEndBuildTests
           pool:
-            name: NetCore1ESPool-Public
+            name: NetCore1ESPool-Svc-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           steps:
           - checkout: self
@@ -453,7 +453,7 @@ stages:
         # Plain build Windows
         - job: Plain_Build_Windows
           pool:
-            name: NetCore1ESPool-Public
+            name: NetCore1ESPool-Svc-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           variables:
           - name: _BuildConfig
