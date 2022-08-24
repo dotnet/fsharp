@@ -7559,12 +7559,7 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
         // optimize 'for i in n .. m do'
         | Expr.App (Expr.Val (vref, _, _), _, [tyarg], [startExpr;finishExpr], _)
              when valRefEq g vref g.range_op_vref && typeEquiv g tyarg g.int_ty ->
-               (g.int32_ty, (fun _ x -> x), id, Choice1Of4 (startExpr, finishExpr))
-
-        // optimize 'for i in n .. step .. m do'
-        | Expr.App(Expr.Val(vref, _, _), _, [ tyarg; stepTyarg ], [ startExpr; stepExpr; finishExpr ], _)
-            when valRefEq g vref g.range_step_op_vref && typeEquiv g tyarg g.int_ty && typeEquiv g stepTyarg g.int_ty ->
-                (g.int32_ty, (fun _ x -> x), id, Choice2Of4(startExpr, stepExpr, finishExpr))
+               (g.int32_ty, (fun _ x -> x), id, Choice1Of3 (startExpr, finishExpr))
 
         // optimize 'for i in arr do'
         | _ when isArray1DTy g enumExprTy ->
@@ -7579,7 +7574,7 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
             let overallExprFixup overallExpr = mkLet spForBind mFor arrVar enumExpr overallExpr
 
             // Ask for a loop over integers for the given range
-            (elemTy, bodyExprFixup, overallExprFixup, Choice3Of4 (idxVar, mkZero g mFor, mkDecr g mFor (mkLdlen g mFor arrExpr)))
+            (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero g mFor, mkDecr g mFor (mkLdlen g mFor arrExpr)))
 
         | _ ->
             // try optimize 'for i in span do' for span or readonlyspan
@@ -7604,13 +7599,13 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
                 let getLengthCallExpr, _ = BuildMethodCall tcVal g cenv.amap PossiblyMutates mWholeExpr true getLengthMethInfo ValUseFlag.NormalValUse [] [ spanExpr ] [] None
 
                 // Ask for a loop over integers for the given range
-                (elemTy, bodyExprFixup, overallExprFixup, Choice3Of4 (idxVar, mkZero g mFor, mkDecr g mFor getLengthCallExpr))
+                (elemTy, bodyExprFixup, overallExprFixup, Choice2Of3 (idxVar, mkZero g mFor, mkDecr g mFor getLengthCallExpr))
 
             | _ ->
                 let enumerableVar, enumerableExprInVar = mkCompGenLocal mEnumExpr "inputSequence" enumExprTy
                 let enumeratorVar, enumeratorExpr, _, enumElemTy, getEnumExpr, getEnumTy, guardExpr, _, currentExpr =
                     AnalyzeArbitraryExprAsEnumerable cenv env true mEnumExpr enumExprTy enumerableExprInVar
-                (enumElemTy, (fun _ x -> x), id, Choice4Of4(enumerableVar, enumeratorVar, enumeratorExpr, getEnumExpr, getEnumTy, guardExpr, currentExpr))
+                (enumElemTy, (fun _ x -> x), id, Choice3Of3(enumerableVar, enumeratorVar, enumeratorExpr, getEnumExpr, getEnumTy, guardExpr, currentExpr))
 
     let pat, _, vspecs, envinner, tpenv =
         let env = { env with eIsControlFlow = false }
@@ -7648,19 +7643,15 @@ and TcForEachExpr cenv overallTy env tpenv (seqExprOnly, isFromSource, synPat, s
         match iterationTechnique with
 
         // Build iteration as a for loop
-        | Choice1Of4(startExpr, finishExpr) ->
+        | Choice1Of3(startExpr, finishExpr) ->
             mkFastForLoop g (spFor, spIn, mWholeExpr, elemVar, startExpr, true, finishExpr, bodyExpr)
 
-        // Build iteration as a for loop with step value
-        | Choice2Of4(startExpr, stepExpr, finishExpr) ->
-            mkIntegerForLoopWithStep g (spFor, spIn, elemVar, startExpr, stepExpr, finishExpr, bodyExpr, mWholeExpr)
-
         // Build iteration as a for loop with a specific index variable that is not the same as the elemVar
-        | Choice3Of4(idxVar, startExpr, finishExpr) ->
+        | Choice2Of3(idxVar, startExpr, finishExpr) ->
             mkFastForLoop g (DebugPointAtFor.No, spIn, mWholeExpr, idxVar, startExpr, true, finishExpr, bodyExpr)
 
         // Build iteration as a while loop with a try/finally disposal
-        | Choice4Of4(enumerableVar, enumeratorVar, _, getEnumExpr, _, guardExpr, currentExpr) ->
+        | Choice3Of3(enumerableVar, enumeratorVar, _, getEnumExpr, _, guardExpr, currentExpr) ->
 
             // This compiled for must be matched EXACTLY by CompiledForEachExpr
             mkLet spForBind mFor enumerableVar enumExpr

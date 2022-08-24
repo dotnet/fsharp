@@ -125,8 +125,6 @@ module TypedTest = begin
     test "check AndAlso - encoded" ((<@ true && false @> |> (function IfThenElse(Bool(true),Bool(false),Bool(false)) -> true | _ -> false))) 
     test "check OrElse - encoded" ((<@ true || false @> |> (function IfThenElse(Bool(true),Bool(true),Bool(false)) -> true | _ -> false))) 
 
-    test "check ForIntegerRangeLoopWithStep"   (<@ for i in 1..2..10 do printf "hello" @> |> (function ForIntegerRangeLoopWithStep(v,Int32(1),Int32(2),Int32(10),b) -> true | _ -> false))
-
     test "check ForIntegerRangeLoop"   (<@ for i = 1 to 10 do printf "hello" @> |> (function ForIntegerRangeLoop(v,Int32(1),Int32(10),b) -> true | _ -> false))
     test "check ForIntegerRangeLoop"   (<@ for i in 1 .. 10 do printf "hello" @> |> (function ForIntegerRangeLoop(v,Int32(1),Int32(10),b) -> true | _ -> false))
     // In this example, the types of the start and end points are not known at the point the loop
@@ -138,7 +136,7 @@ module TypedTest = begin
     test "check ForEachInList"          (<@ for i in "123" do printf "hello" @> |> (function ForEachShape(_) -> true | _ -> false))
     test "check ForEachInString"        (<@ for i in [1;2;3] do printf "hello" @> |> (function ForEachShape(_) -> true | _ -> false))
     // A slight non orthogonality is that all other 'for' loops go to (quite complex) the desugared form
-    test "check Other Loop"   (<@ for i in 1L .. 2L .. 10L do printf "hello" @> |> (function Let(v,_,b) -> true | _ -> false))
+    test "check Other Loop"   (<@ for i in 1 .. 2 .. 10 do printf "hello" @> |> (function Let(v,_,b) -> true | _ -> false))
     test "check Other Loop"   (<@ for i in 1L .. 10L do printf "hello" @> |> (function Let(v,_,b) -> true | _ -> false))
 
     let mutable mutableX = 1
@@ -1622,15 +1620,6 @@ module MoreQuotationsTests =
         """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
         IfThenElse (Value (true), Value (1), Value (0)), matchValue,
         IfThenElse (Value (true), Value (0), Call (None, Reraise, [])))"""
-
-    let t15 = <@@ for i in 1..2..10 do printfn $"{i}" @@>
-    checkStrings "vwewvwewe15" (sprintf "%A" t15)
-        """ForIntegerRangeLoop (i, Value (1), Value (2), Value (10),
-                     Call (None, PrintFormatLine,
-                           [Coerce (NewObject (PrintfFormat`5, Value ("%P()"),
-                                               NewArray (Object,
-                                                         Call (None, Box, [i])),
-                                               Value (<null>)), PrintfFormat`4)]))"""
 
     let _ = <@@ let x : int option = None in x.IsSome @@> |> checkQuoteString "fqekhec1" """Let (x, NewUnionCase (None), Call (None, get_IsSome, [x]))"""
     let _ = <@@ let x : int option = None in x.IsNone @@> |> checkQuoteString "fqekhec2" """Let (x, NewUnionCase (None), Call (None, get_IsNone, [x]))"""

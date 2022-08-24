@@ -3014,13 +3014,13 @@ and GenExprAux (cenv: cenv) (cgbuf: CodeGenBuffer) eenv expr (sequel: sequel) =
                 GenWhileLoop cenv cgbuf eenv (sp, e1, e2, m) sequel
             | TOp.IntegerForLoop (spFor, spTo, dir),
               [ Expr.Lambda (_, _, _, [ _ ], e1, _, _); Expr.Lambda (_, _, _, [ _ ], e2, _, _); Expr.Lambda (_, _, _, [ v ], e3, _, _) ],
-              [] -> GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, e3, mkZero g (range ()), m) sequel
+              [] -> GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, e3, None, m) sequel
             | TOp.IntegerForLoop (spFor, spTo, dir),
               [ Expr.Lambda (_, _, _, [ _ ], e1, _, _)
                 Expr.Lambda (_, _, _, [ _ ], e2, _, _)
                 Expr.Lambda (_, _, _, [ v ], e3, _, _)
                 Expr.Lambda (_, _, _, [ _ ], e4, _, _) ],
-              [] -> GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, e3, e4, m) sequel
+              [] -> GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, e3, Some e4, m) sequel
             | TOp.TryFinally (spTry, spFinally),
               [ Expr.Lambda (_, _, _, [ _ ], e1, _, _); Expr.Lambda (_, _, _, [ _ ], e2, _, _) ],
               [ resTy ] -> GenTryFinally cenv cgbuf eenv (e1, e2, m, resTy, spTry, spFinally) sequel
@@ -4895,7 +4895,7 @@ and GenTryFinally cenv cgbuf eenv (bodyExpr, handlerExpr, m, resTy, spTry, spFin
 // Generate for-loop
 //--------------------------------------------------------------------------
 
-and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, stepExpr, m) sequel =
+and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, stepExpr: Expr option, m) sequel =
     let eenv = SetIsInLoop true eenv
     let g = cenv.g
 
@@ -4912,16 +4912,16 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, st
     let test = CG.GenerateDelayMark cgbuf "for_test"
     let stack, eenvinner = EmitSaveStack cenv cgbuf eenv m (start, finish)
 
-    let stepByOne, isFSharpStyle, isUp =
-        match dir with
-        | FSharpForLoopUp -> true, true, true
-        | FSharpForLoopDown -> true, true, false
-        | FSharpForLoopWithStep _ -> false, true, true
-        | CSharpForLoopUp -> true, false, true
+    let isFSharpStyle, isUp =
+        match stepExpr, dir with
+        | Some _, _ -> true, true
+        | None, FSharpForLoopUp -> true, true
+        | None, FSharpForLoopDown -> true, false
+        | None, CSharpForLoopUp -> false, true
 
     let stepConst =
         match stepExpr with
-        | Expr.Const (Const.Int32 i, _, _) when i <> 0 -> Some i
+        | Some(Expr.Const (Const.Int32 i, _, _)) when i <> 0 -> Some i
         | _ -> None
 
     let finishIdx, stepIdx, eenvinner =
@@ -4935,7 +4935,7 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, st
             let v, _realloc, eenvinner =
                 AllocLocal cenv cgbuf eenvinner true (vName, g.ilg.typ_Int32, false) (start, finish)
 
-            if not stepByOne && Option.isNone stepConst then
+            if stepExpr.IsSome && stepConst.IsNone then
                 let v2, _realloc, eenvinner =
                     AllocLocal cenv cgbuf eenvinner true (vName, g.ilg.typ_Int32, false) (start, finish)
 
@@ -4954,20 +4954,20 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, st
     GenExpr cenv cgbuf eenv e1 Continue
     GenStoreVal cgbuf eenvinner m v
 
-    match dir, stepConst with
-    | FSharpForLoopWithStep, None ->
+    match stepExpr, stepConst with
+    | Some step, None ->
         // Throw invalidarg at runtime if step is 0.
         // Emulates behavior of the RangeInt32 enumerator that this replaces.
-        GenExpr cenv cgbuf eenvinner stepExpr Continue
+        GenExpr cenv cgbuf eenvinner step Continue
         EmitSetLocal cgbuf stepIdx
         EmitGetLocal cgbuf g.ilg.typ_Int32 stepIdx
 
         let notZero = CG.GenerateDelayMark cgbuf "notZero"
         CG.EmitInstr cgbuf (pop 1) Push0 (I_brcmp(BI_brtrue, notZero.CodeLabel))
 
-        let arg1 = mkString g stepExpr.Range (SR.GetString "StepCannotBeZero")
-        let arg2 = mkString g stepExpr.Range "step"
-        let invalidArgExpr = MakeArgumentExnExpr cenv eenv (arg1, arg2, stepExpr.Range)
+        let arg1 = mkString g step.Range (SR.GetString "StepCannotBeZero")
+        let arg2 = mkString g step.Range "step"
+        let invalidArgExpr = MakeArgumentExnExpr cenv eenv (arg1, arg2, step.Range)
         GenExpr cenv cgbuf eenvinner invalidArgExpr Continue
         CG.EmitInstr cgbuf (pop 1) Push0 I_throw
 
@@ -4978,15 +4978,15 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, st
         GenExpr cenv cgbuf eenvinner e2 Continue
         EmitSetLocal cgbuf finishIdx
 
-        if stepByOne then
+        if stepExpr.IsNone then
             EmitGetLocal cgbuf g.ilg.typ_Int32 finishIdx
             GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
 
-    match dir with
-    | FSharpForLoopUp -> CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_blt, finish.CodeLabel))
-    | FSharpForLoopDown -> CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bgt, finish.CodeLabel))
-    | FSharpForLoopWithStep
-    | CSharpForLoopUp -> CG.EmitInstr cgbuf (pop 0) Push0 (I_br test.CodeLabel)
+    match stepExpr, dir with
+    | Some _, _
+    | None, CSharpForLoopUp -> CG.EmitInstr cgbuf (pop 0) Push0 (I_br test.CodeLabel)
+    | None, FSharpForLoopUp -> CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_blt, finish.CodeLabel))
+    | None, FSharpForLoopDown -> CG.EmitInstr cgbuf (pop 2) Push0 (I_brcmp(BI_bgt, finish.CodeLabel))
 
     cgbuf.EmitStartOfHiddenCode()
 
@@ -4999,13 +4999,15 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, st
     //    v++ or v--
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
 
-    match dir with
-    | FSharpForLoopUp
-    | FSharpForLoopDown
-    | CSharpForLoopUp ->
-        CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int32 ]) (mkLdcInt32 1)
-        CG.EmitInstr cgbuf (pop 1) Push0 (if isUp then AI_add else AI_sub)
-    | FSharpForLoopWithStep _ ->
+    match stepExpr with 
+    | None ->
+        match dir with
+        | FSharpForLoopUp
+        | FSharpForLoopDown
+        | CSharpForLoopUp ->
+            CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int32 ]) (mkLdcInt32 1)
+            CG.EmitInstr cgbuf (pop 1) Push0 (if isUp then AI_add else AI_sub)
+    | Some _ ->
         match stepConst with
         | Some sc ->
             let pos = sc > 0
@@ -5032,18 +5034,21 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, st
 
     GenGetLocalVal cenv cgbuf eenvinner e2.Range v None
 
-    match dir with
-    | FSharpForLoopUp
-    | FSharpForLoopDown ->
-        EmitGetLocal cgbuf g.ilg.typ_Int32 finishIdx
-        CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int32 ]) (mkLdcInt32 1)
-        CG.EmitInstr cgbuf (pop 1) Push0 (if isUp then AI_add else AI_sub)
+    match stepExpr with 
+    | None ->
+        match dir with
+        | FSharpForLoopUp
+        | FSharpForLoopDown ->
+            EmitGetLocal cgbuf g.ilg.typ_Int32 finishIdx
+            CG.EmitInstr cgbuf (pop 0) (Push [ g.ilg.typ_Int32 ]) (mkLdcInt32 1)
+            CG.EmitInstr cgbuf (pop 1) Push0 (if isUp then AI_add else AI_sub)
 
-        CmpThenBrOrContinue(pop 2, [ I_brcmp(BI_bne_un, inner.CodeLabel) ])
-        |> GenSequel cenv eenv.cloc cgbuf
-
-    | FSharpForLoopWithStep _ ->
-
+            CmpThenBrOrContinue(pop 2, [ I_brcmp(BI_bne_un, inner.CodeLabel) ])
+            |> GenSequel cenv eenv.cloc cgbuf
+        | CSharpForLoopUp ->
+            CmpThenBrOrContinue(pop 2, [ I_brcmp(BI_blt, inner.CodeLabel) ])
+            |> GenExpr cenv cgbuf eenv e2
+    | Some _ ->
         match stepConst with
         | Some sc ->
             let pos = sc > 0
@@ -5073,9 +5078,6 @@ and GenIntegerForLoop cenv cgbuf eenv (spFor, spTo, v, e1, dir, e2, loopBody, st
             CmpThenBrOrContinue(pop 2, [ I_brcmp(BI_bge, inner.CodeLabel) ])
         |> GenSequel cenv eenv.cloc cgbuf
 
-    | CSharpForLoopUp ->
-        CmpThenBrOrContinue(pop 2, [ I_brcmp(BI_blt, inner.CodeLabel) ])
-        |> GenExpr cenv cgbuf eenv e2
 
     // .finish - loop-exit here
     CG.SetMarkToHere cgbuf finish

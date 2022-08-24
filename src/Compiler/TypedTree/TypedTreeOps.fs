@@ -1522,7 +1522,7 @@ let mkIntegerForLoop (g: TcGlobals) (spFor, spIn, v, startExpr, dir, finishExpr,
     Expr.Op (TOp.IntegerForLoop (spFor, spIn, dir), [], [mkDummyLambda g (startExpr, g.int_ty) ;mkDummyLambda g (finishExpr, g.int_ty);mkLambda bodyExpr.Range v (bodyExpr, g.unit_ty)], m)
 
 let mkIntegerForLoopWithStep (g: TcGlobals) (spFor, spIn, v, startExpr, stepExpr: Expr, finishExpr, bodyExpr: Expr, m) = 
-    Expr.Op (TOp.IntegerForLoop (spFor, spIn, FSharpForLoopWithStep), [], [mkDummyLambda g (startExpr, g.int_ty) ;mkDummyLambda g (finishExpr, g.int_ty);mkLambda bodyExpr.Range v (bodyExpr, g.unit_ty); mkDummyLambda g (stepExpr, g.int_ty)], m)
+    Expr.Op (TOp.IntegerForLoop (spFor, spIn, FSharpForLoopUp), [], [mkDummyLambda g (startExpr, g.int_ty) ;mkDummyLambda g (finishExpr, g.int_ty);mkLambda bodyExpr.Range v (bodyExpr, g.unit_ty); mkDummyLambda g (stepExpr, g.int_ty)], m)
 
 let mkTryWith g (bodyExpr, filterVal, filterExpr: Expr, handlerVal, handlerExpr: Expr, m, ty, spTry, spWith) = 
     Expr.Op (TOp.TryWith (spTry, spWith), [ty], [mkDummyLambda g (bodyExpr, ty);mkLambda filterExpr.Range filterVal (filterExpr, ty);mkLambda handlerExpr.Range handlerVal (handlerExpr, ty)], m)

@@ -141,8 +141,6 @@ val mkSequential: ExprData * ExprData -> ExprData
 
 val mkIntegerForLoop: ExprData * ExprData * ExprData -> ExprData
 
-val mkIntegerForLoopWithStep: ExprData * ExprData * ExprData * ExprData -> ExprData
-
 val mkWhileLoop: ExprData * ExprData -> ExprData
 
 val mkTryFinally: ExprData * ExprData -> ExprData

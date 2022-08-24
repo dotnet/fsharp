@@ -665,9 +665,6 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             | FSharpForLoopUp -> QP.mkIntegerForLoop(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body)
             | _ -> wfail(Error(FSComp.SR.crefQuotationsCantContainDescendingForLoops(), m))
 
-        | TOp.IntegerForLoop (_, _, _), [], [Expr.Lambda (_, _, _, [_], lim0, _, _);Expr.Lambda (_, _, _, [_], lim1, _, _);body; Expr.Lambda (_, _, _, [_], step, _, _)] ->
-            QP.mkIntegerForLoopWithStep(ConvExpr cenv env lim0, ConvExpr cenv env lim1, ConvExpr cenv env body, ConvExpr cenv env step)
-
         | TOp.ILCall (_, _, _, isCtor, valUseFlag, isProperty, _, ilMethRef, enclTypeInst, methInst, _), [], callArgs ->
              let parentTyconR = ConvILTypeRefUnadjusted cenv m ilMethRef.DeclaringTypeRef
              let isNewObj = isCtor || (match valUseFlag with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false)

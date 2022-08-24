@@ -1060,10 +1060,9 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
             true
 
         // Integer for-loops are allowed but their bodies are not currently resumable
-        | IntegerForLoopExpr (_sp1, _sp2, _style, e1, e2, v, e3, e4, _m) ->
+        | IntegerForLoopExpr (_sp1, _sp2, _style, e1, e2, v, e3, _, _m) ->
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } e1
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } e2
-            Option.iter (CheckExprNoByrefs cenv { env with resumableCode = Resumable.None }) e4
             BindVal cenv env v
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } e3
             true
@@ -1453,10 +1452,6 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
     | TOp.IntegerForLoop _, _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [_], e3, _, _)]  ->
         CheckTypeInstNoByrefs cenv env m tyargs
         CheckExprsNoByRefLike cenv env [e1;e2;e3]
-
-    | TOp.IntegerForLoop _, _, [Expr.Lambda (_, _, _, [_], e1, _, _);Expr.Lambda (_, _, _, [_], e2, _, _);Expr.Lambda (_, _, _, [_], e3, _, _);Expr.Lambda (_, _, _, [_], e4, _, _)]  ->
-        CheckTypeInstNoByrefs cenv env m tyargs
-        CheckExprsNoByRefLike cenv env [e1;e2;e3;e4]
 
     | TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
         CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/catch can be a byref 
