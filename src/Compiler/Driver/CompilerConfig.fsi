@@ -331,6 +331,8 @@ type TcConfigBuilder =
 
         mutable extraStaticLinkRoots: string list
 
+        mutable compressMetadata: bool
+
         mutable noSignatureData: bool
 
         mutable onlyEssentialOptimizationData: bool
@@ -646,6 +648,8 @@ type TcConfig =
     member standalone: bool
 
     member extraStaticLinkRoots: string list
+
+    member compressMetadata: bool
 
     member noSignatureData: bool
 

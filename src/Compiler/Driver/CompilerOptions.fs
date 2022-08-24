@@ -5,6 +5,7 @@
 module internal FSharp.Compiler.CompilerOptions
 
 open System
+open System.Diagnostics
 open System.IO
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -22,6 +23,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.DiagnosticsLogger
 
 open Internal.Utilities
+open System.Text
 
 module Attributes =
     open System.Runtime.CompilerServices
@@ -111,7 +113,11 @@ let compilerOptionUsage (CompilerOption (s, tag, spec, _, _)) =
         else
             sprintf "%s:%s" s tag (* still being decided *)
 
-let PrintCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOption) =
+let nl = Environment.NewLine
+
+let getCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOption) =
+    let sb = StringBuilder()
+
     let flagWidth = 42 // fixed width for printing of flags, e.g. --debug:{full|pdbonly|portable|embedded}
     let defaultLineWidth = 80 // the fallback width
 
@@ -130,18 +136,18 @@ let PrintCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOp
     //   flagWidth chars - for flags description or padding on continuation lines.
     //   single space    - space.
     //   description     - words upto but excluding the final character of the line.
-    printf "%-40s" (compilerOptionUsage compilerOption)
+    let _ = sb.Append $"{compilerOptionUsage compilerOption, -40}"
 
     let printWord column (word: string) =
         // Have printed upto column.
         // Now print the next word including any preceding whitespace.
         // Returns the column printed to (suited to folding).
         if column + 1 (*space*) + word.Length >= lineWidth then // NOTE: "equality" ensures final character of the line is never printed
-            printfn "" (* newline *)
-            printf "%-40s %s" "" (*<--flags*) word
+            let _ = sb.Append $"{nl}"
+            let _ = sb.Append $"{String.Empty, -40} {word}"
             flagWidth + 1 + word.Length
         else
-            printf " %s" word
+            let _ = sb.Append $" {word}"
             column + 1 + word.Length
 
     let words =
@@ -150,16 +156,19 @@ let PrintCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOp
         | Some s -> s.Split [| ' ' |]
 
     let _finalColumn = Array.fold printWord flagWidth words
-    printfn "" (* newline *)
+    let _ = sb.Append $"{nl}"
+    sb.ToString()
 
-let PrintPublicOptions (heading, opts) =
+let getPublicOptions (heading, opts) =
     if not (isNil opts) then
-        printfn ""
-        printfn ""
-        printfn "\t\t%s" heading
-        List.iter PrintCompilerOption opts
+        $"{nl}{nl}\t\t{heading}{nl}"
+        + (opts |> List.map getCompilerOption |> String.concat "")
+    else
+        ""
 
-let PrintCompilerOptionBlocks blocks =
+let GetCompilerOptionBlocks blocks =
+    let sb = new StringBuilder()
+
     let publicBlocks =
         blocks
         |> List.choose (function
@@ -173,10 +182,11 @@ let PrintCompilerOptionBlocks blocks =
             let headingOptions =
                 publicBlocks |> List.filter (fun (h2, _) -> heading = h2) |> List.collect snd
 
-            PrintPublicOptions(heading, headingOptions)
+            let _ = sb.Append(getPublicOptions (heading, headingOptions))
             Set.add heading doneHeadings
 
     List.fold consider Set.empty publicBlocks |> ignore<Set<string>>
+    sb.ToString()
 
 (* For QA *)
 let dumpCompilerOption prefix (CompilerOption (str, _, spec, _, _)) =
@@ -920,6 +930,14 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
                     | _ -> error (Error(FSComp.SR.optsUnknownPlatform s, rangeCmdArgs))),
             None,
             Some(FSComp.SR.optsPlatform ())
+        )
+
+        CompilerOption(
+            "compressmetadata",
+            tagNone,
+            OptionSwitch(fun switch -> tcConfigB.compressMetadata <- switch = OptionSwitch.On),
+            None,
+            Some(FSComp.SR.optsCompressMetadata ())
         )
 
         CompilerOption(
@@ -1972,31 +1990,46 @@ let deprecatedFlagsFsc tcConfigB =
 // OptionBlock: Miscellaneous options
 //-----------------------------------
 
-let DisplayBannerText tcConfigB =
+let GetBannerText tcConfigB =
     if tcConfigB.showBanner then
-        (printfn "%s" tcConfigB.productNameForBannerText
-         printfn "%s" (FSComp.SR.optsCopyright ()))
+        $"{tcConfigB.productNameForBannerText}{nl}"
+        + $"{FSComp.SR.optsCopyright ()}{nl}"
+    else
+        ""
 
 /// FSC only help. (FSI has it's own help function).
-let displayHelpFsc tcConfigB (blocks: CompilerOptionBlock list) =
-    DisplayBannerText tcConfigB
-    PrintCompilerOptionBlocks blocks
-    exit 0
+let GetHelpFsc tcConfigB (blocks: CompilerOptionBlock list) =
+    GetBannerText tcConfigB + GetCompilerOptionBlocks blocks
 
-let displayVersion tcConfigB =
-    printfn "%s" tcConfigB.productNameForBannerText
-    exit 0
+let GetVersion tcConfigB =
+    $"{tcConfigB.productNameForBannerText}{nl}"
 
 let miscFlagsBoth tcConfigB =
     [
         CompilerOption("nologo", tagNone, OptionUnit(fun () -> tcConfigB.showBanner <- false), None, Some(FSComp.SR.optsNologo ()))
-        CompilerOption("version", tagNone, OptionConsoleOnly(fun _ -> displayVersion tcConfigB), None, Some(FSComp.SR.optsVersion ()))
+        CompilerOption(
+            "version",
+            tagNone,
+            OptionConsoleOnly(fun _ ->
+                Console.Write(GetVersion tcConfigB)
+                exit 0),
+            None,
+            Some(FSComp.SR.optsVersion ())
+        )
     ]
 
 let miscFlagsFsc tcConfigB =
     miscFlagsBoth tcConfigB
     @ [
-        CompilerOption("help", tagNone, OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks), None, Some(FSComp.SR.optsHelp ()))
+        CompilerOption(
+            "help",
+            tagNone,
+            OptionConsoleOnly(fun blocks ->
+                Console.Write(GetHelpFsc tcConfigB blocks)
+                exit 0),
+            None,
+            Some(FSComp.SR.optsHelp ())
+        )
         CompilerOption("@<file>", tagNone, OptionUnit ignore, None, Some(FSComp.SR.optsResponseFile ()))
     ]
 
@@ -2052,7 +2085,9 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "?",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks ->
+                Console.Write(GetHelpFsc tcConfigB blocks)
+                exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2060,7 +2095,9 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "help",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks ->
+                Console.Write(GetHelpFsc tcConfigB blocks)
+                exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2068,7 +2105,9 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "full-help",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks ->
+                Console.Write(GetHelpFsc tcConfigB blocks)
+                exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2241,8 +2280,8 @@ let PrintWholeAssemblyImplementation (tcConfig: TcConfig) outfile header expr =
 // ReportTime
 //----------------------------------------------------------------------------
 
-let mutable tPrev = None
-let mutable nPrev = None
+let mutable tPrev: (DateTime * DateTime * float * int[]) option = None
+let mutable nPrev: string option = None
 
 let ReportTime (tcConfig: TcConfig) descr =
 
@@ -2278,29 +2317,41 @@ let ReportTime (tcConfig: TcConfig) descr =
     if (tcConfig.showTimes || verbose) then
         // Note that timing calls are relatively expensive on the startup path so we don't
         // make this call unless showTimes has been turned on.
-        let timeNow =
-            System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
-
+        let p = Process.GetCurrentProcess()
+        let utNow = p.UserProcessorTime.TotalSeconds
+        let tNow = DateTime.Now
         let maxGen = GC.MaxGeneration
         let gcNow = [| for i in 0..maxGen -> GC.CollectionCount i |]
-        let ptime = System.Diagnostics.Process.GetCurrentProcess()
-        let wsNow = ptime.WorkingSet64 / 1000000L
+        let wsNow = p.WorkingSet64 / 1000000L
 
-        match tPrev, nPrev with
-        | Some (timePrev, gcPrev: int[]), Some prevDescr ->
-            let spanGC = [| for i in 0..maxGen -> GC.CollectionCount i - gcPrev[i] |]
-            dprintf "TIME: %4.1f Delta: %4.1f Mem: %3d" timeNow (timeNow - timePrev) wsNow
+        let tStart =
+            match tPrev, nPrev with
+            | Some (tStart, tPrev, utPrev, gcPrev), Some prevDescr ->
+                let spanGC = [| for i in 0..maxGen -> GC.CollectionCount i - gcPrev[i] |]
+                let t = tNow - tStart
+                let tDelta = tNow - tPrev
+                let utDelta = utNow - utPrev
 
-            dprintf
-                " G0: %3d G1: %2d G2: %2d [%s]\n"
-                spanGC[Operators.min 0 maxGen]
-                spanGC[Operators.min 1 maxGen]
-                spanGC[Operators.min 2 maxGen]
-                prevDescr
+                printf
+                    "Real: %4.1f Realdelta: %4.1f Cpu: %4.1f Cpudelta: %4.1f Mem: %3d"
+                    t.TotalSeconds
+                    tDelta.TotalSeconds
+                    utNow
+                    utDelta
+                    wsNow
 
-        | _ -> ()
+                printfn
+                    " G0: %3d G1: %2d G2: %2d [%s]"
+                    spanGC[Operators.min 0 maxGen]
+                    spanGC[Operators.min 1 maxGen]
+                    spanGC[Operators.min 2 maxGen]
+                    prevDescr
 
-        tPrev <- Some(timeNow, gcNow)
+                tStart
+
+            | _ -> DateTime.Now
+
+        tPrev <- Some(tStart, tNow, utNow, gcNow)
 
     nPrev <- Some descr
 
