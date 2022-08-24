@@ -20,6 +20,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="expected-help-output.txt">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
     <Compile Include="..\fsharp\TestHelpers.fs" Link="TestHelpers.fs" />
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="SurfaceArea.netstandard.fs" />
@@ -38,6 +41,8 @@
     <Compile Include="..\service\Symbols.fs">
       <Link>Symbols.fs</Link>
     </Compile>
+    <Compile Include="TestDoubles.fs" />
+    <Compile Include="ConsoleOnlyOptionsTests.fs" />
     <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
     <Compile Include="..\service\SyntaxTreeTests\TypeTests.fs">
       <Link>SyntaxTree\TypeTests.fs</Link>
