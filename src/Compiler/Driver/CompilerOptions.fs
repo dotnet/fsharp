@@ -159,14 +159,9 @@ let getCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOpti
     sb.ToString()
 
 let getPublicOptions (heading, opts) =
-    let sb = StringBuilder()
-
     if not (isNil opts) then
-        let _ = sb.Append $"{nl}"
-        let _ = sb.Append $"{nl}"
-        let _ = sb.Append $"\t\t{heading}{nl}"
-        opts |> List.map getCompilerOption |> List.iter (sb.Append >> ignore)
-        sb.ToString()
+        $"{nl}{nl}\t\t{heading}{nl}" +
+        (opts |> List.map getCompilerOption |> String.concat "")
     else
         ""
 
