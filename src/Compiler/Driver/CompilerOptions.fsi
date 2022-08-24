@@ -43,7 +43,7 @@ and CompilerOptionBlock =
     | PublicOptions of heading: string * options: CompilerOption list
     | PrivateOptions of options: CompilerOption list
 
-val PrintCompilerOptionBlocks: CompilerOptionBlock list -> printer: (string -> unit) -> unit
+val PrintCompilerOptionBlocks: CompilerOptionBlock list -> string
 
 val DumpCompilerOptionBlocks: CompilerOptionBlock list -> unit // for QA
 

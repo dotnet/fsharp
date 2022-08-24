@@ -168,7 +168,8 @@ let GetPublicOptions (heading, opts) =
         sb.ToString()
     else ""
 
-let PrintCompilerOptionBlocks blocks printer =
+let PrintCompilerOptionBlocks blocks =
+    let sb = new StringBuilder()
     let publicBlocks =
         blocks
         |> List.choose (function
@@ -182,10 +183,11 @@ let PrintCompilerOptionBlocks blocks printer =
             let headingOptions =
                 publicBlocks |> List.filter (fun (h2, _) -> heading = h2) |> List.collect snd
 
-            printer (GetPublicOptions (heading, headingOptions))
+            let _ = sb.Append (GetPublicOptions (heading, headingOptions))
             Set.add heading doneHeadings
 
     List.fold consider Set.empty publicBlocks |> ignore<Set<string>>
+    sb.ToString()
 
 (* For QA *)
 let dumpCompilerOption prefix (CompilerOption (str, _, spec, _, _)) =
@@ -1990,7 +1992,7 @@ let GetBannerText tcConfigB =
 /// FSC only help. (FSI has it's own help function).
 let DisplayHelpFsc printer exiter tcConfigB (blocks: CompilerOptionBlock list) =
     printer (GetBannerText tcConfigB)
-    PrintCompilerOptionBlocks blocks printer
+    printer (PrintCompilerOptionBlocks blocks)
     exiter ()
 
 let GetVersion tcConfigB =
