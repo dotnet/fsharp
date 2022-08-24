@@ -64,14 +64,14 @@ val DisplayHelpFsc:
     tcConfigB: TcConfigBuilder 
     -> blocks: CompilerOptionBlock list 
     -> print: (string -> unit) 
-    -> exit: (unit -> 'a)
-    -> 'a
+    -> exit: (unit -> 'T)
+    -> 'T
 
 val DisplayVersion:
     tcConfigB: TcConfigBuilder 
     -> print: (string -> unit)
-    -> exit: (unit -> 'a)
-    -> 'a
+    -> exit: (unit -> 'T)
+    -> 'T
 
 val GetCoreFscCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 
