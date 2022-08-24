@@ -22,6 +22,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.DiagnosticsLogger
 
 open Internal.Utilities
+open System.Text
 
 module Attributes =
     open System.Runtime.CompilerServices
@@ -113,7 +114,9 @@ let compilerOptionUsage (CompilerOption (s, tag, spec, _, _)) =
 
 let nl = Environment.NewLine
 
-let PrintCompilerOption printer (CompilerOption (_s, _tag, _spec, _, help) as compilerOption) =
+let getCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOption) =
+    let sb = StringBuilder()
+
     let flagWidth = 42 // fixed width for printing of flags, e.g. --debug:{full|pdbonly|portable|embedded}
     let defaultLineWidth = 80 // the fallback width
 
@@ -132,18 +135,18 @@ let PrintCompilerOption printer (CompilerOption (_s, _tag, _spec, _, help) as co
     //   flagWidth chars - for flags description or padding on continuation lines.
     //   single space    - space.
     //   description     - words upto but excluding the final character of the line.
-    printer $"{compilerOptionUsage compilerOption, -40}"
+    let _ = sb.Append $"{compilerOptionUsage compilerOption, -40}"
 
     let printWord column (word: string) =
         // Have printed upto column.
         // Now print the next word including any preceding whitespace.
         // Returns the column printed to (suited to folding).
         if column + 1 (*space*) + word.Length >= lineWidth then // NOTE: "equality" ensures final character of the line is never printed
-            printer $"{nl}"
-            printer $"{String.Empty, -40} {word}"
+            let _ = sb.Append $"{nl}"
+            let _ = sb.Append $"{String.Empty, -40} {word}"
             flagWidth + 1 + word.Length
         else
-            printer $" {word}"
+            let _ = sb.Append $" {word}"
             column + 1 + word.Length
 
     let words =
@@ -152,14 +155,15 @@ let PrintCompilerOption printer (CompilerOption (_s, _tag, _spec, _, help) as co
         | Some s -> s.Split [| ' ' |]
 
     let _finalColumn = Array.fold printWord flagWidth words
-    printer $"{nl}"
+    let _ = sb.Append $"{nl}"
+    sb.ToString()
 
 let PrintPublicOptions (heading, opts) printer =
     if not (isNil opts) then
         printer $"{nl}"
         printer $"{nl}"
         printer $"\t\t{heading}{nl}"
-        List.iter (PrintCompilerOption printer) opts
+        List.iter (getCompilerOption >> printer) opts
 
 let PrintCompilerOptionBlocks blocks printer =
     let publicBlocks =
