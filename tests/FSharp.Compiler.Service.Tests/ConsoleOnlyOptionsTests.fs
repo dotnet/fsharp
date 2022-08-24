@@ -34,7 +34,7 @@ let ``Help is displayed correctly`` () =
     let print text = File.AppendAllText(fileName, text)
     let exit() = ()
 
-    DisplayHelpFsc builder blocks print exit
+    DisplayHelpFsc print exit builder blocks
 
     let help = File.ReadAllText fileName
     // contains instead of equals
@@ -50,7 +50,7 @@ let ``Version is displayed correctly`` () =
     let print text = File.AppendAllText(fileName, text)
     let exit() = ()
 
-    DisplayVersion builder print exit
+    DisplayVersion print exit builder
 
     let version = File.ReadAllText fileName
     Assert.That(version, Does.Match expectedVersionPattern)

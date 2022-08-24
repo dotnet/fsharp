@@ -55,13 +55,13 @@ val ParseCompilerOptions: (string -> unit) * CompilerOptionBlock list * string l
 val DisplayBannerText: tcConfigB: TcConfigBuilder -> print: (string -> unit) -> unit
 
 val DisplayHelpFsc:
-    tcConfigB: TcConfigBuilder ->
-    blocks: CompilerOptionBlock list ->
     print: (string -> unit) ->
     exit: (unit -> 'T) ->
+    tcConfigB: TcConfigBuilder ->
+    blocks: CompilerOptionBlock list ->
         'T
 
-val DisplayVersion: tcConfigB: TcConfigBuilder -> print: (string -> unit) -> exit: (unit -> 'T) -> 'T
+val DisplayVersion: print: (string -> unit) -> exit: (unit -> 'T) -> tcConfigB: TcConfigBuilder -> 'T
 
 val GetCoreFscCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 
