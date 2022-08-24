@@ -41,6 +41,7 @@
     <Compile Include="..\service\Symbols.fs">
       <Link>Symbols.fs</Link>
     </Compile>
+    <Compile Include="TestDoubles.fs" />
     <Compile Include="ConsoleOnlyOptionsTests.fs" />
     <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
     <Compile Include="..\service\SyntaxTreeTests\TypeTests.fs">
