@@ -1994,25 +1994,13 @@ let displayVersion = DisplayVersion Console.Write (fun () -> exit 0)
 let miscFlagsBoth tcConfigB =
     [
         CompilerOption("nologo", tagNone, OptionUnit(fun () -> tcConfigB.showBanner <- false), None, Some(FSComp.SR.optsNologo ()))
-        CompilerOption(
-            "version",
-            tagNone,
-            OptionConsoleOnly(fun _ -> displayVersion tcConfigB),
-            None,
-            Some(FSComp.SR.optsVersion ())
-        )
+        CompilerOption("version", tagNone, OptionConsoleOnly(fun _ -> displayVersion tcConfigB), None, Some(FSComp.SR.optsVersion ()))
     ]
 
 let miscFlagsFsc tcConfigB =
     miscFlagsBoth tcConfigB
     @ [
-        CompilerOption(
-            "help",
-            tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks),
-            None,
-            Some(FSComp.SR.optsHelp ())
-        )
+        CompilerOption("help", tagNone, OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks), None, Some(FSComp.SR.optsHelp ()))
         CompilerOption("@<file>", tagNone, OptionUnit ignore, None, Some(FSComp.SR.optsResponseFile ()))
     ]
 
