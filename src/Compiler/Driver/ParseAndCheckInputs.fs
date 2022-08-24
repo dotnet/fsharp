@@ -1160,7 +1160,7 @@ let AddCheckResultsToTcState
         | _ -> tcSigEnv, []
 
     let ccuSigForFile =
-        CombineCcuContentFragments m [ implFileSigType; tcState.tcsCcuSig ]
+        CombineCcuContentFragments [ implFileSigType; tcState.tcsCcuSig ]
 
     let tcState =
         { tcState with
@@ -1249,7 +1249,7 @@ let CheckOneInputAux
                 let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
 
                 // Add the signature to the signature env (unless it had an explicit signature)
-                let ccuSigForFile = CombineCcuContentFragments m [ sigFileType; tcState.tcsCcuSig ]
+                let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
 
                 // Open the prefixPath for fsi.exe
                 let tcEnv, _openDecls1 =

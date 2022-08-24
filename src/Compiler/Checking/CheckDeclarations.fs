@@ -4479,7 +4479,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
 
                     // Publish the combined module type
                     env.eModuleOrNamespaceTypeAccumulator.Value <- 
-                        CombineCcuContentFragments m [env.eModuleOrNamespaceTypeAccumulator.Value; modTyRoot]
+                        CombineCcuContentFragments [env.eModuleOrNamespaceTypeAccumulator.Value; modTyRoot]
                     env
 
             return env
@@ -4801,7 +4801,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
                   // Publish the combined module type
                   env.eModuleOrNamespaceTypeAccumulator.Value <-
-                      CombineCcuContentFragments m [env.eModuleOrNamespaceTypeAccumulator.Value; modTyRoot]
+                      CombineCcuContentFragments [env.eModuleOrNamespaceTypeAccumulator.Value; modTyRoot]
                   env, openDecls
           
           let moduleContentsRoot = BuildRootModuleContents kind.IsModule enclosingNamespacePath envNS.eCompPath moduleContents
