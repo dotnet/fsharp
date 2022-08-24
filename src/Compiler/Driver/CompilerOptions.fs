@@ -173,7 +173,7 @@ let PrintCompilerOptionBlocks blocks print =
             let headingOptions =
                 publicBlocks |> List.filter (fun (h2, _) -> heading = h2) |> List.collect snd
 
-            PrintPublicOptions(heading, headingOptions) print
+            PrintPublicOptions (heading, headingOptions) print
             Set.add heading doneHeadings
 
     List.fold consider Set.empty publicBlocks |> ignore<Set<string>>
@@ -1981,22 +1981,34 @@ let DisplayBannerText tcConfigB print =
 let DisplayHelpFsc tcConfigB (blocks: CompilerOptionBlock list) print exit =
     DisplayBannerText tcConfigB print
     PrintCompilerOptionBlocks blocks print
-    exit()
+    exit ()
 
 let DisplayVersion tcConfigB print exit =
     print $"{tcConfigB.productNameForBannerText}\n"
-    exit()
+    exit ()
 
 let miscFlagsBoth tcConfigB =
     [
         CompilerOption("nologo", tagNone, OptionUnit(fun () -> tcConfigB.showBanner <- false), None, Some(FSComp.SR.optsNologo ()))
-        CompilerOption("version", tagNone, OptionConsoleOnly(fun _ -> DisplayVersion tcConfigB Console.Write (exit 0)), None, Some(FSComp.SR.optsVersion ()))
+        CompilerOption(
+            "version",
+            tagNone,
+            OptionConsoleOnly(fun _ -> DisplayVersion tcConfigB Console.Write (exit 0)),
+            None,
+            Some(FSComp.SR.optsVersion ())
+        )
     ]
 
 let miscFlagsFsc tcConfigB =
     miscFlagsBoth tcConfigB
     @ [
-        CompilerOption("help", tagNone, OptionConsoleOnly(fun blocks -> DisplayHelpFsc tcConfigB blocks Console.Write (exit 0)), None, Some(FSComp.SR.optsHelp ()))
+        CompilerOption(
+            "help",
+            tagNone,
+            OptionConsoleOnly(fun blocks -> DisplayHelpFsc tcConfigB blocks Console.Write (exit 0)),
+            None,
+            Some(FSComp.SR.optsHelp ())
+        )
         CompilerOption("@<file>", tagNone, OptionUnit ignore, None, Some(FSComp.SR.optsResponseFile ()))
     ]
 
