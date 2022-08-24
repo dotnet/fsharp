@@ -34,7 +34,7 @@ type DiagnosticsLoggerUpToMaxErrors =
 
     /// Called when a diagnostic occurs
     abstract HandleIssue:
-        tcConfigB: TcConfigBuilder * diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+        tcConfig: TcConfig * diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
     /// Called when 'too many errors' has occurred
     abstract HandleTooManyErrors: text: string -> unit

@@ -68,7 +68,7 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
     let mutable errors = 0
 
     /// Called when an error or warning occurs
-    abstract HandleIssue: tcConfigB: TcConfigBuilder * diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    abstract HandleIssue: tcConfig: TcConfig * diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
     /// Called when 'too many errors' has occurred
     abstract HandleTooManyErrors: text: string -> unit
@@ -76,12 +76,13 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
     override _.ErrorCount = errors
 
     override x.DiagnosticSink(diagnostic, severity) =
-        if diagnostic.ReportAsError (tcConfigB.diagnosticsOptions, severity) then
-            if errors >= tcConfigB.maxErrors then
+        let tcConfig = TcConfig.Create(tcConfigB, validate = false)
+        if diagnostic.ReportAsError (tcConfig.diagnosticsOptions, severity) then
+            if errors >= tcConfig.maxErrors then
                 x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors ())
                 exiter.Exit 1
 
-            x.HandleIssue(tcConfigB, diagnostic, FSharpDiagnosticSeverity.Error)
+            x.HandleIssue(tcConfig, diagnostic, FSharpDiagnosticSeverity.Error)
 
             errors <- errors + 1
 
@@ -92,11 +93,11 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
                 Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (diagnostic.Exception.ToString()))
             | _ -> ()
 
-        elif diagnostic.ReportAsWarning (tcConfigB.diagnosticsOptions, severity) then
-            x.HandleIssue(tcConfigB, diagnostic, FSharpDiagnosticSeverity.Warning)
+        elif diagnostic.ReportAsWarning (tcConfig.diagnosticsOptions, severity) then
+            x.HandleIssue(tcConfig, diagnostic, FSharpDiagnosticSeverity.Warning)
 
-        elif diagnostic.ReportAsInfo (tcConfigB.diagnosticsOptions, severity) then
-            x.HandleIssue(tcConfigB, diagnostic, severity)
+        elif diagnostic.ReportAsInfo (tcConfig.diagnosticsOptions, severity) then
+            x.HandleIssue(tcConfig, diagnostic, severity)
 
 /// Create an error logger that counts and prints errors
 let ConsoleDiagnosticsLogger (tcConfigB: TcConfigBuilder, exiter: Exiter) =
@@ -105,18 +106,15 @@ let ConsoleDiagnosticsLogger (tcConfigB: TcConfigBuilder, exiter: Exiter) =
         member _.HandleTooManyErrors(text: string) =
             DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () -> Printf.eprintfn "%s" text)
 
-        member _.HandleIssue(tcConfigB, err, severity) =
+        member _.HandleIssue(tcConfig, diagnostic, severity) =
             DoWithDiagnosticColor severity (fun () ->
-                let diagnostic =
-                    OutputDiagnostic(
-                        tcConfigB.implicitIncludeDir,
-                        tcConfigB.showFullPaths,
-                        tcConfigB.flatErrors,
-                        tcConfigB.diagnosticStyle,
+                writeViaBuffer stderr (fun buf ->
+                    diagnostic.Output(
+                        buf,
+                        tcConfig,
                         severity
                     )
-
-                writeViaBuffer stderr diagnostic err
+                )
                 stderr.WriteLine())
     }
     :> DiagnosticsLogger
@@ -338,12 +336,11 @@ module InterfaceFileWriter =
             }
 
         let writeToFile os (CheckedImplFile (contents = mexpr)) =
-            writeViaBuffer
-                os
-                (fun os s -> Printf.bprintf os "%s\n\n" s)
-                (NicePrint.layoutImpliedSignatureOfModuleOrNamespace true denv infoReader AccessibleFromSomewhere range0 mexpr
-                 |> Display.squashTo 80
-                 |> LayoutRender.showL)
+            let text =
+                NicePrint.layoutImpliedSignatureOfModuleOrNamespace true denv infoReader AccessibleFromSomewhere range0 mexpr
+                |> Display.squashTo 80
+                |> LayoutRender.showL
+            Printf.fprintf os "%s\n\n" text
 
         let writeHeader filePath os =
             if

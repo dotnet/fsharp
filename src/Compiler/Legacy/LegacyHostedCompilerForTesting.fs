@@ -33,15 +33,12 @@ type internal InProcDiagnosticsLoggerProvider() =
                     member _.HandleTooManyErrors text =
                         warnings.Add(FormattedDiagnostic.Short(FSharpDiagnosticSeverity.Warning, text))
 
-                    member _.HandleIssue(tcConfigB, err, severity) =
+                    member _.HandleIssue(tcConfig, err, severity) =
                         // 'true' is passed for "suggestNames", since we want to suggest names with fsc.exe runs and this doesn't affect IDE perf
-                        let diagnostics =
-                            CollectFormattedDiagnostics
-                                (tcConfigB.implicitIncludeDir, tcConfigB.showFullPaths,
-                                 tcConfigB.flatErrors, tcConfigB.diagnosticStyle, severity, err, true)
+                        let diagnostics = CollectFormattedDiagnostics (tcConfig, severity, err, true)
                         match severity with
                         | FSharpDiagnosticSeverity.Error ->
-                           errors.AddRange(diagnostics)
+                            errors.AddRange(diagnostics)
                         | FSharpDiagnosticSeverity.Warning ->
                             warnings.AddRange(diagnostics)
                         | _ -> ()}

@@ -1963,7 +1963,7 @@ type FormattedDiagnostic =
     | Short of FSharpDiagnosticSeverity * string
     | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo
 
-let FormatDiagnosticLocation (implicitIncludeDir, showFullPaths, diagnosticStyle) m : FormattedDiagnosticLocation =
+let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocation =
     if equals m rangeStartup || equals m rangeCmdArgs then
         {
             Range = m
@@ -1975,13 +1975,13 @@ let FormatDiagnosticLocation (implicitIncludeDir, showFullPaths, diagnosticStyle
         let file = m.FileName
 
         let file =
-            if showFullPaths then
-                FileSystem.GetFullFilePathInDirectoryShim implicitIncludeDir file
+            if tcConfig.showFullPaths then
+                FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir file
             else
-                SanitizeFileName file implicitIncludeDir
+                SanitizeFileName file tcConfig.implicitIncludeDir
 
         let text, m, file =
-            match diagnosticStyle with
+            match tcConfig.diagnosticStyle with
             | DiagnosticStyle.Emacs ->
                 let file = file.Replace("\\", "/")
                 (sprintf "File \"%s\", line %d, characters %d-%d: " file m.StartLine m.StartColumn m.EndColumn), m, file
@@ -2037,10 +2037,7 @@ let FormatDiagnosticLocation (implicitIncludeDir, showFullPaths, diagnosticStyle
 /// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
 let CollectFormattedDiagnostics
     (
-        implicitIncludeDir,
-        showFullPaths,
-        flattenErrors,
-        diagnosticStyle,
+        tcConfig: TcConfig,
         severity: FSharpDiagnosticSeverity,
         diagnostic: PhasedDiagnostic,
         suggestNames: bool
@@ -2060,7 +2057,7 @@ let CollectFormattedDiagnostics
             let where =
                 match diagnostic.Range with
                 | Some m ->
-                    FormatDiagnosticLocation (implicitIncludeDir, showFullPaths, diagnosticStyle) m
+                    FormatDiagnosticLocation tcConfig m
                     |> Some
                 | None -> None
 
@@ -2074,7 +2071,7 @@ let CollectFormattedDiagnostics
                 | FSharpDiagnosticSeverity.Hidden -> "info"
 
             let text =
-                match diagnosticStyle with
+                match tcConfig.diagnosticStyle with
                 // Show the subcategory for --vserrors so that we can fish it out in Visual Studio and use it to determine error stickiness.
                 | DiagnosticStyle.VisualStudio -> sprintf "%s %s FS%04d: " subcategory message errorNumber
                 | _ -> sprintf "%s FS%04d: " message errorNumber
@@ -2086,7 +2083,7 @@ let CollectFormattedDiagnostics
                     TextRepresentation = text
                 }
 
-            let message = diagnostic.FormatCore (flattenErrors, suggestNames)
+            let message = diagnostic.FormatCore (tcConfig.flatErrors, suggestNames)
 
             let entry: FormattedDiagnosticDetailedInfo =
                 {
@@ -2106,42 +2103,50 @@ let CollectFormattedDiagnostics
 
         errors.ToArray()
 
-/// used by fsc.exe and fsi.exe, but not by VS
-/// prints error and related errors to the specified StringBuilder
-let OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, diagnosticStyle, severity) os (diagnostic: PhasedDiagnostic) =
+type PhasedDiagnostic with
 
-    // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
-    let errors =
-        CollectFormattedDiagnostics(implicitIncludeDir, showFullPaths, flattenErrors, diagnosticStyle, severity, diagnostic, true)
+    /// used by fsc.exe and fsi.exe, but not by VS
+    /// prints error and related errors to the specified StringBuilder
+    member diagnostic.Output (buf, tcConfig: TcConfig, severity) =
 
-    for e in errors do
-        Printf.bprintf os "\n"
+        // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
+        let diagnostics =
+            CollectFormattedDiagnostics(tcConfig, severity, diagnostic, true)
 
-        match e with
-        | FormattedDiagnostic.Short (_, txt) -> os.AppendString txt |> ignore
-        | FormattedDiagnostic.Long (_, details) ->
-            match details.Location with
-            | Some l when not l.IsEmpty -> os.AppendString l.TextRepresentation
-            | _ -> ()
+        for e in diagnostics do
+            Printf.bprintf buf "\n"
 
-            os.AppendString details.Canonical.TextRepresentation
-            os.AppendString details.Message
+            match e with
+            | FormattedDiagnostic.Short (_, txt) -> buf.AppendString txt |> ignore
+            | FormattedDiagnostic.Long (_, details) ->
+                match details.Location with
+                | Some l when not l.IsEmpty -> buf.AppendString l.TextRepresentation
+                | _ -> ()
 
-let OutputDiagnosticContext prefix fileLineFunction os (diagnostic: PhasedDiagnostic) =
-    match diagnostic.Range with
-    | None -> ()
-    | Some m ->
-        let fileName = m.FileName
-        let lineA = m.StartLine
-        let lineB = m.EndLine
-        let line = fileLineFunction fileName lineA
+                buf.AppendString details.Canonical.TextRepresentation
+                buf.AppendString details.Message
 
-        if line <> "" then
-            let iA = m.StartColumn
-            let iB = m.EndColumn
-            let iLen = if lineA = lineB then max (iB - iA) 1 else 1
-            Printf.bprintf os "%s%s\n" prefix line
-            Printf.bprintf os "%s%s%s\n" prefix (String.make iA '-') (String.make iLen '^')
+    member diagnostic.OutputContext (buf, prefix, fileLineFunction) =
+        match diagnostic.Range with
+        | None -> ()
+        | Some m ->
+            let fileName = m.FileName
+            let lineA = m.StartLine
+            let lineB = m.EndLine
+            let line = fileLineFunction fileName lineA
+
+            if line <> "" then
+                let iA = m.StartColumn
+                let iB = m.EndColumn
+                let iLen = if lineA = lineB then max (iB - iA) 1 else 1
+                Printf.bprintf buf "%s%s\n" prefix line
+                Printf.bprintf buf "%s%s%s\n" prefix (String.make iA '-') (String.make iLen '^')
+
+    member diagnostic.WriteWithContext (os, prefix, fileLineFunction, tcConfig, severity) =
+        writeViaBuffer os (fun buf ->
+            diagnostic.OutputContext (buf, prefix, fileLineFunction)
+            diagnostic.Output (buf, tcConfig, severity)
+        )
 
 //----------------------------------------------------------------------------
 // Scoped #nowarn pragmas

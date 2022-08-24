@@ -4,6 +4,7 @@
 module internal FSharp.Compiler.CompilerDiagnostics
 
 open System.Text
+open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Syntax
@@ -70,20 +71,21 @@ type PhasedDiagnostic with
     /// Indicates if we should report a warning as an error
     member ReportAsError: FSharpDiagnosticOptions * FSharpDiagnosticSeverity -> bool
 
-/// Output an error or warning to a buffer
-val OutputDiagnostic:
-    implicitIncludeDir: string *
-    showFullPaths: bool *
-    flattenErrors: bool *
-    diagnosticStyle: DiagnosticStyle *
-    severity: FSharpDiagnosticSeverity ->
-        StringBuilder ->
-        PhasedDiagnostic ->
+    /// Output all of a diagnostic to a buffer, including range
+    member Output:
+        buf: StringBuilder *
+        tcConfig: TcConfig *
+        severity: FSharpDiagnosticSeverity ->
             unit
 
-/// Output extra context information for an error or warning to a buffer
-val OutputDiagnosticContext:
-    prefix: string -> fileLineFunction: (string -> int -> string) -> StringBuilder -> PhasedDiagnostic -> unit
+    /// Write extra context information for a diagnostic
+    member WriteWithContext:
+        os: System.IO.TextWriter *
+        prefix: string *
+        fileLineFunction: (string -> int -> string) *
+        tcConfig: TcConfig *
+        severity: FSharpDiagnosticSeverity ->
+            unit
 
 /// Get an error logger that filters the reporting of warnings based on scoped pragma information
 val GetDiagnosticsLoggerFilteringByScopedPragmas:
@@ -125,10 +127,7 @@ type FormattedDiagnostic =
 
 /// Used internally and in LegacyHostedCompilerForTesting
 val CollectFormattedDiagnostics:
-    implicitIncludeDir: string *
-    showFullPaths: bool *
-    flattenErrors: bool *
-    diagnosticStyle: DiagnosticStyle *
+    tcConfig: TcConfig *
     severity: FSharpDiagnosticSeverity *
     PhasedDiagnostic *
     suggestNames: bool ->

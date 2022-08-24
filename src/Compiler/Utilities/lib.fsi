@@ -230,7 +230,7 @@ val equalOn: f: ('a -> 'b) -> x: 'a -> y: 'a -> bool when 'b: equality
 val buildString: f: (StringBuilder -> unit) -> string
 
 /// Writing to output stream via a string buffer.
-val writeViaBuffer: os: TextWriter -> f: (StringBuilder -> 'a -> unit) -> x: 'a -> unit
+val writeViaBuffer: os: TextWriter -> f: (StringBuilder -> unit) -> unit
 
 type StringBuilder with
 

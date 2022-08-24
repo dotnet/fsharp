@@ -2397,8 +2397,8 @@ module internal ParseAndCheckFile =
             // If there was a loadClosure, replay the errors and warnings from resolution, excluding parsing
             loadClosure.LoadClosureRootFileDiagnostics |> List.iter diagnosticSink
 
-            let fileOfBackgroundError err =
-                match GetRangeOfDiagnostic(fst err) with
+            let fileOfBackgroundError (diagnostic: PhasedDiagnostic, _) =
+                match diagnostic.Range with
                 | Some m -> Some m.FileName
                 | None -> None
 

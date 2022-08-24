@@ -726,13 +726,12 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
             if 0 < i && i <= lines.Length then lines[i-1] else ""
 
     /// Display the given error.
-    member syphon.PrintError (tcConfig:TcConfigBuilder, err) =
+    member syphon.PrintDiagnostic (tcConfig:TcConfig, diagnostic: PhasedDiagnostic) =
         ignoreAllErrors (fun () ->
             let severity = FSharpDiagnosticSeverity.Error
             DoWithDiagnosticColor severity (fun () ->
                 errorWriter.WriteLine()
-                writeViaBuffer errorWriter (OutputDiagnosticContext "  " syphon.GetLine) err
-                writeViaBuffer errorWriter (OutputDiagnostic (tcConfig.implicitIncludeDir,tcConfig.showFullPaths,tcConfig.flatErrors,tcConfig.diagnosticStyle,severity))  err
+                diagnostic.WriteWithContext(errorWriter, "  ", syphon.GetLine, tcConfig, severity)
                 errorWriter.WriteLine()
                 errorWriter.WriteLine()
                 errorWriter.Flush()))
@@ -773,26 +772,25 @@ type internal DiagnosticsLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, 
 
     member _.ResetErrorCount() = errorCount <- 0
 
-    override _.DiagnosticSink(err, severity) =
-        if err.ReportAsError (tcConfigB.diagnosticsOptions, severity) then
-            fsiStdinSyphon.PrintError(tcConfigB,err)
+    override _.DiagnosticSink(diagnostic, severity) =
+        let tcConfig = TcConfig.Create(tcConfigB,validate=false)
+        if diagnostic.ReportAsError (tcConfig.diagnosticsOptions, severity) then
+            fsiStdinSyphon.PrintDiagnostic(tcConfig,diagnostic)
             errorCount <- errorCount + 1
             if tcConfigB.abortOnError then exit 1 (* non-zero exit code *)
             // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
             raise StopProcessing
-        elif err.ReportAsWarning (tcConfigB.diagnosticsOptions, severity) then
+        elif diagnostic.ReportAsWarning (tcConfig.diagnosticsOptions, severity) then
             DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
-                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
-                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.diagnosticStyle,severity)) err
+                diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
-        elif err.ReportAsInfo (tcConfigB.diagnosticsOptions, severity) then
+        elif diagnostic.ReportAsInfo (tcConfig.diagnosticsOptions, severity) then
             DoWithDiagnosticColor FSharpDiagnosticSeverity.Info (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
-                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
-                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.diagnosticStyle,severity)) err
+                diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())

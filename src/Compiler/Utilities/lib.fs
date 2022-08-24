@@ -321,9 +321,9 @@ let buildString f =
     buf.ToString()
 
 /// Writing to output stream via a string buffer.
-let writeViaBuffer (os: TextWriter) f x =
+let writeViaBuffer (os: TextWriter) f =
     let buf = StringBuilder 100
-    f buf x
+    f buf
     os.Write(buf.ToString())
 
 type StringBuilder with
