@@ -160,8 +160,8 @@ let getCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOpti
 
 let getPublicOptions (heading, opts) =
     if not (isNil opts) then
-        $"{nl}{nl}\t\t{heading}{nl}" +
-        (opts |> List.map getCompilerOption |> String.concat "")
+        $"{nl}{nl}\t\t{heading}{nl}"
+        + (opts |> List.map getCompilerOption |> String.concat "")
     else
         ""
 
