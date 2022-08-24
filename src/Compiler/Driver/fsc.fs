@@ -121,7 +121,6 @@ let ConsoleDiagnosticsLogger (tcConfigB: TcConfigBuilder, exiter: Exiter) =
     }
     :> DiagnosticsLogger
 
-
 /// DiagnosticLoggers can be sensitive to the TcConfig flags. During the checking
 /// of the flags themselves we have to create temporary loggers, until the full configuration is
 /// available.
@@ -133,8 +132,7 @@ type CapturingDiagnosticsLogger with
 
     /// Commit the delayed diagnostics via a fresh temporary logger of the right kind.
     member x.CommitDelayedDiagnostics(diagnosticsLoggerProvider: DiagnosticsLoggerProvider, tcConfigB, exiter) =
-        let diagnosticsLogger =
-            diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
+        let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
         x.CommitDelayedDiagnostics diagnosticsLogger
 
 /// The default DiagnosticsLogger implementation, reporting messages to the Console up to the maxerrors maximum
@@ -519,8 +517,7 @@ let main1
     SetTailcallSwitch tcConfigB OptionSwitch.On
 
     // Now install a delayed logger to hold all errors from flags until after all flags have been parsed (for example, --vserrors)
-    let delayForFlagsLogger =
-        CapturingDiagnosticsLogger("DelayFlagsLogger")
+    let delayForFlagsLogger = CapturingDiagnosticsLogger("DelayFlagsLogger")
 
     let _holder = UseDiagnosticsLogger delayForFlagsLogger
 
@@ -539,7 +536,7 @@ let main1
             AdjustForScriptCompile(tcConfigB, files, lexResourceManager, dependencyProvider)
         with e ->
             errorRecovery e rangeStartup
-            delayForFlagsLogger.CommitDelayedDiagnostics (diagnosticsLoggerProvider, tcConfigB, exiter)
+            delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
             exiter.Exit 1
 
     tcConfigB.conditionalDefines <- "COMPILED" :: tcConfigB.conditionalDefines
@@ -554,12 +551,12 @@ let main1
             tcConfigB.DecideNames sourceFiles
         with e ->
             errorRecovery e rangeStartup
-            delayForFlagsLogger.CommitDelayedDiagnostics (diagnosticsLoggerProvider, tcConfigB, exiter)
+            delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
             exiter.Exit 1
 
     // DecideNames may give "no inputs" error. Abort on error at this point. bug://3911
     if not tcConfigB.continueAfterParseFailure && delayForFlagsLogger.ErrorCount > 0 then
-        delayForFlagsLogger.CommitDelayedDiagnostics (diagnosticsLoggerProvider, tcConfigB, exiter)
+        delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
         exiter.Exit 1
 
     // If there's a problem building TcConfig, abort
@@ -568,11 +565,10 @@ let main1
             TcConfig.Create(tcConfigB, validate = false)
         with e ->
             errorRecovery e rangeStartup
-            delayForFlagsLogger.CommitDelayedDiagnostics (diagnosticsLoggerProvider, tcConfigB, exiter)
+            delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
             exiter.Exit 1
 
-    let diagnosticsLogger =
-        diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
+    let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
 
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
     let _holder = UseDiagnosticsLogger diagnosticsLogger
@@ -665,18 +661,7 @@ let main1
     let inputs = inputs |> List.map fst
 
     let tcState, topAttrs, typedAssembly, _tcEnvAtEnd =
-        TypeCheck(
-            ctok,
-            tcConfig,
-            tcImports,
-            tcGlobals,
-            diagnosticsLogger,
-            assemblyName,
-            tcEnv0,
-            openDecls0,
-            inputs,
-            exiter
-        )
+        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, assemblyName, tcEnv0, openDecls0, inputs, exiter)
 
     AbortOnError(diagnosticsLogger, exiter)
     ReportTime tcConfig "Typechecked"
@@ -790,13 +775,12 @@ let main1OfAst
         try
             TcConfig.Create(tcConfigB, validate = false)
         with e ->
-            delayForFlagsLogger.CommitDelayedDiagnostics (diagnosticsLoggerProvider, tcConfigB, exiter)
+            delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
             exiter.Exit 1
 
     let dependencyProvider = new DependencyProvider()
 
-    let diagnosticsLogger =
-        diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
+    let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
 
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
     let _holder = UseDiagnosticsLogger diagnosticsLogger
@@ -848,18 +832,7 @@ let main1OfAst
 
     // Type check the inputs
     let tcState, topAttrs, typedAssembly, _tcEnvAtEnd =
-        TypeCheck(
-            ctok,
-            tcConfig,
-            tcImports,
-            tcGlobals,
-            diagnosticsLogger,
-            assemblyName,
-            tcEnv0,
-            openDecls0,
-            inputs,
-            exiter
-        )
+        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, assemblyName, tcEnv0, openDecls0, inputs, exiter)
 
     AbortOnError(diagnosticsLogger, exiter)
     ReportTime tcConfig "Typechecked"

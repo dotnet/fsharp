@@ -17,8 +17,7 @@ open FSharp.Compiler.TcGlobals
 /// of the flags themselves we have to create temporary loggers, until the full configuration is
 /// available.
 type DiagnosticsLoggerProvider =
-    abstract CreateLogger:
-        tcConfigB: TcConfigBuilder * exiter: Exiter -> DiagnosticsLogger
+    abstract CreateLogger: tcConfigB: TcConfigBuilder * exiter: Exiter -> DiagnosticsLogger
 
 /// The default DiagnosticsLoggerProvider implementation, reporting messages to the Console up to the maxerrors maximum
 type ConsoleLoggerProvider =

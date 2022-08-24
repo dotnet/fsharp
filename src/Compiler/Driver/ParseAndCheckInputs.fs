@@ -743,7 +743,8 @@ let UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, eagerFormat) f =
 
     // Check input files and create delayed error loggers before we try to parallel parse.
     let delayLoggers =
-        inputs |> List.map (fun _ -> CapturingDiagnosticsLogger("TcDiagnosticsLogger", ?eagerFormat=eagerFormat))
+        inputs
+        |> List.map (fun _ -> CapturingDiagnosticsLogger("TcDiagnosticsLogger", ?eagerFormat = eagerFormat))
 
     try
         f (List.zip inputs delayLoggers)
@@ -751,14 +752,7 @@ let UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, eagerFormat) f =
         for logger in delayLoggers do
             logger.CommitDelayedDiagnostics diagnosticsLogger
 
-let ParseInputFilesInParallel
-    (
-        tcConfig: TcConfig,
-        lexResourceManager,
-        sourceFiles,
-        delayLogger: DiagnosticsLogger,
-        retryLocked
-    ) =
+let ParseInputFilesInParallel (tcConfig: TcConfig, lexResourceManager, sourceFiles, delayLogger: DiagnosticsLogger, retryLocked) =
 
     let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
 
@@ -803,13 +797,7 @@ let ParseInputFiles
     ) =
     try
         if tcConfig.concurrentBuild then
-            ParseInputFilesInParallel(
-                tcConfig,
-                lexResourceManager,
-                sourceFiles,
-                diagnosticsLogger,
-                retryLocked
-            )
+            ParseInputFilesInParallel(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, retryLocked)
         else
             ParseInputFilesSequential(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, retryLocked)
 
@@ -1565,18 +1553,7 @@ let CheckMultipleInputsInParallel
 
         finishedResults, tcState)
 
-let CheckClosedInputSet
-    (
-        ctok,
-        checkForErrors,
-        tcConfig: TcConfig,
-        tcImports,
-        tcGlobals,
-        prefixPathOpt,
-        tcState,
-        eagerFormat,
-        inputs
-    ) =
+let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
 
     let disableParallel =
         Environment.GetEnvironmentVariable("FSHARP_NO_PARALLEL_CHECKING")
@@ -1586,17 +1563,7 @@ let CheckClosedInputSet
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
         if tcConfig.concurrentBuild && not disableParallel then
-            CheckMultipleInputsInParallel(
-                ctok,
-                checkForErrors,
-                tcConfig,
-                tcImports,
-                tcGlobals,
-                prefixPathOpt,
-                tcState,
-                eagerFormat,
-                inputs
-            )
+            CheckMultipleInputsInParallel(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs)
         else
             CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
 

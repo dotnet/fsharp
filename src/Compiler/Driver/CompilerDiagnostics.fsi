@@ -59,7 +59,8 @@ val GetDiagnosticNumber: diagnostic: PhasedDiagnostic -> int
 val StripRelatedDiagnostics: diagnostic: PhasedDiagnostic -> PhasedDiagnostic
 
 /// Eagerly format a PhasedDiagnostic to a DiagnosticWithText
-val EagerlyFormatDiagnostic: flattenErrors: bool -> suggestNames: bool -> diagnostic: PhasedDiagnostic -> PhasedDiagnostic
+val EagerlyFormatDiagnostic:
+    flattenErrors: bool -> suggestNames: bool -> diagnostic: PhasedDiagnostic -> PhasedDiagnostic
 
 /// Output an error to a buffer
 val OutputPhasedDiagnostic:

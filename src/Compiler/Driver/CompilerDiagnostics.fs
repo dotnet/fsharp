@@ -384,23 +384,23 @@ let IsWarningOrInfoEnabled (diagnostic, severity) n level specificWarnOn =
         || (severity = FSharpDiagnosticSeverity.Warning
             && level >= GetWarningLevel diagnostic)
 
-let ToPhased phase exn =
-    {
-        Exception = exn
-        Phase = phase
-    }
+let ToPhased phase exn = { Exception = exn; Phase = phase }
 
 let rec StripRelatedException phase exn =
     match exn with
     | ErrorFromAddingTypeEquation (g, denv, ty1, ty2, exn2, m) ->
         let diag2 = StripRelatedException phase exn2
-        ErrorFromAddingTypeEquation(g, denv, ty1, ty2, diag2.Exception, m) |> ToPhased phase
+
+        ErrorFromAddingTypeEquation(g, denv, ty1, ty2, diag2.Exception, m)
+        |> ToPhased phase
     | ErrorFromApplyingDefault (g, denv, tp, defaultType, exn2, m) ->
         let diag2 = StripRelatedException phase exn2
+
         ErrorFromApplyingDefault(g, denv, tp, defaultType, diag2.Exception, m)
         |> ToPhased phase
     | ErrorsFromAddingSubsumptionConstraint (g, denv, ty1, ty2, exn2, contextInfo, m) ->
         let diag2 = StripRelatedException phase exn2
+
         ErrorsFromAddingSubsumptionConstraint(g, denv, ty1, ty2, diag2.Exception, contextInfo, m)
         |> ToPhased phase
     | ErrorFromAddingConstraint (x, exn2, m) ->
@@ -413,8 +413,7 @@ let rec StripRelatedException phase exn =
     | :? TargetInvocationException as exn -> StripRelatedException phase exn.InnerException
     | _ -> ToPhased phase exn
 
-let StripRelatedDiagnostics (diagnostic: PhasedDiagnostic) =
-    StripRelatedException diagnostic.Phase diagnostic.Exception
+let StripRelatedDiagnostics (diagnostic: PhasedDiagnostic) = StripRelatedException diagnostic.Phase diagnostic.Exception
 
 let Message (name, format) = DeclareResourceString(name, format)
 
@@ -1893,6 +1892,7 @@ let EagerlyFormatDiagnostic (flattenErrors: bool) (suggestNames: bool) (diagnost
         let os = StringBuilder()
         OutputPhasedDiagnostic os diagnostic flattenErrors suggestNames
         let message = os.ToString()
+
         DiagnosticWithText(GetDiagnosticNumber diagnostic, message, m)
         |> ToPhased diagnostic.Phase
     | None -> diagnostic
