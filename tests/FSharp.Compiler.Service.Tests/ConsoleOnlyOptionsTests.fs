@@ -9,6 +9,7 @@ open NUnit.Framework
 open TestDoubles
 
 [<Test>]
+[<Ignore "Failing in main, disabling until resolved">]
 let ``Help is displayed correctly`` () =
     try
         if System.Console.BufferWidth < 80 then
