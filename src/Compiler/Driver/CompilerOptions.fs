@@ -263,9 +263,8 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
     // returns a tuple - the option token, the option argument string
     let parseOption (s: string) =
-        // grab the option token
-        let opts = s.Split([| ':' |])
-        let mutable opt = opts[0]
+
+        let mutable opt = s
 
         if opt = "" then
             ()
@@ -283,9 +282,13 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
             else
                 opt <- ""
 
+        // grab the option token
+        let opts = opt.Split([| ':' |])
+        let token = opts[0]
+
         // get the argument string
         let optArgs = if opts.Length > 1 then String.Join(":", opts[1..]) else ""
-        opt, optArgs
+        opt, token, optArgs
 
     let getOptionArg compilerOption (argString: string) =
         if argString = "" then
@@ -352,7 +355,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
             processArg (responseFileOptions @ t)
         | opt :: t ->
-            let optToken, argString = parseOption opt
+            let option, optToken, argString = parseOption opt
 
             let reportDeprecatedOption errOpt =
                 match errOpt with
@@ -361,7 +364,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
             let rec attempt l =
                 match l with
-                | CompilerOption (s, _, OptionConsoleOnly f, d, _) :: _ when optToken = s && argString = "" ->
+                | CompilerOption (s, _, OptionConsoleOnly f, d, _) :: _ when option = s ->
                     reportDeprecatedOption d
                     f blocks
                     t
@@ -710,7 +713,7 @@ let tagAlgorithm = "{SHA1|SHA256}"
 let tagInt = "<n>"
 let tagPathMap = "<path=sourcePath;...>"
 let tagNone = ""
-let tagLangVersionValues = "{?|version|latest|preview}"
+let tagLangVersionValues = "{version|latest|preview}"
 
 // PrintOptionInfo
 //----------------
@@ -1104,23 +1107,15 @@ let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
         Some(FSComp.SR.optsMlcompatibility ())
     )
 
-/// LanguageVersion management
-let setLanguageVersion specifiedVersion =
+let GetLanguageVersions () =
+    seq { 
+        FSComp.SR.optsSupportedLangVersions ()
+        yield! LanguageVersion.ValidOptions
+        yield! LanguageVersion.ValidVersions
+    } |> String.concat Environment.NewLine
 
-    let dumpAllowedValues () =
-        printfn "%s" (FSComp.SR.optsSupportedLangVersions ())
-
-        for v in LanguageVersion.ValidOptions do
-            printfn "%s" v
-
-        for v in LanguageVersion.ValidVersions do
-            printfn "%s" v
-
-        exit 0
-
-    if specifiedVersion = "?" then
-        dumpAllowedValues ()
-    elif specifiedVersion.ToUpperInvariant() = "PREVIEW" then
+let setLanguageVersion (specifiedVersion: string) =
+    if specifiedVersion.ToUpperInvariant() = "PREVIEW" then
         ()
     elif not (LanguageVersion.ContainsVersion specifiedVersion) then
         error (Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
@@ -1130,6 +1125,16 @@ let setLanguageVersion specifiedVersion =
 let languageFlags tcConfigB =
     [
         // -langversion:?                Display the allowed values for language version
+        CompilerOption(
+            "langversion:?",
+            tagNone,
+            OptionConsoleOnly(fun _ ->
+                Console.Write(GetLanguageVersions())
+                exit 0),
+            None,
+            Some(FSComp.SR.optsGetLangVersions ())
+        )
+
         // -langversion:<string>         Specify language version such as
         //                               'default' (latest major version), or
         //                               'latest' (latest version, including minor versions),
@@ -1140,7 +1145,7 @@ let languageFlags tcConfigB =
             tagLangVersionValues,
             OptionString(fun switch -> tcConfigB.langVersion <- setLanguageVersion (switch)),
             None,
-            Some(FSComp.SR.optsLangVersion ())
+            Some(FSComp.SR.optsSetLangVersion ())
         )
 
         CompilerOption(
