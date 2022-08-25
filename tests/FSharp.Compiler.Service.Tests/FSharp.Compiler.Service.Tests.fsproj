@@ -20,7 +20,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="expected-help-output.txt">
+    <Content Include="expected-help-output.bsl">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
     <Compile Include="..\fsharp\TestHelpers.fs" Link="TestHelpers.fs" />
