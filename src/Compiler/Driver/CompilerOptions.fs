@@ -1116,7 +1116,7 @@ let setLanguageVersion specifiedVersion =
         for v in LanguageVersion.ValidVersions do
             printfn "%s" v
 
-        exit 0
+        QuitProcessExiter.Exit 0
 
     if specifiedVersion = "?" then
         dumpAllowedValues ()
@@ -2023,7 +2023,7 @@ let miscFlagsBoth tcConfigB =
             tagNone,
             OptionConsoleOnly(fun _ ->
                 Console.Write(GetVersion tcConfigB)
-                exit 0),
+                QuitProcessExiter.Exit 0),
             None,
             Some(FSComp.SR.optsVersion ())
         )
@@ -2037,7 +2037,7 @@ let miscFlagsFsc tcConfigB =
             tagNone,
             OptionConsoleOnly(fun blocks ->
                 Console.Write(GetHelpFsc tcConfigB blocks)
-                exit 0),
+                QuitProcessExiter.Exit 0),
             None,
             Some(FSComp.SR.optsHelp ())
         )
@@ -2098,7 +2098,7 @@ let abbreviatedFlagsFsc tcConfigB =
             tagNone,
             OptionConsoleOnly(fun blocks ->
                 Console.Write(GetHelpFsc tcConfigB blocks)
-                exit 0),
+                QuitProcessExiter.Exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2108,7 +2108,7 @@ let abbreviatedFlagsFsc tcConfigB =
             tagNone,
             OptionConsoleOnly(fun blocks ->
                 Console.Write(GetHelpFsc tcConfigB blocks)
-                exit 0),
+                QuitProcessExiter.Exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2118,7 +2118,7 @@ let abbreviatedFlagsFsc tcConfigB =
             tagNone,
             OptionConsoleOnly(fun blocks ->
                 Console.Write(GetHelpFsc tcConfigB blocks)
-                exit 0),
+                QuitProcessExiter.Exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
