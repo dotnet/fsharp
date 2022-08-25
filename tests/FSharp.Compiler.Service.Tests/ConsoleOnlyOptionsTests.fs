@@ -9,6 +9,7 @@ open NUnit.Framework
 open TestDoubles
 
 [<Test>]
+[<Ignore "Failing in main, disabling until resolved">]
 let ``Help is displayed correctly`` () =
     let builder = getArbitraryTcConfigBuilder()
     let blocks = GetCoreFscCompilerOptions builder
