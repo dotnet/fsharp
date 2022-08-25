@@ -8,6 +8,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
@@ -224,10 +225,10 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     // Give bespoke error messages for the FSharp.Core "query" builder
     let isQuery = 
         match stripDebugPoints interpExpr with 
-        | Expr.Val (vf, _, m) -> 
-            let item = Item.CustomBuilder (vf.DisplayName, vf)
+        | Expr.Val (vref, _, m) -> 
+            let item = Item.CustomBuilder (vref.DisplayName, vref)
             CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, env.eAccessRights)
-            valRefEq cenv.g vf cenv.g.query_value_vref 
+            valRefEq cenv.g vref cenv.g.query_value_vref 
         | _ -> false
 
     /// Make a builder.Method(...) call
@@ -468,7 +469,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         match info with 
                         | None -> false
                         | Some args -> 
-                            args |> List.exists (fun (isParamArrayArg, _isInArg, isOutArg, optArgInfo, _callerInfo, _reflArgInfo) -> isParamArrayArg || isOutArg || optArgInfo.IsOptional))
+                            args |> List.exists (fun (ParamAttribs(isParamArrayArg, _isInArg, isOutArg, optArgInfo, _callerInfo, _reflArgInfo)) -> isParamArrayArg || isOutArg || optArgInfo.IsOptional))
                 else
                     false
 
@@ -728,7 +729,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
     let checkForBinaryApp comp = 
         match comp with 
         | StripApps(SingleIdent nm, [StripApps(SingleIdent nm2, args); arg2]) when 
-                  IsMangledInfixOperator nm.idText && 
+                  IsLogicalInfixOpName nm.idText && 
                   (match tryExpectedArgCountForCustomOperator nm2 with Some n -> n > 0 | _ -> false) &&
                   not (List.isEmpty args) -> 
             let estimatedRangeOfIntendedLeftAndRightArguments = unionRanges (List.last args).Range arg2.Range
@@ -876,8 +877,12 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 SynExpr.Sequential (DebugPointAtSequential.SuppressNeither, true, l, (arbExpr(caption, l.Range.EndRange)), l.Range)
 
             let mkOverallExprGivenVarSpaceExpr, varSpaceInner =
+
                 let isNullableOp opId =
-                    match DecompileOpName opId with "?=" | "=?" | "?=?" -> true | _ -> false
+                    match ConvertValLogicalNameToDisplayNameCore opId with
+                    | "?=" | "=?" | "?=?" -> true
+                    | _ -> false
+
                 match secondResultPatOpt, keySelectorsOpt with 
                 // groupJoin 
                 | Some secondResultPat, Some relExpr when customOperationIsLikeGroupJoin nm -> 
@@ -889,7 +894,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                     | BinOpExpr (opId, l, r) ->
                         if isNullableOp opId.idText then 
                             // When we cannot resolve NullableOps, recommend the relevant namespace to be added
-                            errorR(Error(FSComp.SR.cannotResolveNullableOperators(DecompileOpName opId.idText), relExpr.Range))
+                            errorR(Error(FSComp.SR.cannotResolveNullableOperators(ConvertValLogicalNameToDisplayNameCore opId.idText), relExpr.Range))
                         else
                             errorR(Error(FSComp.SR.tcInvalidRelationInJoin(nm.idText), relExpr.Range))
                         let l = wrapInArbErrSequence l "_keySelector1"
@@ -911,7 +916,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                     | BinOpExpr (opId, l, r) ->
                         if isNullableOp opId.idText then
                             // When we cannot resolve NullableOps, recommend the relevant namespace to be added
-                            errorR(Error(FSComp.SR.cannotResolveNullableOperators(DecompileOpName opId.idText), relExpr.Range))
+                            errorR(Error(FSComp.SR.cannotResolveNullableOperators(ConvertValLogicalNameToDisplayNameCore opId.idText), relExpr.Range))
                         else
                             errorR(Error(FSComp.SR.tcInvalidRelationInJoin(nm.idText), relExpr.Range))
                         // this is not correct JoinRelation but it is still binary operation
@@ -1909,8 +1914,8 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             // This transformation is visible in quotations and thus needs to remain.
             | (TPat_as (TPat_wild _, PatternValBinding (v, _), _), 
                 [_],
-                DebugPoints(Expr.App (Expr.Val (vf, _, _), _, [genEnumElemTy], [yieldExpr], _mYield), recreate)) 
-                    when valRefEq cenv.g vf cenv.g.seq_singleton_vref ->
+                DebugPoints(Expr.App (Expr.Val (vref, _, _), _, [genEnumElemTy], [yieldExpr], _mYield), recreate)) 
+                    when valRefEq cenv.g vref cenv.g.seq_singleton_vref ->
 
                 // The debug point mFor is attached to the 'map'
                 // The debug point mIn is attached to the lambda
@@ -2051,11 +2056,11 @@ let TcSequenceExpression (cenv: cenv) env tpenv comp (overallTy: OverallTy) m =
             error(Error(FSComp.SR.tcUseForInSequenceExpression(), m))
 
         | SynExpr.Match (spMatch, expr, clauses, _m, _trivia) ->
-            let inputExpr, matchty, tpenv = TcExprOfUnknownType cenv env tpenv expr
+            let inputExpr, inputTy, tpenv = TcExprOfUnknownType cenv env tpenv expr
 
             let tclauses, tpenv = 
                 (tpenv, clauses) ||> List.mapFold (fun tpenv (SynMatchClause(pat, cond, innerComp, _, sp, _)) ->
-                      let patR, condR, vspecs, envinner, tpenv = TcMatchPattern cenv matchty env tpenv pat cond
+                      let patR, condR, vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv pat cond
                       let envinner =
                           match sp with
                           | DebugPointAtTarget.Yes -> { envinner with eIsControlFlow = true }

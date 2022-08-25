@@ -764,7 +764,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             type A() = 
                 let fff n = n + 1                
             """
-        this.AssertQuickInfoContainsAtEndOfMarker(code, "let ff", "val fff: (int -> int)")
+        this.AssertQuickInfoContainsAtEndOfMarker(code, "let ff", "val fff: n: int -> int")
 
     // Regression for 2494
     [<Test>]

@@ -3,7 +3,7 @@
 module internal FSharp.Compiler.CheckDeclarations
 
 open Internal.Utilities.Library
-open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Import
@@ -75,6 +75,6 @@ val CheckOneSigFile:
         ParsedSigFileInput ->
             Cancellable<TcEnv * ModuleOrNamespaceType * bool>
 
-exception ParameterlessStructCtor of range: range
-
 exception NotUpperCaseConstructor of range: range
+
+exception NotUpperCaseConstructorWithoutRQA of range: range

@@ -86,8 +86,8 @@ let isDelayedRepr (f: Val) e =
 
 // REVIEW: these should just be replaced by direct calls to mkLocal, mkCompGenLocal etc.
 // REVIEW: However these set an arity whereas the others don't
-let mkLocalNameTypeArity compgen m name ty topValInfo =
-    Construct.NewVal(name, m, None, ty, Immutable, compgen, topValInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
+let mkLocalNameTypeArity compgen m name ty valReprInfo =
+    Construct.NewVal(name, m, None, ty, Immutable, compgen, valReprInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
 
 //-------------------------------------------------------------------------
 // definitions: TLR, arity, arity-met, arity-short
@@ -758,7 +758,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
        let aenvs = Zmap.values cmap
        let pack = cmapPairs |> List.map (fun (v, aenv) -> mkInvisibleBind aenv (exprForVal env.m v))
        let unpack =
-           let unpackCarrier (v, aenv) = mkInvisibleBind (setValHasNoArity v) (exprForVal env.m aenv)
+           let unpackCarrier (v, aenv) = mkInvisibleBind (ClearValReprInfo v) (exprForVal env.m aenv)
            let unpackSubenv f =
                let subCMap = carrierMapFor f
                let vaenvs = Zmap.toList subCMap
@@ -771,8 +771,6 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
 
        // dump
        if verboseTLR then
-           let bindingL bind = bindingL g bind
-
            dprintf "tlr: packEnv envVals =%s\n" (showL (listL valL env.ReqdVals))
            dprintf "tlr: packEnv envSubs =%s\n" (showL (listL valL env.ReqdSubEnvs))
            dprintf "tlr: packEnv vals =%s\n" (showL (listL valL vals))
@@ -795,18 +793,6 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
 // step3: chooseEnvPacks
 //-------------------------------------------------------------------------
 
-#if DEBUG
-let DumpEnvPackM g envPackM =
-    let bindingL bind = bindingL g bind
-    for KeyValue(fc, packedReqdItems) in envPackM do
-        dprintf "packedReqdItems: fc = %A\n" fc
-        dprintf "         reqdTypars = %s\n" (showL (commaListL (List.map typarL packedReqdItems.ep_etps)))
-        dprintf "         aenvs = %s\n" (showL (commaListL (List.map valL packedReqdItems.ep_aenvs)))
-        dprintf "         pack = %s\n" (showL (semiListL (List.map bindingL packedReqdItems.ep_pack)))
-        dprintf "         unpack = %s\n" (showL (semiListL (List.map bindingL packedReqdItems.ep_unpack)))
-        dprintf "\n"
-#endif
-
 /// For each fclass, have an env.
 /// Required to choose an PackedReqdItems,
 /// e.g. deciding whether to tuple up the environment or not.
@@ -818,9 +804,6 @@ let DumpEnvPackM g envPackM =
 let ChooseReqdItemPackings g fclassM topValS  declist reqdItemsMap =
     if verboseTLR then dprintf "ChooseReqdItemPackings------\n"
     let envPackM = FlatEnvPacks g fclassM topValS  declist reqdItemsMap
-#if DEBUG
-    if verboseTLR then DumpEnvPackM g envPackM
-#endif
     envPackM
 
 //-------------------------------------------------------------------------
@@ -964,10 +947,10 @@ module Pass4_RewriteAssembly =
     // pass4: lowertop - convert_vterm_bind on TopLevel binds
     //-------------------------------------------------------------------------
 
-    let AdjustBindToTopVal g (TBind(v, repr, _)) =
+    let AdjustBindToValRepr g (TBind(v, repr, _)) =
         match v.ValReprInfo with
         | None -> 
-            v.SetValReprInfo (Some (InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v repr ))
+            v.SetValReprInfo (Some (InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes v repr ))
             // Things that don't have an arity from type inference but are top-level are compiler-generated
             v.SetIsCompilerGenerated(true)
         | Some _ -> ()
@@ -996,7 +979,7 @@ module Pass4_RewriteAssembly =
 
             // REVIEW: is this mutation really, really necessary? 
             // Why are we applying TLR if the thing already has an arity? 
-            let fOrig = setValHasNoArity fOrig
+            let fOrig = ClearValReprInfo fOrig
 
             let fBind =
                  mkMultiLambdaBind g fOrig letSeqPtOpt m tps vss
@@ -1045,7 +1028,7 @@ module Pass4_RewriteAssembly =
         | Some envp -> envp.ep_pack // environment pack bindings
 
     let forceTopBindToHaveArity penv (bind: Binding) =
-        if penv.topValS.Contains(bind.Var) then AdjustBindToTopVal penv.g bind
+        if penv.topValS.Contains(bind.Var) then AdjustBindToValRepr penv.g bind
 
     let TransBindings xisRec penv (binds: Bindings) =
         let tlrBs, nonTlrBs = binds |> List.partition (fun b -> Zset.contains b.Var penv.tlrS)

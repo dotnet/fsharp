@@ -8,30 +8,31 @@ set -u
 usage()
 {
   echo "Common settings:"
-  echo "  --configuration <value>    Build configuration: 'Debug' or 'Release' (short: -c)"
-  echo "  --verbosity <value>        Msbuild verbosity: q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic] (short: -v)"
-  echo "  --binaryLog                Create MSBuild binary log (short: -bl)"
+  echo "  --configuration <value>        Build configuration: 'Debug' or 'Release' (short: -c)"
+  echo "  --verbosity <value>            Msbuild verbosity: q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic] (short: -v)"
+  echo "  --binaryLog                    Create MSBuild binary log (short: -bl)"
   echo ""
   echo "Actions:"
-  echo "  --bootstrap                Force the build of the bootstrap compiler"
-  echo "  --restore                  Restore projects required to build (short: -r)"
-  echo "  --norestore                Don't restore projects required to build"
-  echo "  --build                    Build all projects (short: -b)"
-  echo "  --rebuild                  Rebuild all projects"
-  echo "  --pack                     Build nuget packages"
-  echo "  --publish                  Publish build artifacts"
-  echo "  --help                     Print help and exit"
+  echo "  --bootstrap                    Force the build of the bootstrap compiler"
+  echo "  --restore                      Restore projects required to build (short: -r)"
+  echo "  --norestore                    Don't restore projects required to build"
+  echo "  --build                        Build all projects (short: -b)"
+  echo "  --rebuild                      Rebuild all projects"
+  echo "  --pack                         Build nuget packages"
+  echo "  --publish                      Publish build artifacts"
+  echo "  --help                         Print help and exit"
   echo ""
   echo "Test actions:"
-  echo "  --testcoreclr              Run unit tests on .NET Core (short: --test, -t)"
+  echo "  --testcoreclr                  Run unit tests on .NET Core (short: --test, -t)"
+  echo "  --testCompilerComponentTests   Run FSharp.Compiler.ComponentTests on .NET Core"
   echo ""
   echo "Advanced settings:"
-  echo "  --ci                       Building in CI"
-  echo "  --docker                   Run in a docker container if applicable"
-  echo "  --skipAnalyzers            Do not run analyzers during build operations"
-  echo "  --skipBuild                Do not run the build"
-  echo "  --prepareMachine           Prepare machine for CI run, clean up processes after build"
-  echo "  --sourceBuild              Simulate building for source-build"
+  echo "  --ci                           Building in CI"
+  echo "  --docker                       Run in a docker container if applicable"
+  echo "  --skipAnalyzers                Do not run analyzers during build operations"
+  echo "  --skipBuild                    Do not run the build"
+  echo "  --prepareMachine               Prepare machine for CI run, clean up processes after build"
+  echo "  --sourceBuild                  Simulate building for source-build"
   echo ""
   echo "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -54,7 +55,7 @@ rebuild=false
 pack=false
 publish=false
 test_core_clr=false
-
+test_compilercomponent_tests=false
 configuration="Debug"
 verbosity='minimal'
 binary_log=false
@@ -121,6 +122,9 @@ while [[ $# > 0 ]]; do
       ;;
     --testcoreclr|--test|-t)
       test_core_clr=true
+      ;;
+    --testcompilercomponenttests)
+      test_compilercomponent_tests=true
       ;;
     --ci)
       ci=true
@@ -257,16 +261,16 @@ function BuildSolution {
         /p:Configuration=$bootstrap_config
 
       mkdir -p "$bootstrap_dir"
-      cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/net6.0 $bootstrap_dir/fslex
-      cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/net6.0 $bootstrap_dir/fsyacc
+      cp -pr $artifacts_dir/bin/fslex/$bootstrap_config/net7.0 $bootstrap_dir/fslex
+      cp -pr $artifacts_dir/bin/fsyacc/$bootstrap_config/net7.0 $bootstrap_dir/fsyacc
     fi
     if [ ! -f "$bootstrap_dir/fsc.exe" ]; then
       BuildMessage="Error building bootstrap"
-      MSBuild "$repo_root/proto.proj" \
+      MSBuild "$repo_root/Proto.sln" \
         /restore \
         /p:Configuration=$bootstrap_config
 
-      cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/net6.0 $bootstrap_dir/fsc
+      cp -pr $artifacts_dir/bin/fsc/$bootstrap_config/net7.0 $bootstrap_dir/fsc
     fi
   fi
 
@@ -275,7 +279,6 @@ function BuildSolution {
     BuildMessage="Error building solution"
     MSBuild $toolset_build_proj \
       $bl \
-      /v:$verbosity \
       /p:Configuration=$configuration \
       /p:Projects="$projects" \
       /p:RepoRoot="$repo_root" \
@@ -309,13 +312,18 @@ InitializeDotNetCli $restore
 BuildSolution
 
 if [[ "$test_core_clr" == true ]]; then
-  coreclrtestframework=net6.0
+  coreclrtestframework=net7.0
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.UnitTests/FSharp.Compiler.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.Private.Scripting.UnitTests/FSharp.Compiler.Private.Scripting.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Build.UnitTests/FSharp.Build.UnitTests.fsproj" --targetframework $coreclrtestframework
   TestUsingNUnit --testproject "$repo_root/tests/FSharp.Core.UnitTests/FSharp.Core.UnitTests.fsproj" --targetframework $coreclrtestframework
+fi
+
+if [[ "$test_compilercomponent_tests" == true ]]; then
+  coreclrtestframework=net7.0
+  TestUsingNUnit --testproject "$repo_root/tests/FSharp.Compiler.ComponentTests/FSharp.Compiler.ComponentTests.fsproj" --targetframework $coreclrtestframework  --notestfilter 
 fi
 
 ExitWithExitCode 0

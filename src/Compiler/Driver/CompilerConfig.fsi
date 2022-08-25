@@ -331,6 +331,8 @@ type TcConfigBuilder =
 
         mutable extraStaticLinkRoots: string list
 
+        mutable compressMetadata: bool
+
         mutable noSignatureData: bool
 
         mutable onlyEssentialOptimizationData: bool
@@ -348,8 +350,6 @@ type TcConfigBuilder =
         mutable embedSourceList: string list
 
         mutable sourceLink: string
-
-        mutable ignoreSymbolStoreSequencePoints: bool
 
         mutable internConstantStrings: bool
 
@@ -433,6 +433,8 @@ type TcConfigBuilder =
 
         mutable noDebugAttributes: bool
 
+        mutable useReflectionFreeCodeGen: bool
+
         /// If true, indicates all type checking and code generation is in the context of fsi.exe
         isInteractive: bool
 
@@ -465,6 +467,9 @@ type TcConfigBuilder =
 
         /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
         mutable noConditionalErasure: bool
+
+        /// Take '#line' into account? Defaults to true
+        mutable applyLineDirectives: bool
 
         mutable pathMap: PathMap
 
@@ -644,6 +649,8 @@ type TcConfig =
 
     member extraStaticLinkRoots: string list
 
+    member compressMetadata: bool
+
     member noSignatureData: bool
 
     member onlyEssentialOptimizationData: bool
@@ -661,8 +668,6 @@ type TcConfig =
     member embedSourceList: string list
 
     member sourceLink: string
-
-    member ignoreSymbolStoreSequencePoints: bool
 
     member internConstantStrings: bool
 
@@ -741,6 +746,7 @@ type TcConfig =
     member alwaysCallVirt: bool
 
     member noDebugAttributes: bool
+    member useReflectionFreeCodeGen: bool
 
     /// If true, indicates all type checking and code generation is in the context of fsi.exe
     member isInteractive: bool
@@ -799,6 +805,9 @@ type TcConfig =
 
     /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
     member noConditionalErasure: bool
+
+    /// Take '#line' into account? Defaults to true
+    member applyLineDirectives: bool
 
     /// if true - 'let mutable x = Span.Empty', the value 'x' is a stack referring span. Used for internal testing purposes only until we get true stack spans.
     member internalTestSpanStackReferring: bool

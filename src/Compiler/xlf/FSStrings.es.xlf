@@ -7,6 +7,11 @@
         <target state="translated">Uno o más mensajes informativos en el archivo cargado.\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="NotUpperCaseConstructorWithoutRQA">
+        <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
+        <target state="new">Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
         <source>symbol '..^'</source>
         <target state="translated">símbolo "..^"</target>
@@ -1369,7 +1374,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references within 'do' statements after the last 'let' binding in the construction sequence.</source>
-        <target state="translated">Las referencias recursivas al objeto que se va a definir se comprobarán para ver si tienen inicialización silenciosa en tiempo de ejecución mediante el uso de una referencia retardada. Considere poner autorreferencias en instrucciones 'do' después del último enlace 'let' en la secuencia de construcción.</target>
+        <target state="translated">Las referencias recursivas al objeto que se va a definir se comprobarán para ver si tienen inicialización silenciosa en tiempo de ejecución mediante el uso de una referencia retardada. Considere poner autorreferencias en instrucciones "do" después del último enlace "let" en la secuencia de construcción.</target>
         <note />
       </trans-unit>
       <trans-unit id="VirtualAugmentationOnNullValuedType">

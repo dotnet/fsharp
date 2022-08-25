@@ -57,6 +57,26 @@ Note that insertions for other teams will also be listed.
 Insertions to any other VS branch (e.g., `main`) will have the auto-merge flag set and should handle themselves, but
 it's a good idea to check the previous link for any old or stalled insertions into VS `main`.
 
+## Preparing for a new VS release branch
+
+### When a VS branch snaps from `main` to `rel/d*` and switches to ask mode:
+
+Update the `insertTargetBranch` value at the bottom of `azure-pipelines.yml` in the appropriate release branch.  E.g., when VS 17.3 snapped and switched to ask mode, [this PR](https://github.com/dotnet/fsharp/pull/13456/files) correctly updates the insertion target so that future builds from that F# branch will get auto-inserted to VS.
+
+### When VS `main` is open for insertions for preview releases of VS:
+
+1. Create a new `release/dev*` branch (e.g., `release/dev17.4`) and initially set its HEAD commit to that of the previous release (e.g., `release/dev17.3` in this case).
+2. Set the new branch to receive auto-merges from `main`, and also set the old release branch to flow into the new one.  [This PR](https://github.com/dotnet/roslyn-tools/pull/1245/files) is a good example of what to do when a new `release/dev17.4` branch is created that should receive merges from both `main` and the previous release branch, `release/dev17.3`.
+3. Set the packages from the new branch to flow into the correct package feeds via the `darc` tool.  To do this:
+   1. Ensure the latest `darc` tool is installed by running `eng/common/darc-init.ps1`.
+   2. (only needed once) Run the command `darc authenticate`.  A text file will be opened with instructions on how to populate access tokens.
+   3. Check the current package/channel subscriptions by running `darc get-default-channels --source-repo fsharp`.  For this example, notice that the latest subscription shows the F# branch `release/dev17.3` is getting added to the `VS 17.3` channel.
+   4. Get the list of `darc` channels and determine the appropriate one to use for the new branch via the command `darc get-channels`.  For this example, notice that a channel named `VS 17.4` is listed.
+   5. Add the new F# branch to the appropriate `darc` channel.  In this example, run `darc add-default-channel --channel "VS 17.4" --branch release/dev17.4 --repo https://github.com/dotnet/fsharp`
+   6. Ensure the subscription was added by repeating step 3 above.
+   7. Note, the help in the `darc` tool is really good.  E.g., you can simply run `darc` to see a list of all commands available, and if you run `darc <some-command>` with no arguments, you'll be given a list of arguments you can use.
+   8. Ensure that version numbers are bumped for a new branch.
+
 ## Less interesting links
 
 [FSharp.Core (Official NuGet Release)](https://dev.azure.com/dnceng/internal/_release?_a=releases&definitionId=72).

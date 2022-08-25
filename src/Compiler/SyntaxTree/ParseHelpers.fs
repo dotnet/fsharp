@@ -25,7 +25,7 @@ open Internal.Utilities.Text.Parsing
 /// information about the grammar at the point where the error occurred, e.g. what tokens
 /// are valid to shift next at that point in the grammar. This information is processed in CompileOps.fs.
 [<NoEquality; NoComparison>]
-exception SyntaxError of obj (* ParseErrorContext<_> *)  * range: range
+exception SyntaxError of obj (* ParseErrorContext<_> *) * range: range
 
 exception IndentationProblem of string * range
 
@@ -411,6 +411,12 @@ let raiseParseErrorAt m s =
     // This initiates error recovery
     raise RecoverableParseError
 
+let (|GetIdent|SetIdent|OtherIdent|) (ident: Ident option) =
+    match ident with
+    | Some ident when ident.idText = "get" -> GetIdent ident.idRange
+    | Some ident when ident.idText = "set" -> SetIdent ident.idRange
+    | _ -> OtherIdent
+
 let mkSynMemberDefnGetSet
     (parseState: IParseState)
     (opt_inline: bool)
@@ -432,9 +438,15 @@ let mkSynMemberDefnGetSet
     let xmlDoc = grabXmlDocAtRangeStart (parseState, attrs, rangeStart)
 
     let tryMkSynMemberDefnMember
-        (withPropertyKeyword: PropertyKeyword option)
-        (optInline, optAttrs: SynAttributeList list, (bindingPat, mBindLhs), optReturnType, mEquals, expr, mExpr)
-        =
+        (
+            optInline,
+            optAttrs: SynAttributeList list,
+            (bindingPat, mBindLhs),
+            optReturnType,
+            mEquals,
+            expr,
+            mExpr
+        ) : (SynMemberDefn * Ident option) option =
         let optInline = opt_inline || optInline
         // optional attributes are only applied to getters and setters
         // the "top level" attrs will be applied to both
@@ -611,7 +623,7 @@ let mkSynMemberDefnGetSet
             // This uses the 'this' variable from the first and the patterns for the get/set binding,
             // replacing the get/set identifier. A little gross.
 
-            let bindingPatAdjusted, xmlDocAdjusted =
+            let (bindingPatAdjusted, getOrSetIdentOpt), xmlDocAdjusted =
 
                 let trivia: SynBindingTrivia =
                     {
@@ -640,7 +652,7 @@ let mkSynMemberDefnGetSet
 
                 let lidOuter, lidVisOuter =
                     match bindingPatOuter with
-                    | SynPat.LongIdent (lid, _, None, None, SynArgPats.Pats [], lidVisOuter, _m) -> lid, lidVisOuter
+                    | SynPat.LongIdent (lid, _, None, SynArgPats.Pats [], lidVisOuter, _m) -> lid, lidVisOuter
                     | SynPat.Named (SynIdent (id, _), _, visOuter, _m)
                     | SynPat.As (_, SynPat.Named (SynIdent (id, _), _, visOuter, _m), _) -> SynLongIdent([ id ], [], [ None ]), visOuter
                     | _ -> raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidDeclarationSyntax ())
@@ -680,21 +692,17 @@ let mkSynMemberDefnGetSet
                             else
                                 args
 
-                        SynPat.LongIdent(
-                            lidOuter,
-                            withPropertyKeyword,
-                            Some(id),
-                            tyargs,
-                            SynArgPats.Pats args,
-                            mergeLidVisOuter lidVisInner,
-                            m
-                        )
+                        SynPat.LongIdent(lidOuter, Some id, tyargs, SynArgPats.Pats args, mergeLidVisOuter lidVisInner, m), Some id
                     | SynPat.Named (_, _, lidVisInner, m)
                     | SynPat.As (_, SynPat.Named (_, _, lidVisInner, m), _) ->
-                        SynPat.LongIdent(lidOuter, None, None, None, SynArgPats.Pats [], mergeLidVisOuter lidVisInner, m)
-                    | SynPat.Typed (p, ty, m) -> SynPat.Typed(go p, ty, m)
-                    | SynPat.Attrib (p, attribs, m) -> SynPat.Attrib(go p, attribs, m)
-                    | SynPat.Wild m -> SynPat.Wild(m)
+                        SynPat.LongIdent(lidOuter, None, None, SynArgPats.Pats [], mergeLidVisOuter lidVisInner, m), None
+                    | SynPat.Typed (p, ty, m) ->
+                        let p, id = go p
+                        SynPat.Typed(p, ty, m), id
+                    | SynPat.Attrib (p, attribs, m) ->
+                        let p, id = go p
+                        SynPat.Attrib(p, attribs, m), id
+                    | SynPat.Wild m -> SynPat.Wild(m), None
                     | _ -> raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidDeclarationSyntax ())
 
                 go pv, PreXmlDoc.Merge doc2 doc
@@ -719,16 +727,133 @@ let mkSynMemberDefnGetSet
             let memberRange =
                 unionRanges rangeStart mWhole |> unionRangeWithXmlDoc xmlDocAdjusted
 
-            Some(SynMemberDefn.Member(binding, memberRange))
+            Some(SynMemberDefn.Member(binding, memberRange), getOrSetIdentOpt)
 
     // Iterate over 1 or 2 'get'/'set' entries
     match classDefnMemberGetSetElements with
-    | [ h ] -> List.choose id [ tryMkSynMemberDefnMember (Some(PropertyKeyword.With mWith)) h ]
+    | [ h ] ->
+        match tryMkSynMemberDefnMember h with
+        | Some (memberDefn, getSetIdentOpt) ->
+            match memberDefn, getSetIdentOpt with
+            | SynMemberDefn.Member _, None -> [ memberDefn ]
+            | SynMemberDefn.Member (binding, m), Some getOrSet ->
+                if getOrSet.idText = "get" then
+                    let trivia =
+                        {
+                            WithKeyword = mWith
+                            GetKeyword = Some getOrSet.idRange
+                            AndKeyword = None
+                            SetKeyword = None
+                        }
+
+                    [ SynMemberDefn.GetSetMember(Some binding, None, m, trivia) ]
+                else
+                    let trivia =
+                        {
+                            WithKeyword = mWith
+                            GetKeyword = None
+                            AndKeyword = None
+                            SetKeyword = Some getOrSet.idRange
+                        }
+
+                    [ SynMemberDefn.GetSetMember(None, Some binding, m, trivia) ]
+            | _ -> []
+        | None -> []
     | [ g; s ] ->
-        List.choose
-            id
-            [
-                tryMkSynMemberDefnMember (Some(PropertyKeyword.With mWith)) g
-                tryMkSynMemberDefnMember (Option.map PropertyKeyword.And mAnd) s
-            ]
+        let getter = tryMkSynMemberDefnMember g
+        let setter = tryMkSynMemberDefnMember s
+
+        match getter, setter with
+        | Some (SynMemberDefn.Member (getBinding, m1), GetIdent mGet), Some (SynMemberDefn.Member (setBinding, m2), SetIdent mSet)
+        | Some (SynMemberDefn.Member (setBinding, m1), SetIdent mSet), Some (SynMemberDefn.Member (getBinding, m2), GetIdent mGet) ->
+            let range = unionRanges m1 m2
+
+            let trivia =
+                {
+                    WithKeyword = mWith
+                    GetKeyword = Some mGet
+                    AndKeyword = mAnd
+                    SetKeyword = Some mSet
+                }
+
+            [ SynMemberDefn.GetSetMember(Some getBinding, Some setBinding, range, trivia) ]
+        | Some (SynMemberDefn.Member (binding, m), getOrSet), None
+        | None, Some (SynMemberDefn.Member (binding, m), getOrSet) ->
+            let trivia =
+                match getOrSet with
+                | GetIdent mGet ->
+                    {
+                        WithKeyword = mWith
+                        GetKeyword = Some mGet
+                        AndKeyword = mAnd
+                        SetKeyword = None
+                    }
+                | SetIdent mSet ->
+                    {
+                        WithKeyword = mWith
+                        GetKeyword = None
+                        AndKeyword = mAnd
+                        SetKeyword = Some mSet
+                    }
+                | OtherIdent ->
+                    {
+                        WithKeyword = mWith
+                        AndKeyword = mAnd
+                        GetKeyword = None
+                        SetKeyword = None
+                    }
+
+            if trivia.GetKeyword.IsSome then
+                [ SynMemberDefn.GetSetMember(Some binding, None, m, trivia) ]
+            elif trivia.SetKeyword.IsSome then
+                [ SynMemberDefn.GetSetMember(None, Some binding, m, trivia) ]
+            else
+                []
+        | _ -> []
     | _ -> []
+
+//  Input Text               Precedence by Parser        Adjustment
+//
+//  ^T.Ident                 ^(T.Ident)                  (^T).Ident
+//  ^T.Ident[idx]            ^(T.Ident[idx])             (^T).Ident[idx]
+//  ^T.Ident.[idx]           ^(T.Ident.[idx])            (^T).Ident.[idx]
+//  ^T.Ident.Ident2          ^(T.Ident.Ident2)           (^T).Ident.Ident2
+//  ^T.Ident(args).Ident3    ^(T.Ident(args).Ident3)     (^T).Ident(args).Ident3
+//  ^T.(+)(args)             ^(T.(+)(args))              (^T).(+)(args).Ident3
+let adjustHatPrefixToTyparLookup mFull rightExpr =
+    let rec take inp =
+        match inp with
+        | SynExpr.Ident (typarIdent)
+        | SynExpr.LongIdent (false, SynLongIdent ([ typarIdent ], _, _), None, _) ->
+            let typar = SynTypar(typarIdent, TyparStaticReq.HeadType, false)
+            SynExpr.Typar(typar, mFull)
+        | SynExpr.LongIdent (false, SynLongIdent ((typarIdent :: items), (dotm :: dots), (_ :: itemTrivias)), None, _) ->
+            let typar = SynTypar(typarIdent, TyparStaticReq.HeadType, false)
+            let lookup = SynLongIdent(items, dots, itemTrivias)
+            SynExpr.DotGet(SynExpr.Typar(typar, mFull), dotm, lookup, mFull)
+        | SynExpr.App (isAtomic, false, funcExpr, argExpr, m) ->
+            let funcExpr2 = take funcExpr
+            SynExpr.App(isAtomic, false, funcExpr2, argExpr, unionRanges funcExpr2.Range m)
+        | SynExpr.DotGet (leftExpr, dotm, lookup, m) ->
+            let leftExpr2 = take leftExpr
+            SynExpr.DotGet(leftExpr2, dotm, lookup, m)
+        | SynExpr.DotIndexedGet (leftExpr, indexArg, dotm, m) ->
+            let leftExpr2 = take leftExpr
+            SynExpr.DotIndexedGet(leftExpr2, indexArg, dotm, m)
+        | _ ->
+            reportParseErrorAt mFull (FSComp.SR.parsIncompleteTyparExpr2 ())
+            arbExpr ("hatExpr1", mFull)
+
+    take rightExpr
+
+// The last element of elementTypes does not have a star or slash
+let mkSynTypeTuple (isStruct: bool) (elementTypes: SynTupleTypeSegment list) : SynType =
+    let range =
+        match elementTypes with
+        | [] -> Range.Zero
+        | head :: tail ->
+
+            (head.Range, tail)
+            ||> List.fold (fun acc segment -> unionRanges acc segment.Range)
+
+    SynType.Tuple(isStruct, elementTypes, range)

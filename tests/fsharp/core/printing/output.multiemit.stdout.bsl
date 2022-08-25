@@ -6177,28 +6177,28 @@ type System.Int32 with
 
 > val functionWhichTakesLongNameMixedParameters:
   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int *
-  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int
-  -> ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int *
-     dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int
-    -> int
+  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int ->
+    ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int *
+    dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int ->
+      int
 
 > val functionWhichTakesLongNameTupledParameters:
   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int *
   bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int *
   ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int *
-  ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int
-    -> int
+  ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int ->
+    int
 
 > val functionWhichTakesLongNameCurriedParameters:
-  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int
-  -> bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int
-  -> cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int
-  -> dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int
-    -> int
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int ->
+    bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int ->
+    cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int ->
+    dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int ->
+    int
 
 > val functionWhichTakesMixedLengthCurriedParametersA:
-  a: 'a -> b: 'b -> c: 'c -> ddddddddddddddddddddddddddddddddddddddddddddd: 'd
-    -> int
+  a: 'a ->
+    b: 'b -> c: 'c -> ddddddddddddddddddddddddddddddddddddddddddddd: 'd -> int
 
 > val functionWhichTakesMixedLengthCurriedParametersB:
   aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: 'a -> b: 'b -> c: 'c -> d: 'd -> int
@@ -6310,5 +6310,58 @@ val ShortName: string = "hi"
                          B = "a" }]
 
 > val list2: int list = [1]
+
+module FSI_0316.
+       D27805741a339047ef3ed7a2ca8faae3c17e6ef2371984011e49a6c9c3286641
+
+{"ImmutableField0":6}
+type R1 =
+  { ImmutableField0: int }
+val it: unit = ()
+
+> val it: R1 = { ImmutableField0 = 7 }
+
+> {"MutableField1":8}
+type R2 =
+  { mutable MutableField1: int }
+val it: unit = ()
+
+> val it: R2 = { MutableField1 = 9 }
+
+> {"AnonRecordField2":10}
+val it: unit = ()
+
+> val it: {| AnonRecordField2: int |} = { AnonRecordField2 = 11 }
+
+module FSI_0323.Project.fsproj
+
+type R3 =
+  { ImmutableField3: int }
+val test3a: string = "{"ImmutableField3":12}"
+
+> val test3b: R3 = { ImmutableField3 = 12 }
+
+> val test3c: string = "{"ImmutableField3":13}"
+
+> val test3d: R3 = { ImmutableField3 = 13 }
+
+> type R4 =
+  { mutable MutableField4: int }
+val test4a: string = "{"MutableField4":15}"
+
+> val test4b: R4 = { MutableField4 = 15 }
+
+> val test4c: string = "{"MutableField4":16}"
+
+> val test4d: R4 = { MutableField4 = 16 }
+
+> type R5 = {| AnonRecordField5: int |}
+val test5a: string = "{"AnonRecordField5":17}"
+
+> val test5b: R5 = { AnonRecordField5 = 17 }
+
+> val test5c: string = "{"AnonRecordField5":18}"
+
+> val test5d: R5 = { AnonRecordField5 = 18 }
 
 > > > 

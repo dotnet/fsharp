@@ -36,6 +36,12 @@
     <IsPackable>true</IsPackable>
     <PackageDescription>FSharp.Core redistributables from F# Tools version $(FSProductVersionPrefix) For F# $(FSLanguageVersion).  Contains code from the F# Software Foundation.</PackageDescription>
     <PackageReleaseNotes>/blob/main/release-notes.md#FSharp-Core-$(FSCoreReleaseNotesVersion)</PackageReleaseNotes>
+    <Configurations>Debug;Release;Proto</Configurations>
+  </PropertyGroup>
+
+  <!--  The FSharp.Core dll provides a referencable public interface -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(CompressAllMetadata)' != 'true'">
+      <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <ItemGroup>

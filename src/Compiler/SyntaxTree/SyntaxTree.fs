@@ -332,6 +332,8 @@ type SynTypeConstraint =
 
     | WhereTyparIsDelegate of typar: SynTypar * typeArgs: SynType list * range: range
 
+    | WhereSelfConstrained of selfConstraint: SynType * range: range
+
     member x.Range =
         match x with
         | WhereTyparIsValueType (range = range)
@@ -345,6 +347,7 @@ type SynTypeConstraint =
         | WhereTyparSupportsMember (range = range)
         | WhereTyparIsEnum (range = range)
         | WhereTyparIsDelegate (range = range) -> range
+        | WhereSelfConstrained (range = range) -> range
 
 [<RequireQualifiedAccess>]
 type SynTyparDecls =
@@ -370,6 +373,18 @@ type SynTyparDecls =
         | SinglePrefix (range = range) -> range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynTupleTypeSegment =
+    | Type of typeName: SynType
+    | Star of range: range
+    | Slash of range: range
+
+    member this.Range =
+        match this with
+        | SynTupleTypeSegment.Type t -> t.Range
+        | SynTupleTypeSegment.Star (range = range)
+        | SynTupleTypeSegment.Slash (range = range) -> range
+
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynType =
 
     | LongIdent of longDotId: SynLongIdent
@@ -392,7 +407,7 @@ type SynType =
         greaterRange: range option *
         range: range
 
-    | Tuple of isStruct: bool * elementTypes: (bool * SynType) list * range: range
+    | Tuple of isStruct: bool * path: SynTupleTypeSegment list * range: range
 
     | AnonRecd of isStruct: bool * fields: (Ident * SynType) list * range: range
 
@@ -478,7 +493,7 @@ type SynExpr =
         argOptions: (SynExpr * Ident option) option *
         withKeyword: range option *
         bindings: SynBinding list *
-        members: SynMemberDefn list *
+        members: SynMemberDefns *
         extraImpls: SynInterfaceImpl list *
         newExprRange: range *
         range: range
@@ -583,6 +598,8 @@ type SynExpr =
         range: range *
         trivia: SynExprIfThenElseTrivia
 
+    | Typar of typar: SynTypar * range: range
+
     | Ident of ident: Ident
 
     | LongIdent of isOptional: bool * longDotId: SynLongIdent * altNameRefCell: SynSimplePatAlternativeIdInfo ref option * range: range
@@ -623,7 +640,7 @@ type SynExpr =
 
     | AddressOf of isByref: bool * expr: SynExpr * opRange: range * range: range
 
-    | TraitCall of supportTys: SynTypar list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
+    | TraitCall of supportTys: SynType list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
 
     | JoinIn of lhsExpr: SynExpr * lhsRange: range * rhsExpr: SynExpr * range: range
 
@@ -757,6 +774,7 @@ type SynExpr =
         | SynExpr.InterpolatedString (range = m)
         | SynExpr.Dynamic (range = m) -> m
         | SynExpr.Ident id -> id.idRange
+        | SynExpr.Typar (range = m) -> m
         | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
 
     member e.RangeWithoutAnyExtraDot =
@@ -889,7 +907,6 @@ type SynPat =
 
     | LongIdent of
         longDotId: SynLongIdent *
-        propertyKeyword: PropertyKeyword option *
         extraId: Ident option *  // holds additional ident for tooling
         typarDecls: SynValTyparDecls option *  // usually None: temporary used to parse "f<'a> x = x"
         argPats: SynArgPats *
@@ -946,18 +963,13 @@ type SynPat =
         | SynPat.Paren (range = m)
         | SynPat.FromParseError (range = m) -> m
 
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type PropertyKeyword =
-    | With of range
-    | And of range
-
 [<NoEquality; NoComparison>]
 type SynInterfaceImpl =
     | SynInterfaceImpl of
         interfaceTy: SynType *
         withKeyword: range option *
         bindings: SynBinding list *
-        members: SynMemberDefn list *
+        members: SynMemberDefns *
         range: range
 
 [<NoEquality; NoComparison>]
@@ -1053,6 +1065,9 @@ type SynMemberFlags =
 
         IsFinal: bool
 
+        // This is not persisted in pickling
+        GetterOrSetterIsCompilerGenerated: bool
+
         MemberKind: SynMemberKind
 
         Trivia: SynMemberFlagsTrivia
@@ -1065,6 +1080,7 @@ type SynMemberFlags =
             && this.IsDispatchSlot = other.IsDispatchSlot
             && this.IsOverrideOrExplicitImpl = other.IsOverrideOrExplicitImpl
             && this.IsFinal = other.IsFinal
+            && this.GetterOrSetterIsCompilerGenerated = other.GetterOrSetterIsCompilerGenerated
             && this.MemberKind = other.MemberKind
         | _ -> false
 
@@ -1073,6 +1089,7 @@ type SynMemberFlags =
         + hash this.IsDispatchSlot
         + hash this.IsOverrideOrExplicitImpl
         + hash this.IsFinal
+        + hash this.GetterOrSetterIsCompilerGenerated
         + hash this.MemberKind
 
 [<StructuralEquality; NoComparison; RequireQualifiedAccess>]
@@ -1224,11 +1241,10 @@ type SynTypeDefnSig =
 
     | SynTypeDefnSig of
         typeInfo: SynComponentInfo *
-        equalsRange: range option *
         typeRepr: SynTypeDefnSigRepr *
-        withKeyword: range option *
         members: SynMemberSig list *
-        range: range
+        range: range *
+        trivia: SynTypeDefnSigTrivia
 
     member this.Range =
         match this with
@@ -1373,6 +1389,12 @@ type SynMemberDefn =
 
     | Member of memberDefn: SynBinding * range: range
 
+    | GetSetMember of
+        memberDefnForGet: SynBinding option *
+        memberDefnForSet: SynBinding option *
+        range: range *
+        trivia: SynMemberGetSetTrivia
+
     | ImplicitCtor of
         accessibility: SynAccess option *
         attributes: SynAttributes *
@@ -1401,7 +1423,8 @@ type SynMemberDefn =
         ident: Ident *
         typeOpt: SynType option *
         propKind: SynMemberKind *
-        memberFlags: (SynMemberKind -> SynMemberFlags) *
+        memberFlags: SynMemberFlags *
+        memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         equalsRange: range *
@@ -1413,6 +1436,7 @@ type SynMemberDefn =
     member d.Range =
         match d with
         | SynMemberDefn.Member (range = m)
+        | SynMemberDefn.GetSetMember (range = m)
         | SynMemberDefn.Interface (range = m)
         | SynMemberDefn.Open (range = m)
         | SynMemberDefn.LetBindings (range = m)
@@ -1471,7 +1495,7 @@ type SynModuleDecl =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynOpenDeclTarget =
 
-    | ModuleOrNamespace of longId: LongIdent * range: range
+    | ModuleOrNamespace of longId: SynLongIdent * range: range
 
     | Type of typeName: SynType * range: range
 
