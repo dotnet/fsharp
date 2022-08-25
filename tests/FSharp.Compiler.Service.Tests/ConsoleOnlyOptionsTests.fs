@@ -10,8 +10,10 @@ open TestDoubles
 
 [<Test>]
 let ``Help is displayed correctly`` () =
-    if System.Console.BufferWidth < 80 then
-        System.Console.BufferWidth <- 80
+    try
+        if System.Console.BufferWidth < 80 then
+            System.Console.BufferWidth <- 80
+    with _ -> ()
 
     let builder = getArbitraryTcConfigBuilder()
     builder.showBanner <- false                 // We don't need the banner
