@@ -45,3 +45,8 @@ let ``5 till 32 dimensional array`` () =
         FSharp $"let a : {arrayType} = failwith \"todo\""
         |> signaturesShouldContain $"val a: int array{idx}d"
     )
+
+[<Fact>]
+let ``Use array2d syntax in implementation`` () =
+    FSharp "let y : int array2d = Array2D.init 0 0 (fun _ _ -> 0)"
+    |> signaturesShouldContain "val y: int array2d"
