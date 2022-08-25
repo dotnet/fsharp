@@ -11,15 +11,14 @@ open TestDoubles
 [<Test>]
 let ``Help is displayed correctly`` () =
     let builder = getArbitraryTcConfigBuilder()
-    let blocks = GetCoreFscCompilerOptions builder
-    let expectedHelp = File.ReadAllText $"{__SOURCE_DIRECTORY__}/expected-help-output.txt"
+    builder.showBanner <- false                 // We don't need the banner
 
+    let blocks = GetCoreFscCompilerOptions builder
+
+    let expectedHelp = File.ReadAllText $"{__SOURCE_DIRECTORY__}/expected-help-output.bsl"
     let help = GetHelpFsc builder blocks
 
-    // contains instead of equals
-    // as we don't control the 1st line of the output (the version)
-    // it's tested separately
-    StringAssert.Contains(expectedHelp, help.Replace("\r\n", Environment.NewLine))
+    Assert.AreEqual(expectedHelp, help.Replace("\r\n", Environment.NewLine)) |> ignore
 
 [<Test>]
 let ``Version is displayed correctly`` () =
