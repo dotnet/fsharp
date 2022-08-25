@@ -1,5 +1,4 @@
-﻿Copyright (c) Microsoft Corporation. All Rights Reserved.
-
+﻿
 
 		- OUTPUT FILES -
 --out:<file>                             Name of the output file (Short form:
@@ -23,6 +22,8 @@
                                          run on: x86, x64, Arm, Arm64,
                                          Itanium, anycpu32bitpreferred, or
                                          anycpu. The default is anycpu.
+--compressmetadata[+|-]                  Compress interface and optimization
+                                         data files
 --nooptimizationdata                     Only include optimization
                                          information essential for
                                          implementing inlined constructs.
