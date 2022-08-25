@@ -11,16 +11,21 @@ open TestDoubles
 [<Test>]
 [<Ignore "Failing in main, disabling until resolved">]
 let ``Help is displayed correctly`` () =
-    let builder = getArbitraryTcConfigBuilder()
-    let blocks = GetCoreFscCompilerOptions builder
-    let expectedHelp = File.ReadAllText $"{__SOURCE_DIRECTORY__}/expected-help-output.txt"
+    try
+        if System.Console.BufferWidth < 80 then
+            System.Console.BufferWidth <- 80
+    with _ -> ()
 
+    let builder = getArbitraryTcConfigBuilder()
+    builder.showBanner <- false                 // We don't need the banner
+
+    let blocks = GetCoreFscCompilerOptions builder
+
+    let expectedHelp = File.ReadAllText $"{__SOURCE_DIRECTORY__}/expected-help-output.bsl"
     let help = GetHelpFsc builder blocks
 
-    // contains instead of equals
-    // as we don't control the 1st line of the output (the version)
-    // it's tested separately
-    StringAssert.Contains(expectedHelp, help.Replace("\r\n", Environment.NewLine))
+    let actualHelp = help.Replace("\r\n", Environment.NewLine)
+    Assert.AreEqual(expectedHelp, actualHelp, $"Console width: {System.Console.BufferWidth}\nExpected: {expectedHelp}\n Actual: {actualHelp}") |> ignore
 
 [<Test>]
 let ``Version is displayed correctly`` () =
