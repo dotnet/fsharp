@@ -10,6 +10,9 @@ open TestDoubles
 
 [<Test>]
 let ``Help is displayed correctly`` () =
+    if System.Console.BufferWidth < 80 then
+        System.Console.BufferWidth <- 80
+
     let builder = getArbitraryTcConfigBuilder()
     builder.showBanner <- false                 // We don't need the banner
 
@@ -18,7 +21,8 @@ let ``Help is displayed correctly`` () =
     let expectedHelp = File.ReadAllText $"{__SOURCE_DIRECTORY__}/expected-help-output.bsl"
     let help = GetHelpFsc builder blocks
 
-    Assert.AreEqual(expectedHelp, help.Replace("\r\n", Environment.NewLine)) |> ignore
+    let actualHelp = help.Replace("\r\n", Environment.NewLine)
+    Assert.AreEqual(expectedHelp, actualHelp, $"Console width: {System.Console.BufferWidth}\nExpected: {expectedHelp}\n Actual: {actualHelp}") |> ignore
 
 [<Test>]
 let ``Version is displayed correctly`` () =
