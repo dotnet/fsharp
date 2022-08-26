@@ -118,14 +118,16 @@ let nl = Environment.NewLine
 let getCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOption) width =
     let sb = StringBuilder()
 
-    let flagWidth = 42          // fixed width for printing of flags, e.g. --debug:{full|pdbonly|portable|embedded}
-    let defaultLineWidth = 80   // the fallback width
+    let flagWidth = 42 // fixed width for printing of flags, e.g. --debug:{full|pdbonly|portable|embedded}
+    let defaultLineWidth = 80 // the fallback width
 
     let lineWidth =
         match width with
         | None ->
-            try Console.BufferWidth
-            with _ -> defaultLineWidth
+            try
+                Console.BufferWidth
+            with _ ->
+                defaultLineWidth
         | Some w -> w
 
     let lineWidth =
@@ -170,6 +172,7 @@ let getPublicOptions heading opts width =
 
 let GetCompilerOptionBlocks blocks width =
     let sb = new StringBuilder()
+
     let publicBlocks =
         blocks
         |> List.choose (function
