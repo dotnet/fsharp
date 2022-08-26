@@ -9,13 +9,7 @@ open NUnit.Framework
 open TestDoubles
 
 [<Test>]
-[<Ignore "Failing in main, disabling until resolved">]
 let ``Help is displayed correctly`` () =
-    try
-        if System.Console.BufferWidth < 80 then
-            System.Console.BufferWidth <- 80
-    with _ -> ()
-
     let builder = getArbitraryTcConfigBuilder()
     builder.showBanner <- false                 // We don't need the banner
 

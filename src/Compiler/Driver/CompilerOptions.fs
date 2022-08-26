@@ -115,23 +115,25 @@ let compilerOptionUsage (CompilerOption (s, tag, spec, _, _)) =
 
 let nl = Environment.NewLine
 
-let getCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOption) =
+let getCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOption) width =
     let sb = StringBuilder()
 
-    let flagWidth = 42 // fixed width for printing of flags, e.g. --debug:{full|pdbonly|portable|embedded}
-    let defaultLineWidth = 80 // the fallback width
+    let flagWidth = 42          // fixed width for printing of flags, e.g. --debug:{full|pdbonly|portable|embedded}
+    let defaultLineWidth = 80   // the fallback width
 
     let lineWidth =
-        try
-            Console.BufferWidth
-        with e ->
-            defaultLineWidth
+        match width with
+        | None ->
+            try Console.BufferWidth
+            with _ -> defaultLineWidth
+        | Some w -> w
 
     let lineWidth =
         if lineWidth = 0 then
             defaultLineWidth
         else
-            lineWidth (* Have seen BufferWidth=0 on Linux/Mono *)
+            lineWidth (* Have seen BufferWidth=0 on Linux/Mono Coreclr for sure *)
+
     // Lines have this form: <flagWidth><space><description>
     //   flagWidth chars - for flags description or padding on continuation lines.
     //   single space    - space.
@@ -159,16 +161,15 @@ let getCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOpti
     let _ = sb.Append $"{nl}"
     sb.ToString()
 
-let getPublicOptions (heading, opts) =
-    if not (isNil opts) then
+let getPublicOptions heading opts width =
+    match opts with
+    | [] -> ""
+    | _ ->
         $"{nl}{nl}\t\t{heading}{nl}"
-        + (opts |> List.map getCompilerOption |> String.concat "")
-    else
-        ""
+        + (opts |> List.map (fun t -> getCompilerOption t width) |> String.concat "")
 
-let GetCompilerOptionBlocks blocks =
+let GetCompilerOptionBlocks blocks width =
     let sb = new StringBuilder()
-
     let publicBlocks =
         blocks
         |> List.choose (function
@@ -182,7 +183,7 @@ let GetCompilerOptionBlocks blocks =
             let headingOptions =
                 publicBlocks |> List.filter (fun (h2, _) -> heading = h2) |> List.collect snd
 
-            let _ = sb.Append(getPublicOptions (heading, headingOptions))
+            let _ = sb.Append(getPublicOptions heading headingOptions width)
             Set.add heading doneHeadings
 
     List.fold consider Set.empty publicBlocks |> ignore<Set<string>>
@@ -1999,7 +2000,8 @@ let GetBannerText tcConfigB =
 
 /// FSC only help. (FSI has it's own help function).
 let GetHelpFsc tcConfigB (blocks: CompilerOptionBlock list) =
-    GetBannerText tcConfigB + GetCompilerOptionBlocks blocks
+
+    GetBannerText tcConfigB + GetCompilerOptionBlocks blocks tcConfigB.bufferWidth
 
 let GetVersion tcConfigB =
     $"{tcConfigB.productNameForBannerText}{nl}"
