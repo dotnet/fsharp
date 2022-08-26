@@ -23,7 +23,7 @@ let ``fsc help text is displayed correctly`` () =
      let help = GetHelpFsc builder blocks
      let actualHelp = help.Replace("\r\n", Environment.NewLine)
 
-     Assert.AreEqual(expectedHelp, actualHelp, $"Console width: {System.Console.BufferWidth}\nExpected: '{expectedHelp}'\n Actual: '{actualHelp}'") |> ignore
+     Assert.AreEqual(expectedHelp, actualHelp, $"Expected: '{expectedHelp}'\n Actual: '{actualHelp}'") |> ignore
 
 [<Test>]
 let ``Version is displayed correctly`` () =
