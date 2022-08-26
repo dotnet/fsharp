@@ -533,8 +533,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownSignatureData">
-        <source>Invalid value '{0}' for --interfacedata, valid value are: none, file, compress."</source>
-        <target state="new">Invalid value '{0}' for --interfacedata, valid value are: none, file, compress."</target>
+        <source>Invalid value '{0}' for --interfacedata, valid value are: none, file, compress.</source>
+        <target state="new">Invalid value '{0}' for --interfacedata, valid value are: none, file, compress.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
