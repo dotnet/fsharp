@@ -165,7 +165,7 @@ let getPublicOptions heading opts width =
     match opts with
     | [] -> ""
     | _ ->
-        $"{nl}{nl}\t\t{heading}{nl}"
+        $"{nl}{nl}                {heading}{nl}"
         + (opts |> List.map (fun t -> getCompilerOption t width) |> String.concat "")
 
 let GetCompilerOptionBlocks blocks width =
@@ -1462,6 +1462,14 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             tagNone,
             OptionUnit(fun () -> tcConfigB.pause <- true),
             Some(InternalCommandLineOption("--pause", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
+            "bufferwidth",
+            tagNone,
+            OptionInt((fun v -> tcConfigB.bufferWidth <- Some v)),
+            Some(InternalCommandLineOption("--bufferWidth", rangeCmdArgs)),
             None
         )
 
