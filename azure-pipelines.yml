@@ -304,7 +304,7 @@ stages:
           steps:
           - checkout: self
             clean: true
-          - script: eng\CIBuild.cmd -configuration $(_configuration) -$(_testKind)
+          - script: eng\CIBuild.cmd -configuration -verifypackageshipstatus $(_configuration) -$(_testKind)
             displayName: Build / Test
           - task: PublishTestResults@2
             displayName: Publish Test Results

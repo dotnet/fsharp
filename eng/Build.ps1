@@ -63,6 +63,7 @@ param (
     [switch]$sourceBuild,
     [switch]$skipBuild,
     [switch]$compressAllMetadata,
+    [switch]$verifypackageshipstatus = $false,
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
 Set-StrictMode -version 2.0
@@ -117,6 +118,7 @@ function Print-Usage() {
     Write-Host "  -sourceBuild                  Simulate building for source-build."
     Write-Host "  -skipbuild                    Skip building product"
     Write-Host "  -compressAllMetadata          Build product with compressed metadata"
+    Write-Host "  -verifypackageshipstatus     Verify whether the packages we are building have already shipped to nuget"
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -149,6 +151,7 @@ function Process-Arguments() {
         $script:testFSharpQA = $False
         $script:testVs = $False
         $script:testpack = $False
+        $script:verifypackageshipstatus = $True
     }
 
     if ($noRestore) {
@@ -173,6 +176,10 @@ function Process-Arguments() {
 
     if ($compressAllMetadata) {
         $script:compressAllMetadata = $True;
+    }
+
+    if ($verifypackageshipstatus) {
+        $script:verifypackageshipstatus = $True;
     }
 
     foreach ($property in $properties) {
@@ -603,6 +610,30 @@ try {
     }
     if ($nupkgtestFailed) {
         throw "Error Verifying nupkgs have access to the source code"
+    }
+    
+
+    $verifypackageshipstatusFailed = $false
+    if ($verifypackageshipstatus) {
+        $dotnetPath = InitializeDotNetCli
+        $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+
+        Write-Host "The error messages below are expected = They mean that FSharp.Core and FSharp.Compiler.Service are not yet published =========== "
+
+        Write-Host "$dotnetExe restore $RepoRoot\buildtools\checkpackages\FSharp.Compiler.Service_notshipped.fsproj"
+        $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Compiler.Service_notshipped.fsproj"
+        if ($exitCode -eq 0) { 
+            throw "Command succeeded but was expected to fail: this means that the fsharp.compiler.service nuget package is already published" 
+        }
+
+        $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Core_notshipped.fsproj"
+        if ($exitCode -eq 0) { 
+            throw "Command succeeded but was expected to fail: this means that the fsharp.core nuget package is already published" 
+        }
+        Write-Host ""
+        Write-Host "Successfully validated the shipping status of FSharp.Compiler.Service nuget package"
+        Write-Host "Successfully validated the shipping status of FSharp.Core nuget package"
+        Write-Host ""
     }
 
     ExitWithExitCode 0

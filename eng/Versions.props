@@ -13,9 +13,9 @@
   <PropertyGroup>
     <PreReleaseVersionLabel>beta</PreReleaseVersionLabel>
     <!-- F# Version components -->
-    <FSMajorVersion>7</FSMajorVersion>
+    <FSMajorVersion>6</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>0</FSBuildVersion>
+    <FSBuildVersion>5</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -31,9 +31,9 @@
     <FSCoreShippedVersion>6.0.0.0</FSCoreShippedVersion>
     <!-- -->
     <!-- FSharp.Compiler.Service version -->
-    <FCSMajorVersion>42</FCSMajorVersion>
-    <FCSMinorVersion>7</FCSMinorVersion>
-    <FCSBuildVersion>100</FCSBuildVersion>
+    <FCSMajorVersion>41</FCSMajorVersion>
+    <FCSMinorVersion>0</FCSMinorVersion>
+    <FCSBuildVersion>5</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
     <FSharpCompilerServiceVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion).$(FCSRevisionVersion)</FSharpCompilerServiceVersion>
