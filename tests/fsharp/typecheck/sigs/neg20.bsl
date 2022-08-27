@@ -150,8 +150,8 @@ neg20.fs(182,14,182,31): typecheck error FS0041: No overloads match for method '
 Known types of arguments: string * obj
 
 Available overloads:
- - static member C2.M: fmt: string * [<System.ParamArray>] args: int[] -> string // Argument 'args' doesn't match
- - static member C2.M: fmt: string * [<System.ParamArray>] args: int[] -> string // Argument at index 1 doesn't match
+ - static member C2.M: fmt: string * [<System.ParamArray>] args: int array -> string // Argument 'args' doesn't match
+ - static member C2.M: fmt: string * [<System.ParamArray>] args: int array -> string // Argument at index 1 doesn't match
 
 neg20.fs(183,29,183,34): typecheck error FS0001: This expression was expected to have type
     'int'    
@@ -204,8 +204,8 @@ neg20.fs(188,14,188,31): typecheck error FS0041: No overloads match for method '
 Known types of arguments: string * obj
 
 Available overloads:
- - static member C3.M: fmt: string * [<System.ParamArray>] args: string[] -> string // Argument 'args' doesn't match
- - static member C3.M: fmt: string * [<System.ParamArray>] args: string[] -> string // Argument at index 1 doesn't match
+ - static member C3.M: fmt: string * [<System.ParamArray>] args: string array -> string // Argument 'args' doesn't match
+ - static member C3.M: fmt: string * [<System.ParamArray>] args: string array -> string // Argument at index 1 doesn't match
 
 neg20.fs(189,29,189,34): typecheck error FS0001: This expression was expected to have type
     'string'    
@@ -334,7 +334,7 @@ neg20.fs(335,11,335,24): typecheck error FS0041: A unique overload for method 'S
 Known type of argument: 'a0
 
 Candidates:
- - System.String(value: char[]) : System.String
+ - System.String(value: char array) : System.String
  - System.String(value: nativeptr<char>) : System.String
  - System.String(value: nativeptr<sbyte>) : System.String
 
@@ -343,7 +343,7 @@ neg20.fs(336,11,336,22): typecheck error FS0041: A unique overload for method 'G
 Known type of argument: 'a0
 
 Candidates:
- - System.Guid(b: byte[]) : System.Guid
+ - System.Guid(b: byte array) : System.Guid
  - System.Guid(g: string) : System.Guid
 
 neg20.fs(355,19,355,38): typecheck error FS1124: Multiple types exist called 'OverloadedClassName', taking different numbers of generic parameters. Provide a type instantiation to disambiguate the type resolution, e.g. 'OverloadedClassName<_>'.
@@ -388,4 +388,3 @@ neg20.fs(478,29,478,61): typecheck error FS0193: Type constraint mismatch. The t
     'Prim<'m>'    
 is not compatible with type
     'IDerivedEquatable<Prim<'m>>'    
-
