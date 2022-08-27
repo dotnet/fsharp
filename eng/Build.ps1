@@ -611,29 +611,38 @@ try {
     if ($nupkgtestFailed) {
         throw "Error Verifying nupkgs have access to the source code"
     }
-    
 
     $verifypackageshipstatusFailed = $false
     if ($verifypackageshipstatus) {
         $dotnetPath = InitializeDotNetCli
         $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
 
-        Write-Host "The error messages below are expected = They mean that FSharp.Core and FSharp.Compiler.Service are not yet published =========== "
-
-        Write-Host "$dotnetExe restore $RepoRoot\buildtools\checkpackages\FSharp.Compiler.Service_notshipped.fsproj"
+        Write-Host "================================================================================================================================"
+        Write-Host "The error messages below are expected = They mean that FSharp.Core and FSharp.Compiler.Service are not yet published "
+        Write-Host "================================================================================================================================"
         $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Compiler.Service_notshipped.fsproj"
-        if ($exitCode -eq 0) { 
-            throw "Command succeeded but was expected to fail: this means that the fsharp.compiler.service nuget package is already published" 
+        if ($exitCode -eq 0) {
+            Write-Host -ForegroundColor Red "Command succeeded but was expected to fail: this means that the fsharp.compiler.service nuget package is already published"
+            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Servoce to be published"
+            $verifypackageshipstatusFailed = $True
         }
 
         $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Core_notshipped.fsproj"
-        if ($exitCode -eq 0) { 
-            throw "Command succeeded but was expected to fail: this means that the fsharp.core nuget package is already published" 
+        if ($exitCode -eq 0) {
+            Write-Host -ForegroundColor Red "Command succeeded but was expected to fail: this means that the fsharp.core nuget package is already published"
+            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Servoce to be published"
+            $verifypackageshipstatusFailed = $True
         }
-        Write-Host ""
-        Write-Host "Successfully validated the shipping status of FSharp.Compiler.Service nuget package"
-        Write-Host "Successfully validated the shipping status of FSharp.Core nuget package"
-        Write-Host ""
+        if (-not $verifypackageshipstatusFailed)
+        {
+            Write-Host "================================================================================================================================"
+            Write-Host "The error messages above are expected = They mean that FSharp.Core and FSharp.Compiler.Service are not yet published "
+            Write-Host "================================================================================================================================"
+        }
+        else
+        {
+            throw "Error Verifying shipping status of shipping nupkgs"
+        }
     }
 
     ExitWithExitCode 0
