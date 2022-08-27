@@ -28,7 +28,7 @@
     <FSCoreReleaseNotesVersion>$(FSMajorVersion)-$(FSMinorVersion)-$(FSBuildVersion)</FSCoreReleaseNotesVersion>
     <FSCoreVersionPrefix>$(FSMajorVersion).$(FSMinorVersion).$(FSBuildVersion)</FSCoreVersionPrefix>
     <FSCoreVersion>$(FSMajorVersion).$(FSMinorVersion).0.0</FSCoreVersion>
-    <FSCoreShippedVersion>$(FSMajorVersion).0.0.0</FSCoreShippedVersion>
+    <FSCoreShippedVersion>6.0.0.0</FSCoreShippedVersion>
     <!-- -->
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>42</FCSMajorVersion>
