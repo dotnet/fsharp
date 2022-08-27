@@ -386,8 +386,7 @@ val checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature:
 val tryLanguageFeatureErrorOption:
     langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn option
 
-val languageFeatureNotSupportedInLibraryError:
-    langFeature: LanguageFeature -> m: range -> 'T
+val languageFeatureNotSupportedInLibraryError: langFeature: LanguageFeature -> m: range -> 'T
 
 type StackGuard =
     new: maxDepth: int -> StackGuard
