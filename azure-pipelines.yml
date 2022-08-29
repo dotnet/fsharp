@@ -341,7 +341,7 @@ stages:
             #   WindowsMachineQueueName=Windows.vs2022.amd64.open
             # and there is an alternate build definition that sets this to a queue that is always scouting the
             # next preview of Visual Studio.
-            name: NetCore1ESPool-Public
+            name: NetCore1ESPool-Svc-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
