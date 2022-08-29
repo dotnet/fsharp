@@ -1107,15 +1107,13 @@ let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
 /// LanguageVersion management
 let setLanguageVersion specifiedVersion =
 
-    let languageVersion = LanguageVersion(specifiedVersion)
-
     let dumpAllowedValues () =
         printfn "%s" (FSComp.SR.optsSupportedLangVersions ())
 
-        for v in languageVersion.ValidOptions do
+        for v in LanguageVersion.ValidOptions do
             printfn "%s" v
 
-        for v in languageVersion.ValidVersions do
+        for v in LanguageVersion.ValidVersions do
             printfn "%s" v
 
         exit 0
@@ -1124,10 +1122,10 @@ let setLanguageVersion specifiedVersion =
         dumpAllowedValues ()
     elif specifiedVersion.ToUpperInvariant() = "PREVIEW" then
         ()
-    elif not (languageVersion.ContainsVersion specifiedVersion) then
+    elif not (LanguageVersion.ContainsVersion specifiedVersion) then
         error (Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
 
-    languageVersion
+    LanguageVersion(specifiedVersion)
 
 let languageFlags tcConfigB =
     [
