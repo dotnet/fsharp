@@ -15,9 +15,13 @@
     -->
     <NoWarn>$(NoWarn);NU1505</NoWarn>
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
-
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Compilers" Version="$(MicrosoftCodeAnalysisCompilersVersion)" />
+  </ItemGroup>
 
   <Target Name="RemoveAnalyzers"
           DependsOnTargets="ResolveAssemblyReferences"
