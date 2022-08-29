@@ -24,6 +24,9 @@
 </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\service\FsUnit.fs">
+      <Link>FsUnit.fs</Link>
+    </Compile>
     <Compile Include="Conformance\BasicGrammarElements\OperatorNames\OperatorNames.fs" />
     <Compile Include="Conformance\BasicGrammarElements\PrecedenceAndOperators\PrecedenceAndOperators.fs" />
     <Compile Include="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\ExceptionDefinitions.fs" />
@@ -193,6 +196,7 @@
     <Compile Include="Globalization\GlobalizationTestCases.fs" />
     <Compile Include="OCamlCompat\OCamlCompat.fs" />
     <Compile Include="Miscellaneous\ListLiterals.fs" />
+    <Compile Include="Signatures\ModuleOrNamespaceTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />

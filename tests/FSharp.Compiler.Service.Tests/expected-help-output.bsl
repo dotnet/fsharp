@@ -1,6 +1,4 @@
-Microsoft (R) F# Compiler version 12.0.0.0 for F# 6.0
-Copyright (c) Microsoft Corporation. All Rights Reserved.
-
+﻿
 
 		- OUTPUT FILES -
 --out:<file>                             Name of the output file (Short form:

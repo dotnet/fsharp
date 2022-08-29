@@ -25,6 +25,7 @@
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
     <WarningsAsErrors>1182;0025;$(WarningsAsErrors)</WarningsAsErrors>
     <OtherFlags>$(OtherFlags) --nowarn:3384</OtherFlags>
+    <OtherFlags>$(OtherFlags) --times --nowarn:75</OtherFlags>
   </PropertyGroup>
 
   <!-- nuget -->
@@ -81,6 +82,16 @@
 
   <PropertyGroup Condition="'$(OS)' == 'Unix'">
     <DefineConstants>$(DefineConstants);TESTING_ON_LINUX</DefineConstants>
+  </PropertyGroup>
+
+
+  <!-- CompressAllMetadata is a switch set by the CI to do a test pass where we compress the metadata for the assemblies -->
+  <!-- We don't compress the proto-compiler yet, because no shipped compiler, and the arcade compiler don't yet support compression -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto' or '$(CompressAllMetadata)' != 'true'">
+      <CompressMetadata>false</CompressMetadata>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(CompressAllMetadata)' == 'true'">
+      <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <!-- SDK targets override -->
