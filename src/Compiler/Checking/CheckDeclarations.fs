@@ -15,9 +15,9 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckComputationExpressions
 open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckIncrementalClasses
 open FSharp.Compiler.CheckPatterns
-open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
@@ -438,7 +438,8 @@ module TcRecdUnionAndEnumDeclarations =
         rfspec
 
     let TcAnonFieldDecl cenv env parent tpenv nm (SynField(Attributes attribs, isStatic, idOpt, ty, isMutable, xmldoc, vis, m)) =
-        let id = (match idOpt with None -> mkSynId m nm | Some id -> id)
+        let mName = m.MakeSynthetic()
+        let id = match idOpt with None -> mkSynId mName nm | Some id -> id
         let xmlDoc = xmldoc.ToXmlDoc(true, Some [])
         TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmlDoc, vis, m)
 
@@ -1017,7 +1018,7 @@ module MutRecBindingChecking =
                 let envForTycon = if isExtrinsic then envForTycon else AddLocalTyconRefs true g cenv.amap tcref.Range [tcref] envForTycon
                 // Set up the environment so use-before-definition warnings are given, at least 
                 // until we reach a Phase2AIncrClassCtorJustAfterSuperInit. 
-                let envForTycon = { envForTycon with eCtorInfo = Some (InitialImplicitCtorInfo()) }
+                let envForTycon = { envForTycon with eCtorInfo = Some (CtorInfo.InitialImplicit()) }
 
                 let reqdThisValTyOpt = Some thisTy
                 
