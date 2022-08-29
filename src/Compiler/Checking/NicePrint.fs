@@ -1472,7 +1472,7 @@ module InfoMemberPrinting =
             let layout = layoutXmlDocOfMethInfo denv infoReader minfo layout
 
             let paramsL =
-                let paramDatas = minfo.GetParamDatas(amap, m, minst)
+                let paramDatas = minfo.GetParamDatas(amap, m, minst) |> List.map (List.map fst)
                 if List.forall isNil paramDatas then
                     WordL.structUnit
                 else
@@ -1515,7 +1515,7 @@ module InfoMemberPrinting =
                     PrintTypes.layoutTyparDecls denv idL true minfo.FormalMethodTypars ^^
                     SepL.leftParen
 
-        let paramDatas = minfo.GetParamDatas (amap, m, minst)
+        let paramDatas = minfo.GetParamDatas (amap, m, minst) |> List.map (List.map fst)
         let layout = layout ^^ sepListL RightL.comma ((List.concat >> List.map (layoutParamData denv)) paramDatas)
         layout ^^ RightL.rightParen ^^ WordL.colon ^^ PrintTypes.layoutType denv retTy
 

@@ -782,7 +782,7 @@ module internal DescriptionListsImpl =
 
         | Item.CtorGroup(_, minfo :: _) 
         | Item.MethodGroup(_, minfo :: _, _) -> 
-            let paramDatas = minfo.GetParamDatas(amap, m, minfo.FormalMethodInst) |> List.head
+            let paramDatas = minfo.GetParamDatas(amap, m, minfo.FormalMethodInst) |> List.head |> List.map fst
             let retTy = minfo.GetFSharpReturnType(amap, m, minfo.FormalMethodInst)
             let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInstantiation paramDatas retTy
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned

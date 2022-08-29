@@ -434,7 +434,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             argInfos 
             |> List.map (fun (_nm, __maintainsVarSpaceUsingBind, _maintainsVarSpace, _allowInto, _isLikeZip, _isLikeJoin, _isLikeGroupJoin, _joinConditionWord, methInfo) -> 
                 match methInfo.GetParamAttribs(cenv.amap, mWhole) with 
-                | [curriedArgInfo] -> Some curriedArgInfo // one for the actual argument group
+                | [curriedArgInfo] -> Some (List.map fst curriedArgInfo) // one for the actual argument group
                 | _ -> None)
             |> Some
         | _ -> None

@@ -335,7 +335,7 @@ let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
             | ValueSome optTy when typeEquiv g g.int32_ty optTy -> CallerFilePath
             | _ -> CallerLineNumber
 
-    ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo)
+    ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo), argInfo.Attribs
 
 #if !NO_TYPEPROVIDERS
 
@@ -1170,7 +1170,7 @@ type MethInfo =
                         if p.Type.TypeRef.FullName = "System.Int32" then CallerFilePath
                         else CallerLineNumber
 
-                 ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo) ] ]
+                 ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo), [] ] ]
 
         | FSMeth(g, _, vref, _) ->
             GetArgInfosOfMember x.IsCSharpStyleExtensionMember g vref
@@ -1191,7 +1191,7 @@ type MethInfo =
                     | None -> ReflectedArgInfo.None
                 let isOutArg = p.PUntaint((fun p -> p.IsOut && not p.IsIn), m)
                 let isInArg = p.PUntaint((fun p -> p.IsIn && not p.IsOut), m)
-                ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, NoCallerInfo, reflArgInfo)] ]
+                ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, NoCallerInfo, reflArgInfo), [] ] ]
 #endif
 
     /// Get the signature of an abstract method slot.
@@ -1292,13 +1292,13 @@ type MethInfo =
 #endif
 
         let paramAttribs = x.GetParamAttribs(amap, m)
-        (paramAttribs, paramNamesAndTypes) ||> List.map2 (List.map2 (fun info (ParamNameAndType(nmOpt, pty)) ->
+        (paramAttribs, paramNamesAndTypes) ||> List.map2 (List.map2 (fun (info, attribs) (ParamNameAndType(nmOpt, pty)) ->
              let (ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo)) = info
-             ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, nmOpt, reflArgInfo, pty)))
+             ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, nmOpt, reflArgInfo, pty), attribs))
 
     /// Get the ParamData objects for the parameters of a MethInfo
     member x.HasParamArrayArg(amap, m, minst) =
-        x.GetParamDatas(amap, m, minst) |> List.existsSquared (fun (ParamData(isParamArrayArg, _, _, _, _, _, _, _)) -> isParamArrayArg)
+        x.GetParamDatas(amap, m, minst) |> List.existsSquared (fun (ParamData(isParamArrayArg, _, _, _, _, _, _, _), _) -> isParamArrayArg)
 
     /// Select all the type parameters of the declaring type of a method.
     ///

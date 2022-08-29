@@ -146,7 +146,7 @@ type ParamAttribs =
         callerInfo: CallerInfo *
         reflArgInfo: ReflectedArgInfo
 
-val CrackParamAttribsInfo: TcGlobals -> ty: TType * argInfo: ArgReprInfo -> ParamAttribs
+val CrackParamAttribsInfo: TcGlobals -> ty: TType * argInfo: ArgReprInfo -> ParamAttribs * Attribs
 
 /// Describes an F# use of an IL type, including the type instantiation associated with the type at a particular usage point.
 [<NoComparison; NoEquality>]
@@ -512,10 +512,10 @@ type MethInfo =
     member GetCustomAttrs: unit -> ILAttributes
 
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
-    member GetParamAttribs: amap: ImportMap * m: range -> ParamAttribs list list
+    member GetParamAttribs: amap: ImportMap * m: range -> (ParamAttribs * Attribs) list list
 
     /// Get the ParamData objects for the parameters of a MethInfo
-    member GetParamDatas: amap: ImportMap * m: range * minst: TType list -> ParamData list list
+    member GetParamDatas: amap: ImportMap * m: range * minst: TType list -> (ParamData * Attribs) list list
 
     /// Get the parameter types of a method info
     member GetParamTypes: amap: ImportMap * m: range * minst: TType list -> TType list list
