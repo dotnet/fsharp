@@ -49,7 +49,11 @@ type LanguageFeature =
     | DelegateTypeNameResolutionFix
     | ReallyLongLists
     | ErrorOnDeprecatedRequireQualifiedAccess
+    | RequiredPropertiesSupport
+    | InitPropertiesSupport
     | LowercaseDUWhenRequireQualifiedAccess
+    | InterfacesWithAbstractStaticMembers
+    | SelfTypeConstraints
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -59,15 +63,16 @@ type LanguageVersion(versionText) =
     static let languageVersion47 = 4.7m
     static let languageVersion50 = 5.0m
     static let languageVersion60 = 6.0m
+    static let languageVersion70 = 7.0m
     static let previewVersion = 9999m // Language version when preview specified
-    static let defaultVersion = languageVersion60 // Language version when default specified
+    static let defaultVersion = languageVersion70 // Language version when default specified
     static let latestVersion = defaultVersion // Language version when latest specified
-    static let latestMajorVersion = languageVersion60 // Language version when latestmajor specified
+    static let latestMajorVersion = languageVersion70 // Language version when latestmajor specified
 
     static let validOptions = [| "preview"; "default"; "latest"; "latestmajor" |]
 
     static let languageVersions =
-        set [| languageVersion46; languageVersion47; languageVersion50; languageVersion60 |]
+        set [| languageVersion46; languageVersion47; languageVersion50; languageVersion60; languageVersion70 |]
 
     static let features =
         dict
@@ -106,13 +111,19 @@ type LanguageVersion(versionText) =
                 LanguageFeature.AttributesToRightOfModuleKeyword, languageVersion60
                 LanguageFeature.DelegateTypeNameResolutionFix, languageVersion60
 
+                // F# 7.0
+                LanguageFeature.MLCompatRevisions, languageVersion70
+                LanguageFeature.BetterExceptionPrinting, languageVersion70
+                LanguageFeature.ReallyLongLists, languageVersion70
+                LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, languageVersion70
+                LanguageFeature.RequiredPropertiesSupport, languageVersion70
+                LanguageFeature.InitPropertiesSupport, languageVersion70
+                LanguageFeature.LowercaseDUWhenRequireQualifiedAccess, languageVersion70
+                LanguageFeature.InterfacesWithAbstractStaticMembers, languageVersion70
+                LanguageFeature.SelfTypeConstraints, languageVersion70
+
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
-                LanguageFeature.MLCompatRevisions, previewVersion
-                LanguageFeature.BetterExceptionPrinting, previewVersion
-                LanguageFeature.ReallyLongLists, previewVersion
-                LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess, previewVersion
-                LanguageFeature.LowercaseDUWhenRequireQualifiedAccess, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -130,6 +141,8 @@ type LanguageVersion(versionText) =
         | "5" -> languageVersion50
         | "6.0"
         | "6" -> languageVersion60
+        | "7.0"
+        | "7" -> languageVersion70
         | _ -> 0m
 
     let specified = getVersionFromString versionText
@@ -212,7 +225,11 @@ type LanguageVersion(versionText) =
         | LanguageFeature.DelegateTypeNameResolutionFix -> FSComp.SR.featureDelegateTypeNameResolutionFix ()
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()
         | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
+        | LanguageFeature.RequiredPropertiesSupport -> FSComp.SR.featureRequiredProperties ()
+        | LanguageFeature.InitPropertiesSupport -> FSComp.SR.featureInitProperties ()
         | LanguageFeature.LowercaseDUWhenRequireQualifiedAccess -> FSComp.SR.featureLowercaseDUWhenRequireQualifiedAccess ()
+        | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureInterfacesWithAbstractStaticMembers ()
+        | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

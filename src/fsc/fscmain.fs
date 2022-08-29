@@ -56,8 +56,6 @@ let main(argv) =
         else
             "fsc.exe"
 
-    // Set the garbage collector to batch mode, which improves overall performance.
-    GCSettings.LatencyMode <- GCLatencyMode.Batch
     Thread.CurrentThread.Name <- "F# Main Thread"
 
     // Set the initial phase to garbage collector to batch mode, which improves overall performance.
@@ -82,7 +80,6 @@ let main(argv) =
             System.Console.ReadLine() |> ignore
 
         // Set up things for the --times testing flag
-#if !FX_NO_APP_DOMAINS
         let timesFlag = argv |> Array.exists (fun x -> x = "/times" || x = "--times")
 
         if timesFlag then
@@ -97,7 +94,6 @@ let main(argv) =
                     stats.memoryMapFileClosedCount
                     stats.rawMemoryFileCount
                     stats.weakByteFileCount)
-#endif
 
         // This object gets invoked when two many errors have been accumulated, or an abort-on-error condition
         // has been reached (e.g. type checking failed, so don't proceed to optimization).
@@ -114,12 +110,7 @@ let main(argv) =
             }
 
         // Get the handler for legacy resolution of references via MSBuild.
-        let legacyReferenceResolver =
-#if CROSS_PLATFORM_COMPILER
-            SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
-#else
-            LegacyMSBuildReferenceResolver.getResolver ()
-#endif
+        let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
 
         // Perform the main compilation.
         //

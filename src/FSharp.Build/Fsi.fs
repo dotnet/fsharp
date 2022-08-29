@@ -64,6 +64,7 @@ type public Fsi() as this =
     let mutable warningLevel: string MaybeNull = null
     let mutable vslcid: string MaybeNull = null
     let mutable utf8output: bool = false
+    let mutable useReflectionFreeCodeGen: bool = false
 
     // See bug 6483; this makes parallel build faster, and is fine to set unconditionally
     do this.YieldDuringToolExecution <- true
@@ -132,6 +133,9 @@ type public Fsi() as this =
 
         if utf8output then
             builder.AppendSwitch("--utf8output")
+
+        if useReflectionFreeCodeGen then
+            builder.AppendSwitch("--reflectionfree")
 
         builder.AppendSwitch("--fullpaths")
         builder.AppendSwitch("--flaterrors")

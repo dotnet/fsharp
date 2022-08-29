@@ -20,3 +20,18 @@ type DU6 = a
 type du1 = du1 of string
 
 type du2 = | du2 of string
+
+[<RequireQualifiedAccess>]
+type du3 = 
+    | a
+    | ``c``
+    
+[<RequireQualifiedAccess>]
+type du4 = 
+    | a
+    | ``a.b``
+    
+[<RequireQualifiedAccess>]
+type du5 = 
+    | a
+    | ``A.C``

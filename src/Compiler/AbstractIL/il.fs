@@ -1203,10 +1203,11 @@ type ILAttribute =
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes(array: ILAttribute[]) =
+    member _.AsArray() = array
 
-    member x.AsArray() = array
+    member _.AsList() = array |> Array.toList
 
-    member x.AsList() = array |> Array.toList
+    static member val internal Empty = ILAttributes([||])
 
 [<NoEquality; NoComparison>]
 type ILAttributesStored =
@@ -1369,7 +1370,7 @@ type ILInstr =
 
     | I_call of ILTailcall * ILMethodSpec * ILVarArgs
     | I_callvirt of ILTailcall * ILMethodSpec * ILVarArgs
-    | I_callconstraint of ILTailcall * ILType * ILMethodSpec * ILVarArgs
+    | I_callconstraint of callvirt: bool * ILTailcall * ILType * ILMethodSpec * ILVarArgs
     | I_calli of ILTailcall * ILCallingSignature * ILVarArgs
     | I_ldftn of ILMethodSpec
     | I_newobj of ILMethodSpec * ILVarArgs
@@ -3409,9 +3410,6 @@ let mkNormalCall mspec = I_call(Normalcall, mspec, None)
 
 let mkNormalCallvirt mspec = I_callvirt(Normalcall, mspec, None)
 
-let mkNormalCallconstraint (ty, mspec) =
-    I_callconstraint(Normalcall, ty, mspec, None)
-
 let mkNormalNewobj mspec = I_newobj(mspec, None)
 
 /// Comment on common object cache sizes:
@@ -3821,18 +3819,24 @@ let mkILClassCtor impl =
 let mk_ospec (ty: ILType, callconv, nm, genparams, formal_args, formal_ret) =
     OverridesSpec(mkILMethRef (ty.TypeRef, callconv, nm, genparams, formal_args, formal_ret), ty)
 
-let mkILGenericVirtualMethod (nm, access, genparams, actual_args, actual_ret, impl) =
+let mkILGenericVirtualMethod (nm, callconv: ILCallingConv, access, genparams, actual_args, actual_ret, impl) =
+    let attributes =
+        convertMemberAccess access
+        ||| MethodAttributes.CheckAccessOnOverride
+        ||| (match impl with
+             | MethodBody.Abstract -> MethodAttributes.Abstract ||| MethodAttributes.Virtual
+             | _ -> MethodAttributes.Virtual)
+        ||| (if callconv.IsInstance then
+                 enum 0
+             else
+                 MethodAttributes.Static)
+
     ILMethodDef(
         name = nm,
-        attributes =
-            (convertMemberAccess access
-             ||| MethodAttributes.CheckAccessOnOverride
-             ||| (match impl with
-                  | MethodBody.Abstract -> MethodAttributes.Abstract ||| MethodAttributes.Virtual
-                  | _ -> MethodAttributes.Virtual)),
+        attributes = attributes,
         implAttributes = MethodImplAttributes.Managed,
         genericParams = genparams,
-        callingConv = ILCallingConv.Instance,
+        callingConv = callconv,
         parameters = actual_args,
         ret = actual_ret,
         isEntryPoint = false,
@@ -3841,8 +3845,11 @@ let mkILGenericVirtualMethod (nm, access, genparams, actual_args, actual_ret, im
         body = notlazy impl
     )
 
-let mkILNonGenericVirtualMethod (nm, access, args, ret, impl) =
-    mkILGenericVirtualMethod (nm, access, mkILEmptyGenericParams, args, ret, impl)
+let mkILNonGenericVirtualMethod (nm, callconv, access, args, ret, impl) =
+    mkILGenericVirtualMethod (nm, callconv, access, mkILEmptyGenericParams, args, ret, impl)
+
+let mkILNonGenericVirtualInstanceMethod (nm, access, args, ret, impl) =
+    mkILNonGenericVirtualMethod (nm, ILCallingConv.Instance, access, args, ret, impl)
 
 let mkILGenericNonVirtualMethod (nm, access, genparams, actual_args, actual_ret, impl) =
     ILMethodDef(
@@ -4266,7 +4273,7 @@ let mkILDelegateMethods access (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsy
 
     let one nm args ret =
         let mdef =
-            mkILNonGenericVirtualMethod (nm, access, args, mkILReturn ret, MethodBody.Abstract)
+            mkILNonGenericVirtualInstanceMethod (nm, access, args, mkILReturn ret, MethodBody.Abstract)
 
         mdef.WithAbstract(false).WithHideBySig(true).WithRuntime(true)
 
@@ -5297,7 +5304,7 @@ and refsOfILInstr s x =
     | I_callvirt (_, mr, varargs) ->
         refsOfILMethodSpec s mr
         refsOfILVarArgs s varargs
-    | I_callconstraint (_, tr, mr, varargs) ->
+    | I_callconstraint (_, _, tr, mr, varargs) ->
         refsOfILType s tr
         refsOfILMethodSpec s mr
         refsOfILVarArgs s varargs

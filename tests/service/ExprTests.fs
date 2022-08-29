@@ -3263,7 +3263,7 @@ let f7() = callXY (C()) (D())
 let f8() = callXY (D()) (C())
     """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:preview"]
+    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
 [<Test>]
 let ``Test ProjectForWitnesses1`` () =
@@ -3334,7 +3334,7 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
             nm |> shouldEqual "callX$W"
             argTypes.Count |> shouldEqual 1
             let argText = argTypes[0].Type.ToString()
-            argText |> shouldEqual "type  ^T ->  ^U ->  ^V"
+            argText |> shouldEqual "type ^T -> ^U -> ^V"
     end
 
 
@@ -3356,8 +3356,8 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
             let argText1 = argTypes[0].Type.ToString()
             let argName2 = argTypes[1].Name
             let argText2 = argTypes[1].Type.ToString()
-            argText1 |> shouldEqual "type  ^T ->  ^U -> Microsoft.FSharp.Core.unit"
-            argText2 |> shouldEqual "type  ^T ->  ^U -> Microsoft.FSharp.Core.unit"
+            argText1 |> shouldEqual "type ^T -> ^U -> Microsoft.FSharp.Core.unit"
+            argText2 |> shouldEqual "type ^T -> ^U -> Microsoft.FSharp.Core.unit"
     end
 
 
@@ -3387,7 +3387,7 @@ type MyNumberWrapper =
     { MyNumber: MyNumber }
     """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:preview"]
+    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
 [<Test>]
 let ``Test ProjectForWitnesses2`` () =
@@ -3442,11 +3442,11 @@ let s2 = sign p1
 
     """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:preview"]
+    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
 [<Test>]
 let ``Test ProjectForWitnesses3`` () =
-    let cleanup, options = createOptionsAux [ ProjectForWitnesses3.fileSource1 ] ["--langversion:preview"]
+    let cleanup, options = createOptionsAux [ ProjectForWitnesses3.fileSource1 ] ["--langversion:7.0"]
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
@@ -3504,9 +3504,9 @@ let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
             let argName2 = argTypes[1].Name
             let argText2 = argTypes[1].Type.ToString()
             argName1 |> shouldEqual (Some "get_Zero")
-            argText1 |> shouldEqual "type Microsoft.FSharp.Core.unit ->  ^T"
+            argText1 |> shouldEqual "type Microsoft.FSharp.Core.unit -> ^T"
             argName2 |> shouldEqual (Some "op_Addition")
-            argText2 |> shouldEqual "type  ^T ->  ^T ->  ^T"
+            argText2 |> shouldEqual "type ^T -> ^T -> ^T"
     end
 
 //---------------------------------------------------------------------------------------------------------
@@ -3536,7 +3536,7 @@ let isNullQuoted (ts : 't[]) =
 
 """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:preview"]
+    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
 [<Test>]
 let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =

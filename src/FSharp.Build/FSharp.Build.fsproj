@@ -4,14 +4,25 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFramework Condition="'$(Configuration)' != 'Proto'">netstandard2.0</TargetFramework>
+    <TargetFrameworks Condition="'$(Configuration)' == 'Proto'">netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Build</AssemblyName>
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);LOCALIZATION_FSBUILD</DefineConstants>
     <NoWarn>NU1701;FS0075</NoWarn>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <LangVersion>5.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
+    <LangVersion>6.0</LangVersion>
     <LangVersion>6.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
+    <Configurations>Debug;Release;Proto</Configurations>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
+  </PropertyGroup>
+
+  <!--  The FSharp.Build dll does not provide a referencable public interface although it's used for testing -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+      <NoOptimizationData>true</NoOptimizationData>
+      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
   </PropertyGroup>
 
   <ItemGroup>
@@ -52,15 +63,7 @@
     <None Include="Microsoft.FSharp.Overrides.NetSdk.targets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)' == 'Proto' and '$(DotNetBuildFromSource)' != 'true'">
-    <!--
-        The FSharp.Build built here may be loaded directly into a shipped Visual Studio, to that end, we cannot 
-        rely on new API's just being added to FSharp.Core.
-    -->
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" IncludeAssets="compile" ExcludeAssets="all" PrivateAssets="all" />
-  </ItemGroup>
-
-  <ItemGroup  Condition="'$(Configuration)' != 'Proto' or '$(DotNetBuildFromSource)' == 'true'">
+  <ItemGroup Condition="">
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
