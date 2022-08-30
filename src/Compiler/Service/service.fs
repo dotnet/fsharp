@@ -35,6 +35,8 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.BuildGraph
+open OpenTelemetry
+open OpenTelemetry.Resources
 
 [<AutoOpen>]
 module EnvMisc =
@@ -1199,6 +1201,27 @@ type BackgroundCompiler
 
     static member ActualCheckFileCount = actualCheckFileCount
 
+module Foo =
+    open FSharp.Compiler.Diagnostics.Activity
+    open OpenTelemetry.Trace
+    
+    let init () =
+        use tracerProvider =
+            Sdk.CreateTracerProviderBuilder()
+               .AddSource(activitySourceName)
+               .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName ="fsc", serviceVersion = "42.42.42.42"))
+               .AddOtlpExporter()
+               .AddZipkinExporter()
+               .Build();
+        use mainActivity = activitySource.StartActivity("main")
+
+        let forceCleanup() =
+            mainActivity.Dispose()
+            activitySource.Dispose()
+            tracerProvider.Dispose()
+        
+        forceCleanup
+
 [<Sealed; AutoSerializable(false)>]
 // There is typically only one instance of this type in an IDE process.
 type FSharpChecker
@@ -1226,6 +1249,8 @@ type FSharpChecker
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking
         )
+        
+    do Foo.init() |> ignore
 
     static let globalInstance = lazy FSharpChecker.Create()
 
