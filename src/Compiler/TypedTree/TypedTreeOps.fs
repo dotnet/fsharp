@@ -10360,3 +10360,24 @@ let isFSharpExceptionTy g ty =
     | ValueSome tcref -> tcref.IsFSharpException
     | _ -> false
 
+let (|EmptyModuleOrNamespace|_|) (moduleOrNamespaceContents: ModuleOrNamespaceContents) =
+    match moduleOrNamespaceContents with
+    | TMDefs(defs = defs) ->
+        let singleModuleOrNamespace =
+            defs
+            |> List.choose (function
+                | ModuleOrNamespaceContents.TMDefRec _ as defRec
+                | ModuleOrNamespaceContents.TMDefs(defs = [ ModuleOrNamespaceContents.TMDefRec _ as defRec ]) -> Some defRec
+                | _ -> None)
+            |> List.tryHead
+
+        match singleModuleOrNamespace with
+        | Some (TMDefRec(bindings = [ ModuleOrNamespaceBinding.Module(mspec, ModuleOrNamespaceContents.TMDefs(defs = defs)) ])) ->
+            defs
+            |> List.forall (function
+                | ModuleOrNamespaceContents.TMDefOpens _
+                | ModuleOrNamespaceContents.TMDefDo _ -> true
+                | _ -> false)
+            |> fun isEmpty -> if isEmpty then Some mspec else None
+        | _ -> None
+    | _ -> None

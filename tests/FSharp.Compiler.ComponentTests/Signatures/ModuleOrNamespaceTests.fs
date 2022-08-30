@@ -142,3 +142,29 @@ namespace Fantomas.Core
     val genExpr: e: FSharp.Compiler.Syntax.SynExpr -> ctx: Context.Context -> Context.Context
 
     val genLambdaArrowWithTrivia: bodyExpr: (FSharp.Compiler.Syntax.SynExpr -> Context.Context -> Context.Context) -> body: FSharp.Compiler.Syntax.SynExpr -> arrowRange: FSharp.Compiler.Text.Range option -> (Context.Context -> Context.Context)"""
+
+[<Fact>]
+let ``Empty namespace`` () =
+    FSharp
+        """
+namespace System
+
+open System.Runtime.CompilerServices
+
+[<assembly: InternalsVisibleTo("Fantomas.Core.Tests")>]
+
+do ()
+"""
+    |> printSignatures
+    |> should equal "namespace System"
+        
+[<Fact>]
+let ``Empty module`` () =
+    FSharp
+        """
+module Foobar
+
+do ()
+"""
+    |> printSignatures
+    |> should equal "module Foobar"

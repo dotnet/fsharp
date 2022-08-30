@@ -2676,3 +2676,5 @@ type TraitConstraintInfo with
 
     /// Get the key associated with the member constraint.
     member GetWitnessInfo: unit -> TraitWitnessInfo
+
+val (|EmptyModuleOrNamespace|_|): moduleOrNamespaceContents: ModuleOrNamespaceContents -> ModuleOrNamespace option
