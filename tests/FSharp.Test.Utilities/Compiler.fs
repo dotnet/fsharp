@@ -1313,15 +1313,15 @@ module rec Compiler =
         let withEvalTypeEquals t (result: CompilationResult) : CompilationResult =
             assertEvalOutput (fun (x: FsiValue) -> x.ReflectionType) t result
 
-    let signatureText (checkResults: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults) =
-        checkResults.GenerateSignature()
+    let signatureText (pageWidth: int option) (checkResults: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults) =
+        checkResults.GenerateSignature(?pageWidth = pageWidth)
         |> Option.defaultWith (fun _ -> failwith "Unable to generate signature text.")
 
     let signaturesShouldContain (expected: string) cUnit =
         let text =
             cUnit
             |> typecheckResults
-            |> signatureText
+            |> signatureText None
 
         let actual =
             text.ToString().Split('\n')
@@ -1331,13 +1331,15 @@ module rec Compiler =
         if not (actual |> Array.contains expected) then
             failwith ($"The following signature:\n%s{expected}\n\nwas not found in:\n" + (actual |> String.concat "\n"))
 
-    let printSignatures cUnit =
+    let private printSignaturesImpl pageWidth cUnit  =
         cUnit
         |> typecheckResults
-        |> signatureText
+        |> signatureText pageWidth
         |> string
         |> fun s ->
             s.Replace("\r", "").Split('\n')
             |> Array.map (fun line -> line.TrimEnd())
             |> String.concat "\n"
-            |> fun tap -> tap
+    
+    let printSignatures cUnit = printSignaturesImpl None cUnit
+    let printSignaturesWith pageWidth cUnit = printSignaturesImpl (Some pageWidth) cUnit
