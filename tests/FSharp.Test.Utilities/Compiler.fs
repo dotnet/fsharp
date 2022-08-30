@@ -388,6 +388,9 @@ module rec Compiler =
     let withLangVersion60 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:6.0" ] "withLangVersion60 is only supported on F#" cUnit
 
+    let withLangVersion70 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:7.0" ] "withLangVersion70 is only supported on F#" cUnit
+
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
 
@@ -1322,8 +1325,19 @@ module rec Compiler =
 
         let actual =
             text.ToString().Split('\n')
-            |> Array.map (fun s -> s.TrimEnd(' '))
+            |> Array.map (fun s -> s.TrimEnd(' ', '\r'))
             |> Array.filter (fun s -> s.Length > 0)
 
         if not (actual |> Array.contains expected) then
             failwith ($"The following signature:\n%s{expected}\n\nwas not found in:\n" + (actual |> String.concat "\n"))
+
+    let printSignatures cUnit =
+        cUnit
+        |> typecheckResults
+        |> signatureText
+        |> string
+        |> fun s ->
+            s.Replace("\r", "").Split('\n')
+            |> Array.map (fun line -> line.TrimEnd())
+            |> String.concat "\n"
+            |> fun tap -> tap
