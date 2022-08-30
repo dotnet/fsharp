@@ -1387,6 +1387,7 @@ let testFlag tcConfigB =
             | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
             | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
             | "ParallelOff" -> tcConfigB.concurrentBuild <- false
+            | "ParallelCheckingWithSignatureFilesOn" -> tcConfigB.parallelCheckingWithSignatureFiles <- true
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif

@@ -1554,15 +1554,9 @@ let CheckMultipleInputsInParallel
         finishedResults, tcState)
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
-
-    let disableParallel =
-        Environment.GetEnvironmentVariable("FSHARP_NO_PARALLEL_CHECKING")
-        |> String.IsNullOrWhiteSpace
-        |> not
-
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
-        if tcConfig.concurrentBuild && not disableParallel then
+        if tcConfig.parallelCheckingWithSignatureFiles then
             CheckMultipleInputsInParallel(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs)
         else
             CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)

@@ -281,7 +281,8 @@ type BackgroundCompiler
         suggestNamesForErrors,
         keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
-        enablePartialTypeChecking
+        enablePartialTypeChecking,
+        enableParallelCheckingWithSignatureFiles
     ) as self =
 
     let beforeFileChecked = Event<string * FSharpProjectOptions>()
@@ -408,6 +409,7 @@ type BackgroundCompiler
                     keepAllBackgroundSymbolUses,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
                     enablePartialTypeChecking,
+                    enableParallelCheckingWithSignatureFiles,
                     dependencyProvider
                 )
 
@@ -1200,7 +1202,8 @@ type FSharpChecker
         suggestNamesForErrors,
         keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
-        enablePartialTypeChecking
+        enablePartialTypeChecking,
+        enableParallelCheckingWithSignatureFiles
     ) =
 
     let backgroundCompiler =
@@ -1213,7 +1216,8 @@ type FSharpChecker
             suggestNamesForErrors,
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
-            enablePartialTypeChecking
+            enablePartialTypeChecking,
+            enableParallelCheckingWithSignatureFiles
         )
 
     static let globalInstance = lazy FSharpChecker.Create()
@@ -1236,7 +1240,8 @@ type FSharpChecker
             ?suggestNamesForErrors,
             ?keepAllBackgroundSymbolUses,
             ?enableBackgroundItemKeyStoreAndSemanticClassification,
-            ?enablePartialTypeChecking
+            ?enablePartialTypeChecking,
+            ?enableParallelCheckingWithSignatureFiles
         ) =
 
         let legacyReferenceResolver =
@@ -1255,6 +1260,7 @@ type FSharpChecker
             defaultArg enableBackgroundItemKeyStoreAndSemanticClassification false
 
         let enablePartialTypeChecking = defaultArg enablePartialTypeChecking false
+        let enableParallelCheckingWithSignatureFiles = defaultArg enableParallelCheckingWithSignatureFiles false
 
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
@@ -1268,7 +1274,8 @@ type FSharpChecker
             suggestNamesForErrors,
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
-            enablePartialTypeChecking
+            enablePartialTypeChecking,
+            enableParallelCheckingWithSignatureFiles
         )
 
     member _.ReferenceResolver = legacyReferenceResolver

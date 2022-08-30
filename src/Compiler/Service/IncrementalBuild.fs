@@ -1431,6 +1431,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking: bool,
+            enableParallelCheckingWithSignatureFiles: bool,
             dependencyProvider
         ) =
 
@@ -1512,6 +1513,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     }
                     |> Some
 
+                tcConfigB.parallelCheckingWithSignatureFiles <- enableParallelCheckingWithSignatureFiles
+                
                 tcConfigB, sourceFilesNew
 
             // If this is a builder for a script, re-apply the settings inferred from the
