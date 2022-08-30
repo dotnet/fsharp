@@ -97,6 +97,11 @@
         <target state="translated">Несоответствие ограничений типов. Тип \n    "{0}"    \nнесовместим с типом\n    "{1}"    {2}\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="StepCannotBeZero">
+        <source>The step of a range cannot be zero.</source>
+        <target state="translated">Шагом диапазона не может быть ноль.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
         <target state="translated">Идентификаторы переменных в верхнем регистре обычно не должны использоваться в шаблонах, и могут указывать на отсутствующую открытую декларацию или неправильно написанное имя шаблона.</target>

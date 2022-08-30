@@ -97,6 +97,11 @@
         <target state="translated">类型约束不匹配。类型 \n    “{0}”    \n与类型\n    “{1}”    {2} 不兼容\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="StepCannotBeZero">
+        <source>The step of a range cannot be zero.</source>
+        <target state="translated">范围的跨距不能为零。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
         <target state="translated">通常不得在模式中使用大写的变量标识符，存在它们可能表示缺少某个开放声明或某个模式名称拼写错误。</target>

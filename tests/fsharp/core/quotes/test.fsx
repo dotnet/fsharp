@@ -125,7 +125,6 @@ module TypedTest = begin
     test "check AndAlso - encoded" ((<@ true && false @> |> (function IfThenElse(Bool(true),Bool(false),Bool(false)) -> true | _ -> false))) 
     test "check OrElse - encoded" ((<@ true || false @> |> (function IfThenElse(Bool(true),Bool(true),Bool(false)) -> true | _ -> false))) 
 
-
     test "check ForIntegerRangeLoop"   (<@ for i = 1 to 10 do printf "hello" @> |> (function ForIntegerRangeLoop(v,Int32(1),Int32(10),b) -> true | _ -> false))
     test "check ForIntegerRangeLoop"   (<@ for i in 1 .. 10 do printf "hello" @> |> (function ForIntegerRangeLoop(v,Int32(1),Int32(10),b) -> true | _ -> false))
     // In this example, the types of the start and end points are not known at the point the loop
@@ -1617,7 +1616,7 @@ module MoreQuotationsTests =
                                      Call (None, Reraise, [])))))"""
 
     let t14 = <@@ try failwith "test" with _ when true -> 0 @@>
-    checkStrings "vwewvwewe13" (sprintf "%A" t14) 
+    checkStrings "vwewvwewe14" (sprintf "%A" t14) 
         """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
         IfThenElse (Value (true), Value (1), Value (0)), matchValue,
         IfThenElse (Value (true), Value (0), Call (None, Reraise, [])))"""

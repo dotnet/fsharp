@@ -97,6 +97,11 @@
         <target state="translated">Vincolo di tipo non corrispondente. Il tipo \n    '{0}'    \nnon è compatibile con il tipo\n    '{1}'    {2}\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="StepCannotBeZero">
+        <source>The step of a range cannot be zero.</source>
+        <target state="translated">Il passaggio di un intervallo non può essere zero.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
         <target state="translated">In genere è consigliabile non usare identificatori di variabili scritti in maiuscolo nei criteri perché potrebbero indicare una dichiarazione OPEN mancante o un nome di criterio con ortografia errata.</target>

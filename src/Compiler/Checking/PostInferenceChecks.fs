@@ -1060,7 +1060,7 @@ and TryCheckResumableCodeConstructs cenv env expr : bool =
             true
 
         // Integer for-loops are allowed but their bodies are not currently resumable
-        | IntegerForLoopExpr (_sp1, _sp2, _style, e1, e2, v, e3, _m) ->
+        | IntegerForLoopExpr (_sp1, _sp2, _style, e1, e2, v, e3, _, _m) ->
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } e1
             CheckExprNoByrefs cenv { env with resumableCode = Resumable.None } e2
             BindVal cenv env v

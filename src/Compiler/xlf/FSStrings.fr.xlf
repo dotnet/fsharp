@@ -97,6 +97,11 @@
         <target state="translated">Incompatibilité de contrainte de type. Le type \n    {0}    \nn'est pas compatible avec le type\n    {1}    {2}\n</target>
         <note />
       </trans-unit>
+      <trans-unit id="StepCannotBeZero">
+        <source>The step of a range cannot be zero.</source>
+        <target state="translated">Une étape d'une plage ne peut pas être zéro.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UpperCaseIdentifierInPattern">
         <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
         <target state="translated">Les identificateurs de variables en majuscules ne doivent généralement pas être utilisés dans les modèles. Ils peuvent indiquer une absence de déclaration open ou un nom de modèle mal orthographié.</target>

@@ -69,6 +69,24 @@ module ForLoop =
     let ``NoIEnumerable03_fsx`` compilation =
         compilation
         |> verifyCompilation
+    
+    // SOURCE=ForLoopWithStep1.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ForLoopWithStep1.dll"            # ForLoopWithStep1.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForLoopWithStep1.fsx"|])>]
+    let ``ForLoopWithStep1_fsx`` compilation =
+        compilation
+        |> verifyCompilation
+
+    // SOURCE=ForLoopWithStep2.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ForLoopWithStep2.dll"            # ForLoopWithStep2.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForLoopWithStep2.fsx"|])>]
+    let ``ForLoopWithStep2_fsx`` compilation =
+        compilation
+        |> verifyCompilation
+
+    // SOURCE=ForLoopWithStep3.fsx SCFLAGS="-a -g --optimize+" COMPILE_ONLY=1 POSTCMD="..\\CompareIL.cmd ForLoopWithStep3.dll"            # ForLoopWithStep3.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"ForLoopWithStep3.fsx"|])>]
+    let ``ForLoopWithStep3_fsx`` compilation =
+        compilation
+        |> verifyCompilation
 
     // SOURCE=NonTrivialBranchingBindingInEnd01.fs SCFLAGS="--optimize+"	# NonTrivialBranchingBindingInEnd01.fs --optimize+
     [<Theory; Directory(__SOURCE_DIRECTORY__, BaselineSuffix=".opt", Includes=[|"NonTrivialBranchingBindingInEnd01.fs"|])>]
@@ -129,4 +147,3 @@ module ForLoop =
     let ``NonTrivialBranchingBindingInEnd05_fs_nonopt`` compilation =
         compilation
         |> verifyCompilation
-
