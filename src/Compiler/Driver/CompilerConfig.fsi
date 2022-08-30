@@ -452,6 +452,8 @@ type TcConfigBuilder =
 
         mutable fxResolver: FxResolver option
 
+        mutable bufferWidth: int option
+
         mutable fsiMultiAssemblyEmit: bool
 
         rangeForErrors: range
@@ -746,12 +748,15 @@ type TcConfig =
     member alwaysCallVirt: bool
 
     member noDebugAttributes: bool
+
     member useReflectionFreeCodeGen: bool
 
     /// If true, indicates all type checking and code generation is in the context of fsi.exe
     member isInteractive: bool
 
     member isInvalidationSupported: bool
+
+    member bufferWidth: int option
 
     /// Indicates if F# Interactive is using single-assembly emit via Reflection.Emit, where internals are available.
     member fsiMultiAssemblyEmit: bool
