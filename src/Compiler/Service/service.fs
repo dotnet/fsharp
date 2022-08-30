@@ -1206,14 +1206,14 @@ module Foo =
     open OpenTelemetry.Trace
     
     let init () =
-        use tracerProvider =
+        let tracerProvider =
             Sdk.CreateTracerProviderBuilder()
                .AddSource(activitySourceName)
-               .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName ="fsc", serviceVersion = "42.42.42.42"))
+               .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName ="FSharpChecker", serviceVersion = "42.42.42.42"))
                .AddOtlpExporter()
                .AddZipkinExporter()
                .Build();
-        use mainActivity = activitySource.StartActivity("main")
+        let mainActivity = activitySource.StartActivity("main")
 
         let forceCleanup() =
             mainActivity.Dispose()
