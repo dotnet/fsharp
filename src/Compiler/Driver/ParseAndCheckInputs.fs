@@ -1140,6 +1140,9 @@ let CheckOneInput
 
     cancellable {
         try
+            use tcOneInputActivity = activitySource.StartActivity("CheckOneInput")
+            tcOneInputActivity.AddTag("inputName", inp.FileName) |> ignore<_>
+            
             CheckSimulateException tcConfig
 
             let m = inp.Range
@@ -1293,8 +1296,6 @@ let CheckOneInput
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let TypeCheckOneInputEntry (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt) tcState (inp: ParsedInput) =
-    use tcOneInputActivity = activitySource.StartActivity("CheckOneInput")
-    tcOneInputActivity.AddTag("inputName", inp.FileName) |> ignore<_>
     // 'use' ensures that the warning handler is restored at the end
     use unwindEL =
         PushDiagnosticsLoggerPhaseUntilUnwind(fun oldLogger ->

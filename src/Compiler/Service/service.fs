@@ -1209,18 +1209,15 @@ module Foo =
         let tracerProvider =
             Sdk.CreateTracerProviderBuilder()
                .AddSource(activitySourceName)
-               .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName ="FSharpChecker", serviceVersion = "42.42.42.42"))
+               .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName ="fsc", serviceVersion = "42.42.42.42"))
                .AddOtlpExporter()
                .AddZipkinExporter()
-               .Build();
-        let mainActivity = activitySource.StartActivity("main")
-
+               .Build()
+        
         let forceCleanup() =
-            mainActivity.Dispose()
             activitySource.Dispose()
             tracerProvider.Dispose()
-        
-        forceCleanup
+        forceCleanup()
 
 [<Sealed; AutoSerializable(false)>]
 // There is typically only one instance of this type in an IDE process.
@@ -1249,9 +1246,10 @@ type FSharpChecker
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking
         )
-        
-    do Foo.init() |> ignore
-
+      
+    // let _ = Foo.init()
+    // let _ = FSharp.Compiler.Diagnostics.Activity.activitySource.StartActivity("main")
+    
     static let globalInstance = lazy FSharpChecker.Create()
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.braceMatchCache. Most recently used cache for brace matching. Accessed on the
