@@ -388,3 +388,4 @@ neg20.fs(478,29,478,61): typecheck error FS0193: Type constraint mismatch. The t
     'Prim<'m>'    
 is not compatible with type
     'IDerivedEquatable<Prim<'m>>'    
+

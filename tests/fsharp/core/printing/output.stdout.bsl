@@ -26,7 +26,7 @@ val x4: int option
 val x5: 'a list
 val x6: int list
 val x7: System.Windows.Forms.Form
-val x8: array2d
+val x8: int array2d
 val x9: Lazy<string>
 type ClassInFile1 =
   new: unit -> ClassInFile1
@@ -39,7 +39,7 @@ val x4: int option
 val x5: 'a list
 val x6: int list
 val x7: System.Windows.Forms.Form
-val x8: array2d
+val x8: int array2d
 val x9: Lazy<string>
 type ClassInFile2 =
   new: unit -> ClassInFile2
@@ -209,7 +209,7 @@ val sxs0: Set<string> = set []
   val a: string = "sub-binding"
   val b:
     (seq<string> * seq<string> * seq<string> * System.Windows.Forms.Form) option *
-    (string list * string list * array2d) option =
+    (string list * string list * string array2d) option =
     (Some (<seq>, <seq>, <seq>, System.Windows.Forms.Form, Text: f1 form),
      Some
        (["0"; "1"; "2"; "3"; "4"; "5"; "6"; "7"; "8"; "9"; "10"; "11"; "12";

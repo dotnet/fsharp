@@ -1490,7 +1490,7 @@ module Test4343d =
   val xString: string = "abcdef"
   val xOption: int option = Some 12
   val xArray2: (int * int) array2d = [[(0, 0); (0, 1)]
-                                 [(1, 0); (1, 1)]]
+                                      [(1, 0); (1, 1)]]
   val xSeq: seq<int>
 module Test4343e =
   type C =

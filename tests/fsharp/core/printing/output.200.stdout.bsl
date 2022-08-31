@@ -74,13 +74,13 @@ val fs: System.Windows.Forms.Form array =
 val xs: string list =
   ["0"; "1"; "2"; "3"; "4"; "5"; "6"; "7"; "8"; "9"; "10"; "11"; "12"; "13";
    "14"; "15"; "16"; "17"; "18"; "19"; ...]
-val xa: string array2d =
+val xa: string array =
   [|"0"; "1"; "2"; "3"; "4"; "5"; "6"; "7"; "8"; "9"; "10"; "11"; "12"; "13";
     "14"; "15"; "16"; "17"; "18"; "19"; ...|]
 val xa2: string array2d = [["0"; "1"; "2"; "3"; "4"; "5"; "6"; "7"]
-                      ["10"; "11"; "12"; "13"; "14"; "15"; "16"; "17"]
-                      ["20"; "21"; "22"; "23"; ...]
-                      ...]
+                           ["10"; "11"; "12"; "13"; "14"; "15"; "16"; "17"]
+                           ["20"; "21"; "22"; "23"; ...]
+                           ...]
 val sxs0: Set<string> = set []
 
 > val sxs1: Set<string> = set ["0"]
@@ -569,25 +569,25 @@ val r10: r = { f0 = 0
                f8 = 8
                f9 = 9 }
 val r10s: r array = [|{ f0 = 0
-                    f1 = 1
-                    f2 = 2
-                    f3 = 3
-                    f4 = 4
-                    f5 = 5
-                    f6 = 6
-                    f7 = 7
-                    f8 = 8
-                    f9 = 9 }; ...|]
+                        f1 = 1
+                        f2 = 2
+                        f3 = 3
+                        f4 = 4
+                        f5 = 5
+                        f6 = 6
+                        f7 = 7
+                        f8 = 8
+                        f9 = 9 }; ...|]
 val r10s': string * r array = ("one extra node", [|{ f0 = 0
-                                                 f1 = 1
-                                                 f2 = 2
-                                                 f3 = 3
-                                                 f4 = 4
-                                                 f5 = 5
-                                                 f6 = 6
-                                                 f7 = 7
-                                                 f8 = 8
-                                                 f9 = ... }; ...|])
+                                                     f1 = 1
+                                                     f2 = 2
+                                                     f3 = 3
+                                                     f4 = 4
+                                                     f5 = 5
+                                                     f6 = 6
+                                                     f7 = 7
+                                                     f8 = 8
+                                                     f9 = ... }; ...|])
 
 > val x1564_A1: int = 1
 
@@ -735,7 +735,7 @@ module Test4343d =
   val xString: string = "abcdef"
   val xOption: int option = Some 12
   val xArray2: (int * int) array2d = [[(0, 0); (0, 1)]
-                                 [(1, 0); (1, 1)]]
+                                      [(1, 0); (1, 1)]]
   val xSeq: seq<int>
 module Test4343e =
   type C =
