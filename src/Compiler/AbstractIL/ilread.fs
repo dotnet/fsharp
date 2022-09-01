@@ -1220,8 +1220,11 @@ type ISeekReadIndexedRowReader<'RowT, 'KeyT, 'T when 'RowT: struct> =
     abstract CompareKey: 'KeyT -> int
     abstract ConvertRow: byref<'RowT> -> 'T
 
-let seekReadIndexedRowsByInterface numRows binaryChop (reader: ISeekReadIndexedRowReader<'RowT, _, _>) =
+let seekReadIndexedRowsRange numRows binaryChop (reader: ISeekReadIndexedRowReader<'RowT, _, _>) : int * int =
     let mutable row = Unchecked.defaultof<'RowT>
+
+    let mutable startRid = -1
+    let mutable endRid = -1
 
     if binaryChop then
         let mutable low = 0
@@ -1241,8 +1244,6 @@ let seekReadIndexedRowsByInterface numRows binaryChop (reader: ISeekReadIndexedR
                 elif c < 0 then high <- mid
                 else fin <- true
 
-        let res = ImmutableArray.CreateBuilder()
-
         if high - low > 1 then
             // now read off rows, forward and backwards
             let mid = (low + high) / 2
@@ -1256,15 +1257,12 @@ let seekReadIndexedRowsByInterface numRows binaryChop (reader: ISeekReadIndexedR
                     fin <- true
                 else
                     reader.GetRow(curr, &row)
-
                     if reader.CompareKey(reader.GetKey(&row)) = 0 then
-                        res.Add(reader.ConvertRow(&row))
+                        startRid <- curr
                     else
                         fin <- true
 
                 curr <- curr - 1
-
-            res.Reverse()
 
             // read forward
             let mutable fin = false
@@ -1275,25 +1273,40 @@ let seekReadIndexedRowsByInterface numRows binaryChop (reader: ISeekReadIndexedR
                     fin <- true
                 else
                     reader.GetRow(curr, &row)
-
                     if reader.CompareKey(reader.GetKey(&row)) = 0 then
-                        res.Add(reader.ConvertRow(&row))
+                        endRid <- curr
                     else
                         fin <- true
 
                     curr <- curr + 1
 
-        res.ToArray()
     else
-        let res = ImmutableArray.CreateBuilder()
-
-        for i = 1 to numRows do
-            reader.GetRow(i, &row)
-
+        let mutable rid = 1
+        while rid <= numRows && startRid = -1 do
+            reader.GetRow(rid, &row)
             if reader.CompareKey(reader.GetKey(&row)) = 0 then
-                res.Add(reader.ConvertRow(&row))
+                startRid <- rid
+                endRid <- rid
+            rid <- rid + 1
 
-        res.ToArray()
+        let mutable fin = false
+        while not fin do
+            reader.GetRow(rid, &row)
+            if reader.CompareKey(reader.GetKey(&row)) = 0 then
+                endRid <- rid
+            else
+                fin <- true
+
+    startRid, endRid
+
+let seekReadIndexedRowsByInterface numRows binaryChop (reader: ISeekReadIndexedRowReader<'RowT, _, _>) =
+    let startRid, endRid = seekReadIndexedRowsRange numRows binaryChop reader
+    if startRid < 0 || endRid < startRid then [||] else
+
+    Array.init (endRid - startRid + 1) (fun i ->
+        let mutable row = Unchecked.defaultof<'RowT>
+        reader.GetRow(startRid + i, &row)
+        reader.ConvertRow(&row))
 
 [<Struct>]
 type CustomAttributeRow =
