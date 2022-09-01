@@ -186,3 +186,14 @@ do ()
     |> should equal """
 namespace Foo
 namespace Bar"""
+
+[<Fact>]
+let ``Empty namespace module`` () =
+    FSharp
+        """
+namespace rec Foobar
+
+do ()
+"""
+    |> printSignatures
+    |> should equal "namespace Foobar"
