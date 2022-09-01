@@ -2258,6 +2258,11 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | V vref -> isForallFunctionTy cenv.g vref.Type
         | _ -> false
 
+    member x.IsRefCell =
+        match d with
+        | V vref -> not vref.IsCtorThisVal && isRefCellTy cenv.g vref.Type
+        | _ -> false
+
     override x.Equals(other: obj) =
         box x === other ||
         match other with

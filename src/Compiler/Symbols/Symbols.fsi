@@ -939,6 +939,9 @@ type FSharpMemberOrFunctionOrValue =
     /// Indicated if this is a value compiled to a method
     member IsValCompiledAsMethod: bool
 
+    /// Indicates if this is a ref cell
+    member IsRefCell: bool
+
     /// Indicates if this is a function
     member IsFunction: bool
 
