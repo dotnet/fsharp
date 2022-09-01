@@ -349,6 +349,9 @@ type FSharpEntity =
     /// Get the type abbreviated by an F# type abbreviation
     member AbbreviatedType: FSharpType
 
+    /// Instantiates FSharpType
+    member AsType: unit -> FSharpType
+
     /// Get the cases of a union type
     member UnionCases: IList<FSharpUnionCase>
 

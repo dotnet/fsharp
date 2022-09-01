@@ -750,6 +750,10 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
         | None -> invalidOp "not a type abbreviation"
         | Some ty -> FSharpType(cenv, ty)
 
+    member _.AsType() =
+        let ty = generalizedTyconRef cenv.g entity
+        FSharpType(cenv, ty)
+
     override _.Attributes = 
         if isUnresolved() then makeReadOnlyCollection [] else
         GetAttribInfosOfEntity cenv.g cenv.amap range0 entity
