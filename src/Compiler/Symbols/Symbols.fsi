@@ -217,6 +217,9 @@ type FSharpEntity =
     /// Get the fully qualified name of the type or module
     member QualifiedName: string
 
+    /// The fully qualified name of the type or module without strong assembly name.
+    member BasicQualifiedName: string
+
     /// Get the full name of the type or module
     member FullName: string
 
@@ -1107,6 +1110,12 @@ type FSharpType =
     /// Get the base type, if any, taking into account the instantiation of this type
     /// if it is an instantiation of a generic type.
     member BaseType: FSharpType option
+
+    /// Canonical form of the type with abbreviations, measures, and F# tuples and functions erased.
+    member StrippedType: FSharpType
+
+    /// The fully qualified name of the type or module without strong assembly name.
+    member BasicQualifiedName: string
 
     /// Adjust the type by removing any occurrences of type inference variables, replacing them
     /// systematically with lower-case type inference variables such as <c>'a</c>.

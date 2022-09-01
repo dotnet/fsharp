@@ -430,18 +430,27 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
             Some (buildAccessPath (Some cp))
         | Some _ -> None
 
-    member x.QualifiedName = 
+    member x.CompiledRepresentation =
         checkIsResolved()
-        let fail() = invalidOp (sprintf "the type '%s' does not have a qualified name" x.LogicalName)
-#if !NO_TYPEPROVIDERS
-        if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then fail()
-        #else
-        if entity.IsTypeAbbrev || entity.IsNamespace then fail()
+
+        let fail () =
+            invalidOp (sprintf $"the type '{x.LogicalName}' does not have a qualified name")
+
+#if !NO_EXTENSIONTYPING
+        if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then fail () else
+#else
+        if entity.IsTypeAbbrev || entity.IsNamespace then fail () else
 #endif
-        match entity.CompiledRepresentation with 
-        | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> tref.QualifiedName
-        | CompiledTypeRepr.ILAsmOpen _ -> fail()
-        
+        match entity.CompiledRepresentation with
+        | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> tref
+        | CompiledTypeRepr.ILAsmOpen _ -> fail ()
+
+    member x.QualifiedName =
+        x.CompiledRepresentation.QualifiedName
+
+    member x.BasicQualifiedName =
+        x.CompiledRepresentation.BasicQualifiedName
+
     member x.FullName = 
         checkIsResolved()
         match x.TryFullName with 
@@ -2477,6 +2486,21 @@ type FSharpType(cenv, ty:TType) =
     member _.BaseType = 
         GetSuperTypeOfType cenv.g cenv.amap range0 ty
         |> Option.map (fun ty -> FSharpType(cenv, ty)) 
+
+    member x.StrippedType =
+        FSharpType(cenv, stripTyEqnsWrtErasure EraseAll cenv.g ty)
+
+    member x.BasicQualifiedName =
+        let fail () =
+            invalidOp (sprintf $"the type '{x}' does not have a qualified name")
+
+        protect <| fun () ->
+            match stripTyparEqns ty with 
+            | TType_app(tcref, _, _) ->
+                match tcref.CompiledRepresentation with 
+                | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> tref.BasicQualifiedName
+                | CompiledTypeRepr.ILAsmOpen _ -> fail () 
+            | _ -> fail ()
 
     member _.Instantiate(instantiation:(FSharpGenericParameter * FSharpType) list) = 
         let resTy = instType (instantiation |> List.map (fun (tyv, ty) -> tyv.TypeParameter, ty.Type)) ty
