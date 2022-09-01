@@ -588,7 +588,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let t = new N.T.M(*Marker*)()"""
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
-         "N.T.M() : int[]", 
+         "N.T.M() : int array", 
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
