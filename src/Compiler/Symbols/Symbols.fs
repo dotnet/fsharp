@@ -437,9 +437,9 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
             invalidOp (sprintf $"the type '{x.LogicalName}' does not have a qualified name")
 
 #if !NO_TYPEPROVIDERS
-        if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then fail () else
+        if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then fail ()
 #else
-        if entity.IsTypeAbbrev || entity.IsNamespace then fail () else
+        if entity.IsTypeAbbrev || entity.IsNamespace then fail ()
 #endif
         match entity.CompiledRepresentation with
         | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> tref
