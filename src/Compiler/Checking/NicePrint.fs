@@ -480,7 +480,7 @@ module PrintTypes =
             | Const.Zero -> tagKeyword(if isRefTy g ty then "null" else "default")
         wordL str
 
-    let layoutAccessibility (denv: DisplayEnv) accessibility itemL =
+    let layoutAccessibilityCore (denv: DisplayEnv) accessibility =
         let isInternalCompPath x = 
             match x with 
             | CompPath(ILScopeRef.Local, []) -> true 
@@ -491,10 +491,13 @@ module PrintTypes =
             | _ when List.forall isInternalCompPath p -> Internal 
             | _ -> Private
         match denv.contextAccessibility, accessibility with
-        | Public, Internal -> WordL.keywordInternal ++ itemL   // print modifier, since more specific than context
-        | Public, Private -> WordL.keywordPrivate ++ itemL     // print modifier, since more specific than context
-        | Internal, Private -> WordL.keywordPrivate ++ itemL   // print modifier, since more specific than context
-        | _ -> itemL
+        | Public, Internal -> WordL.keywordInternal
+        | Public, Private -> WordL.keywordPrivate
+        | Internal, Private -> WordL.keywordPrivate
+        | _ -> emptyL
+    
+    let layoutAccessibility (denv: DisplayEnv) accessibility itemL =
+        layoutAccessibilityCore denv accessibility ++ itemL
 
     /// Layout a reference to a type 
     let layoutTyconRef denv tcref = layoutTyconRefImpl false denv tcref
@@ -1977,6 +1980,9 @@ module TastDefinitionPrinting =
         let addReprAccessL l =
             layoutAccessibility denv tycon.TypeReprAccessibility l 
 
+        let addReprAccessRecord l =
+            layoutAccessibilityCore denv tycon.TypeReprAccessibility --- l
+        
         let addLhs rhsL =
             let brk = not (isNil allDecls) || breakTypeDefnEqn repr
             if brk then 
@@ -2019,7 +2025,7 @@ module TastDefinitionPrinting =
                 |> applyMaxMembers denv.maxMembers
                 |> aboveListL
                 |> (if useMultiLine then braceMultiLineL else braceL)
-                |> addReprAccessL
+                |> addReprAccessRecord
                 |> addMaxMembers
                 |> addLhs
 
@@ -2326,12 +2332,10 @@ module InferredSigPrinting =
             let outerPath = mspec.CompilationPath.AccessPath
 
             let denv =
-                innerPath
-                |> List.choose (fun (path, kind) ->
-                    match kind with
-                    | ModuleOrNamespaceKind.Namespace false -> None
-                    | _ -> Some path)
-                |> denv.AddOpenPath
+                if not (isConcreteNamespace def) then
+                    denv
+                else
+                    denv.AddOpenPath (List.map fst innerPath)
 
             if mspec.IsImplicitNamespace then
                 // The current mspec is a namespace that belongs to the `def` child (nested) module(s).                

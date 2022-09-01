@@ -3,8 +3,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net472;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <!-- Workaround to get rid of:
         error NU1505: Duplicate 'PackageDownload' items found.
         Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
@@ -20,6 +20,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="expected-help-output.bsl">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
     <Compile Include="..\fsharp\TestHelpers.fs" Link="TestHelpers.fs" />
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="SurfaceArea.netstandard.fs" />
@@ -38,6 +41,9 @@
     <Compile Include="..\service\Symbols.fs">
       <Link>Symbols.fs</Link>
     </Compile>
+    <Compile Include="TestDoubles.fs" />
+    <Compile Include="ConsoleOnlyOptionsTests.fs" />
+    <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
     <Compile Include="..\service\SyntaxTreeTests\TypeTests.fs">
       <Link>SyntaxTree\TypeTests.fs</Link>
     </Compile>

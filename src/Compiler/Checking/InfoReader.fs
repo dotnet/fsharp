@@ -922,7 +922,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
 
 let checkLanguageFeatureRuntimeAndRecover (infoReader: InfoReader) langFeature m =
     if not (infoReader.IsLanguageFeatureRuntimeSupported langFeature) then
-        let featureStr = infoReader.g.langVersion.GetFeatureString langFeature
+        let featureStr = LanguageVersion.GetFeatureString langFeature
         errorR (Error(FSComp.SR.chkFeatureNotRuntimeSupported featureStr, m))
 
 let GetIntrinsicConstructorInfosOfType (infoReader: InfoReader) m ty = 

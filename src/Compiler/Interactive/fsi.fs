@@ -882,10 +882,10 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     // In the "--help", these options can be printed either before (fsiUsagePrefix) or after (fsiUsageSuffix) the core options.
 
     let displayHelpFsi tcConfigB (blocks:CompilerOptionBlock list) =
-        DisplayBannerText tcConfigB;
+        Console.Write (GetBannerText tcConfigB)
         fprintfn fsiConsoleOutput.Out ""
         fprintfn fsiConsoleOutput.Out "%s" (FSIstrings.SR.fsiUsage(executableFileNameWithoutExtension.Value))
-        PrintCompilerOptionBlocks blocks
+        Console.Write (GetCompilerOptionBlocks blocks tcConfigB.bufferWidth)
         exit 0
 
     // option tags
@@ -948,12 +948,12 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
         ]);
        PublicOptions(FSComp.SR.optsHelpBannerMisc(),
         [   CompilerOption("help", tagNone,
-                                 OptionHelp (displayHelpFsi tcConfigB), None, Some (FSIstrings.SR.fsiHelp()))
+                                 OptionConsoleOnly (displayHelpFsi tcConfigB), None, Some (FSIstrings.SR.fsiHelp()))
         ]);
        PrivateOptions(
-        [   CompilerOption("?", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
-            CompilerOption("help", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
-            CompilerOption("full-help", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
+        [   CompilerOption("?", tagNone, OptionConsoleOnly (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
+            CompilerOption("help", tagNone, OptionConsoleOnly (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
+            CompilerOption("full-help", tagNone, OptionConsoleOnly (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
         ]);
        PublicOptions(FSComp.SR.optsHelpBannerAdvanced(),
         [CompilerOption("exec",                 "", OptionUnit (fun () -> interact <- false), None, Some (FSIstrings.SR.fsiExec()))
@@ -2262,10 +2262,7 @@ type internal FsiInterruptController(
                         if killThreadRequest = ThreadAbortRequest then
                             if progress then fsiConsoleOutput.uprintnfn "%s" (FSIstrings.SR.fsiAbortingMainThread())
                             killThreadRequest <- NoRequest
-                            let rec abortLoop n =
-                                if n > 0 then
-                                    if not (controlledExecution.TryAbort(TimeSpan.FromSeconds(30))) then abortLoop (n-1)
-                            abortLoop 3
+                            controlledExecution.TryAbort()
                         ()), Name="ControlCAbortThread")
                 killerThread.IsBackground <- true
                 killerThread.Start()
@@ -2888,7 +2885,8 @@ type FsiInteractionProcessor
             fsiInterruptController.ControlledExecution().ResetAbort()
             (istate,CtrlC)
 
-        | :? TargetInvocationException as e when (ControlledExecution.StripTargetInvocationException(e)).GetType().Name = "ThreadAbortException" ->
+        | :? TargetInvocationException as e when (ControlledExecution.StripTargetInvocationException(e)).GetType().Name = "ThreadAbortException" ||
+                                                 (ControlledExecution.StripTargetInvocationException(e)).GetType().Name = "OperationCanceledException" ->
             fsiInterruptController.ClearInterruptRequest()
             fsiInterruptController.InterruptAllowed <- InterruptIgnored
             fsiInterruptController.ControlledExecution().ResetAbort()
@@ -3386,7 +3384,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let fsiDynamicCompiler = FsiDynamicCompiler(fsi, timeReporter, tcConfigB, tcLockObject, outWriter, tcImports, tcGlobals, fsiOptions, fsiConsoleOutput, fsiCollectible, niceNameGen, resolveAssemblyRef)
 
-    let controlledExecution = ControlledExecution(Thread.CurrentThread)
+    let controlledExecution = ControlledExecution()
 
     let fsiInterruptController = FsiInterruptController(fsiOptions, controlledExecution, fsiConsoleOutput)
 
