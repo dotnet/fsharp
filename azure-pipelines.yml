@@ -445,8 +445,9 @@ stages:
 
         # MacOS
         - job: MacOS
+          condition: eq(1,2)
           pool:
-            vmImage: macOS-12
+            vmImage: $(MacOSMachineQueueName)
           variables:
           - name: _SignType
             value: Test
@@ -575,8 +576,9 @@ stages:
 
         # Plain build Mac
         - job: Plain_Build_MacOS
+          condition: eq(1,2)
           pool:
-            vmImage: macOS-12
+            vmImage: $(MacOSMachineQueueName)
           variables:
           - name: _BuildConfig
             value: Debug
