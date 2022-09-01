@@ -1,19 +1,9 @@
 module FSharp.Compiler.ComponentTests.Signatures.ModuleOrNamespaceTests
 
-open System
 open Xunit
 open FsUnit
 open FSharp.Test.Compiler
-
-let private prependNewline v = String.Concat("\n", v)
-
-let equal x =
-    let x =
-        match box x with
-        | :? String as s -> s.Replace("\r\n", "\n") |> box
-        | x -> x
-
-    equal x
+open FSharp.Compiler.ComponentTests.Signatures.TestHelpers
 
 [<Fact>]
 let ``Type from shared namespace`` () =
