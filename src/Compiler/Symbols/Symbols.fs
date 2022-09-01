@@ -436,7 +436,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
         let fail () =
             invalidOp (sprintf $"the type '{x.LogicalName}' does not have a qualified name")
 
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
         if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then fail () else
 #else
         if entity.IsTypeAbbrev || entity.IsNamespace then fail () else
