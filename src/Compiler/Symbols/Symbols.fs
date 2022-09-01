@@ -268,7 +268,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         let dflt() = FSharpSymbol(cenv, (fun () -> item), (fun _ _ _ -> true)) 
         match item with
         | Item.Value v when v.Deref.IsClassConstructor ->
-            FSharpMemberOrFunctionOrValue(cenv, C (FSMeth(cenv.g, generalizeTyconRef v.TopValDeclaringEntity |> snd, v, None)), item) :> _
+            FSharpMemberOrFunctionOrValue(cenv, C (FSMeth(cenv.g, generalizeTyconRef cenv.g v.DeclaringEntity |> snd, v, None)), item) :> _
 
         | Item.Value v -> FSharpMemberOrFunctionOrValue(cenv, V v, item) :> _
         | Item.UnionCase (uinfo, _) -> FSharpUnionCase(cenv, uinfo.UnionCaseRef) :> _
