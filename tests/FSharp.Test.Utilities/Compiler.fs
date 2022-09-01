@@ -1342,4 +1342,4 @@ module rec Compiler =
             |> String.concat "\n"
     
     let printSignatures cUnit = printSignaturesImpl None cUnit
-    let printSignaturesWith pageWidth cUnit = printSignaturesImpl (Some pageWidth) cUnit
+    let printSignaturesWithPageWidth pageWidth cUnit = printSignaturesImpl (Some pageWidth) cUnit

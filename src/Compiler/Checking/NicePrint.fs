@@ -862,11 +862,22 @@ module PrintTypes =
 
     /// Layout type arguments, either NAME<ty, ..., ty> or (ty, ..., ty) NAME *)
     and layoutTypeAppWithInfoAndPrec denv env tcL prec prefix argTys =
-        if prefix then 
+        if prefix then
+            let addExtraSpace argTy =
+                match argTy with
+                | TType_var(typar, _) when typar.StaticReq = TyparStaticReq.HeadType -> SepL.space
+                | _ -> emptyL
+
             match argTys with
             | [] -> tcL
-            | [argTy] -> tcL ^^ sepL (tagPunctuation "<") ^^ (layoutTypeWithInfoAndPrec denv env 4 argTy) ^^ rightL (tagPunctuation">")
-            | _ -> bracketIfL (prec <= 1) (tcL ^^ angleL (layoutTypesWithInfoAndPrec denv env 2 (sepL (tagPunctuation ",")) argTys))
+            | [argTy] ->
+                tcL
+                ^^ sepL (tagPunctuation "<")
+                ^^ addExtraSpace argTy
+                ^^ (layoutTypeWithInfoAndPrec denv env 4 argTy)
+                ^^ rightL (tagPunctuation">")
+            | firstArgTy :: _ ->
+                bracketIfL (prec <= 1) (tcL ^^ angleL (addExtraSpace firstArgTy ^^ layoutTypesWithInfoAndPrec denv env 2 (sepL (tagPunctuation ",")) argTys))
         else
             match argTys with
             | [] -> tcL

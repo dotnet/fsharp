@@ -18,7 +18,7 @@ type PullActions =
             Log : int
         }
 """
-    |> printSignaturesWith 80
+    |> printSignaturesWithPageWidth 80
     |> should
         equal
         """
