@@ -434,7 +434,7 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
         checkIsResolved()
 
         let fail () =
-            invalidOp (sprintf $"the type '{x.LogicalName}' does not have a qualified name")
+            invalidOp $"the type '{x.LogicalName}' does not have a qualified name"
 
 #if !NO_TYPEPROVIDERS
         if entity.IsTypeAbbrev || entity.IsProvidedErasedTycon || entity.IsNamespace then fail ()
@@ -2501,7 +2501,7 @@ type FSharpType(cenv, ty:TType) =
 
     member x.BasicQualifiedName =
         let fail () =
-            invalidOp (sprintf $"the type '{x}' does not have a qualified name")
+            invalidOp $"the type '{x}' does not have a qualified name"
 
         protect <| fun () ->
             match stripTyparEqns ty with 
