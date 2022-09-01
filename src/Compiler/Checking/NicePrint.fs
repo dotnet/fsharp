@@ -2433,7 +2433,9 @@ module InferredSigPrinting =
             wordL (tagKeyword keyword) ^^ sepListL SepL.dot pathL
 
         match expr with
-        | EmptyModuleOrNamespace mspec -> emptyModuleOrNamespace mspec
+        | EmptyModuleOrNamespaces mspecs ->
+            List.map emptyModuleOrNamespace mspecs
+            |> aboveListL
         | expr -> imdefL denv expr
 
 //--------------------------------------------------------------------------

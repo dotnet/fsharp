@@ -168,3 +168,21 @@ do ()
 """
     |> printSignatures
     |> should equal "module Foobar"
+
+[<Fact>]
+let ``Two empty namespaces`` () =
+    FSharp
+        """
+namespace Foo
+
+do ()
+
+namespace Bar
+
+do ()
+"""
+    |> printSignatures
+    |> prependNewline
+    |> should equal """
+namespace Foo
+namespace Bar"""

@@ -10360,24 +10360,34 @@ let isFSharpExceptionTy g ty =
     | ValueSome tcref -> tcref.IsFSharpException
     | _ -> false
 
-let (|EmptyModuleOrNamespace|_|) (moduleOrNamespaceContents: ModuleOrNamespaceContents) =
+let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceContents) =
     match moduleOrNamespaceContents with
     | TMDefs(defs = defs) ->
-        let singleModuleOrNamespace =
+        let mdDefsLength =
+            defs
+            |> List.count (function
+                | ModuleOrNamespaceContents.TMDefRec _
+                | ModuleOrNamespaceContents.TMDefs _ -> true
+                | _ -> false)
+        
+        let emptyModuleOrNamespaces =
             defs
             |> List.choose (function
                 | ModuleOrNamespaceContents.TMDefRec _ as defRec
-                | ModuleOrNamespaceContents.TMDefs(defs = [ ModuleOrNamespaceContents.TMDefRec _ as defRec ]) -> Some defRec
+                | ModuleOrNamespaceContents.TMDefs(defs = [ ModuleOrNamespaceContents.TMDefRec _ as defRec ]) ->
+                    match defRec with
+                    | TMDefRec(bindings = [ ModuleOrNamespaceBinding.Module(mspec, ModuleOrNamespaceContents.TMDefs(defs = defs)) ]) ->
+                        defs
+                        |> List.forall (function
+                            | ModuleOrNamespaceContents.TMDefOpens _
+                            | ModuleOrNamespaceContents.TMDefDo _ -> true
+                            | _ -> false)
+                        |> fun isEmpty -> if isEmpty then Some mspec else None
+                    | _ -> None
                 | _ -> None)
-            |> List.tryHead
 
-        match singleModuleOrNamespace with
-        | Some (TMDefRec(bindings = [ ModuleOrNamespaceBinding.Module(mspec, ModuleOrNamespaceContents.TMDefs(defs = defs)) ])) ->
-            defs
-            |> List.forall (function
-                | ModuleOrNamespaceContents.TMDefOpens _
-                | ModuleOrNamespaceContents.TMDefDo _ -> true
-                | _ -> false)
-            |> fun isEmpty -> if isEmpty then Some mspec else None
-        | _ -> None
+        if mdDefsLength = emptyModuleOrNamespaces.Length then
+            Some emptyModuleOrNamespaces
+        else
+            None
     | _ -> None
