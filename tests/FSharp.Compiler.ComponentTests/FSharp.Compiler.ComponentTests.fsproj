@@ -211,8 +211,15 @@
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
   </ItemGroup>
 
 </Project>
