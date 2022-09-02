@@ -10360,9 +10360,6 @@ let isFSharpExceptionTy g ty =
     | ValueSome tcref -> tcref.IsFSharpException
     | _ -> false
 
-/// Matches a ModuleOrNamespaceContents that is empty from a signature printing point of view.
-/// Signatures printed via the typed tree in NicePrint don't print TMDefOpens or TMDefDo.
-/// This will match anything that does not have any types or bindings.
 let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceContents) =
     match moduleOrNamespaceContents with
     | TMDefs(defs = defs) ->
