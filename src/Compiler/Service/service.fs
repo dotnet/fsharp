@@ -343,10 +343,10 @@ type BackgroundCompiler
                             member x.EvaluateRawContents() =
                                 node {
                                     Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
-                                    let act = Activity.activitySource.StartActivity("CheckReferencedProject")
-                                    act.AddTag("Project", nm) |> ignore
+                                    //let act = Activity.activitySource.StartActivity("CheckReferencedProject")
+                                    //act.AddTag("Project", nm) |> ignore
                                     let! x = self.GetAssemblyData(opts, userOpName + ".CheckReferencedProject(" + nm + ")")
-                                    act.Dispose()
+                                    //act.Dispose()
                                     return x
                                 }
 
@@ -587,6 +587,9 @@ type BackgroundCompiler
 
     member _.ParseFile(fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, userOpName: string) =
         async {
+            use act = Activity.activitySource.StartActivity("CompileToDynamicAssembly1")
+            act.AddTag("filename", fileName) |> ignore
+            act.AddTag("UserOpName", userOpName) |> ignore
             if cache then
                 let hash = sourceText.GetHashCode() |> int64
 
@@ -1407,6 +1410,8 @@ type FSharpChecker
         let _userOpName = defaultArg userOpName "Unknown"
 
         async {
+            use act = Activity.activitySource.StartActivity("CompileToDynamicAssembly1")
+            act.AddTag("UserOpName", _userOpName) |> ignore
             let ctok = CompilationThreadToken()
             CompileHelpers.setOutputStreams execute
 
@@ -1449,6 +1454,9 @@ type FSharpChecker
         let _userOpName = defaultArg userOpName "Unknown"
 
         async {
+            use act = Activity.activitySource.StartActivity("CompileToDynamicAssembly2")
+            act.AddTag("Assembly", assemblyName) |> ignore
+            act.AddTag("UserOpName", _userOpName) |> ignore
             let ctok = CompilationThreadToken()
             CompileHelpers.setOutputStreams execute
 
@@ -1541,17 +1549,23 @@ type FSharpChecker
             options: FSharpProjectOptions,
             ?userOpName: string
         ) =
-        let userOpName = defaultArg userOpName "Unknown"
-
-        backgroundCompiler.CheckFileInProjectAllowingStaleCachedResults(
-            parseResults,
-            fileName,
-            fileVersion,
-            SourceText.ofString source,
-            options,
-            userOpName
-        )
-        |> Async.AwaitNodeCode
+        async {
+            use act = Activity.activitySource.StartActivity("CheckFileInProjectAllowingStaleCachedResults")
+            act.AddTag("Project", options.ProjectFileName) |> ignore
+            act.AddTag("filename", fileName) |> ignore
+            act.AddTag("UserOpName", userOpName) |> ignore
+            let userOpName = defaultArg userOpName "Unknown"
+            return!
+                backgroundCompiler.CheckFileInProjectAllowingStaleCachedResults(
+                    parseResults,
+                    fileName,
+                    fileVersion,
+                    SourceText.ofString source,
+                    options,
+                    userOpName
+                )
+                |> Async.AwaitNodeCode
+        }
 
     /// Typecheck a source code file, returning a handle to the results of the
     /// parse including the reconstructed types in the file.
@@ -1564,10 +1578,16 @@ type FSharpChecker
             options: FSharpProjectOptions,
             ?userOpName: string
         ) =
-        let userOpName = defaultArg userOpName "Unknown"
-
-        backgroundCompiler.CheckFileInProject(parseResults, fileName, fileVersion, sourceText, options, userOpName)
-        |> Async.AwaitNodeCode
+        async {
+            use act = Activity.activitySource.StartActivity("CheckFileInProject")
+            act.AddTag("Project", options.ProjectFileName) |> ignore
+            act.AddTag("filename", fileName) |> ignore
+            act.AddTag("UserOpName", userOpName) |> ignore
+            let userOpName = defaultArg userOpName "Unknown"
+            return!
+                backgroundCompiler.CheckFileInProject(parseResults, fileName, fileVersion, sourceText, options, userOpName)
+                |> Async.AwaitNodeCode
+        }
 
     /// Typecheck a source code file, returning a handle to the results of the
     /// parse including the reconstructed types in the file.
@@ -1578,17 +1598,30 @@ type FSharpChecker
             sourceText: ISourceText,
             options: FSharpProjectOptions,
             ?userOpName: string
-        ) =
-        let userOpName = defaultArg userOpName "Unknown"
-
-        backgroundCompiler.ParseAndCheckFileInProject(fileName, fileVersion, sourceText, options, userOpName)
-        |> Async.AwaitNodeCode
+        ) =        
+        async {
+            let act = Activity.activitySource.StartActivity("ParseAndCheckFileInProject")
+            act.AddTag("Project", options.ProjectFileName) |> ignore
+            act.AddTag("filename", fileName) |> ignore
+            act.AddTag("UserOpName", userOpName) |> ignore
+            let userOpName = defaultArg userOpName "Unknown"
+            let! x =
+                backgroundCompiler.ParseAndCheckFileInProject(fileName, fileVersion, sourceText, options, userOpName)
+                |> Async.AwaitNodeCode
+            act.Dispose()
+            return x
+        }
 
     member _.ParseAndCheckProject(options, ?userOpName: string) =
-        let userOpName = defaultArg userOpName "Unknown"
-
-        backgroundCompiler.ParseAndCheckProject(options, userOpName)
-        |> Async.AwaitNodeCode
+        async {
+            let userOpName = defaultArg userOpName "Unknown"
+            use act = Activity.activitySource.StartActivity("ParseAndCheckProject")
+            act.AddTag("Project", options.ProjectFileName) |> ignore
+            act.AddTag("UserOpName", userOpName) |> ignore
+            return!
+                backgroundCompiler.ParseAndCheckProject(options, userOpName)
+                |> Async.AwaitNodeCode
+        }
 
     member _.FindBackgroundReferencesInFile
         (
@@ -1598,17 +1631,26 @@ type FSharpChecker
             ?canInvalidateProject: bool,
             ?userOpName: string
         ) =
-        let canInvalidateProject = defaultArg canInvalidateProject true
-        let userOpName = defaultArg userOpName "Unknown"
-
-        backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
-        |> Async.AwaitNodeCode
+        async {
+            let canInvalidateProject = defaultArg canInvalidateProject true
+            let userOpName = defaultArg userOpName "Unknown"
+            use act = Activity.activitySource.StartActivity("FindBackgroundReferencesInFile")
+            act.AddTag("Project", options.ProjectFileName) |> ignore
+            act.AddTag("UserOpName", userOpName) |> ignore
+            return!
+                backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
+                |> Async.AwaitNodeCode
+        }
 
     member _.GetBackgroundSemanticClassificationForFile(fileName: string, options: FSharpProjectOptions, ?userOpName) =
-        let userOpName = defaultArg userOpName "Unknown"
-
-        backgroundCompiler.GetSemanticClassificationForFile(fileName, options, userOpName)
-        |> Async.AwaitNodeCode
+        async {
+            let userOpName = defaultArg userOpName "Unknown"
+            use act = Activity.activitySource.StartActivity("FindBackgroundReferencesInFile")
+            act.AddTag("Project", options.ProjectFileName) |> ignore
+            return!
+                backgroundCompiler.GetSemanticClassificationForFile(fileName, options, userOpName)
+                |> Async.AwaitNodeCode
+        }
 
     /// For a given script file, get the ProjectOptions implied by the #load closure
     member _.GetProjectOptionsFromScript

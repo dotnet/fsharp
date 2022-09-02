@@ -1038,6 +1038,8 @@ module IncrementalBuilderStateHelpers =
 
     let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
         GraphNode(node {
+            let act = Activity.activitySource.StartActivity("GetCheckResultsAndImplementationsForProject")
+            act.AddTag("projectName", initialState.outfile) |> ignore
             // Compute last bound model then get all the evaluated models.
             let! _ = boundModels[boundModels.Count - 1].GetOrComputeValue()
             let boundModels =
@@ -1053,6 +1055,7 @@ module IncrementalBuilderStateHelpers =
                     initialState.outfile 
                     boundModels
             let result = (result, DateTime.UtcNow)
+            act.Dispose()
             return result
         })
 
@@ -1351,6 +1354,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
     member builder.GetCheckResultsAndImplementationsForProject() =
       node {
+        // let act = Activity.activitySource.StartActivity("GetCheckResultsAndImplementationsForProject")
+        // act.AddTag("projectName", initialState.outfile) |> ignore
         let cache = TimeStampCache(defaultTimeStamp)
         do! checkFileTimeStamps cache
         let! result = currentState.finalizedBoundModel.GetOrComputeValue()
@@ -1358,7 +1363,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         | (ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp ->
             let cache = TimeStampCache defaultTimeStamp
             let projectTimeStamp = builder.GetLogicalTimeStampForProject(cache)
-            return PartialCheckResults (boundModel, timestamp, projectTimeStamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
+            let res = PartialCheckResults (boundModel, timestamp, projectTimeStamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
+            act.Dispose()
+            return res
       }
 
     member builder.GetFullCheckResultsAndImplementationsForProject() =
