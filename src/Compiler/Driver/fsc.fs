@@ -168,6 +168,7 @@ let TypeCheck
         exiter: Exiter
     ) =
     use typecheckActivity = activitySource.StartActivity("typecheck_inputs")
+    typecheckActivity.AddTag("assemblyName", assemblyName) |> ignore
 
     try
         if isNil inputs then

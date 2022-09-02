@@ -5,6 +5,7 @@ module internal FSharp.Compiler.CheckDeclarations
 open System
 open System.Collections.Generic
 
+open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -5167,11 +5168,14 @@ let CheckOneImplFile
         env,
         rootSigOpt: ModuleOrNamespaceType option,
         synImplFile) =
-
-    let (ParsedImplFileInput (_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland, _)) = synImplFile
+    
+    let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland, _)) = synImplFile
     let infoReader = InfoReader(g, amap)
 
     cancellable {
+        use act = Activity.activitySource.StartActivity("CheckOneSigFile")
+        act.AddTag("fileName", fileName) |> ignore
+        act.AddTag("qualifiedNameOfFile", qualNameOfFile.Text) |> ignore
         let cenv = 
             cenv.Create (g, isScript, niceNameGen, amap, thisCcu, false, Option.isSome rootSigOpt,
                 conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
@@ -5297,8 +5301,12 @@ let CheckOneImplFile
 
 
 /// Check an entire signature file
-let CheckOneSigFile (g, niceNameGen, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile; modules = sigFileFrags)) = 
- cancellable {     
+let CheckOneSigFile (g, niceNameGen, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (fileName = fileName; qualifiedNameOfFile = qualNameOfFile; modules = sigFileFrags)) = 
+ cancellable {
+    use act = Activity.activitySource.StartActivity("CheckOneSigFile")
+    act.AddTag("fileName", fileName) |> ignore
+    act.AddTag("qualifiedNameOfFile", qualNameOfFile.Text) |> ignore
+    
     let cenv = 
         cenv.Create 
             (g, false, niceNameGen, amap, thisCcu, true, false, conditionalDefines, tcSink,

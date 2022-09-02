@@ -343,10 +343,7 @@ type BackgroundCompiler
                             member x.EvaluateRawContents() =
                                 node {
                                     Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
-                                    //let act = Activity.activitySource.StartActivity("CheckReferencedProject")
-                                    //act.AddTag("Project", nm) |> ignore
                                     let! x = self.GetAssemblyData(opts, userOpName + ".CheckReferencedProject(" + nm + ")")
-                                    //act.Dispose()
                                     return x
                                 }
 
@@ -396,6 +393,8 @@ type BackgroundCompiler
     /// creates an incremental builder used by the command line compiler.
     let CreateOneIncrementalBuilder (options: FSharpProjectOptions, userOpName) =
         node {
+            use act = Activity.activitySource.StartActivity("CreateOneIncrementalBuilder")
+            act.AddTag("project", options.ProjectFileName) |> ignore
             Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CreateOneIncrementalBuilder", options.ProjectFileName)
             let projectReferences = getProjectReferences options userOpName
 
@@ -776,10 +775,14 @@ type BackgroundCompiler
     /// Type-check the result obtained by parsing. Force the evaluation of the antecedent type checking context if needed.
     member bc.CheckFileInProject(parseResults: FSharpParseFileResults, fileName, fileVersion, sourceText: ISourceText, options, userOpName) =
         node {
+            use act = Activity.activitySource.StartActivity("Service_CheckFileInProject")
+            act.AddTag("project", options.ProjectFileName) |> ignore
+            act.AddTag("fileName", fileName) |> ignore
             let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
-            | None -> return FSharpCheckFileAnswer.Succeeded(FSharpCheckFileResults.MakeEmpty(fileName, creationDiags, keepAssemblyContents))
+            | None ->
+                return FSharpCheckFileAnswer.Succeeded(FSharpCheckFileResults.MakeEmpty(fileName, creationDiags, keepAssemblyContents))
             | Some builder ->
                 // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
                 let! cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options)
@@ -795,6 +798,9 @@ type BackgroundCompiler
     /// Parses and checks the source file and returns untyped AST and check results.
     member bc.ParseAndCheckFileInProject(fileName: string, fileVersion, sourceText: ISourceText, options: FSharpProjectOptions, userOpName) =
         node {
+            use act = Activity.activitySource.StartActivity("Service_ParseAndCheckFileInProject")
+            act.AddTag("project", options.ProjectFileName) |> ignore
+            act.AddTag("fileName", fileName) |> ignore
             let strGuid = "_ProjectId=" + (options.ProjectId |> Option.defaultValue "null")
             Logger.LogBlockMessageStart (fileName + strGuid) LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
@@ -1600,16 +1606,14 @@ type FSharpChecker
             ?userOpName: string
         ) =        
         async {
-            let act = Activity.activitySource.StartActivity("ParseAndCheckFileInProject")
+            use act = Activity.activitySource.StartActivity("ParseAndCheckFileInProject")
             act.AddTag("Project", options.ProjectFileName) |> ignore
             act.AddTag("filename", fileName) |> ignore
             act.AddTag("UserOpName", userOpName) |> ignore
             let userOpName = defaultArg userOpName "Unknown"
-            let! x =
+            return! 
                 backgroundCompiler.ParseAndCheckFileInProject(fileName, fileVersion, sourceText, options, userOpName)
                 |> Async.AwaitNodeCode
-            act.Dispose()
-            return x
         }
 
     member _.ParseAndCheckProject(options, ?userOpName: string) =
