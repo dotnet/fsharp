@@ -35,8 +35,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.BuildGraph
-open OpenTelemetry
-open OpenTelemetry.Resources
 
 [<AutoOpen>]
 module EnvMisc =
@@ -343,8 +341,7 @@ type BackgroundCompiler
                             member x.EvaluateRawContents() =
                                 node {
                                     Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "GetAssemblyData", nm)
-                                    let! x = self.GetAssemblyData(opts, userOpName + ".CheckReferencedProject(" + nm + ")")
-                                    return x
+                                    return! self.GetAssemblyData(opts, userOpName + ".CheckReferencedProject(" + nm + ")")
                                 }
 
                             member x.TryGetLogicalTimeStamp(cache) =
@@ -739,6 +736,13 @@ type BackgroundCompiler
             userOpName
         ) =
         node {
+            use _ =
+                Activity.instance.Start "CheckFileInProjectAllowingStaleCachedResults"
+                    [|
+                        "Project", options.ProjectFileName
+                        "filename", fileName
+                        "UserOpName", userOpName |> Option.defaultValue ""  
+                    |]
             let! cachedResults =
                 node {
                     let! builderOpt, creationDiags = getAnyBuilder (options, userOpName)
@@ -772,12 +776,11 @@ type BackgroundCompiler
     /// Type-check the result obtained by parsing. Force the evaluation of the antecedent type checking context if needed.
     member bc.CheckFileInProject(parseResults: FSharpParseFileResults, fileName, fileVersion, sourceText: ISourceText, options, userOpName) =
         node {
-            use _ = Activity.instance.Start "Service_CheckFileInProject" [|"project", options.ProjectFileName; "fileName", fileName|]
+            use _ = Activity.instance.Start "CheckFileInProject" [|"project", options.ProjectFileName; "fileName", fileName; "userOpName", userOpName|]
             let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
-            | None ->
-                return FSharpCheckFileAnswer.Succeeded(FSharpCheckFileResults.MakeEmpty(fileName, creationDiags, keepAssemblyContents))
+            | None -> return FSharpCheckFileAnswer.Succeeded(FSharpCheckFileResults.MakeEmpty(fileName, creationDiags, keepAssemblyContents))
             | Some builder ->
                 // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
                 let! cachedResults = bc.GetCachedCheckFileResult(builder, fileName, sourceText, options)
@@ -1234,7 +1237,7 @@ type FSharpChecker
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking
         )
-      
+
     static let globalInstance = lazy FSharpChecker.Create()
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.braceMatchCache. Most recently used cache for brace matching. Accessed on the
@@ -1525,13 +1528,6 @@ type FSharpChecker
             ?userOpName: string
         ) =
         async {
-            use _ =
-                Activity.instance.Start "CheckFileInProjectAllowingStaleCachedResults"
-                    [|
-                        "Project", options.ProjectFileName
-                        "filename", fileName
-                        "UserOpName", userOpName |> Option.defaultValue ""  
-                    |]
             let userOpName = defaultArg userOpName "Unknown"
             return!
                 backgroundCompiler.CheckFileInProjectAllowingStaleCachedResults(
@@ -1557,13 +1553,6 @@ type FSharpChecker
             ?userOpName: string
         ) =
         async {
-            use _ =
-                Activity.instance.Start "CheckFileInProject"
-                        [|
-                            "Project", options.ProjectFileName
-                            "filename", fileName
-                            "UserOpName", userOpName |> Option.defaultValue ""  
-                        |]
             let userOpName = defaultArg userOpName "Unknown"
             return!
                 backgroundCompiler.CheckFileInProject(parseResults, fileName, fileVersion, sourceText, options, userOpName)

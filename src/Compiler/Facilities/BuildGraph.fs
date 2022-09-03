@@ -94,17 +94,6 @@ type NodeCodeBuilder() =
     member _.Combine(Node (p1): NodeCode<unit>, Node (p2): NodeCode<'T>) : NodeCode<'T> = Node(async.Combine(p1, p2))
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Using(value: ActivityFacade, binder: ActivityFacade -> NodeCode<'U>) =
-        Node(
-            async {
-                try
-                    return! binder value |> Async.AwaitNodeCode
-                finally
-                    (value :> IDisposable).Dispose()
-            }
-        )
-        
-    [<DebuggerHidden; DebuggerStepThrough>]
     member _.Using(value: CompilationGlobalsScope, binder: CompilationGlobalsScope -> NodeCode<'U>) =
         Node(
             async {
@@ -117,6 +106,18 @@ type NodeCodeBuilder() =
                     (value :> IDisposable).Dispose()
             }
         )
+    
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member _.Using(value: ActivityFacade, binder: ActivityFacade -> NodeCode<'U>) =
+        Node(
+            async {
+                try
+                    return! binder value |> Async.AwaitNodeCode
+                finally
+                    (value :> IDisposable).Dispose()
+            }
+        )
+        
 
 let node = NodeCodeBuilder()
 
