@@ -7,8 +7,34 @@ open System.Diagnostics
 open System.Diagnostics.Tracing
 
 module Activity =
-    let activitySourceName = "fsc"
-    let activitySource = new ActivitySource(activitySourceName)
+    
+    type ActivityFacade(activity : Activity option) =
+        member this.AddTag key (value : #obj) = match activity with | Some activity -> activity.AddTag(key, value) |> ignore | None -> ()
+        member this.Perform action = match activity with | Some activity -> action activity | None -> ()
+        member this.Dispose() = match activity with | Some activity -> activity.Dispose() | None -> ()
+        interface IDisposable with
+            member this.Dispose() = this.Dispose()
+
+    let start (source : ActivitySource) (activityName : string) (tags : (string * #obj) seq) =
+        let activity = source.StartActivity(activityName) |> Option.ofObj
+        let facade = new ActivityFacade(activity)
+        for key, value in tags do
+            facade.AddTag key value
+        facade
+        
+    let startNoTags (source : ActivitySource) (activityName : string) = start source activityName []
+    
+    type ActivitySourceFacade(source : ActivitySource) =
+        member this.Start (name : string) (tags : (string * #obj) seq) = start source name tags
+        member this.StartNoTags name = startNoTags source name
+        member this.Name = source.Name
+        member this.Dispose() = source.Dispose()
+        interface IDisposable with
+            member this.Dispose() = this.Dispose()
+    
+    let private activitySourceName = "fsc"
+    let private activitySource = new ActivitySource(activitySourceName)
+    let instance = new ActivitySourceFacade(activitySource)
 
 type LogCompilerFunctionId =
     | Service_ParseAndCheckFileInProject = 1

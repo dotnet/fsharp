@@ -1,11 +1,12 @@
-﻿open BenchmarkDotNet.Configs
+﻿open System
+open BenchmarkDotNet.Configs
 open BenchmarkDotNet.Running
 open FSharp.Compiler.Benchmarks
 open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
 
-open FSharp.Compiler.Diagnostics.Activity
+open FSharp.Compiler.Diagnostics
 
 [<EntryPoint>]
 let main args =
@@ -16,16 +17,16 @@ let main args =
     // be null
     use tracerProvider =
         Sdk.CreateTracerProviderBuilder()
-           .AddSource(activitySourceName)
+           .AddSource(Activity.instance.Name)
            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName ="program", serviceVersion = "42.42.42.44"))
            .AddOtlpExporter()
            .AddZipkinExporter()
            .Build();
-    use mainActivity = activitySource.StartActivity("main")
+    use mainActivity = Activity.instance.StartNoTags("main")
 
     let forceCleanup() =
         mainActivity.Dispose()
-        activitySource.Dispose()
+        Activity.instance.Dispose()
         tracerProvider.Dispose()
     
     b.Setup()

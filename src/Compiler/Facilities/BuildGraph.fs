@@ -7,6 +7,7 @@ open System.Threading
 open System.Threading.Tasks
 open System.Diagnostics
 open System.Globalization
+open FSharp.Compiler.Diagnostics.Activity
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
 
@@ -93,7 +94,7 @@ type NodeCodeBuilder() =
     member _.Combine(Node (p1): NodeCode<unit>, Node (p2): NodeCode<'T>) : NodeCode<'T> = Node(async.Combine(p1, p2))
 
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Using(value: Activity, binder: Activity -> NodeCode<'U>) =
+    member _.Using(value: ActivityFacade, binder: ActivityFacade -> NodeCode<'U>) =
         Node(
             async {
                 try

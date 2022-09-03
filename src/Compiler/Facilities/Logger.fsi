@@ -5,9 +5,24 @@ namespace FSharp.Compiler.Diagnostics
 open System
 open System.Diagnostics
 
-module Activity = 
-    val activitySourceName: string
-    val activitySource: ActivitySource
+module Activity =
+
+    type ActivityFacade =
+        interface IDisposable
+        new : Activity option -> ActivityFacade
+        member AddTag : string -> #obj -> unit
+        member Perform : (Activity -> unit) -> unit
+        member Dispose : unit -> unit
+
+    type ActivitySourceFacade =
+        interface IDisposable
+        new : ActivitySource -> ActivitySourceFacade
+        member Start : string -> (string * #obj) seq -> ActivityFacade
+        member StartNoTags : string -> ActivityFacade
+        member Name : string
+        member Dispose : unit -> unit
+
+    val instance: ActivitySourceFacade
 
 type internal LogCompilerFunctionId =
     | Service_ParseAndCheckFileInProject = 1

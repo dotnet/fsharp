@@ -116,9 +116,12 @@ module IncrementalBuildSyntaxTree =
         let mutable weakCache: WeakReference<_> option = None
 
         let parse(sigNameOpt: QualifiedNameOfFile option) =
-            use act = Activity.activitySource.StartActivity("SyntaxTree.parse")
-            act.AddTag("fileName", source.FilePath) |> ignore
-            act.AddTag("buildPhase", BuildPhase.Parse) |> ignore
+            use act =
+                Activity.instance.Start "SyntaxTree.parse"
+                    [|
+                        "fileName", source.FilePath
+                        "buildPhase", BuildPhase.Parse.ToString()
+                    |]
             let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
             // Return the disposable object that cleans up
             use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
@@ -126,7 +129,7 @@ module IncrementalBuildSyntaxTree =
             try
                 IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
                 let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
-                act.AddTag("canSkip", canSkip) |> ignore
+                act.AddTag "canSkip" canSkip
                 let input =
                     if canSkip then
                         ParsedInput.ImplFile(
@@ -469,8 +472,7 @@ type BoundModel private (tcConfig: TcConfig,
                 let! res = defaultTypeCheck ()
                 return res
             | Some syntaxTree ->
-                use act = Activity.activitySource.StartActivity("TypeCheck")
-                act.AddTag("fileName", syntaxTree.FileName) |> ignore
+                use _ = Activity.instance.Start "TypeCheck" [|"fileName", syntaxTree.FileName|]
                 let sigNameOpt =
                     if partialCheck then
                         this.BackingSignature
@@ -508,7 +510,7 @@ type BoundModel private (tcConfig: TcConfig,
                                 partialCheck)
                         |> NodeCode.FromCancellable
 
-                    use _ = Activity.activitySource.StartActivity("TypeCheck_BuildState")
+                    use _ = Activity.instance.StartNoTags("TypeCheck_BuildState")
                     Logger.LogBlockMessageStop fileName LogCompilerFunctionId.IncrementalBuild_TypeCheck
 
                     fileChecked.Trigger fileName
@@ -1045,8 +1047,7 @@ module IncrementalBuilderStateHelpers =
 
     let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
         GraphNode(node {
-            use act = Activity.activitySource.StartActivity("GetCheckResultsAndImplementationsForProject")
-            act.AddTag("projectOutFile", initialState.outfile) |> ignore
+            use _ = Activity.instance.Start "GetCheckResultsAndImplementationsForProject" [|"projectOutFile", initialState.outfile|]
             // Compute last bound model then get all the evaluated models.
             let! _ = boundModels[boundModels.Count - 1].GetOrComputeValue()
             let boundModels =

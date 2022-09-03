@@ -2347,9 +2347,8 @@ module internal ParseAndCheckFile =
 
     let parseFile (sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
-        use act = Activity.activitySource.StartActivity("parseFile")
-        act.AddTag("fileName", fileName) |> ignore
-
+        use act = Activity.instance.Start "parseFile" [|"fileName", fileName|]
+        
         let errHandler =
             ErrorHandler(true, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors)
 

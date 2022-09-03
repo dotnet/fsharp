@@ -22,7 +22,6 @@ open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.Diagnostics.Activity
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
 open FSharp.Compiler.IO
@@ -1140,8 +1139,7 @@ let CheckOneInput
 
     cancellable {
         try
-            use tcOneInputActivity = activitySource.StartActivity("CheckOneInput")
-            tcOneInputActivity.AddTag("inputName", inp.FileName) |> ignore<_>
+            use _ = Activity.instance.Start "CheckOneInput" [|"inputName", inp.FileName|]
             
             CheckSimulateException tcConfig
 
@@ -1344,7 +1342,7 @@ let CheckClosedInputSetFinish (declaredImpls: CheckedImplFile list, tcState) =
     tcState, declaredImpls, ccuContents
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
-    use tcActivity = activitySource.StartActivity("CheckClosedInputSet")
+    use tcActivity = Activity.instance.StartNoTags("CheckClosedInputSet")
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
         (tcState, inputs)

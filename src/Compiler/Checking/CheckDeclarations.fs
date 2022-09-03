@@ -5173,9 +5173,7 @@ let CheckOneImplFile
     let infoReader = InfoReader(g, amap)
 
     cancellable {
-        use act = Activity.activitySource.StartActivity("CheckOneSigFile")
-        act.AddTag("fileName", fileName) |> ignore
-        act.AddTag("qualifiedNameOfFile", qualNameOfFile.Text) |> ignore
+        use _ = Activity.instance.Start "CheckOneImplFile" [|"fileName", fileName; "qualifiedNameOfFile", qualNameOfFile.Text|]
         let cenv = 
             cenv.Create (g, isScript, niceNameGen, amap, thisCcu, false, Option.isSome rootSigOpt,
                 conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
@@ -5303,9 +5301,12 @@ let CheckOneImplFile
 /// Check an entire signature file
 let CheckOneSigFile (g, niceNameGen, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (fileName = fileName; qualifiedNameOfFile = qualNameOfFile; modules = sigFileFrags)) = 
  cancellable {
-    use act = Activity.activitySource.StartActivity("CheckOneSigFile")
-    act.AddTag("fileName", fileName) |> ignore
-    act.AddTag("qualifiedNameOfFile", qualNameOfFile.Text) |> ignore
+    use _ =
+        Activity.instance.Start "CheckOneSigFile"
+            [|
+                "fileName", fileName
+                "qualifiedNameOfFile", qualNameOfFile.Text
+            |]
     
     let cenv = 
         cenv.Create 

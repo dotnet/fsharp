@@ -13,7 +13,7 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AbstractIL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CompilerConfig
-open FSharp.Compiler.Diagnostics.Activity
+open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.CodeAnalysis
@@ -34,16 +34,16 @@ let main(argv) =
     // be null
     use tracerProvider =
         Sdk.CreateTracerProviderBuilder()
-           .AddSource(activitySourceName)
+           .AddSource(Activity.instance.Name)
            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName ="fsc", serviceVersion = "42.42.42.42"))
            .AddOtlpExporter()
            .AddZipkinExporter()
            .Build();
-    use mainActivity = activitySource.StartActivity("main")
+    use mainActivity = Activity.instance.StartNoTags "main"
 
     let forceCleanup() =
         mainActivity.Dispose()
-        activitySource.Dispose()
+        Activity.instance.Dispose()
         tracerProvider.Dispose()
 
     let compilerName =
