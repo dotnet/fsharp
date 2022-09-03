@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32113.165
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Server.Shared", "src\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj", "{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}"
-EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Core", "src\FSharp.Core\FSharp.Core.fsproj", "{DED3BBD7-53F4-428A-8C9F-27968E768605}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{CFE3259A-2D30-4EB0-80D5-E8B5F3D01449}"
@@ -104,9 +102,10 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsiAnyCpu", "src\fsi\fsiAny
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "fsiArm64", "src\fsi\fsiArm64Project\fsiArm64.fsproj", "{209C7D37-8C01-413C-8698-EC25F4C86976}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "HistoricalBenchmark", "tests\benchmarks\FCSBenchmarks\BenchmarkComparison\HistoricalBenchmark.fsproj", "{BEC6E796-7E53-4888-AAFC-B8FD55C425DF}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "HistoricalBenchmark", "tests\benchmarks\FCSBenchmarks\BenchmarkComparison\HistoricalBenchmark.fsproj", "{BEC6E796-7E53-4888-AAFC-B8FD55C425DF}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Benchmarks", "tests\benchmarks\FCSBenchmarks\CompilerServiceBenchmarks\FSharp.Compiler.Benchmarks.fsproj", "{9C7523BA-7AB2-4604-A5FD-653E82C2BAD1}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.Compiler.Benchmarks", "tests\benchmarks\FCSBenchmarks\CompilerServiceBenchmarks\FSharp.Compiler.Benchmarks.fsproj", "{9C7523BA-7AB2-4604-A5FD-653E82C2BAD1}"
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D58BFE8B-7C85-4D3B-B5F3-9A7BB90FF1EE}"
 	ProjectSection(SolutionItems) = preProject
 		src\Compiler\FSComp.txt = src\Compiler\FSComp.txt
@@ -122,18 +121,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}.Debug|x86.Build.0 = Debug|Any CPU
-		{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}.Proto|Any CPU.ActiveCfg = Release|Any CPU
-		{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}.Proto|Any CPU.Build.0 = Release|Any CPU
-		{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}.Proto|x86.ActiveCfg = Release|Any CPU
-		{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}.Proto|x86.Build.0 = Release|Any CPU
-		{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}.Release|x86.ActiveCfg = Release|Any CPU
-		{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}.Release|x86.Build.0 = Release|Any CPU
 		{DED3BBD7-53F4-428A-8C9F-27968E768605}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DED3BBD7-53F4-428A-8C9F-27968E768605}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DED3BBD7-53F4-428A-8C9F-27968E768605}.Debug|x86.ActiveCfg = Debug|Any CPU
@@ -475,7 +462,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06} = {B8DDA694-7939-42E3-95E5-265C2217C142}
 		{DED3BBD7-53F4-428A-8C9F-27968E768605} = {3058BC79-8E79-4645-B05D-48CC182FA8A6}
 		{702A7979-BCF9-4C41-853E-3ADFC9897890} = {B8DDA694-7939-42E3-95E5-265C2217C142}
 		{649FA588-F02E-457C-9FCF-87E46407481E} = {B8DDA694-7939-42E3-95E5-265C2217C142}

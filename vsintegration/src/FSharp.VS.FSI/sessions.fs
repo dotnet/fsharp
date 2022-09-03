@@ -9,6 +9,9 @@ open System.Diagnostics
 open System.Runtime.InteropServices
 open System.Threading
 
+open FSharp.Compiler
+open Internal.Utilities.FSharpEnvironment
+
 #nowarn "52" //  The value has been copied to ensure the original is not mutated by this operation
 
 // Can not be DEBUG only since it is used by tests  
@@ -129,14 +132,15 @@ let catchAll trigger x =
     with err -> System.Windows.Forms.MessageBox.Show(err.ToString()) |> ignore
 
 let determineFsiPath () =    
-    if SessionsProperties.fsiUseNetCore then 
-        let pf = Environment.GetEnvironmentVariable("ProgramW6432")
-        let pf = if String.IsNullOrEmpty(pf) then Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) else pf
-        let exe = Path.Combine(pf,"dotnet","dotnet.exe") 
-        let arg = "fsi"
+    if SessionsProperties.fsiUseNetCore then
+        let exe =
+            match getDotnetHostPath() with
+            | Some s when not(isNull s) -> s
+            | _ -> raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe "dotnet fsi"))
+
         if not (File.Exists exe) then
             raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe exe))
-        exe, arg, false, false
+        exe, "fsi", false, false
     else
         let fsiExeName () = 
             if SessionsProperties.useAnyCpuVersion then
@@ -146,34 +150,20 @@ let determineFsiPath () =
             else
                 "fsi.exe"
 
-        // Use the VS-extension-installed development path if available, relative to the location of this assembly
-        let determineFsiRelativePath1 () =
-            let thisAssemblyDirectory = typeof<EventWrapper>.Assembly.Location |> Path.GetDirectoryName
-            Path.Combine(thisAssemblyDirectory,fsiExeName() )
-
-        // This path is relative to the location of "FSharp.Compiler.Interactive.Settings.dll"
-        let determineFsiRelativePath2 () =
-            let thisAssembly : System.Reflection.Assembly = typeof<FSharp.Compiler.Server.Shared.FSharpInteractiveServer>.Assembly
-            let thisAssemblyDirectory = thisAssembly.Location |> Path.GetDirectoryName
-            // Use the quick-development path if available    
-            Path.Combine(thisAssemblyDirectory, "Tools", fsiExeName() )
-
         let fsiExe =
-            // Choose VS extension path, if it exists (for developers)
-            let fsiRelativePath1 = determineFsiRelativePath1()
-            if  File.Exists fsiRelativePath1 then fsiRelativePath1 else
-
-            // Choose relative path, if it exists (for developers), otherwise, the installed path.    
-            let fsiRelativePath2 = determineFsiRelativePath2()
-            if  File.Exists fsiRelativePath2 then fsiRelativePath2 else
-
-            // Try the registry key
-            let fsbin = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with Some(s) -> s | None -> ""
-            let fsiRegistryPath = Path.Combine(fsbin, "Tools", fsiExeName() )
-            if File.Exists(fsiRegistryPath) then fsiRegistryPath else
-
-            // Otherwise give up
-            raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe fsiRegistryPath))
+            // Probe for F#
+            let pathToFsi =
+                [|
+                    yield Path.Combine(Path.GetDirectoryName(typeof<EventWrapper>.Assembly.Location), fsiExeName())           //This assembly location
+                    yield Path.Combine(Path.GetDirectoryName(typeof<CompilerEnvironment>.Assembly.Location), "Tools", fsiExeName())    //FSharp.Compiler.Service location
+                    match BinFolderOfDefaultFSharpCompiler(None) with
+                    | Some fsbin -> yield Path.Combine(fsbin, "Tools", fsiExeName() )
+                    | _ -> ()
+                |]
+                |> Seq.tryFind(fun path -> File.Exists(path))
+            match pathToFsi with
+            | Some p -> p
+            | _ -> raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe (fsiExeName())))
         fsiExe, "", true, true
 
 let readLinesAsync (reader: StreamReader) trigger =
@@ -182,7 +172,7 @@ let readLinesAsync (reader: StreamReader) trigger =
     let encoding = Encoding.UTF8
     let decoder = encoding.GetDecoder()
     let async0 = async.Return 0
-    let charBuffer = 
+    let charBuffer =
         let maxCharsInBuffer = encoding.GetMaxCharCount byteBuffer.Length
         Array.zeroCreate maxCharsInBuffer
 
@@ -337,24 +327,25 @@ type FsiSession(sourceFile: string) =
 
     do cmdProcess.EnableRaisingEvents <- true
 
-    let clientConnection   = 
-        if fsiSupportsServer then
-            try Some (FSharp.Compiler.Server.Shared.FSharpInteractiveServer.StartClient(channelName))
-            with e -> raise (SessionError (VFSIstrings.SR.exceptionRaisedWhenCreatingRemotingClient(e.ToString())))
-        else
-            None
+//@@@@    let clientConnection   = 
+//@@@@        if fsiSupportsServer then
+//@@@@            try Some (FSharp.Compiler.Server.Shared.FSharpInteractiveServer.StartClient(channelName))
+//@@@@            with e -> raise (SessionError (VFSIstrings.SR.exceptionRaisedWhenCreatingRemotingClient(e.ToString())))
+//@@@@        else
+//@@@@            None
 
     /// interrupt timeout in miliseconds 
     let interruptTimeoutMS   = 1000 
 
     // Create session object 
     member _.Interrupt() = 
-       match clientConnection with
-       | None -> false
-       | Some client ->
-           match timeoutApp "VFSI interrupt" interruptTimeoutMS (fun () -> client.Interrupt()) () with
-           | Some () -> true
-           | None    -> false
+//@@@@@       match clientConnection with
+//@@@@@       | None -> false
+//@@@@@       | Some client ->
+//@@@@@           match timeoutApp "VFSI interrupt" interruptTimeoutMS (fun () -> client.Interrupt()) () with
+//@@@@@           | Some () -> true
+//@@@@@           | None    -> false
+        false
 
     member _.SendInput (str: string) = inputQueue.Post(str)
 
@@ -366,7 +357,7 @@ type FsiSession(sourceFile: string) =
 
     member _.Alive       = not cmdProcess.HasExited
 
-    member _.SupportsInterrupt = not cmdProcess.HasExited && clientConnection.IsSome // clientConnection not on .NET Core
+    member _.SupportsInterrupt = not cmdProcess.HasExited //@@@@@  && clientConnection.IsSome // clientConnection not on .NET Core
 
     member _.ProcessID   =
         // When using .NET Core, allow up to 2 seconds to allow detection of process ID

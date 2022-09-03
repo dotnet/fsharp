@@ -44,7 +44,6 @@
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
       <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
-      <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
   </ItemGroup>
 
   <ItemGroup>

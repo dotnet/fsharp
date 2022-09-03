@@ -145,26 +145,6 @@ let internal TrySetUnhandledExceptionMode () =
 
 #endif
 
-/// Starts the remoting server to handle interrupt reuests from a host tool.
-let StartServer (fsiSession: FsiEvaluationSession) (fsiServerName) =
-#if FSI_SERVER
-    let server =
-        { new Server.Shared.FSharpInteractiveServer() with
-            member _.Interrupt() =
-                //printf "FSI-SERVER: received CTRL-C request...\n"
-                try
-                    fsiSession.Interrupt()
-                with _ ->
-                    // Final sanity check! - catch all exns - but not expected
-                    assert false
-                    ()
-        }
-
-    Server.Shared.FSharpInteractiveServer.StartServer(fsiServerName, server)
-#else
-    ignore (fsiSession, fsiServerName)
-#endif
-
 //----------------------------------------------------------------------------
 // GUI runCodeOnMainThread
 //----------------------------------------------------------------------------
@@ -294,7 +274,7 @@ let evaluateSession (argv: string[]) =
 
                 member _.UseFsiAuxLib = fsiConfig0.UseFsiAuxLib
 
-                member _.StartServer(fsiServerName) = StartServer fsiSession fsiServerName
+                member _.StartServer(_) = ()
 
                 // Connect the configuration through to the 'fsi' Event loop
                 member _.GetOptionalConsoleReadLine(probe) = getConsoleReadLine (probe)
