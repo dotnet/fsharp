@@ -741,7 +741,7 @@ type BackgroundCompiler
                     [|
                         "Project", options.ProjectFileName
                         "filename", fileName
-                        "UserOpName", userOpName |> Option.defaultValue ""  
+                        "UserOpName", userOpName  
                     |]
             let! cachedResults =
                 node {
