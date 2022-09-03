@@ -36,8 +36,7 @@ let main(argv) =
         Sdk.CreateTracerProviderBuilder()
            .AddSource(Activity.instance.Name)
            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(serviceName ="fsc", serviceVersion = "42.42.42.42"))
-           .AddOtlpExporter()
-           .AddZipkinExporter()
+           .AddJaegerExporter()
            .Build();
     use mainActivity = Activity.instance.StartNoTags "main"
 
