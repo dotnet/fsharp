@@ -1368,8 +1368,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         | (ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt, boundModel), timestamp ->
             let cache = TimeStampCache defaultTimeStamp
             let projectTimeStamp = builder.GetLogicalTimeStampForProject(cache)
-            let res = PartialCheckResults (boundModel, timestamp, projectTimeStamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
-            return res
+            return PartialCheckResults (boundModel, timestamp, projectTimeStamp), ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt
       }
 
     member builder.GetFullCheckResultsAndImplementationsForProject() =

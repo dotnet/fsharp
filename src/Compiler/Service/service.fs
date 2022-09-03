@@ -1527,19 +1527,16 @@ type FSharpChecker
             options: FSharpProjectOptions,
             ?userOpName: string
         ) =
-        async {
-            let userOpName = defaultArg userOpName "Unknown"
-            return!
-                backgroundCompiler.CheckFileInProjectAllowingStaleCachedResults(
-                    parseResults,
-                    fileName,
-                    fileVersion,
-                    SourceText.ofString source,
-                    options,
-                    userOpName
-                )
-                |> Async.AwaitNodeCode
-        }
+        let userOpName = defaultArg userOpName "Unknown"
+        backgroundCompiler.CheckFileInProjectAllowingStaleCachedResults(
+            parseResults,
+            fileName,
+            fileVersion,
+            SourceText.ofString source,
+            options,
+            userOpName
+        )
+        |> Async.AwaitNodeCode
 
     /// Typecheck a source code file, returning a handle to the results of the
     /// parse including the reconstructed types in the file.
