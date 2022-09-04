@@ -2279,6 +2279,21 @@ FSharp.Compiler.DependencyManager.ResolvingErrorReport: System.IAsyncResult Begi
 FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void .ctor(System.Object, IntPtr)
 FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void EndInvoke(System.IAsyncResult)
 FSharp.Compiler.DependencyManager.ResolvingErrorReport: Void Invoke(FSharp.Compiler.DependencyManager.ErrorReportType, Int32, System.String)
+FSharp.Compiler.Diagnostics.Activity
+FSharp.Compiler.Diagnostics.Activity+ActivityFacade: Void .ctor(Microsoft.FSharp.Core.FSharpOption`1[System.Diagnostics.Activity])
+FSharp.Compiler.Diagnostics.Activity+ActivityFacade: Void AddTag[?](System.String, ?)
+FSharp.Compiler.Diagnostics.Activity+ActivityFacade: Void Dispose()
+FSharp.Compiler.Diagnostics.Activity+ActivityFacade: Void Perform(Microsoft.FSharp.Core.FSharpFunc`2[System.Diagnostics.Activity,Microsoft.FSharp.Core.Unit])
+FSharp.Compiler.Diagnostics.Activity+ActivitySourceFacade: ActivityFacade StartNoTags(System.String)
+FSharp.Compiler.Diagnostics.Activity+ActivitySourceFacade: ActivityFacade Start[?](System.String, System.Collections.Generic.IEnumerable`1[System.Tuple`2[System.String,?]])
+FSharp.Compiler.Diagnostics.Activity+ActivitySourceFacade: System.String Name
+FSharp.Compiler.Diagnostics.Activity+ActivitySourceFacade: System.String get_Name()
+FSharp.Compiler.Diagnostics.Activity+ActivitySourceFacade: Void .ctor(System.Diagnostics.ActivitySource)
+FSharp.Compiler.Diagnostics.Activity+ActivitySourceFacade: Void Dispose()
+FSharp.Compiler.Diagnostics.Activity: ActivitySourceFacade get_instance()
+FSharp.Compiler.Diagnostics.Activity: ActivitySourceFacade instance
+FSharp.Compiler.Diagnostics.Activity: FSharp.Compiler.Diagnostics.Activity+ActivityFacade
+FSharp.Compiler.Diagnostics.Activity: FSharp.Compiler.Diagnostics.Activity+ActivitySourceFacade
 FSharp.Compiler.Diagnostics.CompilerDiagnostics
 FSharp.Compiler.Diagnostics.CompilerDiagnostics: System.Collections.Generic.IEnumerable`1[System.String] GetSuggestedNames(Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit],Microsoft.FSharp.Core.Unit], System.String)
 FSharp.Compiler.Diagnostics.CompilerDiagnostics: System.String GetErrorMessage(FSharp.Compiler.Diagnostics.FSharpDiagnosticKind)
