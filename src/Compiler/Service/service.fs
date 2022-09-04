@@ -390,7 +390,7 @@ type BackgroundCompiler
     /// creates an incremental builder used by the command line compiler.
     let CreateOneIncrementalBuilder (options: FSharpProjectOptions, userOpName) =
         node {
-            use _ = Activity.instance.Start "CreateOneIncrementalBuilder" [|"project", options.ProjectFileName|]
+            use _ = Activity.instance.Start "CreateOneIncrementalBuilder" [| "project", options.ProjectFileName |]
             Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CreateOneIncrementalBuilder", options.ProjectFileName)
             let projectReferences = getProjectReferences options userOpName
 
@@ -582,7 +582,9 @@ type BackgroundCompiler
 
     member _.ParseFile(fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, userOpName: string) =
         async {
-            use _ = Activity.instance.Start "CompileToDynamicAssembly1" [|"filename", fileName; "UserOpName", userOpName|]
+            use _ =
+                Activity.instance.Start "CompileToDynamicAssembly1" [| "filename", fileName; "UserOpName", userOpName |]
+
             if cache then
                 let hash = sourceText.GetHashCode() |> int64
 
@@ -737,12 +739,14 @@ type BackgroundCompiler
         ) =
         node {
             use _ =
-                Activity.instance.Start "CheckFileInProjectAllowingStaleCachedResults"
+                Activity.instance.Start
+                    "CheckFileInProjectAllowingStaleCachedResults"
                     [|
                         "Project", options.ProjectFileName
                         "filename", fileName
-                        "UserOpName", userOpName  
+                        "UserOpName", userOpName
                     |]
+
             let! cachedResults =
                 node {
                     let! builderOpt, creationDiags = getAnyBuilder (options, userOpName)
@@ -776,7 +780,15 @@ type BackgroundCompiler
     /// Type-check the result obtained by parsing. Force the evaluation of the antecedent type checking context if needed.
     member bc.CheckFileInProject(parseResults: FSharpParseFileResults, fileName, fileVersion, sourceText: ISourceText, options, userOpName) =
         node {
-            use _ = Activity.instance.Start "CheckFileInProject" [|"project", options.ProjectFileName; "fileName", fileName; "userOpName", userOpName|]
+            use _ =
+                Activity.instance.Start
+                    "CheckFileInProject"
+                    [|
+                        "project", options.ProjectFileName
+                        "fileName", fileName
+                        "userOpName", userOpName
+                    |]
+
             let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
 
             match builderOpt with
@@ -796,7 +808,9 @@ type BackgroundCompiler
     /// Parses and checks the source file and returns untyped AST and check results.
     member bc.ParseAndCheckFileInProject(fileName: string, fileVersion, sourceText: ISourceText, options: FSharpProjectOptions, userOpName) =
         node {
-            use _ = Activity.instance.Start "Service_ParseAndCheckFileInProject" [|"project", options.ProjectFileName; "fileName", fileName|]
+            use _ =
+                Activity.instance.Start "Service_ParseAndCheckFileInProject" [| "project", options.ProjectFileName; "fileName", fileName |]
+
             let strGuid = "_ProjectId=" + (options.ProjectId |> Option.defaultValue "null")
             Logger.LogBlockMessageStart (fileName + strGuid) LogCompilerFunctionId.Service_ParseAndCheckFileInProject
 
@@ -1391,7 +1405,7 @@ type FSharpChecker
         let _userOpName = defaultArg userOpName "Unknown"
 
         async {
-            use _ = Activity.instance.Start "CompileToDynamicAssembly1" [|"UserOpName", _userOpName|]
+            use _ = Activity.instance.Start "CompileToDynamicAssembly1" [| "UserOpName", _userOpName |]
             let ctok = CompilationThreadToken()
             CompileHelpers.setOutputStreams execute
 
@@ -1434,7 +1448,9 @@ type FSharpChecker
         let _userOpName = defaultArg userOpName "Unknown"
 
         async {
-            use _ = Activity.instance.Start "CompileToDynamicAssembly2" [|"Assembly", assemblyName; "UserOpName", _userOpName|]
+            use _ =
+                Activity.instance.Start "CompileToDynamicAssembly2" [| "Assembly", assemblyName; "UserOpName", _userOpName |]
+
             let ctok = CompilationThreadToken()
             CompileHelpers.setOutputStreams execute
 
@@ -1528,6 +1544,7 @@ type FSharpChecker
             ?userOpName: string
         ) =
         let userOpName = defaultArg userOpName "Unknown"
+
         backgroundCompiler.CheckFileInProjectAllowingStaleCachedResults(
             parseResults,
             fileName,
@@ -1551,6 +1568,7 @@ type FSharpChecker
         ) =
         async {
             let userOpName = defaultArg userOpName "Unknown"
+
             return!
                 backgroundCompiler.CheckFileInProject(parseResults, fileName, fileVersion, sourceText, options, userOpName)
                 |> Async.AwaitNodeCode
@@ -1565,17 +1583,20 @@ type FSharpChecker
             sourceText: ISourceText,
             options: FSharpProjectOptions,
             ?userOpName: string
-        ) =        
+        ) =
         async {
             let userOpName = defaultArg userOpName "Unknown"
+
             use _ =
-                Activity.instance.Start "ParseAndCheckFileInProject"
+                Activity.instance.Start
+                    "ParseAndCheckFileInProject"
                     [|
                         "Project", options.ProjectFileName
                         "filename", fileName
-                        "UserOpName", userOpName  
+                        "UserOpName", userOpName
                     |]
-            return! 
+
+            return!
                 backgroundCompiler.ParseAndCheckFileInProject(fileName, fileVersion, sourceText, options, userOpName)
                 |> Async.AwaitNodeCode
         }
@@ -1583,12 +1604,10 @@ type FSharpChecker
     member _.ParseAndCheckProject(options, ?userOpName: string) =
         async {
             let userOpName = defaultArg userOpName "Unknown"
+
             use _ =
-                Activity.instance.Start "ParseAndCheckProject"
-                    [|
-                        "Project", options.ProjectFileName
-                        "UserOpName", userOpName  
-                    |]
+                Activity.instance.Start "ParseAndCheckProject" [| "Project", options.ProjectFileName; "UserOpName", userOpName |]
+
             return!
                 backgroundCompiler.ParseAndCheckProject(options, userOpName)
                 |> Async.AwaitNodeCode
@@ -1605,12 +1624,10 @@ type FSharpChecker
         async {
             let canInvalidateProject = defaultArg canInvalidateProject true
             let userOpName = defaultArg userOpName "Unknown"
+
             use _ =
-                Activity.instance.Start "FindBackgroundReferencesInFile"
-                    [|
-                        "Project", options.ProjectFileName
-                        "UserOpName", userOpName  
-                    |]
+                Activity.instance.Start "FindBackgroundReferencesInFile" [| "Project", options.ProjectFileName; "UserOpName", userOpName |]
+
             return!
                 backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
                 |> Async.AwaitNodeCode
@@ -1619,12 +1636,10 @@ type FSharpChecker
     member _.GetBackgroundSemanticClassificationForFile(fileName: string, options: FSharpProjectOptions, ?userOpName) =
         async {
             let userOpName = defaultArg userOpName "Unknown"
+
             use _ =
-                Activity.instance.Start "FindBackgroundReferencesInFile"
-                    [|
-                        "Project", options.ProjectFileName
-                        "UserOpName", userOpName  
-                    |]
+                Activity.instance.Start "FindBackgroundReferencesInFile" [| "Project", options.ProjectFileName; "UserOpName", userOpName |]
+
             return!
                 backgroundCompiler.GetSemanticClassificationForFile(fileName, options, userOpName)
                 |> Async.AwaitNodeCode

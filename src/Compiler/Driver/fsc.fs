@@ -166,7 +166,8 @@ let TypeCheck
         inputs,
         exiter: Exiter
     ) =
-    use _ = Activity.instance.Start "typecheck_inputs" [|"assemblyName", assemblyName|]
+    use _ =
+        Activity.instance.Start "typecheck_inputs" [| "assemblyName", assemblyName |]
 
     try
         if isNil inputs then
@@ -476,7 +477,7 @@ let main1
         diagnosticsLoggerProvider: DiagnosticsLoggerProvider,
         disposables: DisposablesTracker
     ) =
-    
+
     use mainActivity = new Activity("main")
 
     // See Bug 735819
@@ -598,7 +599,9 @@ let main1
 
     // Import basic assemblies
     let tcGlobals, frameworkTcImports =
-        use frameworkImportsActivity = Activity.instance.StartNoTags("import_framework_references")
+        use frameworkImportsActivity =
+            Activity.instance.StartNoTags("import_framework_references")
+
         TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes)
         |> NodeCode.RunImmediateWithoutCancellation
 
@@ -651,7 +654,9 @@ let main1
     ReportTime tcConfig "Import non-system references"
 
     let tcImports =
-        use nonFrameworkImportsActivity = Activity.instance.StartNoTags("import_non_framework_references")
+        use nonFrameworkImportsActivity =
+            Activity.instance.StartNoTags("import_non_framework_references")
+
         TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
         |> NodeCode.RunImmediateWithoutCancellation
 
@@ -730,9 +735,9 @@ let main1OfAst
         disposables: DisposablesTracker,
         inputs: ParsedInput list
     ) =
-    
+
     use main1AstActivity = Activity.instance.StartNoTags("main1_of_ast")
-    
+
     let tryGetMetadataSnapshot = (fun _ -> None)
 
     let directoryBuildingFrom = Directory.GetCurrentDirectory()
@@ -1396,6 +1401,7 @@ let CompileFromCommandLineArguments
                 with _ ->
                     ()
         }
+
     main1 (
         ctok,
         argv,

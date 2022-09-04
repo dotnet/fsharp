@@ -857,10 +857,7 @@ let ProcessMetaCommandsFromInput
             | ParsedHashDirective ("nowarn", ParsedHashDirectiveArguments numbers, m) ->
                 List.fold (fun state d -> nowarnF state (m, d)) state numbers
 
-            | ParsedHashDirective (("reference"
-                                   | "r"),
-                                   ParsedHashDirectiveArguments args,
-                                   m) ->
+            | ParsedHashDirective (("reference" | "r"), ParsedHashDirectiveArguments args, m) ->
                 matchedm <- m
                 ProcessDependencyManagerDirective Directive.Resolution args m state
 
@@ -1139,8 +1136,8 @@ let CheckOneInput
 
     cancellable {
         try
-            use _ = Activity.instance.Start "CheckOneInput" [|"inputName", inp.FileName|]
-            
+            use _ = Activity.instance.Start "CheckOneInput" [| "inputName", inp.FileName |]
+
             CheckSimulateException tcConfig
 
             let m = inp.Range
