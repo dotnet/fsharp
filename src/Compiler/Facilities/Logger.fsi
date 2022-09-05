@@ -5,7 +5,7 @@ namespace FSharp.Compiler.Diagnostics
 open System
 open System.Diagnostics
 
-module Activity =
+module internal Activity =
 
     type ActivityFacade =
         interface IDisposable
