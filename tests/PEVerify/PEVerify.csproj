@@ -15,8 +15,8 @@
     -->
     <NoWarn>$(NoWarn);NU1505</NoWarn>
     <NoWarn>$(NoWarn);1591</NoWarn>
-    <EnableNETAnalyzers>false</EnableNETAnalyzers>
-    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>false</RunAnalyzersDuringLiveAnalysis>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,9 +24,7 @@
   </ItemGroup>
 
   <Target Name="RemoveAnalyzers"
-          DependsOnTargets="ResolveAssemblyReferences"
           BeforeTargets="CoreCompile">
-
     <ItemGroup>
       <Analyzers Remove="@(Analyzers)" />
     </ItemGroup>
