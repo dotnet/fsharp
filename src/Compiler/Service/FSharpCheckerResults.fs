@@ -247,7 +247,9 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
         // 'seq' in 'seq { ... }' gets colored as keywords
         | Item.Value vref, ItemOccurence.Use when valRefEq denv.g denv.g.seq_vref vref -> true
         // custom builders, custom operations get colored as keywords
-        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use -> true
+        | (Item.CustomBuilder _
+          | Item.CustomOperation _),
+          ItemOccurence.Use -> true
         | _ -> false
 
     member _.IsFromOpenStatement = itemOcc = ItemOccurence.Open
@@ -2308,8 +2310,14 @@ module internal ParseAndCheckFile =
 
                     matchBraces stackAfterMatch
 
-                | LPAREN | LBRACE _ | LBRACK | LBRACE_BAR | LBRACK_BAR | LQUOTE _ | LBRACK_LESS as tok, _ ->
-                    matchBraces ((tok, lexbuf.LexemeRange) :: stack)
+                | LPAREN
+                  | LBRACE _
+                  | LBRACK
+                  | LBRACE_BAR
+                  | LBRACK_BAR
+                  | LQUOTE _
+                  | LBRACK_LESS as tok,
+                  _ -> matchBraces ((tok, lexbuf.LexemeRange) :: stack)
 
                 // INTERP_STRING_BEGIN_PART corresponds to $"... {" at the start of an interpolated string
                 //
@@ -2318,7 +2326,9 @@ module internal ParseAndCheckFile =
                 //   interpolation expression)
                 //
                 // Either way we start a new potential match at the last character
-                | INTERP_STRING_BEGIN_PART _ | INTERP_STRING_PART _ as tok, _ ->
+                | INTERP_STRING_BEGIN_PART _
+                  | INTERP_STRING_PART _ as tok,
+                  _ ->
                     let m = lexbuf.LexemeRange
 
                     let m2 =
@@ -2326,7 +2336,9 @@ module internal ParseAndCheckFile =
 
                     matchBraces ((tok, m2) :: stack)
 
-                | (EOF _ | LEX_FAILURE _), _ -> ()
+                | (EOF _
+                  | LEX_FAILURE _),
+                  _ -> ()
                 | _ -> matchBraces stack
 
             matchBraces [])
