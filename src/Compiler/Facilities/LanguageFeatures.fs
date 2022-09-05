@@ -147,7 +147,7 @@ type LanguageVersion(versionText) =
 
     let specified = getVersionFromString versionText
 
-    let versionToString v =
+    static let versionToString v =
         if v = previewVersion then "'PREVIEW'" else string v
 
     let specifiedString = versionToString specified
@@ -167,15 +167,15 @@ type LanguageVersion(versionText) =
     member _.IsPreviewEnabled = specified = previewVersion
 
     /// Does the languageVersion support this version string
-    member _.ContainsVersion version =
+    static member ContainsVersion version =
         let langVersion = getVersionFromString version
         langVersion <> 0m && languageVersions.Contains langVersion
 
     /// Get a list of valid strings for help text
-    member _.ValidOptions = validOptions
+    static member ValidOptions = validOptions
 
     /// Get a list of valid versions for help text
-    member _.ValidVersions =
+    static member ValidVersions =
         [|
             for v in languageVersions |> Seq.sort -> sprintf "%M%s" v (if v = defaultVersion then " (Default)" else "")
         |]
@@ -190,7 +190,7 @@ type LanguageVersion(versionText) =
     member _.SpecifiedVersionString = specifiedString
 
     /// Get a string name for the given feature.
-    member _.GetFeatureString feature =
+    static member GetFeatureString feature =
         match feature with
         | LanguageFeature.SingleUnderscorePattern -> FSComp.SR.featureSingleUnderscorePattern ()
         | LanguageFeature.WildCardInForLoop -> FSComp.SR.featureWildCardInForLoop ()
@@ -232,7 +232,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
 
     /// Get a version string associated with the given feature.
-    member _.GetFeatureVersionString feature =
+    static member GetFeatureVersionString feature =
         match features.TryGetValue feature with
         | true, v -> versionToString v
         | _ -> invalidArg "feature" "Internal error: Unable to find feature."

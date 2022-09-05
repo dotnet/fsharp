@@ -10,6 +10,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler 
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
@@ -21,8 +22,6 @@ open FSharp.Compiler.TypeHierarchy
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
 open FSharp.Core.CompilerServices
-open Features
-
 #endif
 
 exception ObsoleteWarning of string * range
