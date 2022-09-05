@@ -206,6 +206,8 @@ type TyparFlags =
 
     member WithCompatFlex: b: bool -> TyparFlags
 
+    member WithStaticReq: staticReq: Syntax.TyparStaticReq -> TyparFlags
+
     /// Indicates that whether or not a generic type definition satisfies the comparison constraint is dependent on whether this type variable satisfies the comparison constraint.
     member ComparisonConditionalOn: bool
 
@@ -292,6 +294,7 @@ exception UndefinedName of depth: int * error: (string -> string) * id: Ident * 
 
 exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
 
+[<CustomEquality; NoComparison>]
 type ModuleOrNamespaceKind =
 
     /// Indicates that a module is compiled to a class with the "Module" suffix added.
@@ -1628,7 +1631,12 @@ type TyparConstraint =
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitWitnessInfo =
-    | TraitWitnessInfo of TTypes * string * Syntax.SynMemberFlags * TTypes * TType option
+    | TraitWitnessInfo of
+        tys: TTypes *
+        memberName: string *
+        memberFlags: SynMemberFlags *
+        objAndArgTys: TTypes *
+        returnTy: TType option
 
     override ToString: unit -> string
 
@@ -1650,34 +1658,42 @@ type TraitConstraintInfo =
     | TTrait of
         tys: TTypes *
         memberName: string *
-        _memFlags: Syntax.SynMemberFlags *
-        argTys: TTypes *
-        returnTy: TType option *
+        memberFlags: Syntax.SynMemberFlags *
+        objAndArgTys: TTypes *
+        returnTyOpt: TType option *
         solution: TraitConstraintSln option ref
 
     override ToString: unit -> string
 
-    /// Get the argument types recorded in the member constraint. This includes the object instance type for
-    /// instance members.
-    member ArgumentTypes: TTypes
-
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member DebugText: string
+
+    /// Get the types that may provide solutions for the traits
+    member SupportTypes: TType list
 
     /// Get the member flags associated with the member constraint.
     member MemberFlags: Syntax.SynMemberFlags
 
-    /// Get the member name associated with the member constraint.
-    member MemberName: string
+    /// Get the member name associated with the member constraint.  For preop
+    member MemberLogicalName: string
+
+    /// Get the raw object and argument types recorded in the member constraint. This includes the object instance type
+    /// instance members. This may be empty for property traits e.g.
+    ///      "(static member Zero: ^T)"
+    /// or unit-taking methods
+    ///      "(static member get_Zero: unit -> ^T)"
+    /// See also extension members GetCompiledArgumentTypes and GetLogicalArgumentTypes
+    member CompiledObjectAndArgumentTypes: TTypes
 
     /// Get the return type recorded in the member constraint.
-    member ReturnType: TType option
+    member CompiledReturnType: TType option
 
     /// Get or set the solution of the member constraint during inference
     member Solution: TraitConstraintSln option with get, set
 
-    /// Get the key associated with the member constraint.
-    member TraitKey: TraitWitnessInfo
+    /// The member kind is irrelevant to the logical properties of a trait. However it adjusts
+    /// the extension property MemberDisplayNameCore
+    member WithMemberKind: SynMemberKind -> TraitConstraintInfo
 
 /// Represents the solution of a member constraint during inference.
 [<NoEquality; NoComparison>]
@@ -1688,8 +1704,9 @@ type TraitConstraintSln =
     /// Indicates a trait is solved by an F# method.
     ///    ty -- the type type its instantiation
     ///    vref -- the method that solves the trait constraint
+    ///    staticTyOpt -- the static type governing a static virtual call, if any
     ///    minst -- the generic method instantiation
-    | FSMethSln of ty: TType * vref: ValRef * minst: TypeInst
+    | FSMethSln of ty: TType * vref: ValRef * minst: TypeInst * staticTyOpt: TType option
 
     /// FSRecdFieldSln(tinst, rfref, isSetProp)
     ///
@@ -1709,7 +1726,13 @@ type TraitConstraintSln =
     ///    extOpt -- information about an extension member, if any
     ///    ilMethodRef -- the method that solves the trait constraint
     ///    minst -- the generic method instantiation
-    | ILMethSln of ty: TType * extOpt: ILTypeRef option * ilMethodRef: ILMethodRef * minst: TypeInst
+    ///    staticTyOpt -- the static type governing a static virtual call, if any
+    | ILMethSln of
+        ty: TType *
+        extOpt: ILTypeRef option *
+        ilMethodRef: ILMethodRef *
+        minst: TypeInst *
+        staticTyOpt: TType option
 
     /// ClosedExprSln expr
     ///

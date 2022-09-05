@@ -410,7 +410,7 @@ type public FSharpCheckFileResults =
     member OpenDeclarations: FSharpOpenDeclaration[]
 
     /// Lays out and returns the formatted signature for the typechecked file as source text.
-    member GenerateSignature: unit -> ISourceText option
+    member GenerateSignature: ?pageWidth: int -> ISourceText option
 
     /// Internal constructor
     static member internal MakeEmpty:

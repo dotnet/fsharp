@@ -458,6 +458,7 @@ type TcConfigBuilder =
         mutable metadataVersion: string option
         mutable standalone: bool
         mutable extraStaticLinkRoots: string list
+        mutable compressMetadata: bool
         mutable noSignatureData: bool
         mutable onlyEssentialOptimizationData: bool
         mutable useOptimizationDataFile: bool
@@ -527,6 +528,9 @@ type TcConfigBuilder =
         /// If true, strip away data that would not be of use to end users, but is useful to us for debugging
         mutable noDebugAttributes: bool
 
+        /// If true, do not emit ToString implementations for unions, records, structs, exceptions
+        mutable useReflectionFreeCodeGen: bool
+
         /// If true, indicates all type checking and code generation is in the context of fsi.exe
         isInteractive: bool
 
@@ -546,6 +550,8 @@ type TcConfigBuilder =
         mutable useSdkRefs: bool
 
         mutable fxResolver: FxResolver option
+
+        mutable bufferWidth: int option
 
         // Is F# Interactive using multi-assembly emit?
         mutable fsiMultiAssemblyEmit: bool
@@ -679,6 +685,7 @@ type TcConfigBuilder =
             metadataVersion = None
             standalone = false
             extraStaticLinkRoots = []
+            compressMetadata = false
             noSignatureData = false
             onlyEssentialOptimizationData = false
             useOptimizationDataFile = false
@@ -730,11 +737,13 @@ type TcConfigBuilder =
             pause = false
             alwaysCallVirt = true
             noDebugAttributes = false
+            useReflectionFreeCodeGen = false
             emitDebugInfoInQuotations = false
             exename = None
             shadowCopyReferences = false
             useSdkRefs = true
             fxResolver = None
+            bufferWidth = None
             fsiMultiAssemblyEmit = true
             internalTestSpanStackReferring = false
             noConditionalErasure = false
@@ -1157,6 +1166,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             errorRecovery e range0
             []
 
+    member _.bufferWidth = data.bufferWidth
     member _.fsiMultiAssemblyEmit = data.fsiMultiAssemblyEmit
     member _.FxResolver = data.FxResolver
     member _.primaryAssembly = data.primaryAssembly
@@ -1226,6 +1236,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.metadataVersion = data.metadataVersion
     member _.standalone = data.standalone
     member _.extraStaticLinkRoots = data.extraStaticLinkRoots
+    member _.compressMetadata = data.compressMetadata
     member _.noSignatureData = data.noSignatureData
     member _.onlyEssentialOptimizationData = data.onlyEssentialOptimizationData
     member _.useOptimizationDataFile = data.useOptimizationDataFile
@@ -1279,6 +1290,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.pause = data.pause
     member _.alwaysCallVirt = data.alwaysCallVirt
     member _.noDebugAttributes = data.noDebugAttributes
+    member _.useReflectionFreeCodeGen = data.useReflectionFreeCodeGen
     member _.isInteractive = data.isInteractive
     member _.isInvalidationSupported = data.isInvalidationSupported
     member _.emitDebugInfoInQuotations = data.emitDebugInfoInQuotations

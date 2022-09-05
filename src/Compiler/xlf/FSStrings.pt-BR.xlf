@@ -1329,7 +1329,7 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">O resultado dessa expressão de igualdade tem o tipo '{0}' e é implicitamente descartado. Use 'let' para associar o resultado a um nome, por exemplo, 'let resultado = expressão'. Se você pretende modificar um valor, use o operador '&lt;-', por exemplo, '{1} &lt;- expressão'.</target>
+        <target state="translated">O resultado dessa expressão de igualdade tem o tipo '{0}' e é implicitamente descartado. Use 'let' para associar o resultado a um nome, por exemplo, 'let resultado = expressão'. Se você pretende modificar um valor, marque o valor como 'mutable' e use o operador '&lt;-', por exemplo, '{1} &lt;- expressão'.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">

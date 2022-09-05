@@ -7,7 +7,7 @@
 .assembly extern System.Runtime
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly extern FSharp.Core
 {
@@ -17,7 +17,7 @@
 .assembly extern System.Collections
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly TupleElimination
 {
@@ -26,29 +26,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.TupleElimination
 {
-  // Offset: 0x00000000 Length: 0x0000026E
+  // Offset: 0x00000000 Length: 0x0000026A
   // WARNING: managed resource file FSharpSignatureData.TupleElimination created
 }
 .mresource public FSharpOptimizationData.TupleElimination
 {
-  // Offset: 0x00000278 Length: 0x0000007B
+  // Offset: 0x00000270 Length: 0x0000007B
   // WARNING: managed resource file FSharpOptimizationData.TupleElimination created
 }
 .module TupleElimination.exe
-// MVID: {624CEE83-634F-F584-A745-038383EE4C62}
+// MVID: {63000B04-FB1F-9C57-A745-0383040B0063}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000024D054E0000
+// Image base: 0x000001A54EA70000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -256,4 +256,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net6.0\tests\EmittedIL\Tuples\TupleElimination_fs\TupleElimination.res
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net7.0\tests\EmittedIL\Tuples\TupleElimination_fs\TupleElimination.res

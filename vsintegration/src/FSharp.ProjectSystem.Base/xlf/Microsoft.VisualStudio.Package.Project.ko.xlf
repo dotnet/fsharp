@@ -129,7 +129,7 @@
 - contain only '.'
 - have any of the following characters: / ? : &amp;  \ * " &lt; &gt; | # %</source>
         <target state="translated">파일 및 폴더에는 다음 문자를 사용할 수 없습니다.
-- 빈 문자열
+- 빈 문자열 
 - 'CON', 'AUX', PRN', 'COM1', 'LPT2' 등의 시스템 예약 이름 
 - '.'만 포함
 - / ? : &amp;  \ * " &lt; &gt; | # % 문자 포함</target>

@@ -12,6 +12,7 @@ open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
+open FSharp.Compiler.Import
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Infos
 open FSharp.Compiler.IO
@@ -101,7 +102,8 @@ type AssignedCalledArg<'T> =
 
 /// Represents the possibilities for a named-setter argument (a property, field, or a record field setter)
 type AssignedItemSetterTarget = 
-    | AssignedPropSetter of PropInfo * MethInfo * TypeInst   (* the MethInfo is a non-indexer setter property *)
+    // the MethInfo is a non-indexer setter property
+    | AssignedPropSetter of staticTyOpt: TType option * pinfo: PropInfo * minfo: MethInfo * pminst: TypeInst
     | AssignedILFieldSetter of ILFieldInfo 
     | AssignedRecdFieldSetter of RecdFieldInfo 
 
@@ -197,11 +199,13 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
             isTyparTy g actualTy && (let ftyvs = freeInType CollectAll reqdTy2 in ftyvs.FreeTypars.Contains(destTyparTy g actualTy))) then
 
             let implicits = 
-                infoReader.FindImplicitConversions m ad actualTy @
-                infoReader.FindImplicitConversions m ad reqdTy2
+                [ for conv in infoReader.FindImplicitConversions m ad actualTy do
+                    (conv, actualTy)
+                  for conv in infoReader.FindImplicitConversions m ad reqdTy2 do
+                    (conv, reqdTy2) ]
             
             let implicits = 
-                implicits |> List.filter (fun minfo -> 
+                implicits |> List.filter (fun (minfo, _staticTy) -> 
                     not minfo.IsInstance &&
                     minfo.FormalMethodTyparInst.IsEmpty && 
                     (match minfo.GetParamTypes(amap, m, []) with
@@ -212,12 +216,12 @@ let TryFindRelevantImplicitConversion (infoReader: InfoReader) ad reqdTy actualT
                 )
 
             match implicits with
-            | [minfo] ->
-                Some (minfo, (reqdTy, reqdTy2, ignore))
-            | minfo :: _ -> 
-                Some (minfo, (reqdTy, reqdTy2, fun denv -> 
+            | [(minfo, staticTy) ] ->
+                Some (minfo, staticTy, (reqdTy, reqdTy2, ignore))
+            | (minfo, staticTy) :: _ -> 
+                Some (minfo, staticTy, (reqdTy, reqdTy2, fun denv -> 
                          let reqdTy2Text, actualTyText, _cxs = NicePrint.minimalStringsOfTwoTypes denv reqdTy2 actualTy
-                         let implicitsText = NicePrint.multiLineStringOfMethInfos infoReader m denv implicits
+                         let implicitsText = NicePrint.multiLineStringOfMethInfos infoReader m denv (List.map fst implicits)
                          errorR(Error(FSComp.SR.tcAmbiguousImplicitConversion(actualTyText, reqdTy2Text, implicitsText), m))))
             | _ -> None
         else
@@ -232,12 +236,15 @@ type TypeDirectedConversion =
 
 [<RequireQualifiedAccess>]
 type TypeDirectedConversionUsed =
-    | Yes of (DisplayEnv -> exn)
+    | Yes of (DisplayEnv -> exn) * isTwoStepConversion: bool
     | No
     static member Combine a b =
-        match a with 
-        | Yes _ -> a
-        | No -> b
+        match a, b with 
+        | Yes(_,true), _ -> a
+        | _, Yes(_,true) -> b
+        | Yes _, _ -> a
+        | _, Yes _ -> b
+        | No, No -> a
 
 let MapCombineTDCD mapper xs =
     MapReduceD mapper TypeDirectedConversionUsed.No TypeDirectedConversionUsed.Combine xs
@@ -275,21 +282,33 @@ let rec AdjustRequiredTypeForTypeDirectedConversions (infoReader: InfoReader) ad
 
     // Adhoc int32 --> int64
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.int64_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-       g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn), None
+        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false), None
 
     // Adhoc int32 --> nativeint
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.nativeint_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-       g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn), None
+        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false), None
 
     // Adhoc int32 --> float64
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions && typeEquiv g g.float_ty reqdTy && typeEquiv g g.int32_ty actualTy then 
-       g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn), None
+        g.int32_ty, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false), None
 
+    elif g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop && isMethodArg && isNullableTy g reqdTy && not (isNullableTy g actualTy) then 
+        let underlyingTy = destNullableTy g reqdTy
+        // shortcut
+        if typeEquiv g underlyingTy actualTy then
+            actualTy, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, false), None
+        else
+            let adjustedTy, _, _ = AdjustRequiredTypeForTypeDirectedConversions infoReader ad isMethodArg isConstraint underlyingTy actualTy m
+            if typeEquiv g adjustedTy actualTy then 
+                actualTy, TypeDirectedConversionUsed.Yes(warn TypeDirectedConversion.BuiltIn, true), None
+            else 
+                reqdTy, TypeDirectedConversionUsed.No, None
+    
     // Adhoc based on op_Implicit, perhaps returing a new equational type constraint to 
     // eliminate articifical constrained type variables.
     elif g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions then
          match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
-         | Some (minfo, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo)), Some eqn
+         | Some (minfo, _staticTy, eqn) -> actualTy, TypeDirectedConversionUsed.Yes(warn (TypeDirectedConversion.Implicit minfo), false), Some eqn
          | None -> reqdTy, TypeDirectedConversionUsed.No, None
 
     else reqdTy, TypeDirectedConversionUsed.No, None
@@ -348,9 +367,8 @@ let AdjustCalledArgTypeForOptionals (infoReader: InfoReader) ad enforceNullableO
 
                 // If inference has worked out it's a struct (e.g. an int) then use this
                 elif isStructTy g callerArgTy then
-                    let calledArgTy2 = destNullableTy g calledArgTy
-                    AdjustRequiredTypeForTypeDirectedConversions infoReader ad true false calledArgTy2 callerArgTy m
-
+                    AdjustRequiredTypeForTypeDirectedConversions infoReader ad true false calledArgTy callerArgTy m
+                
                 // If neither and we are at the end of overload resolution then use the Nullable
                 elif enforceNullableOptionalsKnownTypes then 
                     calledArgTy, TypeDirectedConversionUsed.No, None
@@ -488,6 +506,7 @@ let MakeCalledArgs amap m (minfo: MethInfo) minst =
 /// <param name='allowParamArgs'>Do we allow the use of a param args method in its "expanded" form?</param>
 /// <param name='allowOutAndOptArgs'>Do we allow the use of the transformation that converts out arguments as tuple returns?</param>
 /// <param name='tyargsOpt'>Method parameters</param>
+/// <param name='staticTyOpt'>The optional static type governing a constrained static virtual interface call</param>
 type CalledMeth<'T>
       (infoReader: InfoReader,
        nameEnv: NameResolutionEnv option,
@@ -503,7 +522,8 @@ type CalledMeth<'T>
        callerArgs: CallerArgs<'T>,
        allowParamArgs: bool,
        allowOutAndOptArgs: bool,
-       tyargsOpt: TType option)    
+       tyargsOpt: TType option,
+       staticTyOpt: TType option)    
     =
     let g = infoReader.g
     let methodRetTy = if minfo.IsConstructor then minfo.ApparentEnclosingType else minfo.GetFSharpReturnType(infoReader.amap, m, calledTyArgs)
@@ -617,7 +637,8 @@ type CalledMeth<'T>
                     | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
                         let pminfo = pinfo.SetterMethod
                         let pminst = freshenMethInfo m pminfo
-                        Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(pinfo, pminfo, pminst), e))
+                        let propStaticTyOpt = if isTyparTy g returnedObjTy then Some returnedObjTy else None
+                        Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(propStaticTyOpt, pinfo, pminfo, pminst), e))
                     | _ ->
                         let epinfos = 
                             match nameEnv with  
@@ -636,7 +657,8 @@ type CalledMeth<'T>
                                 | Some(TType_app(_, types, _)) -> types
                                 | _ -> pminst
 
-                            Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(pinfo, pminfo, pminst), e))
+                            let propStaticTyOpt = if isTyparTy g returnedObjTy then Some returnedObjTy else None
+                            Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(propStaticTyOpt, pinfo, pminfo, pminst), e))
                         |  _ ->    
                             match infoReader.GetILFieldInfosOfType(Some(nm), ad, m, returnedObjTy) with
                             | finfo :: _ -> 
@@ -792,6 +814,8 @@ type CalledMeth<'T>
 
     member x.TotalNumAssignedNamedArgs = x.ArgSets |> List.sumBy (fun x -> x.NumAssignedNamedArgs)
 
+    member x.OptionalStaticType = staticTyOpt
+
     override x.ToString() = "call to " + minfo.ToString()
 
 let NamesOfCalledArgs (calledArgs: CalledArg list) = 
@@ -869,11 +893,14 @@ let IsBaseCall objArgs =
 /// Compute whether we insert a 'coerce' on the 'this' pointer for an object model call 
 /// For example, when calling an interface method on a struct, or a method on a constrained 
 /// variable type. 
-let ComputeConstrainedCallInfo g amap m (objArgs, minfo: MethInfo) =
-    match objArgs with 
-    | [objArgExpr] when not minfo.IsExtensionMember -> 
+let ComputeConstrainedCallInfo g amap m staticTyOpt args (minfo: MethInfo) =
+    match args, staticTyOpt with 
+    | _, Some staticTy when not minfo.IsExtensionMember && not minfo.IsInstance && minfo.IsAbstract -> Some staticTy
+
+    | (objArgExpr :: _), _ when minfo.IsInstance && not minfo.IsExtensionMember -> 
         let methObjTy = minfo.ApparentEnclosingType
         let objArgTy = tyOfExpr g objArgExpr
+        let objArgTy = if isByrefTy g objArgTy then destByrefTy g objArgTy else objArgTy
         if TypeDefinitelySubsumesTypeNoCoercion 0 g amap m methObjTy objArgTy 
            // Constrained calls to class types can only ever be needed for the three class types that 
            // are base types of value types
@@ -891,8 +918,8 @@ let ComputeConstrainedCallInfo g amap m (objArgs, minfo: MethInfo) =
 
 /// Adjust the 'this' pointer before making a call 
 /// Take the address of a struct, and coerce to an interface/base/constraint type if necessary 
-let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m objArgs f =
-    let ccallInfo = ComputeConstrainedCallInfo g amap m (objArgs, minfo)
+let TakeObjAddrForMethodCall g amap (minfo: MethInfo) isMutable m staticTyOpt objArgs f =
+    let ccallInfo = ComputeConstrainedCallInfo g amap m staticTyOpt objArgs minfo
 
     let wrap, objArgs = 
 
@@ -1007,11 +1034,18 @@ let BuildFSharpMethodCall g m (ty, vref: ValRef) valUseFlags minst args =
 
 /// Make a call to a method info. Used by the optimizer and code generator to build 
 /// calls to the type-directed solutions to member constraints.
-let MakeMethInfoCall amap m minfo minst args =
-    let valUseFlags = NormalValUse // correct unless if we allow wild trait constraints like "T has a ctor and can be used as a parent class" 
+let MakeMethInfoCall (amap: ImportMap) m (minfo: MethInfo) minst args staticTyOpt =
+    let g = amap.g
+    let ccallInfo = ComputeConstrainedCallInfo g amap m staticTyOpt args minfo
+    let valUseFlags = 
+        match ccallInfo with
+        | Some ty -> 
+            // printfn "possible constrained call to '%s' at %A" minfo.LogicalName m
+            PossibleConstrainedCall ty
+        | None -> 
+            NormalValUse
 
     match minfo with 
-
     | ILMeth(g, ilminfo, _) -> 
         let direct = not minfo.IsVirtual
         let isProp = false // not necessarily correct, but this is only used post-creflect where this flag is irrelevant 
@@ -1069,10 +1103,10 @@ let TryImportProvidedMethodBaseAsLibraryIntrinsic (amap: Import.ImportMap, m: ra
 //   minst: the instantiation to apply for a generic method 
 //   objArgs: the 'this' argument, if any 
 //   args: the arguments, if any 
-let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objArgs args =
+let BuildMethodCall tcVal g amap isMutable m isProp minfo valUseFlags minst objArgs args staticTyOpt =
     let direct = IsBaseCall objArgs
 
-    TakeObjAddrForMethodCall g amap minfo isMutable m objArgs (fun ccallInfo objArgs -> 
+    TakeObjAddrForMethodCall g amap minfo isMutable m staticTyOpt objArgs (fun ccallInfo objArgs -> 
         let allArgs = objArgs @ args
         let valUseFlags = 
             if direct && (match valUseFlags with NormalValUse -> true | _ -> false) then 
@@ -1154,7 +1188,7 @@ let ILFieldStaticChecks g amap infoReader ad m (finfo : ILFieldInfo) =
 
     // Static IL interfaces fields are not supported in lower F# versions.
     if isInterfaceTy g finfo.ApparentEnclosingType then    
-        checkLanguageFeatureRuntimeErrorRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
+        checkLanguageFeatureRuntimeAndRecover infoReader LanguageFeature.DefaultInterfaceMemberConsumption m
         checkLanguageFeatureAndRecover g.langVersion LanguageFeature.DefaultInterfaceMemberConsumption m
 
     CheckILFieldAttributes g finfo m
@@ -1285,16 +1319,25 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap infoReade
 
        mkCallToDoubleOperator g m actualTy expr
 
+   elif g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop &&
+        isNullableTy g reqdTy && not (isNullableTy g actualTy) then
+
+       let underlyingTy = destNullableTy g reqdTy
+       let adjustedExpr = AdjustExprForTypeDirectedConversions tcVal g amap infoReader ad underlyingTy actualTy m expr
+       let adjustedActualTy = tyOfExpr g adjustedExpr
+       
+       let minfo = GetIntrinsicConstructorInfosOfType infoReader m reqdTy |> List.head
+       let callerArgExprCoerced = mkCoerceIfNeeded g underlyingTy adjustedActualTy adjustedExpr
+       MakeMethInfoCall amap m minfo [] [callerArgExprCoerced] None
    else
        match TryFindRelevantImplicitConversion infoReader ad reqdTy actualTy m with
-       | Some (minfo, _) -> 
+       | Some (minfo, staticTy, _) -> 
            MethInfoChecks g amap false None [] ad m minfo
-           let callExpr, _ = BuildMethodCall tcVal g amap Mutates.NeverMutates m false minfo ValUseFlag.NormalValUse [] [] [expr]
+           let staticTyOpt = if isTyparTy g staticTy then Some staticTy else None
+           let callExpr, _ = BuildMethodCall tcVal g amap Mutates.NeverMutates m false minfo ValUseFlag.NormalValUse [] [] [expr] staticTyOpt
            assert (let resTy = tyOfExpr g callExpr in typeEquiv g reqdTy resTy)
            callExpr
-       | None -> mkCoerceIfNeeded g reqdTy actualTy expr
-       // TODO: consider Nullable
-       
+       | None -> mkCoerceIfNeeded g reqdTy actualTy expr 
 
 // Handle adhoc argument conversions
 let AdjustCallerArgExpr tcVal (g: TcGlobals) amap infoReader ad isOutArg calledArgTy (reflArgInfo: ReflectedArgInfo) callerArgTy m callerArgExpr = 
@@ -1429,17 +1472,6 @@ let GetDefaultExpressionForOptionalArg tcFieldInit g (calledArg: CalledArg) eCal
     let callerArg = CallerArg(calledArgTy, mMethExpr, false, expr)
     preBinder, { NamedArgIdOpt = None; CalledArg = calledArg; CallerArg = callerArg }
 
-let MakeNullableExprIfNeeded (infoReader: InfoReader) calledArgTy callerArgTy callerArgExpr m =
-    let g = infoReader.g
-    let amap = infoReader.amap
-    if isNullableTy g callerArgTy then 
-        callerArgExpr
-    else
-        let calledNonOptTy = destNullableTy g calledArgTy 
-        let minfo = GetIntrinsicConstructorInfosOfType infoReader m calledArgTy |> List.head
-        let callerArgExprCoerced = mkCoerceIfNeeded g calledNonOptTy callerArgTy callerArgExpr
-        MakeMethInfoCall amap m minfo [] [callerArgExprCoerced]
-
 // Adjust all the optional arguments, filling in values for defaults, 
 let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: InfoReader) ad (assignedArg: AssignedCalledArg<_>) =
     let g = infoReader.g
@@ -1471,14 +1503,9 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
             | NotOptional ->
                 //  T --> Nullable<T> widening at callsites
                 if isOptCallerArg then errorR(Error(FSComp.SR.tcFormalArgumentIsNotOptional(), m))
-                if isNullableTy g calledArgTy then 
-                    if isNullableTy g callerArgTy then
-                        callerArgExpr
-                    else
-                        let calledNonOptTy = destNullableTy g calledArgTy
-                        let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
-                        let callerArgTy2 = tyOfExpr g callerArgExpr2
-                        MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy2 callerArgExpr2 m
+                if isNullableTy g calledArgTy then
+                    // AdjustCallerArgExpr later on will deal with the nullable conversion
+                    callerArgExpr 
                 else
                     failwith "unreachable" // see case above
             
@@ -1500,21 +1527,8 @@ let AdjustCallerArgForOptional tcVal tcFieldInit eCallerMemberName (infoReader: 
                         // This should be unreachable but the error will be reported elsewhere
                         callerArgExpr
                 else
-                    if isNullableTy g calledArgTy  then 
-                        if isNullableTy g callerArgTy then
-                            // CSharpMethod(x=b) when 'x' has nullable type
-                            // CSharpMethod(x=b) when both 'x' and 'b' have nullable type --> CSharpMethod(x=b)
-                            callerArgExpr
-                        else
-                            // CSharpMethod(x=b) when 'x' has nullable type and 'b' does not --> CSharpMethod(x=Nullable(b))
-                            let calledNonOptTy = destNullableTy g calledArgTy
-                            let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledNonOptTy reflArgInfo callerArgTy m callerArgExpr
-                            let callerArgTy2 = tyOfExpr g callerArgExpr2
-                            MakeNullableExprIfNeeded infoReader calledArgTy callerArgTy2 callerArgExpr2 m
-                    else 
-                        // CSharpMethod(x=b) --> CSharpMethod(?x=b)
-                        let _, callerArgExpr2 = AdjustCallerArgExpr tcVal g amap infoReader ad isOutArg calledArgTy reflArgInfo callerArgTy m callerArgExpr
-                        callerArgExpr2
+                    // AdjustCallerArgExpr later on will deal with any nullable conversion
+                    callerArgExpr
 
             | CalleeSide -> 
                 if isOptCallerArg then 
@@ -1949,7 +1963,7 @@ module ProvidedMethodCalls =
             let targetMethInfo = ProvidedMeth(amap, ctor.PApply((fun ne -> upcast ne), m), None, m)
             let objArgs = [] 
             let arguments = [ for ea in args.PApplyArray(id, "GetInvokerExpression", m) -> exprToExpr ea ]
-            let callExpr = BuildMethodCall tcVal g amap Mutates.PossiblyMutates m false targetMethInfo isSuperInit [] objArgs arguments
+            let callExpr = BuildMethodCall tcVal g amap Mutates.PossiblyMutates m false targetMethInfo isSuperInit [] objArgs arguments None
             callExpr
 
         and addVar (v: Tainted<ProvidedVar>) =    
@@ -1984,7 +1998,7 @@ module ProvidedMethodCalls =
             let mut         = if top then mut else PossiblyMutates
             let isSuperInit = if top then isSuperInit else ValUseFlag.NormalValUse
             let isProp      = if top then isProp else false
-            let callExpr = BuildMethodCall tcVal g amap mut m isProp targetMethInfo isSuperInit replacementGenericArguments objArgs arguments
+            let callExpr = BuildMethodCall tcVal g amap mut m isProp targetMethInfo isSuperInit replacementGenericArguments objArgs arguments None
             Some meth, callExpr
 
         and varToExpr (pe: Tainted<ProvidedVar>) =    
@@ -2059,7 +2073,7 @@ let CheckRecdFieldMutation m denv (rfinfo: RecdFieldInfo) =
     if not rfinfo.RecdField.IsMutable then
         errorR (FieldNotMutable (denv, rfinfo.RecdFieldRef, m))
 
-/// Generate a witness for the given (solved) constraint.  Five possiblilities are taken
+/// Generate a witness for the given (solved) constraint.  Five possibilities are taken
 /// into account.
 ///   1. The constraint is solved by a .NET-declared method or an F#-declared method
 ///   2. The constraint is solved by an F# record field
@@ -2081,7 +2095,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
 
             // Given the solution information, reconstruct the MethInfo for the solution
             match sln with 
-            | ILMethSln(origTy, extOpt, mref, minst) ->
+            | ILMethSln(origTy, extOpt, mref, minst, staticTyOpt) ->
                 let metadataTy = convertToTypeWithMetadataIfPossible g origTy
                 let tcref = tcrefOfAppTy g metadataTy
                 let mdef = resolveILMethodRef tcref.ILTyconRawMetadata mref
@@ -2091,10 +2105,10 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                     | Some ilActualTypeRef -> 
                         let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef 
                         MethInfo.CreateILExtensionMeth(amap, m, origTy, actualTyconRef, None, mdef)
-                Choice1Of5 (ilMethInfo, minst)
+                Choice1Of5 (ilMethInfo, minst, staticTyOpt)
 
-            | FSMethSln(ty, vref, minst) ->
-                Choice1Of5  (FSMeth(g, ty, vref, None), minst)
+            | FSMethSln(ty, vref, minst, staticTyOpt) ->
+                Choice1Of5  (FSMeth(g, ty, vref, None), minst, staticTyOpt)
 
             | FSRecdFieldSln(tinst, rfref, isSetProp) ->
                 Choice2Of5  (tinst, rfref, isSetProp)
@@ -2109,7 +2123,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                 Choice5Of5 ()
 
     match sln with
-    | Choice1Of5(minfo, methArgTys) -> 
+    | Choice1Of5(minfo, methArgTys, staticTyOpt) -> 
         let argExprs = 
             // FIX for #421894 - typechecker assumes that coercion can be applied for the trait
             // calls arguments but codegen doesn't emit coercion operations
@@ -2149,9 +2163,9 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
                 let wrap, h', _readonly, _writeonly = mkExprAddrOfExpr g true false PossiblyMutates h None m 
                 Some (wrap (Expr.Op (TOp.TraitCall traitInfo, [], (h' :: t), m)))
             | _ ->
-                Some (MakeMethInfoCall amap m minfo methArgTys argExprs)
+                Some (MakeMethInfoCall amap m minfo methArgTys argExprs staticTyOpt)
         else        
-            Some (MakeMethInfoCall amap m minfo methArgTys argExprs)
+            Some (MakeMethInfoCall amap m minfo methArgTys argExprs staticTyOpt)
 
     | Choice2Of5 (tinst, rfref, isSet) -> 
         match isSet, rfref.RecdField.IsStatic, argExprs.Length with 
@@ -2208,7 +2222,7 @@ let GenWitnessExpr amap g m (traitInfo: TraitConstraintInfo) argExprs =
         
 /// Generate a lambda expression for the given solved trait.
 let GenWitnessExprLambda amap g m (traitInfo: TraitConstraintInfo) =
-    let witnessInfo = traitInfo.TraitKey
+    let witnessInfo = traitInfo.GetWitnessInfo()
     let argTysl = GenWitnessArgTys g witnessInfo
     let vse = argTysl |> List.mapiSquared (fun i j ty -> mkCompGenLocal m ("arg" + string i + "_" + string j) ty) 
     let vsl = List.mapSquared fst vse

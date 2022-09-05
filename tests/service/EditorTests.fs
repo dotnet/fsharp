@@ -694,6 +694,9 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
                              ("RightToLeft", Some (box 64))
                              ("ECMAScript", Some (box 256))
                              ("CultureInvariant", Some (box 512))
+#if NETCOREAPP
+                             ("NonBacktracking", Some 1024)
+#endif
                            ]
         |]
 
@@ -1909,3 +1912,4 @@ do let x = 1 in ()
     | ToolTipText [ToolTipElement.Group [data]] ->
         data.MainDescription |> Array.map (fun text -> text.Text) |> String.concat "" |> shouldEqual "val x: int"
     | elements -> failwith $"Tooltip elements: {elements}"
+

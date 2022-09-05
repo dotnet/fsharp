@@ -395,9 +395,11 @@ type staticInInterface =
         end
     end"""
             
-        CheckErrorList fileContent <| function
-                | [err] -> Assert.IsTrue(err.Message.Contains("Unexpected keyword 'static' in member definition. Expected 'member', 'override' or other token"))
-                | x -> Assert.Fail(sprintf "Unexpected errors: %A" x)
+        CheckErrorList fileContent (function
+            | err1 :: _ ->
+                Assert.IsTrue(err1.Message.Contains("No abstract or interface member was found that corresponds to this override"))
+            | x ->
+                Assert.Fail(sprintf "Unexpected errors: %A" x))
     
     [<Test>]
     [<Category("TypeProvider")>]
