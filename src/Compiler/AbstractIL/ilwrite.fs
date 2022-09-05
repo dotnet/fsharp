@@ -4122,7 +4122,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           | Some AMD64 -> writeInt32AsUInt16 os 0x8664      // Machine - IMAGE_FILE_MACHINE_AMD64
           | Some IA64 -> writeInt32AsUInt16 os 0x200        // Machine - IMAGE_FILE_MACHINE_IA64
           | Some ARM64 -> writeInt32AsUInt16 os 0xaa64      // Machine - IMAGE_FILE_MACHINE_ARM64
-          | Some ARM -> writeInt32AsUInt16 os 0x1c0         // Machine - IMAGE_FILE_MACHINE_ARM
+          | Some ARM -> writeInt32AsUInt16 os 0x1c4         // Machine - IMAGE_FILE_MACHINE_ARMNT
           | _ ->  writeInt32AsUInt16 os 0x014c              // Machine - IMAGE_FILE_MACHINE_I386
 
           writeInt32AsUInt16 os numSections
