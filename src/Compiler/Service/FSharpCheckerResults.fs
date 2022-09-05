@@ -2798,7 +2798,7 @@ type FSharpCheckFileResults
             let (nenv, _), _ = scope.GetBestDisplayEnvForPos cursorPos
             Some(FSharpDisplayContext(fun _ -> nenv.DisplayEnv))
 
-    member _.GenerateSignature() =
+    member _.GenerateSignature(?pageWidth: int) =
         match details with
         | None -> None
         | Some (scope, _builderOpt) ->
@@ -2816,7 +2816,11 @@ type FSharpCheckFileResults
                 let layout =
                     NicePrint.layoutImpliedSignatureOfModuleOrNamespace true denv infoReader ad range0 mexpr
 
-                layout |> LayoutRender.showL |> SourceText.ofString)
+                match pageWidth with
+                | None -> layout
+                | Some pageWidth -> Display.squashTo pageWidth layout
+                |> LayoutRender.showL
+                |> SourceText.ofString)
 
     member _.ImplementationFile =
         if not keepAssemblyContents then

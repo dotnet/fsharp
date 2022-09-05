@@ -210,7 +210,7 @@ stages:
           - name: _SignType
             value: Test
           pool:
-            name: NetCore1ESPool-Svc-Public
+            name: NetCore-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 90
           steps:
@@ -283,7 +283,7 @@ stages:
             #   WindowsMachineQueueName=Windows.vs2022.amd64.open
             # and there is an alternate build definition that sets this to a queue that is always scouting the
             # next preview of Visual Studio.
-            name: NetCore1ESPool-Svc-Public
+            name: NetCore-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           timeoutInMinutes: 120
           strategy:
@@ -334,10 +334,68 @@ stages:
             continueOnError: true
             condition: failed()
 
+        # Windows With Compressed Metadata
+        - job: WindowsCompressedMetadata
+          pool:
+            # The PR build definition sets this variable:
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
+            # and there is an alternate build definition that sets this to a queue that is always scouting the
+            # next preview of Visual Studio.
+            name: NetCore-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          strategy:
+            maxParallel: 4
+            matrix:
+              desktop_release:
+                _configuration: Release
+                _testKind: testDesktop
+              coreclr_release:
+                _configuration: Release
+                _testKind: testCoreclr
+              fsharpqa_release:
+                _configuration: Release
+                _testKind: testFSharpQA
+              vs_release:
+                _configuration: Release
+                _testKind: testVs
+          steps:
+          - checkout: self
+            clean: true
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
+            displayName: Build / Test
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            inputs:
+              testResultsFormat: 'NUnit'
+              testResultsFiles: '*.xml'
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
+            continueOnError: true
+            condition: ne(variables['_testKind'], 'testFSharpQA')
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Test Logs
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)'
+              ArtifactName: 'Windows $(_configuration) $(_testKind) test logs'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents Windows $(_testKind)'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
+
         # Mock official build
         - job: MockOfficial
           pool:
-            name: NetCore1ESPool-Svc-Public
+            name: NetCore-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           steps:
           - checkout: self
@@ -387,6 +445,7 @@ stages:
 
         # MacOS
         - job: MacOS
+          condition: eq(1,2)
           pool:
             vmImage: $(MacOSMachineQueueName)
           variables:
@@ -428,7 +487,7 @@ stages:
         # End to end build
         - job: EndToEndBuildTests
           pool:
-            name: NetCore1ESPool-Svc-Public
+            name: NetCore-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           steps:
           - checkout: self
@@ -453,7 +512,7 @@ stages:
         # Plain build Windows
         - job: Plain_Build_Windows
           pool:
-            name: NetCore1ESPool-Svc-Public
+            name: NetCore-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
           variables:
           - name: _BuildConfig
@@ -517,6 +576,7 @@ stages:
 
         # Plain build Mac
         - job: Plain_Build_MacOS
+          condition: eq(1,2)
           pool:
             vmImage: $(MacOSMachineQueueName)
           variables:

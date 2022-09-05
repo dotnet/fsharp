@@ -23,6 +23,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.DiagnosticsLogger
 
 open Internal.Utilities
+open System.Text
 
 module Attributes =
     open System.Runtime.CompilerServices
@@ -112,37 +113,45 @@ let compilerOptionUsage (CompilerOption (s, tag, spec, _, _)) =
         else
             sprintf "%s:%s" s tag (* still being decided *)
 
-let PrintCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOption) =
+let nl = Environment.NewLine
+
+let getCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOption) width =
+    let sb = StringBuilder()
+
     let flagWidth = 42 // fixed width for printing of flags, e.g. --debug:{full|pdbonly|portable|embedded}
     let defaultLineWidth = 80 // the fallback width
 
     let lineWidth =
-        try
-            Console.BufferWidth
-        with e ->
-            defaultLineWidth
+        match width with
+        | None ->
+            try
+                Console.BufferWidth
+            with _ ->
+                defaultLineWidth
+        | Some w -> w
 
     let lineWidth =
         if lineWidth = 0 then
             defaultLineWidth
         else
-            lineWidth (* Have seen BufferWidth=0 on Linux/Mono *)
+            lineWidth (* Have seen BufferWidth=0 on Linux/Mono Coreclr for sure *)
+
     // Lines have this form: <flagWidth><space><description>
     //   flagWidth chars - for flags description or padding on continuation lines.
     //   single space    - space.
     //   description     - words upto but excluding the final character of the line.
-    printf "%-40s" (compilerOptionUsage compilerOption)
+    let _ = sb.Append $"{compilerOptionUsage compilerOption, -40}"
 
     let printWord column (word: string) =
         // Have printed upto column.
         // Now print the next word including any preceding whitespace.
         // Returns the column printed to (suited to folding).
         if column + 1 (*space*) + word.Length >= lineWidth then // NOTE: "equality" ensures final character of the line is never printed
-            printfn "" (* newline *)
-            printf "%-40s %s" "" (*<--flags*) word
+            let _ = sb.Append $"{nl}"
+            let _ = sb.Append $"{String.Empty, -40} {word}"
             flagWidth + 1 + word.Length
         else
-            printf " %s" word
+            let _ = sb.Append $" {word}"
             column + 1 + word.Length
 
     let words =
@@ -151,16 +160,19 @@ let PrintCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOp
         | Some s -> s.Split [| ' ' |]
 
     let _finalColumn = Array.fold printWord flagWidth words
-    printfn "" (* newline *)
+    let _ = sb.Append $"{nl}"
+    sb.ToString()
 
-let PrintPublicOptions (heading, opts) =
-    if not (isNil opts) then
-        printfn ""
-        printfn ""
-        printfn "\t\t%s" heading
-        List.iter PrintCompilerOption opts
+let getPublicOptions heading opts width =
+    match opts with
+    | [] -> ""
+    | _ ->
+        $"{nl}{nl}                {heading}{nl}"
+        + (opts |> List.map (fun t -> getCompilerOption t width) |> String.concat "")
 
-let PrintCompilerOptionBlocks blocks =
+let GetCompilerOptionBlocks blocks width =
+    let sb = new StringBuilder()
+
     let publicBlocks =
         blocks
         |> List.choose (function
@@ -174,10 +186,11 @@ let PrintCompilerOptionBlocks blocks =
             let headingOptions =
                 publicBlocks |> List.filter (fun (h2, _) -> heading = h2) |> List.collect snd
 
-            PrintPublicOptions(heading, headingOptions)
+            let _ = sb.Append(getPublicOptions heading headingOptions width)
             Set.add heading doneHeadings
 
     List.fold consider Set.empty publicBlocks |> ignore<Set<string>>
+    sb.ToString()
 
 (* For QA *)
 let dumpCompilerOption prefix (CompilerOption (str, _, spec, _, _)) =
@@ -924,6 +937,14 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
         )
 
         CompilerOption(
+            "compressmetadata",
+            tagNone,
+            OptionSwitch(fun switch -> tcConfigB.compressMetadata <- switch = OptionSwitch.On),
+            None,
+            Some(FSComp.SR.optsCompressMetadata ())
+        )
+
+        CompilerOption(
             "nooptimizationdata",
             tagNone,
             OptionUnit(fun () -> tcConfigB.onlyEssentialOptimizationData <- true),
@@ -1086,15 +1107,13 @@ let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
 /// LanguageVersion management
 let setLanguageVersion specifiedVersion =
 
-    let languageVersion = LanguageVersion(specifiedVersion)
-
     let dumpAllowedValues () =
         printfn "%s" (FSComp.SR.optsSupportedLangVersions ())
 
-        for v in languageVersion.ValidOptions do
+        for v in LanguageVersion.ValidOptions do
             printfn "%s" v
 
-        for v in languageVersion.ValidVersions do
+        for v in LanguageVersion.ValidVersions do
             printfn "%s" v
 
         exit 0
@@ -1103,10 +1122,10 @@ let setLanguageVersion specifiedVersion =
         dumpAllowedValues ()
     elif specifiedVersion.ToUpperInvariant() = "PREVIEW" then
         ()
-    elif not (languageVersion.ContainsVersion specifiedVersion) then
+    elif not (LanguageVersion.ContainsVersion specifiedVersion) then
         error (Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
 
-    languageVersion
+    LanguageVersion(specifiedVersion)
 
 let languageFlags tcConfigB =
     [
@@ -1444,6 +1463,14 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             tagNone,
             OptionUnit(fun () -> tcConfigB.pause <- true),
             Some(InternalCommandLineOption("--pause", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
+            "bufferwidth",
+            tagNone,
+            OptionInt((fun v -> tcConfigB.bufferWidth <- Some v)),
+            Some(InternalCommandLineOption("--bufferWidth", rangeCmdArgs)),
             None
         )
 
@@ -1973,31 +2000,47 @@ let deprecatedFlagsFsc tcConfigB =
 // OptionBlock: Miscellaneous options
 //-----------------------------------
 
-let DisplayBannerText tcConfigB =
+let GetBannerText tcConfigB =
     if tcConfigB.showBanner then
-        (printfn "%s" tcConfigB.productNameForBannerText
-         printfn "%s" (FSComp.SR.optsCopyright ()))
+        $"{tcConfigB.productNameForBannerText}{nl}"
+        + $"{FSComp.SR.optsCopyright ()}{nl}"
+    else
+        ""
 
 /// FSC only help. (FSI has it's own help function).
-let displayHelpFsc tcConfigB (blocks: CompilerOptionBlock list) =
-    DisplayBannerText tcConfigB
-    PrintCompilerOptionBlocks blocks
-    exit 0
+let GetHelpFsc tcConfigB (blocks: CompilerOptionBlock list) =
 
-let displayVersion tcConfigB =
-    printfn "%s" tcConfigB.productNameForBannerText
-    exit 0
+    GetBannerText tcConfigB + GetCompilerOptionBlocks blocks tcConfigB.bufferWidth
+
+let GetVersion tcConfigB =
+    $"{tcConfigB.productNameForBannerText}{nl}"
 
 let miscFlagsBoth tcConfigB =
     [
         CompilerOption("nologo", tagNone, OptionUnit(fun () -> tcConfigB.showBanner <- false), None, Some(FSComp.SR.optsNologo ()))
-        CompilerOption("version", tagNone, OptionConsoleOnly(fun _ -> displayVersion tcConfigB), None, Some(FSComp.SR.optsVersion ()))
+        CompilerOption(
+            "version",
+            tagNone,
+            OptionConsoleOnly(fun _ ->
+                Console.Write(GetVersion tcConfigB)
+                exit 0),
+            None,
+            Some(FSComp.SR.optsVersion ())
+        )
     ]
 
 let miscFlagsFsc tcConfigB =
     miscFlagsBoth tcConfigB
     @ [
-        CompilerOption("help", tagNone, OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks), None, Some(FSComp.SR.optsHelp ()))
+        CompilerOption(
+            "help",
+            tagNone,
+            OptionConsoleOnly(fun blocks ->
+                Console.Write(GetHelpFsc tcConfigB blocks)
+                exit 0),
+            None,
+            Some(FSComp.SR.optsHelp ())
+        )
         CompilerOption("@<file>", tagNone, OptionUnit ignore, None, Some(FSComp.SR.optsResponseFile ()))
     ]
 
@@ -2053,7 +2096,9 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "?",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks ->
+                Console.Write(GetHelpFsc tcConfigB blocks)
+                exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2061,7 +2106,9 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "help",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks ->
+                Console.Write(GetHelpFsc tcConfigB blocks)
+                exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2069,7 +2116,9 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "full-help",
             tagNone,
-            OptionConsoleOnly(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks ->
+                Console.Write(GetHelpFsc tcConfigB blocks)
+                exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )

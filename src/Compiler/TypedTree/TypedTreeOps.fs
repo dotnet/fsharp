@@ -10360,3 +10360,35 @@ let isFSharpExceptionTy g ty =
     | ValueSome tcref -> tcref.IsFSharpException
     | _ -> false
 
+let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceContents) =
+    match moduleOrNamespaceContents with
+    | TMDefs(defs = defs) ->
+        let mdDefsLength =
+            defs
+            |> List.count (function
+                | ModuleOrNamespaceContents.TMDefRec _
+                | ModuleOrNamespaceContents.TMDefs _ -> true
+                | _ -> false)
+        
+        let emptyModuleOrNamespaces =
+            defs
+            |> List.choose (function
+                | ModuleOrNamespaceContents.TMDefRec _ as defRec
+                | ModuleOrNamespaceContents.TMDefs(defs = [ ModuleOrNamespaceContents.TMDefRec _ as defRec ]) ->
+                    match defRec with
+                    | TMDefRec(bindings = [ ModuleOrNamespaceBinding.Module(mspec, ModuleOrNamespaceContents.TMDefs(defs = defs)) ]) ->
+                        defs
+                        |> List.forall (function
+                            | ModuleOrNamespaceContents.TMDefOpens _
+                            | ModuleOrNamespaceContents.TMDefDo _
+                            | ModuleOrNamespaceContents.TMDefRec (isRec = true; tycons = []; bindings = []) -> true
+                            | _ -> false)
+                        |> fun isEmpty -> if isEmpty then Some mspec else None
+                    | _ -> None
+                | _ -> None)
+
+        if mdDefsLength = emptyModuleOrNamespaces.Length then
+            Some emptyModuleOrNamespaces
+        else
+            None
+    | _ -> None

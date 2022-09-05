@@ -7019,7 +7019,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
     let newFormatMethod =
         match GetIntrinsicConstructorInfosOfType cenv.infoReader m formatTy |> List.filter (fun minfo -> minfo.NumArgs = [3]) with
         | [ctorInfo] -> ctorInfo
-        | _ -> languageFeatureNotSupportedInLibraryError g.langVersion LanguageFeature.StringInterpolation m
+        | _ -> languageFeatureNotSupportedInLibraryError LanguageFeature.StringInterpolation m
 
     let stringKind =
         // If this is an interpolated string then try to force the result to be a string
@@ -7054,7 +7054,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
 
             match createMethodOpt with
             | Some createMethod -> Choice2Of2 createMethod
-            | None -> languageFeatureNotSupportedInLibraryError g.langVersion LanguageFeature.StringInterpolation m
+            | None -> languageFeatureNotSupportedInLibraryError LanguageFeature.StringInterpolation m
 
         // ... or if that fails then may be a PrintfFormat by a type-directed rule....
         elif not (isObjTy g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy then

@@ -88,7 +88,7 @@ this file.
     </PropertyGroup>
 
     <PropertyGroup>
-      <!--- So that the UI can display default values for these properties, specify values when not set -->
+      <!-- So that the UI can display default values for these properties, specify values when not set -->
       <FSharpPreferNetFrameworkTools Condition="'$(FSharpPreferNetFrameworkTools)'!='true'">false</FSharpPreferNetFrameworkTools>
       <FSharpPrefer64BitTools Condition="'$(FSharpPrefer64BitTools)'!='false'">true</FSharpPrefer64BitTools>
     </PropertyGroup>
@@ -327,6 +327,7 @@ this file.
               ChecksumAlgorithm="$(PdbChecksumAlgorithm)"
               CodePage="$(CodePage)"
               CompilerTools="@(FscCompilerTools)"
+              CompressMetadata="$(CompressMetadata)"
               DebugSymbols="$(DebugSymbols)"
               DebugType="$(DebugType)"
               DefineConstants="$(DefineConstants)"
@@ -343,6 +344,8 @@ this file.
               LangVersion="$(LangVersion)"
               LCID="$(LCID)"
               NoFramework="true"
+              NoInterfaceData="$(NoInterfaceData)"
+              NoOptimizationData="$(NoOptimizationData)"
               Optimize="$(Optimize)"
               ReflectionFree="$(ReflectionFree)"
               OtherFlags="$(FscOtherFlags)"
