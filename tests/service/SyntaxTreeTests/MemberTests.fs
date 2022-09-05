@@ -220,4 +220,6 @@ type A =
         )
     ]) ])) ->
         Assert.False preXmlDoc.IsEmpty
+        let comment = preXmlDoc.ToXmlDoc(false, None).GetXmlText()
+        Assert.False (System.String.IsNullOrWhiteSpace(comment))
     | _ -> Assert.Fail "Could not get valid AST"
