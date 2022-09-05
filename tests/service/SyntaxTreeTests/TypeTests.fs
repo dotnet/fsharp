@@ -273,7 +273,7 @@ type Foo() =
 
 [<Test>]
 let ``SynTypeDefn with AbstractSlot contains the range of the with keyword`` () =
-    let parseResults = 
+    let parseResults =
         getParseResults
             """
 type Foo() =
@@ -292,7 +292,7 @@ type Foo() =
 
 [<Test>]
 let ``read-only property in SynMemberDefn.Member contains the range of the with keyword`` () =
-    let parseResults = 
+    let parseResults =
         getParseResults
             """
 type Foo() =
@@ -314,7 +314,7 @@ type Foo() =
 
 [<Test>]
 let ``write-only property in SynMemberDefn.Member contains the range of the with keyword`` () =
-    let parseResults = 
+    let parseResults =
         getParseResults
             """
 type Foo() =
@@ -336,7 +336,7 @@ type Foo() =
 
 [<Test>]
 let ``read/write property in SynMemberDefn.Member contains the range of the with keyword`` () =
-    let parseResults = 
+    let parseResults =
         getParseResults
             """
 type Foo() =
@@ -430,7 +430,7 @@ type Foo =
 
 [<Test>]
 let ``SynTypeDefn with member with set/get`` () =
-    let parseResults = 
+    let parseResults =
         getParseResults
             """
 type A() =
@@ -502,7 +502,7 @@ let _: struct (int * int) = ()
         ])
      ) ->
         assertRange (2, 7) (2, 25) mTuple
-        
+
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
 
 [<Test>]
@@ -522,7 +522,7 @@ let _: struct (int * int = ()
         ])
      ) ->
         assertRange (2, 7) (2, 24) mTuple
-        
+
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
 
 [<Test>]

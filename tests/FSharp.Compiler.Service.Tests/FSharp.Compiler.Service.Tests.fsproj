@@ -101,6 +101,9 @@
     <Compile Include="..\service\SyntaxTreeTests\MemberFlagTests.fs">
       <Link>SyntaxTree\MemberFlagTests.fs</Link>
     </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\MemberTests.fs">
+      <Link>SyntaxTree\MemberTests.fs</Link>
+    </Compile>
     <Compile Include="..\service\SyntaxTreeTests\ComputationExpressionTests.fs">
       <Link>SyntaxTree\ComputationExpressionTests.fs</Link>
     </Compile>
