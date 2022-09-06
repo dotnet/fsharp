@@ -47,10 +47,14 @@ type SynLongIdent =
     member this.IdentsWithTrivia =
         let (SynLongIdent (lid, _, trivia)) = this
 
-        if lid.Length <> trivia.Length then
-            failwith "difference between idents and trivia"
-        else
+        if lid.Length = trivia.Length then
             List.zip lid trivia |> List.map SynIdent
+        elif lid.Length > trivia.Length then
+            let delta = lid.Length - trivia.Length
+            let trivia = [ yield! trivia; yield! List.replicate delta None ]
+            List.zip lid trivia |> List.map SynIdent
+        else
+            failwith "difference between idents and trivia"
 
     member this.ThereIsAnExtraDotAtTheEnd =
         match this with
