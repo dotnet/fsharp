@@ -2,4 +2,4 @@
 
 ()
 
-//<Expects status="error" id="FS0226">The file extension of '.+\\dummy\.txt' is not recognized\. Source files must have extension \.fs, \.fsi, \.fsx, \.fsscript, \.ml or \.mli\.$</Expects>
+//<Expects status="error" id="FS0226">The file extension of '.+\\dummy\.txt' is not recognized\. Source files must have extension \.fs, \.fsi, \.fsx or \.fsscript$</Expects>

@@ -124,6 +124,7 @@ let GetRangeOfDiagnostic (diagnostic: PhasedDiagnostic) =
         | LetRecCheckedAtRuntime m
         | UpperCaseIdentifierInPattern m
         | NotUpperCaseConstructor m
+        | NotUpperCaseConstructorWithoutRQA m
         | RecursiveUseCheckedAtRuntime (_, _, m)
         | LetRecEvaluatedOutOfOrder (_, _, _, m)
         | DiagnosticWithText (_, _, m)
@@ -270,6 +271,7 @@ let GetDiagnosticNumber (diagnostic: PhasedDiagnostic) =
         | UseOfAddressOfOperator _ -> 51
         | DefensiveCopyWarning _ -> 52
         | NotUpperCaseConstructor _ -> 53
+        | NotUpperCaseConstructorWithoutRQA _ -> 53
         | TypeIsImplicitlyAbstract _ -> 54
         // 55 cannot be reused
         | DeprecatedThreadStaticBindingWarning _ -> 56
@@ -435,6 +437,7 @@ let ErrorFromApplyingDefault2E () = Message("ErrorFromApplyingDefault2", "")
 let ErrorsFromAddingSubsumptionConstraintE () = Message("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
 let UpperCaseIdentifierInPatternE () = Message("UpperCaseIdentifierInPattern", "")
 let NotUpperCaseConstructorE () = Message("NotUpperCaseConstructor", "")
+let NotUpperCaseConstructorWithoutRQAE () = Message("NotUpperCaseConstructorWithoutRQA", "")
 let FunctionExpectedE () = Message("FunctionExpected", "")
 let BakedInMemberConstraintNameE () = Message("BakedInMemberConstraintName", "%s")
 let BadEventTransformationE () = Message("BadEventTransformation", "")
@@ -607,7 +610,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
                     for value in buffer do
                         os.AppendLine() |> ignore
                         os.AppendString "   "
-                        os.AppendString(DecompileOpName value)
+                        os.AppendString(ConvertValLogicalNameToDisplayNameCore value)
 
     let rec OutputExceptionR (os: StringBuilder) error =
 
@@ -771,6 +774,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | NotUpperCaseConstructor _ -> os.AppendString(NotUpperCaseConstructorE().Format)
 
+        | NotUpperCaseConstructorWithoutRQA _ -> os.AppendString(NotUpperCaseConstructorWithoutRQAE().Format)
+
         | ErrorFromAddingConstraint (_, e, _) -> OutputExceptionR os e
 
 #if !NO_TYPEPROVIDERS
@@ -783,12 +788,13 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | UnresolvedOverloading (denv, callerArgs, failure, m) ->
 
+            let g = denv.g
             // extract eventual information (return type and type parameters)
             // from ConstraintTraitInfo
             let knownReturnType, genericParameterTypes =
                 match failure with
                 | NoOverloadsFound(cx = Some cx)
-                | PossibleCandidates(cx = Some cx) -> cx.ReturnType, cx.ArgumentTypes
+                | PossibleCandidates(cx = Some cx) -> Some(cx.GetReturnType(g)), cx.GetCompiledArgumentTypes()
                 | _ -> None, []
 
             // prepare message parts (known arguments, known return type, known generic parameters)
@@ -895,7 +901,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | ParameterlessStructCtor _ -> os.AppendString(ParameterlessStructCtorE().Format)
 
-        | InterfaceNotRevealed (denv, ity, _) -> os.AppendString(InterfaceNotRevealedE().Format(NicePrint.minimalStringOfType denv ity))
+        | InterfaceNotRevealed (denv, intfTy, _) ->
+            os.AppendString(InterfaceNotRevealedE().Format(NicePrint.minimalStringOfType denv intfTy))
 
         | NotAFunctionButIndexer (_, _, name, _, _, old) ->
             if old then
@@ -931,12 +938,12 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | Duplicate (k, s, _) ->
             if k = "member" then
-                os.AppendString(Duplicate1E().Format(DecompileOpName s))
+                os.AppendString(Duplicate1E().Format(ConvertValLogicalNameToDisplayNameCore s))
             else
-                os.AppendString(Duplicate2E().Format k (DecompileOpName s))
+                os.AppendString(Duplicate2E().Format k (ConvertValLogicalNameToDisplayNameCore s))
 
         | UndefinedName (_, k, id, suggestionsF) ->
-            os.AppendString(k (DecompileOpName id.idText))
+            os.AppendString(k (ConvertValLogicalNameToDisplayNameCore id.idText))
             suggestNames suggestionsF id.idText
 
         | InternalUndefinedItemRef (f, smr, ccuName, s) ->
@@ -948,11 +955,11 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
         | FieldsFromDifferentTypes (_, fref1, fref2, _) ->
             os.AppendString(FieldsFromDifferentTypesE().Format fref1.FieldName fref2.FieldName)
 
-        | VarBoundTwice id -> os.AppendString(VarBoundTwiceE().Format(DecompileOpName id.idText))
+        | VarBoundTwice id -> os.AppendString(VarBoundTwiceE().Format(ConvertValLogicalNameToDisplayNameCore id.idText))
 
         | Recursion (denv, id, ty1, ty2, _) ->
             let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-            os.AppendString(RecursionE().Format (DecompileOpName id.idText) ty1 ty2 tpcs)
+            os.AppendString(RecursionE().Format (ConvertValLogicalNameToDisplayNameCore id.idText) ty1 ty2 tpcs)
 
         | InvalidRuntimeCoercion (denv, ty1, ty2, _) ->
             let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
@@ -1501,7 +1508,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
                     |> List.exists (function
                         | TType_app (maybeUnit, [], _) ->
                             match maybeUnit.TypeAbbrev with
-                            | Some ttype when isUnitTy g ttype -> true
+                            | Some ty when isUnitTy g ty -> true
                             | _ -> false
                         | _ -> false)
 
@@ -1642,7 +1649,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
         | DiagnosticWithText (_, s, _) -> os.AppendString s
 
         | DiagnosticWithSuggestions (_, s, _, idText, suggestionF) ->
-            os.AppendString(DecompileOpName s)
+            os.AppendString(ConvertValLogicalNameToDisplayNameCore s)
             suggestNames suggestionF idText
 
         | InternalError (s, _)
@@ -1673,7 +1680,8 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             | Some (cex, false) -> os.AppendString(MatchIncomplete2E().Format cex)
             | Some (cex, true) -> os.AppendString(MatchIncomplete3E().Format cex)
 
-            if isComp then os.AppendString(MatchIncomplete4E().Format)
+            if isComp then
+                os.AppendString(MatchIncomplete4E().Format)
 
         | PatternMatchCompilation.EnumMatchIncomplete (isComp, cexOpt, _) ->
             os.AppendString(EnumMatchIncomplete1E().Format)
@@ -1683,11 +1691,12 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             | Some (cex, false) -> os.AppendString(MatchIncomplete2E().Format cex)
             | Some (cex, true) -> os.AppendString(MatchIncomplete3E().Format cex)
 
-            if isComp then os.AppendString(MatchIncomplete4E().Format)
+            if isComp then
+                os.AppendString(MatchIncomplete4E().Format)
 
         | PatternMatchCompilation.RuleNeverMatched _ -> os.AppendString(RuleNeverMatchedE().Format)
 
-        | ValNotMutable (_, valRef, _) -> os.AppendString(ValNotMutableE().Format(valRef.DisplayName))
+        | ValNotMutable (_, vref, _) -> os.AppendString(ValNotMutableE().Format(vref.DisplayName))
 
         | ValNotLocal _ -> os.AppendString(ValNotLocalE().Format)
 
@@ -1695,7 +1704,9 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | ObsoleteWarning (s, _) ->
             os.AppendString(Obsolete1E().Format)
-            if s <> "" then os.AppendString(Obsolete2E().Format s)
+
+            if s <> "" then
+                os.AppendString(Obsolete2E().Format s)
 
         | Experimental (s, _) -> os.AppendString(ExperimentalE().Format s)
 
@@ -1990,7 +2001,8 @@ let CollectFormattedDiagnostics
                     // Show prefix only for real files. Otherwise, we just want a truncated error like:
                     //      parse error FS0031: blah blah
                     if
-                        not (equals m range0) && not (equals m rangeStartup)
+                        not (equals m range0)
+                        && not (equals m rangeStartup)
                         && not (equals m rangeCmdArgs)
                     then
                         let file = file.Replace("/", "\\")

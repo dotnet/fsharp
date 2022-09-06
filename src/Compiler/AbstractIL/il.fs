@@ -25,7 +25,9 @@ open Internal.Utilities
 
 let logging = false
 
-let _ = if logging then dprintn "* warning: Il.logging is on"
+let _ =
+    if logging then
+        dprintn "* warning: Il.logging is on"
 
 let int_order = LanguagePrimitives.FastGenericComparer<int>
 
@@ -68,11 +70,13 @@ let memoizeNamespaceRightTable =
 let memoizeNamespacePartTable = ConcurrentDictionary<string, string>()
 
 let splitNameAt (nm: string) idx =
-    if idx < 0 then failwith "splitNameAt: idx < 0"
+    if idx < 0 then
+        failwith "splitNameAt: idx < 0"
 
     let last = nm.Length - 1
 
-    if idx > last then failwith "splitNameAt: idx > last"
+    if idx > last then
+        failwith "splitNameAt: idx > last"
 
     (nm.Substring(0, idx)), (if idx < last then nm.Substring(idx + 1, last - idx) else "")
 
@@ -551,7 +555,8 @@ type ILAssemblyRef(data) =
                     addC (convDigit (int32 v / 16))
                     addC (convDigit (int32 v % 16))
             // retargetable can be true only for system assemblies that definitely have Version
-            if aref.Retargetable then add ", Retargetable=Yes"
+            if aref.Retargetable then
+                add ", Retargetable=Yes"
 
         b.ToString()
 
@@ -1198,10 +1203,11 @@ type ILAttribute =
 
 [<NoEquality; NoComparison; Struct>]
 type ILAttributes(array: ILAttribute[]) =
+    member _.AsArray() = array
 
-    member x.AsArray() = array
+    member _.AsList() = array |> Array.toList
 
-    member x.AsList() = array |> Array.toList
+    static member val internal Empty = ILAttributes([||])
 
 [<NoEquality; NoComparison>]
 type ILAttributesStored =
@@ -1364,7 +1370,7 @@ type ILInstr =
 
     | I_call of ILTailcall * ILMethodSpec * ILVarArgs
     | I_callvirt of ILTailcall * ILMethodSpec * ILVarArgs
-    | I_callconstraint of ILTailcall * ILType * ILMethodSpec * ILVarArgs
+    | I_callconstraint of callvirt: bool * ILTailcall * ILType * ILMethodSpec * ILVarArgs
     | I_calli of ILTailcall * ILCallingSignature * ILVarArgs
     | I_ldftn of ILMethodSpec
     | I_newobj of ILMethodSpec * ILVarArgs
@@ -2497,8 +2503,10 @@ let typeKindOfFlags nm (super: ILType option) flags =
 
             if name = "System.Enum" then
                 ILTypeDefKind.Enum
-            elif (name = "System.Delegate" && nm <> "System.MulticastDelegate")
-                 || name = "System.MulticastDelegate" then
+            elif
+                (name = "System.Delegate" && nm <> "System.MulticastDelegate")
+                || name = "System.MulticastDelegate"
+            then
                 ILTypeDefKind.Delegate
             elif name = "System.ValueType" && nm <> "System.Enum" then
                 ILTypeDefKind.ValueType
@@ -3402,9 +3410,6 @@ let mkNormalCall mspec = I_call(Normalcall, mspec, None)
 
 let mkNormalCallvirt mspec = I_callvirt(Normalcall, mspec, None)
 
-let mkNormalCallconstraint (ty, mspec) =
-    I_callconstraint(Normalcall, ty, mspec, None)
-
 let mkNormalNewobj mspec = I_newobj(mspec, None)
 
 /// Comment on common object cache sizes:
@@ -3814,18 +3819,24 @@ let mkILClassCtor impl =
 let mk_ospec (ty: ILType, callconv, nm, genparams, formal_args, formal_ret) =
     OverridesSpec(mkILMethRef (ty.TypeRef, callconv, nm, genparams, formal_args, formal_ret), ty)
 
-let mkILGenericVirtualMethod (nm, access, genparams, actual_args, actual_ret, impl) =
+let mkILGenericVirtualMethod (nm, callconv: ILCallingConv, access, genparams, actual_args, actual_ret, impl) =
+    let attributes =
+        convertMemberAccess access
+        ||| MethodAttributes.CheckAccessOnOverride
+        ||| (match impl with
+             | MethodBody.Abstract -> MethodAttributes.Abstract ||| MethodAttributes.Virtual
+             | _ -> MethodAttributes.Virtual)
+        ||| (if callconv.IsInstance then
+                 enum 0
+             else
+                 MethodAttributes.Static)
+
     ILMethodDef(
         name = nm,
-        attributes =
-            (convertMemberAccess access
-             ||| MethodAttributes.CheckAccessOnOverride
-             ||| (match impl with
-                  | MethodBody.Abstract -> MethodAttributes.Abstract ||| MethodAttributes.Virtual
-                  | _ -> MethodAttributes.Virtual)),
+        attributes = attributes,
         implAttributes = MethodImplAttributes.Managed,
         genericParams = genparams,
-        callingConv = ILCallingConv.Instance,
+        callingConv = callconv,
         parameters = actual_args,
         ret = actual_ret,
         isEntryPoint = false,
@@ -3834,8 +3845,11 @@ let mkILGenericVirtualMethod (nm, access, genparams, actual_args, actual_ret, im
         body = notlazy impl
     )
 
-let mkILNonGenericVirtualMethod (nm, access, args, ret, impl) =
-    mkILGenericVirtualMethod (nm, access, mkILEmptyGenericParams, args, ret, impl)
+let mkILNonGenericVirtualMethod (nm, callconv, access, args, ret, impl) =
+    mkILGenericVirtualMethod (nm, callconv, access, mkILEmptyGenericParams, args, ret, impl)
+
+let mkILNonGenericVirtualInstanceMethod (nm, access, args, ret, impl) =
+    mkILNonGenericVirtualMethod (nm, ILCallingConv.Instance, access, args, ret, impl)
 
 let mkILGenericNonVirtualMethod (nm, access, genparams, actual_args, actual_ret, impl) =
     ILMethodDef(
@@ -3925,7 +3939,8 @@ let cdef_cctorCode2CodeOrCreate tag imports f (cd: ILTypeDef) =
             [|
                 yield f cctor
                 for md in mdefs do
-                    if md.Name <> ".cctor" then yield md
+                    if md.Name <> ".cctor" then
+                        yield md
             |])
 
     cd.With(methods = methods)
@@ -4199,7 +4214,7 @@ let mkILSimpleModule
             AssemblyLongevity = ILAssemblyLongevity.Unspecified
             DisableJitOptimizations = 0 <> (flags &&& 0x4000)
             JitTracking = (0 <> (flags &&& 0x8000)) // always turn these on
-            IgnoreSymbolStoreSequencePoints = (0 <> (flags &&& 0x2000))
+            IgnoreSymbolStoreSequencePoints = false
             Retargetable = (0 <> (flags &&& 0x100))
             ExportedTypes = exportedTypes
             EntrypointElsewhere = None
@@ -4258,7 +4273,7 @@ let mkILDelegateMethods access (ilg: ILGlobals) (iltyp_AsyncCallback, iltyp_IAsy
 
     let one nm args ret =
         let mdef =
-            mkILNonGenericVirtualMethod (nm, access, args, mkILReturn ret, MethodBody.Abstract)
+            mkILNonGenericVirtualInstanceMethod (nm, access, args, mkILReturn ret, MethodBody.Abstract)
 
         mdef.WithAbstract(false).WithHideBySig(true).WithRuntime(true)
 
@@ -4888,7 +4903,8 @@ type ILTypeSigParser(tstring: string) =
 
         // Does the type name start with a leading '['? If so, ignore it
         // (if the specialization type is in another module, it will be wrapped in bracket)
-        if here () = '[' then drop ()
+        if here () = '[' then
+            drop ()
 
         // 1. Iterate over beginning of type, grabbing the type name and determining if it's generic or an array
         let typeName =
@@ -4947,8 +4963,11 @@ type ILTypeSigParser(tstring: string) =
         let scope =
             if (here () = ',' || here () = ' ') && (peek () <> '[' && peekN 2 <> '[') then
                 let grabScopeComponent () =
-                    if here () = ',' then drop () // ditch the ','
-                    if here () = ' ' then drop () // ditch the ' '
+                    if here () = ',' then
+                        drop () // ditch the ','
+
+                    if here () = ' ' then
+                        drop () // ditch the ' '
 
                     while (peek () <> ',' && peek () <> ']' && peek () <> nil) do
                         step ()
@@ -4969,8 +4988,11 @@ type ILTypeSigParser(tstring: string) =
                 ILScopeRef.Local
 
         // strip any extraneous trailing brackets or commas
-        if (here () = ']') then drop ()
-        if (here () = ',') then drop ()
+        if (here () = ']') then
+            drop ()
+
+        if (here () = ',') then
+            drop ()
 
         // build the IL type
         let tref = mkILTyRef (scope, typeName)
@@ -5282,7 +5304,7 @@ and refsOfILInstr s x =
     | I_callvirt (_, mr, varargs) ->
         refsOfILMethodSpec s mr
         refsOfILVarArgs s varargs
-    | I_callconstraint (_, tr, mr, varargs) ->
+    | I_callconstraint (_, _, tr, mr, varargs) ->
         refsOfILType s tr
         refsOfILMethodSpec s mr
         refsOfILVarArgs s varargs
@@ -5549,17 +5571,18 @@ let resolveILMethodRefWithRescope r (td: ILTypeDef) (mref: ILMethodRef) =
     let argTypes = mref.ArgTypes |> List.map r
     let retType: ILType = r mref.ReturnType
 
-    match possibles
-          |> List.filter (fun md ->
-              mref.CallingConv = md.CallingConv
-              &&
-              // REVIEW: this uses equality on ILType. For CMOD_OPTIONAL this is not going to be correct
-              (md.Parameters, argTypes)
-              ||> List.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2)
-              &&
-              // REVIEW: this uses equality on ILType. For CMOD_OPTIONAL this is not going to be correct
-              r md.Return.Type = retType)
-        with
+    match
+        possibles
+        |> List.filter (fun md ->
+            mref.CallingConv = md.CallingConv
+            &&
+            // REVIEW: this uses equality on ILType. For CMOD_OPTIONAL this is not going to be correct
+            (md.Parameters, argTypes)
+            ||> List.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2)
+            &&
+            // REVIEW: this uses equality on ILType. For CMOD_OPTIONAL this is not going to be correct
+            r md.Return.Type = retType)
+    with
     | [] ->
         failwith (
             "no method named "

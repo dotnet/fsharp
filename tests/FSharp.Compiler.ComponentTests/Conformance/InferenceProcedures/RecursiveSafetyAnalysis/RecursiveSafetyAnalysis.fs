@@ -19,6 +19,7 @@ module RecursiveSafetyAnalysis =
     let ``E_CyclicReference01_fs`` compilation =
         compilation
         |> withOptions ["--mlcompatibility"; "--flaterrors"]
+        |> withLangVersion50
         |> asExe
         |> compile
         |> shouldFail

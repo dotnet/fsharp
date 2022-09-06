@@ -1,4 +1,6 @@
 
+module FSI_0001
+
 > val it: unit = ()
 
 > val repeatId: string = "A"
@@ -234,7 +236,9 @@ module D1 =
   val words: System.Collections.Generic.IDictionary<string,int>
   val words2000: System.Collections.Generic.IDictionary<int,string>
 
-> > module D2 =
+> module FSI_0020
+
+> module D2 =
   val words: IDictionary<string,int>
   val words2000: IDictionary<int,string>
 val opt1: 'a option
@@ -2763,5 +2767,58 @@ val ShortName: string = "hi"
                          B = "a" }]
 
 > val list2: int list = [1]
+
+module FSI_0317.
+       D27805741a339047ef3ed7a2ca8faae3c17e6ef2371984011e49a6c9c3286641
+
+{"ImmutableField0":6}
+type R1 =
+  { ImmutableField0: int }
+val it: unit = ()
+
+> val it: R1 = { ImmutableField0 = 7 }
+
+> {"MutableField1":8}
+type R2 =
+  { mutable MutableField1: int }
+val it: unit = ()
+
+> val it: R2 = { MutableField1 = 9 }
+
+> {"AnonRecordField2":10}
+val it: unit = ()
+
+> val it: {| AnonRecordField2: int |} = { AnonRecordField2 = 11 }
+
+module FSI_0324.Project.fsproj
+
+type R3 =
+  { ImmutableField3: int }
+val test3a: string = "{"ImmutableField3":12}"
+
+> val test3b: R3 = { ImmutableField3 = 12 }
+
+> val test3c: string = "{"ImmutableField3":13}"
+
+> val test3d: R3 = { ImmutableField3 = 13 }
+
+> type R4 =
+  { mutable MutableField4: int }
+val test4a: string = "{"MutableField4":15}"
+
+> val test4b: R4 = { MutableField4 = 15 }
+
+> val test4c: string = "{"MutableField4":16}"
+
+> val test4d: R4 = { MutableField4 = 16 }
+
+> type R5 = {| AnonRecordField5: int |}
+val test5a: string = "{"AnonRecordField5":17}"
+
+> val test5b: R5 = { AnonRecordField5 = 17 }
+
+> val test5c: string = "{"AnonRecordField5":18}"
+
+> val test5d: R5 = { AnonRecordField5 = 18 }
 
 > > > 

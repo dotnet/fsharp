@@ -412,7 +412,8 @@ type AsyncActivation<'T>(contents: AsyncActivationContents<'T>) =
             ok <- true
             res
         finally
-            if not ok then ctxt.OnExceptionRaised()
+            if not ok then
+                ctxt.OnExceptionRaised()
 
     member ctxt.PostWithTrampoline (syncCtxt: SynchronizationContext) (f: unit -> AsyncReturn) =
         let holder = contents.aux.trampolineHolder
@@ -486,7 +487,8 @@ module AsyncPrimitives =
             result <- userCode arg
             ok <- true
         finally
-            if not ok then ctxt.OnExceptionRaised()
+            if not ok then
+                ctxt.OnExceptionRaised()
 
         if ok then
             AsyncActivation<'T>.HijackCheckThenCall ctxt ctxt.cont result
@@ -508,7 +510,8 @@ module AsyncPrimitives =
             result <- part2 result1
             ok <- true
         finally
-            if not ok then ctxt.OnExceptionRaised()
+            if not ok then
+                ctxt.OnExceptionRaised()
 
         if ok then
             Invoke result ctxt
@@ -525,7 +528,8 @@ module AsyncPrimitives =
             res <- userCode result1
             ok <- true
         finally
-            if not ok then ctxt.OnExceptionRaised()
+            if not ok then
+                ctxt.OnExceptionRaised()
 
         if ok then res.Invoke ctxt else fake ()
 
@@ -543,7 +547,8 @@ module AsyncPrimitives =
             resOpt <- filterFunction (edi.GetAssociatedSourceException())
             ok <- true
         finally
-            if not ok then ctxt.OnExceptionRaised()
+            if not ok then
+                ctxt.OnExceptionRaised()
 
         if ok then
             match resOpt with
@@ -990,7 +995,9 @@ module AsyncPrimitives =
                     else
                     // In this case the ResultCell has already been disposed, e.g. due to a timeout.
                     // The result is dropped on the floor.
-                    if disposed then
+                    if
+                        disposed
+                    then
                         []
                     else
                         result <- Some res
