@@ -46,24 +46,25 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
 
 type CanCoerce = CanCoerce | NoCoerce
 
+let stripAll stripMeasures g ty =
+    if stripMeasures then
+        ty |> stripTyEqnsWrtErasure EraseAll g |> stripMeasuresFromTy g
+    else
+        ty |> stripTyEqns g
+
 /// The feasible equivalence relation. Part of the language spec.
 let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 = 
 
     if ndeep > 100 then error(InternalError("recursive class hierarchy (detected in TypeFeasiblySubsumesType), ty1 = " + (DebugPrint.showType ty1), m));
-    let stripAll ty =
-        if stripMeasures then
-            ty |> stripTyEqnsWrtErasure EraseAll g |> stripMeasuresFromTType g
-        else
-            ty |> stripTyEqns g
 
-    let ty1str = stripAll ty1
-    let ty2str = stripAll ty2
+    let ty1 = stripAll stripMeasures g ty1
+    let ty2 = stripAll stripMeasures g ty2
 
-    match ty1str, ty2str with
+    match ty1, ty2 with
     | TType_var _, _  
     | _, TType_var _ -> true
 
-    | TType_app (tc1, l1, _), TType_app (tc2, l2, _) when tyconRefEq g tc1 tc2 ->
+    | TType_app (tcref1, l1, _), TType_app (tcref2, l2, _) when tyconRefEq g tcref1 tcref2 ->
         List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2
 
     | TType_anon (anonInfo1, l1),TType_anon (anonInfo2, l2)      -> 
@@ -76,9 +77,9 @@ let rec TypesFeasiblyEquivalent stripMeasures ndeep g amap m ty1 ty2 =
         evalTupInfoIsStruct tupInfo1 = evalTupInfoIsStruct tupInfo2 &&
         List.lengthsEqAndForall2 (TypesFeasiblyEquivalent stripMeasures ndeep g amap m) l1 l2 
 
-    | TType_fun (d1, r1, _), TType_fun (d2, r2, _) -> 
-        TypesFeasiblyEquivalent stripMeasures ndeep g amap m d1 d2 &&
-        TypesFeasiblyEquivalent stripMeasures ndeep g amap m r1 r2
+    | TType_fun (domainTy1, rangeTy1, _), TType_fun (domainTy2, rangeTy2, _) -> 
+        TypesFeasiblyEquivalent stripMeasures ndeep g amap m domainTy1 domainTy2 &&
+        TypesFeasiblyEquivalent stripMeasures ndeep g amap m rangeTy1 rangeTy2
 
     | TType_measure _, TType_measure _ ->
         true
@@ -133,51 +134,51 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
 /// Here x gets a generalized type "list<'T>".
 let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
     let m = tp.Range
-    let max, m = 
-         let initial = 
+    let maxTy, m = 
+         let initialTy = 
              match tp.Kind with 
              | TyparKind.Type -> g.obj_ty 
              | TyparKind.Measure -> TType_measure Measure.One
          // Loop through the constraints computing the lub
-         ((initial, m), tp.Constraints) ||> List.fold (fun (maxSoFar, _) tpc -> 
+         ((initialTy, m), tp.Constraints) ||> List.fold (fun (maxTy, _) tpc -> 
              let join m x = 
-                 if TypeFeasiblySubsumesType 0 g amap m x CanCoerce maxSoFar then maxSoFar
-                 elif TypeFeasiblySubsumesType 0 g amap m maxSoFar CanCoerce x then x
-                 else errorR(Error(FSComp.SR.typrelCannotResolveImplicitGenericInstantiation((DebugPrint.showType x), (DebugPrint.showType maxSoFar)), m)); maxSoFar
+                 if TypeFeasiblySubsumesType 0 g amap m x CanCoerce maxTy then maxTy
+                 elif TypeFeasiblySubsumesType 0 g amap m maxTy CanCoerce x then x
+                 else errorR(Error(FSComp.SR.typrelCannotResolveImplicitGenericInstantiation((DebugPrint.showType x), (DebugPrint.showType maxTy)), m)); maxTy
              // Don't continue if an error occurred and we set the value eagerly 
-             if tp.IsSolved then maxSoFar, m else
+             if tp.IsSolved then maxTy, m else
              match tpc with 
              | TyparConstraint.CoercesTo(x, m) -> 
                  join m x, m
              | TyparConstraint.MayResolveMember(_traitInfo, m) -> 
-                 maxSoFar, m
+                 maxTy, m
              | TyparConstraint.SimpleChoice(_, m) -> 
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInPrintf(), m))
-                 maxSoFar, m
+                 maxTy, m
              | TyparConstraint.SupportsNull m -> 
-                 maxSoFar, m
+                 maxTy, m
              | TyparConstraint.SupportsComparison m -> 
                  join m g.mk_IComparable_ty, m
              | TyparConstraint.SupportsEquality m -> 
-                 maxSoFar, m
+                 maxTy, m
              | TyparConstraint.IsEnum(_, m) -> 
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInEnum(), m))
-                 maxSoFar, m
+                 maxTy, m
              | TyparConstraint.IsDelegate(_, _, m) -> 
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInDelegate(), m))
-                 maxSoFar, m
+                 maxTy, m
              | TyparConstraint.IsNonNullableStruct m -> 
                  join m g.int_ty, m
              | TyparConstraint.IsUnmanaged m ->
                  errorR(Error(FSComp.SR.typrelCannotResolveAmbiguityInUnmanaged(), m))
-                 maxSoFar, m
+                 maxTy, m
              | TyparConstraint.RequiresDefaultConstructor m -> 
-                 maxSoFar, m
+                 maxTy, m
              | TyparConstraint.IsReferenceType m -> 
-                 maxSoFar, m
+                 maxTy, m
              | TyparConstraint.DefaultsTo(_priority, _ty, m) -> 
-                 maxSoFar, m)
-    max, m
+                 maxTy, m)
+    maxTy, m
 
 let ChooseTyparSolution g amap tp = 
     let ty, _m = ChooseTyparSolutionAndRange g amap tp
@@ -227,9 +228,11 @@ let ChooseTyparSolutionsForFreeChoiceTypars g amap e =
 
     | _ -> e
 
-/// Break apart lambdas. Needs ChooseTyparSolutionsForFreeChoiceTypars because it's used in
+/// Break apart lambdas according to a given expected ValReprInfo that the lambda implements.
+/// Needs ChooseTyparSolutionsForFreeChoiceTypars because it's used in
 /// PostTypeCheckSemanticChecks before we've eliminated these nodes.
-let tryDestTopLambda g amap (ValReprInfo (tpNames, _, _) as tvd) (e, ty) =
+let tryDestLambdaWithValReprInfo g amap valReprInfo (lambdaExpr, ty) =
+    let (ValReprInfo (tpNames, _, _)) = valReprInfo
     let rec stripLambdaUpto n (e, ty) = 
         match stripDebugPoints e with 
         | Expr.Lambda (_, None, None, v, b, _, retTy) when n > 0 -> 
@@ -248,20 +251,23 @@ let tryDestTopLambda g amap (ValReprInfo (tpNames, _, _) as tvd) (e, ty) =
         | _ -> 
             (None, None, [], e, ty)
 
-    let n = tvd.NumCurriedArgs
-    let tps, taue, tauty = 
-        match stripDebugPoints e with 
+    let n = valReprInfo.NumCurriedArgs
+
+    let tps, bodyExpr, bodyTy = 
+        match stripDebugPoints lambdaExpr with 
         | Expr.TyLambda (_, tps, b, _, retTy) when not (isNil tpNames) -> tps, b, retTy 
-        | _ -> [], e, ty
-    let ctorThisValOpt, baseValOpt, vsl, body, retTy = startStripLambdaUpto n (taue, tauty)
+        | _ -> [], lambdaExpr, ty
+
+    let ctorThisValOpt, baseValOpt, vsl, body, retTy = startStripLambdaUpto n (bodyExpr, bodyTy)
+
     if vsl.Length <> n then 
         None 
     else
         Some (tps, ctorThisValOpt, baseValOpt, vsl, body, retTy)
 
-let destTopLambda g amap topValInfo (e, ty) = 
-    match tryDestTopLambda g amap topValInfo (e, ty) with 
-    | None -> error(Error(FSComp.SR.typrelInvalidValue(), e.Range))
+let destLambdaWithValReprInfo g amap valReprInfo (lambdaExpr, ty) = 
+    match tryDestLambdaWithValReprInfo g amap valReprInfo (lambdaExpr, ty) with 
+    | None -> error(Error(FSComp.SR.typrelInvalidValue(), lambdaExpr.Range))
     | Some res -> res
     
 let IteratedAdjustArityOfLambdaBody g arities vsl body  =
@@ -269,16 +275,22 @@ let IteratedAdjustArityOfLambdaBody g arities vsl body  =
           let vs, body = AdjustArityOfLambdaBody g arities vs body
           vs :: allvs, body)
 
-/// Do AdjustArityOfLambdaBody for a series of  
-/// iterated lambdas, producing one method.  
-/// The required iterated function arity (List.length topValInfo) must be identical 
+/// Do IteratedAdjustArityOfLambdaBody for a series of iterated lambdas, producing one method.  
+/// The required iterated function arity (List.length valReprInfo) must be identical 
 /// to the iterated function arity of the input lambda (List.length vsl) 
-let IteratedAdjustArityOfLambda g amap topValInfo e =
-    let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destTopLambda g amap topValInfo (e, tyOfExpr g e)
-    let arities = topValInfo.AritiesOfArgs
+let IteratedAdjustLambdaToMatchValReprInfo g amap valReprInfo lambdaExpr =
+
+    let lambdaExprTy = tyOfExpr g lambdaExpr
+
+    let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destLambdaWithValReprInfo g amap valReprInfo (lambdaExpr, lambdaExprTy)
+
+    let arities = valReprInfo.AritiesOfArgs
+
     if arities.Length <> vsl.Length then 
-        errorR(InternalError(sprintf "IteratedAdjustArityOfLambda, List.length arities = %d, List.length vsl = %d" arities.Length vsl.Length, body.Range))
+        errorR(InternalError(sprintf "IteratedAdjustLambdaToMatchValReprInfo, #arities = %d, #vsl = %d" arities.Length vsl.Length, body.Range))
+
     let vsl, body = IteratedAdjustArityOfLambdaBody g arities vsl body
+
     tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy
 
 /// "Single Feasible Type" inference
@@ -286,5 +298,3 @@ let IteratedAdjustArityOfLambda g amap topValInfo e =
 let FindUniqueFeasibleSupertype g amap m ty1 ty2 =  
     let supertypes = Option.toList (GetSuperTypeOfType g amap m ty2) @ (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2)
     supertypes |> List.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce) 
-    
-

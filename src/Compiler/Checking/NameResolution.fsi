@@ -41,10 +41,6 @@ type ArgumentContainer =
     /// The named argument is a static parameter to a provided type.
     | Type of TyconRef
 
-/// Detect a use of a nominal type, including type abbreviations.
-/// When reporting symbols, we care about abbreviations, e.g. 'int' and 'int32' count as two separate symbols.
-val (|AbbrevOrAppTy|_|): TType -> TyconRef option
-
 type EnclosingTypeInst = TypeInst
 
 /// Represents an item that results from name resolution
@@ -67,6 +63,9 @@ type Item =
 
     /// Represents the resolution of a name to an F# record or exception field.
     | RecdField of RecdFieldInfo
+
+    /// Represents the resolution of a name to an F# trait
+    | Trait of TraitConstraintInfo
 
     /// Represents the resolution of a name to a union case field.
     | UnionCaseField of UnionCaseInfo * fieldIndex: int
@@ -122,7 +121,17 @@ type Item =
     | ImplicitOp of Ident * TraitConstraintSln option ref
 
     /// Represents the resolution of a name to a named argument
-    | ArgName of Ident * TType * ArgumentContainer option
+    //
+    // In the FCS API, Item.ArgName corresponds to FSharpParameter symbols.
+    // Not all parameters have names, e.g. for 'g' in this:
+    //
+    //    let f (g: int -> int) x = ...
+    //
+    // then the symbol for 'g' reports FSharpParameters via CurriedParameterGroups
+    // based on analyzing the type of g as a function type.
+    //
+    // For these parameters, the identifier will be missing.
+    | ArgName of ident: Ident option * argType: TType * container: ArgumentContainer option * range: range
 
     /// Represents the resolution of a name to a named property setter
     | SetterArg of Ident * Item

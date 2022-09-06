@@ -321,9 +321,9 @@ module GlobalUsageAnalysis =
 
 let internalError str = raise(Failure(str))
 
-let mkLocalVal m name ty topValInfo =
+let mkLocalVal m name ty valReprInfo =
     let compgen = false
-    Construct.NewVal(name, m, None, ty, Immutable, compgen, topValInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone) 
+    Construct.NewVal(name, m, None, ty, Immutable, compgen, valReprInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone) 
 
 /// Represents inferred information about a tuple value
 type TupleStructure = 
@@ -467,7 +467,7 @@ let mkTransform g (f: Val) m tps x1Ntys retTy (callPattern, tyfringes: (TType li
        
     // Create transformedVal replacement for f 
     // Mark the arity of the value 
-    let topValInfo = 
+    let valReprInfo = 
         match f.ValReprInfo with 
         | None -> None 
         | _ -> Some(ValReprInfo (ValReprInfo.InferTyparInfo tps, List.collect ValReprInfoForTS callPattern, ValReprInfo.unnamedRetVal))
@@ -479,7 +479,7 @@ let mkTransform g (f: Val) m tps x1Ntys retTy (callPattern, tyfringes: (TType li
     let transformedVal =
         // Ensure that we have an g.CompilerGlobalState
         assert(g.CompilerGlobalState |> Option.isSome)
-        mkLocalVal f.Range (g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName (f.LogicalName, f.Range)) fCty topValInfo
+        mkLocalVal f.Range (g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName (f.LogicalName, f.Range)) fCty valReprInfo
     { transformCallPattern = callPattern
       transformedFormals = transformedFormals
       transformedVal = transformedVal }

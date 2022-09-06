@@ -44,7 +44,7 @@ module Result =
     [<CompiledName("DefaultWith")>]
     let defaultWith defThunk result =
         match result with
-        | Error _ -> defThunk ()
+        | Error error -> defThunk error
         | Ok v -> v
 
     [<CompiledName("Count")>]

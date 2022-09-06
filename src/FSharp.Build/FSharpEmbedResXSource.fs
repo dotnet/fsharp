@@ -41,9 +41,11 @@ module internal {1} =
             let sourcePath = Path.Combine(_outputPath, justFileName + ".fs")
 
             // simple up-to-date check
-            if File.Exists(resx)
-               && File.Exists(sourcePath)
-               && File.GetLastWriteTimeUtc(resx) <= File.GetLastWriteTimeUtc(sourcePath) then
+            if
+                File.Exists(resx)
+                && File.Exists(sourcePath)
+                && File.GetLastWriteTimeUtc(resx) <= File.GetLastWriteTimeUtc(sourcePath)
+            then
                 printMessage (sprintf "Skipping generation: '%s' since it is up-to-date." sourcePath)
                 Some(sourcePath)
             else

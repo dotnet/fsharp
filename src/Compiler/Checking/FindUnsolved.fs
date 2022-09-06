@@ -84,15 +84,15 @@ let rec accExpr (cenv: cenv) (env: env) expr =
         accExprs cenv env argsl
 
     | Expr.Lambda (_, _ctorThisValOpt, _baseValOpt, argvs, _body, m, bodyTy) -> 
-        let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
+        let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal) 
         let ty = mkMultiLambdaTy cenv.g m argvs bodyTy 
-        accLambdas cenv env topValInfo expr ty
+        accLambdas cenv env valReprInfo expr ty
 
     | Expr.TyLambda (_, tps, _body, _m, bodyTy)  -> 
-        let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
+        let valReprInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal) 
         accTy cenv env bodyTy
         let ty = mkForallTyIfNeeded tps bodyTy 
-        accLambdas cenv env topValInfo expr ty
+        accLambdas cenv env valReprInfo expr ty
 
     | Expr.TyChoose (_tps, e1, _m)  -> 
         accExpr cenv env e1 
@@ -161,12 +161,12 @@ and accTraitInfo cenv env (TTrait(tys, _nm, _, argTys, retTy, _sln)) =
     retTy |> Option.iter (accTy cenv env)
     tys |> List.iter (accTy cenv env)
 
-and accLambdas cenv env topValInfo expr exprTy =
+and accLambdas cenv env valReprInfo expr exprTy =
     match stripDebugPoints expr with
-    | Expr.TyChoose (_tps, bodyExpr, _m)  -> accLambdas cenv env topValInfo bodyExpr exprTy      
+    | Expr.TyChoose (_tps, bodyExpr, _m)  -> accLambdas cenv env valReprInfo bodyExpr exprTy      
     | Expr.Lambda _
     | Expr.TyLambda _ ->
-        let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destTopLambda cenv.g cenv.amap topValInfo (expr, exprTy) 
+        let _tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = destLambdaWithValReprInfo cenv.g cenv.amap valReprInfo (expr, exprTy) 
         accTy cenv env bodyTy
         vsl |> List.iterSquared (accVal cenv env)
         baseValOpt |> Option.iter (accVal cenv env)
@@ -201,7 +201,7 @@ and accDiscrim cenv env d =
     | DecisionTreeTest.ArrayLength(_, ty) -> accTy cenv env ty
     | DecisionTreeTest.Const _
     | DecisionTreeTest.IsNull -> ()
-    | DecisionTreeTest.IsInst (srcty, tgty) -> accTy cenv env srcty; accTy cenv env tgty
+    | DecisionTreeTest.IsInst (srcTy, tgtTy) -> accTy cenv env srcTy; accTy cenv env tgtTy
     | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _, _) -> 
         accExpr cenv env exp
         accTypeInst cenv env tys
@@ -233,8 +233,8 @@ and accVal cenv env v =
 
 and accBind cenv env (bind: Binding) =
     accVal cenv env bind.Var    
-    let topValInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData
-    accLambdas cenv env topValInfo bind.Expr bind.Var.Type
+    let valReprInfo  = match bind.Var.ValReprInfo with Some info -> info | _ -> ValReprInfo.emptyValData
+    accLambdas cenv env valReprInfo bind.Expr bind.Var.Type
 
 and accBinds cenv env binds = 
     binds |> List.iter (accBind cenv env) 

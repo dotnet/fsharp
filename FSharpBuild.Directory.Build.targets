@@ -6,6 +6,11 @@
   <Import Project="eng\targets\NuGet.targets" />
   <Import Project="FSharp.Profiles.props" />
 
+  <PropertyGroup>
+    <DefineConstants Condition="'$(Configuration)'=='release'">$(DefineConstants);Release</DefineConstants>
+    <DefineConstants Condition="'$(Configuration)'=='debug'">$(DefineConstants);Debug</DefineConstants>
+  </PropertyGroup>
+
   <ItemDefinitionGroup>
     <NoneSubstituteText>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
@@ -137,8 +142,8 @@
   </PropertyGroup>
 
   <Target Name="PrefixRepoToReleaseNotes"
+          AfterTargets="InitializeSourceControlInformationFromSourceControlManager"
           BeforeTargets="InitializeStandardNuspecProperties"
-          DependsOnTargets="InitializeSourceControlInformationFromSourceControlManager"
           Condition="'$(IsPackable)'=='true'">
 
     <PropertyGroup>
