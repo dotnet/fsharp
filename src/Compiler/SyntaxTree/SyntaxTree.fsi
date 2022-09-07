@@ -509,6 +509,8 @@ type SynType =
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
 
     | Paren of innerType: SynType * range: range
+    
+    | SignatureParameter of attributes: SynAttributes * optional: bool * id: Ident option * usedType: SynType * range: range
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -1161,9 +1163,9 @@ type SynAttributes = SynAttributeList list
 /// Represents extra information about the declaration of a value
 [<NoEquality; NoComparison>]
 type SynValData =
-    | SynValData of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
+    | SynValData of memberFlags: SynMemberFlags option * (* valInfo: SynValInfo  * *) thisIdOpt: Ident option
 
-    member SynValInfo: SynValInfo
+    // member SynValInfo: SynValInfo
 
 /// Represents a binding for a 'let' or 'member' declaration
 [<NoEquality; NoComparison>]
@@ -1177,7 +1179,7 @@ type SynBinding =
         xmlDoc: PreXmlDoc *
         valData: SynValData *
         headPat: SynPat *
-        returnInfo: SynBindingReturnInfo option *
+        returnInfo: SynType option *
         expr: SynExpr *
         range: range *
         debugPoint: DebugPointAtBinding *
@@ -1193,9 +1195,9 @@ type SynBinding =
 
     member RangeOfHeadPattern: range
 
-/// Represents the return information in a binding for a 'let' or 'member' declaration
-[<NoEquality; NoComparison>]
-type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
+// /// Represents the return information in a binding for a 'let' or 'member' declaration
+// [<NoEquality; NoComparison>]
+// type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
 
 /// Represents the flags for a 'member' declaration
 [<NoComparison; RequireQualifiedAccess; CustomEquality>]
@@ -1282,7 +1284,7 @@ type SynTypeDefnKind =
     | Opaque
     | Augmentation of withKeyword: range
     | IL
-    | Delegate of signature: SynType * signatureInfo: SynValInfo
+    | Delegate of signature: SynType // * signatureInfo: SynValInfo
 
 /// Represents the syntax tree for the core of a simple type definition, in either signature
 /// or implementation.
@@ -1370,7 +1372,7 @@ type SynUnionCaseKind =
     | Fields of cases: SynField list
 
     /// Full type spec given by 'UnionCase: ty1 * tyN -> rty'. Only used in FSharp.Core, otherwise a warning.
-    | FullType of fullType: SynType * fullTypeInfo: SynValInfo
+    | FullType of fullType: SynType // * fullTypeInfo: SynValInfo
 
 /// Represents the syntax tree for the right-hand-side of a type definition in a signature.
 /// Note: in practice, using a discriminated union to make a distinction between
@@ -1446,7 +1448,7 @@ type SynValSig =
         ident: SynIdent *
         explicitTypeParams: SynValTyparDecls *
         synType: SynType *
-        arity: SynValInfo *
+        // arity: SynValInfo *
         isInline: bool *
         isMutable: bool *
         xmlDoc: PreXmlDoc *
@@ -1457,38 +1459,38 @@ type SynValSig =
 
     member RangeOfId: range
 
-    member SynInfo: SynValInfo
+    //member SynInfo: SynValInfo
 
     member SynType: SynType
 
-/// The argument names and other metadata for a member or function
-[<NoEquality; NoComparison>]
-type SynValInfo =
+// /// The argument names and other metadata for a member or function
+// [<NoEquality; NoComparison>]
+// type SynValInfo =
+//
+//     /// SynValInfo(curriedArgInfos, returnInfo)
+//     | SynValInfo of curriedArgInfos: SynArgInfo list list * returnInfo: SynArgInfo
+//
+//     member CurriedArgInfos: SynArgInfo list list
+//
+//     member ArgNames: string list
 
-    /// SynValInfo(curriedArgInfos, returnInfo)
-    | SynValInfo of curriedArgInfos: SynArgInfo list list * returnInfo: SynArgInfo
-
-    member CurriedArgInfos: SynArgInfo list list
-
-    member ArgNames: string list
-
-/// Represents the argument names and other metadata for a parameter for a member or function
-[<NoEquality; NoComparison>]
-type SynArgInfo =
-
-    | SynArgInfo of attributes: SynAttributes * optional: bool * ident: Ident option
-
-    member Ident: Ident option
-
-    member Attributes: SynAttributes
+// /// Represents the argument names and other metadata for a parameter for a member or function
+// [<NoEquality; NoComparison>]
+// type SynArgInfo =
+//
+//     | SynArgInfo of attributes: SynAttributes * optional: bool * ident: Ident option
+//
+//     member Ident: Ident option
+//
+//     member Attributes: SynAttributes
 
 /// Represents the names and other metadata for the type parameters for a member or function
 [<NoEquality; NoComparison>]
 type SynValTyparDecls = SynValTyparDecls of typars: SynTyparDecls option * canInfer: bool
 
-/// Represents the syntactic elements associated with the "return" of a function or method.
-[<NoEquality; NoComparison>]
-type SynReturnInfo = SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
+// /// Represents the syntactic elements associated with the "return" of a function or method.
+// [<NoEquality; NoComparison>]
+// type SynReturnInfo = SynReturnInfo of returnType: (SynType (* SynArgInfo) *)) * range: range
 
 /// Represents the right hand side of an exception declaration 'exception E = ... '
 [<NoEquality; NoComparison>]

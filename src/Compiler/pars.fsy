@@ -63,7 +63,7 @@ let mkSynDoBinding (vis, expr, m) =
     | None -> ()
     SynBinding(None,
              SynBindingKind.Do,
-             false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData,
+             false, false, [], PreXmlDoc.Empty, SynValData(None, None),
              SynPat.Const(SynConst.Unit, m),
              None, expr, m, DebugPointAtBinding.NoneAtDo,
              SynBindingTrivia.Zero)
@@ -854,7 +854,7 @@ moduleSpfn:
 valSpfn: 
   | opt_attributes opt_declVisibility VAL opt_attributes opt_inline opt_mutable opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-        let attr1, attr2, isInline, isMutable, vis2, id, doc, explicitValTyparDecls, (ty, arity), (mEquals, konst: SynExpr option) = ($1), ($4), ($5), ($6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
+        let attr1, attr2, isInline, isMutable, vis2, id, doc, explicitValTyparDecls, ty, (mEquals, konst: SynExpr option) = ($1), ($4), ($5), ($6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
         if not (isNil attr2) then errorR(Deprecated(FSComp.SR.parsAttributesMustComeBeforeVal(), rhs parseState 4))
         let m = 
             rhs2 parseState 1 11 
@@ -864,7 +864,7 @@ valSpfn:
                 | None -> m
                 | Some e -> unionRanges m e.Range
         let mVal = rhs parseState 3
-        let valSpfn = SynValSig((attr1@attr2), id, explicitValTyparDecls, ty, arity, isInline, isMutable, doc, vis2, konst, m, { ValKeyword = Some mVal; WithKeyword = None; EqualsRange = mEquals }) 
+        let valSpfn = SynValSig((attr1@attr2), id, explicitValTyparDecls, ty, isInline, isMutable, doc, vis2, konst, m, { ValKeyword = Some mVal; WithKeyword = None; EqualsRange = mEquals })
         SynModuleSigDecl.Val(valSpfn, m)
       }
 
@@ -992,16 +992,15 @@ tyconSpfnRhs:
            SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (kind, decls, objectModelRange), augmentation, mWhole, trivia)) }
 
   | DELEGATE OF topType
-     { let m = lhs parseState 
-       let ty, arity = $3
+     { let m = lhs parseState
        let flags = AbstractMemberFlags true SynMemberFlagsTrivia.Zero SynMemberKind.Member
-       let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero)
+       let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, $3, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero)
        let invoke = SynMemberSig.Member(valSig, flags, m) 
        (fun nameRange nameInfo mEquals augmentation -> 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            let mWhole = unionRanges nameRange m
            let trivia: SynTypeDefnSigTrivia = { TypeKeyword = None; WithKeyword = None; EqualsRange = mEquals }
-           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), [], mWhole, trivia)) }
+           SynTypeDefnSig(nameInfo, SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Delegate $3, [invoke], m), [], mWhole, trivia)) }
 
 
 /* The right-hand-side of an object type definition in a signature */
@@ -1069,9 +1068,15 @@ classSpfnMembersAtLeastOne:
 classMemberSpfn:
   | opt_attributes opt_declVisibility memberSpecFlags opt_inline opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet optLiteralValueSpfn
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
-       let isInline, doc, vis2, id, explicitValTyparDecls, (ty, arity), (mEquals, optLiteralValue) = $4, grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
+       let isInline, doc, vis2, id, explicitValTyparDecls, ty, (mEquals, optLiteralValue) = $4, grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
        let mWith, getSetRangeOpt, getSet = $10 
-       let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
+
+       let getSetAdjuster (t: SynType) =
+            match t, getSet with
+            | SynType.SignatureParameter(attributes = _ :: _), _ -> getSet
+            | _, SynMemberKind.Member -> SynMemberKind.PropertyGet
+            | _ -> getSet
+
        let mWhole = 
            let m = rhs parseState 3 
            match getSetRangeOpt with 
@@ -1084,8 +1089,8 @@ classMemberSpfn:
                | None -> m
                | Some e -> unionRanges m e.Range
        let trivia = { ValKeyword = None; WithKeyword = mWith; EqualsRange = mEquals }
-       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, mWhole, trivia)
-       let flags = $3 (getSetAdjuster arity)
+       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, isInline, false, doc, vis2, optLiteralValue, mWhole, trivia)
+       let flags = $3 (getSetAdjuster ty)
        SynMemberSig.Member(valSpfn, flags, mWhole) }
 
   | opt_attributes opt_declVisibility interfaceMember appType  
@@ -1115,10 +1120,10 @@ classMemberSpfn:
        SynMemberSig.NestedType($5, rhs2 parseState 1 5) }
 
   | opt_attributes opt_declVisibility NEW COLON topTypeWithTypeConstraints  
-     { let vis, doc, (ty, valSynInfo) = $2, grabXmlDoc(parseState, $1, 1), $5
+     { let vis, doc, ty = $2, grabXmlDoc(parseState, $1, 1), $5
        let m = unionRanges (rhs parseState 1) ty.Range |> unionRangeWithXmlDoc doc
        let isInline = false 
-       let valSpfn = SynValSig ($1, (SynIdent(mkSynId (rhs parseState 3) "new", None)), noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, m, SynValSigTrivia.Zero)
+       let valSpfn = SynValSig ($1, (SynIdent(mkSynId (rhs parseState 3) "new", None)), noInferredTypars, ty, isInline, false, doc, vis, None, m, SynValSigTrivia.Zero)
        SynMemberSig.Member(valSpfn, CtorMemberFlags SynMemberFlagsTrivia.Zero, m) }
 
 
@@ -1737,14 +1742,13 @@ tyconDefnRhs:
 
   /* A delegate type definition */
   | DELEGATE OF topType
-     { let m = lhs parseState 
-       let ty, arity = $3
+     { let m = lhs parseState
        (fun nameRange augmentation -> 
-           let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero) 
+           let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, $3, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero)
            let flags = AbstractMemberFlags true SynMemberFlagsTrivia.Zero SynMemberKind.Member
            let invoke = SynMemberDefn.AbstractSlot(valSig, flags, m) 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
-           SynTypeDefnRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), []) }
+           SynTypeDefnRepr.ObjectModel (SynTypeDefnKind.Delegate $3, [invoke], m), []) }
 
 
 /* The right-hand-side of a object type definition */
@@ -1932,20 +1936,24 @@ classDefnMember:
         [ SynMemberDefn.Interface ($4, mWithKwd, members, mWhole) ] }
         
   | opt_attributes opt_declVisibility abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet  opt_ODECLEND
-     { let ty, arity = $8
-       let isInline, doc, id, explicitValTyparDecls = $4, grabXmlDoc(parseState, $1, 1), $5, $6
+     { let isInline, doc, id, explicitValTyparDecls = $4, grabXmlDoc(parseState, $1, 1), $5, $6
        let mWith, getSetRangeOpt, getSet = $9
-       let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
+       let getSetAdjuster (t: SynType) =
+            match t, getSet with
+            | SynType.SignatureParameter(attributes = _ :: _), _ -> getSet
+            | _, SynMemberKind.Member -> SynMemberKind.PropertyGet
+            | _ -> getSet
+
        let mWhole = 
            let m = rhs parseState 1
            match getSetRangeOpt with 
-           | None -> unionRanges m ty.Range
+           | None -> unionRanges m $8.Range
            | Some m2 -> unionRanges m m2
            |> unionRangeWithXmlDoc doc
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
        let trivia = { ValKeyword = None; WithKeyword = mWith; EqualsRange = None }
-       let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWhole, trivia)
-       [ SynMemberDefn.AbstractSlot(valSpfn, $3 (getSetAdjuster arity), mWhole) ] }
+       let valSpfn = SynValSig($1, id, explicitValTyparDecls, $8, isInline, false, doc, None, None, mWhole, trivia)
+       [ SynMemberDefn.AbstractSlot(valSpfn, $3 (getSetAdjuster $8), mWhole) ] }
        
   | opt_attributes opt_declVisibility inheritsDefn
      {  if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalOnInherit(), rhs parseState 1))
@@ -1975,7 +1983,7 @@ classDefnMember:
         let m = unionRanges mWholeBindLhs $7.Range |> unionRangeWithXmlDoc xmlDoc
         let mEquals = rhs parseState 6
         let expr = $7
-        let valSynData = SynValData (Some (CtorMemberFlags SynMemberFlagsTrivia.Zero), SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), $5) 
+        let valSynData = SynValData (Some (CtorMemberFlags SynMemberFlagsTrivia.Zero), $5)
         let vis = $2 
         let declPat = SynPat.LongIdent (SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
         // Check that 'SynPatForConstructorDecl' matches this correctly
@@ -2815,11 +2823,11 @@ cType:
 /* A return type in an 'extern' DllImport function definition */
 cRetType: 
   | opt_attributes cType 
-     { SynReturnInfo(($2, SynArgInfo($1, false, None)), rhs parseState 2) }
+     { SynType.SignatureParameter($1, false, None, $2, rhs parseState 2) }
 
   | opt_attributes VOID  
-     { let m = rhs parseState 2 
-       SynReturnInfo((SynType.App(SynType.LongIdent(SynLongIdent([ident("unit", m)], [], [ Some (IdentTrivia.OriginalNotation "void") ])), None, [], [], None, false, m), SynArgInfo($1, false, None)), m) } 
+     { let m = rhs parseState 2
+       SynType.App(SynType.LongIdent(SynLongIdent([ident("unit", m)], [], [ Some (IdentTrivia.OriginalNotation "void") ])), None, [], [], None, false, m) }
 
 
 localBindings: 
@@ -5035,72 +5043,70 @@ topTypeWithTypeConstraints:
      { $1 }
 
   | topType WHEN typeConstraints 
-     { let ty, arity = $1 
-       // nb. it doesn't matter where the constraints go in the structure of the type. 
-       SynType.WithGlobalConstraints(ty, List.rev $3, lhs parseState), arity }
+     { // nb. it doesn't matter where the constraints go in the structure of the type.
+       SynType.WithGlobalConstraints($1, List.rev $3, lhs parseState) }
 
 opt_topReturnTypeWithTypeConstraints: 
   |             
      { None } 
 
   | COLON topTypeWithTypeConstraints 
-     { let ty, arity = $2 
-       let arity = (match arity with SynValInfo([], rmdata)-> rmdata | _ -> SynInfo.unnamedRetVal)
-       Some (SynReturnInfo((ty, arity), rhs parseState 2)) }
+     { Some $2 }
 
 topType: 
   | topTupleType RARROW topType 
-     { let dty, dmdata= $1 
-       let rty, (SynValInfo(dmdatas, rmdata)) = $3
-       let mArrow = rhs parseState 2
-       SynType.Fun(dty, rty, lhs parseState, { ArrowRange = mArrow }), (SynValInfo(dmdata :: dmdatas, rmdata)) }
+     { let mArrow = rhs parseState 2
+       SynType.Fun($1, $3, lhs parseState, { ArrowRange = mArrow }) }
 
   | topTupleType 
-     { let ty, rmdata = $1 in ty, (SynValInfo([], (match rmdata with [md] -> md | _ -> SynInfo.unnamedRetVal))) }
+     { $1 }
 
 topTupleType:
   | topAppType STAR topTupleTypeElements 
-     { let t, argInfo = $1
-       let mStar = rhs parseState 2
-       let path = SynTupleTypeSegment.Type t :: SynTupleTypeSegment.Star mStar :: (List.map fst $3)
-       let mdata = argInfo :: (List.choose snd $3)
-       mkSynTypeTuple path, mdata }
+     { let mStar = rhs parseState 2
+       let path = SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Star mStar :: $3
+       mkSynTypeTuple path }
 
   | topAppType                 
-     { let ty, mdata = $1 in ty, [mdata] }
+     { $1 }
 
 topTupleTypeElements:
   | topAppType STAR topTupleTypeElements       
-     { let t, argInfo = $1
-       let mStar = rhs parseState 2
-       (SynTupleTypeSegment.Type t, Some argInfo) :: (SynTupleTypeSegment.Star mStar, None) :: $3 }
+     { let mStar = rhs parseState 2
+       SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Star mStar :: $3 }
 
   | topAppType %prec prec_toptuptyptail_prefix 
-     { let t, argInfo = $1
-       [ SynTupleTypeSegment.Type t, Some argInfo ] }
+     { [ SynTupleTypeSegment.Type $1 ] }
 
 topAppType:
   | attributes appType COLON appType 
      { match $2 with 
-       | SynType.LongIdent(SynLongIdent([id], _, _)) -> $4, SynArgInfo($1, false, Some id)
+       | SynType.LongIdent(SynLongIdent([id], _, _)) ->
+          let m = rhs2 parseState 1 4
+          SynType.SignatureParameter($1, false, Some id, $4, m)
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType())  }
 
   | attributes QMARK ident COLON appType 
-     { $5, SynArgInfo($1, true, Some $3) }
+     { let m = rhs2 parseState 1 5
+       SynType.SignatureParameter($1, true, Some $3, $5, m) }
 
   | attributes appType 
-     { ($2, SynArgInfo($1, false, None)) }
+     { let m = rhs2 parseState 1 2
+       SynType.SignatureParameter($1, false, None, $2, m) }
 
   | appType COLON appType 
      { match $1 with 
-       | SynType.LongIdent(SynLongIdent([id], _, _)) -> $3, SynArgInfo([], false, Some id)
+       | SynType.LongIdent(SynLongIdent([id], _, _)) ->
+          let m = rhs2 parseState 1 3
+          SynType.SignatureParameter([], false, Some id, $3, m)
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType())  }
 
   | QMARK ident COLON appType 
-     { $4, SynArgInfo([], true, Some $2) }
+     { let m = rhs2 parseState 1 4
+       SynType.SignatureParameter([], true, Some $2, $4, m) }
 
   | appType 
-     { $1, SynArgInfo([], false, None) }
+     { $1 }
 
 /* Any tokens in this grammar must be added to the lex filter rule 'peekAdjacentTypars' */
 /* See the F# specification "Lexical analysis of type applications and type parameter definitions" */

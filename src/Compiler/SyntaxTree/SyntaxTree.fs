@@ -434,6 +434,8 @@ type SynType =
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
 
     | Paren of innerType: SynType * range: range
+    
+    | SignatureParameter of attributes: SynAttributes * optional: bool * id: Ident option * usedType: SynType * range: range
 
     member x.Range =
         match x with
@@ -452,7 +454,8 @@ type SynType =
         | SynType.HashConstraint (range = m)
         | SynType.MeasureDivide (range = m)
         | SynType.MeasurePower (range = m)
-        | SynType.Paren (range = m) -> m
+        | SynType.Paren (range = m)
+        | SynType.SignatureParameter(range = m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1019,9 +1022,9 @@ type SynAttributes = SynAttributeList list
 
 [<NoEquality; NoComparison>]
 type SynValData =
-    | SynValData of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
+    | SynValData of memberFlags: SynMemberFlags option * (* valInfo: SynValInfo * *) thisIdOpt: Ident option
 
-    member x.SynValInfo = (let (SynValData (_flags, synValInfo, _)) = x in synValInfo)
+    // member x.SynValInfo = (let (SynValData (_flags, synValInfo, _)) = x in synValInfo)
 
 [<NoEquality; NoComparison>]
 type SynBinding =
@@ -1034,7 +1037,7 @@ type SynBinding =
         xmlDoc: PreXmlDoc *
         valData: SynValData *
         headPat: SynPat *
-        returnInfo: SynBindingReturnInfo option *
+        returnInfo: SynType option * // SynBindingReturnInfo option *
         expr: SynExpr *
         range: range *
         debugPoint: DebugPointAtBinding *
@@ -1051,8 +1054,8 @@ type SynBinding =
 
     member x.RangeOfHeadPattern = let (SynBinding (headPat = headPat)) = x in headPat.Range
 
-[<NoEquality; NoComparison>]
-type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
+// [<NoEquality; NoComparison>]
+// type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
 
 [<NoComparison; RequireQualifiedAccess; CustomEquality>]
 type SynMemberFlags =
@@ -1140,7 +1143,7 @@ type SynTypeDefnKind =
     | Opaque
     | Augmentation of withKeyword: range
     | IL
-    | Delegate of signature: SynType * signatureInfo: SynValInfo
+    | Delegate of signature: SynType // * signatureInfo: SynValInfo
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeDefnSimpleRepr =
@@ -1219,7 +1222,7 @@ type SynUnionCaseKind =
 
     | Fields of cases: SynField list
 
-    | FullType of fullType: SynType * fullTypeInfo: SynValInfo
+    | FullType of fullType: SynType // * fullTypeInfo: SynValInfo
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynTypeDefnSigRepr =
@@ -1285,7 +1288,7 @@ type SynValSig =
         ident: SynIdent *
         explicitTypeParams: SynValTyparDecls *
         synType: SynType *
-        arity: SynValInfo *
+        // arity: SynValInfo *
         isInline: bool *
         isMutable: bool *
         xmlDoc: PreXmlDoc *
@@ -1296,38 +1299,38 @@ type SynValSig =
 
     member x.RangeOfId = let (SynValSig(ident = SynIdent (id, _))) = x in id.idRange
 
-    member x.SynInfo = let (SynValSig (arity = v)) = x in v
+    // member x.SynInfo = let (SynValSig (arity = v)) = x in v
 
     member x.SynType = let (SynValSig (synType = ty)) = x in ty
 
-[<NoEquality; NoComparison>]
-type SynValInfo =
+// [<NoEquality; NoComparison>]
+// type SynValInfo =
+//
+//     | SynValInfo of curriedArgInfos: SynArgInfo list list * returnInfo: SynArgInfo
+//
+//     member x.CurriedArgInfos = (let (SynValInfo (args, _)) = x in args)
+//
+//     member x.ArgNames =
+//         x.CurriedArgInfos
+//         |> List.concat
+//         |> List.map (fun info -> info.Ident)
+//         |> List.choose id
+//         |> List.map (fun id -> id.idText)
 
-    | SynValInfo of curriedArgInfos: SynArgInfo list list * returnInfo: SynArgInfo
-
-    member x.CurriedArgInfos = (let (SynValInfo (args, _)) = x in args)
-
-    member x.ArgNames =
-        x.CurriedArgInfos
-        |> List.concat
-        |> List.map (fun info -> info.Ident)
-        |> List.choose id
-        |> List.map (fun id -> id.idText)
-
-[<NoEquality; NoComparison>]
-type SynArgInfo =
-
-    | SynArgInfo of attributes: SynAttributes * optional: bool * ident: Ident option
-
-    member x.Ident: Ident option = let (SynArgInfo (_, _, id)) = x in id
-
-    member x.Attributes: SynAttributes = let (SynArgInfo (attrs, _, _)) = x in attrs
+// [<NoEquality; NoComparison>]
+// type SynArgInfo =
+//
+//     | SynArgInfo of attributes: SynAttributes * optional: bool * ident: Ident option
+//
+//     member x.Ident: Ident option = let (SynArgInfo (_, _, id)) = x in id
+//
+//     member x.Attributes: SynAttributes = let (SynArgInfo (attrs, _, _)) = x in attrs
 
 [<NoEquality; NoComparison>]
 type SynValTyparDecls = SynValTyparDecls of typars: SynTyparDecls option * canInfer: bool
 
-[<NoEquality; NoComparison>]
-type SynReturnInfo = SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
+// [<NoEquality; NoComparison>]
+// type SynReturnInfo = SynReturnInfo of returnType: (SynType (* SynArgInfo *) ) * range: range
 
 [<NoEquality; NoComparison>]
 type SynExceptionDefnRepr =
