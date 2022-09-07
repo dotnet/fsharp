@@ -1,0 +1,6 @@
+<linker>
+  <assembly fullname="FSharp.Core">
+    <resource name="FSharpOptimizationInfo.FSharp.Core" action="remove" />
+    <resource name="FSharpSignatureInfo.FSharp.Core" action="remove" />
+  </assembly>
+</linker>
