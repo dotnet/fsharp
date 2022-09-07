@@ -434,7 +434,7 @@ type SynType =
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
 
     | Paren of innerType: SynType * range: range
-    
+
     | SignatureParameter of attributes: SynAttributes * optional: bool * id: Ident option * usedType: SynType * range: range
 
     member x.Range =
@@ -455,7 +455,7 @@ type SynType =
         | SynType.MeasureDivide (range = m)
         | SynType.MeasurePower (range = m)
         | SynType.Paren (range = m)
-        | SynType.SignatureParameter(range = m) -> m
+        | SynType.SignatureParameter (range = m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1021,10 +1021,9 @@ type SynAttributeList =
 type SynAttributes = SynAttributeList list
 
 [<NoEquality; NoComparison>]
-type SynValData =
-    | SynValData of memberFlags: SynMemberFlags option * (* valInfo: SynValInfo * *) thisIdOpt: Ident option
+type SynValData = SynValData of memberFlags: SynMemberFlags option (* valInfo: SynValInfo * *) * thisIdOpt: Ident option
 
-    // member x.SynValInfo = (let (SynValData (_flags, synValInfo, _)) = x in synValInfo)
+// member x.SynValInfo = (let (SynValData (_flags, synValInfo, _)) = x in synValInfo)
 
 [<NoEquality; NoComparison>]
 type SynBinding =
@@ -1037,7 +1036,7 @@ type SynBinding =
         xmlDoc: PreXmlDoc *
         valData: SynValData *
         headPat: SynPat *
-        returnInfo: SynType option * // SynBindingReturnInfo option *
+        returnInfo: SynType option *  // SynBindingReturnInfo option *
         expr: SynExpr *
         range: range *
         debugPoint: DebugPointAtBinding *

@@ -17,6 +17,38 @@ open FSharp.Compiler.TypeProviders
 open FSharp.Compiler.Xml
 open FSharp.Core.CompilerServices
 
+/// The argument names and other metadata for a member or function
+[<NoEquality; NoComparison>]
+type SynValInfo =
+
+    /// SynValInfo(curriedArgInfos, returnInfo)
+    | SynValInfo of curriedArgInfos: SynArgInfo list list * returnInfo: SynArgInfo
+
+    member CurriedArgInfos: SynArgInfo list list
+
+    member ArgNames: string list
+
+/// Represents the argument names and other metadata for a parameter for a member or function
+[<NoEquality; NoComparison>]
+type SynArgInfo =
+
+    | SynArgInfo of attributes: SynAttributes * optional: bool * ident: Ident option
+
+    member Ident: Ident option
+
+    member Attributes: SynAttributes
+
+/// Represents the syntactic elements associated with the "return" of a function or method.
+[<NoEquality; NoComparison>]
+type SynReturnInfo = SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
+
+/// Represents extra information about the declaration of a value
+[<NoEquality; NoComparison>]
+type SynValData2 =
+    | SynValData2 of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
+
+    member SynValInfo: SynValInfo
+
 type Stamp = int64
 
 type StampMap<'T> = Map<Stamp, 'T>

@@ -32,6 +32,38 @@ open FSharp.Compiler.TypeProviders
 open FSharp.Core.CompilerServices
 #endif
 
+[<NoEquality; NoComparison>]
+type SynValInfo =
+
+    | SynValInfo of curriedArgInfos: SynArgInfo list list * returnInfo: SynArgInfo
+
+    member x.CurriedArgInfos = (let (SynValInfo (args, _)) = x in args)
+
+    member x.ArgNames =
+        x.CurriedArgInfos
+        |> List.concat
+        |> List.map (fun info -> info.Ident)
+        |> List.choose id
+        |> List.map (fun id -> id.idText)
+
+[<NoEquality; NoComparison>]
+type SynArgInfo =
+
+    | SynArgInfo of attributes: SynAttributes * optional: bool * ident: Ident option
+
+    member x.Ident: Ident option = let (SynArgInfo (_, _, id)) = x in id
+
+    member x.Attributes: SynAttributes = let (SynArgInfo (attrs, _, _)) = x in attrs
+
+[<NoEquality; NoComparison>]
+type SynReturnInfo = SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
+
+[<NoEquality; NoComparison>]
+type SynValData2 =
+    | SynValData2 of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
+
+    member x.SynValInfo = (let (SynValData2 (_flags, synValInfo, _)) = x in synValInfo)
+
 type Stamp = int64
 
 type StampMap<'T> = Map<Stamp, 'T>

@@ -509,8 +509,13 @@ type SynType =
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
 
     | Paren of innerType: SynType * range: range
-    
-    | SignatureParameter of attributes: SynAttributes * optional: bool * id: Ident option * usedType: SynType * range: range
+
+    | SignatureParameter of
+        attributes: SynAttributes *
+        optional: bool *
+        id: Ident option *
+        usedType: SynType *
+        range: range
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -1163,9 +1168,9 @@ type SynAttributes = SynAttributeList list
 /// Represents extra information about the declaration of a value
 [<NoEquality; NoComparison>]
 type SynValData =
-    | SynValData of memberFlags: SynMemberFlags option * (* valInfo: SynValInfo  * *) thisIdOpt: Ident option
+    | SynValData of memberFlags: SynMemberFlags option (* valInfo: SynValInfo  * *) * thisIdOpt: Ident option
 
-    // member SynValInfo: SynValInfo
+// member SynValInfo: SynValInfo
 
 /// Represents a binding for a 'let' or 'member' declaration
 [<NoEquality; NoComparison>]

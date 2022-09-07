@@ -165,11 +165,11 @@ val mkSynMemberDefnGetSet:
     parseState: IParseState ->
     opt_inline: bool ->
     mWith: range ->
-    classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * SynReturnInfo option * range option * SynExpr * range) list ->
+    classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * SynType option * range option * SynExpr * range) list ->
     mAnd: range option ->
     mWhole: range ->
     propertyNameBindingPat: SynPat ->
-    optPropertyType: SynReturnInfo option ->
+    optPropertyType: SynType option ->
     visNoLongerUsed: SynAccess option ->
     memFlagsBuilder: (SynMemberKind -> SynMemberFlags) ->
     attrs: SynAttributeList list ->

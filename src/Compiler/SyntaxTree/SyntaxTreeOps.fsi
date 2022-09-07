@@ -188,89 +188,12 @@ val stripParenTypes: synType: SynType -> SynType
 
 val (|StripParenTypes|): synType: SynType -> SynType
 
-/// Operations related to the syntactic analysis of arguments of value, function and member definitions and signatures.
-module SynInfo =
-    /// The argument information for an argument without a name
-    val unnamedTopArg1: SynArgInfo
-
-    /// The argument information for a curried argument without a name
-    val unnamedTopArg: SynArgInfo list
-
-    /// The argument information for a '()' argument
-    val unitArgData: SynArgInfo list
-
-    /// The 'argument' information for a return value where no attributes are given for the return value (the normal case)
-    val unnamedRetVal: SynArgInfo
-
-    /// The 'argument' information for the 'this'/'self' parameter in the cases where it is not given explicitly
-    val selfMetadata: SynArgInfo list
-
-    /// Determine if a syntactic information represents a member without arguments (which is implicitly a property getter)
-    val HasNoArgs: SynValInfo -> bool
-
-    /// Check if one particular argument is an optional argument. Used when adjusting the
-    /// types of optional arguments for function and member signatures.
-    val IsOptionalArg: SynArgInfo -> bool
-
-    /// Check if there are any optional arguments in the syntactic argument information. Used when adjusting the
-    /// types of optional arguments for function and member signatures.
-    val HasOptionalArgs: SynValInfo -> bool
-
-    /// Add a parameter entry to the syntactic value information to represent the '()' argument to a property getter. This is
-    /// used for the implicit '()' argument in property getter signature specifications.
-    val IncorporateEmptyTupledArgForPropertyGetter: SynValInfo -> SynValInfo
-
-    /// Add a parameter entry to the syntactic value information to represent the 'this' argument. This is
-    /// used for the implicit 'this' argument in member signature specifications.
-    val IncorporateSelfArg: SynValInfo -> SynValInfo
-
-    /// Add a parameter entry to the syntactic value information to represent the value argument for a property setter. This is
-    /// used for the implicit value argument in property setter signature specifications.
-    val IncorporateSetterArg: SynValInfo -> SynValInfo
-
-    /// Get the argument counts for each curried argument group. Used in some adhoc places in tc.fs.
-    val AritiesOfArgs: SynValInfo -> int list
-
-    /// Get the argument attributes from the syntactic information for an argument.
-    val AttribsOfArgData: SynArgInfo -> SynAttribute list
-
-    /// Infer the syntactic argument info for a single argument from a simple pattern.
-    val InferSynArgInfoFromSimplePat: attribs: SynAttributes -> p: SynSimplePat -> SynArgInfo
-
-    /// Infer the syntactic argument info for one or more arguments one or more simple patterns.
-    val InferSynArgInfoFromSimplePats: x: SynSimplePats -> SynArgInfo list
-
-    /// Infer the syntactic argument info for one or more arguments a pattern.
-    val InferSynArgInfoFromPat: p: SynPat -> SynArgInfo list
-
-    /// Make sure only a solitary unit argument has unit elimination
-    val AdjustArgsForUnitElimination: infosForArgs: SynArgInfo list list -> SynArgInfo list list
-
-    /// Transform a property declared using '[static] member P = expr' to a method taking a "unit" argument.
-    /// This is similar to IncorporateEmptyTupledArgForPropertyGetter, but applies to member definitions
-    /// rather than member signatures.
-    val AdjustMemberArgs: memFlags: SynMemberKind -> infosForArgs: 'a list list -> 'a list list
-
-    val InferSynReturnData: retInfo: SynReturnInfo option -> SynArgInfo
-
-    val emptySynValData: SynValData
-
-    /// Infer the syntactic information for a 'let' or 'member' definition, based on the argument pattern,
-    /// any declared return information (e.g. .NET attributes on the return element), and the r.h.s. expression
-    /// in the case of 'let' definitions.
-    val InferSynValData:
-        memberFlagsOpt: SynMemberFlags option *
-        pat: SynPat option *
-        retInfo: SynReturnInfo option *
-        origRhsExpr: SynExpr ->
-            SynValData
-
 val mkSynBindingRhs:
     staticOptimizations: (SynStaticOptimizationConstraint list * SynExpr) list ->
     rhsExpr: SynExpr ->
     mRhs: range ->
-    retInfo: SynReturnInfo option ->
-        SynExpr * SynBindingReturnInfo option
+    retInfo: SynType option ->
+        SynExpr * SynType option
 
 val mkSynBinding:
     xmlDoc: PreXmlDoc * headPat: SynPat ->
@@ -279,7 +202,7 @@ val mkSynBinding:
         isMutable: bool *
         mBind: range *
         spBind: DebugPointAtBinding *
-        retInfo: SynReturnInfo option *
+        retInfo: SynType option *
         origRhsExpr: SynExpr *
         mRhs: range *
         staticOptimizations: (SynStaticOptimizationConstraint list * SynExpr) list *

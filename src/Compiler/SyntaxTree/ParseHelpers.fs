@@ -421,11 +421,11 @@ let mkSynMemberDefnGetSet
     (parseState: IParseState)
     (opt_inline: bool)
     (mWith: range)
-    (classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * SynReturnInfo option * range option * SynExpr * range) list)
+    (classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * SynType option * range option * SynExpr * range) list)
     (mAnd: range option)
     (mWhole: range)
     (propertyNameBindingPat: SynPat)
-    (optPropertyType: SynReturnInfo option)
+    (optPropertyType: SynType option)
     (visNoLongerUsed: SynAccess option)
     (memFlagsBuilder: SynMemberKind -> SynMemberFlags)
     (attrs: SynAttributeList list)
@@ -560,64 +560,66 @@ let mkSynMemberDefnGetSet
                      Some(memFlagsBuilder memberKind),
                      trivia)
 
-            let (SynBinding (vis, _, isInline, _, attrs, doc, valSynData, pv, rhsRetInfo, rhsExpr, mBindLhs, spBind, trivia)) =
+            let (SynBinding (vis, _, isInline, _, attrs, doc, _valSynData, pv, rhsRetInfo, rhsExpr, mBindLhs, spBind, trivia)) =
                 binding
 
             let mWholeBindLhs =
                 (mBindLhs, attrs)
                 ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
 
-            let (SynValData (_, valSynInfo, _)) = valSynData
+            // let (SynValData (_, valSynInfo, _)) = valSynData
 
             // Setters have all arguments tupled in their internal TAST form, though they don't appear to be
             // tupled from the syntax
             let memFlags: SynMemberFlags = memFlagsBuilder memberKind
 
-            let valSynInfo =
-                let adjustValueArg valueArg =
-                    match valueArg with
-                    | [ _ ] -> valueArg
-                    | _ -> SynInfo.unnamedTopArg
+            // TODO: this will surely bite me at some point
 
-                match memberKind, valSynInfo, memFlags.IsInstance with
-                | SynMemberKind.PropertyGet, SynValInfo ([], _ret), false
-                | SynMemberKind.PropertyGet, SynValInfo ([ _ ], _ret), true ->
-                    raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsGetterMustHaveAtLeastOneArgument ())
+            // let valSynInfo =
+            //     let adjustValueArg valueArg =
+            //         match valueArg with
+            //         | [ _ ] -> valueArg
+            //         | _ -> SynInfo.unnamedTopArg
+            //
+            //     match memberKind, valSynInfo, memFlags.IsInstance with
+            //     | SynMemberKind.PropertyGet, SynValInfo ([], _ret), false
+            //     | SynMemberKind.PropertyGet, SynValInfo ([ _ ], _ret), true ->
+            //         raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsGetterMustHaveAtLeastOneArgument ())
+            //
+            //     | SynMemberKind.PropertyGet, SynValInfo (thisArg :: indexOrUnitArgs :: rest, ret), true ->
+            //         if not rest.IsEmpty then
+            //             reportParseErrorAt mWholeBindLhs (FSComp.SR.parsGetterAtMostOneArgument ())
+            //
+            //         SynValInfo([ thisArg; indexOrUnitArgs ], ret)
+            //
+            //     | SynMemberKind.PropertyGet, SynValInfo (indexOrUnitArgs :: rest, ret), false ->
+            //         if not rest.IsEmpty then
+            //             reportParseErrorAt mWholeBindLhs (FSComp.SR.parsGetterAtMostOneArgument ())
+            //
+            //         SynValInfo([ indexOrUnitArgs ], ret)
+            //
+            //     | SynMemberKind.PropertySet, SynValInfo ([ thisArg; valueArg ], ret), true ->
+            //         SynValInfo([ thisArg; adjustValueArg valueArg ], ret)
+            //
+            //     | SynMemberKind.PropertySet, SynValInfo (thisArg :: indexArgs :: valueArg :: rest, ret), true ->
+            //         if not rest.IsEmpty then
+            //             reportParseErrorAt mWholeBindLhs (FSComp.SR.parsSetterAtMostTwoArguments ())
+            //
+            //         SynValInfo([ thisArg; indexArgs @ adjustValueArg valueArg ], ret)
+            //
+            //     | SynMemberKind.PropertySet, SynValInfo ([ valueArg ], ret), false -> SynValInfo([ adjustValueArg valueArg ], ret)
+            //
+            //     | SynMemberKind.PropertySet, SynValInfo (indexArgs :: valueArg :: rest, ret), _ ->
+            //         if not rest.IsEmpty then
+            //             reportParseErrorAt mWholeBindLhs (FSComp.SR.parsSetterAtMostTwoArguments ())
+            //
+            //         SynValInfo([ indexArgs @ adjustValueArg valueArg ], ret)
+            //
+            //     | _ ->
+            //         // should be unreachable, cover just in case
+            //         raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidProperty ())
 
-                | SynMemberKind.PropertyGet, SynValInfo (thisArg :: indexOrUnitArgs :: rest, ret), true ->
-                    if not rest.IsEmpty then
-                        reportParseErrorAt mWholeBindLhs (FSComp.SR.parsGetterAtMostOneArgument ())
-
-                    SynValInfo([ thisArg; indexOrUnitArgs ], ret)
-
-                | SynMemberKind.PropertyGet, SynValInfo (indexOrUnitArgs :: rest, ret), false ->
-                    if not rest.IsEmpty then
-                        reportParseErrorAt mWholeBindLhs (FSComp.SR.parsGetterAtMostOneArgument ())
-
-                    SynValInfo([ indexOrUnitArgs ], ret)
-
-                | SynMemberKind.PropertySet, SynValInfo ([ thisArg; valueArg ], ret), true ->
-                    SynValInfo([ thisArg; adjustValueArg valueArg ], ret)
-
-                | SynMemberKind.PropertySet, SynValInfo (thisArg :: indexArgs :: valueArg :: rest, ret), true ->
-                    if not rest.IsEmpty then
-                        reportParseErrorAt mWholeBindLhs (FSComp.SR.parsSetterAtMostTwoArguments ())
-
-                    SynValInfo([ thisArg; indexArgs @ adjustValueArg valueArg ], ret)
-
-                | SynMemberKind.PropertySet, SynValInfo ([ valueArg ], ret), false -> SynValInfo([ adjustValueArg valueArg ], ret)
-
-                | SynMemberKind.PropertySet, SynValInfo (indexArgs :: valueArg :: rest, ret), _ ->
-                    if not rest.IsEmpty then
-                        reportParseErrorAt mWholeBindLhs (FSComp.SR.parsSetterAtMostTwoArguments ())
-
-                    SynValInfo([ indexArgs @ adjustValueArg valueArg ], ret)
-
-                | _ ->
-                    // should be unreachable, cover just in case
-                    raiseParseErrorAt mWholeBindLhs (FSComp.SR.parsInvalidProperty ())
-
-            let valSynData = SynValData(Some(memFlags), valSynInfo, None)
+            let valSynData = SynValData(Some(memFlags), None)
 
             // Fold together the information from the first lambda pattern and the get/set binding
             // This uses the 'this' variable from the first and the patterns for the get/set binding,

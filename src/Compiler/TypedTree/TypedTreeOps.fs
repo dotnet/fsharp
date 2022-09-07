@@ -31,6 +31,163 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypeProviders
 #endif
 
+/// Operations related to the syntactic analysis of arguments of value, function and member definitions and signatures.
+module SynInfo =
+
+    /// The argument information for an argument without a name
+    let unnamedTopArg1 = SynArgInfo([], false, None)
+
+    /// The argument information for a curried argument without a name
+    let unnamedTopArg = [ unnamedTopArg1 ]
+
+    /// The argument information for a '()' argument
+    let unitArgData = unnamedTopArg
+
+    /// The 'argument' information for a return value where no attributes are given for the return value (the normal case)
+    let unnamedRetVal = SynArgInfo([], false, None)
+
+    /// The 'argument' information for the 'this'/'self' parameter in the cases where it is not given explicitly
+    let selfMetadata = unnamedTopArg
+
+    /// Determine if a syntactic information represents a member without arguments (which is implicitly a property getter)
+    let HasNoArgs (SynValInfo (args, _)) = isNil args
+
+    /// Check if one particular argument is an optional argument. Used when adjusting the
+    /// types of optional arguments for function and member signatures.
+    let IsOptionalArg (SynArgInfo (_, isOpt, _)) = isOpt
+
+    /// Check if there are any optional arguments in the syntactic argument information. Used when adjusting the
+    /// types of optional arguments for function and member signatures.
+    let HasOptionalArgs (SynValInfo (args, _)) =
+        List.exists (List.exists IsOptionalArg) args
+
+    /// Add a parameter entry to the syntactic value information to represent the '()' argument to a property getter. This is
+    /// used for the implicit '()' argument in property getter signature specifications.
+    let IncorporateEmptyTupledArgForPropertyGetter (SynValInfo (args, retInfo)) = SynValInfo([] :: args, retInfo)
+
+    /// Add a parameter entry to the syntactic value information to represent the 'this' argument. This is
+    /// used for the implicit 'this' argument in member signature specifications.
+    let IncorporateSelfArg (SynValInfo (args, retInfo)) =
+        SynValInfo(selfMetadata :: args, retInfo)
+
+    /// Add a parameter entry to the syntactic value information to represent the value argument for a property setter. This is
+    /// used for the implicit value argument in property setter signature specifications.
+    let IncorporateSetterArg (SynValInfo (args, retInfo)) =
+        let args =
+            match args with
+            | [] -> [ unnamedTopArg ]
+            | [ arg ] -> [ arg @ [ unnamedTopArg1 ] ]
+            | _ -> failwith "invalid setter type"
+
+        SynValInfo(args, retInfo)
+
+    /// Get the argument counts for each curried argument group. Used in some adhoc places in tc.fs.
+    let AritiesOfArgs (SynValInfo (args, _)) = List.map List.length args
+
+    /// Get the argument attributes from the syntactic information for an argument.
+    let AttribsOfArgData (SynArgInfo (Attributes attribs, _, _)) = attribs
+
+    /// Infer the syntactic argument info for a single argument from a simple pattern.
+    let rec InferSynArgInfoFromSimplePat attribs p =
+        match p with
+        | SynSimplePat.Id (nm, _, isCompGen, _, isOpt, _) -> SynArgInfo(attribs, isOpt, (if isCompGen then None else Some nm))
+        | SynSimplePat.Typed (a, _, _) -> InferSynArgInfoFromSimplePat attribs a
+        | SynSimplePat.Attrib (a, attribs2, _) -> InferSynArgInfoFromSimplePat (attribs @ attribs2) a
+
+    /// Infer the syntactic argument info for one or more arguments one or more simple patterns.
+    let rec InferSynArgInfoFromSimplePats x =
+        match x with
+        | SynSimplePats.SimplePats (ps, _) -> List.map (InferSynArgInfoFromSimplePat []) ps
+        | SynSimplePats.Typed (ps, _, _) -> InferSynArgInfoFromSimplePats ps
+
+    /// Infer the syntactic argument info for one or more arguments a pattern.
+    let InferSynArgInfoFromPat p =
+        // It is ok to use a fresh SynArgNameGenerator here, because compiler generated names are filtered from SynArgInfo, see InferSynArgInfoFromSimplePat above
+        let sp, _ = SimplePatsOfPat (SynArgNameGenerator()) p
+        InferSynArgInfoFromSimplePats sp
+
+    /// Make sure only a solitary unit argument has unit elimination
+    let AdjustArgsForUnitElimination infosForArgs =
+        match infosForArgs with
+        | [ [] ] -> infosForArgs
+        | _ ->
+            infosForArgs
+            |> List.map (function
+                | [] -> unitArgData
+                | x -> x)
+
+    /// Transform a property declared using '[static] member P = expr' to a method taking a "unit" argument.
+    /// This is similar to IncorporateEmptyTupledArgForPropertyGetter, but applies to member definitions
+    /// rather than member signatures.
+    let AdjustMemberArgs memFlags infosForArgs =
+        match infosForArgs with
+        | [] when memFlags = SynMemberKind.Member -> [] :: infosForArgs
+        | _ -> infosForArgs
+
+    /// For 'let' definitions, we infer syntactic argument information from the r.h.s. of a definition, if it
+    /// is an immediate 'fun ... -> ...' or 'function ...' expression. This is noted in the F# language specification.
+    /// This does not apply to member definitions nor to returns with attributes
+    let InferLambdaArgs (retInfo: SynArgInfo) origRhsExpr =
+        if retInfo.Attributes.Length > 0 then
+            []
+        else
+            let rec loop e =
+                match e with
+                | SynExpr.Lambda (fromMethod = false; args = spats; body = rest) -> InferSynArgInfoFromSimplePats spats :: loop rest
+                | _ -> []
+
+            loop origRhsExpr
+
+    let InferSynReturnData (retInfo: SynReturnInfo option) =
+        match retInfo with
+        | None -> unnamedRetVal
+        | Some (SynReturnInfo ((_, retInfo), _)) -> retInfo
+
+    let private emptySynValInfo = SynValInfo([], unnamedRetVal)
+
+    let emptySynValData = SynValData2(None, emptySynValInfo, None)
+
+    /// Infer the syntactic information for a 'let' or 'member' definition, based on the argument pattern,
+    /// any declared return information (e.g. .NET attributes on the return element), and the r.h.s. expression
+    /// in the case of 'let' definitions.
+    let InferSynValData (memberFlagsOpt: SynMemberFlags option, pat, retInfo, origRhsExpr) =
+
+        let infosForExplicitArgs =
+            match pat with
+            | Some (SynPat.LongIdent(argPats = SynArgPats.Pats curriedArgs)) -> List.map InferSynArgInfoFromPat curriedArgs
+            | _ -> []
+
+        let isSimplePattern pat =
+            let _nowPats, laterF = SimplePatsOfPat (SynArgNameGenerator()) pat
+            Option.isNone laterF
+        
+        let explicitArgsAreSimple =
+            match pat with
+            | Some (SynPat.LongIdent(argPats = SynArgPats.Pats curriedArgs)) -> List.forall isSimplePattern curriedArgs
+            | _ -> true
+
+        let retInfo = InferSynReturnData retInfo
+
+        match memberFlagsOpt with
+        | None ->
+            let infosForLambdaArgs = InferLambdaArgs retInfo origRhsExpr
+
+            let infosForArgs =
+                infosForExplicitArgs
+                @ (if explicitArgsAreSimple then infosForLambdaArgs else [])
+
+            let infosForArgs = AdjustArgsForUnitElimination infosForArgs
+            SynValData2(None, SynValInfo(infosForArgs, retInfo), None)
+
+        | Some memFlags ->
+            let infosForObjArgs = if memFlags.IsInstance then [ selfMetadata ] else []
+
+            let infosForArgs = AdjustMemberArgs memFlags.MemberKind infosForExplicitArgs
+            let infosForArgs = AdjustArgsForUnitElimination infosForArgs
+
+            let argInfos = infosForObjArgs @ infosForArgs
+            SynValData2(Some memFlags, SynValInfo(argInfos, retInfo), None)
+
 let AccFreeVarsStackGuardDepth = GetEnvInteger "FSHARP_AccFreeVars" 100
 let RemapExprStackGuardDepth = GetEnvInteger "FSHARP_RemapExpr" 50
 let FoldExprStackGuardDepth = GetEnvInteger "FSHARP_FoldExpr" 50
