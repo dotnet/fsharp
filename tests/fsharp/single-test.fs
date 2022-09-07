@@ -213,7 +213,7 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
     let loadSources = []
     let useSources = []
     let extraSources = ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
-    let utilitySources = [__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs"]
+    let utilitySources = []
     let referenceItems =  if String.IsNullOrEmpty(copyFiles) then [] else [copyFiles]
     let framework = "net6.0"
 
