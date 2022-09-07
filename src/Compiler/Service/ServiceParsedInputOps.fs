@@ -646,7 +646,7 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> walkExpr e)
             |> Option.orElseWith (fun () ->
                 match returnInfo with
-                | Some (SynBindingReturnInfo (t, _, _)) -> walkType t
+                | Some t -> walkType t
                 | None -> None)
 
         and walkInterfaceImpl (SynInterfaceImpl (bindings = bindings)) = List.tryPick walkBinding bindings
@@ -913,7 +913,7 @@ module ParsedInput =
         and walkUnionCaseType inp =
             match inp with
             | SynUnionCaseKind.Fields fields -> List.tryPick walkField fields
-            | SynUnionCaseKind.FullType (t, _) -> walkType t
+            | SynUnionCaseKind.FullType t -> walkType t
 
         and walkUnionCase synUnionCase =
             let (SynUnionCase (attributes = Attributes attrs; caseType = t)) = synUnionCase
@@ -1652,7 +1652,7 @@ module ParsedInput =
             List.iter walkAttribute attrs
             walkPat pat
             walkExpr e
-            returnInfo |> Option.iter (fun (SynBindingReturnInfo (t, _, _)) -> walkType t)
+            returnInfo |> Option.iter walkType
 
         and walkInterfaceImpl (SynInterfaceImpl (bindings = bindings)) = List.iter walkBinding bindings
 
@@ -1675,6 +1675,10 @@ module ParsedInput =
             | SynType.WithGlobalConstraints (t, typeConstraints, _) ->
                 walkType t
                 List.iter walkTypeConstraint typeConstraints
+            | SynType.SignatureParameter (Attributes attributes, _, id, t, _) ->
+                Option.iter addIdent id
+                walkType t
+                List.iter walkAttribute attributes
             | _ -> ()
 
         and walkClause (SynMatchClause (pat = pat; whenExpr = e1; resultExpr = e2)) =
@@ -1838,13 +1842,9 @@ module ParsedInput =
             List.iter walkAttribute attrs
             walkType t
 
-        and walkValSig (SynValSig (attributes = Attributes attrs; synType = t; arity = SynValInfo (argInfos, argInfo))) =
+        and walkValSig (SynValSig (attributes = Attributes attrs; synType = t)) =
             List.iter walkAttribute attrs
             walkType t
-
-            argInfo :: (argInfos |> List.concat)
-            |> List.collect (fun (SynArgInfo (Attributes attrs, _, _)) -> attrs)
-            |> List.iter walkAttribute
 
         and walkMemberSig membSig =
             match membSig with
@@ -1898,7 +1898,7 @@ module ParsedInput =
         and walkUnionCaseType kind =
             match kind with
             | SynUnionCaseKind.Fields fields -> List.iter walkField fields
-            | SynUnionCaseKind.FullType (t, _) -> walkType t
+            | SynUnionCaseKind.FullType t -> walkType t
 
         and walkUnionCase (SynUnionCase (attributes = Attributes attrs; caseType = t)) =
             List.iter walkAttribute attrs

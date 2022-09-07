@@ -512,7 +512,8 @@ module TcRecdUnionAndEnumDeclarations =
                 
                 rfields, thisTy
 
-            | SynUnionCaseKind.FullType (ty, arity) -> 
+            | SynUnionCaseKind.FullType ty ->
+                let arity = mkArityForType ty
                 let tyR, _ = TcTypeAndRecover cenv NoNewTypars CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
                 let curriedArgTys, recordTy = GetTopTauTypeInFSharpForm g (arity |> TranslateSynValInfo m (TcAttributes cenv env) |> TranslatePartialValReprInfo []).ArgInfos tyR m
 
@@ -882,7 +883,7 @@ module MutRecBindingChecking =
                         | SynMemberDefn.Member (bind, m), _ ->
                             // Phase2A: member binding - create prelim valspec (for recursive reference) and RecursiveBindingInfo 
                             let NormalizedBinding(_, _, _, _, _, _, _, valSynData, _, _, _, _) as bind = BindingNormalization.NormalizeBinding ValOrMemberBinding cenv envForTycon bind
-                            let (SynValData(memberFlagsOpt, _, _)) = valSynData 
+                            let (SynValData2(memberFlagsOpt, _, _)) = valSynData 
 
                             match tcref.TypeOrMeasureKind with
                             | TyparKind.Type -> ()
@@ -2362,7 +2363,8 @@ module EstablishTypeDefinitionCores =
                         let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
                         yield (tyR, m)
 
-                | SynUnionCaseKind.FullType (ty, arity) -> 
+                | SynUnionCaseKind.FullType ty ->
+                    let arity = mkArityForType ty
                     let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
                     let curriedArgTys, _ = GetTopTauTypeInFSharpForm g (arity |> TranslateSynValInfo m (TcAttributes cenv env) |> TranslatePartialValReprInfo []).ArgInfos tyR m
 
@@ -2544,7 +2546,9 @@ module EstablishTypeDefinitionCores =
         // '<param>' documentation is allowed for delegates
         let paramNames =
             match synTyconRepr with 
-            | SynTypeDefnSimpleRepr.General (SynTypeDefnKind.Delegate (_ty, arity), _, _, _, _, _, _, _) -> arity.ArgNames
+            | SynTypeDefnSimpleRepr.General (SynTypeDefnKind.Delegate ty, _, _, _, _, _, _, _) ->
+                let arity = mkArityForType ty
+                arity.ArgNames
             | SynTypeDefnSimpleRepr.General (SynTypeDefnKind.Unspecified, _, _, _, _, _, Some synPats, _) ->
                 let rec patName (p: SynSimplePat) =
                     match p with
@@ -3333,7 +3337,8 @@ module EstablishTypeDefinitionCores =
                                   structLayoutAttributeCheck(not isIncrClass)
                                   allowNullLiteralAttributeCheck()
                                   TFSharpClass
-                              | SynTypeDefnKind.Delegate (ty, arity) -> 
+                              | SynTypeDefnKind.Delegate ty ->
+                                  let arity = mkArityForType ty
                                   noCLIMutableAttributeCheck()
                                   noSealedAttributeCheck FSComp.SR.tcTypesAreAlwaysSealedDelegate
                                   structLayoutAttributeCheck false
@@ -4008,14 +4013,14 @@ module TcDeclarations =
                         let mLetPortion = synExpr.Range
                         let fldId = ident (CompilerGeneratedName id.idText, mLetPortion)
                         let headPat = SynPat.LongIdent (SynLongIdent([fldId], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [], None, mLetPortion)
-                        let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
+
                         let isMutable = 
                             match propKind with 
                             | SynMemberKind.PropertySet 
                             | SynMemberKind.PropertyGetSet -> true 
                             | _ -> false
                         let attribs = mkAttributeList attribs mWholeAutoProp
-                        let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, synExpr, synExpr.Range, [], attribs, None, SynBindingTrivia.Zero)
+                        let binding = mkSynBinding (xmlDoc, headPat) (None, false, isMutable, mLetPortion, DebugPointAtBinding.NoneAtInvisible, tyOpt, synExpr, synExpr.Range, [], attribs, None, SynBindingTrivia.Zero)
 
                         [(SynMemberDefn.LetBindings ([binding], isStatic, false, mWholeAutoProp))]
 
@@ -4050,9 +4055,8 @@ module TcDeclarations =
                             | SynMemberKind.PropertyGetSet -> 
                                 let getter = 
                                     let rhsExpr = SynExpr.Ident fldId
-                                    let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                                     let attribs = mkAttributeList attribs mMemberPortion
-                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
+                                    let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, tyOpt, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
                                     SynMemberDefn.Member (binding, mMemberPortion) 
                                 yield getter
                             | _ -> ()
@@ -4084,7 +4088,7 @@ module TcDeclarations =
 
             let isConcrete = 
                 members |> List.exists (function 
-                    | SynMemberDefn.Member(SynBinding(valData = SynValData(Some memberFlags, _, _)), _) -> not memberFlags.IsDispatchSlot 
+                    | SynMemberDefn.Member(SynBinding(valData = SynValData(Some memberFlags, _)), _) -> not memberFlags.IsDispatchSlot 
                     | SynMemberDefn.Interface (members=defOpt) -> Option.isSome defOpt
                     | SynMemberDefn.LetBindings _ -> true
                     | SynMemberDefn.ImplicitCtor _ -> true
@@ -4242,10 +4246,11 @@ module TcDeclarations =
             // members of the type
             let preEstablishedHasDefaultCtor = 
                 members |> List.exists (function 
-                    | SynMemberSig.Member (synValSig, memberFlags, _) -> 
+                    | SynMemberSig.Member (SynValSig(synType = ty) as synValSig, memberFlags, _) -> 
                         memberFlags.MemberKind=SynMemberKind.Constructor && 
                         // REVIEW: This is a syntactic approximation
-                        (match synValSig.SynType, synValSig.SynInfo.CurriedArgInfos with 
+                        let arity = mkArityForType ty
+                        (match synValSig.SynType, arity.CurriedArgInfos with 
                          | StripParenTypes (SynType.Fun (argType = StripParenTypes (SynType.LongIdent (SynLongIdent([id], _, _))))), [[_]] when id.idText = "unit" -> true
                          | _ -> false) 
                     | _ -> false) 
@@ -4584,7 +4589,7 @@ and TcModuleOrNamespaceSignatureElementsNonMutRec cenv parent env (id, moduleKin
 let ElimSynModuleDeclExpr bind =
     match bind with 
     | SynModuleDecl.Expr (expr, m) -> 
-        let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, SynPat.Wild m, None, expr, m, DebugPointAtBinding.NoneAtDo, SynBindingTrivia.Zero)
+        let bind2 = SynBinding (None, SynBindingKind.StandaloneExpression, false, false, [], PreXmlDoc.Empty, SynValData(None, None), SynPat.Wild m, None, expr, m, DebugPointAtBinding.NoneAtDo, SynBindingTrivia.Zero)
         SynModuleDecl.Let(false, [bind2], m)
     | _ -> bind
 

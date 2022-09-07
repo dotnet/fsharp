@@ -261,7 +261,7 @@ type NormalizedBinding =
         attribs: SynAttribute list *
         xmlDoc: XmlDoc *
         typars: SynValTyparDecls *
-        valSynData: SynValData *
+        valSynData: SynValData2 *
         pat: SynPat *
         rhsExpr: NormalizedBindingRhs *
         mBinding: range *

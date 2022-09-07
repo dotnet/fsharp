@@ -59,6 +59,9 @@ type SynArgInfo =
 type SynReturnInfo = SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
 
 [<NoEquality; NoComparison>]
+type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
+
+[<NoEquality; NoComparison>]
 type SynValData2 =
     | SynValData2 of memberFlags: SynMemberFlags option * valInfo: SynValInfo * thisIdOpt: Ident option
 

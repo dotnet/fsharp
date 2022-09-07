@@ -379,21 +379,21 @@ let b : int * string * bool = 1, "", false
     | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Let(bindings = [
             SynBinding(returnInfo =
-                Some (SynBindingReturnInfo(typeName = SynType.Tuple(path = [
+                Some (SynType.Tuple(path = [
                     SynTupleTypeSegment.Type _
                     SynTupleTypeSegment.Star _
                     SynTupleTypeSegment.Type _
-                ]))))
+                ])))
         ])
         SynModuleDecl.Let(bindings = [
             SynBinding(returnInfo =
-                Some (SynBindingReturnInfo(typeName = SynType.Tuple(path = [
+                Some (SynType.Tuple(path = [
                     SynTupleTypeSegment.Type _
                     SynTupleTypeSegment.Star _
                     SynTupleTypeSegment.Type _
                     SynTupleTypeSegment.Star _
                     SynTupleTypeSegment.Type _
-                ]))))
+                ])))
         ])
     ]) ])) ->
         Assert.Pass ()

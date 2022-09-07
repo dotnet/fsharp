@@ -2266,7 +2266,7 @@ let PushOnePatternToRhs (cenv: cenv) isMember synPat (NormalizedBindingRhs(simpl
     NormalizedBindingRhs(simplePats :: simplePatsList, retTyOpt, rhsExpr)
 
 type NormalizedBindingPatternInfo =
-    NormalizedBindingPat of SynPat * NormalizedBindingRhs * SynValData * SynValTyparDecls
+    NormalizedBindingPat of SynPat * NormalizedBindingRhs * SynValData2 * SynValTyparDecls
 
 /// Represents a syntactic, unchecked binding after the resolution of the name resolution status of pattern
 /// constructors and after "pushing" all complex patterns to the right hand side.
@@ -2279,7 +2279,7 @@ type NormalizedBinding =
       attribs: SynAttribute list *
       xmlDoc: XmlDoc *
       typars: SynValTyparDecls *
-      valSynData: SynValData *
+      valSynData: SynValData2 *
       pat: SynPat *
       rhsExpr: NormalizedBindingRhs *
       mBinding: range *
@@ -2298,14 +2298,14 @@ module BindingNormalization =
 
 
     let private MakeNormalizedStaticOrValBinding (cenv: cenv) isObjExprBinding id vis typars args rhsExpr valSynData =
-        let (SynValData(memberFlagsOpt, _, _)) = valSynData
+        let (SynValData2(memberFlagsOpt, _, _)) = valSynData
         NormalizedBindingPat(mkSynPatVar vis id, PushMultiplePatternsToRhs cenv ((isObjExprBinding = ObjExprBinding) || Option.isSome memberFlagsOpt) args rhsExpr, valSynData, typars)
 
     let private MakeNormalizedInstanceMemberBinding (cenv: cenv) thisId memberId toolId vis m typars args rhsExpr valSynData =
         NormalizedBindingPat(SynPat.InstanceMember(thisId, memberId, toolId, vis, m), PushMultiplePatternsToRhs cenv true args rhsExpr, valSynData, typars)
 
     let private NormalizeStaticMemberBinding (cenv: cenv) (memberFlags: SynMemberFlags) valSynData id vis typars args m rhsExpr =
-        let (SynValData(_, valSynInfo, thisIdOpt)) = valSynData
+        let (SynValData2(_, valSynInfo, thisIdOpt)) = valSynData
         if memberFlags.IsInstance then
             // instance method without adhoc "this" argument
             error(Error(FSComp.SR.tcInstanceMemberRequiresTarget(), m))
@@ -2319,7 +2319,7 @@ module BindingNormalization =
         // static property: these transformed into methods taking one "unit" argument
         | [], SynMemberKind.Member ->
             let memberFlags = {memberFlags with MemberKind = SynMemberKind.PropertyGet}
-            let valSynData = SynValData(Some memberFlags, valSynInfo, thisIdOpt)
+            let valSynData = SynValData2(Some memberFlags, valSynInfo, thisIdOpt)
             NormalizedBindingPat(mkSynPatVar vis id,
                                  PushOnePatternToRhs cenv true (SynPat.Const(SynConst.Unit, m)) rhsExpr,
                                  valSynData,
@@ -2327,7 +2327,7 @@ module BindingNormalization =
         | _ -> MakeNormalizedStaticOrValBinding cenv ValOrMemberBinding id vis typars args rhsExpr valSynData
 
     let private NormalizeInstanceMemberBinding (cenv: cenv) (memberFlags: SynMemberFlags) valSynData thisId memberId (toolId: Ident option) vis typars args m rhsExpr =
-        let (SynValData(_, valSynInfo, thisIdOpt)) = valSynData
+        let (SynValData2(_, valSynInfo, thisIdOpt)) = valSynData
 
         if not memberFlags.IsInstance then
             // static method with adhoc "this" argument
@@ -2351,7 +2351,7 @@ module BindingNormalization =
                 (SynPat.InstanceMember(thisId, memberId, toolId, vis, m),
                  PushOnePatternToRhs cenv true (SynPat.Const(SynConst.Unit, m)) rhsExpr,
                  // Update the member info to record that this is a SynMemberKind.PropertyGet
-                 SynValData(Some memberFlags, valSynInfo, thisIdOpt),
+                 SynValData2(Some memberFlags, valSynInfo, thisIdOpt),
                  typars)
 
         | _ ->
@@ -2359,7 +2359,7 @@ module BindingNormalization =
 
     let private NormalizeBindingPattern (cenv: cenv) nameResolver isObjExprBinding (env: TcEnv) valSynData headPat rhsExpr =
         let ad = env.AccessRights
-        let (SynValData(memberFlagsOpt, _, _)) = valSynData
+        let (SynValData2(memberFlagsOpt, _, _)) = valSynData
         let rec normPattern pat =
             // One major problem with versions of F# prior to 1.9.x was that data constructors easily 'pollute' the namespace
             // of available items, to the point that you can't even define a function with the same name as an existing union case.
@@ -2423,7 +2423,17 @@ module BindingNormalization =
 
     let NormalizeBinding isObjExprBinding (cenv: cenv) (env: TcEnv) binding =
         match binding with
-        | SynBinding (vis, kind, isInline, isMutable, Attributes attrs, xmlDoc, valSynData, headPat, retInfo, rhsExpr, mBinding, debugPoint, _) ->
+        | SynBinding (vis, kind, isInline, isMutable, Attributes attrs, xmlDoc, _, headPat, retInfo, rhsExpr, mBinding, debugPoint, _) ->
+            let valSynData = inferSynValDataFromBinding binding
+
+            let retInfo : SynBindingReturnInfo option =
+                match retInfo with
+                | Some (SynType.SignatureParameter(attributes, _, _, usedType, m)) ->
+                    Some(SynBindingReturnInfo(usedType, m, attributes))
+                | Some t ->
+                   Some(SynBindingReturnInfo(t, t.Range, []))
+                | None -> None
+            
             let (NormalizedBindingPat(pat, rhsExpr, valSynData, typars)) =
                 NormalizeBindingPattern cenv cenv.nameResolver isObjExprBinding env valSynData headPat (NormalizedBindingRhs ([], retInfo, rhsExpr))
             let paramNames = Some valSynData.SynValInfo.ArgNames
@@ -2459,10 +2469,10 @@ module EventDeclarationNormalization =
         | _ -> error(BadEventTransformation m)
 
     let private ConvertSynData m valSynData =
-        let (SynValData(memberFlagsOpt, valSynInfo, thisIdOpt)) = valSynData
+        let (SynValData2(memberFlagsOpt, valSynInfo, thisIdOpt)) = valSynData
         let memberFlagsOpt = ConvertMemberFlagsOpt m memberFlagsOpt
         let valSynInfo = ConvertSynInfo m valSynInfo
-        SynValData(memberFlagsOpt, valSynInfo, thisIdOpt)
+        SynValData2(memberFlagsOpt, valSynInfo, thisIdOpt)
 
     let rec private RenameBindingPattern f declPattern =
         match declPattern with
@@ -4061,7 +4071,8 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv synMemberSig m =
 /// Check a value specification, e.g. in a signature, interface declaration or a constraint
 and TcValSpec (cenv: cenv) env declKind newOk containerInfo memFlagsOpt thisTyOpt tpenv synValSig attrs =
     let g = cenv.g
-    let (SynValSig(ident=SynIdent(id,_); explicitTypeParams=ValTyparDecls (synTypars, synTyparConstraints, _); synType=ty; arity=valSynInfo; range=m)) = synValSig
+    let (SynValSig(ident=SynIdent(id,_); explicitTypeParams=ValTyparDecls (synTypars, synTyparConstraints, _); synType=ty; range=m)) = synValSig
+    let valSynInfo = mkArityForType ty
     let declaredTypars = TcTyparDecls cenv env synTypars
     let (ContainerInfo(altActualParent, tcrefContainerInfo)) = containerInfo
 
@@ -4353,8 +4364,10 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     | SynType.App(arg1, _, args, _, _, postfix, m) ->
         TcTypeMeasureApp kindOpt cenv newOk checkConstraints occ env tpenv arg1 args postfix m 
 
-    | SynType.Paren(innerType, _) ->
+    | SynType.Paren(innerType, _)
+    | SynType.SignatureParameter(usedType = innerType) ->
         TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ iwsam env tpenv innerType
+
 
 and CheckIWSAM (cenv: cenv) (env: TcEnv) checkConstraints iwsam m tcref =
     let g = cenv.g
@@ -6590,7 +6603,7 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) env tpenv withExprInfoO
 
 and GetNameAndSynValInfoOfObjExprBinding _cenv _env b =
     let (NormalizedBinding (_, _, _, _, _, _, _, valSynData, pat, rhsExpr, mBinding, _)) = b
-    let (SynValData(memberFlagsOpt, valSynInfo, _)) = valSynData
+    let (SynValData2(memberFlagsOpt, valSynInfo, _)) = valSynData
     match pat, memberFlagsOpt with
 
     // This is the normal case for F# 'with member x.M(...) = ...'
@@ -6682,7 +6695,7 @@ and TcObjectExprBinding (cenv: cenv) (env: TcEnv) implTy tpenv (absSlotInfo, bin
     let g = cenv.g
 
     let (NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, synTyparDecls, valSynData, headPat, bindingRhs, mBinding, debugPoint)) = bind
-    let (SynValData(memberFlagsOpt, _, _)) = valSynData
+    let (SynValData2(memberFlagsOpt, _, _)) = valSynData
 
     // 4a2. adjust the binding, especially in the "member" case, a subset of the logic of AnalyzeAndMakeAndPublishRecursiveValue
     let bindingRhs, logicalMethId, memberFlags =
@@ -6762,7 +6775,7 @@ and ComputeObjectExprOverrides (cenv: cenv) (env: TcEnv) tpenv impls =
             let binds, bindsAttributes =
                [ for binding in binds do
                      let (NormalizedBinding(_, _, _, _, bindingSynAttribs, _, _, valSynData, _, _, _, _)) = binding
-                     let (SynValData(memberFlagsOpt, _, _)) = valSynData
+                     let (SynValData2(memberFlagsOpt, _, _)) = valSynData
                      let attrTgt = ObjectExpressionOverrideBinding.AllowedAttribTargets memberFlagsOpt
                      let bindingAttribs = TcAttributes cenv env attrTgt bindingSynAttribs
                      yield binding, bindingAttribs
@@ -10176,7 +10189,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
 
     match bind with
     | NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, _, valSynData, pat, NormalizedBindingRhs(spatsL, rtyOpt, rhsExpr), mBinding, debugPoint) ->
-        let (SynValData(memberFlagsOpt, _, _)) = valSynData
+        let (SynValData2(memberFlagsOpt, _, _)) = valSynData
 
         let callerName =
             match declKind, kind, pat with
@@ -10234,8 +10247,8 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                 match rotRetSynAttrs with
                 | [] -> valSynData
                 | {Range=mHead} :: _ ->
-                let (SynValData(valMf, SynValInfo(args, SynArgInfo(attrs, opt, retId)), valId)) = valSynData
-                SynValData(valMf, SynValInfo(args, SynArgInfo({Attributes=rotRetSynAttrs; Range=mHead} :: attrs, opt, retId)), valId)
+                let (SynValData2(valMf, SynValInfo(args, SynArgInfo(attrs, opt, retId)), valId)) = valSynData
+                SynValData2(valMf, SynValInfo(args, SynArgInfo({Attributes=rotRetSynAttrs; Range=mHead} :: attrs, opt, retId)), valId)
             retAttribs, valAttribs, valSynData
 
         let isVolatile = HasFSharpAttribute g g.attrib_VolatileFieldAttribute valAttribs
@@ -10312,7 +10325,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
         let isCompGen = false
 
         // Use the syntactic arity if we're defining a function
-        let (SynValData(_, valSynInfo, _)) = valSynData
+        let (SynValData2(_, valSynInfo, _)) = valSynData
         let prelimValReprInfo = TranslateSynValInfo mBinding (TcAttributes cenv env) valSynInfo
 
         // Check the pattern of the l.h.s. of the binding
@@ -11350,7 +11363,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue
     // Pull apart the inputs
     let (NormalizedBinding(vis1, bindingKind, isInline, isMutable, bindingSynAttribs, bindingXmlDoc, synTyparDecls, valSynData, declPattern, bindingRhs, mBinding, debugPoint)) = binding
     let (NormalizedBindingRhs(_, _, bindingExpr)) = bindingRhs
-    let (SynValData(memberFlagsOpt, valSynInfo, thisIdOpt)) = valSynData
+    let (SynValData2(memberFlagsOpt, valSynInfo, thisIdOpt)) = valSynData
     let (ContainerInfo(altActualParent, tcrefContainerInfo)) = containerInfo
 
     let attrTgt = declKind.AllowedAttribTargets memberFlagsOpt

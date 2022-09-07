@@ -1881,7 +1881,7 @@ type internal FsiDynamicCompiler(
         let m = expr.Range
         let itName = "it"
         let itID  = mkSynId m itName
-        let mkBind pat expr = SynBinding (None, SynBindingKind.Do, false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData, pat, None, expr, m, DebugPointAtBinding.NoneAtInvisible, SynBindingTrivia.Zero)
+        let mkBind pat expr = SynBinding (None, SynBindingKind.Do, false, false, [], PreXmlDoc.Empty, SynValData(None,None), pat, None, expr, m, DebugPointAtBinding.NoneAtInvisible, SynBindingTrivia.Zero)
         let bindingA = mkBind (mkSynPatVar None itID) expr
         let defA = SynModuleDecl.Let (false, [bindingA], m)
         [defA]

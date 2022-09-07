@@ -119,7 +119,7 @@ module NavigationImpl =
         | SynUnionCaseKind.Fields (flds) ->
             flds
             |> List.fold (fun st (SynField (_, _, _, _, _, _, _, m)) -> unionRangesChecked m st) range.Zero
-        | SynUnionCaseKind.FullType (ty, _) -> ty.Range
+        | SynUnionCaseKind.FullType ty -> ty.Range
 
     let bodyRange mBody decls =
         unionRangesChecked (rangeOfDecls decls) mBody
@@ -168,7 +168,7 @@ module NavigationImpl =
         // Process let-binding
         let processBinding isMember enclosingEntityKind isAbstract synBinding =
             let (SynBinding (valData = valData; headPat = synPat; expr = synExpr)) = synBinding
-            let (SynValData (memberOpt, _, _)) = valData
+            let (SynValData (memberOpt, _)) = valData
 
             let m =
                 match synExpr with
@@ -792,7 +792,7 @@ module NavigateTo =
 
         let addBinding synBinding itemKind container =
             let (SynBinding (valData = valData; headPat = headPat)) = synBinding
-            let (SynValData (memberFlagsOpt, _, _)) = valData
+            let (SynValData (memberFlagsOpt, _)) = valData
 
             let kind =
                 match itemKind with

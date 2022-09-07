@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.Collections.Generic
 open System.Diagnostics
+open FSharp.Compiler.QuotationPickler
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.Diagnostics
@@ -14,6 +15,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTreeOps
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
+open FSharp.Compiler.TypedTreeOps
 
 module SourceFileImpl =
     let IsSignatureFile file =
@@ -407,8 +409,9 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                 override _.VisitBinding(_path, _, binding) =
                     match binding with
-                    | SynBinding (valData = valData; range = range) when rangeContainsPos range pos ->
-                        let info = valData.SynValInfo.CurriedArgInfos
+                    | SynBinding (range = range) when rangeContainsPos range pos ->
+                        let valSynData = inferSynValDataFromBinding binding
+                        let info = valSynData.SynValInfo.CurriedArgInfos
                         let mutable found = false
 
                         for group in info do
@@ -454,7 +457,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                     // let x : int = 12
                     match binding with
                     | SynBinding (headPat = SynPat.Named (range = patRange)
-                                  returnInfo = Some (SynBindingReturnInfo(typeName = SynType.LongIdent _))) -> Some patRange
+                                  returnInfo = Some (SynType.LongIdent _
+                                  | SynType.SignatureParameter(usedType = SynType.LongIdent _))) -> Some patRange
                     | _ -> defaultTraverse binding
             }
 

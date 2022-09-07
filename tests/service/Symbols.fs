@@ -116,9 +116,9 @@ extern void setCallbridgeSupportTarget(IntPtr newTarget)
         | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(returnInfo =
-                    Some (SynBindingReturnInfo(typeName =
+                    Some (
                         SynType.App(typeName =
-                            SynType.LongIdent(SynLongIdent([unitIdent], [], [Some (IdentTrivia.OriginalNotation "void")])))))) ] , _)
+                            SynType.LongIdent(SynLongIdent([unitIdent], [], [Some (IdentTrivia.OriginalNotation "void")]))))) ] , _)
                 ])
             ])) ->
             Assert.AreEqual("unit", unitIdent.idText)

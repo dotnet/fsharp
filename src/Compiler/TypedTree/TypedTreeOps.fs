@@ -188,6 +188,54 @@ module SynInfo =
             let argInfos = infosForObjArgs @ infosForArgs
             SynValData2(Some memFlags, SynValInfo(argInfos, retInfo), None)
 
+let mkArityForType ty =
+    let mkArgInfo t =
+        let mkArgInfoImpl t =
+            match t with
+            | SynType.SignatureParameter(attributes, optional, id, _, _) ->
+                SynArgInfo(attributes, optional, id)
+            | _ ->  SynArgInfo([], false, None)
+        
+        match t with
+        | SynType.Tuple(_, path, _) ->
+            path
+            |> List.choose (function
+                | SynTupleTypeSegment.Type t ->  Some (mkArgInfoImpl t)
+                | _ -> None)
+        | t -> [ mkArgInfoImpl t ]
+    
+    let rec visit t =
+        match t with
+        | SynType.Fun(argType, returnType, _, _) ->
+            [ yield! visit argType; returnType ]
+        | t -> [ t ]
+
+    match ty with
+    | SynType.Fun(argType, _, _, _) ->
+        let argTypes = visit argType
+        List.map mkArgInfo argTypes, SynArgInfo([], false, None)
+    | _ -> [], SynArgInfo([], false, None)
+    |> SynValInfo
+    
+let inferSynValDataFromBinding binding =
+    match binding with
+    | SynBinding (valData = valSynData; headPat = headPat; returnInfo = retInfo; expr = rhsExpr) ->
+        let (SynValData(memberFlags = memberFlags)) = valSynData
+        let returnInfo : SynReturnInfo option =
+            match retInfo with
+            | Some (SynType.SignatureParameter(attributes, optional, ident, usedType, m)) ->
+                Some (SynReturnInfo((usedType, SynArgInfo(attributes, optional, ident)), m))
+            | Some t ->
+                Some (SynReturnInfo((t, SynArgInfo([], false, None)), t.Range))
+            | None -> None
+
+        let origRhsExpr =
+            match rhsExpr with
+            | SynExpr.Typed(expr = rhsExpr)
+            | rhsExpr -> rhsExpr
+
+        SynInfo.InferSynValData(memberFlags, Some headPat, returnInfo, origRhsExpr)
+
 let AccFreeVarsStackGuardDepth = GetEnvInteger "FSHARP_AccFreeVars" 100
 let RemapExprStackGuardDepth = GetEnvInteger "FSHARP_RemapExpr" 50
 let FoldExprStackGuardDepth = GetEnvInteger "FSHARP_FoldExpr" 50

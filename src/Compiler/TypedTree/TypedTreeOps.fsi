@@ -94,6 +94,10 @@ module SynInfo =
         origRhsExpr: SynExpr ->
             SynValData2
 
+val mkArityForType: ty: SynType -> SynValInfo
+
+val inferSynValDataFromBinding: binding: SynBinding -> SynValData2
+
 type Erasure =
     | EraseAll
     | EraseMeasures

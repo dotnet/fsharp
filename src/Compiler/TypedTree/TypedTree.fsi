@@ -42,6 +42,10 @@ type SynArgInfo =
 [<NoEquality; NoComparison>]
 type SynReturnInfo = SynReturnInfo of returnType: (SynType * SynArgInfo) * range: range
 
+// /// Represents the return information in a binding for a 'let' or 'member' declaration
+[<NoEquality; NoComparison>]
+type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
+
 /// Represents extra information about the declaration of a value
 [<NoEquality; NoComparison>]
 type SynValData2 =

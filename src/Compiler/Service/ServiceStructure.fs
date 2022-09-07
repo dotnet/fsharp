@@ -566,7 +566,6 @@ module Structure =
                 | SynValData (Some {
                                        MemberKind = SynMemberKind.Constructor
                                    },
-                              _,
                               _) ->
                     let collapse = Range.endToEnd synPat.Range d.Range
                     rcheck Scope.New Collapse.Below d.Range collapse
@@ -574,7 +573,6 @@ module Structure =
                 | SynValData (Some {
                                        MemberKind = SynMemberKind.PropertyGet | SynMemberKind.PropertySet
                                    },
-                              _,
                               _) ->
                     let range = mkRange d.Range.FileName (mkPos d.Range.StartLine objectModelRange.StartColumn) d.Range.End
 

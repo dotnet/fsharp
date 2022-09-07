@@ -7,6 +7,8 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
+open FSharp.Compiler.TypedTree
+open FSharp.Compiler.TypedTreeOps
 
 /// Represent an Xml documentation block in source code
 type XmlDocable = XmlDocable of line: int * indent: int * paramNames: string list
@@ -43,10 +45,11 @@ module XmlDocParsing =
         | SynPat.FromParseError _ -> []
 
     let getParamNames binding =
-        let (SynBinding (valData = synValData; headPat = synPat)) = binding
+        let (SynBinding (headPat = synPat)) = binding
+        let synValData = inferSynValDataFromBinding binding
 
         match synValData with
-        | SynValData (_, SynValInfo (curriedArgs, _), _) when not curriedArgs.IsEmpty ->
+        | SynValData2 (_, SynValInfo (curriedArgs, _), _) when not curriedArgs.IsEmpty ->
             let parameters =
                 [
                     for args in curriedArgs do
@@ -175,14 +178,16 @@ module XmlDocParsing =
                         |> List.collect getXmlDocablesSynMemberDefn
 
                 | SynMemberDefn.AbstractSlot (valSig, _, range) ->
-                    let (SynValSig (attributes = synAttributes; arity = synValInfo; xmlDoc = preXmlDoc)) =
+                    let (SynValSig (attributes = synAttributes; xmlDoc = preXmlDoc; synType = ty)) =
                         valSig
+
+                    let arity = mkArityForType ty
 
                     if isEmptyXmlDoc preXmlDoc then
                         let fullRange = synAttributes |> List.fold (fun r a -> unionRanges r a.Range) range
                         let line = fullRange.StartLine
                         let indent = indentOf line
-                        let paramNames = synValInfo.ArgNames
+                        let paramNames = arity.ArgNames
                         XmlDocable(line, indent, paramNames)
 
                 | SynMemberDefn.Interface (members = synMemberDefnsOption) ->
