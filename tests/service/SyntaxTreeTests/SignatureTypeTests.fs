@@ -471,3 +471,45 @@ type Z with
         assertRange (14, 0) (14, 4) mType3
         assertRange (14, 7) (14, 11) mWith3
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``SynValSig contains parameter names`` () =
+    let parseResults = 
+        getParseResultsOfSignatureFile
+            """
+module Meh
+
+val InferSynValData:
+    memberFlagsOpt: SynMemberFlags option * pat: SynPat option * SynReturnInfo option * origRhsExpr: SynExpr ->
+        x: string ->
+            SynValData2
+"""
+
+    match parseResults with
+    | ParsedInput.SigFile (ParsedSigFileInput (modules=[
+        SynModuleOrNamespaceSig(decls=[
+            SynModuleSigDecl.Val(valSig = SynValSig(synType =
+                    SynType.Fun(
+                        argType =
+                            SynType.Tuple(path = [
+                                SynTupleTypeSegment.Type(SynType.SignatureParameter(id = Some memberFlagsOpt))
+                                SynTupleTypeSegment.Star _
+                                SynTupleTypeSegment.Type(SynType.SignatureParameter(id = Some pat))
+                                SynTupleTypeSegment.Star _
+                                SynTupleTypeSegment.Type(SynType.App _)
+                                SynTupleTypeSegment.Star _
+                                SynTupleTypeSegment.Type(SynType.SignatureParameter(id = Some origRhsExpr))
+                            ])
+                        returnType =
+                            SynType.Fun(
+                                argType = SynType.SignatureParameter(id = Some x)
+                                returnType = SynType.LongIdent _
+                            )
+                    )
+                ))
+        ] ) ])) ->
+        Assert.AreEqual("memberFlagsOpt", memberFlagsOpt.idText)
+        Assert.AreEqual("pat", pat.idText)
+        Assert.AreEqual("origRhsExpr", origRhsExpr.idText)
+        Assert.AreEqual("x", x.idText)
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

@@ -136,3 +136,30 @@ type Currency =
         assertRange (7, 4) (7, 11) mPrivate
     | _ ->
         Assert.Fail "Could not get valid AST"
+
+[<Test>]
+let ``SynUnionCaseKind.FullType`` () =
+    let parseResults =
+        getParseResults
+             """
+type X =
+    | a: int * z:int
+ """
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+        SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [
+                SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(simpleRepr =
+                    SynTypeDefnSimpleRepr.Union(unionCases = [
+                        SynUnionCase(caseType = SynUnionCaseKind.FullType(SynType.Tuple(path = [
+                            SynTupleTypeSegment.Type(SynType.LongIdent _)
+                            SynTupleTypeSegment.Star _
+                            SynTupleTypeSegment.Type(SynType.SignatureParameter(id = Some z))
+                        ])))
+                    ])))
+            ])
+        ])
+    ])) ->
+        Assert.AreEqual("z", z.idText)
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

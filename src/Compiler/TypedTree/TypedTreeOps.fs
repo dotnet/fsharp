@@ -207,12 +207,13 @@ let mkArityForType ty =
     let rec visit t =
         match t with
         | SynType.Fun(argType, returnType, _, _) ->
-            [ yield! visit argType; returnType ]
+            [ yield argType; yield! visit returnType ]
         | t -> [ t ]
 
     match ty with
-    | SynType.Fun(argType, _, _, _) ->
-        let argTypes = visit argType
+    | SynType.Fun(argType, returnType, _, _) ->
+        let allTypes = argType :: visit returnType
+        let argTypes = List.take (allTypes.Length - 1) allTypes
         List.map mkArgInfo argTypes, SynArgInfo([], false, None)
     | _ -> [], SynArgInfo([], false, None)
     |> SynValInfo
