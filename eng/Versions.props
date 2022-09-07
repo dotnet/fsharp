@@ -202,6 +202,7 @@
     <MicroBuildCoreSentinelVersion>1.0.0</MicroBuildCoreSentinelVersion>
     <MicroBuildPluginsSwixBuildVersion>1.1.33</MicroBuildPluginsSwixBuildVersion>
     <!-- other packages -->
+    <BenchmarkDotNetVersion>0.13.2</BenchmarkDotNetVersion>
     <FsCheckVersion>2.16.5</FsCheckVersion>
     <FSharpDataTypeProvidersVersion>4.3.0.0</FSharpDataTypeProvidersVersion>
     <MicrosoftCompositionVersion>1.0.30</MicrosoftCompositionVersion>
