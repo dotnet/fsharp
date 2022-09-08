@@ -2676,3 +2676,9 @@ type TraitConstraintInfo with
 
     /// Get the key associated with the member constraint.
     member GetWitnessInfo: unit -> TraitWitnessInfo
+
+/// Matches a ModuleOrNamespaceContents that is empty from a signature printing point of view.
+/// Signatures printed via the typed tree in NicePrint don't print TMDefOpens or TMDefDo.
+/// This will match anything that does not have any types or bindings.
+val (|EmptyModuleOrNamespaces|_|):
+    moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) option

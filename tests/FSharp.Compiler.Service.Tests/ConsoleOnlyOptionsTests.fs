@@ -5,27 +5,25 @@ module FSharp.Compiler.Service.Tests.ConsoleOnlyOptionsTests
 open System
 open System.IO
 open FSharp.Compiler.CompilerOptions
+open FSharp.Compiler.Text.Range
 open NUnit.Framework
 open TestDoubles
 
 [<Test>]
-[<Ignore "Failing in main, disabling until resolved">]
-let ``Help is displayed correctly`` () =
-    try
-        if System.Console.BufferWidth < 80 then
-            System.Console.BufferWidth <- 80
-    with _ -> ()
+let ``fsc help text is displayed correctly`` () =
 
-    let builder = getArbitraryTcConfigBuilder()
-    builder.showBanner <- false                 // We don't need the banner
+     let builder = getArbitraryTcConfigBuilder()
+     builder.showBanner <- false                     // We don't need the banner
+     builder.TurnWarningOff(rangeCmdArgs, "75")      // We are going to use a test only flag
+     builder.bufferWidth <- Some 80                  // Fixed width 80
+ 
+     let expectedHelp = File.ReadAllText $"{__SOURCE_DIRECTORY__}/expected-help-output.bsl"
 
-    let blocks = GetCoreFscCompilerOptions builder
+     let blocks = GetCoreFscCompilerOptions builder
+     let help = GetHelpFsc builder blocks
+     let actualHelp = help.Replace("\r\n", Environment.NewLine)
 
-    let expectedHelp = File.ReadAllText $"{__SOURCE_DIRECTORY__}/expected-help-output.bsl"
-    let help = GetHelpFsc builder blocks
-
-    let actualHelp = help.Replace("\r\n", Environment.NewLine)
-    Assert.AreEqual(expectedHelp, actualHelp, $"Console width: {System.Console.BufferWidth}\nExpected: {expectedHelp}\n Actual: {actualHelp}") |> ignore
+     Assert.AreEqual(expectedHelp, actualHelp, $"Expected: '{expectedHelp}'\n Actual: '{actualHelp}'") |> ignore
 
 [<Test>]
 let ``Version is displayed correctly`` () =
