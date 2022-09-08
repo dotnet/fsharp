@@ -154,6 +154,8 @@ module SynInfo =
 
         let infosForExplicitArgs =
             match pat with
+            | Some (SynPat.LongIdent(argPats = SynArgPats.Pats [ SynPat.Tuple(elementPats = pats) ])) ->
+                List.map InferSynArgInfoFromPat pats
             | Some (SynPat.LongIdent(argPats = SynArgPats.Pats curriedArgs)) -> List.map InferSynArgInfoFromPat curriedArgs
             | _ -> []
 
@@ -163,6 +165,8 @@ module SynInfo =
         
         let explicitArgsAreSimple =
             match pat with
+            | Some (SynPat.LongIdent(argPats = SynArgPats.Pats [ SynPat.Tuple(elementPats = pats) ])) ->
+                List.forall isSimplePattern pats
             | Some (SynPat.LongIdent(argPats = SynArgPats.Pats curriedArgs)) -> List.forall isSimplePattern curriedArgs
             | _ -> true
 
@@ -197,7 +201,6 @@ module SynInfo =
             let valSynInfo =
                 match memFlags.MemberKind, inferredSynValData.SynValInfo, memFlags.IsInstance with
                 | SynMemberKind.PropertyGet, SynValInfo (thisArg :: indexOrUnitArgs :: _rest, ret), true ->
-
                     SynValInfo([ thisArg; indexOrUnitArgs ], ret)
 
                 | SynMemberKind.PropertyGet, SynValInfo (indexOrUnitArgs :: _rest, ret), false ->
