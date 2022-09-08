@@ -1073,6 +1073,7 @@ classMemberSpfn:
 
        let getSetAdjuster (t: SynType) =
             match t, getSet with
+            | SynType.Fun _, _ -> getSet
             | SynType.SignatureParameter(attributes = _ :: _), _ -> getSet
             | _, SynMemberKind.Member -> SynMemberKind.PropertyGet
             | _ -> getSet
@@ -1940,6 +1941,7 @@ classDefnMember:
        let mWith, getSetRangeOpt, getSet = $9
        let getSetAdjuster (t: SynType) =
             match t, getSet with
+            | SynType.Fun _, _ -> getSet
             | SynType.SignatureParameter(attributes = _ :: _), _ -> getSet
             | _, SynMemberKind.Member -> SynMemberKind.PropertyGet
             | _ -> getSet
