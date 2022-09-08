@@ -186,7 +186,39 @@ module SynInfo =
             let infosForArgs = AdjustArgsForUnitElimination infosForArgs
 
             let argInfos = infosForObjArgs @ infosForArgs
-            SynValData2(Some memFlags, SynValInfo(argInfos, retInfo), None)
+            
+            let inferredSynValData = SynValData2(Some memFlags, SynValInfo(argInfos, retInfo), None)
+
+            let adjustValueArg valueArg =
+                match valueArg with
+                | [ _ ] -> valueArg
+                | _ -> unnamedTopArg
+
+            let valSynInfo =
+                match memFlags.MemberKind, inferredSynValData.SynValInfo, memFlags.IsInstance with
+                | SynMemberKind.PropertyGet, SynValInfo (thisArg :: indexOrUnitArgs :: _rest, ret), true ->
+
+                    SynValInfo([ thisArg; indexOrUnitArgs ], ret)
+
+                | SynMemberKind.PropertyGet, SynValInfo (indexOrUnitArgs :: _rest, ret), false ->
+                    SynValInfo([ indexOrUnitArgs ], ret)
+
+                | SynMemberKind.PropertySet, SynValInfo ([ thisArg; valueArg ], ret), true ->
+                    SynValInfo([ thisArg; adjustValueArg valueArg ], ret)
+
+                | SynMemberKind.PropertySet, SynValInfo (thisArg :: indexArgs :: valueArg :: _rest, ret), true ->
+                    SynValInfo([ thisArg; indexArgs @ adjustValueArg valueArg ], ret)
+
+                | SynMemberKind.PropertySet, SynValInfo ([ valueArg ], ret), false -> SynValInfo([ adjustValueArg valueArg ], ret)
+
+                | SynMemberKind.PropertySet, SynValInfo (indexArgs :: valueArg :: _rest, ret), _ ->
+                    SynValInfo([ indexArgs @ adjustValueArg valueArg ], ret)
+
+                | _, valInfo, _ ->
+                    // should be unreachable, cover just in case
+                    valInfo
+
+            SynValData2(Some(memFlags), valSynInfo, None)
 
 let mkArityForType ty =
     let mkArgInfo t =
