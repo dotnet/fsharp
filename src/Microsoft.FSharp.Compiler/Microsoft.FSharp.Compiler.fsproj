@@ -49,6 +49,10 @@
     </DependentProjects>
   </ItemGroup>
 
+   <ItemGroup>
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
   <Target Name="PackDependentProjectsCore">
     <MSBuild Projects="@(DependentProjects)" Targets="Pack" Properties="Restore=true;Pack=true;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
   </Target>
