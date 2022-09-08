@@ -89,7 +89,7 @@ module TaskBuilderDynamicLowPriority =
 module Value = 
 
     [<AutoOpen>]
-    module TaskLowProrityExtensions = 
+    module TaskLowPriorityExtensions = 
 
         type TaskBuilderDynamic with
             member inline _.ReturnFrom<^TaskLike, ^Awaiter, ^T
@@ -125,7 +125,7 @@ module Value =
 
 
     [<AutoOpen>]
-    module HighLowProrityExtensions = 
+    module HighLowPriorityExtensions = 
 
         type TaskBuilderDynamic with
             member inline _.Bind (t: Task<'TResult1>, continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)) : TaskCode<'TOverall, 'TResult2> =

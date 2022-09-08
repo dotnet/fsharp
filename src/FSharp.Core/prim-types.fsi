@@ -4601,7 +4601,6 @@ namespace Microsoft.FSharp.Core
         /// <summary>Contains extension methods to allow the use of F# indexer notation with arrays.
         /// This module is automatically opened in all F# code.</summary>
         [<AutoOpen>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         module ArrayExtensions = 
             type ``[,,,]``<'T> with
                 /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
