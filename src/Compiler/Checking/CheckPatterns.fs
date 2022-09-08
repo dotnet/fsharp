@@ -418,7 +418,7 @@ and TcPatAnds warnOnUpper cenv env vFlags patEnv ty pats m =
 and TcPatTuple warnOnUpper cenv env vFlags patEnv ty isExplicitStruct args m =
     let g = cenv.g
     try
-        let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m ty isExplicitStruct args
+        let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m ty isExplicitStruct None args
         let argsR, acc = TcPatterns warnOnUpper cenv env vFlags patEnv argTys args
         let phase2 values = TPat_tuple(tupInfo, List.map (fun f -> f values) argsR, argTys, m)
         phase2, acc

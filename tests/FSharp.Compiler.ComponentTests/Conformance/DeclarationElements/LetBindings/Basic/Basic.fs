@@ -42,7 +42,7 @@ module Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 5, Col 16, Line 5, Col 23, "Type mismatch. Expecting a\n    ''a * 'b'    \nbut given a\n    ''a * 'b * 'c'    \nThe tuples have differing lengths of 2 and 3")
+            (Error 1, Line 5, Col 16, Line 5, Col 23, "Type mismatch. Expecting a\n    ''a * 'b'    \nbut given a\n    'int * int * int'    \nThe tuples have differing lengths of 2 and 3")
         ]
 
     // SOURCE=E_AttributesOnLet01.fs SCFLAGS="--test:ErrorRanges"              # E_AttributesOnLet01.fs

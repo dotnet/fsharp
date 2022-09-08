@@ -5761,10 +5761,9 @@ and TcExprLazy (cenv: cenv) overallTy env tpenv (synInnerExpr, m) =
     let expr = mkLazyDelayed g m innerTy (mkUnitDelayLambda g m innerExpr)
     expr, tpenv
 
-
 /// Allow the inference of structness from the known type, e.g.
 ///    let (x: struct (int * int)) = (3,4)
-and UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownTy isExplicitStruct ps =
+and UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownTy isExplicitStruct tcForErrorMessage ps =
     let g = cenv.g
     let tupInfo, ptys =
         if isAnyTupleTy g knownTy then
@@ -5783,57 +5782,36 @@ and UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownT
         | _ -> contextInfo
     
     let ty2 = TType_tuple (tupInfo, ptys)
-    AddCxTypeEqualsType' contextInfo denv cenv.css m knownTy ty2 |> RaiseOperationResult
-    tupInfo, ptys
-
-/// Allow the inference of structness from the known type, e.g.
-///    let (x: struct (int * int)) = (3,4)
-and UnifyTupleTypeAndInferCharacteristics' env tpenv contextInfo (cenv: cenv) denv m knownTy isExplicitStruct ps =
-    let g = cenv.g
-    let tupInfo, ptys =
-        if isAnyTupleTy g knownTy then
-            let tupInfo, ptys = destAnyTupleTy g knownTy
-            let tupInfo = (if isExplicitStruct then tupInfoStruct else tupInfo)
-            let ptys = 
-                if List.length ps = List.length ptys then ptys 
-                else NewInferenceTypes g ps
-            tupInfo, ptys
-        else
-            mkTupInfo isExplicitStruct, NewInferenceTypes g ps
-
-    let contextInfo =
-        match contextInfo with
-        | ContextInfo.RecordFields -> ContextInfo.TupleInRecordFields
-        | _ -> contextInfo
-
-    // TcExprsWithFlexes 
     
-    let ty2 = TType_tuple (tupInfo, ptys)
-    match AddCxTypeEqualsType' contextInfo denv cenv.css m knownTy ty2 with
-    | ErrorResult(warnings, ErrorFromAddingTypeEquation(g, displayEnv, actualTy, expectedTy, ex, m)) ->
-        
-        let flexes = ptys |> List.map (fun _ -> false)
-        let argsR, _tpenv = TcExprsWithFlexes cenv env m tpenv flexes ptys ps
+    let cxOperationResult = AddCxTypeEqualsType' contextInfo denv cenv.css m knownTy ty2 
+    match cxOperationResult, tcForErrorMessage with
+    // Try to type check the tuple values when there's an incorrect number of them 
+    | ErrorResult(warnings, ErrorFromAddingTypeEquation(g, displayEnv, actualTy, expectedTy, (ConstraintSolverTupleDiffLengths _ as ex), m)), Some tcForErrorMessage ->
+
         let fixedExpectedTy =
-            match mkAnyTupled g m tupInfo argsR ptys with
-            | TypedTree.Expr.Op (TOp.Tuple _, typeArgs, _, _) -> TType_tuple (mkTupInfo false, typeArgs)
+            match tcForErrorMessage (tupInfo, ptys) with
+            | Expr.Op (TOp.Tuple _, typeArgs, _, _) -> TType_tuple (mkTupInfo false, typeArgs)
             | _ -> expectedTy
-            
+
         ErrorResult(warnings, ErrorFromAddingTypeEquation(g, displayEnv, actualTy, fixedExpectedTy, ex, m)) 
-    | x -> x
+    | operationResult, _ -> operationResult
     |> RaiseOperationResult
+    
     tupInfo, ptys
 
 and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
     let g = cenv.g
-    TcPossiblyPropogatingExprLeafThenConvert (fun ty -> isAnyTupleTy g ty || isTyparTy g ty) cenv overallTy env m (fun overallTy ->
-        let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics' env tpenv env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
-
+    
+    let tcTuple (tupInfo, argTys) = 
         let flexes = argTys |> List.map (fun _ -> false)
         let argsR, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys args
         let expr = mkAnyTupled g m tupInfo argsR argTys
-        
+
         expr, tpenv
+        
+    TcPossiblyPropogatingExprLeafThenConvert (fun ty -> isAnyTupleTy g ty || isTyparTy g ty) cenv overallTy env m (fun overallTy ->
+        UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct (Some (tcTuple >> fst)) args  
+        |> tcTuple
     )
 
 and TcExprArrayOrList (cenv: cenv) overallTy env tpenv (isArray, args, m) =
