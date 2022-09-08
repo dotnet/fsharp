@@ -8,7 +8,7 @@ open FSharp.Test.Compiler
 module ``Type Mismatch`` =
 
     [<Fact>]
-    let ``type mistmach is reported when tupes have differing lenghts``() =
+    let ``type mismatch is reported when tuples have differing lengths``() =
         FSharp """
  let x: int * int * int = 1, ""
  let x: int * string * int = "", 1
@@ -17,9 +17,9 @@ module ``Type Mismatch`` =
         |> typecheck
         |> shouldFail
         |> withDiagnostics [
-            (Error 1,  Line 2, Col 27, Line 2, Col 32, "Type mismatch. Expecting a\n    'int * int * int'    \nbut given a\n    ''a * 'b'    \nThe tuples have differing lengths of 3 and 2");
-            (Error 1,  Line 3, Col 30, Line 3, Col 35, "Type mismatch. Expecting a\n    'int * string * int'    \nbut given a\n    ''a * 'b'    \nThe tuples have differing lengths of 3 and 2");
-            (Error 1,  Line 4, Col 21, Line 4, Col 30, "Type mismatch. Expecting a\n    'int * int'    \nbut given a\n    ''a * 'b * 'c'    \nThe tuples have differing lengths of 2 and 3")
+            (Error 1,  Line 2, Col 27, Line 2, Col 32, "Type mismatch. Expecting a\n    'int * int * int'    \nbut given a\n    'int * string'    \nThe tuples have differing lengths of 3 and 2");
+            (Error 1,  Line 3, Col 30, Line 3, Col 35, "Type mismatch. Expecting a\n    'int * string * int'    \nbut given a\n    'string * int'    \nThe tuples have differing lengths of 3 and 2");
+            (Error 1,  Line 4, Col 21, Line 4, Col 30, "Type mismatch. Expecting a\n    'int * int'    \nbut given a\n    'string * string * int'    \nThe tuples have differing lengths of 2 and 3")
         ]
 
     [<Fact>]

@@ -759,4 +759,3 @@ and TcPatLongIdentLiteral warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId
 and TcPatterns warnOnUpper cenv env vFlags s argTys args =
     assert (List.length args = List.length argTys)
     List.mapFold (fun s (ty, pat) -> TcPat warnOnUpper cenv env None vFlags s ty pat) s (List.zip argTys args)
-

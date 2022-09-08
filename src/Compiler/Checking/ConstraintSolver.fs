@@ -1228,7 +1228,6 @@ and SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln origl1 origl2 =
             | h1 :: t1, h2 :: t2 when t1.Length = t2.Length -> 
                 SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln h1 h2 ++ (fun () -> loop t1 t2) 
             | _ ->
-                // It would be better to have an instance of FSharpType contained in the error somehow but until it's not implemented it'd be good to report the correct type.
                 ErrorD(ConstraintSolverTupleDiffLengths(csenv.DisplayEnv, origl1, origl2, csenv.m, m2)) 
         loop origl1 origl2
 
@@ -3454,12 +3453,13 @@ let EliminateConstraintsForGeneralizedTypars (denv: DisplayEnv) css m (trace: Op
 // No error recovery here: we do that on a per-expression basis.
 //------------------------------------------------------------------------- 
 
-let AddCxTypeEqualsType contextInfo denv css m actual expected  = 
+let AddCxTypeEqualsType' contextInfo denv css m actual expected  = 
     let csenv = MakeConstraintSolverEnv contextInfo css m denv
     PostponeOnFailedMemberConstraintResolution csenv NoTrace
         (fun csenv -> SolveTypeEqualsTypeWithReport csenv 0 m NoTrace None actual expected)
         ErrorD
-    |> RaiseOperationResult
+
+let AddCxTypeEqualsType contextInfo denv css m actual expected = AddCxTypeEqualsType' contextInfo denv css m actual expected |> RaiseOperationResult
 
 let UndoIfFailed f =
     let trace = Trace.New()

@@ -582,30 +582,6 @@ let ShrinkContext env oldRange newRange =
         if not (equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.ElseBranchResult newRange }
 
-/// Allow the inference of structness from the known type, e.g.
-///    let (x: struct (int * int)) = (3,4)
-let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownTy isExplicitStruct ps =
-    let g = cenv.g
-    let tupInfo, ptys =
-        if isAnyTupleTy g knownTy then
-            let tupInfo, ptys = destAnyTupleTy g knownTy
-            let tupInfo = (if isExplicitStruct then tupInfoStruct else tupInfo)
-            let ptys = 
-                if List.length ps = List.length ptys then ptys 
-                else NewInferenceTypes g ps
-            tupInfo, ptys
-        else
-            mkTupInfo isExplicitStruct, NewInferenceTypes g ps
-
-    let contextInfo =
-        match contextInfo with
-        | ContextInfo.RecordFields -> ContextInfo.TupleInRecordFields
-        | _ -> contextInfo
-
-    let ty2 = TType_tuple (tupInfo, ptys)
-    AddCxTypeEqualsType contextInfo denv cenv.css m knownTy ty2
-    tupInfo, ptys
-
 // Allow inference of assembly-affinity and structness from the known type - even from another assembly. This is a rule of
 // the language design and allows effective cross-assembly use of anonymous types in some limited circumstances.
 let UnifyAnonRecdTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m ty isExplicitStruct unsortedNames =
@@ -5334,7 +5310,7 @@ and TcPropagatingExprLeafThenConvert (cenv: cenv) overallTy actualTy (env: TcEnv
         UnifyTypes cenv env m overallTy.Commit actualTy
         f ()
 
-/// Process a leaf construct, for cases where we propogate the overall type eagerly in
+/// Process a leaf construct, for cases where we propagate the overall type eagerly in
 /// some cases. Then apply additional type-directed conversions.
 ///
 /// However in some cases favour propagating characteristics of the overall type.
@@ -5785,14 +5761,78 @@ and TcExprLazy (cenv: cenv) overallTy env tpenv (synInnerExpr, m) =
     let expr = mkLazyDelayed g m innerTy (mkUnitDelayLambda g m innerExpr)
     expr, tpenv
 
+
+/// Allow the inference of structness from the known type, e.g.
+///    let (x: struct (int * int)) = (3,4)
+and UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownTy isExplicitStruct ps =
+    let g = cenv.g
+    let tupInfo, ptys =
+        if isAnyTupleTy g knownTy then
+            let tupInfo, ptys = destAnyTupleTy g knownTy
+            let tupInfo = (if isExplicitStruct then tupInfoStruct else tupInfo)
+            let ptys = 
+                if List.length ps = List.length ptys then ptys 
+                else NewInferenceTypes g ps
+            tupInfo, ptys
+        else
+            mkTupInfo isExplicitStruct, NewInferenceTypes g ps
+
+    let contextInfo =
+        match contextInfo with
+        | ContextInfo.RecordFields -> ContextInfo.TupleInRecordFields
+        | _ -> contextInfo
+    
+    let ty2 = TType_tuple (tupInfo, ptys)
+    AddCxTypeEqualsType' contextInfo denv cenv.css m knownTy ty2 |> RaiseOperationResult
+    tupInfo, ptys
+
+/// Allow the inference of structness from the known type, e.g.
+///    let (x: struct (int * int)) = (3,4)
+and UnifyTupleTypeAndInferCharacteristics' env tpenv contextInfo (cenv: cenv) denv m knownTy isExplicitStruct ps =
+    let g = cenv.g
+    let tupInfo, ptys =
+        if isAnyTupleTy g knownTy then
+            let tupInfo, ptys = destAnyTupleTy g knownTy
+            let tupInfo = (if isExplicitStruct then tupInfoStruct else tupInfo)
+            let ptys = 
+                if List.length ps = List.length ptys then ptys 
+                else NewInferenceTypes g ps
+            tupInfo, ptys
+        else
+            mkTupInfo isExplicitStruct, NewInferenceTypes g ps
+
+    let contextInfo =
+        match contextInfo with
+        | ContextInfo.RecordFields -> ContextInfo.TupleInRecordFields
+        | _ -> contextInfo
+
+    // TcExprsWithFlexes 
+    
+    let ty2 = TType_tuple (tupInfo, ptys)
+    match AddCxTypeEqualsType' contextInfo denv cenv.css m knownTy ty2 with
+    | ErrorResult(warnings, ErrorFromAddingTypeEquation(g, displayEnv, actualTy, expectedTy, ex, m)) ->
+        
+        let flexes = ptys |> List.map (fun _ -> false)
+        let argsR, _tpenv = TcExprsWithFlexes cenv env m tpenv flexes ptys ps
+        let fixedExpectedTy =
+            match mkAnyTupled g m tupInfo argsR ptys with
+            | TypedTree.Expr.Op (TOp.Tuple _, typeArgs, _, _) -> TType_tuple (mkTupInfo false, typeArgs)
+            | _ -> expectedTy
+            
+        ErrorResult(warnings, ErrorFromAddingTypeEquation(g, displayEnv, actualTy, fixedExpectedTy, ex, m)) 
+    | x -> x
+    |> RaiseOperationResult
+    tupInfo, ptys
+
 and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
     let g = cenv.g
     TcPossiblyPropogatingExprLeafThenConvert (fun ty -> isAnyTupleTy g ty || isTyparTy g ty) cenv overallTy env m (fun overallTy ->
-        let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
+        let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics' env tpenv env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
 
         let flexes = argTys |> List.map (fun _ -> false)
         let argsR, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys args
         let expr = mkAnyTupled g m tupInfo argsR argTys
+        
         expr, tpenv
     )
 
