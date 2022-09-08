@@ -123,11 +123,9 @@ type TcAssemblyResolutions =
 
     member GetUnresolvedReferences: unit -> UnresolvedAssemblyReference list
 
-    static member ResolveAssemblyReferences:
-        tcConfig: TcConfig -> TcAssemblyResolutions
+    static member ResolveAssemblyReferences: tcConfig: TcConfig -> TcAssemblyResolutions
 
-    static member GetAssemblyResolutionInformation:
-        tcConfig: TcConfig -> TcAssemblyResolutions
+    static member GetAssemblyResolutionInformation: tcConfig: TcConfig -> TcAssemblyResolutions
 
 [<Sealed>]
 type RawFSharpAssemblyData =
@@ -190,7 +188,8 @@ type TcImports =
     member SystemRuntimeContainsType: string -> bool
 
     static member BuildTcImports:
-        tcConfigP: TcConfigProvider * tcResolutions: TcAssemblyResolutions * dependencyProvider: DependencyProvider -> NodeCode<TcGlobals * TcImports>
+        tcConfigP: TcConfigProvider * tcResolutions: TcAssemblyResolutions * dependencyProvider: DependencyProvider ->
+            NodeCode<TcGlobals * TcImports>
 
     static member BuildTcImports:
         tcConfigP: TcConfigProvider * dependencyProvider: DependencyProvider -> NodeCode<TcGlobals * TcImports>

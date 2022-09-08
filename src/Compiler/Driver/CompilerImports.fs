@@ -979,8 +979,7 @@ and TcImportsWeakHack(tciLock: TcImportsLock, tcImports: WeakReference<TcImports
             RequireTcImportsLock(tcitok, dllInfos)
             dllInfos <- value |> List.map (fun x -> { FileName = x.FileName }))
 
-    member self.Base: TcImportsWeakHack option =
-        Some self
+    member self.Base: TcImportsWeakHack option = Some self
 
     member _.SystemRuntimeContainsType typeName =
         match tcImports.TryGetTarget() with
@@ -990,12 +989,7 @@ and TcImportsWeakHack(tciLock: TcImportsLock, tcImports: WeakReference<TcImports
 /// Represents a table of imported assemblies with their resolutions.
 /// Is a disposable object, but it is recommended not to explicitly call Dispose unless you absolutely know nothing will be using its contents after the disposal.
 /// Otherwise, simply allow the GC to collect this and it will properly call Dispose from the finalizer.
-and [<Sealed>] TcImports
-    (
-        tcConfigP: TcConfigProvider,
-        initialResolutions: TcAssemblyResolutions,
-        dependencyProvider: DependencyProvider
-    ) as this
+and [<Sealed>] TcImports(tcConfigP: TcConfigProvider, initialResolutions: TcAssemblyResolutions, dependencyProvider: DependencyProvider) as this
 #if !NO_TYPEPROVIDERS
 #endif
  =
@@ -1150,6 +1144,7 @@ and [<Sealed>] TcImports
         | Some res -> ResolvedImportedAssembly res
         | None ->
             tcImports.ImplicitLoadIfAllowed(ctok, m, assemblyName, lookupOnly)
+
             match NameMap.tryFind assemblyName ccuTable with
             | Some res -> ResolvedImportedAssembly res
             | None -> UnresolvedImportedAssembly assemblyName
@@ -1432,8 +1427,7 @@ and [<Sealed>] TcImports
 
         match tcGlobals with
         | Some g -> g
-        | None ->
-            failwith "unreachable: GetGlobals - are the references to mscorlib.dll and FSharp.Core.dll valid?"
+        | None -> failwith "unreachable: GetGlobals - are the references to mscorlib.dll and FSharp.Core.dll valid?"
 
     member private tcImports.SetTcGlobals g =
         CheckDisposed()
@@ -2158,7 +2152,12 @@ and [<Sealed>] TcImports
     // Note: This returns a TcImports object. However, framework TcImports are not currently disposed. The only reason
     // we dispose TcImports is because we need to dispose type providers, and type providers are never included in the framework DLL set.
     // If a framework set ever includes type providers, you will not have to worry about explicitly calling Dispose as the Finalizer will handle it.
-    static member BuildTcImports(tcConfigP: TcConfigProvider, tcResolutions: TcAssemblyResolutions, dependencyProvider: DependencyProvider) =
+    static member BuildTcImports
+        (
+            tcConfigP: TcConfigProvider,
+            tcResolutions: TcAssemblyResolutions,
+            dependencyProvider: DependencyProvider
+        ) =
         node {
             let ctok = CompilationThreadToken()
             let tcConfig = tcConfigP.Get ctok
