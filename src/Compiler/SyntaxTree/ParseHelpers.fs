@@ -859,3 +859,14 @@ let mkSynTypeTuple (elementTypes: SynTupleTypeSegment list) : SynType =
             ||> List.fold (fun acc segment -> unionRanges acc segment.Range)
 
     SynType.Tuple(false, elementTypes, range)
+
+let getSetAdjuster getSet t =
+    let rec visit t =
+        match t, getSet with
+        | SynType.WithGlobalConstraints (t, _, _), _ -> visit t
+        | SynType.Fun _, _ -> getSet
+        | SynType.SignatureParameter(attributes = _ :: _), _ -> getSet
+        | _, SynMemberKind.Member -> SynMemberKind.PropertyGet
+        | _ -> getSet
+
+    visit t

@@ -197,25 +197,30 @@ let mkArityForType ty =
             | _ ->  SynArgInfo([], false, None)
         
         match t with
-        | SynType.Tuple(_, path, _) ->
+        // struct tuples are consider as one SynArgInfo
+        | SynType.Tuple(false, path, _) ->
             path
             |> List.choose (function
                 | SynTupleTypeSegment.Type t ->  Some (mkArgInfoImpl t)
                 | _ -> None)
         | t -> [ mkArgInfoImpl t ]
     
-    let rec visit t =
+    let rec collectTypes continuation t =
         match t with
         | SynType.Fun(argType, returnType, _, _) ->
-            [ yield argType; yield! visit returnType ]
-        | t -> [ t ]
+            collectTypes (fun types -> argType :: types |> continuation) returnType
+        | t -> continuation [ t ]
 
-    match ty with
-    | SynType.Fun(argType, returnType, _, _) ->
-        let allTypes = argType :: visit returnType
-        let argTypes = List.take (allTypes.Length - 1) allTypes
-        List.map mkArgInfo argTypes, SynArgInfo([], false, None)
-    | _ -> [], SynArgInfo([], false, None)
+    let rec visit t =
+        match t with
+        | SynType.WithGlobalConstraints(t, _, _) -> visit t
+        | SynType.Fun(argType, returnType, _, _) ->
+            let allTypes = argType :: collectTypes id returnType
+            let argTypes = List.take (allTypes.Length - 1) allTypes
+            List.map mkArgInfo argTypes, SynArgInfo([], false, None)
+        | _ -> [], SynArgInfo([], false, None)
+
+    visit ty
     |> SynValInfo
     
 let inferSynValDataFromBinding binding =
@@ -1026,7 +1031,7 @@ let destFunTy g ty = ty |> stripTyEqns g |> (function TType_fun (domainTy, range
 
 let destAnyTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) -> tupInfo, l | _ -> failwith "destAnyTupleTy: not a tuple type")
 
-let destRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) when not (evalTupInfoIsStruct tupInfo) -> l | _ -> failwith "destRefTupleTy: not a reference tuple type")
+let destRefTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) when not (evalTupInfoIsStruct tupInfo) -> l | x -> failwith $"destRefTupleTy: not a reference tuple type, got {x}")
 
 let destStructTupleTy g ty = ty |> stripTyEqns g |> (function TType_tuple (tupInfo, l) when evalTupInfoIsStruct tupInfo -> l | _ -> failwith "destStructTupleTy: not a struct tuple type")
 

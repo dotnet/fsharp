@@ -1071,13 +1071,6 @@ classMemberSpfn:
        let isInline, doc, vis2, id, explicitValTyparDecls, ty, (mEquals, optLiteralValue) = $4, grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
        let mWith, getSetRangeOpt, getSet = $10 
 
-       let getSetAdjuster (t: SynType) =
-            match t, getSet with
-            | SynType.Fun _, _ -> getSet
-            | SynType.SignatureParameter(attributes = _ :: _), _ -> getSet
-            | _, SynMemberKind.Member -> SynMemberKind.PropertyGet
-            | _ -> getSet
-
        let mWhole = 
            let m = rhs parseState 3 
            match getSetRangeOpt with 
@@ -1091,7 +1084,7 @@ classMemberSpfn:
                | Some e -> unionRanges m e.Range
        let trivia = { ValKeyword = None; WithKeyword = mWith; EqualsRange = mEquals }
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, isInline, false, doc, vis2, optLiteralValue, mWhole, trivia)
-       let flags = $3 (getSetAdjuster ty)
+       let flags = $3 (getSetAdjuster getSet ty)
        SynMemberSig.Member(valSpfn, flags, mWhole) }
 
   | opt_attributes opt_declVisibility interfaceMember appType  
@@ -1939,12 +1932,6 @@ classDefnMember:
   | opt_attributes opt_declVisibility abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet  opt_ODECLEND
      { let isInline, doc, id, explicitValTyparDecls = $4, grabXmlDoc(parseState, $1, 1), $5, $6
        let mWith, getSetRangeOpt, getSet = $9
-       let getSetAdjuster (t: SynType) =
-            match t, getSet with
-            | SynType.Fun _, _ -> getSet
-            | SynType.SignatureParameter(attributes = _ :: _), _ -> getSet
-            | _, SynMemberKind.Member -> SynMemberKind.PropertyGet
-            | _ -> getSet
 
        let mWhole = 
            let m = rhs parseState 1
@@ -1955,7 +1942,7 @@ classDefnMember:
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
        let trivia = { ValKeyword = None; WithKeyword = mWith; EqualsRange = None }
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, $8, isInline, false, doc, None, None, mWhole, trivia)
-       [ SynMemberDefn.AbstractSlot(valSpfn, $3 (getSetAdjuster $8), mWhole) ] }
+       [ SynMemberDefn.AbstractSlot(valSpfn, $3 (getSetAdjuster getSet $8), mWhole) ] }
        
   | opt_attributes opt_declVisibility inheritsDefn
      {  if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalOnInherit(), rhs parseState 1))

@@ -180,3 +180,5 @@ val mkSynMemberDefnGetSet:
 val adjustHatPrefixToTyparLookup: mFull: range -> rightExpr: SynExpr -> SynExpr
 
 val mkSynTypeTuple: elementTypes: SynTupleTypeSegment list -> SynType
+
+val getSetAdjuster: getSet: SynMemberKind -> t: SynType -> SynMemberKind
