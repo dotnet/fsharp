@@ -221,7 +221,7 @@ let mkArityForType ty =
 let inferSynValDataFromBinding binding =
     match binding with
     | SynBinding (valData = valSynData; headPat = headPat; returnInfo = retInfo; expr = rhsExpr) ->
-        let (SynValData(memberFlags = memberFlags)) = valSynData
+        let (SynValData(memberFlags, thisIdOpt)) = valSynData
         let returnInfo : SynReturnInfo option =
             match retInfo with
             | Some (SynType.SignatureParameter(attributes, optional, ident, usedType, m)) ->
@@ -235,7 +235,8 @@ let inferSynValDataFromBinding binding =
             | SynExpr.Typed(expr = rhsExpr)
             | rhsExpr -> rhsExpr
 
-        SynInfo.InferSynValData(memberFlags, Some headPat, returnInfo, origRhsExpr)
+        let (SynValData2(memberFlags, valInfo, _)) = SynInfo.InferSynValData(memberFlags, Some headPat, returnInfo, origRhsExpr)
+        SynValData2(memberFlags, valInfo, thisIdOpt)
 
 let AccFreeVarsStackGuardDepth = GetEnvInteger "FSHARP_AccFreeVars" 100
 let RemapExprStackGuardDepth = GetEnvInteger "FSHARP_RemapExpr" 50
