@@ -488,8 +488,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
-        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
-        <target state="translated">Zobrazte si povolené hodnoty verze jazyka a pak zadejte požadovanou verzi, například latest nebo preview.</target>
+        <source>Display the allowed values for language version.</source>
+        <target state="needs-review-translation">Zobrazte si povolené hodnoty verze jazyka a pak zadejte požadovanou verzi, například latest nebo preview.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersionHelp">
+        <source>Specify language version such as '6.0' or 'latest' or 'preview'</source>
+        <target state="new">Specify language version such as '6.0' or 'latest' or 'preview'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimizationData">

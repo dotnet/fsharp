@@ -488,8 +488,13 @@
         <note />
       </trans-unit>
       <trans-unit id="optsLangVersion">
-        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
-        <target state="translated">언어 버전의 허용된 값을 표시하고 '최신' 또는 '미리 보기'와 같은 언어 버전을 지정합니다.</target>
+        <source>Display the allowed values for language version.</source>
+        <target state="needs-review-translation">언어 버전의 허용된 값을 표시하고 '최신' 또는 '미리 보기'와 같은 언어 버전을 지정합니다.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsLangVersionHelp">
+        <source>Specify language version such as '6.0' or 'latest' or 'preview'</source>
+        <target state="new">Specify language version such as '6.0' or 'latest' or 'preview'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimizationData">

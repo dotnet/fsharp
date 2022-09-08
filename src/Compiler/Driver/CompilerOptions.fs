@@ -263,29 +263,31 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
     // returns a tuple - the option token, the option argument string
     let parseOption (s: string) =
-        // grab the option token
-        let opts = s.Split([| ':' |])
-        let mutable opt = opts[0]
 
-        if opt = "" then
+        let mutable option = s
+        if option = "" then
             ()
         // if it doesn't start with a '-' or '/', reject outright
-        elif opt[0] <> '-' && opt[0] <> '/' then
-            opt <- ""
-        elif opt <> "--" then
+        elif option[0] <> '-' && option[0] <> '/' then
+            option <- ""
+        elif option <> "--" then
             // is it an abbreviated or MSFT-style option?
             // if so, strip the first character and move on with your life
-            if opt.Length = 2 || isSlashOpt opt then
-                opt <- opt[1..]
+            if option.Length = 2 || isSlashOpt option then
+                option <- option[1..]
             // else, it should be a non-abbreviated option starting with "--"
-            elif opt.Length > 3 && opt.StartsWithOrdinal("--") then
-                opt <- opt[2..]
+            elif option.Length > 3 && option.StartsWithOrdinal("--") then
+                option <- option[2..]
             else
-                opt <- ""
+                option <- ""
+
+        // grab the option token
+        let opts = option.Split([| ':' |])
+        let token = opts[0]
 
         // get the argument string
         let optArgs = if opts.Length > 1 then String.Join(":", opts[1..]) else ""
-        opt, optArgs
+        option, token, optArgs
 
     let getOptionArg compilerOption (argString: string) =
         if argString = "" then
@@ -352,7 +354,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
             processArg (responseFileOptions @ t)
         | opt :: t ->
-            let optToken, argString = parseOption opt
+            let option, optToken, argString = parseOption opt
 
             let reportDeprecatedOption errOpt =
                 match errOpt with
@@ -361,7 +363,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
             let rec attempt l =
                 match l with
-                | CompilerOption (s, _, OptionConsoleOnly f, d, _) :: _ when optToken = s && argString = "" ->
+                | CompilerOption (s, _, OptionConsoleOnly f, d, _) :: _ when option = s ->
                     reportDeprecatedOption d
                     f blocks
                     t
@@ -710,7 +712,7 @@ let tagAlgorithm = "{SHA1|SHA256}"
 let tagInt = "<n>"
 let tagPathMap = "<path=sourcePath;...>"
 let tagNone = ""
-let tagLangVersionValues = "{?|version|latest|preview}"
+let tagLangVersionValues = "{version|latest|preview}"
 
 // PrintOptionInfo
 //----------------
@@ -1104,23 +1106,24 @@ let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
         Some(FSComp.SR.optsMlcompatibility ())
     )
 
+
+let showLanguageVersions () =
+
+    printfn "%s" (FSComp.SR.optsSupportedLangVersions ())
+
+    for v in LanguageVersion.ValidOptions do
+        printfn "%s" v
+
+    for v in LanguageVersion.ValidVersions do
+        printfn "%s" v
+
+    exit 0
+
+
 /// LanguageVersion management
-let setLanguageVersion specifiedVersion =
+let setLanguageVersion (specifiedVersion: string) =
 
-    let dumpAllowedValues () =
-        printfn "%s" (FSComp.SR.optsSupportedLangVersions ())
-
-        for v in LanguageVersion.ValidOptions do
-            printfn "%s" v
-
-        for v in LanguageVersion.ValidVersions do
-            printfn "%s" v
-
-        exit 0
-
-    if specifiedVersion = "?" then
-        dumpAllowedValues ()
-    elif specifiedVersion.ToUpperInvariant() = "PREVIEW" then
+    if specifiedVersion.ToUpperInvariant() = "PREVIEW" then
         ()
     elif not (LanguageVersion.ContainsVersion specifiedVersion) then
         error (Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
@@ -1129,12 +1132,19 @@ let setLanguageVersion specifiedVersion =
 
 let languageFlags tcConfigB =
     [
-        // -langversion:?                Display the allowed values for language version
         // -langversion:<string>         Specify language version such as
         //                               'default' (latest major version), or
         //                               'latest' (latest version, including minor versions),
         //                               'preview' (features for preview)
         //                               or specific versions like '4.7'
+        CompilerOption(
+            "langversion:?",
+            tagNone,
+            OptionConsoleOnly(fun _ -> showLanguageVersions() ),
+            None,
+            Some(FSComp.SR.optsLangVersionHelp ())
+        )
+
         CompilerOption(
             "langversion",
             tagLangVersionValues,
