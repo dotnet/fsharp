@@ -546,7 +546,7 @@ let main1
     if not bannerAlreadyPrinted then
         Console.Write(GetBannerText tcConfigB)
 
-    // Create tcGlobals and frameworkTcImports
+    // Create tcGlobals and tcImports
     let outfile, pdbfile, assemblyName =
         try
             tcConfigB.DecideNames sourceFiles
@@ -585,21 +585,18 @@ let main1
     ReportTime tcConfig "Import mscorlib and FSharp.Core.dll"
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
 
-    let sysRes, otherRes, knownUnresolved =
-        TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
-
-    // Import basic assemblies
-    let tcGlobals, frameworkTcImports =
-        TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes)
+    // Import assemblies
+    let tcGlobals, tcImports =
+        TcImports.BuildTcImports(foundationalTcConfigP, dependencyProvider)
         |> NodeCode.RunImmediateWithoutCancellation
+
+    // register tcImports to be disposed in future
+    disposables.Register tcImports
 
     let ilSourceDocs =
         [
             for sourceFile in sourceFiles -> tcGlobals.memoize_file (FileIndex.fileIndexOfFile sourceFile)
         ]
-
-    // Register framework tcImports to be disposed in future
-    disposables.Register frameworkTcImports
 
     // Parse sourceFiles
     ReportTime tcConfig "Parse inputs"
@@ -635,18 +632,6 @@ let main1
         (tcConfig, inputs)
         ||> List.fold (fun z (input, sourceFileDirectory) ->
             ApplyMetaCommandsFromInputToTcConfig(z, input, sourceFileDirectory, dependencyProvider))
-
-    let tcConfigP = TcConfigProvider.Constant tcConfig
-
-    // Import other assemblies
-    ReportTime tcConfig "Import non-system references"
-
-    let tcImports =
-        TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
-        |> NodeCode.RunImmediateWithoutCancellation
-
-    // register tcImports to be disposed in future
-    disposables.Register tcImports
 
     if not tcConfig.continueAfterParseFailure then
         AbortOnError(diagnosticsLogger, exiter)
@@ -687,7 +672,6 @@ let main1
         ctok,
         tcGlobals,
         tcImports,
-        frameworkTcImports,
         tcState.Ccu,
         typedAssembly,
         topAttrs,
@@ -812,16 +796,13 @@ let main1OfAst
     ReportTime tcConfig "Import mscorlib and FSharp.Core.dll"
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
 
-    let sysRes, otherRes, knownUnresolved =
-        TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
-
     // Import basic assemblies
-    let tcGlobals, frameworkTcImports =
-        TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes)
+    let tcGlobals, tcImports =
+        TcImports.BuildTcImports(foundationalTcConfigP, dependencyProvider)
         |> NodeCode.RunImmediateWithoutCancellation
 
-    // Register framework tcImports to be disposed in future
-    disposables.Register frameworkTcImports
+    // register tcImports to be disposed in future
+    disposables.Register tcImports
 
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
@@ -830,18 +811,6 @@ let main1OfAst
     let tcConfig =
         (tcConfig, inputs)
         ||> List.fold (fun tcc inp -> ApplyMetaCommandsFromInputToTcConfig(tcc, inp, meta, dependencyProvider))
-
-    let tcConfigP = TcConfigProvider.Constant tcConfig
-
-    // Import other assemblies
-    ReportTime tcConfig "Import non-system references"
-
-    let tcImports =
-        TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
-        |> NodeCode.RunImmediateWithoutCancellation
-
-    // register tcImports to be disposed in future
-    disposables.Register tcImports
 
     // Build the initial type checking environment
     ReportTime tcConfig "Typecheck"
@@ -873,7 +842,6 @@ let main1OfAst
         ctok,
         tcGlobals,
         tcImports,
-        frameworkTcImports,
         tcState.Ccu,
         typedAssembly,
         topAttrs,
@@ -892,7 +860,6 @@ let main2
     (Args (ctok,
            tcGlobals,
            tcImports: TcImports,
-           frameworkTcImports,
            generatedCcu: CcuThunk,
            typedImplFiles,
            topAttrs,
@@ -975,7 +942,6 @@ let main2
         ctok,
         tcConfig,
         tcImports,
-        frameworkTcImports,
         tcGlobals,
         diagnosticsLogger,
         generatedCcu,
@@ -997,8 +963,7 @@ let main2
 let main3
     (Args (ctok,
            tcConfig,
-           tcImports,
-           frameworkTcImports: TcImports,
+           tcImports: TcImports,
            tcGlobals,
            diagnosticsLogger: DiagnosticsLogger,
            generatedCcu: CcuThunk,
@@ -1028,7 +993,7 @@ let main3
         match tcConfig.metadataVersion with
         | Some v -> v
         | _ ->
-            match frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name with
+            match tcImports.DllTable.TryFind tcConfig.primaryAssembly.Name with
             | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion
             | _ -> ""
 

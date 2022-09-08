@@ -819,8 +819,6 @@ type TcConfig =
 
     member GetSearchPathsForLibraryFiles: unit -> string list
 
-    member IsSystemAssembly: string -> bool
-
     member PrimaryAssemblyDllReference: unit -> AssemblyReference
 
     member CoreLibraryDllReference: unit -> AssemblyReference

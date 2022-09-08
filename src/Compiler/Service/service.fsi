@@ -464,7 +464,7 @@ type public FSharpChecker =
 
     [<Obsolete("Please create an instance of FSharpChecker using FSharpChecker.Create")>]
     static member Instance: FSharpChecker
-    member internal FrameworkImportsCache: FrameworkImportsCache
+
     member internal ReferenceResolver: LegacyReferenceResolver
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer

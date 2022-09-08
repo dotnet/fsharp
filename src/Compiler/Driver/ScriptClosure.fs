@@ -571,11 +571,13 @@ module ScriptPreprocessClosure =
 
             use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
 
-            let references, unresolvedReferences =
-                TcAssemblyResolutions.GetAssemblyResolutionInformation(tcConfig)
+            let tcResolutions = TcAssemblyResolutions.GetAssemblyResolutionInformation(tcConfig)
 
-            let references = references |> List.map (fun ar -> ar.resolvedPath, ar)
-            references, unresolvedReferences, diagnosticsLogger.Diagnostics
+            let resolutions = tcResolutions.GetAssemblyResolutions()
+            let unresolved = tcResolutions.GetUnresolvedReferences()
+
+            let references = resolutions |> List.map (fun ar -> ar.resolvedPath, ar)
+            references, unresolved, diagnosticsLogger.Diagnostics
 
         // Root errors and warnings - look at the last item in the closureFiles list
         let loadClosureRootDiagnostics, allRootDiagnostics =
@@ -662,14 +664,13 @@ module ScriptPreprocessClosure =
                     reduceMemoryUsage
                 )
 
-            let resolutions0, _unresolvedReferences =
+            let tcResolutions0 =
                 TcAssemblyResolutions.GetAssemblyResolutionInformation(tcConfig)
 
             let references0 =
-                resolutions0
+                tcResolutions0.GetAssemblyResolutions()
                 |> List.map (fun r -> r.originalReference.Range, r.resolvedPath)
-                |> Seq.distinct
-                |> List.ofSeq
+                |> List.distinct
 
             references0, tcConfig.assumeDotNetFramework, scriptDefaultReferencesDiagnostics
 

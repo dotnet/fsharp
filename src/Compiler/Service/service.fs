@@ -309,8 +309,6 @@ type BackgroundCompiler
             areSimilar = FSharpProjectOptions.UseSameProject
         )
 
-    let frameworkTcImportsCache = FrameworkImportsCache(frameworkTcImportsCacheStrongSize)
-
     // We currently share one global dependency provider for all scripts for the FSharpChecker.
     // For projects, one is used per project.
     //
@@ -405,7 +403,6 @@ type BackgroundCompiler
                 IncrementalBuilder.TryCreateIncrementalBuilderForProjectOptions(
                     legacyReferenceResolver,
                     FSharpCheckerResultsSettings.defaultFSharpBinariesDir,
-                    frameworkTcImportsCache,
                     loadClosure,
                     Array.toList options.SourceFiles,
                     Array.toList options.OtherOptions,
@@ -1180,7 +1177,6 @@ type BackgroundCompiler
                 parseFileCache.Clear(ltok))
 
             incrementalBuildersCache.Clear(AnyCallerThread)
-            frameworkTcImportsCache.Clear()
             scriptClosureCache.Clear AnyCallerThread)
 
     member _.DownsizeCaches() =
@@ -1190,10 +1186,7 @@ type BackgroundCompiler
                 parseFileCache.Resize(ltok, newKeepStrongly = 1))
 
             incrementalBuildersCache.Resize(AnyCallerThread, newKeepStrongly = 1, newKeepMax = 1)
-            frameworkTcImportsCache.Downsize()
             scriptClosureCache.Resize(AnyCallerThread, newKeepStrongly = 1, newKeepMax = 1))
-
-    member _.FrameworkImportsCache = frameworkTcImportsCache
 
     static member ActualParseFileCount = actualParseFileCount
 
@@ -1695,8 +1688,6 @@ type FSharpChecker
     static member ActualCheckFileCount = BackgroundCompiler.ActualCheckFileCount
 
     static member Instance = globalInstance.Force()
-
-    member internal _.FrameworkImportsCache = backgroundCompiler.FrameworkImportsCache
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
     member _.TokenizeLine(line: string, state: FSharpTokenizerLexState) =

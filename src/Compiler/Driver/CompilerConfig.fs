@@ -1378,28 +1378,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     member _.GetNativeProbingRoots() = data.GetNativeProbingRoots()
 
-    /// A closed set of assemblies where, for any subset S:
-    ///    - the TcImports object built for S (and thus the F# Compiler CCUs for the assemblies in S)
-    ///       is a resource that can be shared between any two IncrementalBuild objects that reference
-    ///       precisely S
-    ///
-    /// Determined by looking at the set of assemblies referenced by f# .
-    ///
-    /// Returning true may mean that the file is locked and/or placed into the
-    /// 'framework' reference set that is potentially shared across multiple compilations.
-    member tcConfig.IsSystemAssembly(fileName: string) =
-        try
-            FileSystem.FileExistsShim fileName
-            && ((tcConfig.GetTargetFrameworkDirectories()
-                 |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName fileName))
-                || (tcConfig
-                       .FxResolver
-                       .GetSystemAssemblies()
-                       .Contains(FileSystemUtils.fileNameWithoutExtension fileName))
-                || tcConfig.FxResolver.IsInReferenceAssemblyPackDirectory fileName)
-        with _ ->
-            false
-
     member tcConfig.GenerateSignatureData =
         not tcConfig.standalone && not tcConfig.noSignatureData
 

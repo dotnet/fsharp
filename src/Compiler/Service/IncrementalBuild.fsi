@@ -23,16 +23,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open FSharp.Compiler.BuildGraph
 
-/// Lookup the global static cache for building the FrameworkTcImports
-type internal FrameworkImportsCache =
-    new: size: int -> FrameworkImportsCache
-
-    member Get: TcConfig -> NodeCode<TcGlobals * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list>
-
-    member Clear: unit -> unit
-
-    member Downsize: unit -> unit
-
 /// Used for unit testing
 module internal IncrementalBuilderEventTesting =
 
@@ -249,7 +239,6 @@ type internal IncrementalBuilder =
     static member TryCreateIncrementalBuilderForProjectOptions:
         legacyReferenceResolver: LegacyReferenceResolver *
         defaultFSharpBinariesDir: string *
-        frameworkTcImportsCache: FrameworkImportsCache *
         loadClosureOpt: LoadClosure option *
         sourceFiles: string list *
         commandLineArgs: string list *
@@ -263,7 +252,7 @@ type internal IncrementalBuilder =
         keepAllBackgroundSymbolUses: bool *
         enableBackgroundItemKeyStoreAndSemanticClassification: bool *
         enablePartialTypeChecking: bool *
-        dependencyProvider: DependencyProvider option ->
+        dependencyProviderOpt: DependencyProvider option ->
             NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.

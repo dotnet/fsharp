@@ -80,9 +80,6 @@ type AssemblyResolution =
         /// Create the tooltip text for the assembly reference
         prepareToolTip: unit -> string
 
-        /// Whether or not this is an installed system assembly (for example, System.dll)
-        sysdir: bool
-
         /// Lazily populated ilAssemblyRef for this reference.
         mutable ilAssemblyRef: ILAssemblyRef option
     }
@@ -124,14 +121,13 @@ type TcAssemblyResolutions =
 
     member GetAssemblyResolutions: unit -> AssemblyResolution list
 
-    static member SplitNonFoundationalResolutions:
-        tcConfig: TcConfig -> AssemblyResolution list * AssemblyResolution list * UnresolvedAssemblyReference list
+    member GetUnresolvedReferences: unit -> UnresolvedAssemblyReference list
 
-    static member BuildFromPriorResolutions:
-        tcConfig: TcConfig * AssemblyResolution list * UnresolvedAssemblyReference list -> TcAssemblyResolutions
+    static member ResolveAssemblyReferences:
+        tcConfig: TcConfig -> TcAssemblyResolutions
 
     static member GetAssemblyResolutionInformation:
-        tcConfig: TcConfig -> AssemblyResolution list * UnresolvedAssemblyReference list
+        tcConfig: TcConfig -> TcAssemblyResolutions
 
 [<Sealed>]
 type RawFSharpAssemblyData =
@@ -152,9 +148,6 @@ type TcImports =
     member GetImportedAssemblies: unit -> ImportedAssembly list
 
     member GetCcusInDeclOrder: unit -> CcuThunk list
-
-    /// This excludes any framework imports (which may be shared between multiple builds)
-    member GetCcusExcludingBase: unit -> CcuThunk list
 
     member FindDllInfo: CompilationThreadToken * range * string -> ImportedBinary
 
@@ -196,14 +189,8 @@ type TcImports =
 
     member SystemRuntimeContainsType: string -> bool
 
-    member internal Base: TcImports option
-
-    static member BuildFrameworkTcImports:
-        TcConfigProvider * AssemblyResolution list * AssemblyResolution list -> NodeCode<TcGlobals * TcImports>
-
-    static member BuildNonFrameworkTcImports:
-        TcConfigProvider * TcImports * AssemblyResolution list * UnresolvedAssemblyReference list * DependencyProvider ->
-            NodeCode<TcImports>
+    static member BuildTcImports:
+        tcConfigP: TcConfigProvider * tcResolutions: TcAssemblyResolutions * dependencyProvider: DependencyProvider -> NodeCode<TcGlobals * TcImports>
 
     static member BuildTcImports:
         tcConfigP: TcConfigProvider * dependencyProvider: DependencyProvider -> NodeCode<TcGlobals * TcImports>

@@ -590,66 +590,6 @@ type BoundModel private (tcConfig: TcConfig,
                       syntaxTreeOpt,
                       None)
 
-/// Global service state
-type FrameworkImportsCacheKey = FrameworkImportsCacheKey of resolvedpath: string list * assemblyName: string * targetFrameworkDirectories: string list * fsharpBinaries: string * langVersion: decimal
-
-/// Represents a cache of 'framework' references that can be shared between multiple incremental builds
-type FrameworkImportsCache(size) =
-
-    let gate = obj()
-
-    // Mutable collection protected via CompilationThreadToken
-    let frameworkTcImportsCache = AgedLookup<AnyCallerThreadToken, FrameworkImportsCacheKey, GraphNode<TcGlobals * TcImports>>(size, areSimilar=(fun (x, y) -> x = y))
-
-    /// Reduce the size of the cache in low-memory scenarios
-    member _.Downsize() = frameworkTcImportsCache.Resize(AnyCallerThread, newKeepStrongly=0)
-
-    /// Clear the cache
-    member _.Clear() = frameworkTcImportsCache.Clear AnyCallerThread
-
-    /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
-    member _.GetNode(tcConfig: TcConfig, frameworkDLLs: AssemblyResolution list, nonFrameworkResolutions: AssemblyResolution list) =
-        let frameworkDLLsKey =
-            frameworkDLLs
-            |> List.map (fun ar->ar.resolvedPath) // The cache key. Just the minimal data.
-            |> List.sort  // Sort to promote cache hits.
-
-        // Prepare the frameworkTcImportsCache
-        //
-        // The data elements in this key are very important. There should be nothing else in the TcConfig that logically affects
-        // the import of a set of framework DLLs into F# CCUs. That is, the F# CCUs that result from a set of DLLs (including
-        // FSharp.Core.dll and mscorlib.dll) must be logically invariant of all the other compiler configuration parameters.
-        let key =
-            FrameworkImportsCacheKey(frameworkDLLsKey,
-                    tcConfig.primaryAssembly.Name,
-                    tcConfig.GetTargetFrameworkDirectories(),
-                    tcConfig.fsharpBinariesDir,
-                    tcConfig.langVersion.SpecifiedVersion)
-
-        let node =
-            lock gate (fun () ->
-                match frameworkTcImportsCache.TryGet (AnyCallerThread, key) with
-                | Some lazyWork -> lazyWork
-                | None ->
-                    let lazyWork = GraphNode(node {
-                        let tcConfigP = TcConfigProvider.Constant tcConfig
-                        return! TcImports.BuildFrameworkTcImports (tcConfigP, frameworkDLLs, nonFrameworkResolutions)
-                    })
-                    frameworkTcImportsCache.Put(AnyCallerThread, key, lazyWork)
-                    lazyWork
-            )
-        node
-
-    /// This function strips the "System" assemblies from the tcConfig and returns a age-cached TcImports for them.
-    member this.Get(tcConfig: TcConfig) =
-      node {
-        // Split into installed and not installed.
-        let frameworkDLLs, nonFrameworkResolutions, unresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
-        let node = this.GetNode(tcConfig, frameworkDLLs, nonFrameworkResolutions)
-        let! tcGlobals, frameworkTcImports = node.GetOrComputeValue()
-        return tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolved
-      }
-
 /// Represents the interim state of checking an assembly
 [<Sealed>]
 type PartialCheckResults (boundModel: BoundModel, timeStamp: DateTime, projectTimeStamp: DateTime) =
@@ -738,12 +678,7 @@ module IncrementalBuilderHelpers =
     let CombineImportedAssembliesTask (
         assemblyName, 
         tcConfig: TcConfig, 
-        tcConfigP, 
-        tcGlobals, 
-        frameworkTcImports, 
-        nonFrameworkResolutions, 
-        unresolvedReferences, 
-        dependencyProvider, 
+        tcImportsNode: GraphNode<TcGlobals * TcImports>, 
         loadClosureOpt: LoadClosure option, 
         niceNameGen, 
         basicDependencies,
@@ -760,38 +695,34 @@ module IncrementalBuilderHelpers =
         let diagnosticsLogger = CompilationDiagnosticLogger("CombineImportedAssembliesTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
 
-        let! tcImports =
-          node {
-            try
-                let! tcImports = TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, dependencyProvider)
+        let! tcGlobals, tcImports = tcImportsNode.GetOrComputeValue()
+        try
 #if !NO_TYPEPROVIDERS
-                tcImports.GetCcusExcludingBase() |> Seq.iter (fun ccu ->
-                    // When a CCU reports an invalidation, merge them together and just report a
-                    // general "imports invalidated". This triggers a rebuild.
-                    //
-                    // We are explicit about what the handler closure captures to help reason about the
-                    // lifetime of captured objects, especially in case the type provider instance gets leaked
-                    // or keeps itself alive mistakenly, e.g. via some global state in the type provider instance.
-                    //
-                    // The handler only captures
-                    //    1. a weak reference to the importsInvalidated event.
-                    //
-                    // The IncrementalBuilder holds the strong reference the importsInvalidated event.
-                    //
-                    // In the invalidation handler we use a weak reference to allow the IncrementalBuilder to
-                    // be collected if, for some reason, a TP instance is not disposed or not GC'd.
-                    let capturedImportsInvalidated = WeakReference<_>(importsInvalidatedByTypeProvider)
-                    ccu.Deref.InvalidateEvent.Add(fun _ ->
-                        match capturedImportsInvalidated.TryGetTarget() with
-                        | true, tg -> tg.Trigger()
-                        | _ -> ()))
+            tcImports.GetImportedAssemblies() |> Seq.iter (fun assembly ->
+                let ccu = assembly.FSharpViewOfMetadata
+                // When a CCU reports an invalidation, merge them together and just report a
+                // general "imports invalidated". This triggers a rebuild.
+                //
+                // We are explicit about what the handler closure captures to help reason about the
+                // lifetime of captured objects, especially in case the type provider instance gets leaked
+                // or keeps itself alive mistakenly, e.g. via some global state in the type provider instance.
+                //
+                // The handler only captures
+                //    1. a weak reference to the importsInvalidated event.
+                //
+                // The IncrementalBuilder holds the strong reference the importsInvalidated event.
+                //
+                // In the invalidation handler we use a weak reference to allow the IncrementalBuilder to
+                // be collected if, for some reason, a TP instance is not disposed or not GC'd.
+                let capturedImportsInvalidated = WeakReference<_>(importsInvalidatedByTypeProvider)
+                ccu.Deref.InvalidateEvent.Add(fun _ ->
+                    match capturedImportsInvalidated.TryGetTarget() with
+                    | true, tg -> tg.Trigger()
+                    | _ -> ()))
 #endif
-                return tcImports
-            with exn ->
-                Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" exn)
-                diagnosticsLogger.Warning exn
-                return frameworkTcImports
-          }
+        with exn ->
+            Debug.Assert(false, sprintf "Could not BuildAllReferencedDllTcImports %A" exn)
+            diagnosticsLogger.Warning exn
 
         let tcInitial, openDecls0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
         let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial, openDecls0)
@@ -848,10 +779,11 @@ module IncrementalBuilderHelpers =
         }
 
     /// Finish up the typechecking to produce outputs for the rest of the compilation process
-    let FinalizeTypeCheckTask (tcConfig: TcConfig) tcGlobals enablePartialTypeChecking assemblyName outfile (boundModels: ImmutableArray<BoundModel>) =
+    let FinalizeTypeCheckTask (tcConfig: TcConfig, tcImportsNode: GraphNode<TcGlobals * TcImports>, enablePartialTypeChecking, assemblyName, outfile, boundModels: ImmutableArray<BoundModel>) =
       node {
         let diagnosticsLogger = CompilationDiagnosticLogger("FinalizeTypeCheckTask", tcConfig.diagnosticsOptions)
         use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
+        let! tcGlobals, _tcImports = tcImportsNode.GetOrComputeValue()
 
         let! results =
             boundModels 
@@ -943,7 +875,7 @@ module IncrementalBuilderHelpers =
 type IncrementalBuilderInitialState =
     {
         initialBoundModel: BoundModel
-        tcGlobals: TcGlobals
+        tcImportsNode: GraphNode<TcGlobals * TcImports>
         referencedAssemblies: ImmutableArray<Choice<string, IProjectReference> * (TimeStampCache -> DateTime)>
         tcConfig: TcConfig
         outfile: string
@@ -965,9 +897,9 @@ type IncrementalBuilderInitialState =
 
     static member Create(
                             initialBoundModel: BoundModel,
-                            tcGlobals,
-                            nonFrameworkAssemblyInputs,
                             tcConfig: TcConfig,
+                            tcImportsNode,
+                            assemblyInputs,
                             outfile,
                             assemblyName,
                             lexResourceManager,
@@ -984,8 +916,8 @@ type IncrementalBuilderInitialState =
         let initialState =
             {
                 initialBoundModel = initialBoundModel
-                tcGlobals = tcGlobals
-                referencedAssemblies = nonFrameworkAssemblyInputs |> ImmutableArray.ofSeq
+                tcImportsNode = tcImportsNode
+                referencedAssemblies = assemblyInputs |> ImmutableArray.ofSeq
                 tcConfig = tcConfig
                 outfile = outfile
                 assemblyName = assemblyName
@@ -1045,13 +977,13 @@ module IncrementalBuilderStateHelpers =
                 |> ImmutableArray.map (fun x -> x.TryPeekValue().Value)
 
             let! result = 
-                FinalizeTypeCheckTask 
-                    initialState.tcConfig 
-                    initialState.tcGlobals 
-                    initialState.enablePartialTypeChecking 
-                    initialState.assemblyName 
-                    initialState.outfile 
-                    boundModels
+                FinalizeTypeCheckTask (
+                    initialState.tcConfig,
+                    initialState.tcImportsNode, 
+                    initialState.enablePartialTypeChecking,
+                    initialState.assemblyName,
+                    initialState.outfile,
+                    boundModels)
             let result = (result, DateTime.UtcNow)
             return result
         })
@@ -1418,7 +1350,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
         (
             legacyReferenceResolver,
             defaultFSharpBinariesDir,
-            frameworkTcImportsCache: FrameworkImportsCache,
             loadClosureOpt: LoadClosure option,
             sourceFiles: string list,
             commandLineArgs: string list,
@@ -1432,7 +1363,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking: bool,
-            dependencyProvider
+            dependencyProviderOpt
         ) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
@@ -1544,28 +1475,43 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let niceNameGen = NiceNameGenerator()
             let outfile, _, assemblyName = tcConfigB.DecideNames sourceFiles
 
+            // For scripts, the dependency provider is already available.
+            // For projects create a fresh one for the project.
+            let dependencyProvider =
+                match dependencyProviderOpt with
+                | None -> new DependencyProvider()
+                | Some dependencyProvider -> dependencyProvider
+
             // Resolve assemblies and create the framework TcImports. This is done when constructing the
             // builder itself, rather than as an incremental task. This caches a level of "system" references. No type providers are
             // included in these references.
-            let! tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences = frameworkTcImportsCache.Get(tcConfig)
+            let tcResolutions = TcAssemblyResolutions.ResolveAssemblyReferences(tcConfig)
+
+            let tcConfigP = TcConfigProvider.Constant tcConfig
+            let tcImportsNode = GraphNode(node {
+                return! TcImports.BuildTcImports (tcConfigP, tcResolutions, dependencyProvider)
+            })
 
             // Note we are not calling diagnosticsLogger.GetDiagnostics() anywhere for this task.
             // This is ok because not much can actually go wrong here.
             let diagnosticsLogger = CompilationDiagnosticLogger("nonFrameworkAssemblyInputs", tcConfig.diagnosticsOptions)
             use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
 
-            // Get the names and time stamps of all the non-framework referenced assemblies, which will act
+            let unresolvedReferences = tcResolutions.GetUnresolvedReferences()
+            let resolutions = tcResolutions.GetAssemblyResolutions()
+
+            // Get the names and time stamps of all the referenced assemblies, which will act
             // as inputs to one of the nodes in the build.
             //
             // This operation is done when constructing the builder itself, rather than as an incremental task.
-            let nonFrameworkAssemblyInputs =
+            let assemblyInputs =
                 // Note we are not calling diagnosticsLogger.GetDiagnostics() anywhere for this task.
                 // This is ok because not much can actually go wrong here.
                 let diagnosticsLogger = CompilationDiagnosticLogger("nonFrameworkAssemblyInputs", tcConfig.diagnosticsOptions)
                 // Return the disposable object that cleans up
                 use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parameter)
 
-                [ for r in nonFrameworkResolutions do
+                [ for r in resolutions do
                     let fileName = r.resolvedPath
                     yield (Choice1Of2 fileName, (fun (cache: TimeStampCache) -> cache.GetFileTimeStamp fileName))
 
@@ -1574,7 +1520,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
 
             // Start importing
 
-            let tcConfigP = TcConfigProvider.Constant tcConfig
             let beforeFileChecked = Event<string>()
             let fileChecked = Event<string>()
 
@@ -1595,22 +1540,15 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     // Exclude things that are definitely not a file name
                     if not(FileSystem.IsInvalidPathShim referenceText) then
                         let file = if FileSystem.IsPathRootedShim referenceText then referenceText else Path.Combine(projectDirectory, referenceText)
-                        yield file
+                        file
 
-                  for r in nonFrameworkResolutions do
-                        yield  r.resolvedPath  ]
+                  for r in resolutions do
+                        r.resolvedPath  ]
 
             let allDependencies =
                 [| yield! basicDependencies
                    for _, f, _ in sourceFiles do
                         yield f |]
-
-            // For scripts, the dependency provider is already available.
-            // For projects create a fresh one for the project.
-            let dependencyProvider =
-                match dependencyProvider with
-                | None -> new DependencyProvider()
-                | Some dependencyProvider -> dependencyProvider
 
             let defaultTimeStamp = DateTime.UtcNow
 
@@ -1618,12 +1556,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                 CombineImportedAssembliesTask(
                     assemblyName,
                     tcConfig,
-                    tcConfigP,
-                    tcGlobals,
-                    frameworkTcImports,
-                    nonFrameworkResolutions,
-                    unresolvedReferences,
-                    dependencyProvider,
+                    tcImportsNode,
                     loadClosureOpt,
                     niceNameGen,
                     basicDependencies,
@@ -1646,9 +1579,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             let initialState =
                 IncrementalBuilderInitialState.Create(
                     initialBoundModel,
-                    tcGlobals,
-                    nonFrameworkAssemblyInputs,
                     tcConfig,
+                    tcImportsNode,
+                    assemblyInputs,
                     outfile,
                     assemblyName,
                     resourceManager,

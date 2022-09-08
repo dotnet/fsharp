@@ -276,15 +276,11 @@ type AssemblyResolution =
         /// Create the tooltip text for the assembly reference
         prepareToolTip: unit -> string
 
-        /// Whether or not this is an installed system assembly (for example, System.dll)
-        sysdir: bool
-
         /// Lazily populated ilAssemblyRef for this reference.
         mutable ilAssemblyRef: ILAssemblyRef option
     }
 
-    override this.ToString() =
-        sprintf "%s%s" (if this.sysdir then "[sys]" else "") this.resolvedPath
+    override this.ToString() = this.resolvedPath
 
     member this.ProjectReference = this.originalReference.ProjectReference
 
@@ -387,15 +383,11 @@ type TcConfig with
         // See if the language service has already produced the contents of the assembly for us, virtually
         match r.ProjectReference with
         | Some _ ->
-            let resolved = r.Text
-            let sysdir = tcConfig.IsSystemAssembly resolved
-
             Some
                 {
                     originalReference = r
-                    resolvedPath = resolved
-                    prepareToolTip = (fun () -> resolved)
-                    sysdir = sysdir
+                    resolvedPath = r.Text
+                    prepareToolTip = (fun () -> r.Text)
                     ilAssemblyRef = None
                 }
         | None ->
@@ -416,8 +408,6 @@ type TcConfig with
 
                 match resolved with
                 | Some resolved ->
-                    let sysdir = tcConfig.IsSystemAssembly resolved
-
                     Some
                         {
                             originalReference = r
@@ -427,7 +417,6 @@ type TcConfig with
                                     let fusionName = AssemblyName.GetAssemblyName(resolved).ToString()
                                     let line (append: string) = append.Trim(' ') + "\n"
                                     line resolved + line fusionName)
-                            sysdir = sysdir
                             ilAssemblyRef = None
                         }
                 | None -> None
@@ -564,7 +553,6 @@ type TcConfig with
                                         originalReference = originalReference
                                         resolvedPath = canonicalItemSpec
                                         prepareToolTip = (fun () -> resolvedFile.prepareToolTip (originalReference.Text, canonicalItemSpec))
-                                        sysdir = tcConfig.IsSystemAssembly canonicalItemSpec
                                         ilAssemblyRef = None
                                     }
                             ]
@@ -751,63 +739,15 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
             yield! tcConfig.referencedDLLs
         ]
 
-    static member SplitNonFoundationalResolutions(tcConfig: TcConfig) =
+    static member ResolveAssemblyReferences(tcConfig: TcConfig) =
         let assemblyList = TcAssemblyResolutions.GetAllDllReferences tcConfig
 
-        let resolutions =
-            TcAssemblyResolutions.ResolveAssemblyReferences(tcConfig, assemblyList, tcConfig.knownUnresolvedReferences)
-
-        let frameworkDLLs, nonFrameworkReferences =
-            resolutions.GetAssemblyResolutions() |> List.partition (fun r -> r.sysdir)
-
-        let unresolved = resolutions.GetUnresolvedReferences()
-#if DEBUG
-        let mutable itFailed = false
-
-        let addedText =
-            "\nIf you want to debug this right now, attach a debugger, and put a breakpoint in 'CompileOps.fs' near the text '!itFailed', and you can re-step through the assembly resolution logic."
-
-        for UnresolvedAssemblyReference (referenceText, _ranges) in unresolved do
-            if referenceText.Contains("mscorlib") then
-                Debug.Assert(false, sprintf "whoops, did not resolve mscorlib: '%s'%s" referenceText addedText)
-                itFailed <- true
-
-        for x in frameworkDLLs do
-            if not (FileSystem.IsPathRootedShim(x.resolvedPath)) then
-                Debug.Assert(false, sprintf "frameworkDLL should be absolute path: '%s'%s" x.resolvedPath addedText)
-                itFailed <- true
-
-        for x in nonFrameworkReferences do
-            if not (FileSystem.IsPathRootedShim(x.resolvedPath)) then
-                Debug.Assert(false, sprintf "nonFrameworkReference should be absolute path: '%s'%s" x.resolvedPath addedText)
-                itFailed <- true
-
-        if itFailed then
-            // idea is, put a breakpoint here and then step through
-            let assemblyList = TcAssemblyResolutions.GetAllDllReferences tcConfig
-
-            let resolutions =
-                TcAssemblyResolutions.ResolveAssemblyReferences(tcConfig, assemblyList, [])
-
-            let _frameworkDLLs, _nonFrameworkReferences =
-                resolutions.GetAssemblyResolutions() |> List.partition (fun r -> r.sysdir)
-
-            ()
-#endif
-        frameworkDLLs, nonFrameworkReferences, unresolved
-
-    static member BuildFromPriorResolutions(tcConfig: TcConfig, resolutions, knownUnresolved) =
-        let references = resolutions |> List.map (fun r -> r.originalReference)
-        TcAssemblyResolutions.ResolveAssemblyReferences(tcConfig, references, knownUnresolved)
+        TcAssemblyResolutions.ResolveAssemblyReferences(tcConfig, assemblyList, tcConfig.knownUnresolvedReferences)
 
     static member GetAssemblyResolutionInformation(tcConfig: TcConfig) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         let assemblyList = TcAssemblyResolutions.GetAllDllReferences tcConfig
-
-        let resolutions =
-            TcAssemblyResolutions.ResolveAssemblyReferences(tcConfig, assemblyList, [])
-
-        resolutions.GetAssemblyResolutions(), resolutions.GetUnresolvedReferences()
+        TcAssemblyResolutions.ResolveAssemblyReferences(tcConfig, assemblyList, [])
 
 //----------------------------------------------------------------------------
 // Abstraction for project reference
@@ -1039,13 +979,8 @@ and TcImportsWeakHack(tciLock: TcImportsLock, tcImports: WeakReference<TcImports
             RequireTcImportsLock(tcitok, dllInfos)
             dllInfos <- value |> List.map (fun x -> { FileName = x.FileName }))
 
-    member _.Base: TcImportsWeakHack option =
-        match tcImports.TryGetTarget() with
-        | true, strong ->
-            match strong.Base with
-            | Some (baseTcImports: TcImports) -> Some baseTcImports.Weak
-            | _ -> None
-        | _ -> None
+    member self.Base: TcImportsWeakHack option =
+        Some self
 
     member _.SystemRuntimeContainsType typeName =
         match tcImports.TryGetTarget() with
@@ -1059,8 +994,7 @@ and [<Sealed>] TcImports
     (
         tcConfigP: TcConfigProvider,
         initialResolutions: TcAssemblyResolutions,
-        importsBase: TcImports option,
-        dependencyProviderOpt: DependencyProvider option
+        dependencyProvider: DependencyProvider
     ) as this
 #if !NO_TYPEPROVIDERS
 #endif
@@ -1140,16 +1074,6 @@ and [<Sealed>] TcImports
             | None -> false
         | None -> false
 
-    member internal tcImports.Base =
-        CheckDisposed()
-        importsBase
-
-    member tcImports.CcuTable =
-        tciLock.AcquireLock(fun tcitok ->
-            RequireTcImportsLock(tcitok, ccuTable)
-            CheckDisposed()
-            ccuTable)
-
     member tcImports.DllTable =
         tciLock.AcquireLock(fun tcitok ->
             RequireTcImportsLock(tcitok, dllTable)
@@ -1186,37 +1110,22 @@ and [<Sealed>] TcImports
         tciLock.AcquireLock(fun tcitok ->
             CheckDisposed()
             RequireTcImportsLock(tcitok, dllInfos)
-
-            match importsBase with
-            | Some importsBase -> importsBase.GetDllInfos() @ dllInfos
-            | None -> dllInfos)
+            dllInfos)
 
     member tcImports.AllAssemblyResolutions() =
         tciLock.AcquireLock(fun tcitok ->
             CheckDisposed()
             RequireTcImportsLock(tcitok, resolutions)
-            let ars = resolutions.GetAssemblyResolutions()
-
-            match importsBase with
-            | Some importsBase -> importsBase.AllAssemblyResolutions() @ ars
-            | None -> ars)
+            resolutions.GetAssemblyResolutions())
 
     member tcImports.TryFindDllInfo(ctok: CompilationThreadToken, m, assemblyName, lookupOnly) =
         CheckDisposed()
 
-        let rec look (t: TcImports) =
-            match NameMap.tryFind assemblyName t.DllTable with
-            | Some res -> Some res
-            | None ->
-                match t.Base with
-                | Some t2 -> look t2
-                | None -> None
-
-        match look tcImports with
+        match NameMap.tryFind assemblyName dllTable with
         | Some res -> Some res
         | None ->
             tcImports.ImplicitLoadIfAllowed(ctok, m, assemblyName, lookupOnly)
-            look tcImports
+            NameMap.tryFind assemblyName dllTable
 
     member tcImports.FindDllInfo(ctok, m, assemblyName) =
         match tcImports.TryFindDllInfo(ctok, m, assemblyName, lookupOnly = false) with
@@ -1227,16 +1136,7 @@ and [<Sealed>] TcImports
         tciLock.AcquireLock(fun tcitok ->
             CheckDisposed()
             RequireTcImportsLock(tcitok, ccuInfos)
-
-            match importsBase with
-            | Some importsBase -> List.append (importsBase.GetImportedAssemblies()) ccuInfos
-            | None -> ccuInfos)
-
-    member tcImports.GetCcusExcludingBase() =
-        tciLock.AcquireLock(fun tcitok ->
-            CheckDisposed()
-            RequireTcImportsLock(tcitok, ccuInfos)
-            ccuInfos |> List.map (fun x -> x.FSharpViewOfMetadata))
+            ccuInfos)
 
     member tcImports.GetCcusInDeclOrder() =
         CheckDisposed()
@@ -1246,20 +1146,11 @@ and [<Sealed>] TcImports
     member tcImports.FindCcuInfo(ctok, m, assemblyName, lookupOnly) =
         CheckDisposed()
 
-        let rec look (t: TcImports) =
-            match NameMap.tryFind assemblyName t.CcuTable with
-            | Some res -> Some res
-            | None ->
-                match t.Base with
-                | Some t2 -> look t2
-                | None -> None
-
-        match look tcImports with
+        match NameMap.tryFind assemblyName ccuTable with
         | Some res -> ResolvedImportedAssembly res
         | None ->
             tcImports.ImplicitLoadIfAllowed(ctok, m, assemblyName, lookupOnly)
-
-            match look tcImports with
+            match NameMap.tryFind assemblyName ccuTable with
             | Some res -> ResolvedImportedAssembly res
             | None -> UnresolvedImportedAssembly assemblyName
 
@@ -1280,15 +1171,7 @@ and [<Sealed>] TcImports
     member tcImports.TryFindXmlDocumentationInfo(assemblyName: string) =
         CheckDisposed()
 
-        let rec look (t: TcImports) =
-            match NameMap.tryFind assemblyName t.CcuTable with
-            | Some res -> Some res
-            | None ->
-                match t.Base with
-                | Some t2 -> look t2
-                | None -> None
-
-        match look tcImports with
+        match NameMap.tryFind assemblyName ccuTable with
         | Some res -> res.FSharpViewOfMetadata.Deref.XmlDocumentationInfo
         | _ -> None
 
@@ -1506,12 +1389,7 @@ and [<Sealed>] TcImports
 
     member _.DependencyProvider =
         CheckDisposed()
-
-        match dependencyProviderOpt with
-        | None ->
-            Debug.Assert(false, "this should never be called on FrameworkTcImports")
-            new DependencyProvider()
-        | Some dependencyProvider -> dependencyProvider
+        dependencyProvider
 
     member tcImports.GetImportMap() =
         CheckDisposed()
@@ -1555,9 +1433,7 @@ and [<Sealed>] TcImports
         match tcGlobals with
         | Some g -> g
         | None ->
-            match importsBase with
-            | Some b -> b.GetTcGlobals()
-            | None -> failwith "unreachable: GetGlobals - are the references to mscorlib.dll and FSharp.Core.dll valid?"
+            failwith "unreachable: GetGlobals - are the references to mscorlib.dll and FSharp.Core.dll valid?"
 
     member private tcImports.SetTcGlobals g =
         CheckDisposed()
@@ -2282,23 +2158,19 @@ and [<Sealed>] TcImports
     // Note: This returns a TcImports object. However, framework TcImports are not currently disposed. The only reason
     // we dispose TcImports is because we need to dispose type providers, and type providers are never included in the framework DLL set.
     // If a framework set ever includes type providers, you will not have to worry about explicitly calling Dispose as the Finalizer will handle it.
-    static member BuildFrameworkTcImports(tcConfigP: TcConfigProvider, frameworkDLLs, nonFrameworkDLLs) =
+    static member BuildTcImports(tcConfigP: TcConfigProvider, tcResolutions: TcAssemblyResolutions, dependencyProvider: DependencyProvider) =
         node {
             let ctok = CompilationThreadToken()
             let tcConfig = tcConfigP.Get ctok
 
-            let tcResolutions =
-                TcAssemblyResolutions.BuildFromPriorResolutions(tcConfig, frameworkDLLs, [])
+            let tcImports = new TcImports(tcConfigP, tcResolutions, dependencyProvider)
 
-            let tcAltResolutions =
-                TcAssemblyResolutions.BuildFromPriorResolutions(tcConfig, nonFrameworkDLLs, [])
-
-            let frameworkTcImports = new TcImports(tcConfigP, tcResolutions, None, None)
+            let resolutions = tcResolutions.GetAssemblyResolutions()
 
             // Fetch the primaryAssembly from the referenced assemblies otherwise
             let primaryAssemblyReference =
                 let path =
-                    frameworkDLLs
+                    resolutions
                     |> List.tryFind (fun dll ->
                         let baseName = Path.GetFileNameWithoutExtension(dll.resolvedPath)
 
@@ -2312,9 +2184,9 @@ and [<Sealed>] TcImports
                 | None -> tcConfig.PrimaryAssemblyDllReference()
 
             let primaryAssemblyResolution =
-                frameworkTcImports.ResolveAssemblyReference(ctok, primaryAssemblyReference, ResolveAssemblyReferenceMode.ReportErrors)
+                tcImports.ResolveAssemblyReference(ctok, primaryAssemblyReference, ResolveAssemblyReferenceMode.ReportErrors)
 
-            let! primaryAssem = frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, primaryAssemblyResolution)
+            let! primaryAssem = tcImports.RegisterAndImportReferencedAssemblies(ctok, primaryAssemblyResolution)
 
             let primaryScopeRef =
                 match primaryAssem with
@@ -2371,14 +2243,12 @@ and [<Sealed>] TcImports
                             match tcResolutions.TryFindByOriginalReference coreLibraryReference with
                             | Some resolution -> Some resolution
                             | _ ->
-                                // Are we using a "non-canonical" FSharp.Core?
-                                match tcAltResolutions.TryFindByOriginalReference coreLibraryReference with
-                                | Some resolution -> Some resolution
-                                | _ -> tcResolutions.TryFindByOriginalReferenceText getFSharpCoreLibraryName // was the ".dll" elided?
+                                // was the ".dll" elided?
+                                tcResolutions.TryFindByOriginalReferenceText getFSharpCoreLibraryName
 
                         match resolvedAssemblyRef with
                         | Some coreLibraryResolution ->
-                            match! frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, [ coreLibraryResolution ]) with
+                            match! tcImports.RegisterAndImportReferencedAssemblies(ctok, [ coreLibraryResolution ]) with
                             | _, [ ResolvedImportedAssembly fslibCcuInfo ] ->
                                 return fslibCcuInfo.FSharpViewOfMetadata, fslibCcuInfo.ILScopeRef
                             | _ ->
@@ -2393,13 +2263,13 @@ and [<Sealed>] TcImports
                 }
 
             // Load the rest of the framework DLLs all at once (they may be mutually recursive)
-            let! _assemblies = frameworkTcImports.RegisterAndImportReferencedAssemblies(ctok, resolvedAssemblies)
+            let! _assemblies = tcImports.RegisterAndImportReferencedAssemblies(ctok, resolvedAssemblies)
 
             // These are the DLLs we can search for well-known types
             let sysCcus =
                 [|
-                    for ccu in frameworkTcImports.GetCcusInDeclOrder() do
-                        ccu
+                    for ccu in tcImports.GetImportedAssemblies() do
+                        ccu.FSharpViewOfMetadata
                 |]
 
             let tryFindSysTypeCcu path typeName =
@@ -2429,8 +2299,8 @@ and [<Sealed>] TcImports
             // the global_g reference cell is used only for debug printing
             global_g <- Some tcGlobals
 #endif
-            frameworkTcImports.SetTcGlobals tcGlobals
-            return tcGlobals, frameworkTcImports
+            tcImports.SetTcGlobals tcGlobals
+            return tcGlobals, tcImports
         }
 
     member tcImports.ReportUnresolvedAssemblyReferences knownUnresolved =
@@ -2444,51 +2314,14 @@ and [<Sealed>] TcImports
             | UnresolvedAssemblyReference (file, originalReferences) -> file, originalReferences)
         |> List.iter reportAssemblyNotResolved
 
-    static member BuildNonFrameworkTcImports
-        (
-            tcConfigP: TcConfigProvider,
-            baseTcImports,
-            nonFrameworkReferences,
-            knownUnresolved,
-            dependencyProvider
-        ) =
-
-        node {
-            let ctok = CompilationThreadToken()
-            let tcConfig = tcConfigP.Get ctok
-
-            let tcResolutions =
-                TcAssemblyResolutions.BuildFromPriorResolutions(tcConfig, nonFrameworkReferences, knownUnresolved)
-
-            let references = tcResolutions.GetAssemblyResolutions()
-
-            let tcImports =
-                new TcImports(tcConfigP, tcResolutions, Some baseTcImports, Some dependencyProvider)
-
-            let! _assemblies = tcImports.RegisterAndImportReferencedAssemblies(ctok, references)
-            tcImports.ReportUnresolvedAssemblyReferences knownUnresolved
-            return tcImports
-        }
-
     static member BuildTcImports(tcConfigP: TcConfigProvider, dependencyProvider) =
         node {
             let ctok = CompilationThreadToken()
             let tcConfig = tcConfigP.Get ctok
-
-            let frameworkDLLs, nonFrameworkReferences, knownUnresolved =
-                TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
-
-            let! tcGlobals, frameworkTcImports = TcImports.BuildFrameworkTcImports(tcConfigP, frameworkDLLs, nonFrameworkReferences)
-
-            let! tcImports =
-                TcImports.BuildNonFrameworkTcImports(
-                    tcConfigP,
-                    frameworkTcImports,
-                    nonFrameworkReferences,
-                    knownUnresolved,
-                    dependencyProvider
-                )
-
+            let tcResolutions = TcAssemblyResolutions.ResolveAssemblyReferences(tcConfig)
+            let! tcGlobals, tcImports = TcImports.BuildTcImports(tcConfigP, tcResolutions, dependencyProvider)
+            let unresolved = tcResolutions.GetUnresolvedReferences()
+            tcImports.ReportUnresolvedAssemblyReferences unresolved
             return tcGlobals, tcImports
         }
 

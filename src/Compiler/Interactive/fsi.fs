@@ -3308,8 +3308,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
       match fsiOptions.WriteReferencesAndExit with
       | Some outFile ->
           let tcConfig = tcConfigP.Get(ctokStartup)
-          let references, _unresolvedReferences = TcAssemblyResolutions.GetAssemblyResolutionInformation(tcConfig)
-          let lines = [ for r in references -> r.resolvedPath ]
+          let tcResolutions = TcAssemblyResolutions.GetAssemblyResolutionInformation(tcConfig)
+          let lines = [ for r in tcResolutions.GetAssemblyResolutions() -> r.resolvedPath ]
           FileSystem.OpenFileForWriteShim(outFile).WriteAllLines(lines)
           exit 0
       | _ -> ()
@@ -3346,20 +3346,12 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     /// on the FsiEvaluationSession.
     let checker = FSharpChecker.Create(legacyReferenceResolver=legacyReferenceResolver)
 
-    let tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences =
+    let tcGlobals, tcImports =
         try
-            let tcConfig = tcConfigP.Get(ctokStartup)
-            checker.FrameworkImportsCache.Get tcConfig
+            TcImports.BuildTcImports(tcConfigP, fsiOptions.DependencyProvider) 
             |> NodeCode.RunImmediateWithoutCancellation
         with e ->
             stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
-
-    let tcImports =
-      try
-          TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences, fsiOptions.DependencyProvider) 
-          |> NodeCode.RunImmediateWithoutCancellation
-      with e ->
-          stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 
     let niceNameGen = NiceNameGenerator()
 
