@@ -1,6 +1,8 @@
 <linker>
   <assembly fullname="FSharp.Core">
+    <resource name="FSharpOptimizationCompressedData.FSharp.Core" action="remove" />
     <resource name="FSharpOptimizationInfo.FSharp.Core" action="remove" />
+    <resource name="FSharpSignatureCompressedData.FSharp.Core" action="remove" />
     <resource name="FSharpSignatureInfo.FSharp.Core" action="remove" />
   </assembly>
 </linker>
