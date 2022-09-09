@@ -285,7 +285,7 @@ let UnsolvedTyparsOfModuleDef g amap denv mdef extraAttribs =
           amap=amap 
           denv=denv 
           unsolved = [] 
-          stackGuard = StackGuard(FindUnsolvedStackGuardDepth) }
+          stackGuard = StackGuard(FindUnsolvedStackGuardDepth, "UnsolvedTyparsOfModuleDef") }
     accModuleOrNamespaceDef cenv NoEnv mdef
     accAttribs cenv NoEnv extraAttribs
     List.rev cenv.unsolved
