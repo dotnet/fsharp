@@ -2338,7 +2338,7 @@ and [<Sealed>] TcImports
 
             let tryFindEquivPrimaryAssembly (resolvedAssembly: AssemblyResolution) =
                 if primaryAssemblyResolvedPath = resolvedAssembly.resolvedPath then
-                   None
+                    None
                 else
                     let reader = OpenILModuleReader resolvedAssembly.resolvedPath readerSettings
                     let mdef = reader.ILModuleDef
@@ -2346,17 +2346,18 @@ and [<Sealed>] TcImports
                     // We check the exported types of all assemblies, since many may forward System.Object,
                     // but only check the actual type definitions for specific assemblies that we know
                     // might actually declare System.Object.
-                    match mdef.Manifest with 
+                    match mdef.Manifest with
                     | Some manifest when
                         manifest.ExportedTypes.TryFindByName "System.Object" |> Option.isSome
-                        ||  PrimaryAssembly.IsPossiblePrimaryAssembly resolvedAssembly.resolvedPath &&
-                            mdef.TypeDefs.ExistsByName "System.Object"
+                        || PrimaryAssembly.IsPossiblePrimaryAssembly resolvedAssembly.resolvedPath
+                           && mdef.TypeDefs.ExistsByName "System.Object"
                         ->
                         mkRefToILAssembly manifest |> Some
                     | _ -> None
 
             // Find assemblies which also declare System.Object
-            let equivPrimaryAssemblyRefs = resolvedAssemblies |> List.choose tryFindEquivPrimaryAssembly
+            let equivPrimaryAssemblyRefs =
+                resolvedAssemblies |> List.choose tryFindEquivPrimaryAssembly
 
             let! fslibCcu, fsharpCoreAssemblyScopeRef =
                 node {
