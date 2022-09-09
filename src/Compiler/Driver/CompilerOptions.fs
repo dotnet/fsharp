@@ -265,6 +265,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
     let parseOption (s: string) =
 
         let mutable option = s
+
         if option = "" then
             ()
         // if it doesn't start with a '-' or '/', reject outright
@@ -1106,7 +1107,6 @@ let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
         Some(FSComp.SR.optsMlcompatibility ())
     )
 
-
 let showLanguageVersions () =
 
     printfn "%s" (FSComp.SR.optsSupportedLangVersions ())
@@ -1118,7 +1118,6 @@ let showLanguageVersions () =
         printfn "%s" v
 
     exit 0
-
 
 /// LanguageVersion management
 let setLanguageVersion (specifiedVersion: string) =
@@ -1140,7 +1139,7 @@ let languageFlags tcConfigB =
         CompilerOption(
             "langversion:?",
             tagNone,
-            OptionConsoleOnly(fun _ -> showLanguageVersions() ),
+            OptionConsoleOnly(fun _ -> showLanguageVersions ()),
             None,
             Some(FSComp.SR.optsLangVersionHelp ())
         )
