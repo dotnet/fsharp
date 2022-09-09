@@ -1037,6 +1037,6 @@ let rec pushShadowedLocals (stackGuard: StackGuard) (localsToPush: PdbLocalVar[]
 //     adding the text " (shadowed)" to the names of those with name conflicts.
 let unshadowScopes rootScope =
     // Avoid stack overflow when writing linearly nested scopes
-    let stackGuard = StackGuard(100)
+    let stackGuard = StackGuard(100, "ILPdbWriter.unshadowScopes")
     let result, _ = pushShadowedLocals stackGuard [||] rootScope
     result
