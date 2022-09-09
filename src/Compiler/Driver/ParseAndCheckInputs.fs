@@ -1537,7 +1537,9 @@ let CheckMultipleInputsInParallel
 
         let tcState =
             { tcState with
-                tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || (createsGeneratedProvidedTypesFlags |> List.exists id)
+                tcsCreatesGeneratedProvidedTypes =
+                    tcState.tcsCreatesGeneratedProvidedTypes
+                    || (createsGeneratedProvidedTypesFlags |> List.exists id)
             }
 
         results, tcState)
