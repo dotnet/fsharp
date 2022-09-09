@@ -2321,12 +2321,12 @@ and [<Sealed>] TcImports
                 | _, [ ResolvedImportedAssembly ccu ] -> ccu.FSharpViewOfMetadata.ILScopeRef
                 | _ -> failwith "primaryScopeRef - unexpected"
 
+            let resolvedAssemblies = tcResolutions.GetAssemblyResolutions()
+
             let primaryAssemblyResolvedPath =
                 match primaryAssemblyResolution with
                 | [ primaryAssemblyResolution ] -> primaryAssemblyResolution.resolvedPath
                 | _ -> failwith "primaryAssemblyResolvedPath - unexpected"
-
-            let resolvedAssemblies = tcResolutions.GetAssemblyResolutions()
 
             let readerSettings: ILReaderOptions =
                 {
@@ -2336,28 +2336,27 @@ and [<Sealed>] TcImports
                     tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot
                 }
 
-            let tryFindAssemblyByExportedType manifest (exportedType: ILExportedTypeOrForwarder) =
-                match exportedType.ScopeRef, primaryScopeRef with
-                | ILScopeRef.Assembly aref1, ILScopeRef.Assembly aref2 when aref1.EqualsIgnoringVersion aref2 ->
-                    mkRefToILAssembly manifest |> Some
-                | _ -> None
+            let tryFindEquivPrimaryAssembly (resolvedAssembly: AssemblyResolution) =
+                if primaryAssemblyResolvedPath = resolvedAssembly.resolvedPath then
+                   None
+                else
+                    let reader = OpenILModuleReader resolvedAssembly.resolvedPath readerSettings
+                    let mdef = reader.ILModuleDef
 
-            let tryFindAssemblyThatForwardsToPrimaryAssembly manifest =
-                manifest.ExportedTypes.TryFindByName "System.Object"
-                |> Option.bind (tryFindAssemblyByExportedType manifest)
+                    // We check the exported types of all assemblies, since many may forward System.Object,
+                    // but only check the actual type definitions for specific assemblies that we know
+                    // might actually declare System.Object.
+                    match mdef.Manifest with 
+                    | Some manifest when
+                        manifest.ExportedTypes.TryFindByName "System.Object" |> Option.isSome
+                        ||  PrimaryAssembly.IsPossiblePrimaryAssembly resolvedAssembly.resolvedPath &&
+                            mdef.TypeDefs.ExistsByName "System.Object"
+                        ->
+                        mkRefToILAssembly manifest |> Some
+                    | _ -> None
 
-            // Determine what other assemblies could have been the primary assembly
-            // by checking to see if "System.Object" is an exported type.
-            let assembliesThatForwardToPrimaryAssembly =
-                resolvedAssemblies
-                |> List.choose (fun resolvedAssembly ->
-                    if primaryAssemblyResolvedPath <> resolvedAssembly.resolvedPath then
-                        let reader = OpenILModuleReader resolvedAssembly.resolvedPath readerSettings
-
-                        reader.ILModuleDef.Manifest
-                        |> Option.bind tryFindAssemblyThatForwardsToPrimaryAssembly
-                    else
-                        None)
+            // Find assemblies which also declare System.Object
+            let equivPrimaryAssemblyRefs = resolvedAssemblies |> List.choose tryFindEquivPrimaryAssembly
 
             let! fslibCcu, fsharpCoreAssemblyScopeRef =
                 node {
@@ -2406,7 +2405,7 @@ and [<Sealed>] TcImports
                 sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName)
 
             let ilGlobals =
-                mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef)
+                mkILGlobals (primaryScopeRef, equivPrimaryAssemblyRefs, fsharpCoreAssemblyScopeRef)
 
             // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
             let tcGlobals =
