@@ -4195,6 +4195,37 @@ module TcDeclarations =
         // Check the members and decide on representations for types with implicit constructors.
         let withBindings, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem mutRecNSInfo envMutRecPrelimWithReprs withEnvs
 
+        // If any of the types has a member with the System.Runtime.CompilerServices.ExtensionAttribute,
+        // that type should also received the ExtensionAttribute if it is not yet present.
+        // Example:
+        // open System.Runtime.CompilerServices
+        //
+        // type Int32Extensions =
+        //      [<Extension>]
+        //      static member PlusOne (a:int) : int = a + 1
+        let withBindings =
+            let tryFindExtensionAttribute (attribs: Attrib list) =
+                 List.tryFind
+                     (fun (a: Attrib) ->
+                        a.TyconRef.CompiledRepresentationForNamedType.BasicQualifiedName = "System.Runtime.CompilerServices.ExtensionAttribute")
+                     attribs
+
+            withBindings
+            |> List.map (function
+                | MutRecShape.Tycon (Some tycon, bindings) ->
+                    if Option.isSome (tryFindExtensionAttribute tycon.Attribs) then
+                        MutRecShape.Tycon (Some tycon, bindings)
+                    else
+                        let extensionAttribute =
+                            tycon.MembersOfFSharpTyconSorted
+                            |> Seq.choose (fun m -> tryFindExtensionAttribute m.Attribs)
+                            |> Seq.tryHead
+
+                        match extensionAttribute with
+                        | None -> MutRecShape.Tycon (Some tycon, bindings)
+                        | Some a -> MutRecShape.Tycon  (Some { tycon with entity_attribs = a :: tycon.Attribs }, bindings)
+                | shape -> shape)
+
         // Generate the hash/compare/equality bindings for all tycons.
         //
         // Note: generating these bindings must come after generating the members, since some in the case of structs some fields
