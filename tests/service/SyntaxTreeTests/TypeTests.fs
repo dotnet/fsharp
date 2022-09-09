@@ -494,7 +494,7 @@ let _: struct (int * int) = ()
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile (ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Let(bindings = [ SynBinding(returnInfo = Some (SynBindingReturnInfo(typeName =
                 SynType.Tuple(true, [ SynTupleTypeSegment.Type _ ; SynTupleTypeSegment.Star _ ; SynTupleTypeSegment.Type _ ], mTuple)))) ])
@@ -514,7 +514,7 @@ let _: struct (int * int = ()
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile (ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Let(bindings = [ SynBinding(returnInfo = Some (SynBindingReturnInfo(typeName =
                 SynType.Tuple(true, [ SynTupleTypeSegment.Type _ ; SynTupleTypeSegment.Star _ ; SynTupleTypeSegment.Type _ ], mTuple)))) ])
