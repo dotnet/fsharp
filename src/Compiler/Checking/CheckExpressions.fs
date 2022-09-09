@@ -582,6 +582,30 @@ let ShrinkContext env oldRange newRange =
         if not (equals m oldRange) then env else
         { env with eContextInfo = ContextInfo.ElseBranchResult newRange }
 
+/// Allow the inference of structness from the known type, e.g.
+///    let (x: struct (int * int)) = (3,4)
+let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownTy isExplicitStruct ps =
+    let g = cenv.g
+    let tupInfo, ptys =
+        if isAnyTupleTy g knownTy then
+            let tupInfo, ptys = destAnyTupleTy g knownTy
+            let tupInfo = (if isExplicitStruct then tupInfoStruct else tupInfo)
+            let ptys = 
+                if List.length ps = List.length ptys then ptys 
+                else NewInferenceTypes g ps
+            tupInfo, ptys
+        else
+            mkTupInfo isExplicitStruct, NewInferenceTypes g ps
+
+    let contextInfo =
+        match contextInfo with
+        | ContextInfo.RecordFields -> ContextInfo.TupleInRecordFields
+        | _ -> contextInfo
+
+    let ty2 = TType_tuple (tupInfo, ptys)
+    AddCxTypeEqualsType contextInfo denv cenv.css m knownTy ty2
+    tupInfo, ptys
+
 // Allow inference of assembly-affinity and structness from the known type - even from another assembly. This is a rule of
 // the language design and allows effective cross-assembly use of anonymous types in some limited circumstances.
 let UnifyAnonRecdTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m ty isExplicitStruct unsortedNames =
@@ -5322,7 +5346,7 @@ and TcPropagatingExprLeafThenConvert (cenv: cenv) overallTy actualTy (env: TcEnv
 ///  - tuple       (except if overallTy is a tuple type or a variable type that can become one)
 ///  - anon record (except if overallTy is an anon record type or a variable type that can become one)
 ///  - record      (except if overallTy is requiresCtor || haveCtor or a record type or a variable type that can become one))
-and TcPossiblyPropogatingExprLeafThenConvert isPropagating (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) m processExpr =
+and TcPossiblyPropagatingExprLeafThenConvert isPropagating (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) m processExpr =
 
     let g = cenv.g
 
@@ -5500,7 +5524,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.AnonRecd (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr) ->
         TcNonControlFlowExpr env <| fun env ->
-        TcPossiblyPropogatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
+        TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
             TcAnonRecdExpr cenv overallTy env tpenv (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr)
         )
 
@@ -5761,57 +5785,15 @@ and TcExprLazy (cenv: cenv) overallTy env tpenv (synInnerExpr, m) =
     let expr = mkLazyDelayed g m innerTy (mkUnitDelayLambda g m innerExpr)
     expr, tpenv
 
-/// Allow the inference of structness from the known type, e.g.
-///    let (x: struct (int * int)) = (3,4)
-and UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownTy isExplicitStruct tcForErrorMessage ps =
-    let g = cenv.g
-    let tupInfo, ptys =
-        if isAnyTupleTy g knownTy then
-            let tupInfo, ptys = destAnyTupleTy g knownTy
-            let tupInfo = (if isExplicitStruct then tupInfoStruct else tupInfo)
-            let ptys = 
-                if List.length ps = List.length ptys then ptys 
-                else NewInferenceTypes g ps
-            tupInfo, ptys
-        else
-            mkTupInfo isExplicitStruct, NewInferenceTypes g ps
-
-    let contextInfo =
-        match contextInfo with
-        | ContextInfo.RecordFields -> ContextInfo.TupleInRecordFields
-        | _ -> contextInfo
-    
-    let ty2 = TType_tuple (tupInfo, ptys)
-    
-    let cxOperationResult = AddCxTypeEqualsType' contextInfo denv cenv.css m knownTy ty2 
-    match cxOperationResult, tcForErrorMessage with
-    // Try to type check the tuple values when there's an incorrect number of them 
-    | ErrorResult(warnings, ErrorFromAddingTypeEquation(g, displayEnv, actualTy, expectedTy, (ConstraintSolverTupleDiffLengths _ as ex), m)), Some tcForErrorMessage ->
-
-        let fixedExpectedTy =
-            match tcForErrorMessage (tupInfo, ptys) with
-            | Expr.Op (TOp.Tuple _, typeArgs, _, _) -> TType_tuple (mkTupInfo false, typeArgs)
-            | _ -> expectedTy
-
-        ErrorResult(warnings, ErrorFromAddingTypeEquation(g, displayEnv, actualTy, fixedExpectedTy, ex, m)) 
-    | operationResult, _ -> operationResult
-    |> RaiseOperationResult
-    
-    tupInfo, ptys
-
 and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
     let g = cenv.g
-    
-    let tcTuple (tupInfo, argTys) = 
+    TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnyTupleTy g ty || isTyparTy g ty) cenv overallTy env m (fun overallTy ->
+        let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
+
         let flexes = argTys |> List.map (fun _ -> false)
         let argsR, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys args
         let expr = mkAnyTupled g m tupInfo argsR argTys
-
         expr, tpenv
-        
-    TcPossiblyPropogatingExprLeafThenConvert (fun ty -> isAnyTupleTy g ty || isTyparTy g ty) cenv overallTy env m (fun overallTy ->
-        UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct (Some (tcTuple >> fst)) args  
-        |> tcTuple
     )
 
 and TcExprArrayOrList (cenv: cenv) overallTy env tpenv (isArray, args, m) =
@@ -5886,7 +5868,7 @@ and TcExprRecord (cenv: cenv) overallTy env tpenv (inherits, withExprOpt, synRec
     CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy.Commit, env.AccessRights)
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors
     let haveCtor = Option.isSome inherits
-    TcPossiblyPropogatingExprLeafThenConvert (fun ty -> requiresCtor || haveCtor || isRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
+    TcPossiblyPropagatingExprLeafThenConvert (fun ty -> requiresCtor || haveCtor || isRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
         TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr)
     )
 

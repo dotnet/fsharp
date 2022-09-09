@@ -266,8 +266,6 @@ val EliminateConstraintsForGeneralizedTypars:
 
 val CheckDeclaredTypars: DisplayEnv -> ConstraintSolverState -> range -> Typars -> Typars -> unit
 
-val AddCxTypeEqualsType': ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> OperationResult<unit>
-
 val AddCxTypeEqualsType: ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> unit
 
 val AddCxTypeEqualsTypeUndoIfFailed: DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool

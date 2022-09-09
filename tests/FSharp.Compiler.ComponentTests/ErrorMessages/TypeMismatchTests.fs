@@ -7,20 +7,51 @@ open FSharp.Test.Compiler
 
 module ``Type Mismatch`` =
 
-    [<Fact>]
-    let ``type mismatch is reported when tuples have differing lengths``() =
-        FSharp """
- let x: int * int * int = 1, ""
- let x: int * string * int = "", 1
- let x: int * int = "", "", 1
-        """
-        |> typecheck
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 1,  Line 2, Col 27, Line 2, Col 32, "Type mismatch. Expecting a\n    'int * int * int'    \nbut given a\n    'int * string'    \nThe tuples have differing lengths of 3 and 2");
-            (Error 1,  Line 3, Col 30, Line 3, Col 35, "Type mismatch. Expecting a\n    'int * string * int'    \nbut given a\n    'string * int'    \nThe tuples have differing lengths of 3 and 2");
-            (Error 1,  Line 4, Col 21, Line 4, Col 30, "Type mismatch. Expecting a\n    'int * int'    \nbut given a\n    'string * string * int'    \nThe tuples have differing lengths of 2 and 3")
-        ]
+    module ``Different tuple lengths`` =
+        
+        [<Fact>]
+        let ``Known type on the left``() =
+            FSharp """
+let x: int * int * int = 1, ""
+let x: int * string * int = "", 1
+let x: int * int = "", "", 1
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 2, Col 26, Line 2, Col 31,
+                 "Type mismatch. Expecting a\n    'tuple of length 3 (int * int * int)'    \nbut given a\n    'tuple of length 2'    \n")
+                (Error 1, Line 3, Col 29, Line 3, Col 34,
+                 "Type mismatch. Expecting a\n    'tuple of length 3 (int * string * int)'    \nbut given a\n    'tuple of length 2'    \n")
+                (Error 1, Line 4, Col 20, Line 4, Col 29,
+                 "Type mismatch. Expecting a\n    'tuple of length 2 (int * int)'    \nbut given a\n    'tuple of length 3'    \n")
+            ]
+            
+        [<Fact>]
+        let ``Known type on the right``() =
+            FSharp """
+let x : int * string = 1, ""
+let a, b, c = x
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 3, Col 15, Line 3, Col 16,
+                 "Type mismatch. Expecting a\n    'tuple of length 3'    \nbut given a\n    'tuple of length 2 (int * string)'    \n")
+            ]
+            
+        // TODO
+        let ``Else branch context``() =
+            FSharp """
+let f1(a, b, c) =
+    if true then (1, 2) else (a, b, c)
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 3, Col 30, Line 3, Col 39,
+                 "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is 'tuple of length 2 (int * int)'. This branch returns a value of type 'tuple of length 3'.")
+            ]
 
     [<Fact>]
     let ``return Instead Of return!``() =

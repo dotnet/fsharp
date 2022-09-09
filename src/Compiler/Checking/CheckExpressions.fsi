@@ -871,7 +871,6 @@ val UnifyTupleTypeAndInferCharacteristics:
     m: range ->
     knownTy: TType ->
     isExplicitStruct: bool ->
-    tcForErrorMessage: (TupInfo * TTypes -> Expr) option ->
     'T list ->
         TupInfo * TTypes
 
