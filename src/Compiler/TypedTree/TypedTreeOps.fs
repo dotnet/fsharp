@@ -2133,7 +2133,10 @@ type FreeVarOptions =
       includeRecdFields: bool
       includeUnionCases: bool
       includeLocals: bool
+      templateReplacement: ((TyconRef -> bool) * Typars) option
       stackGuard: StackGuard option }
+
+    member this.WithTemplateReplacement(f, typars) = { this with templateReplacement = Some (f, typars) }
       
 let CollectAllNoCaching = 
     { canCache = false
@@ -2144,6 +2147,7 @@ let CollectAllNoCaching =
       includeUnionCases = true
       includeTypars = true
       includeLocals = true
+      templateReplacement = None
       stackGuard = None}
 
 let CollectTyparsNoCaching = 
@@ -2155,6 +2159,7 @@ let CollectTyparsNoCaching =
       includeRecdFields = false
       includeUnionCases = false
       includeLocals = false
+      templateReplacement = None
       stackGuard = None }
 
 let CollectLocalsNoCaching = 
@@ -2166,6 +2171,7 @@ let CollectLocalsNoCaching =
       includeRecdFields = false 
       includeUnionCases = false
       includeLocals = true
+      templateReplacement = None
       stackGuard = None }
 
 let CollectTyparsAndLocalsNoCaching = 
@@ -2177,6 +2183,7 @@ let CollectTyparsAndLocalsNoCaching =
       includeUnionCases = false
       includeTypars = true
       includeLocals = true
+      templateReplacement = None
       stackGuard = None }
 
 let CollectAll =
@@ -2188,6 +2195,7 @@ let CollectAll =
       includeUnionCases = true
       includeTypars = true
       includeLocals = true
+      templateReplacement = None
       stackGuard = None }
     
 let CollectTyparsAndLocalsImpl stackGuardOpt = // CollectAll
@@ -2199,6 +2207,7 @@ let CollectTyparsAndLocalsImpl stackGuardOpt = // CollectAll
       includeLocalTyconReprs = false
       includeRecdFields = false
       includeUnionCases = false
+      templateReplacement = None
       stackGuard = stackGuardOpt }
 
   
@@ -2219,12 +2228,18 @@ let accFreeLocalTycon opts x acc =
     if Zset.contains x acc.FreeTycons then acc else 
     { acc with FreeTycons = Zset.add x acc.FreeTycons } 
 
-let accFreeTycon opts (tcref: TyconRef) acc = 
+let rec accFreeTycon opts (tcref: TyconRef) acc = 
+    let acc =
+        match opts.templateReplacement with
+        | Some (isTemplateTyconRef, cloFreeTyvars) when isTemplateTyconRef tcref ->
+            let cloInst = List.map mkTyparTy cloFreeTyvars
+            accFreeInTypes opts cloInst acc
+        | _ -> acc
     if not opts.includeLocalTycons then acc
     elif tcref.IsLocalRef then accFreeLocalTycon opts tcref.ResolvedTarget acc
     else acc
 
-let rec boundTypars opts tps acc = 
+and boundTypars opts tps acc = 
     // Bound type vars form a recursively-referential set due to constraints, e.g. A: I<B>, B: I<A> 
     // So collect up free vars in all constraints first, then bind all variables 
     let acc = List.foldBack (fun (tp: Typar) acc -> accFreeInTyparConstraints opts tp.Constraints acc) tps acc
