@@ -11869,7 +11869,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
             intraAssemblyInfo = intraAssemblyInfo
             optionsOpt = None
             optimizeDuringCodeGen = (fun _flag expr -> expr)
-            stackGuard = StackGuard(IlxGenStackGuardDepth)
+            stackGuard = StackGuard(IlxGenStackGuardDepth, "IlxAssemblyGenerator")
         }
 
     /// Register a set of referenced assemblies with the ILX code generator
