@@ -1495,7 +1495,7 @@ let CheckMultipleInputsInParallel
                 partialResult, (tcState, priorErrors))
 
         // Do the parallel phase, checking all implementation files that did have a signature, in parallel.
-        let unfinishedResults =
+        let results, createsGeneratedProvidedTypesFlags =
 
             List.zip partialResults inputsWithLoggers
             |> List.toArray
@@ -1506,7 +1506,7 @@ let CheckMultipleInputsInParallel
                 RequireCompilationThread ctok
 
                 match partialResult with
-                | Choice1Of2 result -> Choice1Of2 result
+                | Choice1Of2 result -> result, false
                 | Choice2Of2 (amap, conditionalDefines, rootSig, priorErrors, file, tcStateForImplFile, ccuSigForFile) ->
 
                     // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
@@ -1531,27 +1531,16 @@ let CheckMultipleInputsInParallel
                         |> Cancellable.runWithoutCancellation
 
                     let result = (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile)
-                    Choice2Of2(result, createsGeneratedProvidedTypes))
+                    result, createsGeneratedProvidedTypes)
             |> Array.toList
-
-        let createsGeneratedProvidedTypes =
-            unfinishedResults
-            |> List.exists (function
-                | Choice1Of2 _ -> false
-                | Choice2Of2 (_, flag) -> flag)
+            |> List.unzip
 
         let tcState =
             { tcState with
-                tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || (createsGeneratedProvidedTypesFlags |> List.exists id)
             }
 
-        let finishedResults =
-            unfinishedResults
-            |> List.map (function
-                | Choice1Of2 result -> result
-                | Choice2Of2 (result, _) -> result)
-
-        finishedResults, tcState)
+        results, tcState)
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
