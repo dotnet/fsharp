@@ -5064,7 +5064,7 @@ topTupleType:
        let mStar = rhs parseState 2
        let path = SynTupleTypeSegment.Type t :: SynTupleTypeSegment.Star mStar :: (List.map fst $3)
        let mdata = argInfo :: (List.choose snd $3)
-       mkSynTypeTuple false path, mdata }
+       mkSynTypeTuple path, mdata }
 
   | topAppType                 
      { let ty, mdata = $1 in ty, [mdata] }
@@ -5120,19 +5120,19 @@ tupleType:
   | appType STAR tupleOrQuotTypeElements 
     { let mStar = rhs parseState 2
       let path = SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Star mStar :: $3
-      mkSynTypeTuple false path }
+      mkSynTypeTuple path }
 
   | INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
       let mSlash = rhs parseState 1
       let path = SynTupleTypeSegment.Slash mSlash :: $2
-      mkSynTypeTuple false path }
+      mkSynTypeTuple path }
 
   | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
       let mSlash = rhs parseState 2
       let path = SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Slash mSlash :: $3
-      mkSynTypeTuple false path }
+      mkSynTypeTuple path }
 
   | appType %prec prec_tuptyp_prefix 
     { $1 }
@@ -5284,13 +5284,15 @@ atomType:
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  rparen 
     { let mStar = rhs parseState 4
       let path = SynTupleTypeSegment.Type $3 :: SynTupleTypeSegment.Star mStar :: $5
-      mkSynTypeTuple true path }
+      let m = rhs2 parseState 1 6
+      SynType.Tuple(true, path, m) }
 
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  recover
     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
       let mStar = rhs parseState 4
       let path = SynTupleTypeSegment.Type $3 :: SynTupleTypeSegment.Star mStar :: $5
-      mkSynTypeTuple true path }
+      let m = rhs2 parseState 1 5
+      SynType.Tuple(true, path, m) }
 
   | STRUCT LPAREN appType STAR recover
     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
