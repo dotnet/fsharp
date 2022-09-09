@@ -1108,11 +1108,12 @@ let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
     )
 
 let GetLanguageVersions () =
-    seq { 
+    seq {
         FSComp.SR.optsSupportedLangVersions ()
         yield! LanguageVersion.ValidOptions
         yield! LanguageVersion.ValidVersions
-    } |> String.concat Environment.NewLine
+    }
+    |> String.concat Environment.NewLine
 
 let setLanguageVersion (specifiedVersion: string) =
     if specifiedVersion.ToUpperInvariant() = "PREVIEW" then
