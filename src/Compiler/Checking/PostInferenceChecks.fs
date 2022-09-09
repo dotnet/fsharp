@@ -2615,7 +2615,7 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
           reportErrors = reportErrors 
           boundVals = Dictionary<_, _>(100, HashIdentity.Structural) 
           limitVals = Dictionary<_, _>(100, HashIdentity.Structural) 
-          stackGuard = StackGuard(PostInferenceChecksStackGuardDepth)
+          stackGuard = StackGuard(PostInferenceChecksStackGuardDepth, "CheckImplFile")
           potentialUnboundUsesOfVals = Map.empty 
           anonRecdTypes = StampMap.Empty
           usesQuotations = false 
