@@ -457,11 +457,6 @@ let mkSynDot mDot m l (SynIdent (r, rTrivia)) =
     | SynExpr.LongIdent (isOpt, SynLongIdent (lid, dots, trivia), None, _) ->
         // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
         SynExpr.LongIdent(isOpt, SynLongIdent(lid @ [ r ], dots @ [ mDot ], trivia @ [ rTrivia ]), None, m)
-    | SynExpr.Underscore (m) ->
-        let inner = SynLongIdent([r], [mDot], [None; rTrivia])
-        SynExpr.DotLambda (inner, m) 
-    | SynExpr.DotLambda (SynLongIdent(lid, dots, trivia), dm) ->
-        SynExpr.DotLambda (SynLongIdent(lid @ [ r ], dots @ [ mDot ], trivia @ [ rTrivia ]), dm)
     | SynExpr.Ident id -> SynExpr.LongIdent(false, SynLongIdent([ id; r ], [ mDot ], [ None; rTrivia ]), None, m)
     | SynExpr.DotGet (e, dm, SynLongIdent (lid, dots, trivia), _) ->
         // REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
@@ -880,7 +875,6 @@ let rec synExprContainsError inpExpr =
 
         | SynExpr.LongIdent _
         | SynExpr.DotLambda _
-        | SynExpr.Underscore _
         | SynExpr.Quote _
         | SynExpr.LibraryOnlyILAssembly _
         | SynExpr.LibraryOnlyStaticOptimization _

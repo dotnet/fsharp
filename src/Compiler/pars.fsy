@@ -525,6 +525,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 %left pat_app
 %left pat_args
 %left PREFIX_OP
+%right dot_lambda
 %left DOT QMARK
 %left HIGH_PRECEDENCE_BRACK_APP
 %left HIGH_PRECEDENCE_PAREN_APP
@@ -4305,6 +4306,11 @@ argExpr:
         arg }
     
 atomicExpr:
+  | UNDERSCORE DOT atomicExpr %prec dot_lambda
+      { let arg1 = lhs parseState
+        let arg2, hpa = $3
+        SynExpr.DotLambda(arg2, arg2.Range), hpa }
+        
   | atomicExpr HIGH_PRECEDENCE_BRACK_APP atomicExpr
       { let arg1, _ = $1 
         let arg2, hpa = $3 
@@ -4332,9 +4338,7 @@ atomicExpr:
         let lhsm = rhs2 parseState 1 2
         SynExpr.Typar(typar, lhsm), false }
 
-  | UNDERSCORE DOT atomicExprQualification 
-      { let arg1 = SynExpr.Underscore (rhs parseState 1)
-        $3 arg1 (lhs parseState) (rhs parseState 2), false }
+
         
   | atomicExpr DOT atomicExprQualification 
       { let arg1, hpa1 = $1 

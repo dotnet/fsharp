@@ -767,9 +767,7 @@ type SynExpr =
     | DotGet of expr: SynExpr * rangeOfDot: range * longDotId: SynLongIdent * range: range
 
     /// F# syntax: _.ident.ident
-    | DotLambda of longDotId: SynLongIdent * range: range
-    
-    | Underscore of range: range
+    | DotLambda of expr: SynExpr * range: range
     
     /// F# syntax: expr.ident...ident <- expr
     | DotSet of targetExpr: SynExpr * longDotId: SynLongIdent * rhsExpr: SynExpr * range: range

@@ -16,7 +16,7 @@ module ThomasTests =
         
     [<Fact>]
     let ``Fails`` () =
-        Fsx """ let x = "a" in x |> _.Length"""
+        Fsx """let x = "a" in x |> _.ToString()"""
         |> compile
         |> shouldSucceed
         
