@@ -23,7 +23,7 @@ module ThomasTests =
     [<Fact>]
     let ``Types`` () =
         Fsx """
-let a : (string -> _) = _.Length
+let a : (string array -> _) = _.Length
 let b = _.ToString()
 let c = _.ToString().Length
 //let c = _.ToString()[0]

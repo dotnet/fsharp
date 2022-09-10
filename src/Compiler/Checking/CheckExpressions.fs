@@ -5468,8 +5468,10 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcConstExpr cenv overallTy env m tpenv synConst
     | SynExpr.DotLambda (synExpr, m) ->
-        let svar = mkSynCompGenSimplePatVar (mkSynId m "unitVar")
-        let lambda = SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ], m), synExpr, None, m, SynExprLambdaTrivia.Zero)
+        let unitVar = mkSynId m "unitVar"
+        let svar = mkSynCompGenSimplePatVar unitVar
+        let pushedExpr = pushUnitArg synExpr unitVar
+        let lambda = SynExpr.Lambda(false, false, SynSimplePats.SimplePats([ svar ], m), pushedExpr, None, m, SynExprLambdaTrivia.Zero)
         TcIteratedLambdas cenv true env overallTy Set.empty tpenv lambda
     //    TcIteratedLambda
     | SynExpr.Lambda _ ->

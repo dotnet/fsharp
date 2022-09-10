@@ -63,6 +63,24 @@ let mkSynSimplePatVar isOpt id =
 let mkSynCompGenSimplePatVar id =
     SynSimplePat.Id(id, None, true, false, false, id.idRange)
 
+let rec pushUnitArg expr arg =
+    match expr with
+    | SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.Ident ident, x1, m1)
+        -> SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.LongIdent(false, SynLongIdent(arg::ident::[], [ident.idRange], [None]), None, ident.idRange), x1, m1)
+    | SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.LongIdent(isOptional, SynLongIdent(id, dotRanges, trivia), altNameRefCell, range), x1, m1)
+        -> SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.LongIdent(isOptional, SynLongIdent(arg::id, dotRanges, trivia), altNameRefCell, range), x1, m1)
+    | SynExpr.App(ExprAtomicFlag.Atomic, infix, (SynExpr.App(_) as innerApp), x1, m1)
+        -> SynExpr.App(ExprAtomicFlag.Atomic, infix, (pushUnitArg innerApp arg), x1, m1)
+    | SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.DotGet(synExpr, rangeOfDot, synLongIdent, range), x1, m1)
+        -> SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.DotGet((pushUnitArg synExpr arg), rangeOfDot, synLongIdent, range), x1, m1)
+    | SynExpr.Ident ident ->
+        SynExpr.LongIdent(false, SynLongIdent(arg::ident::[], [ident.idRange], [None]), None, ident.idRange)
+    | SynExpr.LongIdent(isOptional, SynLongIdent(id, dotRanges, trivia), altNameRefCell, range)
+        -> SynExpr.LongIdent(isOptional, SynLongIdent(arg::id, dotRanges, trivia), altNameRefCell, range)
+    | SynExpr.DotGet(synExpr, rangeOfDot, synLongIdent, range) ->
+        SynExpr.DotGet(pushUnitArg synExpr arg, rangeOfDot, synLongIdent, range)
+    | _ -> expr
+    // | SynExpr.App(ExprAtomicFlag.Atomic, infix, innerExpr, x1, m1)
 let (|SynSingleIdent|_|) x =
     match x with
     | SynLongIdent ([ id ], _, _) -> Some id
