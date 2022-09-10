@@ -5449,6 +5449,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.LongIdent _
     | SynExpr.App _
     | SynExpr.Dynamic _
+    | SynExpr.Underscore _
     | SynExpr.DotGet _ ->
         error(Error(FSComp.SR.tcExprUndelayed(), synExpr.Range))
 
@@ -8607,6 +8608,7 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.Typar _
         | SynExpr.LongIdent _
         | SynExpr.DotLambda _
+        | SynExpr.Underscore _
         | SynExpr.Dynamic _ -> true
 
         | SynExpr.Tuple (_, synExprs, _, _)

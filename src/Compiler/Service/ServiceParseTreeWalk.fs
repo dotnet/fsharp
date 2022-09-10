@@ -657,6 +657,8 @@ module SyntaxTraversal =
 
                 | SynExpr.DotLambda _ -> None
                 
+                | SynExpr.Underscore _ -> None
+                
                 | SynExpr.Set (synExpr, synExpr2, _)
 
                 | SynExpr.DotSet (synExpr, _, synExpr2, _) ->
