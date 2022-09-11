@@ -284,7 +284,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
                     option[1..]
                 elif option.StartsWithOrdinal("--") then
                     match option.Length with
-                    | l when l >= 4 && option[3]=':' -> ""
+                    | l when l >= 4 && option[3] = ':' -> ""
                     | l when l > 3 -> option[2..]
                     | _ -> ""
                 else
