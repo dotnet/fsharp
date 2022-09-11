@@ -261,33 +261,39 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
     let specs = List.collect GetOptionsOfBlock blocks
 
-    // returns a tuple - the option token, the option argument string
-    let parseOption (s: string) =
+    // returns a tuple - the option minus switchchars, the option tokenand  the option argument string
+    let parseOption (option: string) =
 
-        let mutable opt = s
+        // Get option arguments, I.e everything following first:
+        let opts = option.Split([| ':' |])
+        let optArgs = String.Join(":", opts[1..])
 
-        if opt = "" then
-            ()
-        // if it doesn't start with a '-' or '/', reject outright
-        elif opt[0] <> '-' && opt[0] <> '/' then
-            opt <- ""
-        elif opt <> "--" then
-            // is it an abbreviated or MSFT-style option?
-            // if so, strip the first character and move on with your life
-            if opt.Length = 2 || isSlashOpt opt then
-                opt <- opt[1..]
-            // else, it should be a non-abbreviated option starting with "--"
-            elif opt.Length > 3 && opt.StartsWithOrdinal("--") then
-                opt <- opt[2..]
+        let opt =
+            if option = "" then
+                ""
+            // if it doesn't start with a '-' or '/', reject outright
+            elif option[0] <> '-' && option[0] <> '/' then
+                ""
+            elif option <> "--" then
+                // is it an abbreviated or MSFT-style option?
+                // if so, strip the first character and move on with your life
+                // Wierdly a -- option can't have only a 1 character name
+                if option.Length = 2 || isSlashOpt option then
+                    option[1..]
+                elif option.Length >= 3 && option[2] = ':' then
+                    option[1..]
+                elif option.StartsWithOrdinal("--") then
+                    match option.Length with
+                    | l when l >= 4 && option[3]=':' -> ""
+                    | l when l > 3 -> option[2..]
+                    | _ -> ""
+                else
+                    ""
             else
-                opt <- ""
+                option
 
         // grab the option token
-        let opts = opt.Split([| ':' |])
-        let token = opts[0]
-
-        // get the argument string
-        let optArgs = if opts.Length > 1 then String.Join(":", opts[1..]) else ""
+        let token = opt.Split([| ':' |])[0]
         opt, token, optArgs
 
     let getOptionArg compilerOption (argString: string) =
