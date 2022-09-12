@@ -117,21 +117,21 @@ let ConsoleDiagnosticsLogger (tcConfigB: TcConfigBuilder, exiter: Exiter) =
 /// DiagnosticLoggers can be sensitive to the TcConfig flags. During the checking
 /// of the flags themselves we have to create temporary loggers, until the full configuration is
 /// available.
-type DiagnosticsLoggerProvider =
+type IDiagnosticsLoggerProvider =
 
     abstract CreateLogger: tcConfigB: TcConfigBuilder * exiter: Exiter -> DiagnosticsLogger
 
 type CapturingDiagnosticsLogger with
 
     /// Commit the delayed diagnostics via a fresh temporary logger of the right kind.
-    member x.CommitDelayedDiagnostics(diagnosticsLoggerProvider: DiagnosticsLoggerProvider, tcConfigB, exiter) =
+    member x.CommitDelayedDiagnostics(diagnosticsLoggerProvider: IDiagnosticsLoggerProvider, tcConfigB, exiter) =
         let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
         x.CommitDelayedDiagnostics diagnosticsLogger
 
 /// The default DiagnosticsLogger implementation, reporting messages to the Console up to the maxerrors maximum
 type ConsoleLoggerProvider() =
 
-    interface DiagnosticsLoggerProvider with
+    interface IDiagnosticsLoggerProvider with
 
         member _.CreateLogger(tcConfigB, exiter) =
             ConsoleDiagnosticsLogger(tcConfigB, exiter)
@@ -462,7 +462,7 @@ let main1
         reduceMemoryUsage: ReduceMemoryFlag,
         defaultCopyFSharpCore: CopyFSharpCoreFlag,
         exiter: Exiter,
-        diagnosticsLoggerProvider: DiagnosticsLoggerProvider,
+        diagnosticsLoggerProvider: IDiagnosticsLoggerProvider,
         disposables: DisposablesTracker
     ) =
 
@@ -690,7 +690,7 @@ let main1OfAst
         dllReferences,
         noframework,
         exiter: Exiter,
-        diagnosticsLoggerProvider: DiagnosticsLoggerProvider,
+        diagnosticsLoggerProvider: IDiagnosticsLoggerProvider,
         disposables: DisposablesTracker,
         inputs: ParsedInput list
     ) =

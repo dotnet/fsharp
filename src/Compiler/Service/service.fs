@@ -98,7 +98,7 @@ module CompileHelpers =
             }
 
         let loggerProvider =
-            { new DiagnosticsLoggerProvider with
+            { new IDiagnosticsLoggerProvider with
                 member _.CreateLogger(_tcConfigB, _exiter) = diagnosticsLogger
             }
 

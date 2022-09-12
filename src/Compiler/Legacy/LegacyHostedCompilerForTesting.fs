@@ -24,7 +24,7 @@ type internal InProcDiagnosticsLoggerProvider() =
     let warnings = ResizeArray()
 
     member _.Provider =
-        { new DiagnosticsLoggerProvider with
+        { new IDiagnosticsLoggerProvider with
 
             member _.CreateLogger(tcConfigB, exiter) =
 
