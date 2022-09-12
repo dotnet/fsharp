@@ -813,7 +813,7 @@ let internal languageFeatureNotSupportedInLibraryError (langFeature: LanguageFea
     error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary (featureStr, suggestedVersionStr), m))
 
 /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
-type StackGuard(maxDepth: int) =
+type StackGuard(maxDepth: int, name: string) =
 
     let mutable depth = 1
 
@@ -828,7 +828,7 @@ type StackGuard(maxDepth: int) =
 
                 async {
                     do! Async.SwitchToNewThread()
-                    Thread.CurrentThread.Name <- "F# Extra Compilation Thread"
+                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
                     use _scope = new CompilationGlobalsScope(diagnosticsLogger, buildPhase)
                     return f ()
                 }
