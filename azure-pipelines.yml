@@ -234,37 +234,6 @@ stages:
             continueOnError: true
             condition: not(succeeded())
 
-        # Run Build with --test:ParallelCheckingWithSignatureFilesOn
-        - job: ParallelCheckingWithSignatureFiles
-          condition: eq(variables['Build.Reason'], 'PullRequest')
-          variables:
-            - name: _SignType
-              value: Test
-          pool:
-            name: NetCore-Public
-            demands: ImageOverride -equals $(WindowsMachineQueueName)
-          timeoutInMinutes: 90
-          steps:
-            - checkout: self
-              clean: true
-            - task: UseDotNet@2
-              displayName: install SDK
-              inputs:
-                packageType: sdk
-                useGlobalJson: true
-                includePreviewVersions: false
-                workingDirectory: $(Build.SourcesDirectory)
-                installationPath: $(Build.SourcesDirectory)/.dotnet
-            - script: .\build.cmd -noVisualStudio /p:ParallelCheckingWithSignatureFilesOn=true
-              displayName: ParallelCheckingWithSignatureFiles build with Debug configuration
-            - task: PublishPipelineArtifact@1
-              displayName: Publish ParallelCheckingWithSignatureFiles Logs
-              inputs:
-                targetPath: '$(Build.SourcesDirectory)/artifacts/log/Debug'
-                artifactName: 'ParallelCheckingWithSignatureFiles Attempt $(System.JobAttempt) Logs'
-              continueOnError: true
-              condition: not(succeeded())
-
           # Check code formatting
         - job: CheckCodeFormatting
           pool:
@@ -538,6 +507,36 @@ stages:
         #    inputs:
         #      filePath: eng\tests\UpToDate.ps1
         #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
+
+        # Run Build with --test:ParallelCheckingWithSignatureFilesOn
+        - job: ParallelCheckingWithSignatureFiles
+          condition: eq(variables['Build.Reason'], 'PullRequest')
+          variables:
+            - name: _SignType
+              value: Test
+          pool:
+            name: NetCore-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 90
+          steps:
+            - checkout: self
+              clean: true
+            - task: UseDotNet@2
+              displayName: install SDK
+              inputs:
+                packageType: sdk
+                useGlobalJson: true
+                includePreviewVersions: false
+                workingDirectory: $(Build.SourcesDirectory)
+                installationPath: $(Build.SourcesDirectory)/.dotnet
+            - script: .\build.cmd -noVisualStudio /p:ParallelCheckingWithSignatureFilesOn=true /bl:\"artifacts/log/$(_BuildConfig)/ParallelCheckingWithSignatureFiles.binlog\"
+              displayName: ParallelCheckingWithSignatureFiles build with Debug configuration
+            - task: PublishPipelineArtifact@1
+              displayName: Publish ParallelCheckingWithSignatureFiles Logs
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)/artifacts/log/$(_BuildConfig)'
+                artifactName: 'ParallelCheckingWithSignatureFiles Attempt $(System.JobAttempt) Logs'
+              continueOnError: true
 
         # Plain build Windows
         - job: Plain_Build_Windows
