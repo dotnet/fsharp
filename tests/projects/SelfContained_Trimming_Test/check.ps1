@@ -17,7 +17,7 @@ if (-not ($output -eq $expected))
 $expected_len = 300000 # 300 KB
 $file = Get-Item .\bin\Release\net7.0\win-x64\publish\FSharp.Core.dll
 $file_len = $file.Length
-if ($file_len -le $expected_len)
+if ($file_len -ge $expected_len)
 {
     Write-Host "Test failed with unexpected FSharp.Core length:`nExpected:`n`t<=${expected_len}B`nActual`n`t  ${file_len}B" -ErrorAction Stop
 }
