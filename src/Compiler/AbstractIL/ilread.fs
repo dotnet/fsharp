@@ -1220,7 +1220,7 @@ type ISeekReadIndexedRowReader<'RowT, 'KeyT, 'T when 'RowT: struct> =
     abstract CompareKey: 'KeyT -> int
     abstract ConvertRow: byref<'RowT> -> 'T
 
-let seekReadIndexedRowsRange numRows binaryChop (reader: ISeekReadIndexedRowReader<'RowT, _, _>) : int * int =
+let seekReadIndexedRowsRange numRows binaryChop (reader: ISeekReadIndexedRowReader<'RowT, _, _>) =
     let mutable row = Unchecked.defaultof<'RowT>
 
     let mutable startRid = -1
@@ -1263,6 +1263,8 @@ let seekReadIndexedRowsRange numRows binaryChop (reader: ISeekReadIndexedRowRead
                         fin <- true
 
                 curr <- curr - 1
+
+            endRid <- mid
 
             // read forward
             let mutable fin = false
