@@ -1257,6 +1257,7 @@ let seekReadIndexedRowsRange numRows binaryChop (reader: ISeekReadIndexedRowRead
                     fin <- true
                 else
                     reader.GetRow(curr, &row)
+
                     if reader.CompareKey(reader.GetKey(&row)) = 0 then
                         startRid <- curr
                     else
@@ -1275,6 +1276,7 @@ let seekReadIndexedRowsRange numRows binaryChop (reader: ISeekReadIndexedRowRead
                     fin <- true
                 else
                     reader.GetRow(curr, &row)
+
                     if reader.CompareKey(reader.GetKey(&row)) = 0 then
                         endRid <- curr
                     else
@@ -1284,16 +1286,21 @@ let seekReadIndexedRowsRange numRows binaryChop (reader: ISeekReadIndexedRowRead
 
     else
         let mutable rid = 1
+
         while rid <= numRows && startRid = -1 do
             reader.GetRow(rid, &row)
+
             if reader.CompareKey(reader.GetKey(&row)) = 0 then
                 startRid <- rid
                 endRid <- rid
+
             rid <- rid + 1
 
         let mutable fin = false
+
         while not fin do
             reader.GetRow(rid, &row)
+
             if reader.CompareKey(reader.GetKey(&row)) = 0 then
                 endRid <- rid
             else
@@ -1303,12 +1310,15 @@ let seekReadIndexedRowsRange numRows binaryChop (reader: ISeekReadIndexedRowRead
 
 let seekReadIndexedRowsByInterface numRows binaryChop (reader: ISeekReadIndexedRowReader<'RowT, _, _>) =
     let startRid, endRid = seekReadIndexedRowsRange numRows binaryChop reader
-    if startRid < 0 || endRid < startRid then [||] else
 
-    Array.init (endRid - startRid + 1) (fun i ->
-        let mutable row = Unchecked.defaultof<'RowT>
-        reader.GetRow(startRid + i, &row)
-        reader.ConvertRow(&row))
+    if startRid < 0 || endRid < startRid then
+        [||]
+    else
+
+        Array.init (endRid - startRid + 1) (fun i ->
+            let mutable row = Unchecked.defaultof<'RowT>
+            reader.GetRow(startRid + i, &row)
+            reader.ConvertRow(&row))
 
 [<Struct>]
 type CustomAttributeRow =
