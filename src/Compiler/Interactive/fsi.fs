@@ -1190,7 +1190,7 @@ type internal FsiConsoleInput(fsi: FsiEvaluationSessionHostConfig, fsiOptions: F
     /// Try to get the console, if it appears operational.
     member _.TryGetConsole() = consoleOpt
 
-    member _.In = inReader
+     member _.In = inReader
 
     member _.WaitForInitialConsoleInput() = WaitHandle.WaitAll [| consoleReaderStartupDone  |] |> ignore;
 
@@ -2480,7 +2480,8 @@ type FsiStdinLexerProvider
         fsiConsoleInput: FsiConsoleInput,
         fsiConsoleOutput: FsiConsoleOutput,
         fsiOptions: FsiCommandLineOptions,
-        lexResourceManager: LexResourceManager
+        lexResourceManager: LexResourceManager,
+        interrupt: unit -> unit
     ) =
 
     // #light is the default for FSI
@@ -2533,6 +2534,7 @@ type FsiStdinLexerProvider
 
     // Create a new lexer to read stdin
     member _.CreateStdinLexer diagnosticsLogger =
+
         let lexbuf =
             match fsiConsoleInput.TryGetConsole() with
             | Some console when fsiOptions.EnableConsoleKeyProcessing && not fsiOptions.UseServerPrompt ->
@@ -2541,7 +2543,15 @@ type FsiStdinLexerProvider
                     | Some firstLine -> firstLine
                     | None -> console())
             | _ ->
-                LexbufFromLineReader fsiStdinSyphon (fun () -> fsiConsoleInput.In.ReadLine() |> removeZeroCharsFromString)
+                LexbufFromLineReader fsiStdinSyphon (fun () ->
+                    let rec line() =
+                        let l = fsiConsoleInput.In.ReadLine()  |> removeZeroCharsFromString
+                        match l with
+                        | "(*FSICOMMAND: interrupt*)" ->
+                            interrupt()
+                            line()
+                        | l -> l
+                    line())
 
         fsiStdinSyphon.Reset()
         CreateLexerForLexBuffer (stdinMockFileName, lexbuf, diagnosticsLogger)
@@ -3393,7 +3403,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     /// This reference cell holds the most recent interactive state
     let initialInteractiveState = fsiDynamicCompiler.GetInitialInteractiveState ()
 
-    let fsiStdinLexerProvider = FsiStdinLexerProvider(tcConfigB, fsiStdinSyphon, fsiConsoleInput, fsiConsoleOutput, fsiOptions, lexResourceManager)
+    let fsiStdinLexerProvider = FsiStdinLexerProvider(tcConfigB, fsiStdinSyphon, fsiConsoleInput, fsiConsoleOutput, fsiOptions, lexResourceManager, fsiInterruptController.Interrupt)
 
     let fsiInteractionProcessor = FsiInteractionProcessor(fsi, tcConfigB, fsiOptions, fsiDynamicCompiler, fsiConsolePrompt, fsiConsoleOutput, fsiInterruptController, fsiStdinLexerProvider, lexResourceManager, initialInteractiveState)
 
