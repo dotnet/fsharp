@@ -1661,7 +1661,8 @@ module ParsedInput =
             | SynType.Array (_, t, _)
             | SynType.HashConstraint (t, _)
             | SynType.MeasurePower (t, _, _)
-            | SynType.Paren (t, _) -> walkType t
+            | SynType.Paren (t, _)
+            | SynType.SignatureParameter (usedType = t) -> walkType t
             | SynType.Fun (argType = t1; returnType = t2)
             | SynType.MeasureDivide (t1, t2, _) ->
                 walkType t1
