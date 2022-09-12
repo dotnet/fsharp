@@ -26,10 +26,21 @@ let ``fsc help text is displayed correctly`` () =
      Assert.AreEqual(expectedHelp, actualHelp, $"Expected: '{expectedHelp}'\n Actual: '{actualHelp}'") |> ignore
 
 [<Test>]
-let ``Version is displayed correctly`` () =
+let ``FSC version is displayed correctly`` () =
     let builder = getArbitraryTcConfigBuilder()
     let expectedVersionPattern = @"Microsoft \(R\) F# Compiler version \d+\.\d+\.\d+\.\d+ for F# \d+\.\d+"
 
     let version = GetVersion builder
 
     Assert.That(version, Does.Match expectedVersionPattern)
+
+[<Test>]
+let ``Language versions are displayed correctly`` () =
+    let versions = GetLanguageVersions()
+
+    StringAssert.Contains("Supported language versions", versions)
+    StringAssert.Contains("preview", versions)
+    StringAssert.Contains("default", versions)
+    StringAssert.Contains("latest", versions)
+    StringAssert.Contains("latestmajor", versions)
+    StringAssert.Contains("(Default)", versions)
