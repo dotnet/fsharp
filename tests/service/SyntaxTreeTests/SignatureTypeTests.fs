@@ -474,6 +474,25 @@ type Z with
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
 
 [<Test>]
+let ``Type augmentation representation kind is SynTypeDefnKind.Augmentation`` () =
+    let parseResults =
+        getParseResultsOfSignatureFile
+            """
+namespace SomeNamespace
+
+type A with
+    member M: unit -> unit
+"""
+
+    match parseResults with
+    | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+        SynModuleSigDecl.Types(
+            types = [ SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.ObjectModel(kind = SynTypeDefnKind.Augmentation _)) ]
+        )
+    ]) ])) -> ()
+    | _ -> Assert.Fail "Could not get valid AST"
+
+[<Test>]    
 let ``SynValSig contains parameter names`` () =
     let parseResults = 
         getParseResultsOfSignatureFile

@@ -783,6 +783,15 @@ tyconSpfn:
         fun leadingKeyword ->
             let trivia: SynTypeDefnSigTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = None; WithKeyword = mWithKwd }
             SynTypeDefnSig($1, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m), members, m, trivia) }
+        let trivia: SynTypeDefnSigTrivia = { TypeKeyword = None; EqualsRange = None; WithKeyword = mWithKwd }
+        let repr =
+        match mWithKwd with
+        | None -> 
+            SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m)
+        | Some mWithKwd -> 
+            SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Augmentation mWithKwd, members, m)
+
+        SynTypeDefnSig($1, repr, members, m, trivia) }
 
 
 /* The right-hand-side of a type definition in a signature */
