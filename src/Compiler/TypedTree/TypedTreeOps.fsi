@@ -877,7 +877,12 @@ val emptyFreeLocals: FreeLocals
 
 val unionFreeLocals: FreeLocals -> FreeLocals -> FreeLocals
 
-type FreeVarOptions
+/// Represents the options to activate when collecting free variables
+[<Sealed>]
+type FreeVarOptions =
+    /// During backend code generation of state machines, register a template replacement for struct types.
+    /// This may introduce new free variables related to the instantiation of the struct type.
+    member WithTemplateReplacement: (TyconRef -> bool) * Typars -> FreeVarOptions
 
 val CollectLocalsNoCaching: FreeVarOptions
 
