@@ -261,31 +261,40 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
     let specs = List.collect GetOptionsOfBlock blocks
 
-    // returns a tuple - the option token, the option argument string
-    let parseOption (s: string) =
-        // grab the option token
-        let opts = s.Split([| ':' |])
-        let mutable opt = opts[0]
+    // returns a tuple - the option minus switchchars, the option tokenand  the option argument string
+    let parseOption (option: string) =
 
-        if opt = "" then
-            ()
-        // if it doesn't start with a '-' or '/', reject outright
-        elif opt[0] <> '-' && opt[0] <> '/' then
-            opt <- ""
-        elif opt <> "--" then
-            // is it an abbreviated or MSFT-style option?
-            // if so, strip the first character and move on with your life
-            if opt.Length = 2 || isSlashOpt opt then
-                opt <- opt[1..]
-            // else, it should be a non-abbreviated option starting with "--"
-            elif opt.Length > 3 && opt.StartsWithOrdinal("--") then
-                opt <- opt[2..]
+        // Get option arguments, I.e everything following first:
+        let opts = option.Split([| ':' |])
+        let optArgs = String.Join(":", opts[1..])
+
+        let opt =
+            if option = "" then
+                ""
+            // if it doesn't start with a '-' or '/', reject outright
+            elif option[0] <> '-' && option[0] <> '/' then
+                ""
+            elif option <> "--" then
+                // is it an abbreviated or MSFT-style option?
+                // if so, strip the first character and move on with your life
+                // Wierdly a -- option can't have only a 1 character name
+                if option.Length = 2 || isSlashOpt option then
+                    option[1..]
+                elif option.Length >= 3 && option[2] = ':' then
+                    option[1..]
+                elif option.StartsWithOrdinal("--") then
+                    match option.Length with
+                    | l when l >= 4 && option[3] = ':' -> ""
+                    | l when l > 3 -> option[2..]
+                    | _ -> ""
+                else
+                    ""
             else
-                opt <- ""
+                option
 
-        // get the argument string
-        let optArgs = if opts.Length > 1 then String.Join(":", opts[1..]) else ""
-        opt, optArgs
+        // grab the option token
+        let token = opt.Split([| ':' |])[0]
+        opt, token, optArgs
 
     let getOptionArg compilerOption (argString: string) =
         if argString = "" then
@@ -352,7 +361,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
             processArg (responseFileOptions @ t)
         | opt :: t ->
-            let optToken, argString = parseOption opt
+            let option, optToken, argString = parseOption opt
 
             let reportDeprecatedOption errOpt =
                 match errOpt with
@@ -361,7 +370,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
             let rec attempt l =
                 match l with
-                | CompilerOption (s, _, OptionConsoleOnly f, d, _) :: _ when optToken = s && argString = "" ->
+                | CompilerOption (s, _, OptionConsoleOnly f, d, _) :: _ when option = s ->
                     reportDeprecatedOption d
                     f blocks
                     t
@@ -710,7 +719,7 @@ let tagAlgorithm = "{SHA1|SHA256}"
 let tagInt = "<n>"
 let tagPathMap = "<path=sourcePath;...>"
 let tagNone = ""
-let tagLangVersionValues = "{?|version|latest|preview}"
+let tagLangVersionValues = "{version|latest|preview}"
 
 // PrintOptionInfo
 //----------------
@@ -1104,23 +1113,16 @@ let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
         Some(FSComp.SR.optsMlcompatibility ())
     )
 
-/// LanguageVersion management
-let setLanguageVersion specifiedVersion =
+let GetLanguageVersions () =
+    seq {
+        FSComp.SR.optsSupportedLangVersions ()
+        yield! LanguageVersion.ValidOptions
+        yield! LanguageVersion.ValidVersions
+    }
+    |> String.concat Environment.NewLine
 
-    let dumpAllowedValues () =
-        printfn "%s" (FSComp.SR.optsSupportedLangVersions ())
-
-        for v in LanguageVersion.ValidOptions do
-            printfn "%s" v
-
-        for v in LanguageVersion.ValidVersions do
-            printfn "%s" v
-
-        QuitProcessExiter.Exit 0
-
-    if specifiedVersion = "?" then
-        dumpAllowedValues ()
-    elif specifiedVersion.ToUpperInvariant() = "PREVIEW" then
+let setLanguageVersion (specifiedVersion: string) =
+    if specifiedVersion.ToUpperInvariant() = "PREVIEW" then
         ()
     elif not (LanguageVersion.ContainsVersion specifiedVersion) then
         error (Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
@@ -1130,6 +1132,16 @@ let setLanguageVersion specifiedVersion =
 let languageFlags tcConfigB =
     [
         // -langversion:?                Display the allowed values for language version
+        CompilerOption(
+            "langversion:?",
+            tagNone,
+            OptionConsoleOnly(fun _ ->
+                Console.Write(GetLanguageVersions())
+                exit 0),
+            None,
+            Some(FSComp.SR.optsGetLangVersions ())
+        )
+
         // -langversion:<string>         Specify language version such as
         //                               'default' (latest major version), or
         //                               'latest' (latest version, including minor versions),
@@ -1140,7 +1152,7 @@ let languageFlags tcConfigB =
             tagLangVersionValues,
             OptionString(fun switch -> tcConfigB.langVersion <- setLanguageVersion (switch)),
             None,
-            Some(FSComp.SR.optsLangVersion ())
+            Some(FSComp.SR.optsSetLangVersion ())
         )
 
         CompilerOption(
