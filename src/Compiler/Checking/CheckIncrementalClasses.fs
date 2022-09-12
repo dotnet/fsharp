@@ -527,7 +527,7 @@ type IncrClassReprInfo =
                         PostTransform = (fun _ -> None)
                         PreInterceptBinding = None
                         RewriteQuotations = true
-                        StackGuard = StackGuard(TcClassRewriteStackGuardDepth) } expr 
+                        StackGuard = StackGuard(TcClassRewriteStackGuardDepth, "FixupIncrClassExprPhase2C") } expr 
 
 type IncrClassConstructionBindingsPhase2C =
     | Phase2CBindings of IncrClassBindingGroup list

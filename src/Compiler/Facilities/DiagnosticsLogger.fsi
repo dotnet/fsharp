@@ -389,7 +389,7 @@ val tryLanguageFeatureErrorOption:
 val languageFeatureNotSupportedInLibraryError: langFeature: LanguageFeature -> m: range -> 'T
 
 type StackGuard =
-    new: maxDepth: int -> StackGuard
+    new: maxDepth: int * name: string -> StackGuard
 
     /// Execute the new function, on a new thread if necessary
     member Guard: f: (unit -> 'T) -> 'T

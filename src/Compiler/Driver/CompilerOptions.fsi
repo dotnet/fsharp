@@ -58,6 +58,8 @@ val GetHelpFsc: tcConfigB: TcConfigBuilder -> blocks: CompilerOptionBlock list -
 
 val GetVersion: tcConfigB: TcConfigBuilder -> string
 
+val GetLanguageVersions: unit -> string
+
 val GetCoreFscCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 
 val GetCoreFsiCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
