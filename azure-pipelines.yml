@@ -607,6 +607,42 @@ stages:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
 
+        # Test trimming on Windows
+        - job: Build_And_Test_Trimming_Windows
+          pool:
+            name: NetCore-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          variables:
+          - name: _BuildConfig
+            value: Debug
+          steps:
+          - checkout: self
+            clean: true
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - script: .\Build.cmd -pack -c Release
+            displayName: Initial build and prepare packages.
+          - script:  dotnet publish -c Release  -bl:\"./bin/Release/net7.0/win-x64/publish/Trimming.binlog\"
+            displayName: Build and publish a trim test package.
+            workingDirectory: $(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test
+          - script: check.ps1
+            displayName: Build and publish a trim test package.
+            workingDirectory: $(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test
+          - task: PublishPipelineArtifact@1
+            displayName: Publish Trim Tests Logs
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test/bin/Release/net7.0/win-x64/publish'
+              artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs'
+            continueOnError: true
+
     # Arcade-powered source build
     # turned off until https://github.com/dotnet/source-build/issues/1795 is fixed
     # - template: /eng/common/templates/jobs/jobs.yml
