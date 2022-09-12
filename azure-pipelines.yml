@@ -633,9 +633,12 @@ stages:
           - script:  dotnet publish -c Release  -bl:\"./bin/Release/net7.0/win-x64/publish/Trimming.binlog\"
             displayName: Build and publish a trim test package.
             workingDirectory: $(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test
-          - script: check.ps1
-            displayName: Build and publish a trim test package.
+          - task: PowerShell@2
+            displayName: Check the state of the trimmed app.
+            inputs:
+              filePath: check.ps1
             workingDirectory: $(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test
+
           - task: PublishPipelineArtifact@1
             displayName: Publish Trim Tests Logs
             inputs:
