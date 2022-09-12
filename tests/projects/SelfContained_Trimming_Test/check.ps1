@@ -7,7 +7,7 @@ if (-not ($LASTEXITCODE -eq 0))
 }
 
 # Checking that the output is as expected.
-$expected = "Hello, trimmed world!"
+$expected = "All tests passed"
 if (-not ($output -eq $expected))
 {
     Write-Host "Test failed with unexpected output:`nExpected:`n`t${expected}`nActual`n`t${output}" -ErrorAction Stop
