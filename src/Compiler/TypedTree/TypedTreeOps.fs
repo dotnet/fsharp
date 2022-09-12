@@ -2133,7 +2133,10 @@ type FreeVarOptions =
       includeRecdFields: bool
       includeUnionCases: bool
       includeLocals: bool
+      templateReplacement: ((TyconRef -> bool) * Typars) option
       stackGuard: StackGuard option }
+
+    member this.WithTemplateReplacement(f, typars) = { this with templateReplacement = Some (f, typars) }
       
 let CollectAllNoCaching = 
     { canCache = false
@@ -2144,6 +2147,7 @@ let CollectAllNoCaching =
       includeUnionCases = true
       includeTypars = true
       includeLocals = true
+      templateReplacement = None
       stackGuard = None}
 
 let CollectTyparsNoCaching = 
@@ -2155,6 +2159,7 @@ let CollectTyparsNoCaching =
       includeRecdFields = false
       includeUnionCases = false
       includeLocals = false
+      templateReplacement = None
       stackGuard = None }
 
 let CollectLocalsNoCaching = 
@@ -2166,6 +2171,7 @@ let CollectLocalsNoCaching =
       includeRecdFields = false 
       includeUnionCases = false
       includeLocals = true
+      templateReplacement = None
       stackGuard = None }
 
 let CollectTyparsAndLocalsNoCaching = 
@@ -2177,6 +2183,7 @@ let CollectTyparsAndLocalsNoCaching =
       includeUnionCases = false
       includeTypars = true
       includeLocals = true
+      templateReplacement = None
       stackGuard = None }
 
 let CollectAll =
@@ -2188,6 +2195,7 @@ let CollectAll =
       includeUnionCases = true
       includeTypars = true
       includeLocals = true
+      templateReplacement = None
       stackGuard = None }
     
 let CollectTyparsAndLocalsImpl stackGuardOpt = // CollectAll
@@ -2199,6 +2207,7 @@ let CollectTyparsAndLocalsImpl stackGuardOpt = // CollectAll
       includeLocalTyconReprs = false
       includeRecdFields = false
       includeUnionCases = false
+      templateReplacement = None
       stackGuard = stackGuardOpt }
 
   
@@ -2209,7 +2218,7 @@ let CollectTypars = CollectTyparsAndLocals
 let CollectLocals = CollectTyparsAndLocals
 
 let CollectTyparsAndLocalsWithStackGuard() =
-    let stackGuard = StackGuard(AccFreeVarsStackGuardDepth)
+    let stackGuard = StackGuard(AccFreeVarsStackGuardDepth, "AccFreeVarsStackGuardDepth")
     CollectTyparsAndLocalsImpl (Some stackGuard)
 
 let CollectLocalsWithStackGuard() = CollectTyparsAndLocalsWithStackGuard()
@@ -2219,12 +2228,18 @@ let accFreeLocalTycon opts x acc =
     if Zset.contains x acc.FreeTycons then acc else 
     { acc with FreeTycons = Zset.add x acc.FreeTycons } 
 
-let accFreeTycon opts (tcref: TyconRef) acc = 
+let rec accFreeTycon opts (tcref: TyconRef) acc = 
+    let acc =
+        match opts.templateReplacement with
+        | Some (isTemplateTyconRef, cloFreeTyvars) when isTemplateTyconRef tcref ->
+            let cloInst = List.map mkTyparTy cloFreeTyvars
+            accFreeInTypes opts cloInst acc
+        | _ -> acc
     if not opts.includeLocalTycons then acc
     elif tcref.IsLocalRef then accFreeLocalTycon opts tcref.ResolvedTarget acc
     else acc
 
-let rec boundTypars opts tps acc = 
+and boundTypars opts tps acc = 
     // Bound type vars form a recursively-referential set due to constraints, e.g. A: I<B>, B: I<A> 
     // So collect up free vars in all constraints first, then bind all variables 
     let acc = List.foldBack (fun (tp: Typar) acc -> accFreeInTyparConstraints opts tp.Constraints acc) tps acc
@@ -6248,31 +6263,31 @@ and remapImplFile ctxt compgen tmenv implFile =
 // Entry points
 
 let remapAttrib g tmenv attrib = 
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     remapAttribImpl ctxt tmenv attrib
 
 let remapExpr g (compgen: ValCopyFlag) (tmenv: Remap) expr =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     remapExprImpl ctxt compgen tmenv expr
 
 let remapPossibleForallTy g tmenv ty =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     remapPossibleForallTyImpl ctxt tmenv ty
 
 let copyModuleOrNamespaceType g compgen mtyp =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     copyAndRemapAndBindModTy ctxt compgen Remap.Empty mtyp |> fst
 
 let copyExpr g compgen e =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     remapExprImpl ctxt compgen Remap.Empty e    
 
 let copyImplFile g compgen e =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     remapImplFile ctxt compgen Remap.Empty e |> fst
 
 let instExpr g tpinst e =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     remapExprImpl ctxt CloneAll (mkInstRemap tpinst) e
 
 //--------------------------------------------------------------------------
@@ -7162,7 +7177,7 @@ let ExprFolder0 =
 type ExprFolders<'State> (folders: ExprFolder<'State>) =
     let mutable exprFClosure = Unchecked.defaultof<'State -> Expr -> 'State> // prevent reallocation of closure
     let mutable exprNoInterceptFClosure = Unchecked.defaultof<'State -> Expr -> 'State> // prevent reallocation of closure
-    let stackGuard = StackGuard(FoldExprStackGuardDepth)
+    let stackGuard = StackGuard(FoldExprStackGuardDepth, "FoldExprStackGuardDepth")
 
     let rec exprsF z xs = 
         List.fold exprFClosure z xs
@@ -9493,7 +9508,7 @@ and remapValToNonLocal ctxt tmenv inp =
     inp |> Construct.NewModifiedVal (remapValData ctxt tmenv)
 
 let ApplyExportRemappingToEntity g tmenv x =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     remapTyconToNonLocal ctxt tmenv x
 
 (* Which constraints actually get compiled to .NET constraints? *)
