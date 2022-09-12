@@ -529,12 +529,12 @@ stages:
                 includePreviewVersions: false
                 workingDirectory: $(Build.SourcesDirectory)
                 installationPath: $(Build.SourcesDirectory)/.dotnet
-            - script: .\build.cmd -binaryLog /p:ParallelCheckingWithSignatureFilesOn=true
+            - script: .\build.cmd -c Release -binaryLog /p:ParallelCheckingWithSignatureFilesOn=true
               displayName: ParallelCheckingWithSignatureFiles build with Debug configuration
             - task: PublishPipelineArtifact@1
               displayName: Publish ParallelCheckingWithSignatureFiles Logs
               inputs:
-                targetPath: '$(Build.SourcesDirectory)/artifacts/log/$(_BuildConfig)'
+                targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
                 artifactName: 'ParallelCheckingWithSignatureFiles Attempt $(System.JobAttempt) Logs'
               continueOnError: true
 
