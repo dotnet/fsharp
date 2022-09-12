@@ -6,24 +6,29 @@ open System.IO
 open Microsoft.Build.Framework
 open Microsoft.Build.Utilities
 
-type FSharpEmbedResourceText() =
-    let mutable _buildEngine: IBuildEngine MaybeNull = null
-    let mutable _hostObject: ITaskHost MaybeNull = null
+/// A special exception that when thrown signifies that
+/// the task should end with failure. It is assumed that
+/// the task has already emitted the error message.
+exception TaskFailed
+
+type FSharpEmbedResourceText() as this =
+    inherit Task()
     let mutable _embeddedText: ITaskItem[] = [||]
     let mutable _generatedSource: ITaskItem[] = [||]
     let mutable _generatedResx: ITaskItem[] = [||]
     let mutable _outputPath: string = ""
 
     let PrintErr (fileName, line, msg) =
-        printfn "%s(%d): error : %s" fileName line msg
+        this.Log.LogError(null, null, null, fileName, line, 0, 0, 0, msg, Array.empty)
 
     let Err (fileName, line, msg) =
         PrintErr(fileName, line, msg)
-        printfn "Note that the syntax of each line is one of these three alternatives:"
-        printfn "# comment"
-        printfn "ident,\"string\""
-        printfn "errNum,ident,\"string\""
-        failwith (sprintf "there were errors in the file '%s'" fileName)
+        let hint = "Note that the syntax of each line is one of these three alternatives:
+# comment
+ident,\"string\"
+errNum,ident,\"string\""
+        this.Log.LogMessage(MessageImportance.High, hint)
+        raise TaskFailed
 
     let xmlBoilerPlateString =
         @"<?xml version=""1.0"" encoding=""utf-8""?>
@@ -192,7 +197,7 @@ type FSharpEmbedResourceText() =
         if s.StartsWith "\"" && s.EndsWith "\"" then
             s.Substring(1, s.Length - 2)
         else
-            failwith "error message string should be quoted"
+            Err(null, 0, "error message string should be quoted")
 
     let ParseLine fileName lineNum (txt: string) =
         let mutable errNum = None
@@ -361,8 +366,7 @@ open Printf
 
     let generateResxAndSource (fileName: string) =
         try
-            let printMessage message =
-                printfn "FSharpEmbedResourceText: %s" message
+            let printMessage fmt = Printf.ksprintf this.Log.LogMessage fmt
 
             let justFileName = Path.GetFileNameWithoutExtension(fileName) // .txt
 
@@ -391,35 +395,33 @@ open Printf
                 && (File.GetLastWriteTimeUtc(fileName) <= File.GetLastWriteTimeUtc(outXmlFileName))
 
             if condition5 then
-                printMessage (sprintf "Skipping generation of %s and %s from %s since up-to-date" outFileName outXmlFileName fileName)
+                printMessage "Skipping generation of %s and %s from %s since up-to-date" outFileName outXmlFileName fileName
 
                 Some(fileName, outFileName, outXmlFileName)
             else
-                printMessage (
-                    sprintf
-                        "Generating %s and %s from %s, because condition %d is false, see FSharpEmbedResourceText.fs in the F# source"
-                        outFileName
-                        outXmlFileName
-                        fileName
-                        (if not condition1 then 1
-                         elif not condition2 then 2
-                         elif not condition3 then 3
-                         elif not condition4 then 4
-                         else 5)
-                )
+                printMessage 
+                    "Generating %s and %s from %s, because condition %d is false, see FSharpEmbedResourceText.fs in the F# source"
+                    outFileName
+                    outXmlFileName
+                    fileName
+                    (if not condition1 then 1
+                     elif not condition2 then 2
+                     elif not condition3 then 3
+                     elif not condition4 then 4
+                     else 5)
 
-                printMessage (sprintf "Reading %s" fileName)
+                printMessage "Reading %s" fileName
 
                 let lines =
                     File.ReadAllLines(fileName)
                     |> Array.mapi (fun i s -> i, s) // keep line numbers
                     |> Array.filter (fun (i, s) -> not (s.StartsWith "#")) // filter out comments
 
-                printMessage (sprintf "Parsing %s" fileName)
+                printMessage "Parsing %s" fileName
                 let stringInfos = lines |> Array.map (fun (i, s) -> ParseLine fileName i s)
                 // now we have array of (lineNum, ident, str, holes, netFormatString)  // str has %d, netFormatString has {0}
 
-                printMessage (sprintf "Validating %s" fileName)
+                printMessage "Validating %s" fileName
                 // validate that all the idents are unique
                 let allIdents = new System.Collections.Generic.Dictionary<string, int>()
 
@@ -436,7 +438,7 @@ open Printf
 
                     allIdents.Add(ident, line)
 
-                printMessage (sprintf "Validating uniqueness of %s" fileName)
+                printMessage "Validating uniqueness of %s" fileName
                 // validate that all the strings themselves are unique
                 let allStrs = new System.Collections.Generic.Dictionary<string, (int * string)>()
 
@@ -456,7 +458,7 @@ open Printf
 
                     allStrs.Add(str, (line, ident))
 
-                printMessage (sprintf "Generating %s" outFileName)
+                printMessage "Generating %s" outFileName
                 use outStream = File.Create outFileName
                 use out = new StreamWriter(outStream)
                 fprintfn out "// This is a generated file; the original input is '%s'" fileName
@@ -466,7 +468,7 @@ open Printf
                 let theResourceName = justFileName
                 fprintfn out "%s" (StringBoilerPlate theResourceName)
 
-                printMessage (sprintf "Generating resource methods for %s" outFileName)
+                printMessage "Generating resource methods for %s" outFileName
                 // gen each resource method
                 stringInfos
                 |> Seq.iter (fun (lineNum, (optErrNum, ident), str, holes, netFormatString) ->
@@ -520,7 +522,7 @@ open Printf
                         justPercentsFromFormatString
                         (actualArgs.ToString()))
 
-                printMessage (sprintf "Generating .resx for %s" outFileName)
+                printMessage "Generating .resx for %s" outFileName
                 fprintfn out ""
                 // gen validation method
                 fprintfn out "    /// Call this method once to validate that all known resources are valid; throws if not"
@@ -548,7 +550,7 @@ open Printf
 
                 use outXmlStream = File.Create outXmlFileName
                 xd.Save outXmlStream
-                printMessage (sprintf "Done %s" outFileName)
+                printMessage "Done %s" outFileName
                 Some(fileName, outFileName, outXmlFileName)
         with e ->
             PrintErr(fileName, 0, sprintf "An exception occurred when processing '%s'\n%s" fileName (e.ToString()))
@@ -569,18 +571,9 @@ open Printf
 
     [<Output>]
     member _.GeneratedResx = _generatedResx
+    override this.Execute() =
 
-    interface ITask with
-        member _.BuildEngine
-            with get () = _buildEngine
-            and set (value) = _buildEngine <- value
-
-        member _.HostObject
-            with get () = _hostObject
-            and set (value) = _hostObject <- value
-
-        member this.Execute() =
-
+        try
             let generatedFiles =
                 this.EmbeddedText
                 |> Array.choose (fun item -> generateResxAndSource item.ItemSpec)
@@ -609,4 +602,6 @@ open Printf
 
             _generatedSource <- generatedSource
             _generatedResx <- generatedResx
-            generatedResult
+            generatedResult && not this.Log.HasLoggedErrors
+        with
+        | TaskFailed -> false
