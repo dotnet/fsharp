@@ -1294,7 +1294,6 @@ let CheckOneInputAux
                     // in the compilation order.
                     let tcStateForImplFile = tcState
                     let qualNameOfFile = file.QualifiedName
-                    let hadSig = true
                     let priorErrors = checkForErrors ()
 
                     let ccuSigForFile, tcState =
