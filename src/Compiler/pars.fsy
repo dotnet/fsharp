@@ -785,11 +785,11 @@ tyconSpfn:
             SynTypeDefnSig($1, SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m), members, m, trivia) }
         let trivia: SynTypeDefnSigTrivia = { TypeKeyword = None; EqualsRange = None; WithKeyword = mWithKwd }
         let repr =
-        match mWithKwd with
-        | None -> 
-            SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m)
-        | Some mWithKwd -> 
-            SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Augmentation mWithKwd, members, m)
+            match mWithKwd with
+            | None ->
+                SynTypeDefnSigRepr.Simple (SynTypeDefnSimpleRepr.None m, m)
+            | Some mWithKwd ->
+                SynTypeDefnSigRepr.ObjectModel (SynTypeDefnKind.Augmentation mWithKwd, members, m)
 
         SynTypeDefnSig($1, repr, members, m, trivia) }
 
