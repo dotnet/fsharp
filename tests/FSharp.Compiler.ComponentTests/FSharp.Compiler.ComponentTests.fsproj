@@ -201,6 +201,7 @@
     <Compile Include="Signatures\ModuleOrNamespaceTests.fs" />
     <Compile Include="Signatures\RecordTests.fs" />
     <Compile Include="Signatures\ArrayTests.fs" />
+    <Compile Include="Signatures\TypeTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
