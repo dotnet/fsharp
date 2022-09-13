@@ -645,7 +645,7 @@ stages:
             displayName: Publish Trim Tests Logs
             inputs:
               targetPath: '$(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test/bin/$(_BuildConfig)/net7.0/win-x64/publish'
-              artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs'
+              artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs $(_kind)'
             continueOnError: true
 
     # Arcade-powered source build
