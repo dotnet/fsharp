@@ -47,34 +47,31 @@ and FormatSelectionRange =
         """
 namespace Foo.Types
 
-    type FormatSelectionRequest =
-        {
-          SourceCode: string
+  type FormatSelectionRequest =
+    {
+      SourceCode: string
 
-          /// File path will be used to identify the .editorconfig options
-          /// Unless the configuration is passed
-          FilePath: string
+      /// File path will be used to identify the .editorconfig options
+      /// Unless the configuration is passed
+      FilePath: string
 
-          /// Overrides the found .editorconfig.
-          Config:
-            System.Collections.Generic.IReadOnlyDictionary<string,string> option
+      /// Overrides the found .editorconfig.
+      Config: System.Collections.Generic.IReadOnlyDictionary<string,string> option
 
-          /// Range follows the same semantics of the FSharp Compiler Range type.
-          Range: FormatSelectionRange
-        }
+      /// Range follows the same semantics of the FSharp Compiler Range type.
+      Range: FormatSelectionRange
+    }
 
-        member IsSignatureFile: bool
+    member IsSignatureFile: bool
 
-    and [<Struct>] FormatSelectionRange =
+  and [<Struct>] FormatSelectionRange =
 
-        new: startLine: int * startColumn: int * endLine: int * endColumn: int ->
-               FormatSelectionRange
+    new: startLine: int * startColumn: int * endLine: int * endColumn: int -> FormatSelectionRange
 
-        val StartLine: int
+    val StartLine: int
 
-        val StartColumn: int
+    val StartColumn: int
 
-        val EndLine: int
+    val EndLine: int
 
-        val EndColumn: int
-"""
+    val EndColumn: int"""
