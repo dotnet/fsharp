@@ -54,6 +54,14 @@ type PrimaryAssembly =
         | System_Runtime -> "System.Runtime"
         | NetStandard -> "netstandard"
 
+    static member IsPossiblePrimaryAssembly(fileName: string) =
+        let name = System.IO.Path.GetFileNameWithoutExtension(fileName)
+
+        String.Compare(name, "mscorlib", true) <> 0
+        || String.Compare(name, "System.Runtime", true) <> 0
+        || String.Compare(name, "netstandard", true) <> 0
+        || String.Compare(name, "System.Private.CoreLib", true) <> 0
+
 // --------------------------------------------------------------------
 // Utilities: type names
 // --------------------------------------------------------------------
@@ -2803,11 +2811,15 @@ and [<Sealed>] ILTypeDefs(f: unit -> ILPreTypeDef[]) =
         member x.GetEnumerator() =
             (seq { for pre in array.Value -> pre.GetTypeDef() }).GetEnumerator()
 
-    member x.AsArrayOfPreTypeDefs() = array.Value
+    member _.AsArrayOfPreTypeDefs() = array.Value
 
-    member x.FindByName nm =
+    member _.FindByName nm =
         let ns, n = splitILTypeName nm
         dict.Value[ (ns, n) ].GetTypeDef()
+
+    member _.ExistsByName nm =
+        let ns, n = splitILTypeName nm
+        dict.Value.ContainsKey((ns, n))
 
 and [<NoEquality; NoComparison>] ILPreTypeDef =
     abstract Namespace: string list
@@ -3331,15 +3343,9 @@ let tname_UIntPtr = "System.UIntPtr"
 let tname_TypedReference = "System.TypedReference"
 
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type ILGlobals
-    (
-        primaryScopeRef: ILScopeRef,
-        assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list,
-        fsharpCoreAssemblyScopeRef: ILScopeRef
-    ) =
+type ILGlobals(primaryScopeRef: ILScopeRef, equivPrimaryAssemblyRefs: ILAssemblyRef list, fsharpCoreAssemblyScopeRef: ILScopeRef) =
 
-    let assembliesThatForwardToPrimaryAssembly =
-        Array.ofList assembliesThatForwardToPrimaryAssembly
+    let equivPrimaryAssemblyRefs = Array.ofList equivPrimaryAssemblyRefs
 
     let mkSysILTypeRef nm = mkILTyRef (primaryScopeRef, nm)
 
@@ -3394,8 +3400,7 @@ type ILGlobals
 
     member x.IsPossiblePrimaryAssemblyRef(aref: ILAssemblyRef) =
         aref.EqualsIgnoringVersion x.primaryAssemblyRef
-        || assembliesThatForwardToPrimaryAssembly
-           |> Array.exists aref.EqualsIgnoringVersion
+        || equivPrimaryAssemblyRefs |> Array.exists aref.EqualsIgnoringVersion
 
     /// For debugging
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
@@ -3403,8 +3408,8 @@ type ILGlobals
 
     override x.ToString() = "<ILGlobals>"
 
-let mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef) =
-    ILGlobals(primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef)
+let mkILGlobals (primaryScopeRef, equivPrimaryAssemblyRefs, fsharpCoreAssemblyScopeRef) =
+    ILGlobals(primaryScopeRef, equivPrimaryAssemblyRefs, fsharpCoreAssemblyScopeRef)
 
 let mkNormalCall mspec = I_call(Normalcall, mspec, None)
 
