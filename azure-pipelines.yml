@@ -613,9 +613,9 @@ stages:
           strategy:
             maxParallel: 2
             matrix:
-              desktop_release:
+              compressed_metadata:
                 _kind: "-compressAllMetadata"
-              coreclr_release:
+              classic_metadata:
                 _kind: ""
           variables:
           - name: _BuildConfig
