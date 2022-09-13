@@ -4,6 +4,10 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
     <LangVersion>preview</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RestoreSources>
+      $(MSBuildThisFileDirectory)/../../../artifacts/packages/Release/Release
+    </RestoreSources>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -23,8 +27,10 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
 
- <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="7.*"/>
- </ItemGroup>
+  <Import Project="$(MSBuildThisFileDirectory)../../../eng/Versions.props" />
+
+  <ItemGroup>
+      <PackageReference Include="FSharp.Core" Version="$(FSCoreProductVersion).*"/>
+  </ItemGroup>
 
 </Project>

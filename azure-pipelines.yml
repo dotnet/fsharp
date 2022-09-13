@@ -612,9 +612,16 @@ stages:
           pool:
             name: NetCore-Public
             demands: ImageOverride -equals $(WindowsMachineQueueName)
+          strategy:
+            maxParallel: 2
+            matrix:
+              desktop_release:
+                _kind: "-compressAllMetadata"
+              coreclr_release:
+                _kind: ""
           variables:
           - name: _BuildConfig
-            value: Debug
+            value: Release
           steps:
           - checkout: self
             clean: true
@@ -628,9 +635,9 @@ stages:
               installationPath: $(Agent.ToolsDirectory)/dotnet
           - script: dotnet --list-sdks
             displayName: Report dotnet SDK versions
-          - script: .\Build.cmd -pack -c Release
+          - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
             displayName: Initial build and prepare packages.
-          - script:  dotnet publish -c Release  -bl:\"./bin/Release/net7.0/win-x64/publish/Trimming.binlog\"
+          - script:  dotnet publish -c $(_BuildConfig)  -bl:\"./bin/$(_BuildConfig)/net7.0/win-x64/publish/Trimming.binlog\"
             displayName: Build and publish a trim test package.
             workingDirectory: $(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test
           - script: .\check.cmd
@@ -639,7 +646,7 @@ stages:
           - task: PublishPipelineArtifact@1
             displayName: Publish Trim Tests Logs
             inputs:
-              targetPath: '$(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test/bin/Release/net7.0/win-x64/publish'
+              targetPath: '$(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test/bin/$(_BuildConfig)/net7.0/win-x64/publish'
               artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs'
             continueOnError: true
 
