@@ -562,19 +562,22 @@ module PrintTypes =
         | _ -> comment "(* unsupported attribute argument *)"
 
     /// Layout arguments of an attribute 'arg1, ..., argN' 
-    and layoutAttribArgs denv args = 
+    and layoutAttribArgs denv args props = 
         let argsL =  args |> List.map (fun (AttribExpr(e1, _)) -> layoutAttribArg denv e1)
-        sepListL (rightL (tagPunctuation ",")) argsL
+        let propsL =
+            props
+            |> List.map (fun (AttribNamedArg(name,_, _, AttribExpr(e1, _))) ->
+                wordL (tagProperty name) ^^ WordL.equals ^^ layoutAttribArg denv e1)
+        sepListL (rightL (tagPunctuation ",")) (argsL @ propsL)
 
     /// Layout an attribute 'Type(arg1, ..., argN)' 
-    //
-    // REVIEW: we are ignoring "props" here
-    and layoutAttrib denv (Attrib(tcref, _, args, _props, _, _, _)) = 
+    and layoutAttrib denv (Attrib(tcref, _, args, props, _, _, _)) = 
         let tcrefL = layoutTyconRefImpl true denv tcref
-        let argsL = bracketL (layoutAttribArgs denv args)
-        match args with 
-        | [] -> tcrefL
-        | _ -> tcrefL ++ argsL
+        let argsL = bracketL (layoutAttribArgs denv args props)
+        if List.isEmpty args && List.isEmpty props then
+            tcrefL
+        else
+            tcrefL ++ argsL
 
     and layoutILAttribElement denv arg = 
         match arg with 
