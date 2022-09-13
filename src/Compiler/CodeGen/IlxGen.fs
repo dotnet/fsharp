@@ -6806,10 +6806,12 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
     // Collect the free variables of the closure
     let cloFreeVarResults =
         let opts = CollectTyparsAndLocalsWithStackGuard()
+
         let opts =
             match eenvouter.tyenv.TemplateReplacement with
             | None -> opts
             | Some (tcref, _, typars, _) -> opts.WithTemplateReplacement(tyconRefEq g tcref, typars)
+
         freeInExpr opts expr
 
     // Partition the free variables when some can be accessed from places besides the immediate environment
