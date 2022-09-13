@@ -8921,8 +8921,11 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
         // To get better warnings we special case some of the few known mutate-a-struct method names
         let mutates = (if methodName = "MoveNext" || methodName = "GetNextArg" then DefinitelyMutates else PossiblyMutates)
 
-        // Check if we have properties with "init-only" setters, which we try to call after init is done.
-        CheckInitProperties g (List.head minfos) methodName mItem
+        match minfos with
+        | minfo :: _ ->
+            // Check if we have properties with "init-only" setters, which we try to call after init is done.
+            CheckInitProperties g minfo methodName mItem
+        | _ -> ()
 
 #if !NO_TYPEPROVIDERS
         match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyArgsOpt, mExprAndItem, mItem) with
