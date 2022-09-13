@@ -8258,8 +8258,9 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen (cenv: cenv) overallTy env
                 // first: put all positional arguments
                 let mutable currentIndex = 0
                 for arg in unnamedArgs do
-                    fittedArgs[currentIndex] <- arg
-                    currentIndex <- currentIndex + 1
+                    if currentIndex < fittedArgs.Length then
+                        fittedArgs[currentIndex] <- arg
+                        currentIndex <- currentIndex + 1
 
                 let SEEN_NAMED_ARGUMENT = -1
 
