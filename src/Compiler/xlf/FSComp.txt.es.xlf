@@ -477,6 +477,11 @@
         <target state="new">Compress interface and optimization data files</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsGetLangVersions">
+        <source>Display the allowed values for language version.</source>
+        <target state="new">Display the allowed values for language version.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
         <target state="translated">Uso no válido de emitir un ensamblado de referencia, no use "--staticlink', or '--refonly' and '--refout" de forma conjunta.</target>
@@ -485,11 +490,6 @@
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
         <target state="translated">Ruta de acceso de ensamblado de referencia no válida</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsLangVersion">
-        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
-        <target state="translated">Mostrar los valores permitidos para la versión de idioma, especificar la versión de idioma como "latest" "preview"</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimizationData">
@@ -515,6 +515,11 @@
       <trans-unit id="optsReflectionFree">
         <source>Disable implicit generation of constructs using reflection</source>
         <target state="new">Disable implicit generation of constructs using reflection</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSetLangVersion">
+        <source>Specify language version such as 'latest' or 'preview'.</source>
+        <target state="new">Specify language version such as 'latest' or 'preview'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSignatureData">
