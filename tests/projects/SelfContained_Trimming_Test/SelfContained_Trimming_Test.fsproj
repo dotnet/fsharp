@@ -5,9 +5,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <LangVersion>preview</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <RestoreSources>
-      $(MSBuildThisFileDirectory)/../../../artifacts/packages/Release/Release
-    </RestoreSources>
+    <DotNetBuildOffline>true</DotNetBuildOffline>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -28,6 +26,12 @@
   </ItemGroup>
 
   <Import Project="$(MSBuildThisFileDirectory)../../../eng/Versions.props" />
+
+  <PropertyGroup>
+      <RestoreSources>
+        $(MSBuildThisFileDirectory)/../../../artifacts/packages/Release/Release
+      </RestoreSources>
+  </PropertyGroup>
 
   <ItemGroup>
       <PackageReference Include="FSharp.Core" Version="$(FSCoreProductVersion).*"/>
