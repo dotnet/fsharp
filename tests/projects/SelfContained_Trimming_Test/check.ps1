@@ -14,10 +14,10 @@ if (-not ($output -eq $expected))
 }
 
 # Checking that FSharp.Core binary is of expected size (needs adjustments if test is updated).
-$expected_len = 2181120 # In bytes
+$expected_len = 2181119  # In bytes
 $file = Get-Item .\bin\Release\net7.0\win-x64\publish\FSharp.Core.dll
 $file_len = $file.Length
-if ($file_len -ge $expected_len)
+if ($file_len -le $expected_len)
 {
     Write-Error "Test failed with unexpected FSharp.Core length:`nExpected:`n`t${expected_len} Bytes`nActual:`n`t${file_len} Bytes" -ErrorAction Stop
 }
