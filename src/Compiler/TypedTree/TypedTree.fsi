@@ -292,6 +292,7 @@ exception UndefinedName of depth: int * error: (string -> string) * id: Ident * 
 
 exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
 
+[<CustomEquality; NoComparison>]
 type ModuleOrNamespaceKind =
 
     /// Indicates that a module is compiled to a class with the "Module" suffix added.
