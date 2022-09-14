@@ -750,14 +750,21 @@ let ParseInputFiles
         let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofList
 
         if tcConfig.concurrentBuild then
-            let exiter = DiagnosticsLogger.QuitProcessExiter
+            let mutable exitCode = 0
+
+            let delayedExiter =
+                { new Exiter with
+                    member _.Exit n =
+                        exitCode <- n
+                        raise StopProcessing
+                }
 
             // Check input files and create delayed error loggers before we try to parallel parse.
             let delayedDiagnosticsLoggers =
                 sourceFiles
                 |> Array.map (fun (fileName, _) ->
                     checkInputFile tcConfig fileName
-                    createDiagnosticsLogger exiter)
+                    createDiagnosticsLogger (delayedExiter))
 
             let results =
                 try
@@ -783,7 +790,7 @@ let ParseInputFiles
                         delayedDiagnosticsLoggers
                         |> Array.iter (fun delayedDiagnosticsLogger -> delayedDiagnosticsLogger.CommitDelayedDiagnostics diagnosticsLogger)
                 with StopProcessing ->
-                    exiter.Exit 0
+                    exiter.Exit exitCode
 
             results |> List.ofArray
         else
