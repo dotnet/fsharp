@@ -8,7 +8,6 @@ namespace FSharp.Compiler.CodeAnalysis.Hosted
 open System
 open System.IO
 open System.Text.RegularExpressions
-open FSharp.Compiler
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Driver
 open FSharp.Compiler.DiagnosticsLogger
@@ -98,7 +97,9 @@ type internal InProcCompiler(legacyReferenceResolver) =
 
         let loggerProvider = InProcDiagnosticsLoggerProvider()
         let mutable exitCode = 0
-        let exiter = DiagnosticsLogger.QuitProcessExiter
+        let exiter = 
+            { new Exiter with
+                 member _.Exit n = exitCode <- n; raise StopProcessing }
         try 
             CompileFromCommandLineArguments (
                 ctok, argv, legacyReferenceResolver,

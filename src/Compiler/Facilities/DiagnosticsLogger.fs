@@ -169,7 +169,6 @@ let QuitProcessExiter =
         member _.Exit n =
             try
                 Environment.Exit n
-                raise StopProcessing
             with _ ->
                 ()
 
