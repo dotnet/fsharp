@@ -16,9 +16,7 @@ World
 -the end
 Test 3=================================================
 
-> module FSI_0001
-
-[Loading D:\staging\staging\src\tests\fsharp\core\load-script\1.fsx
+> [Loading D:\staging\staging\src\tests\fsharp\core\load-script\1.fsx
  Loading D:\staging\staging\src\tests\fsharp\core\load-script\2.fsx
  Loading D:\staging\staging\src\tests\fsharp\core\load-script\3.fsx]
 Hello
