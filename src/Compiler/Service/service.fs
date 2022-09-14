@@ -116,8 +116,13 @@ module CompileHelpers =
         use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
         use unwindEL_2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
 
+        let exiter =
+            { new Exiter with
+                member x.Exit n = raise StopProcessing
+            }
+
         try
-            f DiagnosticsLogger.QuitProcessExiter
+            f exiter
             0
         with e ->
             stopProcessingRecovery e range0
