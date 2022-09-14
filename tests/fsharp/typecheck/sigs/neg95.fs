@@ -51,11 +51,11 @@ namespace Neg95B
     [<Struct>]
     type StructUnion = StructUnion of float * StructUnion 
 
-    [<Struct>]
-    type StructUnion2 = A of int | B of string
-
-    [<Struct>]
-    type StructUnion3 = A of X:int | B of X:string
+    // [<Struct>]
+    // type StructUnion2 = A of int | B of string
+    //
+    // [<Struct>]
+    // type StructUnion3 = A of X:int | B of X:string
 
     [<Struct>]
     type StructUnion4 = A of X:int | B of Y:StructUnion4
