@@ -510,6 +510,14 @@ type SynType =
 
     | Paren of innerType: SynType * range: range
 
+    /// F# syntax: a: b, used in signatures and type annotations
+    | SignatureParameter of
+        attributes: SynAttributes *
+        optional: bool *
+        id: Ident option *
+        usedType: SynType *
+        range: range
+
     /// Gets the syntax range of this construct
     member Range: range
 
