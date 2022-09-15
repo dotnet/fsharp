@@ -180,7 +180,11 @@ module internal PrintUtilities =
         let isArray = not prefix && isArrayTyconRef denv.g tcref
         let demangled = 
             if isArray then
-                tcref.DisplayNameCore // no backticks for arrays "int[]"
+                let numberOfCommas = tcref.CompiledName |> Seq.filter (fun c -> c = ',') |> Seq.length
+                if numberOfCommas = 0 then
+                    "array"
+                else
+                    $"array{numberOfCommas + 1}d"
             else
                 let name =
                     if denv.includeStaticParametersInTypeNames then 
@@ -198,11 +202,7 @@ module internal PrintUtilities =
             tagEntityRefName denv tcref demangled
             |> mkNav tcref.DefinitionRange
 
-        let tyconTextL =
-            if isArray then
-                tyconTagged |> rightL
-            else
-                tyconTagged |> wordL
+        let tyconTextL = tyconTagged |> wordL
 
         if denv.shortTypeNames then 
             tyconTextL
@@ -873,6 +873,16 @@ module PrintTypes =
             | [arg] -> layoutTypeWithInfoAndPrec denv env 2 arg ^^ tcL
             | args -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 (sepL (tagPunctuation ",")) args) --- tcL)
 
+    and layoutTypeForGenericMultidimensionalArrays denv env prec tcref innerT level =
+        let innerLayout = layoutTypeWithInfoAndPrec denv env prec innerT
+
+        let arrayLayout =
+            tagEntityRefName denv tcref $"array{level}d"
+            |> mkNav tcref.DefinitionRange
+            |> wordL
+        
+        innerLayout ^^ arrayLayout
+    
     /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec ty =
         let g = denv.g
@@ -893,6 +903,10 @@ module PrintTypes =
         // Always prefer 'float' to 'float<1>'
         | TType_app (tc, args, _) when tc.IsMeasureableReprTycon && List.forall (isDimensionless g) args ->
           layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided g tc args)
+        
+        // Special case for nested array<array<'t>> shape
+        | TTypeMultiDimensionalArrayAsGeneric (tcref, innerT, level) ->
+            layoutTypeForGenericMultidimensionalArrays denv env prec tcref innerT level
 
         // Layout a type application
         | TType_ucase (UnionCaseRef(tc, _), args)
