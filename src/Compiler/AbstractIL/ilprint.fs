@@ -661,16 +661,20 @@ let goutput_fdef _tref env os (fd: ILFieldDef) =
     output_member_access os fd.Access
     output_string os " "
 
-    if fd.IsStatic then output_string os " static "
+    if fd.IsStatic then
+        output_string os " static "
 
-    if fd.IsLiteral then output_string os " literal "
+    if fd.IsLiteral then
+        output_string os " literal "
 
     if fd.IsSpecialName then
         output_string os " specialname rtspecialname "
 
-    if fd.IsInitOnly then output_string os " initonly "
+    if fd.IsInitOnly then
+        output_string os " initonly "
 
-    if fd.NotSerialized then output_string os " notserialized "
+    if fd.NotSerialized then
+        output_string os " notserialized "
 
     goutput_typ env os fd.FieldType
     output_string os " "
@@ -740,7 +744,8 @@ let output_code_label os lab = output_string os (formatCodeLabel lab)
 let goutput_local env os (l: ILLocal) =
     goutput_typ env os l.Type
 
-    if l.IsPinned then output_string os " pinned"
+    if l.IsPinned then
+        output_string os " pinned"
 
 let goutput_param env os (l: ILParameter) =
     match l.Name with
@@ -888,11 +893,11 @@ let rec goutput_instr env os inst =
         output_string os "callvirt "
         goutput_vararg_mspec env os (mspec, varargs)
         output_after_tailcall os tl
-    | I_callconstraint (tl, ty, mspec, varargs) ->
+    | I_callconstraint (callvirt, tl, ty, mspec, varargs) ->
         output_tailness os tl
         output_string os "constraint. "
         goutput_typ env os ty
-        output_string os " callvirt "
+        output_string os (if callvirt then " callvirt " else " call ")
         goutput_vararg_mspec env os (mspec, varargs)
         output_after_tailcall os tl
     | I_castclass ty ->
@@ -985,7 +990,8 @@ let rec goutput_instr env os inst =
             let rank = shape.Rank
             output_parens (output_array ", " (goutput_typ env)) os (Array.create rank PrimaryAssemblyILGlobals.typ_Int32)
     | I_ldelema (ro, _, shape, tok) ->
-        if ro = ReadonlyAddress then output_string os "readonly. "
+        if ro = ReadonlyAddress then
+            output_string os "readonly. "
 
         if shape = ILArrayShape.SingleDimensional then
             output_string os "ldelema "
@@ -1034,7 +1040,8 @@ let rec goutput_instr env os inst =
     | _ -> output_string os "<printing for this instruction is not implemented>"
 
 let goutput_ilmbody env os (il: ILMethodBody) =
-    if il.IsZeroInit then output_string os " .zeroinit\n"
+    if il.IsZeroInit then
+        output_string os " .zeroinit\n"
 
     output_string os " .maxstack "
     output_i32 os il.MaxStack
@@ -1067,7 +1074,8 @@ let goutput_mbody is_entrypoint env os (md: ILMethodDef) =
     | MethodBody.IL il -> goutput_ilmbody env os il.Value
     | _ -> ()
 
-    if is_entrypoint then output_string os " .entrypoint"
+    if is_entrypoint then
+        output_string os " .entrypoint"
 
     output_string os "\n"
     output_string os "}\n"
@@ -1125,11 +1133,14 @@ let goutput_mdef env os (md: ILMethodDef) =
     let menv = ppenv_enter_method (List.length md.GenericParams) env
     output_string os " .method "
 
-    if md.IsHideBySig then output_string os "hidebysig "
+    if md.IsHideBySig then
+        output_string os "hidebysig "
 
-    if md.IsReqSecObj then output_string os "reqsecobj "
+    if md.IsReqSecObj then
+        output_string os "reqsecobj "
 
-    if md.IsSpecialName then output_string os "specialname "
+    if md.IsSpecialName then
+        output_string os "specialname "
 
     if md.IsUnmanagedExport then
         output_string os "unmanagedexp "
@@ -1149,13 +1160,17 @@ let goutput_mdef env os (md: ILMethodDef) =
     (goutput_params menv) os md.Parameters
     output_string os " "
 
-    if md.IsSynchronized then output_string os "synchronized "
+    if md.IsSynchronized then
+        output_string os "synchronized "
 
-    if md.IsMustRun then output_string os "/* mustrun */ "
+    if md.IsMustRun then
+        output_string os "/* mustrun */ "
 
-    if md.IsPreserveSig then output_string os "preservesig "
+    if md.IsPreserveSig then
+        output_string os "preservesig "
 
-    if md.IsNoInline then output_string os "noinlining "
+    if md.IsNoInline then
+        output_string os "noinlining "
 
     if md.IsAggressiveInline then
         output_string os "aggressiveinlining "
@@ -1255,13 +1270,17 @@ let rec goutput_tdef enc env contents os (cd: ILTypeDef) =
         output_string os layout_attr
         output_string os " "
 
-        if cd.IsSealed then output_string os "sealed "
+        if cd.IsSealed then
+            output_string os "sealed "
 
-        if cd.IsAbstract then output_string os "abstract "
+        if cd.IsAbstract then
+            output_string os "abstract "
 
-        if cd.IsSerializable then output_string os "serializable "
+        if cd.IsSerializable then
+            output_string os "serializable "
 
-        if cd.IsComInterop then output_string os "import "
+        if cd.IsComInterop then
+            output_string os "import "
 
         output_sqstring os cd.Name
         goutput_gparams env os cd.GenericParams
@@ -1339,7 +1358,8 @@ let output_assemblyRef os (aref: ILAssemblyRef) =
     output_string os " .assembly extern "
     output_sqstring os aref.Name
 
-    if aref.Retargetable then output_string os " retargetable "
+    if aref.Retargetable then
+        output_string os " retargetable "
 
     output_string os " { "
     output_option output_hash os aref.Hash
