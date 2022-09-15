@@ -138,7 +138,7 @@ module public ParsedInput =
         parsedInput: ParsedInput ->
         partiallyQualifiedName: MaybeUnresolvedIdent[] ->
         insertionPoint: OpenStatementInsertionPoint ->
-            (( (* requiresQualifiedAccessParent: *) ShortIdents option (* autoOpenParent: *)  * ShortIdents option (*  entityNamespace *)  * ShortIdents option (* entity: *)  * ShortIdents) -> (InsertionContextEntity * InsertionContext)[])
+            (( (* requiresQualifiedAccessParent: *) ShortIdents option (* autoOpenParent: *) * ShortIdents option (*  entityNamespace *) * ShortIdents option (* entity: *) * ShortIdents) -> (InsertionContextEntity * InsertionContext)[])
 
     /// Returns `InsertContext` based on current position and symbol idents.
     val FindNearestPointToInsertOpenDeclaration:
@@ -157,6 +157,6 @@ module public ParsedInput =
 // implementation details used by other code in the compiler
 module internal SourceFileImpl =
 
-    val IsInterfaceFile: string -> bool
+    val IsSignatureFile: string -> bool
 
     val GetImplicitConditionalDefinesForEditing: isInteractive: bool -> string list

@@ -2,7 +2,7 @@
 //
 // To run the tests in this file: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 
-namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+namespace VisualFSharp.UnitTests.Editor
 
 open System
 open System.Collections.Generic
@@ -40,7 +40,7 @@ type Worker () =
 
     member _.VerifyCompletionListExactly(fileContents: string, marker: string, expected: List<string>) =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
-        let document = RoslynTestHelpers.CreateDocument(filePath, SourceText.From(fileContents), options = projectOptions)
+        let document = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, SourceText.From(fileContents), options = projectOptions)
         let expected = expected |> Seq.toList
         let actual = 
             let x = FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [])) 
@@ -76,6 +76,3 @@ module FsxCompletionProviderTests =
         // We execute in a seperate appdomain so that we can set BaseDirectory to a non-existent location
         getWorker().VerifyCompletionListExactly(fileContents, "fsi.", expected)
 
-#if EXE
-ShouldTriggerCompletionInFsxFile()
-#endif

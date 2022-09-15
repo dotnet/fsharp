@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="$(MSBuildProjectDirectory)\..\..\eng\Versions.props" />
+ 
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <CachePath>$(MSBuildProjectDirectory)\..\..\artifacts\tmp\$([System.Guid]::NewGuid())</CachePath>
+    <OutputPath>$(CachePath)\bin</OutputPath>
+    <IntermediateOutputPath>$(CachePath)\obj</IntermediateOutputPath>
+    <NUGET_HTTP_CACHE_PATH>$(CachePath)\http_cache</NUGET_HTTP_CACHE_PATH >
+    <RestorePackagesPath>$(CachePath)\nuget_cache</RestorePackagesPath>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RestoreAdditionalProjectSources>https://api.nuget.org/v3/index.json</RestoreAdditionalProjectSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.Compiler.Service" Version="[$(FSharpCompilerServicePackageVersion)]" />
+  </ItemGroup>
+
+</Project>

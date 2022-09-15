@@ -366,7 +366,7 @@ let convReturnInstr ty instr =
     | I_ret -> [ I_box ty; I_ret ]
     | I_call (_, mspec, varargs) -> [ I_call(Normalcall, mspec, varargs) ]
     | I_callvirt (_, mspec, varargs) -> [ I_callvirt(Normalcall, mspec, varargs) ]
-    | I_callconstraint (_, ty, mspec, varargs) -> [ I_callconstraint(Normalcall, ty, mspec, varargs) ]
+    | I_callconstraint (callvirt, _, ty, mspec, varargs) -> [ I_callconstraint(callvirt, Normalcall, ty, mspec, varargs) ]
     | I_calli (_, csig, varargs) -> [ I_calli(Normalcall, csig, varargs) ]
     | _ -> [ instr ]
 
@@ -500,9 +500,11 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
             // nb. should combine the term and type abstraction cases for
             // to allow for term and type variables to be mixed in a single
             // application.
-            if (match laterStruct with
-                | Lambdas_return _ -> false
-                | _ -> true) then
+            if
+                (match laterStruct with
+                 | Lambdas_return _ -> false
+                 | _ -> true)
+            then
 
                 let nowStruct =
                     List.foldBack (fun x y -> Lambdas_forall(x, y)) tyargsl (Lambdas_return nowReturnTy)
@@ -571,6 +573,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 let nowApplyMethDef =
                     mkILGenericVirtualMethod (
                         "Specialize",
+                        ILCallingConv.Instance,
                         ILMemberAccess.Public,
                         addedGenParams (* method is generic over added ILGenericParameterDefs *) ,
                         [],
@@ -622,9 +625,11 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
             let nowReturnTy = mkTyOfLambdas cenv laterStruct
 
             // CASE 2a - Too Many Term Arguments or Remaining Type arguments - Split the Closure Class in Two
-            if (match laterStruct with
-                | Lambdas_return _ -> false
-                | _ -> true) then
+            if
+                (match laterStruct with
+                 | Lambdas_return _ -> false
+                 | _ -> true)
+            then
                 let nowStruct =
                     List.foldBack (fun l r -> Lambdas_lambda(l, r)) nowParams (Lambdas_return nowReturnTy)
 
@@ -703,7 +708,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                     let convil = convILMethodBody (Some nowCloSpec, None) (Lazy.force clo.cloCode)
 
                     let nowApplyMethDef =
-                        mkILNonGenericVirtualMethod (
+                        mkILNonGenericVirtualInstanceMethod (
                             "Invoke",
                             ILMemberAccess.Public,
                             nowParams,

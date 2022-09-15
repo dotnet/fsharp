@@ -246,14 +246,15 @@ module SyntaxTraversal =
                         else
                             None)
                     diveResults
-                with
+            with
             | [] ->
                 // No entity's range contained the desired position.  However the ranges in the parse tree only span actual characters present in the file.
                 // The cursor may be at whitespace between entities or after everything, so find the nearest entity with the range left of the position.
                 let mutable e = diveResults.Head
 
                 for r in diveResults do
-                    if posGt pos (fst r).Start then e <- r
+                    if posGt pos (fst r).Start then
+                        e <- r
 
                 snd (e) ()
             | [ x ] -> x ()
@@ -396,9 +397,11 @@ module SyntaxTraversal =
                                     // special-case:caret is located in the offside position below inherit
                                     // inherit A()
                                     // $
-                                    if not (rangeContainsPos expr.Range pos)
-                                       && sepOpt.IsNone
-                                       && pos.Column = inheritRange.StartColumn then
+                                    if
+                                        not (rangeContainsPos expr.Range pos)
+                                        && sepOpt.IsNone
+                                        && pos.Column = inheritRange.StartColumn
+                                    then
                                         visitor.VisitRecordField(path, None, None)
                                     else
                                         traverseSynExpr expr)
@@ -451,9 +454,11 @@ module SyntaxTraversal =
                                         // special case: caret is below field binding
                                         // field x = 5
                                         // $
-                                        if not (rangeContainsPos e.Range pos)
-                                           && sepOpt.IsNone
-                                           && pos.Column = offsideColumn then
+                                        if
+                                            not (rangeContainsPos e.Range pos)
+                                            && sepOpt.IsNone
+                                            && pos.Column = offsideColumn
+                                        then
                                             visitor.VisitRecordField(path, copyOpt, None)
                                         else
                                             traverseSynExpr expr)
@@ -644,6 +649,8 @@ module SyntaxTraversal =
 
                 | SynExpr.LongIdent (_, _longIdent, _altNameRefCell, _range) -> None
 
+                | SynExpr.Typar (_typar, _range) -> None
+
                 | SynExpr.LongIdentSet (_longIdent, synExpr, _range) -> traverseSynExpr synExpr
 
                 | SynExpr.DotGet (synExpr, _dotm, _longIdent, _range) -> traverseSynExpr synExpr
@@ -814,10 +821,15 @@ module SyntaxTraversal =
                 | SynType.Array (_, ty, _) -> traverseSynType path ty
                 | SynType.StaticConstantNamed (ty1, ty2, _)
                 | SynType.MeasureDivide (ty1, ty2, _) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
-                | SynType.Tuple (_, tys, _) -> tys |> List.map snd |> List.tryPick (traverseSynType path)
+                | SynType.Tuple (path = segments) -> getTypeFromTuplePath segments |> List.tryPick (traverseSynType path)
                 | SynType.StaticConstantExpr (expr, _) -> traverseSynExpr [] expr
-                | SynType.Anon _ -> None
-                | _ -> None
+                | SynType.Paren (innerType = t)
+                | SynType.SignatureParameter (usedType = t) -> traverseSynType path t
+                | SynType.Anon _
+                | SynType.AnonRecd _
+                | SynType.LongIdent _
+                | SynType.Var _
+                | SynType.StaticConstant _ -> None
 
             visitor.VisitType(origPath, defaultTraverse, ty)
 

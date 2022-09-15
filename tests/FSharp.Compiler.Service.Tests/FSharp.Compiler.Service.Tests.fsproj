@@ -3,8 +3,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net472;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <!-- Workaround to get rid of:
         error NU1505: Duplicate 'PackageDownload' items found.
         Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
@@ -20,6 +20,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="expected-help-output.bsl">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Content>
     <Compile Include="..\fsharp\TestHelpers.fs" Link="TestHelpers.fs" />
     <Compile Include="LibraryTestFx.fs" />
     <Compile Include="SurfaceArea.netstandard.fs" />
@@ -37,6 +40,78 @@
     </Compile>
     <Compile Include="..\service\Symbols.fs">
       <Link>Symbols.fs</Link>
+    </Compile>
+    <Compile Include="TestDoubles.fs" />
+    <Compile Include="ConsoleOnlyOptionsTests.fs" />
+    <Compile Include="VisualStudioVersusConsoleContextTests.fs" />
+    <Compile Include="..\service\SyntaxTreeTests\TypeTests.fs">
+      <Link>SyntaxTree\TypeTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\ExpressionTests.fs">
+      <Link>SyntaxTree\ExpressionTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\StringTests.fs">
+      <Link>SyntaxTree\StringTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\ModuleOrNamespaceTests.fs">
+      <Link>SyntaxTree\ModuleOrNamespaceTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\ModuleOrNamespaceSigTests.fs">
+      <Link>SyntaxTree\ModuleOrNamespaceSigTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\SignatureTypeTests.fs">
+      <Link>SyntaxTree\SignatureTypeTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\MeasureTests.fs">
+      <Link>SyntaxTree\MeasureTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\MatchClauseTests.fs">
+      <Link>SyntaxTree\MatchClauseTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\SourceIdentifierTests.fs">
+      <Link>SyntaxTree\SourceIdentifierTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\NestedModuleTests.fs">
+      <Link>SyntaxTree\NestedModuleTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\BindingTests.fs">
+      <Link>SyntaxTree\BindingTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\ParsedHashDirectiveTests.fs">
+      <Link>SyntaxTree\ParsedHashDirectiveTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\LambdaTests.fs">
+      <Link>SyntaxTree\LambdaTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\IfThenElseTests.fs">
+      <Link>SyntaxTree\IfThenElseTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\UnionCaseTests.fs">
+      <Link>SyntaxTree\UnionCaseTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\EnumCaseTests.fs">
+      <Link>SyntaxTree\EnumCaseTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\PatternTests.fs">
+      <Link>SyntaxTree\PatternTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\ExceptionTests.fs">
+      <Link>SyntaxTree\ExceptionTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\MemberFlagTests.fs">
+      <Link>SyntaxTree\MemberFlagTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\ComputationExpressionTests.fs">
+      <Link>SyntaxTree\ComputationExpressionTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\ConditionalDirectiveTests.fs">
+      <Link>SyntaxTree\ConditionalDirectiveTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\CodeCommentTests.fs">
+      <Link>SyntaxTree\CodeCommentTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\OperatorNameTests.fs">
+      <Link>SyntaxTree\OperatorNameTests.fs</Link>
     </Compile>
     <Compile Include="..\service\FileSystemTests.fs">
       <Link>FileSystemTests.fs</Link>

@@ -195,9 +195,10 @@ module MainModuleBuilder =
                 "System.Runtime.Numerics"
 
         let numericsAssemblyRef =
-            match tcImports.GetImportedAssemblies()
-                  |> List.tryFind<ImportedAssembly> (fun a -> a.FSharpViewOfMetadata.AssemblyName = refNumericsDllName)
-                with
+            match
+                tcImports.GetImportedAssemblies()
+                |> List.tryFind<ImportedAssembly> (fun a -> a.FSharpViewOfMetadata.AssemblyName = refNumericsDllName)
+            with
             | Some asm ->
                 match asm.ILScopeRef with
                 | ILScopeRef.Assembly aref -> Some aref
@@ -391,12 +392,7 @@ module MainModuleBuilder =
                     yield! codegenResults.ilAssemAttrs
 
                     if Option.isSome pdbfile then
-                        tcGlobals.mkDebuggableAttributeV2 (
-                            tcConfig.jitTracking,
-                            tcConfig.ignoreSymbolStoreSequencePoints,
-                            disableJitOptimizations,
-                            false (* enableEnC *)
-                        )
+                        tcGlobals.mkDebuggableAttributeV2 (tcConfig.jitTracking, disableJitOptimizations, false (* enableEnC *) )
                     yield! reflectedDefinitionAttrs
                 ]
 
@@ -418,7 +414,6 @@ module MainModuleBuilder =
                         CustomAttrsStored = storeILCustomAttrs manifestAttrs
                         DisableJitOptimizations = disableJitOptimizations
                         JitTracking = tcConfig.jitTracking
-                        IgnoreSymbolStoreSequencePoints = tcConfig.ignoreSymbolStoreSequencePoints
                         SecurityDeclsStored = storeILSecurityDecls secDecls
                     }
 
@@ -581,10 +576,11 @@ module MainModuleBuilder =
                 tcConfig.win32manifest
 
             // don't embed a manifest if target is not an exe, if manifest is specifically excluded, if another native resource is being included, or if running on mono
-            elif not (tcConfig.target.IsExe)
-                 || not (tcConfig.includewin32manifest)
-                 || not (tcConfig.win32res = "")
-                 || runningOnMono then
+            elif
+                not (tcConfig.target.IsExe)
+                || not (tcConfig.includewin32manifest)
+                || not (tcConfig.win32res = "")
+            then
                 ""
             // otherwise, include the default manifest
             else
@@ -607,7 +603,7 @@ module MainModuleBuilder =
                     ILNativeResource.Out av
                 if not (tcConfig.win32res = "") then
                     ILNativeResource.Out(FileSystem.OpenFileForReadShim(tcConfig.win32res).ReadAllBytes())
-                if tcConfig.includewin32manifest && not (win32Manifest = "") && not runningOnMono then
+                if tcConfig.includewin32manifest && not (win32Manifest = "") then
                     ILNativeResource.Out
                         [|
                             yield! ResFileFormat.ResFileHeader()
@@ -617,9 +613,11 @@ module MainModuleBuilder =
                                     tcConfig.target = CompilerTarget.Dll
                                 ))
                         |]
-                if tcConfig.win32res = ""
-                   && tcConfig.win32icon <> ""
-                   && tcConfig.target <> CompilerTarget.Dll then
+                if
+                    tcConfig.win32res = ""
+                    && tcConfig.win32icon <> ""
+                    && tcConfig.target <> CompilerTarget.Dll
+                then
                     use ms = new MemoryStream()
                     use iconStream = FileSystem.OpenFileForReadShim(tcConfig.win32icon)
                     Win32ResourceConversions.AppendIconToResourceStream(ms, iconStream)

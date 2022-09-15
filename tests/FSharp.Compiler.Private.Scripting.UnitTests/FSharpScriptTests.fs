@@ -318,19 +318,6 @@ typeof<System.Device.Gpio.GpioController>.Assembly.Location
             ()
 
     [<Fact>]
-    member _.``Reference -- Azure.ResourceManager.Resources``() =
-        let code = """
-#r "nuget: Azure.Identity, 1.3.0"
-#r "nuget: Azure.ResourceManager.Resources, 1.0.0-preview.2"
-let creds = Azure.Identity.DefaultAzureCredential()
-let client = Azure.ResourceManager.Resources.ResourcesManagementClient("mySubscriptionId", creds)
-true"""
-        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
-        let opt = script.Eval(code)  |> getValue
-        let value = opt.Value
-        Assert.True(true = downcast value.ReflectionValue)
-
-    [<Fact>]
     member _.``Simple pinvoke should not be impacted by native resolver``() =
         let code = @"
 open System
