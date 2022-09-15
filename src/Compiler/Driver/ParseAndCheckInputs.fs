@@ -737,7 +737,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
 /// Parse multiple input files from disk
 let ParseInputFiles
     (
-        tcConfig: TcConfig,
+        tcConfigB: TcConfigBuilder,
         lexResourceManager,
         sourceFiles,
         diagnosticsLogger: DiagnosticsLogger,
@@ -746,6 +746,8 @@ let ParseInputFiles
         retryLocked
     ) =
     try
+        let tcConfig = TcConfig.Create(tcConfigB, validate = false)
+
         let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
         let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofList
 
@@ -758,6 +760,8 @@ let ParseInputFiles
                         exitCode <- n
                         raise StopProcessing
                 }
+
+            tcConfigB.exiter <- delayedExiter
 
             // Check input files and create delayed error loggers before we try to parallel parse.
             let delayedDiagnosticsLoggers =
