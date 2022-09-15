@@ -103,7 +103,7 @@ module Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 10, Col 3, Line 10, Col 59, "This expression was expected to have type\n    'int[]'    \nbut here has type\n    'unit'    ")
+            (Error 1, Line 10, Col 3, Line 10, Col 59, "This expression was expected to have type\n    'int array'    \nbut here has type\n    'unit'    ")
             (Error 267, Line 10, Col 3, Line 10, Col 59, "This is not a valid constant expression or custom attribute value")
             (Error 850, Line 10, Col 3, Line 10, Col 59, "This attribute cannot be used in this version of F#")
             (Error 850, Line 13, Col 3, Line 13, Col 52, "This attribute cannot be used in this version of F#")
