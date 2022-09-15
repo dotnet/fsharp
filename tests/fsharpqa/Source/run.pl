@@ -278,6 +278,10 @@ if($ENV{REDUCED_RUNTIME} ne "1"){
        }
      }
 
+     if(!defined($PEVERIFY)) {
+        $PEVERIFY = "PEVerify.exe";
+     }
+
      # Use $ENV{PEVER} if it is defined
      my $PEVER_ARG = $ENV{PEVER};
 
