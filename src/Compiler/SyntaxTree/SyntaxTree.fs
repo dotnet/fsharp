@@ -439,6 +439,8 @@ type SynType =
 
     | Paren of innerType: SynType * range: range
 
+    | SignatureParameter of attributes: SynAttributes * optional: bool * id: Ident option * usedType: SynType * range: range
+
     member x.Range =
         match x with
         | SynType.App (range = m)
@@ -456,7 +458,8 @@ type SynType =
         | SynType.HashConstraint (range = m)
         | SynType.MeasureDivide (range = m)
         | SynType.MeasurePower (range = m)
-        | SynType.Paren (range = m) -> m
+        | SynType.Paren (range = m)
+        | SynType.SignatureParameter (range = m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
