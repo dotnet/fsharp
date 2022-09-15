@@ -394,14 +394,24 @@ let MainMain argv =
          || x = "/shadowcopyreferences+"
          || x = "--shadowcopyreferences+")
 
+    let executeFsi shadowCopyFiles =
+        if shadowCopyFiles then
+            let setupInformation = AppDomain.CurrentDomain.SetupInformation
+            setupInformation.ShadowCopyFiles <- "true"
+            let helper = AppDomain.CreateDomain("FSI_Domain", null, setupInformation)
+            helper.ExecuteAssemblyByName(Assembly.GetExecutingAssembly().GetName())
+        else
+            evaluateSession (argv)
+
     if
         AppDomain.CurrentDomain.IsDefaultAppDomain()
         && argv |> Array.exists isShadowCopy
     then
-        let setupInformation = AppDomain.CurrentDomain.SetupInformation
-        setupInformation.ShadowCopyFiles <- "true"
-        let helper = AppDomain.CreateDomain("FSI_Domain", null, setupInformation)
-        helper.ExecuteAssemblyByName(Assembly.GetExecutingAssembly().GetName())
+        try
+            executeFsi true
+        with
+        | :? FileLoadException ->
+            executeFsi false
     else
         evaluateSession (argv)
 #else
