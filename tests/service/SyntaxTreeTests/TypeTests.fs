@@ -534,7 +534,7 @@ type Foo = delegate of a: A * b: B -> c:C -> D
  """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile (ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(typeDefns = [
                 SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(kind =
@@ -569,7 +569,7 @@ type X =
  """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile (ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(typeDefns = [
                 SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(
