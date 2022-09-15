@@ -404,13 +404,12 @@ let MainMain argv =
             evaluateSession (argv)
 
     let tryShadowCopy =
-        AppDomain.CurrentDomain.IsDefaultAppDomain() && argv
-        |> Array.exists isShadowCopy
+        AppDomain.CurrentDomain.IsDefaultAppDomain()
+        && argv |> Array.exists isShadowCopy
 
     try
         executeFsi tryShadowCopy
-    with
-    | :? FileLoadException ->
+    with :? FileLoadException ->
         executeFsi false
 #else
     evaluateSession (argv)
