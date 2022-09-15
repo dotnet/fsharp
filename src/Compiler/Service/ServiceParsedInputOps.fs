@@ -669,8 +669,15 @@ module ParsedInput =
             | SynType.HashConstraint (t, _) -> walkType t
             | SynType.MeasureDivide (t1, t2, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.MeasurePower (t, _, _) -> walkType t
-            | SynType.Paren (t, _) -> walkType t
-            | _ -> None
+            | SynType.Paren (t, _)
+            | SynType.SignatureParameter (usedType = t) -> walkType t
+            | SynType.StaticConstantExpr (e, _) -> walkExpr e
+            | SynType.StaticConstantNamed (ident, value, _) -> List.tryPick walkType [ ident; value ]
+            | SynType.Anon _
+            | SynType.AnonRecd _
+            | SynType.LongIdent _
+            | SynType.Var _
+            | SynType.StaticConstant _ -> None
 
         and walkClause clause =
             let (SynMatchClause (pat = pat; whenExpr = e1; resultExpr = e2)) = clause
@@ -1661,7 +1668,8 @@ module ParsedInput =
             | SynType.Array (_, t, _)
             | SynType.HashConstraint (t, _)
             | SynType.MeasurePower (t, _, _)
-            | SynType.Paren (t, _) -> walkType t
+            | SynType.Paren (t, _)
+            | SynType.SignatureParameter (usedType = t) -> walkType t
             | SynType.Fun (argType = t1; returnType = t2)
             | SynType.MeasureDivide (t1, t2, _) ->
                 walkType t1
@@ -1675,7 +1683,14 @@ module ParsedInput =
             | SynType.WithGlobalConstraints (t, typeConstraints, _) ->
                 walkType t
                 List.iter walkTypeConstraint typeConstraints
-            | _ -> ()
+            | SynType.StaticConstantExpr (e, _) -> walkExpr e
+            | SynType.StaticConstantNamed (ident, value, _) ->
+                walkType ident
+                walkType value
+            | SynType.Anon _
+            | SynType.AnonRecd _
+            | SynType.Var _
+            | SynType.StaticConstant _ -> ()
 
         and walkClause (SynMatchClause (pat = pat; whenExpr = e1; resultExpr = e2)) =
             walkPat pat
