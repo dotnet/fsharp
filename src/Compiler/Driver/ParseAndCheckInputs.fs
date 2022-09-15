@@ -737,17 +737,14 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
 /// Parse multiple input files from disk
 let ParseInputFiles
     (
-        tcConfigB: TcConfigBuilder,
+        tcConfig: TcConfig,
         lexResourceManager,
         sourceFiles,
         diagnosticsLogger: DiagnosticsLogger,
-        exiter: Exiter,
         createDiagnosticsLogger: Exiter -> CapturingDiagnosticsLogger,
         retryLocked
     ) =
     try
-        let tcConfig = TcConfig.Create(tcConfigB, validate = false)
-
         let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
         let sourceFiles = isLastCompiland |> List.zip sourceFiles |> Array.ofList
 
@@ -760,8 +757,6 @@ let ParseInputFiles
                         exitCode <- n
                         raise StopProcessing
                 }
-
-            tcConfigB.exiter <- delayedExiter
 
             // Check input files and create delayed error loggers before we try to parallel parse.
             let delayedDiagnosticsLoggers =
@@ -794,7 +789,7 @@ let ParseInputFiles
                         delayedDiagnosticsLoggers
                         |> Array.iter (fun delayedDiagnosticsLogger -> delayedDiagnosticsLogger.CommitDelayedDiagnostics diagnosticsLogger)
                 with StopProcessing ->
-                    exiter.Exit exitCode
+                    tcConfig.exiter.Exit exitCode
 
             results |> List.ofArray
         else
@@ -810,7 +805,7 @@ let ParseInputFiles
 
     with e ->
         errorRecoveryNoRange e
-        exiter.Exit 1
+        tcConfig.exiter.Exit 1
 
 let ProcessMetaCommandsFromInput
     (nowarnF: 'state -> range * string -> 'state,

@@ -100,11 +100,10 @@ val EmptyParsedInput: fileName: string * isLastCompiland: (bool * bool) -> Parse
 
 /// Parse multiple input files from disk
 val ParseInputFiles:
-    tcConfigB: TcConfigBuilder *
+    tcConfig: TcConfig *
     lexResourceManager: Lexhelp.LexResourceManager *
     sourceFiles: string list *
     diagnosticsLogger: DiagnosticsLogger *
-    exiter: Exiter *
     createDiagnosticsLogger: (Exiter -> CapturingDiagnosticsLogger) *
     retryLocked: bool ->
         (ParsedInput * string) list
