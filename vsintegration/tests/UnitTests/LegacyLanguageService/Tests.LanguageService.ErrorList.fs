@@ -297,8 +297,8 @@ let x =
 Known type of argument: 'a0 when 'a0: null
 
 Candidates:
- - System.Console.WriteLine(buffer: char[]) : unit
- - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj[]) : unit
+ - System.Console.WriteLine(buffer: char array) : unit
+ - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj array) : unit
  - System.Console.WriteLine(value: obj) : unit
  - System.Console.WriteLine(value: string) : unit""" ]
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)

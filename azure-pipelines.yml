@@ -445,7 +445,6 @@ stages:
 
         # MacOS
         - job: MacOS
-          condition: eq(1,2)
           pool:
             vmImage: macos-11
           variables:
@@ -576,7 +575,6 @@ stages:
 
         # Plain build Mac
         - job: Plain_Build_MacOS
-          condition: eq(1,2)
           pool:
             vmImage: macos-11
           variables:
@@ -606,6 +604,50 @@ stages:
             env:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
+
+        # Test trimming on Windows
+        - job: Build_And_Test_Trimming_Windows
+          pool:
+            name: NetCore-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          strategy:
+            maxParallel: 2
+            matrix:
+              compressed_metadata:
+                _kind: "-compressAllMetadata"
+              classic_metadata:
+                _kind: ""
+          variables:
+          - name: _BuildConfig
+            value: Release
+          steps:
+          - checkout: self
+            clean: true
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
+            displayName: Initial build and prepare packages.
+          - script:  dotnet publish -c $(_BuildConfig)  -bl:\"./bin/$(_BuildConfig)/net7.0/win-x64/publish/Trimming.binlog\"
+            displayName: Build and publish a trim test package.
+            workingDirectory: $(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test
+          - script: .\check.cmd
+            displayName: Check the state of the trimmed app.
+            workingDirectory: $(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test
+          - task: PublishPipelineArtifact@1
+            displayName: Publish Trim Tests Logs
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test/bin/$(_BuildConfig)/net7.0/win-x64/publish'
+              artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs $(_kind)'
+            continueOnError: true
+            condition: always()
 
     # Arcade-powered source build
     # turned off until https://github.com/dotnet/source-build/issues/1795 is fixed
