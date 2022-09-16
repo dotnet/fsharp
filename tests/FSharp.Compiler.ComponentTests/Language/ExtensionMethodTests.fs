@@ -145,5 +145,132 @@ namespace Consumer
 
         csharp |> compile |> shouldSucceed
 
-// TODO: verify nested module versus toplevel modules, recursive modules versus non recursive modules
-// This may require some refactoring to extract some shared logic.
+    [<Fact>]
+    let ``Toplevel named module with Extension attribute and top level let binding with Extension attribute`` () =
+        let fsharp =
+            FSharp """
+    [<System.Runtime.CompilerServices.Extension>]
+    module Foo
+
+    [<System.Runtime.CompilerServices.Extension>]
+    let PlusOne (a:int) = a + 1
+    """
+           |> withName "FSLib"
+        
+        let csharp =
+            CSharp """
+    namespace Consumer
+    {
+        using static Foo;
+
+        public class Class1
+        {
+            public Class1()
+            {
+                var meh = 1.PlusOne();
+            }
+        }
+    }
+    """
+
+            |> withName "CSLib"
+            |> withReferences [ fsharp ]
+        
+        csharp |> compile |> shouldSucceed
+
+    [<Fact>]
+    let ``Toplevel named module without Extension attribute and top level let binding with Extension attribute`` () =
+        let fsharp =
+            FSharp """
+    module Foo
+
+    [<System.Runtime.CompilerServices.Extension>]
+    let PlusOne (a:int) = a + 1
+    """
+           |> withName "FSLib"
+        
+        let csharp =
+            CSharp """
+    namespace Consumer
+    {
+        using static Foo;
+
+        public class Class1
+        {
+            public Class1()
+            {
+                var meh = 1.PlusOne();
+            }
+        }
+    }
+    """
+
+            |> withName "CSLib"
+            |> withReferences [ fsharp ]
+        
+        csharp |> compile |> shouldSucceed
+
+    [<Fact>]
+    let ``Recursive toplevel named module with Extension attribute and top level let binding with Extension attribute`` () =
+        let fsharp =
+            FSharp """
+    [<System.Runtime.CompilerServices.Extension>]
+    module rec Foo
+
+    [<System.Runtime.CompilerServices.Extension>]
+    let PlusOne (a:int) = a + 1
+    """
+           |> withName "FSLib"
+        
+        let csharp =
+            CSharp """
+    namespace Consumer
+    {
+        using static Foo;
+
+        public class Class1
+        {
+            public Class1()
+            {
+                var meh = 1.PlusOne();
+            }
+        }
+    }
+    """
+
+            |> withName "CSLib"
+            |> withReferences [ fsharp ]
+        
+        csharp |> compile |> shouldSucceed
+
+    [<Fact>]
+    let ``Recursive toplevel named module without Extension attribute and top level let binding with Extension attribute`` () =
+        let fsharp =
+            FSharp """
+    module rec Foo
+
+    [<System.Runtime.CompilerServices.Extension>]
+    let PlusOne (a:int) = a + 1
+    """
+           |> withName "FSLib"
+        
+        let csharp =
+            CSharp """
+    namespace Consumer
+    {
+        using static Foo;
+
+        public class Class1
+        {
+            public Class1()
+            {
+                var meh = 1.PlusOne();
+            }
+        }
+    }
+    """
+
+            |> withName "CSLib"
+            |> withReferences [ fsharp ]
+        
+        csharp |> compile |> shouldSucceed
