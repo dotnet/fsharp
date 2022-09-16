@@ -10384,7 +10384,7 @@ let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceC
                 | ModuleOrNamespaceContents.TMDefRec _
                 | ModuleOrNamespaceContents.TMDefs _ -> true
                 | _ -> false)
-        
+
         let emptyModuleOrNamespaces =
             defs
             |> List.choose (function
@@ -10406,4 +10406,18 @@ let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceC
             Some emptyModuleOrNamespaces
         else
             None
+    | _ -> None
+
+let (|TTypeMultiDimensionalArrayAsGeneric|_|) (t: TType) =
+    let rec (|Impl|_|) t =
+        match t with
+        | TType_app(tc, [Impl(outerTc, innerT, currentLevel)], _) when tc.DisplayNameCore = "array" ->
+            Some (outerTc, innerT, currentLevel + 1)
+        | TType_app(tc, [arg], _) when tc.DisplayNameCore = "array" ->
+            Some (tc, arg, 1)
+        | _ -> None
+
+    match t with
+    | Impl (tc, arg, level) ->
+        if level > 2 then Some (tc, arg, level) else None
     | _ -> None

@@ -1059,3 +1059,19 @@ let getTypeFromTuplePath (path: SynTupleTypeSegment list) : SynType list =
     |> List.choose (function
         | SynTupleTypeSegment.Type t -> Some t
         | _ -> None)
+
+let (|MultiDimensionArrayType|_|) (t: SynType) =
+    match t with
+    | SynType.App (StripParenTypes (SynType.LongIdent (SynLongIdent ([ identifier ], _, _))), _, [ elementType ], _, _, true, m) ->
+        if System.Text.RegularExpressions.Regex.IsMatch(identifier.idText, "^array\d\d?d$") then
+            let rank =
+                identifier.idText
+                |> Seq.filter System.Char.IsDigit
+                |> Seq.toArray
+                |> System.String
+                |> int
+
+            Some(rank, elementType, m)
+        else
+            None
+    | _ -> None
