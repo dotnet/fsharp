@@ -2438,10 +2438,10 @@ namespace Microsoft.FSharp.Core
 
         /// <summary>The representation of "Value of type 'T"</summary>
         ///
-        /// <param name="Item">The input value.</param>
+        /// <param name="value">The input value.</param>
         ///
         /// <returns>An option representing the value.</returns>
-        | ValueSome: 'T -> 'T voption
+        | ValueSome: value:'T -> 'T voption
 
         /// <summary>Get the value of a 'ValueSome' option. An InvalidOperationException is raised if the option is 'ValueNone'.</summary>
         member Value: 'T
