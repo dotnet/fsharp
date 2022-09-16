@@ -230,4 +230,4 @@ module M =
         """
          |> withXmlCommentChecking
          |> compile
-         |> withDiagnostics [  ]
+         |> withDiagnostics [ ]
