@@ -510,6 +510,8 @@ let main1
             rangeForErrors = range0
         )
 
+    tcConfigB.exiter <- exiter
+
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
     SetDebugSwitch tcConfigB None OptionSwitch.Off
