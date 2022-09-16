@@ -69,6 +69,7 @@ module SessionsProperties =
     let mutable fsiShadowCopy = true
     let mutable fsiDebugMode = false
     let mutable fsiPreview = false
+    let ServerPrompt="SERVER-PROMPT>" + Environment.NewLine
 
 // This code pre-dates the events/object system.
 // Later: Tidy up.
@@ -129,7 +130,7 @@ let catchAll trigger x =
     with err -> System.Windows.Forms.MessageBox.Show(err.ToString()) |> ignore
 
 let determineFsiPath () =    
-    if SessionsProperties.fsiUseNetCore then 
+    if SessionsProperties.fsiUseNetCore then
         let pf = Environment.GetEnvironmentVariable("ProgramW6432")
         let pf = if String.IsNullOrEmpty(pf) then Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) else pf
         let exe = Path.Combine(pf,"dotnet","dotnet.exe") 
@@ -176,34 +177,45 @@ let determineFsiPath () =
             raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe fsiRegistryPath))
         fsiExe, "", true, true
 
-let readLinesAsync (reader: StreamReader) trigger =
+let readOutputAsync (reader: StreamReader) trigger =
     let buffer = StringBuilder(1024)
     let byteBuffer = Array.zeroCreate 128
     let encoding = Encoding.UTF8
     let decoder = encoding.GetDecoder()
     let async0 = async.Return 0
-    let charBuffer = 
+    let charBuffer =
         let maxCharsInBuffer = encoding.GetMaxCharCount byteBuffer.Length
         Array.zeroCreate maxCharsInBuffer
 
     let rec findLinesInBuffer pos =
-        if pos >= buffer.Length then max (buffer.Length - 1) 0 // exit and point to the last char
+        if pos >= buffer.Length then
+            max (buffer.Length - 1) 0 // exit and point to the last char
         else
-        let c = buffer.[pos]
-        let deletePos = match c with
-                        | '\r' when (pos + 1) < buffer.Length && buffer.[pos + 1] = '\n' -> Some(pos + 2)
+            let deletePos =
+                let rec loop pos =
+                    if pos < buffer.Length then
+                        match buffer.[pos] with
+                        | '\r' when (pos + 1) < buffer.Length && buffer.[pos + 1] = '\n' -> Some(pos, pos + 2)
                         | '\r' when (pos + 1) = buffer.Length -> None
-                        | '\r' -> Some(pos + 1)
-                        | '\n' -> Some(pos + 1)
-                        | _  ->  None
+                        | '\r' -> Some(pos, pos + 1)
+                        | '\n' -> Some(pos, pos + 1)
+                        | _  -> loop (pos + 1)
+                    else
+                        None
+                loop pos
 
-        match deletePos with
-        | Some deletePos ->
-            let line = buffer.ToString(0, pos)
-            trigger line
-            buffer.Remove(0, deletePos) |> ignore
-            findLinesInBuffer 0
-        | None ->  findLinesInBuffer (pos + 1)
+            match deletePos with
+            | Some (pos, deletePos) ->
+                let line = buffer.ToString(0, pos) + Environment.NewLine
+                trigger line
+                buffer.Remove(0, deletePos) |> ignore
+                findLinesInBuffer 0
+
+            | None ->
+                let text = buffer.ToString(0, buffer.Length)
+                buffer.Remove(0, buffer.Length) |> ignore
+                trigger text
+                findLinesInBuffer 0
 
     let rec read pos = 
         async {
@@ -298,7 +310,7 @@ type FsiSession(sourceFile: string) =
     let mutable skipLines = 0
 
     // hook up stdout\stderr data events
-    do readLinesAsync cmdProcess.StandardOutput (fun line ->
+    do readOutputAsync cmdProcess.StandardOutput (fun line ->
            // For .NET Core, the "dotnet fsi ..." starts a second process "dotnet ..../fsi.dll ..."
            // So the first thing we ask a .NET Core F# Interactive to do is report its true process ID.
            // 
@@ -316,7 +328,7 @@ type FsiSession(sourceFile: string) =
            else
                catchAll fsiOutput.Trigger line)
 
-    do readLinesAsync cmdProcess.StandardError  (catchAll fsiError.Trigger)
+    do readOutputAsync cmdProcess.StandardError  (catchAll fsiError.Trigger)
 
     let inputQueue = 
         // Write the input asynchronously, freeing up the IDE thread to contrinue doing work
