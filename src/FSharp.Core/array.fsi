@@ -35,7 +35,7 @@ module Array =
     /// </code>
     /// </example>
     [<CompiledName("AllPairs")>]
-    val allPairs: array1:'T1[] -> array2:'T2[] -> ('T1 * 'T2)[]
+    val allPairs: array1:'T1 array -> array2:'T2 array -> ('T1 * 'T2) array
 
     /// <summary>Builds a new array that contains the elements of the first array followed by the elements of the second array.</summary>
     ///
@@ -53,7 +53,7 @@ module Array =
     /// Evaluates to <c>[| 1; 2; 3; 4 |]</c>.
     /// </example>
     [<CompiledName("Append")>]
-    val append: array1:'T[] -> array2:'T[] -> 'T[]
+    val append: array1:'T array -> array2:'T array -> 'T array
 
     /// <summary>Returns the average of the elements in the array.</summary>
     ///
@@ -78,7 +78,7 @@ module Array =
     /// Throws <c>ArgumentException</c>
     /// </example>
     [<CompiledName("Average")>]
-    val inline average   : array:^T[] -> ^T   
+    val inline average   : array:^T array -> ^T   
                              when ^T : (static member ( + ) : ^T * ^T -> ^T) 
                              and  ^T : (static member DivideByInt : ^T*int -> ^T) 
                              and  ^T : (static member Zero : ^T)
@@ -109,14 +109,14 @@ module Array =
     /// <code lang="fsharp">
     /// type Foo = { Bar: float }
     ///
-    /// let input : Foo[] = [| |]
+    /// let input : Foo array = [| |]
     ///
     /// input |> Array.averageBy (fun foo -> foo.Bar)
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
     [<CompiledName("AverageBy")>]
-    val inline averageBy   : projection:('T -> ^U) -> array:'T[] -> ^U   
+    val inline averageBy   : projection:('T -> ^U) -> array:'T array -> ^U   
                                 when ^U : (static member ( + ) : ^U * ^U -> ^U) 
                                 and  ^U : (static member DivideByInt : ^U*int -> ^U) 
                                 and  ^U : (static member Zero : ^U)
@@ -152,7 +152,7 @@ module Array =
     /// After evaluation <c>target</c> contains <c>[| 0; 1; 2; 13; 14; 5 |]</c>.
     /// </example>
     [<CompiledName("CopyTo")>]
-    val inline blit: source:'T[] -> sourceIndex:int -> target:'T[] -> targetIndex:int -> count:int -> unit
+    val inline blit: source:'T array -> sourceIndex:int -> target:'T array -> targetIndex:int -> count:int -> unit
     
     /// <summary>For each element of the array, applies the given function. Concatenates all the results and return the combined array.</summary>
     ///
@@ -165,7 +165,7 @@ module Array =
     ///
     /// <example id="collect-1">
     /// <code lang="fsharp">
-    /// type Foo = { Bar: int[] }
+    /// type Foo = { Bar: int array }
     ///
     /// let input = [| {Bar = [| 1; 2 |]}; {Bar = [| 3; 4 |]} |]
     ///
@@ -183,7 +183,7 @@ module Array =
     /// Evaluates to <c>[| 1; 2; 3; 4 |]</c>
     /// </example>
     [<CompiledName("Collect")>]
-    val collect : mapping:('T -> 'U[]) -> array:'T[] -> 'U[]
+    val collect : mapping:('T -> 'U array) -> array:'T array -> 'U array
 
     /// <summary>Compares two arrays using the given comparison function, element by element.</summary>
     ///
@@ -266,7 +266,7 @@ module Array =
     /// Evaluates to <c>-1</c>
     /// </example>
     [<CompiledName("CompareWith")>]
-    val inline compareWith: comparer:('T -> 'T -> int) -> array1:'T[] -> array2:'T[] -> int
+    val inline compareWith: comparer:('T -> 'T -> int) -> array1:'T array -> array2:'T array -> int
 
     /// <summary>Builds a new array that contains the elements of each of the given sequence of arrays.</summary>
     ///
@@ -285,7 +285,7 @@ module Array =
     /// Evaluates to <c>[| 1; 2; 3; 4; 5 |]</c>
     /// </example>
     [<CompiledName("Concat")>]
-    val concat: arrays:seq<'T[]> -> 'T[]
+    val concat: arrays:seq<'T array> -> 'T array
     
     /// <summary>Tests if the array contains the specified element.</summary>
     ///
@@ -303,7 +303,7 @@ module Array =
     /// </code>
     /// </example>
     [<CompiledName("Contains")>]
-    val inline contains: value:'T -> array:'T[] -> bool when 'T : equality
+    val inline contains: value:'T -> array:'T array -> bool when 'T : equality
 
     /// <summary>Builds a new array that contains the elements of the given array.</summary>
     ///
@@ -322,7 +322,7 @@ module Array =
     /// Evaluates to a new array containing<c>[| 12; 13; 14 |]</c>.
     /// </example>
     [<CompiledName("Copy")>]
-    val copy: array:'T[] -> 'T[]
+    val copy: array:'T array -> 'T array
 
     /// <summary>Applies a key-generating function to each element of an array and returns an array yielding unique
     /// keys and their number of occurrences in the original array.</summary>
@@ -346,7 +346,7 @@ module Array =
     /// Evaluates to <c>[| ("a", 2); ("b", 1) |]</c>
     /// </example>
     [<CompiledName("CountBy")>]
-    val countBy : projection:('T -> 'Key) -> array:'T[] -> ('Key * int)[] when 'Key : equality
+    val countBy : projection:('T -> 'Key) -> array:'T array -> ('Key * int) array when 'Key : equality
 
     /// <summary>Creates an array whose elements are all initially the given value.</summary>
     ///
@@ -376,7 +376,7 @@ module Array =
     /// Note each entry in the array is the same mutable cell object.
     /// </example>
     [<CompiledName("Create")>]
-    val create: count:int -> value:'T -> 'T[]
+    val create: count:int -> value:'T -> 'T array
 
     /// <summary>Returns the first element of the array, or
     /// <c>None</c> if the array is empty.</summary>
@@ -398,14 +398,14 @@ module Array =
     ///
     /// <example id="tryhead-2">
     /// <code lang="fsharp">
-    /// let inputs : int[] = [| |]
+    /// let inputs : int array = [| |]
     ///
     /// inputs |> Array.tryHead
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
     [<CompiledName("TryHead")>]
-    val tryHead: array:'T[] -> 'T option
+    val tryHead: array:'T array -> 'T option
      
     /// <summary>Applies the given function to successive elements, returning the first
     /// result where the function returns <c>Some(x)</c> for some <c>x</c>. If the function 
@@ -437,7 +437,7 @@ module Array =
     /// </example>
     ///
     [<CompiledName("TryPick")>]
-    val tryPick: chooser:('T -> 'U option) -> array:'T[] -> 'U option
+    val tryPick: chooser:('T -> 'U option) -> array:'T array -> 'U option
 
     /// <summary>Fills a range of elements of the array with the given value.</summary>
     ///
@@ -458,7 +458,7 @@ module Array =
     /// After evaluation <c>target</c> contains <c>[| 0; 1; 2; 100; 100; 5 |]</c>.
     /// </example>
     [<CompiledName("Fill")>]
-    val fill: target:'T[] -> targetIndex:int -> count:int -> value:'T -> unit
+    val fill: target:'T array -> targetIndex:int -> count:int -> value:'T -> unit
 
     /// <summary>Applies the given function to successive elements, returning the first
     /// result where the function returns <c>Some(x)</c> for some <c>x</c>. If the function 
@@ -492,7 +492,7 @@ module Array =
     /// </example>
     ///
     [<CompiledName("Pick")>]
-    val pick: chooser:('T -> 'U option) -> array:'T[] -> 'U 
+    val pick: chooser:('T -> 'U option) -> array:'T array -> 'U 
 
     /// <summary>Applies the given function to each element of the array. Returns
     /// the array comprised of the results <c>x</c> for each element where
@@ -523,7 +523,7 @@ module Array =
     /// Evaluates to <c>[| 2 |]</c>
     /// </example>
     [<CompiledName("Choose")>]
-    val choose: chooser:('T -> 'U option) -> array:'T[] -> 'U[]
+    val choose: chooser:('T -> 'U option) -> array:'T array -> 'U array
 
     /// <summary>Divides the input array into chunks of size at most <c>chunkSize</c>.</summary>
     ///
@@ -553,7 +553,7 @@ module Array =
     /// Throws <c>ArgumentException</c>
     /// </example>
     [<CompiledName("ChunkBySize")>]
-    val chunkBySize: chunkSize:int -> array:'T[] -> 'T[][]
+    val chunkBySize: chunkSize:int -> array:'T array -> 'T array array
 
     /// <summary>Returns an array that contains no duplicate entries according to generic hash and
     /// equality comparisons on the entries.
@@ -574,7 +574,7 @@ module Array =
     /// Evaluates to <c>[| 1; 2; 3 |]</c>
     /// </example>
     [<CompiledName("Distinct")>]
-    val distinct: array:'T[] -> 'T[] when 'T : equality
+    val distinct: array:'T array -> 'T array when 'T : equality
 
     /// <summary>Returns an array that contains no duplicate entries according to the 
     /// generic hash and equality comparisons on the keys returned by the given key-generating function.
@@ -596,7 +596,7 @@ module Array =
     /// Evaluates to <c>[| { Bar = 1 }; { Bar = 2 }; { Bar = 3 } |]</c>
     /// </example>
     [<CompiledName("DistinctBy")>]
-    val distinctBy: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : equality
+    val distinctBy: projection:('T -> 'Key) -> array:'T array -> 'T array when 'Key : equality
 
     /// <summary>Splits the input array into at most <c>count</c> chunks.</summary>
     ///
@@ -626,7 +626,7 @@ module Array =
     /// Throws <c>ArgumentException</c>
     /// </example>
     [<CompiledName("SplitInto")>]
-    val splitInto: count:int -> array:'T[] -> 'T[][]
+    val splitInto: count:int -> array:'T array -> 'T array array
 
     /// <summary>Returns an empty array of the given type.</summary>
     /// <returns>The empty array.</returns>
@@ -638,7 +638,7 @@ module Array =
     /// </example>
     [<GeneralizableValue>]
     [<CompiledName("Empty")>]
-    val empty<'T> : 'T[]
+    val empty<'T> : 'T array
 
     /// <summary>Returns the only element of the array.</summary>
     ///
@@ -669,14 +669,14 @@ module Array =
     ///
     /// <example id="exactly-one-3">
     /// <code lang="fsharp">
-    /// let inputs: int[] = [| |]
+    /// let inputs: int array = [| |]
     ///
     /// inputs |> Array.exactlyOne
     /// </code>
     /// Throws <c>ArgumentException</c>
     /// </example>
     [<CompiledName("ExactlyOne")>]
-    val exactlyOne: array:'T[] -> 'T
+    val exactlyOne: array:'T array -> 'T
 
     /// <summary>Returns the only element of the array or <c>None</c> if array is empty or contains more than one element.</summary>
     ///
@@ -706,14 +706,14 @@ module Array =
     ///
     /// <example id="try-exactly-one-3">
     /// <code lang="fsharp">
-    /// let inputs: int[] = [| |]
+    /// let inputs: int array = [| |]
     ///
     /// inputs |> Array.tryExactlyOne
     /// </code>
     /// Evaluates to <c>None</c>
     /// </example>
     [<CompiledName("TryExactlyOne")>]
-    val tryExactlyOne: array:'T[] -> 'T option
+    val tryExactlyOne: array:'T array -> 'T option
 
     /// <summary>Returns a new list with the distinct elements of the input array which do not appear in the itemsToExclude sequence,
     /// using generic hash and equality comparisons to compare values.</summary>
@@ -736,7 +736,7 @@ module Array =
     /// Evaluates to <c>[| 2; 4 |]</c>
     /// </example>
     [<CompiledName("Except")>]
-    val except: itemsToExclude:seq<'T> -> array:'T[] -> 'T[] when 'T : equality
+    val except: itemsToExclude:seq<'T> -> array:'T array -> 'T array when 'T : equality
 
     /// <summary>Tests if any element of the array satisfies the given predicate.</summary>
     ///
@@ -769,7 +769,7 @@ module Array =
     /// Evaluates to <c>false</c>
     /// </example>
     [<CompiledName("Exists")>]
-    val inline exists: predicate:('T -> bool) -> array:'T[] -> bool
+    val inline exists: predicate:('T -> bool) -> array:'T array -> bool
 
     /// <summary>Tests if any pair of corresponding elements of the arrays satisfies the given predicate.</summary>
     ///
@@ -808,7 +808,7 @@ module Array =
     /// Evaluates to <c>true</c>
     /// </example>
     [<CompiledName("Exists2")>]
-    val exists2: predicate:('T1 -> 'T2 -> bool) -> array1:'T1[] -> array2:'T2[] -> bool
+    val exists2: predicate:('T1 -> 'T2 -> bool) -> array1:'T1 array -> array2:'T2 array -> bool
 
     /// <summary>Returns a new collection containing only the elements of the collection
     /// for which the given predicate returns "true".</summary>
@@ -829,7 +829,7 @@ module Array =
     /// Evaluates to <c>[| 2; 4 |]</c>
     /// </example>
     [<CompiledName("Filter")>]
-    val filter: predicate:('T -> bool) -> array:'T[] -> 'T[]
+    val filter: predicate:('T -> bool) -> array:'T array -> 'T array
 
     /// <summary>Returns the first element for which the given function returns 'true'.
     /// Raise <see cref="T:System.Collections.Generic.KeyNotFoundException"/> if no such element exists.</summary>
@@ -861,7 +861,7 @@ module Array =
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
     [<CompiledName("Find")>]
-    val find: predicate:('T -> bool) -> array:'T[] -> 'T
+    val find: predicate:('T -> bool) -> array:'T array -> 'T
 
     /// <summary>Returns the last element for which the given function returns 'true'.
     /// Raise <see cref="T:System.Collections.Generic.KeyNotFoundException"/> if no such element exists.</summary>
@@ -893,7 +893,7 @@ module Array =
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
     [<CompiledName("FindBack")>]
-    val findBack: predicate:('T -> bool) -> array:'T[] -> 'T
+    val findBack: predicate:('T -> bool) -> array:'T array -> 'T
 
     /// <summary>Returns the index of the first element in the array
     /// that satisfies the given predicate. Raise <see cref="T:System.Collections.Generic.KeyNotFoundException"/> if 
@@ -925,7 +925,7 @@ module Array =
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
     [<CompiledName("FindIndex")>]
-    val findIndex: predicate:('T -> bool) -> array:'T[] -> int
+    val findIndex: predicate:('T -> bool) -> array:'T array -> int
 
     /// <summary>Returns the index of the last element in the array
     /// that satisfies the given predicate. Raise <see cref="T:System.Collections.Generic.KeyNotFoundException"/> if
@@ -958,7 +958,7 @@ module Array =
     /// Throws <c>KeyNotFoundException</c>
     /// </example>
     [<CompiledName("FindIndexBack")>]
-    val findIndexBack: predicate:('T -> bool) -> array:'T[] -> int
+    val findIndexBack: predicate:('T -> bool) -> array:'T array -> int
 
     /// <summary>Tests if all elements of the array satisfy the given predicate.</summary>
     ///
@@ -983,7 +983,7 @@ module Array =
     /// </code>
     /// </example>
     [<CompiledName("ForAll")>]
-    val forall: predicate:('T -> bool) -> array:'T[] -> bool
+    val forall: predicate:('T -> bool) -> array:'T array -> bool
 
     /// <summary>Tests if all corresponding elements of the array satisfy the given predicate pairwise.</summary>
     ///
@@ -1032,7 +1032,7 @@ module Array =
     /// Throws <c>ArgumentException</c>.
     /// </example>
     [<CompiledName("ForAll2")>]
-    val forall2: predicate:('T1 -> 'T2 -> bool) -> array1:'T1[] -> array2:'T2[] -> bool
+    val forall2: predicate:('T1 -> 'T2 -> bool) -> array1:'T1 array -> array2:'T2 array -> bool
 
     /// <summary>Applies a function to each element of the collection, threading an accumulator argument
     /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes 
@@ -1062,7 +1062,7 @@ module Array =
     /// Evaluates to <c>2</c>
     /// </example>
     [<CompiledName("Fold")>]
-    val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> array: 'T[] -> 'State
+    val fold<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> array: 'T array -> 'State
 
     /// <summary>Applies a function to each element of the array, starting from the end, threading an accumulator argument
     /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> then computes 
@@ -1105,7 +1105,7 @@ module Array =
     /// </code>
     /// </example>
     [<CompiledName("FoldBack")>]
-    val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> array:'T[] -> state:'State -> 'State
+    val foldBack<'T,'State> : folder:('T -> 'State -> 'State) -> array:'T array -> state:'State -> 'State
 
     /// <summary>Applies a function to pairs of elements drawn from the two collections, 
     /// left-to-right, threading an accumulator argument
@@ -1139,7 +1139,7 @@ module Array =
     /// Evaluates to <c>1</c>
     /// </example>
     [<CompiledName("Fold2")>]
-    val fold2<'T1,'T2,'State>  : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> array1:'T1[] -> array2:'T2[] -> 'State
+    val fold2<'T1,'T2,'State>  : folder:('State -> 'T1 -> 'T2 -> 'State) -> state:'State -> array1:'T1 array -> array2:'T2 array -> 'State
 
     /// <summary>Apply a function to pairs of elements drawn from the two collections, right-to-left, 
     /// threading an accumulator argument through the computation. The two input
@@ -1187,7 +1187,7 @@ module Array =
     /// </code>
     /// </example>
     [<CompiledName("FoldBack2")>]
-    val foldBack2<'T1,'T2,'State> : folder:('T1 -> 'T2 -> 'State -> 'State) -> array1:'T1[] -> array2:'T2[] -> state:'State -> 'State
+    val foldBack2<'T1,'T2,'State> : folder:('T1 -> 'T2 -> 'State -> 'State) -> array1:'T1 array -> array2:'T2 array -> state:'State -> 'State
 
     /// <summary>Gets an element from an array.</summary>
     ///
@@ -1219,7 +1219,7 @@ module Array =
     /// Throws <c>IndexOutOfRangeException</c>
     /// </example>
     [<CompiledName("Get")>]
-    val get: array:'T[] -> index:int -> 'T
+    val get: array:'T array -> index:int -> 'T
 
     /// <summary>Returns the first element of the array.</summary>
     ///
@@ -1246,7 +1246,7 @@ module Array =
     /// Throws <c>ArgumentException</c>
     /// </example>
     [<CompiledName("Head")>]
-    val head: array:'T[] -> 'T
+    val head: array:'T array -> 'T
 
     /// <summary>Applies a key-generating function to each element of an array and yields an array of 
     /// unique keys. Each unique key contains an array of all elements that match 
@@ -1268,7 +1268,7 @@ module Array =
     /// Evaluates to <c>[| (1, [| 1; 3; 5 |]); (0, [| 2; 4 |]) |]</c>
     /// </example>
     [<CompiledName("GroupBy")>]
-    val groupBy: projection:('T -> 'Key) -> array:'T[] -> ('Key * 'T[])[]  when 'Key : equality
+    val groupBy: projection:('T -> 'Key) -> array:'T array -> ('Key * 'T array) array  when 'Key : equality
 
     /// <summary>Builds a new array whose elements are the corresponding elements of the input array
     /// paired with the integer index (from 0) of each element.</summary>
@@ -1288,7 +1288,7 @@ module Array =
     /// Evaluates to <c>[| (0, "a"); (1, "b"); (2, "c") |]</c>
     /// </example>
     [<CompiledName("Indexed")>]
-    val indexed: array:'T[] -> (int * 'T)[]
+    val indexed: array:'T array -> (int * 'T) array
 
     /// <summary>Creates an array given the dimension and a generator function to compute the elements.</summary>
     ///
@@ -1313,7 +1313,7 @@ module Array =
     /// Throws <c>ArgumentException</c>
     /// </example>
     [<CompiledName("Initialize")>]
-    val inline init: count:int -> initializer:(int -> 'T) -> 'T[]
+    val inline init: count:int -> initializer:(int -> 'T) -> 'T array
 
     /// <summary>Creates an array where the entries are initially the default value Unchecked.defaultof&lt;'T&gt;.</summary>
     ///
@@ -1325,12 +1325,12 @@ module Array =
     ///
     /// <example id="zerocreate-1">
     /// <code lang="fsharp">
-    /// let arr : int[] = Array.zeroCreate 4
+    /// let arr : int array = Array.zeroCreate 4
     /// </code>
     /// Evaluates to <c>[| 0; 0; 0; 0 |]</c>
     /// </example>
     [<CompiledName("ZeroCreate")>]
-    val zeroCreate: count:int -> 'T[]
+    val zeroCreate: count:int -> 'T array
      
     /// <summary>Returns true if the given array is empty, otherwise false.</summary>
     ///
@@ -1354,7 +1354,7 @@ module Array =
     /// Evaluates to <c>false</c>
     /// </example>
     [<CompiledName("IsEmpty")>]
-    val isEmpty: array:'T[] -> bool
+    val isEmpty: array:'T array -> bool
 
     /// <summary>Applies the given function to each element of the array.</summary>
     ///
@@ -1378,7 +1378,7 @@ module Array =
     /// in the console.
     /// </example>
     [<CompiledName("Iterate")>]
-    val inline iter: action:('T -> unit) -> array:'T[] -> unit
+    val inline iter: action:('T -> unit) -> array:'T array -> unit
 
     /// <summary>Applies the given function to pair of elements drawn from matching indices in two arrays. The
     /// two arrays must have the same lengths, otherwise an <c>ArgumentException</c> is
@@ -1407,7 +1407,7 @@ module Array =
     /// in the console.
     /// </example>
     [<CompiledName("Iterate2")>]
-    val iter2: action:('T1 -> 'T2 -> unit) -> array1:'T1[] -> array2:'T2[] -> unit
+    val iter2: action:('T1 -> 'T2 -> unit) -> array1:'T1 array -> array2:'T2 array -> unit
 
     /// <summary>Applies the given function to each element of the array. The integer passed to the
     /// function indicates the index of element.</summary>
@@ -1432,7 +1432,7 @@ module Array =
     /// in the console.
     /// </example>
     [<CompiledName("IterateIndexed")>]
-    val iteri: action:(int -> 'T -> unit) -> array:'T[] -> unit
+    val iteri: action:(int -> 'T -> unit) -> array:'T array -> unit
 
     /// <summary>Applies the given function to pair of elements drawn from matching indices in two arrays,
     /// also passing the index of the elements. The two arrays must have the same lengths, 
@@ -1461,7 +1461,7 @@ module Array =
     /// in the console.
     /// </example>
     [<CompiledName("IterateIndexed2")>]
-    val iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> array1:'T1[] -> array2:'T2[] -> unit
+    val iteri2: action:(int -> 'T1 -> 'T2 -> unit) -> array1:'T1 array -> array2:'T2 array -> unit
 
     /// <summary>Returns the last element of the array.</summary>
     ///
@@ -1486,7 +1486,7 @@ module Array =
     /// Throws <c>ArgumentException</c>
     /// </example>
     [<CompiledName("Last")>]
-    val inline last: array:'T[] -> 'T
+    val inline last: array:'T array -> 'T
 
     /// <summary>Gets an element from an array.</summary>
     ///
@@ -1518,7 +1518,7 @@ module Array =
     /// Throws <c>ArgumentException</c>
     /// </example>
     [<CompiledName("Item")>]
-    val item: index:int -> array:'T[] -> 'T
+    val item: index:int -> array:'T array -> 'T
 
     /// <summary>Returns the length of an array. You can also use property arr.Length.</summary>
     ///
@@ -1539,7 +1539,7 @@ module Array =
     /// Evaluates to <c>3</c>
     /// </example>
     [<CompiledName("Length")>]
-    val length: array:'T[] -> int
+    val length: array:'T array -> int
     
     /// <summary>Returns the last element of the array.
     /// Return <c>None</c> if no such element exists.</summary>
@@ -1564,7 +1564,7 @@ module Array =
     /// Evaluates to <c>None</c>
     /// </example>
     [<CompiledName("TryLast")>]
-    val tryLast: array:'T[] -> 'T option
+    val tryLast: array:'T array -> 'T option
 
     /// <summary>Builds a new array whose elements are the results of applying the given function
     /// to each of the elements of the array.</summary>
@@ -1585,7 +1585,7 @@ module Array =
     /// Evaluates to <c>[| 1; 3; 2 |]</c>
     /// </example>
     [<CompiledName("Map")>]
-    val inline map: mapping:('T -> 'U) -> array:'T[] -> 'U[]
+    val inline map: mapping:('T -> 'U) -> array:'T array -> 'U array
 
     /// <summary>Builds a new collection whose elements are the results of applying the given function
     /// to the corresponding elements of the two collections pairwise. The two input
@@ -1611,7 +1611,7 @@ module Array =
     /// Evaluates to <c>[| 'a'; 'd'; 'o' |]</c>
     /// </example>
     [<CompiledName("Map2")>]
-    val map2: mapping:('T1 -> 'T2 -> 'U) -> array1:'T1[] -> array2:'T2[] -> 'U[]
+    val map2: mapping:('T1 -> 'T2 -> 'U) -> array1:'T1 array -> array2:'T2 array -> 'U array
 
     /// <summary>Combines map and fold. Builds a new array whose elements are the results of applying the given function
     /// to each of the elements of the input array. The function is also used to accumulate a final value.</summary>
@@ -1641,7 +1641,7 @@ module Array =
     /// Evaluates <c>newCharges</c> to <c>[|In 2; Out 4; In 6|]</c> and <c>balance</c> to <c>2</c>.
     /// </example>
     [<CompiledName("MapFold")>]
-    val mapFold<'T,'State,'Result> : mapping:('State -> 'T -> 'Result * 'State) -> state:'State -> array:'T[] -> 'Result[] * 'State
+    val mapFold<'T,'State,'Result> : mapping:('State -> 'T -> 'Result * 'State) -> state:'State -> array:'T array -> 'Result array * 'State
 
     /// <summary>Combines map and foldBack. Builds a new array whose elements are the results of applying the given function
     /// to each of the elements of the input array. The function is also used to accumulate a final value.</summary>
@@ -1671,7 +1671,7 @@ module Array =
     /// Evaluates <c>newCharges</c> to <c>[|In 2; Out 4; In 6|]</c> and <c>balance</c> to <c>2</c>.
     /// </example>
     [<CompiledName("MapFoldBack")>]
-    val mapFoldBack<'T,'State,'Result> : mapping:('T -> 'State -> 'Result * 'State) -> array:'T[] -> state:'State -> 'Result[] * 'State
+    val mapFoldBack<'T,'State,'Result> : mapping:('T -> 'State -> 'Result * 'State) -> array:'T array -> state:'State -> 'Result array * 'State
 
     /// <summary>Builds a new collection whose elements are the results of applying the given function
     /// to the corresponding triples from the three collections. The three input
@@ -1700,7 +1700,7 @@ module Array =
     /// </example>
     /// 
     [<CompiledName("Map3")>]
-    val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> array1:'T1[] -> array2:'T2[] -> array3:'T3[] -> 'U[]
+    val map3: mapping:('T1 -> 'T2 -> 'T3 -> 'U) -> array1:'T1 array -> array2:'T2 array -> array3:'T3 array -> 'U array
 
     /// <summary>Builds a new collection whose elements are the results of applying the given function
     /// to the corresponding elements of the two collections pairwise, also passing the index of 
@@ -1726,7 +1726,7 @@ module Array =
     /// Evaluates to <c>[|(0, 'a'); (1, 'd'); (2, 'o')|]</c>
     /// </example>
     [<CompiledName("MapIndexed2")>]
-    val mapi2: mapping:(int -> 'T1 -> 'T2 -> 'U) -> array1:'T1[] -> array2:'T2[] -> 'U[]
+    val mapi2: mapping:(int -> 'T1 -> 'T2 -> 'U) -> array1:'T1 array -> array2:'T2 array -> 'U array
 
     /// <summary>Builds a new array whose elements are the results of applying the given function
     /// to each of the elements of the array. The integer index passed to the
@@ -1748,7 +1748,7 @@ module Array =
     /// Evaluates to <c>[| 10; 11; 12 |]</c>
     /// </example>
     [<CompiledName("MapIndexed")>]
-    val mapi: mapping:(int -> 'T -> 'U) -> array:'T[] -> 'U[]
+    val mapi: mapping:(int -> 'T -> 'U) -> array:'T array -> 'U array
 
     /// <summary>Returns the greatest of all elements of the array, compared via Operators.max on the function result.</summary>
     ///
@@ -1772,14 +1772,14 @@ module Array =
     ///
     /// <example id="max-2">
     /// <code lang="fsharp">
-    /// let inputs: int[]= [| |]
+    /// let inputs: int array= [| |]
     ///
     /// inputs |> Array.max
     /// </code>
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
     [<CompiledName("Max")>]
-    val inline max: array:'T[] -> 'T  when 'T : comparison 
+    val inline max: array:'T array -> 'T  when 'T : comparison 
 
     /// <summary>Returns the greatest of all elements of the array, compared via Operators.max on the function result.</summary>
     ///
@@ -1804,14 +1804,14 @@ module Array =
     ///
     /// <example id="maxby-2">
     /// <code lang="fsharp">
-    /// let inputs: string[]= [| |]
+    /// let inputs: string array= [| |]
     ///
     /// inputs |> Array.maxBy (fun s -> s.Length)
     /// </code>
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
     [<CompiledName("MaxBy")>]
-    val inline maxBy  : projection:('T -> 'U) -> array:'T[] -> 'T when 'U : comparison 
+    val inline maxBy  : projection:('T -> 'U) -> array:'T array -> 'T when 'U : comparison 
 
     /// <summary>Returns the lowest of all elements of the array, compared via Operators.min.</summary>
     ///
@@ -1835,14 +1835,14 @@ module Array =
     ///
     /// <example id="min-2">
     /// <code lang="fsharp">
-    /// let inputs: int[]= [| |]
+    /// let inputs: int array= [| |]
     ///
     /// inputs |> Array.min
     /// </code>
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
     [<CompiledName("Min")>]
-    val inline min: array:'T[] -> 'T  when 'T : comparison 
+    val inline min: array:'T array -> 'T  when 'T : comparison 
 
     /// <summary>Returns the lowest of all elements of the array, compared via Operators.min on the function result.</summary>
     ///
@@ -1867,14 +1867,14 @@ module Array =
     ///
     /// <example id="minby-2">
     /// <code lang="fsharp">
-    /// let inputs: string[]= [| |]
+    /// let inputs: string array= [| |]
     ///
     /// inputs |> Array.minBy (fun s -> s.Length)
     /// </code>
     /// Throws <c>System.ArgumentException</c>.
     /// </example>
     [<CompiledName("MinBy")>]
-    val inline minBy  : projection:('T -> 'U) -> array:'T[] -> 'T when 'U : comparison 
+    val inline minBy  : projection:('T -> 'U) -> array:'T array -> 'T when 'U : comparison 
 
     /// <summary>Builds an array from the given list.</summary>
     ///
@@ -1891,7 +1891,7 @@ module Array =
     /// Evaluates to <c>[| 1; 2; 5 |]</c>.
     /// </example>
     [<CompiledName("OfList")>]
-    val ofList: list:'T list -> 'T[]
+    val ofList: list:'T list -> 'T array
 
     /// <summary>Builds a new array from the given enumerable object.</summary>
     ///
@@ -1910,7 +1910,7 @@ module Array =
     /// Evaluates to <c>[| 1; 2; 5 |]</c>.
     /// </example>
     [<CompiledName("OfSeq")>]
-    val ofSeq: source:seq<'T> -> 'T[]
+    val ofSeq: source:seq<'T> -> 'T array
 
     /// <summary>Returns an array of each element in the input array and its predecessor, with the
     /// exception of the first element which is only returned as the predecessor of the second element.</summary>
@@ -1930,7 +1930,7 @@ module Array =
     /// Evaluates to <c>[|(1, 2); (2, 3); (3, 4)|]</c>.
     /// </example>
     [<CompiledName("Pairwise")>]
-    val pairwise: array:'T[] -> ('T * 'T)[]
+    val pairwise: array:'T array -> ('T * 'T) array
 
     /// <summary>Splits the collection into two collections, containing the 
     /// elements for which the given predicate returns "true" and "false"
@@ -1953,7 +1953,7 @@ module Array =
     /// Evaluates to <c>([|2; 4|], [|1; 3|])</c>.
     /// </example>
     [<CompiledName("Partition")>]
-    val partition: predicate:('T -> bool) -> array:'T[] -> 'T[] * 'T[]
+    val partition: predicate:('T -> bool) -> array:'T array -> 'T array * 'T array
 
     /// <summary>Returns an array with all elements permuted according to the
     /// specified permutation.</summary>
@@ -1975,7 +1975,7 @@ module Array =
     /// Evaluates to <c>[|4; 1; 2; 3|]</c>.
     /// </example>
     [<CompiledName("Permute")>]
-    val permute: indexMap:(int -> int) -> array:'T[] -> 'T[]
+    val permute: indexMap:(int -> int) -> array:'T array -> 'T array
 
     /// <summary>Applies a function to each element of the array, threading an accumulator argument
     /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> 
@@ -1999,7 +1999,7 @@ module Array =
     /// Evaluates to <c>1342</c>, by computing <c>((1 * 10 + 3) * 10 + 4) * 10 + 2</c>
     /// </example>
     [<CompiledName("Reduce")>]
-    val reduce: reduction:('T -> 'T -> 'T) -> array:'T[] -> 'T
+    val reduce: reduction:('T -> 'T -> 'T) -> array:'T array -> 'T
 
     /// <summary>Applies a function to each element of the array, starting from the end, threading an accumulator argument
     /// through the computation. If the input function is <c>f</c> and the elements are <c>i0...iN</c> 
@@ -2023,7 +2023,7 @@ module Array =
     /// Evaluates to <c>2431</c>, by computing <c>1 + (3 + (4 + 2 * 10) * 10) * 10</c>
     /// </example>
     [<CompiledName("ReduceBack")>]
-    val reduceBack: reduction:('T -> 'T -> 'T) -> array:'T[] -> 'T
+    val reduceBack: reduction:('T -> 'T -> 'T) -> array:'T array -> 'T
 
     /// <summary>Creates an array by replicating the given initial value.</summary>
     ///
@@ -2041,7 +2041,7 @@ module Array =
     /// Evaluates to <c>[| "a"; "a"; "a" |]</c>.
     /// </example>
     [<CompiledName("Replicate")>]
-    val replicate: count:int -> initial:'T -> 'T[]
+    val replicate: count:int -> initial:'T -> 'T array
 
     /// <summary>Returns a new array with the elements in reverse order.</summary>
     ///
@@ -2058,7 +2058,7 @@ module Array =
     /// Evaluates to <c>[| 2; 1; 0 |]</c>.
     /// </example>
     [<CompiledName("Reverse")>]
-    val rev: array:'T[] -> 'T[]
+    val rev: array:'T array -> 'T array
 
     /// <summary>Like <c>fold</c>, but return the intermediary and final results.</summary>
     ///
@@ -2087,7 +2087,7 @@ module Array =
     /// state, <c>1</c> the next state, <c>-1</c> the next state, and <c>2</c> the final state.
     /// </example>
     [<CompiledName("Scan")>]
-    val scan<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> array:'T[] -> 'State[]
+    val scan<'T,'State> : folder:('State -> 'T -> 'State) -> state:'State -> array:'T array -> 'State array
 
     /// <summary>Like <c>foldBack</c>, but return both the intermediary and final results.</summary>
     ///
@@ -2116,7 +2116,7 @@ module Array =
     /// state, <c>3</c> the next state, <c>1</c> the next state, and <c>2</c> the final state.
     /// </example>
     [<CompiledName("ScanBack")>]
-    val scanBack<'T,'State> : folder:('T -> 'State -> 'State) -> array:'T[] -> state:'State -> 'State[]
+    val scanBack<'T,'State> : folder:('T -> 'State -> 'State) -> array:'T array -> state:'State -> 'State array
 
     /// <summary>Returns an array that contains one item only.</summary>
     ///
@@ -2131,7 +2131,7 @@ module Array =
     /// Evaluates to <c>[| 7 |]</c>.
     /// </example>
     [<CompiledName("Singleton")>]
-    val inline singleton: value:'T -> 'T[]
+    val inline singleton: value:'T -> 'T array
 
     /// <summary>Sets an element of an array.</summary>
     ///
@@ -2160,7 +2160,7 @@ module Array =
     /// Throws <c>IndexOutOfRangeException</c>
     /// </example>
     [<CompiledName("Set")>]
-    val set: array:'T[] -> index:int -> value:'T -> unit
+    val set: array:'T array -> index:int -> value:'T -> unit
 
     /// <summary>Builds a new array that contains the elements of the given array, excluding the first N elements.</summary>
     ///
@@ -2200,7 +2200,7 @@ module Array =
     /// Evaluates to <c>[| "a"; "b"; "c"; "d" |]</c>.
     /// </example>
     [<CompiledName("Skip")>]
-    val skip: count:int -> array:'T[] -> 'T[]
+    val skip: count:int -> array:'T array -> 'T array
 
     /// <summary>Bypasses elements in an array while the given predicate returns True, and then returns
     /// the remaining elements in a new array.</summary>
@@ -2222,7 +2222,7 @@ module Array =
     /// </example>
     ///
     [<CompiledName("SkipWhile")>]
-    val skipWhile: predicate:('T -> bool) -> array:'T[] -> 'T[]
+    val skipWhile: predicate:('T -> bool) -> array:'T array -> 'T array
 
     /// <summary>Builds a new array that contains the given subrange specified by
     /// starting index and length.</summary>
@@ -2255,7 +2255,7 @@ module Array =
     /// Evaluates to <c>[| 2; 3; 4 |]</c>.
     /// </example>
     [<CompiledName("GetSubArray")>]
-    val sub: array:'T[] -> startIndex:int -> count:int -> 'T[]
+    val sub: array:'T array -> startIndex:int -> count:int -> 'T array
 
     /// <summary>Sorts the elements of an array, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
     ///
@@ -2277,7 +2277,7 @@ module Array =
     /// Evaluates to <c>[| 1; 1 3; 4; 6; 8 |]</c>.
     /// </example>
     [<CompiledName("Sort")>]
-    val sort: array:'T[] -> 'T[] when 'T : comparison 
+    val sort: array:'T array -> 'T array when 'T : comparison 
 
     /// <summary>Sorts the elements of an array, using the given projection for the keys and returning a new array. 
     /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
@@ -2301,7 +2301,7 @@ module Array =
     /// Evaluates to <c>[|"a"; "dd"; "bbb"; "cccc"|]</c>.
     /// </example>
     [<CompiledName("SortBy")>]
-    val sortBy: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : comparison 
+    val sortBy: projection:('T -> 'Key) -> array:'T array -> 'T array when 'Key : comparison 
 
     /// <summary>Sorts the elements of an array, using the given comparison function as the order, returning a new array.</summary>
     ///
@@ -2329,7 +2329,7 @@ module Array =
     /// Evaluates to <c>[|(0, "aa"); (2, "cc"); (3, "dd"); (1, "bbb")|]</c>.
     /// </example>
     [<CompiledName("SortWith")>]
-    val sortWith: comparer:('T -> 'T -> int) -> array:'T[] -> 'T[]
+    val sortWith: comparer:('T -> 'T -> int) -> array:'T array -> 'T array
 
     /// <summary>Sorts the elements of an array by mutating the array in-place, using the given projection for the keys. 
     /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
@@ -2351,7 +2351,7 @@ module Array =
     /// After evaluation <c>array</c> contains <c>[|"a"; "dd"; "bbb"; "cccc"|]</c>.
     /// </example>
     [<CompiledName("SortInPlaceBy")>]
-    val sortInPlaceBy: projection:('T -> 'Key) -> array:'T[] -> unit when 'Key : comparison 
+    val sortInPlaceBy: projection:('T -> 'Key) -> array:'T array -> unit when 'Key : comparison 
 
     /// <summary>Sorts the elements of an array by mutating the array in-place, using the given comparison function as the order.</summary>
     ///
@@ -2374,7 +2374,7 @@ module Array =
     /// After evaluation <c>array</c> contains <c>[|(0, "aa"); (2, "cc"); (3, "dd"); (1, "bbb")|]</c>.
     /// </example>
     [<CompiledName("SortInPlaceWith")>]
-    val sortInPlaceWith: comparer:('T -> 'T -> int) -> array:'T[] -> unit
+    val sortInPlaceWith: comparer:('T -> 'T -> int) -> array:'T array -> unit
 
     /// <summary>Sorts the elements of an array by mutating the array in-place, using the given comparison function. 
     /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
@@ -2392,7 +2392,7 @@ module Array =
     /// After evaluation <c>array</c> contains <c>[| 1; 1; 3; 4; 6; 8 |]</c>.
     /// </example>
     [<CompiledName("SortInPlace")>]
-    val sortInPlace: array:'T[] -> unit when 'T : comparison 
+    val sortInPlace: array:'T array -> unit when 'T : comparison 
 
     /// <summary>Splits an array into two arrays, at the given index.</summary>
     ///
@@ -2414,7 +2414,7 @@ module Array =
     /// Evaluates <c>front</c> to <c>[|8; 4; 3|]</c> and <c>back</c> to <c>[|1; 6; 1|]</c>.
     /// </example>
     [<CompiledName("SplitAt")>]
-    val splitAt: index:int -> array:'T[] -> ('T[] * 'T[])
+    val splitAt: index:int -> array:'T array -> ('T array * 'T array)
 
     /// <summary>Sorts the elements of an array, in descending order, returning a new array. Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>. </summary>
     ///
@@ -2434,7 +2434,7 @@ module Array =
     /// Evaluates to <c>[| 8; 6; 4; 3; 1; 1 |]</c>.
     /// </example>
     [<CompiledName("SortDescending")>]
-    val inline sortDescending: array:'T[] -> 'T[] when 'T : comparison
+    val inline sortDescending: array:'T array -> 'T array when 'T : comparison
 
     /// <summary>Sorts the elements of an array, in descending order, using the given projection for the keys and returning a new array. 
     /// Elements are compared using <see cref="M:Microsoft.FSharp.Core.Operators.compare"/>.</summary>
@@ -2456,7 +2456,7 @@ module Array =
     /// Evaluates to <c>[|"cccc"; "bbb"; "dd"; "a"|]</c>.
     /// </example>
     [<CompiledName("SortByDescending")>]
-    val inline sortByDescending: projection:('T -> 'Key) -> array:'T[] -> 'T[] when 'Key : comparison
+    val inline sortByDescending: projection:('T -> 'Key) -> array:'T array -> 'T array when 'Key : comparison
 
     /// <summary>Returns the sum of the elements in the array.</summary>
     ///
@@ -2475,7 +2475,7 @@ module Array =
     /// Evaluates to <c>11</c>.
     /// </example>
     [<CompiledName("Sum")>]
-    val inline sum: array: ^T[] -> ^T 
+    val inline sum: array: ^T array -> ^T 
                         when ^T : (static member ( + ) : ^T * ^T -> ^T) 
                         and  ^T : (static member Zero : ^T)
 
@@ -2498,7 +2498,7 @@ module Array =
     /// Evaluates to <c>7</c>.
     /// </example>
     [<CompiledName("SumBy")>]
-    val inline sumBy: projection:('T -> ^U) -> array:'T[] -> ^U 
+    val inline sumBy: projection:('T -> ^U) -> array:'T array -> ^U 
                         when ^U : (static member ( + ) : ^U * ^U -> ^U) 
                         and  ^U : (static member Zero : ^U)
 
@@ -2544,7 +2544,7 @@ module Array =
     /// Evaluates to <c>[| |]</c>.
     /// </example>
     [<CompiledName("Take")>]
-    val take: count:int -> array:'T[] -> 'T[]
+    val take: count:int -> array:'T array -> 'T array
 
     /// <summary>Returns an array that contains all elements of the original array while the 
     /// given predicate returns True, and then returns no further elements.</summary>
@@ -2566,7 +2566,7 @@ module Array =
     /// </example>
     ///
     [<CompiledName("TakeWhile")>]
-    val takeWhile: predicate:('T -> bool) -> array:'T[] -> 'T[]
+    val takeWhile: predicate:('T -> bool) -> array:'T array -> 'T array
 
     /// <summary>Returns a new array containing the elements of the original except the first element.</summary>
     ///
@@ -2587,7 +2587,7 @@ module Array =
     /// </example>
     ///
     [<CompiledName("Tail")>]
-    val tail: array:'T[] -> 'T[]
+    val tail: array:'T array -> 'T array
 
     /// <summary>Builds a list from the given array.</summary>
     ///
@@ -2606,7 +2606,7 @@ module Array =
     /// Evaluates to <c>[ 1; 2; 5 ]</c>.
     /// </example>
     [<CompiledName("ToList")>]
-    val toList: array:'T[] -> 'T list
+    val toList: array:'T array -> 'T list
 
     /// <summary>Views the given array as a sequence.</summary>
     ///
@@ -2625,7 +2625,7 @@ module Array =
     /// Evaluates to <c>seq { 1; 2; 5 }</c>.
     /// </example>
     [<CompiledName("ToSeq")>]
-    val toSeq: array:'T[] -> seq<'T>
+    val toSeq: array:'T array -> seq<'T>
 
     /// <summary>Returns the transpose of the given sequence of arrays.</summary>
     ///
@@ -2647,7 +2647,7 @@ module Array =
     /// Evaluates to <c>[|[|10; 11|]; [|20; 21|]; [|30; 31|]|]</c>.
     /// </example>
     [<CompiledName("Transpose")>]
-    val transpose: arrays:seq<'T[]> -> 'T[][]
+    val transpose: arrays:seq<'T array> -> 'T array array
 
     /// <summary>Returns at most N elements in a new array.</summary>
     ///
@@ -2685,7 +2685,7 @@ module Array =
     /// Evaluates to <c>[| |]</c>.
     /// </example>
     [<CompiledName("Truncate")>]
-    val truncate: count:int -> array:'T[] -> 'T[]
+    val truncate: count:int -> array:'T array -> 'T array
 
     /// <summary>Returns the first element for which the given function returns True.
     /// Return None if no such element exists.</summary>
@@ -2715,7 +2715,7 @@ module Array =
     /// Evaluates to <c>None</c>
     /// </example>
     [<CompiledName("TryFind")>]
-    val tryFind: predicate:('T -> bool) -> array:'T[] -> 'T option
+    val tryFind: predicate:('T -> bool) -> array:'T array -> 'T option
 
     /// <summary>Returns the last element for which the given function returns True.
     /// Return None if no such element exists.</summary>
@@ -2745,7 +2745,7 @@ module Array =
     /// Evaluates to <c>None</c>
     /// </example>
     [<CompiledName("TryFindBack")>]
-    val tryFindBack: predicate:('T -> bool) -> array:'T[] -> 'T option
+    val tryFindBack: predicate:('T -> bool) -> array:'T array -> 'T option
 
     /// <summary>Returns the index of the first element in the array
     /// that satisfies the given predicate.</summary>
@@ -2775,7 +2775,7 @@ module Array =
     /// Evaluates to <c>None</c>
     /// </example>
     [<CompiledName("TryFindIndex")>]
-    val tryFindIndex : predicate:('T -> bool) -> array:'T[] -> int option
+    val tryFindIndex : predicate:('T -> bool) -> array:'T array -> int option
 
     /// <summary>Tries to find the nth element in the array.
     /// Returns <c>None</c> if index is negative or the input array does not contain enough elements.</summary>
@@ -2805,7 +2805,7 @@ module Array =
     /// Evaluates to <c>None</c>.
     /// </example>
     [<CompiledName("TryItem")>]
-    val tryItem: index:int -> array:'T[] -> 'T option
+    val tryItem: index:int -> array:'T array -> 'T option
 
     /// <summary>Returns the index of the last element in the array
     /// that satisfies the given predicate.</summary>
@@ -2835,7 +2835,7 @@ module Array =
     /// Evaluates to <c>None</c>
     /// </example>
     [<CompiledName("TryFindIndexBack")>]
-    val tryFindIndexBack : predicate:('T -> bool) -> array:'T[] -> int option
+    val tryFindIndexBack : predicate:('T -> bool) -> array:'T array -> int option
 
     /// <summary>Returns an array that contains the elements generated by the given computation.
     /// The generator is repeatedly called to build the list until it returns `None`.
@@ -2854,7 +2854,7 @@ module Array =
     /// Evaluates to <c>[| 1; 2; 4; 8; 16; 32; 64 |]</c>
     /// </example>
     [<CompiledName("Unfold")>]
-    val unfold<'T,'State> : generator:('State -> ('T * 'State) option) -> state:'State -> 'T[]
+    val unfold<'T,'State> : generator:('State -> ('T * 'State) option) -> state:'State -> 'T array
 
     /// <summary>Splits an array of pairs into two arrays.</summary>
     ///
@@ -2873,7 +2873,7 @@ module Array =
     /// Evaluates <c>numbers</c> to <c>[|1; 2|]</c> and <c>names</c> to <c>[|"one"; "two"|]</c>.
     /// </example>
     [<CompiledName("Unzip")>]
-    val unzip: array:('T1 * 'T2)[] -> ('T1[] * 'T2[])
+    val unzip: array:('T1 * 'T2) array -> ('T1 array * 'T2 array)
 
     /// <summary>Splits an array of triples into three arrays.</summary>
     ///
@@ -2892,7 +2892,7 @@ module Array =
     /// Evaluates <c>numbers</c> to <c>[|1; 2|]</c>, <c>names</c> to <c>[|"one"; "two"|]</c> and <c>roman</c> to <c>[|"I"; "II"|]</c>.
     /// </example>
     [<CompiledName("Unzip3")>]
-    val unzip3: array:('T1 * 'T2 * 'T3)[] -> ('T1[] * 'T2[] * 'T3[])
+    val unzip3: array:('T1 * 'T2 * 'T3) array -> ('T1 array * 'T2 array * 'T3 array)
 
     /// <summary>Returns a new array containing only the elements of the array
     /// for which the given predicate returns "true".</summary>
@@ -2915,7 +2915,7 @@ module Array =
     /// Evaluates to <c>[| 2; 4 |]</c>
     /// </example>
     [<CompiledName("Where")>]
-    val where: predicate:('T -> bool) -> array:'T[] -> 'T[]
+    val where: predicate:('T -> bool) -> array:'T array -> 'T array
 
     /// <summary>Returns an array of sliding windows containing elements drawn from the input
     /// array. Each window is returned as a fresh array.</summary>
@@ -2937,7 +2937,7 @@ module Array =
     /// Evaluates to <c>[|[|1; 2; 3|]; [|2; 3; 4|]; [|3; 4; 5|]|]</c>
     /// </example>
     [<CompiledName("Windowed")>]
-    val windowed : windowSize:int -> array:'T[] -> 'T[][]
+    val windowed : windowSize:int -> array:'T array -> 'T array array
 
     /// <summary>Combines the two arrays into an array of pairs. The two arrays must have equal lengths, otherwise an <c>ArgumentException</c> is
     /// raised.</summary>
@@ -2960,7 +2960,7 @@ module Array =
     /// Evaluates to <c>[| (1, "one"); (2, "two") |]</c>.
     /// </example>
     [<CompiledName("Zip")>]
-    val zip: array1:'T1[] -> array2:'T2[] -> ('T1 * 'T2)[]
+    val zip: array1:'T1 array -> array2:'T2 array -> ('T1 * 'T2) array
 
     /// <summary>Combines three arrays into an array of pairs. The three arrays must have equal lengths, otherwise an <c>ArgumentException</c> is
     /// raised.</summary>
@@ -2985,7 +2985,7 @@ module Array =
     /// Evaluates to <c>[|(1, "one", "I"); (2, "two", "II")|]</c>.
     /// </example>
     [<CompiledName("Zip3")>]
-    val zip3: array1:'T1[] -> array2:'T2[] -> array3:'T3[] -> ('T1 * 'T2 * 'T3)[]
+    val zip3: array1:'T1 array -> array2:'T2 array -> array3:'T3 array -> ('T1 * 'T2 * 'T3) array
 
     /// <summary>Return a new array with the item at a given index removed.</summary>
     ///
@@ -3005,7 +3005,7 @@ module Array =
     /// Evaluates to <c>[| 0; 2 |]</c>.
     /// </example>
     [<CompiledName("RemoveAt")>]
-    val removeAt : index: int -> source: 'T[] -> 'T[]
+    val removeAt : index: int -> source: 'T array -> 'T array
     
     /// <summary>Return a new array with the number of items starting at a given index removed.</summary>
     ///
@@ -3026,7 +3026,7 @@ module Array =
     /// Evaluates to <c>[| 0; 3 |]</c>.
     /// </example>
     [<CompiledName("RemoveManyAt")>]
-    val removeManyAt : index: int -> count: int -> source: 'T[] -> 'T[]
+    val removeManyAt : index: int -> count: int -> source: 'T array -> 'T array
     
     /// <summary>Return a new array with the item at a given index set to the new value.</summary>
     ///
@@ -3047,7 +3047,7 @@ module Array =
     /// Evaluates to <c>[| 0; 9; 2 |]</c>.
     /// </example>
     [<CompiledName("UpdateAt")>]
-    val updateAt : index: int -> value: 'T -> source: 'T[] -> 'T[]
+    val updateAt : index: int -> value: 'T -> source: 'T array -> 'T array
     
     /// <summary>Return a new array with a new item inserted before the given index.</summary>
     ///
@@ -3068,7 +3068,7 @@ module Array =
     /// Evaluates to <c>[| 0; 9; 1; 2 |]</c>.
     /// </example>
     [<CompiledName("InsertAt")>]
-    val insertAt : index: int -> value: 'T -> source: 'T[] -> 'T[]
+    val insertAt : index: int -> value: 'T -> source: 'T array -> 'T array
     
     /// <summary>Return a new array with new items inserted before the given index.</summary>
     ///
@@ -3089,7 +3089,7 @@ module Array =
     /// Evaluates to <c>[| 0; 8; 9; 1; 2 |]</c>.
     /// </example>
     [<CompiledName("InsertManyAt")>]
-    val insertManyAt : index: int -> values: seq<'T> -> source: 'T[] -> 'T[]
+    val insertManyAt : index: int -> values: seq<'T> -> source: 'T array -> 'T array
 
     /// <summary>Provides parallel operations on arrays </summary>
     module Parallel =
@@ -3126,7 +3126,7 @@ module Array =
         /// Evaluates to <c>[| 2 |]</c>
         /// </example>
         [<CompiledName("Choose")>]
-        val choose: chooser:('T -> 'U option) -> array:'T[] -> 'U[]
+        val choose: chooser:('T -> 'U option) -> array:'T array -> 'U array
 
         /// <summary>For each element of the array, apply the given function. Concatenate all the results and return the combined array.</summary>
         ///
@@ -3136,13 +3136,13 @@ module Array =
         /// <param name="mapping"></param>
         /// <param name="array">The input array.</param>
         ///
-        /// <returns>'U[]</returns>
+        /// <returns>'U array</returns>
         ///
         /// <exception cref="T:System.ArgumentNullException">Thrown when the input array is null.</exception>
         ///
         /// <example id="collect-1">
         /// <code lang="fsharp">
-        /// type Foo = { Bar: int[] }
+        /// type Foo = { Bar: int array }
         ///
         /// let input = [| {Bar = [| 1; 2 |]}; {Bar = [| 3; 4 |]} |]
         ///
@@ -3160,7 +3160,7 @@ module Array =
         /// Evaluates to <c>[| 1; 2; 3; 4 |]</c>
         /// </example>
         [<CompiledName("Collect")>]
-        val collect: mapping:('T -> 'U[]) -> array:'T[] -> 'U[]
+        val collect: mapping:('T -> 'U array) -> array:'T array -> 'U array
         
         /// <summary>Build a new array whose elements are the results of applying the given function
         /// to each of the elements of the array.</summary>
@@ -3184,7 +3184,7 @@ module Array =
         /// Evaluates to <c>[| 1; 3; 2 |]</c>
         /// </example>
         [<CompiledName("Map")>]
-        val map: mapping:('T -> 'U) -> array:'T[] -> 'U[]
+        val map: mapping:('T -> 'U) -> array:'T array -> 'U array
         
         /// <summary>Build a new array whose elements are the results of applying the given function
         /// to each of the elements of the array. The integer index passed to the
@@ -3209,7 +3209,7 @@ module Array =
         /// Evaluates to <c>[| 10; 11; 12 |]</c>
         /// </example>
         [<CompiledName("MapIndexed")>]
-        val mapi: mapping:(int -> 'T -> 'U) -> array:'T[] -> 'U[]
+        val mapi: mapping:(int -> 'T -> 'U) -> array:'T array -> 'U array
 
         /// <summary>Apply the given function to each element of the array. </summary>
         ///
@@ -3235,7 +3235,7 @@ module Array =
         /// </code>
         /// </example>
         [<CompiledName("Iterate")>]
-        val iter: action:('T -> unit) -> array:'T[] -> unit
+        val iter: action:('T -> unit) -> array:'T array -> unit
 
         /// <summary>Apply the given function to each element of the array. The integer passed to the
         /// function indicates the index of element.</summary>
@@ -3262,7 +3262,7 @@ module Array =
         /// </code>
         /// </example>
         [<CompiledName("IterateIndexed")>]
-        val iteri: action:(int -> 'T -> unit) -> array:'T[] -> unit
+        val iteri: action:(int -> 'T -> unit) -> array:'T array -> unit
         
         /// <summary>Create an array given the dimension and a generator function to compute the elements.</summary>
         ///
@@ -3281,7 +3281,7 @@ module Array =
         /// Evaluates to <c>[| 5; 6; 7; 8 |]</c>
         /// </example>
         [<CompiledName("Initialize")>]
-        val init: count:int -> initializer:(int -> 'T) -> 'T[]
+        val init: count:int -> initializer:(int -> 'T) -> 'T array
         
         /// <summary>Split the collection into two collections, containing the 
         /// elements for which the given predicate returns "true" and "false"
@@ -3306,4 +3306,4 @@ module Array =
         /// Evaluates to <c>([|2; 4|], [|1; 3|])</c>.
         /// </example>
         [<CompiledName("Partition")>]
-        val partition: predicate:('T -> bool) -> array:'T[] -> 'T[] * 'T[]
+        val partition: predicate:('T -> bool) -> array:'T array -> 'T array * 'T array

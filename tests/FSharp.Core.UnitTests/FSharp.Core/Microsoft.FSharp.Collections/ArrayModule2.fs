@@ -20,9 +20,9 @@ Make sure each method works on:
 
 type ArrayWindowedTestInput<'t> =
     {
-        InputArray : 't[]
+        InputArray : 't array
         WindowSize : int
-        ExpectedArray : 't[][]
+        ExpectedArray : 't array array
         Exception : Type option
     }
 
@@ -43,7 +43,7 @@ type ArrayModule2() =
         if resultEpt <> 0 then Assert.Fail()
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.length  nullArr  |> ignore)  
         
         // null array, argument name showing up
@@ -66,12 +66,12 @@ type ArrayModule2() =
         Assert.AreEqual([| (0,"Lists");(1,"Are");(2,"Commonly");(3,"List") |], resultStr)
 
         // empty array
-        let emptyArr:int[] = [| |]
+        let emptyArr:int array = [| |]
         let resultEpt = Array.indexed emptyArr
         Assert.AreEqual([| |], resultEpt)
 
         // null array
-        let nullArr = null:string[]
+        let nullArr = null:string array
         CheckThrowsArgumentNullException (fun () -> Array.indexed nullArr |> ignore)
 
         ()
@@ -96,7 +96,7 @@ type ArrayModule2() =
         if resultEpt <> [| |] then Assert.Fail()
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.map funcStr nullArr |> ignore)
         
         ()
@@ -114,12 +114,12 @@ type ArrayModule2() =
         if resultStr <> [|8;9;17;15|] then Assert.Fail()
         
         // empty array
-        let emptyArr:int[] = [| |]
+        let emptyArr:int array = [| |]
         let resultEpt = Array.map2 funcInt emptyArr emptyArr
         if resultEpt <> [| |] then Assert.Fail()
 
         // null array
-        let nullArr = null:int[]
+        let nullArr = null:int array
         let validArray = [| 1 |]       
         CheckThrowsArgumentNullException (fun () -> Array.map2 funcInt nullArr validArray |> ignore)  
         CheckThrowsArgumentNullException (fun () -> Array.map2 funcInt validArray nullArr |> ignore)  
@@ -153,7 +153,7 @@ type ArrayModule2() =
         if resultEmpty <> [||] then Assert.Fail()
 
         // Null array
-        let nullArray = null : int[]
+        let nullArray = null : int array
         let nonNullArray = [|1|]
         CheckThrowsArgumentNullException (fun () -> Array.map3 funcInt nullArray nonNullArray nonNullArray |> ignore)
         CheckThrowsArgumentNullException (fun () -> Array.map3 funcInt nonNullArray nullArray nonNullArray |> ignore)
@@ -181,7 +181,7 @@ type ArrayModule2() =
         Assert.AreEqual(100, resultEptAcc)
 
         // null array
-        let nullArr = null:string[]
+        let nullArr = null:string array
         CheckThrowsArgumentNullException (fun () -> Array.mapFold funcStr "" nullArr |> ignore)
 
         ()
@@ -206,7 +206,7 @@ type ArrayModule2() =
         Assert.AreEqual(100, resultEptAcc)
 
         // null array
-        let nullArr = null:string[]
+        let nullArr = null:string array
         CheckThrowsArgumentNullException (fun () -> Array.mapFoldBack funcStr nullArr "" |> ignore)
 
         ()
@@ -224,12 +224,12 @@ type ArrayModule2() =
         if resultStr <> [|5;4;10;7|] then Assert.Fail()
         
         // empty array
-        let emptyArr:int[] = [| |]
+        let emptyArr:int array = [| |]
         let resultEpt = Array.mapi funcInt emptyArr 
         if resultEpt <> [| |] then Assert.Fail()
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.mapi funcStr nullArr |> ignore)  
         
         ()
@@ -247,12 +247,12 @@ type ArrayModule2() =
         if resultStr <> [|8;10;19;18|] then Assert.Fail()
         
         // empty array
-        let emptyArr:int[] = [| |]
+        let emptyArr:int array = [| |]
         let resultEpt = Array.mapi2 funcInt emptyArr emptyArr
         if resultEpt <> [| |] then Assert.Fail()
 
         // null array
-        let nullArr = null:int[] 
+        let nullArr = null:int array 
         let validArray = [| 1 |]      
         CheckThrowsArgumentNullException (fun () -> Array.mapi2 funcInt validArray  nullArr  |> ignore)  
         CheckThrowsArgumentNullException (fun () -> Array.mapi2 funcInt  nullArr validArray |> ignore)  
@@ -275,7 +275,7 @@ type ArrayModule2() =
         // empty array -- argumentexception   
         
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.max   nullArr  |> ignore)  
         
         // len = 0
@@ -298,7 +298,7 @@ type ArrayModule2() =
         // empty array -- argumentexception    
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.maxBy funcStr   nullArr  |> ignore)  
         
         // len = 0
@@ -319,7 +319,7 @@ type ArrayModule2() =
         // empty array -- argumentexception   
         
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.min   nullArr  |> ignore)  
         
         // len = 0
@@ -342,7 +342,7 @@ type ArrayModule2() =
         // empty array -- argumentexception    
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.minBy funcStr   nullArr  |> ignore)  
         
         // len = 0
@@ -402,7 +402,7 @@ type ArrayModule2() =
         if resultEpt <> ([||],[||]) then Assert.Fail()
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.partition (fun (x:string) -> x.Length >4)  nullArr  |> ignore)  
         
         ()
@@ -422,7 +422,7 @@ type ArrayModule2() =
         if resultEpt <> [||] then Assert.Fail()
     
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.permute (fun i -> (i+1) % 4)  nullArr  |> ignore)   
         
         ()
@@ -441,7 +441,7 @@ type ArrayModule2() =
         CheckThrowsArgumentException (fun () -> Array.reduce (fun x y -> x/y)  [||] |> ignore)
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.reduce (fun (x:string) (y:string) -> x.Remove(0,y.Length))  nullArr  |> ignore)   
         
         ()
@@ -461,7 +461,7 @@ type ArrayModule2() =
         CheckThrowsArgumentException (fun () -> Array.reduceBack (fun x y -> x/y) [||] |> ignore)
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.reduceBack (fun (x:string) (y:string) -> x.Remove(0,y.Length))  nullArr  |> ignore)   
         
         ()
@@ -482,7 +482,7 @@ type ArrayModule2() =
         if resultEpt <> [||] then Assert.Fail()
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.rev  nullArr  |> ignore) 
         ()
 
@@ -503,7 +503,7 @@ type ArrayModule2() =
         if resultEpt <> [|5|] then Assert.Fail()
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.scan funcStr "begin"  nullArr  |> ignore)  
         
         ()   
@@ -525,7 +525,7 @@ type ArrayModule2() =
         if resultEpt <> [|5|] then Assert.Fail()
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.scanBack funcStr nullArr "begin"  |> ignore) 
         
         ()
@@ -551,8 +551,8 @@ type ArrayModule2() =
         if resultEpt <> [||] then Assert.Fail()
 
         // exceptions
-        CheckThrowsArgumentNullException (fun () -> Array.skip 0 (null:string[]) |> ignore)
-        CheckThrowsArgumentNullException (fun () -> Array.skip -3 (null:string[]) |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.skip 0 (null:string array) |> ignore)
+        CheckThrowsArgumentNullException (fun () -> Array.skip -3 (null:string array) |> ignore)
         CheckThrowsArgumentException (fun () -> Array.skip 1 [||] |> ignore)
         CheckThrowsArgumentException (fun () -> Array.skip 4 [|1; 2; 3|] |> ignore)
 
@@ -602,7 +602,7 @@ type ArrayModule2() =
         // empty array -- outofbundaryexception
         
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsNullRefException (fun () -> Array.set nullArr 0 "null"   |> ignore)
         
         ()    
@@ -625,12 +625,12 @@ type ArrayModule2() =
         if strArr <> [| "Lists"; "a"; "are"; "commonly"; "data"; "structure"; "used"|]     then Assert.Fail()
         
         // empty array
-        let emptyArr:int[] = [| |]
+        let emptyArr:int array = [| |]
         Array.sortInPlaceWith compare emptyArr
         if emptyArr <> [||] then Assert.Fail()
         
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.sortInPlaceWith compare nullArr  |> ignore)  
         
         // len = 2  
@@ -660,12 +660,12 @@ type ArrayModule2() =
         if strArr <> [| "a"; "are";"data"; "used";"Lists"; "commonly";"structure"|] && strArr <> [| "a"; "are"; "used"; "data"; "Lists"; "commonly";"structure"|]    then Assert.Fail()
         
         // empty array
-        let emptyArr:int[] = [| |]
+        let emptyArr:int array = [| |]
         Array.sortInPlaceBy int emptyArr
         if emptyArr <> [||] then Assert.Fail()
         
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.sortInPlaceBy (fun (x:string) -> x.Length) nullArr |> ignore)  
         
         // len = 2  
@@ -689,7 +689,7 @@ type ArrayModule2() =
         Assert.AreEqual([|"d"; "c"; "b"; "a"; "Z"; "Y"; "X"; ""; null|], resultStr)
         
         // empty array
-        let emptyArr:int[] = [| |]
+        let emptyArr:int array = [| |]
         let resultEmpty = Array.sortDescending emptyArr
         if resultEmpty <> [||] then Assert.Fail()
         
@@ -727,7 +727,7 @@ type ArrayModule2() =
         Assert.AreEqual([|"....";"...";"..";"."; ""|], resultStr)
         
         // empty array
-        let emptyArr:int[] = [| |]
+        let emptyArr:int array = [| |]
         let resultEmpty = Array.sortByDescending int emptyArr        
         if resultEmpty <> [||] then Assert.Fail()    
         
@@ -766,7 +766,7 @@ type ArrayModule2() =
         if resultEpt <> [||] then Assert.Fail()
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.sub nullArr 1 1 |> ignore)  
         
         // bounds
@@ -779,7 +779,7 @@ type ArrayModule2() =
     [<Fact>]
     member this.Sum() =
         // empty integer array 
-        let resultEptInt = Array.sum ([||]:int[]) 
+        let resultEptInt = Array.sum ([||]:int array) 
         if resultEptInt <> 0 then Assert.Fail(sprintf "int: should 0 but is %i" resultEptInt)
         
         // empty float32 array
@@ -802,29 +802,29 @@ type ArrayModule2() =
         if resultInt <> 55 then Assert.Fail(sprintf "int: should 55 but is %i" resultInt)
         
         // float32 array
-        let floatArray: float32[] = [| 1.1f; 1.1f; 1.1f |]
+        let floatArray: float32 array = [| 1.1f; 1.1f; 1.1f |]
         let resultFloat = Array.sum floatArray
         if abs (resultFloat - 3.3f) > 0.000001f then Assert.Fail(sprintf "float32: should be 3.3 but is %.10f" resultFloat)
         
         // double array
-        let doubleArray: System.Double[] = [| 1.0; 8.0 |]
+        let doubleArray: System.Double array = [| 1.0; 8.0 |]
         let resultDouble = Array.sum doubleArray
         if resultDouble <> 9.0 then Assert.Fail(sprintf "float: should be 9.0 but is %.10f" resultDouble)
         
         // decimal array
-        let decimalArray: decimal[] = [| 0M; 19M; 19.03M |]
+        let decimalArray: decimal array = [| 0M; 19M; 19.03M |]
         let resultDecimal = Array.sum decimalArray
         if resultDecimal <> 38.03M then Assert.Fail(sprintf "decimal: should be 38.03 but is %M" resultDecimal)
  
         // null array
-        let nullArr = null:double[]    
+        let nullArr = null:double array    
         CheckThrowsArgumentNullException (fun () -> Array.sum nullArr |> ignore) 
         ()
 
     [<Fact>]
     member this.SumBy() =
         // empty integer array
-        let resultEptInt = Array.sumBy int ([||]:int[])
+        let resultEptInt = Array.sumBy int ([||]:int array)
         if resultEptInt <> 0 then Assert.Fail(sprintf "int: should 0 but is %i" resultEptInt)
         
         // empty float32 array
@@ -847,21 +847,21 @@ type ArrayModule2() =
         if resultInt <> 55 then Assert.Fail(sprintf "int: should 55 but is %i" resultInt)
         
         // float32 array
-        let floatArray: string[] = [| "1.2";"3.5";"6.7" |]
+        let floatArray: string array = [| "1.2";"3.5";"6.7" |]
         let resultFloat = Array.sumBy float32 floatArray
         if abs (resultFloat - 11.4f) > 0.000001f then Assert.Fail(sprintf "float32: should be 11.4 but is %.10f" resultFloat)
         
         // double array
-        let doubleArray: System.Double[] = [| 1.0;8.0 |]
+        let doubleArray: System.Double array = [| 1.0;8.0 |]
         let resultDouble = Array.sumBy float doubleArray
         if resultDouble <> 9.0 then Assert.Fail(sprintf "float: should be 9.0 but is %.10f" resultDouble)
         
         // decimal array
-        let decimalArray: decimal[] = [| 0M;19M;19.03M |]
+        let decimalArray: decimal array = [| 0M;19M;19.03M |]
         let resultDecimal = Array.sumBy decimal decimalArray
         if resultDecimal <> 38.03M then Assert.Fail(sprintf "decimal: should be 38.03 but is %M" resultDecimal)
         // null array
-        let nullArr = null:double[]
+        let nullArr = null:double array
         CheckThrowsArgumentNullException (fun () -> Array.sumBy float32 nullArr |> ignore)
         ()
 
@@ -899,7 +899,7 @@ type ArrayModule2() =
         if resultEpt <> [] then Assert.Fail()
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.toList   nullArr  |> ignore)  
         
         ()    
@@ -919,7 +919,7 @@ type ArrayModule2() =
         if resultEpt <> [||]  then Assert.Fail()
 
         // null array
-        let nullArr = null:string[]  
+        let nullArr = null:string array  
         CheckThrowsArgumentNullException (fun () -> nullArr  |> Array.toSeq   |> ignore)  
         
         ()   
@@ -942,7 +942,7 @@ type ArrayModule2() =
         Assert.AreEqual([| |], Array.transpose [| [||]; [||] |])
 
         // null array
-        let nullArr = null: string[][]
+        let nullArr = null: string array array
         CheckThrowsArgumentNullException (fun () -> nullArr |> Array.transpose |> ignore)
 
         // jagged arrays
@@ -987,7 +987,7 @@ type ArrayModule2() =
         if resultEpt <> None  then Assert.Fail()
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.tryFind (fun (x:string) -> x.Length > 4)  nullArr  |> ignore)  
         
         ()
@@ -1011,7 +1011,7 @@ type ArrayModule2() =
         Assert.AreEqual(None, [| 1..20 |] |> Array.tryFindBack (fun _ -> false))
 
         // null array
-        let nullArr = null:string[]
+        let nullArr = null:string array
         CheckThrowsArgumentNullException (fun () -> Array.tryFindBack (fun _ -> failwith "error") nullArr |> ignore)
 
         ()
@@ -1031,7 +1031,7 @@ type ArrayModule2() =
         if resultEpt <> None  then Assert.Fail()
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.tryFindIndex (fun (x:string) -> x.Length > 4)  nullArr  |> ignore)  
         
         ()
@@ -1055,7 +1055,7 @@ type ArrayModule2() =
         Assert.AreEqual(None, [| 1..20 |] |> Array.tryFindIndexBack (fun _ -> false))
 
         // null array
-        let nullArr = null:string[]
+        let nullArr = null:string array
         CheckThrowsArgumentNullException (fun () -> Array.tryFindIndexBack (fun (x:string) -> x.Length > 4) nullArr |> ignore)
 
         ()
@@ -1243,7 +1243,7 @@ type ArrayModule2() =
         if resultEpt <> [||]  then Assert.Fail()
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.zip nullArr   nullArr  |> ignore)  
         
         // len1 <> len2
@@ -1267,7 +1267,7 @@ type ArrayModule2() =
         if resultEpt <> [||]  then Assert.Fail()
 
         // null array
-        let nullArr = null:string[]      
+        let nullArr = null:string array      
         CheckThrowsArgumentNullException (fun () -> Array.zip3 nullArr  nullArr  nullArr  |> ignore)  
         
         // len1 <> len2
@@ -1288,10 +1288,10 @@ type ArrayModule2() =
         Assert.AreEqual("commonly", resultStr)
 
         // empty array
-        CheckThrowsIndexOutRangException(fun () -> Array.item 0 ([| |] : decimal[]) |> ignore)
+        CheckThrowsIndexOutRangException(fun () -> Array.item 0 ([| |] : decimal array) |> ignore)
 
         // null array
-        let nullArr = null:string[]
+        let nullArr = null:string array
         CheckThrowsNullRefException (fun () -> Array.item 0 nullArr |> ignore)
 
         // Negative index
@@ -1315,12 +1315,12 @@ type ArrayModule2() =
         Assert.AreEqual(Some("are"), resultStr)
 
         // empty array
-        let emptyArr:int[] = [| |]
+        let emptyArr:int array = [| |]
         let resultEmpty = Array.tryItem 1 emptyArr
         Assert.AreEqual(None, resultEmpty)
 
         // null array
-        let nullArr = null:string[]
+        let nullArr = null:string array
         CheckThrowsArgumentNullException (fun () -> Array.tryItem 0 nullArr |> ignore)
 
         // Negative index
