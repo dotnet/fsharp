@@ -458,6 +458,7 @@ type TcConfigBuilder =
         mutable metadataVersion: string option
         mutable standalone: bool
         mutable extraStaticLinkRoots: string list
+        mutable compressMetadata: bool
         mutable noSignatureData: bool
         mutable onlyEssentialOptimizationData: bool
         mutable useOptimizationDataFile: bool
@@ -527,6 +528,9 @@ type TcConfigBuilder =
         /// If true, strip away data that would not be of use to end users, but is useful to us for debugging
         mutable noDebugAttributes: bool
 
+        /// If true, do not emit ToString implementations for unions, records, structs, exceptions
+        mutable useReflectionFreeCodeGen: bool
+
         /// If true, indicates all type checking and code generation is in the context of fsi.exe
         isInteractive: bool
 
@@ -546,6 +550,8 @@ type TcConfigBuilder =
         mutable useSdkRefs: bool
 
         mutable fxResolver: FxResolver option
+
+        mutable bufferWidth: int option
 
         // Is F# Interactive using multi-assembly emit?
         mutable fsiMultiAssemblyEmit: bool
@@ -571,6 +577,8 @@ type TcConfigBuilder =
         mutable langVersion: LanguageVersion
 
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
+
+        mutable exiter: Exiter
     }
 
     // Directories to start probing in
@@ -643,7 +651,7 @@ type TcConfigBuilder =
             outputFile = None
             platform = None
             prefer32Bit = false
-            useSimpleResolution = runningOnMono
+            useSimpleResolution = false
             target = CompilerTarget.ConsoleExe
             debuginfo = false
             testFlagEmitFeeFeeAs100001 = false
@@ -679,6 +687,7 @@ type TcConfigBuilder =
             metadataVersion = None
             standalone = false
             extraStaticLinkRoots = []
+            compressMetadata = false
             noSignatureData = false
             onlyEssentialOptimizationData = false
             useOptimizationDataFile = false
@@ -730,11 +739,13 @@ type TcConfigBuilder =
             pause = false
             alwaysCallVirt = true
             noDebugAttributes = false
+            useReflectionFreeCodeGen = false
             emitDebugInfoInQuotations = false
             exename = None
             shadowCopyReferences = false
             useSdkRefs = true
             fxResolver = None
+            bufferWidth = None
             fsiMultiAssemblyEmit = true
             internalTestSpanStackReferring = false
             noConditionalErasure = false
@@ -753,6 +764,7 @@ type TcConfigBuilder =
             rangeForErrors = rangeForErrors
             sdkDirOverride = sdkDirOverride
             xmlDocInfoLoader = None
+            exiter = QuitProcessExiter
         }
 
     member tcConfigB.FxResolver =
@@ -836,7 +848,7 @@ type TcConfigBuilder =
             if tcConfigB.debuginfo then
                 Some(
                     match tcConfigB.debugSymbolFile with
-                    | None -> getDebugFileName outfile tcConfigB.portablePDB
+                    | None -> getDebugFileName outfile
                     | Some f -> f
                 )
             elif (tcConfigB.debugSymbolFile <> None) && (not tcConfigB.debuginfo) then
@@ -1088,14 +1100,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             with e ->
                 // We no longer expect the above to fail but leaving this just in case
                 error (Error(FSComp.SR.buildErrorOpeningBinaryFile (fileName, e.Message), rangeStartup))
-        | None ->
-#if !ENABLE_MONO_SUPPORT
-            // TODO: we have to get msbuild out of this
-            if data.useSimpleResolution then
-                None, ""
-            else
-#endif
-            None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
+        | None -> None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
 
     let makePathAbsolute path =
         ComputeMakePathAbsolute data.implicitIncludeDir path
@@ -1143,30 +1148,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         | _ -> ()
 
                     | LegacyResolutionEnvironment.EditingOrCompilation _ ->
-#if ENABLE_MONO_SUPPORT
-                        if runningOnMono then
-                            // Default compilation-time references on Mono
-                            //
-                            // On Mono, the default references come from the implementation assemblies.
-                            // This is because we have had trouble reliably using MSBuild APIs to compute DotNetFrameworkReferenceAssembliesRootDirectory on Mono.
-                            yield runtimeRoot
-
-                            if FileSystem.DirectoryExistsShim runtimeRootFacades then
-                                yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
-
-                            if FileSystem.DirectoryExistsShim runtimeRootWPF then
-                                yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
-                            // On Mono we also add a default reference to the 4.5-api and 4.5-api/Facades directories.
-                            let runtimeRootApi = runtimeRootWithoutSlash + "-api"
-                            let runtimeRootApiFacades = Path.Combine(runtimeRootApi, "Facades")
-
-                            if FileSystem.DirectoryExistsShim runtimeRootApi then
-                                yield runtimeRootApi
-
-                            if FileSystem.DirectoryExistsShim runtimeRootApiFacades then
-                                yield runtimeRootApiFacades
-                        else
-#endif
                         // Default compilation-time references on .NET Framework
                         //
                         // This is the normal case for "fsc.exe a.fs". We refer to the reference assemblies folder.
@@ -1188,6 +1169,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             errorRecovery e range0
             []
 
+    member _.bufferWidth = data.bufferWidth
     member _.fsiMultiAssemblyEmit = data.fsiMultiAssemblyEmit
     member _.FxResolver = data.FxResolver
     member _.primaryAssembly = data.primaryAssembly
@@ -1257,6 +1239,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.metadataVersion = data.metadataVersion
     member _.standalone = data.standalone
     member _.extraStaticLinkRoots = data.extraStaticLinkRoots
+    member _.compressMetadata = data.compressMetadata
     member _.noSignatureData = data.noSignatureData
     member _.onlyEssentialOptimizationData = data.onlyEssentialOptimizationData
     member _.useOptimizationDataFile = data.useOptimizationDataFile
@@ -1310,6 +1293,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.pause = data.pause
     member _.alwaysCallVirt = data.alwaysCallVirt
     member _.noDebugAttributes = data.noDebugAttributes
+    member _.useReflectionFreeCodeGen = data.useReflectionFreeCodeGen
     member _.isInteractive = data.isInteractive
     member _.isInvalidationSupported = data.isInvalidationSupported
     member _.emitDebugInfoInQuotations = data.emitDebugInfoInQuotations
@@ -1322,6 +1306,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.noConditionalErasure = data.noConditionalErasure
     member _.applyLineDirectives = data.applyLineDirectives
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
+    member _.exiter = data.exiter
 
     static member Create(builder, validate) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter

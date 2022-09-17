@@ -626,17 +626,23 @@ let instrs () =
         i_stsfld, I_field_instr(volatilePrefix (fun x fspec -> I_stsfld(x, fspec)))
         i_ldflda, I_field_instr(noPrefixes I_ldflda)
         i_ldsflda, I_field_instr(noPrefixes I_ldsflda)
-        i_call, I_method_instr(tailPrefix (fun tl (mspec, y) -> I_call(tl, mspec, y)))
+        (i_call,
+         I_method_instr(
+             constraintOrTailPrefix (fun (c, tl) (mspec, y) ->
+                 match c with
+                 | Some ty -> I_callconstraint(false, tl, ty, mspec, y)
+                 | None -> I_call(tl, mspec, y))
+         ))
         i_ldftn, I_method_instr(noPrefixes (fun (mspec, _y) -> I_ldftn mspec))
         i_ldvirtftn, I_method_instr(noPrefixes (fun (mspec, _y) -> I_ldvirtftn mspec))
         i_newobj, I_method_instr(noPrefixes I_newobj)
-        i_callvirt,
-        I_method_instr(
-            constraintOrTailPrefix (fun (c, tl) (mspec, y) ->
-                match c with
-                | Some ty -> I_callconstraint(tl, ty, mspec, y)
-                | None -> I_callvirt(tl, mspec, y))
-        )
+        (i_callvirt,
+         I_method_instr(
+             constraintOrTailPrefix (fun (c, tl) (mspec, y) ->
+                 match c with
+                 | Some ty -> I_callconstraint(true, tl, ty, mspec, y)
+                 | None -> I_callvirt(tl, mspec, y))
+         ))
         i_leave_s, I_unconditional_i8_instr(noPrefixes (fun x -> I_leave x))
         i_br_s, I_unconditional_i8_instr(noPrefixes I_br)
         i_leave, I_unconditional_i32_instr(noPrefixes (fun x -> I_leave x))
@@ -4843,7 +4849,7 @@ let openPEMetadataOnly (fileName, peinfo, pectxtEager, pevEager, mdfile: BinaryF
     openMetadataReader (fileName, mdfile, 0, peinfo, pectxtEager, pevEager, None, reduceMemoryUsage)
 
 type ILReaderMetadataSnapshot = obj * nativeint * int
-type ILReaderTryGetMetadataSnapshot = (* path: *) string (* snapshotTimeStamp: *)  * DateTime -> ILReaderMetadataSnapshot option
+type ILReaderTryGetMetadataSnapshot = (* path: *) string (* snapshotTimeStamp: *) * DateTime -> ILReaderMetadataSnapshot option
 
 [<RequireQualifiedAccess>]
 type MetadataOnlyFlag =
@@ -5023,7 +5029,7 @@ let OpenILModuleReader fileName opts =
                 //
                 let ilModuleReader =
                     // Check if we are doing metadataOnly reading (the most common case in both the compiler and IDE)
-                    if not runningOnMono && metadataOnly then
+                    if metadataOnly then
 
                         // See if tryGetMetadata gives us a BinaryFile for the metadata section alone.
                         let mdfileOpt =
@@ -5079,7 +5085,7 @@ let OpenILModuleReader fileName opts =
                 // multi-proc build. So use memory mapping, but only for stable files. Other files
                 // still use an in-memory ByteFile
                 let pefile =
-                    if not runningOnMono && (alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath) then
+                    if alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath then
                         let _, pefile = getBinaryFile fullPath false
                         pefile
                     else

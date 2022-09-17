@@ -5,7 +5,7 @@ module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System.IO
 open Internal.Utilities.Library
-open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
@@ -104,7 +104,6 @@ val ParseInputFiles:
     lexResourceManager: Lexhelp.LexResourceManager *
     sourceFiles: string list *
     diagnosticsLogger: DiagnosticsLogger *
-    exiter: Exiter *
     createDiagnosticsLogger: (Exiter -> CapturingDiagnosticsLogger) *
     retryLocked: bool ->
         (ParsedInput * string) list

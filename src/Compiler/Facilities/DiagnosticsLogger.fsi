@@ -386,11 +386,10 @@ val checkLanguageFeatureAndRecover: langVersion: LanguageVersion -> langFeature:
 val tryLanguageFeatureErrorOption:
     langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> exn option
 
-val languageFeatureNotSupportedInLibraryError:
-    langVersion: LanguageVersion -> langFeature: LanguageFeature -> m: range -> 'T
+val languageFeatureNotSupportedInLibraryError: langFeature: LanguageFeature -> m: range -> 'T
 
 type StackGuard =
-    new: maxDepth: int -> StackGuard
+    new: maxDepth: int * name: string -> StackGuard
 
     /// Execute the new function, on a new thread if necessary
     member Guard: f: (unit -> 'T) -> 'T

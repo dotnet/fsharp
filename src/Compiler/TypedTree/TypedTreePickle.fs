@@ -1499,6 +1499,7 @@ let u_MemberFlags st : SynMemberFlags=
       IsDispatchSlot=x4
       IsOverrideOrExplicitImpl=x5
       IsFinal=x6
+      GetterOrSetterIsCompilerGenerated=false
       MemberKind=x7
       Trivia = SynMemberFlagsTrivia.Zero }
 
@@ -1513,9 +1514,9 @@ let p_anonInfo x st =
 
 let p_trait_sln sln st =
     match sln with
-    | ILMethSln(a, b, c, d) ->
+    | ILMethSln(a, b, c, d, None) ->
          p_byte 0 st; p_tup4 p_ty (p_option p_ILTypeRef) p_ILMethodRef p_tys (a, b, c, d) st
-    | FSMethSln(a, b, c) ->
+    | FSMethSln(a, b, c, None) ->
          p_byte 1 st; p_tup3 p_ty (p_vref "trait") p_tys (a, b, c) st
     | BuiltInSln ->
          p_byte 2 st
@@ -1525,6 +1526,10 @@ let p_trait_sln sln st =
          p_byte 4 st; p_tup3 p_tys p_rfref p_bool (a, b, c) st
     | FSAnonRecdFieldSln(a, b, c) ->
          p_byte 5 st; p_tup3 p_anonInfo p_tys p_int (a, b, c) st
+    | ILMethSln(a, b, c, d, Some e) ->
+         p_byte 6 st; p_tup5 p_ty (p_option p_ILTypeRef) p_ILMethodRef p_tys p_ty (a, b, c, d, e) st
+    | FSMethSln(a, b, c, Some d) ->
+         p_byte 7 st; p_tup4 p_ty (p_vref "trait") p_tys p_ty (a, b, c, d) st
 
 
 let p_trait (TTrait(a, b, c, d, e, f)) st  =
@@ -1543,10 +1548,10 @@ let u_trait_sln st =
     match tag with
     | 0 ->
         let a, b, c, d = u_tup4 u_ty (u_option u_ILTypeRef) u_ILMethodRef u_tys st
-        ILMethSln(a, b, c, d)
+        ILMethSln(a, b, c, d, None)
     | 1 ->
         let a, b, c = u_tup3 u_ty u_vref u_tys st
-        FSMethSln(a, b, c)
+        FSMethSln(a, b, c, None)
     | 2 ->
         BuiltInSln
     | 3 ->
@@ -1557,6 +1562,12 @@ let u_trait_sln st =
     | 5 ->
          let a, b, c = u_tup3 u_anonInfo u_tys u_int st
          FSAnonRecdFieldSln(a, b, c)
+    | 6 ->
+        let a, b, c, d, e = u_tup5 u_ty (u_option u_ILTypeRef) u_ILMethodRef u_tys u_ty st
+        ILMethSln(a, b, c, d, Some e)
+    | 7 ->
+        let a, b, c, d = u_tup4 u_ty u_vref u_tys u_ty st
+        FSMethSln(a, b, c, Some d)
     | _ -> ufailwith st "u_trait_sln"
 
 let u_trait st =
@@ -2050,7 +2061,7 @@ and p_ValData x st =
     p_option p_ValReprInfo x.ValReprInfo st
     p_string x.XmlDocSig st
     p_access x.Accessibility st
-    p_parentref x.DeclaringEntity st
+    p_parentref x.TryDeclaringEntity st
     p_option p_const x.LiteralValue st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.XmlDoc) st
@@ -2183,7 +2194,7 @@ and u_recdfield_spec st =
       rfield_xmldoc= defaultArg xmldoc XmlDoc.Empty
       rfield_xmldocsig=f
       rfield_access=g
-      rfield_name_generated = false
+      rfield_name_generated = d.idRange.IsSynthetic
       rfield_other_range = None }
 
 and u_rfield_table st = Construct.MakeRecdFieldsTable (u_list u_recdfield_spec st)

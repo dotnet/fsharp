@@ -366,7 +366,7 @@ let convReturnInstr ty instr =
     | I_ret -> [ I_box ty; I_ret ]
     | I_call (_, mspec, varargs) -> [ I_call(Normalcall, mspec, varargs) ]
     | I_callvirt (_, mspec, varargs) -> [ I_callvirt(Normalcall, mspec, varargs) ]
-    | I_callconstraint (_, ty, mspec, varargs) -> [ I_callconstraint(Normalcall, ty, mspec, varargs) ]
+    | I_callconstraint (callvirt, _, ty, mspec, varargs) -> [ I_callconstraint(callvirt, Normalcall, ty, mspec, varargs) ]
     | I_calli (_, csig, varargs) -> [ I_calli(Normalcall, csig, varargs) ]
     | _ -> [ instr ]
 
@@ -573,6 +573,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                 let nowApplyMethDef =
                     mkILGenericVirtualMethod (
                         "Specialize",
+                        ILCallingConv.Instance,
                         ILMemberAccess.Public,
                         addedGenParams (* method is generic over added ILGenericParameterDefs *) ,
                         [],
@@ -707,7 +708,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                     let convil = convILMethodBody (Some nowCloSpec, None) (Lazy.force clo.cloCode)
 
                     let nowApplyMethDef =
-                        mkILNonGenericVirtualMethod (
+                        mkILNonGenericVirtualInstanceMethod (
                             "Invoke",
                             ILMemberAccess.Public,
                             nowParams,

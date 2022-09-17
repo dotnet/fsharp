@@ -1137,14 +1137,17 @@ let TryGetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
 let canGenMethodDef (tdef: ILTypeDef) cenv (mdef: ILMethodDef) =
     if not cenv.referenceAssemblyOnly then
         true
-    // If the method is part of attribute type, generate get_* and set_* methods for it, consider the following case:
+    // If the method is part of attribute type, generate get_* and set_* methods and .ctors for it, consider the following case:
     //      [<AttributeUsage(AttributeTargets.All)>]
     //      type PublicWithInternalSetterPropertyAttribute() =
     //          inherit Attribute()
     //          member val internal Prop1 : int = 0 with get, set
     //      [<PublicWithInternalSetterPropertyAttribute(Prop1=4)>]
     //      type ClassPublicWithAttributes() = class end
-    else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsConstructor) && (not mdef.IsClassInitializer) then
+
+    // We want to generate pretty much everything for attributes, because of serialization scenarios, and the fact that non-visible constructors, properties and fields can still be part of reference assembly.
+    // Example: NoDynamicInvocationAttribute has an internal constructor, which should be included in the reference assembly.
+    else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsClassInitializer) then
         true
     else
         match mdef.Access with
@@ -1919,10 +1922,11 @@ module Codebuf =
             emitTailness cenv codebuf tl
             emitMethodSpecInstr cenv codebuf env i_callvirt (mspec, varargs)
             //emitAfterTailcall codebuf tl
-        | I_callconstraint (tl, ty, mspec, varargs) ->
+        | I_callconstraint (callvirt, tl, ty, mspec, varargs) ->
             emitTailness cenv codebuf tl
             emitConstrained cenv codebuf env ty
-            emitMethodSpecInstr cenv codebuf env i_callvirt (mspec, varargs)
+            let instr = if callvirt then i_callvirt else i_call
+            emitMethodSpecInstr cenv codebuf env instr (mspec, varargs)
             //emitAfterTailcall codebuf tl
         | I_newobj (mspec, varargs) ->
             emitMethodSpecInstr cenv codebuf env i_newobj (mspec, varargs)
@@ -3197,29 +3201,6 @@ module FileSystemUtilities =
     open System.Reflection
     open System.Globalization
     let progress = try Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
-    let setExecutablePermission (fileName: string) =
-
-#if ENABLE_MONO_SUPPORT
-      if runningOnMono then
-        try
-            let monoPosix = Assembly.Load("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
-            if progress then eprintf "loading type Mono.Unix.UnixFileInfo...\n"
-            let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo")
-            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box fileName |], CultureInfo.InvariantCulture)
-            let prevPermissions = monoUnixFileInfo.InvokeMember("get_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| |], CultureInfo.InvariantCulture)
-            let prevPermissionsValue = prevPermissions |> unbox<int>
-            let newPermissionsValue = prevPermissionsValue ||| 0x000001ED
-            let newPermissions = Enum.ToObject(prevPermissions.GetType(), newPermissionsValue)
-            // Add 0x000001ED (UserReadWriteExecute, GroupReadExecute, OtherReadExecute) to the access permissions on Unix
-            monoUnixFileInfo.InvokeMember("set_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| newPermissions |], CultureInfo.InvariantCulture) |> ignore
-        with exn ->
-            if progress then eprintf "failure: %s...\n" (exn.ToString())
-            // Fail silently
-      else
-#else
-        ignore fileName
-#endif
-        ()
 
 /// Arbitrary value
 [<Literal>]
@@ -4141,7 +4122,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           | Some AMD64 -> writeInt32AsUInt16 os 0x8664      // Machine - IMAGE_FILE_MACHINE_AMD64
           | Some IA64 -> writeInt32AsUInt16 os 0x200        // Machine - IMAGE_FILE_MACHINE_IA64
           | Some ARM64 -> writeInt32AsUInt16 os 0xaa64      // Machine - IMAGE_FILE_MACHINE_ARM64
-          | Some ARM -> writeInt32AsUInt16 os 0x1c0         // Machine - IMAGE_FILE_MACHINE_ARM
+          | Some ARM -> writeInt32AsUInt16 os 0x1c4         // Machine - IMAGE_FILE_MACHINE_ARMNT
           | _ ->  writeInt32AsUInt16 os 0x014c              // Machine - IMAGE_FILE_MACHINE_I386
 
           writeInt32AsUInt16 os numSections
@@ -4545,11 +4526,6 @@ let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
         with _ ->
             try FileSystem.FileDeleteShim options.outfile with | _ -> ()
             reraise()
-
-    try
-        FileSystemUtilities.setExecutablePermission options.outfile
-    with _ ->
-        ()
 
     let reopenOutput () =
         FileSystem.OpenFileForWriteShim(options.outfile, FileMode.Open, FileAccess.Write, FileShare.Read)

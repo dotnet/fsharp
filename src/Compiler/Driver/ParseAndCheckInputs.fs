@@ -14,7 +14,7 @@ open Internal.Utilities.Text.Lexing
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.CompilerConfig
@@ -471,27 +471,27 @@ let ParseInput
 type Tokenizer = unit -> Parser.token
 
 // Show all tokens in the stream, for testing purposes
-let ShowAllTokensAndExit (shortFilename, tokenizer: Tokenizer, lexbuf: LexBuffer<char>) =
+let ShowAllTokensAndExit (shortFilename, tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter: Exiter) =
     while true do
         printf "tokenize - getting one token from %s\n" shortFilename
         let t = tokenizer ()
         printf "tokenize - got %s @ %a\n" (Parser.token_to_string t) outputRange lexbuf.LexemeRange
 
         match t with
-        | Parser.EOF _ -> exit 0
+        | Parser.EOF _ -> exiter.Exit 0
         | _ -> ()
 
         if lexbuf.IsPastEndOfStream then
             printf "!!! at end of stream\n"
 
 // Test one of the parser entry points, just for testing purposes
-let TestInteractionParserAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>) =
+let TestInteractionParserAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>, exiter: Exiter) =
     while true do
         match (Parser.interaction (fun _ -> tokenizer ()) lexbuf) with
         | ParsedScriptInteraction.Definitions (l, m) -> printfn "Parsed OK, got %d defs @ %a" l.Length outputRange m
         | ParsedScriptInteraction.HashDirective (_, m) -> printfn "Parsed OK, got hash @ %a" outputRange m
 
-    exit 0
+    exiter.Exit 0
 
 // Report the statistics for testing purposes
 let ReportParsingStatistics res =
@@ -606,11 +606,11 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
 
                 // If '--tokenize' then show the tokens now and exit
                 if tokenizeOnly then
-                    ShowAllTokensAndExit(shortFilename, tokenizer, lexbuf)
+                    ShowAllTokensAndExit(shortFilename, tokenizer, lexbuf, tcConfig.exiter)
 
                 // Test hook for one of the parser entry points
                 if tcConfig.testInteractionParser then
-                    TestInteractionParserAndExit(tokenizer, lexbuf)
+                    TestInteractionParserAndExit(tokenizer, lexbuf, tcConfig.exiter)
 
                 // Parse the input
                 let res =
@@ -741,7 +741,6 @@ let ParseInputFiles
         lexResourceManager,
         sourceFiles,
         diagnosticsLogger: DiagnosticsLogger,
-        exiter: Exiter,
         createDiagnosticsLogger: Exiter -> CapturingDiagnosticsLogger,
         retryLocked
     ) =
@@ -764,7 +763,7 @@ let ParseInputFiles
                 sourceFiles
                 |> Array.map (fun (fileName, _) ->
                     checkInputFile tcConfig fileName
-                    createDiagnosticsLogger (delayedExiter))
+                    createDiagnosticsLogger delayedExiter)
 
             let results =
                 try
@@ -790,7 +789,7 @@ let ParseInputFiles
                         delayedDiagnosticsLoggers
                         |> Array.iter (fun delayedDiagnosticsLogger -> delayedDiagnosticsLogger.CommitDelayedDiagnostics diagnosticsLogger)
                 with StopProcessing ->
-                    exiter.Exit exitCode
+                    tcConfig.exiter.Exit exitCode
 
             results |> List.ofArray
         else
@@ -806,7 +805,7 @@ let ParseInputFiles
 
     with e ->
         errorRecoveryNoRange e
-        exiter.Exit 1
+        tcConfig.exiter.Exit 1
 
 let ProcessMetaCommandsFromInput
     (nowarnF: 'state -> range * string -> 'state,

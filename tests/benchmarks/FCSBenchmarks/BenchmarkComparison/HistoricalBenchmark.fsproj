@@ -2,16 +2,23 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <Configurations>Release</Configurations>
+    <!-- Workaround to get rid of:
+        error NU1505: Duplicate 'PackageDownload' items found.
+        Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
+        The duplicate 'PackageDownload' items are:
+          Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2].
+    -->
+    <NoWarn>$(NoWarn);NU1505</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
   </PropertyGroup>
-  
+
   <PropertyGroup>
     <FcsReferenceType Condition="'$(FcsReferenceType)' == ''">project</FcsReferenceType>
     <FcsProjectPath Condition="'$(FcsProjectPath)' == ''">..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj</FcsProjectPath>
@@ -25,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
+    <PackageReference Include="BenchmarkDotNet" Version="$(BenchmarkDotNetVersion)" />
   </ItemGroup>
 
   <!-- Reference FCS in one of three different ways -->

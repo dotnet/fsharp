@@ -264,7 +264,7 @@
       </trans-unit>
       <trans-unit id="UseTripleQuotedInterpolation">
         <source>Use triple quoted string interpolation.</source>
-        <target state="new">Use triple quoted string interpolation.</target>
+        <target state="translated">Üçlü tırnak içine alınmış dize ilişkilendirmesini kullanın.</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">
