@@ -11,6 +11,7 @@
             <dependency id="Microsoft.Build.Utilities.Core" version="$MicrosoftBuildUtilitiesCorePackageVersion$" exclude="Build,Analyzers" />
             <dependency id="System.Buffers" version="$SystemBuffersPackageVersion$" exclude="Build,Analyzers" />
             <dependency id="System.Collections.Immutable" version="$SystemCollectionsImmutablePackageVersion$" exclude="Build,Analyzers" />
+            <dependency id="System.Diagnostics.DiagnosticSource" version="$SystemDiagnosticsDiagnosticSourceVersion$" exclude="Build,Analyzers" />
             <dependency id="System.Memory" version="$SystemMemoryPackageVersion$" exclude="Build,Analyzers" />
             <dependency id="System.Reflection.Emit" version="$SystemReflectionEmitPackageVersion$" exclude="Build,Analyzers" />
             <dependency id="System.Reflection.Metadata" version="$SystemReflectionMetadataPackageVersion$" exclude="Build,Analyzers" />

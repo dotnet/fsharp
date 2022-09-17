@@ -57,6 +57,7 @@
     <NuspecProperty Include="SystemBuffersPackageVersion=$(SystemBuffersVersion)" />
     <NuspecProperty Include="SystemCollectionsImmutablePackageVersion=$(SystemCollectionsImmutableVersion)" />
     <NuspecProperty Include="SystemMemoryPackageVersion=$(SystemMemoryVersion)" />
+    <NuspecProperty Include="SystemDiagnosticsDiagnosticSourcePackageVersion=$(SystemDiagnosticsDiagnosticSourceVersion)" />
     <NuspecProperty Include="SystemReflectionEmitPackageVersion=$(SystemReflectionEmitVersion)" />
     <NuspecProperty Include="SystemReflectionMetadataPackageVersion=$(SystemReflectionMetadataVersion)" />
     <NuspecProperty Include="SystemRuntimeCompilerServicesUnsafePackageVersion=$(SystemRuntimeCompilerServicesUnsafeVersion)" />
@@ -489,6 +490,7 @@
     <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
     <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
     <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
