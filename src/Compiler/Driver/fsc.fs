@@ -515,6 +515,8 @@ let main1
             rangeForErrors = range0
         )
 
+    tcConfigB.exiter <- exiter
+
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
     SetDebugSwitch tcConfigB None OptionSwitch.Off
@@ -621,7 +623,7 @@ let main1
         (fun exiter -> diagnosticsLoggerProvider.CreateDelayAndForwardLogger(exiter) :> CapturingDiagnosticsLogger)
 
     let inputs =
-        ParseInputFiles(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, exiter, createDiagnosticsLogger, false)
+        ParseInputFiles(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, createDiagnosticsLogger, false)
 
     let inputs, _ =
         (Map.empty, inputs)
