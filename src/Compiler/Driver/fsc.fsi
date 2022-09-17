@@ -76,4 +76,4 @@ val CompileFromSyntaxTrees:
         unit
 
 /// Read the parallelReferenceResolution flag from environment variables
-val internal getParallelReferenceResolutionFromEnvironment : unit -> ParallelReferenceResolution option
+val internal getParallelReferenceResolutionFromEnvironment: unit -> ParallelReferenceResolution option

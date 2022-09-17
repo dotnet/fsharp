@@ -1239,24 +1239,25 @@ type FSharpChecker
     // This cache is safe for concurrent access.
     let braceMatchCache =
         MruCache<AnyCallerThreadToken, _, _>(braceMatchCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
-    
-    static let inferParallelReferenceResolution (parallelReferenceResolution : bool option) =
+
+    static let inferParallelReferenceResolution (parallelReferenceResolution: bool option) =
         let explicitValue =
             parallelReferenceResolution
             |> Option.defaultValue false
             |> function
                 | true -> ParallelReferenceResolution.On
                 | false -> ParallelReferenceResolution.Off
-        
+
         let withEnvOverride =
             // Override ParallelReferenceResolution set on the constructor with an environment setting if present.
-            getParallelReferenceResolutionFromEnvironment()
+            getParallelReferenceResolutionFromEnvironment ()
             |> Option.defaultValue explicitValue
-        
+
         withEnvOverride
-        
-    static member getParallelReferenceResolutionFromEnvironment () = getParallelReferenceResolutionFromEnvironment ()
-    
+
+    static member getParallelReferenceResolutionFromEnvironment() =
+        getParallelReferenceResolutionFromEnvironment ()
+
     /// Instantiate an interactive checker.
     static member Create
         (
@@ -1291,7 +1292,7 @@ type FSharpChecker
 
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
-            
+
         let parallelReferenceResolution = inferParallelReferenceResolution parallelReferenceResolution
 
         FSharpChecker(

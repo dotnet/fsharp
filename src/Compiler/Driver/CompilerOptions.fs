@@ -1678,7 +1678,7 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             Some(InternalCommandLineOption("nodebugdata", rangeCmdArgs)),
             None
         )
-        
+
         CompilerOption(
             "parallelreferenceresolution",
             tagNone,

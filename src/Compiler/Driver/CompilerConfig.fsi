@@ -485,7 +485,7 @@ type TcConfigBuilder =
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
         mutable exiter: Exiter
-        
+
         mutable parallelReferenceResolution: ParallelReferenceResolution
     }
 
@@ -847,8 +847,8 @@ type TcConfig =
     member assumeDotNetFramework: bool
 
     member exiter: Exiter
-    
-    member parallelReferenceResolution : ParallelReferenceResolution
+
+    member parallelReferenceResolution: ParallelReferenceResolution
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

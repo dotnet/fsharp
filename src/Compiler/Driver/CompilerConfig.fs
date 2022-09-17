@@ -584,8 +584,8 @@ type TcConfigBuilder =
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
         mutable exiter: Exiter
-        
-        mutable parallelReferenceResolution : ParallelReferenceResolution
+
+        mutable parallelReferenceResolution: ParallelReferenceResolution
     }
 
     // Directories to start probing in
@@ -1315,7 +1315,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.applyLineDirectives = data.applyLineDirectives
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
     member _.exiter = data.exiter
-    member _.parallelReferenceResolution =  data.parallelReferenceResolution
+    member _.parallelReferenceResolution = data.parallelReferenceResolution
 
     static member Create(builder, validate) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
