@@ -2142,10 +2142,8 @@ and [<Sealed>] TcImports
             CheckDisposed()
 
             let tcConfig = tcConfigP.Get ctok
-            let runInParallel = tcConfig.parallelReferenceResolution
-
             let runMethod =
-                match runInParallel with
+                match tcConfig.parallelReferenceResolution with
                 | ParallelReferenceResolution.On -> NodeCode.Parallel
                 | ParallelReferenceResolution.Off -> NodeCode.Sequential
 
