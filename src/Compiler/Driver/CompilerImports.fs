@@ -2141,19 +2141,13 @@ and [<Sealed>] TcImports
         node {
             CheckDisposed()
 
-            // TODO inject top-down from FSharpChecker
-            let runInParallel =
-                Environment.GetEnvironmentVariable("FCS_PARALLEL_PROJECTS_ANALYSIS")
-                |> bool.TryParse
-                |> function
-                    | true, runInParallel -> runInParallel
-                    | false, _ -> false
+            let tcConfig = tcConfigP.Get ctok
+            let runInParallel = tcConfig.parallelReferenceResolution
 
             let runMethod =
-                if runInParallel then
-                    NodeCode.Parallel
-                else
-                    NodeCode.Sequential
+                match runInParallel with
+                | ParallelReferenceResolution.On -> NodeCode.Parallel
+                | ParallelReferenceResolution.Off -> NodeCode.Sequential
 
             let! results =
                 nms

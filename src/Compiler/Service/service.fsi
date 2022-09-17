@@ -8,6 +8,7 @@ open System
 open System.IO
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
@@ -31,6 +32,7 @@ type public FSharpChecker =
     /// <param name="keepAllBackgroundSymbolUses">Indicate whether all symbol uses should be kept in background checking</param>
     /// <param name="enableBackgroundItemKeyStoreAndSemanticClassification">Indicates whether a table of symbol keys should be kept for background compilation</param>
     /// <param name="enablePartialTypeChecking">Indicates whether to perform partial type checking. Cannot be set to true if keepAssmeblyContents is true. If set to true, can cause duplicate type-checks when richer information on a file is needed, but can skip background type-checking entirely on implementation files with signature files.</param>
+    /// <param name="parallelReferenceResolution">Indicates whether to resolve references in parallel.</param>
     static member Create:
         ?projectCacheSize: int *
         ?keepAssemblyContents: bool *
@@ -40,7 +42,8 @@ type public FSharpChecker =
         ?suggestNamesForErrors: bool *
         ?keepAllBackgroundSymbolUses: bool *
         ?enableBackgroundItemKeyStoreAndSemanticClassification: bool *
-        ?enablePartialTypeChecking: bool ->
+        ?enablePartialTypeChecking: bool *
+        ?parallelReferenceResolution: bool ->
             FSharpChecker
 
     /// <summary>

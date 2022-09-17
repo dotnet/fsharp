@@ -1432,7 +1432,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking: bool,
-            dependencyProvider
+            dependencyProvider,
+            parallelReferenceResolution
         ) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
@@ -1513,6 +1514,8 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     }
                     |> Some
 
+                tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+                
                 tcConfigB, sourceFilesNew
 
             // If this is a builder for a script, re-apply the settings inferred from the

@@ -292,7 +292,8 @@ type BackgroundCompiler
         suggestNamesForErrors,
         keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
-        enablePartialTypeChecking
+        enablePartialTypeChecking,
+        parallelReferenceResolution
     ) as self =
 
     let beforeFileChecked = Event<string * FSharpProjectOptions>()
@@ -419,7 +420,8 @@ type BackgroundCompiler
                     keepAllBackgroundSymbolUses,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
                     enablePartialTypeChecking,
-                    dependencyProvider
+                    dependencyProvider,
+                    parallelReferenceResolution
                 )
 
             match builderOpt with
@@ -1211,7 +1213,8 @@ type FSharpChecker
         suggestNamesForErrors,
         keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
-        enablePartialTypeChecking
+        enablePartialTypeChecking,
+        parallelReferenceResolution
     ) =
 
     let backgroundCompiler =
@@ -1224,7 +1227,8 @@ type FSharpChecker
             suggestNamesForErrors,
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
-            enablePartialTypeChecking
+            enablePartialTypeChecking,
+            parallelReferenceResolution
         )
 
     static let globalInstance = lazy FSharpChecker.Create()
@@ -1235,7 +1239,24 @@ type FSharpChecker
     // This cache is safe for concurrent access.
     let braceMatchCache =
         MruCache<AnyCallerThreadToken, _, _>(braceMatchCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
-
+    
+    static let inferParallelReferenceResolution (parallelReferenceResolution : bool option) =
+        let explicitValue =
+            parallelReferenceResolution
+            |> Option.defaultValue false
+            |> function
+                | true -> ParallelReferenceResolution.On
+                | false -> ParallelReferenceResolution.Off
+        
+        let withEnvOverride =
+            // Override ParallelReferenceResolution set on the constructor with an environment setting if present.
+            getParallelReferenceResolutionFromEnvironment()
+            |> Option.defaultValue explicitValue
+        
+        withEnvOverride
+        
+    static member getParallelReferenceResolutionFromEnvironment () = getParallelReferenceResolutionFromEnvironment ()
+    
     /// Instantiate an interactive checker.
     static member Create
         (
@@ -1247,7 +1268,8 @@ type FSharpChecker
             ?suggestNamesForErrors,
             ?keepAllBackgroundSymbolUses,
             ?enableBackgroundItemKeyStoreAndSemanticClassification,
-            ?enablePartialTypeChecking
+            ?enablePartialTypeChecking,
+            ?parallelReferenceResolution
         ) =
 
         let legacyReferenceResolver =
@@ -1269,6 +1291,8 @@ type FSharpChecker
 
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
+            
+        let parallelReferenceResolution = inferParallelReferenceResolution parallelReferenceResolution
 
         FSharpChecker(
             legacyReferenceResolver,
@@ -1279,7 +1303,8 @@ type FSharpChecker
             suggestNamesForErrors,
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
-            enablePartialTypeChecking
+            enablePartialTypeChecking,
+            parallelReferenceResolution
         )
 
     member _.ReferenceResolver = legacyReferenceResolver

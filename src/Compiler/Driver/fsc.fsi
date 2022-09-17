@@ -74,3 +74,6 @@ val CompileFromSyntaxTrees:
     tcImportsCapture: (TcImports -> unit) option *
     dynamicAssemblyCreator: (TcConfig * TcGlobals * string * ILModuleDef -> unit) option ->
         unit
+
+/// Read the parallelReferenceResolution flag from environment variables
+val internal getParallelReferenceResolutionFromEnvironment : unit -> ParallelReferenceResolution option

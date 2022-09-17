@@ -455,6 +455,20 @@ let TryFindVersionAttribute g attrib attribName attribs deterministic =
 [<NoEquality; NoComparison>]
 type Args<'T> = Args of 'T
 
+let getParallelReferenceResolutionFromEnvironment () =
+    Environment.GetEnvironmentVariable("FCS_ParallelReferenceResolution")
+    |> Option.ofObj
+    |> Option.bind (fun flag ->
+        match bool.TryParse flag with 
+        | true, runInParallel ->
+            if runInParallel then
+                Some ParallelReferenceResolution.On
+            else
+                Some ParallelReferenceResolution.Off
+        | false, _ ->
+            None
+    )
+
 /// First phase of compilation.
 ///   - Set up console encoding and code page settings
 ///   - Process command line, flags and collect filenames
@@ -543,7 +557,12 @@ let main1
             exiter.Exit 1
 
     tcConfigB.conditionalDefines <- "COMPILED" :: tcConfigB.conditionalDefines
-
+    
+    // Override ParallelReferenceResolution set on the CLI with an environment setting if present.
+    match getParallelReferenceResolutionFromEnvironment() with
+    | Some parallelReferenceResolution -> tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+    | None -> ()
+    
     // Display the banner text, if necessary
     if not bannerAlreadyPrinted then
         Console.Write(GetBannerText tcConfigB)

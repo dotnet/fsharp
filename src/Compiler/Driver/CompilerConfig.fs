@@ -388,6 +388,11 @@ type MetadataAssemblyGeneration =
     | ReferenceOut of outputPath: string
     | ReferenceOnly
 
+[<RequireQualifiedAccess>]
+type ParallelReferenceResolution =
+    | On
+    | Off
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -579,6 +584,8 @@ type TcConfigBuilder =
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
         mutable exiter: Exiter
+        
+        mutable parallelReferenceResolution : ParallelReferenceResolution
     }
 
     // Directories to start probing in
@@ -765,6 +772,7 @@ type TcConfigBuilder =
             sdkDirOverride = sdkDirOverride
             xmlDocInfoLoader = None
             exiter = QuitProcessExiter
+            parallelReferenceResolution = ParallelReferenceResolution.Off
         }
 
     member tcConfigB.FxResolver =
@@ -1307,6 +1315,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.applyLineDirectives = data.applyLineDirectives
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
     member _.exiter = data.exiter
+    member _.parallelReferenceResolution =  data.parallelReferenceResolution
 
     static member Create(builder, validate) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
