@@ -4,7 +4,6 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
-    <Configurations>Release</Configurations>
     <!-- Workaround to get rid of:
         error NU1505: Duplicate 'PackageDownload' items found.
         Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.

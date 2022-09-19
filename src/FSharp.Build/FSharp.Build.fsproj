@@ -13,7 +13,6 @@
     <NoWarn>NU1701;FS0075</NoWarn>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <LangVersion>6.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
-    <Configurations>Debug;Release;Proto</Configurations>
   </PropertyGroup>
 
   <!--  The FSharp.Build dll does not provide a referencable public interface although it's used for testing -->
