@@ -596,7 +596,7 @@ let main1
     use unwindParsePhase = UseBuildPhase BuildPhase.Parse
 
     let inputs =
-        ParseInputFiles(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, exiter, false)
+        ParseInputFiles(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, false)
 
     let inputs, _ =
         (Map.empty, inputs)

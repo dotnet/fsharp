@@ -792,7 +792,6 @@ let ParseInputFiles
         lexResourceManager,
         sourceFiles,
         diagnosticsLogger: DiagnosticsLogger,
-        exiter: Exiter,
         retryLocked
     ) =
     try

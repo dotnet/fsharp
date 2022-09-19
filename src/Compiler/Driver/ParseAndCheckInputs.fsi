@@ -102,7 +102,6 @@ val ParseInputFiles:
     lexResourceManager: Lexhelp.LexResourceManager *
     sourceFiles: string list *
     diagnosticsLogger: DiagnosticsLogger *
-    exiter: Exiter *
     retryLocked: bool ->
         (ParsedInput * string) list
 
