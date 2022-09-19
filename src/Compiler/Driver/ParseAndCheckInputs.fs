@@ -786,14 +786,7 @@ let ParseInputFilesSequential (tcConfig: TcConfig, lexResourceManager, sourceFil
     |> List.ofArray
 
 /// Parse multiple input files from disk
-let ParseInputFiles
-    (
-        tcConfig: TcConfig,
-        lexResourceManager,
-        sourceFiles,
-        diagnosticsLogger: DiagnosticsLogger,
-        retryLocked
-    ) =
+let ParseInputFiles (tcConfig: TcConfig, lexResourceManager, sourceFiles, diagnosticsLogger: DiagnosticsLogger, retryLocked) =
     try
         if tcConfig.concurrentBuild then
             ParseInputFilesInParallel(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, retryLocked)
