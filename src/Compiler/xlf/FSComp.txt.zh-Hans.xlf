@@ -449,7 +449,7 @@
       </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
-        <target state="translated">显示语言版本的允许值，指定语言版本，如“最新”或“预览”</target>
+        <target state="new">Display the allowed values for language version, specify language version such as 'latest' or 'preview'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -3124,7 +3124,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedTypeParameter">
         <source>Syntax error: unexpected type parameter specification</source>
-        <target state="translated">语法错误: 意外的类型参数规范</target>
+        <target state="new">Syntax error: unexpected type parameter specification</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMismatchedQuotationName">
@@ -5074,12 +5074,12 @@
       </trans-unit>
       <trans-unit id="optsEmbeddedSourceRequirePortablePDBs">
         <source>--embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">--仅在发出可移植 PDB 时才支持嵌入开关(--debug:portable or --debug:embedded)</target>
+        <target state="new">--embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSourceLinkRequirePortablePDBs">
         <source>--sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">--仅在发出可移植 PDB 时才支持源链接开关(--debug:portable or --debug:embedded)</target>
+        <target state="new">--sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="srcFileTooLarge">
@@ -6139,17 +6139,17 @@
       </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
         <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">MDB 文件的名称必须是 &lt;assembly-file-name&gt;.mdb。将忽略 --pdb 选项。</target>
+        <target state="new">The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilwriteMDBMemberMissing">
         <source>MDB generation failed. Could not find compatible member {0}</source>
-        <target state="translated">MDB 生成失败。找不到兼容成员 {0}</target>
+        <target state="new">MDB generation failed. Could not find compatible member {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="ilwriteErrorCreatingMdb">
         <source>Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</source>
-        <target state="translated">无法生成 MDB 调试信息。未能从“Mono.CompilerServices.SymbolWriter.dll”程序集加载“MonoSymbolWriter”类型。</target>
+        <target state="new">Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseNameConflictsWithGeneratedType">
@@ -6429,7 +6429,7 @@
       </trans-unit>
       <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
         <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">决定性生成仅支持可移植的 PDB (--debug:portable 或 --debug:embedded)</target>
+        <target state="new">Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -7439,7 +7439,7 @@
       </trans-unit>
       <trans-unit id="keyworkDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
-        <target state="translated">用于互相递归绑定、属性声明，并用于对泛型参数的多个约束。</target>
+        <target state="new">Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionAs">
@@ -8059,7 +8059,7 @@
       </trans-unit>
       <trans-unit id="fscPathMapDebugRequiresPortablePdb">
         <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">--pathmap 只能与可移植的 PDB 一起使用(--debug:portable 或 --debug:embedded)</target>
+        <target state="new">--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">

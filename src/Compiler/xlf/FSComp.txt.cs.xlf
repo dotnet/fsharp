@@ -449,7 +449,7 @@
       </trans-unit>
       <trans-unit id="optsLangVersion">
         <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
-        <target state="translated">Zobrazte si povolené hodnoty verze jazyka a pak zadejte požadovanou verzi, například latest nebo preview.</target>
+        <target state="new">Display the allowed values for language version, specify language version such as 'latest' or 'preview'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -3124,7 +3124,7 @@
       </trans-unit>
       <trans-unit id="parsUnexpectedTypeParameter">
         <source>Syntax error: unexpected type parameter specification</source>
-        <target state="translated">Chyba syntaxe: neočekávaná specifikace parametru typu</target>
+        <target state="new">Syntax error: unexpected type parameter specification</target>
         <note />
       </trans-unit>
       <trans-unit id="parsMismatchedQuotationName">
@@ -5074,12 +5074,12 @@
       </trans-unit>
       <trans-unit id="optsEmbeddedSourceRequirePortablePDBs">
         <source>--embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Přepínač --embed se podporuje jenom při generování souboru PDB typu Portable (--debug:portable nebo --debug:embedded).</target>
+        <target state="new">--embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSourceLinkRequirePortablePDBs">
         <source>--sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Přepínač --sourcelink se podporuje jenom při generování souboru PDB typu Portable (--debug:portable nebo --debug:embedded).</target>
+        <target state="new">--sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="srcFileTooLarge">
@@ -6139,17 +6139,17 @@
       </trans-unit>
       <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
         <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">Název souboru MDB musí být &lt;název-souboru-sestavení&gt;.mdb. Parametr --pdb se bude ignorovat.</target>
+        <target state="new">The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</target>
         <note />
       </trans-unit>
       <trans-unit id="ilwriteMDBMemberMissing">
         <source>MDB generation failed. Could not find compatible member {0}</source>
-        <target state="translated">Generování souboru MDB selhalo. Nenašel se kompatibilní člen {0}.</target>
+        <target state="new">MDB generation failed. Could not find compatible member {0}</target>
         <note />
       </trans-unit>
       <trans-unit id="ilwriteErrorCreatingMdb">
         <source>Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</source>
-        <target state="translated">Nedají se vygenerovat ladicí informace MDB. Načtení typu MonoSymbolWriter ze sestavení Mono.CompilerServices.SymbolWriter.dll selhalo.</target>
+        <target state="new">Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseNameConflictsWithGeneratedType">
@@ -6429,7 +6429,7 @@
       </trans-unit>
       <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
         <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Deterministické buildy podporují jenom přenositelné soubory PDB (--debug:portable nebo --debug:embedded)</target>
+        <target state="new">Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -7439,7 +7439,7 @@
       </trans-unit>
       <trans-unit id="keyworkDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
-        <target state="translated">Používá se ve vzájemně rekurzivních vazbách, v deklaracích vlastností a s několika omezeními u generických parametrů.</target>
+        <target state="new">Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionAs">
@@ -8059,7 +8059,7 @@
       </trans-unit>
       <trans-unit id="fscPathMapDebugRequiresPortablePdb">
         <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="translated">Parametr --pathmap se může používat jenom s přenositelnými soubory PDB (--debug:portable nebo --debug:embedded)</target>
+        <target state="new">--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">
