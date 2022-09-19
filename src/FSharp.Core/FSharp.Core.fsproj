@@ -4,7 +4,8 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>netstandard2.1;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(Configuration)' == 'Proto'">netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(Configuration)' != 'Proto'">netstandard2.1;netstandard2.0</TargetFrameworks>
     <NoWarn>$(NoWarn);62</NoWarn> <!-- ML Compat -->
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <NoWarn>$(NoWarn);1204</NoWarn> <!-- This construct is for use in the FSharp.Core library and should not be used directly -->
