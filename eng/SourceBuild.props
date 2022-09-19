@@ -24,7 +24,7 @@
           BeforeTargets="RunInnerSourceBuildCommand">
 
     <Exec
-      Command="./build.sh --bootstrap --skipBuild"
+      Command="./build.sh --bootstrap --skipBuild -bl"
       WorkingDirectory="$(InnerSourceBuildRepoRoot)"
       EnvironmentVariables="@(InnerBuildEnv);DotNetBuildFromSource=true" />
   </Target>
