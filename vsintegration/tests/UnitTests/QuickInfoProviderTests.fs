@@ -6,7 +6,7 @@
 // ------------------------------------------------------------------------------------------------------------------------
 
 
-namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+namespace VisualFSharp.UnitTests.Editor
 
 open System
 open NUnit.Framework
@@ -82,7 +82,7 @@ let ShouldShowQuickInfoAtCorrectPositions() =
     System.Console.WriteLine(x + y)
     """
         let caretPosition = fileContents.IndexOf(symbol)
-        let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
+        let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
 
         let quickInfo =
             FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
@@ -100,7 +100,7 @@ let ShouldShowQuickInfoForGenericParameters() =
             "(extension) System.Collections.Generic.IEnumerable.GroupBy<'TSource,'TKey>(keySelector: System.Func<'TSource,'TKey>) : System.Collections.Generic.IEnumerable<IGrouping<'TKey,'TSource>>
 'TSource is int * string
 'TKey is int");
-         ("Sort", Some "System.Array.Sort<'T>(array: 'T[]) : unit
+         ("Sort", Some "System.Array.Sort<'T>(array: 'T array) : unit
 'T is int");
          ("let test4 x = C().FSharpGenericMethodExplitTypeParams",
           Some
@@ -212,7 +212,7 @@ let res7 = sin 5.0
 let res8 = abs 5.0<kg>
     """
         let caretPosition = fileContents.IndexOf(symbol) + symbol.Length - 1
-        let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
+        let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
         
         let quickInfo =
             FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)

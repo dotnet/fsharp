@@ -60,7 +60,7 @@ module CoreTests =
     [<Test>]
     let ``array-FSC_OPTIMIZED-5.0`` () = singleTestBuildAndRunVersion "core/array" FSC_OPTIMIZED "5.0"
 
-    [<Test; Ignore("Some tests fail on .NET6 preview6, and fixed in preview7, disabling until preview7 gets released.")>]
+    [<Test>]
     let ``array-FSI-5.0`` () = singleTestBuildAndRunVersion "core/array" FSI "5.0"
 
     [<Test>]
@@ -299,22 +299,22 @@ module CoreTests =
     let ``members-factors-mutrec-FSI`` () = singleTestBuildAndRun "core/members/factors-mutrec" FSI
 
     [<Test>]
-    let ``graph-FSC_DEBUG`` () = singleTestBuildAndRun "perf/graph" FSC_DEBUG
+    let ``graph-FSC_DEBUG`` () = singleTestBuildAndRunVersion "perf/graph" FSC_DEBUG "supports-ml"
 
     [<Test>]
-    let ``graph-FSC_OPTIMIZED`` () = singleTestBuildAndRun "perf/graph" FSC_OPTIMIZED
+    let ``graph-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "perf/graph" FSC_OPTIMIZED "supports-ml"
 
     [<Test>]
-    let ``graph-FSI`` () = singleTestBuildAndRun "perf/graph" FSI
+    let ``graph-FSI`` () = singleTestBuildAndRunVersion "perf/graph" FSI "supports-ml"
 
     [<Test>]
-    let ``nbody-FSC_DEBUG`` () = singleTestBuildAndRun "perf/nbody" FSC_DEBUG
+    let ``nbody-FSC_DEBUG`` () = singleTestBuildAndRunVersion "perf/nbody" FSC_DEBUG "supports-ml"
 
     [<Test>]
-    let ``nbody-FSC_OPTIMIZED`` () = singleTestBuildAndRun "perf/nbody" FSC_OPTIMIZED
+    let ``nbody-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "perf/nbody" FSC_OPTIMIZED "supports-ml"
 
     [<Test>]
-    let ``nbody-FSI`` () = singleTestBuildAndRun "perf/nbody" FSI
+    let ``nbody-FSI`` () = singleTestBuildAndRunVersion "perf/nbody" FSI "supports-ml"
 
     [<Test>]
     let ``forexpression-FSC_DEBUG`` () = singleTestBuildAndRun "core/forexpression" FSC_DEBUG
@@ -939,7 +939,7 @@ module CoreTests =
 
         begin
             use testOkFile = fileguard cfg "test.ok"
-            fsiStdin cfg "test1.ml"  "--maxerrors:1" []
+            fsiStdin cfg "test1.ml"  " --langversion:5.0 --mlcompatibility --maxerrors:1" []
             testOkFile.CheckExists()
         end
 
@@ -981,15 +981,15 @@ module CoreTests =
     let hiding () =
         let cfg = testConfig "core/hiding"
 
-        fsc cfg "%s -a --optimize -o:lib.dll" cfg.fsc_flags ["lib.mli";"lib.ml";"libv.ml"]
+        fsc cfg "%s -a --optimize --langversion:5.0 --mlcompatibility -o:lib.dll" cfg.fsc_flags ["lib.mli";"lib.ml";"libv.ml"]
 
         peverify cfg "lib.dll"
 
-        fsc cfg "%s -a --optimize -r:lib.dll -o:lib2.dll" cfg.fsc_flags ["lib2.mli";"lib2.ml";"lib3.ml"]
+        fsc cfg "%s -a --optimize --langversion:5.0 --mlcompatibility -r:lib.dll -o:lib2.dll" cfg.fsc_flags ["lib2.mli";"lib2.ml";"lib3.ml"]
 
         peverify cfg "lib2.dll"
 
-        fsc cfg "%s --optimize -r:lib.dll -r:lib2.dll -o:client.exe" cfg.fsc_flags ["client.ml"]
+        fsc cfg "%s --optimize --langversion:5.0 --mlcompatibility -r:lib.dll -r:lib2.dll -o:client.exe" cfg.fsc_flags ["client.ml"]
 
         peverify cfg "client.exe"
 
@@ -1060,10 +1060,13 @@ module CoreTests =
         let rawFileErr = tryCreateTemporaryFileName ()
         ``fsi <a >b 2>c`` "%s --nologo --preferreduilang:en-US %s" fsc_flags_errors_ok flag ("test.fsx", rawFileOut, rawFileErr)
 
-        // REM REVIEW: want to normalise CWD paths, not suppress them.
-        let ``findstr /v`` text = Seq.filter (fun (s: string) -> not <| s.Contains(text))
-        let removeCDandHelp from' to' =
-            File.ReadLines from' |> (``findstr /v`` cfg.Directory) |> (``findstr /v`` "--help' for options") |> (fun lines -> File.WriteAllLines(getfullpath cfg to', lines))
+        let removeCDandHelp fromFile toFile =
+            File.ReadAllLines fromFile
+            |> Array.filter (fun s -> not (s.Contains(cfg.Directory)))
+            |> Array.filter (fun s -> not (s.Contains("--help' for options")))
+            |> Array.filter (fun s -> not (s.Contains("[Loading")))
+            |> Array.filter (fun s -> not (s.Contains("Binding session")))
+            |> (fun lines -> File.WriteAllLines(getfullpath cfg toFile, lines))
 
         removeCDandHelp rawFileOut diffFileOut
         removeCDandHelp rawFileErr diffFileErr
@@ -1259,9 +1262,9 @@ module CoreTests =
     let parsing () =
         let cfg = testConfig "core/parsing"
 
-        fsc cfg "%s -a -o:crlf.dll -g" cfg.fsc_flags ["crlf.ml"]
+        fsc cfg "%s -a --langversion:5.0 --mlcompatibility -o:crlf.dll -g" cfg.fsc_flags ["crlf.ml"]
 
-        fsc cfg "%s -o:toplet.exe -g" cfg.fsc_flags ["toplet.ml"]
+        fsc cfg "%s --langversion:5.0 --mlcompatibility -o:toplet.exe -g" cfg.fsc_flags ["toplet.ml"]
 
         peverify cfg "toplet.exe"
 
@@ -1295,7 +1298,7 @@ module CoreTests =
         let cfg = testConfig "core/internalsvisible"
 
         // Compiling F# Library
-        fsc cfg "%s --version:1.2.3 --keyfile:key.snk -a --optimize -o:library.dll" cfg.fsc_flags ["library.fsi"; "library.fs"]
+        fsc cfg "%s --version:1.2.3 --keyfile:key.snk --langversion:5.0 --mlcompatibility -a --optimize -o:library.dll" cfg.fsc_flags ["library.fsi"; "library.fs"]
 
         peverify cfg "library.dll"
 
@@ -1305,7 +1308,7 @@ module CoreTests =
         peverify cfg "librarycs.dll"
 
         // Compiling F# main referencing C# and F# libraries
-        fsc cfg "%s --version:1.2.3 --keyfile:key.snk --optimize -r:library.dll -r:librarycs.dll -o:main.exe" cfg.fsc_flags ["main.fs"]
+        fsc cfg "%s --version:1.2.3 --keyfile:key.snk --optimize --langversion:5.0 --mlcompatibility -r:library.dll -r:librarycs.dll -o:main.exe" cfg.fsc_flags ["main.fs"]
 
         peverify cfg "main.exe"
 
@@ -1879,19 +1882,19 @@ module CoreTests =
     let testResources () =
         let cfg = testConfig "core/resources"
 
-        fsc cfg "%s  --resource:Resources.resources -o:test-embed.exe -g" cfg.fsc_flags ["test.fs"]
+        fsc cfg "%s --langversion:5.0 --mlcompatibility --resource:Resources.resources -o:test-embed.exe -g" cfg.fsc_flags ["test.fs"]
 
         peverify cfg "test-embed.exe"
 
-        fsc cfg "%s  --linkresource:Resources.resources -o:test-link.exe -g" cfg.fsc_flags ["test.fs"]
+        fsc cfg "%s --langversion:5.0 --mlcompatibility --linkresource:Resources.resources -o:test-link.exe -g" cfg.fsc_flags ["test.fs"]
 
         peverify cfg "test-link.exe"
 
-        fsc cfg "%s  --resource:Resources.resources,ResourceName.resources -o:test-embed-named.exe -g" cfg.fsc_flags ["test.fs"]
+        fsc cfg "%s --langversion:5.0 --mlcompatibility --resource:Resources.resources,ResourceName.resources -o:test-embed-named.exe -g" cfg.fsc_flags ["test.fs"]
 
         peverify cfg "test-embed-named.exe"
 
-        fsc cfg "%s  --linkresource:Resources.resources,ResourceName.resources -o:test-link-named.exe -g" cfg.fsc_flags ["test.fs"]
+        fsc cfg "%s --langversion:5.0 --mlcompatibility --linkresource:Resources.resources,ResourceName.resources -o:test-link-named.exe -g" cfg.fsc_flags ["test.fs"]
 
         peverify cfg "test-link-named.exe"
 
@@ -1947,13 +1950,13 @@ module CoreTests =
 
         peverify cfg "app69514-withsig.exe"
 
-        fsc cfg "%s -o:lib.dll -a -g" cfg.fsc_flags ["lib.ml"]
+        fsc cfg "%s -o:lib.dll -a --langversion:5.0 --mlcompatibility -g" cfg.fsc_flags ["lib.ml"]
 
         peverify cfg "lib.dll"
 
         csc cfg """/nologo /r:"%s" /r:lib.dll /out:test.exe """ cfg.FSCOREDLLPATH ["test.cs"]
 
-        fsc cfg "%s --optimize -o:lib--optimize.dll -a -g" cfg.fsc_flags ["lib.ml"]
+        fsc cfg "%s --optimize -o:lib--optimize.dll -a  --langversion:5.0 --mlcompatibility -g" cfg.fsc_flags ["lib.ml"]
 
         peverify cfg "lib--optimize.dll"
 
@@ -2108,19 +2111,19 @@ module ToolsTests =
         let cfg = 
             testConfig "tools/bundle" 
 
-        fsc cfg "%s --progress --standalone -o:test-one-fsharp-module.exe -g" cfg.fsc_flags ["test-one-fsharp-module.fs"]
+        fsc cfg "%s --progress --langversion:5.0 --mlcompatibility --standalone -o:test-one-fsharp-module.exe -g" cfg.fsc_flags ["test-one-fsharp-module.fs"]
 
         peverify cfg "test-one-fsharp-module.exe"
 
-        fsc cfg "%s -a -o:test_two_fsharp_modules_module_1.dll -g" cfg.fsc_flags ["test_two_fsharp_modules_module_1.fs"]
+        fsc cfg "%s -a --langversion:5.0 --mlcompatibility -o:test_two_fsharp_modules_module_1.dll -g" cfg.fsc_flags ["test_two_fsharp_modules_module_1.fs"]
 
         peverify cfg "test_two_fsharp_modules_module_1.dll"
 
-        fsc cfg "%s --standalone -r:test_two_fsharp_modules_module_1.dll -o:test_two_fsharp_modules_module_2.exe -g" cfg.fsc_flags ["test_two_fsharp_modules_module_2.fs"]
+        fsc cfg "%s --langversion:5.0 --mlcompatibility --standalone -r:test_two_fsharp_modules_module_1.dll -o:test_two_fsharp_modules_module_2.exe -g" cfg.fsc_flags ["test_two_fsharp_modules_module_2.fs"]
 
         peverify cfg "test_two_fsharp_modules_module_2.exe"
 
-        fsc cfg "%s -a --standalone -r:test_two_fsharp_modules_module_1.dll -o:test_two_fsharp_modules_module_2_as_dll.dll -g" cfg.fsc_flags ["test_two_fsharp_modules_module_2.fs"]
+        fsc cfg "%s -a --langversion:5.0 --mlcompatibility --standalone -r:test_two_fsharp_modules_module_1.dll -o:test_two_fsharp_modules_module_2_as_dll.dll -g" cfg.fsc_flags ["test_two_fsharp_modules_module_2.fs"]
 
         peverify cfg "test_two_fsharp_modules_module_2_as_dll.dll"
 #endif
@@ -2149,7 +2152,7 @@ module RegressionTests =
     let ``struct-tuple-bug-1-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSC_OPTIMIZED
 
     [<Test >]
-    let ``tuple-bug-1-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/tuple-bug-1" FSC_OPTIMIZED
+    let ``tuple-bug-1-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "regression/tuple-bug-1" FSC_OPTIMIZED "supports-ml"
 
     [<Test >]
     let ``12383-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/12383" FSC_OPTIMIZED
@@ -2259,10 +2262,10 @@ module RegressionTests =
 #endif
 
     [<Test>]
-    let ``26`` () = singleTestBuildAndRun "regression/26" FSC_OPTIMIZED
+    let ``26`` () = singleTestBuildAndRunVersion "regression/26" FSC_OPTIMIZED "supports-ml"
 
     [<Test >]
-    let ``321`` () = singleTestBuildAndRun "regression/321" FSC_OPTIMIZED
+    let ``321`` () = singleTestBuildAndRunVersion "regression/321" FSC_OPTIMIZED "supports-ml"
 
 #if !NETCOREAPP
     // This test is disabled in coreclr builds dependent on fixing : https://github.com/dotnet/fsharp/issues/2600
@@ -2270,11 +2273,11 @@ module RegressionTests =
     let ``655`` () =
         let cfg = testConfig "regression/655"
 
-        fsc cfg "%s -a -o:pack.dll" cfg.fsc_flags ["xlibC.ml"]
+        fsc cfg "%s --langversion:5.0 --mlcompatibility -a -o:pack.dll" cfg.fsc_flags ["xlibC.ml"]
 
         peverify cfg "pack.dll"
 
-        fsc cfg "%s    -o:test.exe -r:pack.dll" cfg.fsc_flags ["main.fs"]
+        fsc cfg "%s --langversion:5.0 --mlcompatibility -o:test.exe -r:pack.dll" cfg.fsc_flags ["main.fs"]
 
         peverify cfg "test.exe"
 
@@ -2289,7 +2292,7 @@ module RegressionTests =
     let ``656`` () =
         let cfg = testConfig "regression/656"
 
-        fsc cfg "%s -o:pack.exe" cfg.fsc_flags ["misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs"]
+        fsc cfg "%s --langversion:5.0 --mlcompatibility -o:pack.exe" cfg.fsc_flags ["misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs"]
 
         peverify cfg  "pack.exe"
 #endif
@@ -2297,22 +2300,22 @@ module RegressionTests =
 #if !NETCOREAPP
     // Requires WinForms
     [<Test>]
-    let ``83`` () = singleTestBuildAndRun "regression/83" FSC_OPTIMIZED
+    let ``83`` () = singleTestBuildAndRunVersion "regression/83" FSC_OPTIMIZED "supports-ml"
 
     [<Test >]
-    let ``84`` () = singleTestBuildAndRun "regression/84" FSC_OPTIMIZED
+    let ``84`` () = singleTestBuildAndRunVersion "regression/84" FSC_OPTIMIZED "supports-ml"
 
     [<Test >]
     let ``85`` () =
         let cfg = testConfig "regression/85"
 
-        fsc cfg "%s -r:Category.dll -a -o:petshop.dll" cfg.fsc_flags ["Category.ml"]
+        fsc cfg "%s --langversion:5.0 --mlcompatibility -r:Category.dll -a -o:petshop.dll" cfg.fsc_flags ["Category.ml"]
 
         peverify cfg "petshop.dll"
 #endif
 
     [<Test >]
-    let ``86`` () = singleTestBuildAndRun "regression/86" FSC_OPTIMIZED
+    let ``86`` () = singleTestBuildAndRunVersion "regression/86" FSC_OPTIMIZED "supports-ml"
 
     [<Test >]
     let ``struct-tuple-bug-1-FSI`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI
@@ -2469,7 +2472,7 @@ module TypecheckTests =
         SingleTest.singleTestBuildAndRunWithCopyDlls cfg "full-rank-arrays.dll" FSC_OPTIMIZED
 
     [<Test>]
-    let misc () = singleTestBuildAndRun "typecheck/misc" FSC_OPTIMIZED
+    let misc () = singleTestBuildAndRunVersion "typecheck/misc" FSC_OPTIMIZED "supports-ml"
 
 #if !NETCOREAPP
 
@@ -2694,7 +2697,7 @@ module TypecheckTests =
     [<Test>]
     let ``sigs pos01a`` () =
         let cfg = testConfig "typecheck/sigs"
-        fsc cfg "%s -a -o:pos01a.dll" cfg.fsc_flags ["pos01a.fsi"; "pos01a.fs"]
+        fsc cfg "%s -a --langversion:5.0 --mlcompatibility -o:pos01a.dll" cfg.fsc_flags ["pos01a.fsi"; "pos01a.fs"]
         peverify cfg "pos01a.dll"
 
     [<Test>]
@@ -2712,10 +2715,10 @@ module TypecheckTests =
     let ``type check neg01`` () = singleNegTest (testConfig "typecheck/sigs") "neg01"
 
     [<Test>]
-    let ``type check neg02`` () = singleNegTest (testConfig "typecheck/sigs") "neg02"
+    let ``type check neg02`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "6.0" "neg02"
 
     [<Test>]
-    let ``type check neg03`` () = singleNegTest (testConfig "typecheck/sigs") "neg03"
+    let ``type check neg03`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "supports-ml*" "neg03"
 
     [<Test>]
     let ``type check neg04`` () = singleNegTest (testConfig "typecheck/sigs") "neg04"
@@ -3100,7 +3103,10 @@ module TypecheckTests =
     let ``type check neg118`` () = singleNegTest (testConfig "typecheck/sigs") "neg118"
 
     [<Test>]
-    let ``type check neg119`` () = singleNegTest (testConfig "typecheck/sigs") "neg119"
+    let ``type check neg119a`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "6.0" "neg119a"
+
+    [<Test>]
+    let ``type check neg119b`` () = singleVersionedNegTest (testConfig "typecheck/sigs") "7.0" "neg119b"
 
     [<Test>]
     let ``type check neg120`` () = singleNegTest (testConfig "typecheck/sigs") "neg120"
@@ -3385,6 +3391,9 @@ module GeneratedSignatureTests =
 
     [<Test>]
     let ``mixCurriedTupled-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/mixCurriedTupled" FSC_NETFX_TEST_GENERATED_SIGNATURE
+
+    [<Test>]
+    let ``zeroConstraint-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/zeroConstraint" FSC_NETFX_TEST_GENERATED_SIGNATURE
 #endif
 
 #if !NETCOREAPP
