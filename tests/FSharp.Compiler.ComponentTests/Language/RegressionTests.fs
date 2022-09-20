@@ -19,3 +19,22 @@ type TestItemSeq =
         |> compile
         |> withErrorCodes [39]
         |> ignore
+
+    [<Fact>]
+    let ``No null value should be returned from trait call``() =
+        FSharp """
+module FSharpBug
+
+type A = A with
+    static member ($) (A, a: float) = 0.0
+    static member ($) (A, a: decimal) = 0M
+    static member ($) (A, a: 't) = 0
+    
+let inline call x = ($) A x
+let expected = 0.0
+let actual = call 42.
+if actual <> expected then failwith "Unexpected result"
+        """
+        |> asExe
+        |> compileAndRun
+        |> shouldSucceed
