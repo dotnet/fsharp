@@ -827,8 +827,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
                 tcConfigB,
                 fsiConsoleOutput: FsiConsoleOutput) =
 
-    let mutable enableConsoleKeyProcessing =
-       not (Environment.OSVersion.Platform = PlatformID.Win32NT)
+    let mutable enableConsoleKeyProcessing = true
 
     let mutable gui        = true           // override via "--gui" on by default
 #if DEBUG
