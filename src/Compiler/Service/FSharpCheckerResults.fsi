@@ -314,13 +314,10 @@ type public FSharpCheckFileResults =
             FSharpSymbolUse list list
 
     /// <summary>Compute a formatted tooltip for the given location</summary>
-    ///
-    /// <param name="line">The line number where the information is being requested.</param>
-    /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
-    /// <param name="lineText">The text of the line where the information is being requested.</param>
+    ///   
     /// <param name="names">The identifiers at the location where the information is being requested.</param>   
     member GetKeywordTooltip:
-        line: int * colAtEndOfNames: int * lineText: string * names: string list -> ToolTipText
+        names: string list -> ToolTipText
 
     /// <summary>Compute a formatted tooltip for the given location</summary>
     ///

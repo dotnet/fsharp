@@ -2659,10 +2659,17 @@ type FSharpCheckFileResults
         | None -> []
         | Some (scope, _builderOpt) -> scope.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, getAllEntities)
 
-    member _.GetKeywordTooltip(line, colAtEndOfNames, lineText, names) =
-         match details with
-            | None -> emptyToolTip
-            | Some (scope, _builderOpt) -> scope.GetStructuredToolTipText(line, lineText, colAtEndOfNames, names)        
+    member _.GetKeywordTooltip(names : string list) =
+         ToolTipText.ToolTipText
+                        [
+                            for kw in names do                               
+                                match Tokenization.FSharpKeywords.KeyWordsDescriptionLookup.TryGetValue kw with
+                                | false, _ -> ()
+                                | true, kwDescription ->
+                                    let tip = wordL (TaggedText.tagStringLiteral kwDescription)
+                                    let tip = LayoutRender.toArray tip
+                                    yield ToolTipElement.Single(tip, FSharpXmlDoc.None)
+                        ]
 
     /// Resolve the names at the given location to give a data tip
     member _.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag) =

@@ -568,7 +568,7 @@ module internal FSharpQuickInfo =
                 asyncMaybe {
                     let targetQuickInfo =
                         match lexerSymbol.Kind with
-                        | LexerSymbolKind.Keyword -> checkFileResults.GetKeywordTooltip(fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
+                        | LexerSymbolKind.Keyword -> checkFileResults.GetKeywordTooltip(lexerSymbol.FullIsland)
                         | _ ->
                             checkFileResults.GetToolTip
                                 (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland,tag)
