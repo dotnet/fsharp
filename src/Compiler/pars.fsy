@@ -4309,7 +4309,7 @@ atomicExpr:
   | UNDERSCORE DOT atomicExpr %prec dot_lambda
       { let arg1 = lhs parseState
         let arg2, hpa = $3
-        SynExpr.DotLambda(arg2, arg2.Range), hpa }
+        SynExpr.DotLambda(arg2, arg2.Range), false }
         
   | atomicExpr HIGH_PRECEDENCE_BRACK_APP atomicExpr
       { let arg1, _ = $1 
