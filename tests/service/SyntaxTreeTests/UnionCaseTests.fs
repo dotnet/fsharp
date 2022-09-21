@@ -19,7 +19,7 @@ type Foo =
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (simpleRepr = SynTypeDefnSimpleRepr.Union(unionCases = [
@@ -50,7 +50,7 @@ type Foo = | Bar of string
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (simpleRepr = SynTypeDefnSimpleRepr.Union(unionCases = [
@@ -73,7 +73,7 @@ type Foo =
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (simpleRepr = SynTypeDefnSimpleRepr.Union(unionCases = [
@@ -96,7 +96,7 @@ type Foo = Bar of string
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (simpleRepr = SynTypeDefnSimpleRepr.Union(unionCases = [
@@ -124,7 +124,7 @@ type Currency =
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.Simple (simpleRepr = SynTypeDefnSimpleRepr.Union(
@@ -147,7 +147,7 @@ type X =
  """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile (ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(typeDefns = [
                 SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(simpleRepr =

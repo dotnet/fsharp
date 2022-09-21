@@ -1676,9 +1676,31 @@ type ParsedImplFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespace list *
-        isLastCompiland: (bool * bool) *
+        contents: SynModuleOrNamespace list *
+        flags: (bool * bool) *
         trivia: ParsedImplFileInputTrivia
+
+    member x.QualifiedName =
+        (let (ParsedImplFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
+
+    member x.ScopedPragmas =
+        (let (ParsedImplFileInput (scopedPragmas = scopedPragmas)) = x in scopedPragmas)
+
+    member x.HashDirectives =
+        (let (ParsedImplFileInput (hashDirectives = hashDirectives)) = x in hashDirectives)
+
+    member x.FileName = (let (ParsedImplFileInput (fileName = fileName)) = x in fileName)
+
+    member x.Contents = (let (ParsedImplFileInput (contents = contents)) = x in contents)
+
+    member x.IsScript = (let (ParsedImplFileInput (isScript = isScript)) = x in isScript)
+
+    member x.IsLastCompiland =
+        (let (ParsedImplFileInput (flags = (isLastCompiland, _))) = x in isLastCompiland)
+
+    member x.IsExe = (let (ParsedImplFileInput (flags = (_, isExe))) = x in isExe)
+
+    member x.Trivia = (let (ParsedImplFileInput (trivia = trivia)) = x in trivia)
 
 [<NoEquality; NoComparison>]
 type ParsedSigFileInput =
@@ -1687,8 +1709,23 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespaceSig list *
+        contents: SynModuleOrNamespaceSig list *
         trivia: ParsedSigFileInputTrivia
+
+    member x.QualifiedName =
+        (let (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
+
+    member x.ScopedPragmas =
+        (let (ParsedSigFileInput (scopedPragmas = scopedPragmas)) = x in scopedPragmas)
+
+    member x.HashDirectives =
+        (let (ParsedSigFileInput (hashDirectives = hashDirectives)) = x in hashDirectives)
+
+    member x.FileName = (let (ParsedSigFileInput (fileName = fileName)) = x in fileName)
+
+    member x.Contents = (let (ParsedSigFileInput (contents = contents)) = x in contents)
+
+    member x.Trivia = (let (ParsedSigFileInput (trivia = trivia)) = x in trivia)
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedInput =
@@ -1698,12 +1735,21 @@ type ParsedInput =
 
     member inp.FileName =
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput (fileName = fileName))
-        | ParsedInput.SigFile (ParsedSigFileInput (fileName = fileName)) -> fileName
+        | ParsedInput.ImplFile file -> file.FileName
+        | ParsedInput.SigFile file -> file.FileName
+
+    member inp.ScopedPragmas =
+        match inp with
+        | ParsedInput.ImplFile file -> file.ScopedPragmas
+        | ParsedInput.SigFile file -> file.ScopedPragmas
+
+    member inp.QualifiedName =
+        match inp with
+        | ParsedInput.ImplFile file -> file.QualifiedName
+        | ParsedInput.SigFile file -> file.QualifiedName
 
     member inp.Range =
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput(modules = SynModuleOrNamespace (range = m) :: _))
-        | ParsedInput.SigFile (ParsedSigFileInput(modules = SynModuleOrNamespaceSig (range = m) :: _)) -> m
-        | ParsedInput.ImplFile (ParsedImplFileInput (fileName = fileName))
-        | ParsedInput.SigFile (ParsedSigFileInput (fileName = fileName)) -> rangeN fileName 0
+        | ParsedInput.ImplFile (ParsedImplFileInput(contents = SynModuleOrNamespace (range = m) :: _))
+        | ParsedInput.SigFile (ParsedSigFileInput(contents = SynModuleOrNamespaceSig (range = m) :: _)) -> m
+        | _ -> rangeN inp.FileName 0

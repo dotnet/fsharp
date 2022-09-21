@@ -49,7 +49,6 @@ val AddLocalSubModule:
 
 val CheckOneImplFile:
     TcGlobals *
-    NiceNameGenerator *
     ImportMap *
     CcuThunk *
     OpenDeclaration list *
@@ -60,17 +59,10 @@ val CheckOneImplFile:
     TcEnv *
     ModuleOrNamespaceType option *
     ParsedImplFileInput ->
-        Cancellable<TopAttribs * CheckedImplFile * ModuleOrNamespaceType * TcEnv * bool>
+        Cancellable<TopAttribs * CheckedImplFile * TcEnv * bool>
 
 val CheckOneSigFile:
-    TcGlobals *
-    NiceNameGenerator *
-    ImportMap *
-    CcuThunk *
-    (unit -> bool) *
-    ConditionalDefines option *
-    TcResultsSink *
-    bool ->
+    TcGlobals * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines option * TcResultsSink * bool ->
         TcEnv ->
         ParsedSigFileInput ->
             Cancellable<TcEnv * ModuleOrNamespaceType * bool>

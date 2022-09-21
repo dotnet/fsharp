@@ -311,7 +311,6 @@ type TcFileState =
     static member Create:
         g: TcGlobals *
         isScript: bool *
-        niceNameGen: NiceNameGenerator *
         amap: ImportMap *
         thisCcu: CcuThunk *
         isSig: bool *
