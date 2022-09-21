@@ -73,6 +73,8 @@ let rec pushUnitArg expr arg =
         -> SynExpr.App(ExprAtomicFlag.Atomic, infix, (pushUnitArg innerApp arg), x1, m1)
     | SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.DotGet(synExpr, rangeOfDot, synLongIdent, range), x1, m1)
         -> SynExpr.App(ExprAtomicFlag.Atomic, infix, SynExpr.DotGet((pushUnitArg synExpr arg), rangeOfDot, synLongIdent, range), x1, m1)
+    | SynExpr.App(ExprAtomicFlag.Atomic, infix, innerExpr, x1, m1) ->
+        SynExpr.App(ExprAtomicFlag.Atomic, infix, pushUnitArg innerExpr arg, x1, m1)
     | SynExpr.Ident ident ->
         SynExpr.LongIdent(false, SynLongIdent(arg::ident::[], [ident.idRange], [None]), None, ident.idRange)
     | SynExpr.LongIdent(isOptional, SynLongIdent(id, dotRanges, trivia), altNameRefCell, range)
