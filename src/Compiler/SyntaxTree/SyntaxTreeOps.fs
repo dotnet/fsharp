@@ -79,6 +79,8 @@ let rec pushUnitArg expr arg =
         -> SynExpr.LongIdent(isOptional, SynLongIdent(arg::id, dotRanges, trivia), altNameRefCell, range)
     | SynExpr.DotGet(synExpr, rangeOfDot, synLongIdent, range) ->
         SynExpr.DotGet(pushUnitArg synExpr arg, rangeOfDot, synLongIdent, range)
+    | SynExpr.DotIndexedGet(objectExpr, indexArgs, dotRange, range) ->
+        SynExpr.DotIndexedGet(pushUnitArg objectExpr arg, indexArgs, dotRange, range)
     | _ -> expr
     // | SynExpr.App(ExprAtomicFlag.Atomic, infix, innerExpr, x1, m1)
 let (|SynSingleIdent|_|) x =
