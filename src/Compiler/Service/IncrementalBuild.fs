@@ -475,7 +475,7 @@ type BoundModel private (tcConfig: TcConfig,
 
                     IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
                     let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
-                    let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
+                    let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
                     use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
                     beforeFileChecked.Trigger fileName
@@ -519,8 +519,8 @@ type BoundModel private (tcConfig: TcConfig,
                             tcDependencyFiles = fileName :: prevTcDependencyFiles
                             sigNameOpt =
                                 match input with
-                                | ParsedInput.SigFile(ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
-                                    Some(fileName, qualName)
+                                | ParsedInput.SigFile sigFile ->
+                                    Some(sigFile.FileName, sigFile.QualifiedName)
                                 | _ ->
                                     None
                         }
@@ -745,7 +745,6 @@ module IncrementalBuilderHelpers =
         unresolvedReferences, 
         dependencyProvider, 
         loadClosureOpt: LoadClosure option, 
-        niceNameGen, 
         basicDependencies,
         keepAssemblyContents,
         keepAllBackgroundResolutions,
@@ -794,7 +793,7 @@ module IncrementalBuilderHelpers =
           }
 
         let tcInitial, openDecls0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
-        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial, openDecls0)
+        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, tcInitial, openDecls0)
         let loadClosureErrors =
            [ match loadClosureOpt with
              | None -> ()
@@ -1432,6 +1431,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking: bool,
+            enableParallelCheckingWithSignatureFiles: bool,
             dependencyProvider,
             parallelReferenceResolution
         ) =
@@ -1514,6 +1514,7 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     }
                     |> Some
 
+                tcConfigB.parallelCheckingWithSignatureFiles <- enableParallelCheckingWithSignatureFiles
                 tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
                 
                 tcConfigB, sourceFilesNew
@@ -1544,7 +1545,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             setupConfigFromLoadClosure()
 
             let tcConfig = TcConfig.Create(tcConfigB, validate=true)
-            let niceNameGen = NiceNameGenerator()
             let outfile, _, assemblyName = tcConfigB.DecideNames sourceFiles
 
             // Resolve assemblies and create the framework TcImports. This is done when constructing the
@@ -1628,7 +1628,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     unresolvedReferences,
                     dependencyProvider,
                     loadClosureOpt,
-                    niceNameGen,
                     basicDependencies,
                     keepAssemblyContents,
                     keepAllBackgroundResolutions,

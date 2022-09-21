@@ -85,19 +85,11 @@ module CompileHelpers =
     let mkCompilationDiagnosticsHandlers () =
         let diagnostics = ResizeArray<_>()
 
-        let diagnosticSink isError exn =
-            let main, related = SplitRelatedDiagnostics exn
-
-            let oneDiagnostic e =
-                diagnostics.Add(FSharpDiagnostic.CreateFromException(e, isError, range0, true)) // Suggest names for errors
-
-            oneDiagnostic main
-            List.iter oneDiagnostic related
-
         let diagnosticsLogger =
             { new DiagnosticsLogger("CompileAPI") with
 
-                member _.DiagnosticSink(exn, isError) = diagnosticSink isError exn
+                member _.DiagnosticSink(diag, isError) =
+                    diagnostics.Add(FSharpDiagnostic.CreateFromException(diag, isError, range0, true)) // Suggest names for errors
 
                 member _.ErrorCount =
                     diagnostics
@@ -106,20 +98,17 @@ module CompileHelpers =
             }
 
         let loggerProvider =
-            { new DiagnosticsLoggerProvider() with
-                member _.CreateDiagnosticsLoggerUpToMaxErrors(_tcConfigBuilder, _exiter) = diagnosticsLogger
+            { new IDiagnosticsLoggerProvider with
+                member _.CreateLogger(_tcConfigB, _exiter) = diagnosticsLogger
             }
 
         diagnostics, diagnosticsLogger, loggerProvider
 
     let tryCompile diagnosticsLogger f =
-        use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        use unwindEL_2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+        use _ = UseBuildPhase BuildPhase.Parse
+        use _ = UseDiagnosticsLogger diagnosticsLogger
 
-        let exiter =
-            { new Exiter with
-                member x.Exit n = raise StopProcessing
-            }
+        let exiter = StopProcessingExiter()
 
         try
             f exiter
@@ -293,6 +282,7 @@ type BackgroundCompiler
         keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
+        enableParallelCheckingWithSignatureFiles,
         parallelReferenceResolution
     ) as self =
 
@@ -420,6 +410,7 @@ type BackgroundCompiler
                     keepAllBackgroundSymbolUses,
                     enableBackgroundItemKeyStoreAndSemanticClassification,
                     enablePartialTypeChecking,
+                    enableParallelCheckingWithSignatureFiles,
                     dependencyProvider,
                     parallelReferenceResolution
                 )
@@ -1214,6 +1205,7 @@ type FSharpChecker
         keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
+        enableParallelCheckingWithSignatureFiles,
         parallelReferenceResolution
     ) =
 
@@ -1228,6 +1220,7 @@ type FSharpChecker
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
+            enableParallelCheckingWithSignatureFiles,
             parallelReferenceResolution
         )
 
@@ -1270,6 +1263,7 @@ type FSharpChecker
             ?keepAllBackgroundSymbolUses,
             ?enableBackgroundItemKeyStoreAndSemanticClassification,
             ?enablePartialTypeChecking,
+            ?enableParallelCheckingWithSignatureFiles,
             ?parallelReferenceResolution
         ) =
 
@@ -1289,6 +1283,7 @@ type FSharpChecker
             defaultArg enableBackgroundItemKeyStoreAndSemanticClassification false
 
         let enablePartialTypeChecking = defaultArg enablePartialTypeChecking false
+        let enableParallelCheckingWithSignatureFiles = defaultArg enableParallelCheckingWithSignatureFiles false
 
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
@@ -1305,6 +1300,7 @@ type FSharpChecker
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
+            enableParallelCheckingWithSignatureFiles,
             parallelReferenceResolution
         )
 

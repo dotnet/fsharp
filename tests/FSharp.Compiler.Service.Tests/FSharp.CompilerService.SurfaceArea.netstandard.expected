@@ -5528,26 +5528,44 @@ FSharp.Compiler.Syntax.ParsedImplFileFragment: Int32 Tag
 FSharp.Compiler.Syntax.ParsedImplFileFragment: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParsedImplFileFragment: System.String ToString()
 FSharp.Compiler.Syntax.ParsedImplFileInput
+FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean IsExe
+FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean IsLastCompiland
+FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean IsScript
+FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_IsExe()
+FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_IsLastCompiland()
+FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_IsScript()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_isScript()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean isScript
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.ParsedImplFileInput NewParsedImplFileInput(System.String, Boolean, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace], System.Tuple`2[System.Boolean,System.Boolean], FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia)
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile QualifiedName
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_QualifiedName()
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_qualifiedNameOfFile()
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile qualifiedNameOfFile
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia Trivia
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia get_Trivia()
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia get_trivia()
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia trivia
 FSharp.Compiler.Syntax.ParsedImplFileInput: Int32 Tag
 FSharp.Compiler.Syntax.ParsedImplFileInput: Int32 get_Tag()
+FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] HashDirectives
+FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] get_HashDirectives()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] get_hashDirectives()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] hashDirectives
+FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] ScopedPragmas
+FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] get_ScopedPragmas()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] get_scopedPragmas()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] scopedPragmas
-FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace] get_modules()
-FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace] modules
+FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace] Contents
+FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace] contents
+FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace] get_Contents()
+FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace] get_contents()
+FSharp.Compiler.Syntax.ParsedImplFileInput: System.String FileName
 FSharp.Compiler.Syntax.ParsedImplFileInput: System.String ToString()
 FSharp.Compiler.Syntax.ParsedImplFileInput: System.String fileName
+FSharp.Compiler.Syntax.ParsedImplFileInput: System.String get_FileName()
 FSharp.Compiler.Syntax.ParsedImplFileInput: System.String get_fileName()
-FSharp.Compiler.Syntax.ParsedImplFileInput: System.Tuple`2[System.Boolean,System.Boolean] get_isLastCompiland()
-FSharp.Compiler.Syntax.ParsedImplFileInput: System.Tuple`2[System.Boolean,System.Boolean] isLastCompiland
+FSharp.Compiler.Syntax.ParsedImplFileInput: System.Tuple`2[System.Boolean,System.Boolean] flags
+FSharp.Compiler.Syntax.ParsedImplFileInput: System.Tuple`2[System.Boolean,System.Boolean] get_flags()
 FSharp.Compiler.Syntax.ParsedInput
 FSharp.Compiler.Syntax.ParsedInput+ImplFile: FSharp.Compiler.Syntax.ParsedImplFileInput Item
 FSharp.Compiler.Syntax.ParsedInput+ImplFile: FSharp.Compiler.Syntax.ParsedImplFileInput get_Item()
@@ -5564,10 +5582,14 @@ FSharp.Compiler.Syntax.ParsedInput: FSharp.Compiler.Syntax.ParsedInput NewSigFil
 FSharp.Compiler.Syntax.ParsedInput: FSharp.Compiler.Syntax.ParsedInput+ImplFile
 FSharp.Compiler.Syntax.ParsedInput: FSharp.Compiler.Syntax.ParsedInput+SigFile
 FSharp.Compiler.Syntax.ParsedInput: FSharp.Compiler.Syntax.ParsedInput+Tags
+FSharp.Compiler.Syntax.ParsedInput: FSharp.Compiler.Syntax.QualifiedNameOfFile QualifiedName
+FSharp.Compiler.Syntax.ParsedInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_QualifiedName()
 FSharp.Compiler.Syntax.ParsedInput: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.ParsedInput: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.ParsedInput: Int32 Tag
 FSharp.Compiler.Syntax.ParsedInput: Int32 get_Tag()
+FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] ScopedPragmas
+FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] get_ScopedPragmas()
 FSharp.Compiler.Syntax.ParsedInput: System.String FileName
 FSharp.Compiler.Syntax.ParsedInput: System.String ToString()
 FSharp.Compiler.Syntax.ParsedInput: System.String get_FileName()
@@ -5647,20 +5669,32 @@ FSharp.Compiler.Syntax.ParsedSigFileFragment: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParsedSigFileFragment: System.String ToString()
 FSharp.Compiler.Syntax.ParsedSigFileInput
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.ParsedSigFileInput NewParsedSigFileInput(System.String, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig], FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia)
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile QualifiedName
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_QualifiedName()
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_qualifiedNameOfFile()
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile qualifiedNameOfFile
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia Trivia
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia get_Trivia()
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia get_trivia()
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia trivia
 FSharp.Compiler.Syntax.ParsedSigFileInput: Int32 Tag
 FSharp.Compiler.Syntax.ParsedSigFileInput: Int32 get_Tag()
+FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] HashDirectives
+FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] get_HashDirectives()
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] get_hashDirectives()
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] hashDirectives
+FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] ScopedPragmas
+FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] get_ScopedPragmas()
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] get_scopedPragmas()
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] scopedPragmas
-FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig] get_modules()
-FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig] modules
+FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig] Contents
+FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig] contents
+FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig] get_Contents()
+FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig] get_contents()
+FSharp.Compiler.Syntax.ParsedSigFileInput: System.String FileName
 FSharp.Compiler.Syntax.ParsedSigFileInput: System.String ToString()
 FSharp.Compiler.Syntax.ParsedSigFileInput: System.String fileName
+FSharp.Compiler.Syntax.ParsedSigFileInput: System.String get_FileName()
 FSharp.Compiler.Syntax.ParsedSigFileInput: System.String get_fileName()
 FSharp.Compiler.Syntax.ParserDetail
 FSharp.Compiler.Syntax.ParserDetail+Tags: Int32 ErrorRecovery

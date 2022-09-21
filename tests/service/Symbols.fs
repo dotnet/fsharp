@@ -98,7 +98,7 @@ extern int private c()
 extern int AccessibleChildren()"""
 
         match parseResults with
-        | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Let(false, [ SynBinding(range = mb) ] , ml)
         ]) ])) ->
             assertRange (2, 0) (3, 31) ml
@@ -113,7 +113,7 @@ extern void setCallbridgeSupportTarget(IntPtr newTarget)
 """
 
         match ast with
-        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+        | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(returnInfo =
                     Some (SynBindingReturnInfo(typeName =
@@ -133,7 +133,7 @@ extern int AccessibleChildren(int* x)
 """
 
         match ast with
-        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+        | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
@@ -157,7 +157,7 @@ extern int AccessibleChildren(obj& x)
 """
 
         match ast with
-        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+        | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
@@ -181,7 +181,7 @@ extern int AccessibleChildren(void* x)
 """
 
         match ast with
-        | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+        | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(false, [ SynBinding(headPat =
                     SynPat.LongIdent(argPats = SynArgPats.Pats [
