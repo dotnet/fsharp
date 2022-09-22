@@ -76,6 +76,13 @@ type SynExprLambdaTrivia =
     static member Zero: SynExprLambdaTrivia = { ArrowRange = None }
 
 [<NoEquality; NoComparison>]
+type SynExprDotLambdaTrivia =
+    {
+        UnderscoreRange : range
+        DotRange : range
+    }
+
+[<NoEquality; NoComparison>]
 type SynExprLetOrUseTrivia = { InKeyword: range option }
 
 [<NoEquality; NoComparison>]

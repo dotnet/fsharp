@@ -5467,7 +5467,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         TcNonControlFlowExpr env <| fun env ->
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy.Commit, env.AccessRights)
         TcConstExpr cenv overallTy env m tpenv synConst
-    | SynExpr.DotLambda (synExpr, m) ->
+    | SynExpr.DotLambda (synExpr, m, _) ->
         let unaryArg = mkSynId m (cenv.synArgNameGenerator.New())
         let svar = mkSynCompGenSimplePatVar unaryArg
         let pushedExpr = pushUnaryArg synExpr unaryArg

@@ -4,15 +4,6 @@ open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 open NUnit.Framework
-
-open Xunit
-// [<Fact>]
-// let ``Thomas`` () =
-    // let ast = """_.ToString.ToString "b" """ |> getParseResults
-    // let ast = """_.x""" |> getParseResults
-    // let ast = """_.x()""" |> getParseResults
-    // Assert.Fail (ast.ToString())
-    
 [<Test>]
 let ``SynExpr.Do contains the range of the do keyword`` () =
     let ast = """let a =
@@ -502,3 +493,29 @@ type CFoo() =
         assertRange (7,4) (7, 67) m
     | _ -> Assert.Fail $"Could not get valid AST, got {ast}"
 
+[<Test>]
+let ``SynExpr.DotLambda has correct ranges and trivia`` () =
+    let ast =
+        getParseResults """
+let e1 : obj [] -> string = _(*test*).(*test*)[5].ToString()
+"""
+
+    match ast with
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
+                SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                    SynModuleDecl.Let(bindings =
+                        [SynBinding.SynBinding(expr =
+                            SynExpr.Typed(expr =
+                                SynExpr.DotLambda(
+                                    SynExpr.App(range = innerRange),
+                                    dlRange,
+                                    { UnderscoreRange = urange; DotRange = dRange }
+                                    )))])
+                ])
+            ])) ->
+        assertRange (2, 28) (2, 60) dlRange
+        assertRange (2, 28) (2, 29) urange
+        assertRange (2, 37) (2, 38) dRange
+        assertRange (2, 46) (2, 60) innerRange
+        Assert.Pass()
+    | _ -> Assert.Fail $"Could not get valid AST, got {ast}"
