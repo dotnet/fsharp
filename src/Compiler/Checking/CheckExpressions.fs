@@ -603,6 +603,7 @@ let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownT
         | _ -> contextInfo
 
     let ty2 = TType_tuple (tupInfo, ptys)
+    
     AddCxTypeEqualsType contextInfo denv cenv.css m knownTy ty2
     tupInfo, ptys
 
@@ -5792,6 +5793,23 @@ and TcExprLazy (cenv: cenv) overallTy env tpenv (synInnerExpr, m) =
 and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
     let g = cenv.g
     TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnyTupleTy g ty || isTyparTy g ty) cenv overallTy env m (fun overallTy ->
+
+        // We preemptively check if the tuple has the correct length before submitting it to the
+        // constraint solver. If not we type check it against empty inference variables so that
+        // we can show the types in the error message if they are known.
+        if isAnyTupleTy g overallTy then
+            let tupInfo, ptys = destAnyTupleTy g overallTy
+
+            if List.length args <> List.length ptys then
+                let rhsTys = NewInferenceTypes g args
+                let flexes = rhsTys |> List.map (fun _ -> false)
+                suppressErrorReporting (fun () -> TcExprsWithFlexes cenv env m tpenv flexes rhsTys args) |> ignore
+                let expectedTy = TType_tuple (tupInfo, rhsTys)
+
+                // We let error recovery handle this exception
+                error (ErrorFromAddingTypeEquation(g, env.DisplayEnv, overallTy, expectedTy,
+                       (ConstraintSolverTupleDiffLengths(env.DisplayEnv, ptys, rhsTys, m, m)), m))
+
         let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
 
         let flexes = argTys |> List.map (fun _ -> false)

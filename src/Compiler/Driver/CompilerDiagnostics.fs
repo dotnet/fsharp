@@ -439,6 +439,7 @@ module OldStyleMessages =
     let ConstraintSolverTypesNotInSubsumptionRelationE () = Message("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
     let ErrorFromAddingTypeEquation1E () = Message("ErrorFromAddingTypeEquation1", "%s%s%s")
     let ErrorFromAddingTypeEquation2E () = Message("ErrorFromAddingTypeEquation2", "%s%s%s")
+    let ErrorFromAddingTypeEquationTuplesE () = Message("ErrorFromAddingTypeEquationTuples", "%d%s%d%s%s")
     let ErrorFromApplyingDefault1E () = Message("ErrorFromApplyingDefault1", "%s")
     let ErrorFromApplyingDefault2E () = Message("ErrorFromApplyingDefault2", "")
     let ErrorsFromAddingSubsumptionConstraintE () = Message("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
@@ -739,18 +740,9 @@ type Exception with
         | ErrorFromAddingTypeEquation (_g, denv, ty1, ty2, ConstraintSolverTupleDiffLengths (_, tl1, tl2, _, _ ), _) ->
                        
             let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
-            
-            let rec isKnownType = function TType_var ({typar_solution = None}, _) -> false
-                                         | TType_var ({typar_solution = Some s}, _) -> isKnownType s
-                                         | _ -> true
 
-            let formatTuple tl ty =
-                if tl |> List.exists isKnownType then
-                     $"tuple of length {tl.Length} ({ty})"
-                else $"tuple of length {tl.Length}"
-            
             if ty1 <> ty2 + tpcs then
-                os.AppendString(ErrorFromAddingTypeEquation2E().Format (formatTuple tl1 ty1) (formatTuple tl2 ty2) tpcs)
+                os.AppendString(ErrorFromAddingTypeEquationTuplesE().Format tl1.Length ty1 tl2.Length ty2 tpcs)
         
         | ErrorFromAddingTypeEquation (g, denv, ty1, ty2, e, _) ->
             if not (typeEquiv g ty1 ty2) then
