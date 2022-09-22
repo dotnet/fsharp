@@ -2666,9 +2666,13 @@ type FSharpCheckFileResults
                                 match Tokenization.FSharpKeywords.KeyWordsDescriptionLookup.TryGetValue kw with
                                 | false, _ -> ()
                                 | true, kwDescription ->
-                                    let tip = wordL (TaggedText.tagStringLiteral kwDescription)
-                                    let tip = LayoutRender.toArray tip
-                                    yield ToolTipElement.Single(tip, FSharpXmlDoc.None)
+                                    let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
+                                    let kwTip = ToolTipElementData.Create(kwText,FSharpXmlDoc.None)                                  
+
+                                    let descText = kwDescription |> TaggedText.tagText |> wordL |> LayoutRender.toArray     
+                                    let descTip = ToolTipElementData.Create(descText,FSharpXmlDoc.None)
+
+                                    yield ToolTipElement.Group [kwTip;descTip]                                 
                         ]
 
     /// Resolve the names at the given location to give a data tip

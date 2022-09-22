@@ -63,36 +63,110 @@ let private getQuickInfoText (ToolTipText elements) : string =
         | ToolTipElement.CompositionError(error) -> error
     elements |> List.map parseElement |> String.concat "\n" |> normalizeLineEnds
 
+let quickInfotest (programText:string) testCases = 
+    let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, programText)
+    Assert.Multiple(fun _ -> 
+        for (symbol: string, expected: string option) in testCases do
+            let expected = expected |> Option.map normalizeLineEnds      
+            let caretPosition = programText.IndexOf(symbol)
+
+            let quickInfo =
+                FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
+                |> Async.RunSynchronously
+        
+            let actual = quickInfo |> Option.map (fun qi -> getQuickInfoText qi.StructuredText)
+            Assert.AreEqual(expected, actual)
+    )
+
 [<Test>]
 let ShouldShowQuickInfoAtCorrectPositions() =
+    let fileContents = """
+let x = 1
+let y = 2
+System.Console.WriteLine(x + y)
+    """
+
     let testCases = 
-       [ "x", Some "val x: int\nFull name: Test.x"
+       [ "let", Some "let\nUsed to associate, or bind, a name to a value or function."
+         "x", Some "val x: int\nFull name: Test.x"
          "y", Some "val y: int\nFull name: Test.y"
          "1", None
          "2", None
          "x +", Some "val x: int\nFull name: Test.x"
          "System", Some "namespace System"
-         "WriteLine", Some "System.Console.WriteLine(value: int) : unit" ]
+         "WriteLine", Some "System.Console.WriteLine(value: int) : unit" 
+       ]
 
-    for (symbol: string, expected: string option) in testCases do
-        let expected = expected |> Option.map normalizeLineEnds
-        let fileContents = """
-    let x = 1
-    let y = 2
-    System.Console.WriteLine(x + y)
+    quickInfotest fileContents testCases
+   
+
+[<Test>]
+let ShouldShowQuickKeywordInfoAtCorrectPositionsForSignatureFiles() =
+    let fileContents = """
+namespace TestNs
+module internal MyModule =
+    val MyVal: isDecl:bool -> string
+        """
+    let testCases = 
+       [ "namespace", Some "namespace\nUsed to associate a name with a group of related types and modules, to logically separate it from other code."
+         "module", Some "module\nUsed to associate a name with a group of related types, values, and functions, to logically separate it from other code."
+         "internal", Some "internal\nUsed to specify that a member is visible inside an assembly but not outside it."
+         "val", Some "val\nUsed in a signature to indicate a value, or in a type to declare a member, in limited situations."
+         "->", Some "->\nIn function types, delimits arguments and return values. Yields an expression (in sequence expressions); equivalent to the yield keyword. Used in match expressions"        
+       ]
+    quickInfotest fileContents testCases
+
+[<Test>]
+let ShouldShowQuickKeywordInfoAtCorrectPositionsWithinComputationExpressions() =
+    let fileContents = """
+type MyOptionBuilder() = 
+        member __.Zero() = None
+        member __.Return(x: 'T) = Some x
+        member __.Bind(m: 'T option, f) = Option.bind f m
+
+let myOpt = MyOptionBuilder()
+let x = 
+    myOpt{
+        let! x = Some 5
+        let! y = Some 11
+        return  x + y
+    }
     """
-        let caretPosition = fileContents.IndexOf(symbol)
-        let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
 
-        let quickInfo =
-            FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
-            |> Async.RunSynchronously
-        
-        let actual = quickInfo |> Option.map (fun qi -> getQuickInfoText qi.StructuredText)
-        Assert.AreEqual(expected, actual)
+    let testCases = 
+       [ "let!", Some "let!\nUsed in computation expressions to bind a name to the result of another computation expression."
+         "return", Some "return\nUsed to provide a value for the result of the containing computation expression."           
+       ]
+
+    quickInfotest fileContents testCases
 
 [<Test>]
 let ShouldShowQuickInfoForGenericParameters() =
+    let fileContents = """
+
+type C() = 
+    member x.FSharpGenericMethodExplitTypeParams<'T>(a:'T, y:'T) = (a,y)
+
+    member x.FSharpGenericMethodInferredTypeParams(a, y) = (a,y)
+
+open System.Linq
+let coll = [ for i in 1 .. 100 -> (i, string i) ]
+let res1 = coll.GroupBy (fun (a, b) -> a)
+let res2 = System.Array.Sort [| 1 |]
+let test4 x = C().FSharpGenericMethodExplitTypeParams([x], [x])
+let test5<'U> (x: 'U) = C().FSharpGenericMethodExplitTypeParams([x], [x])
+let test6 = C().FSharpGenericMethodExplitTypeParams(1, 1)
+let test7 x = C().FSharpGenericMethodInferredTypeParams([x], [x])
+let test8 = C().FSharpGenericMethodInferredTypeParams(1, 1)
+let test9<'U> (x: 'U) = C().FSharpGenericMethodInferredTypeParams([x], [x])
+let res3 = [1] |> List.map id
+let res4 = (1.0,[1]) ||> List.fold (fun s x -> string s + string x) // note there is a type error here, still cehck quickinfo any way
+let res5 = 1 + 2
+let res6 = System.DateTime.Now + System.TimeSpan.Zero
+let res7 = sin 5.0
+let res8 = abs 5.0<kg>
+    """
+
     let testCases = 
 
         [("GroupBy",
@@ -184,44 +258,5 @@ Full name: Microsoft.FSharp.Core.Operators.sin
             "val abs: value: 'T -> 'T (requires member Abs)
 Full name: Microsoft.FSharp.Core.Operators.abs
 'T is int")]    
-    let actualForAllTests = 
-     [ for (symbol: string, expected: string option) in testCases do
-        let expected = expected |> Option.map normalizeLineEnds
-        let fileContents = """
 
-type C() = 
-    member x.FSharpGenericMethodExplitTypeParams<'T>(a:'T, y:'T) = (a,y)
-
-    member x.FSharpGenericMethodInferredTypeParams(a, y) = (a,y)
-
-open System.Linq
-let coll = [ for i in 1 .. 100 -> (i, string i) ]
-let res1 = coll.GroupBy (fun (a, b) -> a)
-let res2 = System.Array.Sort [| 1 |]
-let test4 x = C().FSharpGenericMethodExplitTypeParams([x], [x])
-let test5<'U> (x: 'U) = C().FSharpGenericMethodExplitTypeParams([x], [x])
-let test6 = C().FSharpGenericMethodExplitTypeParams(1, 1)
-let test7 x = C().FSharpGenericMethodInferredTypeParams([x], [x])
-let test8 = C().FSharpGenericMethodInferredTypeParams(1, 1)
-let test9<'U> (x: 'U) = C().FSharpGenericMethodInferredTypeParams([x], [x])
-let res3 = [1] |> List.map id
-let res4 = (1.0,[1]) ||> List.fold (fun s x -> string s + string x) // note there is a type error here, still cehck quickinfo any way
-let res5 = 1 + 2
-let res6 = System.DateTime.Now + System.TimeSpan.Zero
-let res7 = sin 5.0
-let res8 = abs 5.0<kg>
-    """
-        let caretPosition = fileContents.IndexOf(symbol) + symbol.Length - 1
-        let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
-        
-        let quickInfo =
-            FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
-            |> Async.RunSynchronously
-        
-        let actual = quickInfo |> Option.map (fun qi -> getQuickInfoText qi.StructuredText)
-        yield symbol, actual ]
-
-    for ((_, expected),(_,actual)) in List.zip testCases actualForAllTests do
-        let normalizedExpected = Option.map normalizeLineEnds expected
-        let normalizedActual = Option.map normalizeLineEnds actual
-        Assert.AreEqual(normalizedExpected, normalizedActual)
+    quickInfotest fileContents testCases

@@ -313,9 +313,9 @@ type public FSharpCheckFileResults =
         ?getAllEntities: (unit -> AssemblySymbol list) ->
             FSharpSymbolUse list list
 
-    /// <summary>Compute a formatted tooltip for the given location</summary>
+    /// <summary>Compute a formatted tooltip for the given keywords</summary>
     ///   
-    /// <param name="names">The identifiers at the location where the information is being requested.</param>   
+    /// <param name="names">The keywords at the location where the information is being requested.</param>   
     member GetKeywordTooltip:
         names: string list -> ToolTipText
 

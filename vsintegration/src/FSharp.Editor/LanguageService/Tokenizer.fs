@@ -150,9 +150,10 @@ module internal Tokenizer =
         | FSharpGlyph.Error -> Glyph.Error
         | FSharpGlyph.TypeParameter -> Glyph.TypeParameter
 
-    let GetImageIdForSymbol(symbolOpt:FSharpSymbol option, kind:LexerSymbolKind) =
+    let GetImageIdForSymbol(symbolOpt:FSharpSymbol option, kind:LexerSymbolKind) =        
         let imageId =
             match kind with
+            | LexerSymbolKind.Keyword -> KnownImageIds.IntellisenseKeyword
             | LexerSymbolKind.Operator -> KnownImageIds.Operator
             | _ ->
                 match symbolOpt with
