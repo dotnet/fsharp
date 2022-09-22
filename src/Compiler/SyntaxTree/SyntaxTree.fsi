@@ -510,6 +510,14 @@ type SynType =
 
     | Paren of innerType: SynType * range: range
 
+    /// F# syntax: a: b, used in signatures and type annotations
+    | SignatureParameter of
+        attributes: SynAttributes *
+        optional: bool *
+        id: Ident option *
+        usedType: SynType *
+        range: range
+
     /// Gets the syntax range of this construct
     member Range: range
 
@@ -1871,9 +1879,27 @@ type ParsedImplFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespace list *
-        isLastCompiland: (bool * bool) *
+        contents: SynModuleOrNamespace list *
+        flags: (bool * bool) *
         trivia: ParsedImplFileInputTrivia
+
+    member FileName: string
+
+    member IsScript: bool
+
+    member QualifiedName: QualifiedNameOfFile
+
+    member ScopedPragmas: ScopedPragma list
+
+    member HashDirectives: ParsedHashDirective list
+
+    member Contents: SynModuleOrNamespace list
+
+    member Trivia: ParsedImplFileInputTrivia
+
+    member IsLastCompiland: bool
+
+    member IsExe: bool
 
 /// Represents the full syntax tree, file name and other parsing information for a signature file
 [<NoEquality; NoComparison>]
@@ -1883,8 +1909,20 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespaceSig list *
+        contents: SynModuleOrNamespaceSig list *
         trivia: ParsedSigFileInputTrivia
+
+    member FileName: string
+
+    member QualifiedName: QualifiedNameOfFile
+
+    member ScopedPragmas: ScopedPragma list
+
+    member HashDirectives: ParsedHashDirective list
+
+    member Contents: SynModuleOrNamespaceSig list
+
+    member Trivia: ParsedSigFileInputTrivia
 
 /// Represents the syntax tree for a parsed implementation or signature file
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1900,3 +1938,9 @@ type ParsedInput =
 
     /// Gets the syntax range of this construct
     member Range: range
+
+    /// Gets the qualified name used to help match signature and implementation files
+    member QualifiedName: QualifiedNameOfFile
+
+    /// Gets the #nowarn and other scoped pragmas
+    member ScopedPragmas: ScopedPragma list

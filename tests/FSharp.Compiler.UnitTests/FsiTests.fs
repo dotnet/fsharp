@@ -6,6 +6,13 @@ open FluentAssertions
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Test
 open Xunit
+open System.Threading
+
+type Sentinel () =
+    let x = ()
+
+module MyModule =
+    let test(x: int) = ()
 
 [<Collection("SingleThreaded")>]
 module FsiTests =
@@ -636,3 +643,38 @@ module FsiTests =
         let boundValue = fsiSession.GetBoundValues() |> List.exactlyOne
         Assert.shouldBe typeof<CustomType2[,]> boundValue.Value.ReflectionType
         boundValue.Value.ReflectionValue.Should().Be(mdArr, "") |> ignore
+
+#if NETCOREAPP
+    [<Fact>]
+    let ``Evaluating simple reference and code succeeds under permutations``() =
+
+        for useSdkRefsFlag in ["/usesdkrefs"; "/usesdkrefs-"] do
+            for multiemitFlag in ["/multiemit"; "/multiemit-"] do
+                let config = FsiEvaluationSession.GetDefaultConfiguration()
+                let argv = [|
+                    typeof<Sentinel>.Assembly.Location
+                    "--noninteractive"
+                    "--targetprofile:netcore"
+                    "--langversion:preview"
+                    multiemitFlag
+                    useSdkRefsFlag
+                    |]
+                let fsi = FsiEvaluationSession.Create(config, argv, TextReader.Null, TextWriter.Null, TextWriter.Null)
+                let assemblyPath = typeof<Sentinel>.Assembly.Location.Replace("\\", "/")
+                let code = $@"
+            #r ""{assemblyPath}""
+            FSharp.Compiler.UnitTests.MyModule.test(3)"
+                let ch, errors = fsi.EvalInteractionNonThrowing(code, CancellationToken.None)
+                errors
+                |> Array.iter (fun e -> printfn "error: %A" e)
+                match ch with
+                | Choice1Of2 v ->
+                    let v =
+                        match v with
+                        | Some v -> sprintf "%A" v.ReflectionValue
+                        | None -> "(none)"
+                    printfn "value: %A" v
+                | Choice2Of2 e ->
+                    printfn "exception: %A" e
+                    raise e
+#endif

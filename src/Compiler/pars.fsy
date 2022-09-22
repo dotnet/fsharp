@@ -5063,7 +5063,7 @@ topTupleType:
        let mStar = rhs parseState 2
        let path = SynTupleTypeSegment.Type t :: SynTupleTypeSegment.Star mStar :: (List.map fst $3)
        let mdata = argInfo :: (List.choose snd $3)
-       mkSynTypeTuple false path, mdata }
+       mkSynTypeTuple path, mdata }
 
   | topAppType                 
      { let ty, mdata = $1 in ty, [mdata] }
@@ -5081,22 +5081,29 @@ topTupleTypeElements:
 topAppType:
   | attributes appType COLON appType 
      { match $2 with 
-       | SynType.LongIdent(SynLongIdent([id], _, _)) -> $4, SynArgInfo($1, false, Some id)
+       | SynType.LongIdent(SynLongIdent([id], _, _)) -> 
+           let m = rhs2 parseState 1 4
+           SynType.SignatureParameter($1, false, Some id, $4, m), SynArgInfo($1, false, Some id)
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType())  }
 
   | attributes QMARK ident COLON appType 
-     { $5, SynArgInfo($1, true, Some $3) }
+     { let m = rhs2 parseState 1 5
+       SynType.SignatureParameter($1, true, Some $3, $5, m), SynArgInfo($1, true, Some $3) }
 
   | attributes appType 
-     { ($2, SynArgInfo($1, false, None)) }
+     { let m = rhs2 parseState 1 2
+       SynType.SignatureParameter($1, false, None, $2, m), SynArgInfo($1, false, None) }
 
   | appType COLON appType 
      { match $1 with 
-       | SynType.LongIdent(SynLongIdent([id], _, _)) -> $3, SynArgInfo([], false, Some id)
+       | SynType.LongIdent(SynLongIdent([id], _, _)) -> 
+           let m = rhs2 parseState 1 3
+           SynType.SignatureParameter([], false, Some id, $3, m), SynArgInfo([], false, Some id)
        | _ -> raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsSyntaxErrorInLabeledType())  }
 
   | QMARK ident COLON appType 
-     { $4, SynArgInfo([], true, Some $2) }
+     { let m = rhs2 parseState 1 4
+       SynType.SignatureParameter([], true, Some $2, $4, m), SynArgInfo([], true, Some $2) }
 
   | appType 
      { $1, SynArgInfo([], false, None) }
@@ -5119,19 +5126,19 @@ tupleType:
   | appType STAR tupleOrQuotTypeElements 
     { let mStar = rhs parseState 2
       let path = SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Star mStar :: $3
-      mkSynTypeTuple false path }
+      mkSynTypeTuple path }
 
   | INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $1 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
       let mSlash = rhs parseState 1
       let path = SynTupleTypeSegment.Slash mSlash :: $2
-      mkSynTypeTuple false path }
+      mkSynTypeTuple path }
 
   | appType INFIX_STAR_DIV_MOD_OP tupleOrQuotTypeElements
     { if $2 <> "/" then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedInfixOperator());
       let mSlash = rhs parseState 2
       let path = SynTupleTypeSegment.Type $1 :: SynTupleTypeSegment.Slash mSlash :: $3
-      mkSynTypeTuple false path }
+      mkSynTypeTuple path }
 
   | appType %prec prec_tuptyp_prefix 
     { $1 }
@@ -5283,13 +5290,15 @@ atomType:
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  rparen 
     { let mStar = rhs parseState 4
       let path = SynTupleTypeSegment.Type $3 :: SynTupleTypeSegment.Star mStar :: $5
-      mkSynTypeTuple true path }
+      let m = rhs2 parseState 1 6
+      SynType.Tuple(true, path, m) }
 
   | STRUCT LPAREN appType STAR tupleOrQuotTypeElements  recover
     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 
       let mStar = rhs parseState 4
       let path = SynTupleTypeSegment.Type $3 :: SynTupleTypeSegment.Star mStar :: $5
-      mkSynTypeTuple true path }
+      let m = rhs2 parseState 1 5
+      SynType.Tuple(true, path, m) }
 
   | STRUCT LPAREN appType STAR recover
     { reportParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnmatchedParen()) 

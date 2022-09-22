@@ -32,8 +32,4 @@
     <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsVersion)" />
-  </ItemGroup>
-
 </Project>
