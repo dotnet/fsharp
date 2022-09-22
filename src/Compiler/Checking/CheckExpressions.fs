@@ -4773,6 +4773,9 @@ and CrackStaticConstantArgs (cenv: cenv) env tpenv (staticParameters: Tainted<Pr
     argsInStaticParameterOrderIncludingDefaults
 
 and TcProvidedTypeAppToStaticConstantArgs (cenv: cenv) env generatedTypePathOpt tpenv (tcref: TyconRef) (args: SynType list) m =
+    // Static argument expressions should not get debug points
+    let env = { env with eIsControlFlow = false }
+
     let typeBeforeArguments =
         match tcref.TypeReprInfo with
         | TProvidedTypeRepr info -> info.ProvidedType
