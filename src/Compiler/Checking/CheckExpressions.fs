@@ -603,7 +603,6 @@ let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownT
         | _ -> contextInfo
 
     let ty2 = TType_tuple (tupInfo, ptys)
-    
     AddCxTypeEqualsType contextInfo denv cenv.css m knownTy ty2
     tupInfo, ptys
 
