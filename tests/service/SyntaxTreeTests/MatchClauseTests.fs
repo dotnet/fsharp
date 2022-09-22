@@ -17,7 +17,7 @@ with ex ->
     None"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(range = range) as clause ]))
     ]) ])) ->
         assertRange (5, 5) (7, 8) range
@@ -40,7 +40,7 @@ with
     None"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(range = r1) as clause1
                                                                 SynMatchClause(range = r2) as clause2 ]))
     ]) ])) ->
@@ -65,7 +65,7 @@ with
 | """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(range = range) as clause ]))
     ]) ])) ->
         assertRange (6, 2) (7, 6) range
@@ -84,7 +84,7 @@ with
 | ex ->"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(range = range) as clause ]))
     ]) ])) ->
         assertRange (6, 2) (6, 4) range
@@ -103,7 +103,7 @@ with
 | ex when (isNull ex) ->"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(range = range) as clause ]))
     ]) ])) ->
         assertRange (6, 2) (6, 21) range
@@ -119,7 +119,7 @@ match foo with
 | Bar bar -> ()"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.Match(clauses = [ SynMatchClause(trivia={ ArrowRange = Some mArrow }) ]))
     ]) ])) ->
         assertRange (3, 10) (3, 12) mArrow
@@ -134,7 +134,7 @@ match foo with
 | Bar bar when (someCheck bar) -> ()"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.Match(clauses = [ SynMatchClause(trivia={ ArrowRange = Some mArrow }) ]))
     ]) ])) ->
         assertRange (3, 31) (3, 33) mArrow
@@ -149,7 +149,7 @@ match foo with
 | Bar bar when (someCheck bar) -> ()"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.Match(clauses = [ SynMatchClause(trivia={ BarRange = Some mBar }) ]))
     ]) ])) ->
         assertRange (3, 0) (3, 1) mBar
@@ -165,7 +165,7 @@ match foo with
 | Far too -> near ()"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.Match(clauses = [ SynMatchClause(trivia={ BarRange = Some mBar1 })
                                                             SynMatchClause(trivia={ BarRange = Some mBar2 }) ]))
     ]) ])) ->
@@ -184,7 +184,7 @@ with
 | exn -> ()"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(trivia={ BarRange = Some mBar }) ]))
     ]) ])) ->
         assertRange (5, 0) (5, 1) mBar
@@ -202,7 +202,7 @@ with exn ->
     ()"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(trivia={ BarRange = None }) ]))
     ]) ])) ->
         Assert.Pass()
@@ -222,7 +222,7 @@ with
 | ex -> ()"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.TryWith(withCases = [ SynMatchClause(trivia={ BarRange = Some mBar1 })
                                                                 SynMatchClause(trivia={ BarRange = Some mBar2 }) ]))
     ]) ])) ->
