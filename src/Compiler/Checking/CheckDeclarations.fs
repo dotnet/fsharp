@@ -3941,7 +3941,20 @@ module TcDeclarations =
              | SynMemberDefn.NestedType (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
              | _ -> ()
         | ds ->
-            // Classic class construction 
+            // Check for duplicated parameters
+            ds
+            |> List.choose (function SynMemberDefn.AbstractSlot (x, _, m) -> Some(x, m) | _ -> None)
+            |> List.map(fun (slot, m) -> slot.SynInfo.ArgNames, m)
+            |> List.iter(fun (argNames, m) ->
+                argNames
+                |> List.groupBy id
+                |> List.filter (fun (_, elems) -> Seq.length elems > 1)
+                |> List.map fst
+                |> List.iter(fun argName ->
+                    if argNames.Length > 0 then
+                        errorR(Error((FSComp.SR.chkDuplicatedMethodParameter(argName), m)))))
+            
+            // Classic class construction    
             let _, ds = List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isInherit;isField;isTycon]) ds
             match ds with
              | SynMemberDefn.Member (range=m) :: _ -> errorR(InternalError("CheckMembersForm: List.takeUntil is wrong", m))
@@ -3955,7 +3968,6 @@ module TcDeclarations =
              | SynMemberDefn.ValField (range=m) :: _ 
              | SynMemberDefn.NestedType (range=m) :: _ -> errorR(InternalError("CheckMembersForm: List.takeUntil is wrong", m))
              | _ -> ()
-                     
 
     /// Separates the definition into core (shape) and body.
     ///

@@ -413,5 +413,18 @@ module MethodsAndProperties =
         compilation
         |> verifyCompileAndRun
         |> shouldSucceed
-
+        
+    // SOURCE=E_Abstract_ReusedParam.fs			# E_Abstract_ReusedParam.fs
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_Abstract_ReusedParam.fs"|])>]
+    let ``E_Abstract_Methods_ReusedParam_fs`` compilation =
+        compilation
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3546, Line 5, Col 5, Line 5, Col 38, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 7, Col 5, Line 7, Col 39, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 9, Col 5, Line 9, Col 47, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
+        ]
 
