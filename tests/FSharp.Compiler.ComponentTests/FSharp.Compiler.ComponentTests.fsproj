@@ -169,6 +169,7 @@
     <Compile Include="Language\ComputationExpressionTests.fs" />
     <Compile Include="Language\CastingTests.fs" />
     <Compile Include="Language\NameofTests.fs" />
+    <Compile Include="Language\DotLambdaTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
     <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
