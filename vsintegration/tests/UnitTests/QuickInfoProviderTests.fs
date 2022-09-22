@@ -43,7 +43,7 @@ let internal projectOptions = {
 
 let private normalizeLineEnds (s: string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n")
 
-let private getQuickInfoText (ToolTipText elements) : string =
+let private tooltipTextToRawString (ToolTipText elements) : string =
     let rec parseElement = function
         | ToolTipElement.None -> ""
         | ToolTipElement.Group(xs) -> 
@@ -63,19 +63,19 @@ let private getQuickInfoText (ToolTipText elements) : string =
         | ToolTipElement.CompositionError(error) -> error
     elements |> List.map parseElement |> String.concat "\n" |> normalizeLineEnds
 
-let quickInfotest (programText:string) testCases = 
+let executeQuickInfoTest (programText:string) testCases = 
     let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, programText)
     Assert.Multiple(fun _ -> 
         for (symbol: string, expected: string option) in testCases do
-            let expected = expected |> Option.map normalizeLineEnds      
-            let caretPosition = programText.IndexOf(symbol)
+            let expected = expected |> Option.map normalizeLineEnds |> Option.map (fun s -> s.Replace("___",""))      
+            let caretPosition = programText.IndexOf(symbol) + symbol.Length - 1
 
             let quickInfo =
                 FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
                 |> Async.RunSynchronously
         
-            let actual = quickInfo |> Option.map (fun qi -> getQuickInfoText qi.StructuredText)
-            Assert.AreEqual(expected, actual)
+            let actual = quickInfo |> Option.map (fun qi -> tooltipTextToRawString qi.StructuredText)
+            Assert.AreEqual(expected, actual,"Symbol: " + symbol)
     )
 
 [<Test>]
@@ -87,17 +87,21 @@ System.Console.WriteLine(x + y)
     """
 
     let testCases = 
-       [ "let", Some "let\nUsed to associate, or bind, a name to a value or function."
+       [ "let", Some "let___Used to associate, or bind, a name to a value or function."
          "x", Some "val x: int\nFull name: Test.x"
          "y", Some "val y: int\nFull name: Test.y"
          "1", None
          "2", None
-         "x +", Some "val x: int\nFull name: Test.x"
+         "x +", Some """val (+) : x: 'T1 -> y: 'T2 -> 'T3 (requires member (+))
+Full name: Microsoft.FSharp.Core.Operators.(+)
+'T1 is int
+'T2 is int
+'T3 is int"""
          "System", Some "namespace System"
          "WriteLine", Some "System.Console.WriteLine(value: int) : unit" 
        ]
 
-    quickInfotest fileContents testCases
+    executeQuickInfoTest fileContents testCases
    
 
 [<Test>]
@@ -108,13 +112,13 @@ module internal MyModule =
     val MyVal: isDecl:bool -> string
         """
     let testCases = 
-       [ "namespace", Some "namespace\nUsed to associate a name with a group of related types and modules, to logically separate it from other code."
-         "module", Some "module\nUsed to associate a name with a group of related types, values, and functions, to logically separate it from other code."
-         "internal", Some "internal\nUsed to specify that a member is visible inside an assembly but not outside it."
-         "val", Some "val\nUsed in a signature to indicate a value, or in a type to declare a member, in limited situations."
-         "->", Some "->\nIn function types, delimits arguments and return values. Yields an expression (in sequence expressions); equivalent to the yield keyword. Used in match expressions"        
+       [ "namespace", Some "namespace___Used to associate a name with a group of related types and modules, to logically separate it from other code."
+         "module", Some "module___Used to associate a name with a group of related types, values, and functions, to logically separate it from other code."
+         "internal", Some "internal___Used to specify that a member is visible inside an assembly but not outside it."
+         "val", Some "val___Used in a signature to indicate a value, or in a type to declare a member, in limited situations."
+         "->", Some "->___In function types, delimits arguments and return values. Yields an expression (in sequence expressions); equivalent to the yield keyword. Used in match expressions"        
        ]
-    quickInfotest fileContents testCases
+    executeQuickInfoTest fileContents testCases
 
 [<Test>]
 let ShouldShowQuickKeywordInfoAtCorrectPositionsWithinComputationExpressions() =
@@ -134,11 +138,11 @@ let x =
     """
 
     let testCases = 
-       [ "let!", Some "let!\nUsed in computation expressions to bind a name to the result of another computation expression."
-         "return", Some "return\nUsed to provide a value for the result of the containing computation expression."           
+       [ "let!", Some "let!___Used in computation expressions to bind a name to the result of another computation expression."
+         "return", Some "return___Used to provide a value for the result of the containing computation expression."           
        ]
 
-    quickInfotest fileContents testCases
+    executeQuickInfoTest fileContents testCases
 
 [<Test>]
 let ShouldShowQuickInfoForGenericParameters() =
@@ -259,4 +263,4 @@ Full name: Microsoft.FSharp.Core.Operators.sin
 Full name: Microsoft.FSharp.Core.Operators.abs
 'T is int")]    
 
-    quickInfotest fileContents testCases
+    executeQuickInfoTest fileContents testCases
