@@ -81,7 +81,8 @@ let (|JoinRelation|_|) cenv env (expr: SynExpr) =
 
     | _ -> None
 
-let elimFastIntegerForLoop (spFor, spTo, id, start, dir, finish, innerExpr, m) = 
+let elimFastIntegerForLoop (spFor, spTo, id, start, dir, finish, innerExpr, m: range) =
+    let m = m.MakeSynthetic()
     let pseudoEnumExpr = 
         if dir then mkSynInfix m start ".." finish
         else mkSynTrifix m ".. .." start (SynExpr.Const (SynConst.Int32 -1, start.Range)) finish
