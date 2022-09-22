@@ -2648,21 +2648,21 @@ type FSharpCheckFileResults
         | None -> []
         | Some (scope, _builderOpt) -> scope.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, getAllEntities)
 
-    member _.GetKeywordTooltip(names : string list) =
-         ToolTipText.ToolTipText
-                        [
-                            for kw in names do                               
-                                match Tokenization.FSharpKeywords.KeyWordsDescriptionLookup.TryGetValue kw with
-                                | false, _ -> ()
-                                | true, kwDescription ->
-                                    let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
-                                    let kwTip = ToolTipElementData.Create(kwText,FSharpXmlDoc.None)                                  
+    member _.GetKeywordTooltip(names: string list) =
+        ToolTipText.ToolTipText
+            [
+                for kw in names do
+                    match Tokenization.FSharpKeywords.KeywordsDescriptionLookup.TryGetValue kw with
+                    | false, _ -> ()
+                    | true, kwDescription ->
+                        let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
+                        let kwTip = ToolTipElementData.Create(kwText, FSharpXmlDoc.None)
 
-                                    let descText = kwDescription |> TaggedText.tagText |> wordL |> LayoutRender.toArray     
-                                    let descTip = ToolTipElementData.Create(descText,FSharpXmlDoc.None)
+                        let descText = kwDescription |> TaggedText.tagText |> wordL |> LayoutRender.toArray
+                        let descTip = ToolTipElementData.Create(descText, FSharpXmlDoc.None)
 
-                                    yield ToolTipElement.Group [kwTip;descTip]                                 
-                        ]
+                        yield ToolTipElement.Group [ kwTip; descTip ]
+            ]
 
     /// Resolve the names at the given location to give a data tip
     member _.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag) =
@@ -2675,7 +2675,7 @@ type FSharpCheckFileResults
         | TOKEN_STRING_TEXT ->
             match details with
             | None -> emptyToolTip
-            | Some (scope, _builderOpt) -> scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames) 
+            | Some (scope, _builderOpt) -> scope.GetReferenceResolutionStructuredToolTipText(line, colAtEndOfNames)
         | _ -> emptyToolTip
 
     member _.GetDescription(symbol: FSharpSymbol, inst: (FSharpGenericParameter * FSharpType) list, displayFullName, range: range) =

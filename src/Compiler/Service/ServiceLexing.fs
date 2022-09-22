@@ -1216,7 +1216,7 @@ module FSharpKeywords =
 
     let KeywordsWithDescription = PrettyNaming.keywordsWithDescription
 
-    let KeyWordsDescriptionLookup = KeywordsWithDescription |> dict
+    let KeywordsDescriptionLookup = KeywordsWithDescription |> dict
 
     let KeywordNames = Lexhelp.Keywords.keywordNames
 
