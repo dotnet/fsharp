@@ -12,6 +12,11 @@
         <target state="translated">'{0}' のファイル拡張子は認識されません。ソース ファイルの拡張子は .fs、.fsi、.fsx、または .fsscript にする必要があります。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDuplicatedMethodParameter">
+        <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
+        <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">機能 '{0}' は F# {1} では使用できません。{2} 以上の言語バージョンをお使いください。</target>

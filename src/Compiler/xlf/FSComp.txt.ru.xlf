@@ -12,6 +12,11 @@
         <target state="translated">Расширение файла "{0}" не распознано. Исходные файлы должны иметь расширения FS, FSI, FSX или FSSCRIPT</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDuplicatedMethodParameter">
+        <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
+        <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">Компонент "{0}" недоступен в F# {1}. Используйте версию языка {2} или выше.</target>
