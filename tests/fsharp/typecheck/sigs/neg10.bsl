@@ -245,5 +245,3 @@ neg10.fs(455,25,455,26): typecheck error FS0001: The type 'C' does not support a
 neg10.fs(456,24,456,25): typecheck error FS0001: The type 'C' does not support a conversion to the type 'int64'
 
 neg10.fs(457,26,457,27): typecheck error FS0001: The type 'C' does not support a conversion to the type 'decimal'
-
-neg10.fsi(1,1,1,1): typecheck error FS0240: The signature file 'Neg10' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.
