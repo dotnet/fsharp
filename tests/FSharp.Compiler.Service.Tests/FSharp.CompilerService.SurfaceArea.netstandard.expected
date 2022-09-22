@@ -9904,8 +9904,8 @@ FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharp
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_KeywordNames()
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] KeywordsWithDescription
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] get_KeywordsWithDescription()
-FSharp.Compiler.Tokenization.FSharpKeywords: System.Collections.Generic.IDictionary`2[System.String,System.String] KeyWordsDescriptionLookup
-FSharp.Compiler.Tokenization.FSharpKeywords: System.Collections.Generic.IDictionary`2[System.String,System.String] get_KeyWordsDescriptionLookup()
+FSharp.Compiler.Tokenization.FSharpKeywords: System.Collections.Generic.IDictionary`2[System.String,System.String] KeywordsDescriptionLookup
+FSharp.Compiler.Tokenization.FSharpKeywords: System.Collections.Generic.IDictionary`2[System.String,System.String] get_KeywordsDescriptionLookup()
 FSharp.Compiler.Tokenization.FSharpKeywords: System.String NormalizeIdentifierBackticks(System.String)
 FSharp.Compiler.Tokenization.FSharpLexer
 FSharp.Compiler.Tokenization.FSharpLexer: Void Tokenize(FSharp.Compiler.Text.ISourceText, Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Tokenization.FSharpToken,Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Tokenization.FSharpLexerFlags], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpMap`2[System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
