@@ -2565,7 +2565,7 @@ val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * Expr * Expr *
 /// Match 'if __useResumableCode then ... else ...' expressions
 val (|IfUseResumableStateMachinesExpr|_|): TcGlobals -> Expr -> (Expr * Expr) option
 
-val CombineCcuContentFragments: range -> ModuleOrNamespaceType list -> ModuleOrNamespaceType
+val CombineCcuContentFragments: ModuleOrNamespaceType list -> ModuleOrNamespaceType
 
 /// Recognise a 'match __resumableEntry() with ...' expression
 val (|ResumableEntryMatchExpr|_|): g: TcGlobals -> Expr -> (Expr * Val * Expr * (Expr * Expr -> Expr)) option
@@ -2687,3 +2687,6 @@ type TraitConstraintInfo with
 /// This will match anything that does not have any types or bindings.
 val (|EmptyModuleOrNamespaces|_|):
     moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) option
+
+/// Captures an application type with a multi-dimensional array as postfix.
+val (|TTypeMultiDimensionalArrayAsGeneric|_|): t: TType -> (TyconRef * TType * int) option

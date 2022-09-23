@@ -6806,10 +6806,12 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
     // Collect the free variables of the closure
     let cloFreeVarResults =
         let opts = CollectTyparsAndLocalsWithStackGuard()
+
         let opts =
             match eenvouter.tyenv.TemplateReplacement with
             | None -> opts
             | Some (tcref, _, typars, _) -> opts.WithTemplateReplacement(tyconRefEq g tcref, typars)
+
         freeInExpr opts expr
 
     // Partition the free variables when some can be accessed from places besides the immediate environment
@@ -11550,6 +11552,11 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
     match List.tryFrontAndBack implFiles with
     | None -> ()
     | Some (firstImplFiles, lastImplFile) ->
+
+        // Generate the assembly sequentially, implementation file by implementation file.
+        //
+        // NOTE: In theory this could be done in parallel, except for the presence of linear
+        // state in the AssemblyBuilder
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
         let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
 
@@ -11624,7 +11631,7 @@ type IlxGenResults =
 
 let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization implFiles, assemAttribs, moduleAttribs) =
 
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
+    use _ = UseBuildPhase BuildPhase.IlxGen
     let g = cenv.g
 
     // Generate the implementations into the mgbuf
