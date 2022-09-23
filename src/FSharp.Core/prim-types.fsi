@@ -2441,7 +2441,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="Item">The input value.</param>
         ///
         /// <returns>An option representing the value.</returns>
-        | ValueSome: 'T -> 'T voption
+        | ValueSome: Item:'T -> 'T voption
 
         /// <summary>Get the value of a 'ValueSome' option. An InvalidOperationException is raised if the option is 'ValueNone'.</summary>
         member Value: 'T
