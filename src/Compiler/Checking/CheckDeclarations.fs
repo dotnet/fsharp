@@ -3946,21 +3946,18 @@ module TcDeclarations =
              | _ -> ()
         | ds ->
             // Check for duplicated parameters
-            ds
-            |> List.filter isAbstractSlot
-            |> List.iter(fun slot ->
-                match slot with
-                | SynMemberDefn.AbstractSlot (x, _, m) ->
-                    let argNames =
-                        x.SynInfo.ArgNames
-                        |> List.groupBy id
-                        |> List.filter (fun (_, elems) -> Seq.length elems > 1)
-                        |> List.map fst
-                    argNames
-                    |> List.iter(fun argName ->
-                        if argNames.Length > 0 then
-                            errorR(Error((FSComp.SR.chkDuplicatedMethodParameter(argName), m))))
-                | _ -> ())
+            for slot in ds do
+                if isAbstractSlot slot then
+                    match slot with
+                    | SynMemberDefn.AbstractSlot (x, _, m) ->
+                        let argNames =
+                            x.SynInfo.ArgNames
+                            |> List.groupBy id
+                            |> List.filter (fun (_, elems) -> Seq.length elems > 1)
+                            |> List.map fst
+                        for name in argNames do
+                            errorR(Error((FSComp.SR.chkDuplicatedMethodParameter(name), m)))
+                    | _ -> ()
             
             // Classic class construction    
             let _, ds = List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isInherit;isField;isTycon]) ds
