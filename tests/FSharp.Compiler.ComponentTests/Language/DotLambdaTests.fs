@@ -36,7 +36,8 @@ module One
 let a : string = {| Inner =  (fun x -> x.ToString()) |} |> _.Inner([5] |> _.[0])
         """
         |> compile
-        |> shouldSucceed
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3546, Line 3, Col 75, Line 3, Col 76, "Discard is ambiguous")
         
     [<Fact>]
     let ``Anonymous unary function shorthand with conflicting wild argument`` () =
@@ -44,6 +45,7 @@ let a : string = {| Inner =  (fun x -> x.ToString()) |} |> _.Inner([5] |> _.[0])
 module One
 let a : string -> string = (fun _ -> 5 |> _.ToString())
 let b : int -> int -> string = function |5 -> (fun _ -> "Five") |_ -> _.ToString()
+let c : string = let _ = "test" in "asd" |> _.ToString()
         """
         |> compile
         |> shouldFail

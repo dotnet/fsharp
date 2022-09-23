@@ -6344,6 +6344,8 @@ FSharp.Compiler.Syntax.SynExpr+DotIndexedSet: FSharp.Compiler.Text.Range leftOfS
 FSharp.Compiler.Syntax.SynExpr+DotIndexedSet: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+DotLambda: FSharp.Compiler.Syntax.SynExpr expr
 FSharp.Compiler.Syntax.SynExpr+DotLambda: FSharp.Compiler.Syntax.SynExpr get_expr()
+FSharp.Compiler.Syntax.SynExpr+DotLambda: FSharp.Compiler.SyntaxTrivia.SynExprDotLambdaTrivia get_trivia()
+FSharp.Compiler.Syntax.SynExpr+DotLambda: FSharp.Compiler.SyntaxTrivia.SynExprDotLambdaTrivia trivia
 FSharp.Compiler.Syntax.SynExpr+DotLambda: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+DotLambda: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+DotNamedIndexedPropertySet: FSharp.Compiler.Syntax.SynExpr argExpr
@@ -7011,7 +7013,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDoBang(FSharp.
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDotGet(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Syntax.SynLongIdent, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDotIndexedGet(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDotIndexedSet(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDotLambda(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDotLambda(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.SyntaxTrivia.SynExprDotLambdaTrivia)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDotNamedIndexedPropertySet(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynLongIdent, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDotSet(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynLongIdent, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewDowncast(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
@@ -9429,6 +9431,13 @@ FSharp.Compiler.SyntaxTrivia.SynExprAndBangTrivia: Microsoft.FSharp.Core.FSharpO
 FSharp.Compiler.SyntaxTrivia.SynExprAndBangTrivia: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range] get_InKeyword()
 FSharp.Compiler.SyntaxTrivia.SynExprAndBangTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynExprAndBangTrivia: Void .ctor(FSharp.Compiler.Text.Range, Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
+FSharp.Compiler.SyntaxTrivia.SynExprDotLambdaTrivia
+FSharp.Compiler.SyntaxTrivia.SynExprDotLambdaTrivia: FSharp.Compiler.Text.Range DotRange
+FSharp.Compiler.SyntaxTrivia.SynExprDotLambdaTrivia: FSharp.Compiler.Text.Range UnderscoreRange
+FSharp.Compiler.SyntaxTrivia.SynExprDotLambdaTrivia: FSharp.Compiler.Text.Range get_DotRange()
+FSharp.Compiler.SyntaxTrivia.SynExprDotLambdaTrivia: FSharp.Compiler.Text.Range get_UnderscoreRange()
+FSharp.Compiler.SyntaxTrivia.SynExprDotLambdaTrivia: System.String ToString()
+FSharp.Compiler.SyntaxTrivia.SynExprDotLambdaTrivia: Void .ctor(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynExprIfThenElseTrivia
 FSharp.Compiler.SyntaxTrivia.SynExprIfThenElseTrivia: Boolean IsElif
 FSharp.Compiler.SyntaxTrivia.SynExprIfThenElseTrivia: Boolean get_IsElif()
