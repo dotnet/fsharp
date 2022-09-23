@@ -2257,11 +2257,6 @@
         <target state="translated">I valori 'base' possono essere utilizzati esclusivamente per effettuare chiamate dirette alle implementazioni di base dei membri sottoposti a override</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">I costruttori di oggetti non possono utilizzare direttamente try/with e try/finally prima dell'inizializzazione dell'oggetto. Ciò include costrutti quali 'for x in ...' che potrebbero essere elaborati negli utilizzi di tali costrutti. Si tratta di una limitazione imposta dall'IL comune.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">
         <source>The address of the variable '{0}' cannot be used at this point</source>
         <target state="translated">Non è possibile usare l'indirizzo della variabile '{0}' in questo punto</target>

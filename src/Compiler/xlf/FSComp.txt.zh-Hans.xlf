@@ -2257,11 +2257,6 @@
         <target state="translated">"base" 值只能用于直接调用重写成员的基实现</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">在初始化对象之前，对象构造函数不能直接使用 try/with 和 try/finally。这包括像 "for x in ..." 这样详细说明其构造使用方式的构造。这是由通用 IL 设定的限制。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">
         <source>The address of the variable '{0}' cannot be used at this point</source>
         <target state="translated">此时无法使用变量“{0}”的地址</target>
