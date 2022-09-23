@@ -88,21 +88,21 @@
     <!-- If a System.* package is stuck on version 4.3.x, targets .NET Standard 1.x and hasn't been
     updated in years, you most likely DON'T need it, please exercise caution when adding it to the list. -->
     <SystemBuffersVersion>4.5.1</SystemBuffersVersion>
-    <SystemCollectionsImmutableVersion>5.0.0</SystemCollectionsImmutableVersion>
+    <SystemCollectionsImmutableVersion>6.0.0</SystemCollectionsImmutableVersion>
     <MicrosoftDiaSymReaderPortablePdbVersion>1.6.0</MicrosoftDiaSymReaderPortablePdbVersion>
     <SystemMemoryVersion>4.5.5</SystemMemoryVersion>
     <SystemReflectionEmitVersion>4.7.0</SystemReflectionEmitVersion>
-    <SystemReflectionMetadataVersion>5.0.0</SystemReflectionMetadataVersion>
+    <SystemReflectionMetadataVersion>6.0.0</SystemReflectionMetadataVersion>
     <SystemThreadingTasksDataflow>4.11.1</SystemThreadingTasksDataflow>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
     <SystemValueTupleVersion>4.5.0</SystemValueTupleVersion>
     <!-- Versions for package groups -->
-    <RoslynVersion>4.4.0-1.22368.2</RoslynVersion>
-    <VisualStudioEditorPackagesVersion>17.3.133-preview</VisualStudioEditorPackagesVersion>
-    <MicrosoftVisualStudioShellPackagesVersion>17.3.0-preview-1-32407-044</MicrosoftVisualStudioShellPackagesVersion>
-    <VisualStudioProjectSystemPackagesVersion>17.0.77-pre-g62a6cb5699</VisualStudioProjectSystemPackagesVersion>
-    <MicrosoftVisualStudioThreadingPackagesVersion>17.3.1-alpha</MicrosoftVisualStudioThreadingPackagesVersion>
-    <MicrosoftBuildOverallPackagesVersion>17.1.0</MicrosoftBuildOverallPackagesVersion>
+    <RoslynVersion>4.4.0-3.22470.1</RoslynVersion>
+    <VisualStudioEditorPackagesVersion>17.4.196-preview</VisualStudioEditorPackagesVersion>
+    <MicrosoftVisualStudioShellPackagesVersion>17.4.0-preview-3-32916-145</MicrosoftVisualStudioShellPackagesVersion>
+    <VisualStudioProjectSystemPackagesVersion>17.4.342-pre</VisualStudioProjectSystemPackagesVersion>
+    <MicrosoftVisualStudioThreadingPackagesVersion>17.4.23-alpha</MicrosoftVisualStudioThreadingPackagesVersion>
+    <MicrosoftBuildOverallPackagesVersion>17.4.0-preview-22469-04</MicrosoftBuildOverallPackagesVersion>
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
@@ -116,7 +116,7 @@
     <!-- Visual Studio Shell packages -->
     <MicrosoftVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioInteropVersion>
     <MicrosoftInternalVisualStudioInteropVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftInternalVisualStudioInteropVersion>
-    <MicrosoftVisualStudioImagingInterop140DesignTimeVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioImagingInterop140DesignTimeVersion>
+    <MicrosoftVisualStudioImagingInterop140DesignTimeVersion>17.4.0-preview-3-32916-053</MicrosoftVisualStudioImagingInterop140DesignTimeVersion>
     <MicrosoftVisualStudioShellInterop80Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInterop80Version>
     <MicrosoftVisualStudioShellInterop90Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInterop90Version>
     <MicrosoftVisualStudioShellInterop100Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellInterop100Version>
@@ -133,8 +133,8 @@
     <MicrosoftVisualStudioShellDesignVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellDesignVersion>
     <MicrosoftVisualStudioShellFrameworkVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioShellFrameworkVersion>
     <MicrosoftVisualStudioPackageLanguageService150Version>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioPackageLanguageService150Version>
-    <MicrosoftVisualStudioManagedInterfacesVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioManagedInterfacesVersion>
-    <MicrosoftVisualStudioProjectAggregatorVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioProjectAggregatorVersion>
+    <MicrosoftVisualStudioManagedInterfacesVersion>17.4.0-preview-3-32916-053</MicrosoftVisualStudioManagedInterfacesVersion>
+    <MicrosoftVisualStudioProjectAggregatorVersion>17.4.0-preview-3-32916-053</MicrosoftVisualStudioProjectAggregatorVersion>
     <MicrosoftVisualStudioGraphModelVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioGraphModelVersion>
     <MicrosoftVisualStudioImagingVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioImagingVersion>
     <MicrosoftVisualStudioDesignerInterfacesVersion>$(MicrosoftVisualStudioShellPackagesVersion)</MicrosoftVisualStudioDesignerInterfacesVersion>
@@ -171,9 +171,9 @@
     <MicrosoftVisualStudioProjectSystemManagedVersion>2.3.6152103</MicrosoftVisualStudioProjectSystemManagedVersion>
     <!-- Misc. Visual Studio packages -->
     <MicrosoftVSSDKBuildToolsVersion>17.1.4054</MicrosoftVSSDKBuildToolsVersion>
-    <MicrosoftVisualStudioRpcContractsVersion>17.3.3-alpha</MicrosoftVisualStudioRpcContractsVersion>
+    <MicrosoftVisualStudioRpcContractsVersion>17.4.7-alpha</MicrosoftVisualStudioRpcContractsVersion>
     <MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>17.0.0</MicrosoftVisualFSharpMicrosoftVisualStudioShellUIInternalVersion>
-    <MicrosoftVisualStudioValidationVersion>17.0.53</MicrosoftVisualStudioValidationVersion>
+    <MicrosoftVisualStudioValidationVersion>17.0.64</MicrosoftVisualStudioValidationVersion>
     <MicrosoftVisualStudioWCFReferenceInteropVersion>9.0.30729</MicrosoftVisualStudioWCFReferenceInteropVersion>
     <SystemRuntimeCompilerServicesUnsafeVersion>6.0.0</SystemRuntimeCompilerServicesUnsafeVersion>
     <VSSDKDebuggerVisualizersVersion>12.0.4</VSSDKDebuggerVisualizersVersion>
@@ -189,7 +189,8 @@
     <BenchmarkDotNetVersion>0.13.2</BenchmarkDotNetVersion>
     <FsCheckVersion>2.16.5</FsCheckVersion>
     <FSharpDataTypeProvidersVersion>4.3.0.0</FSharpDataTypeProvidersVersion>
-    <MicrosoftCompositionVersion>1.0.30</MicrosoftCompositionVersion>
+    <MicrosoftCompositionVersion>1.0.31</MicrosoftCompositionVersion>
+    <SystemComponentModelCompositionVersion>6.0.0</SystemComponentModelCompositionVersion>
     <MicrosoftMSXMLVersion>8.0.0</MicrosoftMSXMLVersion>
     <MicrosoftNetCompilersVersion>4.3.0-1.22220.8</MicrosoftNetCompilersVersion>
     <MicrosoftNETCoreAppRefVersion>3.1.0</MicrosoftNETCoreAppRefVersion>
@@ -203,8 +204,8 @@
     <NUnitLiteVersion>3.11.0</NUnitLiteVersion>
     <NunitXmlTestLoggerVersion>2.1.80</NunitXmlTestLoggerVersion>
     <RoslynToolsSignToolVersion>1.0.0-beta2-dev3</RoslynToolsSignToolVersion>
-    <StreamJsonRpcVersion>2.12.7-alpha</StreamJsonRpcVersion>
-    <NerdbankStreamsVersion>2.8.57</NerdbankStreamsVersion>
+    <StreamJsonRpcVersion>2.13.23-alpha</StreamJsonRpcVersion>
+    <NerdbankStreamsVersion>2.9.87-alpha</NerdbankStreamsVersion>
     <XUnitVersion>2.4.1</XUnitVersion>
     <XUnitRunnerVersion>2.4.2</XUnitRunnerVersion>
     <FluentAssertionsVersion>5.10.3</FluentAssertionsVersion>

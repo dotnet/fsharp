@@ -2257,11 +2257,6 @@
         <target state="translated">Hodnoty base se dají použít jenom k přímému volání implementací base přepsaných členů.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">Konstruktory objektu nemůžou použít try/with a try/finally přímo, dokud se objekt neinicializuje. To zahrnuje i konstrukce, jako je třeba for x in ..., které se dají na použití těchto konstruktorů rozpracovat. Toto je omezení mezijazyka Common IL.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">
         <source>The address of the variable '{0}' cannot be used at this point</source>
         <target state="translated">Adresa proměnné {0} se na tomto místě použít nedá.</target>
