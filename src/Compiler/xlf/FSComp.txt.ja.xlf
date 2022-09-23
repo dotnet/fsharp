@@ -702,6 +702,11 @@
         <target state="translated">このスクリプトの .NET SDK を特定できませんでした。このスクリプトが、'global.json' が使用されているディレクトリにある場合は、関連する .NET SDK がインストールされていることを確認してください。予期しないエラー '{0}'。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAmbiguousDiscardDotLambda">
+        <source>Discard is ambiguous</source>
+        <target state="new">Discard is ambiguous</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
         <target state="translated">この式の型は '{0}' であり、あいまいで暗黙的な変換によってのみ、型 '{1}' と互換性を持たせることが可能です。' op_Implicit' の明示的な呼び出しを使用することを検討してください。該当する暗黙的な変換は次のとおりです: {2}</target>

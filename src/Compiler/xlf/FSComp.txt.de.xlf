@@ -702,6 +702,11 @@
         <target state="translated">Das .NET SDK für dieses Skript konnte nicht ermittelt werden. Wenn sich das Skript in einem Verzeichnis mit "global.json" befindet, stellen Sie sicher, dass das entsprechende .NET SDK installiert ist. Unerwarteter Fehler: {0}.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAmbiguousDiscardDotLambda">
+        <source>Discard is ambiguous</source>
+        <target state="new">Discard is ambiguous</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
         <target state="translated">Dieser Ausdruck weist den Typ "{0}" auf und wird nur durch eine mehrdeutige implizite Konvertierung mit dem Typ "{1}" kompatibel gemacht. Erwägen Sie die Verwendung eines expliziten Aufrufs an "op_Implicit". Die anwendbaren impliziten Konvertierungen sind: {2}</target>

@@ -702,6 +702,11 @@
         <target state="translated">이 스크립트에 대한 .NET SDK를 확인할 수 없습니다. 스크립트가 'global.json'을 사용하는 디렉터리에 있는 경우 관련 .NET SDK가 설치되어 있는지 확인하세요. 예기치 않은 오류 '{0}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAmbiguousDiscardDotLambda">
+        <source>Discard is ambiguous</source>
+        <target state="new">Discard is ambiguous</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
         <target state="translated">이 식은 ‘{0}’ 형식이며 모호한 암시적 변환을 통해 ‘{1}’ 형식하고만 호환됩니다. ‘op_Implicit’에 대한 명시적 호출을 사용하십시오. 해당하는 암시적 변환은 ‘{2}’입니다.</target>

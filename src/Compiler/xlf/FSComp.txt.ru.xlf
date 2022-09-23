@@ -702,6 +702,11 @@
         <target state="translated">Не удалось определить пакет SDK .NET для этого скрипта. Если сценарий находится в каталоге с использованием файла "global.json", убедитесь, что установлен соответствующий пакет SDK .NET. Непредвиденная ошибка "{0}".</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcAmbiguousDiscardDotLambda">
+        <source>Discard is ambiguous</source>
+        <target state="new">Discard is ambiguous</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcAmbiguousImplicitConversion">
         <source>This expression has type '{0}' and is only made compatible with type '{1}' through an ambiguous implicit conversion. Consider using an explicit call to 'op_Implicit'. The applicable implicit conversions are:{2}</source>
         <target state="translated">Это выражение имеет тип "{0}" и совместимо только с типом "{1}" посредством неоднозначного неявного преобразования. Рассмотрите возможность использования явного вызова "op_Implicit". Применимые неявные преобразования: {2}</target>

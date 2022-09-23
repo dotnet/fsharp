@@ -37,3 +37,14 @@ let a : string = {| Inner =  (fun x -> x.ToString()) |} |> _.Inner([5] |> _.[0])
         """
         |> compile
         |> shouldSucceed
+        
+    [<Fact>]
+    let ``Anonymous unary function shorthand with conflicting wild argument`` () =
+        FSharp """
+module One
+let a : string -> string = (fun _ -> 5 |> _.ToString())
+let b : int -> int -> string = function |5 -> (fun _ -> "Five") |_ -> _.ToString()
+        """
+        |> compile
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 3546, Line 3, Col 43, Line 3, Col 44, "Discard is ambiguous")
