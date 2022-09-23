@@ -3854,7 +3854,7 @@ namespace Microsoft.FSharp.Core
     [<DebuggerDisplay("{DebugDisplay,nq}")>]
     type ValueOption<'T> =
         | ValueNone : 'T voption
-        | ValueSome : 'T -> 'T voption
+        | ValueSome : Item: 'T -> 'T voption
 
         member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new InvalidOperationException("ValueOption.Value"))
 
