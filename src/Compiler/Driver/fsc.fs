@@ -678,7 +678,7 @@ let main1
 /// Alternative first phase of compilation.  This is for the compile-from-AST feature of FCS.
 ///   - Import assemblies
 ///   - Check the inputs
-let main1OfAst
+let main1OfAstTOMAS_REMOVE
     (
         ctok,
         legacyReferenceResolver,
@@ -1358,7 +1358,7 @@ let CompileFromCommandLineArguments
     |> main6 dynamicAssemblyCreator
 
 /// An additional compilation entry point used by FSharp.Compiler.Service taking syntax trees as input
-let CompileFromSyntaxTrees
+let CompileFromSyntaxTreesTOMAS_REMOVE
     (
         ctok,
         legacyReferenceResolver,
@@ -1378,7 +1378,7 @@ let CompileFromSyntaxTrees
 
     use disposables = new DisposablesTracker()
 
-    main1OfAst (
+    main1OfAstTOMAS_REMOVE (
         ctok,
         legacyReferenceResolver,
         reduceMemoryUsage,

@@ -57,7 +57,7 @@ val CompileFromCommandLineArguments:
         unit
 
 /// An additional compilation entry point used by FSharp.Compiler.Service taking syntax trees as input
-val CompileFromSyntaxTrees:
+val CompileFromSyntaxTreesTOMAS_REMOVE:
     ctok: CompilationThreadToken *
     legacyReferenceResolver: LegacyReferenceResolver *
     reduceMemoryUsage: ReduceMemoryFlag *

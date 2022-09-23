@@ -704,7 +704,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         #endif
 
         let compileErrors, statusCode =
-            checker.Compile([parseResults.ParseTree], "test", outputFilePath, dependencies, executable = isExe, noframework = true)
+            checker.CompileTOMAS_REMOVE([parseResults.ParseTree], "test", outputFilePath, dependencies, executable = isExe, noframework = true)
             |> Async.RunImmediate
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
@@ -728,7 +728,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             #endif
 
         let compileErrors, statusCode, assembly =
-            checker.CompileToDynamicAssembly([parseResults.ParseTree], assemblyName, dependencies, None, noframework = true)
+            checker.CompileToDynamicAssemblyTOMAS_REMOVE([parseResults.ParseTree], assemblyName, dependencies, None, noframework = true)
             |> Async.RunImmediate
 
         Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)

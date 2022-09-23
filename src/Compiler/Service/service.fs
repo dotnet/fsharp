@@ -139,7 +139,7 @@ module CompileHelpers =
 
         diagnostics.ToArray(), result
 
-    let compileFromAsts
+    let compileFromAstsTOMAS_REMOVE
         (
             ctok,
             legacyReferenceResolver,
@@ -166,7 +166,7 @@ module CompileHelpers =
 
         let result =
             tryCompile diagnosticsLogger (fun exiter ->
-                CompileFromSyntaxTrees(
+                CompileFromSyntaxTreesTOMAS_REMOVE(
                     ctok,
                     legacyReferenceResolver,
                     ReduceMemoryFlag.Yes,
@@ -185,7 +185,7 @@ module CompileHelpers =
 
         diagnostics.ToArray(), result
 
-    let createDynamicAssembly
+    let createDynamicAssemblyTOMAS_REMOVE
         (debugInfo: bool, tcImportsRef: TcImports option ref, execute: bool, assemblyBuilderRef: _ option ref)
         (tcConfig: TcConfig, tcGlobals: TcGlobals, outfile, ilxMainModule)
         =
@@ -1339,7 +1339,7 @@ type FSharpChecker
             return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
         }
 
-    member _.Compile
+    member _.CompileTOMAS_REMOVE
         (
             ast: ParsedInput list,
             assemblyName: string,
@@ -1357,7 +1357,7 @@ type FSharpChecker
             let noframework = defaultArg noframework false
 
             return
-                CompileHelpers.compileFromAsts (
+                CompileHelpers.compileFromAstsTOMAS_REMOVE (
                     ctok,
                     legacyReferenceResolver,
                     ast,
@@ -1372,7 +1372,7 @@ type FSharpChecker
                 )
         }
 
-    member _.CompileToDynamicAssembly(otherFlags: string[], execute: (TextWriter * TextWriter) option, ?userOpName: string) =
+    member _.CompileToDynamicAssemblyTOMAS_REMOVE(otherFlags: string[], execute: (TextWriter * TextWriter) option, ?userOpName: string) =
         let _userOpName = defaultArg userOpName "Unknown"
 
         async {
@@ -1390,7 +1390,7 @@ type FSharpChecker
                 |> Array.exists (fun arg -> arg = "-g" || arg = "--debug:+" || arg = "/debug:+")
 
             let dynamicAssemblyCreator =
-                Some(CompileHelpers.createDynamicAssembly (debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
+                Some(CompileHelpers.createDynamicAssemblyTOMAS_REMOVE (debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
 
             // Perform the compilation, given the above capturing function.
             let diagnostics, result =
@@ -1405,7 +1405,7 @@ type FSharpChecker
             return diagnostics, result, assemblyOpt
         }
 
-    member _.CompileToDynamicAssembly
+    member _.CompileToDynamicAssemblyTOMAS_REMOVE
         (
             ast: ParsedInput list,
             assemblyName: string,
@@ -1439,11 +1439,11 @@ type FSharpChecker
 
             // Function to generate and store the results of compilation
             let dynamicAssemblyCreator =
-                Some(CompileHelpers.createDynamicAssembly (debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
+                Some(CompileHelpers.createDynamicAssemblyTOMAS_REMOVE (debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
 
             // Perform the compilation, given the above capturing function.
             let diagnostics, result =
-                CompileHelpers.compileFromAsts (
+                CompileHelpers.compileFromAstsTOMAS_REMOVE (
                     ctok,
                     legacyReferenceResolver,
                     ast,

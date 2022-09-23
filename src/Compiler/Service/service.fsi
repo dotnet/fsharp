@@ -341,7 +341,7 @@ type public FSharpChecker =
     /// <param name="executable">Indicates if an executable is being produced.</param>
     /// <param name="noframework">Enables the <c>/noframework</c> flag.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member Compile:
+    member CompileTOMAS_REMOVE:
         ast: ParsedInput list *
         assemblyName: string *
         outFile: string *
@@ -368,7 +368,7 @@ type public FSharpChecker =
     /// <param name="otherFlags">Other flags for compilation.</param>
     /// <param name="execute">An optional pair of output streams, enabling execution of the result.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member CompileToDynamicAssembly:
+    member CompileToDynamicAssemblyTOMAS_REMOVE:
         otherFlags: string[] * execute: (TextWriter * TextWriter) option * ?userOpName: string ->
             Async<FSharpDiagnostic[] * int * System.Reflection.Assembly option>
 
@@ -383,7 +383,7 @@ type public FSharpChecker =
     /// <param name="debug">Enabled debug symbols</param>
     /// <param name="noframework">Enables the <c>/noframework</c> flag.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member CompileToDynamicAssembly:
+    member CompileToDynamicAssemblyTOMAS_REMOVE:
         ast: ParsedInput list *
         assemblyName: string *
         dependencies: string list *
