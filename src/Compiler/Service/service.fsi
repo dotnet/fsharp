@@ -327,7 +327,7 @@ type public FSharpChecker =
     ///
     /// <param name="argv">The command line arguments for the project build.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member Compile: argv: string[] * ?userOpName: string -> Async<FSharpDiagnostic[] * int>  
+    member Compile: argv: string[] * ?userOpName: string -> Async<FSharpDiagnostic[] * int>
 
     /// <summary>
     /// Try to get type check results for a file. This looks up the results of recent type checks of the
