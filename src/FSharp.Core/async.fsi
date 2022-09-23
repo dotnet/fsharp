@@ -196,15 +196,15 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="try-cancelled-1">
         /// <code lang="fsharp">
-        /// [ 2; 3; 5; 7; 11 ]
-        /// |> List.map (fun i ->
+        /// let primes = [ 2; 3; 5; 7; 11 ]
+        /// for i in primes do
         ///     Async.TryCancelled(
         ///         async {
         ///             do! Async.Sleep(i * 1000)
         ///             printfn $"{i}"
         ///         },
-        ///     fun oce -> printfn $"Computation Cancelled: {i}"))
-        /// |> List.iter Async.Start
+        ///         fun oce -> printfn $"Computation Cancelled: {i}")
+        ///     |> Async.Start
         ///
         /// Thread.Sleep(6000)
         /// Async.CancelDefaultToken()
@@ -235,13 +235,14 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="on-cancel-1">
         /// <code lang="fsharp">
-        ///     [ 2; 3; 5; 7; 11 ]
-        /// |> List.iter (fun i ->
+        /// let primes = [ 2; 3; 5; 7; 11 ]
+        /// for i in primes do
         ///     async {
         ///         use! holder = Async.OnCancel(fun () -> printfn $"Computation Cancelled: {i}")
         ///         do! Async.Sleep(i * 1000)
         ///         printfn $"{i}"
-        ///     } |> Async.Start)
+        ///     }
+        ///     |> Async.Start
         ///
         /// Thread.Sleep(6000)
         /// Async.CancelDefaultToken()
@@ -275,15 +276,17 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="cancel-default-token-1">
         /// <code lang="fsharp">
-        /// try
-        ///     let computations =
-        ///         [ 2; 3; 5; 7; 11 ]
-        ///         |> List.map (fun i ->
+        /// let primes = [ 2; 3; 5; 7; 11 ]
+        ///
+        /// let computations =
+        ///     [ for i in primes do
         ///             async {
         ///                 do! Async.Sleep(i * 1000)
         ///                 printfn $"{i}"
-        ///             })
+        ///             }
+        ///     ]
         ///
+        /// try
         ///     let t =
         ///         Async.Parallel(computations, 3) |> Async.StartAsTask
         ///
@@ -307,13 +310,14 @@ namespace Microsoft.FSharp.Control
         /// <example id="default-cancellation-token-1">
         /// <code lang="fsharp">
         /// Async.DefaultCancellationToken.Register(fun () -> printfn "Computation Cancelled") |> ignore
-        /// [ 2; 3; 5; 7; 11 ]
-        /// |> List.map (fun i ->
+        /// let primes = [ 2; 3; 5; 7; 11 ]
+        ///
+        /// for i in primes do
         ///     async {
         ///         do! Async.Sleep(i * 1000)
         ///         printfn $"{i}"
-        ///     })
-        /// |> List.iter Async.Start
+        ///     }
+        ///     |> Async.Start
         ///
         /// Thread.Sleep(6000)
         /// Async.CancelDefaultToken()
@@ -332,13 +336,13 @@ namespace Microsoft.FSharp.Control
         /// <remarks>This method should normally be used as the immediate 
         /// right-hand-side of a <c>let!</c> binding in an F# asynchronous workflow, that is,
         /// <code lang="fsharp">
-        ///        async { ...
-        ///                let! completor1 = childComputation1 |> Async.StartChild  
-        ///                let! completor2 = childComputation2 |> Async.StartChild  
-        ///                ... 
-        ///                let! result1 = completor1 
-        ///                let! result2 = completor2 
-        ///                ... }
+        ///     async { ...
+        ///            let! completor1 = childComputation1 |> Async.StartChild  
+        ///            let! completor2 = childComputation2 |> Async.StartChild  
+        ///            ... 
+        ///            let! result1 = completor1 
+        ///            let! result2 = completor2 
+        ///            ... }
         /// </code>
         ///
         /// When used in this way, each use of <c>StartChild</c> starts an instance of <c>childComputation</c> 
@@ -355,6 +359,7 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="start-child-1">
         /// <code lang="fsharp">
+        ///
         /// let computeWithTimeout timeout =
         ///     async {
         ///         let! completor1 =
@@ -402,19 +407,19 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="parallel-1">
         /// <code lang="fsharp">
+        /// let primes = [ 2; 3; 5; 7; 10; 11 ]
         /// let t =
-        ///     [ 2; 3; 5; 7; 10; 11 ]
-        ///     |> List.map
-        ///         (fun i ->
-        ///             async {
-        ///                 do! Async.Sleep(System.Random().Next(1000, 2000))
+        ///     [ for i in primes do
+        ///         async {
+        ///             do! Async.Sleep(System.Random().Next(1000, 2000))
         ///
-        ///                 if i % 2 > 0 then
-        ///                     printfn $"{i}"
-        ///                     return true
-        ///                 else
-        ///                     return false
-        ///             })
+        ///             if i % 2 > 0 then
+        ///                 printfn $"{i}"
+        ///                 return true
+        ///             else
+        ///                 return false
+        ///         }
+        ///     ]
         ///     |> Async.Parallel
         ///     |> Async.StartAsTask
         ///
@@ -446,20 +451,19 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="parallel-2">
         /// <code lang="fsharp">
+        /// let primes = [ 2; 3; 5; 7; 10; 11 ]
         /// let computations =
-        ///     [ 2; 3; 5; 7; 10; 11 ]
-        ///     |> List.map
-        ///         (fun i ->
-        ///             async {
-        ///                 do! Async.Sleep(System.Random().Next(1000, 2000))
+        ///     [ for i in primes do
+        ///         async {
+        ///             do! Async.Sleep(System.Random().Next(1000, 2000))
         ///
-        ///                 return
-        ///                     if i % 2 > 0 then
-        ///                         printfn $"{i}"
-        ///                         true
-        ///                     else
-        ///                         false
-        ///             })
+        ///             return
+        ///                 if i % 2 > 0 then
+        ///                     printfn $"{i}"
+        ///                     true
+        ///                 else
+        ///                     false
+        ///         } ]
         ///
         /// let t =
         ///     Async.Parallel(computations, maxDegreeOfParallelism=3)
@@ -492,10 +496,9 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="sequential-1">
         /// <code lang="fsharp">
+        /// let primes = [ 2; 3; 5; 7; 10; 11 ]
         /// let computations =
-        ///     [ 2; 3; 5; 7; 10; 11 ]
-        ///     |> List.map
-        ///         (fun i ->
+        ///     [ for i in primes do
         ///             async {
         ///                 do! Async.Sleep(System.Random().Next(1000, 2000))
         ///
@@ -504,7 +507,8 @@ namespace Microsoft.FSharp.Control
         ///                     return true
         ///                 else
         ///                     return false
-        ///             })
+        ///             }
+        ///    ]
         ///
         /// let t =
         ///     Async.Sequential(computations)
@@ -539,13 +543,16 @@ namespace Microsoft.FSharp.Control
         /// <example id="choice-example-1">
         /// <code lang="fsharp">
         /// printfn "Starting"
-        /// [ 2; 3; 5; 7 ]
-        /// |> List.map
-        ///     (fun i ->
+        /// let primes = [ 2; 3; 5; 7 ]
+        /// let computations =
+        ///     [ for i in primes do
         ///         async {
         ///             do! Async.Sleep(System.Random().Next(1000, 2000))
         ///             return if i % 2 > 0 then Some(i) else None
-        ///         })
+        ///         }
+        ///     ]
+        ///
+        /// computations
         /// |> Async.Choice
         /// |> Async.RunSynchronously
         /// |> function
@@ -558,9 +565,9 @@ namespace Microsoft.FSharp.Control
         ///
         /// <example id="choice-example-2">
         /// <code lang="fsharp">
-        /// [ 2; 3; 5; 7 ]
-        /// |> List.map
-        ///     (fun i ->
+        /// let primes = [ 2; 3; 5; 7 ]
+        /// let computations =
+        ///     [ for i in primes do
         ///         async {
         ///             do! Async.Sleep(System.Random().Next(1000, 2000))
         ///
@@ -569,7 +576,10 @@ namespace Microsoft.FSharp.Control
         ///                     Some(i)
         ///                 else
         ///                     failwith $"Even numbers not supported: {i}"
-        ///         })
+        ///         }
+        ////    ]
+        ///
+        /// computations
         /// |> Async.Choice
         /// |> Async.RunSynchronously
         /// |> function
