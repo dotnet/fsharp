@@ -3,10 +3,6 @@
 module Core_math_numbers
 #endif
 
-#if NETCOREAPP
-open CoreClrUtilities
-#endif
-
 #light
 #nowarn "49";;
 #nowarn "44";;

@@ -477,6 +477,11 @@
         <target state="new">Compress interface and optimization data files</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsGetLangVersions">
+        <source>Display the allowed values for language version.</source>
+        <target state="new">Display the allowed values for language version.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
         <target state="translated">Nieprawidłowe użycie emitowania zestawu odwołania, nie używaj razem elementów „--staticlink” ani „--refonly” i „--refout”.</target>
@@ -485,11 +490,6 @@
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
         <target state="translated">Nieprawidłowa ścieżka zestawu odwołania“</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsLangVersion">
-        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
-        <target state="translated">Wyświetl dozwolone wartości dla wersji językowej; określ wersję językową, np. „latest” lub „preview”</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimizationData">
@@ -515,6 +515,11 @@
       <trans-unit id="optsReflectionFree">
         <source>Disable implicit generation of constructs using reflection</source>
         <target state="new">Disable implicit generation of constructs using reflection</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSetLangVersion">
+        <source>Specify language version such as 'latest' or 'preview'.</source>
+        <target state="new">Specify language version such as 'latest' or 'preview'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSignatureData">
@@ -2250,11 +2255,6 @@
       <trans-unit id="chkLimitationsOfBaseKeyword">
         <source>'base' values may only be used to make direct calls to the base implementations of overridden members</source>
         <target state="translated">Wartości „base” mogą być używane tylko w celu bezpośrednich wywołań, które dotyczą podstawowych implementacji przesłoniętych elementów członkowskich</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">Konstruktory obiektów nie mogą bezpośrednio używać instrukcji try/with i try/finally przed zainicjowaniem obiektu. Obejmuje to takie konstrukcje, jak „for x in ...”, które mogą skutkować użyciem takich konstrukcji. Jest to ograniczenie nałożone przez język Common IL.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">

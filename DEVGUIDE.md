@@ -121,6 +121,18 @@ You can find all test options as separate flags. For example `build -testAll`:
 
 Running any of the above will build the latest changes and run tests against them.
 
+## Using your custom compiler to build other projects
+
+Building the compiler using `build.cmd` or `build.sh` will output artifacts in `artifacts\bin`. 
+
+To use your custom build of `Fsc`, add the `DotnetFscCompilerPath` property to your project's `.fsproj` file, adjusted to point at your local build directory, build configuration, and target framework as appropriate:
+
+```xml
+<PropertyGroup>
+    <DotnetFscCompilerPath>D:\Git\fsharp\artifacts\bin\fsc\Debug\net7.0\fsc.dll</DotnetFscCompilerPath>
+</PropertyGroup>
+```
+
 ## Updating FSComp.fs, FSComp.resx and XLF
 
 If your changes involve modifying the list of language keywords in any way, (e.g. when implementing a new keyword), the XLF localization files need to be synced with the corresponding resx files. This can be done automatically by running
