@@ -791,7 +791,7 @@ type internal FxResolver
 
     static member GetSystemAssemblies() = systemAssemblies
 
-    static member IsReferenceAssemblyPackDirectoryApprox (dirName: string) =
+    static member IsReferenceAssemblyPackDirectoryApprox(dirName: string) =
         dirName.Contains "Microsoft.NETCore.App.Ref"
 
     member _.TryGetSdkDir() =

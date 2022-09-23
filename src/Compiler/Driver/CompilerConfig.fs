@@ -1398,9 +1398,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         try
             let dirName = Path.GetDirectoryName fileName
             let baseName = FileSystemUtils.fileNameWithoutExtension fileName
+
             FileSystem.FileExistsShim fileName
-            && ((tcConfig.GetTargetFrameworkDirectories()
-                 |> List.contains dirName)
+            && ((tcConfig.GetTargetFrameworkDirectories() |> List.contains dirName)
                 || FxResolver.GetSystemAssemblies().Contains baseName
                 || FxResolver.IsReferenceAssemblyPackDirectoryApprox dirName)
         with _ ->
