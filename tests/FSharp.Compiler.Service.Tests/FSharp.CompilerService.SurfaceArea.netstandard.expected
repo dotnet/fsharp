@@ -1971,6 +1971,7 @@ FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServi
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.MethodGroup GetMethods(Int32, Int32, System.String, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.SemanticClassificationItem[] GetSemanticClassification(Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.Range])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetDescription(FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpGenericParameter,FSharp.Compiler.Symbols.FSharpType]], Boolean, FSharp.Compiler.Text.Range)
+FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetKeywordTooltip(Microsoft.FSharp.Collections.FSharpList`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.EditorServices.ToolTipText GetToolTip(Int32, Int32, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], Int32)
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature PartialAssemblySignature
 FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults: FSharp.Compiler.Symbols.FSharpAssemblySignature get_PartialAssemblySignature()
@@ -3993,6 +3994,7 @@ FSharp.Compiler.EditorServices.ToolTipElementData: Microsoft.FSharp.Core.FSharpO
 FSharp.Compiler.EditorServices.ToolTipElementData: Microsoft.FSharp.Core.FSharpOption`1[System.String] get_ParamName()
 FSharp.Compiler.EditorServices.ToolTipElementData: System.String ToString()
 FSharp.Compiler.EditorServices.ToolTipElementData: Void .ctor(FSharp.Compiler.Text.TaggedText[], FSharp.Compiler.Symbols.FSharpXmlDoc, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.TaggedText[]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.TaggedText[]], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.EditorServices.ToolTipElementData: FSharp.Compiler.EditorServices.ToolTipElementData Create(FSharp.Compiler.Text.TaggedText[], FSharp.Compiler.Symbols.FSharpXmlDoc, Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Text.TaggedText[]]], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Text.TaggedText[]])
 FSharp.Compiler.EditorServices.ToolTipText
 FSharp.Compiler.EditorServices.ToolTipText: Boolean Equals(FSharp.Compiler.EditorServices.ToolTipText)
 FSharp.Compiler.EditorServices.ToolTipText: Boolean Equals(System.Object)
@@ -9902,6 +9904,8 @@ FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharp
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_KeywordNames()
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] KeywordsWithDescription
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] get_KeywordsWithDescription()
+FSharp.Compiler.Tokenization.FSharpKeywords: System.Collections.Generic.IDictionary`2[System.String,System.String] KeywordsDescriptionLookup
+FSharp.Compiler.Tokenization.FSharpKeywords: System.Collections.Generic.IDictionary`2[System.String,System.String] get_KeywordsDescriptionLookup()
 FSharp.Compiler.Tokenization.FSharpKeywords: System.String NormalizeIdentifierBackticks(System.String)
 FSharp.Compiler.Tokenization.FSharpLexer
 FSharp.Compiler.Tokenization.FSharpLexer: Void Tokenize(FSharp.Compiler.Text.ISourceText, Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Tokenization.FSharpToken,Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Tokenization.FSharpLexerFlags], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpMap`2[System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])
