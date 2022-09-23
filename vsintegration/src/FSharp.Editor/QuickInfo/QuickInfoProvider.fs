@@ -36,24 +36,8 @@ type internal FSharpAsyncQuickInfoSource
     // test helper
     static member ProvideQuickInfo(document: Document, position:int) =
         asyncMaybe {
-            let! sourceText = document.GetTextAsync()
-            let textLine = sourceText.Lines.GetLineFromPosition position
-            let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
-            let textLineString = textLine.ToString()
-            let! symbol = document.TryFindFSharpLexerSymbolAsync(position, SymbolLookupKind.Precise, true, true, nameof(FSharpAsyncQuickInfoSource))
-
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpAsyncQuickInfoSource)) |> liftAsync
-            let res = checkFileResults.GetToolTip (textLineNumber, symbol.Ident.idRange.EndColumn, textLineString, symbol.FullIsland, FSharpTokenTag.IDENT)
-            match res with
-            | ToolTipText []
-            | ToolTipText [ToolTipElement.None] -> return! None
-            | _ ->
-                let! symbolUse = checkFileResults.GetSymbolUseAtLocation (textLineNumber, symbol.Ident.idRange.EndColumn, textLineString, symbol.FullIsland)
-                let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, symbol.Range)
-                return { StructuredText = res
-                         Span = symbolSpan
-                         Symbol = Some symbolUse.Symbol
-                         SymbolKind = symbol.Kind }
+            let! _, sigQuickInfo, targetQuickInfo  = FSharpQuickInfo.getQuickInfo(document, position, CancellationToken.None)
+            return! sigQuickInfo |> Option.orElse targetQuickInfo
         }
 
     static member BuildSingleQuickInfoItem (documentationBuilder:IDocumentationBuilder) (quickInfo:QuickInfo) =

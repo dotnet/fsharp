@@ -1045,11 +1045,11 @@ module Structure =
             List.iter parseModuleSigDeclaration decls
 
         match parsedInput with
-        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) ->
-            modules |> List.iter parseModuleOrNamespace
+        | ParsedInput.ImplFile file ->
+            file.Contents |> List.iter parseModuleOrNamespace
             getCommentRanges sourceLines
-        | ParsedInput.SigFile (ParsedSigFileInput (modules = moduleSigs)) ->
-            List.iter parseModuleOrNamespaceSigs moduleSigs
+        | ParsedInput.SigFile file ->
+            file.Contents |> List.iter parseModuleOrNamespaceSigs
             getCommentRanges sourceLines
 
         acc :> seq<_>

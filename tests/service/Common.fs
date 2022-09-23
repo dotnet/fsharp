@@ -210,7 +210,7 @@ let matchBraces (name: string, code: string) =
 
 let getSingleModuleLikeDecl (input: ParsedInput) =
     match input with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ decl ])) -> decl
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ decl ])) -> decl
     | _ -> failwith "Could not get module decls"
 
 let getSingleModuleMemberDecls (input: ParsedInput) =
