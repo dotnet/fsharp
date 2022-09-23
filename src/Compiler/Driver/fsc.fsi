@@ -55,21 +55,3 @@ val CompileFromCommandLineArguments:
     tcImportsCapture: (TcImports -> unit) option *
     dynamicAssemblyCreator: (TcConfig * TcGlobals * string * ILModuleDef -> unit) option ->
         unit
-
-/// An additional compilation entry point used by FSharp.Compiler.Service taking syntax trees as input
-val CompileFromSyntaxTrees:
-    ctok: CompilationThreadToken *
-    legacyReferenceResolver: LegacyReferenceResolver *
-    reduceMemoryUsage: ReduceMemoryFlag *
-    assemblyName: string *
-    target: CompilerTarget *
-    targetDll: string *
-    targetPdb: string option *
-    dependencies: string list *
-    noframework: bool *
-    exiter: Exiter *
-    loggerProvider: IDiagnosticsLoggerProvider *
-    inputs: ParsedInput list *
-    tcImportsCapture: (TcImports -> unit) option *
-    dynamicAssemblyCreator: (TcConfig * TcGlobals * string * ILModuleDef -> unit) option ->
-        unit
