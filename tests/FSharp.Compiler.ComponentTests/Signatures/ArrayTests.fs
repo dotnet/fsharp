@@ -32,17 +32,10 @@ let ``4 dimensional array`` () =
         "val a: int array4d"
 
 [<Fact>]
-let ``5 till 32 dimensional array`` () =
-    [ 5 .. 32 ]
-    |> List.iter (fun idx ->
-        let arrayType =
-            [ 1 .. idx ]
-            |> List.fold (fun acc _ -> $"array<{acc}>") "int"
-
-        assertSingleSignatureBinding
-            $"let a : {arrayType} = failwith \"todo\""
-            $"val a: int array{idx}d"
-    )
+let ``5 dimensional jagged array`` () =
+    assertSingleSignatureBinding
+        "let a : array<array<array<array<array<int>>>>> = failwith \"todo\""
+        "val a: int array array array array array"
 
 [<Fact>]
 let ``Use array2d syntax in implementation`` () =
