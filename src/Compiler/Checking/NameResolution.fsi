@@ -525,6 +525,67 @@ type ResultCollectionSettings =
     | AllResults
     | AtMostOneResult
 
+/// Indicates if a lookup requires a match on the instance/static characteristic.
+///
+/// This is not supplied at all lookup sites - in theory it could be, but currently diagnostics on many paths
+/// rely on returning all the content and then filtering it later for instance/static characteristic.
+///
+/// When applied, this also currently doesn't filter all content - it is currently only applied to filter out extension methods
+/// that have a static/instance mismatch.
+[<RequireQualifiedAccess>]
+type LookupIsInstance =
+    | Ambivalent
+    | Yes
+    | No
+
+/// Indicates the kind of lookup being performed. Note, this type should be made private to nameres.fs.
+[<RequireQualifiedAccess>]
+type LookupKind =
+    | RecdField
+
+    | Pattern
+
+    /// Indicates resolution within an expression, either A.B.C (static) or expr.A.B.C (instance) and
+    /// whether we should filter content according to instance/static characteristic.
+    | Expr of isInstanceFilter: LookupIsInstance
+
+    | Type
+
+    | Ctor
+
+/// Indicates if a warning should be given for the use of upper-case identifiers in patterns
+type WarnOnUpperFlag =
+    | WarnOnUpperCase
+    | AllIdsOK
+
+/// Indicates whether we permit a direct reference to a type generator. Only set when resolving the
+/// right-hand-side of a [<Generate>] declaration.
+[<RequireQualifiedAccess>]
+type PermitDirectReferenceToGeneratedType =
+    | Yes
+    | No
+
+/// Specifies extra work to do after overload resolution
+[<RequireQualifiedAccess>]
+type AfterResolution =
+    /// Notification is not needed
+    | DoNothing
+
+    /// Notify the sink of the information needed to complete recording a use of a symbol
+    /// for the purposes of the language service.  One of the callbacks should be called by
+    /// the checker.
+    ///
+    /// The first callback represents a case where we have learned the type
+    /// instantiation of a generic method or value.
+    ///
+    /// The second represents the case where we have resolved overloading and/or
+    /// a specific override. The 'Item option' contains the candidate overrides.
+    | RecordResolution of
+        Item option *
+        (TyparInstantiation -> unit) *
+        (MethInfo * PropInfo option * TyparInstantiation -> unit) *
+        (unit -> unit)
+
 /// Temporarily redirect reporting of name resolution and type checking results
 val internal WithNewTypecheckResultsSink: ITypecheckResultsSink * TcResultsSink -> System.IDisposable
 
@@ -556,37 +617,38 @@ val internal CallOpenDeclarationSink: TcResultsSink -> OpenDeclaration -> unit
 
 /// Get all the available properties of a type (both intrinsic and extension)
 val internal AllPropInfosOfTypeInScope:
-    ResultCollectionSettings ->
-    InfoReader ->
-    NameResolutionEnv ->
-    string option ->
-    AccessorDomain ->
-    FindMemberFlag ->
-    range ->
-    TType ->
+    collectionSettings: ResultCollectionSettings ->
+    infoReader: InfoReader ->
+    nenv: NameResolutionEnv ->
+    optFilter: string option ->
+    ad: AccessorDomain ->
+    findFlag: FindMemberFlag ->
+    m: range ->
+    ty: TType ->
         PropInfo list
 
 /// Get all the available properties of a type (only extension)
 val internal ExtensionPropInfosOfTypeInScope:
-    ResultCollectionSettings ->
-    InfoReader ->
-    NameResolutionEnv ->
-    string option ->
-    AccessorDomain ->
-    range ->
-    TType ->
+    collectionSettings: ResultCollectionSettings ->
+    infoReader: InfoReader ->
+    nenv: NameResolutionEnv ->
+    optFilter: string option ->
+    isInstanceFilter: LookupIsInstance ->
+    ad: AccessorDomain ->
+    m: range ->
+    ty: TType ->
         PropInfo list
 
 /// Get the available methods of a type (both declared and inherited)
 val internal AllMethInfosOfTypeInScope:
-    ResultCollectionSettings ->
-    InfoReader ->
-    NameResolutionEnv ->
-    string option ->
-    AccessorDomain ->
-    FindMemberFlag ->
-    range ->
-    TType ->
+    collectionSettings: ResultCollectionSettings ->
+    infoReader: InfoReader ->
+    nenv: NameResolutionEnv ->
+    optFilter: string option ->
+    ad: AccessorDomain ->
+    findFlag: FindMemberFlag ->
+    m: range ->
+    ty: TType ->
         MethInfo list
 
 /// Used to report an error condition where name resolution failed due to an indeterminate type
@@ -597,27 +659,6 @@ exception internal UpperCaseIdentifierInPattern of range
 
 /// Generate a new reference to a record field with a fresh type instantiation
 val FreshenRecdFieldRef: NameResolver -> range -> RecdFieldRef -> RecdFieldInfo
-
-/// Indicates the kind of lookup being performed. Note, this type should be made private to nameres.fs.
-[<RequireQualifiedAccess>]
-type LookupKind =
-    | RecdField
-    | Pattern
-    | Expr
-    | Type
-    | Ctor
-
-/// Indicates if a warning should be given for the use of upper-case identifiers in patterns
-type WarnOnUpperFlag =
-    | WarnOnUpperCase
-    | AllIdsOK
-
-/// Indicates whether we permit a direct reference to a type generator. Only set when resolving the
-/// right-hand-side of a [<Generate>] declaration.
-[<RequireQualifiedAccess>]
-type PermitDirectReferenceToGeneratedType =
-    | Yes
-    | No
 
 /// Resolve a long identifier to a namespace, module.
 val internal ResolveLongIdentAsModuleOrNamespace:
@@ -720,27 +761,6 @@ val internal ResolvePartialLongIdentToClassOrRecdFields:
 
 /// Return the fields for the given class or record
 val internal ResolveRecordOrClassFieldsOfType: NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
-
-/// Specifies extra work to do after overload resolution
-[<RequireQualifiedAccess>]
-type AfterResolution =
-    /// Notification is not needed
-    | DoNothing
-
-    /// Notify the sink of the information needed to complete recording a use of a symbol
-    /// for the purposes of the language service.  One of the callbacks should be called by
-    /// the checker.
-    ///
-    /// The first callback represents a case where we have learned the type
-    /// instantiation of a generic method or value.
-    ///
-    /// The second represents the case where we have resolved overloading and/or
-    /// a specific override. The 'Item option' contains the candidate overrides.
-    | RecordResolution of
-        Item option *
-        (TyparInstantiation -> unit) *
-        (MethInfo * PropInfo option * TyparInstantiation -> unit) *
-        (unit -> unit)
 
 /// Resolve a long identifier occurring in an expression position.
 val internal ResolveLongIdentAsExprAndComputeRange:

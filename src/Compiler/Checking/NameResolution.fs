@@ -484,6 +484,19 @@ type NameResolutionEnv =
 // Helpers to do with extension members
 //-------------------------------------------------------------------------
 
+/// Indicates if a lookup requires a match on the instance/static characteristic.
+///
+/// This is not supplied at all lookup sites - in theory it could be, but currently diagnostics on many paths
+/// rely on returning all the content and then filtering it later for instance/static characteristic.
+///
+/// The isInstanceFilter also doesn't filter all content - it is currently only applied to filter out extension methods
+/// that have a static/instance mismatch.
+[<RequireQualifiedAccess>]
+type LookupIsInstance =
+    | Ambivalent
+    | Yes
+    | No
+
 /// Indicates if we only need one result or all possible results from a resolution.
 [<RequireQualifiedAccess>]
 type ResultCollectionSettings =
@@ -603,29 +616,36 @@ let SelectPropInfosFromExtMembers (infoReader: InfoReader) ad optFilter declarin
     propCollector.Close()
 
 /// Query the available extension properties of a type (including extension properties for inherited types)
-let ExtensionPropInfosOfTypeInScope collectionSettings (infoReader:InfoReader) (nenv: NameResolutionEnv) optFilter ad m ty =
+let ExtensionPropInfosOfTypeInScope collectionSettings (infoReader:InfoReader) (nenv: NameResolutionEnv) optFilter isInstanceFilter ad m ty =
     let g = infoReader.g
 
     let extMemsDangling = SelectPropInfosFromExtMembers infoReader ad optFilter ty m nenv.eUnindexedExtensionMembers 
 
-    if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil extMemsDangling) then 
-        extMemsDangling 
-    else
-        let extMemsFromHierarchy =
-            infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty)
-            |> List.collect (fun ty ->
-                 match tryTcrefOfAppTy g ty with
-                 | ValueSome tcref ->
-                    let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
-                    SelectPropInfosFromExtMembers infoReader ad optFilter ty m extMemInfos
-                 | _ -> [])
+    let pinfos =
+        if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil extMemsDangling) then 
+            extMemsDangling 
+        else
+            let extMemsFromHierarchy =
+                infoReader.GetEntireTypeHierarchy(AllowMultiIntfInstantiations.Yes, m, ty)
+                |> List.collect (fun ty ->
+                     match tryTcrefOfAppTy g ty with
+                     | ValueSome tcref ->
+                        let extMemInfos = nenv.eIndexedExtensionMembers.Find tcref
+                        SelectPropInfosFromExtMembers infoReader ad optFilter ty m extMemInfos
+                     | _ -> [])
 
-        extMemsDangling @ extMemsFromHierarchy
+            extMemsDangling @ extMemsFromHierarchy
+    pinfos
+    |> List.filter (fun pinfo ->
+        match isInstanceFilter with
+        | LookupIsInstance.Ambivalent -> true
+        | LookupIsInstance.Yes -> not pinfo.IsStatic
+        | LookupIsInstance.No -> pinfo.IsStatic)
 
 /// Get all the available properties of a type (both intrinsic and extension)
 let AllPropInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad findFlag m ty =
     IntrinsicPropInfosOfTypeInScope infoReader optFilter ad findFlag m ty
-    @ ExtensionPropInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad m ty
+    @ ExtensionPropInfosOfTypeInScope collectionSettings infoReader nenv optFilter LookupIsInstance.Ambivalent ad m ty
 
 /// Get the available methods of a type (both declared and inherited)
 let IntrinsicMethInfosOfType (infoReader: InfoReader) optFilter ad allowMultiIntfInst findFlag m ty =
@@ -674,8 +694,8 @@ let SelectMethInfosFromExtMembers (infoReader: InfoReader) optFilter apparentTy 
                 | _ -> ()
     ]
 
-/// Query the available extension properties of a methods (including extension methods for inherited types)
-let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter m ty =
+/// Query the available extension methods of a type (including extension methods for inherited types)
+let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSettings) (infoReader: InfoReader) (nenv: NameResolutionEnv) optFilter isInstanceFilter m ty =
     let extMemsDangling = SelectMethInfosFromExtMembers  infoReader optFilter ty  m nenv.eUnindexedExtensionMembers
     if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil extMemsDangling) then 
         extMemsDangling
@@ -690,6 +710,11 @@ let ExtensionMethInfosOfTypeInScope (collectionSettings: ResultCollectionSetting
                     SelectMethInfosFromExtMembers infoReader optFilter ty  m extValRefs
                 | _ -> [])
         extMemsDangling @ extMemsFromHierarchy
+    |> List.filter (fun minfo ->
+        match isInstanceFilter with
+        | LookupIsInstance.Ambivalent -> true
+        | LookupIsInstance.Yes -> minfo.IsInstance
+        | LookupIsInstance.No -> not minfo.IsInstance)
 
 /// Get all the available methods of a type (both intrinsic and extension)
 let AllMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad findFlag m ty =
@@ -697,7 +722,7 @@ let AllMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad fi
     if collectionSettings = ResultCollectionSettings.AtMostOneResult && not (isNil intrinsic) then 
         intrinsic
     else
-        intrinsic @ ExtensionMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter m ty
+        intrinsic @ ExtensionMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter LookupIsInstance.Ambivalent m ty
 
 //-------------------------------------------------------------------------
 // Helpers to do with building environments
@@ -1127,12 +1152,12 @@ let rec AddStaticContentOfTypeToNameEnv (g:TcGlobals) (amap: Import.ImportMap) a
         [| 
             // Extension methods
             yield! 
-                ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None m ty
+                ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None LookupIsInstance.No m ty
                 |> ChooseMethInfosForNameEnv g m ty
 
             // Extension properties
             yield!
-                ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None ad m ty
+                ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv None LookupIsInstance.No ad m ty
                 |> ChoosePropInfosForNameEnv g ty
 
             // Events
@@ -2431,11 +2456,17 @@ exception IndeterminateType of range
 /// Indicates the kind of lookup being performed. Note, this type should be made private to nameres.fs.
 [<RequireQualifiedAccess>]
 type LookupKind =
-   | RecdField
-   | Pattern
-   | Expr
-   | Type
-   | Ctor
+    | RecdField
+
+    | Pattern
+
+    /// Indicates resolution within an expression, either A.B.C or expr.A.B.C.  The isInstanceFilter
+    /// optionally indicates whether we should filter content according to instance/static characteristic.
+    | Expr of isInstanceFilter: LookupIsInstance
+
+    | Type
+
+    | Ctor
 
 
 /// Try to find a union case of a type, with the given name
@@ -2510,10 +2541,14 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
     let m = unionRanges m id.idRange
     let nm = id.idText // used to filter the searches of the tables
     let optFilter = Some nm // used to filter the searches of the tables
+    let isLookUpExpr = (match lookupKind with LookupKind.Expr _ -> true | _ -> false)
+    let isInstanceFilter = (match lookupKind with LookupKind.Expr isInstanceFilter -> isInstanceFilter | _ -> LookupIsInstance.Ambivalent)
+
     let contentsSearchAccessible =
+
         let unionCaseSearch =
             match lookupKind with
-            | LookupKind.Expr | LookupKind.Pattern -> TryFindUnionCaseOfType g ty nm
+            | LookupKind.Expr _ | LookupKind.Pattern -> TryFindUnionCaseOfType g ty nm
             | _ -> ValueNone
 
         // Lookup: datatype constructors take precedence
@@ -2521,15 +2556,17 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
         | ValueSome ucase ->
             OneResult (success(resInfo, Item.UnionCase(ucase, false), rest))
         | ValueNone ->
+
             let anonRecdSearch =
                 match lookupKind with
-                | LookupKind.Expr -> TryFindAnonRecdFieldOfType g ty nm
+                | LookupKind.Expr _ -> TryFindAnonRecdFieldOfType g ty nm
                 | _ -> None
+
             match anonRecdSearch with
             | Some item ->
                 OneResult (success(resInfo, item, rest))
             | None ->
-            let isLookUpExpr = (lookupKind = LookupKind.Expr)
+
             match TryFindIntrinsicNamedItemOfType ncenv.InfoReader (nm, ad, true) findFlag m ty with
             | Some (TraitItem (traitInfo :: _)) when isLookUpExpr ->
                 success [resInfo, Item.Trait traitInfo, rest]
@@ -2538,7 +2575,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 let pinfos = psets |> ExcludeHiddenOfPropInfos g ncenv.amap m
 
                 // fold the available extension members into the overload resolution
-                let extensionPropInfos = ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter ad m ty
+                let extensionPropInfos = ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter ad m ty
 
                 // make sure to keep the intrinsic pinfos before the extension pinfos in the list,
                 // since later on this logic is used when giving preference to intrinsic definitions
@@ -2550,23 +2587,26 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 let minfos = msets |> ExcludeHiddenOfMethInfos g ncenv.amap m
 
                 // fold the available extension members into the overload resolution
-                let extensionMethInfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter m ty
+                let extensionMethInfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty
 
                 success [resInfo, Item.MakeMethGroup (nm, minfos@extensionMethInfos), rest]
-            | Some (ILFieldItem (finfo :: _))  when (match lookupKind with LookupKind.Expr | LookupKind.Pattern -> true | _ -> false) ->
+
+            | Some (ILFieldItem (finfo :: _))  when (match lookupKind with LookupKind.Expr _ | LookupKind.Pattern -> true | _ -> false) ->
                 success [resInfo, Item.ILField finfo, rest]
 
             | Some (EventItem (einfo :: _)) when isLookUpExpr ->
                 success [resInfo, Item.Event einfo, rest]
 
-            | Some (RecdFieldItem rfinfo) when (match lookupKind with LookupKind.Expr | LookupKind.RecdField | LookupKind.Pattern -> true | _ -> false) ->
+            | Some (RecdFieldItem rfinfo) when (match lookupKind with LookupKind.Expr _ | LookupKind.RecdField | LookupKind.Pattern -> true | _ -> false) ->
                 success [resInfo, Item.RecdField rfinfo, rest]
 
             | _ ->
 
-            let pinfos = ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter ad m ty
+            let pinfos = ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter ad m ty
+
             if not (isNil pinfos) && isLookUpExpr then OneResult(success (resInfo, Item.Property (nm, pinfos), rest)) else
-            let minfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter m ty
+
+            let minfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv optFilter isInstanceFilter m ty
 
             if not (isNil minfos) && isLookUpExpr then
                 success [resInfo, Item.MakeMethGroup (nm, minfos), rest]
@@ -2600,10 +2640,10 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
     | Result res when not (isNil res) -> nestedSearchAccessible
     | _ ->
         let suggestMembers (addToBuffer: string -> unit) =
-            for p in ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None ad m ty do
+            for p in ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None LookupIsInstance.Ambivalent ad m ty do
                 addToBuffer p.PropertyName
 
-            for m in ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None m ty do
+            for m in ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None LookupIsInstance.Ambivalent m ty do
                 addToBuffer m.DisplayName
 
             for p in GetIntrinsicPropInfosOfType ncenv.InfoReader None ad AllowMultiIntfInstantiations.No findFlag m ty do
@@ -2617,7 +2657,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
                 addToBuffer l
 
             match lookupKind with
-            | LookupKind.Expr | LookupKind.Pattern ->
+            | LookupKind.Expr _ | LookupKind.Pattern ->
                 match tryTcrefOfAppTy g ty with
                 | ValueSome tcref ->
                     for uc in tcref.UnionCasesArray do
@@ -2647,9 +2687,9 @@ and ResolveLongIdentInNestedTypes (ncenv: NameResolver) nenv lookupKind resInfo 
         |> AtMostOneResult m)
 
 /// Resolve a long identifier using type-qualified name resolution.
-let ResolveLongIdentInType sink ncenv nenv lookupKind m ad id findFlag typeNameResInfo ty =
+let ResolveLongIdentInType sink (ncenv: NameResolver) nenv lookupKind m ad id findFlag typeNameResInfo ty =
     let resInfo, item, rest =
-        ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind ResolutionInfo.Empty 0 m ad id [] findFlag typeNameResInfo ty
+        ResolveLongIdentInTypePrim ncenv nenv lookupKind ResolutionInfo.Empty 0 m ad id [] findFlag typeNameResInfo ty
         |> AtMostOneResult m
         |> ForceRaise
 
@@ -2683,6 +2723,7 @@ let (|AccessibleEntityRef|_|) amap m ad (modref: ModuleOrNamespaceRef) mspec =
 let rec ResolveExprLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv (typeNameResInfo: TypeNameResolutionInfo) ad resInfo depth m modref (mty: ModuleOrNamespaceType) (id: Ident) (rest: Ident list) =
     // resInfo records the modules or namespaces actually relevant to a resolution
     let m = unionRanges m id.idRange
+    let lookupKind = LookupKind.Expr LookupIsInstance.No
     match mty.AllValsByLogicalName.TryGetValue id.idText with
     | true, vspec when IsValAccessible ad (mkNestedValRef modref vspec) ->
         success(resInfo, Item.Value (mkNestedValRef modref vspec), rest)
@@ -2718,7 +2759,7 @@ let rec ResolveExprLongIdentInModuleOrNamespace (ncenv: NameResolver) nenv (type
                     let typeNameResInfo = TypeNameResolutionInfo.ResolveToTypeRefs typeNameResInfo.StaticArgsInfo
                     CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
 
-                ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult ncenv nenv LookupKind.Expr (depth+1) m ad id2 rest2 typeNameResInfo id.idRange tcrefs
+                ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult ncenv nenv lookupKind (depth+1) m ad id2 rest2 typeNameResInfo id.idRange tcrefs
 
             // Check if we've got some explicit type arguments
             | _ ->
@@ -2817,6 +2858,9 @@ let ResolveUnqualifiedTyconRefs nenv tcrefs =
 /// Not all of the sequence will necessarily be swallowed, i.e. we return some identifiers
 /// that may represent further actions, e.g. further lookups.
 let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified m ad nenv (typeNameResInfo: TypeNameResolutionInfo) (id: Ident) (rest: Ident list) isOpenDecl =
+
+    let lookupKind = LookupKind.Expr LookupIsInstance.No
+
     let canSuggestThisItem (item:Item) =
         // All items can be suggested except nameof when it comes from FSharp.Core.dll and the nameof feature is not enabled
         match item with
@@ -2968,7 +3012,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv: NameResolver) first fullyQualified
                     let tcrefs =
                        let typeNameResInfo = TypeNameResolutionInfo.ResolveToTypeRefs typeNameResInfo.StaticArgsInfo
                        CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities (tcrefs, typeNameResInfo, PermitDirectReferenceToGeneratedType.No, unionRanges m id.idRange)
-                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult ncenv nenv LookupKind.Expr 1 m ad id2 rest2 typeNameResInfo id.idRange tcrefs
+                    ResolveLongIdentInTyconRefs ResultCollectionSettings.AtMostOneResult ncenv nenv lookupKind 1 m ad id2 rest2 typeNameResInfo id.idRange tcrefs
                   | _ ->
                     NoResultsOrUsefulErrors
 
@@ -3610,7 +3654,8 @@ let ResolveField sink ncenv nenv ad ty (mp, id) allFields =
 //
 // QUERY (instantiationGenerator cleanup): it would be really nice not to flow instantiationGenerator to here.
 let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Ident) rest (typeNameResInfo: TypeNameResolutionInfo) findFlag =
-    let adhocDotSearchAccessible = AtMostOneResult m (ResolveLongIdentInTypePrim ncenv nenv LookupKind.Expr ResolutionInfo.Empty 1 m ad id rest findFlag typeNameResInfo ty)
+    let lookupKind = LookupKind.Expr LookupIsInstance.Yes
+    let adhocDotSearchAccessible = AtMostOneResult m (ResolveLongIdentInTypePrim ncenv nenv lookupKind ResolutionInfo.Empty 1 m ad id rest findFlag typeNameResInfo ty)
     match adhocDotSearchAccessible with
     | Exception _ ->
         // If the dot is not resolved by adhoc overloading then look for a record field
@@ -3628,7 +3673,9 @@ let private ResolveExprDotLongIdent (ncenv: NameResolver) m ad nenv ty (id: Iden
                     OneSuccess (ResolutionInfo.Empty, item, rest)
                 | _ -> NoResultsOrUsefulErrors
 
-        let adhocDotSearchAll () = ResolveLongIdentInTypePrim ncenv nenv LookupKind.Expr ResolutionInfo.Empty 1 m AccessibleFromSomeFSharpCode id rest findFlag typeNameResInfo ty
+        let adhocDotSearchAll () =
+            let lookupKind = LookupKind.Expr LookupIsInstance.Ambivalent
+            ResolveLongIdentInTypePrim ncenv nenv lookupKind ResolutionInfo.Empty 1 m AccessibleFromSomeFSharpCode id rest findFlag typeNameResInfo ty
 
         dotFieldIdSearch +++ adhocDotSearchAll
         |> AtMostOneResult m
@@ -3750,6 +3797,7 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
             | _ -> error(InternalError("ResolveExprDotLongIdentAndComputeRange", wholem))
         let itemRange = ComputeItemRange wholem lid rest
         resInfo, item, rest, itemRange
+
     // "true" resolution
     let resInfo, item, rest, itemRange = resolveExpr findFlag
     ResolutionInfo.SendEntityPathToSink(sink, ncenv, nenv, ItemOccurence.Use, ad, resInfo, ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap itemRange item))
