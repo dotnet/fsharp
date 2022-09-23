@@ -2262,11 +2262,6 @@
         <target state="translated">'base' 値を使用できるのは、オーバーライドされたメンバーの基本実装に対して直接呼び出しを行う場合のみです。</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">オブジェクト コンストラクターでは、オブジェクトの初期化前に try/with および try/finally を直接使用できません。'for x in ...' などのコストラクトを呼び出す可能性があるようなコンストラクトがこれに含まれます。これは Common IL での制限事項です。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">
         <source>The address of the variable '{0}' cannot be used at this point</source>
         <target state="translated">この時点で変数 '{0}' のアドレスは使用できません</target>
