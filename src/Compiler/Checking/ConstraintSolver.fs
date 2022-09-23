@@ -244,15 +244,15 @@ exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * 
 
 exception ConstraintSolverError of string * range * range
 
-exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * range
+exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * error: exn * range: range
 
-exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * range
+exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * error: exn * range: range
 
-exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * ContextInfo * parameterRange: range
+exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * error: exn * ctxtInfo: ContextInfo * parameterRange: range
 
-exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * exn * range
+exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * error: exn * range: range
 
-exception UnresolvedOverloading of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * range
+exception UnresolvedOverloading of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * range: range
 
 exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * range
 
@@ -2695,21 +2695,21 @@ and AddWrappedContextualSubsumptionReport (csenv: ConstraintSolverEnv) ndeep m c
     | _ -> ErrorD (wrapper (ErrorsFromAddingSubsumptionConstraint(csenv.g, csenv.DisplayEnv, ty1, ty2, res, csenv.eContextInfo, m)))
 
 /// Assert a subtype constraint
-and SolveTypeSubsumesTypeWithWrappedContextualReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 wrapper =
+and SolveTypeSubsumesTypeWithWrappedContextualReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln origTy1 ty1 ty2 wrapper =
     // Due to the legacy of the change https://github.com/dotnet/fsharp/pull/1650, 
     // when doing nested, speculative overload resolution, we ignore failed member constraints and continue.  The
     // constraint is not recorded for later solution.
     if csenv.IsSpeculativeForMethodOverloading then
         IgnoreFailedMemberConstraintResolution
             (fun () -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m trace cxsln ty1 ty2)
-            (fun res -> AddWrappedContextualSubsumptionReport csenv ndeep m cxsln ty1 ty2 res wrapper)
+            (fun res -> AddWrappedContextualSubsumptionReport csenv ndeep m cxsln (defaultArg origTy1 ty1) ty2 res wrapper)
     else
         PostponeOnFailedMemberConstraintResolution csenv trace
             (fun csenv -> SolveTypeSubsumesTypeKeepAbbrevs csenv ndeep m trace cxsln ty1 ty2)
-            (fun res -> AddWrappedContextualSubsumptionReport csenv ndeep m cxsln ty1 ty2 res wrapper)
+            (fun res -> AddWrappedContextualSubsumptionReport csenv ndeep m cxsln (defaultArg origTy1 ty1) ty2 res wrapper)
        
-and SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 =
-    SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep m trace cxsln ty1 ty2 id
+and SolveTypeSubsumesTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln origTy1 ty1 ty2 =
+    SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep m trace cxsln origTy1 ty1 ty2 id
 
 and SolveTypeEqualsTypeWithReport (csenv: ConstraintSolverEnv) ndeep m trace cxsln actualTy expectedTy = 
     TryD
@@ -2738,9 +2738,9 @@ and ArgsMustSubsumeOrConvert
         msg csenv.DisplayEnv
     | None -> ()
     match usesTDC with 
-    | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
+    | TypeDirectedConversionUsed.Yes(warn, _) -> do! WarnD(warn csenv.DisplayEnv)
     | TypeDirectedConversionUsed.No -> ()
-    do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArg.CallerArgumentType
+    do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerArg.CallerArgumentType
     if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerArg.CallerArgumentType) then 
         return! ErrorD(Error(FSComp.SR.csMethodExpectsParams(), m))
     else 
@@ -2769,9 +2769,9 @@ and ArgsMustSubsumeOrConvertWithContextualReport
             msg csenv.DisplayEnv
         | None -> ()
         match usesTDC with 
-        | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
+        | TypeDirectedConversionUsed.Yes(warn, _) -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
-        do! SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep  m trace cxsln calledArgTy callerArgTy (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg))  
+        do! SolveTypeSubsumesTypeWithWrappedContextualReport csenv ndeep m trace cxsln (Some calledArg.CalledArgumentType) calledArgTy callerArgTy (fun e -> ArgDoesNotMatchError(e :?> _, calledMeth, calledArg, callerArg))  
         return usesTDC
     }
 
@@ -2783,7 +2783,7 @@ and TypesEquiv csenv ndeep trace cxsln ty1 ty2 =
 
 and TypesMustSubsume (csenv: ConstraintSolverEnv) ndeep trace cxsln m calledArgTy callerArgTy = 
     trackErrors {
-        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln calledArgTy callerArgTy 
+        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln None calledArgTy callerArgTy 
         return TypeDirectedConversionUsed.No
     }
 
@@ -2796,9 +2796,9 @@ and ReturnTypesMustSubsumeOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace 
             msg csenv.DisplayEnv
         | None -> ()
         match usesTDC with 
-        | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
+        | TypeDirectedConversionUsed.Yes(warn, _) -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
-        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln reqdTy actualTy 
+        do! SolveTypeSubsumesTypeWithReport csenv ndeep m trace cxsln None reqdTy actualTy 
         return usesTDC
     }
 
@@ -2813,7 +2813,7 @@ and ArgsEquivOrConvert (csenv: ConstraintSolverEnv) ad ndeep trace cxsln isConst
             msg csenv.DisplayEnv
         | None -> ()
         match usesTDC with 
-        | TypeDirectedConversionUsed.Yes warn -> do! WarnD(warn csenv.DisplayEnv)
+        | TypeDirectedConversionUsed.Yes(warn, _) -> do! WarnD(warn csenv.DisplayEnv)
         | TypeDirectedConversionUsed.No -> ()
         if not (typeEquiv csenv.g calledArgTy callerArgTy) then 
             return! ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(), m))
@@ -3223,6 +3223,10 @@ and GetMostApplicableOverload csenv ndeep candidates applicableMeths calledMethG
         // Prefer methods that don't use type-directed conversion
         let c = compare (match usesTDC1 with TypeDirectedConversionUsed.No -> 1 | _ -> 0) (match usesTDC2 with TypeDirectedConversionUsed.No -> 1 | _ -> 0)
         if c <> 0 then c else
+            
+        // Prefer methods that need less type-directed conversion
+        let c = compare (match usesTDC1 with TypeDirectedConversionUsed.Yes(_, false) -> 1 | _ -> 0) (match usesTDC2 with TypeDirectedConversionUsed.Yes(_, false) -> 1 | _ -> 0)
+        if c <> 0 then c else
 
         // Prefer methods that don't give "this code is less generic" warnings
         // Note: Relies on 'compare' respecting true > false
@@ -3519,7 +3523,7 @@ let AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed denv css m extraRigidTypars
 
 let AddCxTypeMustSubsumeType contextInfo denv css m trace ty1 ty2 = 
     let csenv = MakeConstraintSolverEnv contextInfo css m denv
-    SolveTypeSubsumesTypeWithReport csenv 0 m trace None ty1 ty2
+    SolveTypeSubsumesTypeWithReport csenv 0 m trace None None ty1 ty2
     |> RaiseOperationResult
 
 let AddCxMethodConstraint denv css m trace traitInfo  =

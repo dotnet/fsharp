@@ -453,7 +453,7 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
             | None -> ()
 
             match usesTDC with
-            | TypeDirectedConversionUsed.Yes warn -> warning(warn env.DisplayEnv)
+            | TypeDirectedConversionUsed.Yes(warn, _) -> warning(warn env.DisplayEnv)
             | TypeDirectedConversionUsed.No -> ()
 
             if AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m reqdTy2 actualTy then
@@ -4303,6 +4303,9 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     | SynType.LongIdent synLongId ->
         TcLongIdentType kindOpt cenv newOk checkConstraints occ iwsam env tpenv synLongId
 
+    | MultiDimensionArrayType (rank, elemTy, m) ->
+        TcElementType cenv newOk checkConstraints occ env tpenv rank elemTy m
+    
     | SynType.App (StripParenTypes (SynType.LongIdent longId), _, args, _, _, postfix, m) ->
         TcLongIdentAppType kindOpt cenv newOk checkConstraints occ iwsam env tpenv longId postfix args m
 
@@ -4353,7 +4356,8 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     | SynType.App(arg1, _, args, _, _, postfix, m) ->
         TcTypeMeasureApp kindOpt cenv newOk checkConstraints occ env tpenv arg1 args postfix m 
 
-    | SynType.Paren(innerType, _) ->
+    | SynType.Paren(innerType, _)
+    | SynType.SignatureParameter(usedType = innerType) ->
         TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ iwsam env tpenv innerType
 
 and CheckIWSAM (cenv: cenv) (env: TcEnv) checkConstraints iwsam m tcref =
@@ -4769,6 +4773,9 @@ and CrackStaticConstantArgs (cenv: cenv) env tpenv (staticParameters: Tainted<Pr
     argsInStaticParameterOrderIncludingDefaults
 
 and TcProvidedTypeAppToStaticConstantArgs (cenv: cenv) env generatedTypePathOpt tpenv (tcref: TyconRef) (args: SynType list) m =
+    // Static argument expressions should not get debug points
+    let env = { env with eIsControlFlow = false }
+
     let typeBeforeArguments =
         match tcref.TypeReprInfo with
         | TProvidedTypeRepr info -> info.ProvidedType
@@ -5385,7 +5392,7 @@ and TcAdjustExprForTypeDirectedConversions (cenv: cenv) (overallTy: OverallTy) a
     let g = cenv.g
 
     match overallTy with
-    | MustConvertTo (_, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions ->
+    | MustConvertTo (isMethodArg, reqdTy) when g.langVersion.SupportsFeature LanguageFeature.AdditionalTypeDirectedConversions || (g.langVersion.SupportsFeature LanguageFeature.NullableOptionalInterop && isMethodArg) ->
         let tcVal = LightweightTcValForUsingInBuildMethodCall g
         AdjustExprForTypeDirectedConversions tcVal g cenv.amap cenv.infoReader env.AccessRights reqdTy actualTy m expr
     | _ ->
@@ -7019,7 +7026,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
     let newFormatMethod =
         match GetIntrinsicConstructorInfosOfType cenv.infoReader m formatTy |> List.filter (fun minfo -> minfo.NumArgs = [3]) with
         | [ctorInfo] -> ctorInfo
-        | _ -> languageFeatureNotSupportedInLibraryError g.langVersion LanguageFeature.StringInterpolation m
+        | _ -> languageFeatureNotSupportedInLibraryError LanguageFeature.StringInterpolation m
 
     let stringKind =
         // If this is an interpolated string then try to force the result to be a string
@@ -7054,7 +7061,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
 
             match createMethodOpt with
             | Some createMethod -> Choice2Of2 createMethod
-            | None -> languageFeatureNotSupportedInLibraryError g.langVersion LanguageFeature.StringInterpolation m
+            | None -> languageFeatureNotSupportedInLibraryError LanguageFeature.StringInterpolation m
 
         // ... or if that fails then may be a PrintfFormat by a type-directed rule....
         elif not (isObjTy g overallTy.Commit) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy.Commit formatTy then
@@ -7129,7 +7136,9 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
             let str = mkString g m printfFormatString
 
             if isString then
-                str, tpenv
+                TcPropagatingExprLeafThenConvert cenv overallTy g.string_ty env (* true *) m (fun () ->
+                    str, tpenv
+                )
             else
                 mkCallNewFormat g m printerTy printerArgTy printerResidueTy printerResultTy printerTupleTy str, tpenv
         else
@@ -8256,8 +8265,9 @@ and TcUnionCaseOrExnCaseOrActivePatternResultItemThen (cenv: cenv) overallTy env
                 // first: put all positional arguments
                 let mutable currentIndex = 0
                 for arg in unnamedArgs do
-                    fittedArgs[currentIndex] <- arg
-                    currentIndex <- currentIndex + 1
+                    if currentIndex < fittedArgs.Length then
+                        fittedArgs[currentIndex] <- arg
+                        currentIndex <- currentIndex + 1
 
                 let SEEN_NAMED_ARGUMENT = -1
 
@@ -8919,8 +8929,11 @@ and TcLookupItemThen cenv overallTy env tpenv mObjExpr objExpr objExprTy delayed
         // To get better warnings we special case some of the few known mutate-a-struct method names
         let mutates = (if methodName = "MoveNext" || methodName = "GetNextArg" then DefinitelyMutates else PossiblyMutates)
 
-        // Check if we have properties with "init-only" setters, which we try to call after init is done.
-        CheckInitProperties g (List.head minfos) methodName mItem
+        match minfos with
+        | minfo :: _ ->
+            // Check if we have properties with "init-only" setters, which we try to call after init is done.
+            CheckInitProperties g minfo methodName mItem
+        | _ -> ()
 
 #if !NO_TYPEPROVIDERS
         match TryTcMethodAppToStaticConstantArgs cenv env tpenv (minfos, tyArgsOpt, mExprAndItem, mItem) with
@@ -9702,12 +9715,9 @@ and TcMethodApplication
             let expr = mkLetsBind mMethExpr outArgTmpBinds expr
             expr, tyOfExpr g expr
 
-    // Subsumption or conversion to return type
-    let callExpr2b = TcAdjustExprForTypeDirectedConversions cenv returnTy exprTy env mMethExpr callExpr2
-
     // Handle post-hoc property assignments
-    let setterExprPrebinders, callExpr3 =
-        let expr = callExpr2b
+    let setterExprPrebinders, callExpr2b =
+        let expr = callExpr2
 
         CheckRequiredProperties g env cenv finalCalledMethInfo finalAssignedItemSetters mMethExpr
 
@@ -9728,6 +9738,9 @@ and TcMethodApplication
             // now put them together
             let expr = mkCompGenLet mMethExpr objv expr (mkCompGenSequential mMethExpr propSetExpr objExpr)
             setterExprPrebinders, expr
+
+    // Subsumption or conversion to return type
+    let callExpr3 = TcAdjustExprForTypeDirectedConversions cenv returnTy exprTy env mMethExpr callExpr2b
 
     // Build the lambda expression if any, if the method is used as a first-class value
     let callExpr4 =

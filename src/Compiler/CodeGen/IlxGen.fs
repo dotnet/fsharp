@@ -288,6 +288,9 @@ type IlxGenOptions =
         /// storage, even though 'it' is not logically mutable
         isInteractiveItExpr: bool
 
+        /// Suppress ToString emit
+        useReflectionFreeCodeGen: bool
+
         /// Whenever possible, use callvirt instead of call
         alwaysCallVirt: bool
     }
@@ -6801,7 +6804,15 @@ and GetIlxClosureFreeVars cenv m (thisVars: ValRef list) boxity eenvouter takenN
         NestedTypeRefForCompLoc eenvouter.cloc cloName
 
     // Collect the free variables of the closure
-    let cloFreeVarResults = freeInExpr (CollectTyparsAndLocalsWithStackGuard()) expr
+    let cloFreeVarResults =
+        let opts = CollectTyparsAndLocalsWithStackGuard()
+
+        let opts =
+            match eenvouter.tyenv.TemplateReplacement with
+            | None -> opts
+            | Some (tcref, _, typars, _) -> opts.WithTemplateReplacement(tyconRefEq g tcref, typars)
+
+        freeInExpr opts expr
 
     // Partition the free variables when some can be accessed from places besides the immediate environment
     // Also filter out the current value being bound, if any, as it is available from the "this"
@@ -10449,64 +10460,65 @@ and GenPrintingMethod cenv eenv methName ilThisTy m =
     let g = cenv.g
 
     [
-        match (eenv.valsInScope.TryFind g.sprintf_vref.Deref, eenv.valsInScope.TryFind g.new_format_vref.Deref) with
-        | Some (Lazy (Method (_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))),
-          Some (Lazy (Method (_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
-            // The type returned by the 'sprintf' call
-            let funcTy = EraseClosures.mkILFuncTy cenv.ilxPubCloEnv ilThisTy g.ilg.typ_String
+        if not g.useReflectionFreeCodeGen then
+            match (eenv.valsInScope.TryFind g.sprintf_vref.Deref, eenv.valsInScope.TryFind g.new_format_vref.Deref) with
+            | Some (Lazy (Method (_, _, sprintfMethSpec, _, _, _, _, _, _, _, _, _))),
+              Some (Lazy (Method (_, _, newFormatMethSpec, _, _, _, _, _, _, _, _, _))) ->
+                // The type returned by the 'sprintf' call
+                let funcTy = EraseClosures.mkILFuncTy cenv.ilxPubCloEnv ilThisTy g.ilg.typ_String
 
-            // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
-            let newFormatMethSpec =
-                mkILMethSpec (
-                    newFormatMethSpec.MethodRef,
-                    AsObject,
-                    [ // 'T -> string'
-                        funcTy
-                        // rest follow from 'StringFormat<T>'
-                        GenUnitTy cenv eenv m
-                        g.ilg.typ_String
-                        g.ilg.typ_String
-                        ilThisTy
-                    ],
-                    []
-                )
+                // Give the instantiation of the printf format object, i.e. a Format`5 object compatible with StringFormat<ilThisTy>
+                let newFormatMethSpec =
+                    mkILMethSpec (
+                        newFormatMethSpec.MethodRef,
+                        AsObject,
+                        [ // 'T -> string'
+                            funcTy
+                            // rest follow from 'StringFormat<T>'
+                            GenUnitTy cenv eenv m
+                            g.ilg.typ_String
+                            g.ilg.typ_String
+                            ilThisTy
+                        ],
+                        []
+                    )
 
-            // Instantiate with our own type
-            let sprintfMethSpec =
-                mkILMethSpec (sprintfMethSpec.MethodRef, AsObject, [], [ funcTy ])
+                // Instantiate with our own type
+                let sprintfMethSpec =
+                    mkILMethSpec (sprintfMethSpec.MethodRef, AsObject, [], [ funcTy ])
 
-            // Here's the body of the method. Call printf, then invoke the function it returns
-            let callInstrs =
-                EraseClosures.mkCallFunc
-                    cenv.ilxPubCloEnv
-                    (fun _ -> 0us)
-                    eenv.tyenv.Count
-                    Normalcall
-                    (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
+                // Here's the body of the method. Call printf, then invoke the function it returns
+                let callInstrs =
+                    EraseClosures.mkCallFunc
+                        cenv.ilxPubCloEnv
+                        (fun _ -> 0us)
+                        eenv.tyenv.Count
+                        Normalcall
+                        (Apps_app(ilThisTy, Apps_done g.ilg.typ_String))
 
-            let ilInstrs =
-                [ // load the hardwired format string
-                    I_ldstr "%+A"
-                    // make the printf format object
-                    mkNormalNewobj newFormatMethSpec
-                    // call sprintf
-                    mkNormalCall sprintfMethSpec
-                    // call the function returned by sprintf
-                    mkLdarg0
-                    if ilThisTy.Boxity = ILBoxity.AsValue then
-                        mkNormalLdobj ilThisTy
-                    yield! callInstrs
-                ]
+                let ilInstrs =
+                    [ // load the hardwired format string
+                        I_ldstr "%+A"
+                        // make the printf format object
+                        mkNormalNewobj newFormatMethSpec
+                        // call sprintf
+                        mkNormalCall sprintfMethSpec
+                        // call the function returned by sprintf
+                        mkLdarg0
+                        if ilThisTy.Boxity = ILBoxity.AsValue then
+                            mkNormalLdobj ilThisTy
+                        yield! callInstrs
+                    ]
 
-            let ilMethodBody =
-                mkMethodBody (true, [], 2, nonBranchingInstrsToCode ilInstrs, None, eenv.imports)
+                let ilMethodBody =
+                    mkMethodBody (true, [], 2, nonBranchingInstrsToCode ilInstrs, None, eenv.imports)
 
-            let mdef =
-                mkILNonGenericVirtualInstanceMethod (methName, ILMemberAccess.Public, [], mkILReturn g.ilg.typ_String, ilMethodBody)
+                let mdef =
+                    mkILNonGenericVirtualInstanceMethod (methName, ILMemberAccess.Public, [], mkILReturn g.ilg.typ_String, ilMethodBody)
 
-            let mdef = mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ])
-            yield mdef
-        | _ -> ()
+                let mdef = mdef.With(customAttrs = mkILCustomAttrs [ g.CompilerGeneratedAttribute ])
+                yield mdef
+            | _ -> ()
     ]
 
 and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
@@ -10646,6 +10658,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
             let tyconRepr = tycon.TypeReprInfo
 
+            let reprAccess = ComputeMemberAccess hiddenRepr
+
             // DebugDisplayAttribute gets copied to the subtypes generated as part of DU compilation
             let debugDisplayAttrs, normalAttrs =
                 tycon.Attribs
@@ -10656,7 +10670,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                 |> List.partition (fun a -> IsSecurityAttribute g cenv.amap cenv.casApplied a m)
 
             let generateDebugDisplayAttribute =
-                not g.compilingFSharpCore && tycon.IsUnionTycon && isNil debugDisplayAttrs
+                not g.useReflectionFreeCodeGen
+                && not g.compilingFSharpCore
+                && tycon.IsUnionTycon
+                && isNil debugDisplayAttrs
 
             let generateDebugProxies =
                 not (tyconRefEq g tcref g.unit_tcr_canon)
@@ -10686,8 +10703,6 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                         |> GenAttrs cenv eenv
                     yield! ilDebugDisplayAttributes
                 ]
-
-            let reprAccess = ComputeMemberAccess hiddenRepr
 
             let ilTypeDefKind =
                 match tyconRepr with
@@ -11537,6 +11552,11 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
     match List.tryFrontAndBack implFiles with
     | None -> ()
     | Some (firstImplFiles, lastImplFile) ->
+
+        // Generate the assembly sequentially, implementation file by implementation file.
+        //
+        // NOTE: In theory this could be done in parallel, except for the presence of linear
+        // state in the AssemblyBuilder
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
         let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
 
@@ -11611,7 +11631,7 @@ type IlxGenResults =
 
 let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization implFiles, assemAttribs, moduleAttribs) =
 
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
+    use _ = UseBuildPhase BuildPhase.IlxGen
     let g = cenv.g
 
     // Generate the implementations into the mgbuf
@@ -11856,7 +11876,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
             intraAssemblyInfo = intraAssemblyInfo
             optionsOpt = None
             optimizeDuringCodeGen = (fun _flag expr -> expr)
-            stackGuard = StackGuard(IlxGenStackGuardDepth)
+            stackGuard = StackGuard(IlxGenStackGuardDepth, "IlxAssemblyGenerator")
         }
 
     /// Register a set of referenced assemblies with the ILX code generator

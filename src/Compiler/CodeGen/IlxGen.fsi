@@ -54,6 +54,9 @@ type internal IlxGenOptions =
         /// storage, even though 'it' is not logically mutable
         isInteractiveItExpr: bool
 
+        /// Suppress ToString emit
+        useReflectionFreeCodeGen: bool
+
         /// Indicates that, whenever possible, use callvirt instead of call
         alwaysCallVirt: bool
     }

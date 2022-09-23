@@ -16,7 +16,7 @@ exception Foo with
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace(decls = [
         SynModuleDecl.Exception(
             exnDefn=SynExceptionDefn(withKeyword = Some mWithKeyword)
         )

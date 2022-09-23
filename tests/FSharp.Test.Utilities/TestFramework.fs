@@ -41,9 +41,10 @@ module Commands =
 
     // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
     // returns exit code, stdio and stderr as string arrays
-    let executeProcess pathToExe arguments workingDir timeout =
+    let executeProcess pathToExe arguments workingDir (timeout:int) =
         match pathToExe with
         | Some path ->
+            let commandLine = ResizeArray()
             let errorsList = ResizeArray()
             let outputList = ResizeArray()
             let mutable errorslock = obj
@@ -55,6 +56,9 @@ module Commands =
             let errorDataReceived (message: string) =
                 if not (isNull message) then
                     lock errorslock (fun () -> errorsList.Add(message))
+
+            commandLine.Add $"cd {workingDir}"
+            commandLine.Add $"{path} {arguments} /bl"
 
             let psi = ProcessStartInfo()
             psi.FileName <- path
@@ -94,6 +98,7 @@ module Commands =
                     workingDir
 
             lock gate (fun () ->
+                File.WriteAllLines(Path.Combine(workingDir', "commandline.txt"), commandLine)
                 File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
                 File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
             )
@@ -225,6 +230,7 @@ type TestConfig =
       FSIANYCPU : string
       FSCANYCPU : string
 #endif
+      DOTNETFSCCOMPILERPATH : string
       FSI_FOR_SCRIPTS : string
       FSharpBuild : string
       FSharpCompilerInteractiveSettings : string
@@ -293,14 +299,15 @@ let config configurationName envVars =
     let fsharpCoreArchitecture = "netstandard2.0"
     let fsharpBuildArchitecture = "netstandard2.0"
     let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
+    let dotnetArchitecture = "net7.0"
 #if NET472
     let fscArchitecture = "net472"
     let fsiArchitecture = "net472"
-    let peverifyArchitecture = "net472"
+    //let peverifyArchitecture = "net472"
 #else
-    let fscArchitecture = "net6.0"
-    let fsiArchitecture = "net6.0"
-    let peverifyArchitecture = "net6.0"
+    let fscArchitecture = dotnetArchitecture
+    let fsiArchitecture = dotnetArchitecture
+    //let peverifyArchitecture = dotnetArchitecture
 #endif
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
     let artifactsPath = repoRoot ++ "artifacts"
@@ -322,8 +329,8 @@ let config configurationName envVars =
     let ILDASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILDASM_EXE)
     let ILASM_EXE = if operatingSystem = "win" then "ilasm.exe" else "ilasm"
     let ILASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILASM_EXE)
-    let PEVERIFY_EXE = if operatingSystem = "win" then "PEVerify.exe" elif operatingSystem = "osx" then "PEVerify.dll" else "PEVerify"
-    let PEVERIFY = requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
+    //let PEVERIFY_EXE = if operatingSystem = "win" then "PEVerify.exe" elif operatingSystem = "osx" then "PEVerify.dll" else "PEVerify"
+    let PEVERIFY = "dummy" //requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
 //    let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"
     let FSharpBuild = requireArtifact ("FSharp.Build" ++ configurationName ++ fsharpBuildArchitecture ++ "FSharp.Build.dll")
     let FSharpCompilerInteractiveSettings = requireArtifact ("FSharp.Compiler.Interactive.Settings" ++ configurationName ++ fsharpCompilerInteractiveSettingsArchitecture ++ "FSharp.Compiler.Interactive.Settings.dll")
@@ -350,7 +357,7 @@ let config configurationName envVars =
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.dll")
 #endif
     let FSCOREDLLPATH = requireArtifact ("FSharp.Core" ++ configurationName ++ fsharpCoreArchitecture ++ "FSharp.Core.dll")
-
+    let DOTNETFSCCOMPILERPATH = requireArtifact ("fsc" ++ configurationName ++ dotnetArchitecture ++ "fsc.dll")
     let defaultPlatform =
         match Is64BitOperatingSystem with
 //        | PlatformID.MacOSX, true -> "osx.10.10-x64"
@@ -372,6 +379,7 @@ let config configurationName envVars =
       FSCANYCPU = FSCANYCPU
       FSIANYCPU = FSIANYCPU
 #endif
+      DOTNETFSCCOMPILERPATH = DOTNETFSCCOMPILERPATH
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
       FSharpBuild = FSharpBuild
       FSharpCompilerInteractiveSettings = FSharpCompilerInteractiveSettings
@@ -610,8 +618,8 @@ let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
 let vbc cfg arg = Printf.ksprintf (Commands.vbc (exec cfg) cfg.VBC) arg
 let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
 let ilasm cfg arg = Printf.ksprintf (Commands.ilasm (exec cfg) cfg.ILASM) arg
-let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
-let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
+let peverify _cfg _test = printfn "PEVerify is disabled, need to migrate to ILVerify instead, see https://github.com/dotnet/fsharp/issues/13854" //Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
+let peverifyWithArgs _cfg _args _test = printfn "PEVerify is disabled, need to migrate to ILVerify instead, see https://github.com/dotnet/fsharp/issues/13854" //Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
 #if !NETCOREAPP
 let fsiAnyCpu cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSIANYCPU)

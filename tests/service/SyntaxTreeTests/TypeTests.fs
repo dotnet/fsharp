@@ -14,7 +14,7 @@ type Foo = One = 0x00000001
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(typeDefns = [
             SynTypeDefn.SynTypeDefn(typeRepr =
                 SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Enum(cases = [ SynEnumCase.SynEnumCase(valueRange = r) ])))])
@@ -33,7 +33,7 @@ type Foo =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(typeDefns = [
             SynTypeDefn.SynTypeDefn(typeRepr =
                 SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Enum(cases = [ SynEnumCase.SynEnumCase(valueRange = r1)
@@ -54,7 +54,7 @@ type Bar =
     end"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(typeDefns = [t]) as types
     ]) ])) ->
         assertRange (2, 0) (5, 7) types.Range
@@ -77,7 +77,7 @@ and [<CustomEquality ; NoComparison>] Bar<'context, 'a> =
     }"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(typeDefns = [t1;t2]) as types
     ]) ])) ->
         assertRange (2, 0) (10, 5) types.Range
@@ -94,7 +94,7 @@ type X = delegate of string -> string
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(kind = SynTypeDefnKind.Delegate _)
                                       trivia={ EqualsRange = Some mEquals }) ]
@@ -114,7 +114,7 @@ type Foobar () =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(kind = SynTypeDefnKind.Class)
                                       trivia={ EqualsRange = Some mEquals }) ]
@@ -134,7 +134,7 @@ type Bear =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(simpleRepr =
                                           SynTypeDefnSimpleRepr.Enum(cases = [
@@ -160,7 +160,7 @@ type Shape =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Union _)
                                       trivia={ EqualsRange = Some mEquals }) ]
@@ -181,7 +181,7 @@ type Person(name : string, age : int) =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_ ; SynMemberDefn.AutoProperty(equalsRange = mEquals)])) ]
         )
@@ -201,7 +201,7 @@ type Foo =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr=SynTypeDefnRepr.Simple(simpleRepr= SynTypeDefnSimpleRepr.Record _)
                                       trivia={ WithKeyword = Some mWithKeyword }) ]
@@ -220,7 +220,7 @@ type Int32 with
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(kind=SynTypeDefnKind.Augmentation mWithKeyword)) ]
         )
@@ -240,7 +240,7 @@ type Foo() =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members=[ SynMemberDefn.ImplicitCtor _
                                                                                        SynMemberDefn.Interface(withKeyword=Some mWithKeyword)
@@ -261,7 +261,7 @@ type Foo() =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_
                                                                                         SynMemberDefn.AutoProperty(withKeyword=Some mWith)
@@ -281,7 +281,7 @@ type Foo() =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_
                                                                                         SynMemberDefn.AbstractSlot(slotSig=SynValSig(trivia = { WithKeyword = Some mWith }))])) ]
@@ -301,7 +301,7 @@ type Foo() =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr =
                 SynTypeDefnRepr.ObjectModel(members=[
@@ -323,7 +323,7 @@ type Foo() =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr =
                 SynTypeDefnRepr.ObjectModel(members=[
@@ -347,7 +347,7 @@ type Foo() =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr =
                 SynTypeDefnRepr.ObjectModel(members=[
@@ -371,7 +371,7 @@ and C = D
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(trivia={ TypeKeyword = Some mType })
                           SynTypeDefn(trivia={ TypeKeyword = None }) ]
@@ -391,7 +391,7 @@ type A = B
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(trivia={ TypeKeyword = Some mType }) ]
         )
@@ -411,7 +411,7 @@ type Foo =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
                 SynMemberDefn.GetSetMember(Some _, Some _, m, { WithKeyword = mWith
@@ -438,7 +438,7 @@ type A() =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
                 SynMemberDefn.ImplicitCtor _
@@ -473,7 +473,7 @@ let ``SynType.Fun has range of arrow`` () =
  """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile (ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(typeDefns = [
                 SynTypeDefn(typeRepr = SynTypeDefnRepr.Simple(simpleRepr =
@@ -483,4 +483,114 @@ let ``SynType.Fun has range of arrow`` () =
         ])
     ])) ->
         assertRange (2, 21) (2, 23) mArrow
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``SynType.Tuple with struct`` () =
+    let parseResults =
+        getParseResults
+            """
+let _: struct (int * int) = ()
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput(contents = [
+        SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding(returnInfo = Some (SynBindingReturnInfo(typeName =
+                SynType.Tuple(true, [ SynTupleTypeSegment.Type _ ; SynTupleTypeSegment.Star _ ; SynTupleTypeSegment.Type _ ], mTuple)))) ])
+            ])
+        ])
+     ) ->
+        assertRange (2, 7) (2, 25) mTuple
+        
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``SynType.Tuple with struct, recovery`` () =
+    let parseResults =
+        getParseResults
+            """
+let _: struct (int * int = ()
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput(contents = [
+        SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding(returnInfo = Some (SynBindingReturnInfo(typeName =
+                SynType.Tuple(true, [ SynTupleTypeSegment.Type _ ; SynTupleTypeSegment.Star _ ; SynTupleTypeSegment.Type _ ], mTuple)))) ])
+            ])
+        ])
+     ) ->
+        assertRange (2, 7) (2, 24) mTuple
+        
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``Named parameters in delegate type`` () =
+    let parseResults =
+        getParseResults
+             """
+type Foo = delegate of a: A * b: B -> c:C -> D
+ """
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput(contents = [
+        SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [
+                SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(kind =
+                    SynTypeDefnKind.Delegate(signature = SynType.Fun(
+                        argType =
+                            SynType.Tuple(path = [
+                                SynTupleTypeSegment.Type(SynType.SignatureParameter(id = Some a))
+                                SynTupleTypeSegment.Star _
+                                SynTupleTypeSegment.Type(SynType.SignatureParameter(id = Some b))
+                            ])
+                        returnType =
+                            SynType.Fun(
+                                argType = SynType.SignatureParameter(id = Some c)
+                                returnType = SynType.LongIdent _
+                            )
+                    ))))
+            ])
+        ])
+    ])) ->
+        Assert.AreEqual("a", a.idText)
+        Assert.AreEqual("b", b.idText)
+        Assert.AreEqual("c", c.idText)
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``Attributes in optional named member parameter`` () =
+    let parseResults =
+        getParseResults
+             """
+type X =
+    abstract member Y: [<Foo; Bar>] ?a: A -> B
+ """
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput(contents = [
+        SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [
+                SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(
+                    members = [
+                        SynMemberDefn.AbstractSlot(slotSig = SynValSig(synType =
+                            SynType.Fun(
+                                argType = SynType.SignatureParameter(
+                                    [ { Attributes = [ _ ; _ ] } ],
+                                    true,
+                                    Some a,
+                                    SynType.LongIdent _,
+                                    m
+                                )
+                                returnType = SynType.LongIdent _
+                            )
+                        ))
+                    ]
+                ))
+            ])
+        ])
+    ])) ->
+        Assert.AreEqual("a", a.idText)
+        assertRange (3, 23) (3, 41) m
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

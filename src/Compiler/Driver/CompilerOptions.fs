@@ -5,6 +5,7 @@
 module internal FSharp.Compiler.CompilerOptions
 
 open System
+open System.Diagnostics
 open System.IO
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -22,6 +23,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.DiagnosticsLogger
 
 open Internal.Utilities
+open System.Text
 
 module Attributes =
     open System.Runtime.CompilerServices
@@ -59,7 +61,7 @@ type OptionSpec =
     | OptionStringList of (string -> unit)
     | OptionStringListSwitch of (string -> OptionSwitch -> unit)
     | OptionUnit of (unit -> unit)
-    | OptionHelp of (CompilerOptionBlock list -> unit) // like OptionUnit, but given the "options"
+    | OptionConsoleOnly of (CompilerOptionBlock list -> unit)
     | OptionGeneral of (string list -> bool) * (string list -> string list) // Applies? * (ApplyReturningResidualArgs)
 
 and CompilerOption =
@@ -95,7 +97,7 @@ let compilerOptionUsage (CompilerOption (s, tag, spec, _, _)) =
     | OptionUnit _
     | OptionSet _
     | OptionClear _
-    | OptionHelp _ -> sprintf "--%s" s
+    | OptionConsoleOnly _ -> sprintf "--%s" s
     | OptionStringList _ -> sprintf "--%s:%s" s tag
     | OptionIntList _ -> sprintf "--%s:%s" s tag
     | OptionSwitch _ -> sprintf "--%s[+|-]" s
@@ -111,37 +113,45 @@ let compilerOptionUsage (CompilerOption (s, tag, spec, _, _)) =
         else
             sprintf "%s:%s" s tag (* still being decided *)
 
-let PrintCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOption) =
+let nl = Environment.NewLine
+
+let getCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOption) width =
+    let sb = StringBuilder()
+
     let flagWidth = 42 // fixed width for printing of flags, e.g. --debug:{full|pdbonly|portable|embedded}
     let defaultLineWidth = 80 // the fallback width
 
     let lineWidth =
-        try
-            Console.BufferWidth
-        with e ->
-            defaultLineWidth
+        match width with
+        | None ->
+            try
+                Console.BufferWidth
+            with _ ->
+                defaultLineWidth
+        | Some w -> w
 
     let lineWidth =
         if lineWidth = 0 then
             defaultLineWidth
         else
-            lineWidth (* Have seen BufferWidth=0 on Linux/Mono *)
+            lineWidth (* Have seen BufferWidth=0 on Linux/Mono Coreclr for sure *)
+
     // Lines have this form: <flagWidth><space><description>
     //   flagWidth chars - for flags description or padding on continuation lines.
     //   single space    - space.
     //   description     - words upto but excluding the final character of the line.
-    printf "%-40s" (compilerOptionUsage compilerOption)
+    let _ = sb.Append $"{compilerOptionUsage compilerOption, -40}"
 
     let printWord column (word: string) =
         // Have printed upto column.
         // Now print the next word including any preceding whitespace.
         // Returns the column printed to (suited to folding).
         if column + 1 (*space*) + word.Length >= lineWidth then // NOTE: "equality" ensures final character of the line is never printed
-            printfn "" (* newline *)
-            printf "%-40s %s" "" (*<--flags*) word
+            let _ = sb.Append $"{nl}"
+            let _ = sb.Append $"{String.Empty, -40} {word}"
             flagWidth + 1 + word.Length
         else
-            printf " %s" word
+            let _ = sb.Append $" {word}"
             column + 1 + word.Length
 
     let words =
@@ -150,16 +160,19 @@ let PrintCompilerOption (CompilerOption (_s, _tag, _spec, _, help) as compilerOp
         | Some s -> s.Split [| ' ' |]
 
     let _finalColumn = Array.fold printWord flagWidth words
-    printfn "" (* newline *)
+    let _ = sb.Append $"{nl}"
+    sb.ToString()
 
-let PrintPublicOptions (heading, opts) =
-    if not (isNil opts) then
-        printfn ""
-        printfn ""
-        printfn "\t\t%s" heading
-        List.iter PrintCompilerOption opts
+let getPublicOptions heading opts width =
+    match opts with
+    | [] -> ""
+    | _ ->
+        $"{nl}{nl}                {heading}{nl}"
+        + (opts |> List.map (fun t -> getCompilerOption t width) |> String.concat "")
 
-let PrintCompilerOptionBlocks blocks =
+let GetCompilerOptionBlocks blocks width =
+    let sb = new StringBuilder()
+
     let publicBlocks =
         blocks
         |> List.choose (function
@@ -173,10 +186,11 @@ let PrintCompilerOptionBlocks blocks =
             let headingOptions =
                 publicBlocks |> List.filter (fun (h2, _) -> heading = h2) |> List.collect snd
 
-            PrintPublicOptions(heading, headingOptions)
+            let _ = sb.Append(getPublicOptions heading headingOptions width)
             Set.add heading doneHeadings
 
     List.fold consider Set.empty publicBlocks |> ignore<Set<string>>
+    sb.ToString()
 
 (* For QA *)
 let dumpCompilerOption prefix (CompilerOption (str, _, spec, _, _)) =
@@ -186,7 +200,7 @@ let dumpCompilerOption prefix (CompilerOption (str, _, spec, _, _)) =
     | OptionUnit _ -> printf "OptionUnit"
     | OptionSet _ -> printf "OptionSet"
     | OptionClear _ -> printf "OptionClear"
-    | OptionHelp _ -> printf "OptionHelp"
+    | OptionConsoleOnly _ -> printf "OptionConsoleOnly"
     | OptionStringList _ -> printf "OptionStringList"
     | OptionIntList _ -> printf "OptionIntList"
     | OptionSwitch _ -> printf "OptionSwitch"
@@ -243,35 +257,44 @@ module ResponseFile =
             Choice2Of2 e
 
 let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: CompilerOptionBlock list, args) =
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+    use _ = UseBuildPhase BuildPhase.Parameter
 
     let specs = List.collect GetOptionsOfBlock blocks
 
-    // returns a tuple - the option token, the option argument string
-    let parseOption (s: string) =
-        // grab the option token
-        let opts = s.Split([| ':' |])
-        let mutable opt = opts[0]
+    // returns a tuple - the option minus switchchars, the option tokenand  the option argument string
+    let parseOption (option: string) =
 
-        if opt = "" then
-            ()
-        // if it doesn't start with a '-' or '/', reject outright
-        elif opt[0] <> '-' && opt[0] <> '/' then
-            opt <- ""
-        elif opt <> "--" then
-            // is it an abbreviated or MSFT-style option?
-            // if so, strip the first character and move on with your life
-            if opt.Length = 2 || isSlashOpt opt then
-                opt <- opt[1..]
-            // else, it should be a non-abbreviated option starting with "--"
-            elif opt.Length > 3 && opt.StartsWithOrdinal("--") then
-                opt <- opt[2..]
+        // Get option arguments, I.e everything following first:
+        let opts = option.Split([| ':' |])
+        let optArgs = String.Join(":", opts[1..])
+
+        let opt =
+            if option = "" then
+                ""
+            // if it doesn't start with a '-' or '/', reject outright
+            elif option[0] <> '-' && option[0] <> '/' then
+                ""
+            elif option <> "--" then
+                // is it an abbreviated or MSFT-style option?
+                // if so, strip the first character and move on with your life
+                // Wierdly a -- option can't have only a 1 character name
+                if option.Length = 2 || isSlashOpt option then
+                    option[1..]
+                elif option.Length >= 3 && option[2] = ':' then
+                    option[1..]
+                elif option.StartsWithOrdinal("--") then
+                    match option.Length with
+                    | l when l >= 4 && option[3] = ':' -> ""
+                    | l when l > 3 -> option[2..]
+                    | _ -> ""
+                else
+                    ""
             else
-                opt <- ""
+                option
 
-        // get the argument string
-        let optArgs = if opts.Length > 1 then String.Join(":", opts[1..]) else ""
-        opt, optArgs
+        // grab the option token
+        let token = opt.Split([| ':' |])[0]
+        opt, token, optArgs
 
     let getOptionArg compilerOption (argString: string) =
         if argString = "" then
@@ -338,7 +361,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
             processArg (responseFileOptions @ t)
         | opt :: t ->
-            let optToken, argString = parseOption opt
+            let option, optToken, argString = parseOption opt
 
             let reportDeprecatedOption errOpt =
                 match errOpt with
@@ -347,7 +370,7 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 
             let rec attempt l =
                 match l with
-                | CompilerOption (s, _, OptionHelp f, d, _) :: _ when optToken = s && argString = "" ->
+                | CompilerOption (s, _, OptionConsoleOnly f, d, _) :: _ when option = s ->
                     reportDeprecatedOption d
                     f blocks
                     t
@@ -696,7 +719,7 @@ let tagAlgorithm = "{SHA1|SHA256}"
 let tagInt = "<n>"
 let tagPathMap = "<path=sourcePath;...>"
 let tagNone = ""
-let tagLangVersionValues = "{?|version|latest|preview}"
+let tagLangVersionValues = "{version|latest|preview}"
 
 // PrintOptionInfo
 //----------------
@@ -923,6 +946,14 @@ let outputFileFlagsFsc (tcConfigB: TcConfigBuilder) =
         )
 
         CompilerOption(
+            "compressmetadata",
+            tagNone,
+            OptionSwitch(fun switch -> tcConfigB.compressMetadata <- switch = OptionSwitch.On),
+            None,
+            Some(FSComp.SR.optsCompressMetadata ())
+        )
+
+        CompilerOption(
             "nooptimizationdata",
             tagNone,
             OptionUnit(fun () -> tcConfigB.onlyEssentialOptimizationData <- true),
@@ -1054,6 +1085,13 @@ let codeGenerationFlags isFsi (tcConfigB: TcConfigBuilder) =
                 Some(FSComp.SR.optsCrossoptimize ())
             )
 
+            CompilerOption(
+                "reflectionfree",
+                tagNone,
+                OptionUnit(fun () -> tcConfigB.useReflectionFreeCodeGen <- true),
+                None,
+                Some(FSComp.SR.optsReflectionFree ())
+            )
         ]
 
     if isFsi then debug @ codegen else debug @ embed @ codegen
@@ -1075,34 +1113,35 @@ let mlCompatibilityFlag (tcConfigB: TcConfigBuilder) =
         Some(FSComp.SR.optsMlcompatibility ())
     )
 
-/// LanguageVersion management
-let setLanguageVersion specifiedVersion =
+let GetLanguageVersions () =
+    seq {
+        FSComp.SR.optsSupportedLangVersions ()
+        yield! LanguageVersion.ValidOptions
+        yield! LanguageVersion.ValidVersions
+    }
+    |> String.concat Environment.NewLine
 
-    let languageVersion = LanguageVersion(specifiedVersion)
-
-    let dumpAllowedValues () =
-        printfn "%s" (FSComp.SR.optsSupportedLangVersions ())
-
-        for v in languageVersion.ValidOptions do
-            printfn "%s" v
-
-        for v in languageVersion.ValidVersions do
-            printfn "%s" v
-
-        exit 0
-
-    if specifiedVersion = "?" then
-        dumpAllowedValues ()
-    elif specifiedVersion.ToUpperInvariant() = "PREVIEW" then
+let setLanguageVersion (specifiedVersion: string) =
+    if specifiedVersion.ToUpperInvariant() = "PREVIEW" then
         ()
-    elif not (languageVersion.ContainsVersion specifiedVersion) then
+    elif not (LanguageVersion.ContainsVersion specifiedVersion) then
         error (Error(FSComp.SR.optsUnrecognizedLanguageVersion specifiedVersion, rangeCmdArgs))
 
-    languageVersion
+    LanguageVersion(specifiedVersion)
 
 let languageFlags tcConfigB =
     [
         // -langversion:?                Display the allowed values for language version
+        CompilerOption(
+            "langversion:?",
+            tagNone,
+            OptionConsoleOnly(fun _ ->
+                Console.Write(GetLanguageVersions())
+                tcConfigB.exiter.Exit 0),
+            None,
+            Some(FSComp.SR.optsGetLangVersions ())
+        )
+
         // -langversion:<string>         Specify language version such as
         //                               'default' (latest major version), or
         //                               'latest' (latest version, including minor versions),
@@ -1113,7 +1152,7 @@ let languageFlags tcConfigB =
             tagLangVersionValues,
             OptionString(fun switch -> tcConfigB.langVersion <- setLanguageVersion (switch)),
             None,
-            Some(FSComp.SR.optsLangVersion ())
+            Some(FSComp.SR.optsSetLangVersion ())
         )
 
         CompilerOption(
@@ -1348,6 +1387,7 @@ let testFlag tcConfigB =
             | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
             | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
             | "ParallelOff" -> tcConfigB.concurrentBuild <- false
+            | "ParallelCheckingWithSignatureFilesOn" -> tcConfigB.parallelCheckingWithSignatureFiles <- true
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
@@ -1436,6 +1476,14 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             tagNone,
             OptionUnit(fun () -> tcConfigB.pause <- true),
             Some(InternalCommandLineOption("--pause", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
+            "bufferwidth",
+            tagNone,
+            OptionInt((fun v -> tcConfigB.bufferWidth <- Some v)),
+            Some(InternalCommandLineOption("--bufferWidth", rangeCmdArgs)),
             None
         )
 
@@ -1965,31 +2013,47 @@ let deprecatedFlagsFsc tcConfigB =
 // OptionBlock: Miscellaneous options
 //-----------------------------------
 
-let DisplayBannerText tcConfigB =
+let GetBannerText tcConfigB =
     if tcConfigB.showBanner then
-        (printfn "%s" tcConfigB.productNameForBannerText
-         printfn "%s" (FSComp.SR.optsCopyright ()))
+        $"{tcConfigB.productNameForBannerText}{nl}"
+        + $"{FSComp.SR.optsCopyright ()}{nl}"
+    else
+        ""
 
 /// FSC only help. (FSI has it's own help function).
-let displayHelpFsc tcConfigB (blocks: CompilerOptionBlock list) =
-    DisplayBannerText tcConfigB
-    PrintCompilerOptionBlocks blocks
-    exit 0
+let GetHelpFsc tcConfigB (blocks: CompilerOptionBlock list) =
 
-let displayVersion tcConfigB =
-    printfn "%s" tcConfigB.productNameForBannerText
-    exit 0
+    GetBannerText tcConfigB + GetCompilerOptionBlocks blocks tcConfigB.bufferWidth
+
+let GetVersion tcConfigB =
+    $"{tcConfigB.productNameForBannerText}{nl}"
 
 let miscFlagsBoth tcConfigB =
     [
         CompilerOption("nologo", tagNone, OptionUnit(fun () -> tcConfigB.showBanner <- false), None, Some(FSComp.SR.optsNologo ()))
-        CompilerOption("version", tagNone, OptionUnit(fun () -> displayVersion tcConfigB), None, Some(FSComp.SR.optsVersion ()))
+        CompilerOption(
+            "version",
+            tagNone,
+            OptionConsoleOnly(fun _ ->
+                Console.Write(GetVersion tcConfigB)
+                tcConfigB.exiter.Exit 0),
+            None,
+            Some(FSComp.SR.optsVersion ())
+        )
     ]
 
 let miscFlagsFsc tcConfigB =
     miscFlagsBoth tcConfigB
     @ [
-        CompilerOption("help", tagNone, OptionHelp(fun blocks -> displayHelpFsc tcConfigB blocks), None, Some(FSComp.SR.optsHelp ()))
+        CompilerOption(
+            "help",
+            tagNone,
+            OptionConsoleOnly(fun blocks ->
+                Console.Write(GetHelpFsc tcConfigB blocks)
+                tcConfigB.exiter.Exit 0),
+            None,
+            Some(FSComp.SR.optsHelp ())
+        )
         CompilerOption("@<file>", tagNone, OptionUnit ignore, None, Some(FSComp.SR.optsResponseFile ()))
     ]
 
@@ -2045,7 +2109,9 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "?",
             tagNone,
-            OptionHelp(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks ->
+                Console.Write(GetHelpFsc tcConfigB blocks)
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2053,7 +2119,9 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "help",
             tagNone,
-            OptionHelp(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks ->
+                Console.Write(GetHelpFsc tcConfigB blocks)
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2061,7 +2129,9 @@ let abbreviatedFlagsFsc tcConfigB =
         CompilerOption(
             "full-help",
             tagNone,
-            OptionHelp(fun blocks -> displayHelpFsc tcConfigB blocks),
+            OptionConsoleOnly(fun blocks ->
+                Console.Write(GetHelpFsc tcConfigB blocks)
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2103,7 +2173,7 @@ let PostProcessCompilerArgs (abbrevArgs: string Set) (args: string[]) =
 
 let testingAndQAFlags _tcConfigB =
     [
-        CompilerOption("dumpAllCommandLineOptions", tagNone, OptionHelp(fun blocks -> DumpCompilerOptionBlocks blocks), None, None) // "Command line options")
+        CompilerOption("dumpAllCommandLineOptions", tagNone, OptionConsoleOnly(fun blocks -> DumpCompilerOptionBlocks blocks), None, None) // "Command line options")
     ]
 
 // Core compiler options, overview
@@ -2161,14 +2231,14 @@ let GetCoreFscCompilerOptions (tcConfigB: TcConfigBuilder) =
     ]
 
 /// The core/common options used by the F# VS Language Service.
-/// Filter out OptionHelp which does printing then exit. This is not wanted in the context of VS!!
+/// Filter out OptionConsoleOnly which do printing then exit (e.g --help or --version). This is not wanted in the context of VS!
 let GetCoreServiceCompilerOptions (tcConfigB: TcConfigBuilder) =
-    let isHelpOption =
+    let isConsoleOnlyOption =
         function
-        | CompilerOption (_, _, OptionHelp _, _, _) -> true
+        | CompilerOption (_, _, OptionConsoleOnly _, _, _) -> true
         | _ -> false
 
-    List.map (FilterCompilerOptionBlock(isHelpOption >> not)) (GetCoreFscCompilerOptions tcConfigB)
+    List.map (FilterCompilerOptionBlock(isConsoleOnlyOption >> not)) (GetCoreFscCompilerOptions tcConfigB)
 
 /// The core/common options used by fsi.exe. [note, some additional options are added in fsi.fs].
 let GetCoreFsiCompilerOptions (tcConfigB: TcConfigBuilder) =
@@ -2234,8 +2304,8 @@ let PrintWholeAssemblyImplementation (tcConfig: TcConfig) outfile header expr =
 // ReportTime
 //----------------------------------------------------------------------------
 
-let mutable tPrev = None
-let mutable nPrev = None
+let mutable tPrev: (DateTime * DateTime * float * int[]) option = None
+let mutable nPrev: string option = None
 
 let ReportTime (tcConfig: TcConfig) descr =
 
@@ -2271,29 +2341,41 @@ let ReportTime (tcConfig: TcConfig) descr =
     if (tcConfig.showTimes || verbose) then
         // Note that timing calls are relatively expensive on the startup path so we don't
         // make this call unless showTimes has been turned on.
-        let timeNow =
-            System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
-
+        let p = Process.GetCurrentProcess()
+        let utNow = p.UserProcessorTime.TotalSeconds
+        let tNow = DateTime.Now
         let maxGen = GC.MaxGeneration
         let gcNow = [| for i in 0..maxGen -> GC.CollectionCount i |]
-        let ptime = System.Diagnostics.Process.GetCurrentProcess()
-        let wsNow = ptime.WorkingSet64 / 1000000L
+        let wsNow = p.WorkingSet64 / 1000000L
 
-        match tPrev, nPrev with
-        | Some (timePrev, gcPrev: int[]), Some prevDescr ->
-            let spanGC = [| for i in 0..maxGen -> GC.CollectionCount i - gcPrev[i] |]
-            dprintf "TIME: %4.1f Delta: %4.1f Mem: %3d" timeNow (timeNow - timePrev) wsNow
+        let tStart =
+            match tPrev, nPrev with
+            | Some (tStart, tPrev, utPrev, gcPrev), Some prevDescr ->
+                let spanGC = [| for i in 0..maxGen -> GC.CollectionCount i - gcPrev[i] |]
+                let t = tNow - tStart
+                let tDelta = tNow - tPrev
+                let utDelta = utNow - utPrev
 
-            dprintf
-                " G0: %3d G1: %2d G2: %2d [%s]\n"
-                spanGC[Operators.min 0 maxGen]
-                spanGC[Operators.min 1 maxGen]
-                spanGC[Operators.min 2 maxGen]
-                prevDescr
+                printf
+                    "Real: %4.1f Realdelta: %4.1f Cpu: %4.1f Cpudelta: %4.1f Mem: %3d"
+                    t.TotalSeconds
+                    tDelta.TotalSeconds
+                    utNow
+                    utDelta
+                    wsNow
 
-        | _ -> ()
+                printfn
+                    " G0: %3d G1: %2d G2: %2d [%s]"
+                    spanGC[Operators.min 0 maxGen]
+                    spanGC[Operators.min 1 maxGen]
+                    spanGC[Operators.min 2 maxGen]
+                    prevDescr
 
-        tPrev <- Some(timeNow, gcNow)
+                tStart
+
+            | _ -> DateTime.Now
+
+        tPrev <- Some(tStart, tNow, utNow, gcNow)
 
     nPrev <- Some descr
 

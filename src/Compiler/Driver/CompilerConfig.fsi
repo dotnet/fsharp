@@ -331,6 +331,8 @@ type TcConfigBuilder =
 
         mutable extraStaticLinkRoots: string list
 
+        mutable compressMetadata: bool
+
         mutable noSignatureData: bool
 
         mutable onlyEssentialOptimizationData: bool
@@ -405,6 +407,8 @@ type TcConfigBuilder =
 
         mutable concurrentBuild: bool
 
+        mutable parallelCheckingWithSignatureFiles: bool
+
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
 
         mutable preferredUiLang: string option
@@ -431,6 +435,8 @@ type TcConfigBuilder =
 
         mutable noDebugAttributes: bool
 
+        mutable useReflectionFreeCodeGen: bool
+
         /// If true, indicates all type checking and code generation is in the context of fsi.exe
         isInteractive: bool
 
@@ -447,6 +453,8 @@ type TcConfigBuilder =
         mutable useSdkRefs: bool
 
         mutable fxResolver: FxResolver option
+
+        mutable bufferWidth: int option
 
         mutable fsiMultiAssemblyEmit: bool
 
@@ -472,6 +480,8 @@ type TcConfigBuilder =
         mutable langVersion: LanguageVersion
 
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
+
+        mutable exiter: Exiter
     }
 
     static member CreateNew:
@@ -645,6 +655,8 @@ type TcConfig =
 
     member extraStaticLinkRoots: string list
 
+    member compressMetadata: bool
+
     member noSignatureData: bool
 
     member onlyEssentialOptimizationData: bool
@@ -713,6 +725,8 @@ type TcConfig =
 
     member concurrentBuild: bool
 
+    member parallelCheckingWithSignatureFiles: bool
+
     member emitMetadataAssembly: MetadataAssemblyGeneration
 
     member pathMap: PathMap
@@ -741,10 +755,14 @@ type TcConfig =
 
     member noDebugAttributes: bool
 
+    member useReflectionFreeCodeGen: bool
+
     /// If true, indicates all type checking and code generation is in the context of fsi.exe
     member isInteractive: bool
 
     member isInvalidationSupported: bool
+
+    member bufferWidth: int option
 
     /// Indicates if F# Interactive is using single-assembly emit via Reflection.Emit, where internals are available.
     member fsiMultiAssemblyEmit: bool
@@ -824,6 +842,8 @@ type TcConfig =
 
     /// Check if the primary assembly is mscorlib
     member assumeDotNetFramework: bool
+
+    member exiter: Exiter
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

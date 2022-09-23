@@ -7,7 +7,7 @@
 .assembly extern System.Runtime
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly extern FSharp.Core
 {
@@ -17,7 +17,7 @@
 .assembly extern System.Linq
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly extern Utils
 {
@@ -35,29 +35,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Linq101Grouping01
 {
-  // Offset: 0x00000000 Length: 0x00000433
+  // Offset: 0x00000000 Length: 0x00000437
   // WARNING: managed resource file FSharpSignatureData.Linq101Grouping01 created
 }
 .mresource public FSharpOptimizationData.Linq101Grouping01
 {
-  // Offset: 0x00000438 Length: 0x00000129
+  // Offset: 0x00000440 Length: 0x00000129
   // WARNING: managed resource file FSharpOptimizationData.Linq101Grouping01 created
 }
 .module Linq101Grouping01.exe
-// MVID: {62466677-0219-3271-A745-038377664662}
+// MVID: {630166A9-7770-CD7D-A745-0383A9660163}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00000216B04E0000
+// Image base: 0x000002B493560000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -1633,4 +1633,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net6.0\tests\EmittedIL\QueryExpressionStepping\Linq101Grouping01_fs\Linq101Grouping01.res
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Release\net7.0\tests\EmittedIL\QueryExpressionStepping\Linq101Grouping01_fs\Linq101Grouping01.res

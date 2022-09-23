@@ -180,7 +180,11 @@ module internal PrintUtilities =
         let isArray = not prefix && isArrayTyconRef denv.g tcref
         let demangled = 
             if isArray then
-                tcref.DisplayNameCore // no backticks for arrays "int[]"
+                let numberOfCommas = tcref.CompiledName |> Seq.filter (fun c -> c = ',') |> Seq.length
+                if numberOfCommas = 0 then
+                    "array"
+                else
+                    $"array{numberOfCommas + 1}d"
             else
                 let name =
                     if denv.includeStaticParametersInTypeNames then 
@@ -198,11 +202,7 @@ module internal PrintUtilities =
             tagEntityRefName denv tcref demangled
             |> mkNav tcref.DefinitionRange
 
-        let tyconTextL =
-            if isArray then
-                tyconTagged |> rightL
-            else
-                tyconTagged |> wordL
+        let tyconTextL = tyconTagged |> wordL
 
         if denv.shortTypeNames then 
             tyconTextL
@@ -480,7 +480,7 @@ module PrintTypes =
             | Const.Zero -> tagKeyword(if isRefTy g ty then "null" else "default")
         wordL str
 
-    let layoutAccessibility (denv: DisplayEnv) accessibility itemL =
+    let layoutAccessibilityCore (denv: DisplayEnv) accessibility =
         let isInternalCompPath x = 
             match x with 
             | CompPath(ILScopeRef.Local, []) -> true 
@@ -491,10 +491,13 @@ module PrintTypes =
             | _ when List.forall isInternalCompPath p -> Internal 
             | _ -> Private
         match denv.contextAccessibility, accessibility with
-        | Public, Internal -> WordL.keywordInternal ++ itemL   // print modifier, since more specific than context
-        | Public, Private -> WordL.keywordPrivate ++ itemL     // print modifier, since more specific than context
-        | Internal, Private -> WordL.keywordPrivate ++ itemL   // print modifier, since more specific than context
-        | _ -> itemL
+        | Public, Internal -> WordL.keywordInternal
+        | Public, Private -> WordL.keywordPrivate
+        | Internal, Private -> WordL.keywordPrivate
+        | _ -> emptyL
+    
+    let layoutAccessibility (denv: DisplayEnv) accessibility itemL =
+        layoutAccessibilityCore denv accessibility ++ itemL
 
     /// Layout a reference to a type 
     let layoutTyconRef denv tcref = layoutTyconRefImpl false denv tcref
@@ -559,19 +562,22 @@ module PrintTypes =
         | _ -> comment "(* unsupported attribute argument *)"
 
     /// Layout arguments of an attribute 'arg1, ..., argN' 
-    and layoutAttribArgs denv args = 
+    and layoutAttribArgs denv args props = 
         let argsL =  args |> List.map (fun (AttribExpr(e1, _)) -> layoutAttribArg denv e1)
-        sepListL (rightL (tagPunctuation ",")) argsL
+        let propsL =
+            props
+            |> List.map (fun (AttribNamedArg(name,_, _, AttribExpr(e1, _))) ->
+                wordL (tagProperty name) ^^ WordL.equals ^^ layoutAttribArg denv e1)
+        sepListL (rightL (tagPunctuation ",")) (argsL @ propsL)
 
     /// Layout an attribute 'Type(arg1, ..., argN)' 
-    //
-    // REVIEW: we are ignoring "props" here
-    and layoutAttrib denv (Attrib(tcref, _, args, _props, _, _, _)) = 
+    and layoutAttrib denv (Attrib(tcref, _, args, props, _, _, _)) = 
         let tcrefL = layoutTyconRefImpl true denv tcref
-        let argsL = bracketL (layoutAttribArgs denv args)
-        match args with 
-        | [] -> tcrefL
-        | _ -> tcrefL ++ argsL
+        let argsL = bracketL (layoutAttribArgs denv args props)
+        if List.isEmpty args && List.isEmpty props then
+            tcrefL
+        else
+            tcrefL ++ argsL
 
     and layoutILAttribElement denv arg = 
         match arg with 
@@ -871,6 +877,16 @@ module PrintTypes =
             | [arg] -> layoutTypeWithInfoAndPrec denv env 2 arg ^^ tcL
             | args -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 (sepL (tagPunctuation ",")) args) --- tcL)
 
+    and layoutTypeForGenericMultidimensionalArrays denv env prec tcref innerT level =
+        let innerLayout = layoutTypeWithInfoAndPrec denv env prec innerT
+
+        let arrayLayout =
+            tagEntityRefName denv tcref $"array{level}d"
+            |> mkNav tcref.DefinitionRange
+            |> wordL
+        
+        innerLayout ^^ arrayLayout
+    
     /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec ty =
         let g = denv.g
@@ -891,6 +907,10 @@ module PrintTypes =
         // Always prefer 'float' to 'float<1>'
         | TType_app (tc, args, _) when tc.IsMeasureableReprTycon && List.forall (isDimensionless g) args ->
           layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided g tc args)
+        
+        // Special case for nested array<array<'t>> shape
+        | TTypeMultiDimensionalArrayAsGeneric (tcref, innerT, level) ->
+            layoutTypeForGenericMultidimensionalArrays denv env prec tcref innerT level
 
         // Layout a type application
         | TType_ucase (UnionCaseRef(tc, _), args)
@@ -1978,6 +1998,9 @@ module TastDefinitionPrinting =
         let addReprAccessL l =
             layoutAccessibility denv tycon.TypeReprAccessibility l 
 
+        let addReprAccessRecord l =
+            layoutAccessibilityCore denv tycon.TypeReprAccessibility --- l
+        
         let addLhs rhsL =
             let brk = not (isNil allDecls) || breakTypeDefnEqn repr
             if brk then 
@@ -2020,7 +2043,7 @@ module TastDefinitionPrinting =
                 |> applyMaxMembers denv.maxMembers
                 |> aboveListL
                 |> (if useMultiLine then braceMultiLineL else braceL)
-                |> addReprAccessL
+                |> addReprAccessRecord
                 |> addMaxMembers
                 |> addLhs
 
@@ -2327,12 +2350,10 @@ module InferredSigPrinting =
             let outerPath = mspec.CompilationPath.AccessPath
 
             let denv =
-                innerPath
-                |> List.choose (fun (path, kind) ->
-                    match kind with
-                    | ModuleOrNamespaceKind.Namespace false -> None
-                    | _ -> Some path)
-                |> denv.AddOpenPath
+                if not (isConcreteNamespace def) then
+                    denv
+                else
+                    denv.AddOpenPath (List.map fst innerPath)
 
             if mspec.IsImplicitNamespace then
                 // The current mspec is a namespace that belongs to the `def` child (nested) module(s).                
@@ -2384,7 +2405,9 @@ module InferredSigPrinting =
                 let nmL = layoutAccessibility denv mspec.Accessibility nmL
                 let denv = denv.AddAccessibility mspec.Accessibility
                 let basic = imdefL denv def
-                let modNameL = wordL (tagKeyword "module") ^^ nmL
+                let modNameL =
+                    wordL (tagKeyword "module") ^^ nmL
+                    |> layoutAttribs denv None false mspec.TypeOrMeasureKind mspec.Attribs
                 let modNameEqualsL = modNameL ^^ WordL.equals
                 let isNamespace = function | Namespace _ -> true | _ -> false
                 let modIsOuter = (outerPath |> List.forall (fun (_, istype) -> isNamespace istype) )
@@ -2417,7 +2440,23 @@ module InferredSigPrinting =
                             modNameEqualsL @@* basic
                 layoutXmlDoc denv true mspec.XmlDoc basicL
 
-        imdefL denv expr
+        let emptyModuleOrNamespace mspec =
+            let innerPath = (fullCompPathOfModuleOrNamespace mspec).AccessPath
+            let pathL = innerPath |> List.map (fst >> ConvertLogicalNameToDisplayLayout (tagNamespace >> wordL))
+
+            let keyword =
+                if not mspec.IsImplicitNamespace && mspec.IsNamespace then
+                    "namespace"
+                else
+                    "module"
+
+            wordL (tagKeyword keyword) ^^ sepListL SepL.dot pathL
+
+        match expr with
+        | EmptyModuleOrNamespaces mspecs when showHeader ->
+            List.map emptyModuleOrNamespace mspecs
+            |> aboveListL
+        | expr -> imdefL denv expr
 
 //--------------------------------------------------------------------------
 

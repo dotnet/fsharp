@@ -438,7 +438,8 @@ module TcRecdUnionAndEnumDeclarations =
         rfspec
 
     let TcAnonFieldDecl cenv env parent tpenv nm (SynField(Attributes attribs, isStatic, idOpt, ty, isMutable, xmldoc, vis, m)) =
-        let id = (match idOpt with None -> mkSynId m nm | Some id -> id)
+        let mName = m.MakeSynthetic()
+        let id = match idOpt with None -> mkSynId mName nm | Some id -> id
         let xmlDoc = xmldoc.ToXmlDoc(true, Some [])
         TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmlDoc, vis, m)
 
@@ -530,7 +531,11 @@ module TcRecdUnionAndEnumDeclarations =
                     error(Error(FSComp.SR.tcReturnTypesForUnionMustBeSameAsType(), m))
                 rfields, recordTy
 
-        let names = rfields |> List.map (fun f -> f.DisplayNameCore)
+        let names = rfields
+                    |> Seq.filter (fun f -> not f.rfield_name_generated)
+                    |> Seq.map (fun f -> f.DisplayNameCore)
+                    |> Seq.toList
+
         let xmlDoc = xmldoc.ToXmlDoc(true, Some names)
         Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
@@ -687,13 +692,12 @@ let TcOpenDecl (cenv: cenv) mOpenDecl scopem env target =
     | SynOpenDeclTarget.Type (synType, m) ->
         TcOpenTypeDecl cenv mOpenDecl scopem env (synType, m)
         
-let MakeSafeInitField (g: TcGlobals) env m isStatic = 
+let MakeSafeInitField (cenv: cenv) env m isStatic = 
     let id =
         // Ensure that we have an g.CompilerGlobalState
-        assert(g.CompilerGlobalState |> Option.isSome)
-        ident(g.CompilerGlobalState.Value.NiceNameGenerator.FreshCompilerGeneratedName("init", m), m)
+        ident(cenv.niceNameGen.FreshCompilerGeneratedName("init", m), m)
     let taccess = TAccess [env.eAccessPath]
-    Construct.NewRecdField isStatic None id false g.int_ty true true [] [] XmlDoc.Empty taccess true
+    Construct.NewRecdField isStatic None id false cenv.g.int_ty true true [] [] XmlDoc.Empty taccess true
 
 // Checking of mutually recursive types, members and 'let' bindings in classes
 //
@@ -1267,7 +1271,7 @@ module MutRecBindingChecking =
                                 | _ -> false)
 
                         if needsSafeStaticInit && hasStaticBindings then
-                            let rfield = MakeSafeInitField g envForDecls tcref.Range true
+                            let rfield = MakeSafeInitField cenv envForDecls tcref.Range true
                             SafeInitField(mkRecdFieldRef tcref rfield.LogicalName, rfield)
                         else
                             NoSafeInitInfo
@@ -2425,7 +2429,7 @@ module EstablishTypeDefinitionCores =
     let ComputeInstanceSafeInitInfo (cenv: cenv) env m thisTy = 
         let g = cenv.g
         if InstanceMembersNeedSafeInitCheck cenv m thisTy then 
-            let rfield = MakeSafeInitField g env m false
+            let rfield = MakeSafeInitField cenv env m false
             let tcref = tcrefOfAppTy g thisTy
             SafeInitField (mkRecdFieldRef tcref rfield.LogicalName, rfield)
         else
@@ -4478,7 +4482,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
 
                     // Publish the combined module type
                     env.eModuleOrNamespaceTypeAccumulator.Value <- 
-                        CombineCcuContentFragments m [env.eModuleOrNamespaceTypeAccumulator.Value; modTyRoot]
+                        CombineCcuContentFragments [env.eModuleOrNamespaceTypeAccumulator.Value; modTyRoot]
                     env
 
             return env
@@ -4800,7 +4804,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
                   // Publish the combined module type
                   env.eModuleOrNamespaceTypeAccumulator.Value <-
-                      CombineCcuContentFragments m [env.eModuleOrNamespaceTypeAccumulator.Value; modTyRoot]
+                      CombineCcuContentFragments [env.eModuleOrNamespaceTypeAccumulator.Value; modTyRoot]
                   env, openDecls
           
           let moduleContentsRoot = BuildRootModuleContents kind.IsModule enclosingNamespacePath envNS.eCompPath moduleContents
@@ -5156,7 +5160,7 @@ let MakeInitialEnv env =
 /// Typecheck, then close the inference scope and then check the file meets its signature (if any)
 let CheckOneImplFile 
        // checkForErrors: A function to help us stop reporting cascading errors 
-       (g, niceNameGen, amap,
+       (g, amap,
         thisCcu,
         openDecls0,
         checkForErrors,
@@ -5172,7 +5176,7 @@ let CheckOneImplFile
 
     cancellable {
         let cenv = 
-            cenv.Create (g, isScript, niceNameGen, amap, thisCcu, false, Option.isSome rootSigOpt,
+            cenv.Create (g, isScript, amap, thisCcu, false, Option.isSome rootSigOpt,
                 conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
                 tcPat=TcPat,
                 tcSimplePats=TcSimplePats,
@@ -5290,17 +5294,17 @@ let CheckOneImplFile
 
         let implFile = CheckedImplFile (qualNameOfFile, scopedPragmas, implFileTy, implFileContents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
-        return (topAttrs, implFile, implFileTypePriorToSig, envAtEnd, cenv.createsGeneratedProvidedTypes)
+        return (topAttrs, implFile, envAtEnd, cenv.createsGeneratedProvidedTypes)
      } 
    
 
 
 /// Check an entire signature file
-let CheckOneSigFile (g, niceNameGen, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile; modules = sigFileFrags)) = 
+let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (sigFile: ParsedSigFileInput) = 
  cancellable {     
     let cenv = 
         cenv.Create 
-            (g, false, niceNameGen, amap, thisCcu, true, false, conditionalDefines, tcSink,
+            (g, false, amap, thisCcu, true, false, conditionalDefines, tcSink,
              (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
              tcPat=TcPat,
              tcSimplePats=TcSimplePats,
@@ -5310,8 +5314,8 @@ let CheckOneSigFile (g, niceNameGen, amap, thisCcu, checkForErrors, conditionalD
 
     let envinner, moduleTyAcc = MakeInitialEnv tcEnv 
 
-    let specs = [ for x in sigFileFrags -> SynModuleSigDecl.NamespaceFragment x ]
-    let! tcEnv = TcSignatureElements cenv ParentNone qualNameOfFile.Range envinner PreXmlDoc.Empty None specs
+    let specs = [ for x in sigFile.Contents -> SynModuleSigDecl.NamespaceFragment x ]
+    let! tcEnv = TcSignatureElements cenv ParentNone sigFile.QualifiedName.Range envinner PreXmlDoc.Empty None specs
     
     let sigFileType = moduleTyAcc.Value
     
@@ -5319,7 +5323,7 @@ let CheckOneSigFile (g, niceNameGen, amap, thisCcu, checkForErrors, conditionalD
         try
             sigFileType |> IterTyconsOfModuleOrNamespaceType (fun tycon ->
                 FinalTypeDefinitionChecksAtEndOfInferenceScope(cenv.infoReader, tcEnv.NameEnv, cenv.tcSink, false, tcEnv.DisplayEnv, tycon))
-        with exn -> errorRecovery exn qualNameOfFile.Range
+        with exn -> errorRecovery exn sigFile.QualifiedName.Range
 
     return (tcEnv, sigFileType, cenv.createsGeneratedProvidedTypes)
  }

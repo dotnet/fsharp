@@ -52,7 +52,7 @@ type LanguageVersion =
     new: string -> LanguageVersion
 
     /// Get the list of valid versions
-    member ContainsVersion: string -> bool
+    static member ContainsVersion: string -> bool
 
     /// Has preview been explicitly specified
     member IsPreviewEnabled: bool
@@ -64,10 +64,10 @@ type LanguageVersion =
     member SupportsFeature: LanguageFeature -> bool
 
     /// Get the list of valid versions
-    member ValidVersions: string[]
+    static member ValidVersions: string[]
 
     /// Get the list of valid options
-    member ValidOptions: string[]
+    static member ValidOptions: string[]
 
     /// Get the specified LanguageVersion
     member SpecifiedVersion: decimal
@@ -79,9 +79,9 @@ type LanguageVersion =
     member SpecifiedVersionString: string
 
     /// Get a string name for the given feature.
-    member GetFeatureString: feature: LanguageFeature -> string
+    static member GetFeatureString: feature: LanguageFeature -> string
 
     /// Get a version string associated with the given feature.
-    member GetFeatureVersionString: feature: LanguageFeature -> string
+    static member GetFeatureVersionString: feature: LanguageFeature -> string
 
     static member Default: LanguageVersion

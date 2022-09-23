@@ -388,6 +388,9 @@ module rec Compiler =
     let withLangVersion60 (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:6.0" ] "withLangVersion60 is only supported on F#" cUnit
 
+    let withLangVersion70 (cUnit: CompilationUnit) : CompilationUnit =
+        withOptionsHelper [ "--langversion:7.0" ] "withLangVersion70 is only supported on F#" cUnit
+
     let withLangVersionPreview (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--langversion:preview" ] "withLangVersionPreview is only supported on F#" cUnit
 
@@ -893,13 +896,17 @@ module rec Compiler =
 
         cUnit
 
-    let verifyIL (il: string list) (result: CompilationResult) : unit =
+    let private doILCheck func (il: string list) result =
         match result with
         | CompilationResult.Success s ->
             match s.OutputPath with
             | None -> failwith "Operation didn't produce any output!"
-            | Some p -> ILChecker.checkIL p il
+            | Some p -> func p il
         | CompilationResult.Failure _ -> failwith "Result should be \"Success\" in order to get IL."
+
+    let verifyIL = doILCheck ILChecker.checkIL
+
+    let verifyILNotPresent = doILCheck ILChecker.checkILNotPresent
 
     let verifyILBinary (il: string list) (dll: string)= ILChecker.checkIL dll il
 
@@ -1121,7 +1128,7 @@ module rec Compiler =
             (sourceErrors, expectedErrors)
             ||> List.iter2 (fun actual expected ->
 
-                Assert.AreEqual(actual, expected, $"Mismatched error message:\nExpecting: {expected}\nActual:    {actual}\n"))
+                Assert.AreEqual(expected, actual, $"Mismatched error message:\nExpecting: {expected}\nActual:    {actual}\n"))
 
         let adjust (adjust: int) (result: CompilationResult) : CompilationResult =
             match result with
@@ -1160,18 +1167,16 @@ module rec Compiler =
             withResults [expectedResult] result
 
         let withDiagnostics (expected: (ErrorType * Line * Col * Line * Col * string) list) (result: CompilationResult) : CompilationResult =
-            let (expectedResults: ErrorInfo list) =
-                expected |>
-                List.map(
-                    fun e ->
-                      let (error, (Line startLine), (Col startCol), (Line endLine), (Col endCol), message) = e
+            let expectedResults: ErrorInfo list =
+                [ for e in expected do
+                      let (error, Line startLine, Col startCol, Line endLine, Col endCol, message) = e
                       { Error = error
                         Range =
                             { StartLine   = startLine
                               StartColumn = startCol
                               EndLine     = endLine
                               EndColumn   = endCol }
-                        Message     = message })
+                        Message     = message } ]
             withResults expectedResults result
 
         let withSingleDiagnostic (expected: (ErrorType * Line * Col * Line * Col * string)) (result: CompilationResult) : CompilationResult =
@@ -1306,20 +1311,33 @@ module rec Compiler =
         let withEvalTypeEquals t (result: CompilationResult) : CompilationResult =
             assertEvalOutput (fun (x: FsiValue) -> x.ReflectionType) t result
 
-    let signatureText (checkResults: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults) =
-        checkResults.GenerateSignature()
+    let signatureText (pageWidth: int option) (checkResults: FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults) =
+        checkResults.GenerateSignature(?pageWidth = pageWidth)
         |> Option.defaultWith (fun _ -> failwith "Unable to generate signature text.")
 
     let signaturesShouldContain (expected: string) cUnit =
         let text =
             cUnit
             |> typecheckResults
-            |> signatureText
+            |> signatureText None
 
         let actual =
             text.ToString().Split('\n')
-            |> Array.map (fun s -> s.TrimEnd(' '))
+            |> Array.map (fun s -> s.TrimEnd(' ', '\r'))
             |> Array.filter (fun s -> s.Length > 0)
 
         if not (actual |> Array.contains expected) then
             failwith ($"The following signature:\n%s{expected}\n\nwas not found in:\n" + (actual |> String.concat "\n"))
+
+    let private printSignaturesImpl pageWidth cUnit  =
+        cUnit
+        |> typecheckResults
+        |> signatureText pageWidth
+        |> string
+        |> fun s ->
+            s.Replace("\r", "").Split('\n')
+            |> Array.map (fun line -> line.TrimEnd())
+            |> String.concat "\n"
+    
+    let printSignatures cUnit = printSignaturesImpl None cUnit
+    let printSignaturesWith pageWidth cUnit = printSignaturesImpl (Some pageWidth) cUnit

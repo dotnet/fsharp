@@ -139,8 +139,8 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
             [("Concat", [("values", "Collections.Generic.IEnumerable<'T>")]);
              ("Concat", [("values", "Collections.Generic.IEnumerable<string>")]);
              ("Concat", [("arg0", "obj")]);
-             ("Concat", [("args", "obj[]")]);
-             ("Concat", [("values", "string[]")]);
+             ("Concat", [("args", "obj array")]);
+             ("Concat", [("values", "string array")]);
 #if NETCOREAPP
              ("Concat", [("str0", "ReadOnlySpan<char>");("str1", "ReadOnlySpan<char>")]);
 #endif
@@ -694,6 +694,9 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
                              ("RightToLeft", Some (box 64))
                              ("ECMAScript", Some (box 256))
                              ("CultureInvariant", Some (box 512))
+#if NETCOREAPP
+                             ("NonBacktracking", Some 1024)
+#endif
                            ]
         |]
 
