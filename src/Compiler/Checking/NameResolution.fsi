@@ -662,95 +662,101 @@ val FreshenRecdFieldRef: NameResolver -> range -> RecdFieldRef -> RecdFieldInfo
 
 /// Resolve a long identifier to a namespace, module.
 val internal ResolveLongIdentAsModuleOrNamespace:
-    TcResultsSink ->
-    ResultCollectionSettings ->
-    ImportMap ->
-    range ->
+    sink: TcResultsSink ->
+    atMostOne: ResultCollectionSettings ->
+    amap: ImportMap ->
+    m: range ->
     first: bool ->
-    FullyQualifiedFlag ->
-    NameResolutionEnv ->
-    AccessorDomain ->
-    Ident ->
-    Ident list ->
+    fullyQualified: FullyQualifiedFlag ->
+    nenv: NameResolutionEnv ->
+    ad: AccessorDomain ->
+    id: Ident ->
+    rest: Ident list ->
     isOpenDecl: bool ->
         ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list>
 
 /// Resolve a long identifier to an object constructor.
 val internal ResolveObjectConstructor:
-    NameResolver -> DisplayEnv -> range -> AccessorDomain -> TType -> ResultOrException<Item>
+    ncenv: NameResolver ->
+    denv: DisplayEnv ->
+    m: range ->
+    ad: AccessorDomain ->
+    ty: TType ->
+        ResultOrException<Item>
 
 /// Resolve a long identifier using type-qualified name resolution.
 val internal ResolveLongIdentInType:
-    TcResultsSink ->
-    NameResolver ->
-    NameResolutionEnv ->
-    LookupKind ->
-    range ->
-    AccessorDomain ->
-    Ident ->
-    FindMemberFlag ->
-    TypeNameResolutionInfo ->
-    TType ->
+    sink: TcResultsSink ->
+    ncenv: NameResolver ->
+    nenv: NameResolutionEnv ->
+    lookupKind: LookupKind ->
+    m: range ->
+    ad: AccessorDomain ->
+    id: Ident ->
+    findFlag: FindMemberFlag ->
+    typeNameResInfo: TypeNameResolutionInfo ->
+    ty: TType ->
         Item * Ident list
 
 /// Resolve a long identifier when used in a pattern.
 val internal ResolvePatternLongIdent:
-    TcResultsSink ->
-    NameResolver ->
-    WarnOnUpperFlag ->
-    bool ->
-    range ->
-    AccessorDomain ->
-    NameResolutionEnv ->
-    TypeNameResolutionInfo ->
-    Ident list ->
+    sink: TcResultsSink ->
+    ncenv: NameResolver ->
+    warnOnUpper: WarnOnUpperFlag ->
+    newDef: bool ->
+    m: range ->
+    ad: AccessorDomain ->
+    nenv: NameResolutionEnv ->
+    numTyArgsOpt: TypeNameResolutionInfo ->
+    lid: Ident list ->
         Item
 
 /// Resolve a long identifier representing a type name
 val internal ResolveTypeLongIdentInTyconRef:
-    TcResultsSink ->
-    NameResolver ->
-    NameResolutionEnv ->
-    TypeNameResolutionInfo ->
-    AccessorDomain ->
-    range ->
-    ModuleOrNamespaceRef ->
-    Ident list ->
+    sink: TcResultsSink ->
+    ncenv: NameResolver ->
+    nenv: NameResolutionEnv ->
+    typeNameResInfo: TypeNameResolutionInfo ->
+    ad: AccessorDomain ->
+    m: range ->
+    tcref: TyconRef ->
+    lid: Ident list ->
         TyconRef
 
 /// Resolve a long identifier to a type definition
 val internal ResolveTypeLongIdent:
-    TcResultsSink ->
-    NameResolver ->
-    ItemOccurence ->
-    FullyQualifiedFlag ->
-    NameResolutionEnv ->
-    AccessorDomain ->
-    Ident list ->
-    TypeNameResolutionStaticArgsInfo ->
-    PermitDirectReferenceToGeneratedType ->
+    sink: TcResultsSink ->
+    ncenv: NameResolver ->
+    occurence: ItemOccurence ->
+    fullyQualified: FullyQualifiedFlag ->
+    nenv: NameResolutionEnv ->
+    ad: AccessorDomain ->
+    lid: Ident list ->
+    staticResInfo: TypeNameResolutionStaticArgsInfo ->
+    genOk: PermitDirectReferenceToGeneratedType ->
         ResultOrException<EnclosingTypeInst * TyconRef>
 
 /// Resolve a long identifier to a field
 val internal ResolveField:
-    TcResultsSink ->
-    NameResolver ->
-    NameResolutionEnv ->
-    AccessorDomain ->
-    TType ->
-    Ident list * Ident ->
-        Ident list ->
-            FieldResolution list
+    sink: TcResultsSink ->
+    ncenv: NameResolver ->
+    nenv: NameResolutionEnv ->
+    ad: AccessorDomain ->
+    ty: TType ->
+    mp: Ident list ->
+    id: Ident ->
+    allFields: Ident list ->
+        FieldResolution list
 
 /// Resolve a long identifier occurring in an expression position
 val internal ResolveExprLongIdent:
-    TcResultsSink ->
-    NameResolver ->
-    range ->
-    AccessorDomain ->
-    NameResolutionEnv ->
-    TypeNameResolutionInfo ->
-    Ident list ->
+    sink: TcResultsSink ->
+    ncenv: NameResolver ->
+    m: range ->
+    ad: AccessorDomain ->
+    nenv: NameResolutionEnv ->
+    typeNameResInfo: TypeNameResolutionInfo ->
+    lid: Ident list ->
         ResultOrException<EnclosingTypeInst * Item * Ident list>
 
 val internal getRecordFieldsInScope: NameResolutionEnv -> Item list
@@ -764,27 +770,27 @@ val internal ResolveRecordOrClassFieldsOfType: NameResolver -> range -> Accessor
 
 /// Resolve a long identifier occurring in an expression position.
 val internal ResolveLongIdentAsExprAndComputeRange:
-    TcResultsSink ->
-    NameResolver ->
-    range ->
-    AccessorDomain ->
-    NameResolutionEnv ->
-    TypeNameResolutionInfo ->
-    Ident list ->
+    sink: TcResultsSink ->
+    ncenv: NameResolver ->
+    wholem: range ->
+    ad: AccessorDomain ->
+    nenv: NameResolutionEnv ->
+    typeNameResInfo: TypeNameResolutionInfo ->
+    lid: Ident list ->
         ResultOrException<EnclosingTypeInst * Item * range * Ident list * AfterResolution>
 
 /// Resolve a long identifier occurring in an expression position, qualified by a type.
 val internal ResolveExprDotLongIdentAndComputeRange:
-    TcResultsSink ->
-    NameResolver ->
-    range ->
-    AccessorDomain ->
-    NameResolutionEnv ->
-    TType ->
-    Ident list ->
-    TypeNameResolutionInfo ->
-    FindMemberFlag ->
-    bool ->
+    sink: TcResultsSink ->
+    ncenv: NameResolver ->
+    wholem: range ->
+    ad: AccessorDomain ->
+    nenv: NameResolutionEnv ->
+    ty: TType ->
+    lid: Ident list ->
+    typeNameResInfo: TypeNameResolutionInfo ->
+    findFlag: FindMemberFlag ->
+    staticOnly: bool ->
         Item * range * Ident list * AfterResolution
 
 /// A generator of type instantiations used when no more specific type instantiation is known.
@@ -795,13 +801,13 @@ val TryToResolveLongIdentAsType: NameResolver -> NameResolutionEnv -> range -> s
 
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions.
 val ResolvePartialLongIdent:
-    NameResolver ->
-    NameResolutionEnv ->
-    (MethInfo -> TType -> bool) ->
-    range ->
-    AccessorDomain ->
-    string list ->
-    bool ->
+    ncenv: NameResolver ->
+    nenv: NameResolutionEnv ->
+    isApplicableMeth: (MethInfo -> TType -> bool) ->
+    m: range ->
+    ad: AccessorDomain ->
+    plid: string list ->
+    allowObsolete: bool ->
         Item list
 
 [<RequireQualifiedAccess>]

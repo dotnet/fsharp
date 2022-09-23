@@ -979,8 +979,8 @@ let ResolveProvidedTypeNameInEntity (amap, m, typeName, modref: ModuleOrNamespac
 /// Qualified lookups of type names where the number of generic arguments is known
 /// from context, e.g. Module.Type<args>.  The full names suh as ``List`1`` can
 /// be used to qualify access if needed
-let LookupTypeNameInEntityHaveArity nm (staticResInfo: TypeNameResolutionStaticArgsInfo) (mty: ModuleOrNamespaceType) =
-    let attempt1 = mty.TypesByMangledName.TryFind (staticResInfo.MangledNameForType nm)
+let LookupTypeNameInEntityHaveArity nm (typeNameResInfo: TypeNameResolutionStaticArgsInfo) (mty: ModuleOrNamespaceType) =
+    let attempt1 = mty.TypesByMangledName.TryFind (typeNameResInfo.MangledNameForType nm)
     match attempt1 with
     | None -> mty.TypesByMangledName.TryFind nm
     | _ -> attempt1
@@ -2443,8 +2443,8 @@ let private ResolveObjectConstructorPrim (ncenv: NameResolver) edenv resInfo m a
                 success (resInfo, Item.MakeCtorGroup ((tcrefOfAppTy g metadataTy).LogicalName, (defaultStructCtorInfo@ctorInfos)))
 
 /// Perform name resolution for an identifier which must resolve to be an object constructor.
-let ResolveObjectConstructor (ncenv: NameResolver) edenv m ad ty =
-    ResolveObjectConstructorPrim (ncenv: NameResolver) edenv [] m ad ty  |?> (fun (_resInfo, item) -> item)
+let ResolveObjectConstructor (ncenv: NameResolver) denv m ad ty =
+    ResolveObjectConstructorPrim (ncenv: NameResolver) denv [] m ad ty  |?> (fun (_resInfo, item) -> item)
 
 //-------------------------------------------------------------------------
 // Bind the "." notation (member lookup or lookup in a type)
@@ -3634,7 +3634,7 @@ let ResolveFieldPrim sink (ncenv: NameResolver) nenv ad ty (mp, id: Ident) allFi
 
         [(resInfo, item)]
 
-let ResolveField sink ncenv nenv ad ty (mp, id) allFields =
+let ResolveField sink ncenv nenv ad ty mp id allFields =
     let res = ResolveFieldPrim sink ncenv nenv ad ty (mp, id) allFields
     // Register the results of any field paths "Module.Type" in "Module.Type.field" as a name resolution. (Note, the path resolution
     // info is only non-empty if there was a unique resolution of the field)
@@ -3788,12 +3788,12 @@ let (|NonOverridable|_|) namedItem =
 
 /// Called for 'expression.Bar' - for VS IntelliSense, we can filter out static members from method groups
 /// Also called for 'GenericType<Args>.Bar' - for VS IntelliSense, we can filter out non-static members from method groups
-let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv ty lid (staticResInfo: TypeNameResolutionInfo) findFlag thisIsActuallyATyAppNotAnExpr =
+let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameResolver) wholem ad nenv ty lid (typeNameResInfo: TypeNameResolutionInfo) findFlag staticOnly =
     let resolveExpr findFlag =
         let resInfo, item, rest =
             match lid with
             | id :: rest ->
-                ResolveExprDotLongIdent ncenv wholem ad nenv ty id rest staticResInfo findFlag
+                ResolveExprDotLongIdent ncenv wholem ad nenv ty id rest typeNameResInfo findFlag
             | _ -> error(InternalError("ResolveExprDotLongIdentAndComputeRange", wholem))
         let itemRange = ComputeItemRange wholem lid rest
         resInfo, item, rest, itemRange
@@ -3817,7 +3817,6 @@ let ResolveExprDotLongIdentAndComputeRange (sink: TcResultsSink) (ncenv: NameRes
                     item, itemRange, true
 
             let callSink (refinedItem, tpinst) =
-                let staticOnly = thisIsActuallyATyAppNotAnExpr
                 let refinedItem = FilterMethodGroups ncenv itemRange refinedItem staticOnly
                 let unrefinedItem = FilterMethodGroups ncenv itemRange unrefinedItem staticOnly
                 CallMethodGroupNameResolutionSink sink (itemRange, nenv, refinedItem, unrefinedItem, tpinst, ItemOccurence.Use, ad)

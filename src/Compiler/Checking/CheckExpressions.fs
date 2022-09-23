@@ -1780,7 +1780,7 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
 //-------------------------------------------------------------------------
 
 /// Helper used to check record expressions and record patterns
-let BuildFieldMap (cenv: cenv) env isPartial ty flds m =
+let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * 'T) list) m =
     let g = cenv.g
     let ad = env.eAccessRights
 
@@ -1792,7 +1792,8 @@ let BuildFieldMap (cenv: cenv) env isPartial ty flds m =
         let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
         flds
         |> List.map (fun (fld, fldExpr) ->
-            let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fld allFields
+            let (fldPath, fldId) = fld
+            let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
             fld, frefSet, fldExpr)
 
     let relevantTypeSets =
