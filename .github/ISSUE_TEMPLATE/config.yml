@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: F# Discussions
+    url: https://github.com/dotnet/fsharp/discussions
+    about: Please ask and answer questions here.
+  - name: F# Language Suggestions
+    url: https://github.com/fsharp/fslang-suggestions
+    about: Language features discussions here.
+  - name: F# Language Design
+    url: https://github.com/fsharp/fslang-design
+    about: Language design RFCs here.
