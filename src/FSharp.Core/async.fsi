@@ -522,9 +522,11 @@ namespace Microsoft.FSharp.Control
         /// </example>
         static member Sequential : computations:seq<Async<'T>> -> Async<'T[]>
 
-        /// <summary>Creates an asynchronous computation that executes all given asynchronous computations in parallel, 
+        /// <summary>
+        /// Creates an asynchronous computation that executes all given asynchronous computations in parallel, 
         /// returning the result of the first succeeding computation (one whose result is 'Some x').
-        /// If all child computations complete with None, the parent computation also returns None.</summary>
+        /// If all child computations complete with None, the parent computation also returns None.
+        /// </summary>
         ///
         /// <remarks>
         /// If any child computation raises an exception, then the overall computation will trigger an 
@@ -532,7 +534,8 @@ namespace Microsoft.FSharp.Control
         ///
         /// The overall computation will respond to cancellation while executing the child computations.
         /// If cancelled, the computation will cancel any remaining child computations but will still wait
-        /// for the other child computations to complete.</remarks>
+        /// for the other child computations to complete.
+        /// </remarks>
         ///
         /// <param name="computations">A sequence of computations to be parallelized.</param>
         ///
@@ -577,7 +580,7 @@ namespace Microsoft.FSharp.Control
         ///                 else
         ///                     failwith $"Even numbers not supported: {i}"
         ///         }
-        ////    ]
+        ///     ]
         ///
         /// computations
         /// |> Async.Choice
