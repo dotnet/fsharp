@@ -2157,6 +2157,9 @@ module RegressionTests =
     [<Test >]
     let ``12383-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/12383" FSC_OPTIMIZED
 
+    [<Test>]
+    let ``13219-bug-FSI`` () = singleTestBuildAndRun "regression/13219" FSI
+
     [<Test >]
     let ``4715-optimized`` () =
         let cfg = testConfig "regression/4715"

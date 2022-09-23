@@ -85,9 +85,6 @@ type env =
       /// "module remap info", i.e. hiding information down the signature chain, used to compute what's hidden by a signature
       sigToImplRemapInfo: (Remap * SignatureHidingInfo) list 
 
-      /// Constructor limited - are we in the prelude of a constructor, prior to object initialization
-      ctorLimitedZone: bool
-
       /// Are we in a quotation?
       quote : bool 
 
@@ -1143,7 +1140,7 @@ and CheckExpr (cenv: cenv) (env: env) origExpr (ctxt: PermitByRefExpr) : Limit =
 
     | Expr.Sequential (e1, e2, ThenDoSeq, _) -> 
         CheckExprNoByrefs cenv env e1
-        CheckExprNoByrefs cenv {env with ctorLimitedZone=false} e2
+        CheckExprNoByrefs cenv env e2
         NoLimit
 
     | Expr.Const (_, m, ty) -> 
@@ -1425,9 +1422,6 @@ and CheckNoResumableStmtConstructs cenv _env expr =
 and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
     let g = cenv.g
 
-    let ctorLimitedZoneCheck() = 
-        if env.ctorLimitedZone then errorR(Error(FSComp.SR.chkObjCtorsCantUseExceptionHandling(), m))
-
     // Ensure anonymous record type requirements are recorded
     match op with
     | TOp.AnonRecdGet (anonInfo, _) 
@@ -1444,7 +1438,6 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
 
     | TOp.TryFinally _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], e2, _, _)] ->
         CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/finally can be a byref 
-        ctorLimitedZoneCheck()
         let limit = CheckExpr cenv env e1 ctxt   // result of a try/finally can be a byref if in a position where the overall expression is can be a byref
         CheckExprNoByrefs cenv env e2
         limit
@@ -1455,7 +1448,6 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
 
     | TOp.TryWith _, [_], [Expr.Lambda (_, _, _, [_], e1, _, _); Expr.Lambda (_, _, _, [_], _e2, _, _); Expr.Lambda (_, _, _, [_], e3, _, _)] ->
         CheckTypeInstNoInnerByrefs cenv env m tyargs  // result of a try/catch can be a byref 
-        ctorLimitedZoneCheck()
         let limit1 = CheckExpr cenv env e1 ctxt // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
         // [(* e2; -- don't check filter body - duplicates logic in 'catch' body *) e3]
         let limit2 = CheckExpr cenv env e3 ctxt // result of a try/catch can be a byref if in a position where the overall expression is can be a byref
@@ -2010,8 +2002,6 @@ and CheckBinding cenv env alwaysCheckNoReraise ctxt (TBind(v, bindRhs, _) as bin
         let access =  AdjustAccess (IsHiddenVal env.sigToImplRemapInfo v) (fun () -> v.DeclaringEntity.CompilationPath) v.Accessibility
         CheckTypeForAccess cenv env (fun () -> NicePrint.stringOfQualifiedValOrMember cenv.denv cenv.infoReader vref) access v.Range v.Type
     
-    let env = if v.IsConstructor && not v.IsIncrClassConstructor then { env with ctorLimitedZone=true } else env
-
     if cenv.reportErrors  then 
 
         // Check top-level let-bound values
@@ -2643,7 +2633,6 @@ let CheckImplFile (g, amap, reportErrors, infoReader, internalsVisibleToPaths, v
     let env = 
         { sigToImplRemapInfo=[]
           quote=false
-          ctorLimitedZone=false 
           boundTyparNames=[]
           argVals = ValMap.Empty
           boundTypars= TyparMap.Empty
