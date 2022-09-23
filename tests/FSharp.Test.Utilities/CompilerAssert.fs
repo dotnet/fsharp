@@ -686,7 +686,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))
 
     /// Assert that the given source code compiles with the `defaultProjectOptions`, with no errors or warnings
-    static member CompileOfAst isExe source =
+    static member CompileOfAstTOMAS_REMOVE isExe source =
         let outputFilePath = Path.ChangeExtension (tryCreateTemporaryFileName (), if isExe then "exe" else ".dll")
         let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
 
@@ -711,7 +711,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.AreEqual(0, statusCode, sprintf "Nonzero status code: %d" statusCode)
         outputFilePath
 
-    static member CompileOfAstToDynamicAssembly source =
+    static member CompileOfAstToDynamicAssemblyTOMAS_REMOVE source =
         let assemblyName = sprintf "test-%O" (Guid.NewGuid())
         let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
         let parseResults =

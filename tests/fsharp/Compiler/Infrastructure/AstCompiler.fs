@@ -10,9 +10,9 @@ open System.Reflection
 module ``AST Compiler Smoke Tests`` =
 
     [<Test>]
-    let ``Simple E2E module compilation``() =
+    let ``Simple E2E module compilation TOMAS_REMOVE``() =
         let assembly = 
-            CompilerAssert.CompileOfAstToDynamicAssembly
+            CompilerAssert.CompileOfAstToDynamicAssemblyTOMAS_REMOVE
                 """
 module TestModule
 
@@ -26,7 +26,7 @@ module TestModule
     [<Test>]
     let ``Compile to Assembly``() =
         let assembly = 
-            CompilerAssert.CompileOfAst false
+            CompilerAssert.CompileOfAstTOMAS_REMOVE false
                 """
 module LiteralValue
 
