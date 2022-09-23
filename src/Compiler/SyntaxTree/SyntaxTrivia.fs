@@ -78,8 +78,8 @@ type SynExprLambdaTrivia =
 [<NoEquality; NoComparison>]
 type SynExprDotLambdaTrivia =
     {
-        UnderscoreRange : range
-        DotRange : range
+        UnderscoreRange: range
+        DotRange: range
     }
 
 [<NoEquality; NoComparison>]

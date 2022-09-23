@@ -122,11 +122,9 @@ type SynExprLambdaTrivia =
 /// Represents additional information for SynExpr.DotLambda
 [<NoEquality; NoComparison>]
 type SynExprDotLambdaTrivia =
-    {
-        UnderscoreRange : range
-        DotRange : range
-    }
-    
+    { UnderscoreRange: range
+      DotRange: range }
+
 /// Represents additional information for SynExpr.LetOrUse
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseTrivia =
