@@ -1,6 +1,7 @@
-name: 🐞 Bug
-description: File a bug/issue
-title: "Issue: Bug report"
+name: Create a report to help us improve F#
+description: Create a report to help us improve F#
+title: "Create a report to help us improve F#
+"
 labels: [Needs Triage]
 body:
 - type: checkboxes
@@ -42,7 +43,7 @@ body:
     label: Known workarounds
     description: Provide a description of the actual behaviour observed. 
   validations:
-    required: true
+    required: false
 - type: textarea
   attributes:
     label: Related information
