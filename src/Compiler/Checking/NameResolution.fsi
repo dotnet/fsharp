@@ -677,12 +677,7 @@ val internal ResolveLongIdentAsModuleOrNamespace:
 
 /// Resolve a long identifier to an object constructor.
 val internal ResolveObjectConstructor:
-    ncenv: NameResolver ->
-    denv: DisplayEnv ->
-    m: range ->
-    ad: AccessorDomain ->
-    ty: TType ->
-        ResultOrException<Item>
+    ncenv: NameResolver -> denv: DisplayEnv -> m: range -> ad: AccessorDomain -> ty: TType -> ResultOrException<Item>
 
 /// Resolve a long identifier using type-qualified name resolution.
 val internal ResolveLongIdentInType:
