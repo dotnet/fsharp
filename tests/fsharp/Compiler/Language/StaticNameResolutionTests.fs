@@ -15,15 +15,17 @@ module StaticNameResolutionTests =
     let ``C# nested type is accessible even when extension method is present with same name``() =
         let csSrc =
             """
-namespace ClassLibrary2
+namespace CSharpLib
 {
     public static class Extensions
     {
+        // Note instance extension member has same name as nested type
         static public T cuda<T>(this T x) { return x; }
     }
 
     public class torch
     {
+        // Note instance extension member has same name as nested type
         public class cuda
         {
             public static bool isAvailable() { return true; }
@@ -35,7 +37,7 @@ namespace ClassLibrary2
 
         let fsSrc =
             """
-open ClassLibrary2
+open CSharpLib
 
 let res1 : bool = torch.cuda.isAvailable()
 let res2 : bool = torch.cuda().isAvailable2()
