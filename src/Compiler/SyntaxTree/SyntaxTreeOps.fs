@@ -468,7 +468,7 @@ let mkSynDotMissing mDot m l =
     | SynExpr.LongIdent (isOpt, SynLongIdent (lid, dots, trivia), None, _) ->
         // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
         SynExpr.LongIdent(isOpt, SynLongIdent(lid, dots @ [ mDot ], trivia), None, m)
-    | SynExpr.Ident id -> SynExpr.LongIdent(false, SynLongIdent([ id ], [ mDot ], []), None, m)
+    | SynExpr.Ident id -> SynExpr.LongIdent(false, SynLongIdent([ id ], [ mDot ], [ None ]), None, m)
     | SynExpr.DotGet (e, dm, SynLongIdent (lid, dots, trivia), _) -> SynExpr.DotGet(e, dm, SynLongIdent(lid, dots @ [ mDot ], trivia), m) // REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
     | expr -> SynExpr.DiscardAfterMissingQualificationAfterDot(expr, m)
 
