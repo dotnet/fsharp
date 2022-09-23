@@ -611,7 +611,7 @@ type internal FxResolver
     // A set of assemblies to always consider to be system assemblies.  A common set of these can be used a shared
     // resources between projects in the compiler services.  Also all assemblies where well-known system types exist
     // referenced from TcGlobals must be listed here.
-    let systemAssemblies =
+    static let systemAssemblies =
         HashSet
             [
                 // NOTE: duplicates are ok in this list
@@ -789,17 +789,10 @@ type internal FxResolver
                 "WindowsBase"
             ]
 
-    member _.GetSystemAssemblies() = systemAssemblies
+    static member GetSystemAssemblies() = systemAssemblies
 
-    member _.IsInReferenceAssemblyPackDirectory fileName =
-        fxlock.AcquireLock(fun fxtok ->
-            RequireFxResolverLock(fxtok, "assuming all member require lock")
-
-            match tryGetNetCoreRefsPackDirectoryRoot () |> replayWarnings with
-            | _, Some root ->
-                let path = Path.GetDirectoryName(fileName)
-                path.StartsWith(root, StringComparison.OrdinalIgnoreCase)
-            | _ -> false)
+    static member IsReferenceAssemblyPackDirectoryApprox (dirName: string) =
+        dirName.Contains "Microsoft.NETCore.App.Ref"
 
     member _.TryGetSdkDir() =
         fxlock.AcquireLock(fun fxtok ->
