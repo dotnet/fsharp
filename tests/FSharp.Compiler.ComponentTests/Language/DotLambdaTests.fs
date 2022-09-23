@@ -13,6 +13,7 @@ module DotLambdaTests =
         |> compile
         |> shouldSucceed
         
+    [<Fact>]
     let ``Simple anonymous unary function shorthands compile`` () =
         FSharp """
 module One
@@ -24,6 +25,15 @@ let a5 : {| Foo : int -> {| X : string |} |} -> string = _.Foo(5).X
 
 open System
 let a6 = [1] |> List.map _.ToString()
+        """
+        |> compile
+        |> shouldSucceed
+        
+    [<Fact>]
+    let ``Nested anonymous unary function shorthands compile`` () =
+        FSharp """
+module One
+let a : string = {| Inner =  (fun x -> x.ToString()) |} |> _.Inner([5] |> _.[0])
         """
         |> compile
         |> shouldSucceed
