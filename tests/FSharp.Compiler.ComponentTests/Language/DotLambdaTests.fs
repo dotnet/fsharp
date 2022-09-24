@@ -10,6 +10,7 @@ module DotLambdaTests =
     [<Fact>]
     let ``Script: _.ToString()`` () =
         Fsx "_.ToString()"
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
         
@@ -18,7 +19,8 @@ module DotLambdaTests =
         Fsx "_.ToString()"
         |> withLangVersion70
         |> compile
-        |> shouldSucceed
+        |> shouldFail
+        |> withSingleDiagnostic (Error 3350, Line 1, Col 1, Line 1, Col 3, "Feature 'underscore dot shorthand for accessor only function' is not available in F# 7.0. Please use language version 'PREVIEW' or greater." )
         
     [<Fact>]
     let ``Simple anonymous unary function shorthands compile`` () =
@@ -33,6 +35,7 @@ let a5 : {| Foo : int -> {| X : string |} |} -> string = _.Foo(5).X
 open System
 let a6 = [1] |> List.map _.ToString()
         """
+        |> withLangVersionPreview
         |> compile
         |> shouldSucceed
         
@@ -42,6 +45,7 @@ let a6 = [1] |> List.map _.ToString()
 module One
 let a : string = {| Inner =  (fun x -> x.ToString()) |} |> _.Inner([5] |> _.[0])
         """
+        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withSingleDiagnostic (Warning 3546, Line 3, Col 75, Line 3, Col 76, "Discard is ambiguous")
@@ -54,6 +58,7 @@ let a : string -> string = (fun _ -> 5 |> _.ToString())
 let b : int -> int -> string = function |5 -> (fun _ -> "Five") |_ -> _.ToString()
 let c : string = let _ = "test" in "asd" |> _.ToString()
         """
+        |> withLangVersionPreview
         |> compile
         |> shouldFail
         |> withSingleDiagnostic (Warning 3546, Line 3, Col 43, Line 3, Col 44, "Discard is ambiguous")
