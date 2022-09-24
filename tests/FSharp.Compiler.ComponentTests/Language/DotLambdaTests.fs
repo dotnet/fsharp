@@ -14,6 +14,13 @@ module DotLambdaTests =
         |> shouldSucceed
         
     [<Fact>]
+    let ``Script: _.ToString(), old lang version`` () =
+        Fsx "_.ToString()"
+        |> withLangVersion70
+        |> compile
+        |> shouldSucceed
+        
+    [<Fact>]
     let ``Simple anonymous unary function shorthands compile`` () =
         FSharp """
 module One

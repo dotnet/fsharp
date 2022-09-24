@@ -117,6 +117,11 @@
         <target state="translated">O atributo de assembly '{0}' refere-se a um assembly de designer '{1}' que não pode ser carregado ou que não existe. A exceção relatada foi {2} – {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAccessorFunctionShorthand">
+        <source>underscore dot shorthand for accessor only function</source>
+        <target state="new">underscore dot shorthand for accessor only function</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">conversões direcionadas por tipos adicionais</target>

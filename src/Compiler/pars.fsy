@@ -4307,7 +4307,10 @@ argExpr:
     
 atomicExpr:
   | UNDERSCORE DOT atomicExpr %prec dot_lambda
-      { let arg1 = rhs parseState 1
+      { parseState.LexBuffer.CheckLanguageFeatureAndRecover LanguageFeature.AccessorFunctionShorthand (rhs parseState 2)
+      //{ if not (parseState.LexBuffer.SupportsFeature LanguageFeature.AccessorFunctionShorthand) then
+      //    raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedSymbolDot())
+        let arg1 = rhs parseState 1
         let arg2 = rhs parseState 2
         let arg3, hpa = $3
         let trivia: SynExprDotLambdaTrivia = { UnderscoreRange = arg1; DotRange = arg2 }

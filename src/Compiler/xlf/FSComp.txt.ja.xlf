@@ -117,6 +117,11 @@
         <target state="translated">アセンブリ属性 '{0}' は、デザイナー アセンブリ '{1}' を参照していますが、これは読み込むことができないか、存在していません。報告された例外: {2} - {3}</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureAccessorFunctionShorthand">
+        <source>underscore dot shorthand for accessor only function</source>
+        <target state="new">underscore dot shorthand for accessor only function</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureAdditionalImplicitConversions">
         <source>additional type-directed conversions</source>
         <target state="translated">その他の型指定された変換</target>
