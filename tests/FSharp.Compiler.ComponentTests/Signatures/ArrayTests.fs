@@ -32,9 +32,15 @@ let ``4 dimensional array`` () =
         "val a: int array4d"
 
 [<Fact>]
-let ``5 dimensional jagged array`` () =
+let ``jagged array 1`` () =
     assertSingleSignatureBinding
         "let a : array<array<array<array<array<int>>>>> = failwith \"todo\""
+        "val a: int array array array array array"
+        
+[<Fact>]
+let ``jagged array 2`` () =
+    assertSingleSignatureBinding
+        "let a: int[][][][][] = failwith \"todo\""
         "val a: int array array array array array"
 
 [<Fact>]
