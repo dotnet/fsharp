@@ -386,6 +386,24 @@ let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: Ident) =
     if not g.compilingFSharpCore && id.idText.IndexOfAny IllegalCharactersInTypeAndNamespaceNames <> -1 then 
         errorR(Error(FSComp.SR.tcInvalidNamespaceModuleTypeUnionName(), id.idRange))
 
+let CheckDuplicatesAbstractMethodParmsSig (typeSpecs:  SynTypeDefnSig list) =
+    for SynTypeDefnSig(typeRepr= trepr) in typeSpecs do 
+        match trepr with 
+        | SynTypeDefnSigRepr.ObjectModel(_, synMemberSigs, _) ->
+         for sms in synMemberSigs do
+             match sms with
+             | SynMemberSig.Member(synValSig, _, m) ->
+                let argNames =
+                    synValSig.SynInfo.ArgNames
+                    |> List.groupBy id
+                    |> List.filter (fun (_, elems) -> Seq.length elems > 1)
+                    |> List.map fst
+                    
+                for name in argNames do
+                    errorR(Error((FSComp.SR.chkDuplicatedMethodParameter(name), m)))
+             | _ -> ()
+        | _ -> ()
+
 let CheckDuplicates (idf: _ -> Ident) k elems = 
     elems |> List.iteri (fun i uc1 -> 
         elems |> List.iteri (fun j uc2 -> 
@@ -4363,7 +4381,8 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
             let _, _, _, env = TcExceptionDeclarations.TcExnSignature cenv env parent emptyUnscopedTyparEnv (edef, scopem)
             return env
 
-        | SynModuleSigDecl.Types (typeSpecs, m) -> 
+        | SynModuleSigDecl.Types (typeSpecs, m) ->
+            CheckDuplicatesAbstractMethodParmsSig(typeSpecs)
             let scopem = unionRanges m endm
             let mutRecDefns = typeSpecs |> List.map MutRecShape.Tycon
             let env = TcDeclarations.TcMutRecSignatureDecls cenv env parent typeNames emptyUnscopedTyparEnv m scopem None mutRecDefns
@@ -4533,7 +4552,8 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
           let rec loop isNamespace moduleRange defs: MutRecSigsInitialData = 
             ((true, true), defs) ||> List.collectFold (fun (openOk, moduleAbbrevOk) def -> 
                 match def with 
-                | SynModuleSigDecl.Types (typeSpecs, _) -> 
+                | SynModuleSigDecl.Types (typeSpecs, _) ->
+                    CheckDuplicatesAbstractMethodParmsSig(typeSpecs)
                     let decls = typeSpecs |> List.map MutRecShape.Tycon
                     decls, (false, false)
 
