@@ -635,9 +635,10 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
       protect <| fun () -> 
         ([ let entityTy = generalizedTyconRef cenv.g entity
            let createMember (minfo: MethInfo) =
-               if minfo.IsConstructor || minfo.IsClassConstructor
-               then FSharpMemberOrFunctionOrValue(cenv, C minfo, Item.CtorGroup (minfo.DisplayName, [minfo]))
-               else FSharpMemberOrFunctionOrValue(cenv, M minfo, Item.MethodGroup (minfo.DisplayName, [minfo], None))
+               if minfo.IsConstructor || minfo.IsClassConstructor then
+                   FSharpMemberOrFunctionOrValue(cenv, C minfo, Item.CtorGroup (minfo.DisplayName, [minfo]))
+               else
+                   FSharpMemberOrFunctionOrValue(cenv, M minfo, Item.MethodGroup (minfo.DisplayName, [minfo], None))
            if x.IsFSharpAbbreviation then 
                ()
            elif x.IsFSharp then 
