@@ -429,7 +429,102 @@ module MethodsAndProperties =
         ]
         
     [<Fact>]
-    let ``Error in signature with abstract methods when reusing parameters`` () =
+    let ``Error in signature file with not implementation file with abstract methods when reusing parameters`` () =
+        let encodeFsi =
+            Fsi """
+namespace Foo
+type I =
+    // Tupled.
+    abstract M : i:int * i:int -> int
+    // Curried.
+    abstract N : i:int -> i:int -> int
+    // More than two.
+    abstract O : i:int * i: int * i:int -> int
+    // Multiple distinct names repeated.
+    abstract P : i:int * j:int * i:int * j:int -> int
+    """
+        encodeFsi
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3546, Line 5, Col 5, Line 5, Col 38, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 7, Col 5, Line 7, Col 39, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 9, Col 5, Line 9, Col 47, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
+            (Error 240, Line 2, Col 1, Line 11, Col 54, "The signature file 'Test' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
+        ]
+        
+    [<Fact>]
+    let ``Error in signature file with not implementation file with abstract methods when reusing parameters in recursive namespace`` () =
+        let encodeFsi =
+            Fsi """
+namespace rec Foo
+type I =
+    // Tupled.
+    abstract M : i:int * i:int -> int
+    // Curried.
+    abstract N : i:int -> i:int -> int
+    // More than two.
+    abstract O : i:int * i: int * i:int -> int
+    // Multiple distinct names repeated.
+    abstract P : i:int * j:int * i:int * j:int -> int
+    """
+        encodeFsi
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3546, Line 5, Col 5, Line 5, Col 38, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 7, Col 5, Line 7, Col 39, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 9, Col 5, Line 9, Col 47, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
+            (Error 240, Line 2, Col 1, Line 11, Col 54, "The signature file 'Test' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
+        ]
+
+    [<Fact>]
+    let ``Errors in signature and implementation files with abstract methods when reusing parameters`` () =
+        let encodeFsi =
+            Fsi """
+namespace Foo
+type I =
+    // Tupled.
+    abstract M : i:int * i:int -> int
+    // Curried.
+    abstract N : i:int -> i:int -> int
+    // More than two.
+    abstract O : i:int * i: int * i:int -> int
+    // Multiple distinct names repeated.
+    abstract P : i:int * j:int * i:int * j:int -> int
+    """
+        let encodeFs =
+            FsSource """
+namespace Foo
+type I =
+    abstract M : i:int * i:int -> int
+    abstract N : i:int -> i:int -> int
+    abstract O : i:int * i: int * i:int -> int
+    abstract P : i:int * j:int * i:int * j:int -> int
+        """
+        encodeFsi
+        |> withAdditionalSourceFile encodeFs
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3546, Line 5, Col 5, Line 5, Col 38, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 7, Col 5, Line 7, Col 39, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 9, Col 5, Line 9, Col 47, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
+            (Error 3546, Line 4, Col 5, Line 4, Col 38, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 5, Col 5, Line 5, Col 39, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 6, Col 5, Line 6, Col 47, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
+        ]
+
+    [<Fact>]
+    let ``Errors in signature and implementation files with abstract methods when reusing parameters in recursive namespaces`` () =
         let encodeFsi =
             Fsi """
 namespace rec Foo
@@ -447,18 +542,13 @@ type I =
             FsSource """
 namespace rec Foo
 type I =
-    // Tupled.
     abstract M : i:int * i:int -> int
-    // Curried.
     abstract N : i:int -> i:int -> int
-    // More than two.
     abstract O : i:int * i: int * i:int -> int
-    // Multiple distinct names repeated.
     abstract P : i:int * j:int * i:int * j:int -> int
         """
         encodeFsi
         |> withAdditionalSourceFile encodeFs
-        |> asExe
         |> compile
         |> shouldFail
         |> withDiagnostics [
@@ -467,6 +557,9 @@ type I =
             (Error 3546, Line 9, Col 5, Line 9, Col 47, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
             (Error 3546, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
             (Error 3546, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
+            (Error 3546, Line 4, Col 5, Line 4, Col 38, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 5, Col 5, Line 5, Col 39, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 6, Col 5, Line 6, Col 47, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            (Error 3546, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
         ]
-
-

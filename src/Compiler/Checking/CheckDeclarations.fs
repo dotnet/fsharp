@@ -385,6 +385,15 @@ let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: Ident) =
     // type names '[]' etc. are used in fslib
     if not g.compilingFSharpCore && id.idText.IndexOfAny IllegalCharactersInTypeAndNamespaceNames <> -1 then 
         errorR(Error(FSComp.SR.tcInvalidNamespaceModuleTypeUnionName(), id.idRange))
+        
+let CheckDuplicatesInSynValSig (synVal: SynValSig) m =
+    let argNames =
+        synVal.SynInfo.ArgNames
+        |> List.countBy id
+        |> List.filter (fun (_, count) -> count > 1)
+        |> List.map fst
+    for name in argNames do
+        errorR(Error((FSComp.SR.chkDuplicatedMethodParameter(name), m)))
 
 let CheckDuplicatesAbstractMethodParmsSig (typeSpecs:  SynTypeDefnSig list) =
     for SynTypeDefnSig(typeRepr= trepr) in typeSpecs do 
@@ -393,14 +402,7 @@ let CheckDuplicatesAbstractMethodParmsSig (typeSpecs:  SynTypeDefnSig list) =
          for sms in synMemberSigs do
              match sms with
              | SynMemberSig.Member(synValSig, _, m) ->
-                let argNames =
-                    synValSig.SynInfo.ArgNames
-                    |> List.groupBy id
-                    |> List.filter (fun (_, elems) -> Seq.length elems > 1)
-                    |> List.map fst
-                    
-                for name in argNames do
-                    errorR(Error((FSComp.SR.chkDuplicatedMethodParameter(name), m)))
+                CheckDuplicatesInSynValSig synValSig m
              | _ -> ()
         | _ -> ()
 
@@ -3963,18 +3965,13 @@ module TcDeclarations =
              | SynMemberDefn.NestedType (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
              | _ -> ()
         | ds ->
-            // Check for duplicated parameters
+
+            // Check for duplicated parameters in abstract methods
             for slot in ds do
                 if isAbstractSlot slot then
                     match slot with
-                    | SynMemberDefn.AbstractSlot (x, _, m) ->
-                        let argNames =
-                            x.SynInfo.ArgNames
-                            |> List.groupBy id
-                            |> List.filter (fun (_, elems) -> Seq.length elems > 1)
-                            |> List.map fst
-                        for name in argNames do
-                            errorR(Error((FSComp.SR.chkDuplicatedMethodParameter(name), m)))
+                    | SynMemberDefn.AbstractSlot (synVal, _, m) ->
+                        CheckDuplicatesInSynValSig synVal m
                     | _ -> ()
             
             // Classic class construction    
@@ -4382,7 +4379,7 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
             return env
 
         | SynModuleSigDecl.Types (typeSpecs, m) ->
-            CheckDuplicatesAbstractMethodParmsSig(typeSpecs)
+            CheckDuplicatesAbstractMethodParmsSig typeSpecs
             let scopem = unionRanges m endm
             let mutRecDefns = typeSpecs |> List.map MutRecShape.Tycon
             let env = TcDeclarations.TcMutRecSignatureDecls cenv env parent typeNames emptyUnscopedTyparEnv m scopem None mutRecDefns
@@ -4553,7 +4550,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
             ((true, true), defs) ||> List.collectFold (fun (openOk, moduleAbbrevOk) def -> 
                 match def with 
                 | SynModuleSigDecl.Types (typeSpecs, _) ->
-                    CheckDuplicatesAbstractMethodParmsSig(typeSpecs)
+                    CheckDuplicatesAbstractMethodParmsSig typeSpecs
                     let decls = typeSpecs |> List.map MutRecShape.Tycon
                     decls, (false, false)
 
