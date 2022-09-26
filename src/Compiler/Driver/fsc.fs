@@ -446,6 +446,18 @@ let TryFindVersionAttribute g attrib attribName attribs deterministic =
 [<NoEquality; NoComparison>]
 type Args<'T> = Args of 'T
 
+let getParallelReferenceResolutionFromEnvironment () =
+    Environment.GetEnvironmentVariable("FCS_ParallelReferenceResolution")
+    |> Option.ofObj
+    |> Option.bind (fun flag ->
+        match bool.TryParse flag with
+        | true, runInParallel ->
+            if runInParallel then
+                Some ParallelReferenceResolution.On
+            else
+                Some ParallelReferenceResolution.Off
+        | false, _ -> None)
+
 /// First phase of compilation.
 ///   - Set up console encoding and code page settings
 ///   - Process command line, flags and collect filenames
@@ -532,6 +544,11 @@ let main1
             exiter.Exit 1
 
     tcConfigB.conditionalDefines <- "COMPILED" :: tcConfigB.conditionalDefines
+
+    // Override ParallelReferenceResolution set on the CLI with an environment setting if present.
+    match getParallelReferenceResolutionFromEnvironment () with
+    | Some parallelReferenceResolution -> tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+    | None -> ()
 
     // Display the banner text, if necessary
     if not bannerAlreadyPrinted then
@@ -673,177 +690,6 @@ let main1
         diagnosticsLogger,
         exiter,
         ilSourceDocs
-    )
-
-/// Alternative first phase of compilation.  This is for the compile-from-AST feature of FCS.
-///   - Import assemblies
-///   - Check the inputs
-let main1OfAst
-    (
-        ctok,
-        legacyReferenceResolver,
-        reduceMemoryUsage,
-        assemblyName,
-        target,
-        outfile,
-        pdbFile,
-        dllReferences,
-        noframework,
-        exiter: Exiter,
-        diagnosticsLoggerProvider: IDiagnosticsLoggerProvider,
-        disposables: DisposablesTracker,
-        inputs: ParsedInput list
-    ) =
-
-    let tryGetMetadataSnapshot = (fun _ -> None)
-
-    let directoryBuildingFrom = Directory.GetCurrentDirectory()
-
-    let defaultFSharpBinariesDir =
-        FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
-
-    let tcConfigB =
-        TcConfigBuilder.CreateNew(
-            legacyReferenceResolver,
-            defaultFSharpBinariesDir,
-            reduceMemoryUsage = reduceMemoryUsage,
-            implicitIncludeDir = directoryBuildingFrom,
-            isInteractive = false,
-            isInvalidationSupported = false,
-            defaultCopyFSharpCore = CopyFSharpCoreFlag.No,
-            tryGetMetadataSnapshot = tryGetMetadataSnapshot,
-            sdkDirOverride = None,
-            rangeForErrors = range0
-        )
-
-    let primaryAssembly =
-        // temporary workaround until https://github.com/dotnet/fsharp/pull/8043 is merged:
-        // pick a primary assembly based on whether the developer included System>Runtime in the list of reference assemblies.
-        // It's an ugly compromise used to avoid exposing primaryAssembly in the public api for this function.
-        let includesSystem_Runtime =
-            dllReferences
-            |> Seq.exists (fun f ->
-                Path
-                    .GetFileName(f)
-                    .Equals("system.runtime.dll", StringComparison.InvariantCultureIgnoreCase))
-
-        if includesSystem_Runtime then
-            PrimaryAssembly.System_Runtime
-        else
-            PrimaryAssembly.Mscorlib
-
-    tcConfigB.target <- target
-    tcConfigB.SetPrimaryAssembly primaryAssembly
-
-    if noframework then
-        tcConfigB.implicitlyReferenceDotNetAssemblies <- false
-        tcConfigB.implicitlyResolveAssemblies <- false
-
-    // Preset: --optimize+ -g --tailcalls+ (see 4505)
-    SetOptimizeSwitch tcConfigB OptionSwitch.On
-
-    SetDebugSwitch
-        tcConfigB
-        None
-        (match pdbFile with
-         | Some _ -> OptionSwitch.On
-         | None -> OptionSwitch.Off)
-
-    SetTailcallSwitch tcConfigB OptionSwitch.On
-
-    // Now install a delayed logger to hold all errors from flags until after all flags have been parsed (for example, --vserrors)
-    let delayForFlagsLogger = CapturingDiagnosticsLogger("DelayForFlagsLogger")
-
-    let _holder = UseDiagnosticsLogger delayForFlagsLogger
-
-    tcConfigB.conditionalDefines <- "COMPILED" :: tcConfigB.conditionalDefines
-
-    // append assembly dependencies
-    dllReferences
-    |> List.iter (fun ref -> tcConfigB.AddReferencedAssemblyByPath(rangeStartup, ref))
-
-    // If there's a problem building TcConfig, abort
-    let tcConfig =
-        try
-            TcConfig.Create(tcConfigB, validate = false)
-        with e ->
-            delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
-            exiter.Exit 1
-
-    let dependencyProvider = new DependencyProvider()
-
-    let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
-
-    // Install the global error logger and never remove it. This logger does have all command-line flags considered.
-    let _holder = UseDiagnosticsLogger diagnosticsLogger
-
-    // Forward all errors from flags
-    delayForFlagsLogger.CommitDelayedDiagnostics diagnosticsLogger
-
-    // Resolve assemblies
-    ReportTime tcConfig "Import mscorlib and FSharp.Core.dll"
-    let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
-
-    let sysRes, otherRes, knownUnresolved =
-        TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
-
-    // Import basic assemblies
-    let tcGlobals, frameworkTcImports =
-        TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes)
-        |> NodeCode.RunImmediateWithoutCancellation
-
-    // Register framework tcImports to be disposed in future
-    disposables.Register frameworkTcImports
-
-    use unwindParsePhase = UseBuildPhase BuildPhase.Parse
-
-    let meta = Directory.GetCurrentDirectory()
-
-    let tcConfig =
-        (tcConfig, inputs)
-        ||> List.fold (fun tcc inp -> ApplyMetaCommandsFromInputToTcConfig(tcc, inp, meta, dependencyProvider))
-
-    let tcConfigP = TcConfigProvider.Constant tcConfig
-
-    // Import other assemblies
-    ReportTime tcConfig "Import non-system references"
-
-    let tcImports =
-        TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
-        |> NodeCode.RunImmediateWithoutCancellation
-
-    // register tcImports to be disposed in future
-    disposables.Register tcImports
-
-    // Build the initial type checking environment
-    ReportTime tcConfig "Typecheck"
-    use unwindParsePhase = UseBuildPhase BuildPhase.TypeCheck
-
-    let tcEnv0, openDecls0 =
-        GetInitialTcEnv(assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
-
-    // Type check the inputs
-    let tcState, topAttrs, typedAssembly, _tcEnvAtEnd =
-        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, assemblyName, tcEnv0, openDecls0, inputs, exiter)
-
-    AbortOnError(diagnosticsLogger, exiter)
-    ReportTime tcConfig "Typechecked"
-
-    Args(
-        ctok,
-        tcGlobals,
-        tcImports,
-        frameworkTcImports,
-        tcState.Ccu,
-        typedAssembly,
-        topAttrs,
-        tcConfig,
-        outfile,
-        pdbFile,
-        assemblyName,
-        diagnosticsLogger,
-        exiter,
-        []
     )
 
 /// Second phase of compilation.
@@ -1350,48 +1196,6 @@ let CompileFromCommandLineArguments
         exiter,
         loggerProvider,
         disposables
-    )
-    |> main2
-    |> main3
-    |> main4 (tcImportsCapture, dynamicAssemblyCreator)
-    |> main5
-    |> main6 dynamicAssemblyCreator
-
-/// An additional compilation entry point used by FSharp.Compiler.Service taking syntax trees as input
-let CompileFromSyntaxTrees
-    (
-        ctok,
-        legacyReferenceResolver,
-        reduceMemoryUsage,
-        assemblyName,
-        target,
-        targetDll,
-        targetPdb,
-        dependencies,
-        noframework,
-        exiter,
-        loggerProvider,
-        inputs,
-        tcImportsCapture,
-        dynamicAssemblyCreator
-    ) =
-
-    use disposables = new DisposablesTracker()
-
-    main1OfAst (
-        ctok,
-        legacyReferenceResolver,
-        reduceMemoryUsage,
-        assemblyName,
-        target,
-        targetDll,
-        targetPdb,
-        dependencies,
-        noframework,
-        exiter,
-        loggerProvider,
-        disposables,
-        inputs
     )
     |> main2
     |> main3
