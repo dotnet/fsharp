@@ -233,7 +233,7 @@ match A with
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-        "(7,2--7,7): This union case expects 2 arguments in tupled form, but was given 0. The missing field arguments may be any of: field: int , int"
+        "(7,2--7,7): This union case expects 2 arguments in tupled form, but was given 0. The missing field arguments may be any of: field: int int"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
 
@@ -263,7 +263,7 @@ match x with
 | B  -> 42
 """
     dumpDiagnostics checkResults |> shouldEqual [
-        "(7,2--7,3): This union case expects 4 arguments in tupled form, but was given 0. The missing field arguments may be any of: f1: seq<int> , {| X: string |} , f3: U , f4: (int * System.String)"
+        "(7,2--7,3): This union case expects 4 arguments in tupled form, but was given 0. The missing field arguments may be any of: f1: seq<int> {| X: string |} f3: U f4: (int * System.String)"
     ]
 
 [<Test>]

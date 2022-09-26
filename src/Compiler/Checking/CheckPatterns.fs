@@ -682,7 +682,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
                 let missingArgs = 
                     argNames.[numArgs..numArgTys - 1]
                     |> List.map (fun id -> (if id.rfield_name_generated then "" else id.DisplayName + ": ") +  printT id.FormalType)
-                    |> String.concat (Environment.NewLine + ", ")
+                    |> String.concat (Environment.NewLine + "\t")
                     |> fun s -> Environment.NewLine+s
 
                 errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments(numArgTys, numArgs, missingArgs), m))
