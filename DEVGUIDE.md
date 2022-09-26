@@ -44,12 +44,12 @@ This will update your fork with the latest from `dotnet/fsharp` on your machine 
 
 ## Developing on Windows
 
-Install the latest released [Visual Studio](https://www.visualstudio.com/downloads/), as that is what the `main` branch's tools are synced with. Select the following workloads:
+Install the latest released [Visual Studio](https://visualstudio.microsoft.com/vs/preview/) preview, as that is what the `main` branch's tools are synced with. Select the following workloads:
 
 * .NET desktop development (also check F# desktop support, as this will install some legacy templates)
 * Visual Studio extension development
 
-You will also need the latest .NET 6 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/6.0).
+You will also need the latest .NET 7 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/7.0).
 
 Building is simple:
 
@@ -73,10 +73,10 @@ If you don't have everything installed yet, you'll get prompted by Visual Studio
 
 If you are just developing the core compiler and library then building ``FSharp.sln`` will be enough.
 
-We recommend installing the latest released Visual Studio and using that if you are on Windows. However, if you prefer not to do that, you will need to install the following:
+We recommend installing the latest Visual Studio preview and using that if you are on Windows. However, if you prefer not to do that, you will need to install the following:
 
 * [.NET Framework 4.7.2](https://dotnet.microsoft.com/download/dotnet-framework/net472)
-* [.NET 6](https://dotnet.microsoft.com/download/dotnet/6.0)
+* [.NET 7](https://dotnet.microsoft.com/download/dotnet/7.0)
 
 You'll need to pass an additional flag to the build script:
 
