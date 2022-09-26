@@ -256,14 +256,14 @@ match None with
 let ``Union case 10 - incomplete union fields`` () =
     let _, checkResults = getParseAndCheckResults """
 type U =
-    | B of  f1:int seq * {|X:string|} * f3:U
+    | B of  f1:int seq * {|X:string|} * f3:U * f4: (int * System.String)
 
 let x : U = failwith ""
 match x with
 | B  -> 42
 """
     dumpDiagnostics checkResults |> shouldEqual [
-        "(7,2--7,3): This union case expects 3 arguments in tupled form, but was given 0. The missing field arguments may be any of: f1: seq<int> , {|X string;|} , f3: U"      
+        "(7,2--7,3): This union case expects 4 arguments in tupled form, but was given 0. The missing field arguments may be any of: f1: seq<int> , {| X: string |} , f3: U , f4: (int * System.String)"
     ]
 
 [<Test>]
