@@ -1032,11 +1032,11 @@ let rec normalizeTupleExpr exprs commas : SynExpr list * range list =
     | _ -> exprs, commas
 
 let rec normalizeTuplePat pats : SynPat list =
-     match pats with
-     | SynPat.Tuple (false, innerPats, _) :: rest ->
-         let innerExprs = normalizeTuplePat (List.rev innerPats)
-         innerExprs @ rest
-     | _ -> pats
+    match pats with
+    | SynPat.Tuple (false, innerPats, _) :: rest ->
+        let innerExprs = normalizeTuplePat (List.rev innerPats)
+        innerExprs @ rest
+    | _ -> pats
 
 /// Remove all members that were captures as SynMemberDefn.GetSetMember
 let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =
