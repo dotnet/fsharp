@@ -1033,7 +1033,7 @@ let rec normalizeTupleExpr exprs commas : SynExpr list * range list =
 
 let rec normalizeTuplePat pats : SynPat list =
      match pats with
-     | SynPat.Tuple(false, innerPats, _) :: rest ->
+     | SynPat.Tuple (false, innerPats, _) :: rest ->
          let innerExprs = normalizeTuplePat (List.rev innerPats)
          innerExprs @ rest
      | _ -> pats
