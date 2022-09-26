@@ -610,7 +610,7 @@ module ResizeArray =
                     // * doing a block copy using `List.CopyTo(index, array, index, count)` (requires more copies to do the mapping)
                     // none are significantly better.
                     for i in 0 .. takeCount - 1 do
-                        holder[i] <- f items[i]
+                        holder[i] <- f items[startIndex+i]
 
                     yield holder
             |]
