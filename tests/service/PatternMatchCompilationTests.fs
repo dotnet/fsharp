@@ -14,7 +14,7 @@ match () with
 | x -> let y = () in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(3,2--3,4): This expression was expected to have type 'unit' but here has type 'string'"
     ]
 
@@ -27,7 +27,7 @@ let ``Wrong type 02 - Binding`` () =
 let ("": unit), (x: int) = let y = () in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(2,5--2,7): This expression was expected to have type 'unit' but here has type 'string'"
         "(2,41--2,43): This expression was expected to have type 'unit * int' but here has type 'unit'"
         "(2,4--2,24): Incomplete pattern matches on this expression."
@@ -44,7 +44,7 @@ match () with
 | [<CompiledName("Foo")>] x -> let y = () in ()
 """
     assertHasSymbolUsages ["x"; "y"; "CompiledNameAttribute"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(3,2--3,25): Attributes are not allowed within patterns"
         "(3,4--3,16): This attribute is not valid for use on this language element"
     ]
@@ -60,7 +60,7 @@ match () with
 | ?x -> let y = () in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(3,2--3,4): Optional arguments are only permitted on type members"
     ]
 
@@ -75,7 +75,7 @@ match 1, 2 with
 | null -> let y = () in ()
 """
     assertHasSymbolUsages ["y"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(3,2--3,6): The type '(int * int)' does not have 'null' as a proper value"
         "(2,6--2,10): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
     ]
@@ -95,8 +95,8 @@ match A with
 | B (x, _) -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpErrors checkResults |> shouldEqual [
-        "(7,2--7,10): This union case expects 3 arguments in tupled form, but was given 2. The missing field arguments may be any of: Item3"
+    dumpDiagnostics checkResults |> shouldEqual [
+        "(7,2--7,10): This union case expects 3 arguments in tupled form, but was given 2. The missing field arguments may be any of: int"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
 
@@ -115,7 +115,7 @@ match A with
 | B (_, _, x) -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(7,5--7,12): This expression was expected to have type 'int' but here has type ''a * 'b * 'c'"
         "(6,6--6,7): Incomplete pattern matches on this expression."
     ]
@@ -135,7 +135,7 @@ match A with
 | B (_, _, x) -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(7,11--7,12): This constructor is applied to 3 argument(s) but expects 2"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
@@ -154,7 +154,7 @@ match A with
 | A x -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(7,2--7,5): This union case does not take arguments"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'B (_)' may indicate a case not covered by the pattern(s)."
     ]
@@ -173,7 +173,7 @@ match A with
 | B x -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
 
@@ -192,7 +192,7 @@ match A with
 | B (name = x) -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(7,5--7,9): The union case 'B' does not have a field named 'name'."
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
@@ -212,7 +212,7 @@ match A with
 | B (field = x; field = z) -> let y = x + z + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(7,16--7,21): Union case/exception field 'field' cannot be used more than once."
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
@@ -232,8 +232,8 @@ match A with
 | B x z -> let y = x + z + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpErrors checkResults |> shouldEqual [
-        "(7,2--7,7): This union case expects 2 arguments in tupled form, but was given 0. The missing field arguments may be any of: field Item2"
+    dumpDiagnostics checkResults |> shouldEqual [
+        "(7,2--7,7): This union case expects 2 arguments in tupled form, but was given 0. The missing field arguments may be any of: field: int , int"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
 
@@ -246,9 +246,25 @@ match None with
 | Some (x, z) -> let y = x + z + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
     ]
 
+[<Test>]
+#if !NETCOREAPP
+[<Ignore("These tests weren't running on desktop and this test fails")>]
+#endif
+let ``Union case 10 - incomplete union fields`` () =
+    let _, checkResults = getParseAndCheckResults """
+type U =
+    | B of  f1:int seq * {|X:string|} * f3:U
+
+let x : U = failwith ""
+match x with
+| B  -> 42
+"""
+    dumpDiagnostics checkResults |> shouldEqual [
+        "(7,2--7,3): This union case expects 3 arguments in tupled form, but was given 0. The missing field arguments may be any of: f1: seq<int> , {|X string;|} , f3: U"      
+    ]
 
 [<Test>]
 #if !NETCOREAPP
@@ -262,7 +278,7 @@ match 1 with
 | Foo (field = x) -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(5,2--5,17): Foo is an active pattern and cannot be treated as a discriminated union case with named fields."
     ]
 
@@ -279,7 +295,7 @@ match 1 with
 | Foo x -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(5,2--5,7): This literal pattern does not take arguments"
         "(4,6--4,7): Incomplete pattern matches on this expression. For example, the value '0' may indicate a case not covered by the pattern(s)."
     ]
@@ -297,7 +313,7 @@ match TraceLevel.Off with
 | TraceLevel.Off x -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(5,2--5,18): This literal pattern does not take arguments"
         "(4,6--4,20): Incomplete pattern matches on this expression. For example, the value 'TraceLevel.Error' may indicate a case not covered by the pattern(s)."
     ]
@@ -319,7 +335,7 @@ let dowork () =
     f (Case 1)
     0 // return an integer exit code"""
     assertHasSymbolUsages ["DU"; "dowork"; "du"; "f"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(6,6--6,10): This constructor is applied to 0 argument(s) but expects 1"
     ]
     
@@ -330,7 +346,7 @@ match 1 with
 | x | x -> let y = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpErrors checkResults |> shouldEqual []
+    dumpDiagnostics checkResults |> shouldEqual []
 
 
 [<Test>]
@@ -343,7 +359,7 @@ match 1 with
 | x | z -> let y = x + z + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(3,2--3,7): The two sides of this 'or' pattern bind different sets of variables"
     ]
 
@@ -362,7 +378,7 @@ match A with
 | B (x, y) | B (a, x) -> let z = x + 1 in ()
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(7,2--7,21): The two sides of this 'or' pattern bind different sets of variables"
         "(7,19--7,20): This expression was expected to have type 'int' but here has type 'string'"
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
@@ -370,7 +386,7 @@ match A with
     
 [<Test>]
 let ``As 01 - names and wildcards`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 match 1 with
 | _ as w -> let x = w + 1 in ()
 
@@ -381,7 +397,7 @@ match 3 with
 | a as b -> let c = a + b in ()
 """
     assertHasSymbolUsages ["a"; "b"; "c"; "w"; "x"; "y"; "z"] checkResults
-    dumpErrors checkResults |> shouldEqual []
+    dumpDiagnostics checkResults |> shouldEqual []
     
     
 [<Test>]
@@ -389,7 +405,7 @@ match 3 with
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 02 - type testing`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let (|Id|) = id
 match box 1 with
 | :? int as a -> let b = a + 1 in ()
@@ -399,7 +415,7 @@ match box 1 with
 | :? int8 as Id i as j -> let x = i + 5y + j in () // Only the first "as" will have the derived type
 """
     assertHasSymbolUsages (List.map string ['a'..'j']) checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(5,34--5,35): The type 'obj' does not support the operator '+'"
         "(5,32--5,33): The type 'obj' does not support the operator '+'"
         "(7,45--7,46): The type 'obj' does not match the type 'uint64'"
@@ -414,7 +430,7 @@ match box 1 with
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 03 - impossible type testing`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 match Unchecked.defaultof<System.ValueType> with
 | :? System.Enum as (:? System.ConsoleKey as a) -> let b = a + enum 1 in ()
 | :? System.Enum as (:? System.ConsoleKey as c) -> let d = c + enum 1 in ()
@@ -423,7 +439,7 @@ match Unchecked.defaultof<System.ValueType> with
 | _ -> ()
 """
     assertHasSymbolUsages ["a"; "b"; "c"; "d"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(5,21--5,27): Type constraint mismatch. The type 'int' is not compatible with type 'System.Enum' "
     ]
 
@@ -432,14 +448,14 @@ match Unchecked.defaultof<System.ValueType> with
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 04 - duplicate type testing`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 match Unchecked.defaultof<System.ValueType> with
 | :? System.Enum as (a & b) -> let c = a = b in ()
 | :? System.Enum as (:? System.ConsoleKey as (d & e)) -> let f = d + e + enum 1 in ()
 | g -> ()
 """
     assertHasSymbolUsages ["a"; "b"; "c"; "d"; "e"; "f"; "g"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(4,2--4,85): This rule will never be matched"
     ]
 
@@ -448,7 +464,7 @@ match Unchecked.defaultof<System.ValueType> with
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 05 - inferred type testing`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 match Unchecked.defaultof<obj> with
 | :? _ as a -> let _ = a in ()
 
@@ -456,14 +472,14 @@ match Unchecked.defaultof<int> with
 | :? _ as z -> let _ = z in ()
 """
     assertHasSymbolUsages ["a"] checkResults
-    dumpErrors checkResults |> shouldEqual [
-        "(2,6--2,25): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
+    dumpDiagnostics checkResults |> shouldEqual [
+        "(2,6--2,30): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
         "(6,2--6,6): The type 'int' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
     ]
 
 [<Test>]
 let ``As 06 - completeness`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 match Unchecked.defaultof<bool> with
 | true as a -> if a then ()
 | b as false -> if not b then ()
@@ -477,7 +493,7 @@ match Unchecked.defaultof<bool> with
 | k & l as (m as (false as n)) as (o as _) -> if k || l || m || n || o then ()
 """
     assertHasSymbolUsages (List.map string ['a'..'o']) checkResults
-    dumpErrors checkResults |> shouldEqual []
+    dumpDiagnostics checkResults |> shouldEqual []
 
 [<Test>]
 let ``As 07 - syntactical precedence matrix testing right - total patterns`` () =
@@ -532,7 +548,7 @@ parenPattern:
   | parenPattern COLON_COLON  parenPattern
   | constrPattern
     *)
-    let _, checkResults = getParseAndCheckResultsPreview $"""
+    let _, checkResults = getParseAndCheckResults70 $"""
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Id0|) = ignore
 let (|Id1|) = id
@@ -556,14 +572,14 @@ Some v |> eq<struct(int * int)>
 ()
 """
     assertHasSymbolUsages (List.map string ['a'..'z']) checkResults
-    dumpErrors checkResults |> shouldEqual []
+    dumpDiagnostics checkResults |> shouldEqual []
     
 [<Test>]
 #if !NETCOREAPP
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 08 - syntactical precedence matrix testing right - partial patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
 let (|Unit2|_|) _ = (|Unit1|_|)
@@ -601,7 +617,7 @@ Some w |> eq<obj>
 ()
 """
     assertHasSymbolUsages (List.map string ['a'..'y']) checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(8,4--8,18): Incomplete pattern matches on this expression. For example, the value '[]' may indicate a case not covered by the pattern(s)."
         "(9,4--9,14): Incomplete pattern matches on this expression."
         "(10,4--10,18): Incomplete pattern matches on this expression."
@@ -623,7 +639,7 @@ Some w |> eq<obj>
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 09 - syntactical precedence matrix testing right - erroneous patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let (|DefinedPattern|) = id
 let a as 1 = true
 let b as true = 2
@@ -643,7 +659,7 @@ let v as struct w = 15
 let x as () = y
 let z as
 """
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(10,9--10,10): Unexpected symbol ',' in binding"
         "(11,9--11,10): Unexpected symbol ':' in binding"
         "(12,9--12,11): Unexpected symbol '::' in binding"
@@ -667,7 +683,7 @@ let z as
 
 [<Test>]
 let ``As 10 - syntactical precedence matrix testing left - total patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview $"""
+    let _, checkResults = getParseAndCheckResults70 $"""
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Id0|) = ignore
 let (|Id1|) = id
@@ -692,14 +708,14 @@ Some x |> eq<struct(int * int)>
 ()
 """
     assertHasSymbolUsages (List.map string ['a'..'z']) checkResults
-    dumpErrors checkResults |> shouldEqual []
+    dumpDiagnostics checkResults |> shouldEqual []
     
 [<Test>]
 #if !NETCOREAPP
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 11 - syntactical precedence matrix testing left - partial patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
 let (|Unit2|_|) _ = (|Unit1|_|)
@@ -737,7 +753,7 @@ Some w |> eq<obj>
 ()
 """
     assertHasSymbolUsages (List.map string ['a'..'y']) checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(8,4--8,20): Incomplete pattern matches on this expression. For example, the value '[]' may indicate a case not covered by the pattern(s)."
         "(9,4--9,14): Incomplete pattern matches on this expression."
         "(10,4--10,18): Incomplete pattern matches on this expression."
@@ -759,7 +775,7 @@ Some w |> eq<obj>
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 12 - syntactical precedence matrix testing left - erroneous patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let (|DefinedPattern|) = id
 let 1 as a = true
 let true as b = 2
@@ -779,7 +795,7 @@ let v struct as w = 15
 let () as x = y
 let z as =
 """
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(10,7--10,9): Unexpected keyword 'as' in binding"
         "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token."
         "(12,9--12,11): Unexpected keyword 'as' in binding"
@@ -810,7 +826,7 @@ let z as =
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 13 - syntactical precedence matrix testing right with type tests - total patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview $"""
+    let _, checkResults = getParseAndCheckResults70 $"""
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Id0|) = ignore
 let (|Id1|) = id
@@ -854,7 +870,7 @@ Some x |> eq<obj>
 ()
 """
     assertHasSymbolUsages (List.map string ['a'..'z']) checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(11,25--11,26): This expression was expected to have type 'int' but here has type 'obj'"
         "(28,6--28,24): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
         "(26,6--26,12): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
@@ -874,7 +890,7 @@ Some x |> eq<obj>
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 14 - syntactical precedence matrix testing right with type tests - partial patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
 let (|Unit2|_|) _ = (|Unit1|_|)
@@ -930,7 +946,7 @@ Some w |> eq<obj>
 ()
 """
     assertHasSymbolUsages (set ['a' .. 'y'] |> Set.remove 'n' |> Set.map string |> Set.toList) checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(21,2--21,8): This type test or downcast will always hold"
         "(34,6--34,14): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
         "(32,6--32,14): Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s)."
@@ -953,7 +969,7 @@ Some w |> eq<obj>
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 15 - syntactical precedence matrix testing right with type tests - erroneous patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let (|DefinedPattern|) = id
 let :? a as 1 = true
 let :? b as true = 2
@@ -973,7 +989,7 @@ let :? v as struct w = 15
 let :? x as () = y
 let :? z as
 """
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(10,12--10,13): Unexpected symbol ',' in binding"
         "(11,12--11,13): Unexpected symbol ':' in binding"
         "(12,12--12,14): Unexpected symbol '::' in binding"
@@ -1010,7 +1026,7 @@ let :? z as
 #endif
 let ``As 16 - syntactical precedence matrix testing left with type tests - total patterns`` () =
     let validSet = set { 'a'..'x' } - set [ 'p'; 'q' ] |> Set.map string
-    let _, checkResults = getParseAndCheckResultsPreview $"""
+    let _, checkResults = getParseAndCheckResults70 $"""
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Id0|) = ignore
 let (|Id1|) = id
@@ -1046,7 +1062,7 @@ match box {{ aaa = 9 }} with
 Some "" |> eq<int> // No more type checks after the above line?
 """
     assertHasSymbolUsages (Set.toList validSet) checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(27,2--27,14): This expression was expected to have type 'obj' but here has type 'struct ('a * 'b)'"
         "(52,2--52,13): This expression was expected to have type 'obj' but here has type 'AAA'"
         "(26,6--26,24): Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s)."
@@ -1066,7 +1082,7 @@ Some "" |> eq<int> // No more type checks after the above line?
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 17 - syntactical precedence matrix testing left with type tests - partial patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
 let (|Unit2|_|) _ = (|Unit1|_|)
@@ -1131,7 +1147,7 @@ match box [|11|] with
 Some "" |> eq<int>
 """
     assertHasSymbolUsages (set ['a'..'y'] - set [ 'm'..'r' ] |> Set.map string |> Set.toList) checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(19,2--19,4): This expression was expected to have type 'obj' but here has type 'int'"
         "(21,2--21,7): This expression was expected to have type 'obj' but here has type 'bool'"
         "(23,2--23,6): This expression was expected to have type 'obj' but here has type 'bool'"
@@ -1160,7 +1176,7 @@ Some "" |> eq<int>
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 18 - syntactical precedence matrix testing left with type tests - erroneous patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let (|DefinedPattern|) = id
 let 1 as :? a = true
 let true as :? b = 2
@@ -1180,7 +1196,7 @@ let v [ as :? w = 15
 let () as :? x = y
 let as :? z =
 """
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(10,7--10,9): Unexpected keyword 'as' in binding"
         "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token."
         "(12,9--12,11): Unexpected keyword 'as' in binding"
@@ -1219,7 +1235,7 @@ let as :? z =
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 19 - syntactical precedence matrix testing - valid syntactic patterns that cause type errors later`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 type I() = inherit System.Attribute()
 type M() = inherit I()
 let 'a'..'b' as c = 'd'
@@ -1234,7 +1250,7 @@ let ?w as x = 7
 let y as ?z = 8
 ()
 """
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(7,9--7,11): Unexpected symbol '[<' in binding"
         "(4,4--4,12): This construct is deprecated: Character range matches have been removed in F#. Consider using a 'when' pattern guard instead."
         "(4,4--4,17): Incomplete pattern matches on this expression. For example, the value '' '' may indicate a case not covered by the pattern(s)."
@@ -1266,6 +1282,6 @@ let f : obj -> _ =
 ()
 """
     assertHasSymbolUsages ["i"] checkResults
-    dumpErrors checkResults |> shouldEqual [
+    dumpDiagnostics checkResults |> shouldEqual [
         "(5,6--5,18): Feature 'non-variable patterns to the right of 'as' patterns' is not available in F# 5.0. Please use language version 6.0 or greater."
     ]

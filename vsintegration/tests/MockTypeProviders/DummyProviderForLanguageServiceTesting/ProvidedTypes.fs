@@ -469,8 +469,6 @@ namespace ProviderImplementation.ProvidedTypes
                 ShapeCombinationUnchecked (Shape (function [cond; body] -> Expr.WhileLoopUnchecked (cond,  body) | _ -> invalidArg "expr" "invalid shape"), [cond; body])
             | IfThenElse (g, t, e) ->
                 ShapeCombinationUnchecked (Shape (function [g; t; e] -> Expr.IfThenElseUnchecked (g, t, e) | _ -> invalidArg "expr" "invalid shape"), [g; t; e])
-            | TupleGet (expr, i) ->
-                ShapeCombinationUnchecked (Shape (function [expr] -> Expr.TupleGetUnchecked (expr, i) | _ -> invalidArg "expr" "invalid shape"), [expr])
             | ExprShape.ShapeCombination (comb,args) ->
                 ShapeCombinationUnchecked (Shape (fun args -> ExprShape.RebuildShapeCombination(comb, args)), args)
             | ExprShape.ShapeVar v -> ShapeVarUnchecked v
@@ -4470,13 +4468,13 @@ namespace ProviderImplementation.ProvidedTypes.AssemblyReader
             (* PE SIGNATURE *)
             let machine = seekReadUInt16AsInt32 is (peFileHeaderPhysLoc + 0)
             let numSections = seekReadUInt16AsInt32 is (peFileHeaderPhysLoc + 2)
-            let optHeaderSize = seekReadUInt16AsInt32 is (peFileHeaderPhysLoc + 16)
-            do if optHeaderSize <>  0xe0 &&
-                 optHeaderSize <> 0xf0 then failwith "not a PE file - bad optional header size";
-            let x64adjust = optHeaderSize - 0xe0
-            let only64 = (optHeaderSize = 0xf0)    (* May want to read in the optional header Magic number and check that as well... *)
+            let headerSizeOpt = seekReadUInt16AsInt32 is (peFileHeaderPhysLoc + 16)
+            do if headerSizeOpt <>  0xe0 &&
+                 headerSizeOpt <> 0xf0 then failwith "not a PE file - bad optional header size";
+            let x64adjust = headerSizeOpt - 0xe0
+            let only64 = (headerSizeOpt = 0xf0)    (* May want to read in the optional header Magic number and check that as well... *)
             let platform = match machine with | 0x8664 -> Some(AMD64) | 0x200 -> Some(IA64) | _ -> Some(X86)
-            let sectionHeadersStartPhysLoc = peOptionalHeaderPhysLoc + optHeaderSize
+            let sectionHeadersStartPhysLoc = peOptionalHeaderPhysLoc + headerSizeOpt
 
             let flags = seekReadUInt16AsInt32 is (peFileHeaderPhysLoc + 18)
             let isDll = (flags &&& 0x2000) <> 0x0
@@ -6329,7 +6327,7 @@ namespace ProviderImplementation.ProvidedTypes.AssemblyReader
                     | None -> [| |]
                     | Some(genericArgs) -> genericArgs
                 let tspec = ILTypeSpec(tref,genericArgs)
-                let ilty =
+                let ilTy =
                     match tspec.Name with
                     | "System.SByte"
                     | "System.Byte"
@@ -6347,8 +6345,8 @@ namespace ProviderImplementation.ProvidedTypes.AssemblyReader
 
                 // if it's an array, wrap it - otherwise, just return the IL type
                 match rank with
-                | Some(r) -> ILType.Array(r,ilty)
-                | _ -> ilty
+                | Some(r) -> ILType.Array(r,ilTy)
+                | _ -> ilTy
 
 
         let sigptr_get_bytes n (bytes:byte[]) sigptr =
@@ -6555,7 +6553,7 @@ namespace ProviderImplementation.ProvidedTypes
     // implementation must support the operations used by the F# compiler to interrogate the reflection objects.
     //
     //     For a System.Assembly, the information must be sufficient to allow the Assembly --> ILScopeRef conversion
-    //     in ExtensionTyping.fs of the F# compiler. This requires:
+    //     in TypeProviders.fs of the F# compiler. This requires:
     //         Assembly.GetName()
     //
     //     For a System.Type representing a reference to a named type definition, the information must be sufficient
@@ -7724,9 +7722,6 @@ namespace ProviderImplementation.ProvidedTypes
             txTable.Get inp.Token (fun () -> 
                 // We never create target types for the types of primitive values that are accepted by the F# compiler as Expr.Value nodes,
                 // which fortunately also correspond to element types. We just use the design-time types instead.
-                // See convertConstExpr in the compiler, e.g. 
-                //     https://github.com/Microsoft/visualfsharp/blob/44fa027b308681a1b78a089e44fa1ab35ff77b41/src/fsharp/MethodCalls.fs#L842
-                // for the accepted types.
                 match inp.Namespace, inp.Name with 
                 | USome "System", "Void"->  typeof<Void>
                 (*
@@ -8986,7 +8981,7 @@ namespace ProviderImplementation.ProvidedTypes
 
                 let systemRuntimeContainsTypeObj = config.GetField("systemRuntimeContainsType")
 
-                // Account for https://github.com/Microsoft/visualfsharp/pull/591
+                // Account for https://github.com/dotnet/fsharp/pull/591
                 let systemRuntimeContainsTypeObj2 =
                     if systemRuntimeContainsTypeObj.HasField("systemRuntimeContainsTypeRef") then
                         systemRuntimeContainsTypeObj.GetField("systemRuntimeContainsTypeRef").GetProperty("Value")
@@ -9799,7 +9794,6 @@ namespace ProviderImplementation.ProvidedTypes
                 bb.EmitByte (if req then et_CMOD_REQD else et_CMOD_OPT)
                 emitTypeInfoAsTypeDefOrRefEncoded cenv bb (tref.Scope, tref.Namespace, tref.Name)
                 EmitType cenv env bb ty
-             | _ -> failwith "EmitType"
 
         and EmitLocalInfo cenv env (bb:ByteBuffer) (l:ILLocal) =
             if l.IsPinned then 

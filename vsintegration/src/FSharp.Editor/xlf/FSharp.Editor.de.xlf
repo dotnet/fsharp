@@ -262,6 +262,11 @@
         <target state="translated">"nameof" verwenden</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseTripleQuotedInterpolation">
+        <source>Use triple quoted string interpolation.</source>
+        <target state="translated">Verwenden Sie die Interpolation von dreifachen Zeichenfolgen in Anführungszeichen.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
         <target state="translated">"upcast" verwenden</target>

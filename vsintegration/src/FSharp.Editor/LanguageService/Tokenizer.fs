@@ -38,6 +38,7 @@ type internal LexerSymbolKind =
     | ActivePattern = 5
     | String = 6
     | Other = 7
+    | Keyword = 8
 
 type internal LexerSymbol =
     { Kind: LexerSymbolKind
@@ -147,10 +148,12 @@ module internal Tokenizer =
             | Private -> Glyph.StructurePrivate
         | FSharpGlyph.Variable -> Glyph.Local
         | FSharpGlyph.Error -> Glyph.Error
+        | FSharpGlyph.TypeParameter -> Glyph.TypeParameter
 
-    let GetImageIdForSymbol(symbolOpt:FSharpSymbol option, kind:LexerSymbolKind) =
+    let GetImageIdForSymbol(symbolOpt:FSharpSymbol option, kind:LexerSymbolKind) =        
         let imageId =
             match kind with
+            | LexerSymbolKind.Keyword -> KnownImageIds.IntellisenseKeyword
             | LexerSymbolKind.Operator -> KnownImageIds.Operator
             | _ ->
                 match symbolOpt with
@@ -243,6 +246,7 @@ module internal Tokenizer =
                         | Internal -> KnownImageIds.ClassInternal
                         | Protected -> KnownImageIds.ClassProtected
                         | Private -> KnownImageIds.ClassPrivate
+                | :? FSharpGenericParameter -> KnownImageIds.Type
                 | _ -> KnownImageIds.None
         if imageId = KnownImageIds.None then
             None
@@ -345,6 +349,7 @@ module internal Tokenizer =
                     | Internal -> Glyph.ClassInternal
                     | Protected -> Glyph.ClassProtected
                     | Private -> Glyph.ClassPrivate
+            | :? FSharpGenericParameter -> Glyph.TypeParameter
             | _ -> Glyph.None
 
 
@@ -384,6 +389,7 @@ module internal Tokenizer =
                 elif token.IsIdentifier then LexerSymbolKind.Ident 
                 elif token.IsPunctuation then LexerSymbolKind.Punctuation
                 elif token.IsString then LexerSymbolKind.String
+                elif token.ColorClass = FSharpTokenColorKind.Keyword then LexerSymbolKind.Keyword
                 else LexerSymbolKind.Other
             Debug.Assert(uint32 token.Tag < 0xFFFFu)
             Debug.Assert(uint32 kind < 0xFFu)
@@ -706,11 +712,12 @@ module internal Tokenizer =
                 
         // Select IDENT token. If failed, select OPERATOR token.
         tokensUnderCursor
-        |> List.tryFind (fun token -> 
+        |> List.tryFind (fun token ->             
             match token.Kind with 
             | LexerSymbolKind.Ident
+            | LexerSymbolKind.Keyword 
             | LexerSymbolKind.ActivePattern
-            | LexerSymbolKind.GenericTypeParameter 
+            | LexerSymbolKind.GenericTypeParameter         
             | LexerSymbolKind.StaticallyResolvedTypeParameter -> true 
             | _ -> false) 
         |> Option.orElseWith (fun _ -> tokensUnderCursor |> List.tryFind (fun token -> token.Kind = LexerSymbolKind.Operator))

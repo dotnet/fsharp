@@ -184,6 +184,7 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
 
 let parseAndCheckScript (file, input) = parseAndCheckScriptWithOptions (file, input, [| |])
 let parseAndCheckScript50 (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:5.0" |])
+let parseAndCheckScript70 (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:7.0" |])
 let parseAndCheckScriptPreview (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:preview" |])
 
 let parseSourceCode (name: string, code: string) =
@@ -209,7 +210,7 @@ let matchBraces (name: string, code: string) =
 
 let getSingleModuleLikeDecl (input: ParsedInput) =
     match input with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ decl ])) -> decl
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ decl ])) -> decl
     | _ -> failwith "Could not get module decls"
 
 let getSingleModuleMemberDecls (input: ParsedInput) =
@@ -223,9 +224,13 @@ let getSingleDeclInModule (input: ParsedInput) =
 
 let getSingleExprInModule (input: ParsedInput) =
     match getSingleDeclInModule input with
-    | SynModuleDecl.DoExpr (_, expr, _) -> expr
+    | SynModuleDecl.Expr (expr, _) -> expr
     | _ -> failwith "Unexpected expression"
 
+let getSingleParenInnerExpr expr =
+    match expr with
+    | SynModuleDecl.Expr(SynExpr.Paren(expr, _, _, _), _) -> expr
+    | _ -> failwith "Unexpected tree"
 
 let parseSourceCodeAndGetModule (source: string) =
     parseSourceCode ("test.fsx", source) |> getSingleModuleLikeDecl
@@ -236,16 +241,16 @@ let tups (m: range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
 /// Extract range info  and convert to zero-based line  - please don't use this one any more
 let tupsZ (m: range) = (m.StartLine-1, m.StartColumn), (m.EndLine-1, m.EndColumn)
 
-let attribsOfSymbolUse (s:FSharpSymbolUse) =
-    [ if s.IsFromDefinition then yield "defn"
-      if s.IsFromType then yield "type"
-      if s.IsFromAttribute then yield "attribute"
-      if s.IsFromDispatchSlotImplementation then yield "override"
-      if s.IsFromPattern then yield "pattern"
-      if s.IsFromComputationExpression then yield "compexpr" ]
+let attribsOfSymbolUse (symbolUse: FSharpSymbolUse) =
+    [ if symbolUse.IsFromDefinition then yield "defn"
+      if symbolUse.IsFromType then yield "type"
+      if symbolUse.IsFromAttribute then yield "attribute"
+      if symbolUse.IsFromDispatchSlotImplementation then yield "override"
+      if symbolUse.IsFromPattern then yield "pattern"
+      if symbolUse.IsFromComputationExpression then yield "compexpr" ]
 
-let attribsOfSymbol (s:FSharpSymbol) =
-    [ match s with
+let attribsOfSymbol (symbol: FSharpSymbol) =
+    [ match symbol with
         | :? FSharpField as v ->
             yield "field"
             if v.IsCompilerGenerated then yield "compgen"
@@ -273,7 +278,7 @@ let attribsOfSymbol (s:FSharpSymbol) =
             if v.IsFSharpUnion then yield "union"
             if v.IsInterface then yield "interface"
             if v.IsMeasure then yield "measure"
-#if !NO_EXTENSIONTYPING
+#if !NO_TYPEPROVIDERS
             if v.IsProvided then yield "provided"
             if v.IsStaticInstantiation then yield "staticinst"
             if v.IsProvidedAndErased then yield "erased"
@@ -281,6 +286,9 @@ let attribsOfSymbol (s:FSharpSymbol) =
 #endif
             if v.IsUnresolved then yield "unresolved"
             if v.IsValueType then yield "valuetype"
+
+        | :? FSharpActivePatternCase as v ->
+            yield sprintf "apatcase%d" v.Index
 
         | :? FSharpMemberOrFunctionOrValue as v ->
             if v.IsActivePattern then yield "apat"
@@ -308,49 +316,52 @@ let attribsOfSymbol (s:FSharpSymbol) =
         | _ -> () ]
 
 let rec allSymbolsInEntities compGen (entities: IList<FSharpEntity>) =
-    [ for e in entities do
-          yield (e :> FSharpSymbol)
-          for gp in e.GenericParameters do
+    [ for entity in entities do
+          yield (entity :> FSharpSymbol)
+          for gp in entity.GenericParameters do
             if compGen || not gp.IsCompilerGenerated then
              yield (gp :> FSharpSymbol)
-          for x in e.MembersFunctionsAndValues do
+          for x in entity.MembersFunctionsAndValues do
              if compGen || not x.IsCompilerGenerated then
                yield (x :> FSharpSymbol)
              for gp in x.GenericParameters do
               if compGen || not gp.IsCompilerGenerated then
                yield (gp :> FSharpSymbol)
-          for x in e.UnionCases do
+          for x in entity.UnionCases do
              yield (x :> FSharpSymbol)
              for f in x.Fields do
                  if compGen || not f.IsCompilerGenerated then
                      yield (f :> FSharpSymbol)
-          for x in e.FSharpFields do
+          for x in entity.FSharpFields do
              if compGen || not x.IsCompilerGenerated then
                  yield (x :> FSharpSymbol)
-          yield! allSymbolsInEntities compGen e.NestedEntities ]
+          yield! allSymbolsInEntities compGen entity.NestedEntities ]
 
 
 let getParseResults (source: string) =
-    parseSourceCode("/home/user/Test.fsx", source)
+    parseSourceCode("Test.fsx", source)
 
 let getParseResultsOfSignatureFile (source: string) =
-    parseSourceCode("/home/user/Test.fsi", source)
+    parseSourceCode("Test.fsi", source)
 
 let getParseAndCheckResults (source: string) =
-    parseAndCheckScript("/home/user/Test.fsx", source)
+    parseAndCheckScript("Test.fsx", source)
 
 let getParseAndCheckResultsOfSignatureFile (source: string) =
-    parseAndCheckScript("/home/user/Test.fsi", source)
+    parseAndCheckScript("Test.fsi", source)
 
 let getParseAndCheckResultsPreview (source: string) =
-    parseAndCheckScriptPreview("/home/user/Test.fsx", source)
+    parseAndCheckScriptPreview("Test.fsx", source)
 
 let getParseAndCheckResults50 (source: string) =
-    parseAndCheckScript50("/home/user/Test.fsx", source)
+    parseAndCheckScript50("Test.fsx", source)
+
+let getParseAndCheckResults70 (source: string) =
+    parseAndCheckScript70("Test.fsx", source)
 
 
-let inline dumpErrors results =
-    (^TResults: (member Diagnostics: FSharpDiagnostic[]) results)
+let inline dumpDiagnostics (results: FSharpCheckFileResults) =
+    results.Diagnostics
     |> Array.map (fun e ->
         let message =
             e.Message.Split('\n')
@@ -446,6 +457,8 @@ let coreLibAssemblyName =
 #else
     "mscorlib"
 #endif
+
+let getRange (e: SynExpr) = e.Range
 
 let assertRange
     (expectedStartLine: int, expectedStartColumn: int)

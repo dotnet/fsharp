@@ -7,6 +7,7 @@ open System.IO
 open System.Reflection
 open System.Collections.Immutable
 open System.Diagnostics
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
@@ -14,7 +15,6 @@ open TestFramework
 open NUnit.Framework
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
-
 module Utilities =
 
     type Async with
@@ -120,6 +120,7 @@ module Utilities =
         <TargetFramework>$TARGETFRAMEWORK</TargetFramework>
         <UseFSharpPreview>true</UseFSharpPreview>
         <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+        <DotnetFscCompilerPath>$DOTNETFSCCOMPILERPATH</DotnetFscCompilerPath>
   </PropertyGroup>
 
   <ItemGroup><Compile Include="Program.fs" /></ItemGroup>
@@ -170,6 +171,7 @@ let main argv = 0"""
             let pathToTemp = Path.Combine(pathToArtifacts, "Temp")
             let projectDirectory = Path.Combine(pathToTemp,Guid.NewGuid().ToString() + ".tmp")
             let pathToFSharpCore = typeof<RequireQualifiedAccessAttribute>.Assembly.Location
+            let dotNetFscCompilerPath = config.DOTNETFSCCOMPILERPATH
             try
                 try
                     Directory.CreateDirectory(projectDirectory) |> ignore
@@ -179,9 +181,9 @@ let main argv = 0"""
                     let directoryBuildTargetsFileName = Path.Combine(projectDirectory, "Directory.Build.targets")
                     let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
 #if NETCOREAPP
-                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net6.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net7.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore).Replace("$DOTNETFSCCOMPILERPATH", dotNetFscCompilerPath))
 #else
-                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore).Replace("$DOTNETFSCCOMPILERPATH", dotNetFscCompilerPath))
 #endif
                     File.WriteAllText(programFsFileName, programFs)
                     File.WriteAllText(directoryBuildPropsFileName, directoryBuildProps)
@@ -232,85 +234,3 @@ let main argv = 0"""
                 | TargetFramework.NetStandard20 -> netStandard20References.Value
                 | TargetFramework.NetCoreApp31 -> netCoreApp31References.Value
                 | TargetFramework.Current -> currentReferencesAsPEs
-
-    type RoslynLanguageVersion = LanguageVersion
-
-    [<Flags>]
-    type CSharpCompilationFlags =
-        | None = 0x0
-        | InternalsVisibleTo = 0x1
-
-    [<RequireQualifiedAccess>]
-    type TestCompilation =
-        | CSharp of CSharpCompilation
-        | IL of ilSource: string * result: Lazy<string * byte []>
-
-        member this.AssertNoErrorsOrWarnings () =
-            match this with
-                | TestCompilation.CSharp c ->
-                    let diagnostics = c.GetDiagnostics ()
-
-                    if not diagnostics.IsEmpty then
-                        NUnit.Framework.Assert.Fail ("CSharp source diagnostics:\n" + (diagnostics |> Seq.map (fun x -> x.GetMessage () + "\n") |> Seq.reduce (+)))
-
-                | TestCompilation.IL (_, result) ->
-                    let errors, _ = result.Value
-                    if errors.Length > 0 then
-                        NUnit.Framework.Assert.Fail ("IL source errors: " + errors)
-
-        member this.EmitAsFile (outputPath: string) =
-            match this with
-                | TestCompilation.CSharp c ->
-                    let c = c.WithAssemblyName(Path.GetFileNameWithoutExtension outputPath)
-                    let emitResult = c.Emit outputPath
-                    if not emitResult.Success then
-                        failwithf "Unable to emit C# compilation.\n%A" emitResult.Diagnostics
-
-                | TestCompilation.IL (_, result) ->
-                    let (_, data) = result.Value
-                    File.WriteAllBytes (outputPath, data)
-
-    type CSharpLanguageVersion =
-        | CSharp8 = 0
-        | CSharp9 = 1
-
-    [<AbstractClass; Sealed>]
-    type CompilationUtil private () =
-
-        static member CreateCSharpCompilation (source: string, lv: CSharpLanguageVersion, ?tf, ?additionalReferences, ?name) =
-            let lv =
-                match lv with
-                    | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
-                    | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
-                    | _ -> LanguageVersion.Default
-
-            let tf = defaultArg tf TargetFramework.NetStandard20
-            let n = defaultArg name (Guid.NewGuid().ToString ())
-            let additionalReferences = defaultArg additionalReferences ImmutableArray.Empty
-            let references = TargetFrameworkUtil.getReferences tf
-            let c =
-                CSharpCompilation.Create(
-                    n,
-                    [ CSharpSyntaxTree.ParseText (source, CSharpParseOptions lv) ],
-                    references.As<MetadataReference>().AddRange additionalReferences,
-                    CSharpCompilationOptions (OutputKind.DynamicallyLinkedLibrary))
-            TestCompilation.CSharp c
-
-        static member CreateILCompilation (source: string) =
-            let compute =
-                lazy
-                    let ilFilePath = tryCreateTemporaryFileName ()
-                    let tmp = tryCreateTemporaryFileName ()
-                    let dllFilePath = Path.ChangeExtension (tmp, ".dll")
-                    try
-                        File.WriteAllText (ilFilePath, source)
-                        let errors = ILChecker.reassembleIL ilFilePath dllFilePath
-                        try
-                           (errors, File.ReadAllBytes dllFilePath)
-                        with
-                            | _ -> (errors, [||])
-                    finally
-                        try File.Delete ilFilePath with | _ -> ()
-                        try File.Delete tmp with | _ -> ()
-                        try File.Delete dllFilePath with | _ -> ()
-            TestCompilation.IL (source, compute)

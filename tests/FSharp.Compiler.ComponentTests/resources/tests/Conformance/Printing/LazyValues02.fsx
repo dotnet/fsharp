@@ -15,5 +15,5 @@ lazy12;;
 lazy 13;;
 lazy 13;;
 it;;
-exit 0;;
+printfn "Finished";;
 

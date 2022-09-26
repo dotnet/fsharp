@@ -262,6 +262,11 @@
         <target state="translated">Utiliser « nameof »</target>
         <note />
       </trans-unit>
+      <trans-unit id="UseTripleQuotedInterpolation">
+        <source>Use triple quoted string interpolation.</source>
+        <target state="translated">Utilisez l’interpolation de chaîne entre guillemets triples.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="UseUpcastKeyword">
         <source>Use 'upcast'</source>
         <target state="translated">Utiliser 'upcast'</target>

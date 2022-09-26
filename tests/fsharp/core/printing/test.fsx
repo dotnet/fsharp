@@ -1108,6 +1108,52 @@ let inst1 = TestLoadFile.ClassInFile1();; // should load ok
 
 let inst2 = TestLoadFile2.ClassInFile2();; // should load ok
 
+type Test = { A: int; B: string };;
+
+let list = [{ A = 1; B = "a" }];;
+
+let list2 = [ for x in list do x.A ];;
+
+#r "nuget:Newtonsoft.Json, 13.0.1"
+type R1 = { ImmutableField0: int }
+open Newtonsoft.Json
+JsonConvert.SerializeObject { ImmutableField0 = 6 } |> printfn "%s";;
+
+JsonConvert.SerializeObject { ImmutableField0 = 7 }
+|> JsonConvert.DeserializeObject<R1>;;
+
+type R2 = { mutable MutableField1: int }
+JsonConvert.SerializeObject { MutableField1 = 8 } |> printfn "%s";;
+
+JsonConvert.SerializeObject { MutableField1 = 9 }
+|> JsonConvert.DeserializeObject<R2>;;
+
+JsonConvert.SerializeObject {| AnonRecordField2 = 10 |} |> printfn "%s";;
+
+JsonConvert.SerializeObject {| AnonRecordField2 = 11 |}
+|> JsonConvert.DeserializeObject<{| AnonRecordField2 :int |}>;;
+
+#r "nuget: System.Text.Json"
+open System.Text.Json
+type R3 = { ImmutableField3: int }
+let test3a = JsonSerializer.Serialize { ImmutableField3 = 12 };;
+let test3b = JsonSerializer.Deserialize<R3> test3a;;
+let test3c = JsonSerializer.Serialize { ImmutableField3 = 13 };;
+let test3d = JsonSerializer.Deserialize<R3> test3c;;
+
+type R4 = { mutable MutableField4: int }
+let test4a = JsonSerializer.Serialize { MutableField4 = 15 };;
+let test4b = JsonSerializer.Deserialize<R4> test4a;;
+let test4c = JsonSerializer.Serialize { MutableField4 = 16 };;
+let test4d = JsonSerializer.Deserialize<R4> test4c;;
+
+type R5 = {| AnonRecordField5: int |}
+let test5a = JsonSerializer.Serialize {| AnonRecordField5 = 17 |};;
+let test5b = JsonSerializer.Deserialize<R5> test5a;;
+let test5c = JsonSerializer.Serialize {| AnonRecordField5 = 18 |};;
+let test5d = JsonSerializer.Deserialize<R5> test5c;;
+
+
 ;; (* ;; needed, to isolate error regressions *)
 
 ;;exit 0;; (* piped in to enable error regressions *)

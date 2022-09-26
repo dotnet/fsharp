@@ -8,8 +8,9 @@
 //<Expects status="success">section='- OUTPUT FILES -         ' ! option=doc                            kind=OptionString</Expects>
 //<Expects status="success">section='- OUTPUT FILES -         ' ! option=keyfile                        kind=OptionString</Expects>
 //<Expects status="success">section='- OUTPUT FILES -         ' ! option=platform                       kind=OptionString</Expects>
-//<Expects status="success">section='- OUTPUT FILES -         ' ! option=nooptimizationdata             kind=OptionUnit</Expects>
-//<Expects status="success">section='- OUTPUT FILES -         ' ! option=nointerfacedata                kind=OptionUnit</Expects>
+//<Expects status="notin">section='- OUTPUT FILES -           ' ! option=compressmetadata               kind=OptionUnit</Expects>
+//<Expects status="notin">section='- OUTPUT FILES -           ' ! option=nooptimizationdata             kind=OptionUnit</Expects>
+//<Expects status="notin">section='- OUTPUT FILES -           ' ! option=nointerfacedata                kind=OptionUnit</Expects>
 //<Expects status="success">section='- OUTPUT FILES -         ' ! option=sig                            kind=OptionString</Expects>
 //<Expects status="success">section='- INPUT FILES -          ' ! option=reference                      kind=OptionString</Expects>
 //<Expects status="success">section='- RESOURCES -            ' ! option=win32res                       kind=OptionString</Expects>
@@ -32,7 +33,7 @@
 //<Expects status="success">section='- LANGUAGE -             ' ! option=define                         kind=OptionString</Expects>
 //<Expects status="success">section='- LANGUAGE -             ' ! option=mlcompatibility                kind=OptionUnit</Expects>
 //<Expects status="success">section='- MISCELLANEOUS -        ' ! option=nologo                         kind=OptionUnit</Expects>
-//<Expects status="success">section='- MISCELLANEOUS -        ' ! option=help                           kind=OptionHelp</Expects>
+//<Expects status="success">section='- MISCELLANEOUS -        ' ! option=help                           kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=codepage                       kind=OptionInt</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=utf8output                     kind=OptionUnit</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=fullpaths                      kind=OptionUnit</Expects>
@@ -48,10 +49,12 @@
 //<Expects status="success">section='- ADVANCED -             ' ! option=subsystemversion               kind=OptionString</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=targetprofile                  kind=OptionString</Expects>
 //<Expects status="success">section='- ADVANCED -             ' ! option=quotations-debug               kind=OptionSwitch</Expects>
-//<Expects status="success">section='NoSection                ' ! option=stamps                         kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=ranges                         kind=OptionSet</Expects>
-//<Expects status="success">section='NoSection                ' ! option=terms                          kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=termsfile                      kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtree                      kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtreefile                  kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtreestamps                kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtreeranges                kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtreetypes                 kind=OptionUnit</Expects>
+//<Expects status="success">section='NoSection                ' ! option=typedtreevalreprinfo           kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=pause                          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=detuple                        kind=OptionInt</Expects>
 //<Expects status="success">section='NoSection                ' ! option=simulateException              kind=OptionString</Expects>
@@ -97,9 +100,8 @@
 //<Expects status="success">section='NoSection                ' ! option=I                              kind=OptionStringList</Expects>
 //<Expects status="success">section='NoSection                ' ! option=o                              kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=a                              kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=\?                              kind=OptionHelp</Expects>
-//<Expects status="success">section='NoSection                ' ! option=help                           kind=OptionHelp</Expects>
-//<Expects status="success">section='NoSection                ' ! option=full-help                      kind=OptionHelp</Expects>
+//<Expects status="success">section='NoSection                ' ! option=help                           kind=OptionConsoleOnly</Expects>
+//<Expects status="success">section='NoSection                ' ! option=full-help                      kind=OptionConsoleOnly</Expects>
 //<Expects status="success">section='NoSection                ' ! option=light                          kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=indentation-syntax             kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=no-indentation-syntax          kind=OptionUnit</Expects>
@@ -112,7 +114,6 @@
 //<Expects status="success">section='NoSection                ' ! option=compiling-fslib                kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=compiling-fslib-20             kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=compiling-fslib-40             kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=version                        kind=OptionString</Expects>
 //<Expects status="success">section='NoSection                ' ! option=local-optimize                 kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=no-local-optimize              kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=cross-optimize                 kind=OptionUnit</Expects>
@@ -128,7 +129,7 @@
 //<Expects status="success">section='NoSection                ' ! option=Ooff                           kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=ml-keywords                    kind=OptionUnit</Expects>
 //<Expects status="success">section='NoSection                ' ! option=gnu-style-errors               kind=OptionUnit</Expects>
-//<Expects status="success">section='NoSection                ' ! option=dumpAllCommandLineOptions      kind=OptionHelp</Expects>
+//<Expects status="success">section='NoSection                ' ! option=dumpAllCommandLineOptions      kind=OptionConsoleOnly</Expects>
 
 // The following ones are for FSI.EXE only
 

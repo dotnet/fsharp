@@ -5,32 +5,6 @@
 # ReqNOCov	-- skip this test/suite if we are doing a code coverage run
 # ReqENU	-- skip this test/suite if we are running on non-ENU (useful to exclude hard-to-localize tests)
 
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AsyncExpressionStepping
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\AttributeTargets
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CCtorDUWithMember
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\CompiledNameAttribute
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\ComputationExpressions
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\DoNotBoxStruct
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\GeneratedIterators
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\InequalityComparison
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\ListExpressionStepping
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\LiteralValue
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\MethodImplAttribute
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Misc
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Mutation
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Operators
-Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\QueryExpressionStepping
-Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionStepping
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SeqExpressionTailCalls
-CodeGen01,NoMT,CodeGen,NoHostedCompiler,SerializableAttribute				CodeGen\EmittedIL\SerializableAttribute
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\StaticInit
-Retry,CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\SteppingMatch
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TailCalls
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\TestFunctions
-CodeGen01,NoMT,CodeGen				CodeGen\EmittedIL\Tuples
-CodeGen01,NoMT,CodeGen				CodeGen\StringEncoding
-CodeGen01,NoMT,CodeGen				CodeGen\Structure
-
 CompilerOptions01,NoMT				CompilerOptions\fsc\checked
 CompilerOptions01,NoMT				CompilerOptions\fsc\cliversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\codepage
@@ -49,14 +23,12 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\optimize
 CompilerOptions01,NoMT				CompilerOptions\fsc\out
 CompilerOptions01,NoMT,pdbs				CompilerOptions\fsc\pdb
 CompilerOptions01,NoMT				CompilerOptions\fsc\platform
-CompilerOptions01,NoMT				CompilerOptions\fsc\reference
 CompilerOptions01,NoMT				CompilerOptions\fsc\Removed
 CompilerOptions01,NoMT				CompilerOptions\fsc\standalone
 CompilerOptions01,NoMT,NoHostedCompiler		CompilerOptions\fsc\staticlink
 CompilerOptions01,NoMT				CompilerOptions\fsc\subsystemversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\tailcalls
 CompilerOptions01,NoMT				CompilerOptions\fsc\target
-CompilerOptions01,NoMT,NoHostedCompiler				CompilerOptions\fsc\times
 CompilerOptions01,NoMT,NoHostedCompiler				CompilerOptions\fsc\tokenize
 CompilerOptions01,NoMT				CompilerOptions\fsc\responsefile
 CompilerOptions01,NoMT,help				CompilerOptions\fsi\help
@@ -64,7 +36,6 @@ CompilerOptions01,NoMT				CompilerOptions\fsi\highentropyva
 CompilerOptions01,NoMT				CompilerOptions\fsi\langversion
 CompilerOptions01,NoMT				CompilerOptions\fsi\nologo
 CompilerOptions01,NoMT				CompilerOptions\fsi\subsystemversion
-CompilerOptions01,NoMT				CompilerOptions\fsi\times
 CompilerOptions02,NoMT				CompilerOptions\fsi\exename
 CompilerOptions01,NoMT,Determinism				CompilerOptions\fsc\determinism
 
@@ -262,10 +233,6 @@ Misc01			Warnings
 Misc02			Libraries\Portable
 Misc02			Misc
 Misc02			MultiTargeting
-Misc02,CodeGen			Optimizations\AssemblyBoundary
-Misc02,CodeGen			Optimizations\ForLoop
-Misc02,CodeGen			Optimizations\GenericComparison
-Misc02,CodeGen			Optimizations\Inlining
 Misc02,NoMT		Printing
 Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\UnitsOfMeasure
 Misc02			..\..\..\testsprivate\fsharpqa\Source\RealWorld\Agents

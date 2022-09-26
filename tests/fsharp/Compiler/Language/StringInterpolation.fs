@@ -10,11 +10,13 @@ open FSharp.Test
 module StringInterpolationTests =
 
     let SimpleCheckTest text =
-        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:5.0" |] ("""
+        CompilerAssert.CompileExeAndRunWithOptions(
+            [| "--langversion:5.0" |],
+            ("""
 let check msg a b = 
     if a = b then printfn "test case '%s' succeeded" msg else failwithf "test case '%s' failed, expected %A, got %A" msg b a
 
-""" + text)
+""" + text))
 
     [<Test>]
     let ``Basic string interpolation`` () =
@@ -544,11 +546,13 @@ check "vcewweh20" $"x = %A{1}" "x = 1"
                    "Feature 'binary formatting for integers' is not available in F# 5.0. Please use language version 6.0 or greater.")|]
     [<Test>]
     let ``%B succeeds for langVersion preview`` () =
-        CompilerAssert.CompileExeAndRunWithOptions [| "--langversion:preview" |] """
+        CompilerAssert.CompileExeAndRunWithOptions(
+            [| "--langversion:preview" |],
+            """
 let check msg a b = 
     if a = b then printfn "test case '%s' succeeded" msg else failwithf "test case '%s' failed, expected %A, got %A" msg b a
 check "vcewweh22a" $"x = %B{19}" "x = 10011"
-        """
+        """)
 
     [<Test>]
     let ``String interpolation using list and array data`` () =
@@ -684,9 +688,9 @@ let xb = $"{%5d{1:N3}}" // inner error that looks like format specifiers
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
             code
             [|(FSharpDiagnosticSeverity.Error, 1156, (2, 14, 2, 16),
-               "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int), 1u (uint32), 1L (int64), 1UL (uint64), 1s (int16), 1y (sbyte), 1uy (byte), 1.0 (float), 1.0f (float32), 1.0m (decimal), 1I (BigInteger).");
+               "This is not a valid numeric literal. Valid numeric literals include 1, 0x1, 0o1, 0b1, 1l (int/int32), 1u (uint/uint32), 1L (int64), 1UL (uint64), 1s (int16), 1us (uint16), 1y (int8/sbyte), 1uy (uint8/byte), 1.0 (float/double), 1.0f (float32/single), 1.0m (decimal), 1I (bigint).")
               (FSharpDiagnosticSeverity.Error, 10, (2, 18, 2, 19),
-               "Unexpected symbol ':' in expression. Expected '}' or other token.");
+               "Unexpected symbol ':' in expression. Expected '}' or other token.")
               (FSharpDiagnosticSeverity.Error, 604, (2, 16, 2, 17), "Unmatched '{'")
             |]
 

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -40,7 +40,7 @@ type internal FSharpEditorFormattingService
 
             let line = sourceText.Lines.[sourceText.Lines.IndexOf position]
                 
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+            let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
 
             let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
 
@@ -167,14 +167,17 @@ type internal FSharpEditorFormattingService
             return textChanges |> Option.defaultValue Seq.empty |> toIList
         }
         
-    interface IFSharpEditorFormattingService with
+    interface IFSharpEditorFormattingServiceWithOptions with
         member val SupportsFormatDocument = false
         member val SupportsFormatSelection = false
         member val SupportsFormatOnPaste = true
         member val SupportsFormatOnReturn = true
 
-        override _.SupportsFormattingOnTypedCharacter (document, ch) =
-            if FSharpIndentationService.IsSmartIndentEnabled document.Project.Solution.Workspace.Options then
+        override _.SupportsFormattingOnTypedCharacter (_document, _ch) =
+            false
+
+        override _.SupportsFormattingOnTypedCharacter (_document, options, ch) =
+            if options.IndentStyle = FormattingOptions.IndentStyle.Smart then
                 match ch with
                 | ')' | ']' | '}' -> true
                 | _ -> false
