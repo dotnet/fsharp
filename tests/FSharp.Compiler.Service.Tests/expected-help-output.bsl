@@ -1,7 +1,6 @@
-﻿Copyright (c) Microsoft Corporation. All Rights Reserved.
+﻿
 
-
-		- OUTPUT FILES -
+                - OUTPUT FILES -
 --out:<file>                             Name of the output file (Short form:
                                          -o)
 --target:exe                             Build a console executable
@@ -23,6 +22,8 @@
                                          run on: x86, x64, Arm, Arm64,
                                          Itanium, anycpu32bitpreferred, or
                                          anycpu. The default is anycpu.
+--compressmetadata[+|-]                  Compress interface and optimization
+                                         data files
 --nooptimizationdata                     Only include optimization
                                          information essential for
                                          implementing inlined constructs.
@@ -45,7 +46,7 @@
                                          the specified file path.
 
 
-		- INPUT FILES -
+                - INPUT FILES -
 --reference:<file>                       Reference an assembly (Short form:
                                          -r)
 --compilertool:<file>                    Reference an assembly or directory
@@ -53,7 +54,7 @@
                                          form: -t)
 
 
-		- RESOURCES -
+                - RESOURCES -
 --win32icon:<file>                       Specify a Win32 icon file (.ico)
 --win32res:<file>                        Specify a Win32 resource file (.res)
 --win32manifest:<file>                   Specify a Win32 manifest file
@@ -66,7 +67,7 @@
                                          name>[,public|private]]
 
 
-		- CODE GENERATION -
+                - CODE GENERATION -
 --debug[+|-]                             Emit debug information (Short form:
                                          -g)
 --debug:{full|pdbonly|portable|embedded} Specify debugging type: full,
@@ -98,7 +99,7 @@
                                          constructs using reflection
 
 
-		- ERRORS AND WARNINGS -
+                - ERRORS AND WARNINGS -
 --warnaserror[+|-]                       Report all warnings as errors
 --warnaserror[+|-]:<warn;...>            Report specific warnings as errors
 --warn:<n>                               Set a warning level (0-5)
@@ -109,18 +110,18 @@
                                          color
 
 
-		- LANGUAGE -
---langversion:{?|version|latest|preview} Display the allowed values for
-                                         language version, specify language
-                                         version such as 'latest' or
-                                         'preview'
+                - LANGUAGE -
+--langversion:?                          Display the allowed values for
+                                         language version.
+--langversion:{version|latest|preview}   Specify language version such as
+                                         'latest' or 'preview'.
 --checked[+|-]                           Generate overflow checks
 --define:<string>                        Define conditional compilation
                                          symbols (Short form: -d)
 --mlcompatibility                        Ignore ML compatibility warnings
 
 
-		- MISCELLANEOUS -
+                - MISCELLANEOUS -
 --nologo                                 Suppress compiler copyright message
 --version                                Display compiler version banner and
                                          exit
@@ -129,7 +130,7 @@
 --@<file>                                Read response file for more options
 
 
-		- ADVANCED -
+                - ADVANCED -
 --codepage:<n>                           Specify the codepage used to read
                                          source files
 --utf8output                             Output messages in UTF-8 encoding

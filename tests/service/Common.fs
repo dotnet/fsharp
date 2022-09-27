@@ -210,7 +210,7 @@ let matchBraces (name: string, code: string) =
 
 let getSingleModuleLikeDecl (input: ParsedInput) =
     match input with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ decl ])) -> decl
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ decl ])) -> decl
     | _ -> failwith "Could not get module decls"
 
 let getSingleModuleMemberDecls (input: ParsedInput) =
@@ -230,6 +230,11 @@ let getSingleExprInModule (input: ParsedInput) =
 let getSingleParenInnerExpr expr =
     match expr with
     | SynModuleDecl.Expr(SynExpr.Paren(expr, _, _, _), _) -> expr
+    | _ -> failwith "Unexpected tree"
+
+let getLetDeclHeadPattern (moduleDecl: SynModuleDecl) =
+    match moduleDecl with
+    | SynModuleDecl.Let(_, [SynBinding(headPat = pat)], _) -> pat
     | _ -> failwith "Unexpected tree"
 
 let parseSourceCodeAndGetModule (source: string) =
@@ -458,7 +463,7 @@ let coreLibAssemblyName =
     "mscorlib"
 #endif
 
-let getRange (e: SynExpr) = e.Range
+let inline getRange (node: ^T) = (^T: (member Range: range) node)
 
 let assertRange
     (expectedStartLine: int, expectedStartColumn: int)

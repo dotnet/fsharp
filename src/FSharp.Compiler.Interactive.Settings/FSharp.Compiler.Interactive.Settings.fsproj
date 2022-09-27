@@ -11,7 +11,7 @@
 
   <!--  The FSharp.Compiler.Interactive.Settings dll provides a referencable public interface to tool builders  -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <CompressMetadata>true</CompressMetadata>
+      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,10 +30,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsVersion)" />
   </ItemGroup>
 
 </Project>

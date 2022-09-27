@@ -382,7 +382,7 @@ type TcConfig with
 
     member tcConfig.TryResolveLibWithDirectories(r: AssemblyReference) =
         let m, nm = r.Range, r.Text
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         // See if the language service has already produced the contents of the assembly for us, virtually
         match r.ProjectReference with
@@ -436,7 +436,7 @@ type TcConfig with
 
     member tcConfig.ResolveLibWithDirectories(ccuLoadFailureAction, r: AssemblyReference) =
         let m, nm = r.Range, r.Text
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         let rs =
             if IsExe nm || IsDLL nm || IsNetModule nm then
@@ -504,7 +504,7 @@ type TcConfig with
             mode: ResolveAssemblyReferenceMode
         ) : AssemblyResolution list * UnresolvedAssemblyReference list =
 
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         if tcConfig.useSimpleResolution then
             failwith "MSBuild resolution is not supported."
@@ -801,7 +801,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
         TcAssemblyResolutions.ResolveAssemblyReferences(tcConfig, references, knownUnresolved)
 
     static member GetAssemblyResolutionInformation(tcConfig: TcConfig) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
         let assemblyList = TcAssemblyResolutions.GetAllDllReferences tcConfig
 
         let resolutions =
@@ -2141,6 +2141,13 @@ and [<Sealed>] TcImports
         node {
             CheckDisposed()
 
+            let tcConfig = tcConfigP.Get ctok
+
+            let runMethod =
+                match tcConfig.parallelReferenceResolution with
+                | ParallelReferenceResolution.On -> NodeCode.Parallel
+                | ParallelReferenceResolution.Off -> NodeCode.Sequential
+
             let! results =
                 nms
                 |> List.map (fun nm ->
@@ -2151,7 +2158,7 @@ and [<Sealed>] TcImports
                             errorR (Error(FSComp.SR.buildProblemReadingAssembly (nm.resolvedPath, e.Message), nm.originalReference.Range))
                             return None
                     })
-                |> NodeCode.Sequential
+                |> runMethod
 
             let dllinfos, phase2s = results |> Array.choose id |> List.ofArray |> List.unzip
             fixupOrphanCcus ()
@@ -2321,12 +2328,12 @@ and [<Sealed>] TcImports
                 | _, [ ResolvedImportedAssembly ccu ] -> ccu.FSharpViewOfMetadata.ILScopeRef
                 | _ -> failwith "primaryScopeRef - unexpected"
 
+            let resolvedAssemblies = tcResolutions.GetAssemblyResolutions()
+
             let primaryAssemblyResolvedPath =
                 match primaryAssemblyResolution with
                 | [ primaryAssemblyResolution ] -> primaryAssemblyResolution.resolvedPath
                 | _ -> failwith "primaryAssemblyResolvedPath - unexpected"
-
-            let resolvedAssemblies = tcResolutions.GetAssemblyResolutions()
 
             let readerSettings: ILReaderOptions =
                 {
@@ -2336,28 +2343,28 @@ and [<Sealed>] TcImports
                     tryGetMetadataSnapshot = tcConfig.tryGetMetadataSnapshot
                 }
 
-            let tryFindAssemblyByExportedType manifest (exportedType: ILExportedTypeOrForwarder) =
-                match exportedType.ScopeRef, primaryScopeRef with
-                | ILScopeRef.Assembly aref1, ILScopeRef.Assembly aref2 when aref1.EqualsIgnoringVersion aref2 ->
-                    mkRefToILAssembly manifest |> Some
-                | _ -> None
+            let tryFindEquivPrimaryAssembly (resolvedAssembly: AssemblyResolution) =
+                if primaryAssemblyResolvedPath = resolvedAssembly.resolvedPath then
+                    None
+                else
+                    let reader = OpenILModuleReader resolvedAssembly.resolvedPath readerSettings
+                    let mdef = reader.ILModuleDef
 
-            let tryFindAssemblyThatForwardsToPrimaryAssembly manifest =
-                manifest.ExportedTypes.TryFindByName "System.Object"
-                |> Option.bind (tryFindAssemblyByExportedType manifest)
+                    // We check the exported types of all assemblies, since many may forward System.Object,
+                    // but only check the actual type definitions for specific assemblies that we know
+                    // might actually declare System.Object.
+                    match mdef.Manifest with
+                    | Some manifest when
+                        manifest.ExportedTypes.TryFindByName "System.Object" |> Option.isSome
+                        || PrimaryAssembly.IsPossiblePrimaryAssembly resolvedAssembly.resolvedPath
+                           && mdef.TypeDefs.ExistsByName "System.Object"
+                        ->
+                        mkRefToILAssembly manifest |> Some
+                    | _ -> None
 
-            // Determine what other assemblies could have been the primary assembly
-            // by checking to see if "System.Object" is an exported type.
-            let assembliesThatForwardToPrimaryAssembly =
-                resolvedAssemblies
-                |> List.choose (fun resolvedAssembly ->
-                    if primaryAssemblyResolvedPath <> resolvedAssembly.resolvedPath then
-                        let reader = OpenILModuleReader resolvedAssembly.resolvedPath readerSettings
-
-                        reader.ILModuleDef.Manifest
-                        |> Option.bind tryFindAssemblyThatForwardsToPrimaryAssembly
-                    else
-                        None)
+            // Find assemblies which also declare System.Object
+            let equivPrimaryAssemblyRefs =
+                resolvedAssemblies |> List.choose tryFindEquivPrimaryAssembly
 
             let! fslibCcu, fsharpCoreAssemblyScopeRef =
                 node {
@@ -2406,7 +2413,7 @@ and [<Sealed>] TcImports
                 sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName)
 
             let ilGlobals =
-                mkILGlobals (primaryScopeRef, assembliesThatForwardToPrimaryAssembly, fsharpCoreAssemblyScopeRef)
+                mkILGlobals (primaryScopeRef, equivPrimaryAssemblyRefs, fsharpCoreAssemblyScopeRef)
 
             // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
             let tcGlobals =

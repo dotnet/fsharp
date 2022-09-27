@@ -20,7 +20,9 @@
 
   <!--  The FSharp.Build dll does not provide a referencable public interface although it's used for testing -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <CompressMetadata>true</CompressMetadata>
+      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+      <NoOptimizationData>true</NoOptimizationData>
+      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
   </PropertyGroup>
 
   <ItemGroup>

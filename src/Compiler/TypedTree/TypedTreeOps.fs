@@ -2133,7 +2133,10 @@ type FreeVarOptions =
       includeRecdFields: bool
       includeUnionCases: bool
       includeLocals: bool
+      templateReplacement: ((TyconRef -> bool) * Typars) option
       stackGuard: StackGuard option }
+
+    member this.WithTemplateReplacement(f, typars) = { this with templateReplacement = Some (f, typars) }
       
 let CollectAllNoCaching = 
     { canCache = false
@@ -2144,6 +2147,7 @@ let CollectAllNoCaching =
       includeUnionCases = true
       includeTypars = true
       includeLocals = true
+      templateReplacement = None
       stackGuard = None}
 
 let CollectTyparsNoCaching = 
@@ -2155,6 +2159,7 @@ let CollectTyparsNoCaching =
       includeRecdFields = false
       includeUnionCases = false
       includeLocals = false
+      templateReplacement = None
       stackGuard = None }
 
 let CollectLocalsNoCaching = 
@@ -2166,6 +2171,7 @@ let CollectLocalsNoCaching =
       includeRecdFields = false 
       includeUnionCases = false
       includeLocals = true
+      templateReplacement = None
       stackGuard = None }
 
 let CollectTyparsAndLocalsNoCaching = 
@@ -2177,6 +2183,7 @@ let CollectTyparsAndLocalsNoCaching =
       includeUnionCases = false
       includeTypars = true
       includeLocals = true
+      templateReplacement = None
       stackGuard = None }
 
 let CollectAll =
@@ -2188,6 +2195,7 @@ let CollectAll =
       includeUnionCases = true
       includeTypars = true
       includeLocals = true
+      templateReplacement = None
       stackGuard = None }
     
 let CollectTyparsAndLocalsImpl stackGuardOpt = // CollectAll
@@ -2199,6 +2207,7 @@ let CollectTyparsAndLocalsImpl stackGuardOpt = // CollectAll
       includeLocalTyconReprs = false
       includeRecdFields = false
       includeUnionCases = false
+      templateReplacement = None
       stackGuard = stackGuardOpt }
 
   
@@ -2209,7 +2218,7 @@ let CollectTypars = CollectTyparsAndLocals
 let CollectLocals = CollectTyparsAndLocals
 
 let CollectTyparsAndLocalsWithStackGuard() =
-    let stackGuard = StackGuard(AccFreeVarsStackGuardDepth)
+    let stackGuard = StackGuard(AccFreeVarsStackGuardDepth, "AccFreeVarsStackGuardDepth")
     CollectTyparsAndLocalsImpl (Some stackGuard)
 
 let CollectLocalsWithStackGuard() = CollectTyparsAndLocalsWithStackGuard()
@@ -2219,12 +2228,18 @@ let accFreeLocalTycon opts x acc =
     if Zset.contains x acc.FreeTycons then acc else 
     { acc with FreeTycons = Zset.add x acc.FreeTycons } 
 
-let accFreeTycon opts (tcref: TyconRef) acc = 
+let rec accFreeTycon opts (tcref: TyconRef) acc = 
+    let acc =
+        match opts.templateReplacement with
+        | Some (isTemplateTyconRef, cloFreeTyvars) when isTemplateTyconRef tcref ->
+            let cloInst = List.map mkTyparTy cloFreeTyvars
+            accFreeInTypes opts cloInst acc
+        | _ -> acc
     if not opts.includeLocalTycons then acc
     elif tcref.IsLocalRef then accFreeLocalTycon opts tcref.ResolvedTarget acc
     else acc
 
-let rec boundTypars opts tps acc = 
+and boundTypars opts tps acc = 
     // Bound type vars form a recursively-referential set due to constraints, e.g. A: I<B>, B: I<A> 
     // So collect up free vars in all constraints first, then bind all variables 
     let acc = List.foldBack (fun (tp: Typar) acc -> accFreeInTyparConstraints opts tp.Constraints acc) tps acc
@@ -6248,31 +6263,31 @@ and remapImplFile ctxt compgen tmenv implFile =
 // Entry points
 
 let remapAttrib g tmenv attrib = 
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     remapAttribImpl ctxt tmenv attrib
 
 let remapExpr g (compgen: ValCopyFlag) (tmenv: Remap) expr =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     remapExprImpl ctxt compgen tmenv expr
 
 let remapPossibleForallTy g tmenv ty =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     remapPossibleForallTyImpl ctxt tmenv ty
 
 let copyModuleOrNamespaceType g compgen mtyp =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     copyAndRemapAndBindModTy ctxt compgen Remap.Empty mtyp |> fst
 
 let copyExpr g compgen e =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     remapExprImpl ctxt compgen Remap.Empty e    
 
 let copyImplFile g compgen e =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     remapImplFile ctxt compgen Remap.Empty e |> fst
 
 let instExpr g tpinst e =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     remapExprImpl ctxt CloneAll (mkInstRemap tpinst) e
 
 //--------------------------------------------------------------------------
@@ -7162,7 +7177,7 @@ let ExprFolder0 =
 type ExprFolders<'State> (folders: ExprFolder<'State>) =
     let mutable exprFClosure = Unchecked.defaultof<'State -> Expr -> 'State> // prevent reallocation of closure
     let mutable exprNoInterceptFClosure = Unchecked.defaultof<'State -> Expr -> 'State> // prevent reallocation of closure
-    let stackGuard = StackGuard(FoldExprStackGuardDepth)
+    let stackGuard = StackGuard(FoldExprStackGuardDepth, "FoldExprStackGuardDepth")
 
     let rec exprsF z xs = 
         List.fold exprFClosure z xs
@@ -9493,7 +9508,7 @@ and remapValToNonLocal ctxt tmenv inp =
     inp |> Construct.NewModifiedVal (remapValData ctxt tmenv)
 
 let ApplyExportRemappingToEntity g tmenv x =
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth) }
+    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
     remapTyconToNonLocal ctxt tmenv x
 
 (* Which constraints actually get compiled to .NET constraints? *)
@@ -10025,60 +10040,64 @@ let (|IfUseResumableStateMachinesExpr|_|) g expr =
 
 /// Combine a list of ModuleOrNamespaceType's making up the description of a CCU. checking there are now
 /// duplicate modules etc.
-let CombineCcuContentFragments m l = 
+let CombineCcuContentFragments l = 
 
     /// Combine module types when multiple namespace fragments contribute to the
     /// same namespace, making new module specs as we go.
-    let rec CombineModuleOrNamespaceTypes path m (mty1: ModuleOrNamespaceType) (mty2: ModuleOrNamespaceType) = 
-        match mty1.ModuleOrNamespaceKind, mty2.ModuleOrNamespaceKind with 
-        | Namespace _, Namespace _ -> 
-            let kind = mty1.ModuleOrNamespaceKind
-            let tab1 = mty1.AllEntitiesByLogicalMangledName
-            let tab2 = mty2.AllEntitiesByLogicalMangledName
-            let entities = 
-                [ for e1 in mty1.AllEntities do 
-                      match tab2.TryGetValue e1.LogicalName with
-                      | true, e2 -> yield CombineEntities path e1 e2
-                      | _ -> yield e1
-                  for e2 in mty2.AllEntities do 
-                      match tab1.TryGetValue e2.LogicalName with
-                      | true, _ -> ()
-                      | _ -> yield e2 ]
+    let rec CombineModuleOrNamespaceTypes path (mty1: ModuleOrNamespaceType) (mty2: ModuleOrNamespaceType) = 
+        let kind = mty1.ModuleOrNamespaceKind
+        let tab1 = mty1.AllEntitiesByLogicalMangledName
+        let tab2 = mty2.AllEntitiesByLogicalMangledName
+        let entities = 
+            [
+                for e1 in mty1.AllEntities do 
+                    match tab2.TryGetValue e1.LogicalName with
+                    | true, e2 -> yield CombineEntities path e1 e2
+                    | _ -> yield e1
 
-            let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
+                for e2 in mty2.AllEntities do 
+                    match tab1.TryGetValue e2.LogicalName with
+                    | true, _ -> ()
+                    | _ -> yield e2
+            ]
 
-            ModuleOrNamespaceType(kind, vals, QueueList.ofList entities)
+        let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
 
-        | Namespace _, _ | _, Namespace _ -> 
-            error(Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly(textOfPath path), m))
-
-        | _-> 
-            error(Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly(textOfPath path), m))
+        ModuleOrNamespaceType(kind, vals, QueueList.ofList entities)
 
     and CombineEntities path (entity1: Entity) (entity2: Entity) = 
 
-        match entity1.IsModuleOrNamespace, entity2.IsModuleOrNamespace with
-        | true, true -> 
-            entity1 |> Construct.NewModifiedTycon (fun data1 -> 
-                        let xml = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
-                        { data1 with 
-                             entity_attribs = entity1.Attribs @ entity2.Attribs
-                             entity_modul_type = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
-                             entity_opt_data = 
-                                match data1.entity_opt_data with
-                                | Some optData -> Some { optData with entity_xmldoc = xml }
-                                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = xml } }) 
-        | false, false -> 
-            error(Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path), entity2.Range))
-        | _, _ -> 
-            error(Error(FSComp.SR.tastConflictingModuleAndTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path), entity2.Range))
+        let path2 = path@[entity2.DemangledModuleOrNamespaceName]
+
+        match entity1.IsNamespace, entity2.IsNamespace, entity1.IsModule, entity2.IsModule with
+        | true, true, _, _ ->
+            ()
+        | true, _, _, _
+        | _, true, _, _ -> 
+            errorR(Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly(textOfPath path2), entity2.Range))
+        | false, false, false, false -> 
+            errorR(Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path), entity2.Range))
+        | false, false, true, true -> 
+            errorR(Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly(textOfPath path2), entity2.Range))
+        | _ -> 
+            errorR(Error(FSComp.SR.tastConflictingModuleAndTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path), entity2.Range))
+
+        entity1 |> Construct.NewModifiedTycon (fun data1 -> 
+            let xml = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
+            { data1 with 
+                entity_attribs = entity1.Attribs @ entity2.Attribs
+                entity_modul_type = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes path2 entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
+                entity_opt_data = 
+                match data1.entity_opt_data with
+                | Some optData -> Some { optData with entity_xmldoc = xml }
+                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = xml } }) 
     
-    and CombineModuleOrNamespaceTypeList path m l = 
+    and CombineModuleOrNamespaceTypeList path l = 
         match l with
-        | h :: t -> List.fold (CombineModuleOrNamespaceTypes path m) h t
+        | h :: t -> List.fold (CombineModuleOrNamespaceTypes path) h t
         | _ -> failwith "CombineModuleOrNamespaceTypeList"
 
-    CombineModuleOrNamespaceTypeList [] m l
+    CombineModuleOrNamespaceTypeList [] l
 
 /// An immutable mappping from witnesses to some data.
 ///
@@ -10360,3 +10379,35 @@ let isFSharpExceptionTy g ty =
     | ValueSome tcref -> tcref.IsFSharpException
     | _ -> false
 
+let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceContents) =
+    match moduleOrNamespaceContents with
+    | TMDefs(defs = defs) ->
+        let mdDefsLength =
+            defs
+            |> List.count (function
+                | ModuleOrNamespaceContents.TMDefRec _
+                | ModuleOrNamespaceContents.TMDefs _ -> true
+                | _ -> false)
+
+        let emptyModuleOrNamespaces =
+            defs
+            |> List.choose (function
+                | ModuleOrNamespaceContents.TMDefRec _ as defRec
+                | ModuleOrNamespaceContents.TMDefs(defs = [ ModuleOrNamespaceContents.TMDefRec _ as defRec ]) ->
+                    match defRec with
+                    | TMDefRec(bindings = [ ModuleOrNamespaceBinding.Module(mspec, ModuleOrNamespaceContents.TMDefs(defs = defs)) ]) ->
+                        defs
+                        |> List.forall (function
+                            | ModuleOrNamespaceContents.TMDefOpens _
+                            | ModuleOrNamespaceContents.TMDefDo _
+                            | ModuleOrNamespaceContents.TMDefRec (isRec = true; tycons = []; bindings = []) -> true
+                            | _ -> false)
+                        |> fun isEmpty -> if isEmpty then Some mspec else None
+                    | _ -> None
+                | _ -> None)
+
+        if mdDefsLength = emptyModuleOrNamespaces.Length then
+            Some emptyModuleOrNamespaces
+        else
+            None
+    | _ -> None

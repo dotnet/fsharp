@@ -40,8 +40,8 @@
   </PropertyGroup>
 
   <!--  The FSharp.Core dll provides a referencable public interface -->
-  <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(CompressAllMetadata)' != 'true'">
-      <CompressMetadata>true</CompressMetadata>
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
   </PropertyGroup>
 
   <ItemGroup>
@@ -52,6 +52,8 @@
       <GeneratedModuleName>Microsoft.FSharp.Core.SR</GeneratedModuleName>
       <Link>FSCore.resx</Link>
     </EmbeddedResource>
+    <EmbeddedResource Include="ILLink.LinkAttributes.xml" LogicalName="ILLink.LinkAttributes.xml" />
+    <EmbeddedResource Include="ILLink.Substitutions.xml" LogicalName="ILLink.Substitutions.xml" />
     <CompileBefore Include="prim-types-prelude.fsi">
       <Link>Primitives/prim-types-prelude.fsi</Link>
     </CompileBefore>

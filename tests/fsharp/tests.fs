@@ -60,7 +60,7 @@ module CoreTests =
     [<Test>]
     let ``array-FSC_OPTIMIZED-5.0`` () = singleTestBuildAndRunVersion "core/array" FSC_OPTIMIZED "5.0"
 
-    [<Test; Ignore("Some tests fail on .NET6 preview6, and fixed in preview7, disabling until preview7 gets released.")>]
+    [<Test>]
     let ``array-FSI-5.0`` () = singleTestBuildAndRunVersion "core/array" FSI "5.0"
 
     [<Test>]
@@ -2156,6 +2156,9 @@ module RegressionTests =
 
     [<Test >]
     let ``12383-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/12383" FSC_OPTIMIZED
+
+    [<Test>]
+    let ``13219-bug-FSI`` () = singleTestBuildAndRun "regression/13219" FSI
 
     [<Test >]
     let ``4715-optimized`` () =

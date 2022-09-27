@@ -43,7 +43,7 @@ and CompilerOptionBlock =
     | PublicOptions of heading: string * options: CompilerOption list
     | PrivateOptions of options: CompilerOption list
 
-val GetCompilerOptionBlocks: CompilerOptionBlock list -> string
+val GetCompilerOptionBlocks: CompilerOptionBlock list -> width: int option -> string
 
 val DumpCompilerOptionBlocks: CompilerOptionBlock list -> unit // for QA
 
@@ -57,6 +57,8 @@ val GetBannerText: tcConfigB: TcConfigBuilder -> string
 val GetHelpFsc: tcConfigB: TcConfigBuilder -> blocks: CompilerOptionBlock list -> string
 
 val GetVersion: tcConfigB: TcConfigBuilder -> string
+
+val GetLanguageVersions: unit -> string
 
 val GetCoreFscCompilerOptions: TcConfigBuilder -> CompilerOptionBlock list
 

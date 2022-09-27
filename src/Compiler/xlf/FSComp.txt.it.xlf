@@ -477,6 +477,11 @@
         <target state="new">Compress interface and optimization data files</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsGetLangVersions">
+        <source>Display the allowed values for language version.</source>
+        <target state="new">Display the allowed values for language version.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
         <target state="translated">Utilizzo non valido della creazione di un assembly di riferimento. Non usare insieme '--staticlink' o '--refonly' e '--refout'.</target>
@@ -485,11 +490,6 @@
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
         <target state="translated">Percorso assembly di riferimento non valido'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsLangVersion">
-        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
-        <target state="translated">Visualizza i valori consentiti per la versione del linguaggio. Specificare la versione del linguaggio, ad esempio 'latest' o 'preview'</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimizationData">
@@ -517,6 +517,11 @@
         <target state="new">Disable implicit generation of constructs using reflection</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsSetLangVersion">
+        <source>Specify language version such as 'latest' or 'preview'.</source>
+        <target state="new">Specify language version such as 'latest' or 'preview'.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsSignatureData">
         <source>Include F# interface information, the default is file. Essential for distributing libraries.</source>
         <target state="new">Include F# interface information, the default is file. Essential for distributing libraries.</target>
@@ -533,8 +538,8 @@
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownSignatureData">
-        <source>Invalid value '{0}' for --interfacedata, valid value are: none, file, compress."</source>
-        <target state="new">Invalid value '{0}' for --interfacedata, valid value are: none, file, compress."</target>
+        <source>Invalid value '{0}' for --interfacedata, valid value are: none, file, compress.</source>
+        <target state="new">Invalid value '{0}' for --interfacedata, valid value are: none, file, compress.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -585,6 +590,16 @@
       <trans-unit id="parsEqualsMissingInTypeDefinition">
         <source>Unexpected token in type definition. Expected '=' after the type '{0}'.</source>
         <target state="translated">Token imprevisto nella definizione del tipo. Dopo il tipo '{0}' è previsto '='.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectedPatternAfterToken">
+        <source>Expected a pattern after this point</source>
+        <target state="new">Expected a pattern after this point</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingPatternInTuple">
+        <source>Expecting pattern</source>
+        <target state="new">Expecting pattern</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
@@ -2250,11 +2265,6 @@
       <trans-unit id="chkLimitationsOfBaseKeyword">
         <source>'base' values may only be used to make direct calls to the base implementations of overridden members</source>
         <target state="translated">I valori 'base' possono essere utilizzati esclusivamente per effettuare chiamate dirette alle implementazioni di base dei membri sottoposti a override</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">I costruttori di oggetti non possono utilizzare direttamente try/with e try/finally prima dell'inizializzazione dell'oggetto. Ciò include costrutti quali 'for x in ...' che potrebbero essere elaborati negli utilizzi di tali costrutti. Si tratta di una limitazione imposta dall'IL comune.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">

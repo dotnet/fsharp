@@ -26,7 +26,9 @@
 
   <!--  The fsi application does not provide a referencable public interface  -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <CompressMetadata>true</CompressMetadata>
+      <NoOptimizationData>true</NoOptimizationData>
+      <NoInterfaceData>true</NoInterfaceData>
+      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
   </PropertyGroup>
 
   <ItemGroup>
@@ -53,17 +55,6 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="WindowsBase" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
-    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessVersion)" />
-    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
-    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsVersion)" />
-    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
-    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />
-    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadVersion)" />
   </ItemGroup>
 
 </Project>
