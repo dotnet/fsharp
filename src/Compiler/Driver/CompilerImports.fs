@@ -2142,6 +2142,7 @@ and [<Sealed>] TcImports
             CheckDisposed()
 
             let tcConfig = tcConfigP.Get ctok
+
             let runMethod =
                 match tcConfig.parallelReferenceResolution with
                 | ParallelReferenceResolution.On -> NodeCode.Parallel
