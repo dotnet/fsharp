@@ -590,8 +590,8 @@ let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownT
         if isAnyTupleTy g knownTy then
             let tupInfo, ptys = destAnyTupleTy g knownTy
             let tupInfo = (if isExplicitStruct then tupInfoStruct else tupInfo)
-            let ptys = 
-                if List.length ps = List.length ptys then ptys 
+            let ptys =
+                if List.length ps = List.length ptys then ptys
                 else NewInferenceTypes g ps
             tupInfo, ptys
         else
@@ -5283,6 +5283,11 @@ and TcExprsWithFlexes (cenv: cenv) env m tpenv flexes argTys args =
     (tpenv, List.zip3 flexes argTys args) ||> List.mapFold (fun tpenv (flex, ty, e) ->
          TcExprFlex cenv flex false ty env tpenv e)
 
+and TcExprsNoFlexes (cenv: cenv) env m tpenv argTys args =
+    if List.length args <> List.length argTys then error(Error(FSComp.SR.tcExpressionCountMisMatch((List.length argTys), (List.length args)), m))
+    (tpenv, List.zip argTys args) ||> List.mapFold (fun tpenv (ty, e) ->
+         TcExprFlex2 cenv ty env false tpenv e)
+
 and CheckSuperInit (cenv: cenv) objTy m =
     let g = cenv.g
 
@@ -5789,30 +5794,27 @@ and TcExprLazy (cenv: cenv) overallTy env tpenv (synInnerExpr, m) =
     let expr = mkLazyDelayed g m innerTy (mkUnitDelayLambda g m innerExpr)
     expr, tpenv
 
+and CheckTupleIsCorrectLength g (env: TcEnv) m tupleTy args typeCheckArgs =
+    if isAnyTupleTy g tupleTy then
+        let tupInfo, ptys = destAnyTupleTy g tupleTy
+
+        if List.length args <> List.length ptys then
+            let argTys = NewInferenceTypes g args
+            suppressErrorReporting (fun () -> typeCheckArgs argTys)
+            let expectedTy = TType_tuple (tupInfo, argTys)
+
+            // We let error recovery handle this exception
+            error (ErrorFromAddingTypeEquation(g, env.DisplayEnv, tupleTy, expectedTy,
+                   (ConstraintSolverTupleDiffLengths(env.DisplayEnv, ptys, argTys, m, m)), m))
+
 and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
     let g = cenv.g
     TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnyTupleTy g ty || isTyparTy g ty) cenv overallTy env m (fun overallTy ->
 
-        // We preemptively check if the tuple has the correct length before submitting it to the
-        // constraint solver. If not we type check it against empty inference variables so that
-        // we can show the types in the error message if they are known.
-        if isAnyTupleTy g overallTy then
-            let tupInfo, ptys = destAnyTupleTy g overallTy
-
-            if List.length args <> List.length ptys then
-                let rhsTys = NewInferenceTypes g args
-                let flexes = rhsTys |> List.map (fun _ -> false)
-                suppressErrorReporting (fun () -> TcExprsWithFlexes cenv env m tpenv flexes rhsTys args) |> ignore
-                let expectedTy = TType_tuple (tupInfo, rhsTys)
-
-                // We let error recovery handle this exception
-                error (ErrorFromAddingTypeEquation(g, env.DisplayEnv, overallTy, expectedTy,
-                       (ConstraintSolverTupleDiffLengths(env.DisplayEnv, ptys, rhsTys, m, m)), m))
+        CheckTupleIsCorrectLength g env m overallTy args (fun argTys -> TcExprsNoFlexes cenv env m tpenv argTys args |> ignore)
 
         let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
-
-        let flexes = argTys |> List.map (fun _ -> false)
-        let argsR, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys args
+        let argsR, tpenv = TcExprsNoFlexes cenv env m tpenv argTys args
         let expr = mkAnyTupled g m tupInfo argsR argTys
         expr, tpenv
     )
@@ -6092,8 +6094,7 @@ and TcExprILAssembly (cenv: cenv) overallTy env tpenv (ilInstrs, synTyArgs, synA
     let argTys = NewInferenceTypes g synArgs
     let tyargs, tpenv = TcTypes cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synTyArgs
     // No subsumption at uses of IL assembly code
-    let flexes = argTys |> List.map (fun _ -> false)
-    let args, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys synArgs
+    let args, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synArgs
     let retTys, tpenv = TcTypes cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synRetTys
     let returnTy =
         match retTys with
@@ -7157,8 +7158,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
                 mkCallNewFormat g m printerTy printerArgTy printerResidueTy printerResultTy printerTupleTy str, tpenv
         else
             // Type check the expressions filling the holes
-            let flexes = argTys |> List.map (fun _ -> false)
-            let fillExprs, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys synFillExprs
+            let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
 
             let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
@@ -7184,8 +7184,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
     | Choice2Of2 createFormattableStringMethod ->
 
         // Type check the expressions filling the holes
-        let flexes = argTys |> List.map (fun _ -> false)
-        let fillExprs, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys synFillExprs
+        let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
 
         let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 

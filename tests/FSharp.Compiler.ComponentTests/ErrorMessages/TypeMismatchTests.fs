@@ -52,6 +52,43 @@ let x: int * int = "", "", 1
                  "Type mismatch. Expecting a tuple of length 2 of type\n    int * int    \nbut given a tuple of length 3 of type\n    string * string * int    \n")
             ]
 
+        [<Fact>]
+        let ``Patterns minimal`` () =
+            FSharp """
+let test (x : int * string * char) =
+    match x with
+    | 10, "20"      -> true
+    | _ -> false
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 4, Col 7, Line 4, Col 15,
+                 "Type mismatch. Expecting a tuple of length 3 of type\n    int * string * char    \nbut given a tuple of length 2 of type\n    int * string    \n")
+            ]
+
+        [<Fact>]
+        let ``Patterns with inference`` () =
+            FSharp """
+let test x =
+    match x with
+    |  0,  "1", '2' -> true
+    | 10, "20"      -> true
+    |     "-1", '0' -> true
+    | 99,       '9' -> true
+    | _ -> false
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 5, Col 7, Line 5, Col 15,
+                 "Type mismatch. Expecting a tuple of length 3 of type\n    int * string * char    \nbut given a tuple of length 2 of type\n    int * string    \n")
+                (Error 1, Line 6, Col 11, Line 6, Col 20,
+                 "Type mismatch. Expecting a tuple of length 3 of type\n    int * string * char    \nbut given a tuple of length 2 of type\n    string * char    \n")
+                (Error 1, Line 7, Col 7, Line 7, Col 20,
+                 "Type mismatch. Expecting a tuple of length 3 of type\n    int * string * char    \nbut given a tuple of length 2 of type\n    int * char    \n")
+            ]
+
     [<Fact>]
     let ``return Instead Of return!``() =
         FSharp """
