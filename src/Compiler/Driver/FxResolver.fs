@@ -853,7 +853,7 @@ type internal FxResolver
                     let sdkDir = tryGetSdkDir () |> replayWarnings
 
                     match sdkDir with
-                    | Some dir -> tryGetTfmFromSdkDir ()
+                    | Some dir -> tryGetTfmFromSdkDir dir
                     | None -> tryGetRunningTfm ()
 
             // Coreclr has mechanism for getting rid
