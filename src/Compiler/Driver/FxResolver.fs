@@ -386,7 +386,7 @@ type internal FxResolver
     // On coreclr it uses the deps.json file
     //
     // On-demand because (a) some FxResolver are ephemeral (b) we want to avoid recomputation
-    let tryGetRunningTfm =
+    let tryGetRunningTfm() =
         let runningTfmOpt =
             let getTfmNumber (v: string) =
                 let arr = v.Split([| '.' |], 3)
@@ -806,12 +806,54 @@ type internal FxResolver
             RequireFxResolverLock(fxtok, "assuming all member require lock")
             tryGetSdkDir () |> replayWarnings)
 
-    /// Gets the selected target framework moniker, e.g netcore3.0, net472, and the running rid of the current machine
+    /// Gets
+    ///    1. The Target Framework Moniker (TFM) used for scripting (e.g netcore3.0, net472)
+    ///    2. The running RID of the current machine (e.g. win-x64)
+    ///
+    /// When analyzing scripts for editing, this is **not** necessarily the running TFM. Rather, it is the TFM to use for analysing
+    /// a script.
+    ///
+    /// Summary:
+    /// - When running scripts (isInteractive = true) this is identical to the running TFM.
+    ///
+    /// - When analyzing .NET Core scripts (isInteractive = false, tryGetSdkDir is Some),
+    ///   the scripting TFM is determined from dotnet.runtimeconfig.json in the SDK directory
+    ///
+    /// - Otherwise, the running TFM is used. That is, if editing with .NET Framework/Core-based tooling a script is assumed
+    ///   to be .NET Framework/Core respectively.
+    ///
+    /// The RID returned is always the RID of the running machine.
     member _.GetTfmAndRid() =
         fxlock.AcquireLock(fun fxtok ->
             RequireFxResolverLock(fxtok, "assuming all member require lock")
 
-            let runningTfm = tryGetRunningTfm
+            // Interactive processes read their own configuration to find the running tfm
+
+            let targetTfm =
+                if isInteractive then
+                    tryGetRunningTfm()
+                else
+                    let sdkDir = tryGetSdkDir () |> replayWarnings
+
+                    match sdkDir with
+                    | Some dir ->
+                        let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
+                        try
+                            use stream = FileSystem.OpenFileForReadShim(dotnetConfigFile)
+                            let dotnetConfig = stream.ReadAllText()
+                            let pattern = "\"tfm\": \""
+
+                            let startPos =
+                                dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
+                                + pattern.Length
+
+                            let endPos = dotnetConfig.IndexOf("\"", startPos)
+                            let tfm = dotnetConfig[startPos .. endPos - 1]
+                            tfm
+                        with _ ->
+                            tryGetRunningTfm()
+                    | None ->
+                        tryGetRunningTfm()
 
             // Coreclr has mechanism for getting rid
             //      System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier
@@ -862,7 +904,7 @@ type internal FxResolver
                     | Architecture.Arm64 -> baseRid + "-arm64"
                     | _ -> baseRid + "-arm"
 
-            runningTfm, runningRid)
+            targetTfm, runningRid)
 
     static member ClearStaticCaches() =
         desiredDotNetSdkVersionForDirectoryCache.Clear()
