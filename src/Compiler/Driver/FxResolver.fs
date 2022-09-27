@@ -386,7 +386,7 @@ type internal FxResolver
     // On coreclr it uses the deps.json file
     //
     // On-demand because (a) some FxResolver are ephemeral (b) we want to avoid recomputation
-    let tryGetRunningTfm() =
+    let tryGetRunningTfm () =
         let runningTfmOpt =
             let getTfmNumber (v: string) =
                 let arr = v.Split([| '.' |], 3)
@@ -831,13 +831,14 @@ type internal FxResolver
 
             let targetTfm =
                 if isInteractive then
-                    tryGetRunningTfm()
+                    tryGetRunningTfm ()
                 else
                     let sdkDir = tryGetSdkDir () |> replayWarnings
 
                     match sdkDir with
                     | Some dir ->
                         let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
+
                         try
                             use stream = FileSystem.OpenFileForReadShim(dotnetConfigFile)
                             let dotnetConfig = stream.ReadAllText()
@@ -851,9 +852,8 @@ type internal FxResolver
                             let tfm = dotnetConfig[startPos .. endPos - 1]
                             tfm
                         with _ ->
-                            tryGetRunningTfm()
-                    | None ->
-                        tryGetRunningTfm()
+                            tryGetRunningTfm ()
+                    | None -> tryGetRunningTfm ()
 
             // Coreclr has mechanism for getting rid
             //      System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier
