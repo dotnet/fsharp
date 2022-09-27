@@ -388,6 +388,11 @@ type MetadataAssemblyGeneration =
     | ReferenceOut of outputPath: string
     | ReferenceOnly
 
+[<RequireQualifiedAccess>]
+type ParallelReferenceResolution =
+    | On
+    | Off
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -458,6 +463,7 @@ type TcConfigBuilder =
         mutable metadataVersion: string option
         mutable standalone: bool
         mutable extraStaticLinkRoots: string list
+        mutable compressMetadata: bool
         mutable noSignatureData: bool
         mutable onlyEssentialOptimizationData: bool
         mutable useOptimizationDataFile: bool
@@ -501,6 +507,7 @@ type TcConfigBuilder =
         mutable emitTailcalls: bool
         mutable deterministic: bool
         mutable concurrentBuild: bool
+        mutable parallelCheckingWithSignatureFiles: bool
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
         mutable preferredUiLang: string option
         mutable lcid: int option
@@ -527,6 +534,9 @@ type TcConfigBuilder =
         /// If true, strip away data that would not be of use to end users, but is useful to us for debugging
         mutable noDebugAttributes: bool
 
+        /// If true, do not emit ToString implementations for unions, records, structs, exceptions
+        mutable useReflectionFreeCodeGen: bool
+
         /// If true, indicates all type checking and code generation is in the context of fsi.exe
         isInteractive: bool
 
@@ -546,6 +556,8 @@ type TcConfigBuilder =
         mutable useSdkRefs: bool
 
         mutable fxResolver: FxResolver option
+
+        mutable bufferWidth: int option
 
         // Is F# Interactive using multi-assembly emit?
         mutable fsiMultiAssemblyEmit: bool
@@ -571,6 +583,10 @@ type TcConfigBuilder =
         mutable langVersion: LanguageVersion
 
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
+
+        mutable exiter: Exiter
+
+        mutable parallelReferenceResolution: ParallelReferenceResolution
     }
 
     // Directories to start probing in
@@ -679,6 +695,7 @@ type TcConfigBuilder =
             metadataVersion = None
             standalone = false
             extraStaticLinkRoots = []
+            compressMetadata = false
             noSignatureData = false
             onlyEssentialOptimizationData = false
             useOptimizationDataFile = false
@@ -716,6 +733,7 @@ type TcConfigBuilder =
             emitTailcalls = true
             deterministic = false
             concurrentBuild = true
+            parallelCheckingWithSignatureFiles = false
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
             lcid = None
@@ -730,11 +748,13 @@ type TcConfigBuilder =
             pause = false
             alwaysCallVirt = true
             noDebugAttributes = false
+            useReflectionFreeCodeGen = false
             emitDebugInfoInQuotations = false
             exename = None
             shadowCopyReferences = false
             useSdkRefs = true
             fxResolver = None
+            bufferWidth = None
             fsiMultiAssemblyEmit = true
             internalTestSpanStackReferring = false
             noConditionalErasure = false
@@ -753,6 +773,8 @@ type TcConfigBuilder =
             rangeForErrors = rangeForErrors
             sdkDirOverride = sdkDirOverride
             xmlDocInfoLoader = None
+            exiter = QuitProcessExiter
+            parallelReferenceResolution = ParallelReferenceResolution.Off
         }
 
     member tcConfigB.FxResolver =
@@ -785,7 +807,7 @@ type TcConfigBuilder =
         tcConfigB.fxResolver <- None // this needs to be recreated when the primary assembly changes
 
     member tcConfigB.ResolveSourceFile(m, nm, pathLoadedFrom) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         let paths =
             seq {
@@ -797,7 +819,7 @@ type TcConfigBuilder =
 
     /// Decide names of output file, pdb and assembly
     member tcConfigB.DecideNames sourceFiles =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         if sourceFiles = [] then
             errorR (Error(FSComp.SR.buildNoInputsSpecified (), rangeCmdArgs))
@@ -848,7 +870,7 @@ type TcConfigBuilder =
         outfile, pdbfile, assemblyName
 
     member tcConfigB.TurnWarningOff(m, s: string) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         match GetWarningNumber(m, s) with
         | None -> ()
@@ -863,7 +885,7 @@ type TcConfigBuilder =
                 }
 
     member tcConfigB.TurnWarningOn(m, s: string) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         match GetWarningNumber(m, s) with
         | None -> ()
@@ -1157,6 +1179,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             errorRecovery e range0
             []
 
+    member _.bufferWidth = data.bufferWidth
     member _.fsiMultiAssemblyEmit = data.fsiMultiAssemblyEmit
     member _.FxResolver = data.FxResolver
     member _.primaryAssembly = data.primaryAssembly
@@ -1226,6 +1249,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.metadataVersion = data.metadataVersion
     member _.standalone = data.standalone
     member _.extraStaticLinkRoots = data.extraStaticLinkRoots
+    member _.compressMetadata = data.compressMetadata
     member _.noSignatureData = data.noSignatureData
     member _.onlyEssentialOptimizationData = data.onlyEssentialOptimizationData
     member _.useOptimizationDataFile = data.useOptimizationDataFile
@@ -1262,6 +1286,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.emitTailcalls = data.emitTailcalls
     member _.deterministic = data.deterministic
     member _.concurrentBuild = data.concurrentBuild
+    member _.parallelCheckingWithSignatureFiles = data.parallelCheckingWithSignatureFiles
     member _.emitMetadataAssembly = data.emitMetadataAssembly
     member _.pathMap = data.pathMap
     member _.langVersion = data.langVersion
@@ -1279,6 +1304,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.pause = data.pause
     member _.alwaysCallVirt = data.alwaysCallVirt
     member _.noDebugAttributes = data.noDebugAttributes
+    member _.useReflectionFreeCodeGen = data.useReflectionFreeCodeGen
     member _.isInteractive = data.isInteractive
     member _.isInvalidationSupported = data.isInvalidationSupported
     member _.emitDebugInfoInQuotations = data.emitDebugInfoInQuotations
@@ -1291,9 +1317,11 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.noConditionalErasure = data.noConditionalErasure
     member _.applyLineDirectives = data.applyLineDirectives
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
+    member _.exiter = data.exiter
+    member _.parallelReferenceResolution = data.parallelReferenceResolution
 
     static member Create(builder, validate) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
         TcConfig(builder, validate)
 
     member _.legacyReferenceResolver = data.legacyReferenceResolver
@@ -1310,7 +1338,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.GetTargetFrameworkDirectories() = targetFrameworkDirectories
 
     member tcConfig.ComputeIndentationAwareSyntaxInitialStatus fileName =
-        use _unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _unwindBuildPhase = UseBuildPhase BuildPhase.Parameter
 
         let indentationAwareSyntaxOnByDefault =
             List.exists (FileSystemUtils.checkSuffix fileName) FSharpIndentationAwareSyntaxFileSuffixes
@@ -1321,7 +1349,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             (tcConfig.indentationAwareSyntax = Some true)
 
     member tcConfig.GetAvailableLoadedSources() =
-        use _unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _unwindBuildPhase = UseBuildPhase BuildPhase.Parameter
 
         let resolveLoadedSource (m, originalPath, path) =
             try

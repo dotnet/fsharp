@@ -2,6 +2,7 @@ module FSharp.Compiler.Service.Tests.SyntaxTreeTests.ModuleOrNamespaceTests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open NUnit.Framework
 
 [<Test>]
@@ -15,7 +16,7 @@ type Teq<'a, 'b>
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r) ])) ->
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r) ])) ->
         assertRange (1, 0) (4, 8) r
     | _ -> Assert.Fail "Could not get valid AST"
     
@@ -34,7 +35,7 @@ let x = 42
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r1)
         SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; range = r2) ])) ->
         assertRange (1, 0) (4, 20) r1
@@ -53,7 +54,7 @@ type X = int
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.GlobalNamespace; range = r) ])) ->
         assertRange (3, 0) (5, 12) r
     | _ -> Assert.Fail "Could not get valid AST"
@@ -70,7 +71,7 @@ let s : string = "s"
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.NamedModule; range = r) ])) ->
         assertRange (2, 0) (5, 20) r
     | _ -> Assert.Fail "Could not get valid AST"
@@ -95,7 +96,7 @@ let a = 42
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.NamedModule; trivia = { ModuleKeyword = Some mModule; NamespaceKeyword = None }) ])) ->
         assertRange (5, 0) (5, 6) mModule
     | _ -> Assert.Fail "Could not get valid AST"
@@ -111,7 +112,25 @@ let a = 42
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; trivia = { ModuleKeyword = None; NamespaceKeyword = Some mNamespace }) ])) ->
         assertRange (2, 0) (2, 9) mNamespace
-    | _ -> Assert.Fail "Could not get valid AST"
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``global in open path should contain trivia`` () =
+    let parseResults = 
+        getParseResults
+            """
+namespace Ionide.VSCode.FSharp
+
+open global.Node
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [
+        SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Open(target = SynOpenDeclTarget.ModuleOrNamespace(longId = SynLongIdent(trivia = [ Some (IdentTrivia.OriginalNotation("global")); None ])))
+        ]) ])) ->
+        Assert.Pass()
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

@@ -726,13 +726,12 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
             if 0 < i && i <= lines.Length then lines[i-1] else ""
 
     /// Display the given error.
-    member syphon.PrintError (tcConfig:TcConfigBuilder, err) =
+    member syphon.PrintDiagnostic (tcConfig:TcConfig, diagnostic: PhasedDiagnostic) =
         ignoreAllErrors (fun () ->
             let severity = FSharpDiagnosticSeverity.Error
             DoWithDiagnosticColor severity (fun () ->
                 errorWriter.WriteLine()
-                writeViaBuffer errorWriter (OutputDiagnosticContext "  " syphon.GetLine) err
-                writeViaBuffer errorWriter (OutputDiagnostic (tcConfig.implicitIncludeDir,tcConfig.showFullPaths,tcConfig.flatErrors,tcConfig.diagnosticStyle,severity))  err
+                diagnostic.WriteWithContext(errorWriter, "  ", syphon.GetLine, tcConfig, severity)
                 errorWriter.WriteLine()
                 errorWriter.WriteLine()
                 errorWriter.Flush()))
@@ -773,34 +772,33 @@ type internal DiagnosticsLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, 
 
     member _.ResetErrorCount() = errorCount <- 0
 
-    override x.DiagnosticSink(err, severity) =
-        if ReportDiagnosticAsError tcConfigB.diagnosticsOptions (err, severity) then
-            fsiStdinSyphon.PrintError(tcConfigB,err)
+    override _.DiagnosticSink(diagnostic, severity) =
+        let tcConfig = TcConfig.Create(tcConfigB,validate=false)
+        if diagnostic.ReportAsError (tcConfig.diagnosticsOptions, severity) then
+            fsiStdinSyphon.PrintDiagnostic(tcConfig,diagnostic)
             errorCount <- errorCount + 1
             if tcConfigB.abortOnError then exit 1 (* non-zero exit code *)
             // STOP ON FIRST ERROR (AVOIDS PARSER ERROR RECOVERY)
             raise StopProcessing
-        elif ReportDiagnosticAsWarning tcConfigB.diagnosticsOptions (err, severity) then
+        elif diagnostic.ReportAsWarning (tcConfig.diagnosticsOptions, severity) then
             DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
-                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
-                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.diagnosticStyle,severity)) err
+                diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
-        elif ReportDiagnosticAsInfo tcConfigB.diagnosticsOptions (err, severity) then
+        elif diagnostic.ReportAsInfo (tcConfig.diagnosticsOptions, severity) then
             DoWithDiagnosticColor FSharpDiagnosticSeverity.Info (fun () ->
                 fsiConsoleOutput.Error.WriteLine()
-                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
-                writeViaBuffer fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.diagnosticStyle,severity)) err
+                diagnostic.WriteWithContext(fsiConsoleOutput.Error, "  ", fsiStdinSyphon.GetLine, tcConfig, severity)
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.WriteLine()
                 fsiConsoleOutput.Error.Flush())
 
-    override x.ErrorCount = errorCount
+    override _.ErrorCount = errorCount
 
 type DiagnosticsLogger with
-    member x.CheckForErrors() = (x.ErrorCount > 0)
+
     /// A helper function to check if its time to abort
     member x.AbortOnError(fsiConsoleOutput:FsiConsoleOutput) =
         if x.ErrorCount > 0 then
@@ -827,8 +825,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
                 tcConfigB,
                 fsiConsoleOutput: FsiConsoleOutput) =
 
-    let mutable enableConsoleKeyProcessing =
-       not (Environment.OSVersion.Platform = PlatformID.Win32NT)
+    let mutable enableConsoleKeyProcessing = true
 
     let mutable gui        = true           // override via "--gui" on by default
 #if DEBUG
@@ -882,10 +879,10 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     // In the "--help", these options can be printed either before (fsiUsagePrefix) or after (fsiUsageSuffix) the core options.
 
     let displayHelpFsi tcConfigB (blocks:CompilerOptionBlock list) =
-        DisplayBannerText tcConfigB;
+        Console.Write (GetBannerText tcConfigB)
         fprintfn fsiConsoleOutput.Out ""
         fprintfn fsiConsoleOutput.Out "%s" (FSIstrings.SR.fsiUsage(executableFileNameWithoutExtension.Value))
-        PrintCompilerOptionBlocks blocks
+        Console.Write (GetCompilerOptionBlocks blocks tcConfigB.bufferWidth)
         exit 0
 
     // option tags
@@ -948,12 +945,12 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
         ]);
        PublicOptions(FSComp.SR.optsHelpBannerMisc(),
         [   CompilerOption("help", tagNone,
-                                 OptionHelp (displayHelpFsi tcConfigB), None, Some (FSIstrings.SR.fsiHelp()))
+                                 OptionConsoleOnly (displayHelpFsi tcConfigB), None, Some (FSIstrings.SR.fsiHelp()))
         ]);
        PrivateOptions(
-        [   CompilerOption("?", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
-            CompilerOption("help", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
-            CompilerOption("full-help", tagNone, OptionHelp (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
+        [   CompilerOption("?", tagNone, OptionConsoleOnly (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
+            CompilerOption("help", tagNone, OptionConsoleOnly (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
+            CompilerOption("full-help", tagNone, OptionConsoleOnly (displayHelpFsi tcConfigB), None, None); // "Short form of --help");
         ]);
        PublicOptions(FSComp.SR.optsHelpBannerAdvanced(),
         [CompilerOption("exec",                 "", OptionUnit (fun () -> interact <- false), None, Some (FSIstrings.SR.fsiExec()))
@@ -962,11 +959,10 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
          CompilerOption("readline",             tagNone, OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = OptionSwitch.On)),           None, Some(FSIstrings.SR.fsiReadline()))
          CompilerOption("quotations-debug",     tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()))
          CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.shadowCopyReferences()))
-#if NETSTANDARD
-         CompilerOption("multiemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiMultiAssemblyEmitOption()))
-#else
-         CompilerOption("multiemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiMultiAssemblyEmitOptionOffByDefault()))
-#endif
+         if FSharpEnvironment.isRunningOnCoreClr then
+             CompilerOption("multiemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiMultiAssemblyEmitOption()))
+         else
+            CompilerOption("multiemit", tagNone, OptionSwitch(fun flag -> tcConfigB.fsiMultiAssemblyEmit <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.fsiMultiAssemblyEmitOptionOffByDefault()))
         ]);
       ]
 
@@ -994,11 +990,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
         if tcConfigB.utf8output then
             let prev = Console.OutputEncoding
             Console.OutputEncoding <- Encoding.UTF8
-#if FX_NO_APP_DOMAINS
-            ignore prev
-#else
             System.AppDomain.CurrentDomain.ProcessExit.Add(fun _ -> Console.OutputEncoding <- prev)
-#endif
     do
         let firstArg =
             match sourceFiles with
@@ -1336,7 +1328,6 @@ type internal FsiDynamicCompiler(
         fsiOptions : FsiCommandLineOptions,
         fsiConsoleOutput : FsiConsoleOutput,
         fsiCollectible: bool,
-        niceNameGen,
         resolveAssemblyRef
     ) =
 
@@ -1368,7 +1359,7 @@ type internal FsiDynamicCompiler(
         if tcConfigB.fsiMultiAssemblyEmit then
             None
         else
-            let assemBuilder, moduleBuilder = mkDynamicAssemblyAndModule (dynamicCcuName, tcConfigB.optSettings.LocalOptimizationsEnabled, generateDebugInfo, fsiCollectible)
+            let assemBuilder, moduleBuilder = mkDynamicAssemblyAndModule (dynamicCcuName, tcConfigB.optSettings.LocalOptimizationsEnabled, fsiCollectible)
             dynamicAssemblies.Add(assemBuilder)
             Some (assemBuilder, moduleBuilder)
 
@@ -1678,10 +1669,24 @@ type internal FsiDynamicCompiler(
         let ilxGenerator = istate.ilxGenerator
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
+        let eagerFormat (diag: PhasedDiagnostic) =
+            diag.EagerlyFormatCore true
+
         // Typecheck. The lock stops the type checker running at the same time as the
         // server intellisense implementation (which is currently incomplete and #if disabled)
         let tcState, topCustomAttrs, declaredImpls, tcEnvAtEndOfLastInput =
-            lock tcLockObject (fun _ -> CheckClosedInputSet(ctok, diagnosticsLogger.CheckForErrors, tcConfig, tcImports, tcGlobals, Some prefixPath, tcState, inputs))
+            lock tcLockObject (fun _ ->
+                CheckClosedInputSet(
+                    ctok,
+                    diagnosticsLogger.CheckForErrors,
+                    tcConfig,
+                    tcImports,
+                    tcGlobals,
+                    Some prefixPath,
+                    tcState, 
+                    eagerFormat,
+                    inputs)
+            )
 
         let codegenResults, optEnv, fragName = ProcessTypedImpl(diagnosticsLogger, optEnv, tcState, tcConfig, isInteractiveItExpr, topCustomAttrs, prefixPath, isIncrementalFragment, declaredImpls, ilxGenerator)
 
@@ -2161,7 +2166,7 @@ type internal FsiDynamicCompiler(
         let tcEnv, openDecls0 = GetInitialTcEnv (dynamicCcuName, rangeStdin0, tcConfig, tcImports, tcGlobals)
         let ccuName = dynamicCcuName
 
-        let tcState = GetInitialTcState (rangeStdin0, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv, openDecls0)
+        let tcState = GetInitialTcState (rangeStdin0, ccuName, tcConfig, tcGlobals, tcImports, tcEnv, openDecls0)
 
         let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), tcState.Ccu)
 
@@ -2267,10 +2272,7 @@ type internal FsiInterruptController(
                         if killThreadRequest = ThreadAbortRequest then
                             if progress then fsiConsoleOutput.uprintnfn "%s" (FSIstrings.SR.fsiAbortingMainThread())
                             killThreadRequest <- NoRequest
-                            let rec abortLoop n =
-                                if n > 0 then
-                                    if not (controlledExecution.TryAbort(TimeSpan.FromSeconds(30))) then abortLoop (n-1)
-                            abortLoop 3
+                            controlledExecution.TryAbort()
                         ()), Name="ControlCAbortThread")
                 killerThread.IsBackground <- true
                 killerThread.Start()
@@ -2893,7 +2895,8 @@ type FsiInteractionProcessor
             fsiInterruptController.ControlledExecution().ResetAbort()
             (istate,CtrlC)
 
-        | :? TargetInvocationException as e when (ControlledExecution.StripTargetInvocationException(e)).GetType().Name = "ThreadAbortException" ->
+        | :? TargetInvocationException as e when (ControlledExecution.StripTargetInvocationException(e)).GetType().Name = "ThreadAbortException" ||
+                                                 (ControlledExecution.StripTargetInvocationException(e)).GetType().Name = "OperationCanceledException" ->
             fsiInterruptController.ClearInterruptRequest()
             fsiInterruptController.InterruptAllowed <- InterruptIgnored
             fsiInterruptController.ControlledExecution().ResetAbort()
@@ -3045,8 +3048,8 @@ type FsiInteractionProcessor
 
     member _.EvalInteraction(ctok, sourceText, scriptFileName, diagnosticsLogger, ?cancellationToken) =
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
-        use _unwind1 = PushThreadBuildPhaseUntilUnwind(BuildPhase.Interactive)
-        use _unwind2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+        use _ = UseBuildPhase BuildPhase.Interactive
+        use _ = UseDiagnosticsLogger diagnosticsLogger
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
         let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, sourceText)
         let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)
@@ -3062,8 +3065,8 @@ type FsiInteractionProcessor
         this.EvalInteraction (ctok, sourceText, scriptPath, diagnosticsLogger)
 
     member _.EvalExpression (ctok, sourceText, scriptFileName, diagnosticsLogger) =
-        use _unwind1 = PushThreadBuildPhaseUntilUnwind(BuildPhase.Interactive)
-        use _unwind2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+        use _unwind1 = UseBuildPhase BuildPhase.Interactive
+        use _unwind2 = UseDiagnosticsLogger diagnosticsLogger
         use _scope = SetCurrentUICultureForThread fsiOptions.FsiLCID
         let lexbuf = UnicodeLexing.StringAsLexbuf(true, tcConfigB.langVersion, sourceText)
         let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)
@@ -3368,8 +3371,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
       with e ->
           stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
 
-    let niceNameGen = NiceNameGenerator()
-
     // Share intern'd strings across all lexing/parsing
     let lexResourceManager = LexResourceManager()
 
@@ -3389,9 +3390,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         | Some resolvedPath -> Some (Choice1Of2 resolvedPath)
         | None -> None
 
-    let fsiDynamicCompiler = FsiDynamicCompiler(fsi, timeReporter, tcConfigB, tcLockObject, outWriter, tcImports, tcGlobals, fsiOptions, fsiConsoleOutput, fsiCollectible, niceNameGen, resolveAssemblyRef)
+    let fsiDynamicCompiler = FsiDynamicCompiler(fsi, timeReporter, tcConfigB, tcLockObject, outWriter, tcImports, tcGlobals, fsiOptions, fsiConsoleOutput, fsiCollectible, resolveAssemblyRef)
 
-    let controlledExecution = ControlledExecution(Thread.CurrentThread)
+    let controlledExecution = ControlledExecution()
 
     let fsiInterruptController = FsiInterruptController(fsiOptions, controlledExecution, fsiConsoleOutput)
 
@@ -3462,10 +3463,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     /// A host calls this to get the active language ID if provided by fsi-server-lcid
     member _.LCID = fsiOptions.FsiLCID
 
-#if FX_NO_APP_DOMAINS
-    member _.ReportUnhandledException (exn:exn) = ignore exn; ()
-#else
-
     /// A host calls this to report an unhandled exception in a standard way, e.g. an exception on the GUI thread gets printed to stderr
     member x.ReportUnhandledException exn = x.ReportUnhandledExceptionSafe true exn
 
@@ -3529,7 +3526,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
                         else
                             reraise()
                 )
-#endif
 
     member _.PartialAssemblySignatureUpdated = fsiInteractionProcessor.PartialAssemblySignatureUpdated
 
@@ -3648,20 +3644,19 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         if fsiOptions.IsInteractiveServer then
             SpawnInteractiveServer (fsi, fsiOptions, fsiConsoleOutput)
 
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Interactive
+        use _ = UseBuildPhase BuildPhase.Interactive
 
         if fsiOptions.Interact then
             // page in the type check env
             fsiInteractionProcessor.LoadDummyInteraction(ctokStartup, diagnosticsLogger)
             if progress then fprintfn fsiConsoleOutput.Out "MAIN: got initial state, creating form";
 
-#if !FX_NO_APP_DOMAINS
             // Route background exceptions to the exception handlers
             AppDomain.CurrentDomain.UnhandledException.Add (fun args ->
                 match args.ExceptionObject with
                 | :? System.Exception as err -> x.ReportUnhandledExceptionSafe false err
                 | _ -> ())
-#endif
+
             fsiInteractionProcessor.LoadInitialFiles(ctokRun, diagnosticsLogger)
             fsiInteractionProcessor.StartStdinReadAndProcessThread(diagnosticsLogger)
 

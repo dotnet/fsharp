@@ -3,8 +3,8 @@
 # Licensed under the MIT License. See https://go.microsoft.com/fwlink/?linkid=2090316 for license information.
 #-------------------------------------------------------------------------------------------------------------
 
-ARG VARIANT=6.0-focal
-FROM mcr.microsoft.com/vscode/devcontainers/dotnet:0-${VARIANT}
+ARG VARIANT=7.0-bullseye-slim
+FROM mcr.microsoft.com/dotnet/sdk:${VARIANT}
 
 # Avoid warnings by switching to noninteractive
 ENV DEBIAN_FRONTEND=noninteractive

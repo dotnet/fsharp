@@ -1137,21 +1137,24 @@ let TryGetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
 let canGenMethodDef (tdef: ILTypeDef) cenv (mdef: ILMethodDef) =
     if not cenv.referenceAssemblyOnly then
         true
-    // If the method is part of attribute type, generate get_* and set_* methods for it, consider the following case:
+    // If the method is part of attribute type, generate get_* and set_* methods and .ctors for it, consider the following case:
     //      [<AttributeUsage(AttributeTargets.All)>]
     //      type PublicWithInternalSetterPropertyAttribute() =
     //          inherit Attribute()
     //          member val internal Prop1 : int = 0 with get, set
     //      [<PublicWithInternalSetterPropertyAttribute(Prop1=4)>]
     //      type ClassPublicWithAttributes() = class end
-    else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsConstructor) && (not mdef.IsClassInitializer) then
+
+    // We want to generate pretty much everything for attributes, because of serialization scenarios, and the fact that non-visible constructors, properties and fields can still be part of reference assembly.
+    // Example: NoDynamicInvocationAttribute has an internal constructor, which should be included in the reference assembly.
+    else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsClassInitializer) then
         true
     else
         match mdef.Access with
         | ILMemberAccess.Public -> true
         // When emitting a reference assembly, do not emit methods that are private/protected/internal unless they are virtual/abstract or provide an explicit interface implementation.
         | ILMemberAccess.Private | ILMemberAccess.Family | ILMemberAccess.Assembly | ILMemberAccess.FamilyOrAssembly
-            when mdef.IsVirtual || mdef.IsAbstract || mdef.IsNewSlot || mdef.IsFinal -> true
+            when mdef.IsVirtual || mdef.IsAbstract || mdef.IsNewSlot || mdef.IsFinal || mdef.IsEntryPoint -> true
         // When emitting a reference assembly, only generate internal methods if the assembly contains a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
         | ILMemberAccess.FamilyOrAssembly | ILMemberAccess.Assembly
             when cenv.hasInternalsVisibleToAttrib -> true
@@ -1919,10 +1922,11 @@ module Codebuf =
             emitTailness cenv codebuf tl
             emitMethodSpecInstr cenv codebuf env i_callvirt (mspec, varargs)
             //emitAfterTailcall codebuf tl
-        | I_callconstraint (tl, ty, mspec, varargs) ->
+        | I_callconstraint (callvirt, tl, ty, mspec, varargs) ->
             emitTailness cenv codebuf tl
             emitConstrained cenv codebuf env ty
-            emitMethodSpecInstr cenv codebuf env i_callvirt (mspec, varargs)
+            let instr = if callvirt then i_callvirt else i_call
+            emitMethodSpecInstr cenv codebuf env instr (mspec, varargs)
             //emitAfterTailcall codebuf tl
         | I_newobj (mspec, varargs) ->
             emitMethodSpecInstr cenv codebuf env i_newobj (mspec, varargs)
@@ -4118,7 +4122,7 @@ let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRe
           | Some AMD64 -> writeInt32AsUInt16 os 0x8664      // Machine - IMAGE_FILE_MACHINE_AMD64
           | Some IA64 -> writeInt32AsUInt16 os 0x200        // Machine - IMAGE_FILE_MACHINE_IA64
           | Some ARM64 -> writeInt32AsUInt16 os 0xaa64      // Machine - IMAGE_FILE_MACHINE_ARM64
-          | Some ARM -> writeInt32AsUInt16 os 0x1c0         // Machine - IMAGE_FILE_MACHINE_ARM
+          | Some ARM -> writeInt32AsUInt16 os 0x1c4         // Machine - IMAGE_FILE_MACHINE_ARMNT
           | _ ->  writeInt32AsUInt16 os 0x014c              // Machine - IMAGE_FILE_MACHINE_I386
 
           writeInt32AsUInt16 os numSections

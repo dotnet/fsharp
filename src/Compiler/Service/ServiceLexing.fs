@@ -1049,8 +1049,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
     // Scan a token starting with the given lexer state
     member x.ScanToken(lexState: FSharpTokenizerLexState) : FSharpTokenInfo option * FSharpTokenizerLexState =
 
-        use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> DiscardErrorsLogger)
+        use _ = UseBuildPhase BuildPhase.Parse
+        use _ = UseDiagnosticsLogger DiscardErrorsLogger
 
         let indentationSyntaxStatus, lexcont = LexerStateEncoding.decodeLexInt lexState
 
@@ -1211,16 +1211,12 @@ type FSharpSourceTokenizer(conditionalDefines: string list, fileName: string opt
 
 module FSharpKeywords =
 
-    let DoesIdentifierNeedBackticks s =
-        PrettyNaming.DoesIdentifierNeedBackticks s
-
-    let AddBackticksToIdentifierIfNeeded s =
-        PrettyNaming.AddBackticksToIdentifierIfNeeded s
-
     let NormalizeIdentifierBackticks s =
         PrettyNaming.NormalizeIdentifierBackticks s
 
     let KeywordsWithDescription = PrettyNaming.keywordsWithDescription
+
+    let KeywordsDescriptionLookup = KeywordsWithDescription |> dict
 
     let KeywordNames = Lexhelp.Keywords.keywordNames
 
@@ -1841,8 +1837,8 @@ module FSharpLexerImpl =
             else
                 lexer
 
-        use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> DiscardErrorsLogger)
+        use _ = UseBuildPhase BuildPhase.Parse
+        use _ = UseDiagnosticsLogger DiscardErrorsLogger
 
         resetLexbufPos "" lexbuf
 

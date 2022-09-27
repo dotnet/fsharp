@@ -138,7 +138,7 @@ module SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentAndUsingOut
     // 
     // The resulting type is like this:
     //
-    //     val inline inst : num:bigint ->  ^output when (witnesses or bigint or  ^output) : (static member convert_witness : bigint * ^output -> ^output)
+    //     val inline inst : num:bigint -> ^output when (witnesses or bigint or ^output) : (static member convert_witness : bigint * ^output -> ^output)
     let inline inst (num: bigint) : ^output = convert num
     let i1 : int32 = inst 777I
     let i2 : int64 = inst 777I

@@ -191,6 +191,7 @@ type TcGlobals(
     directoryToResolveRelativePaths,
     mlCompatibility: bool,
     isInteractive: bool,
+    useReflectionFreeCodeGen: bool,
     // The helper to find system types amongst referenced DLLs
     tryFindSysTypeCcu,
     emitDebugInfoInQuotations: bool,
@@ -983,6 +984,9 @@ type TcGlobals(
         tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
         tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
         tryFindSysAttrib "System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
+        tryFindSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
                               ] |> List.choose (Option.map (fun x -> x.TyconRef))
 
   override _.ToString() = "<TcGlobals>"
@@ -1000,6 +1004,8 @@ type TcGlobals(
   member _.knownFSharpCoreModules = v_knownFSharpCoreModules
 
   member _.compilingFSharpCore = compilingFSharpCore
+
+  member _.useReflectionFreeCodeGen = useReflectionFreeCodeGen
 
   member _.mlCompatibility = mlCompatibility
 
@@ -1425,6 +1431,9 @@ type TcGlobals(
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
   member val attrib_ComponentModelEditorBrowsableAttribute = findSysAttrib "System.ComponentModel.EditorBrowsableAttribute"
+  member val attrib_CompilerFeatureRequiredAttribute       = findSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
+  member val attrib_SetsRequiredMembersAttribute           = findSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
+  member val attrib_RequiredMemberAttribute                = findSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst
 
@@ -1758,6 +1767,8 @@ type TcGlobals(
 
   member _.CompilerGeneratedAttribute = mkCompilerGeneratedAttribute ()
 
+  member _.DebuggerNonUserCodeAttribute = mkDebuggerNonUserCodeAttribute ()
+
   member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
       mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])
 
@@ -1765,15 +1776,16 @@ type TcGlobals(
   /// AdditionDynamic for op_Addition.  Also work out the type instantiation of the dynamic function.
   member _.MakeBuiltInWitnessInfo (t: TraitConstraintInfo) =
       let memberName =
-          let nm = t.MemberName
+          let nm = t.MemberLogicalName
           let coreName =
               if nm.StartsWith "op_" then nm[3..]
               elif nm = "get_Zero" then "GenericZero"
               elif nm = "get_One" then "GenericOne"
               else nm
           coreName + "Dynamic"
+
       let gtps, argTys, retTy, tinst =
-          match memberName, t.ArgumentTypes, t.ReturnType with
+          match memberName, t.CompiledObjectAndArgumentTypes, t.CompiledReturnType with
           | ("AdditionDynamic" | "MultiplyDynamic" | "SubtractionDynamic"| "DivisionDynamic" | "ModulusDynamic" | "CheckedAdditionDynamic" | "CheckedMultiplyDynamic" | "CheckedSubtractionDynamic" | "LeftShiftDynamic" | "RightShiftDynamic" | "BitwiseAndDynamic" | "BitwiseOrDynamic" | "ExclusiveOrDynamic" | "LessThanDynamic" | "GreaterThanDynamic" | "LessThanOrEqualDynamic" | "GreaterThanOrEqualDynamic" | "EqualityDynamic" | "InequalityDynamic"),
             [ arg0Ty; arg1Ty ],
             Some retTy ->
@@ -1787,13 +1799,14 @@ type TcGlobals(
           | ("GenericZeroDynamic" | "GenericOneDynamic"), [], Some retTy ->
                [vara], [ ], varaTy, [ retTy ]
           | _ -> failwithf "unknown builtin witness '%s'" memberName
+
       let vref = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, memberName, None, None, gtps, (List.map List.singleton argTys, retTy))
       vref, tinst
 
   /// Find an FSharp.Core operator that corresponds to a trait witness
   member g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy (t: TraitConstraintInfo) argExprs =
 
-    match t.MemberName, t.ArgumentTypes, t.ReturnType, argExprs with
+    match t.MemberLogicalName, t.CompiledObjectAndArgumentTypes, t.CompiledReturnType, argExprs with
     | "get_Sign", [aty], _, objExpr :: _ ->
         // Call Operators.sign
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "sign", None, Some "Sign", [vara], ([[varaTy]], v_int32_ty))
@@ -1826,7 +1839,7 @@ type TcGlobals(
         Some (info, tyargs, [])
     | ("Abs" | "Sin" | "Cos" | "Tan" | "Sinh" | "Cosh" | "Tanh" | "Atan" | "Acos" | "Asin" | "Exp" | "Ceiling" | "Floor" | "Round" | "Truncate" | "Log10"| "Log"), [aty], _, [_] ->
         // Call corresponding Operators.*
-        let nm = t.MemberName
+        let nm = t.MemberLogicalName
         let lower = if nm = "Ceiling" then "ceil" else nm.ToLowerInvariant()
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, lower, None, Some nm, [vara], ([[varaTy]], varaTy))
         let tyargs = [aty]

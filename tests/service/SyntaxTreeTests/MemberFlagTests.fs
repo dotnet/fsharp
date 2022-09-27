@@ -22,7 +22,7 @@ type Y =
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.Types(types =[
             SynTypeDefnSig(typeRepr=SynTypeDefnSigRepr.ObjectModel(memberSigs=[
                 SynMemberSig.Member(flags={ Trivia= { AbstractRange = Some mAbstract1 } })
@@ -56,7 +56,7 @@ type Foo =
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.ObjectModel (members=[
@@ -85,29 +85,29 @@ type Foo =
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.ObjectModel (members=[
-                    SynMemberDefn.AutoProperty(memberFlags= mkFlags1)
-                    SynMemberDefn.AutoProperty(memberFlags= mkFlags2)
-                    SynMemberDefn.AutoProperty(memberFlags= mkFlags3)
-                    SynMemberDefn.AutoProperty(memberFlags= mkFlags4)
+                    SynMemberDefn.AutoProperty(memberFlags= flags1)
+                    SynMemberDefn.AutoProperty(memberFlags= flags2)
+                    SynMemberDefn.AutoProperty(memberFlags= flags3)
+                    SynMemberDefn.AutoProperty(memberFlags= flags4)
                 ]))
             ], _)
         ])
       ])) ->
-        let ({ Trivia = flagsTrivia1 } : SynMemberFlags) = mkFlags1 SynMemberKind.Member
+        let ({ Trivia = flagsTrivia1 } : SynMemberFlags) = flags1
         assertRange (3, 4) (3, 10) flagsTrivia1.StaticRange.Value
         assertRange (3, 11) (3, 17) flagsTrivia1.MemberRange.Value
 
-        let ({ Trivia = flagsTrivia2 } : SynMemberFlags) = mkFlags2 SynMemberKind.Member
+        let ({ Trivia = flagsTrivia2 } : SynMemberFlags) = flags2
         assertRange (4, 4) (4, 10) flagsTrivia2.MemberRange.Value
         
-        let ({ Trivia = flagsTrivia3 } : SynMemberFlags) = mkFlags3 SynMemberKind.Member
+        let ({ Trivia = flagsTrivia3 } : SynMemberFlags) = flags3
         assertRange (5, 4) (5, 12) flagsTrivia3.OverrideRange.Value
         
-        let ({ Trivia = flagsTrivia4 } : SynMemberFlags) = mkFlags4 SynMemberKind.Member
+        let ({ Trivia = flagsTrivia4 } : SynMemberFlags) = flags4
         assertRange (6, 4) (6, 11) flagsTrivia4.DefaultRange.Value
     | _ ->
         Assert.Fail "Could not get valid AST"
@@ -124,7 +124,7 @@ type Foo =
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types ([
                 SynTypeDefn.SynTypeDefn (typeRepr = SynTypeDefnRepr.ObjectModel (members=[
@@ -158,7 +158,7 @@ let meh =
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Let (bindings = [
                 SynBinding(expr=SynExpr.ObjExpr(

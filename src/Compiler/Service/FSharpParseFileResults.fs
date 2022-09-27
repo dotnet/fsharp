@@ -16,7 +16,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 
 module SourceFileImpl =
-    let IsInterfaceFile file =
+    let IsSignatureFile file =
         let ext = Path.GetExtension file
         0 = String.Compare(".fsi", ext, StringComparison.OrdinalIgnoreCase)
 
@@ -608,6 +608,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                         | SynExpr.LibraryOnlyILAssembly _
                         | SynExpr.LibraryOnlyStaticOptimization _
                         | SynExpr.Null _
+                        | SynExpr.Typar _
                         | SynExpr.Ident _
                         | SynExpr.ImplicitZero _
                         | SynExpr.Const _
@@ -936,7 +937,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             let walkImplFile (modules: SynModuleOrNamespace list) = List.collect walkModule modules
 
             match input with
-            | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) -> walkImplFile modules
+            | ParsedInput.ImplFile file -> walkImplFile file.Contents
             | _ -> []
 
         DiagnosticsScope.Protect

@@ -43,7 +43,7 @@ type NavigationEntityKind =
 type NavigationItem
     (
         uniqueName: string,
-        name: string,
+        logicalName: string,
         kind: NavigationItemKind,
         glyph: FSharpGlyph,
         range: range,
@@ -58,7 +58,7 @@ type NavigationItem
 
     member _.UniqueName = uniqueName
 
-    member _.Name = name
+    member _.LogicalName = logicalName
 
     member _.Glyph = glyph
 
@@ -77,7 +77,7 @@ type NavigationItem
     member _.Access = access
 
     member _.WithUniqueName(uniqueName: string) =
-        NavigationItem(uniqueName, name, kind, glyph, range, bodyRange, singleTopLevel, enclosingEntityKind, isAbstract, access)
+        NavigationItem(uniqueName, logicalName, kind, glyph, range, bodyRange, singleTopLevel, enclosingEntityKind, isAbstract, access)
 
     static member Create(name, kind, glyph, range, bodyRange, singleTopLevel, enclosingEntityKind, isAbstract, access) =
         NavigationItem("", name, kind, glyph, range, bodyRange, singleTopLevel, enclosingEntityKind, isAbstract, access)
@@ -432,18 +432,18 @@ module NavigationImpl =
                     let nested =
                         nested
                         |> Array.ofList
-                        |> Array.map (fun (decl, idx) -> decl.WithUniqueName(uniqueName d.Name idx))
+                        |> Array.map (fun (decl, idx) -> decl.WithUniqueName(uniqueName d.LogicalName idx))
 
-                    nested |> Array.sortInPlaceWith (fun a b -> compare a.Name b.Name)
+                    nested |> Array.sortInPlaceWith (fun a b -> compare a.LogicalName b.LogicalName)
 
                     {
-                        Declaration = d.WithUniqueName(uniqueName d.Name idx)
+                        Declaration = d.WithUniqueName(uniqueName d.LogicalName idx)
                         Nested = nested
                     }
             |]
 
         items
-        |> Array.sortInPlaceWith (fun a b -> compare a.Declaration.Name b.Declaration.Name)
+        |> Array.sortInPlaceWith (fun a b -> compare a.Declaration.LogicalName b.Declaration.LogicalName)
 
         NavigationItems(items)
 
@@ -639,20 +639,22 @@ module NavigationImpl =
                     let nested =
                         nested
                         |> Array.ofList
-                        |> Array.map (fun (decl, idx) -> decl.WithUniqueName(uniqueName d.Name idx))
+                        |> Array.map (fun (decl, idx) -> decl.WithUniqueName(uniqueName d.LogicalName idx))
 
-                    nested |> Array.sortInPlaceWith (fun a b -> compare a.Name b.Name)
+                    nested |> Array.sortInPlaceWith (fun a b -> compare a.LogicalName b.LogicalName)
 
-                    let nested = nested |> Array.distinctBy (fun x -> x.Range, x.BodyRange, x.Name, x.Kind)
+                    let nested =
+                        nested
+                        |> Array.distinctBy (fun x -> x.Range, x.BodyRange, x.LogicalName, x.Kind)
 
                     {
-                        Declaration = d.WithUniqueName(uniqueName d.Name idx)
+                        Declaration = d.WithUniqueName(uniqueName d.LogicalName idx)
                         Nested = nested
                     }
             |]
 
         items
-        |> Array.sortInPlaceWith (fun a b -> compare a.Declaration.Name b.Declaration.Name)
+        |> Array.sortInPlaceWith (fun a b -> compare a.Declaration.LogicalName b.Declaration.LogicalName)
 
         NavigationItems(items)
 
@@ -660,8 +662,8 @@ module NavigationImpl =
 module Navigation =
     let getNavigation (parsedInput: ParsedInput) =
         match parsedInput with
-        | ParsedInput.SigFile (ParsedSigFileInput (modules = modules)) -> NavigationImpl.getNavigationFromSigFile modules
-        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) -> NavigationImpl.getNavigationFromImplFile modules
+        | ParsedInput.SigFile file -> NavigationImpl.getNavigationFromSigFile file.Contents
+        | ParsedInput.ImplFile file -> NavigationImpl.getNavigationFromImplFile file.Contents
 
     let empty = NavigationItems([||])
 
@@ -692,12 +694,12 @@ type NavigableContainerType =
 type NavigableContainer =
     {
         Type: NavigableContainerType
-        Name: string
+        LogicalName: string
     }
 
 type NavigableItem =
     {
-        Name: string
+        LogicalName: string
         Range: range
         IsSignature: bool
         Kind: NavigableItemKind
@@ -722,7 +724,7 @@ module NavigateTo =
             if not (String.IsNullOrEmpty id.idText) then
                 let item =
                     {
-                        Name = id.idText
+                        LogicalName = id.idText
                         Range = id.idRange
                         IsSignature = isSignature
                         Kind = kind
@@ -745,7 +747,7 @@ module NavigateTo =
 
             {
                 Type = NavigableContainerType.Exception
-                Name = id.idText
+                LogicalName = id.idText
             }
 
         let addComponentInfo containerType kind info isSig container =
@@ -757,7 +759,7 @@ module NavigateTo =
 
             {
                 Type = containerType
-                Name = formatLongIdent lid
+                LogicalName = formatLongIdent lid
             }
 
         let addValSig kind synValSig isSig container =
@@ -817,15 +819,14 @@ module NavigateTo =
             let ctor = mapMemberKind memberFlags.MemberKind
             addValSig ctor valSig isSig container
 
-        let rec walkSigFileInput (inp: ParsedSigFileInput) =
-            let (ParsedSigFileInput (fileName = fileName; modules = moduleOrNamespaceList)) = inp
+        let rec walkSigFileInput (file: ParsedSigFileInput) =
 
-            for item in moduleOrNamespaceList do
+            for item in file.Contents do
                 walkSynModuleOrNamespaceSig
                     item
                     {
                         Type = NavigableContainerType.File
-                        Name = fileName
+                        LogicalName = file.FileName
                     }
 
         and walkSynModuleOrNamespaceSig (inp: SynModuleOrNamespaceSig) container =
@@ -842,7 +843,7 @@ module NavigateTo =
                             NavigableContainerType.Module
                         else
                             NavigableContainerType.Namespace
-                    Name = formatLongIdent lid
+                    LogicalName = formatLongIdent lid
                 }
 
             for decl in decls do
@@ -888,15 +889,14 @@ module NavigateTo =
             | SynMemberSig.Interface _ -> ()
 
         and walkImplFileInput (inp: ParsedImplFileInput) =
-            let (ParsedImplFileInput (fileName = fileName; modules = moduleOrNamespaceList)) = inp
 
             let container =
                 {
                     Type = NavigableContainerType.File
-                    Name = fileName
+                    LogicalName = inp.FileName
                 }
 
-            for item in moduleOrNamespaceList do
+            for item in inp.Contents do
                 walkSynModuleOrNamespace item container
 
         and walkSynModuleOrNamespace inp container =
@@ -913,7 +913,7 @@ module NavigateTo =
                             NavigableContainerType.Module
                         else
                             NavigableContainerType.Namespace
-                    Name = formatLongIdent lid
+                    LogicalName = formatLongIdent lid
                 }
 
             for decl in decls do

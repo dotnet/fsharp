@@ -1,5 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+namespace VisualFSharp.UnitTests.Editor
 
 open System
 open System.Threading
@@ -72,7 +72,7 @@ let main argv =
         let searchPosition = code.IndexOf(searchToken)
         Assert.IsTrue(searchPosition >= 0, "SearchToken '{0}' is not found in code", searchToken)
         
-        let document, sourceText = RoslynTestHelpers.CreateDocument(fileName, code)
+        let document, sourceText = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code)
         let searchSpan = TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
 
         let actualResolutionOption = FSharpBreakpointResolutionService.GetBreakpointLocation(document, searchSpan) |> Async.RunSynchronously

@@ -83,7 +83,7 @@ type AssignedCalledArg<'T> =
 
 /// Represents the possibilities for a named-setter argument (a property, field, or a record field setter)
 type AssignedItemSetterTarget =
-    | AssignedPropSetter of PropInfo * MethInfo * TypeInst
+    | AssignedPropSetter of staticTyOpt: TType option * pinfo: PropInfo * minfo: MethInfo * pminst: TypeInst
     | AssignedILFieldSetter of ILFieldInfo
     | AssignedRecdFieldSetter of RecdFieldInfo
 
@@ -119,7 +119,7 @@ type CallerArgs<'T> =
 /// has been used in F# code
 [<RequireQualifiedAccess>]
 type TypeDirectedConversionUsed =
-    | Yes of (DisplayEnv -> exn)
+    | Yes of (DisplayEnv -> exn) * isTwoStepConversion: bool
     | No
 
     static member Combine: TypeDirectedConversionUsed -> TypeDirectedConversionUsed -> TypeDirectedConversionUsed
@@ -205,7 +205,8 @@ type CalledMeth<'T> =
         callerArgs: CallerArgs<'T> *
         allowParamArgs: bool *
         allowOutAndOptArgs: bool *
-        tyargsOpt: TType option ->
+        tyargsOpt: TType option *
+        staticTyOpt: TType option ->
             CalledMeth<'T>
 
     static member GetMethod: x: CalledMeth<'T> -> MethInfo
@@ -302,6 +303,8 @@ type CalledMeth<'T> =
 
     member UsesParamArrayConversion: bool
 
+    member OptionalStaticType: TType option
+
     member amap: ImportMap
 
     member infoReader: InfoReader
@@ -338,7 +341,14 @@ val BuildILMethInfoCall:
 
 /// Make a call to a method info. Used by the optimizer and code generator to build
 /// calls to the type-directed solutions to member constraints.
-val MakeMethInfoCall: amap: ImportMap -> m: range -> minfo: MethInfo -> minst: TType list -> args: Exprs -> Expr
+val MakeMethInfoCall:
+    amap: ImportMap ->
+    m: range ->
+    minfo: MethInfo ->
+    minst: TType list ->
+    args: Exprs ->
+    staticTyOpt: TType option ->
+        Expr
 
 /// Build an expression that calls a given method info.
 /// This is called after overload resolution, and also to call other
@@ -348,6 +358,7 @@ val MakeMethInfoCall: amap: ImportMap -> m: range -> minfo: MethInfo -> minst: T
 //   minst: the instantiation to apply for a generic method
 //   objArgs: the 'this' argument, if any
 //   args: the arguments, if any
+//   staticTyOpt: the static type that governs the call, different to the nominal type containing the member, e.g. 'T.CallSomeMethod()
 val BuildMethodCall:
     tcVal: (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType) ->
     g: TcGlobals ->
@@ -360,6 +371,7 @@ val BuildMethodCall:
     minst: TType list ->
     objArgs: Expr list ->
     args: Expr list ->
+    staticTyOpt: TType option ->
         Expr * TType
 
 /// Build a call to the System.Object constructor taking no arguments,

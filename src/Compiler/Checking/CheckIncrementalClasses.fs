@@ -8,6 +8,7 @@ open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckPatterns
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.DiagnosticsLogger
@@ -245,7 +246,7 @@ type IncrClassReprInfo =
         if isUnitTy g v.Type then 
             false
         else 
-            let arity = InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v bind.Expr 
+            let arity = InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes v bind.Expr 
             not arity.HasNoArgs && not v.IsMutable
 
 
@@ -292,7 +293,7 @@ type IncrClassReprInfo =
                 warning (Error(FSComp.SR.chkUnusedValue(v.DisplayName), v.Range))
 
         let repr = 
-            match InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v bind.Expr with 
+            match InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes v bind.Expr with 
             | arity when arity.HasNoArgs || v.IsMutable -> 
                 // all mutable variables are forced into fields, since they may escape into closures within the implicit constructor
                 // e.g. 
@@ -319,7 +320,7 @@ type IncrClassReprInfo =
                     InVar isCtorArg
             | valReprInfo -> 
                 //dprintfn "Representing %s as a method %s" v.LogicalName name
-                let tps, _, argInfos, _, _ = GetTopValTypeInCompiledForm g valReprInfo 0 v.Type v.Range
+                let tps, _, argInfos, _, _ = GetValReprTypeInCompiledForm g valReprInfo 0 v.Type v.Range
 
                 let valSynInfo = SynValInfo(argInfos |> List.mapSquared (fun (_, argInfo) -> SynArgInfo([], false, argInfo.Name)), SynInfo.unnamedRetVal)
                 let memberFlags = (if isStatic then StaticMemberFlags else NonVirtualMemberFlags) SynMemberFlagsTrivia.Zero SynMemberKind.Member
@@ -328,7 +329,7 @@ type IncrClassReprInfo =
 
                 let copyOfTyconTypars = ctorInfo.GetNormalizedInstanceCtorDeclaredTypars cenv env.DisplayEnv ctorInfo.TyconRef.Range
                 
-                AdjustValToTopVal v (Parent tcref) valReprInfo
+                AdjustValToHaveValReprInfo v (Parent tcref) valReprInfo
 
                 // Add the 'this' pointer on to the function
                 let memberTauTy, valReprInfo = 
@@ -403,7 +404,7 @@ type IncrClassReprInfo =
                 
         | InMethod(isStatic, methodVal, valReprInfo), _ -> 
             //dprintfn "Rewriting application of %s to be call to method %s" v.LogicalName methodVal.LogicalName
-            let expr, exprTy = AdjustValForExpectedArity g m (mkLocalValRef methodVal) NormalValUse valReprInfo 
+            let expr, exprTy = AdjustValForExpectedValReprInfo g m (mkLocalValRef methodVal) NormalValUse valReprInfo 
             // Prepend the the type arguments for the class
             let tyargs = tinst @ tyargs 
             let thisArgs =
@@ -526,7 +527,7 @@ type IncrClassReprInfo =
                         PostTransform = (fun _ -> None)
                         PreInterceptBinding = None
                         RewriteQuotations = true
-                        StackGuard = StackGuard(TcClassRewriteStackGuardDepth) } expr 
+                        StackGuard = StackGuard(TcClassRewriteStackGuardDepth, "FixupIncrClassExprPhase2C") } expr 
 
 type IncrClassConstructionBindingsPhase2C =
     | Phase2CBindings of IncrClassBindingGroup list

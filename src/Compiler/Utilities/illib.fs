@@ -104,7 +104,7 @@ module internal PervasiveAutoOpens =
                          t)
                     | Some t -> t
 
-                printf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
+                printf "  ilwrite: Cpu %4.1f (total)   %4.1f (delta) - %s\n" (t - first) (t - prev) descr
                 tPrev <- Some t
 
     let foldOn p f z x = f z (p x)
@@ -610,7 +610,7 @@ module ResizeArray =
                     // * doing a block copy using `List.CopyTo(index, array, index, count)` (requires more copies to do the mapping)
                     // none are significantly better.
                     for i in 0 .. takeCount - 1 do
-                        holder[i] <- f items[i]
+                        holder[i] <- f items[startIndex + i]
 
                     yield holder
             |]

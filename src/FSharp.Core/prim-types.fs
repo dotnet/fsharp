@@ -3854,7 +3854,7 @@ namespace Microsoft.FSharp.Core
     [<DebuggerDisplay("{DebugDisplay,nq}")>]
     type ValueOption<'T> =
         | ValueNone : 'T voption
-        | ValueSome : 'T -> 'T voption
+        | ValueSome : Item: 'T -> 'T voption
 
         member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new InvalidOperationException("ValueOption.Value"))
 
@@ -4107,7 +4107,7 @@ namespace Microsoft.FSharp.Collections
                 let start = if i < 0 then 0 else i
                 PrivateListHelpers.sliceTake (j - start) (PrivateListHelpers.sliceSkip start l)
 
-        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         member l.GetReverseIndex(_: int, offset: int) =
             l.Length - offset - 1
 
@@ -5118,9 +5118,6 @@ namespace Microsoft.FSharp.Core
             [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
             [<assembly: System.CLSCompliant(true)>]
             [<assembly: System.Security.SecurityTransparent>] // assembly is fully transparent
-#if !CROSS_PLATFORM_COMPILER
-            [<assembly: System.Security.SecurityRules(System.Security.SecurityRuleSet.Level2)>] // v4 transparency; soon to be the default, but not yet
-#endif
             do ()
 
 #if FX_NO_MONITOR_REPORTS_LOCKTAKEN
@@ -6905,10 +6902,9 @@ namespace Microsoft.FSharp.Core
                           if n >= 0 then PowDecimal x n else 1.0M /  PowDecimal x n)
 
         [<AutoOpen>]
-        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         module ArrayExtensions =
             type ``[,,,]``<'T> with
-                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
@@ -6921,7 +6917,7 @@ namespace Microsoft.FSharp.Core
                     len - offset - 1
 
             type ``[,,]``<'T> with
-                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
@@ -6933,7 +6929,7 @@ namespace Microsoft.FSharp.Core
                     len - offset - 1
 
             type ``[,]``<'T> with
-                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
@@ -6944,11 +6940,11 @@ namespace Microsoft.FSharp.Core
                     len - offset - 1
 
             type ``[]``<'T> with
-                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member arr.GetReverseIndex (_: int, offset: int) = arr.Length - offset - 1
 
             type String with
-                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member str.GetReverseIndex (_: int, offset: int) = str.Length - offset - 1
 
 namespace Microsoft.FSharp.Control

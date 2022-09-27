@@ -626,17 +626,23 @@ let instrs () =
         i_stsfld, I_field_instr(volatilePrefix (fun x fspec -> I_stsfld(x, fspec)))
         i_ldflda, I_field_instr(noPrefixes I_ldflda)
         i_ldsflda, I_field_instr(noPrefixes I_ldsflda)
-        i_call, I_method_instr(tailPrefix (fun tl (mspec, y) -> I_call(tl, mspec, y)))
+        (i_call,
+         I_method_instr(
+             constraintOrTailPrefix (fun (c, tl) (mspec, y) ->
+                 match c with
+                 | Some ty -> I_callconstraint(false, tl, ty, mspec, y)
+                 | None -> I_call(tl, mspec, y))
+         ))
         i_ldftn, I_method_instr(noPrefixes (fun (mspec, _y) -> I_ldftn mspec))
         i_ldvirtftn, I_method_instr(noPrefixes (fun (mspec, _y) -> I_ldvirtftn mspec))
         i_newobj, I_method_instr(noPrefixes I_newobj)
-        i_callvirt,
-        I_method_instr(
-            constraintOrTailPrefix (fun (c, tl) (mspec, y) ->
-                match c with
-                | Some ty -> I_callconstraint(tl, ty, mspec, y)
-                | None -> I_callvirt(tl, mspec, y))
-        )
+        (i_callvirt,
+         I_method_instr(
+             constraintOrTailPrefix (fun (c, tl) (mspec, y) ->
+                 match c with
+                 | Some ty -> I_callconstraint(true, tl, ty, mspec, y)
+                 | None -> I_callvirt(tl, mspec, y))
+         ))
         i_leave_s, I_unconditional_i8_instr(noPrefixes (fun x -> I_leave x))
         i_br_s, I_unconditional_i8_instr(noPrefixes I_br)
         i_leave, I_unconditional_i32_instr(noPrefixes (fun x -> I_leave x))
@@ -1214,8 +1220,11 @@ type ISeekReadIndexedRowReader<'RowT, 'KeyT, 'T when 'RowT: struct> =
     abstract CompareKey: 'KeyT -> int
     abstract ConvertRow: byref<'RowT> -> 'T
 
-let seekReadIndexedRowsByInterface numRows binaryChop (reader: ISeekReadIndexedRowReader<'RowT, _, _>) =
+let seekReadIndexedRowsRange numRows binaryChop (reader: ISeekReadIndexedRowReader<'RowT, _, _>) =
     let mutable row = Unchecked.defaultof<'RowT>
+
+    let mutable startRid = -1
+    let mutable endRid = -1
 
     if binaryChop then
         let mutable low = 0
@@ -1235,11 +1244,11 @@ let seekReadIndexedRowsByInterface numRows binaryChop (reader: ISeekReadIndexedR
                 elif c < 0 then high <- mid
                 else fin <- true
 
-        let res = ImmutableArray.CreateBuilder()
-
         if high - low > 1 then
             // now read off rows, forward and backwards
             let mid = (low + high) / 2
+
+            startRid <- mid
 
             // read backwards
             let mutable fin = false
@@ -1252,13 +1261,11 @@ let seekReadIndexedRowsByInterface numRows binaryChop (reader: ISeekReadIndexedR
                     reader.GetRow(curr, &row)
 
                     if reader.CompareKey(reader.GetKey(&row)) = 0 then
-                        res.Add(reader.ConvertRow(&row))
+                        startRid <- curr
                     else
                         fin <- true
 
                 curr <- curr - 1
-
-            res.Reverse()
 
             // read forward
             let mutable fin = false
@@ -1271,23 +1278,47 @@ let seekReadIndexedRowsByInterface numRows binaryChop (reader: ISeekReadIndexedR
                     reader.GetRow(curr, &row)
 
                     if reader.CompareKey(reader.GetKey(&row)) = 0 then
-                        res.Add(reader.ConvertRow(&row))
+                        endRid <- curr
                     else
                         fin <- true
 
                     curr <- curr + 1
 
-        res.ToArray()
     else
-        let res = ImmutableArray.CreateBuilder()
+        let mutable rid = 1
 
-        for i = 1 to numRows do
-            reader.GetRow(i, &row)
+        while rid <= numRows && startRid = -1 do
+            reader.GetRow(rid, &row)
 
             if reader.CompareKey(reader.GetKey(&row)) = 0 then
-                res.Add(reader.ConvertRow(&row))
+                startRid <- rid
+                endRid <- rid
 
-        res.ToArray()
+            rid <- rid + 1
+
+        let mutable fin = false
+
+        while rid <= numRows && not fin do
+            reader.GetRow(rid, &row)
+
+            if reader.CompareKey(reader.GetKey(&row)) = 0 then
+                endRid <- rid
+            else
+                fin <- true
+
+    startRid, endRid
+
+let seekReadIndexedRowsByInterface numRows binaryChop (reader: ISeekReadIndexedRowReader<'RowT, _, _>) =
+    let startRid, endRid = seekReadIndexedRowsRange numRows binaryChop reader
+
+    if startRid <= 0 || endRid < startRid then
+        [||]
+    else
+
+        Array.init (endRid - startRid + 1) (fun i ->
+            let mutable row = Unchecked.defaultof<'RowT>
+            reader.GetRow(startRid + i, &row)
+            reader.ConvertRow(&row))
 
 [<Struct>]
 type CustomAttributeRow =
@@ -4843,7 +4874,7 @@ let openPEMetadataOnly (fileName, peinfo, pectxtEager, pevEager, mdfile: BinaryF
     openMetadataReader (fileName, mdfile, 0, peinfo, pectxtEager, pevEager, None, reduceMemoryUsage)
 
 type ILReaderMetadataSnapshot = obj * nativeint * int
-type ILReaderTryGetMetadataSnapshot = (* path: *) string (* snapshotTimeStamp: *)  * DateTime -> ILReaderMetadataSnapshot option
+type ILReaderTryGetMetadataSnapshot = (* path: *) string (* snapshotTimeStamp: *) * DateTime -> ILReaderMetadataSnapshot option
 
 [<RequireQualifiedAccess>]
 type MetadataOnlyFlag =
