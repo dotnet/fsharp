@@ -22,6 +22,21 @@ let x a b c : int * int = a, b, c
             ]
 
         [<Fact>]
+        let ``Type annotation propagates to the error message``() =
+            FSharp """
+let x a b (c: string) : int * int = a, b, c
+let y a (b: string) c : int * int = a, b, c
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 2, Col 37, Line 2, Col 44,
+                 "Type mismatch. Expecting a tuple of length 2 of type\n    int * int    \nbut given a tuple of length 3 of type\n    'a * 'b * string    \n")
+                (Error 1, Line 3, Col 37, Line 3, Col 44,
+                 "Type mismatch. Expecting a tuple of length 2 of type\n    int * int    \nbut given a tuple of length 3 of type\n    'a * string * 'b    \n")
+            ]
+
+        [<Fact>]
         let ``Known type on the right``() =
             FSharp """
 let x : int * string = 1, ""
