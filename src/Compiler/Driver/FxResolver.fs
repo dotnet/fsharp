@@ -382,16 +382,16 @@ type internal FxResolver
 
     let tryGetNetCoreRefsPackDirectoryRoot () = tryNetCoreRefsPackDirectoryRoot.Force()
 
+    let getTfmNumber (v: string) =
+        let arr = v.Split([| '.' |], 3)
+        arr[0] + "." + arr[1]
+
     // Tries to figure out the tfm for the compiler instance.
     // On coreclr it uses the deps.json file
     //
     // On-demand because (a) some FxResolver are ephemeral (b) we want to avoid recomputation
     let tryGetRunningTfm () =
         let runningTfmOpt =
-            let getTfmNumber (v: string) =
-                let arr = v.Split([| '.' |], 3)
-                arr[0] + "." + arr[1]
-
             // Compute TFM from System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription
             // System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;;
             // val it: string = ".NET 6.0.7"
@@ -928,7 +928,7 @@ type internal FxResolver
             let defaultReferences =
                 if assumeDotNetFramework then
                     getDotNetFrameworkDefaultReferences useFsiAuxLib, assumeDotNetFramework
-                else if useSdkRefs then
+                elif useSdkRefs then
                     // Go fetch references
                     let sdkDir = tryGetSdkRefsPackDirectory () |> replayWarnings
 
