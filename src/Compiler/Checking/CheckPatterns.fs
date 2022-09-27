@@ -678,12 +678,12 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
         elif numArgs < numArgTys then
             if numArgTys > 1 then
                 // Expects tuple without enough args
-                let printT = NicePrint.minimalStringOfType env.DisplayEnv
+                let printTy  = NicePrint.minimalStringOfType env.DisplayEnv
                 let missingArgs = 
                     argNames.[numArgs..numArgTys - 1]
-                    |> List.map (fun id -> (if id.rfield_name_generated then "" else id.DisplayName + ": ") +  printT id.FormalType)
+                    |> List.map (fun id -> (if id.rfield_name_generated then "" else id.DisplayName + ": ") +  printTy  id.FormalType)
                     |> String.concat (Environment.NewLine + "\t")
-                    |> fun s -> Environment.NewLine+s
+                    |> fun s -> Environment.NewLine + "\t" + s
 
                 errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments(numArgTys, numArgs, missingArgs), m))
             else

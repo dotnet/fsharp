@@ -85,26 +85,6 @@ match 1, 2 with
 #if !NETCOREAPP
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
-let ``Union case 01 - Missing field`` () =
-    let _, checkResults = getParseAndCheckResults """
-type U =
-    | A
-    | B of int * int * int
-
-match A with
-| B (x, _) -> let y = x + 1 in ()
-"""
-    assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
-        "(7,2--7,10): This union case expects 3 arguments in tupled form, but was given 2. The missing field arguments may be any of: int"
-        "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
-    ]
-
-
-[<Test>]
-#if !NETCOREAPP
-[<Ignore("These tests weren't running on desktop and this test fails")>]
-#endif
 let ``Union case 02 - Extra args`` () =
     let _, checkResults = getParseAndCheckResults """
 type U =
@@ -197,47 +177,6 @@ match A with
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
 
-
-[<Test>]
-#if !NETCOREAPP
-[<Ignore("These tests weren't running on desktop and this test fails")>]
-#endif
-let ``Union case 07 - Named args - Name used twice`` () =
-    let _, checkResults = getParseAndCheckResults """
-type U =
-    | A
-    | B of field: int * int
-
-match A with
-| B (field = x; field = z) -> let y = x + z + 1 in ()
-"""
-    assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
-        "(7,16--7,21): Union case/exception field 'field' cannot be used more than once."
-        "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
-    ]
-
-
-[<Test>]
-#if !NETCOREAPP
-[<Ignore("These tests weren't running on desktop and this test fails")>]
-#endif
-let ``Union case 08 - Multiple tupled args`` () =
-    let _, checkResults = getParseAndCheckResults """
-type U =
-    | A
-    | B of field: int * int
-
-match A with
-| B x z -> let y = x + z + 1 in ()
-"""
-    assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
-        "(7,2--7,7): This union case expects 2 arguments in tupled form, but was given 0. The missing field arguments may be any of: field: int int"
-        "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
-    ]
-
-
 [<Test>]
 let ``Union case 09 - Single arg`` () =
     let _, checkResults = getParseAndCheckResults """
@@ -247,23 +186,6 @@ match None with
 """
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
-    ]
-
-[<Test>]
-#if !NETCOREAPP
-[<Ignore("These tests weren't running on desktop and this test fails")>]
-#endif
-let ``Union case 10 - incomplete union fields`` () =
-    let _, checkResults = getParseAndCheckResults """
-type U =
-    | B of  f1:int seq * {|X:string|} * f3:U * f4: (int * System.String)
-
-let x : U = failwith ""
-match x with
-| B  -> 42
-"""
-    dumpDiagnostics checkResults |> shouldEqual [
-        "(7,2--7,3): This union case expects 4 arguments in tupled form, but was given 0. The missing field arguments may be any of: f1: seq<int> {| X: string |} f3: U f4: (int * System.String)"
     ]
 
 [<Test>]
