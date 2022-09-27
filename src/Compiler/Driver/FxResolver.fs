@@ -548,6 +548,24 @@ type internal FxResolver
         assemblyReferences |> List.iter traverseDependencies
         assemblies
 
+    let tryGetTfmFromSdkDir (sdkDir: string) =
+        let dotnetConfigFile = Path.Combine(sdkDir, "dotnet.runtimeconfig.json")
+
+        try
+            use stream = FileSystem.OpenFileForReadShim(dotnetConfigFile)
+            let dotnetConfig = stream.ReadAllText()
+            let pattern = "\"tfm\": \""
+
+            let startPos =
+                dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
+                + pattern.Length
+
+            let endPos = dotnetConfig.IndexOf("\"", startPos)
+            let tfm = dotnetConfig[startPos .. endPos - 1]
+            tfm
+        with _ ->
+            tryGetRunningTfm ()
+
     // This list is the default set of references for "non-project" files.
     //
     // These DLLs are
@@ -828,7 +846,6 @@ type internal FxResolver
             RequireFxResolverLock(fxtok, "assuming all member require lock")
 
             // Interactive processes read their own configuration to find the running tfm
-
             let targetTfm =
                 if isInteractive then
                     tryGetRunningTfm ()
@@ -836,23 +853,7 @@ type internal FxResolver
                     let sdkDir = tryGetSdkDir () |> replayWarnings
 
                     match sdkDir with
-                    | Some dir ->
-                        let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
-
-                        try
-                            use stream = FileSystem.OpenFileForReadShim(dotnetConfigFile)
-                            let dotnetConfig = stream.ReadAllText()
-                            let pattern = "\"tfm\": \""
-
-                            let startPos =
-                                dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
-                                + pattern.Length
-
-                            let endPos = dotnetConfig.IndexOf("\"", startPos)
-                            let tfm = dotnetConfig[startPos .. endPos - 1]
-                            tfm
-                        with _ ->
-                            tryGetRunningTfm ()
+                    | Some dir -> tryGetTfmFromSdkDir ()
                     | None -> tryGetRunningTfm ()
 
             // Coreclr has mechanism for getting rid
