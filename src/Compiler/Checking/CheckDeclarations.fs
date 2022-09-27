@@ -543,8 +543,9 @@ module TcRecdUnionAndEnumDeclarations =
         let unionCasesR = unionCases |> List.map (TcUnionCaseDecl cenv env parent thisTy thisTyInst tpenv hasRQAAttribute) 
         unionCasesR |> CheckDuplicates (fun uc -> uc.Id) "union case" 
 
-    let TcEnumDecl cenv env parent thisTy fieldTy (SynEnumCase(attributes=Attributes synAttrs; ident= SynIdent(id,_); value=v; xmlDoc=xmldoc; range=m)) =
+    let TcEnumDecl g cenv env parent thisTy fieldTy (SynEnumCase(attributes=Attributes synAttrs; ident= SynIdent(id,_); value=v; xmlDoc=xmldoc; range=m)) =
         let attrs = TcAttributes cenv env AttributeTargets.Field synAttrs
+        
         match v with 
         | SynConst.Bytes _
         | SynConst.UInt16s _
@@ -555,12 +556,13 @@ module TcRecdUnionAndEnumDeclarations =
             let vis = CombineReprAccess parent vis
             if id.idText = "value__" then errorR(Error(FSComp.SR.tcNotValidEnumCaseName(), id.idRange))
             let xmlDoc = xmldoc.ToXmlDoc(true, Some [])
+            CheckFSharpAttributes g attrs m |> CommitOperationResult
             Construct.NewRecdField true (Some v) id false thisTy false false [] attrs xmlDoc vis false
       
     let TcEnumDecls (cenv: cenv) env parent thisTy enumCases =
         let g = cenv.g
         let fieldTy = NewInferenceType g
-        let enumCases' = enumCases |> List.map (TcEnumDecl cenv env parent thisTy fieldTy) |> CheckDuplicates (fun f -> f.Id) "enum element"
+        let enumCases' = enumCases |> List.map (TcEnumDecl g cenv env parent thisTy fieldTy) |> CheckDuplicates (fun f -> f.Id) "enum element"
         fieldTy, enumCases'
 
 //-------------------------------------------------------------------------
