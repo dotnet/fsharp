@@ -1562,21 +1562,21 @@ attribute:
   /* A custom attribute */
   | path opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
      { let arg = match $3 with None -> mkSynUnit $1.Range | Some e -> e
-       let m = mkFileIndexRange $1.Range.FileIndex $1.Range.Start arg.Range.End
+       let m = unionRanges  $1.Range arg.Range
        ({ TypeName=$1; ArgExpr=arg; Target=None; AppliesToGetterAndSetter=false; Range=m } : SynAttribute) }
 
   /* A custom attribute with an attribute target */
   | attributeTarget path opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
      { let arg = match $4 with None -> mkSynUnit $2.Range | Some e -> e
-       let startPos = match $1 with Some (ident:Ident) -> ident.idRange.Start | None -> $2.Range.Start
-       let m = mkFileIndexRange arg.Range.FileIndex startPos arg.Range.End
+       let startRange = match $1 with Some (ident:Ident) -> ident.idRange | None -> $2.Range
+       let m = unionRanges startRange arg.Range
        ({ TypeName=$2; ArgExpr=arg; Target=$1; AppliesToGetterAndSetter=false; Range=m } : SynAttribute) }
 
   /* A custom attribute with an attribute target */
   | attributeTarget OBLOCKBEGIN path oblockend opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
      { let arg = match $6 with None -> mkSynUnit $3.Range | Some e -> e 
-       let startPos = match $1 with Some ident -> ident.idRange.Start | None -> $3.Range.Start
-       let m = mkFileIndexRange arg.Range.FileIndex startPos arg.Range.End
+       let startRange = match $1 with Some ident -> ident.idRange | None -> $3.Range
+       let m = unionRanges startRange arg.Range
        ({ TypeName=$3; ArgExpr=arg; Target=$1; AppliesToGetterAndSetter=false; Range=m } : SynAttribute) }
 
 
