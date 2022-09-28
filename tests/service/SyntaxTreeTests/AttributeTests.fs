@@ -3,7 +3,6 @@ module FSharp.Compiler.Service.Tests.SyntaxTreeTests.AttributeTests
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open NUnit.Framework
-open Tests.Service.Symbols
 
 [<Test>]
 let ``range of attribute`` () =
