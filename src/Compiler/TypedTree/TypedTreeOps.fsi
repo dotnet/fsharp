@@ -2687,6 +2687,3 @@ type TraitConstraintInfo with
 /// This will match anything that does not have any types or bindings.
 val (|EmptyModuleOrNamespaces|_|):
     moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) option
-
-/// Captures an application type with a multi-dimensional array as postfix.
-val (|TTypeMultiDimensionalArrayAsGeneric|_|): t: TType -> (TyconRef * TType * int) option

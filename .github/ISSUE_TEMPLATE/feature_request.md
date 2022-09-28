@@ -2,7 +2,7 @@
 name: Feature request
 about: Suggest an idea for the F# tools or compiler
 title: ''
-labels: Feature Request
+labels: [Feature Request, Needs-Triage]
 assignees: ''
 
 ---
