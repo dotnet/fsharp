@@ -998,17 +998,22 @@ type MethInfo =
     member x.IsStruct =
         isStructTy x.TcGlobals x.ApparentEnclosingType
 
+    member x.IsOnReadOnlyType = 
+        let g = x.TcGlobals
+        let typeInfo = ILTypeInfo.FromType g x.ApparentEnclosingType
+        typeInfo.IsReadOnly g
+
     /// Indicates if this method is read-only; usually by the [<IsReadOnly>] attribute on method or struct level.
     /// Must be an instance method.
     /// Receiver must be a struct type.
     member x.IsReadOnly =
-        // Perf Review: Is there a way we can cache this result?       
+        // Perf Review: Is there a way we can cache this result?        
 
         x.IsInstance &&
         x.IsStruct &&
         match x with
         | ILMeth (g, ilMethInfo, _) -> 
-             ilMethInfo.IsReadOnly g //|| ilMethInfo.DeclaringTyconRef.type
+             ilMethInfo.IsReadOnly g || x.IsOnReadOnlyType
         | FSMeth _ -> false // F# defined methods not supported yet. Must be a language feature.
         | _ -> false
 
