@@ -239,9 +239,7 @@ let c = Color.Red
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 5, Col 7, Line 5, Col 50, "This construct is deprecated. Use B instead")
-            // FIXME Find the reason why we are getting this new compiler error
-            (Error 39, Line 8, Col 15, Line 8, Col 18, "The type 'Color' does not define the field, constructor or member 'Red'.")
+            (Error 101, Line 8, Col 9, Line 8, Col 18, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -258,7 +256,7 @@ let c = Color.Red
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 44, Line 5, Col 7, Line 5, Col 44, "This construct is deprecated. Use B instead")
+            (Warning 44, Line 8, Col 9, Line 8, Col 18, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
