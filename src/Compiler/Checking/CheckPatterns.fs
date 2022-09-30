@@ -567,7 +567,7 @@ and ApplyUnionCaseOrExn m (cenv: cenv) env overallTy item =
         UnifyTypes cenv env m overallTy g.exn_ty
         CheckTyconAccessible cenv.amap m ad ecref |> ignore
         let mkf mArgs args = TPat_exnconstr(ecref, args, unionRanges m mArgs)
-        mkf, recdFieldTysOfExnDefRef ecref, [ for f in (recdFieldsOfExnDefRef ecref) -> f.Id ]
+        mkf, recdFieldTysOfExnDefRef ecref, [ for f in (recdFieldsOfExnDefRef ecref) -> f  ]
 
     | Item.UnionCase(ucinfo, showDeprecated) ->
         if showDeprecated then
@@ -584,7 +584,7 @@ and ApplyUnionCaseOrExn m (cenv: cenv) env overallTy item =
         let inst = mkTyparInst ucref.TyconRef.TyparsNoRange ucinfo.TypeInst
         UnifyTypes cenv env m overallTy resTy
         let mkf mArgs args = TPat_unioncase(ucref, ucinfo.TypeInst, args, unionRanges m mArgs)
-        mkf, actualTysOfUnionCaseFields inst ucref, [ for f in ucref.AllFieldsAsList -> f.Id ]
+        mkf, actualTysOfUnionCaseFields inst ucref, [ for f in ucref.AllFieldsAsList -> f]
 
     | _ ->
         invalidArg "item" "not a union case or exception reference"
@@ -612,7 +612,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
             let extraPatterns = List ()
 
             for id, _, pat in pairs do
-                match argNames |> List.tryFindIndex (fun id2 -> id.idText = id2.idText) with
+                match argNames |> List.tryFindIndex (fun id2 -> id.idText = id2.Id.idText) with
                 | None ->
                     extraPatterns.Add pat
                     match item with
@@ -680,7 +680,14 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
         elif numArgs < numArgTys then
             if numArgTys > 1 then
                 // Expects tuple without enough args
-                errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments numArgTys, m))
+                let printTy  = NicePrint.minimalStringOfType env.DisplayEnv
+                let missingArgs = 
+                    argNames.[numArgs..numArgTys - 1]
+                    |> List.map (fun id -> (if id.rfield_name_generated then "" else id.DisplayName + ": ") +  printTy  id.FormalType)
+                    |> String.concat (Environment.NewLine + "\t")
+                    |> fun s -> Environment.NewLine + "\t" + s
+
+                errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments(numArgTys, numArgs, missingArgs), m))
             else
                 errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, m))
             args @ (List.init (numArgTys - numArgs) (fun _ -> SynPat.Wild (m.MakeSynthetic()))), extraPatterns
