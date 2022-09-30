@@ -954,6 +954,19 @@ module MutRecBindingChecking =
                     | rest -> rest
 
                 let prelimRecValues = [ for x in defnAs do match x with Phase2AMember bind -> yield bind.RecBindingInfo.Val | _ -> () ]
+                
+                let tyconOpt =
+                    tyconOpt
+                    |> Option.map (fun tycon ->
+                        tryAddExtensionAttributeIfNotAlreadyPresent
+                            (fun tryFindExtensionAttribute ->
+                                tycon.MembersOfFSharpTyconSorted
+                                |> Seq.choose (fun m -> tryFindExtensionAttribute m.Attribs)
+                                |> Seq.tryHead
+                            )
+                            tycon
+                    )
+            
                 let defnAs = MutRecShape.Tycon(TyconBindingsPhase2A(tyconOpt, declKind, prelimRecValues, tcref, copyOfTyconTypars, thisTy, defnAs))
                 defnAs, (tpenv, recBindIdx, uncheckedBindsRev))
 
@@ -4205,9 +4218,9 @@ module TcDeclarations =
         //      [<Extension>]
         //      static member PlusOne (a:int) : int = a + 1
         //
-        //  // or
+        // or
         //
-        // module recFoo
+        // module rec Foo
         //
         // [<System.Runtime.CompilerServices.Extension>]
         // let PlusOne (a:int) = a + 1

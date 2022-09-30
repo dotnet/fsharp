@@ -1,5 +1,6 @@
 ﻿namespace FSharp.Compiler.ComponentTests.Language
 
+open FSharp.Test
 open Xunit
 open FSharp.Test.Compiler
 
@@ -299,7 +300,7 @@ namespace Consumer
             |> withReferences [ fsharp ]
         
         csharp |> compile |> shouldSucceed
-
+    
     [<Fact>]
     let ``Recursive toplevel named module without Extension attribute and top level let binding with Extension attribute`` () =
         let fsharp =
@@ -327,6 +328,171 @@ namespace Consumer
     }
     """
 
+            |> withName "CSLib"
+            |> withReferences [ fsharp ]
+        
+        csharp |> compile |> shouldSucceed
+
+    [<Fact>]
+    let ``Foobar `` () =
+        let fsharp =
+            FSharp """
+module rec Foo
+
+[<System.Runtime.CompilerServices.Extension>]
+type Bar =
+    [<System.Runtime.CompilerServices.Extension>]
+    static member PlusOne (a:int) = a + 1
+    """
+           |> withName "FSLib"
+        
+        let csharp =
+            CSharp """
+    namespace Consumer
+    {
+        using static Foo.Bar;
+
+        public class Class1
+        {
+            public Class1()
+            {
+                var meh = 1.PlusOne();
+            }
+        }
+    }
+    """
+            |> withName "CSLib"
+            |> withReferences [ fsharp ]
+        
+        csharp |> compile |> shouldSucceed
+    
+    [<Fact>]
+    let ``Recursive named module with type with CSharp style extension can be consumed in CSharp`` () =
+        let fsharp =
+            FSharp """
+module rec Foo
+
+type Bar =
+    [<System.Runtime.CompilerServices.Extension>]
+    static member PlusOne (a:int) = a + 1
+    """
+           |> withName "FSLib"
+        
+        let csharp =
+            CSharp """
+    namespace Consumer
+    {
+        using static Foo.Bar;
+
+        public class Class1
+        {
+            public Class1()
+            {
+                var meh = 1.PlusOne();
+            }
+        }
+    }
+    """
+            |> withName "CSLib"
+            |> withReferences [ fsharp ]
+        
+        csharp |> compile |> shouldSucceed
+
+    [<Fact>]
+    let ``CSharp style extension method in F# type backed by a signature`` () =
+        let implementation =
+            SourceCodeFileKind.Create(
+                "Source.fs",
+                """
+module Foo
+
+open System.Runtime.CompilerServices
+
+type Bar =
+    [<Extension>]
+    static member PlusOne (a:int) : int = a + 1
+"""
+            )
+
+        let fsharp =
+            Fsi """
+module Foo
+
+open System.Runtime.CompilerServices
+
+[<Class>]
+type Bar =
+    [<Extension>]
+    static member PlusOne: a: int -> int
+"""
+            |> withAdditionalSourceFile implementation
+           |> withName "FSLib"
+        
+        let csharp =
+            CSharp """
+    namespace Consumer
+    {
+        using static Foo.Bar;
+
+        public class Class1
+        {
+            public Class1()
+            {
+                var meh = 1.PlusOne();
+            }
+        }
+    }
+    """
+            |> withName "CSLib"
+            |> withReferences [ fsharp ]
+        
+        csharp |> compile |> shouldSucceed
+
+    [<Fact>]
+    let ``CSharp style extension method in F# type backed by a signature in a recursive module`` () =
+        let implementation =
+            SourceCodeFileKind.Create(
+                "Source.fs",
+                """
+module rec Foo
+
+open System.Runtime.CompilerServices
+
+type Bar =
+    [<Extension>]
+    static member PlusOne (a:int) : int = a + 1
+"""
+            )
+
+        let fsharp =
+            Fsi """
+module rec Foo
+
+open System.Runtime.CompilerServices
+
+[<Class>]
+type Bar =
+    [<Extension>]
+    static member PlusOne: a: int -> int
+"""
+            |> withAdditionalSourceFile implementation
+           |> withName "FSLib"
+        
+        let csharp =
+            CSharp """
+    namespace Consumer
+    {
+        using static Foo.Bar;
+
+        public class Class1
+        {
+            public Class1()
+            {
+                var meh = 1.PlusOne();
+            }
+        }
+    }
+    """
             |> withName "CSLib"
             |> withReferences [ fsharp ]
         
