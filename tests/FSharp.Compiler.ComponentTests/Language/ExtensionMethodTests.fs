@@ -37,6 +37,24 @@ let f (b:int) = b.PlusOne()
         |> shouldSucceed
 
     [<Fact>]
+    let ``Extension method without toplevel attribute on recursive type`` () =
+        Fsx
+            """
+open System.Runtime.CompilerServices
+
+type Foo =
+    class
+    end
+and Bar =
+    [<Extension>]
+    static member PlusOne (a:int) : int = a + 1
+
+let f (b:int) = b.PlusOne()
+            """
+        |> compile
+        |> shouldSucceed
+    
+    [<Fact>]
     let ``F# CSharpStyleExtensionMethod consumed in C#`` () =
         let fsharp =
             FSharp
@@ -72,6 +90,45 @@ namespace Consumer
 
         csharp |> compile |> shouldSucceed
 
+    [<Fact>]
+    let ``F# CSharpStyleExtensionMethod in recursive type consumed in C#`` () =
+        let fsharp =
+            FSharp
+                """
+module Hello
+
+open System.Runtime.CompilerServices
+
+type Foo =
+    class
+    end
+and Bar =
+    [<Extension>]
+    static member PlusOne (a:int) : int = a + 1
+"""
+            |> withName "FSLib"
+
+        let csharp =
+            CSharp
+                """
+namespace Consumer
+{
+    using static Hello.Bar;
+
+    public class Class1
+    {
+        public Class1()
+        {
+            var meh = 1.PlusOne();
+        }
+    }
+}
+"""
+            |> withName "CSLib"
+            |> withReferences [ fsharp ]
+
+        csharp |> compile |> shouldSucceed
+    
     [<Fact>]
     let ``F# CSharpStyleExtensionMethod defined in top level module with attribute consumed in C#`` () =
         let fsharp =
