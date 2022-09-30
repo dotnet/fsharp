@@ -2587,6 +2587,21 @@ module TypecheckTests =
         exec cfg ("." ++ "pos40.exe") ""
 
     [<Test>]
+    let ``sigs pos1281`` () =
+        let cfg = testConfig "typecheck/sigs"
+        // This checks that warning 25 "incomplete matches" is not triggered
+        fsc cfg "%s --target:exe -o:pos1281.exe --warnaserror --nowarn:26" cfg.fsc_flags ["pos1281.fs"]
+        peverify cfg "pos1281.exe"
+        exec cfg ("." ++ "pos1281.exe") ""
+
+    [<Test>]
+    let ``sigs pos3294`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos3294.exe --warnaserror" cfg.fsc_flags ["pos3294.fs"]
+        peverify cfg "pos3294.exe"
+        exec cfg ("." ++ "pos3294.exe") ""
+
+    [<Test>]
     let ``sigs pos23`` () =
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos23.exe" cfg.fsc_flags ["pos23.fs"]
