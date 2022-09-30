@@ -565,6 +565,7 @@ module TcRecdUnionAndEnumDeclarations =
 
     let TcEnumDecl cenv env parent thisTy fieldTy (SynEnumCase(attributes=Attributes synAttrs; ident= SynIdent(id,_); value=v; xmlDoc=xmldoc; range=m)) =
         let attrs = TcAttributes cenv env AttributeTargets.Field synAttrs
+        
         match v with 
         | SynConst.Bytes _
         | SynConst.UInt16s _
