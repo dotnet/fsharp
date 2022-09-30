@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ja" original="../FSComp.resx">
     <body>
+      <trans-unit id="arrayElementHasWrongTypeTuple">
+        <source>All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="new">All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="buildInvalidSourceFileExtensionML">
         <source>The file extension of '{0}' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">'{0}' のファイル拡張子を認識できません。ソース ファイル拡張子は .fs、.fsi、.fsx、または .fsscript にする必要があります。非推奨の拡張子 .ml または .mli の使用を有効にするには、'--langversion:5.0' および '--mlcompatibility' を使用してください。</target>
@@ -100,6 +105,11 @@
       <trans-unit id="csOverloadCandidateNamedArgumentTypeMismatch">
         <source>Argument '{0}' doesn't match</source>
         <target state="translated">引数 '{0}' が一致しません</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="elseBranchHasWrongTypeTuple">
+        <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="new">All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
@@ -307,6 +317,11 @@
         <target state="translated">F# 引用での特性制約に対する監視の引き渡し</target>
         <note />
       </trans-unit>
+      <trans-unit id="followingPatternMatchClauseHasWrongTypeTuple">
+        <source>All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="new">All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="forFormatInvalidForInterpolated">
         <source>Interpolated strings may not use '%' format specifiers unless each is given an expression, e.g. '%d{{1+1}}'.</source>
         <target state="translated">'%d{{1+1}}' などの式が指定されている場合を除き、補間された文字列では '%' 書式指定子を使用できません。</target>
@@ -345,6 +360,11 @@
       <trans-unit id="fsiInvalidDirective">
         <source>Invalid directive '#{0} {1}'</source>
         <target state="translated">無効なディレクティブ '#{0} {1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ifExpressionTuple">
+        <source>The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="new">The 'if' expression needs to return a tuple of length {0} of type\n    {1}    \nto satisfy context type requirements. It currently returns a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="ilxGenUnknownDebugPoint">
@@ -400,6 +420,11 @@
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">補間された文字列が無効です。三重引用符文字列リテラルは、補間された式では使用できません。補間式に対して明示的な 'let' バインドを使用することをご検討ください。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="listElementHasWrongTypeTuple">
+        <source>All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</source>
+        <target state="new">All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length {0} of type\n    {1}    \nThis element is a tuple of length {2} of type\n    {3}    \n</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatError">

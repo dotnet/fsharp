@@ -5810,7 +5810,7 @@ and CheckTupleIsCorrectLength g (env: TcEnv) m tupleTy args typeCheckArgs =
 
             // We let error recovery handle this exception
             error (ErrorFromAddingTypeEquation(g, env.DisplayEnv, tupleTy, expectedTy,
-                   (ConstraintSolverTupleDiffLengths(env.DisplayEnv, ptys, argTys, m, m)), m))
+                   (ConstraintSolverTupleDiffLengths(env.DisplayEnv, env.eContextInfo, ptys, argTys, m, m)), m))
 
 and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
     let g = cenv.g

@@ -170,7 +170,7 @@ type Exception with
         | VirtualAugmentationOnNullValuedType m
         | NonVirtualAugmentationOnNullValuedType m
         | NonRigidTypar (_, _, _, _, _, m)
-        | ConstraintSolverTupleDiffLengths (_, _, _, m, _)
+        | ConstraintSolverTupleDiffLengths (_, _, _, _, m, _)
         | ConstraintSolverInfiniteTypes (_, _, _, _, m, _)
         | ConstraintSolverMissingConstraint (_, _, _, m, _)
         | ConstraintSolverTypesNotInEqualityRelation (_, _, _, m, _, _)
@@ -616,12 +616,28 @@ let OutputNameSuggestions (os: StringBuilder) suggestNames suggestionsF idText =
                     os.AppendString "   "
                     os.AppendString(ConvertValLogicalNameToDisplayNameCore value)
 
+let OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m (os: StringBuilder) fallback =
+    match contextInfo with
+    | ContextInfo.IfExpression range when equals range m -> os.AppendString(FSComp.SR.ifExpression (ty1, ty2))
+    | ContextInfo.CollectionElement (isArray, range) when equals range m ->
+        if isArray then
+            os.AppendString(FSComp.SR.arrayElementHasWrongType (ty1, ty2))
+        else
+            os.AppendString(FSComp.SR.listElementHasWrongType (ty1, ty2))
+    | ContextInfo.OmittedElseBranch range when equals range m -> os.AppendString(FSComp.SR.missingElseBranch (ty2))
+    | ContextInfo.ElseBranchResult range when equals range m -> os.AppendString(FSComp.SR.elseBranchHasWrongType (ty1, ty2))
+    | ContextInfo.FollowingPatternMatchClause range when equals range m ->
+        os.AppendString(FSComp.SR.followingPatternMatchClauseHasWrongType (ty1, ty2))
+    | ContextInfo.PatternMatchGuard range when equals range m -> os.AppendString(FSComp.SR.patternMatchGuardIsNotBool (ty2))
+    | contextInfo -> fallback contextInfo
+
 type Exception with
 
     member exn.Output(os: StringBuilder, suggestNames) =
 
         match exn with
-        | ConstraintSolverTupleDiffLengths (_, tl1, tl2, m, m2) ->
+        // TODO: this is now unused...?
+        | ConstraintSolverTupleDiffLengths (_, _, tl1, tl2, m, m2) ->
             os.AppendString(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length)
 
             if m.StartLine <> m2.StartLine then
@@ -662,19 +678,8 @@ type Exception with
             // REVIEW: consider if we need to show _cxs (the type parameter constraints)
             let ty1, ty2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
-            match contextInfo with
-            | ContextInfo.IfExpression range when equals range m -> os.AppendString(FSComp.SR.ifExpression (ty1, ty2))
-            | ContextInfo.CollectionElement (isArray, range) when equals range m ->
-                if isArray then
-                    os.AppendString(FSComp.SR.arrayElementHasWrongType (ty1, ty2))
-                else
-                    os.AppendString(FSComp.SR.listElementHasWrongType (ty1, ty2))
-            | ContextInfo.OmittedElseBranch range when equals range m -> os.AppendString(FSComp.SR.missingElseBranch (ty2))
-            | ContextInfo.ElseBranchResult range when equals range m -> os.AppendString(FSComp.SR.elseBranchHasWrongType (ty1, ty2))
-            | ContextInfo.FollowingPatternMatchClause range when equals range m ->
-                os.AppendString(FSComp.SR.followingPatternMatchClauseHasWrongType (ty1, ty2))
-            | ContextInfo.PatternMatchGuard range when equals range m -> os.AppendString(FSComp.SR.patternMatchGuardIsNotBool (ty2))
-            | _ -> os.AppendString(ConstraintSolverTypesNotInEqualityRelation2E().Format ty1 ty2)
+            OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m os (fun _ ->
+                os.AppendString(ConstraintSolverTypesNotInEqualityRelation2E().Format ty1 ty2))
 
             if m.StartLine <> m2.StartLine then
                 os.AppendString(SeeAlsoE().Format(stringOfRange m))
@@ -698,33 +703,15 @@ type Exception with
             ->
             let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
 
-            match contextInfo with
-            | ContextInfo.IfExpression range when equals range m -> os.AppendString(FSComp.SR.ifExpression (ty1, ty2))
-
-            | ContextInfo.CollectionElement (isArray, range) when equals range m ->
-                if isArray then
-                    os.AppendString(FSComp.SR.arrayElementHasWrongType (ty1, ty2))
-                else
-                    os.AppendString(FSComp.SR.listElementHasWrongType (ty1, ty2))
-
-            | ContextInfo.OmittedElseBranch range when equals range m -> os.AppendString(FSComp.SR.missingElseBranch (ty2))
-
-            | ContextInfo.ElseBranchResult range when equals range m -> os.AppendString(FSComp.SR.elseBranchHasWrongType (ty1, ty2))
-
-            | ContextInfo.FollowingPatternMatchClause range when equals range m ->
-                os.AppendString(FSComp.SR.followingPatternMatchClauseHasWrongType (ty1, ty2))
-
-            | ContextInfo.PatternMatchGuard range when equals range m -> os.AppendString(FSComp.SR.patternMatchGuardIsNotBool (ty2))
-
-            | ContextInfo.TupleInRecordFields ->
-                os.AppendString(ErrorFromAddingTypeEquation1E().Format ty2 ty1 tpcs)
-                os.AppendString(Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord ())
-
-            | _ when ty2 = "bool" && ty1.EndsWithOrdinal(" ref") ->
-                os.AppendString(ErrorFromAddingTypeEquation1E().Format ty2 ty1 tpcs)
-                os.AppendString(Environment.NewLine + FSComp.SR.derefInsteadOfNot ())
-
-            | _ -> os.AppendString(ErrorFromAddingTypeEquation1E().Format ty2 ty1 tpcs)
+            OutputTypesNotInEqualityRelationContextInfo contextInfo ty1 ty2 m os (fun contextInfo ->
+                match contextInfo with
+                | ContextInfo.TupleInRecordFields ->
+                    os.AppendString(ErrorFromAddingTypeEquation1E().Format ty2 ty1 tpcs)
+                    os.AppendString(Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord ())
+                | _ when ty2 = "bool" && ty1.EndsWithOrdinal(" ref") ->
+                    os.AppendString(ErrorFromAddingTypeEquation1E().Format ty2 ty1 tpcs)
+                    os.AppendString(Environment.NewLine + FSComp.SR.derefInsteadOfNot ())
+                | _ -> os.AppendString(ErrorFromAddingTypeEquation1E().Format ty2 ty1 tpcs))
 
         | ErrorFromAddingTypeEquation (_, _, _, _, (ConstraintSolverTypesNotInEqualityRelation (_, _, _, _, _, contextInfo) as e), _) when
             (match contextInfo with
@@ -737,10 +724,23 @@ type Exception with
 
         | ErrorFromAddingTypeEquation(error = ConstraintSolverError _ as e) -> e.Output(os, suggestNames)
 
-        | ErrorFromAddingTypeEquation (_g, denv, ty1, ty2, ConstraintSolverTupleDiffLengths (_, tl1, tl2, _, _), _) ->
+        | ErrorFromAddingTypeEquation (_g, denv, ty1, ty2, ConstraintSolverTupleDiffLengths (_, contextInfo, tl1, tl2, _, _), m) ->
             let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+            let messageArgs = tl1.Length, ty1, tl2.Length, ty2
+
             if ty1 <> ty2 + tpcs then
-                os.AppendString(ErrorFromAddingTypeEquationTuplesE().Format tl1.Length ty1 tl2.Length ty2 tpcs)
+                match contextInfo with
+                | ContextInfo.IfExpression range when equals range m -> os.AppendString(FSComp.SR.ifExpressionTuple messageArgs)
+                | ContextInfo.ElseBranchResult range when equals range m ->
+                    os.AppendString(FSComp.SR.elseBranchHasWrongTypeTuple messageArgs)
+                | ContextInfo.FollowingPatternMatchClause range when equals range m ->
+                    os.AppendString(FSComp.SR.followingPatternMatchClauseHasWrongTypeTuple messageArgs)
+                | ContextInfo.CollectionElement (isArray, range) when equals range m ->
+                    if isArray then
+                        os.AppendString(FSComp.SR.arrayElementHasWrongTypeTuple messageArgs)
+                    else
+                        os.AppendString(FSComp.SR.listElementHasWrongTypeTuple messageArgs)
+                | _ -> os.AppendString(ErrorFromAddingTypeEquationTuplesE().Format tl1.Length ty1 tl2.Length ty2 tpcs)
 
         | ErrorFromAddingTypeEquation (g, denv, ty1, ty2, e, _) ->
             if not (typeEquiv g ty1 ty2) then
@@ -2105,7 +2105,7 @@ type PhasedDiagnostic with
             Printf.bprintf buf "\n"
 
             match e with
-            | FormattedDiagnostic.Short (_, txt) -> buf.AppendString txt |> ignore
+            | FormattedDiagnostic.Short (_, txt) -> buf.AppendString txt
             | FormattedDiagnostic.Long (_, details) ->
                 match details.Location with
                 | Some l when not l.IsEmpty -> buf.AppendString l.TextRepresentation
