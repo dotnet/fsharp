@@ -14,7 +14,7 @@ type T =
  """
 
     match parseResults with
-    | ParsedInput.SigFile(ParsedSigFileInput(modules = [
+    | ParsedInput.SigFile(ParsedSigFileInput(contents = [
         SynModuleOrNamespaceSig(decls = [
             SynModuleSigDecl.Types(types = [
                 SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.ObjectModel(memberSigs = [
@@ -37,7 +37,7 @@ type T =
  """
 
     match parseResults with
-    | ParsedInput.SigFile(ParsedSigFileInput(modules = [
+    | ParsedInput.SigFile(ParsedSigFileInput(contents = [
         SynModuleOrNamespaceSig(decls = [
             SynModuleSigDecl.Types(types = [
                 SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.ObjectModel(memberSigs = [
