@@ -101,3 +101,5 @@ val IsSecurityAttribute:
 val IsSecurityCriticalAttribute: g: TcGlobals -> Attrib -> bool
 
 val IsAssemblyVersionAttribute: g: TcGlobals -> Attrib -> bool
+
+val CheckILEventAttributes: g: TcGlobals -> tcref: TyconRef -> cattrs: ILAttributes -> m: range ->  OperationResult<unit>
