@@ -115,6 +115,7 @@
     </Compile>
     <Compile Include="..\service\SyntaxTreeTests\SynIdentTests.fs">
       <Link>SyntaxTree\SynIdentTests.fs</Link>
+    </Compile>
     <Compile Include="..\service\SyntaxTreeTests\SynTypeTests.fs">
       <Link>SyntaxTree\SynTypeTests.fs</Link>
     </Compile>
