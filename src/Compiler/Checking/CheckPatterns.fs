@@ -289,6 +289,11 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
     | SynPat.Or (pat1, pat2, m, _) ->
         TcPatOr warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m
 
+    | SynPat.Cons(pat1, pat2, m, trivia) ->
+        let longDotId = SynLongIdent((mkSynCaseName trivia.ColonColonRange opNameCons), [], [Some (FSharp.Compiler.SyntaxTrivia.IdentTrivia.OriginalNotation "::")])
+        let args = SynArgPats.Pats [ SynPat.Tuple(false, [ pat1; pat2 ], m) ]
+        TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags patEnv ty (longDotId, None, args, None, m)
+
     | SynPat.Ands (pats, m) ->
         TcPatAnds warnOnUpper cenv env vFlags patEnv ty pats m
 

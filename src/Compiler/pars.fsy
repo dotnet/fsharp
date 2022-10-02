@@ -3124,7 +3124,8 @@ headBindingPattern:
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
   | headBindingPattern COLON_COLON  headBindingPattern 
-      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [ Some (IdentTrivia.OriginalNotation "::") ]), None, None, SynArgPats.Pats [SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3)], None, lhs parseState) }
+      { let mColonColon = rhs parseState 2
+        SynPat.Cons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
 
   | tuplePatternElements %prec pat_tuple
       { let pats = normalizeTuplePat $1
@@ -3398,7 +3399,8 @@ parenPattern:
         SynPat.Attrib($2, $1, mLhs) } 
 
   | parenPattern COLON_COLON  parenPattern 
-      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [ Some (IdentTrivia.OriginalNotation "::") ]), None, None, SynArgPats.Pats [ SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3) ], None, lhs parseState) }
+      { let mColonColon = rhs parseState 2
+        SynPat.Cons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
 
   | constrPattern { $1 }
 

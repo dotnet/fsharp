@@ -199,6 +199,14 @@ type SynPatOrTrivia =
         BarRange: range
     }
 
+/// Represents additional information for SynPat.Cons
+[<NoEquality; NoComparison>]
+type SynPatConsTrivia =
+    {
+        /// The syntax range of the `::` token.
+        ColonColonRange: range
+    }
+
 /// Represents additional information for SynTypeDefn
 [<NoEquality; NoComparison>]
 type SynTypeDefnTrivia =

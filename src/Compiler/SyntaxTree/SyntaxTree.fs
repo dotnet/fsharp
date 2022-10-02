@@ -908,6 +908,8 @@ type SynPat =
 
     | Or of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatOrTrivia
 
+    | Cons of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatConsTrivia
+
     | Ands of pats: SynPat list * range: range
 
     | As of lhsPat: SynPat * rhsPat: SynPat * range: range
@@ -953,6 +955,7 @@ type SynPat =
         | SynPat.Wild (range = m)
         | SynPat.Named (range = m)
         | SynPat.Or (range = m)
+        | SynPat.Cons (range = m)
         | SynPat.Ands (range = m)
         | SynPat.As (range = m)
         | SynPat.LongIdent (range = m)
