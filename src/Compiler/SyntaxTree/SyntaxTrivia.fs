@@ -257,3 +257,10 @@ type SynMemberGetSetTrivia =
         AndKeyword: range option
         SetKeyword: range option
     }
+
+[<NoEquality; NoComparison>]
+type SynArgPatsNamePatPairsTrivia =
+    {
+        LeftParenRange: range
+        RightParenRange: range
+    }

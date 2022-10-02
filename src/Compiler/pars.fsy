@@ -3237,7 +3237,11 @@ constrPattern:
 
 atomicPatsOrNamePatPairs:
   | LPAREN namePatPairs rparen
-      { SynArgPats.NamePatPairs $2, snd $2 }
+      { let mLParen = rhs parseState 1
+        let mRParen = rhs parseState 3
+        let pats, m = $2
+        let trivia = { LeftParenRange = mLParen; RightParenRange = mRParen } 
+        SynArgPats.NamePatPairs(pats, m, trivia), snd $2 }
 
   | atomicPatterns
       { let mParsed = rhs parseState 1

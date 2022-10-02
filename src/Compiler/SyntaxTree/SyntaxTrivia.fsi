@@ -365,3 +365,13 @@ type SynMemberGetSetTrivia =
         /// The syntax range of the `set` keyword
         SetKeyword: range option
     }
+
+/// Represents additional information for SynArgPats.NamePatPairs
+[<NoEquality; NoComparison>]
+type SynArgPatsNamePatPairsTrivia =
+    {
+        /// The syntax range of the `(` token.
+        LeftParenRange: range
+        /// The syntax range of the `)` token.
+        RightParenRange: range
+    }
