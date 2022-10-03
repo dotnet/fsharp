@@ -790,7 +790,7 @@ module SyntaxTraversal =
                 | SynPat.Paren (p, _) -> traversePat path p
                 | SynPat.As (p1, p2, _)
                 | SynPat.Or (p1, p2, _, _)
-                | SynPat.Cons (p1, p2, _, _) -> [ p1; p2 ] |> List.tryPick (traversePat path)
+                | SynPat.ListCons (p1, p2, _, _) -> [ p1; p2 ] |> List.tryPick (traversePat path)
                 | SynPat.Ands (ps, _)
                 | SynPat.Tuple (_, ps, _)
                 | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick (traversePat path)

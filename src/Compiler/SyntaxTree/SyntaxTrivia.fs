@@ -123,7 +123,7 @@ type SynUnionCaseTrivia = { BarRange: range option }
 type SynPatOrTrivia = { BarRange: range }
 
 [<NoEquality; NoComparison>]
-type SynPatConsTrivia = { ColonColonRange: range }
+type SynPatListConsTrivia = { ColonColonRange: range }
 
 [<NoEquality; NoComparison>]
 type SynTypeDefnTrivia =

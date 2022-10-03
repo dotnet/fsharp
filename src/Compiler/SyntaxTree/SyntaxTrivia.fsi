@@ -201,7 +201,7 @@ type SynPatOrTrivia =
 
 /// Represents additional information for SynPat.Cons
 [<NoEquality; NoComparison>]
-type SynPatConsTrivia =
+type SynPatListConsTrivia =
     {
         /// The syntax range of the `::` token.
         ColonColonRange: range
