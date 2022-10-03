@@ -118,3 +118,41 @@ let ``Non readonly struct needs a defensive copy when its extension method is ca
         IL_0016:  ret
       } """]
 #endif
+
+
+#if NETSTANDARD 
+[<Fact>]
+#endif
+let ``Csharp extension method on a readonly struct does not need defensive copy``() =
+    let csLib = 
+        CSharp """
+using System;
+public static class DateTimeExtensionMethod
+{
+        public static string CustomPrintDate(this in DateTime d)
+        {
+            return d.Date.ToShortDateString();
+        }
+}"""    |> withName "CsLib"
+
+    FSharp """
+module DateTimeDefinedInCsharpUsage
+open System
+let doWork(dt:inref<DateTime>) =
+    dt.CustomPrintDate()
+    """
+    |> withReferences [csLib]
+    |> ignoreWarnings
+    |> compile
+    |> shouldSucceed
+    |> verifyIL ["""      .method public static string  doWork([in] valuetype [runtime]System.DateTime& dt) cil managed
+      {
+        .param [1]
+        .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 ) 
+        
+        .maxstack  8
+        IL_0000:  ldarg.0
+        IL_0001:  call       string [CsLib]DateTimeExtensionMethod::CustomPrintDate(valuetype [runtime]System.DateTime&)
+        IL_0006:  ret
+      } """]
+
