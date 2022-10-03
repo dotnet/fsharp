@@ -205,13 +205,9 @@ module internal TokenClassifications =
             // (this isn't entirely correct, but it'll work for now - see bug 3727)
             (FSharpTokenColorKind.Number, FSharpTokenCharKind.Operator, FSharpTokenTriggerClass.None)
 
-        | INFIX_STAR_DIV_MOD_OP ("mod"
-        | "land"
-        | "lor"
-        | "lxor")
-        | INFIX_STAR_STAR_OP ("lsl"
-        | "lsr"
-        | "asr") -> (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
+        | INFIX_STAR_DIV_MOD_OP ("mod" | "land" | "lor" | "lxor")
+        | INFIX_STAR_STAR_OP ("lsl" | "lsr" | "asr") ->
+            (FSharpTokenColorKind.Keyword, FSharpTokenCharKind.Keyword, FSharpTokenTriggerClass.None)
 
         | LPAREN_STAR_RPAREN
         | DOLLAR
