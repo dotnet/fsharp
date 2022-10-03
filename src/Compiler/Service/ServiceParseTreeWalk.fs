@@ -797,7 +797,7 @@ module SyntaxTraversal =
                 | SynPat.LongIdent (argPats = args) ->
                     match args with
                     | SynArgPats.Pats ps -> ps |> List.tryPick (traversePat path)
-                    | SynArgPats.NamePatPairs (ps, _) -> ps |> List.map (fun (_, _, pat) -> pat) |> List.tryPick (traversePat path)
+                    | SynArgPats.NamePatPairs (pats = ps) -> ps |> List.map (fun (_, _, pat) -> pat) |> List.tryPick (traversePat path)
                 | SynPat.Typed (p, ty, _) ->
                     match traversePat path p with
                     | None -> traverseSynType path ty
