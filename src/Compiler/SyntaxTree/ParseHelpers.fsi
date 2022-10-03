@@ -148,7 +148,7 @@ type LexerContinuation =
 and LexCont = LexerContinuation
 
 val ParseAssemblyCodeInstructions:
-    s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILInstr []
+    s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILInstr[]
 
 val grabXmlDocAtRangeStart: parseState: IParseState * optAttributes: SynAttributeList list * range: range -> PreXmlDoc
 
@@ -156,3 +156,27 @@ val grabXmlDoc: parseState: IParseState * optAttributes: SynAttributeList list *
 
 val ParseAssemblyCodeType:
     s: string -> reportLibraryOnlyFeatures: bool -> langVersion: LanguageVersion -> m: range -> ILType
+
+val reportParseErrorAt: range -> (int * string) -> unit
+
+val raiseParseErrorAt: range -> (int * string) -> 'a
+
+val mkSynMemberDefnGetSet:
+    parseState: IParseState ->
+    opt_inline: bool ->
+    mWith: range ->
+    classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * SynReturnInfo option * range option * SynExpr * range) list ->
+    mAnd: range option ->
+    mWhole: range ->
+    propertyNameBindingPat: SynPat ->
+    optPropertyType: SynReturnInfo option ->
+    visNoLongerUsed: SynAccess option ->
+    memFlagsBuilder: (SynMemberKind -> SynMemberFlags) ->
+    attrs: SynAttributeList list ->
+    rangeStart: range ->
+        SynMemberDefn list
+
+/// Incorporate a '^' for an qualified access to a generic type parameter
+val adjustHatPrefixToTyparLookup: mFull: range -> rightExpr: SynExpr -> SynExpr
+
+val mkSynTypeTuple: elementTypes: SynTupleTypeSegment list -> SynType

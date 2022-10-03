@@ -2,14 +2,14 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../Properties.resx">
     <body>
-      <trans-unit id="FSharpInteractive64Bit">
-        <source>64-bit F# Interactive</source>
-        <target state="translated">64bitový F# Interactive</target>
+      <trans-unit id="FSharpInteractiveAnyCpu">
+        <source>Use fsiAnyCpu.exe</source>
+        <target state="translated">Použít fsiAnyCpu.exe</target>
         <note />
       </trans-unit>
-      <trans-unit id="FSharpInteractive64BitDescr">
-        <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
-        <target state="translated">V případě nastavení na true a za předpokladu, že aktuální počítač je 64bitový, se F# Interactive spustí jako 64bitový proces. (V opačném případě je F# Interactive 32bitový proces.)</target>
+      <trans-unit id="FSharpInteractiveAnyCpuDescr">
+        <source>If set to true, 'fsiAnyCpu.exe' is run as a platform neutral process. Otherwise, F# Interactive is a 32-bit process on X86/X64 or a native 64 bit process on Arm64 based systems.</source>
+        <target state="translated">Když se nastaví na hodnotu true, 'fsiAnyCpu.exe' se spustí jako proces neutrální vzhledem k platformě. V opačném případě je F# Interactive 32bitový proces na platformě X86/X64 nebo nativní 64bitový proces v systémech založených na arm64.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">

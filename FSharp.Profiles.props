@@ -4,23 +4,11 @@
 
   <Choose>
     <When Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' ">
-      <PropertyGroup>
-        <DefineConstants Condition="'$(MonoPackaging)' == 'true'">$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
-        <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
-      </PropertyGroup>
     </When>
     <Otherwise>
       <PropertyGroup>
         <DefineConstants>$(DefineConstants);NETSTANDARD</DefineConstants>
-        <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-        <DefineConstants>$(DefineConstants);FX_NO_CORHOST_SIGNER</DefineConstants>
-        <DefineConstants>$(DefineConstants);FX_NO_PDB_READER</DefineConstants>
-        <DefineConstants>$(DefineConstants);FX_NO_PDB_WRITER</DefineConstants>
-        <DefineConstants>$(DefineConstants);FX_NO_SYMBOLSTORE</DefineConstants>
-        <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONFIGURATION</DefineConstants>
-        <DefineConstants>$(DefineConstants);FX_NO_WIN_REGISTRY</DefineConstants>
         <DefineConstants>$(DefineConstants);FX_NO_WINFORMS</DefineConstants>
-        <DefineConstants>$(DefineConstants);FX_RESHAPED_REFEMIT</DefineConstants>
         <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
       </PropertyGroup>
     </Otherwise>

@@ -1,7 +1,42 @@
 root = true
 
+# max_line_length is set to 140. At some point we will reduce it to 120 for as many files as reasonable.
 [*.fs]
+max_line_length=140
 fsharp_newline_between_type_definition_and_members=true
+fsharp_max_function_binding_width=40
+fsharp_max_if_then_else_short_width=60
+fsharp_max_infix_operator_expression=80
+fsharp_max_array_or_list_width=80
+fsharp_max_array_or_list_number_of_items=5
+fsharp_max_dot_get_expression_width=80
+fsharp_multiline_block_brackets_on_same_column=true
+fsharp_keep_max_number_of_blank_lines=1
 
 [*.fsi]
 fsharp_newline_between_type_definition_and_members=true
+fsharp_keep_max_number_of_blank_lines=1
+
+# These files contains many imperative if-then expressions which are not clearer on one line
+# Reducing fsharp_max_if_then_else_short_width back to its default formats these over multiple lines.
+[src/FSharp.Build/*.fs]
+fsharp_max_if_then_else_short_width=40
+
+# This file contains a long list of one-line function definitions. Increasing
+# fsharp_max_function_binding_width formats these over a single line.
+[src/Compiler/Driver/CompilerDiagnostics.fs]
+fsharp_max_function_binding_width=70
+
+# This file contains long specifications of navigation items
+[src/Compiler/Service/ServiceStructure.fs]
+fsharp_max_value_binding_width=100
+
+# This file contains long specifications of navigation items
+[src/Compiler/Service/ServiceNavigation.fs]
+max_line_length=170
+fsharp_max_value_binding_width=120
+
+# This file contains long calls with explicitly named arguments
+[src/Compiler/Service/service.fs]
+max_line_length=150
+fsharp_max_value_binding_width=100

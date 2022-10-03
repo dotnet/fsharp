@@ -24,14 +24,15 @@ type OverrideCanImplement =
 /// The overall information about a method implementation in a class or object expression
 type OverrideInfo =
     | Override of
-        OverrideCanImplement *
-        TyconRef *
-        Ident *
-        (Typars * TyparInst) *
-        TType list list *
-        TType option *
-        bool *
-        bool
+        canImplement: OverrideCanImplement *
+        boundingTyconRef: TyconRef *
+        id: Ident *
+        methTypars: Typars *
+        memberToParentInstantiation: TyparInstantiation *
+        argTypes: TType list list *
+        returnType: TType option *
+        isFakeEventProperty: bool *
+        isCompilerGenerated: bool
 
     member ArgTypes: TType list list
 
@@ -50,8 +51,8 @@ type OverrideInfo =
     member ReturnType: TType option
 
 type RequiredSlot =
-    | RequiredSlot of MethInfo * isOptional: bool
-    | DefaultInterfaceImplementationSlot of MethInfo * isOptional: bool * possiblyNoMostSpecific: bool
+    | RequiredSlot of methodInfo: MethInfo * isOptional: bool
+    | DefaultInterfaceImplementationSlot of methodInfo: MethInfo * isOptional: bool * possiblyNoMostSpecific: bool
 
     /// Indicates a slot which has a default interface implementation.
     /// A combination of this flag and the lack of IsOptional means the slot may have been reabstracted.
@@ -66,7 +67,12 @@ type RequiredSlot =
     /// A slot that *might* have ambiguity due to multiple inheritance; happens with default interface implementations.
     member PossiblyNoMostSpecificImplementation: bool
 
-type SlotImplSet = SlotImplSet of RequiredSlot list * NameMultiMap<RequiredSlot> * OverrideInfo list * PropInfo list
+type SlotImplSet =
+    | SlotImplSet of
+        dispatchSlots: RequiredSlot list *
+        dispatchSlotsKeyed: NameMultiMap<RequiredSlot> *
+        availablePriorOverrides: OverrideInfo list *
+        requiredProperties: PropInfo list
 
 exception TypeIsImplicitlyAbstract of range
 
@@ -83,7 +89,7 @@ module DispatchSlotChecking =
     val GetObjectExprOverrideInfo:
         g: TcGlobals ->
         amap: ImportMap ->
-        implty: TType *
+        implTy: TType *
         id: Ident *
         memberFlags: SynMemberFlags *
         ty: TType *
@@ -133,9 +139,13 @@ module DispatchSlotChecking =
 
 /// "Type Completion" inference and a few other checks at the end of the inference scope
 val FinalTypeDefinitionChecksAtEndOfInferenceScope:
-    infoReader: InfoReader * nenv: NameResolutionEnv * sink: TcResultsSink * isImplementation: bool * denv: DisplayEnv ->
-        tycon: Tycon ->
-            unit
+    infoReader: InfoReader *
+    nenv: NameResolutionEnv *
+    sink: TcResultsSink *
+    isImplementation: bool *
+    denv: DisplayEnv *
+    tycon: Tycon ->
+        unit
 
 /// Get the methods relevant to determining if a uniquely-identified-override exists based on the syntactic information
 /// at the member signature prior to type inference. This is used to pre-assign type information if it does
@@ -145,7 +155,8 @@ val GetAbstractMethInfosForSynMethodDecl:
     memberName: Ident *
     bindm: range *
     typToSearchForAbstractMembers: (TType * SlotImplSet option) *
-    valSynData: SynValInfo ->
+    valSynData: SynValInfo *
+    memberFlags: SynMemberFlags ->
         MethInfo list * MethInfo list
 
 /// Get the properties relevant to determining if a uniquely-identified-override exists based on the syntactic information
@@ -155,7 +166,5 @@ val GetAbstractPropInfosForSynPropertyDecl:
     ad: AccessorDomain *
     memberName: Ident *
     bindm: range *
-    typToSearchForAbstractMembers: (TType * SlotImplSet option) *
-    _k: 'a *
-    _valSynData: 'b ->
+    typToSearchForAbstractMembers: (TType * SlotImplSet option) ->
         PropInfo list

@@ -85,26 +85,6 @@ match 1, 2 with
 #if !NETCOREAPP
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
-let ``Union case 01 - Missing field`` () =
-    let _, checkResults = getParseAndCheckResults """
-type U =
-    | A
-    | B of int * int * int
-
-match A with
-| B (x, _) -> let y = x + 1 in ()
-"""
-    assertHasSymbolUsages ["x"; "y"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
-        "(7,2--7,10): This union case expects 3 arguments in tupled form"        
-        "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
-    ]
-
-
-[<Test>]
-#if !NETCOREAPP
-[<Ignore("These tests weren't running on desktop and this test fails")>]
-#endif
 let ``Union case 02 - Extra args`` () =
     let _, checkResults = getParseAndCheckResults """
 type U =
@@ -197,47 +177,6 @@ match A with
         "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
     ]
 
-
-[<Test>]
-#if !NETCOREAPP
-[<Ignore("These tests weren't running on desktop and this test fails")>]
-#endif
-let ``Union case 07 - Named args - Name used twice`` () =
-    let _, checkResults = getParseAndCheckResults """
-type U =
-    | A
-    | B of field: int * int
-
-match A with
-| B (field = x; field = z) -> let y = x + z + 1 in ()
-"""
-    assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
-        "(7,16--7,21): Union case/exception field 'field' cannot be used more than once."
-        "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
-    ]
-
-
-[<Test>]
-#if !NETCOREAPP
-[<Ignore("These tests weren't running on desktop and this test fails")>]
-#endif
-let ``Union case 08 - Multiple tupled args`` () =
-    let _, checkResults = getParseAndCheckResults """
-type U =
-    | A
-    | B of field: int * int
-
-match A with
-| B x z -> let y = x + z + 1 in ()
-"""
-    assertHasSymbolUsages ["x"; "y"; "z"] checkResults
-    dumpDiagnostics checkResults |> shouldEqual [
-        "(7,2--7,7): This union case expects 2 arguments in tupled form"
-        "(6,6--6,7): Incomplete pattern matches on this expression. For example, the value 'A' may indicate a case not covered by the pattern(s)."
-    ]
-
-
 [<Test>]
 let ``Union case 09 - Single arg`` () =
     let _, checkResults = getParseAndCheckResults """
@@ -248,7 +187,6 @@ match None with
     assertHasSymbolUsages ["x"; "y"; "z"] checkResults
     dumpDiagnostics checkResults |> shouldEqual [
     ]
-
 
 [<Test>]
 #if !NETCOREAPP
@@ -370,7 +308,7 @@ match A with
     
 [<Test>]
 let ``As 01 - names and wildcards`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 match 1 with
 | _ as w -> let x = w + 1 in ()
 
@@ -389,7 +327,7 @@ match 3 with
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 02 - type testing`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let (|Id|) = id
 match box 1 with
 | :? int as a -> let b = a + 1 in ()
@@ -414,7 +352,7 @@ match box 1 with
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 03 - impossible type testing`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 match Unchecked.defaultof<System.ValueType> with
 | :? System.Enum as (:? System.ConsoleKey as a) -> let b = a + enum 1 in ()
 | :? System.Enum as (:? System.ConsoleKey as c) -> let d = c + enum 1 in ()
@@ -432,7 +370,7 @@ match Unchecked.defaultof<System.ValueType> with
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 04 - duplicate type testing`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 match Unchecked.defaultof<System.ValueType> with
 | :? System.Enum as (a & b) -> let c = a = b in ()
 | :? System.Enum as (:? System.ConsoleKey as (d & e)) -> let f = d + e + enum 1 in ()
@@ -448,7 +386,7 @@ match Unchecked.defaultof<System.ValueType> with
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 05 - inferred type testing`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 match Unchecked.defaultof<obj> with
 | :? _ as a -> let _ = a in ()
 
@@ -463,7 +401,7 @@ match Unchecked.defaultof<int> with
 
 [<Test>]
 let ``As 06 - completeness`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 match Unchecked.defaultof<bool> with
 | true as a -> if a then ()
 | b as false -> if not b then ()
@@ -532,7 +470,7 @@ parenPattern:
   | parenPattern COLON_COLON  parenPattern
   | constrPattern
     *)
-    let _, checkResults = getParseAndCheckResultsPreview $"""
+    let _, checkResults = getParseAndCheckResults70 $"""
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Id0|) = ignore
 let (|Id1|) = id
@@ -563,7 +501,7 @@ Some v |> eq<struct(int * int)>
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 08 - syntactical precedence matrix testing right - partial patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
 let (|Unit2|_|) _ = (|Unit1|_|)
@@ -623,7 +561,7 @@ Some w |> eq<obj>
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 09 - syntactical precedence matrix testing right - erroneous patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let (|DefinedPattern|) = id
 let a as 1 = true
 let b as true = 2
@@ -667,7 +605,7 @@ let z as
 
 [<Test>]
 let ``As 10 - syntactical precedence matrix testing left - total patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview $"""
+    let _, checkResults = getParseAndCheckResults70 $"""
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Id0|) = ignore
 let (|Id1|) = id
@@ -699,7 +637,7 @@ Some x |> eq<struct(int * int)>
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 11 - syntactical precedence matrix testing left - partial patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
 let (|Unit2|_|) _ = (|Unit1|_|)
@@ -759,7 +697,7 @@ Some w |> eq<obj>
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 12 - syntactical precedence matrix testing left - erroneous patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let (|DefinedPattern|) = id
 let 1 as a = true
 let true as b = 2
@@ -781,6 +719,7 @@ let z as =
 """
     dumpDiagnostics checkResults |> shouldEqual [
         "(10,7--10,9): Unexpected keyword 'as' in binding"
+        "(10,5--10,6): Expecting pattern"
         "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token."
         "(12,9--12,11): Unexpected keyword 'as' in binding"
         "(13,8--13,10): Unexpected keyword 'as' in binding"
@@ -801,6 +740,7 @@ let z as =
         "(6,4--6,10): This runtime coercion or type test from type 'a to int involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
         "(8,29--8,30): This expression was expected to have type 'unit' but here has type 'int'"
         "(9,26--9,27): This expression was expected to have type 'unit' but here has type 'int'"
+        "(10,14--10,15): This expression was expected to have type ''a * 'b' but here has type 'int'"
         "(15,4--15,5): The pattern discriminator 'r' is not defined."
         "(15,4--15,12): Incomplete pattern matches on this expression."
     ]
@@ -810,7 +750,7 @@ let z as =
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 13 - syntactical precedence matrix testing right with type tests - total patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview $"""
+    let _, checkResults = getParseAndCheckResults70 $"""
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Id0|) = ignore
 let (|Id1|) = id
@@ -874,7 +814,7 @@ Some x |> eq<obj>
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 14 - syntactical precedence matrix testing right with type tests - partial patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
 let (|Unit2|_|) _ = (|Unit1|_|)
@@ -953,7 +893,7 @@ Some w |> eq<obj>
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 15 - syntactical precedence matrix testing right with type tests - erroneous patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let (|DefinedPattern|) = id
 let :? a as 1 = true
 let :? b as true = 2
@@ -1010,7 +950,7 @@ let :? z as
 #endif
 let ``As 16 - syntactical precedence matrix testing left with type tests - total patterns`` () =
     let validSet = set { 'a'..'x' } - set [ 'p'; 'q' ] |> Set.map string
-    let _, checkResults = getParseAndCheckResultsPreview $"""
+    let _, checkResults = getParseAndCheckResults70 $"""
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Id0|) = ignore
 let (|Id1|) = id
@@ -1066,7 +1006,7 @@ Some "" |> eq<int> // No more type checks after the above line?
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 17 - syntactical precedence matrix testing left with type tests - partial patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let eq<'T> (x:'T option) = () // FS-1093-safe type assert function
 let (|Unit1|_|) x = if System.Random().NextDouble() < 0.5 then Some Unit1 else None
 let (|Unit2|_|) _ = (|Unit1|_|)
@@ -1160,7 +1100,7 @@ Some "" |> eq<int>
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 18 - syntactical precedence matrix testing left with type tests - erroneous patterns`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 let (|DefinedPattern|) = id
 let 1 as :? a = true
 let true as :? b = 2
@@ -1182,6 +1122,7 @@ let as :? z =
 """
     dumpDiagnostics checkResults |> shouldEqual [
         "(10,7--10,9): Unexpected keyword 'as' in binding"
+        "(10,5--10,6): Expecting pattern"
         "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token."
         "(12,9--12,11): Unexpected keyword 'as' in binding"
         "(13,8--13,10): Unexpected keyword 'as' in binding"
@@ -1209,6 +1150,8 @@ let as :? z =
         "(8,25--8,29): The type 'unit' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
         "(9,25--9,26): The type 'g' is not defined."
         "(9,22--9,26): The type 'unit' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
+        "(10,13--10,14): The type 'i' is not defined."
+        "(10,10--10,14): The type ''a * 'b' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
         "(16,4--16,5): The pattern discriminator 't' is not defined."
         "(16,14--16,15): The type 'u' is not defined."
         "(16,11--16,15): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
@@ -1219,7 +1162,7 @@ let as :? z =
 [<Ignore("These tests weren't running on desktop and this test fails")>]
 #endif
 let ``As 19 - syntactical precedence matrix testing - valid syntactic patterns that cause type errors later`` () =
-    let _, checkResults = getParseAndCheckResultsPreview """
+    let _, checkResults = getParseAndCheckResults70 """
 type I() = inherit System.Attribute()
 type M() = inherit I()
 let 'a'..'b' as c = 'd'

@@ -184,12 +184,20 @@ let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAtt
 // Table of all these "globals"
 //-------------------------------------------------------------------------
 
-type public TcGlobals(compilingFSharpCore: bool, ilg:ILGlobals, fslibCcu: CcuThunk, directoryToResolveRelativePaths,
-                      mlCompatibility: bool, isInteractive:bool,
-                      // The helper to find system types amongst referenced DLLs
-                      tryFindSysTypeCcu,
-                      emitDebugInfoInQuotations: bool, noDebugAttributes: bool,
-                      pathMap: PathMap, langVersion: LanguageVersion) =
+type TcGlobals(
+    compilingFSharpCore: bool,
+    ilg: ILGlobals,
+    fslibCcu: CcuThunk,
+    directoryToResolveRelativePaths,
+    mlCompatibility: bool,
+    isInteractive: bool,
+    useReflectionFreeCodeGen: bool,
+    // The helper to find system types amongst referenced DLLs
+    tryFindSysTypeCcu,
+    emitDebugInfoInQuotations: bool,
+    noDebugAttributes: bool,
+    pathMap: PathMap,
+    langVersion: LanguageVersion) =
 
   let vara = Construct.NewRigidTypar "a" envRange
   let varb = Construct.NewRigidTypar "b" envRange
@@ -557,8 +565,8 @@ type public TcGlobals(compilingFSharpCore: bool, ilg:ILGlobals, fslibCcu: CcuThu
 
   let tryDecodeTupleTy tupInfo l =
       match l with
-      | [t1;t2;t3;t4;t5;t6;t7;marker] ->
-          match marker with
+      | [t1;t2;t3;t4;t5;t6;t7;markerTy] ->
+          match markerTy with
           | TType_app(tcref, [t8], _) when tyconRefEq tcref v_ref_tuple1_tcr -> mkRawRefTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
           | TType_app(tcref, [t8], _) when tyconRefEq tcref v_struct_tuple1_tcr -> mkRawStructTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
           | TType_tuple (_structness2, t8plus) -> TType_tuple (tupInfo, [t1;t2;t3;t4;t5;t6;t7] @ t8plus) |> Some
@@ -976,9 +984,12 @@ type public TcGlobals(compilingFSharpCore: bool, ilg:ILGlobals, fslibCcu: CcuThu
         tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
         tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
         tryFindSysAttrib "System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
+        tryFindSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
                               ] |> List.choose (Option.map (fun x -> x.TyconRef))
 
-  override x.ToString() = "<TcGlobals>"
+  override _.ToString() = "<TcGlobals>"
 
   member _.ilg = ilg
 
@@ -991,78 +1002,153 @@ type public TcGlobals(compilingFSharpCore: bool, ilg:ILGlobals, fslibCcu: CcuThu
   // A table of known modules in FSharp.Core. Not all modules are necessarily listed, but the more we list the
   // better the job we do of mapping from provided expressions back to FSharp.Core F# functions and values.
   member _.knownFSharpCoreModules = v_knownFSharpCoreModules
+
   member _.compilingFSharpCore = compilingFSharpCore
+
+  member _.useReflectionFreeCodeGen = useReflectionFreeCodeGen
+
   member _.mlCompatibility = mlCompatibility
+
   member _.emitDebugInfoInQuotations = emitDebugInfoInQuotations
+
   member _.directoryToResolveRelativePaths = directoryToResolveRelativePaths
+
   member _.pathMap = pathMap
+
   member _.langVersion = langVersion
+
   member _.unionCaseRefEq x y = primUnionCaseRefEq compilingFSharpCore fslibCcu x y
+
   member _.valRefEq x y = primValRefEq compilingFSharpCore fslibCcu x y
+
   member _.fslibCcu = fslibCcu
+
   member val refcell_tcr_canon = v_refcell_tcr_canon
+
   member val option_tcr_canon = mk_MFCore_tcref     fslibCcu "Option`1"
+
   member val valueoption_tcr_canon = mk_MFCore_tcref     fslibCcu "ValueOption`1"
+
   member _.list_tcr_canon = v_list_tcr_canon
+
   member val set_tcr_canon = mk_MFCollections_tcref   fslibCcu "Set`1"
+
   member val map_tcr_canon = mk_MFCollections_tcref   fslibCcu "Map`2"
+
   member _.lazy_tcr_canon = lazy_tcr
+
   member val refcell_tcr_nice = v_refcell_tcr_nice
+
   member val array_tcr_nice = v_il_arr_tcr_map[0]
+
   member _.option_tcr_nice = v_option_tcr_nice
+
   member _.valueoption_tcr_nice = v_valueoption_tcr_nice
+
   member _.list_tcr_nice = v_list_tcr_nice
+
   member _.lazy_tcr_nice = v_lazy_tcr_nice
+
   member _.format_tcr = v_format_tcr
+
   member _.expr_tcr = v_expr_tcr
+
   member _.raw_expr_tcr = v_raw_expr_tcr
+
   member _.nativeint_tcr = v_nativeint_tcr
+
   member _.unativeint_tcr = v_unativeint_tcr
+
   member _.int_tcr = v_int_tcr
+
   member _.int32_tcr = v_int32_tcr
+
   member _.int16_tcr = v_int16_tcr
+
   member _.int64_tcr = v_int64_tcr
+
   member _.uint16_tcr = v_uint16_tcr
+
   member _.uint32_tcr = v_uint32_tcr
+
   member _.uint64_tcr = v_uint64_tcr
+
   member _.sbyte_tcr = v_sbyte_tcr
+
   member _.decimal_tcr = v_decimal_tcr
+
   member _.date_tcr = v_date_tcr
+
   member _.pdecimal_tcr = v_pdecimal_tcr
+
   member _.byte_tcr = v_byte_tcr
+
   member _.bool_tcr = v_bool_tcr
+
   member _.unit_tcr_canon = v_unit_tcr_canon
+
   member _.unit_tcr_nice = v_unit_tcr_nice
+
   member _.exn_tcr = v_exn_tcr
+
   member _.char_tcr = v_char_tcr
+
   member _.float_tcr = v_float_tcr
+
   member _.float32_tcr = v_float32_tcr
+
   member _.pfloat_tcr = v_pfloat_tcr
+
   member _.pfloat32_tcr = v_pfloat32_tcr
+
   member _.pint_tcr = v_pint_tcr
+
   member _.pint8_tcr = v_pint8_tcr
+
   member _.pint16_tcr = v_pint16_tcr
+
   member _.pint64_tcr = v_pint64_tcr
+
   member _.pnativeint_tcr = v_pnativeint_tcr
+
   member _.puint_tcr = v_puint_tcr
+
   member _.puint8_tcr = v_puint8_tcr
+
   member _.puint16_tcr = v_puint16_tcr
+
   member _.puint64_tcr = v_puint64_tcr
+
   member _.punativeint_tcr = v_punativeint_tcr
+
   member _.byref_tcr = v_byref_tcr
+
   member _.byref2_tcr = v_byref2_tcr
+
   member _.outref_tcr = v_outref_tcr
+
   member _.inref_tcr = v_inref_tcr
+
   member _.nativeptr_tcr = v_nativeptr_tcr
+
   member _.voidptr_tcr = v_voidptr_tcr
+
   member _.ilsigptr_tcr = v_ilsigptr_tcr
+
   member _.fastFunc_tcr = v_fastFunc_tcr
+
   member _.MatchFailureException_tcr = v_mfe_tcr
+
   member _.tcref_IQueryable = v_tcref_IQueryable
+
   member _.tcref_IObservable = v_tcref_IObservable
+
   member _.tcref_IObserver = v_tcref_IObserver
+
   member _.fslib_IEvent2_tcr = v_fslib_IEvent2_tcr
+
   member _.fslib_IDelegateEvent_tcr = v_fslib_IDelegateEvent_tcr
+
   member _.seq_tcr = v_seq_tcr
 
   member val seq_base_tcr = mk_MFCompilerServices_tcref fslibCcu "GeneratedSequenceBase`1"
@@ -1345,6 +1431,9 @@ type public TcGlobals(compilingFSharpCore: bool, ilg:ILGlobals, fslibCcu: CcuThu
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
   member val attrib_ComponentModelEditorBrowsableAttribute = findSysAttrib "System.ComponentModel.EditorBrowsableAttribute"
+  member val attrib_CompilerFeatureRequiredAttribute       = findSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
+  member val attrib_SetsRequiredMembersAttribute           = findSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
+  member val attrib_RequiredMemberAttribute                = findSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst
 
@@ -1641,18 +1730,15 @@ type public TcGlobals(compilingFSharpCore: bool, ilg:ILGlobals, fslibCcu: CcuThu
 
   member _.TryFindSysAttrib nm = tryFindSysAttrib nm
 
-  member val ilxPubCloEnv =
-      EraseClosures.newIlxPubCloEnv(ilg, addMethodGeneratedAttrs, addFieldGeneratedAttrs, addFieldNeverAttrs)
-
   member _.AddMethodGeneratedAttributes mdef = addMethodGeneratedAttrs mdef
 
-  member _.AddPropertyGeneratedAttrs mdef = addPropertyGeneratedAttrs mdef
+  member _.AddPropertyGeneratedAttributes mdef = addPropertyGeneratedAttrs mdef
 
-  member _.AddFieldGeneratedAttrs mdef = addFieldGeneratedAttrs mdef
+  member _.AddFieldGeneratedAttributes mdef = addFieldGeneratedAttrs mdef
 
-  member _.AddPropertyNeverAttrs mdef = addPropertyNeverAttrs mdef
+  member _.AddPropertyNeverAttributes mdef = addPropertyNeverAttrs mdef
 
-  member _.AddFieldNeverAttrs mdef = addFieldNeverAttrs mdef
+  member _.AddFieldNeverAttributes mdef = addFieldNeverAttrs mdef
 
   member _.MkDebuggerTypeProxyAttribute ty = mkDebuggerTypeProxyAttribute ty
 
@@ -1666,11 +1752,10 @@ type public TcGlobals(compilingFSharpCore: bool, ilg:ILGlobals, fslibCcu: CcuThu
   member _.mkDebuggableAttribute jitOptimizerDisabled =
       mkILCustomAttribute (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
 
-  member _.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
+  member _.mkDebuggableAttributeV2(jitTracking, jitOptimizerDisabled, enableEnC) =
         let debuggingMode =
             (if jitTracking then 1 else 0) |||
             (if jitOptimizerDisabled then 256 else 0) |||
-            (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
             (if enableEnC then 4 else 0)
         let tref_DebuggableAttribute_DebuggingModes = mkILTyRefInTyRef (tref_DebuggableAttribute, tname_DebuggableAttribute_DebuggingModes)
         mkILCustomAttribute
@@ -1682,6 +1767,8 @@ type public TcGlobals(compilingFSharpCore: bool, ilg:ILGlobals, fslibCcu: CcuThu
 
   member _.CompilerGeneratedAttribute = mkCompilerGeneratedAttribute ()
 
+  member _.DebuggerNonUserCodeAttribute = mkDebuggerNonUserCodeAttribute ()
+
   member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
       mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])
 
@@ -1689,20 +1776,21 @@ type public TcGlobals(compilingFSharpCore: bool, ilg:ILGlobals, fslibCcu: CcuThu
   /// AdditionDynamic for op_Addition.  Also work out the type instantiation of the dynamic function.
   member _.MakeBuiltInWitnessInfo (t: TraitConstraintInfo) =
       let memberName =
-          let nm = t.MemberName
+          let nm = t.MemberLogicalName
           let coreName =
               if nm.StartsWith "op_" then nm[3..]
               elif nm = "get_Zero" then "GenericZero"
               elif nm = "get_One" then "GenericOne"
               else nm
           coreName + "Dynamic"
+
       let gtps, argTys, retTy, tinst =
-          match memberName, t.ArgumentTypes, t.ReturnType with
+          match memberName, t.CompiledObjectAndArgumentTypes, t.CompiledReturnType with
           | ("AdditionDynamic" | "MultiplyDynamic" | "SubtractionDynamic"| "DivisionDynamic" | "ModulusDynamic" | "CheckedAdditionDynamic" | "CheckedMultiplyDynamic" | "CheckedSubtractionDynamic" | "LeftShiftDynamic" | "RightShiftDynamic" | "BitwiseAndDynamic" | "BitwiseOrDynamic" | "ExclusiveOrDynamic" | "LessThanDynamic" | "GreaterThanDynamic" | "LessThanOrEqualDynamic" | "GreaterThanOrEqualDynamic" | "EqualityDynamic" | "InequalityDynamic"),
             [ arg0Ty; arg1Ty ],
             Some retTy ->
                [vara; varb; varc], [ varaTy; varbTy ], varcTy, [ arg0Ty; arg1Ty; retTy ]
-          | ("UnaryNegationDynamic" | "CheckedUnaryNegationDynamic" | "LogicalNotDynamic" | "ExplicitDynamic"),
+          | ("UnaryNegationDynamic" | "CheckedUnaryNegationDynamic" | "LogicalNotDynamic" | "ExplicitDynamic" | "CheckedExplicitDynamic"),
             [ arg0Ty ],
             Some retTy ->
                [vara; varb ], [ varaTy ], varbTy, [ arg0Ty; retTy ]
@@ -1711,13 +1799,14 @@ type public TcGlobals(compilingFSharpCore: bool, ilg:ILGlobals, fslibCcu: CcuThu
           | ("GenericZeroDynamic" | "GenericOneDynamic"), [], Some retTy ->
                [vara], [ ], varaTy, [ retTy ]
           | _ -> failwithf "unknown builtin witness '%s'" memberName
+
       let vref = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, memberName, None, None, gtps, (List.map List.singleton argTys, retTy))
       vref, tinst
 
   /// Find an FSharp.Core operator that corresponds to a trait witness
   member g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy (t: TraitConstraintInfo) argExprs =
 
-    match t.MemberName, t.ArgumentTypes, t.ReturnType, argExprs with
+    match t.MemberLogicalName, t.CompiledObjectAndArgumentTypes, t.CompiledReturnType, argExprs with
     | "get_Sign", [aty], _, objExpr :: _ ->
         // Call Operators.sign
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "sign", None, Some "Sign", [vara], ([[varaTy]], v_int32_ty))
@@ -1750,16 +1839,16 @@ type public TcGlobals(compilingFSharpCore: bool, ilg:ILGlobals, fslibCcu: CcuThu
         Some (info, tyargs, [])
     | ("Abs" | "Sin" | "Cos" | "Tan" | "Sinh" | "Cosh" | "Tanh" | "Atan" | "Acos" | "Asin" | "Exp" | "Ceiling" | "Floor" | "Round" | "Truncate" | "Log10"| "Log"), [aty], _, [_] ->
         // Call corresponding Operators.*
-        let nm = t.MemberName
+        let nm = t.MemberLogicalName
         let lower = if nm = "Ceiling" then "ceil" else nm.ToLowerInvariant()
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, lower, None, Some nm, [vara], ([[varaTy]], varaTy))
         let tyargs = [aty]
         Some (info, tyargs, argExprs)
-    | "get_Item", [arrTy; _], Some rty, [_; _] when isArrayTy g arrTy ->
-        Some (g.array_get_info, [rty], argExprs)
-    | "set_Item", [arrTy; _; ety], _, [_; _; _] when isArrayTy g arrTy ->
-        Some (g.array_set_info, [ety], argExprs)
-    | "get_Item", [sty; _; _], _, [_; _] when isStringTy g sty ->
+    | "get_Item", [arrTy; _], Some retTy, [_; _] when isArrayTy g arrTy ->
+        Some (g.array_get_info, [retTy], argExprs)
+    | "set_Item", [arrTy; _; elemTy], _, [_; _; _] when isArrayTy g arrTy ->
+        Some (g.array_set_info, [elemTy], argExprs)
+    | "get_Item", [stringTy; _; _], _, [_; _] when isStringTy g stringTy ->
         Some (g.getstring_info, [], argExprs)
     | "op_UnaryPlus", [aty], _, [_] ->
         // Call Operators.id

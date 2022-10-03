@@ -3,7 +3,7 @@
 module internal FSharp.Compiler.CheckDeclarations
 
 open Internal.Utilities.Library
-open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Import
@@ -44,11 +44,11 @@ val CombineTopAttrs: TopAttribs -> TopAttribs -> TopAttribs
 val TcOpenModuleOrNamespaceDecl:
     TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> LongIdent * range -> TcEnv * OpenDeclaration list
 
-val AddLocalSubModule: g: TcGlobals -> amap: ImportMap -> m: range -> env: TcEnv -> modul: ModuleOrNamespace -> TcEnv
+val AddLocalSubModule:
+    g: TcGlobals -> amap: ImportMap -> m: range -> env: TcEnv -> moduleEntity: ModuleOrNamespace -> TcEnv
 
 val CheckOneImplFile:
     TcGlobals *
-    NiceNameGenerator *
     ImportMap *
     CcuThunk *
     OpenDeclaration list *
@@ -59,21 +59,14 @@ val CheckOneImplFile:
     TcEnv *
     ModuleOrNamespaceType option *
     ParsedImplFileInput ->
-        Cancellable<TopAttribs * TypedImplFile * ModuleOrNamespaceType * TcEnv * bool>
+        Cancellable<TopAttribs * CheckedImplFile * TcEnv * bool>
 
 val CheckOneSigFile:
-    TcGlobals *
-    NiceNameGenerator *
-    ImportMap *
-    CcuThunk *
-    (unit -> bool) *
-    ConditionalDefines option *
-    TcResultsSink *
-    bool ->
+    TcGlobals * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines option * TcResultsSink * bool ->
         TcEnv ->
         ParsedSigFileInput ->
             Cancellable<TcEnv * ModuleOrNamespaceType * bool>
 
-exception ParameterlessStructCtor of range: range
-
 exception NotUpperCaseConstructor of range: range
+
+exception NotUpperCaseConstructorWithoutRQA of range: range

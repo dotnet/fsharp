@@ -39,7 +39,7 @@ type ToolTipElementData =
       Remarks: TaggedText[] option
       ParamName : string option }
 
-    static member Create(layout, xml, ?typeMapping, ?paramName, ?remarks) = 
+    static member internal Create(layout, xml, ?typeMapping, ?paramName, ?remarks) = 
         { MainDescription=layout; XmlDoc=xml; TypeMapping=defaultArg typeMapping []; ParamName=paramName; Remarks=remarks }
 
 /// A single data tip display element
@@ -100,7 +100,7 @@ module DeclarationListHelpers =
         
         let layouts = 
             [ for minfo in minfos -> 
-                let prettyTyparInst, layout = NicePrint.prettyLayoutOfMethInfoFreeStyle infoReader m denv item.TyparInst minfo
+                let prettyTyparInst, layout = NicePrint.prettyLayoutOfMethInfoFreeStyle infoReader m denv item.TyparInstantiation minfo
                 let xml = GetXmlCommentForMethInfoItem infoReader m item.Item minfo
                 let tpsL = FormatTyparMapping denv prettyTyparInst
                 let layout = toArray layout
@@ -153,12 +153,12 @@ module DeclarationListHelpers =
         let denv = SimplerDisplayEnv denv 
         let xml = GetXmlCommentForItem infoReader m item.Item
         match item.Item with
-        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) -> 
+        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(vref=vref)) }) -> 
             // operator with solution
             FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv { item with Item = Item.Value vref }
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
-            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv infoReader item.TyparInst vref
+            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv infoReader item.TyparInstantiation vref
             let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout vref
             let tpsL = FormatTyparMapping denv prettyTyparInst
             let tpsL = List.map toArray tpsL
@@ -175,7 +175,7 @@ module DeclarationListHelpers =
                 wordL (tagText (FSComp.SR.typeInfoUnionCase())) ^^
                 NicePrint.layoutTyconRef denv ucinfo.TyconRef ^^
                 sepL (tagPunctuation ".") ^^
-                wordL (tagUnionCase (DecompileOpName uc.Id.idText) |> mkNav uc.DefinitionRange) ^^
+                wordL (tagUnionCase (ConvertValLogicalNameToDisplayNameCore uc.Id.idText) |> mkNav uc.DefinitionRange) ^^
                 RightL.colon ^^
                 (if List.isEmpty recd then emptyL else NicePrint.layoutUnionCases denv infoReader ucinfo.TyconRef recd ^^ WordL.arrow) ^^
                 NicePrint.layoutType denv unionTy
@@ -196,16 +196,15 @@ module DeclarationListHelpers =
         // Active pattern tags 
         | Item.ActivePatternCase apref -> 
             let v = apref.ActivePatternVal
-            // Format the type parameters to get e.g. ('a -> 'a) rather than ('?1234 -> '?1234)
-            let tau = v.TauType
+            let vTauTy = v.TauType
             // REVIEW: use _cxs here
-            let (prettyTyparInst, ptau), _cxs = PrettyTypes.PrettifyInstAndType denv.g (item.TyparInst, tau)
+            let (prettyTyparInst, prettyTy), _cxs = PrettyTypes.PrettifyInstAndType denv.g (item.TyparInstantiation, vTauTy)
             let remarks = OutputFullName displayFullName pubpathOfValRef fullDisplayTextOfValRefAsLayout v
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
-                wordL (tagActivePatternCase apref.Name |> mkNav v.DefinitionRange) ^^
+                wordL (tagActivePatternCase apref.DisplayName |> mkNav v.DefinitionRange) ^^
                 RightL.colon ^^
-                NicePrint.layoutType denv ptau
+                NicePrint.layoutType denv prettyTy
 
             let tpsL = FormatTyparMapping denv prettyTyparInst
 
@@ -224,14 +223,14 @@ module DeclarationListHelpers =
 
         | Item.RecdField rfinfo when rfinfo.TyconRef.IsFSharpException ->
             let ty, _ = PrettyTypes.PrettifyType g rfinfo.FieldType
-            let id = rfinfo.RecdField.Id
+            let id = rfinfo.DisplayName
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
-                wordL (tagParameter id.idText) ^^
+                wordL (tagParameter id) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv ty
             let layout = toArray layout
-            ToolTipElement.Single (layout, xml, paramName = id.idText)
+            ToolTipElement.Single (layout, xml, paramName = id)
 
         // F# record field names
         | Item.RecdField rfinfo ->
@@ -292,7 +291,7 @@ module DeclarationListHelpers =
 
         // .NET events
         | Item.Event einfo ->
-            let eventTy = PropTypOfEventInfo infoReader m AccessibleFromSomewhere einfo
+            let eventTy = PropTypeOfEventInfo infoReader m AccessibleFromSomewhere einfo
             let eventTy, _cxs = PrettyTypes.PrettifyType g eventTy
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoEvent())) ^^
@@ -353,11 +352,11 @@ module DeclarationListHelpers =
            ToolTipElement.Single(layout, xml)
         
         // The 'fake' representation of constructors of .NET delegate types
-        | Item.DelegateCtor delty -> 
-           let delty, _cxs = PrettyTypes.PrettifyType g delty
-           let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
+        | Item.DelegateCtor delTy -> 
+           let delTy, _cxs = PrettyTypes.PrettifyType g delTy
+           let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delTy m AccessibleFromSomewhere
            let layout =
-               NicePrint.layoutTyconRef denv (tcrefOfAppTy g delty) ^^
+               NicePrint.layoutTyconRef denv (tcrefOfAppTy g delTy) ^^
                LeftL.leftParen ^^
                NicePrint.layoutType denv delFuncTy ^^
                RightL.rightParen
@@ -383,6 +382,12 @@ module DeclarationListHelpers =
         // Type variables
         | Item.TypeVar (_, typar) ->
             let layout = NicePrint.prettyLayoutOfTypar denv typar
+            ToolTipElement.Single (toArray layout, xml)
+
+        // Traits
+        | Item.Trait traitInfo ->
+            let denv = { denv with shortConstraints = false}
+            let layout = NicePrint.prettyLayoutOfTrait denv traitInfo
             ToolTipElement.Single (toArray layout, xml)
 
         // F# Modules and namespaces
@@ -430,7 +435,7 @@ module DeclarationListHelpers =
 
         | Item.AnonRecdField(anon, argTys, i, _) -> 
             let argTy = argTys[i]
-            let nm = anon.SortedNames[i]
+            let nm = anon.DisplayNameByIdx i
             let argTy, _ = PrettyTypes.PrettifyType g argTy
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoAnonRecdField())) ^^
@@ -441,7 +446,7 @@ module DeclarationListHelpers =
             ToolTipElement.Single (layout, FSharpXmlDoc.None)
             
         // Named parameters
-        | Item.ArgName (id, argTy, _) -> 
+        | Item.ArgName (Some id, argTy, _, _) -> 
             let argTy, _ = PrettyTypes.PrettifyType g argTy
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoArgument())) ^^
@@ -454,8 +459,44 @@ module DeclarationListHelpers =
         | Item.SetterArg (_, item) -> 
             FormatItemDescriptionToToolTipElement displayFullName infoReader ad m denv (ItemWithNoInst item)
 
-        |  _ -> 
-            ToolTipElement.None
+        | Item.ArgName (None, _, _, _)
+    
+        // TODO: give a decent tooltip for implicit operators that include the resolution of the operator
+        //
+        //type C() = 
+        //    static member (++++++) (x: C, y: C) = C()
+        //
+        //let f (x: C) =
+        //    x ++++++ x
+        //
+        // Here hovering over "++++++" in "f" could give a tooltip saying what the thing is and what it has resolved to.
+        //
+        //
+        | Item.ImplicitOp _ 
+
+        // TODO: consider why we aren't getting Item.Types for generic type parameters
+        //    let F<'T>() = new System.Collections.Generic.List<'T>()
+        | Item.Types (_, [TType_var _]) 
+
+        // TODO: consider why we aren't getting Item.Types for units of measure
+        | Item.Types (_, [TType_measure _]) 
+
+        // TODO: consider whether we ever get Item.Types with more than one element
+        | Item.Types (_, _ :: _ :: _) 
+
+        // We don't expect Item.Types with an anonymous record type, function types etc.
+        | Item.Types (_, [TType_anon _]) 
+        | Item.Types (_, [TType_fun _]) 
+        | Item.Types (_, [TType_forall _]) 
+        | Item.Types (_, [TType_tuple _]) 
+        | Item.Types (_, [TType_ucase _]) 
+
+        // We don't expect these cases
+        | Item.Types (_, []) 
+        | Item.Property (_, []) 
+        | Item.UnqualifiedType []
+        | Item.ModuleOrNamespaces []
+        | Item.CustomOperation (_, _, None) ->  ToolTipElement.None 
 
     /// Format the structured version of a tooltip for an item
     let FormatStructuredDescriptionOfItem isDecl infoReader ad m denv item = 
@@ -484,16 +525,16 @@ type MethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string,
 module internal DescriptionListsImpl = 
 
     let isFunction g ty =
-        let _, tau = tryDestForallTy g ty
-        isFunTy g tau 
+        let _, tauTy = tryDestForallTy g ty
+        isFunTy g tauTy 
    
-    let printCanonicalizedTypeName g (denv:DisplayEnv) tau =
+    let printCanonicalizedTypeName g (denv:DisplayEnv) tauTy =
         // get rid of F# abbreviations and such
-        let strippedType = stripTyEqnsWrtErasure EraseAll g tau
+        let strippedTy = stripTyEqnsWrtErasure EraseAll g tauTy
         // pretend no namespaces are open
         let denv = denv.SetOpenPaths([])
         // now printing will see a .NET-like canonical representation, that is good for sorting overloads into a reasonable order (see bug 94520)
-        NicePrint.stringOfTy denv strippedType
+        NicePrint.stringOfTy denv strippedTy
 
     let PrettyParamOfRecdField g denv (f: RecdField) =
         let display = NicePrint.prettyLayoutOfType denv f.FormalType
@@ -566,12 +607,12 @@ module internal DescriptionListsImpl =
 
         // Remake the params using the prettified versions
         let prettyParams = 
-          (paramInfo, prettyParamTys, prettyParamTysL) |||> List.map3 (fun (nm, isOptArg, paramPrefix) tau tyL -> 
+          (paramInfo, prettyParamTys, prettyParamTysL) |||> List.map3 (fun (nm, isOptArg, paramPrefix) tauTy tyL -> 
             let display = paramPrefix ^^ tyL
             let display = toArray display
             MethodGroupItemParameter(
               name = nm,
-              canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
+              canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tauTy,
               display = display,
               isOptional=isOptArg
             ))
@@ -587,11 +628,11 @@ module internal DescriptionListsImpl =
         // Remake the params using the prettified versions
         let parameters = 
             (prettyParamTys, prettyParamTysL)
-            ||> List.map2 (fun tau tyL ->
+            ||> List.map2 (fun paramTy tyL ->
                 let display = toArray tyL
                 MethodGroupItemParameter(
                     name = "",
-                    canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
+                    canonicalTypeTextForSorting = printCanonicalizedTypeName g denv paramTy,
                     display =  display,
                     isOptional=false
                 ))
@@ -635,17 +676,18 @@ module internal DescriptionListsImpl =
         let denv = { SimplerDisplayEnv denv with useColonForReturnType=true}
         match item.Item with
         | Item.Value vref -> 
+
             let getPrettyParamsOfTypes() = 
-                let tau = vref.TauType
-                match tryDestFunTy denv.g tau with
-                | ValueSome(arg, rtau) ->
+                let vTauTy = vref.TauType
+                match tryDestFunTy denv.g vTauTy with
+                | ValueSome(arg, retTy) ->
                     let args = tryDestRefTupleTy denv.g arg 
-                    let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfTypes g denv item.TyparInst args rtau
+                    let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfTypes g denv item.TyparInstantiation args retTy
                     // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
                     // for display as part of the method group
                     prettyParams, prettyRetTyL
                 | _ -> 
-                    let _prettyTyparInst, prettyTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] tau
+                    let _prettyTyparInst, prettyTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] vTauTy
                     [], prettyTyL
 
             match vref.ValReprInfo with
@@ -654,10 +696,10 @@ module internal DescriptionListsImpl =
                 // in this case use old approach and return only information about types
                 getPrettyParamsOfTypes ()
 
-            | Some valRefInfo ->
+            | Some valReprInfo ->
                 // ValReprInfo will exist for top-level syntactic functions
                 // per spec: binding is considered to define a syntactic function if it is either a function or its immediate right-hand-side is a anonymous function
-                let _, argInfos,  lastRetTy, _ = GetTopValTypeInFSharpForm  g valRefInfo vref.Type m
+                let _, argInfos,  lastRetTy, _ = GetValReprTypeInFSharpForm  g valReprInfo vref.Type m
                 match argInfos with
                 | [] -> 
                     // handles cases like 'let foo = List.map'
@@ -675,10 +717,10 @@ module internal DescriptionListsImpl =
                     // Adjust the return type so it only strips the first argument
                     let curriedRetTy = 
                         match tryDestFunTy denv.g vref.TauType with
-                        | ValueSome(_, rtau) -> rtau
+                        | ValueSome(_, retTy) -> retTy
                         | _ -> lastRetTy
 
-                    let _prettyTyparInst, prettyFirstCurriedParams, prettyCurriedRetTyL, prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst firstCurriedParamDatas curriedRetTy
+                    let _prettyTyparInst, prettyFirstCurriedParams, prettyCurriedRetTyL, prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInstantiation firstCurriedParamDatas curriedRetTy
                     
                     let prettyCurriedRetTyL = prettyCurriedRetTyL ^^ SepL.space ^^ prettyConstraintsL
 
@@ -695,45 +737,45 @@ module internal DescriptionListsImpl =
 
         | Item.ActivePatternCase(apref)   -> 
             let v = apref.ActivePatternVal 
-            let tau = v.TauType
-            let args, resTy = stripFunTy denv.g tau 
+            let vTauTy = v.TauType
+            let args, resTy = stripFunTy denv.g vTauTy 
 
             let apinfo = Option.get (TryGetActivePatternInfo v)
-            let aparity = apinfo.Names.Length
+            let aparity = apinfo.ActiveTags.Length
             
             let caseTy = if aparity <= 1 then resTy else (argsOfAppTy g resTy)[apref.CaseIndex]
 
-            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfTypes g denv item.TyparInst args caseTy
+            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfTypes g denv item.TyparInstantiation args caseTy
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
             // for display as part of the method group
             prettyParams, prettyRetTyL
 
         | Item.ExnCase ecref -> 
             let prettyParams = ecref |> recdFieldsOfExnDefRef |> List.mapi (PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedExceptionField) 
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] g.exn_ty
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] g.exn_ty
             prettyParams, prettyRetTyL
 
         | Item.RecdField rfinfo ->
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] rfinfo.FieldType
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] rfinfo.FieldType
             [], prettyRetTyL
 
         | Item.AnonRecdField(_anonInfo, tys, i, _) ->
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] tys[i]
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] tys[i]
             [], prettyRetTyL
 
         | Item.ILField finfo ->
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] (finfo.FieldType(amap, m))
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] (finfo.FieldType(amap, m))
             [], prettyRetTyL
 
         | Item.Event einfo ->
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] (PropTypOfEventInfo infoReader m AccessibleFromSomewhere einfo)
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] (PropTypeOfEventInfo infoReader m AccessibleFromSomewhere einfo)
             [], prettyRetTyL
 
         | Item.Property(_, pinfo :: _) -> 
             let paramDatas = pinfo.GetParamDatas(amap, m)
             let propTy = pinfo.GetPropertyType(amap, m) 
 
-            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas propTy
+            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInstantiation paramDatas propTy
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
             // for display as part of the method group
             prettyParams, prettyRetTyL
@@ -741,10 +783,18 @@ module internal DescriptionListsImpl =
         | Item.CtorGroup(_, minfo :: _) 
         | Item.MethodGroup(_, minfo :: _, _) -> 
             let paramDatas = minfo.GetParamDatas(amap, m, minfo.FormalMethodInst) |> List.head
-            let retTy = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
-            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas retTy
+            let retTy = minfo.GetFSharpReturnType(amap, m, minfo.FormalMethodInst)
+            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInstantiation paramDatas retTy
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
             // for display as part of the method group
+            prettyParams, prettyRetTyL
+
+        | Item.Trait traitInfo -> 
+            let paramDatas =
+                [ for pty in traitInfo.GetLogicalArgumentTypes(g) do
+                    ParamData(false, false, false, OptionalArgInfo.NotOptional, CallerInfo.NoCallerInfo, None, ReflectedArgInfo.None, pty) ]
+            let retTy = traitInfo.GetReturnType(g)
+            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInstantiation paramDatas retTy
             prettyParams, prettyRetTyL
 
         | Item.CustomBuilder (_, vref) -> 
@@ -759,33 +809,45 @@ module internal DescriptionListsImpl =
                 let argNamesAndTys = ParamNameAndTypesOfUnaryCustomOperation g minfo 
                 let argTys, _ = PrettyTypes.PrettifyTypes g (argNamesAndTys |> List.map (fun (ParamNameAndType(_, ty)) -> ty))
                 let paramDatas = (argNamesAndTys, argTys) ||> List.map2 (fun (ParamNameAndType(nmOpt, _)) argTy -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, argTy))
-                let retTy = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
-                let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas retTy
+                let retTy = minfo.GetFSharpReturnType(amap, m, minfo.FormalMethodInst)
+                let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInstantiation paramDatas retTy
 
                 // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
                 // for display as part of the method group
                 prettyParams, prettyRetTyL
 
             | Some _ -> 
-                let retTy = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
-                let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] retTy
+                let retTy = minfo.GetFSharpReturnType(amap, m, minfo.FormalMethodInst)
+                let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] retTy
                 [], prettyRetTyL  // no parameter data available for binary operators like 'zip', 'join' and 'groupJoin' since they use bespoke syntax 
 
         | Item.FakeInterfaceCtor ty -> 
-            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] ty
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInstantiation [] ty
             [], prettyRetTyL
 
-        | Item.DelegateCtor delty -> 
-            let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
+        | Item.DelegateCtor delTy -> 
+            let (SigOfFunctionForDelegate(_, _, _, delFuncTy)) = GetSigOfFunctionForDelegate infoReader delTy m AccessibleFromSomewhere
 
             // No need to pass more generic type information in here since the instanitations have already been applied
-            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst [ParamData(false, false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, delFuncTy)] delty
+            let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInstantiation [ParamData(false, false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, delFuncTy)] delTy
 
             // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
             // for display as part of the method group
             prettyParams, prettyRetTyL
 
-        |  _ -> 
+        | Item.CustomOperation _ // TODO: consider whether this should report parameter help
+        | Item.ActivePatternResult _  // TODO: consider whether this should report parameter help
+        | Item.UnqualifiedType _
+        | Item.UnionCaseField _
+        | Item.Types _
+        | Item.SetterArg _
+        | Item.NewDef _
+        | Item.ModuleOrNamespaces _
+        | Item.ImplicitOp _
+        | Item.ArgName _
+        | Item.MethodGroup(_, [], _)
+        | Item.CtorGroup(_,[])
+        | Item.Property(_,[]) -> 
             [], emptyL
 
 
@@ -839,7 +901,9 @@ module internal DescriptionListsImpl =
                   else FSharpGlyph.Variable
             | Item.Types(_, ty :: _) -> typeToGlyph (stripTyEqns denv.g ty)    
             | Item.UnionCase _
-            | Item.ActivePatternCase _ -> FSharpGlyph.EnumMember   
+            | Item.ActivePatternResult _
+            | Item.ImplicitOp _
+            | Item.ActivePatternCase _ -> FSharpGlyph.EnumMember
             | Item.ExnCase _ -> FSharpGlyph.Exception   
             | Item.AnonRecdField _ -> FSharpGlyph.Field
             | Item.RecdField _ -> FSharpGlyph.Field
@@ -853,6 +917,7 @@ module internal DescriptionListsImpl =
             | Item.CustomOperation _ -> FSharpGlyph.Method
             | Item.MethodGroup (_, minfos, _) when minfos |> List.forall (fun minfo -> minfo.IsExtensionMember) -> FSharpGlyph.ExtensionMethod
             | Item.MethodGroup _ -> FSharpGlyph.Method
+            | Item.Trait _ -> FSharpGlyph.Method
             | Item.TypeVar _ -> FSharpGlyph.TypeParameter
             | Item.Types _  -> FSharpGlyph.Class
             | Item.UnqualifiedType (tcref :: _) -> 
@@ -874,17 +939,23 @@ module internal DescriptionListsImpl =
                 else FSharpGlyph.Class
             | Item.ModuleOrNamespaces(modref :: _) -> 
                   if modref.IsNamespace then FSharpGlyph.NameSpace else FSharpGlyph.Module
-            | Item.ArgName _ -> FSharpGlyph.Variable
+            | Item.NewDef _
+            | Item.ArgName _
             | Item.SetterArg _ -> FSharpGlyph.Variable
-            | _ -> FSharpGlyph.Error)
+
+            // These empty lists are not expected to occur
+            | Item.ModuleOrNamespaces []
+            | Item.UnqualifiedType [] ->
+                FSharpGlyph.Error
+            )
 
 
-    /// Get rid of groups of overloads an replace them with single items.
-    /// (This looks like it is doing the a similar thing as FlattenItems, this code 
-    /// duplication could potentially be removed)
-    let AnotherFlattenItems g m item =
+    /// Select the items that participate in a MethodGroup.
+    let SelectMethodGroupItems g m item =
         match item with 
         | Item.CtorGroup(nm, cinfos) -> List.map (fun minfo -> Item.CtorGroup(nm, [minfo])) cinfos 
+        | Item.Trait traitInfo ->
+            if traitInfo.GetLogicalArgumentTypes(g).IsEmpty then [] else [item]
         | Item.FakeInterfaceCtor _
         | Item.DelegateCtor _ -> [item]
         | Item.NewDef _ 
@@ -907,17 +978,29 @@ module internal DescriptionListsImpl =
             [item] 
 #endif
         | Item.MethodGroup(nm, minfos, orig) -> minfos |> List.map (fun minfo -> Item.MethodGroup(nm, [minfo], orig)) 
-        | Item.CustomOperation(_name, _helpText, _minfo) -> [item]
-        | Item.TypeVar _ -> []
-        | Item.CustomBuilder _ -> []
-        | _ -> []
-
+        | Item.CustomOperation _ -> [item]
+        // These are not items that can participate in a method group
+        | Item.TypeVar _
+        | Item.CustomBuilder _
+        | Item.ActivePatternCase _
+        | Item.AnonRecdField _
+        | Item.ArgName _
+        | Item.ImplicitOp _
+        | Item.ModuleOrNamespaces _
+        | Item.SetterArg _
+        | Item.Types _
+        | Item.UnionCaseField _
+        | Item.UnqualifiedType _
+        | Item.ActivePatternResult _ -> []
 
 /// An intellisense declaration
 [<Sealed>]
 type DeclarationListItem(textInDeclList: string, textInCode: string, fullName: string, glyph: FSharpGlyph, info, accessibility: FSharpAccessibility,
                                kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
+
     member _.Name = textInDeclList
+
+    member _.NameInList = textInDeclList
 
     member _.NameInCode = textInCode
 
@@ -1178,7 +1261,7 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
                | true, res -> yield! res
                | false, _ ->
 #endif
-                let flatItems = AnotherFlattenItems g  m item.Item
+                let flatItems = SelectMethodGroupItems g  m item.Item
 
                 let methods = 
                     flatItems |> Array.ofList |> Array.map (fun flatItem -> 
@@ -1225,4 +1308,3 @@ type MethodGroup( name: string, unsortedMethods: MethodGroupItem[] ) =
         MethodGroup(name, methods)
 
     static member internal Empty = empty
-

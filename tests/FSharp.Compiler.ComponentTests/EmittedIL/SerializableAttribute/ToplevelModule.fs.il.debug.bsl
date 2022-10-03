@@ -12,7 +12,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly ToplevelModule
 {
@@ -21,7 +21,7 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
@@ -37,13 +37,13 @@
   // WARNING: managed resource file FSharpOptimizationData.ToplevelModule created
 }
 .module ToplevelModule.exe
-// MVID: {624CBE98-FD28-3DB9-A745-038398BE4C62}
+// MVID: {62F987D1-3E21-F1E3-A745-0383D187F962}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x034B0000
+// Image base: 0x000001EAC2450000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -152,8 +152,9 @@
             instance int32  CompareTo(class ABC/Expr obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       67 (0x43)
-      .maxstack  4
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       66 (0x42)
+      .maxstack  5
       .locals init (class ABC/Expr V_0,
                class ABC/Expr V_1,
                class [mscorlib]System.Collections.IComparer V_2,
@@ -163,10 +164,10 @@
                int32 V_6,
                int32 V_7)
       IL_0000:  ldarg.0
-      IL_0001:  brfalse.s  IL_003c
+      IL_0001:  brfalse.s  IL_003b
 
       IL_0003:  ldarg.1
-      IL_0004:  brfalse.s  IL_003a
+      IL_0004:  brfalse.s  IL_0039
 
       IL_0006:  ldarg.0
       IL_0007:  pop
@@ -190,33 +191,31 @@
       IL_0029:  stloc.s    V_7
       IL_002b:  ldloc.s    V_6
       IL_002d:  ldloc.s    V_7
-      IL_002f:  bge.s      IL_0033
+      IL_002f:  cgt
+      IL_0031:  ldloc.s    V_6
+      IL_0033:  ldloc.s    V_7
+      IL_0035:  clt
+      IL_0037:  sub
+      IL_0038:  ret
 
-      IL_0031:  ldc.i4.m1
-      IL_0032:  ret
+      IL_0039:  ldc.i4.1
+      IL_003a:  ret
 
-      IL_0033:  ldloc.s    V_6
-      IL_0035:  ldloc.s    V_7
-      IL_0037:  cgt
-      IL_0039:  ret
+      IL_003b:  ldarg.1
+      IL_003c:  brfalse.s  IL_0040
 
-      IL_003a:  ldc.i4.1
-      IL_003b:  ret
+      IL_003e:  ldc.i4.m1
+      IL_003f:  ret
 
-      IL_003c:  ldarg.1
-      IL_003d:  brfalse.s  IL_0041
-
-      IL_003f:  ldc.i4.m1
-      IL_0040:  ret
-
-      IL_0041:  ldc.i4.0
-      IL_0042:  ret
+      IL_0040:  ldc.i4.0
+      IL_0041:  ret
     } // end of method Expr::CompareTo
 
     .method public hidebysig virtual final 
             instance int32  CompareTo(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -231,8 +230,9 @@
                                       class [mscorlib]System.Collections.IComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       82 (0x52)
-      .maxstack  4
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       81 (0x51)
+      .maxstack  5
       .locals init (class ABC/Expr V_0,
                class ABC/Expr V_1,
                class ABC/Expr V_2,
@@ -246,11 +246,11 @@
       IL_0001:  unbox.any  ABC/Expr
       IL_0006:  stloc.0
       IL_0007:  ldarg.0
-      IL_0008:  brfalse.s  IL_0046
+      IL_0008:  brfalse.s  IL_0045
 
       IL_000a:  ldarg.1
       IL_000b:  unbox.any  ABC/Expr
-      IL_0010:  brfalse.s  IL_0044
+      IL_0010:  brfalse.s  IL_0043
 
       IL_0012:  ldarg.0
       IL_0013:  pop
@@ -274,34 +274,32 @@
       IL_0033:  stloc.s    V_8
       IL_0035:  ldloc.s    V_7
       IL_0037:  ldloc.s    V_8
-      IL_0039:  bge.s      IL_003d
+      IL_0039:  cgt
+      IL_003b:  ldloc.s    V_7
+      IL_003d:  ldloc.s    V_8
+      IL_003f:  clt
+      IL_0041:  sub
+      IL_0042:  ret
 
-      IL_003b:  ldc.i4.m1
-      IL_003c:  ret
+      IL_0043:  ldc.i4.1
+      IL_0044:  ret
 
-      IL_003d:  ldloc.s    V_7
-      IL_003f:  ldloc.s    V_8
-      IL_0041:  cgt
-      IL_0043:  ret
+      IL_0045:  ldarg.1
+      IL_0046:  unbox.any  ABC/Expr
+      IL_004b:  brfalse.s  IL_004f
 
-      IL_0044:  ldc.i4.1
-      IL_0045:  ret
+      IL_004d:  ldc.i4.m1
+      IL_004e:  ret
 
-      IL_0046:  ldarg.1
-      IL_0047:  unbox.any  ABC/Expr
-      IL_004c:  brfalse.s  IL_0050
-
-      IL_004e:  ldc.i4.m1
-      IL_004f:  ret
-
-      IL_0050:  ldc.i4.0
-      IL_0051:  ret
+      IL_004f:  ldc.i4.0
+      IL_0050:  ret
     } // end of method Expr::CompareTo
 
     .method public hidebysig virtual final 
             instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       43 (0x2b)
       .maxstack  7
       .locals init (int32 V_0,
@@ -350,6 +348,7 @@
             instance int32  GetHashCode() cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -363,6 +362,7 @@
                                   class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       61 (0x3d)
       .maxstack  4
       .locals init (class ABC/Expr V_0,
@@ -420,6 +420,7 @@
             instance bool  Equals(class ABC/Expr obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       37 (0x25)
       .maxstack  4
       .locals init (class ABC/Expr V_0,
@@ -458,6 +459,7 @@
             instance bool  Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       20 (0x14)
       .maxstack  4
       .locals init (class ABC/Expr V_0)
@@ -547,10 +549,25 @@
       IL_0006:  ret
     } // end of method MyExn::get_Data0
 
+    .method public strict virtual instance string 
+            get_Message() cil managed
+    {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       22 (0x16)
+      .maxstack  8
+      IL_0000:  ldstr      "%+A"
+      IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/MyExn,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class ABC/MyExn>::.ctor(string)
+      IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/MyExn,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+      IL_000f:  ldarg.0
+      IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/MyExn,string>::Invoke(!0)
+      IL_0015:  ret
+    } // end of method MyExn::get_Message
+
     .method public hidebysig virtual instance int32 
             GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       41 (0x29)
       .maxstack  7
       .locals init (int32 V_0,
@@ -593,6 +610,7 @@
             GetHashCode() cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       12 (0xc)
       .maxstack  8
       IL_0000:  ldarg.0
@@ -606,6 +624,7 @@
                    class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       78 (0x4e)
       .maxstack  4
       .locals init (class [mscorlib]System.Exception V_0,
@@ -669,6 +688,7 @@
             Equals(class [mscorlib]System.Exception obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       56 (0x38)
       .maxstack  4
       .locals init (object V_0)
@@ -713,6 +733,7 @@
             Equals(object obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       20 (0x14)
       .maxstack  4
       .locals init (class [mscorlib]System.Exception V_0)
@@ -879,8 +900,9 @@
               instance int32  CompareTo(class ABC/ABC/Expr obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       67 (0x43)
-        .maxstack  4
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        // Code size       66 (0x42)
+        .maxstack  5
         .locals init (class ABC/ABC/Expr V_0,
                  class ABC/ABC/Expr V_1,
                  class [mscorlib]System.Collections.IComparer V_2,
@@ -890,10 +912,10 @@
                  int32 V_6,
                  int32 V_7)
         IL_0000:  ldarg.0
-        IL_0001:  brfalse.s  IL_003c
+        IL_0001:  brfalse.s  IL_003b
 
         IL_0003:  ldarg.1
-        IL_0004:  brfalse.s  IL_003a
+        IL_0004:  brfalse.s  IL_0039
 
         IL_0006:  ldarg.0
         IL_0007:  pop
@@ -917,33 +939,31 @@
         IL_0029:  stloc.s    V_7
         IL_002b:  ldloc.s    V_6
         IL_002d:  ldloc.s    V_7
-        IL_002f:  bge.s      IL_0033
+        IL_002f:  cgt
+        IL_0031:  ldloc.s    V_6
+        IL_0033:  ldloc.s    V_7
+        IL_0035:  clt
+        IL_0037:  sub
+        IL_0038:  ret
 
-        IL_0031:  ldc.i4.m1
-        IL_0032:  ret
+        IL_0039:  ldc.i4.1
+        IL_003a:  ret
 
-        IL_0033:  ldloc.s    V_6
-        IL_0035:  ldloc.s    V_7
-        IL_0037:  cgt
-        IL_0039:  ret
+        IL_003b:  ldarg.1
+        IL_003c:  brfalse.s  IL_0040
 
-        IL_003a:  ldc.i4.1
-        IL_003b:  ret
+        IL_003e:  ldc.i4.m1
+        IL_003f:  ret
 
-        IL_003c:  ldarg.1
-        IL_003d:  brfalse.s  IL_0041
-
-        IL_003f:  ldc.i4.m1
-        IL_0040:  ret
-
-        IL_0041:  ldc.i4.0
-        IL_0042:  ret
+        IL_0040:  ldc.i4.0
+        IL_0041:  ret
       } // end of method Expr::CompareTo
 
       .method public hidebysig virtual final 
               instance int32  CompareTo(object obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       13 (0xd)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -958,8 +978,9 @@
                                         class [mscorlib]System.Collections.IComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-        // Code size       82 (0x52)
-        .maxstack  4
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+        // Code size       81 (0x51)
+        .maxstack  5
         .locals init (class ABC/ABC/Expr V_0,
                  class ABC/ABC/Expr V_1,
                  class ABC/ABC/Expr V_2,
@@ -973,11 +994,11 @@
         IL_0001:  unbox.any  ABC/ABC/Expr
         IL_0006:  stloc.0
         IL_0007:  ldarg.0
-        IL_0008:  brfalse.s  IL_0046
+        IL_0008:  brfalse.s  IL_0045
 
         IL_000a:  ldarg.1
         IL_000b:  unbox.any  ABC/ABC/Expr
-        IL_0010:  brfalse.s  IL_0044
+        IL_0010:  brfalse.s  IL_0043
 
         IL_0012:  ldarg.0
         IL_0013:  pop
@@ -1001,34 +1022,32 @@
         IL_0033:  stloc.s    V_8
         IL_0035:  ldloc.s    V_7
         IL_0037:  ldloc.s    V_8
-        IL_0039:  bge.s      IL_003d
+        IL_0039:  cgt
+        IL_003b:  ldloc.s    V_7
+        IL_003d:  ldloc.s    V_8
+        IL_003f:  clt
+        IL_0041:  sub
+        IL_0042:  ret
 
-        IL_003b:  ldc.i4.m1
-        IL_003c:  ret
+        IL_0043:  ldc.i4.1
+        IL_0044:  ret
 
-        IL_003d:  ldloc.s    V_7
-        IL_003f:  ldloc.s    V_8
-        IL_0041:  cgt
-        IL_0043:  ret
+        IL_0045:  ldarg.1
+        IL_0046:  unbox.any  ABC/ABC/Expr
+        IL_004b:  brfalse.s  IL_004f
 
-        IL_0044:  ldc.i4.1
-        IL_0045:  ret
+        IL_004d:  ldc.i4.m1
+        IL_004e:  ret
 
-        IL_0046:  ldarg.1
-        IL_0047:  unbox.any  ABC/ABC/Expr
-        IL_004c:  brfalse.s  IL_0050
-
-        IL_004e:  ldc.i4.m1
-        IL_004f:  ret
-
-        IL_0050:  ldc.i4.0
-        IL_0051:  ret
+        IL_004f:  ldc.i4.0
+        IL_0050:  ret
       } // end of method Expr::CompareTo
 
       .method public hidebysig virtual final 
               instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       43 (0x2b)
         .maxstack  7
         .locals init (int32 V_0,
@@ -1077,6 +1096,7 @@
               instance int32  GetHashCode() cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       12 (0xc)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -1090,6 +1110,7 @@
                                     class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       61 (0x3d)
         .maxstack  4
         .locals init (class ABC/ABC/Expr V_0,
@@ -1147,6 +1168,7 @@
               instance bool  Equals(class ABC/ABC/Expr obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       37 (0x25)
         .maxstack  4
         .locals init (class ABC/ABC/Expr V_0,
@@ -1185,6 +1207,7 @@
               instance bool  Equals(object obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       20 (0x14)
         .maxstack  4
         .locals init (class ABC/ABC/Expr V_0)
@@ -1274,10 +1297,25 @@
         IL_0006:  ret
       } // end of method MyExn::get_Data0
 
+      .method public strict virtual instance string 
+              get_Message() cil managed
+      {
+        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        // Code size       22 (0x16)
+        .maxstack  8
+        IL_0000:  ldstr      "%+A"
+        IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/MyExn,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,class ABC/ABC/MyExn>::.ctor(string)
+        IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/MyExn,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
+        IL_000f:  ldarg.0
+        IL_0010:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class ABC/ABC/MyExn,string>::Invoke(!0)
+        IL_0015:  ret
+      } // end of method MyExn::get_Message
+
       .method public hidebysig virtual instance int32 
               GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       41 (0x29)
         .maxstack  7
         .locals init (int32 V_0,
@@ -1320,6 +1358,7 @@
               GetHashCode() cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       12 (0xc)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -1333,6 +1372,7 @@
                      class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       78 (0x4e)
         .maxstack  4
         .locals init (class [mscorlib]System.Exception V_0,
@@ -1396,6 +1436,7 @@
               Equals(class [mscorlib]System.Exception obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       56 (0x38)
         .maxstack  4
         .locals init (object V_0)
@@ -1440,6 +1481,7 @@
               Equals(object obj) cil managed
       {
         .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
         // Code size       20 (0x14)
         .maxstack  4
         .locals init (class [mscorlib]System.Exception V_0)
@@ -1587,4 +1629,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\SerializableAttribute\ToplevelModule_fs\ToplevelModule.res
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net472\tests\EmittedIL\SerializableAttribute\ToplevelModule_fs\ToplevelModule.res

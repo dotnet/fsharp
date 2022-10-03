@@ -100,8 +100,8 @@ module RuntimeHelpers =
     /// <param name="source">The input sequence.</param>
     ///
     /// <returns>The result sequence.</returns>
-    val EnumerateUsing: resource: 'T -> source: ('T -> 'Collection) -> seq<'U>
-        when 'T :> IDisposable and 'Collection :> seq<'U>
+    val EnumerateUsing:
+        resource: 'T -> source: ('T -> 'Collection) -> seq<'U> when 'T :> IDisposable and 'Collection :> seq<'U>
 
     /// <summary>Creates an anonymous event with the given handlers.</summary>
     ///
@@ -190,7 +190,7 @@ type ArrayCollector<'T> =
     member AddMany: values: seq<'T> -> unit
 
     /// Add multiple elements to the collector and return the resulting array
-    member AddManyAndClose: values: seq<'T> -> 'T []
+    member AddManyAndClose: values: seq<'T> -> 'T[]
 
     /// Return the resulting list
-    member Close: unit -> 'T []
+    member Close: unit -> 'T[]

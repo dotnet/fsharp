@@ -184,6 +184,7 @@ let parseAndCheckScriptWithOptions (file:string, input, opts) =
 
 let parseAndCheckScript (file, input) = parseAndCheckScriptWithOptions (file, input, [| |])
 let parseAndCheckScript50 (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:5.0" |])
+let parseAndCheckScript70 (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:7.0" |])
 let parseAndCheckScriptPreview (file, input) = parseAndCheckScriptWithOptions (file, input, [| "--langversion:preview" |])
 
 let parseSourceCode (name: string, code: string) =
@@ -209,7 +210,7 @@ let matchBraces (name: string, code: string) =
 
 let getSingleModuleLikeDecl (input: ParsedInput) =
     match input with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ decl ])) -> decl
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ decl ])) -> decl
     | _ -> failwith "Could not get module decls"
 
 let getSingleModuleMemberDecls (input: ParsedInput) =
@@ -225,6 +226,16 @@ let getSingleExprInModule (input: ParsedInput) =
     match getSingleDeclInModule input with
     | SynModuleDecl.Expr (expr, _) -> expr
     | _ -> failwith "Unexpected expression"
+
+let getSingleParenInnerExpr expr =
+    match expr with
+    | SynModuleDecl.Expr(SynExpr.Paren(expr, _, _, _), _) -> expr
+    | _ -> failwith "Unexpected tree"
+
+let getLetDeclHeadPattern (moduleDecl: SynModuleDecl) =
+    match moduleDecl with
+    | SynModuleDecl.Let(_, [SynBinding(headPat = pat)], _) -> pat
+    | _ -> failwith "Unexpected tree"
 
 let parseSourceCodeAndGetModule (source: string) =
     parseSourceCode ("test.fsx", source) |> getSingleModuleLikeDecl
@@ -350,6 +361,9 @@ let getParseAndCheckResultsPreview (source: string) =
 let getParseAndCheckResults50 (source: string) =
     parseAndCheckScript50("Test.fsx", source)
 
+let getParseAndCheckResults70 (source: string) =
+    parseAndCheckScript70("Test.fsx", source)
+
 
 let inline dumpDiagnostics (results: FSharpCheckFileResults) =
     results.Diagnostics
@@ -448,6 +462,8 @@ let coreLibAssemblyName =
 #else
     "mscorlib"
 #endif
+
+let inline getRange (node: ^T) = (^T: (member Range: range) node)
 
 let assertRange
     (expectedStartLine: int, expectedStartColumn: int)

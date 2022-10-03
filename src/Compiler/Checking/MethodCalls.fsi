@@ -68,20 +68,22 @@ val CalledArg:
 /// Represents a match between a caller argument and a called argument, arising from either
 /// a named argument or an unnamed argument.
 type AssignedCalledArg<'T> =
-    { /// The identifier for a named argument, if any
-      NamedArgIdOpt: Ident option
+    {
+        /// The identifier for a named argument, if any
+        NamedArgIdOpt: Ident option
 
-      /// The called argument in the method
-      CalledArg: CalledArg
+        /// The called argument in the method
+        CalledArg: CalledArg
 
-      /// The argument on the caller side
-      CallerArg: CallerArg<'T> }
+        /// The argument on the caller side
+        CallerArg: CallerArg<'T>
+    }
 
     member Position: struct (int * int)
 
 /// Represents the possibilities for a named-setter argument (a property, field, or a record field setter)
 type AssignedItemSetterTarget =
-    | AssignedPropSetter of PropInfo * MethInfo * TypeInst
+    | AssignedPropSetter of staticTyOpt: TType option * pinfo: PropInfo * minfo: MethInfo * pminst: TypeInst
     | AssignedILFieldSetter of ILFieldInfo
     | AssignedRecdFieldSetter of RecdFieldInfo
 
@@ -117,7 +119,7 @@ type CallerArgs<'T> =
 /// has been used in F# code
 [<RequireQualifiedAccess>]
 type TypeDirectedConversionUsed =
-    | Yes of (DisplayEnv -> exn)
+    | Yes of (DisplayEnv -> exn) * isTwoStepConversion: bool
     | No
 
     static member Combine: TypeDirectedConversionUsed -> TypeDirectedConversionUsed -> TypeDirectedConversionUsed
@@ -159,20 +161,22 @@ val AdjustCalledArgType:
         TType * TypeDirectedConversionUsed * (TType * TType * (DisplayEnv -> unit)) option
 
 type CalledMethArgSet<'T> =
-    { /// The called arguments corresponding to "unnamed" arguments
-      UnnamedCalledArgs: CalledArg list
+    {
+        /// The called arguments corresponding to "unnamed" arguments
+        UnnamedCalledArgs: CalledArg list
 
-      /// Any unnamed caller arguments not otherwise assigned
-      UnnamedCallerArgs: CallerArg<'T> list
+        /// Any unnamed caller arguments not otherwise assigned
+        UnnamedCallerArgs: CallerArg<'T> list
 
-      /// The called "ParamArray" argument, if any
-      ParamArrayCalledArgOpt: CalledArg option
+        /// The called "ParamArray" argument, if any
+        ParamArrayCalledArgOpt: CalledArg option
 
-      /// Any unnamed caller arguments assigned to a "param array" argument
-      ParamArrayCallerArgs: CallerArg<'T> list
+        /// Any unnamed caller arguments assigned to a "param array" argument
+        ParamArrayCallerArgs: CallerArg<'T> list
 
-      /// Named args
-      AssignedNamedArgs: AssignedCalledArg<'T> list }
+        /// Named args
+        AssignedNamedArgs: AssignedCalledArg<'T> list
+    }
 
     member NumAssignedNamedArgs: int
 
@@ -201,7 +205,8 @@ type CalledMeth<'T> =
         callerArgs: CallerArgs<'T> *
         allowParamArgs: bool *
         allowOutAndOptArgs: bool *
-        tyargsOpt: TType option ->
+        tyargsOpt: TType option *
+        staticTyOpt: TType option ->
             CalledMeth<'T>
 
     static member GetMethod: x: CalledMeth<'T> -> MethInfo
@@ -244,11 +249,11 @@ type CalledMeth<'T> =
     /// Return type after tupling of out args is taken into account
     member CalledReturnTypeAfterOutArgTupling: TType
 
-    /// The instantiation of the method we're attempting to call
+    /// The generic instantiation of the method we're attempting to call
     member CalledTyArgs: TType list
 
     /// The instantiation of the method we're attempting to call
-    member CalledTyparInst: TypedTreeOps.TyparInst
+    member CalledTyparInst: TyparInstantiation
 
     /// The types of the actual object arguments, if any
     member CallerObjArgTys: TType list
@@ -260,7 +265,7 @@ type CalledMeth<'T> =
 
     member HasCorrectGenericArity: bool
 
-    member HasOptArgs: bool
+    member HasOptionalArgs: bool
 
     member HasOutArgs: bool
 
@@ -298,6 +303,8 @@ type CalledMeth<'T> =
 
     member UsesParamArrayConversion: bool
 
+    member OptionalStaticType: TType option
+
     member amap: ImportMap
 
     member infoReader: InfoReader
@@ -334,7 +341,14 @@ val BuildILMethInfoCall:
 
 /// Make a call to a method info. Used by the optimizer and code generator to build
 /// calls to the type-directed solutions to member constraints.
-val MakeMethInfoCall: amap: ImportMap -> m: range -> minfo: MethInfo -> minst: TType list -> args: Exprs -> Expr
+val MakeMethInfoCall:
+    amap: ImportMap ->
+    m: range ->
+    minfo: MethInfo ->
+    minst: TType list ->
+    args: Exprs ->
+    staticTyOpt: TType option ->
+        Expr
 
 /// Build an expression that calls a given method info.
 /// This is called after overload resolution, and also to call other
@@ -344,6 +358,7 @@ val MakeMethInfoCall: amap: ImportMap -> m: range -> minfo: MethInfo -> minst: T
 //   minst: the instantiation to apply for a generic method
 //   objArgs: the 'this' argument, if any
 //   args: the arguments, if any
+//   staticTyOpt: the static type that governs the call, different to the nominal type containing the member, e.g. 'T.CallSomeMethod()
 val BuildMethodCall:
     tcVal: (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType) ->
     g: TcGlobals ->
@@ -356,6 +371,7 @@ val BuildMethodCall:
     minst: TType list ->
     objArgs: Expr list ->
     args: Expr list ->
+    staticTyOpt: TType option ->
         Expr * TType
 
 /// Build a call to the System.Object constructor taking no arguments,

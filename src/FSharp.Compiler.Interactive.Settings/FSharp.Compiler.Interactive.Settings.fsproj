@@ -9,9 +9,15 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
   </PropertyGroup>
 
+  <!--  The FSharp.Compiler.Interactive.Settings dll provides a referencable public interface to tool builders  -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+  </PropertyGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="fsi" />
     <InternalsVisibleTo Include="fsiAnyCpu" />
+    <InternalsVisibleTo Include="fsiArm64" />
     <InternalsVisibleTo Include="FSharp.Compiler" />
   </ItemGroup>
 
@@ -24,10 +30,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsVersion)" />
   </ItemGroup>
 
 </Project>

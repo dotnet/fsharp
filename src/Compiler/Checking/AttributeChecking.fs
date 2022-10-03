@@ -10,6 +10,7 @@ open Internal.Utilities.Library
 open FSharp.Compiler.AbstractIL.IL 
 open FSharp.Compiler 
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.Features
 open FSharp.Compiler.Import
 open FSharp.Compiler.Infos
 open FSharp.Compiler.TcGlobals
@@ -229,22 +230,36 @@ let MethInfoHasAttribute g m attribSpec minfo  =
         |> Option.isSome
 
 
+let private CheckCompilerFeatureRequiredAttribute (g: TcGlobals) cattrs msg m =
+    // In some cases C# will generate both ObsoleteAttribute and CompilerFeatureRequiredAttribute.
+    // Specifically, when default constructor is generated for class with any reqired members in them.
+    // ObsoleteAttribute should be ignored if CompilerFeatureRequiredAttribute is present, and its name is "RequiredMembers".
+    let (AttribInfo(tref,_)) = g.attrib_CompilerFeatureRequiredAttribute
+    match TryDecodeILAttribute tref cattrs with
+    | Some([ILAttribElem.String (Some featureName) ], _) when featureName = "RequiredMembers" ->
+        CompleteD
+    | _ ->
+        ErrorD (ObsoleteError(msg, m))
+
 /// Check IL attributes for 'ObsoleteAttribute', returning errors and warnings as data
-let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m = 
+let private CheckILAttributes (g: TcGlobals) isByrefLikeTyconRef cattrs m =
     let (AttribInfo(tref,_)) = g.attrib_SystemObsolete
-    match TryDecodeILAttribute tref cattrs with 
-    | Some ([ILAttribElem.String (Some msg) ], _) when not isByrefLikeTyconRef -> 
+    match TryDecodeILAttribute tref cattrs with
+    | Some ([ILAttribElem.String (Some msg) ], _) when not isByrefLikeTyconRef ->
             WarnD(ObsoleteWarning(msg, m))
-    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef -> 
-        if isError then 
-            ErrorD (ObsoleteError(msg, m))
-        else 
+    | Some ([ILAttribElem.String (Some msg); ILAttribElem.Bool isError ], _) when not isByrefLikeTyconRef ->
+        if isError then
+            if g.langVersion.SupportsFeature(LanguageFeature.RequiredPropertiesSupport) then
+                CheckCompilerFeatureRequiredAttribute g cattrs msg m
+            else
+                ErrorD (ObsoleteError(msg, m))
+        else
             WarnD (ObsoleteWarning(msg, m))
-    | Some ([ILAttribElem.String None ], _) when not isByrefLikeTyconRef -> 
+    | Some ([ILAttribElem.String None ], _) when not isByrefLikeTyconRef ->
         WarnD(ObsoleteWarning("", m))
-    | Some _ when not isByrefLikeTyconRef -> 
+    | Some _ when not isByrefLikeTyconRef ->
         WarnD(ObsoleteWarning("", m))
-    | _ -> 
+    | _ ->
         CompleteD
 
 let langVersionPrefix = "--langversion:preview"
@@ -391,27 +406,39 @@ let CheckILFieldAttributes g (finfo:ILFieldInfo) m =
         CheckProvidedAttributes amap.g m (fi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) |> CommitOperationResult
 #endif
 
+/// Check the attributes on an entity, returning errors and warnings as data.
+let CheckEntityAttributes g (tcref: TyconRef) m =    
+    if tcref.IsILTycon then 
+        CheckILAttributes g (isByrefLikeTyconRef g m tcref) tcref.ILTyconRawMetadata.CustomAttrs m
+    else 
+        CheckFSharpAttributes g tcref.Attribs m
+
 /// Check the attributes associated with a method, returning warnings and errors as data.
-let CheckMethInfoAttributes g m tyargsOpt minfo = 
-    let search = 
-        BindMethInfoAttributes m minfo 
-            (fun ilAttribs -> Some(CheckILAttributes g false ilAttribs m)) 
-            (fun fsAttribs -> 
-                let res = 
-                    CheckFSharpAttributes g fsAttribs m ++ (fun () -> 
-                        if Option.isNone tyargsOpt && HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute fsAttribs then
-                            ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(minfo.LogicalName), m))
-                        else
-                            CompleteD)
-                Some res) 
+let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) = 
+    match stripTyEqns g minfo.ApparentEnclosingAppType with
+    | TType_app(tcref, _, _) -> CheckEntityAttributes g tcref m 
+    | _ -> CompleteD
+    ++ (fun () ->
+        let search =
+            BindMethInfoAttributes m minfo 
+                (fun ilAttribs -> Some(CheckILAttributes g false ilAttribs m)) 
+                (fun fsAttribs -> 
+                    let res = 
+                        CheckFSharpAttributes g fsAttribs m ++ (fun () -> 
+                            if Option.isNone tyargsOpt && HasFSharpAttribute g g.attrib_RequiresExplicitTypeArgumentsAttribute fsAttribs then
+                                ErrorD(Error(FSComp.SR.tcFunctionRequiresExplicitTypeArguments(minfo.LogicalName), m))
+                            else
+                                CompleteD)
+                    Some res) 
 #if !NO_TYPEPROVIDERS
-            (fun provAttribs -> Some (CheckProvidedAttributes g m provAttribs)) 
+                (fun provAttribs -> Some (CheckProvidedAttributes g m provAttribs)) 
 #else
-            (fun _provAttribs -> None)
+                (fun _provAttribs -> None)
 #endif 
-    match search with
-    | Some res -> res
-    | None -> CompleteD // no attribute = no errors 
+        match search with
+        | Some res -> res
+        | None -> CompleteD // no attribute = no errors 
+    )
 
 /// Indicate if a method has 'Obsolete', 'CompilerMessageAttribute' or 'TypeProviderEditorHideMethodsAttribute'. 
 /// Used to suppress the item in intellisense.
@@ -471,13 +498,6 @@ let PropInfoIsUnseen m pinfo =
     | ProvidedProp (_amap, pi, m) -> 
         CheckProvidedAttributesForUnseen (pi.PApply((fun st -> (st :> IProvidedCustomAttributeProvider)), m)) m
 #endif
-     
-/// Check the attributes on an entity, returning errors and warnings as data.
-let CheckEntityAttributes g (x:TyconRef) m = 
-    if x.IsILTycon then 
-        CheckILAttributes g (isByrefLikeTyconRef g m x) x.ILTyconRawMetadata.CustomAttrs m
-    else 
-        CheckFSharpAttributes g x.Attribs m
 
 /// Check the attributes on a union case, returning errors and warnings as data.
 let CheckUnionCaseAttributes g (x:UnionCaseRef) m =
@@ -487,7 +507,8 @@ let CheckUnionCaseAttributes g (x:UnionCaseRef) m =
 /// Check the attributes on a record field, returning errors and warnings as data.
 let CheckRecdFieldAttributes g (x:RecdFieldRef) m =
     CheckEntityAttributes g x.TyconRef m ++ (fun () ->
-    CheckFSharpAttributes g x.PropertyAttribs m)
+    CheckFSharpAttributes g x.PropertyAttribs m) ++ (fun () ->
+    CheckFSharpAttributes g x.RecdField.FieldAttribs m)
 
 /// Check the attributes on an F# value, returning errors and warnings as data.
 let CheckValAttributes g (x:ValRef) m =

@@ -118,10 +118,10 @@ type ParamNameAndType =
 
     static member FromMember: isCSharpExtMem: bool -> g: TcGlobals -> vref: ValRef -> ParamNameAndType list list
 
-    static member Instantiate: inst: TyparInst -> p: ParamNameAndType -> ParamNameAndType
+    static member Instantiate: inst: TyparInstantiation -> p: ParamNameAndType -> ParamNameAndType
 
     static member InstantiateCurried:
-        inst: TyparInst -> paramTypes: ParamNameAndType list list -> ParamNameAndType list list
+        inst: TyparInstantiation -> paramTypes: ParamNameAndType list list -> ParamNameAndType list list
 
 /// Full information about a parameter returned for use by the type checker and language service.
 [<NoComparison; NoEquality>]
@@ -136,6 +136,18 @@ type ParamData =
         reflArgInfo: ReflectedArgInfo *
         ttype: TType
 
+// Adhoc information - could be unified with ParamData
+type ParamAttribs =
+    | ParamAttribs of
+        isParamArrayArg: bool *
+        isInArg: bool *
+        isOutArg: bool *
+        optArgInfo: OptionalArgInfo *
+        callerInfo: CallerInfo *
+        reflArgInfo: ReflectedArgInfo
+
+val CrackParamAttribsInfo: TcGlobals -> ty: TType * argInfo: ArgReprInfo -> ParamAttribs
+
 /// Describes an F# use of an IL type, including the type instantiation associated with the type at a particular usage point.
 [<NoComparison; NoEquality>]
 type ILTypeInfo =
@@ -143,7 +155,7 @@ type ILTypeInfo =
 
     static member FromType: g: TcGlobals -> ty: TType -> ILTypeInfo
 
-    member Instantiate: inst: TyparInst -> ILTypeInfo
+    member Instantiate: inst: TyparInstantiation -> ILTypeInfo
 
     member ILScopeRef: ILScopeRef
 
@@ -251,10 +263,10 @@ type ILMethInfo =
     member TcGlobals: TcGlobals
 
     /// Get the compiled return type of the method, where 'void' is None.
-    member GetCompiledReturnTy: amap: ImportMap * m: range * minst: TType list -> TType option
+    member GetCompiledReturnType: amap: ImportMap * m: range * minst: TType list -> TType option
 
     /// Get the F# view of the return type of the method, where 'void' is 'unit'.
-    member GetFSharpReturnTy: amap: ImportMap * m: range * minst: TType list -> TType
+    member GetFSharpReturnType: amap: ImportMap * m: range * minst: TType list -> TType
 
     /// Get the (zero or one) 'self'/'this'/'object' arguments associated with an IL method.
     /// An instance extension method returns one object argument.
@@ -352,7 +364,7 @@ type MethInfo =
     /// Get the formal generic method parameters for the method as a list of variable types.
     member FormalMethodInst: TypeInst
 
-    member FormalMethodTyparInst: TyparInst
+    member FormalMethodTyparInst: TyparInstantiation
 
     /// Get the formal generic method parameters for the method as a list of type variables.
     ///
@@ -423,6 +435,9 @@ type MethInfo =
     /// Receiver must be a struct type.
     member IsReadOnly: bool
 
+    /// Indicates, wheter this method has `IsExternalInit` modreq.
+    member HasExternalInit: bool
+
     /// Indicates if the enclosing type for the method is a value type.
     ///
     /// For an extension method, this indicates if the method extends a struct type.
@@ -442,7 +457,7 @@ type MethInfo =
 #if NO_TYPEPROVIDERS
     member ProvidedStaticParameterInfo: obj option
 #else
-    member ProvidedStaticParameterInfo: (Tainted<ProvidedMethodBase> * Tainted<ProvidedParameterInfo> []) option
+    member ProvidedStaticParameterInfo: (Tainted<ProvidedMethodBase> * Tainted<ProvidedParameterInfo>[]) option
 #endif
 
     /// Get the TcGlobals value that governs the method declaration
@@ -477,10 +492,10 @@ type MethInfo =
     member ComputeHashCode: unit -> int
 
     /// Get the return type of a method info, where 'void' is returned as 'None'
-    member GetCompiledReturnTy: amap: ImportMap * m: range * minst: TType list -> TType option
+    member GetCompiledReturnType: amap: ImportMap * m: range * minst: TType list -> TType option
 
     /// Get the return type of a method info, where 'void' is returned as 'unit'
-    member GetFSharpReturnTy: amap: ImportMap * m: range * minst: TType list -> TType
+    member GetFSharpReturnType: amap: ImportMap * m: range * minst: TType list -> TType
 
     /// Select all the type parameters of the declaring type of a method.
     ///
@@ -493,9 +508,11 @@ type MethInfo =
     /// An instance method returns one object argument.
     member GetObjArgTypes: amap: ImportMap * m: range * minst: TypeInst -> TType list
 
+    /// Get custom attributes for method (only applicable for IL methods)
+    member GetCustomAttrs: unit -> ILAttributes
+
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
-    member GetParamAttribs:
-        amap: ImportMap * m: range -> (bool * bool * bool * OptionalArgInfo * CallerInfo * ReflectedArgInfo) list list
+    member GetParamAttribs: amap: ImportMap * m: range -> ParamAttribs list list
 
     /// Get the ParamData objects for the parameters of a MethInfo
     member GetParamDatas: amap: ImportMap * m: range * minst: TType list -> ParamData list list
@@ -510,7 +527,7 @@ type MethInfo =
     member HasParamArrayArg: amap: ImportMap * m: range * minst: TType list -> bool
 
     /// Apply a type instantiation to a method info, i.e. apply the instantiation to the enclosing type.
-    member Instantiate: amap: ImportMap * m: range * inst: TyparInst -> MethInfo
+    member Instantiate: amap: ImportMap * m: range * inst: TyparInstantiation -> MethInfo
 
     /// Indicates if this method is an extension member that is read-only.
     /// An extension member is considered read-only if the first argument is a read-only byref (inref) type.
@@ -545,6 +562,9 @@ type ILFieldInfo =
 
     /// Get the name of the field
     member FieldName: string
+
+    /// Get the core of the display name for the field. This is the same as the logical name.
+    member DisplayNameCore: string
 
     /// Get an (uninstantiated) reference to the field as an Abstract IL ILFieldRef
     member ILFieldRef: ILFieldRef
@@ -642,14 +662,14 @@ type UnionCaseInfo =
     ///
     /// Backticks and parens are not added for non-identifiers.
     ///
-    /// Note logical names op_Nil and op_ConsCons become [] and :: respectively.
+    /// Note logical names op_Nil and op_ColonColon become [] and :: respectively.
     member DisplayNameCore: string
 
     /// Get the display name of the union case
     ///
     /// Backticks and parens are added implicitly for non-identifiers.
     ///
-    /// Note logical names op_Nil and op_ConsCons become ([]) and (::) respectively.
+    /// Note logical names op_Nil and op_ColonColon become ([]) and (::) respectively.
     member DisplayName: string
 
     /// Get the F# metadata for the declaring union type
@@ -668,7 +688,7 @@ type UnionCaseInfo =
     member UnionCaseRef: UnionCaseRef
 
     /// Get the instantiation of the type parameters of the declaring type of the union case
-    member GetTyparInst: m: range -> TyparInst
+    member GetTyparInst: m: range -> TyparInstantiation
 
 /// Describes an F# use of a property backed by Abstract IL metadata
 [<NoComparison; NoEquality>]
@@ -694,6 +714,9 @@ type ILPropInfo =
 
     /// Get the declaring IL type of the IL property, including any generic instantiation
     member ILTypeInfo: ILTypeInfo
+
+    /// Is the property requied (has the RequiredMemberAttribute).
+    member IsRequired: bool
 
     /// Indicates if the IL property is logically a 'newslot', i.e. hides any previous slots of the same name.
     member IsNewSlot: bool
@@ -787,6 +810,12 @@ type PropInfo =
     /// Indicates if this property has an associated setter method.
     member HasSetter: bool
 
+    /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
+    member IsSetterInitOnly: bool
+
+    /// Is the property requied (has the RequiredMemberAttribute).
+    member IsRequired: bool
+
     member ImplementedSlotSignatures: SlotSig list
 
     /// Indicates if this property is marked 'override' and thus definitely overrides another property.
@@ -822,6 +851,14 @@ type PropInfo =
 
     /// Get the logical name of the property.
     member PropertyName: string
+
+    /// Get the display name of the property.
+    ///
+    /// Backticks and parens are added implicitly for non-identifiers.
+    member DisplayName: string
+
+    /// Get the property name in core DisplayName form (no backticks or parens added)
+    member DisplayNameCore: string
 
     /// Get a MethInfo for the 'setter' method associated with the property
     member SetterMethod: MethInfo
@@ -927,6 +964,14 @@ type EventInfo =
     /// Get the logical name of the event.
     member EventName: string
 
+    /// Get the display name of the event.
+    ///
+    /// Backticks and parens are added implicitly for non-identifiers.
+    member DisplayName: string
+
+    /// Get the event name in core DisplayName form (no backticks or parens added)
+    member DisplayNameCore: string
+
     /// Indicates if this event has an associated XML comment authored in this assembly.
     member HasDirectXmlComment: bool
 
@@ -987,7 +1032,7 @@ type CompiledSig =
         argTys: TType list list *
         returnTy: TType option *
         formalMethTypars: Typars *
-        formalMethTyparInst: TyparInst
+        formalMethTyparInst: TyparInstantiation
 
 /// Get the information about the compiled form of a method signature. Used when analyzing implementation
 /// relations between members and abstract slots.

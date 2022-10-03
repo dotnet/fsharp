@@ -41,10 +41,6 @@ type ArgumentContainer =
     /// The named argument is a static parameter to a provided type.
     | Type of TyconRef
 
-/// Detect a use of a nominal type, including type abbreviations.
-/// When reporting symbols, we care about abbreviations, e.g. 'int' and 'int32' count as two separate symbols.
-val (|AbbrevOrAppTy|_|): TType -> TyconRef option
-
 type EnclosingTypeInst = TypeInst
 
 /// Represents an item that results from name resolution
@@ -67,6 +63,9 @@ type Item =
 
     /// Represents the resolution of a name to an F# record or exception field.
     | RecdField of RecdFieldInfo
+
+    /// Represents the resolution of a name to an F# trait
+    | Trait of TraitConstraintInfo
 
     /// Represents the resolution of a name to a union case field.
     | UnionCaseField of UnionCaseInfo * fieldIndex: int
@@ -122,7 +121,17 @@ type Item =
     | ImplicitOp of Ident * TraitConstraintSln option ref
 
     /// Represents the resolution of a name to a named argument
-    | ArgName of Ident * TType * ArgumentContainer option
+    //
+    // In the FCS API, Item.ArgName corresponds to FSharpParameter symbols.
+    // Not all parameters have names, e.g. for 'g' in this:
+    //
+    //    let f (g: int -> int) x = ...
+    //
+    // then the symbol for 'g' reports FSharpParameters via CurriedParameterGroups
+    // based on analyzing the type of g as a function type.
+    //
+    // For these parameters, the identifier will be missing.
+    | ArgName of ident: Ident option * argType: TType * container: ArgumentContainer option * range: range
 
     /// Represents the resolution of a name to a named property setter
     | SetterArg of Ident * Item
@@ -140,12 +149,14 @@ type Item =
     /// This includes backticks, parens etc.
     member DisplayName: string
 
-/// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at
+/// Pairs an Item with a TyparInstantiation showing how generic type variables of the item are instantiated at
 /// a particular usage point.
 [<RequireQualifiedAccess>]
-type ItemWithInst = { Item: Item; TyparInst: TyparInst }
+type ItemWithInst =
+    { Item: Item
+      TyparInstantiation: TyparInstantiation }
 
-val (|ItemWithInst|): ItemWithInst -> Item * TyparInst
+val (|ItemWithInst|): ItemWithInst -> Item * TyparInstantiation
 val ItemWithNoInst: Item -> ItemWithInst
 
 /// Represents a record field resolution and the information if the usage is deprecated.
@@ -168,59 +179,60 @@ type ExtensionMember =
 /// The environment of information used to resolve names
 [<NoEquality; NoComparison>]
 type NameResolutionEnv =
-    { /// Display environment information for output
-      eDisplayEnv: DisplayEnv
+    {
+        /// Display environment information for output
+        eDisplayEnv: DisplayEnv
 
-      /// Values and Data Tags available by unqualified name
-      eUnqualifiedItems: LayeredMap<string, Item>
+        /// Values and Data Tags available by unqualified name
+        eUnqualifiedItems: LayeredMap<string, Item>
 
-      /// Enclosing type instantiations that are associated with an unqualified type item
-      eUnqualifiedEnclosingTypeInsts: TyconRefMap<EnclosingTypeInst>
+        /// Enclosing type instantiations that are associated with an unqualified type item
+        eUnqualifiedEnclosingTypeInsts: TyconRefMap<EnclosingTypeInst>
 
-      /// Data Tags and Active Pattern Tags available by unqualified name
-      ePatItems: NameMap<Item>
+        /// Data Tags and Active Pattern Tags available by unqualified name
+        ePatItems: NameMap<Item>
 
-      /// Modules accessible via "." notation. Note this is a multi-map.
-      /// Adding a module abbreviation adds it a local entry to this List.map.
-      /// Likewise adding a ccu or opening a path adds entries to this List.map.
-      eModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
+        /// Modules accessible via "." notation. Note this is a multi-map.
+        /// Adding a module abbreviation adds it a local entry to this List.map.
+        /// Likewise adding a ccu or opening a path adds entries to this List.map.
+        eModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
 
-      /// Fully qualified modules and namespaces. 'open' does not change this.
-      eFullyQualifiedModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
+        /// Fully qualified modules and namespaces. 'open' does not change this.
+        eFullyQualifiedModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
 
-      /// RecdField labels in scope.  RecdField labels are those where type are inferred
-      /// by label rather than by known type annotation.
-      /// Bools indicate if from a record, where no warning is given on indeterminate lookup
-      eFieldLabels: NameMultiMap<RecdFieldRef>
+        /// RecdField labels in scope.  RecdField labels are those where type are inferred
+        /// by label rather than by known type annotation.
+        /// Bools indicate if from a record, where no warning is given on indeterminate lookup
+        eFieldLabels: NameMultiMap<RecdFieldRef>
 
-      /// Record or unions that may have type instantiations associated with them
-      /// when record labels or union cases are used in an unqualified context.
-      eUnqualifiedRecordOrUnionTypeInsts: TyconRefMap<TypeInst>
+        /// Record or unions that may have type instantiations associated with them
+        /// when record labels or union cases are used in an unqualified context.
+        eUnqualifiedRecordOrUnionTypeInsts: TyconRefMap<TypeInst>
 
-      /// Tycons indexed by the various names that may be used to access them, e.g.
-      ///     "List" --> multiple TyconRef's for the various tycons accessible by this name.
-      ///     "List`1" --> TyconRef
-      eTyconsByAccessNames: LayeredMultiMap<string, TyconRef>
+        /// Tycons indexed by the various names that may be used to access them, e.g.
+        ///     "List" --> multiple TyconRef's for the various tycons accessible by this name.
+        ///     "List`1" --> TyconRef
+        eTyconsByAccessNames: LayeredMultiMap<string, TyconRef>
 
-      eFullyQualifiedTyconsByAccessNames: LayeredMultiMap<string, TyconRef>
+        eFullyQualifiedTyconsByAccessNames: LayeredMultiMap<string, TyconRef>
 
-      /// Tycons available by unqualified, demangled names (i.e. (List,1) --> TyconRef)
-      eTyconsByDemangledNameAndArity: LayeredMap<NameArityPair, TyconRef>
+        /// Tycons available by unqualified, demangled names (i.e. (List,1) --> TyconRef)
+        eTyconsByDemangledNameAndArity: LayeredMap<NameArityPair, TyconRef>
 
-      /// Tycons available by unqualified, demangled names (i.e. (List,1) --> TyconRef)
-      eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair, TyconRef>
+        /// Tycons available by unqualified, demangled names (i.e. (List,1) --> TyconRef)
+        eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair, TyconRef>
 
-      /// Extension members by type and name
-      eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
+        /// Extension members by type and name
+        eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
 
-      /// Other extension members unindexed by type
-      eUnindexedExtensionMembers: ExtensionMember list
+        /// Other extension members unindexed by type
+        eUnindexedExtensionMembers: ExtensionMember list
 
-      /// Typars (always available by unqualified names). Further typars can be
-      /// in the tpenv, a structure folded through each top-level definition.
-      eTypars: NameMap<Typar>
+        /// Typars (always available by unqualified names). Further typars can be
+        /// in the tpenv, a structure folded through each top-level definition.
+        eTypars: NameMap<Typar>
 
-     }
+    }
 
     static member Empty: g: TcGlobals -> NameResolutionEnv
     member DisplayEnv: DisplayEnv
@@ -428,24 +440,26 @@ type TcSymbolUseData =
 type internal TcSymbolUses =
 
     /// Get all the uses of a particular item within the file
-    member GetUsesOfSymbol: Item -> TcSymbolUseData []
+    member GetUsesOfSymbol: Item -> TcSymbolUseData[]
 
     /// All the uses of all items within the file
-    member AllUsesOfSymbols: TcSymbolUseData [] []
+    member AllUsesOfSymbols: TcSymbolUseData[][]
 
     /// Get the locations of all the printf format specifiers in the file
-    member GetFormatSpecifierLocationsAndArity: unit -> (range * int) []
+    member GetFormatSpecifierLocationsAndArity: unit -> (range * int)[]
 
     /// Empty collection of symbol uses
     static member Empty: TcSymbolUses
 
 /// Source text and an array of line end positions, used for format string parsing
 type FormatStringCheckContext =
-    { /// Source text
-      SourceText: ISourceText
+    {
+        /// Source text
+        SourceText: ISourceText
 
-      /// Array of line start positions
-      LineStartPositions: int [] }
+        /// Array of line start positions
+        LineStartPositions: int[]
+    }
 
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =
@@ -458,11 +472,12 @@ type ITypecheckResultsSink =
 
     /// Record that a name resolution occurred at a specific location in the source
     abstract NotifyNameResolution:
-        pos * Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * bool -> unit
+        pos * Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * bool -> unit
 
     /// Record that a method group name resolution occurred at a specific location in the source
     abstract NotifyMethodGroupNameResolution:
-        pos * Item * Item * TyparInst * ItemOccurence * NameResolutionEnv * AccessorDomain * range * bool -> unit
+        pos * Item * Item * TyparInstantiation * ItemOccurence * NameResolutionEnv * AccessorDomain * range * bool ->
+            unit
 
     /// Record that a printf format specifier occurred at a specific location in the source
     abstract NotifyFormatSpecifierLocation: range * int -> unit
@@ -489,10 +504,10 @@ type internal TcResultsSinkImpl =
     member GetSymbolUses: unit -> TcSymbolUses
 
     /// Get all open declarations reported to the sink
-    member GetOpenDeclarations: unit -> OpenDeclaration []
+    member GetOpenDeclarations: unit -> OpenDeclaration[]
 
     /// Get the format specifier locations
-    member GetFormatSpecifierLocations: unit -> (range * int) []
+    member GetFormatSpecifierLocations: unit -> (range * int)[]
 
     interface ITypecheckResultsSink
 
@@ -503,7 +518,6 @@ type TcResultsSink =
 
     static member NoSink: TcResultsSink
     static member WithSink: ITypecheckResultsSink -> TcResultsSink
-
 
 /// Indicates if we only need one result or all possible results from a resolution.
 [<RequireQualifiedAccess>]
@@ -522,15 +536,17 @@ val internal CallEnvSink: TcResultsSink -> range * NameResolutionEnv * AccessorD
 
 /// Report a specific name resolution at a source range
 val internal CallNameResolutionSink:
-    TcResultsSink -> range * NameResolutionEnv * Item * TyparInst * ItemOccurence * AccessorDomain -> unit
+    TcResultsSink -> range * NameResolutionEnv * Item * TyparInstantiation * ItemOccurence * AccessorDomain -> unit
 
 /// Report a specific method group name resolution at a source range
 val internal CallMethodGroupNameResolutionSink:
-    TcResultsSink -> range * NameResolutionEnv * Item * Item * TyparInst * ItemOccurence * AccessorDomain -> unit
+    TcResultsSink ->
+    range * NameResolutionEnv * Item * Item * TyparInstantiation * ItemOccurence * AccessorDomain ->
+        unit
 
 /// Report a specific name resolution at a source range, replacing any previous resolutions
 val internal CallNameResolutionSinkReplacing:
-    TcResultsSink -> range * NameResolutionEnv * Item * TyparInst * ItemOccurence * AccessorDomain -> unit
+    TcResultsSink -> range * NameResolutionEnv * Item * TyparInstantiation * ItemOccurence * AccessorDomain -> unit
 
 /// Report a specific name resolution at a source range
 val internal CallExprHasTypeSink: TcResultsSink -> range * NameResolutionEnv * TType * AccessorDomain -> unit
@@ -590,7 +606,6 @@ type LookupKind =
     | Expr
     | Type
     | Ctor
-
 
 /// Indicates if a warning should be given for the use of upper-case identifiers in patterns
 type WarnOnUpperFlag =
@@ -723,8 +738,8 @@ type AfterResolution =
     /// a specific override. The 'Item option' contains the candidate overrides.
     | RecordResolution of
         Item option *
-        (TyparInst -> unit) *
-        (MethInfo * PropInfo option * TyparInst -> unit) *
+        (TyparInstantiation -> unit) *
+        (MethInfo * PropInfo option * TyparInstantiation -> unit) *
         (unit -> unit)
 
 /// Resolve a long identifier occurring in an expression position.

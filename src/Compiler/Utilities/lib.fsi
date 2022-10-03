@@ -74,7 +74,7 @@ module Check =
 
     /// Throw <cref>System.ArgumentNullException</cref> if array argument is <c>null</c>.
     /// Throw <cref>System.ArgumentOutOfRangeException</cref> is array argument is empty.
-    val ArrayArgumentNotNullOrEmpty: arr: 'T [] -> argName: string -> unit
+    val ArrayArgumentNotNullOrEmpty: arr: 'T[] -> argName: string -> unit
 
     /// Throw <cref>System.ArgumentNullException</cref> if string argument is <c>null</c>.
     /// Throw <cref>System.ArgumentOutOfRangeException</cref> is string argument is empty.
@@ -227,10 +227,10 @@ module Zset =
 val equalOn: f: ('a -> 'b) -> x: 'a -> y: 'a -> bool when 'b: equality
 
 /// Buffer printing utility
-val bufs: f: (StringBuilder -> unit) -> string
+val buildString: f: (StringBuilder -> unit) -> string
 
 /// Writing to output stream via a string buffer.
-val writeViaBuffer: os: TextWriter -> f: (StringBuilder -> 'a -> unit) -> x: 'a -> unit
+val writeViaBuffer: os: TextWriter -> f: (StringBuilder -> unit) -> unit
 
 type StringBuilder with
 
@@ -315,6 +315,21 @@ type DisposablesTracker =
 [<RequireQualifiedAccess>]
 module ArrayParallel =
 
-    val inline map: ('T -> 'U) -> 'T [] -> 'U []
+    val inline iter: ('T -> unit) -> 'T[] -> unit
 
-    val inline mapi: (int -> 'T -> 'U) -> 'T [] -> 'U []
+    val inline iteri: (int -> 'T -> unit) -> 'T[] -> unit
+
+    val inline map: ('T -> 'U) -> 'T[] -> 'U[]
+
+    val inline mapi: (int -> 'T -> 'U) -> 'T[] -> 'U[]
+
+[<RequireQualifiedAccess>]
+module ListParallel =
+
+    //val inline iter: ('T -> unit) -> 'T list -> unit
+
+    //val inline iteri: (int -> 'T -> unit) -> 'T list -> unit
+
+    val map: ('T -> 'U) -> 'T list -> 'U list
+
+//val inline mapi: (int -> 'T -> 'U) -> 'T list -> 'U list

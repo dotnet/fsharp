@@ -28,15 +28,15 @@ let BuildDisposableCleanup tcVal (g: TcGlobals) infoReader m (v: Val) =
         assert (TypeFeasiblySubsumesType 0 g infoReader.amap m g.system_IDisposable_ty CanCoerce v.Type)
         // We can use NeverMutates here because the variable is going out of scope, there is no need to take a defensive
         // copy of it.
-        let disposeExpr, _ = BuildMethodCall tcVal g infoReader.amap NeverMutates m false disposeMethod NormalValUse [] [exprForVal v.Range v] []
+        let disposeExpr, _ = BuildMethodCall tcVal g infoReader.amap NeverMutates m false disposeMethod NormalValUse [] [exprForVal v.Range v] [] None
         //callNonOverloadedILMethod g infoReader.amap m "Dispose" g.system_IDisposable_ty [exprForVal v.Range v]
         
         disposeExpr
     else
         let disposeObjVar, disposeObjExpr = mkCompGenLocal m "objectToDispose" g.system_IDisposable_ty
-        let disposeExpr, _ = BuildMethodCall tcVal g infoReader.amap PossiblyMutates m false disposeMethod NormalValUse [] [disposeObjExpr] []
-        let inpe = mkCoerceExpr(exprForVal v.Range v, g.obj_ty, m, v.Type)
-        mkIsInstConditional g m g.system_IDisposable_ty inpe disposeObjVar disposeExpr (mkUnit g m)
+        let disposeExpr, _ = BuildMethodCall tcVal g infoReader.amap PossiblyMutates m false disposeMethod NormalValUse [] [disposeObjExpr] [] None
+        let inputExpr = mkCoerceExpr(exprForVal v.Range v, g.obj_ty, m, v.Type)
+        mkIsInstConditional g m g.system_IDisposable_ty inputExpr disposeObjVar disposeExpr (mkUnit g m)
 
 let mkCallCollectorMethod tcVal (g: TcGlobals) infoReader m name collExpr args =
     let listCollectorTy = tyOfExpr g collExpr
@@ -44,7 +44,7 @@ let mkCallCollectorMethod tcVal (g: TcGlobals) infoReader m name collExpr args =
         match GetIntrinsicMethInfosOfType infoReader (Some name) AccessibleFromSomewhere AllowMultiIntfInstantiations.Yes IgnoreOverrides m listCollectorTy with
         | [x] -> x
         | _ -> error(InternalError("no " + name + " method found on Collector", m))
-    let expr, _ = BuildMethodCall tcVal g infoReader.amap DefinitelyMutates m false addMethod NormalValUse [] [collExpr] args
+    let expr, _ = BuildMethodCall tcVal g infoReader.amap DefinitelyMutates m false addMethod NormalValUse [] [collExpr] args None
     expr
 
 let mkCallCollectorAdd tcVal (g: TcGlobals) infoReader m collExpr arg =
@@ -167,7 +167,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
                 Result.Ok(closed, exprR)
             | Result.Error msg -> Result.Error msg
 
-        | Expr.Match (spBind, exprm, pt, targets, m, ty) ->
+        | Expr.Match (spBind, mExpr, pt, targets, m, ty) ->
             // lower all the targets. abandon if any fail to lower
             let resTargets =
                 targets |> Array.map (fun (TTarget(vs, targetExpr, flags)) -> 
@@ -179,7 +179,7 @@ let LowerComputedListOrArraySeqExpr tcVal g amap m collectorTy overallSeqExpr =
             if resTargets |> Array.forall (function Result.Ok _ -> true | _ -> false) then
                 let tglArray = Array.map (function Result.Ok v -> v | _ -> failwith "unreachable") resTargets
 
-                let exprR = primMkMatch (spBind, exprm, pt, tglArray, m, ty)
+                let exprR = primMkMatch (spBind, mExpr, pt, tglArray, m, ty)
                 Result.Ok(false, exprR)
             else
                 resTargets |> Array.pick (function Result.Error msg -> Some (Result.Error msg) | _ -> None)

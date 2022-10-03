@@ -169,7 +169,7 @@ let g (t : T) = t.Count()
                 "#r \"System2\""
             ]
         TakeCoffeeBreak(this.VS)
-        checkErrors 2
+        checkErrors 1
 
         ReplaceFileInMemory file <|
             [
@@ -297,8 +297,8 @@ let x =
 Known type of argument: 'a0 when 'a0: null
 
 Candidates:
- - System.Console.WriteLine(buffer: char[]) : unit
- - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj[]) : unit
+ - System.Console.WriteLine(buffer: char array) : unit
+ - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj array) : unit
  - System.Console.WriteLine(value: obj) : unit
  - System.Console.WriteLine(value: string) : unit""" ]
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
@@ -395,9 +395,11 @@ type staticInInterface =
         end
     end"""
             
-        CheckErrorList fileContent <| function
-                | [err] -> Assert.IsTrue(err.Message.Contains("Unexpected keyword 'static' in member definition. Expected 'member', 'override' or other token"))
-                | x -> Assert.Fail(sprintf "Unexpected errors: %A" x)
+        CheckErrorList fileContent (function
+            | err1 :: _ ->
+                Assert.IsTrue(err1.Message.Contains("No abstract or interface member was found that corresponds to this override"))
+            | x ->
+                Assert.Fail(sprintf "Unexpected errors: %A" x))
     
     [<Test>]
     [<Category("TypeProvider")>]

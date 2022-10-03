@@ -293,7 +293,7 @@ module Map =
     /// </code>
     /// </example>
     [<CompiledName("OfArray")>]
-    val ofArray: elements: ('Key * 'T) [] -> Map<'Key, 'T>
+    val ofArray: elements: ('Key * 'T)[] -> Map<'Key, 'T>
 
     /// <summary>Returns a new map made from the given bindings.</summary>
     ///
@@ -360,7 +360,7 @@ module Map =
     /// </code>
     /// </example>
     [<CompiledName("ToArray")>]
-    val toArray: table: Map<'Key, 'T> -> ('Key * 'T) []
+    val toArray: table: Map<'Key, 'T> -> ('Key * 'T)[]
 
     /// <summary>Is the map empty?</summary>
     ///
@@ -484,8 +484,9 @@ module Map =
     /// Evaluates to <c>"1 a 2 b initial"</c>
     /// </example>
     [<CompiledName("FoldBack")>]
-    val foldBack<'Key, 'T, 'State> : folder: ('Key -> 'T -> 'State -> 'State) -> table: Map<'Key, 'T> -> state: 'State -> 'State
-        when 'Key: comparison
+    val foldBack<'Key, 'T, 'State> :
+        folder: ('Key -> 'T -> 'State -> 'State) -> table: Map<'Key, 'T> -> state: 'State -> 'State
+            when 'Key: comparison
 
     /// <summary>Folds over the bindings in the map </summary>
     ///
@@ -504,8 +505,9 @@ module Map =
     /// Evaluates to <c>"initial 1 a 2 b"</c>.
     /// </example>
     [<CompiledName("Fold")>]
-    val fold<'Key, 'T, 'State> : folder: ('State -> 'Key -> 'T -> 'State) -> state: 'State -> table: Map<'Key, 'T> -> 'State
-        when 'Key: comparison
+    val fold<'Key, 'T, 'State> :
+        folder: ('State -> 'Key -> 'T -> 'State) -> state: 'State -> table: Map<'Key, 'T> -> 'State
+            when 'Key: comparison
 
     /// <summary>Applies the given function to each binding in the dictionary</summary>
     ///

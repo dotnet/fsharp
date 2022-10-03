@@ -258,7 +258,7 @@ type LowerStateMachine(g: TcGlobals) =
         | Expr.Const (Const.Zero, m, ty) -> 
             Some (Expr.Const (Const.Zero, m, ty))
 
-        | Expr.Match (spBind, exprm, dtree, targets, m, ty) ->
+        | Expr.Match (spBind, mExpr, dtree, targets, m, ty) ->
             let mutable newTyOpt = None
             let targets2 = 
                 targets |> Array.choose (fun (TTarget(vs, targetExpr, flags)) -> 
@@ -289,7 +289,7 @@ type LowerStateMachine(g: TcGlobals) =
                     | Some targetExpr2 -> Some (TTarget(vs, targetExpr2, flags))
                     | None -> None)
             if targets2.Length = targets.Length then 
-                Some (Expr.Match (spBind, exprm, dtree, targets2, m, ty))
+                Some (Expr.Match (spBind, mExpr, dtree, targets2, m, ty))
             else
                 None
 
@@ -358,7 +358,7 @@ type LowerStateMachine(g: TcGlobals) =
           PostTransform = (fun _ -> None)
           PreInterceptBinding = None
           RewriteQuotations=true 
-          StackGuard = StackGuard(LowerStateMachineStackGuardDepth) }
+          StackGuard = StackGuard(LowerStateMachineStackGuardDepth, "LowerStateMachineStackGuardDepth") }
 
     let ConvertStateMachineLeafExpression (env: env) expr = 
         if sm_verbose then printfn "ConvertStateMachineLeafExpression for %A..." expr
@@ -395,11 +395,11 @@ type LowerStateMachine(g: TcGlobals) =
             let remake2 (moveNextExprR, stateVars, thisVars) = 
                 if sm_verbose then 
                     printfn "----------- AFTER REWRITE moveNextExprWithJumpTable ----------------------"
-                    printfn "%s" (DebugPrint.showExpr g moveNextExprR)
+                    printfn "%s" (DebugPrint.showExpr moveNextExprR)
                     printfn "----------- AFTER REWRITE setStateMachineBodyR ----------------------"
-                    printfn "%s" (DebugPrint.showExpr g setStateMachineBodyR)
+                    printfn "%s" (DebugPrint.showExpr setStateMachineBodyR)
                     printfn "----------- AFTER REWRITE afterCodeBodyR ----------------------"
-                    printfn "%s" (DebugPrint.showExpr g afterCodeBodyR)
+                    printfn "%s" (DebugPrint.showExpr afterCodeBodyR)
                 LoweredStateMachine 
                     (templateStructTy, dataTy, stateVars, thisVars, 
                         (moveNextThisVar, moveNextExprR), 
@@ -434,13 +434,13 @@ type LowerStateMachine(g: TcGlobals) =
     let rec ConvertResumableCode env (pcValInfo: ((Val * Expr) * Expr) option) expr : Result<StateMachineConversionFirstPhaseResult, string> = 
         if sm_verbose then 
             printfn "---------ConvertResumableCode-------------------"
-            printfn "%s" (DebugPrint.showExpr g expr)
+            printfn "%s" (DebugPrint.showExpr expr)
             printfn "---------"
         
         let env, expr = RepeatBindAndApplyOuterDefinitions env expr
         
         if sm_verbose then 
-            printfn "After RepeatBindAndApplyOuterDefinitions:\n%s" (DebugPrint.showExpr g expr)
+            printfn "After RepeatBindAndApplyOuterDefinitions:\n%s" (DebugPrint.showExpr expr)
             printfn "---------"
 
         // Detect the different permitted constructs in the expanded state machine
@@ -489,8 +489,8 @@ type LowerStateMachine(g: TcGlobals) =
                 ConvertResumableTryWith env pcValInfo (spTry, spWith, resTy, bodyExpr, filterVar, filterExpr, handlerVar, handlerExpr, m)
 
             // control-flow match
-            | Expr.Match (spBind, exprm, dtree, targets, m, ty) ->
-                ConvertResumableMatch env pcValInfo (spBind, exprm, dtree, targets, m, ty)
+            | Expr.Match (spBind, mExpr, dtree, targets, m, ty) ->
+                ConvertResumableMatch env pcValInfo (spBind, mExpr, dtree, targets, m, ty)
 
             // Non-control-flow let binding can appear as part of state machine. The body is considered state-machine code,
             // the expression being bound is not.
@@ -520,14 +520,14 @@ type LowerStateMachine(g: TcGlobals) =
             match res with 
             | Result.Ok res -> 
                 printfn "-------------------"
-                printfn "Phase 1 Done for %s" (DebugPrint.showExpr g res.phase1)
+                printfn "Phase 1 Done for %s" (DebugPrint.showExpr res.phase1)
                 printfn "Phase 1 Done, resumableVars = %A" (res.resumableVars.FreeLocals |> Zset.elements |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
                 printfn "Phase 1 Done, stateVars = %A" (res.stateVars |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
                 printfn "Phase 1 Done, thisVars = %A" (res.thisVars |> List.map (fun v -> v.CompiledName(g.CompilerGlobalState)) |> String.concat ",")
                 printfn "-------------------"
             | Result.Error msg-> 
                 printfn "Phase 1 failed: %s" msg
-                printfn "Phase 1 failed for %s" (DebugPrint.showExpr g expr)
+                printfn "Phase 1 failed for %s" (DebugPrint.showExpr expr)
         res
 
     and ConvertResumableEntry env pcValInfo (noneBranchExpr, someVar, someBranchExpr, _rebuild) =
@@ -756,7 +756,7 @@ type LowerStateMachine(g: TcGlobals) =
             |> Result.Ok
         | Result.Error err, _, _ | _, Result.Error err, _ | _, _, Result.Error err -> Result.Error err
 
-    and ConvertResumableMatch env pcValInfo (spBind, exprm, dtree, targets, m, ty) =
+    and ConvertResumableMatch env pcValInfo (spBind, mExpr, dtree, targets, m, ty) =
         if sm_verbose then printfn "MatchExpr" 
         // lower all the targets. 
         let dtreeR = ConvertStateMachineLeafDecisionTree env dtree 
@@ -783,14 +783,14 @@ type LowerStateMachine(g: TcGlobals) =
                     (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, _)) res -> 
                         let flags = vs |> List.map (fun v -> res.resumableVars.FreeLocals.Contains(v)) 
                         TTarget(vs, res.phase1, Some flags))
-                primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
+                primMkMatch (spBind, mExpr, dtreeR, gtgs, m, ty)
 
               phase2 = (fun ctxt ->
                             let gtgs =
                                 (targets, tglArray) ||> Array.map2 (fun (TTarget(vs, _, _)) res ->
                                     let flags = vs |> List.map (fun v -> res.resumableVars.FreeLocals.Contains(v)) 
                                     TTarget(vs, res.phase2 ctxt, Some flags))
-                            let generate = primMkMatch (spBind, exprm, dtreeR, gtgs, m, ty)
+                            let generate = primMkMatch (spBind, mExpr, dtreeR, gtgs, m, ty)
                             generate)
 
               entryPoints = entryPoints
@@ -872,9 +872,9 @@ type LowerStateMachine(g: TcGlobals) =
                 if sm_verbose then 
                     printfn "Found state machine override method and code expression..."
                     printfn "----------- OVERALL EXPRESSION FOR STATE MACHINE CONVERSION ----------------------"
-                    printfn "%s" (DebugPrint.showExpr g overallExpr)
+                    printfn "%s" (DebugPrint.showExpr overallExpr)
                     printfn "----------- INPUT TO STATE MACHINE CONVERSION ----------------------"
-                    printfn "%s" (DebugPrint.showExpr g codeExpr)
+                    printfn "%s" (DebugPrint.showExpr codeExpr)
                     printfn "----------- START STATE MACHINE CONVERSION ----------------------"
     
                 // Perform phase1 of the conversion

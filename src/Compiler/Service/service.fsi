@@ -8,6 +8,7 @@ open System
 open System.IO
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
@@ -31,6 +32,8 @@ type public FSharpChecker =
     /// <param name="keepAllBackgroundSymbolUses">Indicate whether all symbol uses should be kept in background checking</param>
     /// <param name="enableBackgroundItemKeyStoreAndSemanticClassification">Indicates whether a table of symbol keys should be kept for background compilation</param>
     /// <param name="enablePartialTypeChecking">Indicates whether to perform partial type checking. Cannot be set to true if keepAssmeblyContents is true. If set to true, can cause duplicate type-checks when richer information on a file is needed, but can skip background type-checking entirely on implementation files with signature files.</param>
+    /// <param name="enableParallelCheckingWithSignatureFiles">Type check implementation files that are backed by a signature file in parallel.</param>
+    /// <param name="parallelReferenceResolution">Indicates whether to resolve references in parallel.</param>
     static member Create:
         ?projectCacheSize: int *
         ?keepAssemblyContents: bool *
@@ -40,7 +43,9 @@ type public FSharpChecker =
         ?suggestNamesForErrors: bool *
         ?keepAllBackgroundSymbolUses: bool *
         ?enableBackgroundItemKeyStoreAndSemanticClassification: bool *
-        ?enablePartialTypeChecking: bool ->
+        ?enablePartialTypeChecking: bool *
+        ?enableParallelCheckingWithSignatureFiles: bool *
+        ?parallelReferenceResolution: bool ->
             FSharpChecker
 
     /// <summary>
@@ -54,7 +59,7 @@ type public FSharpChecker =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member MatchBraces:
         fileName: string * sourceText: ISourceText * options: FSharpParsingOptions * ?userOpName: string ->
-            Async<(range * range) []>
+            Async<(range * range)[]>
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
@@ -68,7 +73,7 @@ type public FSharpChecker =
     [<Obsolete("Please pass FSharpParsingOptions to MatchBraces. If necessary generate FSharpParsingOptions from FSharpProjectOptions by calling checker.GetParsingOptionsFromProjectOptions(options)")>]
     member MatchBraces:
         fileName: string * source: string * options: FSharpProjectOptions * ?userOpName: string ->
-            Async<(range * range) []>
+            Async<(range * range)[]>
 
     /// <summary>
     /// Parses a source code for a file and caches the results. Returns an AST that can be traversed for various features.
@@ -209,7 +214,7 @@ type public FSharpChecker =
         source: ISourceText *
         ?previewEnabled: bool *
         ?loadedTimeStamp: DateTime *
-        ?otherFlags: string [] *
+        ?otherFlags: string[] *
         ?useFsiAuxLib: bool *
         ?useSdkRefs: bool *
         ?assumeDotNetFramework: bool *
@@ -228,7 +233,7 @@ type public FSharpChecker =
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
     member GetProjectOptionsFromCommandLineArgs:
-        projectFileName: string * argv: string [] * ?loadedTimeStamp: DateTime * ?isInteractive: bool * ?isEditing: bool ->
+        projectFileName: string * argv: string[] * ?loadedTimeStamp: DateTime * ?isInteractive: bool * ?isEditing: bool ->
             FSharpProjectOptions
 
     /// <summary>
@@ -325,71 +330,7 @@ type public FSharpChecker =
     ///
     /// <param name="argv">The command line arguments for the project build.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member Compile: argv: string [] * ?userOpName: string -> Async<FSharpDiagnostic [] * int>
-
-    /// <summary>
-    /// TypeCheck and compile provided AST
-    /// </summary>
-    ///
-    /// <param name="ast">The syntax tree for the build.</param>
-    /// <param name="assemblyName">The assembly name for the compiled output.</param>
-    /// <param name="outFile">The output file for the compialtion.</param>
-    /// <param name="dependencies">The list of dependencies for the compialtion.</param>
-    /// <param name="pdbFile">The output PDB file, if any.</param>
-    /// <param name="executable">Indicates if an executable is being produced.</param>
-    /// <param name="noframework">Enables the <c>/noframework</c> flag.</param>
-    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member Compile:
-        ast: ParsedInput list *
-        assemblyName: string *
-        outFile: string *
-        dependencies: string list *
-        ?pdbFile: string *
-        ?executable: bool *
-        ?noframework: bool *
-        ?userOpName: string ->
-            Async<FSharpDiagnostic [] * int>
-
-    /// <summary>
-    /// Compiles to a dynamic assembly using the given flags.
-    ///
-    /// The first argument is ignored and can just be "fsc.exe".
-    ///
-    /// Any source files names are resolved via the FileSystem API. An output file name must be given by a -o flag, but this will not
-    /// be written - instead a dynamic assembly will be created and loaded.
-    ///
-    /// If the 'execute' parameter is given the entry points for the code are executed and
-    /// the given TextWriters are used for the stdout and stderr streams respectively. In this
-    /// case, a global setting is modified during the execution.
-    /// </summary>
-    ///
-    /// <param name="otherFlags">Other flags for compilation.</param>
-    /// <param name="execute">An optional pair of output streams, enabling execution of the result.</param>
-    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member CompileToDynamicAssembly:
-        otherFlags: string [] * execute: (TextWriter * TextWriter) option * ?userOpName: string ->
-            Async<FSharpDiagnostic [] * int * System.Reflection.Assembly option>
-
-    /// <summary>
-    /// TypeCheck and compile provided AST
-    /// </summary>
-    ///
-    /// <param name="ast">The syntax tree for the build.</param>
-    /// <param name="assemblyName">The assembly name for the compiled output.</param>
-    /// <param name="dependencies">The list of dependencies for the compialtion.</param>
-    /// <param name="execute">An optional pair of output streams, enabling execution of the result.</param>
-    /// <param name="debug">Enabled debug symbols</param>
-    /// <param name="noframework">Enables the <c>/noframework</c> flag.</param>
-    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member CompileToDynamicAssembly:
-        ast: ParsedInput list *
-        assemblyName: string *
-        dependencies: string list *
-        execute: (TextWriter * TextWriter) option *
-        ?debug: bool *
-        ?noframework: bool *
-        ?userOpName: string ->
-            Async<FSharpDiagnostic [] * int * System.Reflection.Assembly option>
+    member Compile: argv: string[] * ?userOpName: string -> Async<FSharpDiagnostic[] * int>
 
     /// <summary>
     /// Try to get type check results for a file. This looks up the results of recent type checks of the
@@ -404,7 +345,7 @@ type public FSharpChecker =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member TryGetRecentCheckResultsForFile:
         fileName: string * options: FSharpProjectOptions * ?sourceText: ISourceText * ?userOpName: string ->
-            (FSharpParseFileResults * FSharpCheckFileResults (* hash *)  * int64) option
+            (FSharpParseFileResults * FSharpCheckFileResults (* hash *) * int64) option
 
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
     member InvalidateAll: unit -> unit
@@ -468,10 +409,10 @@ type public FSharpChecker =
     member internal ReferenceResolver: LegacyReferenceResolver
 
     /// Tokenize a single line, returning token information and a tokenization state represented by an integer
-    member TokenizeLine: line: string * state: FSharpTokenizerLexState -> FSharpTokenInfo [] * FSharpTokenizerLexState
+    member TokenizeLine: line: string * state: FSharpTokenizerLexState -> FSharpTokenInfo[] * FSharpTokenizerLexState
 
     /// Tokenize an entire file, line by line
-    member TokenizeFile: source: string -> FSharpTokenInfo [] []
+    member TokenizeFile: source: string -> FSharpTokenInfo[][]
 
 namespace FSharp.Compiler
 

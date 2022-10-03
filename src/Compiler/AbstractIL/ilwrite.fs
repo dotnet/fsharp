@@ -574,7 +574,6 @@ type cenv =
     }
     member cenv.GetTable (tab: TableName) = cenv.tables[tab.Index]
 
-
     member cenv.AddCode ((reqdStringFixupsOffset, requiredStringFixups), code) =
         if align 4 cenv.nextCodeAddr <> cenv.nextCodeAddr then dprintn "warning: code not 4-byte aligned"
         cenv.requiredStringFixups <- (cenv.nextCodeAddr + reqdStringFixupsOffset, requiredStringFixups) :: cenv.requiredStringFixups
@@ -582,6 +581,10 @@ type cenv =
         cenv.nextCodeAddr <- cenv.nextCodeAddr + code.Length
 
     member cenv.GetCode() = cenv.codeChunks.AsMemory().ToArray()
+
+    member cenv.EmitDebugDocument (doc: ILSourceDocument) =
+        if cenv.generatePdb then
+          cenv.documents.FindOrAddSharedEntry doc |> ignore
 
     override x.ToString() = "<cenv>"
 
@@ -765,16 +768,15 @@ and GetTypeDescAsTypeRefIdx cenv (scoref, enc, n) =
     GetTypeRefAsTypeRefIdx cenv (mkILNestedTyRef (scoref, enc, n))
 
 and GetResolutionScopeAsElem cenv (scoref, enc) =
-    if isNil enc then
+    match List.tryFrontAndBack enc with
+    | None ->
         match scoref with
         | ILScopeRef.Local -> (rs_Module, 1)
         | ILScopeRef.Assembly aref -> (rs_AssemblyRef, GetAssemblyRefAsIdx cenv aref)
         | ILScopeRef.Module mref -> (rs_ModuleRef, GetModuleRefAsIdx cenv mref)
         | ILScopeRef.PrimaryAssembly -> (rs_AssemblyRef, GetAssemblyRefAsIdx cenv cenv.ilg.primaryAssemblyRef)
-    else
-        let enc2, n2 = List.frontAndBack enc
+    | Some (enc2, n2) ->
         (rs_TypeRef, GetTypeDescAsTypeRefIdx cenv (scoref, enc2, n2))
-
 
 let getTypeInfoAsTypeDefOrRefEncoded cenv (scoref, enc, nm) =
     if isScopeRefLocal scoref then
@@ -1135,21 +1137,24 @@ let TryGetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
 let canGenMethodDef (tdef: ILTypeDef) cenv (mdef: ILMethodDef) =
     if not cenv.referenceAssemblyOnly then
         true
-    // If the method is part of attribute type, generate get_* and set_* methods for it, consider the following case:
+    // If the method is part of attribute type, generate get_* and set_* methods and .ctors for it, consider the following case:
     //      [<AttributeUsage(AttributeTargets.All)>]
     //      type PublicWithInternalSetterPropertyAttribute() =
     //          inherit Attribute()
     //          member val internal Prop1 : int = 0 with get, set
     //      [<PublicWithInternalSetterPropertyAttribute(Prop1=4)>]
     //      type ClassPublicWithAttributes() = class end
-    else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsConstructor) && (not mdef.IsClassInitializer) then
+
+    // We want to generate pretty much everything for attributes, because of serialization scenarios, and the fact that non-visible constructors, properties and fields can still be part of reference assembly.
+    // Example: NoDynamicInvocationAttribute has an internal constructor, which should be included in the reference assembly.
+    else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsClassInitializer) then
         true
     else
         match mdef.Access with
         | ILMemberAccess.Public -> true
         // When emitting a reference assembly, do not emit methods that are private/protected/internal unless they are virtual/abstract or provide an explicit interface implementation.
         | ILMemberAccess.Private | ILMemberAccess.Family | ILMemberAccess.Assembly | ILMemberAccess.FamilyOrAssembly
-            when mdef.IsVirtual || mdef.IsAbstract || mdef.IsNewSlot || mdef.IsFinal -> true
+            when mdef.IsVirtual || mdef.IsAbstract || mdef.IsNewSlot || mdef.IsFinal || mdef.IsEntryPoint -> true
         // When emitting a reference assembly, only generate internal methods if the assembly contains a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
         | ILMemberAccess.FamilyOrAssembly | ILMemberAccess.Assembly
             when cenv.hasInternalsVisibleToAttrib -> true
@@ -1917,10 +1922,11 @@ module Codebuf =
             emitTailness cenv codebuf tl
             emitMethodSpecInstr cenv codebuf env i_callvirt (mspec, varargs)
             //emitAfterTailcall codebuf tl
-        | I_callconstraint (tl, ty, mspec, varargs) ->
+        | I_callconstraint (callvirt, tl, ty, mspec, varargs) ->
             emitTailness cenv codebuf tl
             emitConstrained cenv codebuf env ty
-            emitMethodSpecInstr cenv codebuf env i_callvirt (mspec, varargs)
+            let instr = if callvirt then i_callvirt else i_call
+            emitMethodSpecInstr cenv codebuf env instr (mspec, varargs)
             //emitAfterTailcall codebuf tl
         | I_newobj (mspec, varargs) ->
             emitMethodSpecInstr cenv codebuf env i_newobj (mspec, varargs)
@@ -3041,7 +3047,21 @@ let DataCapacity = 200
 [<Literal>]
 let ResourceCapacity = 200
 
-let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes, referenceAssemblyOnly, referenceAssemblyAttribOpt: ILAttribute option) (m : ILModuleDef) cilStartAddress normalizeAssemblyRefs =
+let generateIL (
+    requiredDataFixups,
+    desiredMetadataVersion,
+    generatePdb,
+    ilg: ILGlobals,
+    emitTailcalls,
+    deterministic,
+    showTimes,
+    referenceAssemblyOnly,
+    referenceAssemblyAttribOpt: ILAttribute option,
+    allGivenSources,
+    m: ILModuleDef,
+    cilStartAddress,
+    normalizeAssemblyRefs) =
+
     let isDll = m.IsDLL
 
     let hasInternalsVisibleToAttrib =
@@ -3113,6 +3133,9 @@ let generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg : IL
     // Now the main compilation step
     GenModule cenv m
 
+    for doc in allGivenSources do
+        cenv.EmitDebugDocument(doc)
+
     // .exe files have a .entrypoint instruction. Do not write it to the entrypoint when writing dll.
     let entryPointToken =
         match cenv.entrypoint with
@@ -3178,29 +3201,6 @@ module FileSystemUtilities =
     open System.Reflection
     open System.Globalization
     let progress = try Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
-    let setExecutablePermission (fileName: string) =
-
-#if ENABLE_MONO_SUPPORT
-      if runningOnMono then
-        try
-            let monoPosix = Assembly.Load("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
-            if progress then eprintf "loading type Mono.Unix.UnixFileInfo...\n"
-            let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo")
-            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box fileName |], CultureInfo.InvariantCulture)
-            let prevPermissions = monoUnixFileInfo.InvokeMember("get_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| |], CultureInfo.InvariantCulture)
-            let prevPermissionsValue = prevPermissions |> unbox<int>
-            let newPermissionsValue = prevPermissionsValue ||| 0x000001ED
-            let newPermissions = Enum.ToObject(prevPermissions.GetType(), newPermissionsValue)
-            // Add 0x000001ED (UserReadWriteExecute, GroupReadExecute, OtherReadExecute) to the access permissions on Unix
-            monoUnixFileInfo.InvokeMember("set_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| newPermissions |], CultureInfo.InvariantCulture) |> ignore
-        with exn ->
-            if progress then eprintf "failure: %s...\n" (exn.ToString())
-            // Fail silently
-      else
-#else
-        ignore fileName
-#endif
-        ()
 
 /// Arbitrary value
 [<Literal>]
@@ -3209,7 +3209,21 @@ let TableCapacity = 20000
 [<Literal>]
 let MetadataCapacity = 500000
 
-let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes, referenceAssemblyOnly, referenceAssemblyAttribOpt) modul cilStartAddress normalizeAssemblyRefs =
+let writeILMetadataAndCode (
+    generatePdb,
+    desiredMetadataVersion,
+    ilg,
+    emitTailcalls,
+    deterministic,
+    showTimes,
+    referenceAssemblyOnly,
+    referenceAssemblyAttribOpt,
+    allGivenSources,
+    modul,
+    cilStartAddress,
+    normalizeAssemblyRefs
+) =
+
     // When we know the real RVAs of the data section we fixup the references for the FieldRVA table.
     // These references are stored as offsets into the metadata we return from this function
     let requiredDataFixups = ref []
@@ -3217,7 +3231,20 @@ let writeILMetadataAndCode (generatePdb, desiredMetadataVersion, ilg, emitTailca
     let next = cilStartAddress
 
     let strings, userStrings, blobs, guids, tables, entryPointToken, code, requiredStringFixups, data, resources, pdbData, mappings =
-      generateIL requiredDataFixups (desiredMetadataVersion, generatePdb, ilg, emitTailcalls, deterministic, showTimes, referenceAssemblyOnly, referenceAssemblyAttribOpt) modul cilStartAddress normalizeAssemblyRefs
+      generateIL (
+          requiredDataFixups,
+          desiredMetadataVersion,
+          generatePdb,
+          ilg,
+          emitTailcalls,
+          deterministic,
+          showTimes,
+          referenceAssemblyOnly,
+          referenceAssemblyAttribOpt,
+          allGivenSources,
+          modul,
+          cilStartAddress,
+          normalizeAssemblyRefs)
 
     reportTime showTimes "Generated Tables and Code"
     let tableSize (tab: TableName) = tables[tab.Index].Count
@@ -3662,7 +3689,6 @@ let writeBytes (os: BinaryWriter) (chunk: byte[]) = os.Write(chunk, 0, chunk.Len
 let writePdb (
     dumpDebugInfo,
     showTimes,
-    portablePDB,
     embeddedPDB,
     pdbfile,
     outfile,
@@ -3688,10 +3714,6 @@ let writePdb (
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary.
     match pdbfile with
     | None -> ()
-#if ENABLE_MONO_SUPPORT
-    | Some fmdb when runningOnMono && not portablePDB ->
-        writeMdbInfo fmdb outfile pdbData
-#endif
     | Some pdbfile ->
         let idd =
             match pdbInfoOpt with
@@ -3705,16 +3727,17 @@ let writePdb (
                         ms.Close()
                         pdbBytes <- Some (ms.ToArray())
                     else
+                        let outfileInfo = FileInfo(outfile).FullName
+                        let pdbfileInfo = FileInfo(pdbfile).FullName
+
+                        // If pdbfilepath matches output filepath then error
+                        if String.Compare(outfileInfo, pdbfileInfo, StringComparison.InvariantCulture) = 0 then
+                            errorR(Error(FSComp.SR.optsPdbMatchesOutputFileName(), rangeStartup))
                         try FileSystem.FileDeleteShim pdbfile with _ -> ()
                         use fs = FileSystem.OpenFileForWriteShim(pdbfile, fileMode = FileMode.Create, fileAccess = FileAccess.ReadWrite)
                         stream.WriteTo fs
                     getInfoForPortablePdb contentId pdbfile pathMap debugDataChunk debugDeterministicPdbChunk debugChecksumPdbChunk algorithmName checkSum embeddedPDB deterministic
-            | None ->
-#if FX_NO_PDB_WRITER
-                [| |]
-#else
-                writePdbInfo showTimes outfile pdbfile pdbData debugDataChunk
-#endif
+            | None -> [| |]
         reportTime showTimes "Generate PDB Info"
 
         // Now we have the debug data we can go back and fill in the debug directory in the image
@@ -3764,35 +3787,39 @@ let writePdb (
     reportTime showTimes "Signing Image"
     pdbBytes
 
-let writeBinaryAux (
-    stream: Stream,
-    ilg: ILGlobals,
-    pdbfile: string option,
-    signer: ILStrongNameSigner option,
-    portablePDB,
-    embeddedPDB,
-    embedAllSource,
-    embedSourceList,
-    sourceLink,
-    checksumAlgorithm,
-    emitTailcalls,
-    deterministic,
-    showTimes,
-    referenceAssemblyOnly,
-    referenceAssemblyAttribOpt,
-    pathMap, modul, 
-    normalizeAssemblyRefs) =
+type options =
+   { ilg: ILGlobals
+     outfile: string
+     pdbfile: string option
+     portablePDB: bool
+     embeddedPDB: bool
+     embedAllSource: bool
+     embedSourceList: string list
+     allGivenSources: ILSourceDocument list
+     sourceLink: string
+     checksumAlgorithm: HashAlgorithm
+     signer: ILStrongNameSigner option
+     emitTailcalls: bool
+     deterministic: bool
+     showTimes: bool
+     dumpDebugInfo: bool
+     referenceAssemblyOnly: bool
+     referenceAssemblyAttribOpt: ILAttribute option
+     pathMap: PathMap }
+
+let writeBinaryAux (stream: Stream, options: options, modul, normalizeAssemblyRefs) =
 
     // Store the public key from the signer into the manifest. This means it will be written
     // to the binary and also acts as an indicator to leave space for delay sign
 
-    reportTime showTimes "Write Started"
+    reportTime options.showTimes "Write Started"
     let isDll = modul.IsDLL
+    let ilg = options.ilg
 
     let signer =
-        match signer, modul.Manifest with
-        | Some _, _ -> signer
-        | _, None -> signer
+        match options.signer, modul.Manifest with
+        | Some _, _ -> options.signer
+        | _, None -> options.signer
         | None, Some {PublicKey=Some pubkey} ->
             (dprintn "Note: The output assembly will be delay-signed using the original public"
              dprintn "Note: key. In order to load it you will need to either sign it with"
@@ -3802,7 +3829,7 @@ let writeBinaryAux (
              dprintn "Note: private key when converting the assembly, assuming you have access to"
              dprintn "Note: it."
              Some (ILStrongNameSigner.OpenPublicKey pubkey))
-        | _ -> signer
+        | _ -> options.signer
 
     let modul =
         let pubkey =
@@ -3824,13 +3851,18 @@ let writeBinaryAux (
 
           let os = new BinaryWriter(stream, System.Text.Encoding.UTF8)
 
-          let imageBaseReal = modul.ImageBase // FIXED CHOICE
-          let alignVirt = modul.VirtualAlignment // FIXED CHOICE
-          let alignPhys = modul.PhysicalAlignment // FIXED CHOICE
+          let imageBaseReal = modul.ImageBase       // FIXED CHOICE
+          let alignVirt = modul.VirtualAlignment    // FIXED CHOICE
+          let alignPhys = modul.PhysicalAlignment   // FIXED CHOICE
 
           let isItanium = modul.Platform = Some IA64
-
-          let numSections = 3 // .text, .sdata, .reloc
+          let isItaniumOrAMD = match modul.Platform with | Some IA64 | Some AMD64 -> true | _ -> false
+          let hasEntryPointStub = match modul.Platform with | Some ARM64 | Some ARM -> false | _ -> true
+          let hasMvidSection = options.referenceAssemblyAttribOpt.IsSome
+          let numSections =
+              let ns = if hasMvidSection then 1 else 0
+              if hasEntryPointStub then ns + 3           // [.mvid], .text, .sdata, .reloc
+              else ns + 2                                // [.mvid], .text, .sdata
 
           // HEADERS
           let next = 0x0
@@ -3838,39 +3870,38 @@ let writeBinaryAux (
           let headerAddr = next
           let next = headerAddr
 
-          let msdosHeaderSize = 0x80
-          let msdosHeaderChunk, next = chunk msdosHeaderSize next
-
-          let peSignatureSize = 0x04
-          let peSignatureChunk, next = chunk peSignatureSize next
-
-          let peFileHeaderSize = 0x14
-          let peFileHeaderChunk, next = chunk peFileHeaderSize next
-
-          let peOptionalHeaderSize = if modul.Is64Bit then 0xf0 else 0xe0
-          let peOptionalHeaderChunk, next = chunk peOptionalHeaderSize next
-
-          let textSectionHeaderSize = 0x28
-          let textSectionHeaderChunk, next = chunk textSectionHeaderSize next
-
-          let dataSectionHeaderSize = 0x28
-          let dataSectionHeaderChunk, next = chunk dataSectionHeaderSize next
-
-          let relocSectionHeaderSize = 0x28
-          let relocSectionHeaderChunk, next = chunk relocSectionHeaderSize next
+          let msdosHeaderChunk, next = chunk 0x80 next
+          let peSignatureChunk, next = chunk 0x04 next
+          let peFileHeaderChunk, next = chunk 0x14 next
+          let peOptionalHeaderChunk, next = chunk (if modul.Is64Bit then 0xf0 else 0xe0) next
+          let mvidSectionHeaderChunk, next =
+              if hasMvidSection then chunk 0x28 next
+              else nochunk next
+          let textSectionHeaderChunk, next = chunk 0x28 next
+          let dataSectionHeaderChunk, next = chunk 0x28 next
+          let relocSectionHeaderChunk, next = if hasEntryPointStub then chunk 0x28 next else nochunk next
 
           let headerSize = next - headerAddr
           let nextPhys = align alignPhys (headerSectionPhysLoc + headerSize)
           let headerSectionPhysSize = nextPhys - headerSectionPhysLoc
           let next = align alignVirt (headerAddr + headerSize)
 
-          // TEXT SECTION: 8 bytes IAT table 72 bytes CLI header
+          // .MVID SECTION
+          let mvidSectionPhysLoc = nextPhys
+          let mvidSectionAddr =  next
+          let mvidSectionChunk, next =  if hasMvidSection then chunk sizeof<Guid> next else nochunk next
+          let mvidSectionSize = if hasMvidSection then next - mvidSectionAddr else 0x00
+          let nextPhys = if hasMvidSection then align alignPhys (mvidSectionPhysLoc + mvidSectionSize) else nextPhys
+          let mvidSectionPhysSize = if hasMvidSection then nextPhys - mvidSectionPhysLoc else 0x00
+          let next = if hasMvidSection then align alignVirt (mvidSectionAddr + mvidSectionSize) else align alignVirt next
 
+          // TEXT SECTION: 8 bytes IAT table 72 bytes CLI header
           let textSectionPhysLoc = nextPhys
           let textSectionAddr = next
           let next = textSectionAddr
 
-          let importAddrTableChunk, next = chunk 0x08 next
+          // IAT not for ARM
+          let importAddrTableChunk, next = if hasEntryPointStub then chunk 0x08 next else nochunk next
           let cliHeaderPadding = (if isItanium then (align 16 next) else next) - next
           let next = next + cliHeaderPadding
           let cliHeaderChunk, next = chunk 0x48 next
@@ -3890,9 +3921,22 @@ let writeBinaryAux (
                     | None -> failwith "Expected mscorlib to have a version number"
 
           let entryPointToken, code, codePadding, metadata, data, resources, requiredDataFixups, pdbData, mappings, guidStart =
-            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg, emitTailcalls, deterministic, showTimes, referenceAssemblyOnly, referenceAssemblyAttribOpt) modul next normalizeAssemblyRefs
+              writeILMetadataAndCode (
+                  options.pdbfile.IsSome,
+                  desiredMetadataVersion,
+                  ilg,
+                  options.emitTailcalls,
+                  options.deterministic,
+                  options.showTimes,
+                  options.referenceAssemblyOnly,
+                  options.referenceAssemblyAttribOpt,
+                  options.allGivenSources,
+                  modul,
+                  next,
+                  normalizeAssemblyRefs
+              )
 
-          reportTime showTimes "Generated IL and metadata"
+          reportTime options.showTimes "Generated IL and metadata"
           let _codeChunk, next = chunk code.Length next
           let _codePaddingChunk, next = chunk codePadding.Length next
 
@@ -3910,26 +3954,24 @@ let writeBinaryAux (
           let vtfixupsChunk, next = nochunk next   // Note: only needed for mixed mode assemblies
           let importTableChunkPrePadding = (if isItanium then (align 16 next) else next) - next
           let next = next + importTableChunkPrePadding
-          let importTableChunk, next = chunk 0x28 next
-          let importLookupTableChunk, next = chunk 0x14 next
-          let importNameHintTableChunk, next = chunk 0x0e next
-          let mscoreeStringChunk, next = chunk 0x0c next
+          let importTableChunk, next = if hasEntryPointStub then chunk 0x28 next else nochunk next
+          let importLookupTableChunk, next = if hasEntryPointStub then chunk 0x14 next else nochunk next
+          let importNameHintTableChunk, next = if hasEntryPointStub then chunk 0x0e next else nochunk next
+          let mscoreeStringChunk, next = if hasEntryPointStub then chunk 0x0c next else nochunk next
 
-          let next = align 0x10 (next + 0x05) - 0x05
+          let next = if hasEntryPointStub then align 0x10 (next + 0x05) - 0x05 else next
           let importTableChunk = { addr=importTableChunk.addr; size = next - importTableChunk.addr}
-          let importTableChunkPadding = importTableChunk.size - (0x28 + 0x14 + 0x0e + 0x0c)
-
-          let next = next + 0x03
-          let entrypointCodeChunk, next = chunk 0x06 next
+          let importTableChunkPadding = if hasEntryPointStub then importTableChunk.size - (0x28 + 0x14 + 0x0e + 0x0c) else importTableChunk.size
+          let entrypointCodeChunk, next = if hasEntryPointStub then chunk 0x06 (next + 0x03) else nochunk next
           let globalpointerCodeChunk, next = chunk (if isItanium then 0x8 else 0x0) next
 
           let pdbInfoOpt =
-            match pdbfile, portablePDB with
+            match options.pdbfile, options.portablePDB with
             | Some _, true ->
                 let pdbInfo =
-                    generatePortablePdb embedAllSource embedSourceList sourceLink checksumAlgorithm showTimes pdbData pathMap
+                    generatePortablePdb options.embedAllSource options.embedSourceList options.sourceLink options.checksumAlgorithm options.showTimes pdbData options.pathMap
 
-                if embeddedPDB then
+                if options.embeddedPDB then
                     let (uncompressedLength, contentId, stream, algorithmName, checkSum) = pdbInfo
                     let compressedStream = compressPortablePdbStream stream
                     Some (uncompressedLength, contentId, compressedStream, algorithmName, checkSum)
@@ -3939,12 +3981,12 @@ let writeBinaryAux (
             | _ -> None
 
           let debugDirectoryChunk, next =
-            chunk (if pdbfile = None then
+            chunk (if options.pdbfile = None then
                         0x0
                    else
                         sizeof_IMAGE_DEBUG_DIRECTORY * 2 +
-                        (if embeddedPDB then sizeof_IMAGE_DEBUG_DIRECTORY else 0) +
-                        (if deterministic then sizeof_IMAGE_DEBUG_DIRECTORY else 0)
+                        (if options.embeddedPDB then sizeof_IMAGE_DEBUG_DIRECTORY else 0) +
+                        (if options.deterministic then sizeof_IMAGE_DEBUG_DIRECTORY else 0)
                   ) next
 
           // The debug data is given to us by the PDB writer and appears to
@@ -3953,7 +3995,7 @@ let writeBinaryAux (
           // to what PDB writers seem to require and leave extra space just in case...
           let debugDataJustInCase = 40
           let debugDataChunk, next =
-              chunk (align 0x4 (match pdbfile with
+              chunk (align 0x4 (match options.pdbfile with
                                 | None -> 0
                                 | Some f -> (24
                                             + System.Text.Encoding.Unicode.GetByteCount f // See bug 748444
@@ -3968,19 +4010,19 @@ let writeBinaryAux (
                                 | None -> 0)) next
 
           let debugEmbeddedPdbChunk, next =
-              if embeddedPDB then
+              if options.embeddedPDB then
                   let streamLength =
                       match pdbInfoOpt with
                       | Some (_, _, stream, _, _) -> int stream.Length
                       | None -> 0
-                  chunk (align 0x4 (match embeddedPDB with
+                  chunk (align 0x4 (match options.embeddedPDB with
                                      | true -> 8 + streamLength
                                      | _ -> 0 )) next
               else
                   nochunk next
 
           let debugDeterministicPdbChunk, next =
-              if deterministic then emptychunk next
+              if options.deterministic then emptychunk next
               else nochunk next
 
           let textSectionSize = next - textSectionAddr
@@ -4020,13 +4062,13 @@ let writeBinaryAux (
 
           // .RELOC SECTION base reloc table: 0x0c size
           let relocSectionPhysLoc = nextPhys
-          let relocSectionAddr = next
-          let baseRelocTableChunk, next = chunk 0x0c next
+          let relocSectionAddr =  if hasEntryPointStub then next else 0x00
+          let baseRelocTableChunk, next =  if hasEntryPointStub then chunk 0x0c next else nochunk next
 
-          let relocSectionSize = next - relocSectionAddr
-          let nextPhys = align alignPhys (relocSectionPhysLoc + relocSectionSize)
-          let relocSectionPhysSize = nextPhys - relocSectionPhysLoc
-          let next = align alignVirt (relocSectionAddr + relocSectionSize)
+          let relocSectionSize = if hasEntryPointStub then next - relocSectionAddr else 0x00
+          let nextPhys = if hasEntryPointStub then align alignPhys (relocSectionPhysLoc + relocSectionSize) else nextPhys
+          let relocSectionPhysSize = if hasEntryPointStub then nextPhys - relocSectionPhysLoc else 0x00
+          let next = if hasEntryPointStub then align alignVirt (relocSectionAddr + relocSectionSize) else align alignVirt next
 
          // Now we know where the data section lies we can fix up the
          // references into the data section from the metadata tables.
@@ -4053,7 +4095,7 @@ let writeBinaryAux (
           let imageEndSectionPhysLoc = nextPhys
           let imageEndAddr = next
 
-          reportTime showTimes "Layout image"
+          reportTime options.showTimes "Layout image"
 
           let write p (os: BinaryWriter) chunkName chunk =
               match p with
@@ -4071,51 +4113,49 @@ let writeBinaryAux (
                   os.Write 0uy
 
           // Now we've computed all the offsets, write the image
-
           write (Some msdosHeaderChunk.addr) os "msdos header" msdosHeader
-
           write (Some peSignatureChunk.addr) os "pe signature" [| |]
-
           writeInt32 os 0x4550
-
           write (Some peFileHeaderChunk.addr) os "pe file header" [| |]
 
-          if (modul.Platform = Some AMD64) then
-            writeInt32AsUInt16 os 0x8664    // Machine - IMAGE_FILE_MACHINE_AMD64
-          elif isItanium then
-            writeInt32AsUInt16 os 0x200
-          else
-            writeInt32AsUInt16 os 0x014c   // Machine - IMAGE_FILE_MACHINE_I386
+          match modul.Platform with
+          | Some AMD64 -> writeInt32AsUInt16 os 0x8664      // Machine - IMAGE_FILE_MACHINE_AMD64
+          | Some IA64 -> writeInt32AsUInt16 os 0x200        // Machine - IMAGE_FILE_MACHINE_IA64
+          | Some ARM64 -> writeInt32AsUInt16 os 0xaa64      // Machine - IMAGE_FILE_MACHINE_ARM64
+          | Some ARM -> writeInt32AsUInt16 os 0x1c4         // Machine - IMAGE_FILE_MACHINE_ARMNT
+          | _ ->  writeInt32AsUInt16 os 0x014c              // Machine - IMAGE_FILE_MACHINE_I386
 
           writeInt32AsUInt16 os numSections
 
+          use sha =
+              match options.checksumAlgorithm with
+              | HashAlgorithm.Sha1 -> System.Security.Cryptography.SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
+              | HashAlgorithm.Sha256 -> System.Security.Cryptography.SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
+
+          let hCode = sha.ComputeHash code
+          let hData = sha.ComputeHash data
+          let hMeta = sha.ComputeHash metadata
+
+          // Not yet suitable for the mvidsection optimization 
+          let deterministicId = [| hCode; hData; hMeta |] |> Array.collect id |> sha.ComputeHash
+          let deterministicMvid () = deterministicId[0..15]
           let pdbData =
             // Hash code, data and metadata
-            if deterministic then
-              use sha =
-                  match checksumAlgorithm with
-                  | HashAlgorithm.Sha1 -> System.Security.Cryptography.SHA1.Create() :> System.Security.Cryptography.HashAlgorithm
-                  | HashAlgorithm.Sha256 -> System.Security.Cryptography.SHA256.Create() :> System.Security.Cryptography.HashAlgorithm
-
-              let hCode = sha.ComputeHash code
-              let hData = sha.ComputeHash data
-              let hMeta = sha.ComputeHash metadata
-              let final = [| hCode; hData; hMeta |] |> Array.collect id |> sha.ComputeHash
-
+            if options.deterministic then
               // Confirm we have found the correct data and aren't corrupting the metadata
               if metadata[ guidStart..guidStart+3] <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
               if metadata[ guidStart+12..guidStart+15] <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
 
               // Update MVID guid in metadata
-              Array.blit final 0 metadata guidStart 16
+              Array.blit deterministicId 0 metadata guidStart 16
 
               // Use last 4 bytes for timestamp - High bit set, to stop tool chains becoming confused
-              let timestamp = int final[16] ||| (int final[17] <<< 8) ||| (int final[18] <<< 16) ||| (int (final[19] ||| 128uy) <<< 24)
+              let timestamp = int deterministicId[16] ||| (int deterministicId[17] <<< 8) ||| (int deterministicId[18] <<< 16) ||| (int (deterministicId[19] ||| 128uy) <<< 24)
               writeInt32 os timestamp
 
               // Update pdbData with new guid and timestamp. Portable and embedded PDBs don't need the ModuleID
               // Full and PdbOnly aren't supported under deterministic builds currently, they rely on non-deterministic Windows native code
-              { pdbData with ModuleID = final[0..15] ; Timestamp = timestamp }
+              { pdbData with ModuleID = deterministicMvid() ; Timestamp = timestamp }
             else
               writeInt32 os timestamp   // date since 1970
               pdbData
@@ -4123,37 +4163,35 @@ let writeBinaryAux (
           writeInt32 os 0x00 // Pointer to Symbol Table Always 0
        // 00000090
           writeInt32 os 0x00 // Number of Symbols Always 0
-          writeInt32AsUInt16 os peOptionalHeaderSize // Size of the optional header, the format is described below.
+          writeInt32AsUInt16 os peOptionalHeaderChunk.size                      // Format is described below.
 
-          // 64bit: IMAGE_FILE_32BIT_MACHINE ||| IMAGE_FILE_LARGE_ADDRESS_AWARE
+          // 64bit: IMAGE_FILE_LARGE_ADDRESS_AWARE
           // 32bit: IMAGE_FILE_32BIT_MACHINE
-          // Yes, 32BIT_MACHINE is set for AMD64...
-          let iMachineCharacteristic = match modul.Platform with | Some IA64 -> 0x20 | Some AMD64 -> 0x0120 | _ -> 0x0100
+          let iMachineCharacteristic = match modul.Platform with | Some IA64 | Some AMD64 | Some ARM64 -> 0x20 | _ -> 0x0100
 
-          writeInt32AsUInt16 os ((if isDll then 0x2000 else 0x0000) ||| 0x0002 ||| 0x0004 ||| 0x0008 ||| iMachineCharacteristic)
+          writeInt32AsUInt16 os ((if isDll then 0x2000 else 0x0000) ||| 0x0002 ||| iMachineCharacteristic)
 
        // Now comes optional header
-
           let peOptionalHeaderByte = peOptionalHeaderByteByCLRVersion desiredMetadataVersion
 
           write (Some peOptionalHeaderChunk.addr) os "pe optional header" [| |]
           if modul.Is64Bit then
-              writeInt32AsUInt16 os 0x020B // Magic number is 0x020B for 64-bit
+              writeInt32AsUInt16 os 0x020B              // Magic number is 0x020B for 64-bit
           else
-              writeInt32AsUInt16 os 0x010b // Always 0x10B (see Section 23.1).
-          writeInt32AsUInt16 os peOptionalHeaderByte // ECMA spec says 6, some binaries, e.g. fscmanaged.exe say 7, Whidbey binaries say 8
-          writeInt32 os textSectionPhysSize          // Size of the code (text) section, or the sum of all code sections if there are multiple sections.
+              writeInt32AsUInt16 os 0x010b              // Always 0x10B (see Section 23.1).
+          writeInt32AsUInt16 os peOptionalHeaderByte    // ECMA spec says 6, some binaries, e.g. fscmanaged.exe say 7, Whidbey binaries say 8
+          writeInt32 os textSectionPhysSize             // Size of the code (text) section, or the sum of all code sections if there are multiple sections.
         // 000000a0
-          writeInt32 os dataSectionPhysSize          // Size of the initialized data section
-          writeInt32 os 0x00                         // Size of the uninitialized data section
-          writeInt32 os entrypointCodeChunk.addr     // RVA of entry point, needs to point to bytes 0xFF 0x25 followed by the RVA+!0x4000000
-          writeInt32 os textSectionAddr              // e.g. 0x0002000
+          writeInt32 os dataSectionPhysSize             // Size of the initialized data section
+          writeInt32 os 0x00                            // Size of the uninitialized data section
+          writeInt32 os entrypointCodeChunk.addr        // RVA of entry point, needs to point to bytes 0xFF 0x25 followed by the RVA+!0x4000000
+          writeInt32 os textSectionAddr                 // e.g. 0x0002000
        // 000000b0
           if modul.Is64Bit then
-              writeInt64 os (int64 imageBaseReal)    // REVIEW: For 64-bit, we should use a 64-bit image base
+              writeInt64 os (int64 imageBaseReal)
           else
-              writeInt32 os dataSectionAddr // e.g. 0x0000c000
-              writeInt32 os imageBaseReal // Image Base Always 0x400000 (see Section 23.1). - QUERY : no it's not always 0x400000, e.g. 0x034f0000
+              writeInt32 os dataSectionAddr             // e.g. 0x0000c000
+              writeInt32 os (int32 imageBaseReal)       // Image Base Always 0x400000 (see Section 23.1). - QUERY : no it's not always 0x400000, e.g. 0x034f0000
 
           writeInt32 os alignVirt //  Section Alignment Always 0x2000 (see Section 23.1).
           writeInt32 os alignPhys // File Alignment Either 0x200 or 0x1000.
@@ -4238,6 +4276,19 @@ let writeBinaryAux (
           writeInt32 os 0x00 // Reserved Always 0 (see Section 23.1).
           writeInt32 os 0x00 // Reserved Always 0 (see Section 23.1).
 
+          if hasMvidSection then
+              write (Some mvidSectionHeaderChunk.addr) os "mvid section header" [| |]
+              writeBytes os [| 0x2euy; 0x6Duy; 0x76uy; 0x69uy; 0x64uy; 0x00uy; 0x00uy; 0x00uy; |] // ".mvid\000\000\000"
+              writeInt32 os mvidSectionSize     // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment.
+              writeInt32 os mvidSectionAddr     //  VirtualAddress For executable images this is the address of the first byte of the section
+              writeInt32 os mvidSectionPhysSize //  SizeOfRawData Size of the initialized data on disk in bytes
+              writeInt32 os mvidSectionPhysLoc  // PointerToRawData RVA to section's first page within the PE file.
+              writeInt32 os 0x00                // PointerToRelocations RVA of Relocation section.
+              writeInt32 os 0x00                // PointerToLineNumbers Always 0 (see Section 23.1).
+              writeInt32AsUInt16 os 0x00        // NumberOfRelocations Number of relocations, set to 0 if unused.
+              writeInt32AsUInt16 os 0x00        //  NumberOfLinenumbers Always 0 (see Section 23.1).
+              writeBytes os [| 0x20uy; 0x00uy; 0x00uy; 0x60uy |] //  Characteristics Flags IMAGE_SCN_CNT_CODE || IMAGE_SCN_MEM_EXECUTE || IMAGE_SCN_MEM_READ
+
           write (Some textSectionHeaderChunk.addr) os "text section header" [| |]
 
        // 00000178
@@ -4273,35 +4324,41 @@ let writeBinaryAux (
           writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1).
           writeBytes os [| 0x40uy; 0x00uy; 0x00uy; 0x40uy |] //  Characteristics Flags: IMAGE_SCN_MEM_READ | IMAGE_SCN_CNT_INITIALIZED_DATA
 
-          write (Some relocSectionHeaderChunk.addr) os "reloc section header" [| |]
+          if hasEntryPointStub then
+              write (Some relocSectionHeaderChunk.addr) os "reloc section header" [| |]
        // 000001a0
-          writeBytes os [| 0x2euy; 0x72uy; 0x65uy; 0x6cuy; 0x6fuy; 0x63uy; 0x00uy; 0x00uy; |] // ".reloc\000\000"
-          writeInt32 os relocSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment.
-          writeInt32 os relocSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section.
+              writeBytes os [| 0x2euy; 0x72uy; 0x65uy; 0x6cuy; 0x6fuy; 0x63uy; 0x00uy; 0x00uy; |] // ".reloc\000\000"
+              writeInt32 os relocSectionSize // VirtualSize: Total size of the section when loaded into memory in bytes rounded to Section Alignment.
+              writeInt32 os relocSectionAddr //  VirtualAddress For executable images this is the address of the first byte of the section.
        // 000001b0
-          writeInt32 os relocSectionPhysSize //  SizeOfRawData Size of the initialized reloc on disk in bytes
-          writeInt32 os relocSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section's first page within the PE file.
+              writeInt32 os relocSectionPhysSize //  SizeOfRawData Size of the initialized reloc on disk in bytes
+              writeInt32 os relocSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section's first page within the PE file.
        // 000001b8
-          writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section.
-          writeInt32 os 0x00 // PointerToLineNumbers Always 0 (see Section 23.1).
+              writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section.
+              writeInt32 os 0x00 // PointerToLineNumbers Always 0 (see Section 23.1).
        // 000001c0
-          writeInt32AsUInt16 os 0x00 // NumberOfRelocations Number of relocations, set to 0 if unused.
-          writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1).
-          writeBytes os [| 0x40uy; 0x00uy; 0x00uy; 0x42uy |] //  Characteristics Flags: IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ |
+              writeInt32AsUInt16 os 0x00 // NumberOfRelocations Number of relocations, set to 0 if unused.
+              writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1).
+              writeBytes os [| 0x40uy; 0x00uy; 0x00uy; 0x42uy |] //  Characteristics Flags: IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_MEM_READ |
 
-          writePadding os "pad to text begin" (textSectionPhysLoc - headerSize)
+          writePadding os "pad to mvid begin" (mvidSectionPhysLoc - headerSize)
+
+          // MVID SECTION
+          if hasMvidSection then
+              ignore mvidSectionChunk
+              writeBytes os (deterministicMvid())
+              writePadding os "pad to mvid begin" (textSectionPhysLoc - (mvidSectionPhysLoc + mvidSectionSize))
 
           // TEXT SECTION: e.g. 0x200
-
           let textV2P v = v - textSectionAddr + textSectionPhysLoc
 
           // e.g. 0x0200
-          write (Some (textV2P importAddrTableChunk.addr)) os "import addr table" [| |]
-          writeInt32 os importNameHintTableChunk.addr
-          writeInt32 os 0x00  // QUERY 4 bytes of zeros not 2 like ECMA 24.3.1 says
+          if hasEntryPointStub then
+              write (Some (textV2P importAddrTableChunk.addr)) os "import addr table" [| |]
+              writeInt32 os importNameHintTableChunk.addr
+              writeInt32 os 0x00  // QUERY 4 bytes of zeros not 2 like ECMA 24.3.1 says
 
           // e.g. 0x0208
-
           let flags =
             (if modul.IsILOnly then 0x01 else 0x00) |||
             (if modul.Is32Bit then 0x02 else 0x00) |||
@@ -4349,60 +4406,61 @@ let writeBinaryAux (
           write (Some (textV2P rawdataChunk.addr)) os "raw data" [| |]
           writeBytes os data
 
-          writePadding os "start of import table" importTableChunkPrePadding
+          if hasEntryPointStub then
+              writePadding os "start of import table" importTableChunkPrePadding
 
-          // vtfixups would go here
-          write (Some (textV2P importTableChunk.addr)) os "import table" [| |]
+              // vtfixups would go here
+              write (Some (textV2P importTableChunk.addr)) os "import table" [| |]
 
-          writeInt32 os importLookupTableChunk.addr
-          writeInt32 os 0x00
-          writeInt32 os 0x00
-          writeInt32 os mscoreeStringChunk.addr
-          writeInt32 os importAddrTableChunk.addr
-          writeInt32 os 0x00
-          writeInt32 os 0x00
-          writeInt32 os 0x00
-          writeInt32 os 0x00
-          writeInt32 os 0x00
+              writeInt32 os importLookupTableChunk.addr
+              writeInt32 os 0x00
+              writeInt32 os 0x00
+              writeInt32 os mscoreeStringChunk.addr
+              writeInt32 os importAddrTableChunk.addr
+              writeInt32 os 0x00
+              writeInt32 os 0x00
+              writeInt32 os 0x00
+              writeInt32 os 0x00
+              writeInt32 os 0x00
 
-          write (Some (textV2P importLookupTableChunk.addr)) os "import lookup table" [| |]
-          writeInt32 os importNameHintTableChunk.addr
-          writeInt32 os 0x00
-          writeInt32 os 0x00
-          writeInt32 os 0x00
-          writeInt32 os 0x00
+              write (Some (textV2P importLookupTableChunk.addr)) os "import lookup table" [| |]
+              writeInt32 os importNameHintTableChunk.addr
+              writeInt32 os 0x00
+              writeInt32 os 0x00
+              writeInt32 os 0x00
+              writeInt32 os 0x00
 
 
-          write (Some (textV2P importNameHintTableChunk.addr)) os "import name hint table" [| |]
-          // Two zero bytes of hint, then Case sensitive, null-terminated ASCII string containing name to import.
-          // Shall _CorExeMain a .exe file _CorDllMain for a .dll file.
-          if isDll then
-              writeBytes os [| 0x00uy; 0x00uy; 0x5fuy; 0x43uy ; 0x6fuy; 0x72uy; 0x44uy; 0x6cuy; 0x6cuy; 0x4duy; 0x61uy; 0x69uy; 0x6euy; 0x00uy |]
-          else
-              writeBytes os [| 0x00uy; 0x00uy; 0x5fuy; 0x43uy; 0x6fuy; 0x72uy; 0x45uy; 0x78uy; 0x65uy; 0x4duy; 0x61uy; 0x69uy; 0x6euy; 0x00uy |]
+              write (Some (textV2P importNameHintTableChunk.addr)) os "import name hint table" [| |]
+              // Two zero bytes of hint, then Case sensitive, null-terminated ASCII string containing name to import.
+              // Shall _CorExeMain a .exe file _CorDllMain for a .dll file.
+              if isDll then
+                  writeBytes os [| 0x00uy; 0x00uy; 0x5fuy; 0x43uy ; 0x6fuy; 0x72uy; 0x44uy; 0x6cuy; 0x6cuy; 0x4duy; 0x61uy; 0x69uy; 0x6euy; 0x00uy |]
+              else
+                  writeBytes os [| 0x00uy; 0x00uy; 0x5fuy; 0x43uy; 0x6fuy; 0x72uy; 0x45uy; 0x78uy; 0x65uy; 0x4duy; 0x61uy; 0x69uy; 0x6euy; 0x00uy |]
 
-          write (Some (textV2P mscoreeStringChunk.addr)) os "mscoree string"
-            [| 0x6duy; 0x73uy; 0x63uy; 0x6fuy ; 0x72uy; 0x65uy ; 0x65uy; 0x2euy ; 0x64uy; 0x6cuy ; 0x6cuy; 0x00uy ; |]
+              write (Some (textV2P mscoreeStringChunk.addr)) os "mscoree string"
+                [| 0x6duy; 0x73uy; 0x63uy; 0x6fuy ; 0x72uy; 0x65uy ; 0x65uy; 0x2euy ; 0x64uy; 0x6cuy ; 0x6cuy; 0x00uy ; |]
 
-          writePadding os "end of import tab" importTableChunkPadding
+              writePadding os "end of import tab" importTableChunkPadding
 
-          writePadding os "head of entrypoint" 0x03
-          let ep = (imageBaseReal + textSectionAddr)
-          write (Some (textV2P entrypointCodeChunk.addr)) os " entrypoint code"
-                 [| 0xFFuy; 0x25uy; (* x86 Instructions for entry *) b0 ep; b1 ep; b2 ep; b3 ep |]
-          if isItanium then
-              write (Some (textV2P globalpointerCodeChunk.addr)) os " itanium global pointer"
-                   [| 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy |]
+              writePadding os "head of entrypoint" 0x03
+              let ep = (imageBaseReal + textSectionAddr)
+              write (Some (textV2P entrypointCodeChunk.addr)) os " entrypoint code"
+                     [| 0xFFuy; 0x25uy; (* x86 Instructions for entry *) b0 ep; b1 ep; b2 ep; b3 ep |]
+              if isItanium then
+                  write (Some (textV2P globalpointerCodeChunk.addr)) os " itanium global pointer"
+                       [| 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy; 0x0uy |]
 
-          if pdbfile.IsSome then
+          if options.pdbfile.IsSome then
               write (Some (textV2P debugDirectoryChunk.addr)) os "debug directory" (Array.create debugDirectoryChunk.size 0x0uy)
               write (Some (textV2P debugDataChunk.addr)) os "debug data" (Array.create debugDataChunk.size 0x0uy)
               write (Some (textV2P debugChecksumPdbChunk.addr)) os "debug checksum" (Array.create debugChecksumPdbChunk.size 0x0uy)
 
-          if embeddedPDB then
+          if options.embeddedPDB then
               write (Some (textV2P debugEmbeddedPdbChunk.addr)) os "debug data" (Array.create debugEmbeddedPdbChunk.size 0x0uy)
 
-          if deterministic then
+          if options.deterministic then
               write (Some (textV2P debugDeterministicPdbChunk.addr)) os "debug deterministic" Array.empty
 
           writePadding os "end of .text" (dataSectionPhysLoc - textSectionPhysLoc - textSectionSize)
@@ -4420,180 +4478,115 @@ let writeBinaryAux (
           writePadding os "end of .rsrc" (relocSectionPhysLoc - dataSectionPhysLoc - dataSectionSize)
 
           // RELOC SECTION
+          if hasEntryPointStub then
+              // See ECMA 24.3.2
+              let relocV2P v = v - relocSectionAddr + relocSectionPhysLoc
 
-          // See ECMA 24.3.2
-          let relocV2P v = v - relocSectionAddr + relocSectionPhysLoc
+              let entrypointFixupAddr = entrypointCodeChunk.addr + 0x02
+              let entrypointFixupBlock = (entrypointFixupAddr / 4096) * 4096
+              let entrypointFixupOffset = entrypointFixupAddr - entrypointFixupBlock
+              let reloc = (if isItaniumOrAMD then 0xA000 (* IMAGE_REL_BASED_DIR64 *) else 0x3000 (* IMAGE_REL_BASED_HIGHLOW *)) ||| entrypointFixupOffset
+              // For the itanium, you need to set a relocation entry for the global pointer
+              let reloc2 =
+                  if not isItanium then
+                      0x0
+                  else
+                      0xA000 ||| (globalpointerCodeChunk.addr - ((globalpointerCodeChunk.addr / 4096) * 4096))
 
-          let entrypointFixupAddr = entrypointCodeChunk.addr + 0x02
-          let entrypointFixupBlock = (entrypointFixupAddr / 4096) * 4096
-          let entrypointFixupOffset = entrypointFixupAddr - entrypointFixupBlock
-          let reloc = (if modul.Is64Bit then 0xA000 (* IMAGE_REL_BASED_DIR64 *) else 0x3000 (* IMAGE_REL_BASED_HIGHLOW *)) ||| entrypointFixupOffset
-          // For the itanium, you need to set a relocation entry for the global pointer
-          let reloc2 =
-              if not isItanium then
-                  0x0
-              else
-                  0xA000 ||| (globalpointerCodeChunk.addr - ((globalpointerCodeChunk.addr / 4096) * 4096))
-
-          write (Some (relocV2P baseRelocTableChunk.addr)) os "base reloc table"
-              [| b0 entrypointFixupBlock; b1 entrypointFixupBlock; b2 entrypointFixupBlock; b3 entrypointFixupBlock
-                 0x0cuy; 0x00uy; 0x00uy; 0x00uy
-                 b0 reloc; b1 reloc
-                 b0 reloc2; b1 reloc2; |]
+              write (Some (relocV2P baseRelocTableChunk.addr)) os "base reloc table"
+                  [| b0 entrypointFixupBlock; b1 entrypointFixupBlock; b2 entrypointFixupBlock; b3 entrypointFixupBlock
+                     0x0cuy; 0x00uy; 0x00uy; 0x00uy
+                     b0 reloc; b1 reloc
+                     b0 reloc2; b1 reloc2; |]
           writePadding os "end of .reloc" (imageEndSectionPhysLoc - relocSectionPhysLoc - relocSectionSize)
 
           pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings
 
-    reportTime showTimes "Writing Image"
+    reportTime options.showTimes "Writing Image"
     pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings
 
-let writeBinaryFiles (outfile,
-    ilg: ILGlobals,
-    pdbfile: string option,
-    signer: ILStrongNameSigner option,
-    portablePDB,
-    embeddedPDB,
-    embedAllSource,
-    embedSourceList,
-    sourceLink,
-    checksumAlgorithm,
-    emitTailcalls,
-    deterministic,
-    showTimes,
-    dumpDebugInfo,
-    referenceAssemblyOnly,
-    referenceAssemblyAttribOpt,
-    pathMap,
-    modul, normalizeAssemblyRefs) =
+let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
 
     let stream =
         try
             // Ensure the output directory exists otherwise it will fail
-            let dir = FileSystem.GetDirectoryNameShim outfile
+            let dir = FileSystem.GetDirectoryNameShim options.outfile
             if not (FileSystem.DirectoryExistsShim dir) then FileSystem.DirectoryCreateShim dir |> ignore
-            FileSystem.OpenFileForWriteShim(outfile, FileMode.Create, FileAccess.Write, FileShare.Read)
+            FileSystem.OpenFileForWriteShim(options.outfile, FileMode.Create, FileAccess.Write, FileShare.Read)
         with _ ->
-            failwith ("Could not open file for writing (binary mode): " + outfile)
+            failwith ("Could not open file for writing (binary mode): " + options.outfile)
 
     let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, mappings =
         try
             try
-                writeBinaryAux(
-                    stream, ilg, pdbfile, signer,
-                    portablePDB, embeddedPDB, embedAllSource,
-                    embedSourceList, sourceLink,
-                    checksumAlgorithm, emitTailcalls, deterministic, showTimes,
-                    referenceAssemblyOnly,
-                    referenceAssemblyAttribOpt,
-                    pathMap,
-                    modul, normalizeAssemblyRefs)
+                writeBinaryAux(stream, options, modul, normalizeAssemblyRefs)
             finally
                 stream.Close()
 
         with _ ->
-            try FileSystem.FileDeleteShim outfile with | _ -> ()
+            try FileSystem.FileDeleteShim options.outfile with | _ -> ()
             reraise()
 
-    try
-        FileSystemUtilities.setExecutablePermission outfile
-    with _ ->
-        ()
-
     let reopenOutput () =
-        FileSystem.OpenFileForWriteShim(outfile, FileMode.Open, FileAccess.Write, FileShare.Read)
+        FileSystem.OpenFileForWriteShim(options.outfile, FileMode.Open, FileAccess.Write, FileShare.Read)
 
-    writePdb (dumpDebugInfo,
-        showTimes, portablePDB,
-        embeddedPDB, pdbfile, outfile,
-        reopenOutput, false, signer, deterministic, pathMap,
-        pdbData, pdbInfoOpt, debugDirectoryChunk,
-        debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk,
-        debugDeterministicPdbChunk, textV2P) |> ignore
+    writePdb (options.dumpDebugInfo,
+        options.showTimes,
+        options.embeddedPDB,
+        options.pdbfile,
+        options.outfile,
+        reopenOutput,
+        false,
+        options.signer,
+        options.deterministic,
+        options.pathMap,
+        pdbData,
+        pdbInfoOpt,
+        debugDirectoryChunk,
+        debugDataChunk,
+        debugChecksumPdbChunk,
+        debugEmbeddedPdbChunk,
+        debugDeterministicPdbChunk,
+        textV2P) |> ignore
 
     mappings
 
-let writeBinaryInMemory (
-    outfile: string,
-    ilg: ILGlobals,
-    pdbfile: string option,
-    signer: ILStrongNameSigner option,
-    portablePDB,
-    embeddedPDB,
-    embedAllSource,
-    embedSourceList,
-    sourceLink,
-    checksumAlgorithm,
-    emitTailcalls, deterministic,
-    showTimes,
-    dumpDebugInfo,
-    pathMap,
-    modul,
-    normalizeAssemblyRefs) =
+let writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) =
 
     let stream = new MemoryStream()
+    let options = { options with referenceAssemblyOnly = false; referenceAssemblyAttribOpt = None }
     let pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk, debugDeterministicPdbChunk, textV2P, _mappings =
-        writeBinaryAux(stream, ilg,
-            pdbfile, signer,
-            portablePDB, embeddedPDB, embedAllSource,
-            embedSourceList, sourceLink,
-            checksumAlgorithm, emitTailcalls,
-            deterministic, showTimes, false, None, pathMap, modul, normalizeAssemblyRefs)
+        writeBinaryAux(stream, options, modul, normalizeAssemblyRefs)
 
     let reopenOutput () = stream
 
     let pdbBytes =
-        writePdb (dumpDebugInfo,
-            showTimes, portablePDB, embeddedPDB, pdbfile,
-            outfile, reopenOutput, true,
-            signer, deterministic, pathMap,
-            pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk,
-            debugChecksumPdbChunk, debugEmbeddedPdbChunk,
-            debugDeterministicPdbChunk, textV2P)
+        writePdb (options.dumpDebugInfo,
+            options.showTimes,
+            options.embeddedPDB,
+            options.pdbfile,
+            options.outfile,
+            reopenOutput,
+            true,
+            options.signer,
+            options.deterministic,
+            options.pathMap,
+            pdbData, pdbInfoOpt,
+            debugDirectoryChunk,
+            debugDataChunk,
+            debugChecksumPdbChunk,
+            debugEmbeddedPdbChunk,
+            debugDeterministicPdbChunk,
+            textV2P)
 
     stream.Close()
 
     stream.ToArray(), pdbBytes
 
 
-type options =
-   { ilg: ILGlobals
-     outfile: string
-     pdbfile: string option
-     portablePDB: bool
-     embeddedPDB: bool
-     embedAllSource: bool
-     embedSourceList: string list
-     sourceLink: string
-     checksumAlgorithm: HashAlgorithm
-     signer: ILStrongNameSigner option
-     emitTailcalls: bool
-     deterministic: bool
-     showTimes: bool
-     dumpDebugInfo: bool
-     referenceAssemblyOnly: bool
-     referenceAssemblyAttribOpt: ILAttribute option
-     pathMap: PathMap }
-
 let WriteILBinaryFile (options: options, inputModule, normalizeAssemblyRefs) =
-    writeBinaryFiles (options.outfile,
-        options.ilg, options.pdbfile, options.signer,
-        options.portablePDB, options.embeddedPDB,options.embedAllSource,
-        options.embedSourceList, options.sourceLink, options.checksumAlgorithm,
-        options.emitTailcalls, options.deterministic, options.showTimes,
-        options.dumpDebugInfo,
-        options.referenceAssemblyOnly,
-        options.referenceAssemblyAttribOpt,
-        options.pathMap,
-        inputModule, normalizeAssemblyRefs)
+    writeBinaryFiles (options, inputModule, normalizeAssemblyRefs)
     |> ignore
 
 let WriteILBinaryInMemory (options: options, inputModule: ILModuleDef, normalizeAssemblyRefs) =
-    writeBinaryInMemory (options.outfile,
-        options.ilg,
-        options.pdbfile,
-        options.signer,
-        options.portablePDB, options.embeddedPDB, options.embedAllSource,
-        options.embedSourceList, options.sourceLink, options.checksumAlgorithm,
-        options.emitTailcalls, options.deterministic,
-        options.showTimes, options.dumpDebugInfo, options.pathMap,
-        inputModule, normalizeAssemblyRefs)
+    writeBinaryInMemory (options, inputModule, normalizeAssemblyRefs)

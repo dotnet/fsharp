@@ -69,10 +69,11 @@ ossreadme*.txt
 *.fsproj.user
 *.vbproj.user
 *.sln.DotSettings.user
+launchSettings.json
 *.log
 *.jrs
 *.chk
-*.bak                                                     
+*.bak
 *.vserr
 *.err
 *.orig
@@ -119,3 +120,8 @@ nCrunchTemp_*
 .fake
 *.pdb
 *.dll
+
+/test.fs
+/test.fsx
+
+tests/FSharp.Compiler.Service.Tests/FSharp.CompilerService.SurfaceArea.netstandard.actual

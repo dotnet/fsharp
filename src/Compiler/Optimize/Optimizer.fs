@@ -194,7 +194,6 @@ let seqL xL xs = Seq.fold (fun z x -> z @@ xL x) emptyL xs
 let namemapL xL xmap = NameMap.foldBack (fun nm x z -> xL nm x @@ z) xmap emptyL
 
 let rec exprValueInfoL g exprVal =
-    let exprL expr = exprL g expr
     match exprVal with
     | ConstValue (x, ty) -> NicePrint.layoutConst g ty x
     | UnknownValue -> wordL (tagText "?")
@@ -607,9 +606,9 @@ let inline BindInternalValsToUnknown cenv vs env =
     ignore vs
     env
 
-let BindTypeVar tyv typeinfo env = { env with typarInfos= (tyv, typeinfo) :: env.typarInfos } 
+let BindTypar tyv typeinfo env = { env with typarInfos= (tyv, typeinfo) :: env.typarInfos } 
 
-let BindTypeVarsToUnknown (tps: Typar list) env = 
+let BindTyparsToUnknown (tps: Typar list) env = 
     if isNil tps then env else
     // The optimizer doesn't use the type values it could track. 
     // However here we mutate to provide better names for generalized type parameters 
@@ -618,7 +617,7 @@ let BindTypeVarsToUnknown (tps: Typar list) env =
     (tps, nms) ||> List.iter2 (fun tp nm -> 
             if PrettyTypes.NeedsPrettyTyparName tp then 
                 tp.typar_id <- ident (nm, tp.Range))      
-    List.fold (fun sofar arg -> BindTypeVar arg UnknownTypeValue sofar) env tps 
+    List.fold (fun sofar arg -> BindTypar arg UnknownTypeValue sofar) env tps 
 
 let BindCcu (ccu: CcuThunk) mval env (_g: TcGlobals) = 
     { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName, mval) }
@@ -882,13 +881,61 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
         | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkBoolVal g (a1 = a2)
         | _ -> UnknownValue
 
-    | [ AI_clt ], [a;b], _ -> 
+    | [ AI_clt ], [a;b], [ty] when typeEquiv g ty g.bool_ty -> 
         match stripValue a, stripValue b with
         | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkBoolVal g (a1 < a2)
         | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkBoolVal g (a1 < a2)
         | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkBoolVal g (a1 < a2)
         | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkBoolVal g (a1 < a2)
         | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkBoolVal g (a1 < a2)
+        | _ -> UnknownValue
+    | [ AI_clt ], [a;b], [ty] when typeEquiv g ty g.int32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | _ -> UnknownValue
+    | [ AI_clt ], [a;b], [ty] when typeEquiv g ty g.uint32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | _ -> UnknownValue
+    | [ AI_clt ], [a;b], [ty] when typeEquiv g ty g.int16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | _ -> UnknownValue
+    | [ AI_clt ], [a;b], [ty] when typeEquiv g ty g.uint16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkUInt16Val g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkUInt16Val  g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkUInt16Val  g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkUInt16Val  g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkUInt16Val  g (if a1 < a2 then 1us else 0us)
+        | _ -> UnknownValue
+    | [ AI_clt ], [a;b], [ty] when typeEquiv g ty g.sbyte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkInt8Val g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkInt8Val  g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkInt8Val  g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkInt8Val  g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkInt8Val  g (if a1 < a2 then 1y else 0y)
+        | _ -> UnknownValue
+    | [ AI_clt ], [a;b], [ty] when typeEquiv g ty g.byte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Bool a1, _), ConstValue(Const.Bool a2, _) -> mkUInt8Val g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkUInt8Val  g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkUInt8Val  g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkUInt8Val  g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkUInt8Val  g (if a1 < a2 then 1uy else 0uy)
         | _ -> UnknownValue
 
     | [ AI_conv DT_U1 ], [a], [ty] when typeEquiv g ty g.byte_ty -> 
@@ -995,6 +1042,55 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
         | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkBoolVal g (a1 < a2)
         | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkBoolVal g (a1 < a2)
         | _ -> UnknownValue
+    | [ AI_clt_un ], [a;b], [ty] when typeEquiv g ty g.int32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkInt32Val g (if a1 < a2 then 1 else 0)
+        | _ -> UnknownValue
+    | [ AI_clt_un ], [a;b], [ty] when typeEquiv g ty g.uint32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkUInt32Val g (if a1 < a2 then 1u else 0u)
+        | _ -> UnknownValue
+    | [ AI_clt_un ], [a;b], [ty] when typeEquiv g ty g.int16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkInt16Val g (if a1 < a2 then 1s else 0s)
+        | _ -> UnknownValue
+    | [ AI_clt_un ], [a;b], [ty] when typeEquiv g ty g.uint16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkUInt16Val g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkUInt16Val g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkUInt16Val g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkUInt16Val g (if a1 < a2 then 1us else 0us)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkUInt16Val g (if a1 < a2 then 1us else 0us)
+        | _ -> UnknownValue
+    | [ AI_clt_un ], [a;b], [ty] when typeEquiv g ty g.sbyte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkInt8Val g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkInt8Val g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkInt8Val g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkInt8Val g (if a1 < a2 then 1y else 0y)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkInt8Val g (if a1 < a2 then 1y else 0y)
+        | _ -> UnknownValue
+    | [ AI_clt_un ], [a;b], [ty] when typeEquiv g ty g.byte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkUInt8Val g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkUInt8Val g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkUInt8Val g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkUInt8Val g (if a1 < a2 then 1uy else 0uy)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkUInt8Val g (if a1 < a2 then 1uy else 0uy)
+        | _ -> UnknownValue
+
 
     | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.bool_ty -> 
         match stripValue a, stripValue b with
@@ -1002,6 +1098,48 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
         | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkBoolVal g (a1 > a2)
         | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkBoolVal g (a1 > a2)
         | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkBoolVal g (a1 > a2)
+        | _ -> UnknownValue
+    | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.int32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | _ -> UnknownValue
+    | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.uint32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | _ -> UnknownValue
+    | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.int16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | _ -> UnknownValue
+    | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.uint16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | _ -> UnknownValue
+    | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.sbyte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | _ -> UnknownValue
+    | [ AI_cgt ], [a;b], [ty] when typeEquiv g ty g.byte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.SByte a1, _), ConstValue(Const.SByte a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | ConstValue(Const.Int16 a1, _), ConstValue(Const.Int16 a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | ConstValue(Const.Int32 a1, _), ConstValue(Const.Int32 a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | ConstValue(Const.Int64 a1, _), ConstValue(Const.Int64 a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
         | _ -> UnknownValue
 
     | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.bool_ty -> 
@@ -1012,6 +1150,55 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
         | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkBoolVal g (a1 > a2)
         | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkBoolVal g (a1 > a2)
         | _ -> UnknownValue
+    | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.int32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkInt32Val g (if a1 > a2 then 1 else 0)
+        | _ -> UnknownValue
+    | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.uint32_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkUInt32Val g (if a1 > a2 then 1u else 0u)
+        | _ -> UnknownValue
+    | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.int16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkInt16Val g (if a1 > a2 then 1s else 0s)
+        | _ -> UnknownValue
+    | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.uint16_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkUInt16Val g (if a1 > a2 then 1us else 0us)
+        | _ -> UnknownValue
+    | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.sbyte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkInt8Val g (if a1 > a2 then 1y else 0y)
+        | _ -> UnknownValue
+    | [ AI_cgt_un ], [a;b], [ty] when typeEquiv g ty g.byte_ty -> 
+        match stripValue a, stripValue b with
+        | ConstValue(Const.Char a1, _), ConstValue(Const.Char a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | ConstValue(Const.Byte a1, _), ConstValue(Const.Byte a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | ConstValue(Const.UInt16 a1, _), ConstValue(Const.UInt16 a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | ConstValue(Const.UInt32 a1, _), ConstValue(Const.UInt32 a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | ConstValue(Const.UInt64 a1, _), ConstValue(Const.UInt64 a2, _) -> mkUInt8Val g (if a1 > a2 then 1uy else 0uy)
+        | _ -> UnknownValue
+
 
     | [ AI_shl ], [a;n], _ -> 
         match stripValue a, stripValue n with
@@ -1317,21 +1504,10 @@ let RemapOptimizationInfo g tmenv =
     remapLazyModulInfo
 
 /// Hide information when a value is no longer visible
-let AbstractAndRemapModulInfo msg g m (repackage, hidden) info =
+let AbstractAndRemapModulInfo g (repackage, hidden) info =
     let mrpi = mkRepackageRemapping repackage
-#if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data prior to trim: \n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
-#else
-    ignore (msg, m)
-#endif
     let info = info |> AbstractLazyModulInfoByHiding false hidden
-#if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after trim:\n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
-#endif
     let info = info |> RemapOptimizationInfo g mrpi
-#if DEBUG
-    if verboseOptimizationInfo then dprintf "%s - %a - Optimization data after remap:\n%s\n" msg outputRange m (showL (Display.squashTo 192 (moduleInfoL g info)))
-#endif
     info
 
 //-------------------------------------------------------------------------
@@ -1986,7 +2162,7 @@ let rec tryRewriteToSeqCombinators g (e: Expr) =
         | None -> None
 
     // match --> match
-    | Expr.Match (spBind, exprm, pt, targets, m, _ty) ->
+    | Expr.Match (spBind, mExpr, pt, targets, m, _ty) ->
         let targets =
             targets |> Array.map (fun (TTarget(vs, e, flags)) ->
                 match tryRewriteToSeqCombinators g e with
@@ -1996,7 +2172,7 @@ let rec tryRewriteToSeqCombinators g (e: Expr) =
         if targets |> Array.forall Option.isSome then 
             let targets = targets |> Array.map Option.get
             let ty = targets |> Array.pick (fun (TTarget(_, e, _)) -> Some(tyOfExpr g e))
-            Some (Expr.Match (spBind, exprm, pt, targets, m, ty))
+            Some (Expr.Match (spBind, mExpr, pt, targets, m, ty))
         else
             None
 
@@ -2069,8 +2245,8 @@ let TryDetectQueryQuoteAndRun cenv (expr: Expr) =
                     match reqdResultInfo, exprIsEnumerableInfo with 
                     | Some _, Some _ | None, None -> resultExpr // the expression is a QuerySource, the result is a QuerySource, nothing to do
                     | Some resultElemTy, None ->
-                        let iety = TType_app(g.tcref_System_Collections_IEnumerable, [], g.knownWithoutNull)
-                        mkCallGetQuerySourceAsEnumerable g expr.Range resultElemTy iety resultExpr
+                        let enumerableTy = TType_app(g.tcref_System_Collections_IEnumerable, [], g.knownWithoutNull)
+                        mkCallGetQuerySourceAsEnumerable g expr.Range resultElemTy enumerableTy resultExpr
                     | None, Some (resultElemTy, qTy) ->
                         mkCallNewQuerySource g expr.Range resultElemTy qTy resultExpr 
                 Some resultExprAfterConvertToResultTy
@@ -2191,33 +2367,37 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
         | None -> OptimizeApplication cenv env (f, fty, tyargs, argsl, m) 
 
     | Expr.Lambda (_lambdaId, _, _, argvs, _body, m, bodyTy) -> 
-        let topValInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
+        let valReprInfo = ValReprInfo ([], [argvs |> List.map (fun _ -> ValReprInfo.unnamedTopArg1)], ValReprInfo.unnamedRetVal)
         let ty = mkMultiLambdaTy g m argvs bodyTy
-        OptimizeLambdas None cenv env topValInfo expr ty
+        OptimizeLambdas None cenv env valReprInfo expr ty
 
     | Expr.TyLambda (_lambdaId, tps, _body, _m, bodyTy) -> 
-        let topValInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal)
+        let valReprInfo = ValReprInfo (ValReprInfo.InferTyparInfo tps, [], ValReprInfo.unnamedRetVal)
         let ty = mkForallTyIfNeeded tps bodyTy
-        OptimizeLambdas None cenv env topValInfo expr ty
+        OptimizeLambdas None cenv env valReprInfo expr ty
 
     | Expr.TyChoose _ -> 
         OptimizeExpr cenv env (ChooseTyparSolutionsForFreeChoiceTypars g cenv.amap expr)
 
-    | Expr.Match (spMatch, exprm, dtree, targets, m, ty) -> 
-        OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty)
+    | Expr.Match (spMatch, mExpr, dtree, targets, m, ty) -> 
+        OptimizeMatch cenv env (spMatch, mExpr, dtree, targets, m, ty)
 
     | Expr.LetRec (binds, bodyExpr, m, _) ->  
         OptimizeLetRec cenv env (binds, bodyExpr, m)
 
-    | Expr.StaticOptimization (constraints, expr2, expr3, m) ->
-        let expr2R, e2info = OptimizeExpr cenv env expr2
-        let expr3R, e3info = OptimizeExpr cenv env expr3
-        Expr.StaticOptimization (constraints, expr2R, expr3R, m), 
-        { TotalSize = min e2info.TotalSize e3info.TotalSize
-          FunctionSize = min e2info.FunctionSize e3info.FunctionSize
-          HasEffect = e2info.HasEffect || e3info.HasEffect
-          MightMakeCriticalTailcall=e2info.MightMakeCriticalTailcall || e3info.MightMakeCriticalTailcall // seems conservative
-          Info= UnknownValue }
+    | Expr.StaticOptimization (staticConditions, expr2, expr3, m) ->
+        let d = DecideStaticOptimizations g staticConditions false
+        if d = StaticOptimizationAnswer.Yes then OptimizeExpr cenv env expr2
+        elif d = StaticOptimizationAnswer.No then OptimizeExpr cenv env expr3
+        else
+            let expr2R, e2info = OptimizeExpr cenv env expr2
+            let expr3R, e3info = OptimizeExpr cenv env expr3
+            Expr.StaticOptimization (staticConditions, expr2R, expr3R, m), 
+            { TotalSize = min e2info.TotalSize e3info.TotalSize
+              FunctionSize = min e2info.FunctionSize e3info.FunctionSize
+              HasEffect = e2info.HasEffect || e3info.HasEffect
+              MightMakeCriticalTailcall=e2info.MightMakeCriticalTailcall || e3info.MightMakeCriticalTailcall // seems conservative
+              Info= UnknownValue }
 
     | Expr.Link _eref -> 
         assert ("unexpected reclink" = "")
@@ -2249,7 +2429,7 @@ and OptimizeMethods cenv env baseValOpt methods =
 
 and OptimizeMethod cenv env baseValOpt (TObjExprMethod(slotsig, attribs, tps, vs, e, m) as tmethod) = 
     let env = {env with latestBoundId=Some tmethod.Id; functionVal = None}
-    let env = BindTypeVarsToUnknown tps env
+    let env = BindTyparsToUnknown tps env
     let env = BindInternalValsToUnknown cenv vs env
     let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
     let eR, einfo = OptimizeExpr cenv env e
@@ -2332,11 +2512,11 @@ and OptimizeExprOp cenv env (op, tyargs, args, m) =
 
     // Special cases 
     match op, tyargs, args with 
-    | TOp.Coerce, [toty;fromty], [arg] -> 
+    | TOp.Coerce, [tgtTy; srcTy], [arg] -> 
         let argR, einfo = OptimizeExpr cenv env arg
-        if typeEquiv g toty fromty then argR, einfo 
+        if typeEquiv g tgtTy srcTy then argR, einfo 
         else 
-          mkCoerceExpr(argR, toty, m, fromty), 
+          mkCoerceExpr(argR, tgtTy, m, srcTy), 
           { TotalSize=einfo.TotalSize + 1
             FunctionSize=einfo.FunctionSize + 1
             HasEffect = true  
@@ -2707,7 +2887,7 @@ and OptimizeLinearExpr cenv env expr contf =
               MightMakeCriticalTailcall = bodyInfo.MightMakeCriticalTailcall // discard tailcall info from binding - not in tailcall position
               Info = evalueR } ))
 
-    | LinearMatchExpr (spMatch, exprm, dtree, tg1, e2, m, ty) ->
+    | LinearMatchExpr (spMatch, mExpr, dtree, tg1, e2, m, ty) ->
          let dtreeR, dinfo = OptimizeDecisionTree cenv env m dtree
          let tg1, tg1info = OptimizeDecisionTreeTarget cenv env m tg1
          // tailcall
@@ -2716,7 +2896,7 @@ and OptimizeLinearExpr cenv env expr contf =
              let e2, e2info = ConsiderSplitToMethod cenv.settings.abstractBigTargets cenv.settings.bigTargetSize cenv env (e2, e2info) 
              let tinfos = [tg1info; e2info]
              let targetsR = [tg1; TTarget([], e2, None)]
-             OptimizeMatchPart2 cenv (spMatch, exprm, dtreeR, targetsR, dinfo, tinfos, m, ty)))
+             OptimizeMatchPart2 cenv (spMatch, mExpr, dtreeR, targetsR, dinfo, tinfos, m, ty)))
 
     | LinearOpExpr (op, tyargs, argsHead, argLast, m) ->
          let argsHeadR, argsHeadInfosR = OptimizeList (OptimizeExprThenConsiderSplit cenv env) argsHead
@@ -3288,7 +3468,7 @@ and StripPreComputationsFromComputedFunction g f0 args mkApp =
             fs, (remake >> (fun bodyExpr2 -> Expr.Sequential (x1, bodyExpr2, NormalSeq, m)))
 
         // Matches which compute a different function on each branch are awkward, see above.
-        | Expr.Match (spMatch, exprm, dtree, targets, dflt, _ty) when targets.Length <= 2 ->
+        | Expr.Match (spMatch, mExpr, dtree, targets, dflt, _ty) when targets.Length <= 2 ->
             let fsl, targetRemakes = 
                 targets 
                 |> Array.map (fun (TTarget(vs, bodyExpr, flags)) -> 
@@ -3306,7 +3486,7 @@ and StripPreComputationsFromComputedFunction g f0 args mkApp =
                         chunk, (acc, i+chunkSize))
                 let targetsR = (newExprsInChunks, targetRemakes) ||> Array.map2 (fun newExprsChunk targetRemake -> targetRemake newExprsChunk)
                 let tyR = tyOfExpr g targetsR[0].TargetExpression
-                Expr.Match (spMatch, exprm, dtree, targetsR, dflt, tyR)
+                Expr.Match (spMatch, mExpr, dtree, targetsR, dflt, tyR)
             fs, remake
 
         | Expr.DebugPoint (dp, innerExpr) -> 
@@ -3555,18 +3735,18 @@ and OptimizeFSharpDelegateInvoke cenv env (delInvokeRef, delExpr, delInvokeTy, d
                    Info=ValueOfExpr newExpr }
 
 /// Optimize/analyze a lambda expression
-and OptimizeLambdas (vspec: Val option) cenv env topValInfo expr exprTy = 
+and OptimizeLambdas (vspec: Val option) cenv env valReprInfo expr exprTy = 
     let g = cenv.g
 
     match expr with
     | Expr.Lambda (lambdaId, _, _, _, _, m, _)  
     | Expr.TyLambda (lambdaId, _, _, m, _) ->
         let env = { env with methEnv = { pipelineCount = 0 }}
-        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = IteratedAdjustArityOfLambda g cenv.amap topValInfo expr
-        let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v, topValInfo)) }
+        let tps, ctorThisValOpt, baseValOpt, vsl, body, bodyTy = IteratedAdjustLambdaToMatchValReprInfo g cenv.amap valReprInfo expr
+        let env = { env with functionVal = (match vspec with None -> None | Some v -> Some (v, valReprInfo)) }
         let env = Option.foldBack (BindInternalValToUnknown cenv) ctorThisValOpt env
         let env = Option.foldBack (BindInternalValToUnknown cenv) baseValOpt env
-        let env = BindTypeVarsToUnknown tps env
+        let env = BindTyparsToUnknown tps env
         let env = List.foldBack (BindInternalValsToUnknown cenv) vsl env
         let bodyR, bodyinfo = OptimizeExpr cenv env body
         let exprR = mkMemberLambdas g m tps ctorThisValOpt baseValOpt vsl (bodyR, bodyTy)
@@ -3722,14 +3902,14 @@ and ConsiderSplitToMethod flag threshold cenv env (e, einfo) =
         e, einfo 
 
 /// Optimize/analyze a pattern matching expression
-and OptimizeMatch cenv env (spMatch, exprm, dtree, targets, m, ty) =
+and OptimizeMatch cenv env (spMatch, mExpr, dtree, targets, m, ty) =
     // REVIEW: consider collecting, merging and using information flowing through each line of the decision tree to each target 
     let dtreeR, dinfo = OptimizeDecisionTree cenv env m dtree 
     let targetsR, tinfos = OptimizeDecisionTreeTargets cenv env m targets 
-    OptimizeMatchPart2 cenv (spMatch, exprm, dtreeR, targetsR, dinfo, tinfos, m, ty)
+    OptimizeMatchPart2 cenv (spMatch, mExpr, dtreeR, targetsR, dinfo, tinfos, m, ty)
 
-and OptimizeMatchPart2 cenv (spMatch, exprm, dtreeR, targetsR, dinfo, tinfos, m, ty) =
-    let newExpr, newInfo = RebuildOptimizedMatch (spMatch, exprm, m, ty, dtreeR, targetsR, dinfo, tinfos)
+and OptimizeMatchPart2 cenv (spMatch, mExpr, dtreeR, targetsR, dinfo, tinfos, m, ty) =
+    let newExpr, newInfo = RebuildOptimizedMatch (spMatch, mExpr, m, ty, dtreeR, targetsR, dinfo, tinfos)
     let newExpr2 = if not cenv.settings.LocalOptimizationsEnabled then newExpr else CombineBoolLogic newExpr
     newExpr2, newInfo
 
@@ -3740,9 +3920,9 @@ and CombineMatchInfos dinfo tinfo =
       MightMakeCriticalTailcall=tinfo.MightMakeCriticalTailcall // discard tailcall info from decision tree since it's not in tailcall position
       Info= UnknownValue }
 
-and RebuildOptimizedMatch (spMatch, exprm, m, ty, dtree, tgs, dinfo, tinfos) = 
+and RebuildOptimizedMatch (spMatch, mExpr, m, ty, dtree, tgs, dinfo, tinfos) = 
      let tinfo = CombineValueInfosUnknown tinfos
-     let expr = mkAndSimplifyMatch spMatch exprm m ty dtree tgs
+     let expr = mkAndSimplifyMatch spMatch mExpr m ty dtree tgs
      let einfo = CombineMatchInfos dinfo tinfo
      expr, einfo
 
@@ -3801,7 +3981,7 @@ and TryOptimizeDecisionTreeTest cenv test vinfo =
     | DecisionTreeTest.ArrayLength _, _ -> None
     | DecisionTreeTest.Const c1, StripConstValue c2 -> if c1 = Const.Zero || c2 = Const.Zero then None else Some(c1=c2)
     | DecisionTreeTest.IsNull, StripConstValue c2 -> Some(c2=Const.Zero)
-    | DecisionTreeTest.IsInst (_srcty1, _tgty1), _ -> None
+    | DecisionTreeTest.IsInst (_srcTy1, _tgtTy1), _ -> None
     // These should not occur in optimization
     | DecisionTreeTest.ActivePatternCase _, _ -> None
     | _ -> None
@@ -3813,8 +3993,8 @@ and OptimizeSwitch cenv env (e, cases, dflt, m) =
     // Replace IsInst tests by calls to the helper for type tests, which may then get optimized
     let e, cases =
         match cases with
-        | [ TCase(DecisionTreeTest.IsInst (_srcTy, tgTy), success)] ->
-            let testExpr = mkCallTypeTest g m tgTy e
+        | [ TCase(DecisionTreeTest.IsInst (_srcTy, tgtTy), success)] ->
+            let testExpr = mkCallTypeTest g m tgtTy e
             let testCases = [TCase(DecisionTreeTest.Const(Const.Bool true), success)]
             testExpr, testCases
         | _ -> e, cases
@@ -3867,7 +4047,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
         let exprOptimized, einfo = 
             let env = if vref.IsCompilerGenerated && Option.isSome env.latestBoundId then env else {env with latestBoundId=Some vref.Id} 
             let cenv = if vref.InlineInfo.MustInline then { cenv with optimizing=false} else cenv 
-            let arityInfo = InferArityOfExprBinding g AllowTypeDirectedDetupling.No vref expr
+            let arityInfo = InferValReprInfoOfBinding g AllowTypeDirectedDetupling.No vref expr
             let exprOptimized, einfo = OptimizeLambdas (Some vref) cenv env arityInfo expr vref.Type 
             let size = localVarSize 
             exprOptimized, {einfo with FunctionSize=einfo.FunctionSize+size; TotalSize = einfo.TotalSize+size} 
@@ -3907,7 +4087,7 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
                
                (vref.InlineInfo = ValInline.Never) ||
                // MarshalByRef methods may not be inlined
-               (match vref.DeclaringEntity with 
+               (match vref.TryDeclaringEntity with 
                 | Parent tcref -> 
                     match g.system_MarshalByRefObject_tcref with
                     | None -> false
@@ -3957,12 +4137,10 @@ and OptimizeBinding cenv isRec env (TBind(vref, expr, spBind)) =
 and OptimizeBindings cenv isRec env xs =
     List.mapFold (OptimizeBinding cenv isRec) env xs
     
-and OptimizeModuleExprWithSig cenv env mexpr = 
-    let g = cenv.g
-    match mexpr with   
-    | ModuleOrNamespaceContentsWithSig(mty, def, m) -> 
+and OptimizeModuleExprWithSig cenv env mty def  = 
+        let g = cenv.g
         // Optimize the module implementation
-        let (def, info), (_env, bindInfosColl) = OptimizeModuleDef cenv (env, []) def  
+        let (def, info), (_env, bindInfosColl) = OptimizeModuleContents cenv (env, []) def  
         let bindInfosColl = List.concat bindInfosColl 
         
         // Compute the elements truly hidden by the module signature.
@@ -4009,7 +4187,7 @@ and OptimizeModuleExprWithSig cenv env mexpr =
 
             and elimModSpec (mspec: ModuleOrNamespace) = 
                 let mtyp = elimModTy mspec.ModuleOrNamespaceType 
-                mspec.entity_modul_contents <- MaybeLazy.Strict mtyp
+                mspec.entity_modul_type <- MaybeLazy.Strict mtyp
 
             let rec elimModuleDefn x =                  
                 match x with 
@@ -4021,7 +4199,6 @@ and OptimizeModuleExprWithSig cenv env mexpr =
                 | TMDefOpens _ -> x
                 | TMDefDo _ -> x
                 | TMDefs defs -> TMDefs(List.map elimModuleDefn defs) 
-                | TMWithSig _ -> x 
 
             and elimModuleBinding modBind = 
                 match modBind with 
@@ -4035,14 +4212,14 @@ and OptimizeModuleExprWithSig cenv env mexpr =
             
             elimModuleDefn def 
 
-        let info = AbstractAndRemapModulInfo "defs" g m rpi info
+        let info = AbstractAndRemapModulInfo g rpi info
 
-        ModuleOrNamespaceContentsWithSig(mty, def, m), info 
+        def, info 
 
 and mkValBind (bind: Binding) info =
     (mkLocalValRef bind.Var, info)
 
-and OptimizeModuleDef cenv (env, bindInfosColl) input = 
+and OptimizeModuleContents cenv (env, bindInfosColl) input = 
     match input with 
     | TMDefRec(isRec, opens, tycons, mbinds, m) -> 
         let env = if isRec then BindInternalValsToUnknown cenv (allValsOfModDef input) env else env
@@ -4056,11 +4233,6 @@ and OptimizeModuleDef cenv (env, bindInfosColl) input =
          notlazy { ValInfos = ValInfos(List.map2 (fun bind binfo -> mkValBind bind (mkValInfo binfo bind.Var)) binds binfos) 
                    ModuleOrNamespaceInfos = NameMap.ofList minfos}), 
         (env, bindInfosColl)
-
-    | TMWithSig mexpr -> 
-        let mexpr, info = OptimizeModuleExprWithSig cenv env mexpr
-        let env = BindValsInModuleOrNamespace cenv info env
-        (TMWithSig mexpr, info), (env, bindInfosColl)
 
     | TMDefOpens _openDecls ->  
         (input, EmptyModuleInfo), (env, bindInfosColl)
@@ -4091,29 +4263,28 @@ and OptimizeModuleBinding cenv (env, bindInfosColl) x =
         (ModuleOrNamespaceBinding.Binding bindR, Choice1Of2 (bindR, binfo)), (env, [ bindInfo ] :: bindInfosColl)
     | ModuleOrNamespaceBinding.Module(mspec, def) ->
         let id = mspec.Id
-        let (def, info), (_, bindInfosColl) = OptimizeModuleDef cenv (env, bindInfosColl) def 
+        let (def, info), (_, bindInfosColl) = OptimizeModuleContents cenv (env, bindInfosColl) def 
         let env = BindValsInModuleOrNamespace cenv info env
         (ModuleOrNamespaceBinding.Module(mspec, def), Choice2Of2 (id.idText, info)), 
         (env, bindInfosColl)
 
 and OptimizeModuleDefs cenv (env, bindInfosColl) defs = 
-    let defs, (env, bindInfosColl) = List.mapFold (OptimizeModuleDef cenv) (env, bindInfosColl) defs
+    let defs, (env, bindInfosColl) = List.mapFold (OptimizeModuleContents cenv) (env, bindInfosColl) defs
     let defs, minfos = List.unzip defs
     (defs, UnionOptimizationInfos minfos), (env, bindInfosColl)
    
 and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit hidden implFile =
     let g = cenv.g
-    let (TImplFile (qname, pragmas, mexpr, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
-    let env, mexprR, minfo, hidden = 
-        match mexpr with 
+    let (CheckedImplFile (qname, pragmas, signature, contents, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)) = implFile
+    let env, contentsR, minfo, hidden = 
         // FSI compiles interactive fragments as if you're typing incrementally into one module.
         //
         // This means the fragment is not constrained by its signature and later fragments will be typechecked 
         // against the implementation of the module rather than the externals.
         //
-        | ModuleOrNamespaceContentsWithSig(mty, def, m) when isIncrementalFragment -> 
+        if isIncrementalFragment then
             // This optimizes and builds minfo ignoring the signature
-            let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleDef cenv (env, []) def 
+            let (defR, minfo), (_env, _bindInfosColl) = OptimizeModuleContents cenv (env, []) contents
             let hidden = ComputeImplementationHidingInfoAtAssemblyBoundary defR hidden
             let minfo =
                 // In F# interactive multi-assembly mode, no internals are accessible across interactive fragments.
@@ -4123,11 +4294,11 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
                 else
                     AbstractLazyModulInfoByHiding false hidden minfo
             let env = BindValsInModuleOrNamespace cenv minfo env
-            env, ModuleOrNamespaceContentsWithSig(mty, defR, m), minfo, hidden
-        | _ ->
+            env, defR, minfo, hidden
+        else
             // This optimizes and builds minfo w.r.t. the signature
-            let mexprR, minfo = OptimizeModuleExprWithSig cenv env mexpr
-            let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary mexpr.Type hidden
+            let mexprR, minfo = OptimizeModuleExprWithSig cenv env signature contents
+            let hidden = ComputeSignatureHidingInfoAtAssemblyBoundary signature hidden
             let minfoExternal = AbstractLazyModulInfoByHiding true hidden minfo
             let env =
                 // In F# interactive multi-assembly mode, internals are not accessible in the 'env' used intra-assembly
@@ -4138,7 +4309,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment fsiMultiAssemblyEmit
                     BindValsInModuleOrNamespace cenv minfo env
             env, mexprR, minfoExternal, hidden
 
-    let implFileR = TImplFile (qname, pragmas, mexprR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
+    let implFileR = CheckedImplFile (qname, pragmas, signature, contentsR, hasExplicitEntryPoint, isScript, anonRecdTypes, namedDebugPointsForInlinedCode)
 
     env, implFileR, minfo, hidden
 
@@ -4154,7 +4325,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
           casApplied=Dictionary<Stamp, bool>() 
-          stackGuard = StackGuard(OptimizerStackGuardDepth) 
+          stackGuard = StackGuard(OptimizerStackGuardDepth, "OptimizerStackGuardDepth") 
         }
 
     let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiMultiAssemblyEmit hidden mimpls  

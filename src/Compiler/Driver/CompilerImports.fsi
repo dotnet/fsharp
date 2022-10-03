@@ -8,7 +8,7 @@ open System
 open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
-open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.DependencyManager
 open FSharp.Compiler.DiagnosticsLogger
@@ -17,6 +17,7 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.BuildGraph
+open FSharp.Compiler.IO
 open FSharp.Compiler.Text
 open FSharp.Core.CompilerServices
 
@@ -42,7 +43,7 @@ val IsOptimizationDataResource: ILResource -> bool
 /// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource: ILResource -> bool
 
-val GetSignatureDataResourceName: ILResource -> string
+val GetResourceNameAndSignatureDataFunc: ILResource -> string * (unit -> ReadOnlyByteMemory)
 
 /// Encode the F# interface data into a set of IL attributes and resources
 val EncodeSignatureData:
@@ -69,20 +70,22 @@ type ResolveAssemblyReferenceMode =
     | ReportErrors
 
 type AssemblyResolution =
-    { /// The original reference to the assembly.
-      originalReference: AssemblyReference
+    {
+        /// The original reference to the assembly.
+        originalReference: AssemblyReference
 
-      /// Path to the resolvedFile
-      resolvedPath: string
+        /// Path to the resolvedFile
+        resolvedPath: string
 
-      /// Create the tooltip text for the assembly reference
-      prepareToolTip: unit -> string
+        /// Create the tooltip text for the assembly reference
+        prepareToolTip: unit -> string
 
-      /// Whether or not this is an installed system assembly (for example, System.dll)
-      sysdir: bool
+        /// Whether or not this is an installed system assembly (for example, System.dll)
+        sysdir: bool
 
-      /// Lazily populated ilAssemblyRef for this reference.
-      mutable ilAssemblyRef: ILAssemblyRef option }
+        /// Lazily populated ilAssemblyRef for this reference.
+        mutable ilAssemblyRef: ILAssemblyRef option
+    }
 
 #if !NO_TYPEPROVIDERS
 type ResolvedExtensionReference =
@@ -114,7 +117,6 @@ type ImportedAssembly =
       mutable TypeProviders: Tainted<ITypeProvider> list
 #endif
       FSharpOptimizationData: Lazy<Option<LazyModuleInfo>> }
-
 
 /// Tables of assembly resolutions
 [<Sealed>]

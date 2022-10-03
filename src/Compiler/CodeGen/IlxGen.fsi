@@ -16,65 +16,72 @@ type IlxGenBackend =
 
 [<NoEquality; NoComparison>]
 type internal IlxGenOptions =
-    { fragName: string
+    {
+        fragName: string
 
-      /// Indicates if we are generating filter blocks
-      generateFilterBlocks: bool
+        /// Indicates if we are generating filter blocks
+        generateFilterBlocks: bool
 
-      /// Indicates if we should workaround old reflection emit bugs
-      workAroundReflectionEmitBugs: bool
+        /// Indicates if we should workaround old reflection emit bugs
+        workAroundReflectionEmitBugs: bool
 
-      /// Indicates if static array data should be emitted using static blobs
-      emitConstantArraysUsingStaticDataBlobs: bool
+        /// Indicates if static array data should be emitted using static blobs
+        emitConstantArraysUsingStaticDataBlobs: bool
 
-      /// If this is set, then the last module becomes the "main" module
-      mainMethodInfo: Attribs option
+        /// If this is set, then the last module becomes the "main" module
+        mainMethodInfo: Attribs option
 
-      /// Indicates if local optimizations are active
-      localOptimizationsEnabled: bool
+        /// Indicates if local optimizations are active
+        localOptimizationsEnabled: bool
 
-      /// Indicates if we are generating debug symbols or not
-      generateDebugSymbols: bool
+        /// Indicates if we are generating debug symbols or not
+        generateDebugSymbols: bool
 
-      /// A flag to help test emit of debug information
-      testFlagEmitFeeFeeAs100001: bool
+        /// A flag to help test emit of debug information
+        testFlagEmitFeeFeeAs100001: bool
 
-      /// Indicates which backend we are generating code for
-      ilxBackend: IlxGenBackend
+        /// Indicates which backend we are generating code for
+        ilxBackend: IlxGenBackend
 
-      /// Is --multiemit enabled?
-      fsiMultiAssemblyEmit: bool
+        /// Is --multiemit enabled?
+        fsiMultiAssemblyEmit: bool
 
-      /// Indicates the code is being generated in FSI.EXE and is executed immediately after code generation
-      /// This includes all interactively compiled code, including #load, definitions, and expressions
-      isInteractive: bool
+        /// Indicates the code is being generated in FSI.EXE and is executed immediately after code generation
+        /// This includes all interactively compiled code, including #load, definitions, and expressions
+        isInteractive: bool
 
-      /// Indicates the code generated is an interactive 'it' expression. We generate a setter to allow clearing of the underlying
-      /// storage, even though 'it' is not logically mutable
-      isInteractiveItExpr: bool
+        /// Indicates the code generated is an interactive 'it' expression. We generate a setter to allow clearing of the underlying
+        /// storage, even though 'it' is not logically mutable
+        isInteractiveItExpr: bool
 
-      /// Indicates that, whenever possible, use callvirt instead of call
-      alwaysCallVirt: bool }
+        /// Suppress ToString emit
+        useReflectionFreeCodeGen: bool
+
+        /// Indicates that, whenever possible, use callvirt instead of call
+        alwaysCallVirt: bool
+    }
 
 /// The results of the ILX compilation of one fragment of an assembly
 type public IlxGenResults =
-    { /// The generated IL/ILX type definitions
-      ilTypeDefs: ILTypeDef list
+    {
+        /// The generated IL/ILX type definitions
+        ilTypeDefs: ILTypeDef list
 
-      /// The generated IL/ILX assembly attributes
-      ilAssemAttrs: ILAttribute list
+        /// The generated IL/ILX assembly attributes
+        ilAssemAttrs: ILAttribute list
 
-      /// The generated IL/ILX .NET module attributes
-      ilNetModuleAttrs: ILAttribute list
+        /// The generated IL/ILX .NET module attributes
+        ilNetModuleAttrs: ILAttribute list
 
-      /// The attributes for the assembly in F# form
-      topAssemblyAttrs: Attribs
+        /// The attributes for the assembly in F# form
+        topAssemblyAttrs: Attribs
 
-      /// The security attributes to attach to the assembly
-      permissionSets: ILSecurityDecl list
+        /// The security attributes to attach to the assembly
+        permissionSets: ILSecurityDecl list
 
-      /// The generated IL/ILX resources associated with F# quotations
-      quotationResourceInfo: (ILTypeRef list * byte []) list }
+        /// The generated IL/ILX resources associated with F# quotations
+        quotationResourceInfo: (ILTypeRef list * byte[]) list
+    }
 
 /// Used to support the compilation-inversion operations "ClearGeneratedValue" and "LookupGeneratedValue"
 type ExecutionContext =
@@ -92,10 +99,10 @@ type public IlxAssemblyGenerator =
     /// Register a fragment of the current assembly with the ILX code generator. If 'isIncrementalFragment' is true then the input
     /// is assumed to be a fragment 'typed' into FSI.EXE, otherwise the input is assumed to be the result of a '#load'
     member AddIncrementalLocalAssemblyFragment:
-        isIncrementalFragment: bool * fragName: string * typedImplFiles: TypedImplFile list -> unit
+        isIncrementalFragment: bool * fragName: string * typedImplFiles: CheckedImplFile list -> unit
 
     /// Generate ILX code for an assembly fragment
-    member GenerateCode: IlxGenOptions * TypedAssemblyAfterOptimization * Attribs * Attribs -> IlxGenResults
+    member GenerateCode: IlxGenOptions * CheckedAssemblyAfterOptimization * Attribs * Attribs -> IlxGenResults
 
     /// Invert the compilation of the given value and clear the storage of the value
     member ClearGeneratedValue: ExecutionContext * Val -> unit

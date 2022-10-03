@@ -4,7 +4,6 @@
 
 namespace Microsoft.FSharp.Control
 
-    #if !BUILDING_WITH_LKG && !BUILD_FROM_SOURCE
     open System
     open System.Runtime.CompilerServices
     open System.Threading.Tasks
@@ -16,7 +15,6 @@ namespace Microsoft.FSharp.Control
     /// The extra data stored in ResumableStateMachine for tasks
     /// </summary>
     [<Struct; NoComparison; NoEquality>]
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<CompilerMessage("This construct  is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
     type TaskStateMachineData<'T> =
 
@@ -286,4 +284,3 @@ namespace Microsoft.FSharp.Control.TaskBuilderExtensions
                 task: Task<'TResult1> *
                 continuation: ('TResult1 -> TaskCode<'TOverall, 'TResult2>)
                     -> bool
-#endif

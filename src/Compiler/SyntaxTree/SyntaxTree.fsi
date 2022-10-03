@@ -163,11 +163,11 @@ type SynConst =
     ///
     /// Also used internally in the typechecker once an array of unit16 constants
     /// is detected, to allow more efficient processing of large arrays of uint16 constants.
-    | Bytes of bytes: byte [] * synByteStringKind: SynByteStringKind * range: range
+    | Bytes of bytes: byte[] * synByteStringKind: SynByteStringKind * range: range
 
     /// Used internally in the typechecker once an array of unit16 constants
     /// is detected, to allow more efficient processing of large arrays of uint16 constants.
-    | UInt16s of uint16 []
+    | UInt16s of uint16[]
 
     /// Old comment: "we never iterate, so the const here is not another SynConst.Measure"
     | Measure of constant: SynConst * constantRange: range * SynMeasure
@@ -224,13 +224,15 @@ type SynRationalConst =
 [<RequireQualifiedAccess>]
 type SynAccess =
     /// A construct marked or assumed 'public'
-    | Public
+    | Public of range: range
 
     /// A construct marked or assumed 'internal'
-    | Internal
+    | Internal of range: range
 
     /// A construct marked or assumed 'private'
-    | Private
+    | Private of range: range
+
+    member Range: range
 
 /// Represents whether a debug point should be present for the target
 /// of a decision tree, that is whether the construct corresponds to a debug
@@ -411,6 +413,9 @@ type SynTypeConstraint =
     /// F# syntax is 'typar: delegate<'Args, unit>
     | WhereTyparIsDelegate of typar: SynTypar * typeArgs: SynType list * range: range
 
+    /// F# syntax is SomeThing<'T>
+    | WhereSelfConstrained of selfConstraint: SynType * range: range
+
     member Range: range
 
 /// List of type parameter declarations with optional type constraints,
@@ -423,6 +428,14 @@ type SynTyparDecls =
 
     member TyparDecls: SynTyparDecl list
     member Constraints: SynTypeConstraint list
+    member Range: range
+
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynTupleTypeSegment =
+    | Type of typeName: SynType
+    | Star of range: range
+    | Slash of range: range
+
     member Range: range
 
 /// Represents a syntax tree for F# types
@@ -455,11 +468,7 @@ type SynType =
 
     /// F# syntax: type * ... * type
     /// F# syntax: struct (type * ... * type)
-    | Tuple of
-        // the bool is true if / rather than * follows the type
-        isStruct: bool *
-        elementTypes: (bool * SynType) list *
-        range: range
+    | Tuple of isStruct: bool * path: SynTupleTypeSegment list * range: range
 
     /// F# syntax: {| id: type; ...; id: type |}
     /// F# syntax: struct {| id: type; ...; id: type |}
@@ -469,7 +478,7 @@ type SynType =
     | Array of rank: int * elementType: SynType * range: range
 
     /// F# syntax: type -> type
-    | Fun of argType: SynType * returnType: SynType * range: range
+    | Fun of argType: SynType * returnType: SynType * range: range * trivia: SynTypeFunTrivia
 
     /// F# syntax: 'Var
     | Var of typar: SynTypar * range: range
@@ -500,6 +509,14 @@ type SynType =
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
 
     | Paren of innerType: SynType * range: range
+
+    /// F# syntax: a: b, used in signatures and type annotations
+    | SignatureParameter of
+        attributes: SynAttributes *
+        optional: bool *
+        id: Ident option *
+        usedType: SynType *
+        range: range
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -563,7 +580,7 @@ type SynExpr =
         argOptions: (SynExpr * Ident option) option *
         withKeyword: range option *
         bindings: SynBinding list *
-        members: SynMemberDefn list *
+        members: SynMemberDefns *
         extraImpls: SynInterfaceImpl list *
         newExprRange: range *
         range: range
@@ -611,7 +628,7 @@ type SynExpr =
         range2: range *
         range: range
 
-    /// F# syntax: ^expr
+    /// F# syntax: ^expr, used for from-end-of-collection indexing and ^T.Operation
     | IndexFromEnd of expr: SynExpr * range: range
 
     /// F# syntax: { expr }
@@ -725,6 +742,9 @@ type SynExpr =
         range: range *
         trivia: SynExprIfThenElseTrivia
 
+    /// F# syntax: 'T (for 'T.ident).
+    | Typar of typar: SynTypar * range: range
+
     /// F# syntax: ident
     /// Optimized representation for SynExpr.LongIdent (false, [id], id.idRange)
     | Ident of ident: Ident
@@ -796,8 +816,8 @@ type SynExpr =
     /// F# syntax: &expr, &&expr
     | AddressOf of isByref: bool * expr: SynExpr * opRange: range * range: range
 
-    /// F# syntax: ((typar1 or ... or typarN): (member-dig) expr)
-    | TraitCall of supportTys: SynTypar list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
+    /// F# syntax: ((type1 or ... or typeN): (member-dig) expr)
+    | TraitCall of supportTys: SynType list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
 
     /// F# syntax: ... in ...
     /// Computation expressions only, based on JOIN_IN token from lex filter
@@ -895,6 +915,9 @@ type SynExpr =
 
     /// Debug points arising from computation expressions
     | DebugPoint of debugPoint: DebugPointAtLeafExpr * isControlFlow: bool * innerExpr: SynExpr
+
+    /// F# syntax: f?x
+    | Dynamic of funcExpr: SynExpr * qmark: range * argExpr: SynExpr * range: range
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -1001,7 +1024,7 @@ type SynSimplePats =
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range
+    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member Patterns: SynPat list
 
@@ -1036,7 +1059,6 @@ type SynPat =
     /// A long identifier pattern possibly with argument patterns
     | LongIdent of
         longDotId: SynLongIdent *
-        propertyKeyword: PropertyKeyword option *
         extraId: Ident option *  // holds additional ident for tooling
         typarDecls: SynValTyparDecls option *  // usually None: temporary used to parse "f<'a> x = x"
         argPats: SynArgPats *
@@ -1084,12 +1106,6 @@ type SynPat =
     /// Gets the syntax range of this construct
     member Range: range
 
-/// Represents a used keyword for a property member
-[<NoEquality; NoComparison; RequireQualifiedAccess>]
-type PropertyKeyword =
-    | With of range
-    | And of range
-
 /// Represents a set of bindings that implement an interface
 [<NoEquality; NoComparison>]
 type SynInterfaceImpl =
@@ -1097,7 +1113,7 @@ type SynInterfaceImpl =
         interfaceTy: SynType *
         withKeyword: range option *
         bindings: SynBinding list *
-        members: SynMemberDefn list *
+        members: SynMemberDefns *
         range: range
 
 /// Represents a clause in a 'match' expression
@@ -1120,29 +1136,33 @@ type SynMatchClause =
 /// Represents an attribute
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynAttribute =
-    { /// The name of the type for the attribute
-      TypeName: SynLongIdent
+    {
+        /// The name of the type for the attribute
+        TypeName: SynLongIdent
 
-      /// The argument of the attribute, perhaps a tuple
-      ArgExpr: SynExpr
+        /// The argument of the attribute, perhaps a tuple
+        ArgExpr: SynExpr
 
-      /// Target specifier, e.g. "assembly", "module", etc.
-      Target: Ident option
+        /// Target specifier, e.g. "assembly", "module", etc.
+        Target: Ident option
 
-      /// Is this attribute being applied to a property getter or setter?
-      AppliesToGetterAndSetter: bool
+        /// Is this attribute being applied to a property getter or setter?
+        AppliesToGetterAndSetter: bool
 
-      /// The syntax range of the attribute
-      Range: range }
+        /// The syntax range of the attribute
+        Range: range
+    }
 
 /// List of attributes enclosed in [< ... >].
 [<RequireQualifiedAccess>]
 type SynAttributeList =
-    { /// The list of attributes
-      Attributes: SynAttribute list
+    {
+        /// The list of attributes
+        Attributes: SynAttribute list
 
-      /// The syntax range of the list of attributes
-      Range: range }
+        /// The syntax range of the list of attributes
+        Range: range
+    }
 
 type SynAttributes = SynAttributeList list
 
@@ -1188,23 +1208,28 @@ type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: r
 /// Represents the flags for a 'member' declaration
 [<NoComparison; RequireQualifiedAccess; CustomEquality>]
 type SynMemberFlags =
-    { /// The member is an instance member (non-static)
-      IsInstance: bool
+    {
+        /// The member is an instance member (non-static)
+        IsInstance: bool
 
-      /// The member is a dispatch slot
-      IsDispatchSlot: bool
+        /// The member is a dispatch slot
+        IsDispatchSlot: bool
 
-      /// The member is an 'override' or explicit interface implementation
-      IsOverrideOrExplicitImpl: bool
+        /// The member is an 'override' or explicit interface implementation
+        IsOverrideOrExplicitImpl: bool
 
-      /// The member is 'final'
-      IsFinal: bool
+        /// The member is 'final'
+        IsFinal: bool
 
-      /// The kind of the member
-      MemberKind: SynMemberKind
+        /// The member was generated by the compiler
+        GetterOrSetterIsCompilerGenerated: bool
 
-      /// Additional information
-      Trivia: SynMemberFlagsTrivia }
+        /// The kind of the member
+        MemberKind: SynMemberKind
+
+        /// Additional information
+        Trivia: SynMemberFlagsTrivia
+    }
 
 /// Note the member kind is actually computed partially by a syntax tree transformation in tc.fs
 [<StructuralEquality; NoComparison; RequireQualifiedAccess>]
@@ -1379,11 +1404,10 @@ type SynTypeDefnSig =
     /// The information for a type definition in a signature
     | SynTypeDefnSig of
         typeInfo: SynComponentInfo *
-        equalsRange: range option *
         typeRepr: SynTypeDefnSigRepr *
-        withKeyword: range option *
         members: SynMemberSig list *
-        range: range
+        range: range *
+        trivia: SynTypeDefnSigTrivia
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -1428,7 +1452,7 @@ type SynValSig =
     | SynValSig of
         attributes: SynAttributes *
         ident: SynIdent *
-        explicitValDecls: SynValTyparDecls *
+        explicitTypeParams: SynValTyparDecls *
         synType: SynType *
         arity: SynValInfo *
         isInline: bool *
@@ -1545,6 +1569,13 @@ type SynMemberDefn =
     /// A 'member' definition within a type
     | Member of memberDefn: SynBinding * range: range
 
+    /// A 'member' definition with get/set accessors within a type
+    | GetSetMember of
+        memberDefnForGet: SynBinding option *
+        memberDefnForSet: SynBinding option *
+        range: range *
+        trivia: SynMemberGetSetTrivia
+
     /// An implicit constructor definition
     | ImplicitCtor of
         accessibility: SynAccess option *
@@ -1582,7 +1613,8 @@ type SynMemberDefn =
         ident: Ident *
         typeOpt: SynType option *
         propKind: SynMemberKind *
-        memberFlags: (SynMemberKind -> SynMemberFlags) *
+        memberFlags: SynMemberFlags *
+        memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         equalsRange: range *
@@ -1644,7 +1676,7 @@ type SynModuleDecl =
 type SynOpenDeclTarget =
 
     /// A 'open' declaration
-    | ModuleOrNamespace of longId: LongIdent * range: range
+    | ModuleOrNamespace of longId: SynLongIdent * range: range
 
     /// A 'open type' declaration
     | Type of typeName: SynType * range: range
@@ -1850,9 +1882,27 @@ type ParsedImplFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespace list *
-        isLastCompiland: (bool * bool) *
+        contents: SynModuleOrNamespace list *
+        flags: (bool * bool) *
         trivia: ParsedImplFileInputTrivia
+
+    member FileName: string
+
+    member IsScript: bool
+
+    member QualifiedName: QualifiedNameOfFile
+
+    member ScopedPragmas: ScopedPragma list
+
+    member HashDirectives: ParsedHashDirective list
+
+    member Contents: SynModuleOrNamespace list
+
+    member Trivia: ParsedImplFileInputTrivia
+
+    member IsLastCompiland: bool
+
+    member IsExe: bool
 
 /// Represents the full syntax tree, file name and other parsing information for a signature file
 [<NoEquality; NoComparison>]
@@ -1862,8 +1912,20 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespaceSig list *
+        contents: SynModuleOrNamespaceSig list *
         trivia: ParsedSigFileInputTrivia
+
+    member FileName: string
+
+    member QualifiedName: QualifiedNameOfFile
+
+    member ScopedPragmas: ScopedPragma list
+
+    member HashDirectives: ParsedHashDirective list
+
+    member Contents: SynModuleOrNamespaceSig list
+
+    member Trivia: ParsedSigFileInputTrivia
 
 /// Represents the syntax tree for a parsed implementation or signature file
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1879,3 +1941,9 @@ type ParsedInput =
 
     /// Gets the syntax range of this construct
     member Range: range
+
+    /// Gets the qualified name used to help match signature and implementation files
+    member QualifiedName: QualifiedNameOfFile
+
+    /// Gets the #nowarn and other scoped pragmas
+    member ScopedPragmas: ScopedPragma list
