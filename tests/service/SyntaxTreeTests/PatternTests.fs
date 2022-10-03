@@ -120,6 +120,5 @@ match data with
             ])
         )
     ]) ])) ->
-        assertRange (3, 13) (3, 14) trivia.LeftParenRange
-        assertRange (5, 12) (5, 13) trivia.RightParenRange
+        assertRange (3, 13) (5, 13) trivia.ParenRange
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

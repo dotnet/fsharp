@@ -259,8 +259,4 @@ type SynMemberGetSetTrivia =
     }
 
 [<NoEquality; NoComparison>]
-type SynArgPatsNamePatPairsTrivia =
-    {
-        LeftParenRange: range
-        RightParenRange: range
-    }
+type SynArgPatsNamePatPairsTrivia = { ParenRange: range }

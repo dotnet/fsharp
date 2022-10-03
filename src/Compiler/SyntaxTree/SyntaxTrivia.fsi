@@ -370,8 +370,6 @@ type SynMemberGetSetTrivia =
 [<NoEquality; NoComparison>]
 type SynArgPatsNamePatPairsTrivia =
     {
-        /// The syntax range of the `(` token.
-        LeftParenRange: range
-        /// The syntax range of the `)` token.
-        RightParenRange: range
+        /// The syntax range from the beginning of the `(` token till the end of the `)` token.
+        ParenRange: range
     }
