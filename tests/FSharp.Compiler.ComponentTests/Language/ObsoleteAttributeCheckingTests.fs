@@ -206,9 +206,9 @@ C.Update()
         |> withDiagnostics [
             (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
         ]  
-        
+
     [<Fact>]
-    let ``Obsolete attribute is taken into account when used on an enum and invocation`` () =
+    let ``Obsolete attribute error is taken into account when used on an enum and invocation`` () =
         Fsx """
 open System
 
@@ -219,15 +219,14 @@ type Color =
     
 let c = Color.Red
         """
-        |> ignoreWarnings
         |> compile
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 9, Col 9, Line 9, Col 14, "This construct is deprecated. Use B instead")
         ]
-        
+     
     [<Fact>]
-    let ``Obsolete attribute is taken into account when used on an enum entry and invocation`` () =
+    let ``Obsolete attribute error is taken into account when used on an enum field and invocation`` () =
         Fsx """
 open System
 
@@ -237,9 +236,28 @@ type Color =
     
 let c = Color.Red
         """
-        |> ignoreWarnings
         |> compile
-        |> shouldSucceed
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 8, Col 9, Line 8, Col 18, "This construct is deprecated. Use B instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used on an enum field and invocation`` () =
+        Fsx """
+open System
+
+type Color =
+    | [<Obsolete("Use B instead")>] Red = 0
+    | Green = 1
+    
+let c = Color.Red
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 8, Col 9, Line 8, Col 18, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute is taken into account when used on an type and use extension method`` () =
