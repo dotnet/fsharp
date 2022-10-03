@@ -812,8 +812,7 @@ module SyntaxTraversal =
 
                 match ty with
                 | SynType.App (typeName, _, typeArgs, _, _, _, _)
-                | SynType.LongIdentApp (typeName, _, _, typeArgs, _, _, _) ->
-                    typeName :: typeArgs |> List.tryPick (traverseSynType path)
+                | SynType.LongIdentApp (typeName, _, _, typeArgs, _, _, _) -> typeName :: typeArgs |> List.tryPick (traverseSynType path)
                 | SynType.Fun (argType = ty1; returnType = ty2) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
                 | SynType.MeasurePower (ty, _, _)
                 | SynType.HashConstraint (ty, _)
@@ -924,7 +923,7 @@ module SyntaxTraversal =
                     |> List.map (fun x -> dive x x.RangeOfBindingWithRhs (traverseSynBinding path))
                     |> pick m
                 | x -> x
-            | SynMemberDefn.AbstractSlot(SynValSig (synType = synType), _memberFlags, _range) -> traverseSynType path synType
+            | SynMemberDefn.AbstractSlot (SynValSig (synType = synType), _memberFlags, _range) -> traverseSynType path synType
             | SynMemberDefn.Interface (interfaceType = synType; members = synMemberDefnsOption) ->
                 match visitor.VisitInterfaceSynMemberDefnType(path, synType) with
                 | None ->
