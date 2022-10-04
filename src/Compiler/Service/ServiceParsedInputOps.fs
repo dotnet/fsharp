@@ -556,7 +556,7 @@ module ParsedInput =
         let (|ConstructorPats|) pats =
             match pats with
             | SynArgPats.Pats ps -> ps
-            | SynArgPats.NamePatPairs (xs, _) -> List.map (fun (_, _, pat) -> pat) xs
+            | SynArgPats.NamePatPairs (pats = xs) -> List.map (fun (_, _, pat) -> pat) xs
 
         /// A recursive pattern that collect all sequential expressions to avoid StackOverflowException
         let rec (|Sequentials|_|) expr =
@@ -1566,7 +1566,7 @@ module ParsedInput =
     let (|ConstructorPats|) pats =
         match pats with
         | SynArgPats.Pats ps -> ps
-        | SynArgPats.NamePatPairs (xs, _) -> List.map (fun (_, _, pat) -> pat) xs
+        | SynArgPats.NamePatPairs (pats = xs) -> List.map (fun (_, _, pat) -> pat) xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
     let getLongIdents (parsedInput: ParsedInput) : IDictionary<pos, LongIdent> =
