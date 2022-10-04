@@ -592,6 +592,16 @@
         <target state="translated">Неожиданный токен в определении типа. После типа "{0}" ожидается "=".</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectedPatternAfterToken">
+        <source>Expected a pattern after this point</source>
+        <target state="new">Expected a pattern after this point</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingPatternInTuple">
+        <source>Expecting pattern</source>
+        <target state="new">Expecting pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="new">Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</target>
@@ -2257,11 +2267,6 @@
         <target state="translated">Значения "base" можно использовать только для выполнения прямых вызовов реализаций класса base для переопределенных элементов</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">В конструкторе объекта нельзя прямо использовать блоки try/with и try/finally до инициализации объекта. К таким вариантам использования также относятся и конструкции вида "for x in ...", применение которых может привести к использованию указанных конструкций. Это ограничение связано с требованиями общего промежуточного языка.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">
         <source>The address of the variable '{0}' cannot be used at this point</source>
         <target state="translated">В этой точке нельзя использовать адрес переменной "{0}"</target>
@@ -3788,8 +3793,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
-        <source>This union case expects {0} arguments in tupled form</source>
-        <target state="translated">Для данного случая объединения требуется {0} аргументов в форме кортежа</target>
+        <source>This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</source>
+        <target state="new">This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">

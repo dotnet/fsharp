@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
   </PropertyGroup>
 
   <PropertyGroup>
-    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../artifacts/bin/fsc/Debug/net6.0/fsc.dll</DotnetFscCompilerPath>
-    <Fsc_DotNET_DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../artifacts/bin/fsc/Debug/net6.0/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
+    <DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../artifacts/bin/fsc/Debug/net7.0/fsc.dll</DotnetFscCompilerPath>
+    <Fsc_DotNET_DotnetFscCompilerPath>$(MSBuildThisFileDirectory)../../../artifacts/bin/fsc/Debug/net7.0/fsc.dll</Fsc_DotNET_DotnetFscCompilerPath>
     <FSharpPreferNetFrameworkTools>False</FSharpPreferNetFrameworkTools>
     <FSharpPrefer64BitTools>True</FSharpPrefer64BitTools>
   </PropertyGroup>

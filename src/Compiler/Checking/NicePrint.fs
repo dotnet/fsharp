@@ -180,7 +180,11 @@ module internal PrintUtilities =
         let isArray = not prefix && isArrayTyconRef denv.g tcref
         let demangled = 
             if isArray then
-                tcref.DisplayNameCore // no backticks for arrays "int[]"
+                let numberOfCommas = tcref.CompiledName |> Seq.filter (fun c -> c = ',') |> Seq.length
+                if numberOfCommas = 0 then
+                    "array"
+                else
+                    $"array{numberOfCommas + 1}d"
             else
                 let name =
                     if denv.includeStaticParametersInTypeNames then 
@@ -198,11 +202,7 @@ module internal PrintUtilities =
             tagEntityRefName denv tcref demangled
             |> mkNav tcref.DefinitionRange
 
-        let tyconTextL =
-            if isArray then
-                tyconTagged |> rightL
-            else
-                tyconTagged |> wordL
+        let tyconTextL = tyconTagged |> wordL
 
         if denv.shortTypeNames then 
             tyconTextL
@@ -562,19 +562,22 @@ module PrintTypes =
         | _ -> comment "(* unsupported attribute argument *)"
 
     /// Layout arguments of an attribute 'arg1, ..., argN' 
-    and layoutAttribArgs denv args = 
+    and layoutAttribArgs denv args props = 
         let argsL =  args |> List.map (fun (AttribExpr(e1, _)) -> layoutAttribArg denv e1)
-        sepListL (rightL (tagPunctuation ",")) argsL
+        let propsL =
+            props
+            |> List.map (fun (AttribNamedArg(name,_, _, AttribExpr(e1, _))) ->
+                wordL (tagProperty name) ^^ WordL.equals ^^ layoutAttribArg denv e1)
+        sepListL (rightL (tagPunctuation ",")) (argsL @ propsL)
 
     /// Layout an attribute 'Type(arg1, ..., argN)' 
-    //
-    // REVIEW: we are ignoring "props" here
-    and layoutAttrib denv (Attrib(tcref, _, args, _props, _, _, _)) = 
+    and layoutAttrib denv (Attrib(tcref, _, args, props, _, _, _)) = 
         let tcrefL = layoutTyconRefImpl true denv tcref
-        let argsL = bracketL (layoutAttribArgs denv args)
-        match args with 
-        | [] -> tcrefL
-        | _ -> tcrefL ++ argsL
+        let argsL = bracketL (layoutAttribArgs denv args props)
+        if List.isEmpty args && List.isEmpty props then
+            tcrefL
+        else
+            tcrefL ++ argsL
 
     and layoutILAttribElement denv arg = 
         match arg with 
@@ -872,7 +875,7 @@ module PrintTypes =
             | [] -> tcL
             | [arg] -> layoutTypeWithInfoAndPrec denv env 2 arg ^^ tcL
             | args -> bracketIfL (prec <= 1) (bracketL (layoutTypesWithInfoAndPrec denv env 2 (sepL (tagPunctuation ",")) args) --- tcL)
-
+    
     /// Layout a type, taking precedence into account to insert brackets where needed
     and layoutTypeWithInfoAndPrec denv env prec ty =
         let g = denv.g
@@ -2387,7 +2390,9 @@ module InferredSigPrinting =
                 let nmL = layoutAccessibility denv mspec.Accessibility nmL
                 let denv = denv.AddAccessibility mspec.Accessibility
                 let basic = imdefL denv def
-                let modNameL = wordL (tagKeyword "module") ^^ nmL
+                let modNameL =
+                    wordL (tagKeyword "module") ^^ nmL
+                    |> layoutAttribs denv None false mspec.TypeOrMeasureKind mspec.Attribs
                 let modNameEqualsL = modNameL ^^ WordL.equals
                 let isNamespace = function | Namespace _ -> true | _ -> false
                 let modIsOuter = (outerPath |> List.forall (fun (_, istype) -> isNamespace istype) )
@@ -2433,7 +2438,7 @@ module InferredSigPrinting =
             wordL (tagKeyword keyword) ^^ sepListL SepL.dot pathL
 
         match expr with
-        | EmptyModuleOrNamespaces mspecs ->
+        | EmptyModuleOrNamespaces mspecs when showHeader ->
             List.map emptyModuleOrNamespace mspecs
             |> aboveListL
         | expr -> imdefL denv expr

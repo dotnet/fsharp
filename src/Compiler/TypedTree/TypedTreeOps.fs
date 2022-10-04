@@ -10040,60 +10040,64 @@ let (|IfUseResumableStateMachinesExpr|_|) g expr =
 
 /// Combine a list of ModuleOrNamespaceType's making up the description of a CCU. checking there are now
 /// duplicate modules etc.
-let CombineCcuContentFragments m l = 
+let CombineCcuContentFragments l = 
 
     /// Combine module types when multiple namespace fragments contribute to the
     /// same namespace, making new module specs as we go.
-    let rec CombineModuleOrNamespaceTypes path m (mty1: ModuleOrNamespaceType) (mty2: ModuleOrNamespaceType) = 
-        match mty1.ModuleOrNamespaceKind, mty2.ModuleOrNamespaceKind with 
-        | Namespace _, Namespace _ -> 
-            let kind = mty1.ModuleOrNamespaceKind
-            let tab1 = mty1.AllEntitiesByLogicalMangledName
-            let tab2 = mty2.AllEntitiesByLogicalMangledName
-            let entities = 
-                [ for e1 in mty1.AllEntities do 
-                      match tab2.TryGetValue e1.LogicalName with
-                      | true, e2 -> yield CombineEntities path e1 e2
-                      | _ -> yield e1
-                  for e2 in mty2.AllEntities do 
-                      match tab1.TryGetValue e2.LogicalName with
-                      | true, _ -> ()
-                      | _ -> yield e2 ]
+    let rec CombineModuleOrNamespaceTypes path (mty1: ModuleOrNamespaceType) (mty2: ModuleOrNamespaceType) = 
+        let kind = mty1.ModuleOrNamespaceKind
+        let tab1 = mty1.AllEntitiesByLogicalMangledName
+        let tab2 = mty2.AllEntitiesByLogicalMangledName
+        let entities = 
+            [
+                for e1 in mty1.AllEntities do 
+                    match tab2.TryGetValue e1.LogicalName with
+                    | true, e2 -> yield CombineEntities path e1 e2
+                    | _ -> yield e1
 
-            let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
+                for e2 in mty2.AllEntities do 
+                    match tab1.TryGetValue e2.LogicalName with
+                    | true, _ -> ()
+                    | _ -> yield e2
+            ]
 
-            ModuleOrNamespaceType(kind, vals, QueueList.ofList entities)
+        let vals = QueueList.append mty1.AllValsAndMembers mty2.AllValsAndMembers
 
-        | Namespace _, _ | _, Namespace _ -> 
-            error(Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly(textOfPath path), m))
-
-        | _-> 
-            error(Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly(textOfPath path), m))
+        ModuleOrNamespaceType(kind, vals, QueueList.ofList entities)
 
     and CombineEntities path (entity1: Entity) (entity2: Entity) = 
 
-        match entity1.IsModuleOrNamespace, entity2.IsModuleOrNamespace with
-        | true, true -> 
-            entity1 |> Construct.NewModifiedTycon (fun data1 -> 
-                        let xml = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
-                        { data1 with 
-                             entity_attribs = entity1.Attribs @ entity2.Attribs
-                             entity_modul_type = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes (path@[entity2.DemangledModuleOrNamespaceName]) entity2.Range entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
-                             entity_opt_data = 
-                                match data1.entity_opt_data with
-                                | Some optData -> Some { optData with entity_xmldoc = xml }
-                                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = xml } }) 
-        | false, false -> 
-            error(Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path), entity2.Range))
-        | _, _ -> 
-            error(Error(FSComp.SR.tastConflictingModuleAndTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path), entity2.Range))
+        let path2 = path@[entity2.DemangledModuleOrNamespaceName]
+
+        match entity1.IsNamespace, entity2.IsNamespace, entity1.IsModule, entity2.IsModule with
+        | true, true, _, _ ->
+            ()
+        | true, _, _, _
+        | _, true, _, _ -> 
+            errorR(Error(FSComp.SR.tastNamespaceAndModuleWithSameNameInAssembly(textOfPath path2), entity2.Range))
+        | false, false, false, false -> 
+            errorR(Error(FSComp.SR.tastDuplicateTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path), entity2.Range))
+        | false, false, true, true -> 
+            errorR(Error(FSComp.SR.tastTwoModulesWithSameNameInAssembly(textOfPath path2), entity2.Range))
+        | _ -> 
+            errorR(Error(FSComp.SR.tastConflictingModuleAndTypeDefinitionInAssembly(entity2.LogicalName, textOfPath path), entity2.Range))
+
+        entity1 |> Construct.NewModifiedTycon (fun data1 -> 
+            let xml = XmlDoc.Merge entity1.XmlDoc entity2.XmlDoc
+            { data1 with 
+                entity_attribs = entity1.Attribs @ entity2.Attribs
+                entity_modul_type = MaybeLazy.Lazy (lazy (CombineModuleOrNamespaceTypes path2 entity1.ModuleOrNamespaceType entity2.ModuleOrNamespaceType))
+                entity_opt_data = 
+                match data1.entity_opt_data with
+                | Some optData -> Some { optData with entity_xmldoc = xml }
+                | _ -> Some { Entity.NewEmptyEntityOptData() with entity_xmldoc = xml } }) 
     
-    and CombineModuleOrNamespaceTypeList path m l = 
+    and CombineModuleOrNamespaceTypeList path l = 
         match l with
-        | h :: t -> List.fold (CombineModuleOrNamespaceTypes path m) h t
+        | h :: t -> List.fold (CombineModuleOrNamespaceTypes path) h t
         | _ -> failwith "CombineModuleOrNamespaceTypeList"
 
-    CombineModuleOrNamespaceTypeList [] m l
+    CombineModuleOrNamespaceTypeList [] l
 
 /// An immutable mappping from witnesses to some data.
 ///
@@ -10384,7 +10388,7 @@ let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceC
                 | ModuleOrNamespaceContents.TMDefRec _
                 | ModuleOrNamespaceContents.TMDefs _ -> true
                 | _ -> false)
-        
+
         let emptyModuleOrNamespaces =
             defs
             |> List.choose (function

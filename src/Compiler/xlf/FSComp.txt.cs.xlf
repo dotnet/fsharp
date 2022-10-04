@@ -592,6 +592,16 @@
         <target state="translated">Neočekávaný token v definici typu. Za typem {0} se očekává =.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectedPatternAfterToken">
+        <source>Expected a pattern after this point</source>
+        <target state="new">Expected a pattern after this point</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingPatternInTuple">
+        <source>Expecting pattern</source>
+        <target state="new">Expecting pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="new">Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</target>
@@ -2257,11 +2267,6 @@
         <target state="translated">Hodnoty base se dají použít jenom k přímému volání implementací base přepsaných členů.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">Konstruktory objektu nemůžou použít try/with a try/finally přímo, dokud se objekt neinicializuje. To zahrnuje i konstrukce, jako je třeba for x in ..., které se dají na použití těchto konstruktorů rozpracovat. Toto je omezení mezijazyka Common IL.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">
         <source>The address of the variable '{0}' cannot be used at this point</source>
         <target state="translated">Adresa proměnné {0} se na tomto místě použít nedá.</target>
@@ -3788,8 +3793,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
-        <source>This union case expects {0} arguments in tupled form</source>
-        <target state="translated">Tento případ typu union očekává argumenty v počtu {0} v podobě řazené kolekce členů.</target>
+        <source>This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</source>
+        <target state="new">This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">

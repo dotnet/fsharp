@@ -60,7 +60,7 @@ module CoreTests =
     [<Test>]
     let ``array-FSC_OPTIMIZED-5.0`` () = singleTestBuildAndRunVersion "core/array" FSC_OPTIMIZED "5.0"
 
-    [<Test; Ignore("Some tests fail on .NET6 preview6, and fixed in preview7, disabling until preview7 gets released.")>]
+    [<Test>]
     let ``array-FSI-5.0`` () = singleTestBuildAndRunVersion "core/array" FSI "5.0"
 
     [<Test>]
@@ -2157,6 +2157,9 @@ module RegressionTests =
     [<Test >]
     let ``12383-FSC_OPTIMIZED`` () = singleTestBuildAndRun "regression/12383" FSC_OPTIMIZED
 
+    [<Test>]
+    let ``13219-bug-FSI`` () = singleTestBuildAndRun "regression/13219" FSI
+
     [<Test >]
     let ``4715-optimized`` () =
         let cfg = testConfig "regression/4715"
@@ -2582,6 +2585,21 @@ module TypecheckTests =
         fsc cfg "%s --langversion:6.0 --target:exe -o:pos40.exe" cfg.fsc_flags ["pos40.fs"]
         peverify cfg "pos40.exe"
         exec cfg ("." ++ "pos40.exe") ""
+
+    [<Test>]
+    let ``sigs pos1281`` () =
+        let cfg = testConfig "typecheck/sigs"
+        // This checks that warning 25 "incomplete matches" is not triggered
+        fsc cfg "%s --target:exe -o:pos1281.exe --warnaserror --nowarn:26" cfg.fsc_flags ["pos1281.fs"]
+        peverify cfg "pos1281.exe"
+        exec cfg ("." ++ "pos1281.exe") ""
+
+    [<Test>]
+    let ``sigs pos3294`` () =
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos3294.exe --warnaserror" cfg.fsc_flags ["pos3294.fs"]
+        peverify cfg "pos3294.exe"
+        exec cfg ("." ++ "pos3294.exe") ""
 
     [<Test>]
     let ``sigs pos23`` () =

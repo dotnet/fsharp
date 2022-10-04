@@ -257,7 +257,7 @@ module ResponseFile =
             Choice2Of2 e
 
 let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: CompilerOptionBlock list, args) =
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+    use _ = UseBuildPhase BuildPhase.Parameter
 
     let specs = List.collect GetOptionsOfBlock blocks
 
@@ -1137,7 +1137,7 @@ let languageFlags tcConfigB =
             tagNone,
             OptionConsoleOnly(fun _ ->
                 Console.Write(GetLanguageVersions())
-                exit 0),
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsGetLangVersions ())
         )
@@ -1387,6 +1387,7 @@ let testFlag tcConfigB =
             | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
             | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
             | "ParallelOff" -> tcConfigB.concurrentBuild <- false
+            | "ParallelCheckingWithSignatureFilesOn" -> tcConfigB.parallelCheckingWithSignatureFiles <- true
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
@@ -1676,6 +1677,14 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             tagNone,
             OptionUnit(fun () -> tcConfigB.noDebugAttributes <- true),
             Some(InternalCommandLineOption("nodebugdata", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
+            "parallelreferenceresolution",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.parallelReferenceResolution <- ParallelReferenceResolution.On),
+            Some(InternalCommandLineOption("--parallelreferenceresolution", rangeCmdArgs)),
             None
         )
 
@@ -2035,7 +2044,7 @@ let miscFlagsBoth tcConfigB =
             tagNone,
             OptionConsoleOnly(fun _ ->
                 Console.Write(GetVersion tcConfigB)
-                exit 0),
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsVersion ())
         )
@@ -2049,7 +2058,7 @@ let miscFlagsFsc tcConfigB =
             tagNone,
             OptionConsoleOnly(fun blocks ->
                 Console.Write(GetHelpFsc tcConfigB blocks)
-                exit 0),
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsHelp ())
         )
@@ -2110,7 +2119,7 @@ let abbreviatedFlagsFsc tcConfigB =
             tagNone,
             OptionConsoleOnly(fun blocks ->
                 Console.Write(GetHelpFsc tcConfigB blocks)
-                exit 0),
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2120,7 +2129,7 @@ let abbreviatedFlagsFsc tcConfigB =
             tagNone,
             OptionConsoleOnly(fun blocks ->
                 Console.Write(GetHelpFsc tcConfigB blocks)
-                exit 0),
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2130,7 +2139,7 @@ let abbreviatedFlagsFsc tcConfigB =
             tagNone,
             OptionConsoleOnly(fun blocks ->
                 Console.Write(GetHelpFsc tcConfigB blocks)
-                exit 0),
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )

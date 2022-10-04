@@ -13,7 +13,7 @@ let ``__LINE__`` () =
 __LINE__"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.Const(SynConst.SourceIdentifier("__LINE__", "2", range), _))
     ]) ])) ->
         assertRange (2, 0) (2, 8) range
@@ -27,7 +27,7 @@ let ``__SOURCE_DIRECTORY__`` () =
 __SOURCE_DIRECTORY__"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.Const(SynConst.SourceIdentifier("__SOURCE_DIRECTORY__", _, range), _))
     ]) ])) ->
         assertRange (2, 0) (2, 20) range
@@ -41,7 +41,7 @@ let ``__SOURCE_FILE__`` () =
 __SOURCE_FILE__"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(expr = SynExpr.Const(SynConst.SourceIdentifier("__SOURCE_FILE__", _, range), _))
     ]) ])) ->
         assertRange (2, 0) (2, 15) range

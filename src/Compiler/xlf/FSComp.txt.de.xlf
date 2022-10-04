@@ -592,6 +592,16 @@
         <target state="translated">Unerwartetes Token in Typdefinition. Nach Typ "{0}" wurde "=" erwartet.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectedPatternAfterToken">
+        <source>Expected a pattern after this point</source>
+        <target state="new">Expected a pattern after this point</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingPatternInTuple">
+        <source>Expecting pattern</source>
+        <target state="new">Expecting pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="new">Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</target>
@@ -2257,11 +2267,6 @@
         <target state="translated">base-Werte dürfen nur für direkte Aufrufe der Basisimplementierungen von überschriebenen Membern verwendet werden.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">Objektkonstruktoren dürfen "try/with" und "try/finally" vor der Initialisierung des Objekts nicht direkt verwenden. Dies umfasst Konstrukte wie "for x in ...", bei denen diese Konstrukte u.U. verwendet werden. Dies ist eine Einschränkung der Common IL.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">
         <source>The address of the variable '{0}' cannot be used at this point</source>
         <target state="translated">Die Adresse der Variablen "{0}" kann an diesem Punkt nicht verwendet werden.</target>
@@ -3788,8 +3793,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
-        <source>This union case expects {0} arguments in tupled form</source>
-        <target state="translated">Dieser Union-Fall erwartet {0} Argumente als Tupel.</target>
+        <source>This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</source>
+        <target state="new">This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">

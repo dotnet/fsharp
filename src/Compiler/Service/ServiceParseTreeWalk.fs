@@ -797,7 +797,7 @@ module SyntaxTraversal =
                 | SynPat.LongIdent (argPats = args) ->
                     match args with
                     | SynArgPats.Pats ps -> ps |> List.tryPick (traversePat path)
-                    | SynArgPats.NamePatPairs (ps, _) -> ps |> List.map (fun (_, _, pat) -> pat) |> List.tryPick (traversePat path)
+                    | SynArgPats.NamePatPairs (pats = ps) -> ps |> List.map (fun (_, _, pat) -> pat) |> List.tryPick (traversePat path)
                 | SynPat.Typed (p, ty, _) ->
                     match traversePat path p with
                     | None -> traverseSynType path ty
@@ -823,8 +823,13 @@ module SyntaxTraversal =
                 | SynType.MeasureDivide (ty1, ty2, _) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
                 | SynType.Tuple (path = segments) -> getTypeFromTuplePath segments |> List.tryPick (traverseSynType path)
                 | SynType.StaticConstantExpr (expr, _) -> traverseSynExpr [] expr
-                | SynType.Anon _ -> None
-                | _ -> None
+                | SynType.Paren (innerType = t)
+                | SynType.SignatureParameter (usedType = t) -> traverseSynType path t
+                | SynType.Anon _
+                | SynType.AnonRecd _
+                | SynType.LongIdent _
+                | SynType.Var _
+                | SynType.StaticConstant _ -> None
 
             visitor.VisitType(origPath, defaultTraverse, ty)
 
@@ -968,7 +973,9 @@ module SyntaxTraversal =
             visitor.VisitBinding(origPath, defaultTraverse, b)
 
         match parseTree with
-        | ParsedInput.ImplFile (ParsedImplFileInput (modules = l)) ->
+        | ParsedInput.ImplFile file ->
+            let l = file.Contents
+
             let fileRange =
 #if DEBUG
                 match l with

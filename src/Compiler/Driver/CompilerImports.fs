@@ -382,7 +382,7 @@ type TcConfig with
 
     member tcConfig.TryResolveLibWithDirectories(r: AssemblyReference) =
         let m, nm = r.Range, r.Text
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         // See if the language service has already produced the contents of the assembly for us, virtually
         match r.ProjectReference with
@@ -436,7 +436,7 @@ type TcConfig with
 
     member tcConfig.ResolveLibWithDirectories(ccuLoadFailureAction, r: AssemblyReference) =
         let m, nm = r.Range, r.Text
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         let rs =
             if IsExe nm || IsDLL nm || IsNetModule nm then
@@ -504,7 +504,7 @@ type TcConfig with
             mode: ResolveAssemblyReferenceMode
         ) : AssemblyResolution list * UnresolvedAssemblyReference list =
 
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         if tcConfig.useSimpleResolution then
             failwith "MSBuild resolution is not supported."
@@ -801,7 +801,7 @@ type TcAssemblyResolutions(tcConfig: TcConfig, results: AssemblyResolution list,
         TcAssemblyResolutions.ResolveAssemblyReferences(tcConfig, references, knownUnresolved)
 
     static member GetAssemblyResolutionInformation(tcConfig: TcConfig) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
         let assemblyList = TcAssemblyResolutions.GetAllDllReferences tcConfig
 
         let resolutions =
@@ -2141,6 +2141,13 @@ and [<Sealed>] TcImports
         node {
             CheckDisposed()
 
+            let tcConfig = tcConfigP.Get ctok
+
+            let runMethod =
+                match tcConfig.parallelReferenceResolution with
+                | ParallelReferenceResolution.On -> NodeCode.Parallel
+                | ParallelReferenceResolution.Off -> NodeCode.Sequential
+
             let! results =
                 nms
                 |> List.map (fun nm ->
@@ -2151,7 +2158,7 @@ and [<Sealed>] TcImports
                             errorR (Error(FSComp.SR.buildProblemReadingAssembly (nm.resolvedPath, e.Message), nm.originalReference.Range))
                             return None
                     })
-                |> NodeCode.Sequential
+                |> runMethod
 
             let dllinfos, phase2s = results |> Array.choose id |> List.ofArray |> List.unzip
             fixupOrphanCcus ()

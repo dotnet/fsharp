@@ -592,6 +592,16 @@
         <target state="translated">형식 정의에 예기치 않은 토큰이 있습니다. '{0}' 형식 뒤에 '='가 필요합니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectedPatternAfterToken">
+        <source>Expected a pattern after this point</source>
+        <target state="new">Expected a pattern after this point</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingPatternInTuple">
+        <source>Expecting pattern</source>
+        <target state="new">Expecting pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="new">Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</target>
@@ -2257,11 +2267,6 @@
         <target state="translated">'base' 값은 재정의된 멤버의 기본 구현에 대한 직접 호출을 수행하는 데에만 사용할 수 있습니다.</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">개체 생성자는 개체 초기화 전에 try/with 및 try/finally를 직접 사용할 수 없습니다. 여기에는 이러한 구문의 사용을 자세히 설명할 수 있는 'for x in ...'과 같은 구문이 포함됩니다. 이는 공통 IL의 제한입니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">
         <source>The address of the variable '{0}' cannot be used at this point</source>
         <target state="translated">'{0}' 변수의 주소를 현재 사용할 수 없습니다.</target>
@@ -3788,8 +3793,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
-        <source>This union case expects {0} arguments in tupled form</source>
-        <target state="translated">이 공용 구조체 케이스에는 튜플된 형식의 인수 {0}개가 필요합니다.</target>
+        <source>This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</source>
+        <target state="new">This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">

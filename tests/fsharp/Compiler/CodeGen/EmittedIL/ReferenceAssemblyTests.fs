@@ -982,4 +982,35 @@ extends [runtime]System.Object
   } 
 
 } """ ]
+
+    [<Test>]
+    let ``Build .exe with --refonly ensure it produces a main in the ref assembly`` () =
+        FSharp """module ReferenceAssembly
+open System
+
+Console.WriteLine("Hello World!")"""
+        |> withOptions ["--refonly"]
+        |> withName "HasMainCheck"
+        |> asExe
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            referenceAssemblyAttributeExpectedIL
+            """.class private abstract auto ansi sealed '<StartupCode$HasMainCheck>'.$ReferenceAssembly
+       extends [mscorlib]System.Object
+{
+  .method public static void  main@() cil managed
+  {
+    .entrypoint
+    // Code size       2 (0x2)
+    .maxstack  8
+    IL_0000:  ldnull
+    IL_0001:  throw
+  } // end of method $ReferenceAssembly::main@
+
+} // end of class '<StartupCode$HasMainCheck>'.$ReferenceAssembly
+"""
+        ]
+        |> ignore
+
     // TODO: Add tests for internal functions, types, interfaces, abstract types (with and without IVTs), (private, internal, public) fields, properties (+ different visibility for getters and setters), events.

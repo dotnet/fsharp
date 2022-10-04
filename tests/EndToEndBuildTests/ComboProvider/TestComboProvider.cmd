@@ -42,8 +42,8 @@ echo dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuratio
      dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net472 -p:FSharpTestCompilerVersion=net40
 if ERRORLEVEL 1 echo Error: TestComboProvider failed  && goto :failure
 
-echo dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net7.0 -p:FSharpTestCompilerVersion=coreclr
-     dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net7.0 -p:FSharpTestCompilerVersion=coreclr
+echo dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net6.0 -p:FSharpTestCompilerVersion=coreclr
+     dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net6.0 -p:FSharpTestCompilerVersion=coreclr
 if ERRORLEVEL 1 echo Error: TestComboProvider failed  && goto :failure
 
 rem
@@ -60,8 +60,8 @@ echo dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuratio
      dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net472 -p:FSharpTestCompilerVersion=net40
 if ERRORLEVEL 1 echo Error: TestComboProvider failed  && goto :failure
 
-echo dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -v %configuration% -p:TestTargetFramework=net7.0 -p:FSharpTestCompilerVersion=coreclr
-     dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net7.0 -p:FSharpTestCompilerVersion=coreclr
+echo dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -v %configuration% -p:TestTargetFramework=net6.0 -p:FSharpTestCompilerVersion=coreclr
+     dotnet test ComboProvider.Tests\ComboProvider.Tests.fsproj -c %configuration% -v minimal -p:TestTargetFramework=net6.0 -p:FSharpTestCompilerVersion=coreclr
 if ERRORLEVEL 1 echo Error: TestComboProvider failed  && goto :failure
 
 :success
