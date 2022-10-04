@@ -2275,6 +2275,12 @@ type EventInfo =
         | ProvidedEvent (_, ei, _) -> ProvidedEventInfo.TaintedGetHashCode ei
 #endif
     override x.ToString() = "event " + x.EventName
+    
+    /// Get custom attributes for events (only applicable for IL events)
+    member x.GetCustomAttrs() =
+        match x with
+        | ILEvent(ILEventInfo(_, ilEventDef))-> ilEventDef.CustomAttrs
+        | _ -> ILAttributes.Empty
 
 //-------------------------------------------------------------------------
 // Helpers associated with getting and comparing method signatures

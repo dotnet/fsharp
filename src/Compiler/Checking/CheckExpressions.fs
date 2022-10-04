@@ -9095,13 +9095,8 @@ and TcEventItemThen (cenv: cenv) overallTy env tpenv mItem mExprAndItem objDetai
     let (SigOfFunctionForDelegate(delInvokeMeth, delArgTys, _, _)) = GetSigOfFunctionForDelegate cenv.infoReader delTy mItem ad
     let objArgs = Option.toList (Option.map fst objDetails)
     MethInfoChecks g cenv.amap true None objArgs env.eAccessRights mItem delInvokeMeth
-    
-    let ilEventDefCustomAttrs =
-        match einfo with
-        | ILEvent(ILEventInfo(_, ilEventDef))-> ilEventDef.CustomAttrs
-        | _ -> ILAttributes.Empty
         
-    CheckILEventAttributes g einfo.DeclaringTyconRef ilEventDefCustomAttrs mItem |> CommitOperationResult
+    CheckILEventAttributes g einfo.DeclaringTyconRef (einfo.GetCustomAttrs()) mItem |> CommitOperationResult
    
     // This checks for and drops the 'object' sender
     let argsTy = ArgsTypeOfEventInfo cenv.infoReader mItem ad einfo
