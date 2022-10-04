@@ -886,12 +886,12 @@ type SynSimplePats =
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range
+    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member x.Patterns =
         match x with
         | Pats pats -> pats
-        | NamePatPairs (pats, _) -> pats |> List.map (fun (_, _, pat) -> pat)
+        | NamePatPairs (pats = pats) -> pats |> List.map (fun (_, _, pat) -> pat)
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynPat =
