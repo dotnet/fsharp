@@ -567,9 +567,11 @@ module Array2Tests = begin
     test "fewoih2" (Array2D.get arr 0 1 = 0);
     test "vvrew03" (Array2D.get arr 2 2 = 0);
     test "vvrew04" (Array2D.get arr 2 3 = 0);
+    
     ignore (Array2D.set arr 0 2 4);
     test "vsdiuvs5" (Array2D.get arr 0 2 = 4);
     arr.[0,2] <- 2;
+    
     test "vsdiuvs6" (arr.[0,2] = 2);
     test "vropivrwe7" (Array2D.length1 arr = 3);
     test "vropivrwe8" (Array2D.length2 arr = 4)

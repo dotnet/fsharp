@@ -1,5 +1,4 @@
 // #Regression #Conformance #Printing #FSI #Regression 
-#light;;
 
 let repeatId = "A";;
 let repeatId = "B";;
@@ -928,6 +927,232 @@ let x = { x = None }
 type optionRecord = { x: obj }
 let x = { x = null }
 ;;
+
+type RecordWithMembers =
+    { x: obj }
+    member a.Property = 1
+    member a.Method() = 2
+;;
+type UnionWithMembers =
+    /// This is Case1
+    | Case1
+    /// This is Case2
+    | Case2 of int
+    /// This is Property
+    member a.Property = 1
+    /// This is Method
+    member a.Method() = 2
+;;
+type OneFieldRecordNoXmlDoc =
+    { OneField: obj}
+;;
+type OneFieldRecordXmlDoc =
+    { /// Hello!
+      OneField: obj}
+;;
+type TwoFieldRecordNoXmlDoc =
+    { TwoFields1: obj; TwoFields2: obj }
+;;
+type TwoFieldRecordXmlDoc =
+    { /// Goog
+      TwoFields1: obj;
+      /// Even more good
+      TwoFields2: obj }
+;;
+type System.Int32 with 
+    member a.ExtrinsicExtensionProperty = 1
+    member a.ExtrinsicExtensionMethod() = 2
+;;
+
+let ``value with spaces in name``   = true
+;;
+
+let functionWhichTakesLongNameMixedParameters 
+        (aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int, 
+         bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int) 
+        (ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int, 
+         dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int) = 1 + 1
+;;
+
+let functionWhichTakesLongNameTupledParameters 
+         (aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int, 
+          bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int, 
+          ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int, 
+          ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int) = 1 + 1
+;;
+
+let functionWhichTakesLongNameCurriedParameters 
+        (aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: int)
+        (bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: int)
+        (cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc: int)
+        (dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd: int) = 1 + 1
+;;
+
+let functionWhichTakesMixedLengthCurriedParametersA a b c ddddddddddddddddddddddddddddddddddddddddddddd = 1 + 1
+;;
+
+let functionWhichTakesMixedLengthCurriedParametersB aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa b c d = 1 + 1
+;;
+
+
+let f (``parameter with spaces in name``: int) = 1
+;;
+
+let functionWhichTakesAParameterPeeciselyPlusButNotOpAddition (``+``: int -> int -> int) = ``+`` 1 2
+;;
+
+let functionWhichTakesAParameterOpAddition ((+): int -> int -> int) = 1 + 1
+;;
+
+let functionWhichTakesAParameterCalled_land (``land``: int -> int -> int) = 1 + 1
+;;
+
+type RecordWithStrangeNames =
+    { 
+       ``funky name`` : obj 
+       op_Addition : obj 
+       ``+`` : obj 
+       ``land`` : obj 
+       ``base`` : obj 
+       }
+;;
+
+type UnionWithSpacesInNamesOfCases =
+    | ``Funky name``   // Check this gets double ticks
+    | ``Funky name 2``  // Check this gets double ticks
+;;
+
+type ``Type with spaces in name`` = // Check this gets double ticks
+    | A
+    | B
+;;
+
+type op_Addition = // Check this doesn't go to (+) for types
+    | A
+    | B
+;;
+
+type ``land`` = // Check this doesn't go to (land) for types, it gets double ticks because (land) is deprecated
+    | A
+    | B
+;;
+
+module ``Module with spaces in name`` = // Check this gets double ticks
+    let x = 1
+;;
+
+module op_Addition = // Check this doesn't go to (+) for modules, nor get double ticks
+    let x = 1
+;;
+
+module ``land`` = // Check this doesn't go to (land) for modules, it gets double ticks because (land) is deprecated
+    let x = 1
+;;
+
+let ``+`` x y = 1  // This is not op_Addition but a function called '+'
+;;
+
+let (+) x y = x + y + 1  // This is op_Addition not a function called '+'
+;;
+
+let ``base`` = 2  // This is not a base value but a value called 'base'
+;;
+
+let ``mod`` = 2  // This is a value called 'mod' in .NET IL, but we can't distinguish from (mod), so print it as (mod)
+;;
+
+let ``or`` = 2  // This is a value called 'or' in .NET IL, legacy, but we can't distinguish from  (or), so print it as ``or``
+;;
+
+let ``land`` = 2  // This is a value called 'land' in .NET IL, legacy, but we can't distinguish from legacy unused (land), so print it as ``land``
+;;
+
+let ``.ctor`` = 2  // This is a value called '.ctor' in .NET IL, and has no special properties
+;;
+
+let ``.cctor`` = 2  // This is a value called '.cctor' in .NET IL, and has no special properties
+;;
+
+// Check line wrapping of very long literals
+[<Literal>]
+let SomeLiteralWithASomewhatLongName = "SomeVeryLongLiteralValueWithLotsOfCharacters"
+
+[<Literal>]
+let SomeLiteralWithASomewhatLongName2 = "SomeVeryLongLiteralValueWithLotsOfCharactersSomeVeryLongLiteralValueWithLotsOfCharactersSomeVeryLongLiteralValueWithLotsOfCharacters"
+
+[<Literal>]
+let ShortName = "hi"
+;;
+
+System.DayOfWeek.Tuesday
+;;
+let internal f() = 1;; f();; // should give a warning in multi-assembly interactive emit
+
+
+type internal CInternal() = class end;;
+
+CInternal() |> ignore;; // should give a warning in multi-assembly interactive emit
+
+type internal CPublic() = 
+    member internal _.MInternal() = ();;
+    
+CPublic().MInternal();; // should give a warning in multi-assembly interactive emit
+
+type internal CPublic2() = 
+    let mutable x = 1
+    member _.MPublic() = x;;
+    
+CPublic2().MPublic();; // should give a warning in multi-assembly interactive emit
+
+let inst1 = TestLoadFile.ClassInFile1();; // should load ok
+
+let inst2 = TestLoadFile2.ClassInFile2();; // should load ok
+
+type Test = { A: int; B: string };;
+
+let list = [{ A = 1; B = "a" }];;
+
+let list2 = [ for x in list do x.A ];;
+
+#r "nuget:Newtonsoft.Json, 13.0.1"
+type R1 = { ImmutableField0: int }
+open Newtonsoft.Json
+JsonConvert.SerializeObject { ImmutableField0 = 6 } |> printfn "%s";;
+
+JsonConvert.SerializeObject { ImmutableField0 = 7 }
+|> JsonConvert.DeserializeObject<R1>;;
+
+type R2 = { mutable MutableField1: int }
+JsonConvert.SerializeObject { MutableField1 = 8 } |> printfn "%s";;
+
+JsonConvert.SerializeObject { MutableField1 = 9 }
+|> JsonConvert.DeserializeObject<R2>;;
+
+JsonConvert.SerializeObject {| AnonRecordField2 = 10 |} |> printfn "%s";;
+
+JsonConvert.SerializeObject {| AnonRecordField2 = 11 |}
+|> JsonConvert.DeserializeObject<{| AnonRecordField2 :int |}>;;
+
+#r "nuget: System.Text.Json"
+open System.Text.Json
+type R3 = { ImmutableField3: int }
+let test3a = JsonSerializer.Serialize { ImmutableField3 = 12 };;
+let test3b = JsonSerializer.Deserialize<R3> test3a;;
+let test3c = JsonSerializer.Serialize { ImmutableField3 = 13 };;
+let test3d = JsonSerializer.Deserialize<R3> test3c;;
+
+type R4 = { mutable MutableField4: int }
+let test4a = JsonSerializer.Serialize { MutableField4 = 15 };;
+let test4b = JsonSerializer.Deserialize<R4> test4a;;
+let test4c = JsonSerializer.Serialize { MutableField4 = 16 };;
+let test4d = JsonSerializer.Deserialize<R4> test4c;;
+
+type R5 = {| AnonRecordField5: int |}
+let test5a = JsonSerializer.Serialize {| AnonRecordField5 = 17 |};;
+let test5b = JsonSerializer.Deserialize<R5> test5a;;
+let test5c = JsonSerializer.Serialize {| AnonRecordField5 = 18 |};;
+let test5d = JsonSerializer.Deserialize<R5> test5c;;
+
 
 ;; (* ;; needed, to isolate error regressions *)
 

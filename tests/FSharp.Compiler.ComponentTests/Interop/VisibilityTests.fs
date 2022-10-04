@@ -1,7 +1,7 @@
 ﻿namespace FSharp.Compiler.ComponentTests.Interop
 
 open Xunit
-open FSharp.Test.Utilities.Compiler
+open FSharp.Test.Compiler
 
 module ``Verify visibility of properties`` =
 

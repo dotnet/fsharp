@@ -21,28 +21,27 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 
-type internal NavigableItem(document: Document, sourceSpan: TextSpan, glyph: Glyph, name: string, kind: string, additionalInfo: string) =
-    inherit FSharpNavigableItem(glyph, ImmutableArray.Create (TaggedText(TextTags.Text, name)), document, sourceSpan)
+type internal NavigableItem(document: Document, sourceSpan: TextSpan, glyph: Glyph, logicalName: string, kind: string, additionalInfo: string) =
+    inherit FSharpNavigableItem(glyph, ImmutableArray.Create (TaggedText(TextTags.Text, logicalName)), document, sourceSpan)
 
-    member _.Name = name
+    // This use of compiler logical names is leaking out into the IDE. We should only report display names here.
+    member _.LogicalName = logicalName
     member _.Kind = kind
     member _.AdditionalInfo = additionalInfo
 
 type internal NavigateToSearchResult(item: NavigableItem, matchKind: FSharpNavigateToMatchKind) =
-    inherit FSharpNavigateToSearchResult(item.AdditionalInfo, item.Kind, matchKind, item.Name, item)
+    inherit FSharpNavigateToSearchResult(item.AdditionalInfo, item.Kind, matchKind, item.LogicalName, item)
 
 module private Index =
     [<System.Diagnostics.DebuggerDisplay("{DebugString()}")>]
-    type private IndexEntry(str: string, offset: int, item: NavigableItem, isOperator: bool) =
+    type private IndexEntry(str: string, offset: int, item: NavigableItem) =
         member _.String = str
         member _.Offset = offset
         member _.Length = str.Length - offset
         member _.Item = item
-        member _.IsOperator = isOperator
         member x.StartsWith (s: string) = 
             if s.Length > x.Length then false
             else CultureInfo.CurrentCulture.CompareInfo.IndexOf(str, s, offset, s.Length, CompareOptions.IgnoreCase) = offset
-        member private _.DebugString() = sprintf "%s (offset %d) (%s)" (str.Substring offset) offset str
 
     let private indexEntryComparer =
         { new IComparer<IndexEntry> with
@@ -70,20 +69,22 @@ module private Index =
         let entries = ResizeArray()
 
         for item in items do
-            let isOperator, name = 
-                if PrettyNaming.IsMangledOpName item.Name then 
-                    true, PrettyNaming.DecompileOpName item.Name 
+            let name = 
+                // This conversion back from logical names to display names should never be needed, because
+                // the FCS API should only report display names in the first place.
+                if PrettyNaming.IsLogicalOpName item.LogicalName then 
+                    PrettyNaming.ConvertValLogicalNameToDisplayNameCore item.LogicalName
                 else 
-                    false, item.Name
+                    item.LogicalName
             for i = 0 to name.Length - 1 do
-                entries.Add(IndexEntry(name, i, item, isOperator))
+                entries.Add(IndexEntry(name, i, item))
 
         entries.Sort(indexEntryComparer)
         { new IIndexedNavigableItems with
               member _.Find (searchValue) =
                   let result = HashSet(navigateToSearchResultComparer)
                   if entries.Count > 0 then 
-                     let entryToFind = IndexEntry(searchValue, 0, Unchecked.defaultof<_>, Unchecked.defaultof<_>)
+                     let entryToFind = IndexEntry(searchValue, 0, Unchecked.defaultof<_>)
                      
                      let initial = 
                          let p = entries.BinarySearch(entryToFind, indexEntryComparer)
@@ -143,7 +144,8 @@ module private Utils =
         | NavigableItemKind.EnumCase -> Glyph.EnumPublic
         | NavigableItemKind.UnionCase -> Glyph.EnumPublic
 
-    let containerToString (container: NavigableContainer) (project: Project) =
+    let containerToString (container: NavigableContainer) (document: Document) =
+        let project = document.Project
         let typeAsString =
             match container.Type with
             | NavigableContainerType.File -> "project "
@@ -154,9 +156,15 @@ module private Utils =
         let name =
             match container.Type with
             | NavigableContainerType.File ->
-                (Path.GetFileNameWithoutExtension project.Name) + ", " + (Path.GetFileName container.Name)
-            | _ -> container.Name
-        typeAsString + name
+                (Path.GetFileNameWithoutExtension project.Name) + ", " + (Path.GetFileName container.LogicalName)
+            | _ -> container.LogicalName
+
+        let combined = typeAsString + name
+
+        if isSignatureFile document.FilePath then
+            "signature for: " + combined
+        else
+            combined
 
     type PerDocumentSavedData = { Hash: int; Items: Index.IIndexedNavigableItems }
 
@@ -164,40 +172,43 @@ module private Utils =
 type internal FSharpNavigateToSearchService 
     [<ImportingConstructor>] 
     (
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
-    let userOpName = "FSharpNavigateToSearchService"
     let kindsProvided = ImmutableHashSet.Create(FSharpNavigateToItemKind.Module, FSharpNavigateToItemKind.Class, FSharpNavigateToItemKind.Field, FSharpNavigateToItemKind.Property, FSharpNavigateToItemKind.Method, FSharpNavigateToItemKind.Enum, FSharpNavigateToItemKind.EnumItem) :> IImmutableSet<string>
 
     // Save the backing navigation data in a memory cache held in a sliding window
     let itemsByDocumentId = new MemoryCache("FSharp.Editor.FSharpNavigateToSearchService")
 
-    let GetNavigableItems(document: Document, parsingOptions: FSharpParsingOptions, kinds: IImmutableSet<string>) =
+    let GetNavigableItems(document: Document, kinds: IImmutableSet<string>) =
         async {
             let! cancellationToken = Async.CancellationToken
+            let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpNavigateToSearchService))
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-            let! parseResults = checkerProvider.Checker.ParseFile(document.FilePath, sourceText.ToFSharpSourceText(), parsingOptions)
-
             let navItems parsedInput =
                 NavigateTo.GetNavigableItems parsedInput
                 |> Array.filter (fun i -> kinds.Contains(navigateToItemKindToRoslynKind i.Kind))
 
             let items = parseResults.ParseTree |> navItems
             let navigableItems =
-                [| for item in items do
+                [|
+                    for item in items do
                         match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with 
                         | None -> ()
                         | Some sourceSpan ->
                             let glyph = navigateToItemKindToGlyph item.Kind
                             let kind = navigateToItemKindToRoslynKind item.Kind
-                            let additionalInfo = containerToString item.Container document.Project
-                            yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo) |]
+                            let additionalInfo = containerToString item.Container document
+                            let _name =
+                                if isSignatureFile document.FilePath then
+                                    item.LogicalName + " (signature)"
+                                else
+                                    item.LogicalName
+                            yield NavigableItem(document, sourceSpan, glyph, item.LogicalName, kind, additionalInfo)
+                |]
             return navigableItems
         }
 
-    let getCachedIndexedNavigableItems(document: Document, parsingOptions: FSharpParsingOptions, kinds: IImmutableSet<string>) =
+    let getCachedIndexedNavigableItems(document: Document, kinds: IImmutableSet<string>) =
         async {
             let! cancellationToken = Async.CancellationToken
             let! textVersion = document.GetTextVersionAsync(cancellationToken)  |> Async.AwaitTask
@@ -206,7 +217,7 @@ type internal FSharpNavigateToSearchService
             match itemsByDocumentId.Get(key) with
             | :? PerDocumentSavedData as data when data.Hash = textVersionHash -> return data.Items
             | _ -> 
-                let! items = GetNavigableItems(document, parsingOptions, kinds)
+                let! items = GetNavigableItems(document, kinds)
                 let indexedItems = Index.build items
                 let data = { Hash= textVersionHash; Items = indexedItems }
                 let cacheItem = CacheItem(key, data)
@@ -225,10 +236,9 @@ type internal FSharpNavigateToSearchService
     interface IFSharpNavigateToSearchService with
         member _.SearchProjectAsync(project, _priorityDocuments, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
             asyncMaybe {
-                let! parsingOptions, _options = projectInfoManager.TryGetOptionsByProject(project, cancellationToken)
                 let! items =
                     project.Documents
-                    |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, parsingOptions, kinds))
+                    |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, kinds))
                     |> Async.Parallel
                     |> liftAsync
                 
@@ -244,7 +254,7 @@ type internal FSharpNavigateToSearchService
                            yield! items
                                   |> Array.collect (fun item -> item.AllItems)
                                   |> Array.Parallel.collect (fun x -> 
-                                      patternMatcher.GetMatches(x.Name)
+                                      patternMatcher.GetMatches(x.LogicalName)
                                       |> Seq.map (fun pm ->
                                           NavigateToSearchResult(x, patternMatchKindToNavigateToMatchKind pm.Kind) :> FSharpNavigateToSearchResult)
                                       |> Seq.toArray) |]
@@ -257,8 +267,7 @@ type internal FSharpNavigateToSearchService
 
         member _.SearchDocumentAsync(document, searchPattern, kinds, cancellationToken) : Task<ImmutableArray<FSharpNavigateToSearchResult>> =
             asyncMaybe {
-                let! parsingOptions, _, _ = projectInfoManager.TryGetOptionsForDocumentOrProject(document, cancellationToken, userOpName)
-                let! items = getCachedIndexedNavigableItems(document, parsingOptions, kinds) |> liftAsync
+                let! items = getCachedIndexedNavigableItems(document, kinds) |> liftAsync
                 return items.Find(searchPattern)
             }
             |> Async.map (Option.defaultValue [||])

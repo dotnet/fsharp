@@ -6,36 +6,57 @@
   <Import Project="eng\targets\NuGet.targets" />
   <Import Project="FSharp.Profiles.props" />
 
+  <PropertyGroup>
+    <DefineConstants Condition="'$(Configuration)'=='release'">$(DefineConstants);Release</DefineConstants>
+    <DefineConstants Condition="'$(Configuration)'=='debug'">$(DefineConstants);Debug</DefineConstants>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <NoneSubstituteText>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <Pattern1></Pattern1>
+      <Pattern2></Pattern2>
+      <Pattern3></Pattern3>
+      <Replacement1></Replacement1>
+      <Replacement2></Replacement2>
+      <Replacement3></Replacement3>
+      <_ReplacementText></_ReplacementText>
+      <IncludeInVsix>false</IncludeInVsix>
+      <Link></Link>
+      <SubDir></SubDir>
+    </NoneSubstituteText>
+  </ItemDefinitionGroup>
+
   <Target Name="NoneSubstituteTextFiles"
           Inputs="@(NoneSubstituteText)"
           Outputs="@(NoneSubstituteText->'$(IntermediateOutputPath)%(Filename)%(Extension)')"
           BeforeTargets="AssignTargetPaths;BeforeBuild;GenerateFSharpTextResources">
 
-    <PropertyGroup>
-      <__TargetFilePath>@(NoneSubstituteText->'$(IntermediateOutputPath)%(Filename)%(Extension)')</__TargetFilePath>
-      <__TargetFileName>@(NoneSubstituteText->'%(Filename)%(Extension)')</__TargetFileName>
-      <__TargetLink>@(NoneSubstituteText->'%(Link)')</__TargetLink>
+    <ItemGroup>
+        <NoneSubstituteText Update="@(NoneSubstituteText)">
+            <__TargetFilePath>$(IntermediateOutputPath)%(Subdir)%(Filename)%(Extension)</__TargetFilePath>
+            <__TargetFileName>%(Filename)%(Extension)</__TargetFileName>
+            <_ReplacementText>$([System.IO.File]::ReadAllText('%(FullPath)'))</_ReplacementText>
+        </NoneSubstituteText>
+        <NoneSubstituteText Update="@(NoneSubstituteText)">
+            <_ReplacementText Condition="'%(Pattern1)' != ''">$([System.Text.RegularExpressions.Regex]::Replace('%(_ReplacementText)', '%(Pattern1)', '%(Replacement1)'))</_ReplacementText>
+        </NoneSubstituteText>
+        <NoneSubstituteText Update="@(NoneSubstituteText)">
+            <_ReplacementText Condition="'%(Pattern2)' != ''">$([System.Text.RegularExpressions.Regex]::Replace('%(_ReplacementText)', '%(Pattern2)', '%(Replacement2)'))</_ReplacementText>
+        </NoneSubstituteText>
+        <NoneSubstituteText Update="@(NoneSubstituteText)">
+            <_ReplacementText Condition="'%(Pattern3)' != ''">$([System.Text.RegularExpressions.Regex]::Replace('%(_ReplacementText)', '%(Pattern3)', '%(Replacement3)'))</_ReplacementText>
+        </NoneSubstituteText>
+    </ItemGroup>
 
-      <_ReplacementText>$([System.IO.File]::ReadAllText('%(NoneSubstituteText.FullPath)'))</_ReplacementText>
-      <_ReplacementText Condition="'%(NoneSubstituteText.Pattern1)' != ''">$(_ReplacementText.Replace('%(NoneSubstituteText.Pattern1)', '%(NoneSubstituteText.Replacement1)'))</_ReplacementText>
-      <_ReplacementText Condition="'%(NoneSubstituteText.Pattern2)' != ''">$(_ReplacementText.Replace('%(NoneSubstituteText.Pattern2)', '%(NoneSubstituteText.Replacement2)'))</_ReplacementText>
-      <_ReplacementText Condition="'%(NoneSubstituteText.Pattern3)' != ''">$(_ReplacementText.Replace('%(NoneSubstituteText.Pattern3)', '%(NoneSubstituteText.Replacement3)'))</_ReplacementText>
-
-      <_CopyToOutputDirectory Condition="'%(NoneSubstituteText.CopyToOutputDirectory)' != ''">%(NoneSubstituteText.CopyToOutputDirectory)</_CopyToOutputDirectory>
-      <_CopyToOutputDirectory Condition="'%(NoneSubstituteText.CopyToOutputDirectory)' == ''">Never</_CopyToOutputDirectory>
-
-      <_IncludeInVsix>false</_IncludeInVsix>
-      <_IncludeInVsix Condition="'%(NoneSubstituteText.IncludeInVsix)' == 'true'">true</_IncludeInVsix>
-    </PropertyGroup>
-
-    <MakeDir Directories="$(IntermediateOutputPath)"
-             Condition="!Exists('$(IntermediateOutputPath)')" />
-    <WriteLinesToFile File="$(__TargetFilePath)" Lines="$(_ReplacementText)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <MakeDir Directories="$(IntermediateOutputPath)" Condition="!Exists('$(IntermediateOutputPath)')" />
+    <WriteLinesToFile File="%(NoneSubstituteText.__TargetFilePath)" Lines="%(NoneSubstituteText._ReplacementText)" Overwrite="true" WriteOnlyWhenDifferent="true" />
 
     <ItemGroup>
-      <None Include="$(__TargetFilePath)" CopyToOutputDirectory="$(_CopyToOutputDirectory)" />
-      <FileWrites Include="$(__TargetFilePath)" Condition="'$(__TargetFileName)' != 'App.config'" />
-      <Content Include="$(__TargetFilePath)" CopyToOutputDirectory="Always" IncludeInVsix="true" Link="$(__TargetLink)" Condition="'$(_IncludeInVsix)'=='true'" />
+      <None Include="%(NoneSubstituteText.__TargetFilePath)" CopyToOutputDirectory="%(NoneSubstituteText.CopyToOutputDirectory)" Condition="'%(NoneSubstituteText.SubDir)'==''" />
+      <_NoneWithTargetPath Include="%(NoneSubstituteText.__TargetFilePath)" CopyToOutputDirectory="%(NoneSubstituteText.CopyToOutputDirectory)" TargetPath="%(SubDir)%(__TargetFileName)" Condition="'%(NoneSubstituteText.SubDir)'!=''"/>
+      <FileWrites Include="%(NoneSubstituteText.__TargetFilePath)" Condition="'%(NoneSubstituteText.__TargetFileName)' != 'App.config'" />
+      <Content Include="%(NoneSubstituteText.__TargetFilePath)" CopyToOutputDirectory="Always" IncludeInVsix="true" Link="%(NoneSubstituteText.Link)" Condition="'%(NoneSubstituteText.IncludeInVsix)'=='true'" />
     </ItemGroup>
   </Target>
 
@@ -121,8 +142,8 @@
   </PropertyGroup>
 
   <Target Name="PrefixRepoToReleaseNotes"
+          AfterTargets="InitializeSourceControlInformationFromSourceControlManager"
           BeforeTargets="InitializeStandardNuspecProperties"
-          DependsOnTargets="InitializeSourceControlInformationFromSourceControlManager"
           Condition="'$(IsPackable)'=='true'">
 
     <PropertyGroup>

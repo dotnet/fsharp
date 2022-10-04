@@ -45,7 +45,8 @@ type UsingMSBuild()  =
 
     // In this bug, if you clean the dependent project, the dependee started getting errors again about the unresolved assembly.
     // The desired behavior is like C#, which is if the assembly disappears from disk, we use cached results of last time it was there.
-    [<Test>]
+    // Disabled due to issue #11752   ---  https://github.com/dotnet/fsharp/issues/11752
+    //[<Test>]
     member public this.``Regression.NoError.Timestamps.Bug3368b``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -88,7 +89,7 @@ type UsingMSBuild()  =
 
     // In this bug, the referenced project output didn't exist yet. Building dependee should cause update in dependant
     [<Test>]
-    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
+    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Regression.NoContainedString.Timestamps.Bug3368a``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -165,7 +166,7 @@ type UsingMSBuild()  =
 
    // FEATURE: When a referenced assembly's timestamp changes the reference is reread.
     [<Test; Category("Expensive")>]
-    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
+    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Timestamps.ReferenceAssemblyChangeAbsolute``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -212,7 +213,7 @@ type UsingMSBuild()  =
 
     // In this bug, relative paths to referenced assemblies weren't seen.
     [<Test; Category("Expensive")>]
-    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
+    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Timestamps.ReferenceAssemblyChangeRelative``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -267,7 +268,7 @@ type UsingMSBuild()  =
 
     // FEATURE: When a referenced project's assembly timestamp changes the reference is reread.
     [<Test; Category("Expensive")>]
-    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
+    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Timestamps.ProjectReferenceAssemblyChange``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()

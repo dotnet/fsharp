@@ -301,21 +301,21 @@ type Array2Module() =
     member this.Iter() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
-        let resultInt = ref 0 
+        let mutable resultInt = 0 
         let funInt (x:int) =   
-            resultInt := !resultInt + x              
+            resultInt <- resultInt + x              
             () 
         Array2D.iter funInt intArr 
-        if !resultInt <> 306 then Assert.Fail()
+        if resultInt <> 306 then Assert.Fail()
         
         // string array 
         let strArr = Array2D.init 2 3 (fun i j -> i.ToString() + "-" + j.ToString())
-        let resultStr = ref ""
+        let mutable resultStr = ""
         let funStr (x:string) =
-            resultStr := (!resultStr) + x + ","  
+            resultStr <- resultStr + x + ","  
             ()
         Array2D.iter funStr strArr  
-        if !resultStr <> "0-0,0-1,0-2,1-0,1-1,1-2," then Assert.Fail()
+        if resultStr <> "0-0,0-1,0-2,1-0,1-1,1-2," then Assert.Fail()
         
         // null array
         let nullArr = null:string[,]    
@@ -325,33 +325,33 @@ type Array2Module() =
     [<Fact>]
     member this.IterNonZeroBased() =
         let a = Array2D.createBased 1 5 10 10 1
-        let result = ref 0
-        a |> Array2D.iter (fun n -> result := !result + n)
-        if !result <> 100 then Assert.Fail()
-        result := 0
-        a |> Array2D.iteri (fun i j x -> result := !result + i + j + x)
-        if !result <> 1600 then Assert.Fail()
+        let mutable result = 0
+        a |> Array2D.iter (fun n -> result <- result + n)
+        if result <> 100 then Assert.Fail()
+        result <- 0
+        a |> Array2D.iteri (fun i j x -> result <- result + i + j + x)
+        if result <> 1600 then Assert.Fail()
         ()
 
     [<Fact>]
     member this.Iteri() =
         // integer array  
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
-        let resultInt = ref 0 
+        let mutable resultInt = 0 
         let funInt (x:int) (y:int) (z:int) =   
-            resultInt := !resultInt + x  + y  + z         
+            resultInt <- resultInt + x  + y  + z         
             () 
         Array2D.iteri funInt intArr 
-        if !resultInt <> 315 then Assert.Fail()
+        if resultInt <> 315 then Assert.Fail()
         
         // string array 
         let strArr = Array2D.init 2 3 (fun i j -> i.ToString() + "-" + j.ToString())
-        let resultStr = ref ""
+        let mutable resultStr = ""
         let funStr (x:int) (y:int) (z:string) =
-            resultStr := (!resultStr) + "[" + x.ToString() + "," + y.ToString() + "]" + "=" + z + "; "  
+            resultStr <- resultStr + "[" + x.ToString() + "," + y.ToString() + "]" + "=" + z + "; "  
             ()
         Array2D.iteri funStr strArr  
-        if !resultStr <> "[0,0]=0-0; [0,1]=0-1; [0,2]=0-2; [1,0]=1-0; [1,1]=1-1; [1,2]=1-2; " then Assert.Fail()
+        if resultStr <> "[0,0]=0-0; [0,1]=0-1; [0,2]=0-2; [1,0]=1-0; [1,1]=1-1; [1,2]=1-2; " then Assert.Fail()
             
         // null array
         let nullArr = null:string[,]    

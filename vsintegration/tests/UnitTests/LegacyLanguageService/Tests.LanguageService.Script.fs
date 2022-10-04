@@ -24,7 +24,7 @@ type UsingMSBuild() as this =
         let (_, p, f) = this.CreateSingleFileProject(code, fileKind = SourceFileKind.FSX)
         (p, f)
 
-    let createSingleFileFsxFromLines (code : list<string>) = 
+    let createSingleFileFsxFromLines (code : string list) = 
         let (_, p, f) = this.CreateSingleFileProject(code, fileKind = SourceFileKind.FSX)
         (p, f)
 
@@ -160,7 +160,7 @@ type UsingMSBuild() as this =
                                        "#r \"Nonexistent\""
                                        ]
         let (project, _) = createSingleFileFsxFromLines code
-        AssertExactlyCountErrorSeenContaining(project, "Nonexistent", 2)   // ...and not an error on the first line.
+        AssertExactlyCountErrorSeenContaining(project, "Nonexistent", 1)   // ...and not an error on the first line.
         
     [<Test>]
     member public this.``Fsx.InvalidHashLoad.ShouldBeASquiggle.Bug3012``() =  
@@ -582,7 +582,7 @@ type UsingMSBuild() as this =
 
     [<Test>]
     [<Category("fsx closure")>]
-    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
+    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Fsx.NoError.HashR.RelativePath1``() =
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()
@@ -619,7 +619,7 @@ type UsingMSBuild() as this =
         AssertNoSquiggle(ans)
 
     [<Test; Category("fsx closure")>]
-    [<Ignore("Re-enable this test --- https://github.com/Microsoft/visualfsharp/issues/5238")>]
+    [<Ignore("Re-enable this test --- https://github.com/dotnet/fsharp/issues/5238")>]
     member public this.``Fsx.NoError.HashR.RelativePath2``() = 
         use _guard = this.UsingNewVS()  
         let solution = this.CreateSolution()
@@ -907,9 +907,7 @@ type UsingMSBuild() as this =
         let (project, file) = createSingleFileFsxFromLines code
         MoveCursorToEndOfMarker(file, "System.ConsoleModifiers.Sh")
         let tooltip = GetQuickInfoAtCursor file
-        AssertContains(tooltip, @"[Signature:F:System.ConsoleModifiers.Shift]") // A message from the mock IDocumentationBuilder
-        AssertContains(tooltip, @"[Filename:") 
-        AssertContains(tooltip, @"mscorlib.dll]") // The assembly we expect the documentation to get taken from     
+        AssertContains(tooltip, @"<summary>The left or right SHIFT modifier key.</summary>")    
         
         MoveCursorToEndOfMarker(file, "(3).ToString().Len")
         let tooltip = GetQuickInfoAtCursor file
@@ -1660,10 +1658,10 @@ type UsingMSBuild() as this =
         Assert.IsTrue((countInvaldiationHandlersAdded() = countInvaldiationHandlersRemoved()), "Check6b2, at end, all invalidation handlers removed after explicit cleraring")
         checkConfigsDisposed()
 
-    [<Test;Category("TypeProvider"); Category("Expensive")>]
+    [<Test;Category("TypeProvider"); Category("Expensive"); Ignore("Flaky test, unclear if it is valuable")>]
     member public this.``TypeProvider.Disposal.SmokeTest1``() = this.TypeProviderDisposalSmokeTest(true)
 
-    [<Test;Category("TypeProvider")>]
+    [<Test;Category("TypeProvider"); Ignore("Flaky test, unclear if it is valuable")>]
     member public this.``TypeProvider.Disposal.SmokeTest2``() = this.TypeProviderDisposalSmokeTest(false)
 
 

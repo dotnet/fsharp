@@ -1,8 +1,8 @@
-Microsoft (R) F# Compiler version 10.6.0.0 for F# 4.7
+Microsoft (R) F# Compiler version 12.0.0.0 for F# 6.0
 Copyright (c) Microsoft Corporation. All Rights Reserved.
 
 
-		- OUTPUT FILES -
+                - OUTPUT FILES -
 --out:<file>                             Name of the output file (Short form:
                                          -o)
 --target:exe                             Build a console executable
@@ -21,9 +21,11 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          the given file
 --keyfile:<file>                         Specify a strong name key file
 --platform:<string>                      Limit which platforms this code can
-                                         run on: x86, Itanium, x64,
-                                         anycpu32bitpreferred, or anycpu. The
-                                         default is anycpu.
+                                         run on: x86, x64, Arm, Arm64,
+                                         Itanium, anycpu32bitpreferred, or
+                                         anycpu. The default is anycpu.
+--compressmetadata[+|-]                  Compress interface and optimization
+                                         data files
 --nooptimizationdata                     Only include optimization
                                          information essential for
                                          implementing inlined constructs.
@@ -34,11 +36,19 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          F#-specific metadata
 --sig:<file>                             Print the inferred interface of the
                                          assembly to a file
+--allsigs                                Print the inferred interfaces of all
+                                         compilation files to associated
+                                         signature files
 --nocopyfsharpcore                       Don't copy FSharp.Core.dll along the
                                          produced binaries
+--refonly[+|-]                           Produce a reference assembly,
+                                         instead of a full assembly, as the
+                                         primary output
+--refout:<file>                          Produce a reference assembly with
+                                         the specified file path.
 
 
-		- INPUT FILES -
+                - INPUT FILES -
 --reference:<file>                       Reference an assembly (Short form:
                                          -r)
 --compilertool:<file>                    Reference an assembly or directory
@@ -46,7 +56,8 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          form: -t)
 
 
-		- RESOURCES -
+                - RESOURCES -
+--win32icon:<file>                       Specify a Win32 icon file (.ico)
 --win32res:<file>                        Specify a Win32 resource file (.res)
 --win32manifest:<file>                   Specify a Win32 manifest file
 --nowin32manifest                        Do not include the default Win32
@@ -58,7 +69,7 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          name>[,public|private]]
 
 
-		- CODE GENERATION -
+                - CODE GENERATION -
 --debug[+|-]                             Emit debug information (Short form:
                                          -g)
 --debug:{full|pdbonly|portable|embedded} Specify debugging type: full,
@@ -86,9 +97,11 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          names output by the compiler
 --crossoptimize[+|-]                     Enable or disable cross-module
                                          optimizations
+--reflectionfree                         Disable implicit generation of
+                                         constructs using reflection
 
 
-		- ERRORS AND WARNINGS -
+                - ERRORS AND WARNINGS -
 --warnaserror[+|-]                       Report all warnings as errors
 --warnaserror[+|-]:<warn;...>            Report specific warnings as errors
 --warn:<n>                               Set a warning level (0-5)
@@ -99,18 +112,18 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          color
 
 
-		- LANGUAGE -
---langversion:{?|version|latest|preview} Display the allowed values for
-                                         language version, specify language
-                                         version such as 'latest' or
-                                         'preview'
+                - LANGUAGE -
+--langversion:?                          Display the allowed values for
+                                         language version.
+--langversion:{version|latest|preview}   Specify language version such as
+                                         'latest' or 'preview'.
 --checked[+|-]                           Generate overflow checks
 --define:<string>                        Define conditional compilation
                                          symbols (Short form: -d)
 --mlcompatibility                        Ignore ML compatibility warnings
 
 
-		- MISCELLANEOUS -
+                - MISCELLANEOUS -
 --nologo                                 Suppress compiler copyright message
 --version                                Display compiler version banner and
                                          exit
@@ -119,7 +132,7 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 --@<file>                                Read response file for more options
 
 
-		- ADVANCED -
+                - ADVANCED -
 --codepage:<n>                           Specify the codepage used to read
                                          source files
 --utf8output                             Output messages in UTF-8 encoding

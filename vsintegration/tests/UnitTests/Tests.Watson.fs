@@ -5,6 +5,7 @@ namespace Tests.Compiler.Watson
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
 open FSharp.Compiler
+open FSharp.Compiler.IO
 open FSharp.Compiler.AbstractIL.ILBinaryReader
 open FSharp.Compiler.CodeAnalysis
 open Internal.Utilities.Library 
@@ -18,11 +19,11 @@ type Check =
         try 
             try
 #if DEBUG
-                FSharp.Compiler.CompilerDiagnostics.CompilerService.showAssertForUnexpectedException := false
+                FSharp.Compiler.CompilerDiagnostics.showAssertForUnexpectedException := false
 #endif
-                if (File.Exists("watson-test.fs")) then
-                    File.Delete("watson-test.fs")
-                File.WriteAllText("watson-test.fs", "// Hello watson" )
+                if (FileSystem.FileExistsShim("watson-test.fs")) then
+                    FileSystem.FileDeleteShim("watson-test.fs")
+                FileSystem.OpenFileForWriteShim("watson-test.fs").Write("// Hello watson" )
                 let argv =
                     [|  "--simulateException:"+simulationCode
                         "--nowarn:988" // don't show `watson-test.fs(1,16): warning FS0988: Main module of program is empty: nothing will happen when it is run`
@@ -30,24 +31,24 @@ type Check =
                     |]
 
                 let ctok = AssumeCompilationThreadWithoutEvidence ()
-                let _code = mainCompile (ctok, argv, LegacyMSBuildReferenceResolver.getResolver(), false, ReduceMemoryFlag.No, CopyFSharpCoreFlag.No, FSharp.Compiler.ErrorLogger.QuitProcessExiter, ConsoleLoggerProvider(), None, None)
+                let _code = CompileFromCommandLineArguments (ctok, argv, LegacyMSBuildReferenceResolver.getResolver(), false, ReduceMemoryFlag.No, CopyFSharpCoreFlag.No, FSharp.Compiler.DiagnosticsLogger.QuitProcessExiter, ConsoleLoggerProvider(), None, None)
                 ()
             with 
             | :? 'TException as e -> 
                 let msg = e.ToString();
-                if msg.Contains("ReportTime") || msg.Contains("TypeCheckOneInput") then ()
+                if msg.Contains("ReportTime") || msg.Contains("CheckOneInput") then ()
                 else
                     printfn "%s" msg
                     Assert.Fail("The correct callstack was not reported to watson.")
-            | (FSharp.Compiler.ErrorLogger.ReportedError (Some (FSharp.Compiler.ErrorLogger.InternalError (msg, range) as e)))
-            | (FSharp.Compiler.ErrorLogger.InternalError (msg, range) as e) -> 
+            | (FSharp.Compiler.DiagnosticsLogger.ReportedError (Some (FSharp.Compiler.DiagnosticsLogger.InternalError (msg, range) as e)))
+            | (FSharp.Compiler.DiagnosticsLogger.InternalError (msg, range) as e) -> 
                 printfn "InternalError Exception: %s, range = %A, stack = %s" msg range (e.ToString())
                 Assert.Fail("An InternalError exception occurred.")
         finally               
 #if DEBUG
-            FSharp.Compiler.CompilerDiagnostics.CompilerService.showAssertForUnexpectedException := true 
+            FSharp.Compiler.CompilerDiagnostics.showAssertForUnexpectedException := true 
 #endif
-        File.Delete("watson-test.fs")
+        FileSystem.FileDeleteShim("watson-test.fs")
 
 
 [<TestFixture>] 

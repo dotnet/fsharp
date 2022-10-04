@@ -10,6 +10,13 @@ module Core_quotes
 
 
 #nowarn "57"
+open System
+open System.Reflection
+open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Quotations.Patterns
+open Microsoft.FSharp.Quotations.DerivedPatterns
+
+
 let failures = ref []
 
 let report_failure (s : string) = 
@@ -27,12 +34,19 @@ let check s v1 v2 =
        eprintf " FAILED: got %A, expected %A" v1 v2 
        report_failure s
 
+let rec removeDoubleSpaces (s: string) =
+   let s2 = s.Replace("  ", " ")
+   if s = s2 then s else removeDoubleSpaces s2
 
-open System
-open System.Reflection
-open Microsoft.FSharp.Quotations
-open Microsoft.FSharp.Quotations.Patterns
-open Microsoft.FSharp.Quotations.DerivedPatterns
+let normalizeActivePatternResults (s: string) =
+   System.Text.RegularExpressions.Regex(@"activePatternResult\d+").Replace(s, "activePatternResult")
+
+let checkStrings s (v1: string) (v2: string) = 
+    check s 
+       (v1.Replace("\r","").Replace("\n","") |> removeDoubleSpaces |> normalizeActivePatternResults)
+       (v2.Replace("\r","").Replace("\n","") |> removeDoubleSpaces |> normalizeActivePatternResults)
+
+let checkQuoteString s expected (q: Expr)  = checkStrings s (sprintf "%A" q) expected
 
 let (|TypedValue|_|) (v : 'T) value = 
     match value with 
@@ -1444,42 +1458,39 @@ end
 module MoreQuotationsTests = 
 
     let t1 = <@@ try 1 with e when true -> 2 | e -> 3 @@>
-    printfn "t1 = %A" t1
-    check "vwjnkwve0-vwnio" 
-        (sprintf "%A" t1) 
-    "TryWith (Value (1), matchValue,
-            IfThenElse (Let (e, matchValue, Value (true)),
-                        Let (e, matchValue, Value (1)),
-                        Let (e, matchValue, Value (1))), matchValue,
-            IfThenElse (Let (e, matchValue, Value (true)),
-                        Let (e, matchValue, Value (2)),
-                        Let (e, matchValue, Value (3))))"
+    checkStrings "vwjnkwve0-vwnio" 
+        (sprintf "%A" t1)
+        """TryWith (Value (1), matchValue,
+          IfThenElse (Let (e, matchValue, Value (true)),
+                      Let (e, matchValue, Value (1)),
+                      Let (e, matchValue, Value (1))), matchValue,
+          IfThenElse (Let (e, matchValue, Value (true)),
+                      Let (e, matchValue, Value (2)),
+                      Let (e, matchValue, Value (3))))"""
 
     [<ReflectedDefinition>]
     let k (x:int) =
        try 1 with _ when true -> 2 | e -> 3
 
     let t2 = <@@ Map.empty.[0] @@>
-    printfn "t2 = %A" t2
-    check "vwjnkwve0-vwnio1" 
+    checkStrings "vwjnkwve0-vwnio1" 
        (sprintf "%A" t2) 
        "PropertyGet (Some (Call (None, Empty, [])), Item, [Value (0)])"
 
 
     let t4 = <@@ use a = new System.IO.StreamWriter(System.IO.Stream.Null) in a @@>
-    printfn "t4 = %A" t4
-    check "vwjnkwve0-vwnio3" 
+    checkStrings "vwjnkwve0-vwnio3" 
         (sprintf "%A" t4) 
-    "Let (a, NewObject (StreamWriter, FieldGet (None, Null)),
+        "Let (a, NewObject (StreamWriter, FieldGet (None, Null)),
         TryFinally (a,
                     IfThenElse (TypeTest (IDisposable, Coerce (a, Object)),
                                 Call (Some (Call (None, UnboxGeneric,
                                                 [Coerce (a, Object)])), Dispose,
                                     []), Value (<null>))))"
 
-    check "vwjnkwve0-vwnio3fuull" 
+    checkStrings "vwjnkwve0-vwnio3fuull" 
         (t4.ToString(true))
-    "Let (a,
+        "Let (a,
         NewObject (Void .ctor(System.IO.Stream),
                 FieldGet (None, System.IO.Stream Null)),
         TryFinally (a,
@@ -1492,47 +1503,129 @@ module MoreQuotationsTests =
 
 
     let t5 = <@@ try failwith "test" with _ when true -> 0 @@>
-    printfn "t5 = %A" t5
+    checkStrings "vwekwvel5" (sprintf "%A" t5) 
+        """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
+         IfThenElse (Value (true), Value (1), Value (0)), matchValue,
+         IfThenElse (Value (true), Value (0), Call (None, Reraise, [])))"""
     
     let t6 = <@@ let mutable a = 0 in a <- 2 @@>
 
-    printfn "t6 = %A" t6
+    checkStrings "vwewvwewe6" (sprintf "%A" t6) 
+        """Let (a, Value (0), VarSet (a, Value (2)))"""
 
     let f (x: _ byref) = x
 
     let t7 = <@@ let mutable a = 0 in f (&a) @@>
-    printfn "t7 = %A" t7
-    
-    let t8 = <@@ for i in 1s .. 10s do printfn "%A" i @@>
-    printfn "t8 = %A" t8
+    checkStrings "vwewvwewe7" (sprintf "%A" t7) 
+        """Let (a, Value (0), Call (None, f, [AddressOf (a)]))"""
 
-    let t9 = <@@ try failwith "test" with Failure _ -> 0  @@>
-    printfn "t9 = %A" t9
+    let t8 = <@@ for i in 1s .. 10s do printfn "%A" i @@>
+    checkStrings "vwewvwewe8" (sprintf "%A" t8) 
+        """Let (inputSequence, Call (None, op_Range, [Value (1s), Value (10s)]),
+        Let (enumerator, Call (Some (inputSequence), GetEnumerator, []),
+             TryFinally (WhileLoop (Call (Some (enumerator), MoveNext, []),
+                                    Let (i,
+                                         PropertyGet (Some (enumerator), Current,
+                                                      []),
+                                         Application (Let (clo1,
+                                                           Call (None,
+                                                                 PrintFormatLine,
+                                                                 [Coerce (NewObject (PrintfFormat`5,
+                                                                                     Value ("%A")),
+                                                                          PrintfFormat`4)]),
+                                                           Lambda (arg10,
+                                                                   Application (clo1,
+                                                                                arg10))),
+                                                      i))),
+                         IfThenElse (TypeTest (IDisposable,
+                                               Coerce (enumerator, Object)),
+                                     Call (Some (Call (None, UnboxGeneric,
+                                                       [Coerce (enumerator, Object)])),
+                                           Dispose, []), Value (<null>)))))"""
+
+    let t9() = <@@ try failwith "test" with Failure _ -> 0 @@>
+    checkStrings "vwewvwewe9" (sprintf "%A" (t9())) 
+        """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
+        Let (activePatternResult1557, Call (None, FailurePattern, [matchValue]),
+             IfThenElse (UnionCaseTest (activePatternResult1557, Some),
+                         Value (1), Value (0))), matchValue,
+        Let (activePatternResult1558, Call (None, FailurePattern, [matchValue]),
+             IfThenElse (UnionCaseTest (activePatternResult1558, Some),
+                         Value (0), Call (None, Reraise, []))))"""
 
     let t9b = <@@ Failure "fil" @@>
-    printfn "t9b = %A" t9b
+    checkStrings "vwewvwewe9b" (sprintf "%A" t9b) 
+        """Call (None, Failure, [Value ("fil")])"""
+
     let t9c = <@@ match Failure "fil" with Failure msg -> msg |  _ -> "no" @@>
-    printfn "t9c = %A" t9c
+    checkStrings "vwewvwewe9c" (sprintf "%A" t9c) 
+        """Let (matchValue, Call (None, Failure, [Value ("fil")]),
+        Let (activePatternResult1564, Call (None, FailurePattern, [matchValue]),
+             IfThenElse (UnionCaseTest (activePatternResult1564, Some),
+                         Let (msg,
+                              PropertyGet (Some (activePatternResult1564), Value,
+                                           []), msg), Value ("no"))))"""
 
     let t10 = <@@ try failwith "test" with Failure _ -> 0 |  _ -> 1 @@>
-    printfn "t10 = %A" t10
+    checkStrings "vwewvwewe10" (sprintf "%A" t10) 
+        """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
+        Let (activePatternResult1565, Call (None, FailurePattern, [matchValue]),
+             IfThenElse (UnionCaseTest (activePatternResult1565, Some),
+                         Value (1), Value (1))), matchValue,
+        Let (activePatternResult1566, Call (None, FailurePattern, [matchValue]),
+             IfThenElse (UnionCaseTest (activePatternResult1566, Some),
+                         Value (0), Value (1))))"""
 
     let t11 = <@@ try failwith "test" with :? System.NullReferenceException -> 0 @@>
-    printfn "t11 = %A" t11
+    checkStrings "vwewvwewe11" (sprintf "%A" t11) 
+        """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
+        IfThenElse (TypeTest (NullReferenceException, matchValue), Value (1),
+                    Value (0)), matchValue,
+        IfThenElse (TypeTest (NullReferenceException, matchValue), Value (0),
+                    Call (None, Reraise, [])))"""
 
     let t12 = <@@ try failwith "test" with :? System.NullReferenceException as n -> 0 @@>
-    printfn "t12 = %A" t12
+    checkStrings "vwewvwewe12" (sprintf "%A" t12) 
+        """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
+        IfThenElse (TypeTest (NullReferenceException, matchValue),
+                    Let (n, Call (None, UnboxGeneric, [matchValue]), Value (1)),
+                    Value (0)), matchValue,
+        IfThenElse (TypeTest (NullReferenceException, matchValue),
+                    Let (n, Call (None, UnboxGeneric, [matchValue]), Value (0)),
+                    Call (None, Reraise, [])))"""
 
     let t13 = <@@ try failwith "test" with Failure _ -> 1 | :? System.NullReferenceException as n -> 0 @@>
-    printfn "t13 = %A" t13
+    checkStrings "vwewvwewe13" (sprintf "%A" t13) 
+        """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
+        Let (activePatternResult1576, Call (None, FailurePattern, [matchValue]),
+             IfThenElse (UnionCaseTest (activePatternResult1576, Some),
+                         Value (1),
+                         IfThenElse (TypeTest (NullReferenceException,
+                                               matchValue),
+                                     Let (n,
+                                          Call (None, UnboxGeneric,
+                                                [matchValue]), Value (1)),
+                                     Value (0)))), matchValue,
+        Let (activePatternResult1577, Call (None, FailurePattern, [matchValue]),
+             IfThenElse (UnionCaseTest (activePatternResult1577, Some),
+                         Value (1),
+                         IfThenElse (TypeTest (NullReferenceException,
+                                               matchValue),
+                                     Let (n,
+                                          Call (None, UnboxGeneric,
+                                                [matchValue]), Value (0)),
+                                     Call (None, Reraise, [])))))"""
 
     let t14 = <@@ try failwith "test" with _ when true -> 0 @@>
-    printfn "t14 = %A" t14
+    checkStrings "vwewvwewe13" (sprintf "%A" t14) 
+        """TryWith (Call (None, FailWith, [Value ("test")]), matchValue,
+        IfThenElse (Value (true), Value (1), Value (0)), matchValue,
+        IfThenElse (Value (true), Value (0), Call (None, Reraise, [])))"""
 
-    let _ = <@@ let x : int option = None in x.IsSome @@> |> printfn "quote = %A" 
-    let _ = <@@ let x : int option = None in x.IsNone @@> |> printfn "quote = %A" 
-    let _ = <@@ let x : int option = None in x.Value @@> |> printfn "quote = %A" 
-    let _ = <@@ let x : int option = None in x.ToString() @@> |> printfn "quote = %A" 
+    let _ = <@@ let x : int option = None in x.IsSome @@> |> checkQuoteString "fqekhec1" """Let (x, NewUnionCase (None), Call (None, get_IsSome, [x]))"""
+    let _ = <@@ let x : int option = None in x.IsNone @@> |> checkQuoteString "fqekhec2" """Let (x, NewUnionCase (None), Call (None, get_IsNone, [x]))"""
+    let _ = <@@ let x : int option = None in x.Value @@> |> checkQuoteString "fqekhec3" """Let (x, NewUnionCase (None), PropertyGet (Some (x), Value, []))"""
+    let _ = <@@ let x : int option = None in x.ToString() @@> |> checkQuoteString "fqekhec4" """Let (x, NewUnionCase (None), Call (Some (x), ToString, []))"""
 
     module Extensions = 
         type System.Object with 
@@ -1562,63 +1655,63 @@ module MoreQuotationsTests =
             member x.Int32ExtensionIndexer2 with set(idx:int) (v:int) = ()
  
         let v = new obj()
-        let _ = <@@ v.ExtensionMethod0() @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod1() @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod2(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod3(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod4(3,4) @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod5(3,4) @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionProperty1 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionProperty2 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionProperty3 <- 4 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionIndexer1(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionIndexer2(3) <- 4 @@> |> printfn "quote = %A"
+        let _ = <@@ v.ExtensionMethod0() @@>  |> checkQuoteString "fqekhec5" """Call (None, Object.ExtensionMethod0, [PropertyGet (None, v, [])])"""
+        let _ = <@@ v.ExtensionMethod1() @@> |> checkQuoteString "fqekhec6" """Call (None, Object.ExtensionMethod1, [PropertyGet (None, v, [])])"""
+        let _ = <@@ v.ExtensionMethod2(3) @@> |> checkQuoteString "fqekhec7" """Call (None, Object.ExtensionMethod2, [PropertyGet (None, v, []), Value (3)])"""
+        let _ = <@@ v.ExtensionMethod3(3) @@> |> checkQuoteString "fqekhec8" """Call (None, Object.ExtensionMethod3, [PropertyGet (None, v, []), Value (3)])"""
+        let _ = <@@ v.ExtensionMethod4(3,4) @@> |> checkQuoteString "fqekhec9" """Call (None, Object.ExtensionMethod4, [PropertyGet (None, v, []), Value (3), Value (4)])"""
+        let _ = <@@ v.ExtensionMethod5(3,4) @@> |> checkQuoteString "fqekhec10" """Call (None, Object.ExtensionMethod5, [PropertyGet (None, v, []), NewTuple (Value (3), Value (4))])"""
+        let _ = <@@ v.ExtensionProperty1 @@> |> checkQuoteString "fqekhec11" """Call (None, Object.get_ExtensionProperty1, [PropertyGet (None, v, [])])"""
+        let _ = <@@ v.ExtensionProperty2 @@> |> checkQuoteString "fqekhec12" """Call (None, Object.get_ExtensionProperty2, [PropertyGet (None, v, [])])"""
+        let _ = <@@ v.ExtensionProperty3 <- 4 @@> |> checkQuoteString "fqekhec13" """Call (None, Object.set_ExtensionProperty3, [PropertyGet (None, v, []), Value (4)])"""
+        let _ = <@@ v.ExtensionIndexer1(3) @@> |> checkQuoteString "fqekhec14" """Call (None, Object.get_ExtensionIndexer1, [PropertyGet (None, v, []), Value (3)])"""
+        let _ = <@@ v.ExtensionIndexer2(3) <- 4 @@> |> checkQuoteString "fqekhec15" """Call (None, Object.set_ExtensionIndexer2, [PropertyGet (None, v, []), Value (3), Value (4)])"""
 
-        let _ = <@@ v.ExtensionMethod0 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod1 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod2 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod3 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod4 @@> |> printfn "quote = %A"
-        let _ = <@@ v.ExtensionMethod5 @@> |> printfn "quote = %A"
+        let _ = <@@ v.ExtensionMethod0 @@> |> checkQuoteString "fqekhec16" """Lambda (unitVar, Call (None, Object.ExtensionMethod0, [PropertyGet (None, v, [])]))"""
+        let _ = <@@ v.ExtensionMethod1 @@> |> checkQuoteString "fqekhec17" """Lambda (unitVar, Call (None, Object.ExtensionMethod1, [PropertyGet (None, v, [])]))"""
+        let _ = <@@ v.ExtensionMethod2 @@> |> checkQuoteString "fqekhec18" """Lambda (arg00, Call (None, Object.ExtensionMethod2, [PropertyGet (None, v, []), arg00]))"""
+        let _ = <@@ v.ExtensionMethod3 @@> |> checkQuoteString "fqekhec19" """Lambda (arg00, Call (None, Object.ExtensionMethod3, [PropertyGet (None, v, []), arg00]))"""
+        let _ = <@@ v.ExtensionMethod4 @@> |> checkQuoteString "fqekhec20" """Lambda (tupledArg, Let (arg00, TupleGet (tupledArg, 0), Let (arg01, TupleGet (tupledArg, 1), Call (None, Object.ExtensionMethod4, [PropertyGet (None, v, []), arg00, arg01]))))"""
+        let _ = <@@ v.ExtensionMethod5 @@> |> checkQuoteString "fqekhec21" """Lambda (arg00, Call (None, Object.ExtensionMethod5, [PropertyGet (None, v, []), arg00]))"""
 
         let v2 = 3
-        let _ = <@@ v2.ExtensionMethod0() @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod1() @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod2(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod3(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod4(3,4) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod5(3,4) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionProperty1 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionProperty2 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionProperty3 <- 4 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionIndexer1(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionIndexer2(3) <- 4 @@> |> printfn "quote = %A"
+        let _ = <@@ v2.ExtensionMethod0() @@> |> checkQuoteString "fqekhec22" """Call (None, Object.ExtensionMethod0, [Coerce (PropertyGet (None, v2, []), Object)])"""
+        let _ = <@@ v2.ExtensionMethod1() @@> |> checkQuoteString "fqekhec23" """Call (None, Object.ExtensionMethod1, [Coerce (PropertyGet (None, v2, []), Object)])"""
+        let _ = <@@ v2.ExtensionMethod2(3) @@> |> checkQuoteString "fqekhec24" """Call (None, Object.ExtensionMethod2, [Coerce (PropertyGet (None, v2, []), Object), Value (3)])"""
+        let _ = <@@ v2.ExtensionMethod3(3) @@> |> checkQuoteString "fqekhec25" """Call (None, Object.ExtensionMethod3, [Coerce (PropertyGet (None, v2, []), Object), Value (3)])"""
+        let _ = <@@ v2.ExtensionMethod4(3,4) @@> |> checkQuoteString "fqekhec26" """Call (None, Object.ExtensionMethod4, [Coerce (PropertyGet (None, v2, []), Object), Value (3), Value (4)])"""
+        let _ = <@@ v2.ExtensionMethod5(3,4) @@> |> checkQuoteString "fqekhec27" """Call (None, Object.ExtensionMethod5, [Coerce (PropertyGet (None, v2, []), Object), NewTuple (Value (3), Value (4))])"""
+        let _ = <@@ v2.ExtensionProperty1 @@> |> checkQuoteString "fqekhec28" """Call (None, Object.get_ExtensionProperty1, [Coerce (PropertyGet (None, v2, []), Object)])"""
+        let _ = <@@ v2.ExtensionProperty2 @@> |> checkQuoteString "fqekhec29" """Call (None, Object.get_ExtensionProperty2, [Coerce (PropertyGet (None, v2, []), Object)])"""
+        let _ = <@@ v2.ExtensionProperty3 <- 4 @@> |> checkQuoteString "fqekhec30" """Call (None, Object.set_ExtensionProperty3, [Coerce (PropertyGet (None, v2, []), Object), Value (4)])"""
+        let _ = <@@ v2.ExtensionIndexer1(3) @@> |> checkQuoteString "fqekhec31" """Call (None, Object.get_ExtensionIndexer1, [Coerce (PropertyGet (None, v2, []), Object), Value (3)])"""
+        let _ = <@@ v2.ExtensionIndexer2(3) <- 4 @@> |> checkQuoteString "fqekhec32" """Call (None, Object.set_ExtensionIndexer2, [Coerce (PropertyGet (None, v2, []), Object), Value (3), Value (4)])"""
 
-        let _ = <@@ v2.ExtensionMethod0 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod1 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod2 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod3 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod4 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.ExtensionMethod5 @@> |> printfn "quote = %A"
+        let _ = <@@ v2.ExtensionMethod0 @@> |> checkQuoteString "fqekhec33" """Lambda (unitVar, Call (None, Object.ExtensionMethod0, [Coerce (PropertyGet (None, v2, []), Object)]))"""
+        let _ = <@@ v2.ExtensionMethod1 @@> |> checkQuoteString "fqekhec34" """Lambda (unitVar, Call (None, Object.ExtensionMethod1, [Coerce (PropertyGet (None, v2, []), Object)]))"""
+        let _ = <@@ v2.ExtensionMethod2 @@> |> checkQuoteString "fqekhec35" """Lambda (arg00, Call (None, Object.ExtensionMethod2, [Coerce (PropertyGet (None, v2, []), Object), arg00]))"""
+        let _ = <@@ v2.ExtensionMethod3 @@> |> checkQuoteString "fqekhec36" """Lambda (arg00, Call (None, Object.ExtensionMethod3, [Coerce (PropertyGet (None, v2, []), Object), arg00]))"""
+        let _ = <@@ v2.ExtensionMethod4 @@> |> checkQuoteString "fqekhec37" """Lambda (tupledArg, Let (arg00, TupleGet (tupledArg, 0), Let (arg01, TupleGet (tupledArg, 1), Call (None, Object.ExtensionMethod4, [Coerce (PropertyGet (None, v2, []), Object), arg00, arg01]))))"""
+        let _ = <@@ v2.ExtensionMethod5 @@> |> checkQuoteString "fqekhec38" """Lambda (arg00, Call (None, Object.ExtensionMethod5, [Coerce (PropertyGet (None, v2, []), Object), arg00]))"""
 
-        let _ = <@@ v2.Int32ExtensionMethod0() @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod1() @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod2(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod3(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod4(3,4) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod5(3,4) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionProperty1 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionProperty2 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionProperty3 <- 4 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionIndexer1(3) @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionIndexer2(3) <- 4 @@> |> printfn "quote = %A"
+        let _ = <@@ v2.Int32ExtensionMethod0() @@> |> checkQuoteString "fqekhec39" """Call (None, Int32.Int32ExtensionMethod0, [PropertyGet (None, v2, [])])"""
+        let _ = <@@ v2.Int32ExtensionMethod1() @@> |> checkQuoteString "fqekhec40" """Call (None, Int32.Int32ExtensionMethod1, [PropertyGet (None, v2, [])])"""
+        let _ = <@@ v2.Int32ExtensionMethod2(3) @@> |> checkQuoteString "fqekhec41" """Call (None, Int32.Int32ExtensionMethod2, [PropertyGet (None, v2, []), Value (3)])"""
+        let _ = <@@ v2.Int32ExtensionMethod3(3) @@> |> checkQuoteString "fqekhec42" """Call (None, Int32.Int32ExtensionMethod3, [PropertyGet (None, v2, []), Value (3)])"""
+        let _ = <@@ v2.Int32ExtensionMethod4(3,4) @@> |> checkQuoteString "fqekhec43" """Call (None, Int32.Int32ExtensionMethod4, [PropertyGet (None, v2, []), Value (3), Value (4)])"""
+        let _ = <@@ v2.Int32ExtensionMethod5(3,4) @@> |> checkQuoteString "fqekhec44" """Call (None, Int32.Int32ExtensionMethod5, [PropertyGet (None, v2, []), NewTuple (Value (3), Value (4))])"""
+        let _ = <@@ v2.Int32ExtensionProperty1 @@> |> checkQuoteString "fqekhec45" """Call (None, Int32.get_Int32ExtensionProperty1, [PropertyGet (None, v2, [])])"""
+        let _ = <@@ v2.Int32ExtensionProperty2 @@> |> checkQuoteString "fqekhec46" """Call (None, Int32.get_Int32ExtensionProperty2, [PropertyGet (None, v2, [])])"""
+        let _ = <@@ v2.Int32ExtensionProperty3 <- 4 @@> |> checkQuoteString "fqekhec47" """Call (None, Int32.set_Int32ExtensionProperty3, [PropertyGet (None, v2, []), Value (4)])"""
+        let _ = <@@ v2.Int32ExtensionIndexer1(3) @@> |> checkQuoteString "fqekhec48" """Call (None, Int32.get_Int32ExtensionIndexer1, [PropertyGet (None, v2, []), Value (3)])"""
+        let _ = <@@ v2.Int32ExtensionIndexer2(3) <- 4 @@> |> checkQuoteString "fqekhec49" """Call (None, Int32.set_Int32ExtensionIndexer2, [PropertyGet (None, v2, []), Value (3), Value (4)])"""
 
-        let _ = <@@ v2.Int32ExtensionMethod0 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod1 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod2 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod3 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod4 @@> |> printfn "quote = %A"
-        let _ = <@@ v2.Int32ExtensionMethod5 @@> |> printfn "quote = %A"
+        let _ = <@@ v2.Int32ExtensionMethod0 @@> |> checkQuoteString "fqekhec50" """Lambda (unitVar, Call (None, Int32.Int32ExtensionMethod0, [PropertyGet (None, v2, [])]))"""
+        let _ = <@@ v2.Int32ExtensionMethod1 @@> |> checkQuoteString "fqekhec51" """Lambda (unitVar, Call (None, Int32.Int32ExtensionMethod1, [PropertyGet (None, v2, [])]))"""
+        let _ = <@@ v2.Int32ExtensionMethod2 @@> |> checkQuoteString "fqekhec52" """Lambda (arg00, Call (None, Int32.Int32ExtensionMethod2, [PropertyGet (None, v2, []), arg00]))"""
+        let _ = <@@ v2.Int32ExtensionMethod3 @@> |> checkQuoteString "fqekhec53" """Lambda (arg00, Call (None, Int32.Int32ExtensionMethod3, [PropertyGet (None, v2, []), arg00]))"""
+        let _ = <@@ v2.Int32ExtensionMethod4 @@> |> checkQuoteString "fqekhec54" """Lambda (tupledArg, Let (arg00, TupleGet (tupledArg, 0), Let (arg01, TupleGet (tupledArg, 1), Call (None, Int32.Int32ExtensionMethod4, [PropertyGet (None, v2, []), arg00, arg01]))))"""
+        let _ = <@@ v2.Int32ExtensionMethod5 @@> |> checkQuoteString "fqekhec55" """Lambda (arg00, Call (None, Int32.Int32ExtensionMethod5, [PropertyGet (None, v2, []), arg00]))"""
 
 
 module QuotationConstructionTests = 
@@ -2819,7 +2912,7 @@ module ReflectionOverTypeInstantiations =
 
     let notRequired opname item = 
         let msg = sprintf "The operation '%s' on item '%s' should not be called on provided type, member or parameter" opname item
-        System.Diagnostics.Debug.Assert (false, msg)
+        //System.Diagnostics.Debug.Assert (false, msg)
         raise (System.NotSupportedException msg)
 
     /// DO NOT ADJUST THIS TYPE - it is the implementation of symbol types from the F# type provider starer pack. 
@@ -3162,12 +3255,13 @@ module TestMatchBang =
 
     testSimpleMatchBang()
     
-#if LANGVERSION_PREVIEW
 module WitnessTests = 
     open FSharp.Data.UnitSystems.SI.UnitSymbols
+    open FSharp.Linq
+    open FSharp.Linq.NullableOperators
 
     test "check CallWithWitness"      
-        (<@ 1 + 1  @> 
+        (<@ 1 + 1 @> 
          |> function 
             | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) -> 
                 minfo1.Name = "op_Addition" && 
@@ -3288,287 +3382,2045 @@ module WitnessTests =
                 false
             | _ -> false)
 
-    test "check CallWithWitnesses all operators)"      
+    test "check CallWithWitnesses all operators"      
       (let tests = 
-            [ <@@ sin 1.0  @@>, true
-              <@@ sin 1.0f  @@>, true
-              <@@ sign 1.0f  @@>, true
-              <@@ sqrt 1.0f<m>  @@>, true
-              <@@ 2.0f ** 2.0f  @@>, true
-              <@@ atan2 3.0 4.0  @@>, true
-              <@@ 1.0f + 4.0f  @@>, true
-              <@@ 1.0f - 4.0f  @@>, true
-              <@@ 1.0f * 4.0f  @@>, true
-              <@@ 1.0M * 4.0M  @@>, true
-              <@@ 1.0f / 4.0f  @@>, true
-              <@@ 1 % 4  @@>, true
-              <@@ -(4.0M)  @@>, true
-
-              <@@ 1y <<< 3  @@>, true
-              <@@ 1uy <<< 3  @@>, true
-              <@@ 1s <<< 3  @@>, true
-              <@@ 1us <<< 3  @@>, true
-              <@@ 1 <<< 3  @@>, true
-              <@@ 1u <<< 3  @@>, true
-              <@@ 1L <<< 3  @@>, true
-              <@@ 1UL <<< 3  @@>, true
-              <@@ LanguagePrimitives.GenericOne<nativeint> <<< 3  @@>, false
-              <@@ LanguagePrimitives.GenericOne<unativeint> <<< 3  @@>, false
-
-              <@@ 1y >>> 3  @@>, true
-              <@@ 1uy >>> 3  @@>, true
-              <@@ 1s >>> 3  @@>, true
-              <@@ 1us >>> 3  @@>, true
-              <@@ 1 >>> 3  @@>, true
-              <@@ 1u >>> 3  @@>, true
-              <@@ 1L >>> 3  @@>, true
-              <@@ 1UL >>> 3  @@>, true
-              <@@ LanguagePrimitives.GenericOne<nativeint> >>> 3  @@>, false
-              <@@ LanguagePrimitives.GenericOne<unativeint> >>> 3  @@>, false
+            [|<@@ sin 1.0 @@>, box 0x3FEAED548F090CEELF // Around 0.841470984807897
+              <@@ sin 1.0f @@>, box 0x3F576AA4lf // = 0.841471f
+              <@@ sign 1.0f @@>, box 1
+              <@@ sqrt 1.0f<m> @@>, box 1f
+              <@@ atan2 3.0 4.0 @@>, box 0x3FE4978FA3269EE1LF // Around 0.643501108793284
+              <@@ atan2 3.0<m> 4.0<m> @@>, box 0x3FE4978FA3269EE1LF // Around 0.643501108793284
               
-              <@@ 1y &&& 3y  @@>, true
-              <@@ 1uy &&& 3uy  @@>, true
-              <@@ 1s &&& 3s  @@>, true
-              <@@ 1us &&& 3us  @@>, true
-              <@@ 1 &&& 3  @@>, true
-              <@@ 1u &&& 3u  @@>, true
-              <@@ 1L &&& 3L  @@>, true
-              <@@ 1UL &&& 3UL  @@>, true
-              <@@ LanguagePrimitives.GenericOne<nativeint> &&& LanguagePrimitives.GenericOne<nativeint>  @@>, false
-              <@@ LanguagePrimitives.GenericOne<unativeint> &&& LanguagePrimitives.GenericOne<unativeint>  @@>, false
+              <@@ 1y + 4y @@>, box 5y
+              <@@ 1uy + 4uy @@>, box 5uy
+              <@@ 1s + 4s @@>, box 5s
+              <@@ 1us + 4us @@>, box 5us
+              <@@ 1 + 4 @@>, box 5
+              <@@ 1u + 4u @@>, box 5u
+              <@@ 1L + 4L @@>, box 5L
+              <@@ 1uL + 4uL @@>, box 5uL
+              <@@ 1.0f + 4.0f @@>, box 5f
+              <@@ 1.0 + 4.0 @@>, box 5.
+              <@@ 1m + 4m @@>, box 5m
+              <@@ 1m<m> + 4m<m> @@>, box 5m
+              <@@ 1I + 4I @@>, box 5I
+              <@@ '1' + '\004' @@>, box '5'
+              <@@ "abc" + "def" @@>, box "abcdef"
+              <@@ LanguagePrimitives.GenericOne<nativeint> + LanguagePrimitives.GenericOne<nativeint> @@>, box 2n
+              <@@ LanguagePrimitives.GenericOne<unativeint> + LanguagePrimitives.GenericOne<unativeint> @@>, box 2un
+              <@@ Checked.(+) 1y 4y @@>, box 5y
+              <@@ Checked.(+) 1uy 4uy @@>, box 5uy
+              <@@ Checked.(+) 1s 4s @@>, box 5s
+              <@@ Checked.(+) 1us 4us @@>, box 5us
+              <@@ Checked.(+) 1 4 @@>, box 5
+              <@@ Checked.(+) 1u 4u @@>, box 5u
+              <@@ Checked.(+) 1L 4L @@>, box 5L
+              <@@ Checked.(+) 1uL 4uL @@>, box 5uL
+              <@@ Checked.(+) 1.0f 4.0f @@>, box 5f
+              <@@ Checked.(+) 1.0 4.0 @@>, box 5.
+              <@@ Checked.(+) 1m 4m @@>, box 5m
+              <@@ Checked.(+) 1m<m> 4m<m> @@>, box 5m
+              <@@ Checked.(+) 1I 4I @@>, box 5I
+              <@@ Checked.(+) '1' '\004' @@>, box '5'
+              <@@ Checked.(+) "abc" "def" @@>, box "abcdef"
+              <@@ Checked.(+) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, box 2n
+              <@@ Checked.(+) LanguagePrimitives.GenericOne<unativeint> LanguagePrimitives.GenericOne<unativeint> @@>, box 2un
 
-              <@@ 1y ||| 3y  @@>, true
-              <@@ 1uy ||| 3uy  @@>, true
-              <@@ 1s ||| 3s  @@>, true
-              <@@ 1us ||| 3us  @@>, true
-              <@@ 1 ||| 3  @@>, true
-              <@@ 1u ||| 3u  @@>, true
-              <@@ 1L ||| 3L  @@>, true
-              <@@ 1UL ||| 3UL  @@>, true
-              <@@ LanguagePrimitives.GenericOne<nativeint> ||| LanguagePrimitives.GenericOne<nativeint>  @@>, false
-              <@@ LanguagePrimitives.GenericOne<unativeint> ||| LanguagePrimitives.GenericOne<unativeint>  @@>, false
+              <@@ 4y - 1y @@>, box 3y
+              <@@ 4uy - 1uy @@>, box 3uy
+              <@@ 4s - 1s @@>, box 3s
+              <@@ 4us - 1us @@>, box 3us
+              <@@ 4 - 1 @@>, box 3
+              <@@ 4u - 1u @@>, box 3u
+              <@@ 4L - 1L @@>, box 3L
+              <@@ 4uL - 1uL @@>, box 3uL
+              <@@ 4.0f - 1.0f @@>, box 3f
+              <@@ 4.0 - 1.0 @@>, box 3.
+              <@@ 4m - 1m @@>, box 3m
+              <@@ 4m<m> - 1m<m> @@>, box 3m
+              <@@ 4I - 1I @@>, box 3I
+              <@@ '4' - '\001' @@>, box '3'
+              <@@ LanguagePrimitives.GenericOne<nativeint> - LanguagePrimitives.GenericOne<nativeint> @@>, box 0n
+              <@@ LanguagePrimitives.GenericOne<unativeint> - LanguagePrimitives.GenericOne<unativeint> @@>, box 0un
+              <@@ Checked.(-) 4y 1y @@>, box 3y
+              <@@ Checked.(-) 4uy 1uy @@>, box 3uy
+              <@@ Checked.(-) 4s 1s @@>, box 3s
+              <@@ Checked.(-) 4us 1us @@>, box 3us
+              <@@ Checked.(-) 4 1 @@>, box 3
+              <@@ Checked.(-) 4u 1u @@>, box 3u
+              <@@ Checked.(-) 4L 1L @@>, box 3L
+              <@@ Checked.(-) 4uL 1uL @@>, box 3uL
+              <@@ Checked.(-) 4.0f 1.0f @@>, box 3f
+              <@@ Checked.(-) 4.0 1.0 @@>, box 3.
+              <@@ Checked.(-) 4m 1m @@>, box 3m
+              <@@ Checked.(-) 4m<m> 1m<m> @@>, box 3m
+              <@@ Checked.(-) 4I 1I @@>, box 3I
+              <@@ Checked.(-) '4' '\001' @@>, box '3'
+              <@@ Checked.(-) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, box 0n
+              <@@ Checked.(-) LanguagePrimitives.GenericOne<unativeint> LanguagePrimitives.GenericOne<unativeint> @@>, box 0un
 
-              <@@ 1y ^^^ 3y  @@>, true
-              <@@ 1uy ^^^ 3uy  @@>, true
-              <@@ 1s ^^^ 3s  @@>, true
-              <@@ 1us ^^^ 3us  @@>, true
-              <@@ 1 ^^^ 3  @@>, true
-              <@@ 1u ^^^ 3u  @@>, true
-              <@@ 1L ^^^ 3L  @@>, true
-              <@@ 1UL ^^^ 3UL  @@>, true
-              <@@ LanguagePrimitives.GenericOne<nativeint> ^^^ LanguagePrimitives.GenericOne<nativeint>  @@>, false
-              <@@ LanguagePrimitives.GenericOne<unativeint> ^^^ LanguagePrimitives.GenericOne<unativeint>  @@>, false
+              <@@ 2y * 4y @@>, box 8y
+              <@@ 2uy * 4uy @@>, box 8uy
+              <@@ 2s * 4s @@>, box 8s
+              <@@ 2us * 4us @@>, box 8us
+              <@@ 2 * 4 @@>, box 8
+              <@@ 2u * 4u @@>, box 8u
+              <@@ 2L * 4L @@>, box 8L
+              <@@ 2uL * 4uL @@>, box 8uL
+              <@@ 2.0f * 4.0f @@>, box 8f
+              <@@ 2.0 * 4.0 @@>, box 8.
+              <@@ 2m * 4m @@>, box 8m
+              <@@ 2m<m^2> * 4m<m> @@>, box 8m
+              <@@ 2I * 4I @@>, box 8I
+              <@@ LanguagePrimitives.GenericOne<nativeint> * LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
+              <@@ LanguagePrimitives.GenericOne<unativeint> * LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
+              <@@ Checked.(*) 2y 4y @@>, box 8y
+              <@@ Checked.(*) 2uy 4uy @@>, box 8uy
+              <@@ Checked.(*) 2s 4s @@>, box 8s
+              <@@ Checked.(*) 2us 4us @@>, box 8us
+              <@@ Checked.(*) 2 4 @@>, box 8
+              <@@ Checked.(*) 2u 4u @@>, box 8u
+              <@@ Checked.(*) 2L 4L @@>, box 8L
+              <@@ Checked.(*) 2uL 4uL @@>, box 8uL
+              <@@ Checked.(*) 2.0f 4.0f @@>, box 8f
+              <@@ Checked.(*) 2.0 4.0 @@>, box 8.
+              <@@ Checked.(*) 2m 4m @@>, box 8m
+              <@@ Checked.(*) 2m<m^2> 4m<m> @@>, box 8m
+              <@@ Checked.(*) 2I 4I @@>, box 8I
+              <@@ Checked.(*) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
+              <@@ Checked.(*) LanguagePrimitives.GenericOne<unativeint> LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
 
-              <@@ ~~~3y  @@>, true
-              <@@ ~~~3uy  @@>, true
-              <@@ ~~~3s  @@>, true
-              <@@ ~~~3us  @@>, true
-              <@@ ~~~3  @@>, true
-              <@@ ~~~3u  @@>, true
-              <@@ ~~~3L  @@>, true
-              <@@ ~~~3UL  @@>, true
-              <@@ ~~~LanguagePrimitives.GenericOne<nativeint>  @@>, false
-              <@@ ~~~LanguagePrimitives.GenericOne<unativeint>  @@>, false
+              <@@ 6y / 3y @@>, box 2y
+              <@@ 6uy / 3uy @@>, box 2uy
+              <@@ 6s / 3s @@>, box 2s
+              <@@ 6us / 3us @@>, box 2us
+              <@@ 6 / 3 @@>, box 2
+              <@@ 6u / 3u @@>, box 2u
+              <@@ 6L / 3L @@>, box 2L
+              <@@ 6uL / 3uL @@>, box 2uL
+              <@@ 6.0f / 3.0f @@>, box 2f
+              <@@ 6.0 / 3.0 @@>, box 2.
+              <@@ 6m / 3m @@>, box 2m
+              <@@ 6m<m> / 3m</m> @@>, box 2m
+              <@@ 6I / 3I @@>, box 2I
+              <@@ LanguagePrimitives.GenericOne<nativeint> / LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
+              <@@ LanguagePrimitives.GenericOne<unativeint> / LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
 
-              <@@ byte 3uy  @@>, true
-              <@@ byte 3y  @@>, true
-              <@@ byte 3s  @@>, true
-              <@@ byte 3us  @@>, true
-              <@@ byte 3  @@>, true
-              <@@ byte 3u  @@>, true
-              <@@ byte 3L  @@>, true
-              <@@ byte 3UL  @@>, true
-              <@@ byte 3.0f  @@>, true
-              <@@ byte 3.0  @@>, true
-              <@@ byte LanguagePrimitives.GenericOne<nativeint>  @@>, false
-              <@@ byte LanguagePrimitives.GenericOne<unativeint>  @@>, false
-              <@@ byte 3.0M  @@>, true
-              <@@ byte "3"  @@>, false
+              <@@ 9y % 4y @@>, box 1y
+              <@@ 9uy % 4uy @@>, box 1uy
+              <@@ 9s % 4s @@>, box 1s
+              <@@ 9us % 4us @@>, box 1us
+              <@@ 9 % 4 @@>, box 1
+              <@@ 9u % 4u @@>, box 1u
+              <@@ 9L % 4L @@>, box 1L
+              <@@ 9uL % 4uL @@>, box 1uL
+              <@@ 9.0f % 4.0f @@>, box 1f
+              <@@ 9.0 % 4.0 @@>, box 1.
+              <@@ 9m % 4m @@>, box 1m
+              <@@ 9m<m> % 4m<m> @@>, box 1m
+              <@@ 9I % 4I @@>, box 1I
+              <@@ LanguagePrimitives.GenericOne<nativeint> % LanguagePrimitives.GenericOne<nativeint> @@>, box 0n
+              <@@ LanguagePrimitives.GenericOne<unativeint> % LanguagePrimitives.GenericOne<unativeint> @@>, box 0un
 
-              <@@ sbyte 3uy  @@>, true
-              <@@ sbyte 3y  @@>, true
-              <@@ sbyte 3s  @@>, true
-              <@@ sbyte 3us  @@>, true
-              <@@ sbyte 3  @@>, true
-              <@@ sbyte 3u  @@>, true
-              <@@ sbyte 3L  @@>, true
-              <@@ sbyte 3UL  @@>, true
-              <@@ sbyte 3.0f  @@>, true
-              <@@ sbyte 3.0  @@>, true
-              <@@ sbyte LanguagePrimitives.GenericOne<nativeint>  @@>, false
-              <@@ sbyte LanguagePrimitives.GenericOne<unativeint>  @@>, false
-              <@@ sbyte 3.0M  @@>, true
-              <@@ sbyte "3"  @@>, false
+              <@@ +(1y) @@>, box 1y
+              <@@ +(1uy) @@>, box 1uy
+              <@@ +(1s) @@>, box 1s
+              <@@ +(1us) @@>, box 1us
+              <@@ +(1) @@>, box 1
+              <@@ +(1u) @@>, box 1u
+              <@@ +(1L) @@>, box 1L
+              <@@ +(1uL) @@>, box 1uL
+              <@@ +(1f) @@>, box 1f
+              <@@ +(1.) @@>, box 1.
+              <@@ +(1m) @@>, box 1m
+              <@@ +(1m<m>) @@>, box 1m
+              <@@ +(1I) @@>, box 1I
+              <@@ +(LanguagePrimitives.GenericOne<nativeint>) @@>, box 1n
+              <@@ +(LanguagePrimitives.GenericOne<unativeint>) @@>, box 1un
 
-              <@@ int16 3uy  @@>, true
-              <@@ int16 3y  @@>, true
-              <@@ int16 3s  @@>, true
-              <@@ int16 3us  @@>, true
-              <@@ int16 3  @@>, true
-              <@@ int16 3u  @@>, true
-              <@@ int16 3L  @@>, true
-              <@@ int16 3UL  @@>, true
-              <@@ int16 3.0f  @@>, true
-              <@@ int16 3.0  @@>, true
-              <@@ int16 LanguagePrimitives.GenericOne<nativeint>  @@>, false
-              <@@ int16 LanguagePrimitives.GenericOne<unativeint>  @@>, false
-              <@@ int16 3.0M  @@>, true
-              <@@ int16 "3"  @@>, false
+              <@@ -(1y) @@>, box -1y
+              <@@ -(1s) @@>, box -1s
+              <@@ -(1) @@>, box -1
+              <@@ -(1L) @@>, box -1L
+              <@@ -(1f) @@>, box -1f
+              <@@ -(1.) @@>, box -1.
+              <@@ -(1m) @@>, box -1m
+              <@@ -(1m<m>) @@>, box -1m
+              <@@ -(1I) @@>, box -1I
+              <@@ -(LanguagePrimitives.GenericOne<nativeint>) @@>, box -1n
+              <@@ Checked.(~-) (1y) @@>, box -1y
+              <@@ Checked.(~-) (1s) @@>, box -1s
+              <@@ Checked.(~-) (1) @@>, box -1
+              <@@ Checked.(~-) (1L) @@>, box -1L
+              <@@ Checked.(~-) (1f) @@>, box -1f
+              <@@ Checked.(~-) (1.) @@>, box -1.
+              <@@ Checked.(~-) (1m) @@>, box -1m
+              <@@ Checked.(~-) (1m<m>) @@>, box -1m
+              <@@ Checked.(~-) (1I) @@>, box -1I
+              <@@ Checked.(~-) (LanguagePrimitives.GenericOne<nativeint>) @@>, box -1n
 
-              <@@ uint16 3uy  @@>, true
-              <@@ uint16 3y  @@>, true
-              <@@ uint16 3s  @@>, true
-              <@@ uint16 3us  @@>, true
-              <@@ uint16 3  @@>, true
-              <@@ uint16 3u  @@>, true
-              <@@ uint16 3L  @@>, true
-              <@@ uint16 3UL  @@>, true
-              <@@ uint16 3.0f  @@>, true
-              <@@ uint16 3.0  @@>, true
-              <@@ uint16 LanguagePrimitives.GenericOne<nativeint>  @@>, false
-              <@@ uint16 LanguagePrimitives.GenericOne<unativeint>  @@>, false
-              <@@ uint16 3.0M  @@>, true
-              <@@ uint16 "3"  @@>, false
+              <@@ 4f ** 3f @@>, box 64f
+              <@@ 4. ** 3. @@>, box 64.
+              <@@ 4I ** 3 @@>, box 64I
 
-              <@@ int32 3uy  @@>, true
-              <@@ int32 3y  @@>, true
-              <@@ int32 3s  @@>, true
-              <@@ int32 3us  @@>, true
-              <@@ int32 3  @@>, true
-              <@@ int32 3u  @@>, true
-              <@@ int32 3L  @@>, true
-              <@@ int32 3UL  @@>, true
-              <@@ int32 3.0f  @@>, true
-              <@@ int32 3.0  @@>, true
-              <@@ int32 LanguagePrimitives.GenericOne<nativeint>  @@>, false
-              <@@ int32 LanguagePrimitives.GenericOne<unativeint>  @@>, false
-              <@@ int32 3.0M  @@>, true
-              <@@ int32 "3"  @@>, false
+              <@@ 1y <<< 3 @@>, box 8y
+              <@@ 1uy <<< 3 @@>, box 8uy
+              <@@ 1s <<< 3 @@>, box 8s
+              <@@ 1us <<< 3 @@>, box 8us
+              <@@ 1 <<< 3 @@>, box 8
+              <@@ 1u <<< 3 @@>, box 8u
+              <@@ 1L <<< 3 @@>, box 8L
+              <@@ 1UL <<< 3 @@>, box 8UL
+              <@@ 1I <<< 3 @@>, box 8I
+              <@@ LanguagePrimitives.GenericOne<nativeint> <<< 3 @@>, box 8n
+              <@@ LanguagePrimitives.GenericOne<unativeint> <<< 3 @@>, box 8un
 
-              <@@ uint32 3uy  @@>, true
-              <@@ uint32 3y  @@>, true
-              <@@ uint32 3s  @@>, true
-              <@@ uint32 3us  @@>, true
-              <@@ uint32 3  @@>, true
-              <@@ uint32 3u  @@>, true
-              <@@ uint32 3L  @@>, true
-              <@@ uint32 3UL  @@>, true
-              <@@ uint32 3.0f  @@>, true
-              <@@ uint32 3.0  @@>, true
-              <@@ uint32 LanguagePrimitives.GenericOne<nativeint>  @@>, false
-              <@@ uint32 LanguagePrimitives.GenericOne<unativeint>  @@>, false
-              <@@ uint32 3.0M  @@>, true
-              <@@ uint32 "3"  @@>, false
-
-              <@@ int64 3uy  @@>, true
-              <@@ int64 3y  @@>, true
-              <@@ int64 3s  @@>, true
-              <@@ int64 3us  @@>, true
-              <@@ int64 3  @@>, true
-              <@@ int64 3u  @@>, true
-              <@@ int64 3L  @@>, true
-              <@@ int64 3UL  @@>, true
-              <@@ int64 3.0f  @@>, true
-              <@@ int64 3.0  @@>, true
-              <@@ int64 LanguagePrimitives.GenericOne<nativeint>  @@>, false
-              <@@ int64 LanguagePrimitives.GenericOne<unativeint>  @@>, false
-              <@@ int64 3.0M  @@>, true
-              <@@ int64 "3"  @@>, false
+              <@@ 1y >>> 3 @@>, box 0y
+              <@@ 1uy >>> 3 @@>, box 0uy
+              <@@ 1s >>> 3 @@>, box 0s
+              <@@ 1us >>> 3 @@>, box 0us
+              <@@ 1 >>> 3 @@>, box 0
+              <@@ 1u >>> 3 @@>, box 0u
+              <@@ 1L >>> 3 @@>, box 0L
+              <@@ 1UL >>> 3 @@>, box 0UL
+              <@@ 1I >>> 3 @@>, box 0I
+              <@@ LanguagePrimitives.GenericOne<nativeint> >>> 3 @@>, box 0n
+              <@@ LanguagePrimitives.GenericOne<unativeint> >>> 3 @@>, box 0un
               
-              <@@ uint64 3uy  @@>, true
-              <@@ uint64 3y  @@>, true
-              <@@ uint64 3s  @@>, true
-              <@@ uint64 3us  @@>, true
-              <@@ uint64 3  @@>, true
-              <@@ uint64 3u  @@>, true
-              <@@ uint64 3L  @@>, true
-              <@@ uint64 3UL  @@>, true
-              <@@ uint64 3.0f  @@>, true
-              <@@ uint64 3.0  @@>, true
-              <@@ uint64 LanguagePrimitives.GenericOne<nativeint>  @@>, false
-              <@@ uint64 LanguagePrimitives.GenericOne<unativeint>  @@>, false
-              <@@ uint64 3.0M  @@>, true
-              <@@ uint64 "3"  @@>, false
+              <@@ 1y &&& 3y @@>, box 1y
+              <@@ 1uy &&& 3uy @@>, box 1uy
+              <@@ 1s &&& 3s @@>, box 1s
+              <@@ 1us &&& 3us @@>, box 1us
+              <@@ 1 &&& 3 @@>, box 1
+              <@@ 1u &&& 3u @@>, box 1u
+              <@@ 1L &&& 3L @@>, box 1L
+              <@@ 1UL &&& 3UL @@>, box 1UL
+              <@@ 1I &&& 3I @@>, box 1I
+              <@@ LanguagePrimitives.GenericOne<nativeint> &&& LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
+              <@@ LanguagePrimitives.GenericOne<unativeint> &&& LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
 
-              <@@ nativeint 3uy  @@>, true
-              <@@ nativeint 3y  @@>, true
-              <@@ nativeint 3s  @@>, true
-              <@@ nativeint 3us  @@>, true
-              <@@ nativeint 3  @@>, true
-              <@@ nativeint 3u  @@>, true
-              <@@ nativeint 3L  @@>, true
-              <@@ nativeint 3UL  @@>, true
-              <@@ nativeint 3.0f  @@>, true
-              <@@ nativeint 3.0  @@>, true
-              <@@ nativeint LanguagePrimitives.GenericOne<nativeint>  @@>, false
-              <@@ nativeint LanguagePrimitives.GenericOne<unativeint>  @@>, false
-              //<@@ nativeint 3.0M  @@>, false
-              //<@@ nativeint "3"  @@>, false
+              <@@ 1y ||| 3y @@>, box 3y
+              <@@ 1uy ||| 3uy @@>, box 3uy
+              <@@ 1s ||| 3s @@>, box 3s
+              <@@ 1us ||| 3us @@>, box 3us
+              <@@ 1 ||| 3 @@>, box 3
+              <@@ 1u ||| 3u @@>, box 3u
+              <@@ 1L ||| 3L @@>, box 3L
+              <@@ 1UL ||| 3UL @@>, box 3UL
+              <@@ 1I ||| 3I @@>, box 3I
+              <@@ LanguagePrimitives.GenericOne<nativeint> ||| LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
+              <@@ LanguagePrimitives.GenericOne<unativeint> ||| LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
 
-              <@@ unativeint 3uy  @@>, true
-              <@@ unativeint 3y  @@>, true
-              <@@ unativeint 3s  @@>, true
-              <@@ unativeint 3us  @@>, true
-              <@@ unativeint 3  @@>, true
-              <@@ unativeint 3u  @@>, true
-              <@@ unativeint 3L  @@>, true
-              <@@ unativeint 3UL  @@>, true
-              <@@ unativeint 3.0f  @@>, true
-              <@@ unativeint 3.0  @@>, true
-              <@@ unativeint LanguagePrimitives.GenericOne<nativeint>  @@>, false
-              <@@ unativeint LanguagePrimitives.GenericOne<unativeint>  @@>, false
-              //<@@ unativeint 3.0M  @@>, true
-              //<@@ unativeint "3"  @@>, true
+              <@@ 1y ^^^ 3y @@>, box 2y
+              <@@ 1uy ^^^ 3uy @@>, box 2uy
+              <@@ 1s ^^^ 3s @@>, box 2s
+              <@@ 1us ^^^ 3us @@>, box 2us
+              <@@ 1 ^^^ 3 @@>, box 2
+              <@@ 1u ^^^ 3u @@>, box 2u
+              <@@ 1L ^^^ 3L @@>, box 2L
+              <@@ 1UL ^^^ 3UL @@>, box 2UL
+              <@@ 1I ^^^ 3I @@>, box 2I
+              <@@ LanguagePrimitives.GenericOne<nativeint> ^^^ LanguagePrimitives.GenericOne<nativeint> @@>, box 0n
+              <@@ LanguagePrimitives.GenericOne<unativeint> ^^^ LanguagePrimitives.GenericOne<unativeint> @@>, box 0un
 
-              <@@ LanguagePrimitives.GenericZero<float>  @@>, true
-              <@@ LanguagePrimitives.GenericZero<float32>  @@>, true
-              <@@ LanguagePrimitives.GenericZero<int>  @@>, true
-              <@@ LanguagePrimitives.GenericZero<int64>  @@>, true
-              <@@ LanguagePrimitives.GenericZero<uint64>  @@>, true
-              <@@ LanguagePrimitives.GenericZero<nativeint>  @@>, true
-              <@@ LanguagePrimitives.GenericOne<float>  @@>, true
-              <@@ LanguagePrimitives.GenericOne<float32>  @@>, true
-              <@@ LanguagePrimitives.GenericOne<int>  @@>, true
-              <@@ LanguagePrimitives.GenericOne<int64>  @@>, true
-              <@@ LanguagePrimitives.GenericOne<uint64>  @@>, true
-              <@@ LanguagePrimitives.GenericOne<nativeint>  @@>, true
-              <@@ List.sum [ 1; 2 ]  @@>, true
-              <@@ List.sum [ 1.0f; 2.0f ]  @@>, true
-              <@@ List.sum [ 1.0; 2.0 ]  @@>, true
-              <@@ List.sum [ 1.0M; 2.0M ]  @@>, true
-              <@@ List.average [ 1.0; 2.0 ]  @@>, true
-              <@@ List.average [ 1.0f; 2.0f ]  @@>, true
-              <@@ List.average [ 1.0M; 2.0M ]  @@>, true 
-            ]
+              <@@ ~~~3y @@>, box -4y
+              <@@ ~~~3uy @@>, box 252uy
+              <@@ ~~~3s @@>, box -4s
+              <@@ ~~~3us @@>, box 65532us
+              <@@ ~~~3 @@>, box -4
+              <@@ ~~~3u @@>, box 4294967292u
+              <@@ ~~~3L @@>, box -4L
+              <@@ ~~~3UL @@>, box 18446744073709551612UL
+              <@@ ~~~LanguagePrimitives.GenericOne<nativeint> @@>, box ~~~1n
+              <@@ ~~~LanguagePrimitives.GenericOne<unativeint> @@>, box ~~~1un
 
-       tests |> List.forall (fun (test, canEval) -> 
-           if canEval then 
-               printfn "--> checking we can evaluate %A" test
-               FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation test |> ignore
-               printfn "<-- evaluated!"
-           else
-               printfn "skipping evaluation of %A because LinqExpressionConverter can't handle it" test
-           printfn "checking %A" test
+              <@@ byte 3uy @@>, box 3uy
+              <@@ byte 3y @@>, box 3uy
+              <@@ byte 3s @@>, box 3uy
+              <@@ byte 3us @@>, box 3uy
+              <@@ byte 3 @@>, box 3uy
+              <@@ byte 3u @@>, box 3uy
+              <@@ byte 3L @@>, box 3uy
+              <@@ byte 3UL @@>, box 3uy
+              <@@ byte '\003' @@>, box 3uy
+              <@@ byte 3.0f @@>, box 3uy
+              <@@ byte 3.0 @@>, box 3uy
+              <@@ byte 3.0<m> @@>, box 3uy
+              <@@ byte 3I @@>, box 3uy
+              <@@ byte LanguagePrimitives.GenericOne<nativeint> @@>, box 1uy
+              <@@ byte LanguagePrimitives.GenericOne<unativeint> @@>, box 1uy
+              <@@ byte 3.0M @@>, box 3uy
+              <@@ byte "3" @@>, box 3uy
+              <@@ uint8 3uy @@>, box 3uy
+              <@@ uint8 3y @@>, box 3uy
+              <@@ uint8 3s @@>, box 3uy
+              <@@ uint8 3us @@>, box 3uy
+              <@@ uint8 3 @@>, box 3uy
+              <@@ uint8 3u @@>, box 3uy
+              <@@ uint8 3L @@>, box 3uy
+              <@@ uint8 3UL @@>, box 3uy
+              <@@ uint8 '\003' @@>, box 3uy
+              <@@ uint8 3.0f @@>, box 3uy
+              <@@ uint8 3.0 @@>, box 3uy
+              <@@ uint8 3.0<m> @@>, box 3uy
+              <@@ uint8 3I @@>, box 3uy
+              <@@ uint8 LanguagePrimitives.GenericOne<nativeint> @@>, box 1uy
+              <@@ uint8 LanguagePrimitives.GenericOne<unativeint> @@>, box 1uy
+              <@@ uint8 3.0M @@>, box 3uy
+              <@@ uint8 "3" @@>, box 3uy
+              <@@ Checked.byte 3uy @@>, box 3uy
+              <@@ Checked.byte 3y @@>, box 3uy
+              <@@ Checked.byte 3s @@>, box 3uy
+              <@@ Checked.byte 3us @@>, box 3uy
+              <@@ Checked.byte 3 @@>, box 3uy
+              <@@ Checked.byte 3u @@>, box 3uy
+              <@@ Checked.byte 3L @@>, box 3uy
+              <@@ Checked.byte 3UL @@>, box 3uy
+              <@@ Checked.byte '\003' @@>, box 3uy
+              <@@ Checked.byte 3.0f @@>, box 3uy
+              <@@ Checked.byte 3.0 @@>, box 3uy
+              <@@ Checked.byte 3.0<m> @@>, box 3uy
+              <@@ Checked.byte 3I @@>, box 3uy
+              <@@ Checked.byte LanguagePrimitives.GenericOne<nativeint> @@>, box 1uy
+              <@@ Checked.byte LanguagePrimitives.GenericOne<unativeint> @@>, box 1uy
+              <@@ Checked.byte 3.0M @@>, box 3uy
+              <@@ Checked.byte "3" @@>, box 3uy
+              <@@ Checked.uint8 3uy @@>, box 3uy
+              <@@ Checked.uint8 3y @@>, box 3uy
+              <@@ Checked.uint8 3s @@>, box 3uy
+              <@@ Checked.uint8 3us @@>, box 3uy
+              <@@ Checked.uint8 3 @@>, box 3uy
+              <@@ Checked.uint8 3u @@>, box 3uy
+              <@@ Checked.uint8 3L @@>, box 3uy
+              <@@ Checked.uint8 3UL @@>, box 3uy
+              <@@ Checked.uint8 '\003' @@>, box 3uy
+              <@@ Checked.uint8 3.0f @@>, box 3uy
+              <@@ Checked.uint8 3.0 @@>, box 3uy
+              <@@ Checked.uint8 3.0<m> @@>, box 3uy
+              <@@ Checked.uint8 3I @@>, box 3uy
+              <@@ Checked.uint8 LanguagePrimitives.GenericOne<nativeint> @@>, box 1uy
+              <@@ Checked.uint8 LanguagePrimitives.GenericOne<unativeint> @@>, box 1uy
+              <@@ Checked.uint8 3.0M @@>, box 3uy
+              <@@ Checked.uint8 "3" @@>, box 3uy
+
+              <@@ sbyte 3uy @@>, box 3y
+              <@@ sbyte 3y @@>, box 3y
+              <@@ sbyte 3s @@>, box 3y
+              <@@ sbyte 3us @@>, box 3y
+              <@@ sbyte 3 @@>, box 3y
+              <@@ sbyte 3u @@>, box 3y
+              <@@ sbyte 3L @@>, box 3y
+              <@@ sbyte 3UL @@>, box 3y
+              <@@ sbyte '\003' @@>, box 3y
+              <@@ sbyte 3.0f @@>, box 3y
+              <@@ sbyte 3.0 @@>, box 3y
+              <@@ sbyte 3.0<m> @@>, box 3y
+              <@@ sbyte 3I @@>, box 3y
+              <@@ sbyte LanguagePrimitives.GenericOne<nativeint> @@>, box 1y
+              <@@ sbyte LanguagePrimitives.GenericOne<unativeint> @@>, box 1y
+              <@@ sbyte 3.0M @@>, box 3y
+              <@@ sbyte "3" @@>, box 3y
+              <@@ int8 3uy @@>, box 3y
+              <@@ int8 3y @@>, box 3y
+              <@@ int8 3s @@>, box 3y
+              <@@ int8 3us @@>, box 3y
+              <@@ int8 3 @@>, box 3y
+              <@@ int8 3u @@>, box 3y
+              <@@ int8 3L @@>, box 3y
+              <@@ int8 3UL @@>, box 3y
+              <@@ int8 '\003' @@>, box 3y
+              <@@ int8 3.0f @@>, box 3y
+              <@@ int8 3.0 @@>, box 3y
+              <@@ int8 3.0<m> @@>, box 3y
+              <@@ int8 3I @@>, box 3y
+              <@@ int8 LanguagePrimitives.GenericOne<nativeint> @@>, box 1y
+              <@@ int8 LanguagePrimitives.GenericOne<unativeint> @@>, box 1y
+              <@@ int8 3.0M @@>, box 3y
+              <@@ int8 "3" @@>, box 3y
+              <@@ Checked.sbyte 3uy @@>, box 3y
+              <@@ Checked.sbyte 3y @@>, box 3y
+              <@@ Checked.sbyte 3s @@>, box 3y
+              <@@ Checked.sbyte 3us @@>, box 3y
+              <@@ Checked.sbyte 3 @@>, box 3y
+              <@@ Checked.sbyte 3u @@>, box 3y
+              <@@ Checked.sbyte 3L @@>, box 3y
+              <@@ Checked.sbyte 3UL @@>, box 3y
+              <@@ Checked.sbyte '\003' @@>, box 3y
+              <@@ Checked.sbyte 3.0f @@>, box 3y
+              <@@ Checked.sbyte 3.0 @@>, box 3y
+              <@@ Checked.sbyte 3.0<m> @@>, box 3y
+              <@@ Checked.sbyte 3I @@>, box 3y
+              <@@ Checked.sbyte LanguagePrimitives.GenericOne<nativeint> @@>, box 1y
+              <@@ Checked.sbyte LanguagePrimitives.GenericOne<unativeint> @@>, box 1y
+              <@@ Checked.sbyte 3.0M @@>, box 3y
+              <@@ Checked.sbyte "3" @@>, box 3y
+              <@@ Checked.int8 3uy @@>, box 3y
+              <@@ Checked.int8 3y @@>, box 3y
+              <@@ Checked.int8 3s @@>, box 3y
+              <@@ Checked.int8 3us @@>, box 3y
+              <@@ Checked.int8 3 @@>, box 3y
+              <@@ Checked.int8 3u @@>, box 3y
+              <@@ Checked.int8 3L @@>, box 3y
+              <@@ Checked.int8 3UL @@>, box 3y
+              <@@ Checked.int8 '\003' @@>, box 3y
+              <@@ Checked.int8 3.0f @@>, box 3y
+              <@@ Checked.int8 3.0 @@>, box 3y
+              <@@ Checked.int8 3.0<m> @@>, box 3y
+              <@@ Checked.int8 3I @@>, box 3y
+              <@@ Checked.int8 LanguagePrimitives.GenericOne<nativeint> @@>, box 1y
+              <@@ Checked.int8 LanguagePrimitives.GenericOne<unativeint> @@>, box 1y
+              <@@ Checked.int8 3.0M @@>, box 3y
+              <@@ Checked.int8 "3" @@>, box 3y
+
+              <@@ int16 3uy @@>, box 3s
+              <@@ int16 3y @@>, box 3s
+              <@@ int16 3s @@>, box 3s
+              <@@ int16 3us @@>, box 3s
+              <@@ int16 3 @@>, box 3s
+              <@@ int16 3u @@>, box 3s
+              <@@ int16 3L @@>, box 3s
+              <@@ int16 3UL @@>, box 3s
+              <@@ int16 '\003' @@>, box 3s
+              <@@ int16 3.0f @@>, box 3s
+              <@@ int16 3.0 @@>, box 3s
+              <@@ int16 3.0<m> @@>, box 3s
+              <@@ int16 3I @@>, box 3s
+              <@@ int16 LanguagePrimitives.GenericOne<nativeint> @@>, box 1s
+              <@@ int16 LanguagePrimitives.GenericOne<unativeint> @@>, box 1s
+              <@@ int16 3.0M @@>, box 3s
+              <@@ int16 "3" @@>, box 3s
+              <@@ Checked.int16 3uy @@>, box 3s
+              <@@ Checked.int16 3y @@>, box 3s
+              <@@ Checked.int16 3s @@>, box 3s
+              <@@ Checked.int16 3us @@>, box 3s
+              <@@ Checked.int16 3 @@>, box 3s
+              <@@ Checked.int16 3u @@>, box 3s
+              <@@ Checked.int16 3L @@>, box 3s
+              <@@ Checked.int16 3UL @@>, box 3s
+              <@@ Checked.int16 '\003' @@>, box 3s
+              <@@ Checked.int16 3.0f @@>, box 3s
+              <@@ Checked.int16 3.0 @@>, box 3s
+              <@@ Checked.int16 3.0<m> @@>, box 3s
+              <@@ Checked.int16 3I @@>, box 3s
+              <@@ Checked.int16 LanguagePrimitives.GenericOne<nativeint> @@>, box 1s
+              <@@ Checked.int16 LanguagePrimitives.GenericOne<unativeint> @@>, box 1s
+              <@@ Checked.int16 3.0M @@>, box 3s
+              <@@ Checked.int16 "3" @@>, box 3s
+
+              <@@ uint16 3uy @@>, box 3us
+              <@@ uint16 3y @@>, box 3us
+              <@@ uint16 3s @@>, box 3us
+              <@@ uint16 3us @@>, box 3us
+              <@@ uint16 3 @@>, box 3us
+              <@@ uint16 3u @@>, box 3us
+              <@@ uint16 3L @@>, box 3us
+              <@@ uint16 3UL @@>, box 3us
+              <@@ uint16 '\003' @@>, box 3us
+              <@@ uint16 3.0f @@>, box 3us
+              <@@ uint16 3.0 @@>, box 3us
+              <@@ uint16 3.0<m> @@>, box 3us
+              <@@ uint16 3I @@>, box 3us
+              <@@ uint16 LanguagePrimitives.GenericOne<nativeint> @@>, box 1us
+              <@@ uint16 LanguagePrimitives.GenericOne<unativeint> @@>, box 1us
+              <@@ uint16 3.0M @@>, box 3us
+              <@@ uint16 "3" @@>, box 3us
+              <@@ Checked.uint16 3uy @@>, box 3us
+              <@@ Checked.uint16 3y @@>, box 3us
+              <@@ Checked.uint16 3s @@>, box 3us
+              <@@ Checked.uint16 3us @@>, box 3us
+              <@@ Checked.uint16 3 @@>, box 3us
+              <@@ Checked.uint16 3u @@>, box 3us
+              <@@ Checked.uint16 3L @@>, box 3us
+              <@@ Checked.uint16 3UL @@>, box 3us
+              <@@ Checked.uint16 '\003' @@>, box 3us
+              <@@ Checked.uint16 3.0f @@>, box 3us
+              <@@ Checked.uint16 3.0 @@>, box 3us
+              <@@ Checked.uint16 3.0<m> @@>, box 3us
+              <@@ Checked.uint16 3I @@>, box 3us
+              <@@ Checked.uint16 LanguagePrimitives.GenericOne<nativeint> @@>, box 1us
+              <@@ Checked.uint16 LanguagePrimitives.GenericOne<unativeint> @@>, box 1us
+              <@@ Checked.uint16 3.0M @@>, box 3us
+              <@@ Checked.uint16 "3" @@>, box 3us
+
+              <@@ int 3uy @@>, box 3
+              <@@ int 3y @@>, box 3
+              <@@ int 3s @@>, box 3
+              <@@ int 3us @@>, box 3
+              <@@ int 3 @@>, box 3
+              <@@ int 3u @@>, box 3
+              <@@ int 3L @@>, box 3
+              <@@ int 3UL @@>, box 3
+              <@@ int '\003' @@>, box 3
+              <@@ int 3.0f @@>, box 3
+              <@@ int 3.0 @@>, box 3
+              <@@ int 3.0<m> @@>, box 3
+              <@@ int 3I @@>, box 3
+              <@@ int LanguagePrimitives.GenericOne<nativeint> @@>, box 1
+              <@@ int LanguagePrimitives.GenericOne<unativeint> @@>, box 1
+              <@@ int 3.0M @@>, box 3
+              <@@ int "3" @@>, box 3
+              <@@ int32 3uy @@>, box 3
+              <@@ int32 3y @@>, box 3
+              <@@ int32 3s @@>, box 3
+              <@@ int32 3us @@>, box 3
+              <@@ int32 3 @@>, box 3
+              <@@ int32 3u @@>, box 3
+              <@@ int32 3L @@>, box 3
+              <@@ int32 3UL @@>, box 3
+              <@@ int32 '\003' @@>, box 3
+              <@@ int32 3.0f @@>, box 3
+              <@@ int32 3.0 @@>, box 3
+              <@@ int32 3.0<m> @@>, box 3
+              <@@ int32 3I @@>, box 3
+              <@@ int32 LanguagePrimitives.GenericOne<nativeint> @@>, box 1
+              <@@ int32 LanguagePrimitives.GenericOne<unativeint> @@>, box 1
+              <@@ int32 3.0M @@>, box 3
+              <@@ int32 "3" @@>, box 3
+              <@@ Checked.int 3uy @@>, box 3
+              <@@ Checked.int 3y @@>, box 3
+              <@@ Checked.int 3s @@>, box 3
+              <@@ Checked.int 3us @@>, box 3
+              <@@ Checked.int 3 @@>, box 3
+              <@@ Checked.int 3u @@>, box 3
+              <@@ Checked.int 3L @@>, box 3
+              <@@ Checked.int 3UL @@>, box 3
+              <@@ Checked.int '\003' @@>, box 3
+              <@@ Checked.int 3.0f @@>, box 3
+              <@@ Checked.int 3.0 @@>, box 3
+              <@@ Checked.int 3.0<m> @@>, box 3
+              <@@ Checked.int 3I @@>, box 3
+              <@@ Checked.int LanguagePrimitives.GenericOne<nativeint> @@>, box 1
+              <@@ Checked.int LanguagePrimitives.GenericOne<unativeint> @@>, box 1
+              <@@ Checked.int 3.0M @@>, box 3
+              <@@ Checked.int "3" @@>, box 3
+              <@@ Checked.int32 3uy @@>, box 3
+              <@@ Checked.int32 3y @@>, box 3
+              <@@ Checked.int32 3s @@>, box 3
+              <@@ Checked.int32 3us @@>, box 3
+              <@@ Checked.int32 3 @@>, box 3
+              <@@ Checked.int32 3u @@>, box 3
+              <@@ Checked.int32 3L @@>, box 3
+              <@@ Checked.int32 3UL @@>, box 3
+              <@@ Checked.int32 '\003' @@>, box 3
+              <@@ Checked.int32 3.0f @@>, box 3
+              <@@ Checked.int32 3.0 @@>, box 3
+              <@@ Checked.int32 3.0<m> @@>, box 3
+              <@@ Checked.int32 3I @@>, box 3
+              <@@ Checked.int32 LanguagePrimitives.GenericOne<nativeint> @@>, box 1
+              <@@ Checked.int32 LanguagePrimitives.GenericOne<unativeint> @@>, box 1
+              <@@ Checked.int32 3.0M @@>, box 3
+              <@@ Checked.int32 "3" @@>, box 3
+
+              <@@ uint 3uy @@>, box 3u
+              <@@ uint 3y @@>, box 3u
+              <@@ uint 3s @@>, box 3u
+              <@@ uint 3us @@>, box 3u
+              <@@ uint 3 @@>, box 3u
+              <@@ uint 3u @@>, box 3u
+              <@@ uint 3L @@>, box 3u
+              <@@ uint 3UL @@>, box 3u
+              <@@ uint '\003' @@>, box 3u
+              <@@ uint 3.0f @@>, box 3u
+              <@@ uint 3.0 @@>, box 3u
+              <@@ uint 3.0<m> @@>, box 3u
+              <@@ uint 3I @@>, box 3u
+              <@@ uint LanguagePrimitives.GenericOne<nativeint> @@>, box 1u
+              <@@ uint LanguagePrimitives.GenericOne<unativeint> @@>, box 1u
+              <@@ uint 3.0M @@>, box 3u
+              <@@ uint "3" @@>, box 3u
+              <@@ uint32 3uy @@>, box 3u
+              <@@ uint32 3y @@>, box 3u
+              <@@ uint32 3s @@>, box 3u
+              <@@ uint32 3us @@>, box 3u
+              <@@ uint32 3 @@>, box 3u
+              <@@ uint32 3u @@>, box 3u
+              <@@ uint32 3L @@>, box 3u
+              <@@ uint32 3UL @@>, box 3u
+              <@@ uint32 '\003' @@>, box 3u
+              <@@ uint32 3.0f @@>, box 3u
+              <@@ uint32 3.0 @@>, box 3u
+              <@@ uint32 3.0<m> @@>, box 3u
+              <@@ uint32 3I @@>, box 3u
+              <@@ uint32 LanguagePrimitives.GenericOne<nativeint> @@>, box 1u
+              <@@ uint32 LanguagePrimitives.GenericOne<unativeint> @@>, box 1u
+              <@@ uint32 3.0M @@>, box 3u
+              <@@ uint32 "3" @@>, box 3u
+              <@@ Checked.uint32 3uy @@>, box 3u
+              <@@ Checked.uint32 3y @@>, box 3u
+              <@@ Checked.uint32 3s @@>, box 3u
+              <@@ Checked.uint32 3us @@>, box 3u
+              <@@ Checked.uint32 3 @@>, box 3u
+              <@@ Checked.uint32 3u @@>, box 3u
+              <@@ Checked.uint32 3L @@>, box 3u
+              <@@ Checked.uint32 3UL @@>, box 3u
+              <@@ Checked.uint32 '\003' @@>, box 3u
+              <@@ Checked.uint32 3.0f @@>, box 3u
+              <@@ Checked.uint32 3.0 @@>, box 3u
+              <@@ Checked.uint32 3.0<m> @@>, box 3u
+              <@@ Checked.uint32 3I @@>, box 3u
+              <@@ Checked.uint32 LanguagePrimitives.GenericOne<nativeint> @@>, box 1u
+              <@@ Checked.uint32 LanguagePrimitives.GenericOne<unativeint> @@>, box 1u
+              <@@ Checked.uint32 3.0M @@>, box 3u
+              <@@ Checked.uint32 "3" @@>, box 3u
+
+              <@@ int64 3uy @@>, box 3L
+              <@@ int64 3y @@>, box 3L
+              <@@ int64 3s @@>, box 3L
+              <@@ int64 3us @@>, box 3L
+              <@@ int64 3 @@>, box 3L
+              <@@ int64 3u @@>, box 3L
+              <@@ int64 3L @@>, box 3L
+              <@@ int64 3UL @@>, box 3L
+              <@@ int64 '\003' @@>, box 3L
+              <@@ int64 3.0f @@>, box 3L
+              <@@ int64 3.0 @@>, box 3L
+              <@@ int64 3.0<m> @@>, box 3L
+              <@@ int64 3I @@>, box 3L
+              <@@ int64 LanguagePrimitives.GenericOne<nativeint> @@>, box 1L
+              <@@ int64 LanguagePrimitives.GenericOne<unativeint> @@>, box 1L
+              <@@ int64 3.0M @@>, box 3L
+              <@@ int64 "3" @@>, box 3L
+              <@@ Checked.int64 3uy @@>, box 3L
+              <@@ Checked.int64 3y @@>, box 3L
+              <@@ Checked.int64 3s @@>, box 3L
+              <@@ Checked.int64 3us @@>, box 3L
+              <@@ Checked.int64 3 @@>, box 3L
+              <@@ Checked.int64 3u @@>, box 3L
+              <@@ Checked.int64 3L @@>, box 3L
+              <@@ Checked.int64 3UL @@>, box 3L
+              <@@ Checked.int64 '\003' @@>, box 3L
+              <@@ Checked.int64 3.0f @@>, box 3L
+              <@@ Checked.int64 3.0 @@>, box 3L
+              <@@ Checked.int64 3.0<m> @@>, box 3L
+              <@@ Checked.int64 3I @@>, box 3L
+              <@@ Checked.int64 LanguagePrimitives.GenericOne<nativeint> @@>, box 1L
+              <@@ Checked.int64 LanguagePrimitives.GenericOne<unativeint> @@>, box 1L
+              <@@ Checked.int64 3.0M @@>, box 3L
+              <@@ Checked.int64 "3" @@>, box 3L
+              
+              <@@ uint64 3uy @@>, box 3UL
+              <@@ uint64 3y @@>, box 3UL
+              <@@ uint64 3s @@>, box 3UL
+              <@@ uint64 3us @@>, box 3UL
+              <@@ uint64 3 @@>, box 3UL
+              <@@ uint64 3u @@>, box 3UL
+              <@@ uint64 3L @@>, box 3UL
+              <@@ uint64 3UL @@>, box 3UL
+              <@@ uint64 '\003' @@>, box 3UL
+              <@@ uint64 3.0f @@>, box 3UL
+              <@@ uint64 3.0 @@>, box 3UL
+              <@@ uint64 3.0<m> @@>, box 3UL
+              <@@ uint64 3I @@>, box 3UL
+              <@@ uint64 LanguagePrimitives.GenericOne<nativeint> @@>, box 1UL
+              <@@ uint64 LanguagePrimitives.GenericOne<unativeint> @@>, box 1UL
+              <@@ uint64 3.0M @@>, box 3UL
+              <@@ uint64 "3" @@>, box 3UL
+              <@@ Checked.uint64 3uy @@>, box 3UL
+              <@@ Checked.uint64 3y @@>, box 3UL
+              <@@ Checked.uint64 3s @@>, box 3UL
+              <@@ Checked.uint64 3us @@>, box 3UL
+              <@@ Checked.uint64 3 @@>, box 3UL
+              <@@ Checked.uint64 3u @@>, box 3UL
+              <@@ Checked.uint64 3L @@>, box 3UL
+              <@@ Checked.uint64 3UL @@>, box 3UL
+              <@@ Checked.uint64 '\003' @@>, box 3UL
+              <@@ Checked.uint64 3.0f @@>, box 3UL
+              <@@ Checked.uint64 3.0 @@>, box 3UL
+              <@@ Checked.uint64 3.0<m> @@>, box 3UL
+              <@@ Checked.uint64 3I @@>, box 3UL
+              <@@ Checked.uint64 LanguagePrimitives.GenericOne<nativeint> @@>, box 1UL
+              <@@ Checked.uint64 LanguagePrimitives.GenericOne<unativeint> @@>, box 1UL
+              <@@ Checked.uint64 3.0M @@>, box 3UL
+              <@@ Checked.uint64 "3" @@>, box 3UL
+              
+              <@@ char 51uy @@>, box '3'
+              <@@ char 51y @@>, box '3'
+              <@@ char 51s @@>, box '3'
+              <@@ char 51us @@>, box '3'
+              <@@ char 51 @@>, box '3'
+              <@@ char 51u @@>, box '3'
+              <@@ char 51L @@>, box '3'
+              <@@ char 51UL @@>, box '3'
+              <@@ char '3' @@>, box '3'
+              <@@ char 51.0f @@>, box '3'
+              <@@ char 51.0 @@>, box '3'
+              <@@ char 51.0<m> @@>, box '3'
+              <@@ char LanguagePrimitives.GenericOne<nativeint> @@>, box '\001'
+              <@@ char LanguagePrimitives.GenericOne<unativeint> @@>, box '\001'
+              <@@ char 51.0M @@>, box '3'
+              <@@ char "3" @@>, box '3'
+              <@@ Checked.char 51uy @@>, box '3'
+              <@@ Checked.char 51y @@>, box '3'
+              <@@ Checked.char 51s @@>, box '3'
+              <@@ Checked.char 51us @@>, box '3'
+              <@@ Checked.char 51 @@>, box '3'
+              <@@ Checked.char 51u @@>, box '3'
+              <@@ Checked.char 51L @@>, box '3'
+              <@@ Checked.char 51UL @@>, box '3'
+              <@@ Checked.char '3' @@>, box '3'
+              <@@ Checked.char 51.0f @@>, box '3'
+              <@@ Checked.char 51.0 @@>, box '3'
+              <@@ Checked.char 51.0<m> @@>, box '3'
+              <@@ Checked.char LanguagePrimitives.GenericOne<nativeint> @@>, box '\001'
+              <@@ Checked.char LanguagePrimitives.GenericOne<unativeint> @@>, box '\001'
+              <@@ Checked.char 51.0M @@>, box '3'
+              <@@ Checked.char "3" @@>, box '3'
+
+              <@@ nativeint 3uy @@>, box 3n
+              <@@ nativeint 3y @@>, box 3n
+              <@@ nativeint 3s @@>, box 3n
+              <@@ nativeint 3us @@>, box 3n
+              <@@ nativeint 3 @@>, box 3n
+              <@@ nativeint 3u @@>, box 3n
+              <@@ nativeint 3L @@>, box 3n
+              <@@ nativeint 3UL @@>, box 3n
+              <@@ nativeint '\003' @@>, box 3n
+              <@@ nativeint 3.0f @@>, box 3n
+              <@@ nativeint 3.0 @@>, box 3n
+              <@@ nativeint 3.0<m> @@>, box 3n
+              <@@ nativeint LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
+              <@@ nativeint LanguagePrimitives.GenericOne<unativeint> @@>, box 1n
+              <@@ nativeint 3.0M @@>, box 3n
+              <@@ nativeint "3" @@>, box 3n
+              <@@ Checked.nativeint 3uy @@>, box 3n
+              <@@ Checked.nativeint 3y @@>, box 3n
+              <@@ Checked.nativeint 3s @@>, box 3n
+              <@@ Checked.nativeint 3us @@>, box 3n
+              <@@ Checked.nativeint 3 @@>, box 3n
+              <@@ Checked.nativeint 3u @@>, box 3n
+              <@@ Checked.nativeint 3L @@>, box 3n
+              <@@ Checked.nativeint 3UL @@>, box 3n
+              <@@ Checked.nativeint '\003' @@>, box 3n
+              <@@ Checked.nativeint 3.0f @@>, box 3n
+              <@@ Checked.nativeint 3.0 @@>, box 3n
+              <@@ Checked.nativeint 3.0<m> @@>, box 3n
+              <@@ Checked.nativeint LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
+              <@@ Checked.nativeint LanguagePrimitives.GenericOne<unativeint> @@>, box 1n
+              <@@ Checked.nativeint 3.0M @@>, box 3n
+              <@@ Checked.nativeint "3" @@>, box 3n
+
+              <@@ unativeint 3uy @@>, box 3un
+              <@@ unativeint 3y @@>, box 3un
+              <@@ unativeint 3s @@>, box 3un
+              <@@ unativeint 3us @@>, box 3un
+              <@@ unativeint 3 @@>, box 3un
+              <@@ unativeint 3u @@>, box 3un
+              <@@ unativeint 3L @@>, box 3un
+              <@@ unativeint 3UL @@>, box 3un
+              <@@ unativeint '\003' @@>, box 3un
+              <@@ unativeint 3.0f @@>, box 3un
+              <@@ unativeint 3.0 @@>, box 3un
+              <@@ unativeint 3.0<m> @@>, box 3un
+              <@@ unativeint LanguagePrimitives.GenericOne<nativeint> @@>, box 1un
+              <@@ unativeint LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
+              <@@ unativeint 3.0M @@>, box 3un
+              <@@ unativeint "3" @@>, box 3un
+              <@@ Checked.unativeint 3uy @@>, box 3un
+              <@@ Checked.unativeint 3y @@>, box 3un
+              <@@ Checked.unativeint 3s @@>, box 3un
+              <@@ Checked.unativeint 3us @@>, box 3un
+              <@@ Checked.unativeint 3 @@>, box 3un
+              <@@ Checked.unativeint 3u @@>, box 3un
+              <@@ Checked.unativeint 3L @@>, box 3un
+              <@@ Checked.unativeint 3UL @@>, box 3un
+              <@@ Checked.unativeint '\003' @@>, box 3un
+              <@@ Checked.unativeint 3.0f @@>, box 3un
+              <@@ Checked.unativeint 3.0 @@>, box 3un
+              <@@ Checked.unativeint 3.0<m> @@>, box 3un
+              <@@ Checked.unativeint LanguagePrimitives.GenericOne<nativeint> @@>, box 1un
+              <@@ Checked.unativeint LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
+              <@@ Checked.unativeint 3.0M @@>, box 3un
+              <@@ Checked.unativeint "3" @@>, box 3un
+
+              <@@ single 3uy @@>, box 3f
+              <@@ single 3y @@>, box 3f
+              <@@ single 3s @@>, box 3f
+              <@@ single 3us @@>, box 3f
+              <@@ single 3 @@>, box 3f
+              <@@ single 3u @@>, box 3f
+              <@@ single 3L @@>, box 3f
+              <@@ single 3UL @@>, box 3f
+              <@@ single '\003' @@>, box 3f
+              <@@ single 3.0f @@>, box 3f
+              <@@ single 3.0 @@>, box 3f
+              <@@ single 3.0<m> @@>, box 3f
+              <@@ single 3I @@>, box 3f
+              <@@ single LanguagePrimitives.GenericOne<nativeint> @@>, box 1f
+              <@@ single LanguagePrimitives.GenericOne<unativeint> @@>, box 1f
+              <@@ single 3.0M @@>, box 3f
+              <@@ single "3" @@>, box 3f
+              <@@ float32 3uy @@>, box 3f
+              <@@ float32 3y @@>, box 3f
+              <@@ float32 3s @@>, box 3f
+              <@@ float32 3us @@>, box 3f
+              <@@ float32 3 @@>, box 3f
+              <@@ float32 3u @@>, box 3f
+              <@@ float32 3L @@>, box 3f
+              <@@ float32 3UL @@>, box 3f
+              <@@ float32 '\003' @@>, box 3f
+              <@@ float32 3.0f @@>, box 3f
+              <@@ float32 3.0 @@>, box 3f
+              <@@ float32 3.0<m> @@>, box 3f
+              <@@ float32 3I @@>, box 3f
+              <@@ float32 LanguagePrimitives.GenericOne<nativeint> @@>, box 1f
+              <@@ float32 LanguagePrimitives.GenericOne<unativeint> @@>, box 1f
+              <@@ float32 3.0M @@>, box 3f
+              <@@ float32 "3" @@>, box 3f
+
+              <@@ double 3uy @@>, box 3.
+              <@@ double 3y @@>, box 3.
+              <@@ double 3s @@>, box 3.
+              <@@ double 3us @@>, box 3.
+              <@@ double 3 @@>, box 3.
+              <@@ double 3u @@>, box 3.
+              <@@ double 3L @@>, box 3.
+              <@@ double 3UL @@>, box 3.
+              <@@ double '\003' @@>, box 3.
+              <@@ double 3.0f @@>, box 3.
+              <@@ double 3.0 @@>, box 3.
+              <@@ double 3.0<m> @@>, box 3.
+              <@@ double 3I @@>, box 3.
+              <@@ double LanguagePrimitives.GenericOne<nativeint> @@>, box 1.
+              <@@ double LanguagePrimitives.GenericOne<unativeint> @@>, box 1.
+              <@@ double 3.0M @@>, box 3.
+              <@@ double "3" @@>, box 3.
+              <@@ float 3uy @@>, box 3.
+              <@@ float 3y @@>, box 3.
+              <@@ float 3s @@>, box 3.
+              <@@ float 3us @@>, box 3.
+              <@@ float 3 @@>, box 3.
+              <@@ float 3u @@>, box 3.
+              <@@ float 3L @@>, box 3.
+              <@@ float 3UL @@>, box 3.
+              <@@ float '\003' @@>, box 3.
+              <@@ float 3.0f @@>, box 3.
+              <@@ float 3.0 @@>, box 3.
+              <@@ float 3.0<m> @@>, box 3.
+              <@@ float 3I @@>, box 3.
+              <@@ float LanguagePrimitives.GenericOne<nativeint> @@>, box 1.
+              <@@ float LanguagePrimitives.GenericOne<unativeint> @@>, box 1.
+              <@@ float 3.0M @@>, box 3.
+              <@@ float "3" @@>, box 3.
+
+              <@@ decimal 3uy @@>, box 3m
+              <@@ decimal 3y @@>, box 3m
+              <@@ decimal 3s @@>, box 3m
+              <@@ decimal 3us @@>, box 3m
+              <@@ decimal 3 @@>, box 3m
+              <@@ decimal 3u @@>, box 3m
+              <@@ decimal 3L @@>, box 3m
+              <@@ decimal 3UL @@>, box 3m
+              <@@ decimal '\003' @@>, box 3m
+              <@@ decimal 3.0f @@>, box 3m
+              <@@ decimal 3.0 @@>, box 3m
+              <@@ decimal 3.0<m> @@>, box 3m
+              <@@ decimal 3I @@>, box 3m
+              <@@ decimal LanguagePrimitives.GenericOne<nativeint> @@>, box 1m
+              <@@ decimal LanguagePrimitives.GenericOne<unativeint> @@>, box 1m
+              <@@ decimal 3.0M @@>, box 3m
+              <@@ decimal "3" @@>, box 3m
+
+              <@@ LanguagePrimitives.GenericZero<byte> @@>, box 0uy
+              <@@ LanguagePrimitives.GenericZero<uint8> @@>, box 0uy
+              <@@ LanguagePrimitives.GenericZero<sbyte> @@>, box 0y
+              <@@ LanguagePrimitives.GenericZero<int8> @@>, box 0y
+              <@@ LanguagePrimitives.GenericZero<int16> @@>, box 0s
+              <@@ LanguagePrimitives.GenericZero<uint16> @@>, box 0us
+              <@@ LanguagePrimitives.GenericZero<int> @@>, box 0
+              <@@ LanguagePrimitives.GenericZero<int32> @@>, box 0
+              <@@ LanguagePrimitives.GenericZero<uint> @@>, box 0u
+              <@@ LanguagePrimitives.GenericZero<uint32> @@>, box 0u
+              <@@ LanguagePrimitives.GenericZero<int64> @@>, box 0L
+              <@@ LanguagePrimitives.GenericZero<uint64> @@>, box 0UL
+              <@@ LanguagePrimitives.GenericZero<bigint> @@>, box 0I
+              <@@ LanguagePrimitives.GenericZero<char> @@>, box '\000'
+              <@@ LanguagePrimitives.GenericZero<nativeint> @@>, box 0n
+              <@@ LanguagePrimitives.GenericZero<unativeint> @@>, box 0un
+              <@@ LanguagePrimitives.GenericZero<float32> @@>, box 0f
+              <@@ LanguagePrimitives.GenericZero<float> @@>, box 0.
+              <@@ LanguagePrimitives.GenericZero<decimal> @@>, box 0m
+              <@@ LanguagePrimitives.GenericZero<decimal<m>> @@>, box 0m
+
+              <@@ LanguagePrimitives.GenericOne<byte> @@>, box 1uy
+              <@@ LanguagePrimitives.GenericOne<uint8> @@>, box 1uy
+              <@@ LanguagePrimitives.GenericOne<sbyte> @@>, box 1y
+              <@@ LanguagePrimitives.GenericOne<int8> @@>, box 1y
+              <@@ LanguagePrimitives.GenericOne<int16> @@>, box 1s
+              <@@ LanguagePrimitives.GenericOne<uint16> @@>, box 1us
+              <@@ LanguagePrimitives.GenericOne<int> @@>, box 1
+              <@@ LanguagePrimitives.GenericOne<int32> @@>, box 1
+              <@@ LanguagePrimitives.GenericOne<uint> @@>, box 1u
+              <@@ LanguagePrimitives.GenericOne<uint32> @@>, box 1u
+              <@@ LanguagePrimitives.GenericOne<int64> @@>, box 1L
+              <@@ LanguagePrimitives.GenericOne<uint64> @@>, box 1UL
+              <@@ LanguagePrimitives.GenericOne<bigint> @@>, box 1I
+              <@@ LanguagePrimitives.GenericOne<char> @@>, box '\001'
+              <@@ LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
+              <@@ LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
+              <@@ LanguagePrimitives.GenericOne<float32> @@>, box 1f
+              <@@ LanguagePrimitives.GenericOne<float> @@>, box 1.
+              <@@ LanguagePrimitives.GenericOne<decimal> @@>, box 1m
+              //<@@ LanguagePrimitives.GenericOne<decimal<m>> @@>, box 1m // Doesn't typecheck
+
+              <@@ List.sum [ 1; 2 ] @@>, box 3
+              <@@ List.sum [ 1I; 2I ] @@>, box 3I
+              <@@ List.sum [ 1.0f; 2.0f ] @@>, box 3f
+              <@@ List.sum [ 1.0; 2.0 ] @@>, box 3.
+              <@@ List.sum [ 1.0M; 2.0M ] @@>, box 3m
+              <@@ List.sum [ 1.0M<m>; 2.0M<m> ] @@>, box 3m
+              <@@ List.average [ 1.0; 2.0 ] @@>, box 1.5
+              <@@ List.average [ 1.0f; 2.0f ] @@>, box 1.5f
+              <@@ List.average [ 1.0M; 2.0M ] @@>, box 1.5m 
+              <@@ List.average [ 1.0M<m>; 2.0M<m> ] @@>, box 1.5m 
+              
+              <@@ Nullable.byte (Nullable<_> 3uy) @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> 3y) @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> 3s) @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> 3us) @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> 3) @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> 3u) @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> 3L) @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> 3UL) @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> '\003') @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> 3.0f) @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> 3.0) @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> 3.0<m>) @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> 3I) @@>, box 3uy
+              <@@ Nullable.byte (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1uy
+              <@@ Nullable.byte (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1uy
+              <@@ Nullable.byte (Nullable<_> 3.0M) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> 3uy) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> 3y) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> 3s) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> 3us) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> 3) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> 3u) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> 3L) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> 3UL) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> '\003') @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> 3.0f) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> 3.0) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> 3.0<m>) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> 3I) @@>, box 3uy
+              <@@ Nullable.uint8 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1uy
+              <@@ Nullable.uint8 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1uy
+              <@@ Nullable.uint8 (Nullable<_> 3.0M) @@>, box 3uy
+
+              <@@ Nullable.sbyte (Nullable<_> 3uy) @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> 3y) @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> 3s) @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> 3us) @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> 3) @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> 3u) @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> 3L) @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> 3UL) @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> '\003') @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> 3.0f) @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> 3.0) @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> 3.0<m>) @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> 3I) @@>, box 3y
+              <@@ Nullable.sbyte (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1y
+              <@@ Nullable.sbyte (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1y
+              <@@ Nullable.sbyte (Nullable<_> 3.0M) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> 3uy) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> 3y) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> 3s) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> 3us) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> 3) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> 3u) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> 3L) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> 3UL) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> '\003') @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> 3.0f) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> 3.0) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> 3.0<m>) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> 3I) @@>, box 3y
+              <@@ Nullable.int8 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1y
+              <@@ Nullable.int8 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1y
+              <@@ Nullable.int8 (Nullable<_> 3.0M) @@>, box 3y
+
+              <@@ Nullable.int16 (Nullable<_> 3uy) @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> 3y) @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> 3s) @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> 3us) @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> 3) @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> 3u) @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> 3L) @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> 3UL) @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> '\003') @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> 3.0f) @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> 3.0) @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> 3.0<m>) @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> 3I) @@>, box 3s
+              <@@ Nullable.int16 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1s
+              <@@ Nullable.int16 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1s
+              <@@ Nullable.int16 (Nullable<_> 3.0M) @@>, box 3s
+
+              <@@ Nullable.uint16 (Nullable<_> 3uy) @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> 3y) @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> 3s) @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> 3us) @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> 3) @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> 3u) @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> 3L) @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> 3UL) @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> '\003') @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> 3.0f) @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> 3.0) @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> 3.0<m>) @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> 3I) @@>, box 3us
+              <@@ Nullable.uint16 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1us
+              <@@ Nullable.uint16 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1us
+              <@@ Nullable.uint16 (Nullable<_> 3.0M) @@>, box 3us
+              
+              <@@ Nullable.int (Nullable<_> 3uy) @@>, box 3
+              <@@ Nullable.int (Nullable<_> 3y) @@>, box 3
+              <@@ Nullable.int (Nullable<_> 3s) @@>, box 3
+              <@@ Nullable.int (Nullable<_> 3us) @@>, box 3
+              <@@ Nullable.int (Nullable<_> 3) @@>, box 3
+              <@@ Nullable.int (Nullable<_> 3u) @@>, box 3
+              <@@ Nullable.int (Nullable<_> 3L) @@>, box 3
+              <@@ Nullable.int (Nullable<_> 3UL) @@>, box 3
+              <@@ Nullable.int (Nullable<_> '\003') @@>, box 3
+              <@@ Nullable.int (Nullable<_> 3.0f) @@>, box 3
+              <@@ Nullable.int (Nullable<_> 3.0) @@>, box 3
+              <@@ Nullable.int (Nullable<_> 3.0<m>) @@>, box 3
+              <@@ Nullable.int (Nullable<_> 3I) @@>, box 3
+              <@@ Nullable.int (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1
+              <@@ Nullable.int (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1
+              <@@ Nullable.int (Nullable<_> 3.0M) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> 3uy) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> 3y) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> 3s) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> 3us) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> 3) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> 3u) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> 3L) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> 3UL) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> '\003') @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> 3.0f) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> 3.0) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> 3.0<m>) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> 3I) @@>, box 3
+              <@@ Nullable.int32 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1
+              <@@ Nullable.int32 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1
+              <@@ Nullable.int32 (Nullable<_> 3.0M) @@>, box 3
+              
+              <@@ Nullable.uint (Nullable<_> 3uy) @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> 3y) @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> 3s) @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> 3us) @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> 3) @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> 3u) @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> 3L) @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> 3UL) @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> '\003') @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> 3.0f) @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> 3.0) @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> 3.0<m>) @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> 3I) @@>, box 3u
+              <@@ Nullable.uint (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1u
+              <@@ Nullable.uint (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1u
+              <@@ Nullable.uint (Nullable<_> 3.0M) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> 3uy) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> 3y) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> 3s) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> 3us) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> 3) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> 3u) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> 3L) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> 3UL) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> '\003') @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> 3.0f) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> 3.0) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> 3.0<m>) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> 3I) @@>, box 3u
+              <@@ Nullable.uint32 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1u
+              <@@ Nullable.uint32 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1u
+              <@@ Nullable.uint32 (Nullable<_> 3.0M) @@>, box 3u
+
+              <@@ Nullable.int64 (Nullable<_> 3uy) @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> 3y) @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> 3s) @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> 3us) @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> 3) @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> 3u) @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> 3L) @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> 3UL) @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> '\003') @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> 3.0f) @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> 3.0) @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> 3.0<m>) @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> 3I) @@>, box 3L
+              <@@ Nullable.int64 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1L
+              <@@ Nullable.int64 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1L
+              <@@ Nullable.int64 (Nullable<_> 3.0M) @@>, box 3L
+
+              <@@ Nullable.uint64 (Nullable<_> 3uy) @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> 3y) @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> 3s) @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> 3us) @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> 3) @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> 3u) @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> 3L) @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> 3UL) @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> '\003') @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> 3.0f) @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> 3.0) @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> 3.0<m>) @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> 3I) @@>, box 3UL
+              <@@ Nullable.uint64 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1UL
+              <@@ Nullable.uint64 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1UL
+              <@@ Nullable.uint64 (Nullable<_> 3.0M) @@>, box 3UL
+
+              <@@ Nullable.char (Nullable<_> 51uy) @@>, box '3'
+              <@@ Nullable.char (Nullable<_> 51y) @@>, box '3'
+              <@@ Nullable.char (Nullable<_> 51s) @@>, box '3'
+              <@@ Nullable.char (Nullable<_> 51us) @@>, box '3'
+              <@@ Nullable.char (Nullable<_> 51) @@>, box '3'
+              <@@ Nullable.char (Nullable<_> 51u) @@>, box '3'
+              <@@ Nullable.char (Nullable<_> 51L) @@>, box '3'
+              <@@ Nullable.char (Nullable<_> 51UL) @@>, box '3'
+              <@@ Nullable.char (Nullable<_> '3') @@>, box '3'
+              <@@ Nullable.char (Nullable<_> 51.0f) @@>, box '3'
+              <@@ Nullable.char (Nullable<_> 51.0) @@>, box '3'
+              <@@ Nullable.char (Nullable<_> 51.0<m>) @@>, box '3'
+              <@@ Nullable.char (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box '\001'
+              <@@ Nullable.char (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box '\001'
+              <@@ Nullable.char (Nullable<_> 51.0M) @@>, box '3'
+
+              <@@ Nullable.single (Nullable<_> 3uy) @@>, box 3f
+              <@@ Nullable.single (Nullable<_> 3y) @@>, box 3f
+              <@@ Nullable.single (Nullable<_> 3s) @@>, box 3f
+              <@@ Nullable.single (Nullable<_> 3us) @@>, box 3f
+              <@@ Nullable.single (Nullable<_> 3) @@>, box 3f
+              <@@ Nullable.single (Nullable<_> 3u) @@>, box 3f
+              <@@ Nullable.single (Nullable<_> 3L) @@>, box 3f
+              <@@ Nullable.single (Nullable<_> 3UL) @@>, box 3f
+              <@@ Nullable.single (Nullable<_> '\003') @@>, box 3f
+              <@@ Nullable.single (Nullable<_> 3.0f) @@>, box 3f
+              <@@ Nullable.single (Nullable<_> 3.0) @@>, box 3f
+              <@@ Nullable.single (Nullable<_> 3.0<m>) @@>, box 3f
+              <@@ Nullable.single (Nullable<_> 3I) @@>, box 3f
+              <@@ Nullable.single (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1f
+              <@@ Nullable.single (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1f
+              <@@ Nullable.single (Nullable<_> 3.0M) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> 3uy) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> 3y) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> 3s) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> 3us) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> 3) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> 3u) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> 3L) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> 3UL) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> '\003') @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> 3.0f) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> 3.0) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> 3.0<m>) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> 3I) @@>, box 3f
+              <@@ Nullable.float32 (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1f
+              <@@ Nullable.float32 (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1f
+              <@@ Nullable.float32 (Nullable<_> 3.0M) @@>, box 3f
+
+              <@@ Nullable.double (Nullable<_> 3uy) @@>, box 3.
+              <@@ Nullable.double (Nullable<_> 3y) @@>, box 3.
+              <@@ Nullable.double (Nullable<_> 3s) @@>, box 3.
+              <@@ Nullable.double (Nullable<_> 3us) @@>, box 3.
+              <@@ Nullable.double (Nullable<_> 3) @@>, box 3.
+              <@@ Nullable.double (Nullable<_> 3u) @@>, box 3.
+              <@@ Nullable.double (Nullable<_> 3L) @@>, box 3.
+              <@@ Nullable.double (Nullable<_> 3UL) @@>, box 3.
+              <@@ Nullable.double (Nullable<_> '\003') @@>, box 3.
+              <@@ Nullable.double (Nullable<_> 3.0f) @@>, box 3.
+              <@@ Nullable.double (Nullable<_> 3.0) @@>, box 3.
+              <@@ Nullable.double (Nullable<_> 3.0<m>) @@>, box 3.
+              <@@ Nullable.double (Nullable<_> 3I) @@>, box 3.
+              <@@ Nullable.double (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1.
+              <@@ Nullable.double (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1.
+              <@@ Nullable.double (Nullable<_> 3.0M) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> 3uy) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> 3y) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> 3s) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> 3us) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> 3) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> 3u) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> 3L) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> 3UL) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> '\003') @@>, box 3.
+              <@@ Nullable.float (Nullable<_> 3.0f) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> 3.0) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> 3.0<m>) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> 3I) @@>, box 3.
+              <@@ Nullable.float (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1.
+              <@@ Nullable.float (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1.
+              <@@ Nullable.float (Nullable<_> 3.0M) @@>, box 3.
+
+              <@@ Nullable.decimal (Nullable<_> 3uy) @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> 3y) @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> 3s) @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> 3us) @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> 3) @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> 3u) @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> 3L) @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> 3UL) @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> '\003') @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> 3.0f) @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> 3.0) @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> 3.0<m>) @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> 3I) @@>, box 3m
+              <@@ Nullable.decimal (Nullable<_> LanguagePrimitives.GenericOne<nativeint>) @@>, box 1m
+              <@@ Nullable.decimal (Nullable<_> LanguagePrimitives.GenericOne<unativeint>) @@>, box 1m
+              <@@ Nullable.decimal (Nullable<_> 3.0M) @@>, box 3m
+
+              <@@ Nullable<_> 1y ?+ 4y @@>, box 5y
+              <@@ Nullable<_> 1uy ?+ 4uy @@>, box 5uy
+              <@@ Nullable<_> 1s ?+ 4s @@>, box 5s
+              <@@ Nullable<_> 1us ?+ 4us @@>, box 5us
+              <@@ Nullable<_> 1 ?+ 4 @@>, box 5
+              <@@ Nullable<_> 1u ?+ 4u @@>, box 5u
+              <@@ Nullable<_> 1L ?+ 4L @@>, box 5L
+              <@@ Nullable<_> 1uL ?+ 4uL @@>, box 5uL
+              <@@ Nullable<_> 1.0f ?+ 4.0f @@>, box 5f
+              <@@ Nullable<_> 1.0 ?+ 4.0 @@>, box 5.
+              <@@ Nullable<_> 1m ?+ 4m @@>, box 5m
+              <@@ Nullable<_> 1m<m> ?+ 4m<m> @@>, box 5m
+              <@@ Nullable<_> 1I ?+ 4I @@>, box 5I
+              <@@ Nullable<_> '1' ?+ '\004' @@>, box '5'
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?+ LanguagePrimitives.GenericOne<nativeint> @@>, box 2n
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?+ LanguagePrimitives.GenericOne<unativeint> @@>, box 2un
+              
+              <@@ 1y +? Nullable<_> 4y @@>, box 5y
+              <@@ 1uy +? Nullable<_> 4uy @@>, box 5uy
+              <@@ 1s +? Nullable<_> 4s @@>, box 5s
+              <@@ 1us +? Nullable<_> 4us @@>, box 5us
+              <@@ 1 +? Nullable<_> 4 @@>, box 5
+              <@@ 1u +? Nullable<_> 4u @@>, box 5u
+              <@@ 1L +? Nullable<_> 4L @@>, box 5L
+              <@@ 1uL +? Nullable<_> 4uL @@>, box 5uL
+              <@@ 1.0f +? Nullable<_> 4.0f @@>, box 5f
+              <@@ 1.0 +? Nullable<_> 4.0 @@>, box 5.
+              <@@ 1m +? Nullable<_> 4m @@>, box 5m
+              <@@ 1m<m> +? Nullable<_> 4m<m> @@>, box 5m
+              <@@ 1I +? Nullable<_> 4I @@>, box 5I
+              <@@ '1' +? Nullable<_> '\004' @@>, box '5'
+              <@@ LanguagePrimitives.GenericOne<nativeint> +? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box 2n
+              <@@ LanguagePrimitives.GenericOne<unativeint> +? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box 2un
+              
+              <@@ Nullable<_> 1y ?+? Nullable<_> 4y @@>, box 5y
+              <@@ Nullable<_> 1uy ?+? Nullable<_> 4uy @@>, box 5uy
+              <@@ Nullable<_> 1s ?+? Nullable<_> 4s @@>, box 5s
+              <@@ Nullable<_> 1us ?+? Nullable<_> 4us @@>, box 5us
+              <@@ Nullable<_> 1 ?+? Nullable<_> 4 @@>, box 5
+              <@@ Nullable<_> 1u ?+? Nullable<_> 4u @@>, box 5u
+              <@@ Nullable<_> 1L ?+? Nullable<_> 4L @@>, box 5L
+              <@@ Nullable<_> 1uL ?+? Nullable<_> 4uL @@>, box 5uL
+              <@@ Nullable<_> 1.0f ?+? Nullable<_> 4.0f @@>, box 5f
+              <@@ Nullable<_> 1.0 ?+? Nullable<_> 4.0 @@>, box 5.
+              <@@ Nullable<_> 1m ?+? Nullable<_> 4m @@>, box 5m
+              <@@ Nullable<_> 1m<m> ?+? Nullable<_> 4m<m> @@>, box 5m
+              <@@ Nullable<_> 1I ?+? Nullable<_> 4I @@>, box 5I
+              <@@ Nullable<_> '1' ?+? Nullable<_> '\004' @@>, box '5'
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box 2n
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?+? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box 2un
+
+              <@@ Nullable<_> 4y ?- 1y @@>, box 3y
+              <@@ Nullable<_> 4uy ?- 1uy @@>, box 3uy
+              <@@ Nullable<_> 4s ?- 1s @@>, box 3s
+              <@@ Nullable<_> 4us ?- 1us @@>, box 3us
+              <@@ Nullable<_> 4 ?- 1 @@>, box 3
+              <@@ Nullable<_> 4u ?- 1u @@>, box 3u
+              <@@ Nullable<_> 4L ?- 1L @@>, box 3L
+              <@@ Nullable<_> 4uL ?- 1uL @@>, box 3uL
+              <@@ Nullable<_> 4.0f ?- 1.0f @@>, box 3f
+              <@@ Nullable<_> 4.0 ?- 1.0 @@>, box 3.
+              <@@ Nullable<_> 4m ?- 1m @@>, box 3m
+              <@@ Nullable<_> 4m<m> ?- 1m<m> @@>, box 3m
+              <@@ Nullable<_> 4I ?- 1I @@>, box 3I
+              <@@ Nullable<_> '4' ?- '\001' @@>, box '3'
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?- LanguagePrimitives.GenericOne<nativeint> @@>, box 0n
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?- LanguagePrimitives.GenericOne<unativeint> @@>, box 0un
+              
+              <@@ 4y -? Nullable<_> 1y @@>, box 3y
+              <@@ 4uy -? Nullable<_> 1uy @@>, box 3uy
+              <@@ 4s -? Nullable<_> 1s @@>, box 3s
+              <@@ 4us -? Nullable<_> 1us @@>, box 3us
+              <@@ 4 -? Nullable<_> 1 @@>, box 3
+              <@@ 4u -? Nullable<_> 1u @@>, box 3u
+              <@@ 4L -? Nullable<_> 1L @@>, box 3L
+              <@@ 4uL -? Nullable<_> 1uL @@>, box 3uL
+              <@@ 4.0f -? Nullable<_> 1.0f @@>, box 3f
+              <@@ 4.0 -? Nullable<_> 1.0 @@>, box 3.
+              <@@ 4m -? Nullable<_> 1m @@>, box 3m
+              <@@ 4m<m> -? Nullable<_> 1m<m> @@>, box 3m
+              <@@ 4I -? Nullable<_> 1I @@>, box 3I
+              <@@ '4' -? Nullable<_> '\001' @@>, box '3'
+              <@@ LanguagePrimitives.GenericOne<nativeint> -? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box 0n
+              <@@ LanguagePrimitives.GenericOne<unativeint> -? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box 0un
+              
+              <@@ Nullable<_> 4y ?-? Nullable<_> 1y @@>, box 3y
+              <@@ Nullable<_> 4uy ?-? Nullable<_> 1uy @@>, box 3uy
+              <@@ Nullable<_> 4s ?-? Nullable<_> 1s @@>, box 3s
+              <@@ Nullable<_> 4us ?-? Nullable<_> 1us @@>, box 3us
+              <@@ Nullable<_> 4 ?-? Nullable<_> 1 @@>, box 3
+              <@@ Nullable<_> 4u ?-? Nullable<_> 1u @@>, box 3u
+              <@@ Nullable<_> 4L ?-? Nullable<_> 1L @@>, box 3L
+              <@@ Nullable<_> 4uL ?-? Nullable<_> 1uL @@>, box 3uL
+              <@@ Nullable<_> 4.0f ?-? Nullable<_> 1.0f @@>, box 3f
+              <@@ Nullable<_> 4.0 ?-? Nullable<_> 1.0 @@>, box 3.
+              <@@ Nullable<_> 4m ?-? Nullable<_> 1m @@>, box 3m
+              <@@ Nullable<_> 4m<m> ?-? Nullable<_> 1m<m> @@>, box 3m
+              <@@ Nullable<_> 4I ?-? Nullable<_> 1I @@>, box 3I
+              <@@ Nullable<_> '4' ?-? Nullable<_> '\001' @@>, box '3'
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?-? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box 0n
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?-? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box 0un
+
+              <@@ Nullable<_> 2y ?* 4y @@>, box 8y
+              <@@ Nullable<_> 2uy ?* 4uy @@>, box 8uy
+              <@@ Nullable<_> 2s ?* 4s @@>, box 8s
+              <@@ Nullable<_> 2us ?* 4us @@>, box 8us
+              <@@ Nullable<_> 2 ?* 4 @@>, box 8
+              <@@ Nullable<_> 2u ?* 4u @@>, box 8u
+              <@@ Nullable<_> 2L ?* 4L @@>, box 8L
+              <@@ Nullable<_> 2uL ?* 4uL @@>, box 8uL
+              <@@ Nullable<_> 2.0f ?* 4.0f @@>, box 8f
+              <@@ Nullable<_> 2.0 ?* 4.0 @@>, box 8.
+              <@@ Nullable<_> 2m ?* 4m @@>, box 8m
+              <@@ Nullable<_> 2m<m^2> ?* 4m<m> @@>, box 8m
+              <@@ Nullable<_> 2I ?* 4I @@>, box 8I
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?* LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?* LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
+              
+              <@@ 2y *? Nullable<_> 4y @@>, box 8y
+              <@@ 2uy *? Nullable<_> 4uy @@>, box 8uy
+              <@@ 2s *? Nullable<_> 4s @@>, box 8s
+              <@@ 2us *? Nullable<_> 4us @@>, box 8us
+              <@@ 2 *? Nullable<_> 4 @@>, box 8
+              <@@ 2u *? Nullable<_> 4u @@>, box 8u
+              <@@ 2L *? Nullable<_> 4L @@>, box 8L
+              <@@ 2uL *? Nullable<_> 4uL @@>, box 8uL
+              <@@ 2.0f *? Nullable<_> 4.0f @@>, box 8f
+              <@@ 2.0 *? Nullable<_> 4.0 @@>, box 8.
+              <@@ 2m *? Nullable<_> 4m @@>, box 8m
+              <@@ 2m<m^2> *? Nullable<_> 4m<m> @@>, box 8m
+              <@@ 2I *? Nullable<_> 4I @@>, box 8I
+              <@@ LanguagePrimitives.GenericOne<nativeint> *? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
+              <@@ LanguagePrimitives.GenericOne<unativeint> *? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
+              
+              <@@ Nullable<_> 2y ?*? Nullable<_> 4y @@>, box 8y
+              <@@ Nullable<_> 2uy ?*? Nullable<_> 4uy @@>, box 8uy
+              <@@ Nullable<_> 2s ?*? Nullable<_> 4s @@>, box 8s
+              <@@ Nullable<_> 2us ?*? Nullable<_> 4us @@>, box 8us
+              <@@ Nullable<_> 2 ?*? Nullable<_> 4 @@>, box 8
+              <@@ Nullable<_> 2u ?*? Nullable<_> 4u @@>, box 8u
+              <@@ Nullable<_> 2L ?*? Nullable<_> 4L @@>, box 8L
+              <@@ Nullable<_> 2uL ?*? Nullable<_> 4uL @@>, box 8uL
+              <@@ Nullable<_> 2.0f ?*? Nullable<_> 4.0f @@>, box 8f
+              <@@ Nullable<_> 2.0 ?*? Nullable<_> 4.0 @@>, box 8.
+              <@@ Nullable<_> 2m ?*? Nullable<_> 4m @@>, box 8m
+              <@@ Nullable<_> 2m<m^2> ?*? Nullable<_> 4m<m> @@>, box 8m
+              <@@ Nullable<_> 2I ?*? Nullable<_> 4I @@>, box 8I
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?*? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?*? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
+
+              <@@ Nullable<_> 6y ?/ 3y @@>, box 2y
+              <@@ Nullable<_> 6uy ?/ 3uy @@>, box 2uy
+              <@@ Nullable<_> 6s ?/ 3s @@>, box 2s
+              <@@ Nullable<_> 6us ?/ 3us @@>, box 2us
+              <@@ Nullable<_> 6 ?/ 3 @@>, box 2
+              <@@ Nullable<_> 6u ?/ 3u @@>, box 2u
+              <@@ Nullable<_> 6L ?/ 3L @@>, box 2L
+              <@@ Nullable<_> 6uL ?/ 3uL @@>, box 2uL
+              <@@ Nullable<_> 6.0f ?/ 3.0f @@>, box 2f
+              <@@ Nullable<_> 6.0 ?/ 3.0 @@>, box 2.
+              <@@ Nullable<_> 6m ?/ 3m @@>, box 2m
+              <@@ Nullable<_> 6m<m> ?/ 3m</m> @@>, box 2m
+              <@@ Nullable<_> 6I ?/ 3I @@>, box 2I
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?/ LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?/ LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
+              
+              <@@ 6y /? Nullable<_> 3y @@>, box 2y
+              <@@ 6uy /? Nullable<_> 3uy @@>, box 2uy
+              <@@ 6s /? Nullable<_> 3s @@>, box 2s
+              <@@ 6us /? Nullable<_> 3us @@>, box 2us
+              <@@ 6 /? Nullable<_> 3 @@>, box 2
+              <@@ 6u /? Nullable<_> 3u @@>, box 2u
+              <@@ 6L /? Nullable<_> 3L @@>, box 2L
+              <@@ 6uL /? Nullable<_> 3uL @@>, box 2uL
+              <@@ 6.0f /? Nullable<_> 3.0f @@>, box 2f
+              <@@ 6.0 /? Nullable<_> 3.0 @@>, box 2.
+              <@@ 6m /? Nullable<_> 3m @@>, box 2m
+              <@@ 6m<m> /? Nullable<_> 3m</m> @@>, box 2m
+              <@@ 6I /? Nullable<_> 3I @@>, box 2I
+              <@@ LanguagePrimitives.GenericOne<nativeint> /? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
+              <@@ LanguagePrimitives.GenericOne<unativeint> /? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
+              
+              <@@ Nullable<_> 6y ?/? Nullable<_> 3y @@>, box 2y
+              <@@ Nullable<_> 6uy ?/? Nullable<_> 3uy @@>, box 2uy
+              <@@ Nullable<_> 6s ?/? Nullable<_> 3s @@>, box 2s
+              <@@ Nullable<_> 6us ?/? Nullable<_> 3us @@>, box 2us
+              <@@ Nullable<_> 6 ?/? Nullable<_> 3 @@>, box 2
+              <@@ Nullable<_> 6u ?/? Nullable<_> 3u @@>, box 2u
+              <@@ Nullable<_> 6L ?/? Nullable<_> 3L @@>, box 2L
+              <@@ Nullable<_> 6uL ?/? Nullable<_> 3uL @@>, box 2uL
+              <@@ Nullable<_> 6.0f ?/? Nullable<_> 3.0f @@>, box 2f
+              <@@ Nullable<_> 6.0 ?/? Nullable<_> 3.0 @@>, box 2.
+              <@@ Nullable<_> 6m ?/? Nullable<_> 3m @@>, box 2m
+              <@@ Nullable<_> 6m<m> ?/? Nullable<_> 3m</m> @@>, box 2m
+              <@@ Nullable<_> 6I ?/? Nullable<_> 3I @@>, box 2I
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?/? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box 1n
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?/? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box 1un
+
+              <@@ Nullable<_> 9y ?% 4y @@>, box 1y
+              <@@ Nullable<_> 9uy ?% 4uy @@>, box 1uy
+              <@@ Nullable<_> 9s ?% 4s @@>, box 1s
+              <@@ Nullable<_> 9us ?% 4us @@>, box 1us
+              <@@ Nullable<_> 9 ?% 4 @@>, box 1
+              <@@ Nullable<_> 9u ?% 4u @@>, box 1u
+              <@@ Nullable<_> 9L ?% 4L @@>, box 1L
+              <@@ Nullable<_> 9uL ?% 4uL @@>, box 1uL
+              <@@ Nullable<_> 9.0f ?% 4.0f @@>, box 1f
+              <@@ Nullable<_> 9.0 ?% 4.0 @@>, box 1.
+              <@@ Nullable<_> 9m ?% 4m @@>, box 1m
+              <@@ Nullable<_> 9m<m> ?% 4m<m> @@>, box 1m
+              <@@ Nullable<_> 9I ?% 4I @@>, box 1I
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?% LanguagePrimitives.GenericOne<nativeint> @@>, box 0n
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?% LanguagePrimitives.GenericOne<unativeint> @@>, box 0un
+              
+              <@@ 9y %? Nullable<_> 4y @@>, box 1y
+              <@@ 9uy %? Nullable<_> 4uy @@>, box 1uy
+              <@@ 9s %? Nullable<_> 4s @@>, box 1s
+              <@@ 9us %? Nullable<_> 4us @@>, box 1us
+              <@@ 9 %? Nullable<_> 4 @@>, box 1
+              <@@ 9u %? Nullable<_> 4u @@>, box 1u
+              <@@ 9L %? Nullable<_> 4L @@>, box 1L
+              <@@ 9uL %? Nullable<_> 4uL @@>, box 1uL
+              <@@ 9.0f %? Nullable<_> 4.0f @@>, box 1f
+              <@@ 9.0 %? Nullable<_> 4.0 @@>, box 1.
+              <@@ 9m %? Nullable<_> 4m @@>, box 1m
+              <@@ 9m<m> %? Nullable<_> 4m<m> @@>, box 1m
+              <@@ 9I %? Nullable<_> 4I @@>, box 1I
+              <@@ LanguagePrimitives.GenericOne<nativeint> %? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box 0n
+              <@@ LanguagePrimitives.GenericOne<unativeint> %? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box 0un
+              
+              <@@ Nullable<_> 9y ?%? Nullable<_> 4y @@>, box 1y
+              <@@ Nullable<_> 9uy ?%? Nullable<_> 4uy @@>, box 1uy
+              <@@ Nullable<_> 9s ?%? Nullable<_> 4s @@>, box 1s
+              <@@ Nullable<_> 9us ?%? Nullable<_> 4us @@>, box 1us
+              <@@ Nullable<_> 9 ?%? Nullable<_> 4 @@>, box 1
+              <@@ Nullable<_> 9u ?%? Nullable<_> 4u @@>, box 1u
+              <@@ Nullable<_> 9L ?%? Nullable<_> 4L @@>, box 1L
+              <@@ Nullable<_> 9uL ?%? Nullable<_> 4uL @@>, box 1uL
+              <@@ Nullable<_> 9.0f ?%? Nullable<_> 4.0f @@>, box 1f
+              <@@ Nullable<_> 9.0 ?%? Nullable<_> 4.0 @@>, box 1.
+              <@@ Nullable<_> 9m ?%? Nullable<_> 4m @@>, box 1m
+              <@@ Nullable<_> 9m<m> ?%? Nullable<_> 4m<m> @@>, box 1m
+              <@@ Nullable<_> 9I ?%? Nullable<_> 4I @@>, box 1I
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?%? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box 0n
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?%? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box 0un
+              
+              <@@ NonStructuralComparison.(=) 3y 3y @@>, box true
+              <@@ NonStructuralComparison.(=) 3uy 3uy @@>, box true
+              <@@ NonStructuralComparison.(=) 3s 3s @@>, box true
+              <@@ NonStructuralComparison.(=) 3us 3us @@>, box true
+              <@@ NonStructuralComparison.(=) 3 3 @@>, box true
+              <@@ NonStructuralComparison.(=) 3u 3u @@>, box true
+              <@@ NonStructuralComparison.(=) 3L 3L @@>, box true
+              <@@ NonStructuralComparison.(=) 3UL 3UL @@>, box true
+              <@@ NonStructuralComparison.(=) '3' '3' @@>, box true
+              <@@ NonStructuralComparison.(=) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ NonStructuralComparison.(=) LanguagePrimitives.GenericOne<unativeint> LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ NonStructuralComparison.(=) 3f 3f @@>, box true
+              <@@ NonStructuralComparison.(=) 3. 3. @@>, box true
+              <@@ NonStructuralComparison.(=) 3m 3m @@>, box true
+              <@@ NonStructuralComparison.(=) 3m<m> 3m<m> @@>, box true
+              <@@ NonStructuralComparison.(=) 3I 3I @@>, box true
+              <@@ NonStructuralComparison.(=) "3" "3" @@>, box true
+              
+              <@@ NonStructuralComparison.(<>) 3y 3y @@>, box false
+              <@@ NonStructuralComparison.(<>) 3uy 3uy @@>, box false
+              <@@ NonStructuralComparison.(<>) 3s 3s @@>, box false
+              <@@ NonStructuralComparison.(<>) 3us 3us @@>, box false
+              <@@ NonStructuralComparison.(<>) 3 3 @@>, box false
+              <@@ NonStructuralComparison.(<>) 3u 3u @@>, box false
+              <@@ NonStructuralComparison.(<>) 3L 3L @@>, box false
+              <@@ NonStructuralComparison.(<>) 3UL 3UL @@>, box false
+              <@@ NonStructuralComparison.(<>) '3' '3' @@>, box false
+              <@@ NonStructuralComparison.(<>) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ NonStructuralComparison.(<>) LanguagePrimitives.GenericOne<unativeint> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ NonStructuralComparison.(<>) 3f 3f @@>, box false
+              <@@ NonStructuralComparison.(<>) 3. 3. @@>, box false
+              <@@ NonStructuralComparison.(<>) 3m 3m @@>, box false
+              <@@ NonStructuralComparison.(<>) 3m<m> 3m<m> @@>, box false
+              <@@ NonStructuralComparison.(<>) 3I 3I @@>, box false
+              <@@ NonStructuralComparison.(<>) "3" "3" @@>, box false
+
+              <@@ NonStructuralComparison.(<=) 3y 3y @@>, box true
+              <@@ NonStructuralComparison.(<=) 3uy 3uy @@>, box true
+              <@@ NonStructuralComparison.(<=) 3s 3s @@>, box true
+              <@@ NonStructuralComparison.(<=) 3us 3us @@>, box true
+              <@@ NonStructuralComparison.(<=) 3 3 @@>, box true
+              <@@ NonStructuralComparison.(<=) 3u 3u @@>, box true
+              <@@ NonStructuralComparison.(<=) 3L 3L @@>, box true
+              <@@ NonStructuralComparison.(<=) 3UL 3UL @@>, box true
+              <@@ NonStructuralComparison.(<=) '3' '3' @@>, box true
+              <@@ NonStructuralComparison.(<=) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ NonStructuralComparison.(<=) LanguagePrimitives.GenericOne<unativeint> LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ NonStructuralComparison.(<=) 3f 3f @@>, box true
+              <@@ NonStructuralComparison.(<=) 3. 3. @@>, box true
+              <@@ NonStructuralComparison.(<=) 3m 3m @@>, box true
+              <@@ NonStructuralComparison.(<=) 3m<m> 3m<m> @@>, box true
+              <@@ NonStructuralComparison.(<=) 3I 3I @@>, box true
+              <@@ NonStructuralComparison.(<=) "3" "3" @@>, box true
+
+              <@@ NonStructuralComparison.(<) 3y 3y @@>, box false
+              <@@ NonStructuralComparison.(<) 3uy 3uy @@>, box false
+              <@@ NonStructuralComparison.(<) 3s 3s @@>, box false
+              <@@ NonStructuralComparison.(<) 3us 3us @@>, box false
+              <@@ NonStructuralComparison.(<) 3 3 @@>, box false
+              <@@ NonStructuralComparison.(<) 3u 3u @@>, box false
+              <@@ NonStructuralComparison.(<) 3L 3L @@>, box false
+              <@@ NonStructuralComparison.(<) 3UL 3UL @@>, box false
+              <@@ NonStructuralComparison.(<) '3' '3' @@>, box false
+              <@@ NonStructuralComparison.(<) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ NonStructuralComparison.(<) LanguagePrimitives.GenericOne<unativeint> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ NonStructuralComparison.(<) 3f 3f @@>, box false
+              <@@ NonStructuralComparison.(<) 3. 3. @@>, box false
+              <@@ NonStructuralComparison.(<) 3m 3m @@>, box false
+              <@@ NonStructuralComparison.(<) 3m<m> 3m<m> @@>, box false
+              <@@ NonStructuralComparison.(<) 3I 3I @@>, box false
+              <@@ NonStructuralComparison.(<) "3" "3" @@>, box false
+
+              <@@ NonStructuralComparison.(>=) 3y 3y @@>, box true
+              <@@ NonStructuralComparison.(>=) 3uy 3uy @@>, box true
+              <@@ NonStructuralComparison.(>=) 3s 3s @@>, box true
+              <@@ NonStructuralComparison.(>=) 3us 3us @@>, box true
+              <@@ NonStructuralComparison.(>=) 3 3 @@>, box true
+              <@@ NonStructuralComparison.(>=) 3u 3u @@>, box true
+              <@@ NonStructuralComparison.(>=) 3L 3L @@>, box true
+              <@@ NonStructuralComparison.(>=) 3UL 3UL @@>, box true
+              <@@ NonStructuralComparison.(>=) '3' '3' @@>, box true
+              <@@ NonStructuralComparison.(>=) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ NonStructuralComparison.(>=) LanguagePrimitives.GenericOne<unativeint> LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ NonStructuralComparison.(>=) 3f 3f @@>, box true
+              <@@ NonStructuralComparison.(>=) 3. 3. @@>, box true
+              <@@ NonStructuralComparison.(>=) 3m 3m @@>, box true
+              <@@ NonStructuralComparison.(>=) 3m<m> 3m<m> @@>, box true
+              <@@ NonStructuralComparison.(>=) 3I 3I @@>, box true
+              <@@ NonStructuralComparison.(>=) "3" "3" @@>, box true
+
+              <@@ NonStructuralComparison.(>) 3y 3y @@>, box false
+              <@@ NonStructuralComparison.(>) 3uy 3uy @@>, box false
+              <@@ NonStructuralComparison.(>) 3s 3s @@>, box false
+              <@@ NonStructuralComparison.(>) 3us 3us @@>, box false
+              <@@ NonStructuralComparison.(>) 3 3 @@>, box false
+              <@@ NonStructuralComparison.(>) 3u 3u @@>, box false
+              <@@ NonStructuralComparison.(>) 3L 3L @@>, box false
+              <@@ NonStructuralComparison.(>) 3UL 3UL @@>, box false
+              <@@ NonStructuralComparison.(>) '3' '3' @@>, box false
+              <@@ NonStructuralComparison.(>) LanguagePrimitives.GenericOne<nativeint> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ NonStructuralComparison.(>) LanguagePrimitives.GenericOne<unativeint> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ NonStructuralComparison.(>) 3f 3f @@>, box false
+              <@@ NonStructuralComparison.(>) 3. 3. @@>, box false
+              <@@ NonStructuralComparison.(>) 3m 3m @@>, box false
+              <@@ NonStructuralComparison.(>) 3m<m> 3m<m> @@>, box false
+              <@@ NonStructuralComparison.(>) 3I 3I @@>, box false
+              <@@ NonStructuralComparison.(>) "3" "3" @@>, box false
+            |]
+
+       tests |> Array.map (fun (test, eval) -> 
+           begin
+               printfn "--> Checking we can evaluate %A" test
+               let res = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation test
+               let b = res = eval
+               if b then printfn "--- Success, it is %A which is equal to %A" res eval
+               else printfn "!!! FAILURE, it is %A which is not equal to %A" res eval
+               b
+           end
+           &&
            match test with
-            | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) -> 
-                minfo1.IsStatic && 
-                minfo2.IsStatic && 
-                minfo2.Name = minfo1.Name + "$W" &&
+           | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) ->
+               minfo1.IsStatic && 
+               minfo2.IsStatic && 
+               minfo2.Name = minfo1.Name + "$W" &&
     (*
-                (printfn "checking minfo2.GetParameters().Length = %d..." (minfo2.GetParameters().Length); true) &&
-                minfo2.GetParameters().Length = 3 && 
-                (printfn "checking witnessArgs.Length..."; true) &&
-                witnessArgs.Length = 1 &&
-                (printfn "checking args.Length..."; true) &&
-                args.Length = 2 &&
-                (printfn "witnessArgs..."; true) &&
-                (match witnessArgs with [ Lambda _ ] -> true | _ -> false) &&
-                (printfn "args..."; true) &&
-                (match args with [ _; _ ] -> true | _ -> false)
-                *)
-                true
-            | _ -> false))
+               (printfn "checking minfo2.GetParameters().Length = %d..." (minfo2.GetParameters().Length); true) &&
+               minfo2.GetParameters().Length = 3 && 
+               (printfn "checking witnessArgs.Length..."; true) &&
+               witnessArgs.Length = 1 &&
+               (printfn "checking args.Length..."; true) &&
+               args.Length = 2 &&
+               (printfn "witnessArgs..."; true) &&
+               (match witnessArgs with [ Lambda _ ] -> true | _ -> false) &&
+               (printfn "args..."; true) &&
+               (match args with [ _; _ ] -> true | _ -> false)
+               *)
+               (printfn "<-- Successfully checked with Quotations.Patterns.(|CallWithWitnesses|_|)"; true)
+               || (printfn "<-- FAILURE, failed after matching with Quotations.Patterns.(|CallWithWitnesses|_|)"; true)
+           | _ ->
+               printfn "<!! FAILURE, it did not match Quotations.Patterns.(|CallWithWitnesses|_|)"
+               false) |> Array.forall id) // Don't short circuit on a failed test
+               
+    test "check non-CallWithWitnesses operators"       
+        (let tests = [|
+              <@@ LanguagePrimitives.PhysicalEquality [|3|] [|3|] @@>, box false
+              <@@ let x = [|3|] in LanguagePrimitives.PhysicalEquality x x @@>, box true
+              <@@ LanguagePrimitives.PhysicalEquality (seq { 3 }) (seq { 3 }) @@>, box false
+              <@@ let x = seq { 3 } in LanguagePrimitives.PhysicalEquality x x @@>, box true
+              <@@ LanguagePrimitives.PhysicalEquality (obj()) (obj()) @@>, box false
+              <@@ let x = obj() in LanguagePrimitives.PhysicalEquality x x @@>, box true
+              
+              <@@ 3y = 3y @@>, box true
+              <@@ 3uy = 3uy @@>, box true
+              <@@ 3s = 3s @@>, box true
+              <@@ 3us = 3us @@>, box true
+              <@@ 3 = 3 @@>, box true
+              <@@ 3u = 3u @@>, box true
+              <@@ 3L = 3L @@>, box true
+              <@@ 3UL = 3UL @@>, box true
+              <@@ '3' = '3' @@>, box true
+              <@@ LanguagePrimitives.GenericOne<nativeint> = LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ LanguagePrimitives.GenericOne<unativeint> = LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ 3f = 3f @@>, box true
+              <@@ 3. = 3. @@>, box true
+              <@@ 3m = 3m @@>, box true
+              <@@ 3m<m> = 3m<m> @@>, box true
+              <@@ 3I = 3I @@>, box true
+              <@@ "3" = "3" @@>, box true
+              <@@ [3] = [3] @@>, box true
+              <@@ [|3|] = [|3|] @@>, box true
+              <@@ seq { 3 } = seq { 3 } @@>, box false // Reference equality
+              <@@ let x = seq { 3 } in x = x @@>, box true
+              <@@ obj() = obj() @@>, box false
+              <@@ let x = obj() in x = x @@>, box true
+              
+              <@@ 3y <> 3y @@>, box false
+              <@@ 3uy <> 3uy @@>, box false
+              <@@ 3s <> 3s @@>, box false
+              <@@ 3us <> 3us @@>, box false
+              <@@ 3 <> 3 @@>, box false
+              <@@ 3u <> 3u @@>, box false
+              <@@ 3L <> 3L @@>, box false
+              <@@ 3UL <> 3UL @@>, box false
+              <@@ '3' <> '3' @@>, box false
+              <@@ LanguagePrimitives.GenericOne<nativeint> <> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ LanguagePrimitives.GenericOne<unativeint> <> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ 3f <> 3f @@>, box false
+              <@@ 3. <> 3. @@>, box false
+              <@@ 3m <> 3m @@>, box false
+              <@@ 3m<m> <> 3m<m> @@>, box false
+              <@@ 3I <> 3I @@>, box false
+              <@@ "3" <> "3" @@>, box false
+              <@@ [3] <> [3] @@>, box false
+              <@@ [|3|] <> [|3|] @@>, box false
+              <@@ seq { 3 } <> seq { 3 } @@>, box true // Reference equality
+              <@@ let x = seq { 3 } in x <> x @@>, box false
+              <@@ obj() <> obj() @@>, box true
+              <@@ let x = obj() in x <> x @@>, box false
 
+              <@@ 3y <= 3y @@>, box true
+              <@@ 3uy <= 3uy @@>, box true
+              <@@ 3s <= 3s @@>, box true
+              <@@ 3us <= 3us @@>, box true
+              <@@ 3 <= 3 @@>, box true
+              <@@ 3u <= 3u @@>, box true
+              <@@ 3L <= 3L @@>, box true
+              <@@ 3UL <= 3UL @@>, box true
+              <@@ '3' <= '3' @@>, box true
+              <@@ LanguagePrimitives.GenericOne<nativeint> <= LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ LanguagePrimitives.GenericOne<unativeint> <= LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ 3f <= 3f @@>, box true
+              <@@ 3. <= 3. @@>, box true
+              <@@ 3m <= 3m @@>, box true
+              <@@ 3m<m> <= 3m<m> @@>, box true
+              <@@ 3I <= 3I @@>, box true
+              <@@ "3" <= "3" @@>, box true
+              <@@ [3] <= [3] @@>, box true
+              <@@ [|3|] <= [|3|] @@>, box true
+
+              <@@ 3y < 3y @@>, box false
+              <@@ 3uy < 3uy @@>, box false
+              <@@ 3s < 3s @@>, box false
+              <@@ 3us < 3us @@>, box false
+              <@@ 3 < 3 @@>, box false
+              <@@ 3u < 3u @@>, box false
+              <@@ 3L < 3L @@>, box false
+              <@@ 3UL < 3UL @@>, box false
+              <@@ '3' < '3' @@>, box false
+              <@@ LanguagePrimitives.GenericOne<nativeint> < LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ LanguagePrimitives.GenericOne<unativeint> < LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ 3f < 3f @@>, box false
+              <@@ 3. < 3. @@>, box false
+              <@@ 3m < 3m @@>, box false
+              <@@ 3m<m> < 3m<m> @@>, box false
+              <@@ 3I < 3I @@>, box false
+              <@@ "3" < "3" @@>, box false
+              <@@ [3] < [3] @@>, box false
+              <@@ [|3|] < [|3|] @@>, box false
+
+              <@@ 3y >= 3y @@>, box true
+              <@@ 3uy >= 3uy @@>, box true
+              <@@ 3s >= 3s @@>, box true
+              <@@ 3us >= 3us @@>, box true
+              <@@ 3 >= 3 @@>, box true
+              <@@ 3u >= 3u @@>, box true
+              <@@ 3L >= 3L @@>, box true
+              <@@ 3UL >= 3UL @@>, box true
+              <@@ '3' >= '3' @@>, box true
+              <@@ LanguagePrimitives.GenericOne<nativeint> >= LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ LanguagePrimitives.GenericOne<unativeint> >= LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ 3f >= 3f @@>, box true
+              <@@ 3. >= 3. @@>, box true
+              <@@ 3m >= 3m @@>, box true
+              <@@ 3m<m> >= 3m<m> @@>, box true
+              <@@ 3I >= 3I @@>, box true
+              <@@ "3" >= "3" @@>, box true
+              <@@ [3] >= [3] @@>, box true
+              <@@ [|3|] >= [|3|] @@>, box true
+
+              <@@ 3y > 3y @@>, box false
+              <@@ 3uy > 3uy @@>, box false
+              <@@ 3s > 3s @@>, box false
+              <@@ 3us > 3us @@>, box false
+              <@@ 3 > 3 @@>, box false
+              <@@ 3u > 3u @@>, box false
+              <@@ 3L > 3L @@>, box false
+              <@@ 3UL > 3UL @@>, box false
+              <@@ '3' > '3' @@>, box false
+              <@@ LanguagePrimitives.GenericOne<nativeint> > LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ LanguagePrimitives.GenericOne<unativeint> > LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ 3f > 3f @@>, box false
+              <@@ 3. > 3. @@>, box false
+              <@@ 3m > 3m @@>, box false
+              <@@ 3m<m> > 3m<m> @@>, box false
+              <@@ 3I > 3I @@>, box false
+              <@@ "3" > "3" @@>, box false
+              <@@ [3] > [3] @@>, box false
+              <@@ [|3|] > [|3|] @@>, box false
+              
+              <@@ Nullable<_> 1y ?= 1y @@>, box true
+              <@@ Nullable<_> 1uy ?= 1uy @@>, box true
+              <@@ Nullable<_> 1s ?= 1s @@>, box true
+              <@@ Nullable<_> 1us ?= 1us @@>, box true
+              <@@ Nullable<_> 1 ?= 1 @@>, box true
+              <@@ Nullable<_> 1u ?= 1u @@>, box true
+              <@@ Nullable<_> 1L ?= 1L @@>, box true
+              <@@ Nullable<_> 1uL ?= 1uL @@>, box true
+              <@@ Nullable<_> 1.0f ?= 1.0f @@>, box true
+              <@@ Nullable<_> 1.0 ?= 1.0 @@>, box true
+              <@@ Nullable<_> 1m ?= 1m @@>, box true
+              <@@ Nullable<_> 1m<m> ?= 1m<m> @@>, box true
+              <@@ Nullable<_> 1I ?= 1I @@>, box true
+              <@@ Nullable<_> '1' ?= '1' @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?= LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?= LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              
+              <@@ 1y =? Nullable<_> 1y @@>, box true
+              <@@ 1uy =? Nullable<_> 1uy @@>, box true
+              <@@ 1s =? Nullable<_> 1s @@>, box true
+              <@@ 1us =? Nullable<_> 1us @@>, box true
+              <@@ 1 =? Nullable<_> 1 @@>, box true
+              <@@ 1u =? Nullable<_> 1u @@>, box true
+              <@@ 1L =? Nullable<_> 1L @@>, box true
+              <@@ 1uL =? Nullable<_> 1uL @@>, box true
+              <@@ 1.0f =? Nullable<_> 1.0f @@>, box true
+              <@@ 1.0 =? Nullable<_> 1.0 @@>, box true
+              <@@ 1m =? Nullable<_> 1m @@>, box true
+              <@@ 1m<m> =? Nullable<_> 1m<m> @@>, box true
+              <@@ 1I =? Nullable<_> 1I @@>, box true
+              <@@ '1' =? Nullable<_> '1' @@>, box true
+              <@@ LanguagePrimitives.GenericOne<nativeint> =? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ LanguagePrimitives.GenericOne<unativeint> =? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              
+              <@@ Nullable<_> 1y ?=? Nullable<_> 1y @@>, box true
+              <@@ Nullable<_> 1uy ?=? Nullable<_> 1uy @@>, box true
+              <@@ Nullable<_> 1s ?=? Nullable<_> 1s @@>, box true
+              <@@ Nullable<_> 1us ?=? Nullable<_> 1us @@>, box true
+              <@@ Nullable<_> 1 ?=? Nullable<_> 1 @@>, box true
+              <@@ Nullable<_> 1u ?=? Nullable<_> 1u @@>, box true
+              <@@ Nullable<_> 1L ?=? Nullable<_> 1L @@>, box true
+              <@@ Nullable<_> 1uL ?=? Nullable<_> 1uL @@>, box true
+              <@@ Nullable<_> 1.0f ?=? Nullable<_> 1.0f @@>, box true
+              <@@ Nullable<_> 1.0 ?=? Nullable<_> 1.0 @@>, box true
+              <@@ Nullable<_> 1m ?=? Nullable<_> 1m @@>, box true
+              <@@ Nullable<_> 1m<m> ?=? Nullable<_> 1m<m> @@>, box true
+              <@@ Nullable<_> 1I ?=? Nullable<_> 1I @@>, box true
+              <@@ Nullable<_> '1' ?=? Nullable<_> '1' @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?=? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?=? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              
+              <@@ Nullable<_> 3y ?<> 3y @@>, box false
+              <@@ Nullable<_> 3uy ?<> 3uy @@>, box false
+              <@@ Nullable<_> 3s ?<> 3s @@>, box false
+              <@@ Nullable<_> 3us ?<> 3us @@>, box false
+              <@@ Nullable<_> 3 ?<> 3 @@>, box false
+              <@@ Nullable<_> 3u ?<> 3u @@>, box false
+              <@@ Nullable<_> 3L ?<> 3L @@>, box false
+              <@@ Nullable<_> 3UL ?<> 3UL @@>, box false
+              <@@ Nullable<_> '3' ?<> '3' @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?<> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?<> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ Nullable<_> 3f ?<> 3f @@>, box false
+              <@@ Nullable<_> 3. ?<> 3. @@>, box false
+              <@@ Nullable<_> 3m ?<> 3m @@>, box false
+              <@@ Nullable<_> 3m<m> ?<> 3m<m> @@>, box false
+              <@@ Nullable<_> 3I ?<> 3I @@>, box false
+              
+              <@@ 3y <>? Nullable<_> 3y @@>, box false
+              <@@ 3uy <>? Nullable<_> 3uy @@>, box false
+              <@@ 3s <>? Nullable<_> 3s @@>, box false
+              <@@ 3us <>? Nullable<_> 3us @@>, box false
+              <@@ 3 <>? Nullable<_> 3 @@>, box false
+              <@@ 3u <>? Nullable<_> 3u @@>, box false
+              <@@ 3L <>? Nullable<_> 3L @@>, box false
+              <@@ 3UL <>? Nullable<_> 3UL @@>, box false
+              <@@ '3' <>? Nullable<_> '3' @@>, box false
+              <@@ LanguagePrimitives.GenericOne<nativeint> <>? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ LanguagePrimitives.GenericOne<unativeint> <>? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ 3f <>? Nullable<_> 3f @@>, box false
+              <@@ 3. <>? Nullable<_> 3. @@>, box false
+              <@@ 3m <>? Nullable<_> 3m @@>, box false
+              <@@ 3m<m> <>? Nullable<_> 3m<m> @@>, box false
+              <@@ 3I <>? Nullable<_> 3I @@>, box false
+              
+              <@@ Nullable<_> 3y ?<>? Nullable<_> 3y @@>, box false
+              <@@ Nullable<_> 3uy ?<>? Nullable<_> 3uy @@>, box false
+              <@@ Nullable<_> 3s ?<>? Nullable<_> 3s @@>, box false
+              <@@ Nullable<_> 3us ?<>? Nullable<_> 3us @@>, box false
+              <@@ Nullable<_> 3 ?<>? Nullable<_> 3 @@>, box false
+              <@@ Nullable<_> 3u ?<>? Nullable<_> 3u @@>, box false
+              <@@ Nullable<_> 3L ?<>? Nullable<_> 3L @@>, box false
+              <@@ Nullable<_> 3UL ?<>? Nullable<_> 3UL @@>, box false
+              <@@ Nullable<_> '3' ?<>? Nullable<_> '3' @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?<>? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?<>? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ Nullable<_> 3f ?<>? Nullable<_> 3f @@>, box false
+              <@@ Nullable<_> 3. ?<>? Nullable<_> 3. @@>, box false
+              <@@ Nullable<_> 3m ?<>? Nullable<_> 3m @@>, box false
+              <@@ Nullable<_> 3m<m> ?<>? Nullable<_> 3m<m> @@>, box false
+              <@@ Nullable<_> 3I ?<>? Nullable<_> 3I @@>, box false
+              
+              <@@ Nullable<_> 3y ?<= 3y @@>, box true
+              <@@ Nullable<_> 3uy ?<= 3uy @@>, box true
+              <@@ Nullable<_> 3s ?<= 3s @@>, box true
+              <@@ Nullable<_> 3us ?<= 3us @@>, box true
+              <@@ Nullable<_> 3 ?<= 3 @@>, box true
+              <@@ Nullable<_> 3u ?<= 3u @@>, box true
+              <@@ Nullable<_> 3L ?<= 3L @@>, box true
+              <@@ Nullable<_> 3UL ?<= 3UL @@>, box true
+              <@@ Nullable<_> '3' ?<= '3' @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?<= LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?<= LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ Nullable<_> 3f ?<= 3f @@>, box true
+              <@@ Nullable<_> 3. ?<= 3. @@>, box true
+              <@@ Nullable<_> 3m ?<= 3m @@>, box true
+              <@@ Nullable<_> 3m<m> ?<= 3m<m> @@>, box true
+              <@@ Nullable<_> 3I ?<= 3I @@>, box true
+
+              <@@ 3y <=? Nullable<_> 3y @@>, box true
+              <@@ 3uy <=? Nullable<_> 3uy @@>, box true
+              <@@ 3s <=? Nullable<_> 3s @@>, box true
+              <@@ 3us <=? Nullable<_> 3us @@>, box true
+              <@@ 3 <=? Nullable<_> 3 @@>, box true
+              <@@ 3u <=? Nullable<_> 3u @@>, box true
+              <@@ 3L <=? Nullable<_> 3L @@>, box true
+              <@@ 3UL <=? Nullable<_> 3UL @@>, box true
+              <@@ '3' <=? Nullable<_> '3' @@>, box true
+              <@@ LanguagePrimitives.GenericOne<nativeint> <=? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ LanguagePrimitives.GenericOne<unativeint> <=? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ 3f <=? Nullable<_> 3f @@>, box true
+              <@@ 3. <=? Nullable<_> 3. @@>, box true
+              <@@ 3m <=? Nullable<_> 3m @@>, box true
+              <@@ 3m<m> <=? Nullable<_> 3m<m> @@>, box true
+              <@@ 3I <=? Nullable<_> 3I @@>, box true
+
+              <@@ Nullable<_> 3y ?<=? Nullable<_> 3y @@>, box true
+              <@@ Nullable<_> 3uy ?<=? Nullable<_> 3uy @@>, box true
+              <@@ Nullable<_> 3s ?<=? Nullable<_> 3s @@>, box true
+              <@@ Nullable<_> 3us ?<=? Nullable<_> 3us @@>, box true
+              <@@ Nullable<_> 3 ?<=? Nullable<_> 3 @@>, box true
+              <@@ Nullable<_> 3u ?<=? Nullable<_> 3u @@>, box true
+              <@@ Nullable<_> 3L ?<=? Nullable<_> 3L @@>, box true
+              <@@ Nullable<_> 3UL ?<=? Nullable<_> 3UL @@>, box true
+              <@@ Nullable<_> '3' ?<=? Nullable<_> '3' @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?<=? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?<=? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ Nullable<_> 3f ?<=? Nullable<_> 3f @@>, box true
+              <@@ Nullable<_> 3. ?<=? Nullable<_> 3. @@>, box true
+              <@@ Nullable<_> 3m ?<=? Nullable<_> 3m @@>, box true
+              <@@ Nullable<_> 3m<m> ?<=? Nullable<_> 3m<m> @@>, box true
+              <@@ Nullable<_> 3I ?<=? Nullable<_> 3I @@>, box true
+
+              <@@ Nullable<_> 3y ?< 3y @@>, box false
+              <@@ Nullable<_> 3uy ?< 3uy @@>, box false
+              <@@ Nullable<_> 3s ?< 3s @@>, box false
+              <@@ Nullable<_> 3us ?< 3us @@>, box false
+              <@@ Nullable<_> 3 ?< 3 @@>, box false
+              <@@ Nullable<_> 3u ?< 3u @@>, box false
+              <@@ Nullable<_> 3L ?< 3L @@>, box false
+              <@@ Nullable<_> 3UL ?< 3UL @@>, box false
+              <@@ Nullable<_> '3' ?< '3' @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?< LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?< LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ Nullable<_> 3f ?< 3f @@>, box false
+              <@@ Nullable<_> 3. ?< 3. @@>, box false
+              <@@ Nullable<_> 3m ?< 3m @@>, box false
+              <@@ Nullable<_> 3m<m> ?< 3m<m> @@>, box false
+              <@@ Nullable<_> 3I ?< 3I @@>, box false
+
+              <@@ 3y <? Nullable<_> 3y @@>, box false
+              <@@ 3uy <? Nullable<_> 3uy @@>, box false
+              <@@ 3s <? Nullable<_> 3s @@>, box false
+              <@@ 3us <? Nullable<_> 3us @@>, box false
+              <@@ 3 <? Nullable<_> 3 @@>, box false
+              <@@ 3u <? Nullable<_> 3u @@>, box false
+              <@@ 3L <? Nullable<_> 3L @@>, box false
+              <@@ 3UL <? Nullable<_> 3UL @@>, box false
+              <@@ '3' <? Nullable<_> '3' @@>, box false
+              <@@ LanguagePrimitives.GenericOne<nativeint> <? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ LanguagePrimitives.GenericOne<unativeint> <? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ 3f <? Nullable<_> 3f @@>, box false
+              <@@ 3. <? Nullable<_> 3. @@>, box false
+              <@@ 3m <? Nullable<_> 3m @@>, box false
+              <@@ 3m<m> <? Nullable<_> 3m<m> @@>, box false
+              <@@ 3I <? Nullable<_> 3I @@>, box false
+
+              <@@ Nullable<_> 3y ?<? Nullable<_> 3y @@>, box false
+              <@@ Nullable<_> 3uy ?<? Nullable<_> 3uy @@>, box false
+              <@@ Nullable<_> 3s ?<? Nullable<_> 3s @@>, box false
+              <@@ Nullable<_> 3us ?<? Nullable<_> 3us @@>, box false
+              <@@ Nullable<_> 3 ?<? Nullable<_> 3 @@>, box false
+              <@@ Nullable<_> 3u ?<? Nullable<_> 3u @@>, box false
+              <@@ Nullable<_> 3L ?<? Nullable<_> 3L @@>, box false
+              <@@ Nullable<_> 3UL ?<? Nullable<_> 3UL @@>, box false
+              <@@ Nullable<_> '3' ?<? Nullable<_> '3' @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?<? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?<? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ Nullable<_> 3f ?<? Nullable<_> 3f @@>, box false
+              <@@ Nullable<_> 3. ?<? Nullable<_> 3. @@>, box false
+              <@@ Nullable<_> 3m ?<? Nullable<_> 3m @@>, box false
+              <@@ Nullable<_> 3m<m> ?<? Nullable<_> 3m<m> @@>, box false
+              <@@ Nullable<_> 3I ?<? Nullable<_> 3I @@>, box false
+
+              <@@ Nullable<_> 3y ?>= 3y @@>, box true
+              <@@ Nullable<_> 3uy ?>= 3uy @@>, box true
+              <@@ Nullable<_> 3s ?>= 3s @@>, box true
+              <@@ Nullable<_> 3us ?>= 3us @@>, box true
+              <@@ Nullable<_> 3 ?>= 3 @@>, box true
+              <@@ Nullable<_> 3u ?>= 3u @@>, box true
+              <@@ Nullable<_> 3L ?>= 3L @@>, box true
+              <@@ Nullable<_> 3UL ?>= 3UL @@>, box true
+              <@@ Nullable<_> '3' ?>= '3' @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?>= LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?>= LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ Nullable<_> 3f ?>= 3f @@>, box true
+              <@@ Nullable<_> 3. ?>= 3. @@>, box true
+              <@@ Nullable<_> 3m ?>= 3m @@>, box true
+              <@@ Nullable<_> 3m<m> ?>= 3m<m> @@>, box true
+              <@@ Nullable<_> 3I ?>= 3I @@>, box true
+
+              <@@ 3y >=? Nullable<_> 3y @@>, box true
+              <@@ 3uy >=? Nullable<_> 3uy @@>, box true
+              <@@ 3s >=? Nullable<_> 3s @@>, box true
+              <@@ 3us >=? Nullable<_> 3us @@>, box true
+              <@@ 3 >=? Nullable<_> 3 @@>, box true
+              <@@ 3u >=? Nullable<_> 3u @@>, box true
+              <@@ 3L >=? Nullable<_> 3L @@>, box true
+              <@@ 3UL >=? Nullable<_> 3UL @@>, box true
+              <@@ '3' >=? Nullable<_> '3' @@>, box true
+              <@@ LanguagePrimitives.GenericOne<nativeint> >=? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ LanguagePrimitives.GenericOne<unativeint> >=? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ 3f >=? Nullable<_> 3f @@>, box true
+              <@@ 3. >=? Nullable<_> 3. @@>, box true
+              <@@ 3m >=? Nullable<_> 3m @@>, box true
+              <@@ 3m<m> >=? Nullable<_> 3m<m> @@>, box true
+              <@@ 3I >=? Nullable<_> 3I @@>, box true
+
+              <@@ Nullable<_> 3y ?>=? Nullable<_> 3y @@>, box true
+              <@@ Nullable<_> 3uy ?>=? Nullable<_> 3uy @@>, box true
+              <@@ Nullable<_> 3s ?>=? Nullable<_> 3s @@>, box true
+              <@@ Nullable<_> 3us ?>=? Nullable<_> 3us @@>, box true
+              <@@ Nullable<_> 3 ?>=? Nullable<_> 3 @@>, box true
+              <@@ Nullable<_> 3u ?>=? Nullable<_> 3u @@>, box true
+              <@@ Nullable<_> 3L ?>=? Nullable<_> 3L @@>, box true
+              <@@ Nullable<_> 3UL ?>=? Nullable<_> 3UL @@>, box true
+              <@@ Nullable<_> '3' ?>=? Nullable<_> '3' @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?>=? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box true
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?>=? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box true
+              <@@ Nullable<_> 3f ?>=? Nullable<_> 3f @@>, box true
+              <@@ Nullable<_> 3. ?>=? Nullable<_> 3. @@>, box true
+              <@@ Nullable<_> 3m ?>=? Nullable<_> 3m @@>, box true
+              <@@ Nullable<_> 3m<m> ?>=? Nullable<_> 3m<m> @@>, box true
+              <@@ Nullable<_> 3I ?>=? Nullable<_> 3I @@>, box true
+
+              <@@ Nullable<_> 3y ?> 3y @@>, box false
+              <@@ Nullable<_> 3uy ?> 3uy @@>, box false
+              <@@ Nullable<_> 3s ?> 3s @@>, box false
+              <@@ Nullable<_> 3us ?> 3us @@>, box false
+              <@@ Nullable<_> 3 ?> 3 @@>, box false
+              <@@ Nullable<_> 3u ?> 3u @@>, box false
+              <@@ Nullable<_> 3L ?> 3L @@>, box false
+              <@@ Nullable<_> 3UL ?> 3UL @@>, box false
+              <@@ Nullable<_> '3' ?> '3' @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ Nullable<_> 3f ?> 3f @@>, box false
+              <@@ Nullable<_> 3. ?> 3. @@>, box false
+              <@@ Nullable<_> 3m ?> 3m @@>, box false
+              <@@ Nullable<_> 3m<m> ?> 3m<m> @@>, box false
+              <@@ Nullable<_> 3I ?> 3I @@>, box false
+
+              <@@ 3y >? Nullable<_> 3y @@>, box false
+              <@@ 3uy >? Nullable<_> 3uy @@>, box false
+              <@@ 3s >? Nullable<_> 3s @@>, box false
+              <@@ 3us >? Nullable<_> 3us @@>, box false
+              <@@ 3 >? Nullable<_> 3 @@>, box false
+              <@@ 3u >? Nullable<_> 3u @@>, box false
+              <@@ 3L >? Nullable<_> 3L @@>, box false
+              <@@ 3UL >? Nullable<_> 3UL @@>, box false
+              <@@ '3' >? Nullable<_> '3' @@>, box false
+              <@@ LanguagePrimitives.GenericOne<nativeint> >? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ LanguagePrimitives.GenericOne<unativeint> >? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ 3f >? Nullable<_> 3f @@>, box false
+              <@@ 3. >? Nullable<_> 3. @@>, box false
+              <@@ 3m >? Nullable<_> 3m @@>, box false
+              <@@ 3m<m> >? Nullable<_> 3m<m> @@>, box false
+              <@@ 3I >? Nullable<_> 3I @@>, box false
+
+              <@@ Nullable<_> 3y ?>? Nullable<_> 3y @@>, box false
+              <@@ Nullable<_> 3uy ?>? Nullable<_> 3uy @@>, box false
+              <@@ Nullable<_> 3s ?>? Nullable<_> 3s @@>, box false
+              <@@ Nullable<_> 3us ?>? Nullable<_> 3us @@>, box false
+              <@@ Nullable<_> 3 ?>? Nullable<_> 3 @@>, box false
+              <@@ Nullable<_> 3u ?>? Nullable<_> 3u @@>, box false
+              <@@ Nullable<_> 3L ?>? Nullable<_> 3L @@>, box false
+              <@@ Nullable<_> 3UL ?>? Nullable<_> 3UL @@>, box false
+              <@@ Nullable<_> '3' ?>? Nullable<_> '3' @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<nativeint> ?>? Nullable<_> LanguagePrimitives.GenericOne<nativeint> @@>, box false
+              <@@ Nullable<_> LanguagePrimitives.GenericOne<unativeint> ?>? Nullable<_> LanguagePrimitives.GenericOne<unativeint> @@>, box false
+              <@@ Nullable<_> 3f ?>? Nullable<_> 3f @@>, box false
+              <@@ Nullable<_> 3. ?>? Nullable<_> 3. @@>, box false
+              <@@ Nullable<_> 3m ?>? Nullable<_> 3m @@>, box false
+              <@@ Nullable<_> 3m<m> ?>? Nullable<_> 3m<m> @@>, box false
+              <@@ Nullable<_> 3I ?>? Nullable<_> 3I @@>, box false
+            |]
+
+       tests |> Array.map (fun (test, eval) -> 
+           begin
+               printfn "--> Checking we can evaluate %A" test
+               let res = FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation test
+               let b = res = eval
+               if b then printfn "--- Success, it is %A which is equal to %A" res eval
+               else printfn "!!! FAILURE, it is %A which is not equal to %A" res eval
+               b
+           end
+           &&
+           match test with
+           | CallWithWitnesses(None, minfo1, minfo2, witnessArgs, args) ->
+               printfn "<!! FAILURE, it matched Quotations.Patterns.(|CallWithWitnesses|_|)"
+               false
+           | _ ->
+               printfn "<-- Success, it did not match Quotations.Patterns.(|CallWithWitnesses|_|)"
+               true) |> Array.forall id) // Don't short circuit on a failed test
 module MoreWitnessTests =
 
     open System.Runtime.CompilerServices
@@ -3912,11 +5764,172 @@ module TestQuotationOfListSum2 =
          test "check List.sum 216" false
 
 
+module ComputationExpressionWithOptionalsAndParamArray =
+    open System
+    type InputKind =
+        | Text of placeholder:string option
+        | Password of placeholder: string option
+    type InputOptions =
+      { Label: string option
+        Kind : InputKind
+        Validators : (string -> bool) array }
+    type InputBuilder() =
+        member t.Yield(_) =
+          { Label = None
+            Kind = Text None
+            Validators = [||] }
+        [<CustomOperation("text")>]
+        member this.Text(io, ?placeholder) =
+            { io with Kind = Text placeholder }
+        [<CustomOperation("password")>]
+        member this.Password(io, ?placeholder) =
+            { io with Kind = Password placeholder }
+        [<CustomOperation("label")>]
+        member this.Label(io, label) =
+            { io with Label = Some label }
+        [<CustomOperation("with_validators")>]
+        member this.Validators(io, [<ParamArray>] validators) =
+            { io with Validators = validators }
 
-#endif
+    let input = InputBuilder()
+    let name =
+        input {
+            label "Name"
+            text
+            with_validators
+                (String.IsNullOrWhiteSpace >> not)
+        }
+    let email =
+        input {
+            label "Email"
+            text "Your email"
+            with_validators
+                (String.IsNullOrWhiteSpace >> not)
+                (fun s -> s.Contains "@")
+        }
+    let password =
+        input {
+            label "Password"
+            password "Must contains at least 6 characters, one number and one uppercase"
+            with_validators
+                (String.exists Char.IsUpper)
+                (String.exists Char.IsDigit)
+                (fun s -> s.Length >= 6)
+        }
+    check "vewhkvh1" name.Kind (Text None)
+    check "vewhkvh2" email.Kind (Text (Some "Your email"))
+    check "vewhkvh3" email.Label (Some "Email")
+    check "vewhkvh4" email.Validators.Length 2
+    check "vewhkvh5" password.Label (Some "Password")
+    check "vewhkvh6" password.Validators.Length 3
+
+module QuotationOfComputationExpressionZipOperation =
+
+    type Builder() =
+      member __.Bind (x, f) = f x
+      member __.Return x = x
+      member __.For (x, f) = f x
+      member __.Yield x = x
+      [<CustomOperation("var", MaintainsVariableSpaceUsingBind = true, IsLikeZip=true)>]
+      member __.Var (x, y, f) = f x y
+
+    let builder = Builder()
+
+    let q = 
+        <@  builder {
+                let! x = 1
+                var y in 2
+                return x + y
+            } @> 
+
+    let actual = (q.ToString())
+    checkStrings "brewbreebr" actual 
+       """Application (Lambda (builder@,
+                     Call (Some (builder@), For,
+                           [Call (Some (builder@), Var,
+                                  [Call (Some (builder@), Bind,
+                                         [Value (1),
+                                          Lambda (_arg1,
+                                                  Let (x, _arg1,
+                                                       Call (Some (builder@),
+                                                             Yield, [x])))]),
+                                   Value (2),
+                                   Lambda (x, Lambda (y, NewTuple (x, y)))]),
+                            Lambda (_arg2,
+                                    Let (y, TupleGet (_arg2, 1),
+                                         Let (x, TupleGet (_arg2, 0),
+                                              Call (Some (builder@), Return,
+                                                    [Call (None, op_Addition,
+                                                           [x, y])]))))])),
+             PropertyGet (None, builder, []))"""
+        
+module CheckEliminatedConstructs = 
+    let isNullQuoted (ts : 't[]) =
+        <@
+            match ts with
+            | null -> true
+            | _ -> false
+        @>
+
+    let actual1 = ((isNullQuoted [| |]).ToString())
+    checkStrings "brewbreebrvwe1" actual1
+       """IfThenElse (Call (None, op_Equality, [ValueWithName ([||], ts), Value (<null>)]),
+            Value (true), Value (false))"""
+        
+module Interpolation =
+    let interpolatedNoHoleQuoted = <@ $"abc" @>
+    let actual1 = interpolatedNoHoleQuoted.ToString()
+    checkStrings "brewbreebrwhat1" actual1 """Value ("abc")"""
+
+    let interpolatedWithLiteralQuoted = <@ $"abc {1} def" @>
+    let actual2 = interpolatedWithLiteralQuoted.ToString()
+    checkStrings "brewbreebrwhat2" actual2
+        """Call (None, PrintFormatToString,
+                 [NewObject (PrintfFormat`5, Value ("abc %P() def"),
+                             NewArray (Object, Call (None, Box, [Value (1)])),
+                             Value (<null>))])"""
+
+module TestQuotationWithIdetnicalStaticInstanceMethods = 
+    type C() =
+        static member M(c: int) = 1 + c
+        member this.M(c: int) = 2 + c
+    let res =
+        <@ C().M(3) @> 
+            |> FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation
+            :?> int
+   
+    check "vewhwveh" res 5
+
 
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
+
+
+module TestTaskQuotationExecution = 
+
+    open System.Threading.Tasks
+
+    let q = <@ task.Run(task.Delay(fun () -> task.Return "bar")) @>
+
+    let task =
+        q
+        |> FSharp.Linq.RuntimeHelpers.LeafExpressionConverter.EvaluateQuotation
+        :?> Task<string>
+
+    check "vewhwveh" task.Result "bar"
+
+module QuotationCapturingMutableThatGetsBoxed =
+
+    // Debug compilation failed
+    type Test () =
+        static member g ([< ReflectedDefinition>] f : Quotations.Expr<unit -> unit>) = printfn "%A" f
+
+    let f () =
+        let mutable x = 0
+        fun _ ->
+            Test.g (fun _ -> x |> ignore)
+
+    f () ()
 
 #if TESTS_AS_APP
 let RUN() = !failures

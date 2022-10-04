@@ -1,0 +1,1113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="SeeAlso" xml:space="preserve">
+    <value>. See also {0}.</value>
+  </data>
+  <data name="ConstraintSolverTupleDiffLengths" xml:space="preserve">
+    <value>The tuples have differing lengths of {0} and {1}</value>
+  </data>
+  <data name="ConstraintSolverInfiniteTypes" xml:space="preserve">
+    <value>The types '{0}' and '{1}' cannot be unified.</value>
+  </data>
+  <data name="ConstraintSolverMissingConstraint" xml:space="preserve">
+    <value>A type parameter is missing a constraint '{0}'</value>
+  </data>
+  <data name="ConstraintSolverTypesNotInEqualityRelation1" xml:space="preserve">
+    <value>The unit of measure '{0}' does not match the unit of measure '{1}'</value>
+  </data>
+  <data name="ConstraintSolverTypesNotInEqualityRelation2" xml:space="preserve">
+    <value>The type '{0}' does not match the type '{1}'</value>
+  </data>
+  <data name="ConstraintSolverTypesNotInSubsumptionRelation" xml:space="preserve">
+    <value>The type '{0}' is not compatible with the type '{1}'{2}</value>
+  </data>
+  <data name="ErrorFromAddingTypeEquation1" xml:space="preserve">
+    <value>This expression was expected to have type\n    '{1}'    \nbut here has type\n    '{0}'    {2}</value>
+  </data>
+  <data name="ErrorFromAddingTypeEquation2" xml:space="preserve">
+    <value>Type mismatch. Expecting a\n    '{0}'    \nbut given a\n    '{1}'    {2}\n</value>
+  </data>
+  <data name="ErrorFromApplyingDefault1" xml:space="preserve">
+    <value>Type constraint mismatch when applying the default type '{0}' for a type inference variable. </value>
+  </data>
+  <data name="ErrorFromApplyingDefault2" xml:space="preserve">
+    <value> Consider adding further type constraints</value>
+  </data>
+  <data name="ErrorsFromAddingSubsumptionConstraint" xml:space="preserve">
+    <value>Type constraint mismatch. The type \n    '{0}'    \nis not compatible with type\n    '{1}'    {2}\n</value>
+  </data>
+  <data name="UpperCaseIdentifierInPattern" xml:space="preserve">
+    <value>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</value>
+  </data>
+  <data name="NotUpperCaseConstructor" xml:space="preserve">
+    <value>Discriminated union cases and exception labels must be uppercase identifiers</value>
+  </data>
+  <data name="FunctionExpected" xml:space="preserve">
+    <value>This function takes too many arguments, or is used in a context where a function is not expected</value>
+  </data>
+  <data name="BakedInMemberConstraintName" xml:space="preserve">
+    <value>Member constraints with the name '{0}' are given special status by the F# compiler as certain .NET types are implicitly augmented with this member. This may result in runtime failures if you attempt to invoke the member constraint from your own code.</value>
+  </data>
+  <data name="BadEventTransformation" xml:space="preserve">
+    <value>A definition to be compiled as a .NET event does not have the expected form. Only property members can be compiled as .NET events.</value>
+  </data>
+  <data name="ParameterlessStructCtor" xml:space="preserve">
+    <value>Implicit object constructors for structs must take at least one argument</value>
+  </data>
+  <data name="InterfaceNotRevealed" xml:space="preserve">
+    <value>The type implements the interface '{0}' but this is not revealed by the signature. You should list the interface in the signature, as the interface will be discoverable via dynamic type casts and/or reflection.</value>
+  </data>
+  <data name="TyconBadArgs" xml:space="preserve">
+    <value>The type '{0}' expects {1} type argument(s) but is given {2}</value>
+  </data>
+  <data name="IndeterminateType" xml:space="preserve">
+    <value>Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.</value>
+  </data>
+  <data name="NameClash1" xml:space="preserve">
+    <value>Duplicate definition of {0} '{1}'</value>
+  </data>
+  <data name="NameClash2" xml:space="preserve">
+    <value>The {0} '{1}' can not be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</value>
+  </data>
+  <data name="Duplicate1" xml:space="preserve">
+    <value>Two members called '{0}' have the same signature</value>
+  </data>
+  <data name="Duplicate2" xml:space="preserve">
+    <value>Duplicate definition of {0} '{1}'</value>
+  </data>
+  <data name="UndefinedName2" xml:space="preserve">
+    <value> A construct with this name was found in FSharp.PowerPack.dll, which contains some modules and types that were implicitly referenced in some previous versions of F#. You may need to add an explicit reference to this DLL in order to compile this code.</value>
+  </data>
+  <data name="FieldNotMutable" xml:space="preserve">
+    <value>This field is not mutable</value>
+  </data>
+  <data name="FieldsFromDifferentTypes" xml:space="preserve">
+    <value>The fields '{0}' and '{1}' are from different types</value>
+  </data>
+  <data name="VarBoundTwice" xml:space="preserve">
+    <value>'{0}' is bound twice in this pattern</value>
+  </data>
+  <data name="Recursion" xml:space="preserve">
+    <value>A use of the function '{0}' does not match a type inferred elsewhere. The inferred type of the function is\n    {1}.    \nThe type of the function required at this point of use is\n    {2}    {3}\nThis error may be due to limitations associated with generic recursion within a 'let rec' collection or within a group of classes. Consider giving a full type signature for the targets of recursive calls including type annotations for both argument and return types.</value>
+  </data>
+  <data name="InvalidRuntimeCoercion" xml:space="preserve">
+    <value>Invalid runtime coercion or type test from type {0} to {1}\n{2}</value>
+  </data>
+  <data name="IndeterminateRuntimeCoercion" xml:space="preserve">
+    <value>This runtime coercion or type test from type\n    {0}    \n to \n    {1}    \ninvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.</value>
+  </data>
+  <data name="IndeterminateStaticCoercion" xml:space="preserve">
+    <value>The static coercion from type\n    {0}    \nto \n    {1}    \n involves an indeterminate type based on information prior to this program point. Static coercions are not allowed on some types. Further type annotations are needed.</value>
+  </data>
+  <data name="StaticCoercionShouldUseBox" xml:space="preserve">
+    <value>A coercion from the value type \n    {0}    \nto the type \n    {1}    \nwill involve boxing. Consider using 'box' instead</value>
+  </data>
+  <data name="TypeIsImplicitlyAbstract" xml:space="preserve">
+    <value>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</value>
+  </data>
+  <data name="NonRigidTypar1" xml:space="preserve">
+    <value>This construct causes code to be less generic than indicated by its type annotations. The type variable implied by the use of a '#', '_' or other type annotation at or near '{0}' has been constrained to be type '{1}'.</value>
+  </data>
+  <data name="NonRigidTypar2" xml:space="preserve">
+    <value>This construct causes code to be less generic than indicated by the type annotations. The unit-of-measure variable '{0} has been constrained to be measure '{1}'.</value>
+  </data>
+  <data name="NonRigidTypar3" xml:space="preserve">
+    <value>This construct causes code to be less generic than indicated by the type annotations. The type variable '{0} has been constrained to be type '{1}'.</value>
+  </data>
+  <data name="Parser.TOKEN.IDENT" xml:space="preserve">
+    <value>identifier</value>
+  </data>
+  <data name="Parser.TOKEN.INT" xml:space="preserve">
+    <value>integer literal</value>
+  </data>
+  <data name="Parser.TOKEN.FLOAT" xml:space="preserve">
+    <value>floating point literal</value>
+  </data>
+  <data name="Parser.TOKEN.DECIMAL" xml:space="preserve">
+    <value>decimal literal</value>
+  </data>
+  <data name="Parser.TOKEN.CHAR" xml:space="preserve">
+    <value>character literal</value>
+  </data>
+  <data name="Parser.TOKEN.BASE" xml:space="preserve">
+    <value>keyword 'base'</value>
+  </data>
+  <data name="Parser.TOKEN.LPAREN.STAR.RPAREN" xml:space="preserve">
+    <value>symbol '(*)'</value>
+  </data>
+  <data name="Parser.TOKEN.DOLLAR" xml:space="preserve">
+    <value>symbol '$'</value>
+  </data>
+  <data name="Parser.TOKEN.INFIX.STAR.STAR.OP" xml:space="preserve">
+    <value>infix operator</value>
+  </data>
+  <data name="Parser.TOKEN.INFIX.COMPARE.OP" xml:space="preserve">
+    <value>infix operator</value>
+  </data>
+  <data name="Parser.TOKEN.COLON.GREATER" xml:space="preserve">
+    <value>symbol ':&gt;'</value>
+  </data>
+  <data name="Parser.TOKEN.COLON.COLON" xml:space="preserve">
+    <value>symbol '::'</value>
+  </data>
+  <data name="Parser.TOKEN.PERCENT.OP" xml:space="preserve">
+    <value>symbol '{0}</value>
+  </data>
+  <data name="Parser.TOKEN.INFIX.AT.HAT.OP" xml:space="preserve">
+    <value>infix operator</value>
+  </data>
+  <data name="Parser.TOKEN.INFIX.BAR.OP" xml:space="preserve">
+    <value>infix operator</value>
+  </data>
+  <data name="Parser.TOKEN.PLUS.MINUS.OP" xml:space="preserve">
+    <value>infix operator</value>
+  </data>
+  <data name="Parser.TOKEN.PREFIX.OP" xml:space="preserve">
+    <value>prefix operator</value>
+  </data>
+  <data name="Parser.TOKEN.COLON.QMARK.GREATER" xml:space="preserve">
+    <value>symbol ':?&gt;'</value>
+  </data>
+  <data name="Parser.TOKEN.INFIX.STAR.DIV.MOD.OP" xml:space="preserve">
+    <value>infix operator</value>
+  </data>
+  <data name="Parser.TOKEN.INFIX.AMP.OP" xml:space="preserve">
+    <value>infix operator</value>
+  </data>
+  <data name="Parser.TOKEN.AMP" xml:space="preserve">
+    <value>symbol '&amp;'</value>
+  </data>
+  <data name="Parser.TOKEN.AMP.AMP" xml:space="preserve">
+    <value>symbol '&amp;&amp;'</value>
+  </data>
+  <data name="Parser.TOKEN.BAR.BAR" xml:space="preserve">
+    <value>symbol '||'</value>
+  </data>
+  <data name="Parser.TOKEN.LESS" xml:space="preserve">
+    <value>symbol '&lt;'</value>
+  </data>
+  <data name="Parser.TOKEN.GREATER" xml:space="preserve">
+    <value>symbol '&gt;'</value>
+  </data>
+  <data name="Parser.TOKEN.QMARK" xml:space="preserve">
+    <value>symbol '?'</value>
+  </data>
+  <data name="Parser.TOKEN.QMARK.QMARK" xml:space="preserve">
+    <value>symbol '??'</value>
+  </data>
+  <data name="Parser.TOKEN.COLON.QMARK" xml:space="preserve">
+    <value>symbol ':?'</value>
+  </data>
+  <data name="Parser.TOKEN.INT32.DOT.DOT" xml:space="preserve">
+    <value>integer..</value>
+  </data>
+  <data name="Parser.TOKEN.DOT.DOT" xml:space="preserve">
+    <value>symbol '..'</value>
+  </data>
+  <data name="Parser.TOKEN.DOT.DOT.HAT" xml:space="preserve">
+    <value>symbol '..^'</value>
+  </data>
+  <data name="Parser.TOKEN.QUOTE" xml:space="preserve">
+    <value>quote symbol</value>
+  </data>
+  <data name="Parser.TOKEN.STAR" xml:space="preserve">
+    <value>symbol '*'</value>
+  </data>
+  <data name="Parser.TOKEN.HIGH.PRECEDENCE.TYAPP" xml:space="preserve">
+    <value>type application </value>
+  </data>
+  <data name="Parser.TOKEN.COLON" xml:space="preserve">
+    <value>symbol ':'</value>
+  </data>
+  <data name="Parser.TOKEN.COLON.EQUALS" xml:space="preserve">
+    <value>symbol ':='</value>
+  </data>
+  <data name="Parser.TOKEN.LARROW" xml:space="preserve">
+    <value>symbol '&lt;-'</value>
+  </data>
+  <data name="Parser.TOKEN.EQUALS" xml:space="preserve">
+    <value>symbol '='</value>
+  </data>
+  <data name="Parser.TOKEN.GREATER.BAR.RBRACK" xml:space="preserve">
+    <value>symbol '&gt;|]'</value>
+  </data>
+  <data name="Parser.TOKEN.MINUS" xml:space="preserve">
+    <value>symbol '-'</value>
+  </data>
+  <data name="Parser.TOKEN.ADJACENT.PREFIX.OP" xml:space="preserve">
+    <value>prefix operator</value>
+  </data>
+  <data name="Parser.TOKEN.FUNKY.OPERATOR.NAME" xml:space="preserve">
+    <value>operator name</value>
+  </data>
+  <data name="Parser.TOKEN.COMMA" xml:space="preserve">
+    <value>symbol ','</value>
+  </data>
+  <data name="Parser.TOKEN.DOT" xml:space="preserve">
+    <value>symbol '.'</value>
+  </data>
+  <data name="Parser.TOKEN.BAR" xml:space="preserve">
+    <value>symbol '|'</value>
+  </data>
+  <data name="Parser.TOKEN.HASH" xml:space="preserve">
+    <value>symbol #</value>
+  </data>
+  <data name="Parser.TOKEN.UNDERSCORE" xml:space="preserve">
+    <value>symbol '_'</value>
+  </data>
+  <data name="Parser.TOKEN.SEMICOLON" xml:space="preserve">
+    <value>symbol ';'</value>
+  </data>
+  <data name="Parser.TOKEN.SEMICOLON.SEMICOLON" xml:space="preserve">
+    <value>symbol ';;'</value>
+  </data>
+  <data name="Parser.TOKEN.LPAREN" xml:space="preserve">
+    <value>symbol '('</value>
+  </data>
+  <data name="Parser.TOKEN.RPAREN" xml:space="preserve">
+    <value>symbol ')'</value>
+  </data>
+  <data name="Parser.TOKEN.SPLICE.SYMBOL" xml:space="preserve">
+    <value>symbol 'splice'</value>
+  </data>
+  <data name="Parser.TOKEN.LQUOTE" xml:space="preserve">
+    <value>start of quotation</value>
+  </data>
+  <data name="Parser.TOKEN.LBRACK" xml:space="preserve">
+    <value>symbol '['</value>
+  </data>
+  <data name="Parser.TOKEN.LBRACE.BAR" xml:space="preserve">
+    <value>symbol '{|'</value>
+  </data>
+  <data name="Parser.TOKEN.LBRACK.BAR" xml:space="preserve">
+    <value>symbol '[|'</value>
+  </data>
+  <data name="Parser.TOKEN.LBRACK.LESS" xml:space="preserve">
+    <value>symbol '[&lt;'</value>
+  </data>
+  <data name="Parser.TOKEN.LBRACE" xml:space="preserve">
+    <value>symbol '{'</value>
+  </data>
+  <data name="Parser.TOKEN.LBRACE.LESS" xml:space="preserve">
+    <value>symbol '{&lt;'</value>
+  </data>
+  <data name="Parser.TOKEN.BAR.RBRACK" xml:space="preserve">
+    <value>symbol '|]'</value>
+  </data>
+  <data name="Parser.TOKEN.BAR.RBRACE" xml:space="preserve">
+    <value>symbol '|}'</value>
+  </data>
+  <data name="Parser.TOKEN.GREATER.RBRACE" xml:space="preserve">
+    <value>symbol '&gt;}'</value>
+  </data>
+  <data name="Parser.TOKEN.GREATER.RBRACK" xml:space="preserve">
+    <value>symbol '&gt;]'</value>
+  </data>
+  <data name="Parser.TOKEN.RQUOTE" xml:space="preserve">
+    <value>end of quotation</value>
+  </data>
+  <data name="Parser.TOKEN.RBRACK" xml:space="preserve">
+    <value>symbol ']'</value>
+  </data>
+  <data name="Parser.TOKEN.RBRACE" xml:space="preserve">
+    <value>symbol '}'</value>
+  </data>
+  <data name="Parser.TOKEN.PUBLIC" xml:space="preserve">
+    <value>keyword 'public'</value>
+  </data>
+  <data name="Parser.TOKEN.PRIVATE" xml:space="preserve">
+    <value>keyword 'private'</value>
+  </data>
+  <data name="Parser.TOKEN.INTERNAL" xml:space="preserve">
+    <value>keyword 'internal'</value>
+  </data>
+  <data name="Parser.TOKEN.FIXED" xml:space="preserve">
+    <value>keyword 'fixed'</value>
+  </data>
+  <data name="Parser.TOKEN.INTERP.STRING.BEGIN.END" xml:space="preserve">
+    <value>interpolated string</value>
+  </data>
+  <data name="Parser.TOKEN.INTERP.STRING.BEGIN.PART" xml:space="preserve">
+    <value>interpolated string (first part)</value>
+  </data>
+  <data name="Parser.TOKEN.INTERP.STRING.PART" xml:space="preserve">
+    <value>interpolated string (part)</value>
+  </data>
+  <data name="Parser.TOKEN.INTERP.STRING.END" xml:space="preserve">
+    <value>interpolated string (final part)</value>
+  </data>
+  <data name="Parser.TOKEN.CONSTRAINT" xml:space="preserve">
+    <value>keyword 'constraint'</value>
+  </data>
+  <data name="Parser.TOKEN.INSTANCE" xml:space="preserve">
+    <value>keyword 'instance'</value>
+  </data>
+  <data name="Parser.TOKEN.DELEGATE" xml:space="preserve">
+    <value>keyword 'delegate'</value>
+  </data>
+  <data name="Parser.TOKEN.INHERIT" xml:space="preserve">
+    <value>keyword 'inherit'</value>
+  </data>
+  <data name="Parser.TOKEN.CONSTRUCTOR" xml:space="preserve">
+    <value>keyword 'constructor'</value>
+  </data>
+  <data name="Parser.TOKEN.DEFAULT" xml:space="preserve">
+    <value>keyword 'default'</value>
+  </data>
+  <data name="Parser.TOKEN.OVERRIDE" xml:space="preserve">
+    <value>keyword 'override'</value>
+  </data>
+  <data name="Parser.TOKEN.ABSTRACT" xml:space="preserve">
+    <value>keyword 'abstract'</value>
+  </data>
+  <data name="Parser.TOKEN.CLASS" xml:space="preserve">
+    <value>keyword 'class'</value>
+  </data>
+  <data name="Parser.TOKEN.MEMBER" xml:space="preserve">
+    <value>keyword 'member'</value>
+  </data>
+  <data name="Parser.TOKEN.STATIC" xml:space="preserve">
+    <value>keyword 'static'</value>
+  </data>
+  <data name="Parser.TOKEN.NAMESPACE" xml:space="preserve">
+    <value>keyword 'namespace'</value>
+  </data>
+  <data name="Parser.TOKEN.OBLOCKBEGIN" xml:space="preserve">
+    <value>start of structured construct</value>
+  </data>
+  <data name="Parser.TOKEN.OBLOCKEND" xml:space="preserve">
+    <value>incomplete structured construct at or before this point</value>
+  </data>
+  <data name="BlockEndSentence" xml:space="preserve">
+    <value>Incomplete structured construct at or before this point</value>
+  </data>
+  <data name="Parser.TOKEN.OTHEN" xml:space="preserve">
+    <value>keyword 'then'</value>
+  </data>
+  <data name="Parser.TOKEN.OELSE" xml:space="preserve">
+    <value>keyword 'else'</value>
+  </data>
+  <data name="Parser.TOKEN.OLET" xml:space="preserve">
+    <value>keyword 'let' or 'use'</value>
+  </data>
+  <data name="Parser.TOKEN.BINDER" xml:space="preserve">
+    <value>binder keyword</value>
+  </data>
+  <data name="Parser.TOKEN.ODO" xml:space="preserve">
+    <value>keyword 'do'</value>
+  </data>
+  <data name="Parser.TOKEN.CONST" xml:space="preserve">
+    <value>keyword 'const'</value>
+  </data>
+  <data name="Parser.TOKEN.OWITH" xml:space="preserve">
+    <value>keyword 'with'</value>
+  </data>
+  <data name="Parser.TOKEN.OFUNCTION" xml:space="preserve">
+    <value>keyword 'function'</value>
+  </data>
+  <data name="Parser.TOKEN.OFUN" xml:space="preserve">
+    <value>keyword 'fun'</value>
+  </data>
+  <data name="Parser.TOKEN.ORESET" xml:space="preserve">
+    <value>end of input</value>
+  </data>
+  <data name="Parser.TOKEN.ODUMMY" xml:space="preserve">
+    <value>internal dummy token</value>
+  </data>
+  <data name="Parser.TOKEN.ODO.BANG" xml:space="preserve">
+    <value>keyword 'do!'</value>
+  </data>
+  <data name="Parser.TOKEN.YIELD" xml:space="preserve">
+    <value>yield</value>
+  </data>
+  <data name="Parser.TOKEN.YIELD.BANG" xml:space="preserve">
+    <value>yield!</value>
+  </data>
+  <data name="Parser.TOKEN.OINTERFACE.MEMBER" xml:space="preserve">
+    <value>keyword 'interface'</value>
+  </data>
+  <data name="Parser.TOKEN.ELIF" xml:space="preserve">
+    <value>keyword 'elif'</value>
+  </data>
+  <data name="Parser.TOKEN.RARROW" xml:space="preserve">
+    <value>symbol '-&gt;'</value>
+  </data>
+  <data name="Parser.TOKEN.SIG" xml:space="preserve">
+    <value>keyword 'sig'</value>
+  </data>
+  <data name="Parser.TOKEN.STRUCT" xml:space="preserve">
+    <value>keyword 'struct'</value>
+  </data>
+  <data name="Parser.TOKEN.UPCAST" xml:space="preserve">
+    <value>keyword 'upcast'</value>
+  </data>
+  <data name="Parser.TOKEN.DOWNCAST" xml:space="preserve">
+    <value>keyword 'downcast'</value>
+  </data>
+  <data name="Parser.TOKEN.NULL" xml:space="preserve">
+    <value>keyword 'null'</value>
+  </data>
+  <data name="Parser.TOKEN.RESERVED" xml:space="preserve">
+    <value>reserved keyword</value>
+  </data>
+  <data name="Parser.TOKEN.MODULE" xml:space="preserve">
+    <value>keyword 'module'</value>
+  </data>
+  <data name="Parser.TOKEN.AND" xml:space="preserve">
+    <value>keyword 'and'</value>
+  </data>
+  !<data name="Parser.TOKEN.AND.BANG" xml:space="preserve">
+    <value>keyword 'and!'</value>
+  </data>
+  <data name="Parser.TOKEN.AS" xml:space="preserve">
+    <value>keyword 'as'</value>
+  </data>
+  <data name="Parser.TOKEN.ASSERT" xml:space="preserve">
+    <value>keyword 'assert'</value>
+  </data>
+  <data name="Parser.TOKEN.ASR" xml:space="preserve">
+    <value>keyword 'asr'</value>
+  </data>
+  <data name="Parser.TOKEN.DOWNTO" xml:space="preserve">
+    <value>keyword 'downto'</value>
+  </data>
+  <data name="Parser.TOKEN.EXCEPTION" xml:space="preserve">
+    <value>keyword 'exception'</value>
+  </data>
+  <data name="Parser.TOKEN.FALSE" xml:space="preserve">
+    <value>keyword 'false'</value>
+  </data>
+  <data name="Parser.TOKEN.FOR" xml:space="preserve">
+    <value>keyword 'for'</value>
+  </data>
+  <data name="Parser.TOKEN.FUN" xml:space="preserve">
+    <value>keyword 'fun'</value>
+  </data>
+  <data name="Parser.TOKEN.FUNCTION" xml:space="preserve">
+    <value>keyword 'function'</value>
+  </data>
+  <data name="Parser.TOKEN.FINALLY" xml:space="preserve">
+    <value>keyword 'finally'</value>
+  </data>
+  <data name="Parser.TOKEN.LAZY" xml:space="preserve">
+    <value>keyword 'lazy'</value>
+  </data>
+  <data name="Parser.TOKEN.MATCH" xml:space="preserve">
+    <value>keyword 'match'</value>
+  </data>
+  <data name="Parser.TOKEN.MATCH.BANG" xml:space="preserve">
+    <value>keyword 'match!'</value>
+  </data>
+  <data name="Parser.TOKEN.MUTABLE" xml:space="preserve">
+    <value>keyword 'mutable'</value>
+  </data>
+  <data name="Parser.TOKEN.NEW" xml:space="preserve">
+    <value>keyword 'new'</value>
+  </data>
+  <data name="Parser.TOKEN.OF" xml:space="preserve">
+    <value>keyword 'of'</value>
+  </data>
+  <data name="Parser.TOKEN.OPEN" xml:space="preserve">
+    <value>keyword 'open'</value>
+  </data>
+  <data name="Parser.TOKEN.OR" xml:space="preserve">
+    <value>keyword 'or'</value>
+  </data>
+  <data name="Parser.TOKEN.VOID" xml:space="preserve">
+    <value>keyword 'void'</value>
+  </data>
+  <data name="Parser.TOKEN.EXTERN" xml:space="preserve">
+    <value>keyword 'extern'</value>
+  </data>
+  <data name="Parser.TOKEN.INTERFACE" xml:space="preserve">
+    <value>keyword 'interface'</value>
+  </data>
+  <data name="Parser.TOKEN.REC" xml:space="preserve">
+    <value>keyword 'rec'</value>
+  </data>
+  <data name="Parser.TOKEN.TO" xml:space="preserve">
+    <value>keyword 'to'</value>
+  </data>
+  <data name="Parser.TOKEN.TRUE" xml:space="preserve">
+    <value>keyword 'true'</value>
+  </data>
+  <data name="Parser.TOKEN.TRY" xml:space="preserve">
+    <value>keyword 'try'</value>
+  </data>
+  <data name="Parser.TOKEN.TYPE" xml:space="preserve">
+    <value>keyword 'type'</value>
+  </data>
+  <data name="Parser.TOKEN.VAL" xml:space="preserve">
+    <value>keyword 'val'</value>
+  </data>
+  <data name="Parser.TOKEN.INLINE" xml:space="preserve">
+    <value>keyword 'inline'</value>
+  </data>
+  <data name="Parser.TOKEN.WHEN" xml:space="preserve">
+    <value>keyword 'when'</value>
+  </data>
+  <data name="Parser.TOKEN.WHILE" xml:space="preserve">
+    <value>keyword 'while'</value>
+  </data>
+  <data name="Parser.TOKEN.WITH" xml:space="preserve">
+    <value>keyword 'with'</value>
+  </data>
+  <data name="Parser.TOKEN.IF" xml:space="preserve">
+    <value>keyword 'if'</value>
+  </data>
+  <data name="Parser.TOKEN.DO" xml:space="preserve">
+    <value>keyword 'do'</value>
+  </data>
+  <data name="Parser.TOKEN.GLOBAL" xml:space="preserve">
+    <value>keyword 'global'</value>
+  </data>
+  <data name="Parser.TOKEN.DONE" xml:space="preserve">
+    <value>keyword 'done'</value>
+  </data>
+  <data name="Parser.TOKEN.IN" xml:space="preserve">
+    <value>keyword 'in'</value>
+  </data>
+  <data name="Parser.TOKEN.HIGH.PRECEDENCE.PAREN.APP" xml:space="preserve">
+    <value>symbol '('</value>
+  </data>
+  <data name="Parser.TOKEN.HIGH.PRECEDENCE.BRACK.APP" xml:space="preserve">
+    <value>symbol'['</value>
+  </data>
+  <data name="Parser.TOKEN.BEGIN" xml:space="preserve">
+    <value>keyword 'begin'</value>
+  </data>
+  <data name="Parser.TOKEN.END" xml:space="preserve">
+    <value>keyword 'end'</value>
+  </data>
+  <data name="Parser.TOKEN.HASH.ENDIF" xml:space="preserve">
+    <value>directive</value>
+  </data>
+  <data name="Parser.TOKEN.INACTIVECODE" xml:space="preserve">
+    <value>inactive code</value>
+  </data>
+  <data name="Parser.TOKEN.LEX.FAILURE" xml:space="preserve">
+    <value>lex failure</value>
+  </data>
+  <data name="Parser.TOKEN.WHITESPACE" xml:space="preserve">
+    <value>whitespace</value>
+  </data>
+  <data name="Parser.TOKEN.COMMENT" xml:space="preserve">
+    <value>comment</value>
+  </data>
+  <data name="Parser.TOKEN.LINE.COMMENT" xml:space="preserve">
+    <value>line comment</value>
+  </data>
+  <data name="Parser.TOKEN.STRING.TEXT" xml:space="preserve">
+    <value>string text</value>
+  </data>
+  <data name="Parser.TOKEN.KEYWORD_STRING" xml:space="preserve">
+    <value>compiler generated literal</value>
+  </data>
+  <data name="Parser.TOKEN.BYTEARRAY" xml:space="preserve">
+    <value>byte array literal</value>
+  </data>
+  <data name="Parser.TOKEN.STRING" xml:space="preserve">
+    <value>string literal</value>
+  </data>
+  <data name="Parser.TOKEN.EOF" xml:space="preserve">
+    <value>end of input</value>
+  </data>
+  <data name="UnexpectedEndOfInput" xml:space="preserve">
+    <value>Unexpected end of input</value>
+  </data>
+  <data name="Unexpected" xml:space="preserve">
+    <value>Unexpected {0}</value>
+  </data>
+  <data name="NONTERM.interaction" xml:space="preserve">
+    <value> in interaction</value>
+  </data>
+  <data name="NONTERM.hashDirective" xml:space="preserve">
+    <value> in directive</value>
+  </data>
+  <data name="NONTERM.fieldDecl" xml:space="preserve">
+    <value> in field declaration</value>
+  </data>
+  <data name="NONTERM.unionCaseRepr" xml:space="preserve">
+    <value> in discriminated union case declaration</value>
+  </data>
+  <data name="NONTERM.localBinding" xml:space="preserve">
+    <value> in binding</value>
+  </data>
+  <data name="NONTERM.hardwhiteLetBindings" xml:space="preserve">
+    <value> in binding</value>
+  </data>
+  <data name="NONTERM.classDefnMember" xml:space="preserve">
+    <value> in member definition</value>
+  </data>
+  <data name="NONTERM.defnBindings" xml:space="preserve">
+    <value> in definitions</value>
+  </data>
+  <data name="NONTERM.classMemberSpfn" xml:space="preserve">
+    <value> in member signature</value>
+  </data>
+  <data name="NONTERM.valSpfn" xml:space="preserve">
+    <value> in value signature</value>
+  </data>
+  <data name="NONTERM.tyconSpfn" xml:space="preserve">
+    <value> in type signature</value>
+  </data>
+  <data name="NONTERM.anonLambdaExpr" xml:space="preserve">
+    <value> in lambda expression</value>
+  </data>
+  <data name="NONTERM.attrUnionCaseDecl" xml:space="preserve">
+    <value> in union case</value>
+  </data>
+  <data name="NONTERM.cPrototype" xml:space="preserve">
+    <value> in extern declaration</value>
+  </data>
+  <data name="NONTERM.objectImplementationMembers" xml:space="preserve">
+    <value> in object expression</value>
+  </data>
+  <data name="NONTERM.ifExprCases" xml:space="preserve">
+    <value> in if/then/else expression</value>
+  </data>
+  <data name="NONTERM.openDecl" xml:space="preserve">
+    <value> in open declaration</value>
+  </data>
+  <data name="NONTERM.fileModuleSpec" xml:space="preserve">
+    <value> in module or namespace signature</value>
+  </data>
+  <data name="NONTERM.patternClauses" xml:space="preserve">
+    <value> in pattern matching</value>
+  </data>
+  <data name="NONTERM.beginEndExpr" xml:space="preserve">
+    <value> in begin/end expression</value>
+  </data>
+  <data name="NONTERM.recdExpr" xml:space="preserve">
+    <value> in record expression</value>
+  </data>
+  <data name="NONTERM.tyconDefn" xml:space="preserve">
+    <value> in type definition</value>
+  </data>
+  <data name="NONTERM.exconCore" xml:space="preserve">
+    <value> in exception definition</value>
+  </data>
+  <data name="NONTERM.typeNameInfo" xml:space="preserve">
+    <value> in type name</value>
+  </data>
+  <data name="NONTERM.attributeList" xml:space="preserve">
+    <value> in attribute list</value>
+  </data>
+  <data name="NONTERM.quoteExpr" xml:space="preserve">
+    <value> in quotation literal</value>
+  </data>
+  <data name="NONTERM.typeConstraint" xml:space="preserve">
+    <value> in type constraint</value>
+  </data>
+  <data name="NONTERM.Category.ImplementationFile" xml:space="preserve">
+    <value> in implementation file</value>
+  </data>
+  <data name="NONTERM.Category.Definition" xml:space="preserve">
+    <value> in definition</value>
+  </data>
+  <data name="NONTERM.Category.SignatureFile" xml:space="preserve">
+    <value> in signature file</value>
+  </data>
+  <data name="NONTERM.Category.Pattern" xml:space="preserve">
+    <value> in pattern</value>
+  </data>
+  <data name="NONTERM.Category.Expr" xml:space="preserve">
+    <value> in expression</value>
+  </data>
+  <data name="NONTERM.Category.Type" xml:space="preserve">
+    <value> in type</value>
+  </data>
+  <data name="NONTERM.typeArgsActual" xml:space="preserve">
+    <value> in type arguments</value>
+  </data>
+  <data name="FixKeyword" xml:space="preserve">
+    <value>keyword </value>
+  </data>
+  <data name="FixSymbol" xml:space="preserve">
+    <value>symbol </value>
+  </data>
+  <data name="FixReplace" xml:space="preserve">
+    <value> (due to indentation-aware syntax)</value>
+  </data>
+  <data name="TokenName1" xml:space="preserve">
+    <value>. Expected {0} or other token.</value>
+  </data>
+  <data name="TokenName1TokenName2" xml:space="preserve">
+    <value>. Expected {0}, {1} or other token.</value>
+  </data>
+  <data name="TokenName1TokenName2TokenName3" xml:space="preserve">
+    <value>. Expected {0}, {1}, {2} or other token.</value>
+  </data>
+  <data name="RuntimeCoercionSourceSealed1" xml:space="preserve">
+    <value>The type '{0}' cannot be used as the source of a type test or runtime coercion</value>
+  </data>
+  <data name="RuntimeCoercionSourceSealed2" xml:space="preserve">
+    <value>The type '{0}' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.</value>
+  </data>
+  <data name="CoercionTargetSealed" xml:space="preserve">
+    <value>The type '{0}' does not have any proper subtypes and need not be used as the target of a static coercion</value>
+  </data>
+  <data name="UpcastUnnecessary" xml:space="preserve">
+    <value>This upcast is unnecessary - the types are identical</value>
+  </data>
+  <data name="TypeTestUnnecessary" xml:space="preserve">
+    <value>This type test or downcast will always hold</value>
+  </data>
+  <data name="OverrideDoesntOverride1" xml:space="preserve">
+    <value>The member '{0}' does not have the correct type to override any given virtual method</value>
+  </data>
+  <data name="OverrideDoesntOverride2" xml:space="preserve">
+    <value>The member '{0}' does not have the correct type to override the corresponding abstract method.</value>
+  </data>
+  <data name="OverrideDoesntOverride3" xml:space="preserve">
+    <value> The required signature is '{0}'.</value>
+  </data>
+  <data name="OverrideDoesntOverride4" xml:space="preserve">
+    <value>The member '{0}' is specialized with 'unit' but 'unit' can't be used as return type of an abstract method parameterized on return type.</value>
+  </data>
+  <data name="UnionCaseWrongArguments" xml:space="preserve">
+    <value>This constructor is applied to {0} argument(s) but expects {1}</value>
+  </data>
+  <data name="UnionPatternsBindDifferentNames" xml:space="preserve">
+    <value>The two sides of this 'or' pattern bind different sets of variables</value>
+  </data>
+  <data name="ValueNotContained" xml:space="preserve">
+    <value>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \n{3}.</value>
+  </data>
+  <data name="RequiredButNotSpecified" xml:space="preserve">
+    <value>Module '{0}' requires a {1} '{2}'</value>
+  </data>
+  <data name="UseOfAddressOfOperator" xml:space="preserve">
+    <value>The use of native pointers may result in unverifiable .NET IL code</value>
+  </data>
+  <data name="DefensiveCopyWarning" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="DeprecatedThreadStaticBindingWarning" xml:space="preserve">
+    <value>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</value>
+  </data>
+  <data name="FunctionValueUnexpected" xml:space="preserve">
+    <value>This expression is a function value, i.e. is missing arguments. Its type is {0}.</value>
+  </data>
+  <data name="UnitTypeExpected" xml:space="preserve">
+    <value>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</value>
+  </data>
+  <data name="UnitTypeExpectedWithEquality" xml:space="preserve">
+    <value>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</value>
+  </data>
+  <data name="UnitTypeExpectedWithPossiblePropertySetter" xml:space="preserve">
+    <value>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</value>
+  </data>
+  <data name="UnitTypeExpectedWithPossibleAssignment" xml:space="preserve">
+    <value>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</value>
+  </data>
+  <data name="UnitTypeExpectedWithPossibleAssignmentToMutable" xml:space="preserve">
+    <value>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</value>
+  </data>
+  <data name="RecursiveUseCheckedAtRuntime" xml:space="preserve">
+    <value>This recursive use will be checked for initialization-soundness at runtime. This warning is usually harmless, and may be suppressed by using '#nowarn "21"' or '--nowarn:21'.</value>
+  </data>
+  <data name="LetRecUnsound1" xml:space="preserve">
+    <value>The value '{0}' will be evaluated as part of its own definition</value>
+  </data>
+  <data name="LetRecUnsound2" xml:space="preserve">
+    <value>This value will be eventually evaluated as part of its own definition. You may need to make the value lazy or a function. Value '{0}'{1}.</value>
+  </data>
+  <data name="LetRecUnsoundInner" xml:space="preserve">
+    <value> will evaluate '{0}'</value>
+  </data>
+  <data name="LetRecEvaluatedOutOfOrder" xml:space="preserve">
+    <value>Bindings may be executed out-of-order because of this forward reference.</value>
+  </data>
+  <data name="LetRecCheckedAtRuntime" xml:space="preserve">
+    <value>This and other recursive references to the object(s) being defined will be checked for initialization-soundness at runtime through the use of a delayed reference. This is because you are defining one or more recursive objects, rather than recursive functions. This warning may be suppressed by using '#nowarn "40"' or '--nowarn:40'.</value>
+  </data>
+  <data name="SelfRefObjCtor1" xml:space="preserve">
+    <value>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</value>
+  </data>
+  <data name="SelfRefObjCtor2" xml:space="preserve">
+    <value>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references within 'do' statements after the last 'let' binding in the construction sequence.</value>
+  </data>
+  <data name="VirtualAugmentationOnNullValuedType" xml:space="preserve">
+    <value>The containing type can use 'null' as a representation value for its nullary union case. Invoking an abstract or virtual member or an interface implementation on a null value will lead to an exception. If necessary add a dummy data value to the nullary constructor to avoid 'null' being used as a representation for this type.</value>
+  </data>
+  <data name="NonVirtualAugmentationOnNullValuedType" xml:space="preserve">
+    <value>The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.</value>
+  </data>
+  <data name="NonUniqueInferredAbstractSlot1" xml:space="preserve">
+    <value>The member '{0}' doesn't correspond to a unique abstract slot based on name and argument count alone</value>
+  </data>
+  <data name="NonUniqueInferredAbstractSlot2" xml:space="preserve">
+    <value>. Multiple implemented interfaces have a member with this name and argument count</value>
+  </data>
+  <data name="NonUniqueInferredAbstractSlot3" xml:space="preserve">
+    <value>. Consider implementing interfaces '{0}' and '{1}' explicitly.</value>
+  </data>
+  <data name="NonUniqueInferredAbstractSlot4" xml:space="preserve">
+    <value>. Additional type annotations may be required to indicate the relevant override. This warning can be disabled using '#nowarn "70"' or '--nowarn:70'.</value>
+  </data>
+  <data name="Failure1" xml:space="preserve">
+    <value>parse error</value>
+  </data>
+  <data name="Failure2" xml:space="preserve">
+    <value>parse error: unexpected end of file</value>
+  </data>
+  <data name="Failure3" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="Failure4" xml:space="preserve">
+    <value>internal error: {0}</value>
+  </data>
+  <data name="FullAbstraction" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="MatchIncomplete1" xml:space="preserve">
+    <value>Incomplete pattern matches on this expression.</value>
+  </data>
+  <data name="MatchIncomplete2" xml:space="preserve">
+    <value> For example, the value '{0}' may indicate a case not covered by the pattern(s).</value>
+  </data>
+  <data name="MatchIncomplete3" xml:space="preserve">
+    <value> For example, the value '{0}' may indicate a case not covered by the pattern(s). However, a pattern rule with a 'when' clause might successfully match this value.</value>
+  </data>
+  <data name="MatchIncomplete4" xml:space="preserve">
+    <value> Unmatched elements will be ignored.</value>
+  </data>
+  <data name="EnumMatchIncomplete1" xml:space="preserve">
+    <value>Enums may take values outside known cases.</value>
+  </data>
+  <data name="RuleNeverMatched" xml:space="preserve">
+    <value>This rule will never be matched</value>
+  </data>
+  <data name="ValNotMutable" xml:space="preserve">
+    <value>This value is not mutable. Consider using the mutable keyword, e.g. 'let mutable {0} = expression'.</value>
+  </data>
+  <data name="ValNotLocal" xml:space="preserve">
+    <value>This value is not local</value>
+  </data>
+  <data name="Obsolete1" xml:space="preserve">
+    <value>This construct is deprecated</value>
+  </data>
+  <data name="Obsolete2" xml:space="preserve">
+    <value>. {0}</value>
+  </data>
+  <data name="Experimental" xml:space="preserve">
+    <value>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</value>
+  </data>
+  <data name="PossibleUnverifiableCode" xml:space="preserve">
+    <value>Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.</value>
+  </data>
+  <data name="Deprecated" xml:space="preserve">
+    <value>This construct is deprecated: {0}</value>
+  </data>
+  <data name="LibraryUseOnly" xml:space="preserve">
+    <value>This construct is deprecated: it is only for use in the F# library</value>
+  </data>
+  <data name="MissingFields" xml:space="preserve">
+    <value>The following fields require values: {0}</value>
+  </data>
+  <data name="ValueRestriction1" xml:space="preserve">
+    <value>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</value>
+  </data>
+  <data name="ValueRestriction2" xml:space="preserve">
+    <value>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</value>
+  </data>
+  <data name="ValueRestriction3" xml:space="preserve">
+    <value>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</value>
+  </data>
+  <data name="ValueRestriction4" xml:space="preserve">
+    <value>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</value>
+  </data>
+  <data name="ValueRestriction5" xml:space="preserve">
+    <value>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</value>
+  </data>
+  <data name="RecoverableParseError" xml:space="preserve">
+    <value>syntax error</value>
+  </data>
+  <data name="ReservedKeyword" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="IndentationProblem" xml:space="preserve">
+    <value>{0}</value>
+  </data>
+  <data name="OverrideInIntrinsicAugmentation" xml:space="preserve">
+    <value>Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.</value>
+  </data>
+  <data name="OverrideInExtrinsicAugmentation" xml:space="preserve">
+    <value>Override implementations should be given as part of the initial declaration of a type.</value>
+  </data>
+  <data name="IntfImplInIntrinsicAugmentation" xml:space="preserve">
+    <value>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data.  You may remove this warning using #nowarn "69" if you have checked this is not the case.</value>
+  </data>
+  <data name="IntfImplInExtrinsicAugmentation" xml:space="preserve">
+    <value>Interface implementations should be given on the initial declaration of a type.</value>
+  </data>
+  <data name="UnresolvedReferenceNoRange" xml:space="preserve">
+    <value>A required assembly reference is missing. You must add a reference to assembly '{0}'.</value>
+  </data>
+  <data name="UnresolvedPathReferenceNoRange" xml:space="preserve">
+    <value>The type referenced through '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'.</value>
+  </data>
+  <data name="HashIncludeNotAllowedInNonScript" xml:space="preserve">
+    <value>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</value>
+  </data>
+  <data name="HashReferenceNotAllowedInNonScript" xml:space="preserve">
+    <value>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</value>
+  </data>
+  <data name="HashDirectiveNotAllowedInNonScript" xml:space="preserve">
+    <value>This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.</value>
+  </data>
+  <data name="FileNameNotResolved" xml:space="preserve">
+    <value>Unable to find the file '{0}' in any of\n {1}</value>
+  </data>
+  <data name="AssemblyNotResolved" xml:space="preserve">
+    <value>Assembly reference '{0}' was not found or is invalid</value>
+  </data>
+  <data name="HashLoadedSourceHasIssues0" xml:space="preserve">
+    <value>One or more informational messages in loaded file.\n</value>
+  </data>
+  <data name="HashLoadedSourceHasIssues1" xml:space="preserve">
+    <value>One or more warnings in loaded file.\n</value>
+  </data>
+  <data name="HashLoadedSourceHasIssues2" xml:space="preserve">
+    <value>One or more errors in loaded file.\n</value>
+  </data>
+  <data name="HashLoadedScriptConsideredSource" xml:space="preserve">
+    <value>Loaded files may only be F# source files (extension .fs). This F# script file (.fsx or .fsscript) will be treated as an F# source file</value>
+  </data>
+  <data name="InvalidInternalsVisibleToAssemblyName1" xml:space="preserve">
+    <value>Invalid assembly name '{0}' from InternalsVisibleTo attribute in {1}</value>
+  </data>
+  <data name="InvalidInternalsVisibleToAssemblyName2" xml:space="preserve">
+    <value>Invalid assembly name '{0}' from InternalsVisibleTo attribute (assembly filename not available)</value>
+  </data>
+  <data name="LoadedSourceNotFoundIgnoring" xml:space="preserve">
+    <value>Could not load file '{0}' because it does not exist or is inaccessible</value>
+  </data>
+  <data name="MSBuildReferenceResolutionError" xml:space="preserve">
+    <value>{0} (Code={1})</value>
+  </data>
+  <data name="TargetInvocationExceptionWrapper" xml:space="preserve">
+    <value>internal error: {0}</value>
+  </data>
+  <data name="NotUpperCaseConstructorWithoutRQA" xml:space="preserve">
+    <value>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</value>
+  </data>
+</root>

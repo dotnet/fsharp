@@ -3,8 +3,8 @@
 namespace FSharp.Compiler.ComponentTests.Conformance.PatternMatching
 
 open Xunit
-open FSharp.Test.Utilities.Compiler
-open FSharp.Test.Utilities.Xunit.Attributes
+open FSharp.Test
+open FSharp.Test.Compiler
 
 module Simple =
 
@@ -47,3 +47,40 @@ module Simple =
         |> withDiagnosticMessageMatches "Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name"
         |> ignore
 
+    [<Fact>]
+    let ``As patterns``() =
+        Fsx """
+        let (|Id|) = id
+        let a = [1..4]
+        match a with
+        | 1 | 1 as b::(Id 2 as c as c2)::[d as 3; Id e & Id _ as Id 4] as Id f when b = 1 && c = 2 && c2 = 2 && d = 3 && e = 4 && a = f -> ()
+        | _ -> failwith "Match failed"
+        """
+        |> asExe
+        |> withLangVersion60
+        |> compileExeAndRun
+        |> shouldSucceed
+
+
+    [<Theory>]
+    [<InlineData("DateTime", "DateTime.Now")>]
+    [<InlineData("int", "1")>]
+    [<InlineData("Guid", "(Guid.NewGuid())")>]
+    [<InlineData("Byte", "0x1")>]
+    [<InlineData("Decimal", "1m")>]
+    let ``Test type matching for subtypes and interfaces`` typ value =
+        Fsx $"""
+open System
+let classify (o: obj) =
+    match o with
+    | :? {typ} as d when d = Unchecked.defaultof<_> -> "default"
+    | :? IFormattable -> "formattable"
+    | _ -> "not a {typ}"
+
+let res = classify {value}
+if res <> "formattable" then
+    failwith $"Unexpected result: {{res}}"
+         """
+         |> asExe
+         |> compileAndRun
+         |> shouldSucceed

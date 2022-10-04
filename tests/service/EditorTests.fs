@@ -1,22 +1,5 @@
 ﻿
-// To run the tests in this file:
-//
-// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
-//
-// Technique 2:
-//
-//   Enable some tests in the #if EXE section at the end of the file, 
-//   then compile this file as an EXE that has InternalsVisibleTo access into the
-//   appropriate DLLs.  This can be the quickest way to get turnaround on updating the tests
-//   and capturing large amounts of structured output.
-(*
-    cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\tests\service\EditorTests.fs 
-    .\VisualFSharp.UnitTests.exe 
-*)
-// Technique 3: 
-// 
-//    Use F# Interactive.  This only works for FSHarp.Compiler.Service.dll which has a public API
+// To run the tests in this file: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 
 #if INTERACTIVE
 #r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
@@ -29,8 +12,6 @@ module Tests.Service.Editor
 
 open NUnit.Framework
 open FsUnit
-open System
-open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Service.Tests.Common
@@ -38,21 +19,38 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open FSharp.Compiler.Tokenization
 
-let stringMethods = 
-    ["Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
-    "GetEnumerator"; "GetHashCode"; "GetReverseIndex"; "GetType"; "GetTypeCode"; "IndexOf";
-    "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
-    "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove"; "Replace"; "Split";
-    "StartsWith"; "Substring"; "ToCharArray"; "ToLower"; "ToLowerInvariant";
-    "ToString"; "ToUpper"; "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart"]
+let stringMethods =
+    [
+        "Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith";
+#if NETCOREAPP
+        "EnumerateRunes";
+#endif
+        "Equals"; "GetEnumerator"; "GetHashCode";
+#if NETCOREAPP
+        "GetPinnableReference";
+#endif
+        "GetReverseIndex"; "GetType"; "GetTypeCode"; "IndexOf";
+        "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
+        "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove";
+        "Replace";
+#if NETCOREAPP
+        "ReplaceLineEndings";
+#endif
+        "Split"; "StartsWith"; "Substring";
+        "ToCharArray"; "ToLower"; "ToLowerInvariant"; "ToString"; "ToUpper";
+        "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart";
+#if NETCOREAPP
+        "TryCopyTo"
+#endif
+]
 
-let input = 
+let input =
   """
   open System
-  
-  let foo() = 
+
+  let foo() =
     let msg = String.Concat("Hello"," ","world")
-    if true then 
+    if true then
       printfn "%s" msg.
   """
 
@@ -60,17 +58,17 @@ let input =
 #if COMPILED
 [<Ignore("This isn't picking up changes in Fsharp.Core")>]
 #endif
-let ``Intro test`` () = 
+let ``Intro test`` () =
 
     // Split the input & define file name
     let inputLines = input.Split('\n')
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
     let identToken = FSharpTokenTag.IDENT
-//    let projectOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
+//    let projectOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunImmediate
 
     // So we check that the messages are the same
-    for msg in typeCheckResults.Diagnostics do 
+    for msg in typeCheckResults.Diagnostics do
         printfn "Got an error, hopefully with the right text: %A" msg
 
     printfn "typeCheckResults.Diagnostics.Length = %d" typeCheckResults.Diagnostics.Length
@@ -81,19 +79,19 @@ let ``Intro test`` () =
     (match typeCheckResults.Diagnostics.Length with 1 | 2 -> true | _ -> false)  |> shouldEqual true
 
     // So we check that the messages are the same
-    for msg in typeCheckResults.Diagnostics do 
+    for msg in typeCheckResults.Diagnostics do
         printfn "Good! got an error, hopefully with the right text: %A" msg
         msg.Message.Contains("Missing qualification after '.'") |> shouldEqual true
 
     // Get tool tip at the specified location
-    let tip = typeCheckResults.GetToolTip(4, 7, inputLines.[1], ["foo"], identToken)
-    // (sprintf "%A" tip).Replace("\n","") |> shouldEqual """ToolTipText [Single ("val foo : unit -> unitFull name: Test.foo",None)]"""
+    let tip = typeCheckResults.GetToolTip(4, 7, inputLines[1], ["foo"], identToken)
+    // (sprintf "%A" tip).Replace("\n","") |> shouldEqual """ToolTipText [Single ("val foo: unit -> unitFull name: Test.foo",None)]"""
     // Get declarations (autocomplete) for a location
     let partialName = { QualifyingIdents = []; PartialIdent = "msg"; EndColumn = 22; LastDotPos = None }
-    let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines.[6], partialName, (fun _ -> []))
-    CollectionAssert.AreEquivalent(stringMethods,[ for item in decls.Items -> item.Name ])
+    let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines[6], partialName, (fun _ -> []))
+    CollectionAssert.AreEquivalent(stringMethods,[ for item in decls.Items -> item.NameInList ])
     // Get overloads of the String.Concat method
-    let methods = typeCheckResults.GetMethods(5, 27, inputLines.[4], Some ["String"; "Concat"])
+    let methods = typeCheckResults.GetMethods(5, 27, inputLines[4], Some ["String"; "Concat"])
 
     methods.MethodName  |> shouldEqual "Concat"
 
@@ -111,31 +109,9 @@ let ``Intro test`` () =
                ("Concat", ["str0: string"; "str1: string"; "str2: string"]);
 #if !NETCOREAPP // TODO: check why this is needed for .NET Core testing of FSharp.Compiler.Service
                ("Concat", ["arg0: obj"; "arg1: obj"; "arg2: obj"; "arg3: obj"]);
-#endif               
+#endif
                ("Concat", ["str0: string"; "str1: string"; "str2: string"; "str3: string"])]
 
-
-// TODO: check if this can be enabled in .NET Core testing of FSharp.Compiler.Service
-#if !INTERACTIVE // InternalsVisibleTo on IncrementalBuild.LocallyInjectCancellationFault not working for some reason?
-//[<Test>]
-//let ``Basic cancellation test`` () = 
-//   try 
-//    printfn "locally injecting a cancellation condition in incremental building"
-//    use _holder = IncrementalBuild.LocallyInjectCancellationFault()
-//    
-//    // Split the input & define file name
-//    let inputLines = input.Split('\n')
-//    let file = "/home/user/Test.fsx"
-//    async { 
-//        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
-//        let! checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, SourceText.ofString input) 
-//        let! parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, SourceText.ofString input, checkOptions) 
-//        return parseResult, typedRes
-//    } |> Async.RunSynchronously
-//      |> ignore
-//    Assert.Fail("expected a cancellation")
-//   with :? OperationCanceledException -> ()
-#endif
 
 [<Test>]
 let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbolUse`` () =
@@ -143,86 +119,99 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
     let extractCurriedParams (symbol:FSharpSymbolUse) =
         match symbol.Symbol with
         | :? FSharpMemberOrFunctionOrValue as mvf ->
-            [for pg in mvf.CurriedParameterGroups do 
-                for (p:FSharpParameter) in pg do 
-                    yield p.DisplayName, p.Type.Format (symbol.DisplayContext)]
+            [for pg in mvf.CurriedParameterGroups do
+                for p:FSharpParameter in pg do
+                    yield p.DisplayName, p.Type.Format symbol.DisplayContext]
         | _ -> []
 
     // Split the input & define file name
     let inputLines = input.Split('\n')
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
-    let methodsSymbols = typeCheckResults.GetMethodsAsSymbols(5, 27, inputLines.[4], ["String"; "Concat"])
+    let methodsSymbols = typeCheckResults.GetMethodsAsSymbols(5, 27, inputLines[4], ["String"; "Concat"])
     match methodsSymbols with
     | Some methods ->
-        [ for ms in methods do
-            yield ms.Symbol.DisplayName, extractCurriedParams ms ]
-        |> List.sortBy (fun (_name, parameters) -> parameters.Length, (parameters |> List.map snd ))
-        |> shouldEqual
+        let results =
+            [ for ms in methods do
+                yield ms.Symbol.DisplayName, extractCurriedParams ms ]
+            |> List.sortBy (fun (_name, parameters) -> parameters.Length, (parameters |> List.map snd ))
+        let expected =
             [("Concat", [("values", "Collections.Generic.IEnumerable<'T>")]);
              ("Concat", [("values", "Collections.Generic.IEnumerable<string>")]);
              ("Concat", [("arg0", "obj")]);
-             ("Concat", [("args", "obj []")]);
-             ("Concat", [("values", "string []")]);
+             ("Concat", [("args", "obj array")]);
+             ("Concat", [("values", "string array")]);
+#if NETCOREAPP
+             ("Concat", [("str0", "ReadOnlySpan<char>");("str1", "ReadOnlySpan<char>")]);
+#endif
              ("Concat", [("arg0", "obj"); ("arg1", "obj")]);
              ("Concat", [("str0", "string"); ("str1", "string")]);
+#if NETCOREAPP
+             ("Concat", [("str0", "ReadOnlySpan<char>"); ("str1", "ReadOnlySpan<char>"); ("str2", "ReadOnlySpan<char>")]);
+#endif
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj")]);
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string")]);
+#if NETCOREAPP
+             ("Concat", [("str0", "ReadOnlySpan<char>"); ("str1", "ReadOnlySpan<char>"); ("str2", "ReadOnlySpan<char>"); ("str3", "ReadOnlySpan<char>")]);
+#endif
 #if !NETCOREAPP // TODO: check why this is needed for .NET Core testing of FSharp.Compiler.Service
              ("Concat", [("arg0", "obj"); ("arg1", "obj"); ("arg2", "obj"); ("arg3", "obj")]);
 #endif
              ("Concat", [("str0", "string"); ("str1", "string"); ("str2", "string"); ("str3", "string")])]
+        
+        results |> shouldEqual expected
+
     | None -> failwith "No symbols returned"
 
 
-let input2 = 
+let input2 =
         """
 [<System.CLSCompliant(true)>]
-let foo(x, y) = 
+let foo(x, y) =
     let msg = String.Concat("Hello"," ","world")
-    if true then 
-        printfn "x = %d, y = %d" x y 
+    if true then
+        printfn "x = %d, y = %d" x y
         printfn "%s" msg
 
-type C() = 
+type C() =
     member x.P = 1
         """
 
 [<Test>]
-let ``Symbols basic test`` () = 
+let ``Symbols basic test`` () =
 
     let file = "/home/user/Test.fsx"
     let untyped2, typeCheckResults2 = parseAndCheckScript(file, input2)
 
     let partialAssemblySignature = typeCheckResults2.PartialAssemblySignature
-    
+
     partialAssemblySignature.Entities.Count |> shouldEqual 1  // one entity
 
 [<Test>]
-let ``Symbols many tests`` () = 
+let ``Symbols many tests`` () =
 
     let file = "/home/user/Test.fsx"
     let untyped2, typeCheckResults2 = parseAndCheckScript(file, input2)
 
     let partialAssemblySignature = typeCheckResults2.PartialAssemblySignature
-    
+
     partialAssemblySignature.Entities.Count |> shouldEqual 1  // one entity
-    let moduleEntity = partialAssemblySignature.Entities.[0]
+    let moduleEntity = partialAssemblySignature.Entities[0]
 
     moduleEntity.DisplayName |> shouldEqual "Test"
 
-    let classEntity = moduleEntity.NestedEntities.[0]
+    let classEntity = moduleEntity.NestedEntities[0]
 
-    let fnVal = moduleEntity.MembersFunctionsAndValues.[0]
+    let fnVal = moduleEntity.MembersFunctionsAndValues[0]
 
     fnVal.Accessibility.IsPublic |> shouldEqual true
     fnVal.Attributes.Count |> shouldEqual 1
     fnVal.CurriedParameterGroups.Count |> shouldEqual 1
-    fnVal.CurriedParameterGroups.[0].Count |> shouldEqual 2
-    fnVal.CurriedParameterGroups.[0].[0].Name.IsSome |> shouldEqual true
-    fnVal.CurriedParameterGroups.[0].[1].Name.IsSome |> shouldEqual true
-    fnVal.CurriedParameterGroups.[0].[0].Name.Value |> shouldEqual "x"
-    fnVal.CurriedParameterGroups.[0].[1].Name.Value |> shouldEqual "y"
+    fnVal.CurriedParameterGroups[0].Count |> shouldEqual 2
+    fnVal.CurriedParameterGroups[0].[0].Name.IsSome |> shouldEqual true
+    fnVal.CurriedParameterGroups[0].[1].Name.IsSome |> shouldEqual true
+    fnVal.CurriedParameterGroups[0].[0].Name.Value |> shouldEqual "x"
+    fnVal.CurriedParameterGroups[0].[1].Name.Value |> shouldEqual "y"
     fnVal.DeclarationLocation.StartLine |> shouldEqual 3
     fnVal.DisplayName |> shouldEqual "foo"
     fnVal.DeclaringEntity.Value.DisplayName |> shouldEqual "Test"
@@ -243,8 +232,8 @@ let ``Symbols many tests`` () =
     fnVal.IsTypeFunction |> shouldEqual false
 
     fnVal.FullType.IsFunctionType |> shouldEqual true // int * int -> unit
-    fnVal.FullType.GenericArguments.[0].IsTupleType |> shouldEqual true // int * int 
-    let argTy1 = fnVal.FullType.GenericArguments.[0].GenericArguments.[0]
+    fnVal.FullType.GenericArguments[0].IsTupleType |> shouldEqual true // int * int
+    let argTy1 = fnVal.FullType.GenericArguments[0].GenericArguments[0]
 
     argTy1.TypeDefinition.DisplayName |> shouldEqual "int" // int
 
@@ -253,129 +242,126 @@ let ``Symbols many tests`` () =
 
     let argTy1b = argTy1.TypeDefinition.AbbreviatedType
     argTy1b.TypeDefinition.Namespace |> shouldEqual (Some "Microsoft.FSharp.Core")
-    argTy1b.TypeDefinition.CompiledName |> shouldEqual "int32" 
+    argTy1b.TypeDefinition.CompiledName |> shouldEqual "int32"
 
     let argTy1c = argTy1b.TypeDefinition.AbbreviatedType
     argTy1c.TypeDefinition.Namespace |> shouldEqual (Some "System")
-    argTy1c.TypeDefinition.CompiledName |> shouldEqual "Int32" 
+    argTy1c.TypeDefinition.CompiledName |> shouldEqual "Int32"
 
     let typeCheckContext = typeCheckResults2.ProjectContext
-    
-    typeCheckContext.GetReferencedAssemblies() |> List.exists (fun s -> s.FileName.Value.Contains(coreLibAssemblyName)) |> shouldEqual true
-    
 
-let input3 = 
+    typeCheckContext.GetReferencedAssemblies() |> List.exists (fun s -> s.FileName.Value.Contains(coreLibAssemblyName)) |> shouldEqual true
+
+
+let input3 =
   """
 let date = System.DateTime.Now.ToString().PadRight(25)
   """
 
 [<Test>]
-#if COMPILED
-[<Ignore("This isn't picking up changes in Fsharp.Core")>]
-#endif
-let ``Expression typing test`` () = 
+let ``Expression typing test`` () =
 
     printfn "------ Expression typing test -----------------"
     // Split the input & define file name
     let inputLines = input3.Split('\n')
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults =  parseAndCheckScript(file, input3) 
+    let parseResult, typeCheckResults =  parseAndCheckScript(file, input3)
     let identToken = FSharpTokenTag.IDENT
 
-    for msg in typeCheckResults.Diagnostics do 
+    for msg in typeCheckResults.Diagnostics do
         printfn "***Expression typing test: Unexpected  error: %A" msg.Message
 
     typeCheckResults.Diagnostics.Length |> shouldEqual 0
 
     // Get declarations (autocomplete) for a location
     //
-    // Getting the declarations at columns 42 to 43 with [], "" for the names and residue 
-    // gives the results for the string type. 
-    // 
-    for col in 42..43 do 
-        let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 2, inputLines.[1], PartialLongName.Empty(col), (fun _ -> []))
-        let autoCompleteSet = set [ for item in decls.Items -> item.Name ]
+    // Getting the declarations at columns 42 to 43 with [], "" for the names and residue
+    // gives the results for the string type.
+    //
+    for col in 42..43 do
+        let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 2, inputLines[1], PartialLongName.Empty(col), (fun _ -> []))
+        let autoCompleteSet = set [ for item in decls.Items -> item.NameInList ]
         autoCompleteSet |> shouldEqual (set stringMethods)
 
 // The underlying problem is that the parser error recovery doesn't include _any_ information for
 // the incomplete member:
-//    member x.Test = 
+//    member x.Test =
 
 [<Test; Ignore("SKIPPED: see #139")>]
-let ``Find function from member 1`` () = 
-    let input = 
+let ``Find function from member 1`` () =
+    let input =
       """
-type Test() = 
+type Test() =
     let abc a b c = a + b + c
-    member x.Test = """ 
+    member x.Test = """
 
     // Split the input & define file name
     let inputLines = input.Split('\n')
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(20), (fun _ -> []))
-    let item = decls.Items |> Array.tryFind (fun d -> d.Name = "abc")
-    decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines[3], PartialLongName.Empty(20), (fun _ -> []))
+    let item = decls.Items |> Array.tryFind (fun d -> d.NameInList = "abc")
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "abc") |> shouldEqual true
 
 [<Test>]
-let ``Find function from member 2`` () = 
-    let input = 
+let ``Find function from member 2`` () =
+    let input =
       """
-type Test() = 
+type Test() =
     let abc a b c = a + b + c
-    member x.Test = a""" 
+    member x.Test = a"""
 
     // Split the input & define file name
     let inputLines = input.Split('\n')
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(21), (fun _ -> []))
-    let item = decls.Items |> Array.tryFind (fun d -> d.Name = "abc")
-    decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
- 
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines[3], PartialLongName.Empty(21), (fun _ -> []))
+    let item = decls.Items |> Array.tryFind (fun d -> d.NameInList = "abc")
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "abc") |> shouldEqual true
+
 [<Test>]
-let ``Find function from var`` () = 
-    let input = 
+let ``Find function from var`` () =
+    let input =
       """
-type Test() = 
+type Test() =
     let abc a b c = a + b + c
-    let test = """ 
+    let test = """
 
     // Split the input & define file name
     let inputLines = input.Split('\n')
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), (fun _ -> []))
-    decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines[3], PartialLongName.Empty(14), (fun _ -> []))
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "abc") |> shouldEqual true
 
 
 [<Test>]
-let ``Completion in base constructor`` () = 
-    let input = 
+let ``Completion in base constructor`` () =
+    let input =
       """
 type A(foo) =
     class
     end
 
 type B(bar) =
-    inherit A(bar)""" 
+    inherit A(bar)"""
 
     // Split the input & define file name
     let inputLines = input.Split('\n')
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines.[6], PartialLongName.Empty(17), (fun _ -> []))
-    decls.Items |> Seq.exists (fun d -> d.Name = "bar") |> shouldEqual true
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines[6], PartialLongName.Empty(17), (fun _ -> []))
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "bar") |> shouldEqual true
 
 
 
 [<Test>]
-let ``Completion in do in base constructor`` () = 
-    let input = 
+let ``Completion in do in base constructor`` () =
+    let input =
       """
 type A() =
     class
@@ -383,72 +369,72 @@ type A() =
 
 type B(bar) =
     inherit A()
-    
-    do bar""" 
+
+    do bar"""
 
     // Split the input & define file name
     let inputLines = input.Split('\n')
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 9, inputLines.[8], PartialLongName.Empty(7), (fun _ -> []))
-    decls.Items |> Seq.exists (fun d -> d.Name = "bar") |> shouldEqual true
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 9, inputLines[8], PartialLongName.Empty(7), (fun _ -> []))
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "bar") |> shouldEqual true
 
 
 [<Test; Ignore("SKIPPED: see #139")>]
-let ``Symbol based find function from member 1`` () = 
-    let input = 
+let ``Symbol based find function from member 1`` () =
+    let input =
       """
-type Test() = 
+type Test() =
     let abc a b c = a + b + c
-    member x.Test = """ 
+    member x.Test = """
 
     // Split the input & define file name
     let inputLines = input.Split('\n')
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(20), (fun () -> []))
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines[3], PartialLongName.Empty(20), (fun () -> []))
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
 [<Test>]
-let ``Symbol based find function from member 2`` () = 
-    let input = 
+let ``Symbol based find function from member 2`` () =
+    let input =
       """
-type Test() = 
+type Test() =
     let abc a b c = a + b + c
-    member x.Test = a""" 
+    member x.Test = a"""
 
     // Split the input & define file name
     let inputLines = input.Split('\n')
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(21), (fun () -> []))
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines[3], PartialLongName.Empty(21), (fun () -> []))
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
 [<Test>]
-let ``Symbol based find function from var`` () = 
-    let input = 
+let ``Symbol based find function from var`` () =
+    let input =
       """
-type Test() = 
+type Test() =
     let abc a b c = a + b + c
-    let test = """ 
+    let test = """
 
     // Split the input & define file name
     let inputLines = input.Split('\n')
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), (fun () -> []))
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines[3], PartialLongName.Empty(14), (fun () -> []))
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
 [<Test>]
-let ``Printf specifiers for regular and verbatim strings`` () = 
-    let input = 
+let ``Printf specifiers for regular and verbatim strings`` () =
+    let input =
       """let os = System.Text.StringBuilder()
 let _ = Microsoft.FSharp.Core.Printf.printf "%A" 0
 let _ = Printf.printf "%A" 0
@@ -469,7 +455,7 @@ let _ = List.map (sprintf @"%A
 let _ = (10, 12) ||> sprintf "%A
                               %O"
 let _ = sprintf "\n%-8.1e+567" 1.0
-let _ = sprintf @"%O\n%-5s" "1" "2" 
+let _ = sprintf @"%O\n%-5s" "1" "2"
 let _ = sprintf "%%"
 let _ = sprintf " %*%" 2
 let _ = sprintf "  %.*%" 2
@@ -486,10 +472,10 @@ let _ =  printf "            %*a" 3 (fun _ _ -> ()) 2
 """
 
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
 
     typeCheckResults.Diagnostics |> shouldEqual [||]
-    typeCheckResults.GetFormatSpecifierLocationsAndArity() 
+    typeCheckResults.GetFormatSpecifierLocationsAndArity()
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
          [|(2, 45, 2, 47, 1); (3, 23, 3, 25, 1); (4, 38, 4, 40, 1); (5, 27, 5, 29, 1);
@@ -504,8 +490,8 @@ let _ =  printf "            %*a" 3 (fun _ _ -> ()) 2
           (34, 29, 34, 32, 3)|]
 
 [<Test>]
-let ``Printf specifiers for triple-quote strings`` () = 
-    let input = 
+let ``Printf specifiers for triple-quote strings`` () =
+    let input =
       "
 let _ = sprintf \"\"\"%-A\"\"\" -10
 let _ = printfn \"\"\"
@@ -516,20 +502,20 @@ let _ = List.iter(printfn \"\"\"%-A
                              \"\"\" 1 2)"
 
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
 
     typeCheckResults.Diagnostics |> shouldEqual [||]
-    typeCheckResults.GetFormatSpecifierLocationsAndArity() 
+    typeCheckResults.GetFormatSpecifierLocationsAndArity()
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual [|(2, 19, 2, 22, 1);
                      (4, 12, 4, 15, 1);
                      (6, 29, 6, 32, 1);
-                     (7, 29, 7, 31, 1); 
+                     (7, 29, 7, 31, 1);
                      (7, 33, 7, 35,1 )|]
- 
+
 [<Test>]
-let ``Printf specifiers for user-defined functions`` () = 
-    let input = 
+let ``Printf specifiers for user-defined functions`` () =
+    let input =
       """
 let debug msg = Printf.kprintf System.Diagnostics.Debug.WriteLine msg
 let _ = debug "Message: %i - %O" 1 "Ok"
@@ -537,22 +523,22 @@ let _ = debug "[LanguageService] Type checking fails for '%s' with content=%A an
 """
 
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
 
     typeCheckResults.Diagnostics |> shouldEqual [||]
-    typeCheckResults.GetFormatSpecifierLocationsAndArity() 
+    typeCheckResults.GetFormatSpecifierLocationsAndArity()
     |> Array.map (fun (range, numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
-    |> shouldEqual [|(3, 24, 3, 26, 1); 
+    |> shouldEqual [|(3, 24, 3, 26, 1);
                      (3, 29, 3, 31, 1);
-                     (4, 58, 4, 60, 1); 
-                     (4, 75, 4, 77, 1); 
-                     (4, 82, 4, 84, 1); 
+                     (4, 58, 4, 60, 1);
+                     (4, 75, 4, 77, 1);
+                     (4, 82, 4, 84, 1);
                      (4, 108, 4, 110, 1)|]
 
 #if ASSUME_PREVIEW_FSHARP_CORE
 [<Test>]
-let ``Printf specifiers for regular and verbatim interpolated strings`` () = 
-    let input = 
+let ``Printf specifiers for regular and verbatim interpolated strings`` () =
+    let input =
       """let os = System.Text.StringBuilder() // line 1
 let _ = $"{0}"                                // line 2
 let _ = $"%A{0}"                              // line 3
@@ -572,15 +558,15 @@ let _ = $"\n%-8.1e{1.0}+567"                  // line 16
 let _ = $@"%O{1}\n%-5s{s}"                    // line 17
 let _ = $"%%"                                 // line 18
 let s2 = $"abc %d{s.Length} and %d{s.Length}def" // line 19
-let s3 = $"abc %d{s.Length} 
+let s3 = $"abc %d{s.Length}
                 and %d{s.Length}def"          // line 21
 """
 
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |]) 
+    let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |])
 
     typeCheckResults.Diagnostics |> shouldEqual [||]
-    typeCheckResults.GetFormatSpecifierLocationsAndArity() 
+    typeCheckResults.GetFormatSpecifierLocationsAndArity()
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
         [|(3, 10, 3, 12, 1); (4, 10, 4, 15, 1); (5, 10, 5, 16, 1); (7, 11, 7, 15, 1);
@@ -590,15 +576,15 @@ let s3 = $"abc %d{s.Length}
           (19, 32, 19, 34, 1); (20, 15, 20, 17, 1); (21, 20, 21, 22, 1)|]
 
 [<Test>]
-let ``Printf specifiers for triple quote interpolated strings`` () = 
-    let input = 
+let ``Printf specifiers for triple quote interpolated strings`` () =
+    let input =
       "let _ = $\"\"\"abc %d{1} and %d{2+3}def\"\"\"  "
 
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |]) 
+    let parseResult, typeCheckResults = parseAndCheckScriptWithOptions(file, input, [| "/langversion:preview" |])
 
     typeCheckResults.Diagnostics |> shouldEqual [||]
-    typeCheckResults.GetFormatSpecifierLocationsAndArity() 
+    typeCheckResults.GetFormatSpecifierLocationsAndArity()
     |> Array.map (fun (range,numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual
         [|(1, 16, 1, 18, 1); (1, 26, 1, 28, 1)|]
@@ -606,38 +592,38 @@ let ``Printf specifiers for triple quote interpolated strings`` () =
 
 
 [<Test>]
-let ``should not report format specifiers for illformed format strings`` () = 
-    let input = 
+let ``should not report format specifiers for illformed format strings`` () =
+    let input =
       """
 let _ = sprintf "%.7f %7.1A %7.f %--8.1f"
 let _ = sprintf "ABCDE"
 """
 
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
-    typeCheckResults.GetFormatSpecifierLocationsAndArity() 
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
+    typeCheckResults.GetFormatSpecifierLocationsAndArity()
     |> Array.map (fun (range, numArgs) -> range.StartLine, range.StartColumn, range.EndLine, range.EndColumn, numArgs)
     |> shouldEqual [||]
 
 [<Test>]
-let ``Single case discreminated union type definition`` () = 
-    let input = 
+let ``Single case discreminated union type definition`` () =
+    let input =
       """
 type DU = Case1
 """
 
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
-    |> Array.map (fun su -> 
-        let r = su.Range 
+    |> Array.map (fun su ->
+        let r = su.Range
         r.StartLine, r.StartColumn, r.EndLine, r.EndColumn)
     |> shouldEqual [|(2, 10, 2, 15); (2, 5, 2, 7); (1, 0, 1, 0)|]
 
 [<Test>]
-let ``Synthetic symbols should not be reported`` () = 
-    let input = 
+let ``Synthetic symbols should not be reported`` () =
+    let input =
       """
 let arr = [|1|]
 let number1, number2 = 1, 2
@@ -646,29 +632,19 @@ let _ = arr.[..number2]
 """
 
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
-    |> Array.map (fun su -> 
-        let r = su.Range 
+    |> Array.map (fun su ->
+        let r = su.Range
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
-    |> shouldEqual 
+    |> shouldEqual
         [|("val arr", (2, 4, 2, 7))
           ("val number2", (3, 13, 3, 20))
           ("val number1", (3, 4, 3, 11))
           ("val arr", (4, 8, 4, 11))
-          ("Microsoft", (4, 11, 4, 12))
-          ("OperatorIntrinsics", (4, 11, 4, 12))
-          ("Operators", (4, 11, 4, 12))
-          ("Core", (4, 11, 4, 12))
-          ("FSharp", (4, 11, 4, 12))
           ("val number1", (4, 16, 4, 23))
           ("val arr", (5, 8, 5, 11))
-          ("Microsoft", (5, 11, 5, 12))
-          ("OperatorIntrinsics", (5, 11, 5, 12))
-          ("Operators", (5, 11, 5, 12))
-          ("Core", (5, 11, 5, 12))
-          ("FSharp", (5, 11, 5, 12)) 
           ("val number2", (5, 15, 5, 22))
           ("Test", (1, 0, 1, 0))|]
 
@@ -681,8 +657,8 @@ let test2 = System.StringComparison.CurrentCulture
 let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
 """
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
-    let allSymbols = typeCheckResults.GetAllUsesOfAllSymbolsInFile() 
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
+    let allSymbols = typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     let enums =
         allSymbols
         |> Array.ofSeq
@@ -718,12 +694,15 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
                              ("RightToLeft", Some (box 64))
                              ("ECMAScript", Some (box 256))
                              ("CultureInvariant", Some (box 512))
+#if NETCOREAPP
+                             ("NonBacktracking", Some 1024)
+#endif
                            ]
         |]
 
 [<Test>]
-let ``IL enum fields should be reported`` () = 
-    let input = 
+let ``IL enum fields should be reported`` () =
+    let input =
       """
 open System
 
@@ -734,29 +713,29 @@ let _ =
 """
 
     let file = "/home/user/Test.fsx"
-    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    let _, typeCheckResults = parseAndCheckScript(file, input)
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
-    |> Array.map (fun su -> 
-        let r = su.Range 
+    |> Array.map (fun su ->
+        let r = su.Range
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> Array.distinct
-    |> shouldEqual 
+    |> shouldEqual
         // note: these "System" sysbol uses are not duplications because each of them corresponts to different namespaces
         [|("System", (2, 5, 2, 11))
           ("ConsoleKey", (5, 10, 5, 20));
-          ("field Tab", (5, 10, 5, 24)); 
+          ("field Tab", (5, 10, 5, 24));
           ("ConsoleKey", (6, 6, 6, 16));
-          ("field OemClear", (6, 6, 6, 25)); 
+          ("field OemClear", (6, 6, 6, 25));
           ("ConsoleKey", (6, 29, 6, 39));
-          ("field A", (6, 29, 6, 41)); 
+          ("field A", (6, 29, 6, 41));
           ("ConsoleKey", (7, 11, 7, 21));
-          ("field B", (7, 11, 7, 23)); 
+          ("field B", (7, 11, 7, 23));
           ("Test", (1, 0, 1, 0))|]
 
 [<Test>]
-let ``Literal values should be reported`` () = 
-    let input = 
+let ``Literal values should be reported`` () =
+    let input =
       """
 module Module1 =
     let [<Literal>] ModuleValue = 1
@@ -769,7 +748,7 @@ module Module1 =
 type Class1() =
     let [<Literal>] ClassValue = 1
     static let [<Literal>] StaticClassValue = 2
-    
+
     let _ = ClassValue
     let _ = StaticClassValue
 
@@ -781,13 +760,13 @@ type Class1() =
 """
 
     let file = "/home/user/Test.fsx"
-    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    let _, typeCheckResults = parseAndCheckScript(file, input)
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
-    |> Array.map (fun su -> 
-        let r = su.Range 
+    |> Array.map (fun su ->
+        let r = su.Range
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
-    |> shouldEqual 
+    |> shouldEqual
         [|("LiteralAttribute", (3, 10, 3, 17))
           ("LiteralAttribute", (3, 10, 3, 17))
           ("member .ctor", (3, 10, 3, 17))
@@ -823,18 +802,18 @@ type Class1() =
           ("Test", (1, 0, 1, 0))|]
 
 [<Test>]
-let ``IsConstructor property should return true for constructors`` () = 
-    let input = 
+let ``IsConstructor property should return true for constructors`` () =
+    let input =
       """
 type T(x: int) =
     new() = T(0)
 let x: T()
 """
     let file = "/home/user/Test.fsx"
-    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    let _, typeCheckResults = parseAndCheckScript(file, input)
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
-    |> Array.map (fun su -> 
+    |> Array.map (fun su ->
         let r = su.Range
         let isConstructor =
             match su.Symbol with
@@ -842,7 +821,7 @@ let x: T()
             | _ -> false
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn), isConstructor)
     |> Array.distinct
-    |> shouldEqual 
+    |> shouldEqual
         [|("T", (2, 5, 2, 6), false)
           ("int", (2, 10, 2, 13), false)
           ("val x", (2, 7, 2, 8), false)
@@ -854,22 +833,22 @@ let x: T()
           ("Test", (1, 0, 1, 0), false)|]
 
 [<Test>]
-let ``ValidateBreakpointLocation tests A`` () = 
-    let input = 
+let ``ValidateBreakpointLocation tests A`` () =
+    let input =
       """
-let f x = 
+let f x =
     let y = z + 1
     y + y
         )"""
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
     let lines = input.Replace("\r", "").Split( [| '\n' |])
-    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Position.mkPos (Line.fromZ i) j, line ]
-    let results = [ for pos, line in positions do 
-                        match parseResult.ValidateBreakpointLocation pos with 
-                        | Some r -> yield ((line, pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))  
+    let positions = [ for i,line in Seq.indexed lines do for j, c in Seq.indexed line do yield Position.mkPos (Line.fromZ i) j, line ]
+    let results = [ for pos, line in positions do
+                        match parseResult.ValidateBreakpointLocation pos with
+                        | Some r -> yield ((line, pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
                         | None -> ()]
-    results |> shouldEqual 
+    results |> shouldEqual
           [(("    let y = z + 1", 3, 0), (3, 4, 3, 17));
            (("    let y = z + 1", 3, 1), (3, 4, 4, 9));
            (("    let y = z + 1", 3, 2), (3, 4, 4, 9));
@@ -895,9 +874,9 @@ let f x =
 
 
 [<Test>]
-let ``ValidateBreakpointLocation tests for object expressions`` () = 
+let ``ValidateBreakpointLocation tests for object expressions`` () =
 // fsi.PrintLength <- 1000
-    let input = 
+    let input =
       """
 type IFoo =
     abstract member Foo: int -> int
@@ -916,15 +895,21 @@ type FooImpl() =
             }
         )"""
     let file = "/home/user/Test.fsx"
-    let parseResult, typeCheckResults = parseAndCheckScript(file, input) 
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
     let lines = input.Replace("\r", "").Split( [| '\n' |])
-    let positions = [ for (i,line) in Seq.indexed lines do for (j, c) in Seq.indexed line do yield Position.mkPos (Line.fromZ i) j, line ]
-    let results = [ for pos, line in positions do 
-                        match parseResult.ValidateBreakpointLocation pos with 
-                        | Some r -> yield ((line, pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))  
+    let positions = [ for i,line in Seq.indexed lines do for j, c in Seq.indexed line do yield Position.mkPos (Line.fromZ i) j, line ]
+    let results = [ for pos, line in positions do
+                        match parseResult.ValidateBreakpointLocation pos with
+                        | Some r -> yield ((line, pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
                         | None -> ()]
-    results |> shouldEqual 
-          [(("type FooBase(foo:IFoo) =", 5, 5), (5, 5, 5, 12));
+    printfn "%A" results
+    results |> shouldEqual
+          [(("type FooBase(foo:IFoo) =", 5, 0), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 1), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 2), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 3), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 4), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 5), (5, 5, 5, 12));
            (("type FooBase(foo:IFoo) =", 5, 6), (5, 5, 5, 12));
            (("type FooBase(foo:IFoo) =", 5, 7), (5, 5, 5, 12));
            (("type FooBase(foo:IFoo) =", 5, 8), (5, 5, 5, 12));
@@ -932,9 +917,27 @@ type FooImpl() =
            (("type FooBase(foo:IFoo) =", 5, 10), (5, 5, 5, 12));
            (("type FooBase(foo:IFoo) =", 5, 11), (5, 5, 5, 12));
            (("type FooBase(foo:IFoo) =", 5, 12), (5, 5, 5, 12));
-           (("    do ()", 6, 4), (6, 7, 6, 9)); (("    do ()", 6, 5), (6, 7, 6, 9));
-           (("    do ()", 6, 6), (6, 7, 6, 9)); (("    do ()", 6, 7), (6, 7, 6, 9));
-           (("    do ()", 6, 8), (6, 7, 6, 9));
+           (("type FooBase(foo:IFoo) =", 5, 13), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 14), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 15), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 16), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 17), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 18), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 19), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 20), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 21), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 22), (5, 5, 5, 12));
+           (("type FooBase(foo:IFoo) =", 5, 23), (5, 5, 5, 12));
+           (("    do ()", 6, 0), (6, 4, 6, 9)); (("    do ()", 6, 1), (6, 4, 6, 9));
+           (("    do ()", 6, 2), (6, 4, 6, 9)); (("    do ()", 6, 3), (6, 4, 6, 9));
+           (("    do ()", 6, 4), (6, 4, 6, 9)); (("    do ()", 6, 5), (6, 4, 6, 9));
+           (("    do ()", 6, 6), (6, 4, 6, 9)); (("    do ()", 6, 7), (6, 4, 6, 9));
+           (("    do ()", 6, 8), (6, 4, 6, 9));
+           (("type FooImpl() =", 8, 0), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 1), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 2), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 3), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 4), (8, 5, 8, 12));
            (("type FooImpl() =", 8, 5), (8, 5, 8, 12));
            (("type FooImpl() =", 8, 6), (8, 5, 8, 12));
            (("type FooImpl() =", 8, 7), (8, 5, 8, 12));
@@ -943,6 +946,13 @@ type FooImpl() =
            (("type FooImpl() =", 8, 10), (8, 5, 8, 12));
            (("type FooImpl() =", 8, 11), (8, 5, 8, 12));
            (("type FooImpl() =", 8, 12), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 13), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 14), (8, 5, 8, 12));
+           (("type FooImpl() =", 8, 15), (8, 5, 8, 12));
+           (("    inherit FooBase", 9, 0), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 1), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 2), (9, 4, 17, 9));
+           (("    inherit FooBase", 9, 3), (9, 4, 17, 9));
            (("    inherit FooBase", 9, 4), (9, 4, 17, 9));
            (("    inherit FooBase", 9, 5), (9, 4, 17, 9));
            (("    inherit FooBase", 9, 6), (9, 4, 17, 9));
@@ -1133,9 +1143,410 @@ type FooImpl() =
            (("        )", 17, 7), (10, 8, 17, 9));
            (("        )", 17, 8), (10, 8, 17, 9))]
 
+let getBreakpointLocations (input: string) (parseResult: FSharpParseFileResults) =
+    let lines = input.Replace("\r", "").Split( [| '\n' |])
+    let positions = [ for i,line in Seq.indexed lines do for j, c in Seq.indexed line do yield Position.mkPos (Line.fromZ i) j, line ]
+    [ for pos, line in positions do
+        match parseResult.ValidateBreakpointLocation pos with
+        | Some r -> 
+            let text = 
+                [ if r.StartLine = r.EndLine then
+                      lines[r.StartLine-1][r.StartColumn..r.EndColumn-1]
+                  else
+                      lines[r.StartLine-1][r.StartColumn..]
+                      for l in r.StartLine..r.EndLine-2 do 
+                            lines[l]
+                      lines[r.EndLine-1][..r.EndColumn-1] ]
+                |> String.concat "$"
+            ((pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, text))
+        | None -> 
+            ()]
+
 [<Test>]
-let ``Partially valid namespaces should be reported`` () = 
-    let input = 
+let ``ValidateBreakpointLocation tests for pipe`` () =
+    let input =
+      """
+let f () =
+    [2]
+    |> List.map (fun b -> b+1)
+    |> List.map (fun b -> b+1)"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
+    let results = getBreakpointLocations input parseResult
+    printfn "%A" results
+    results |> shouldEqual
+        [((3, 0), (3, 4, 3, 7, "[2]")); ((3, 1), (3, 4, 3, 7, "[2]"));
+         ((3, 2), (3, 4, 3, 7, "[2]")); ((3, 3), (3, 4, 3, 7, "[2]"));
+         ((3, 4), (3, 4, 3, 7, "[2]")); ((3, 5), (3, 4, 3, 7, "[2]"));
+         ((3, 6), (3, 4, 3, 7, "[2]"));
+         ((4, 0), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 1), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 2), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 3), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 4), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 5), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 6), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 7), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 8), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 9), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 10), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 11), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 12), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 13), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 14), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 15), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 16), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 17), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 18), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 19), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 20), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 21), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 22), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 23), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 24), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 25), (4, 7, 4, 30, "List.map (fun b -> b+1)"));
+         ((4, 26), (4, 26, 4, 29, "b+1")); ((4, 27), (4, 26, 4, 29, "b+1"));
+         ((4, 28), (4, 26, 4, 29, "b+1")); ((4, 29), (4, 26, 4, 29, "b+1"));
+         ((5, 0), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 1), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 2), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 3), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 4), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 5), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 6), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 7), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 8), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 9), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 10), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 11), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 12), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 13), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 14), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 15), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 16), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 17), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 18), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 19), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 20), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 21), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 22), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 23), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 24), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 25), (5, 7, 5, 30, "List.map (fun b -> b+1)"));
+         ((5, 26), (5, 26, 5, 29, "b+1")); ((5, 27), (5, 26, 5, 29, "b+1"));
+         ((5, 28), (5, 26, 5, 29, "b+1")); ((5, 29), (5, 26, 5, 29, "b+1"))]
+
+[<Test>]
+let ``ValidateBreakpointLocation tests for pipe2`` () =
+    let input =
+      """
+let f () =
+    ([1],[2]) 
+    ||> List.zip
+    |> List.map (fun (b,c) -> (c,b))
+    |> List.unzip"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
+    let results = getBreakpointLocations input parseResult
+    printfn "%A" results
+    results |> shouldEqual 
+        [((3, 0), (3, 5, 3, 8, "[1]")); ((3, 1), (3, 5, 3, 8, "[1]"));
+         ((3, 2), (3, 5, 3, 8, "[1]")); ((3, 3), (3, 5, 3, 8, "[1]"));
+         ((3, 4), (3, 5, 3, 8, "[1]")); ((3, 5), (3, 5, 3, 8, "[1]"));
+         ((3, 6), (3, 5, 3, 8, "[1]")); ((3, 7), (3, 5, 3, 8, "[1]"));
+         ((3, 8), (3, 5, 3, 8, "[1]")); ((3, 9), (3, 9, 3, 12, "[2]"));
+         ((3, 10), (3, 9, 3, 12, "[2]")); ((3, 11), (3, 9, 3, 12, "[2]"));
+         ((3, 12), (3, 9, 3, 12, "[2]")); ((3, 13), (3, 5, 3, 8, "[1]"));
+         ((4, 0), (4, 8, 4, 16, "List.zip")); ((4, 1), (4, 8, 4, 16, "List.zip"));
+         ((4, 2), (4, 8, 4, 16, "List.zip")); ((4, 3), (4, 8, 4, 16, "List.zip"));
+         ((4, 4), (4, 8, 4, 16, "List.zip")); ((4, 5), (4, 8, 4, 16, "List.zip"));
+         ((4, 6), (4, 8, 4, 16, "List.zip")); ((4, 7), (4, 8, 4, 16, "List.zip"));
+         ((4, 8), (4, 8, 4, 16, "List.zip")); ((4, 9), (4, 8, 4, 16, "List.zip"));
+         ((4, 10), (4, 8, 4, 16, "List.zip")); ((4, 11), (4, 8, 4, 16, "List.zip"));
+         ((4, 12), (4, 8, 4, 16, "List.zip")); ((4, 13), (4, 8, 4, 16, "List.zip"));
+         ((4, 14), (4, 8, 4, 16, "List.zip")); ((4, 15), (4, 8, 4, 16, "List.zip"));
+         ((5, 0), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 1), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 2), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 3), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 4), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 5), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 6), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 7), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 8), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 9), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 10), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 11), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 12), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 13), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 14), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 15), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 16), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 17), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 18), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 19), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 20), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 21), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 22), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 23), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 24), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 25), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 26), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 27), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 28), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 29), (5, 7, 5, 36, "List.map (fun (b,c) -> (c,b))"));
+         ((5, 30), (5, 30, 5, 35, "(c,b)")); ((5, 31), (5, 30, 5, 35, "(c,b)"));
+         ((5, 32), (5, 30, 5, 35, "(c,b)")); ((5, 33), (5, 30, 5, 35, "(c,b)"));
+         ((5, 34), (5, 30, 5, 35, "(c,b)")); ((5, 35), (5, 30, 5, 35, "(c,b)"));
+         ((6, 0), (6, 7, 6, 17, "List.unzip")); ((6, 1), (6, 7, 6, 17, "List.unzip"));
+         ((6, 2), (6, 7, 6, 17, "List.unzip")); ((6, 3), (6, 7, 6, 17, "List.unzip"));
+         ((6, 4), (6, 7, 6, 17, "List.unzip")); ((6, 5), (6, 7, 6, 17, "List.unzip"));
+         ((6, 6), (6, 7, 6, 17, "List.unzip")); ((6, 7), (6, 7, 6, 17, "List.unzip"));
+         ((6, 8), (6, 7, 6, 17, "List.unzip")); ((6, 9), (6, 7, 6, 17, "List.unzip"));
+         ((6, 10), (6, 7, 6, 17, "List.unzip")); ((6, 11), (6, 7, 6, 17, "List.unzip"));
+         ((6, 12), (6, 7, 6, 17, "List.unzip")); ((6, 13), (6, 7, 6, 17, "List.unzip"));
+         ((6, 14), (6, 7, 6, 17, "List.unzip")); ((6, 15), (6, 7, 6, 17, "List.unzip"));
+         ((6, 16), (6, 7, 6, 17, "List.unzip"))]
+
+    
+[<Test>]
+let ``ValidateBreakpointLocation tests for pipe3`` () =
+    let input =
+      """
+let f () =
+    ([1],[2],[3]) 
+    |||> List.zip3
+    |> List.map (fun (a,b,c) -> (c,b,a))
+    |> List.unzip3"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, typeCheckResults = parseAndCheckScript(file, input)
+    let results = getBreakpointLocations input parseResult
+    printfn "%A" results
+    results |> shouldEqual 
+        [((3, 0), (3, 5, 3, 8, "[1]")); ((3, 1), (3, 5, 3, 8, "[1]"));
+         ((3, 2), (3, 5, 3, 8, "[1]")); ((3, 3), (3, 5, 3, 8, "[1]"));
+         ((3, 4), (3, 5, 3, 8, "[1]")); ((3, 5), (3, 5, 3, 8, "[1]"));
+         ((3, 6), (3, 5, 3, 8, "[1]")); ((3, 7), (3, 5, 3, 8, "[1]"));
+         ((3, 8), (3, 5, 3, 8, "[1]")); ((3, 9), (3, 9, 3, 12, "[2]"));
+         ((3, 10), (3, 9, 3, 12, "[2]")); ((3, 11), (3, 9, 3, 12, "[2]"));
+         ((3, 12), (3, 9, 3, 12, "[2]")); ((3, 13), (3, 13, 3, 16, "[3]"));
+         ((3, 14), (3, 13, 3, 16, "[3]")); ((3, 15), (3, 13, 3, 16, "[3]"));
+         ((3, 16), (3, 13, 3, 16, "[3]")); ((3, 17), (3, 5, 3, 8, "[1]"));
+         ((4, 0), (4, 9, 4, 18, "List.zip3")); ((4, 1), (4, 9, 4, 18, "List.zip3"));
+         ((4, 2), (4, 9, 4, 18, "List.zip3")); ((4, 3), (4, 9, 4, 18, "List.zip3"));
+         ((4, 4), (4, 9, 4, 18, "List.zip3")); ((4, 5), (4, 9, 4, 18, "List.zip3"));
+         ((4, 6), (4, 9, 4, 18, "List.zip3")); ((4, 7), (4, 9, 4, 18, "List.zip3"));
+         ((4, 8), (4, 9, 4, 18, "List.zip3")); ((4, 9), (4, 9, 4, 18, "List.zip3"));
+         ((4, 10), (4, 9, 4, 18, "List.zip3")); ((4, 11), (4, 9, 4, 18, "List.zip3"));
+         ((4, 12), (4, 9, 4, 18, "List.zip3")); ((4, 13), (4, 9, 4, 18, "List.zip3"));
+         ((4, 14), (4, 9, 4, 18, "List.zip3")); ((4, 15), (4, 9, 4, 18, "List.zip3"));
+         ((4, 16), (4, 9, 4, 18, "List.zip3")); ((4, 17), (4, 9, 4, 18, "List.zip3"));
+         ((5, 0), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 1), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 2), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 3), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 4), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 5), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 6), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 7), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 8), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 9), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 10), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 11), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 12), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 13), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 14), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 15), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 16), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 17), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 18), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 19), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 20), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 21), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 22), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 23), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 24), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 25), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 26), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 27), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 28), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 29), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 30), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 31), (5, 7, 5, 40, "List.map (fun (a,b,c) -> (c,b,a))"));
+         ((5, 32), (5, 32, 5, 39, "(c,b,a)")); ((5, 33), (5, 32, 5, 39, "(c,b,a)"));
+         ((5, 34), (5, 32, 5, 39, "(c,b,a)")); ((5, 35), (5, 32, 5, 39, "(c,b,a)"));
+         ((5, 36), (5, 32, 5, 39, "(c,b,a)")); ((5, 37), (5, 32, 5, 39, "(c,b,a)"));
+         ((5, 38), (5, 32, 5, 39, "(c,b,a)")); ((5, 39), (5, 32, 5, 39, "(c,b,a)"));
+         ((6, 0), (6, 7, 6, 18, "List.unzip3")); ((6, 1), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 2), (6, 7, 6, 18, "List.unzip3")); ((6, 3), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 4), (6, 7, 6, 18, "List.unzip3")); ((6, 5), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 6), (6, 7, 6, 18, "List.unzip3")); ((6, 7), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 8), (6, 7, 6, 18, "List.unzip3")); ((6, 9), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 10), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 11), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 12), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 13), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 14), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 15), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 16), (6, 7, 6, 18, "List.unzip3"));
+         ((6, 17), (6, 7, 6, 18, "List.unzip3"))]
+
+[<Test>]
+let ``ValidateBreakpointLocation tests for lambda with pattern arg`` () =
+    let input =
+      """
+let bodyWrapper () =
+   id (fun (A(b,c)) ->
+        let x = 1
+        x)"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, _typeCheckResults = parseAndCheckScript(file, input)
+    let results = getBreakpointLocations input parseResult
+    printfn "%A" results
+    // The majority of the breakpoints here get the entire expression, except the start-of-line ones
+    // on line 4 and 5, and the ones actually on the interior text of the lambda.
+    //
+    // This is correct
+    results |> shouldEqual 
+        [((3, 0), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 1), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 2), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 3), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 4), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 5), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 6), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 7), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 8), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 9), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 10), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 11), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 12), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 13), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 14), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 15), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 16), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 17), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 18), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 19), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 20), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((3, 21), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 0), (4, 8, 4, 17, "let x = 1"));
+         ((4, 1), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 2), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 3), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 4), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 5), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 6), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 7), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((4, 8), (4, 8, 4, 17, "let x = 1")); ((4, 9), (4, 8, 4, 17, "let x = 1"));
+         ((4, 10), (4, 8, 4, 17, "let x = 1")); ((4, 11), (4, 8, 4, 17, "let x = 1"));
+         ((4, 12), (4, 8, 4, 17, "let x = 1")); ((4, 13), (4, 8, 4, 17, "let x = 1"));
+         ((4, 14), (4, 8, 4, 17, "let x = 1")); ((4, 15), (4, 8, 4, 17, "let x = 1"));
+         ((4, 16), (4, 8, 4, 17, "let x = 1")); ((5, 0), (5, 8, 5, 9, "x"));
+         ((5, 1), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 2), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 3), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 4), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 5), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 6), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 7), (3, 3, 5, 10, "id (fun (A(b,c)) ->$        let x = 1$        x)"));
+         ((5, 8), (5, 8, 5, 9, "x")); ((5, 9), (5, 8, 5, 9, "x"))]
+
+[<Test>]
+let ``ValidateBreakpointLocation tests for boolean logic`` () =
+    let input =
+      """
+let bodyWrapper (a, b, c) = a || b && c"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, _typeCheckResults = parseAndCheckScript(file, input)
+    let results = getBreakpointLocations input parseResult
+    printfn "%A" results
+    // The majority of the breakpoints here get the entire expression, except the start-of-line ones
+    // on line 4 and 5, and the ones actually on the interior text of the lambda.
+    //
+    // This is correct
+    results |> shouldEqual 
+        [((2, 0), (2, 28, 2, 29, "a")); ((2, 1), (2, 28, 2, 29, "a"));
+         ((2, 2), (2, 28, 2, 29, "a")); ((2, 3), (2, 28, 2, 29, "a"));
+         ((2, 4), (2, 28, 2, 29, "a")); ((2, 5), (2, 28, 2, 29, "a"));
+         ((2, 6), (2, 28, 2, 29, "a")); ((2, 7), (2, 28, 2, 29, "a"));
+         ((2, 8), (2, 28, 2, 29, "a")); ((2, 9), (2, 28, 2, 29, "a"));
+         ((2, 10), (2, 28, 2, 29, "a")); ((2, 11), (2, 28, 2, 29, "a"));
+         ((2, 12), (2, 28, 2, 29, "a")); ((2, 13), (2, 28, 2, 29, "a"));
+         ((2, 14), (2, 28, 2, 29, "a")); ((2, 15), (2, 28, 2, 29, "a"));
+         ((2, 16), (2, 28, 2, 29, "a")); ((2, 17), (2, 28, 2, 29, "a"));
+         ((2, 18), (2, 28, 2, 29, "a")); ((2, 19), (2, 28, 2, 29, "a"));
+         ((2, 20), (2, 28, 2, 29, "a")); ((2, 21), (2, 28, 2, 29, "a"));
+         ((2, 22), (2, 28, 2, 29, "a")); ((2, 23), (2, 28, 2, 29, "a"));
+         ((2, 24), (2, 28, 2, 29, "a")); ((2, 25), (2, 28, 2, 29, "a"));
+         ((2, 26), (2, 28, 2, 29, "a")); ((2, 27), (2, 28, 2, 29, "a"));
+         ((2, 28), (2, 28, 2, 29, "a")); ((2, 29), (2, 28, 2, 29, "a"));
+         ((2, 30), (2, 33, 2, 34, "b")); ((2, 31), (2, 33, 2, 34, "b"));
+         ((2, 32), (2, 33, 2, 34, "b")); ((2, 33), (2, 33, 2, 34, "b"));
+         ((2, 34), (2, 33, 2, 34, "b")); ((2, 35), (2, 38, 2, 39, "c"));
+         ((2, 36), (2, 38, 2, 39, "c")); ((2, 37), (2, 38, 2, 39, "c"));
+         ((2, 38), (2, 38, 2, 39, "c"))]
+
+[<Test>]
+let ``ValidateBreakpointLocation tests for side-effect expression`` () =
+    let input =
+      """
+let print() = ()
+print()
+do print()
+type C() =
+    do print()
+module M =
+    print()
+"""
+    let file = "/home/user/Test.fsx"
+    let parseResult, _typeCheckResults = parseAndCheckScript(file, input)
+    let results = getBreakpointLocations input parseResult
+    printfn "%A" results
+    // The majority of the breakpoints here get the entire expression, except the start-of-line ones
+    // on line 4 and 5, and the ones actually on the interior text of the lambda.
+    //
+    // This is correct
+    results |> shouldEqual 
+            [((2, 0), (2, 14, 2, 16, "()")); ((2, 1), (2, 14, 2, 16, "()"));
+             ((2, 2), (2, 14, 2, 16, "()")); ((2, 3), (2, 14, 2, 16, "()"));
+             ((2, 4), (2, 14, 2, 16, "()")); ((2, 5), (2, 14, 2, 16, "()"));
+             ((2, 6), (2, 14, 2, 16, "()")); ((2, 7), (2, 14, 2, 16, "()"));
+             ((2, 8), (2, 14, 2, 16, "()")); ((2, 9), (2, 14, 2, 16, "()"));
+             ((2, 10), (2, 14, 2, 16, "()")); ((2, 11), (2, 14, 2, 16, "()"));
+             ((2, 12), (2, 14, 2, 16, "()")); ((2, 13), (2, 14, 2, 16, "()"));
+             ((2, 14), (2, 14, 2, 16, "()")); ((2, 15), (2, 14, 2, 16, "()"));
+             ((3, 0), (3, 0, 3, 7, "print()")); ((3, 1), (3, 0, 3, 7, "print()"));
+             ((3, 2), (3, 0, 3, 7, "print()")); ((3, 3), (3, 0, 3, 7, "print()"));
+             ((3, 4), (3, 0, 3, 7, "print()")); ((3, 5), (3, 0, 3, 7, "print()"));
+             ((3, 6), (3, 0, 3, 7, "print()")); ((4, 0), (4, 0, 4, 10, "do print()"));
+             ((4, 1), (4, 0, 4, 10, "do print()")); ((4, 2), (4, 0, 4, 10, "do print()"));
+             ((4, 3), (4, 0, 4, 10, "do print()")); ((4, 4), (4, 0, 4, 10, "do print()"));
+             ((4, 5), (4, 0, 4, 10, "do print()")); ((4, 6), (4, 0, 4, 10, "do print()"));
+             ((4, 7), (4, 0, 4, 10, "do print()")); ((4, 8), (4, 0, 4, 10, "do print()"));
+             ((4, 9), (4, 0, 4, 10, "do print()")); ((5, 0), (5, 5, 5, 6, "C"));
+             ((5, 1), (5, 5, 5, 6, "C")); ((5, 2), (5, 5, 5, 6, "C"));
+             ((5, 3), (5, 5, 5, 6, "C")); ((5, 4), (5, 5, 5, 6, "C"));
+             ((5, 5), (5, 5, 5, 6, "C")); ((5, 6), (5, 5, 5, 6, "C"));
+             ((5, 7), (5, 5, 5, 6, "C")); ((5, 8), (5, 5, 5, 6, "C"));
+             ((5, 9), (5, 5, 5, 6, "C")); ((6, 0), (6, 4, 6, 14, "do print()"));
+             ((6, 1), (6, 4, 6, 14, "do print()")); ((6, 2), (6, 4, 6, 14, "do print()"));
+             ((6, 3), (6, 4, 6, 14, "do print()")); ((6, 4), (6, 4, 6, 14, "do print()"));
+             ((6, 5), (6, 4, 6, 14, "do print()")); ((6, 6), (6, 4, 6, 14, "do print()"));
+             ((6, 7), (6, 4, 6, 14, "do print()")); ((6, 8), (6, 4, 6, 14, "do print()"));
+             ((6, 9), (6, 4, 6, 14, "do print()")); ((6, 10), (6, 4, 6, 14, "do print()"));
+             ((6, 11), (6, 4, 6, 14, "do print()")); ((6, 12), (6, 4, 6, 14, "do print()"));
+             ((6, 13), (6, 4, 6, 14, "do print()")); ((8, 0), (8, 4, 8, 11, "print()"));
+             ((8, 1), (8, 4, 8, 11, "print()")); ((8, 2), (8, 4, 8, 11, "print()"));
+             ((8, 3), (8, 4, 8, 11, "print()")); ((8, 4), (8, 4, 8, 11, "print()"));
+             ((8, 5), (8, 4, 8, 11, "print()")); ((8, 6), (8, 4, 8, 11, "print()"));
+             ((8, 7), (8, 4, 8, 11, "print()")); ((8, 8), (8, 4, 8, 11, "print()"));
+             ((8, 9), (8, 4, 8, 11, "print()")); ((8, 10), (8, 4, 8, 11, "print()"))]
+
+
+[<Test>]
+let ``Partially valid namespaces should be reported`` () =
+    let input =
       """
 open System.Threading.Foo
 open System
@@ -1145,14 +1556,14 @@ let _ = Threading.Buzz = null
 """
 
     let file = "/home/user/Test.fsx"
-    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    let _, typeCheckResults = parseAndCheckScript(file, input)
     typeCheckResults.GetAllUsesOfAllSymbolsInFile()
     |> Array.ofSeq
-    |> Array.map (fun su -> 
-        let r = su.Range 
+    |> Array.map (fun su ->
+        let r = su.Range
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> Array.distinct
-    |> shouldEqual 
+    |> shouldEqual
         // note: these "System" sysbol uses are not duplications because each of them corresponts to different namespaces
         [|("System", (2, 5, 2, 11))
           ("Threading", (2, 12, 2, 21))
@@ -1165,26 +1576,25 @@ let _ = Threading.Buzz = null
           ("Test", (1, 0, 1, 0))|]
 
 [<Test>]
-let ``GetDeclarationLocation should not require physical file`` () = 
+let ``GetDeclarationLocation should not require physical file`` () =
     let input = "let abc = 1\nlet xyz = abc"
     let file = "/home/user/Test.fsx"
-    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    let _, typeCheckResults = parseAndCheckScript(file, input)
     let location = typeCheckResults.GetDeclarationLocation(2, 13, "let xyz = abc", ["abc"])
     match location with
-    | FindDeclResult.DeclFound r -> Some (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, "<=== Found here."                             ) 
+    | FindDeclResult.DeclFound r -> Some (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, "<=== Found here."                             )
     | _                                -> Some (0          , 0            , 0        , 0          , "Not Found. Should not require physical file." )
     |> shouldEqual                       (Some (1          , 4            , 1        , 7          , "<=== Found here."                             ))
 
 
 //-------------------------------------------------------------------------------
 
-
 #if TEST_TP_PROJECTS
-module internal TPProject = 
+module internal TPProject =
     open System.IO
 
-    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
-    let base2 = Path.GetTempFileName()
+    let fileName1 = Path.ChangeExtension(tryCreateTemporaryFileName (), ".fs")
+    let base2 = tryCreateTemporaryFileName ()
     let dllName = Path.ChangeExtension(base2, ".dll")
     let projFileName = Path.ChangeExtension(base2, ".fsproj")
     let fileSource1 = """
@@ -1205,18 +1615,19 @@ let _ = RegexTypedStatic.IsMatch<"ABC", (*$ *) >(  ) // TEST: param info on Ctrl
 let _ = RegexTypedStatic.IsMatch<"ABC" >(  (*$*) ) // TEST: no assert on Ctrl-space at $
     """
 
-    File.WriteAllText(fileName1, fileSource1)
-    let fileLines1 = File.ReadAllLines(fileName1)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(fileSource1)
+    let fileLines1 = FileSystem.OpenFileForReadShim(fileName1).AsStream().ReadLines()
+
     let fileNames = [fileName1]
     let args = Array.append (mkProjectCommandLineArgs (dllName, fileNames)) [| "-r:" + PathRelativeToTestAssembly(@"DummyProviderForLanguageServiceTesting.dll") |]
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
 [<Test>]
-let ``Test TPProject all symbols`` () = 
+let ``Test TPProject all symbols`` () =
 
-    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunSynchronously
-    let allSymbolUses = wholeProjectResults.GetAllUsesOfAllSymbols() 
+    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunImmediate
+    let allSymbolUses = wholeProjectResults.GetAllUsesOfAllSymbols()
     let allSymbolUsesInfo =  [ for s in allSymbolUses -> s.Symbol.DisplayName, tups s.Range, attribsOfSymbol s.Symbol ]
     //printfn "allSymbolUsesInfo = \n----\n%A\n----" allSymbolUsesInfo
 
@@ -1252,10 +1663,10 @@ let ``Test TPProject all symbols`` () =
 
 
 [<Test>]
-let ``Test TPProject errors`` () = 
-    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunSynchronously
-    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunSynchronously
-    let typeCheckResults = 
+let ``Test TPProject errors`` () =
+    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunImmediate
+    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunImmediate
+    let typeCheckResults =
         match typeCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res
         | res -> failwithf "Parsing did not finish... (%A)" res
@@ -1275,26 +1686,26 @@ let ``Test TPProject errors`` () =
          (15, 33, 15, 38, "No static parameter exists with name ''");
          (16, 40, 16, 50, "This expression was expected to have type    'string'    but here has type    'unit'    ")]
 
-let internal extractToolTipText (ToolTipText(els)) = 
-    [ for e in els do 
+let internal extractToolTipText (ToolTipText(els)) =
+    [ for e in els do
         match e with
         | ToolTipElement.Group txts -> for item in txts do yield item.MainDescription
         | ToolTipElement.CompositionError err -> yield err
-        | ToolTipElement.None -> yield "NONE!" ] 
+        | ToolTipElement.None -> yield "NONE!" ]
 
 [<Test>]
-let ``Test TPProject quick info`` () = 
-    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunSynchronously
-    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunSynchronously
-    let typeCheckResults = 
+let ``Test TPProject quick info`` () =
+    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunImmediate
+    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunImmediate
+    let typeCheckResults =
         match typeCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res
         | res -> failwithf "Parsing did not finish... (%A)" res
 
     let toolTips  =
-      [ for lineNum in 0 .. TPProject.fileLines1.Length - 1 do 
+      [ for lineNum in 0 .. TPProject.fileLines1.Length - 1 do
          let lineText = TPProject.fileLines1.[lineNum]
-         if lineText.Contains(".IsMatch") then 
+         if lineText.Contains(".IsMatch") then
             let colAtEndOfNames = lineText.IndexOf(".IsMatch") + ".IsMatch".Length
             let res = typeCheckResults.GetToolTipTextAlternate(lineNum, colAtEndOfNames, lineText, ["RegexTypedStatic";"IsMatch"], FSharpTokenTag.IDENT)
             yield lineNum, extractToolTipText  res ]
@@ -1317,25 +1728,25 @@ let ``Test TPProject quick info`` () =
 
 
 [<Test>]
-let ``Test TPProject param info`` () = 
-    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunSynchronously
-    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunSynchronously
-    let typeCheckResults = 
+let ``Test TPProject param info`` () =
+    let wholeProjectResults = checker.ParseAndCheckProject(TPProject.options) |> Async.RunImmediate
+    let parseResult, typeCheckAnswer = checker.ParseAndCheckFileInProject(TPProject.fileName1, 0, TPProject.fileSource1, TPProject.options) |> Async.RunImmediate
+    let typeCheckResults =
         match typeCheckAnswer with
         | FSharpCheckFileAnswer.Succeeded(res) -> res
         | res -> failwithf "Parsing did not finish... (%A)" res
 
     let paramInfos =
-      [ for lineNum in 0 .. TPProject.fileLines1.Length - 1 do 
+      [ for lineNum in 0 .. TPProject.fileLines1.Length - 1 do
          let lineText = TPProject.fileLines1.[lineNum]
-         if lineText.Contains(".IsMatch") then 
+         if lineText.Contains(".IsMatch") then
             let colAtEndOfNames = lineText.IndexOf(".IsMatch")  + ".IsMatch".Length
-            let meths = typeCheckResults.GetMethodsAlternate(lineNum, colAtEndOfNames, lineText, Some ["RegexTypedStatic";"IsMatch"])  
-            let elems = 
-                [ for meth in meths.Methods do 
+            let meths = typeCheckResults.GetMethodsAlternate(lineNum, colAtEndOfNames, lineText, Some ["RegexTypedStatic";"IsMatch"])
+            let elems =
+                [ for meth in meths.Methods do
                    yield extractToolTipText  meth.Description, meth.HasParameters, [ for p in meth.Parameters -> p.ParameterName ], [ for p in meth.StaticParameters -> p.ParameterName ] ]
             yield lineNum, elems]
-    //printfn "paramInfos = \n----\n%A\n----" paramInfos 
+    //printfn "paramInfos = \n----\n%A\n----" paramInfos
 
     // This tests that properly statically-instantiated methods have the right method lists and parameter info
     paramInfos |> shouldEqual
@@ -1359,7 +1770,7 @@ let ``Test TPProject param info`` () =
 let ``FSharpField.IsNameGenerated`` () =
     let checkFields source =
         let file = "/home/user/Test.fsx"
-        let _, typeCheckResults = parseAndCheckScript(file, source) 
+        let _, typeCheckResults = parseAndCheckScript(file, source)
         let symbols =
             typeCheckResults.GetAllUsesOfAllSymbolsInFile()
         symbols
@@ -1367,18 +1778,18 @@ let ``FSharpField.IsNameGenerated`` () =
         |> Array.choose (fun su ->
             match su.Symbol with
             | :? FSharpEntity as entity -> Some entity.FSharpFields
-            | :? FSharpUnionCase as unionCase -> Some unionCase.Fields 
+            | :? FSharpUnionCase as unionCase -> Some unionCase.Fields
             | _ -> None)
         |> Seq.concat
         |> Seq.map (fun (field: FSharpField) -> field.Name, field.IsNameGenerated)
         |> List.ofSeq
-        
+
     ["exception E of string", ["Data0", true]
      "exception E of Data0: string", ["Data0", false]
      "exception E of Name: string", ["Name", false]
      "exception E of string * Data2: string * Data1: string * Name: string * Data4: string",
         ["Data0", true; "Data2", false; "Data1", false; "Name", false; "Data4", false]
-    
+
      "type U = Case of string", ["Item", true]
      "type U = Case of Item: string", ["Item", false]
      "type U = Case of Name: string", ["Name", false]
@@ -1435,8 +1846,17 @@ let ``Inherit ctor arg recovery`` () =
     assertHasSymbolUsages ["x"] checkResults
 
 [<Test>]
-let ``Brace matching smoke test`` () = 
-    let input = 
+let ``Missing this recovery`` () =
+    let _, checkResults = getParseAndCheckResults """
+    type T() =
+        member M() =
+            let x = 1 in ()
+    """
+    assertHasSymbolUsages ["x"] checkResults
+
+[<Test>]
+let ``Brace matching smoke test`` () =
+    let input =
       """
 let x1 = { contents = 1 }
 let x2 = {| contents = 1 |}
@@ -1445,11 +1865,11 @@ let x4 = [| 1 |]
 let x5 = $"abc{1}def"
 """
     let file = "/home/user/Test.fsx"
-    let braces = matchBraces(file, input) 
+    let braces = matchBraces(file, input)
 
     braces
-    |> Array.map (fun (r1,r2) -> 
-        (r1.StartLine, r1.StartColumn, r1.EndLine, r1.EndColumn), 
+    |> Array.map (fun (r1,r2) ->
+        (r1.StartLine, r1.StartColumn, r1.EndLine, r1.EndColumn),
         (r2.StartLine, r2.StartColumn, r2.EndLine, r2.EndColumn))
     |> shouldEqual
          [|((2, 9, 2, 10), (2, 24, 2, 25));
@@ -1457,11 +1877,11 @@ let x5 = $"abc{1}def"
            ((4, 9, 4, 10), (4, 13, 4, 14));
            ((5, 9, 5, 11), (5, 14, 5, 16));
            ((6, 14, 6, 15), (6, 16, 6, 17))|]
-     
+
 
 [<Test>]
-let ``Brace matching in interpolated strings`` () = 
-    let input = 
+let ``Brace matching in interpolated strings`` () =
+    let input =
       "
 let x5 = $\"abc{1}def\"
 let x6 = $\"abc{1}def{2}hij\"
@@ -1469,16 +1889,27 @@ let x7 = $\"\"\"abc{1}def{2}hij\"\"\"
 let x8 = $\"\"\"abc{  {contents=1} }def{2}hij\"\"\"
 "
     let file = "/home/user/Test.fsx"
-    let braces = matchBraces(file, input) 
+    let braces = matchBraces(file, input)
 
     braces
-    |> Array.map (fun (r1,r2) -> 
-        (r1.StartLine, r1.StartColumn, r1.EndLine, r1.EndColumn), 
+    |> Array.map (fun (r1,r2) ->
+        (r1.StartLine, r1.StartColumn, r1.EndLine, r1.EndColumn),
         (r2.StartLine, r2.StartColumn, r2.EndLine, r2.EndColumn))
     |> shouldEqual
         [|((2, 14, 2, 15), (2, 16, 2, 17)); ((3, 14, 3, 15), (3, 16, 3, 17));
           ((3, 20, 3, 21), (3, 22, 3, 23)); ((4, 16, 4, 17), (4, 18, 4, 19));
           ((4, 22, 4, 23), (4, 24, 4, 25)); ((5, 19, 5, 20), (5, 30, 5, 31));
           ((5, 16, 5, 17), (5, 32, 5, 33)); ((5, 36, 5, 37), (5, 38, 5, 39))|]
-         
+
+
+[<Test>]
+let ``Active pattern 01 - Named args`` () =
+    let _, checkResults = getParseAndCheckResults """
+do let x = 1 in ()
+"""
+    let su = checkResults |> findSymbolUseByName "x"
+    match checkResults.GetDescription(su.Symbol, su.GenericArguments, true, su.Range) with
+    | ToolTipText [ToolTipElement.Group [data]] ->
+        data.MainDescription |> Array.map (fun text -> text.Text) |> String.concat "" |> shouldEqual "val x: int"
+    | elements -> failwith $"Tooltip elements: {elements}"
 

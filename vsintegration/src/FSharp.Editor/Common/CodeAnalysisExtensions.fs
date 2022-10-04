@@ -30,6 +30,11 @@ type Project with
 
 type Solution with 
 
+    /// Checks if the file path is associated with a document in the solution.
+    member self.ContainsDocumentWithFilePath filePath =
+        self.GetDocumentIdsWithFilePath(filePath).IsEmpty
+        |> not
+
     /// Try to get a document inside the solution using the document's name
     member self.TryGetDocumentNamed docName =
         self.Projects |> Seq.tryPick (fun proj ->

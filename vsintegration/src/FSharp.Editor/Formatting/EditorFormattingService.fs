@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -20,8 +20,6 @@ open System.Windows.Forms
 type internal FSharpEditorFormattingService
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
         settings: EditorOptions
     ) =
     
@@ -42,7 +40,7 @@ type internal FSharpEditorFormattingService
 
             let line = sourceText.Lines.[sourceText.Lines.IndexOf position]
                 
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions
+            let defines = CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions
 
             let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
 
@@ -153,8 +151,8 @@ type internal FSharpEditorFormattingService
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
-            let parsingOptions = projectInfoManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(document)
-            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, checkerProvider.Checker, indentStyle, parsingOptions, position)
+            let parsingOptions = document.GetFSharpQuickParsingOptions()
+            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, document.GetFSharpChecker(), indentStyle, parsingOptions, position)
             return textChange |> Option.toList |> toIList
         }
         
@@ -164,19 +162,22 @@ type internal FSharpEditorFormattingService
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let tabSize = options.GetOption<int>(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
             
-            let parsingOptions = projectInfoManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(document) 
+            let parsingOptions = document.GetFSharpQuickParsingOptions()
             let! textChanges = FSharpEditorFormattingService.GetPasteChanges(document.Id, sourceText, document.FilePath, settings.Formatting, tabSize, parsingOptions, currentClipboard, span)
             return textChanges |> Option.defaultValue Seq.empty |> toIList
         }
         
-    interface IFSharpEditorFormattingService with
+    interface IFSharpEditorFormattingServiceWithOptions with
         member val SupportsFormatDocument = false
         member val SupportsFormatSelection = false
         member val SupportsFormatOnPaste = true
         member val SupportsFormatOnReturn = true
 
-        override _.SupportsFormattingOnTypedCharacter (document, ch) =
-            if FSharpIndentationService.IsSmartIndentEnabled document.Project.Solution.Workspace.Options then
+        override _.SupportsFormattingOnTypedCharacter (_document, _ch) =
+            false
+
+        override _.SupportsFormattingOnTypedCharacter (_document, options, ch) =
+            if options.IndentStyle = FormattingOptions.IndentStyle.Smart then
                 match ch with
                 | ')' | ']' | '}' -> true
                 | _ -> false

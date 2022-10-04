@@ -17,21 +17,21 @@ type internal FSharpCompletionService
     (
         workspace: Workspace,
         serviceProvider: SVsServiceProvider,
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
         assemblyContentProvider: AssemblyContentProvider,
         settings: EditorOptions
     ) =
-    inherit CompletionServiceWithProviders(workspace)
+    inherit FSharpCompletionServiceWithProviders(workspace)
+
+    let projectInfoManager = workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
 
     let builtInProviders = 
         ImmutableArray.Create<CompletionProvider>(
-            FSharpCompletionProvider(workspace, serviceProvider, checkerProvider, projectInfoManager, assemblyContentProvider),
+            FSharpCompletionProvider(workspace, serviceProvider, assemblyContentProvider),
             FSharpCommonCompletionProvider.Create(HashDirectiveCompletionProvider.Create(workspace, projectInfoManager)))
 
     override _.Language = FSharpConstants.FSharpLanguageName
     override _.GetBuiltInProviders() = builtInProviders
-    override _.GetRules() =
+    override _.GetRulesImpl() =
         let enterKeyRule =
             match settings.IntelliSense.EnterKeySetting with
             | NeverNewline -> EnterKeyRule.Never
@@ -56,13 +56,11 @@ type internal FSharpCompletionServiceFactory
     [<ImportingConstructor>] 
     (
         serviceProvider: SVsServiceProvider,
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
         assemblyContentProvider: AssemblyContentProvider,
         settings: EditorOptions
     ) =
     interface ILanguageServiceFactory with
         member _.CreateLanguageService(hostLanguageServices: HostLanguageServices) : ILanguageService =
-            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider, checkerProvider, projectInfoManager, assemblyContentProvider, settings)
+            upcast new FSharpCompletionService(hostLanguageServices.WorkspaceServices.Workspace, serviceProvider, assemblyContentProvider, settings)
 
 

@@ -13,7 +13,7 @@ neg03.fs(14,5,14,8): typecheck error FS0025: Incomplete pattern matches on this 
 
 neg03.fs(16,8,16,11): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '[_;_]' may indicate a case not covered by the pattern(s).
 
-neg03.fs(22,39,22,42): typecheck error FS0026: This rule will never be matched
+neg03.fs(22,39,22,47): typecheck error FS0026: This rule will never be matched
 
 neg03.fs(25,9,25,13): typecheck error FS0001: The type 'bool' does not support the operator '<<<'
 
@@ -32,11 +32,11 @@ neg03.fs(28,15,28,19): typecheck error FS0001: This expression was expected to h
 but here has type
     'bool'    
 
-neg03.fs(40,31,40,36): typecheck error FS0001: Type mismatch. Expecting a
-    'Map<string,string>'    
-but given a
+neg03.fs(40,31,40,36): typecheck error FS0193: Type constraint mismatch. The type 
     'Map<string,int>'    
-The type 'string' does not match the type 'int'
+is not compatible with type
+    'Map<string,string>'    
+
 
 neg03.fs(45,20,45,26): typecheck error FS0685: The generic function 'typeof' must be given explicit type argument(s)
 
@@ -88,13 +88,13 @@ neg03.fs(84,9,84,23): typecheck error FS0025: Incomplete pattern matches on this
 
 neg03.fs(85,9,85,27): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '"a"' may indicate a case not covered by the pattern(s).
 
-neg03.fs(86,9,86,13): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '( some-non-null-value )' may indicate a case not covered by the pattern(s).
+neg03.fs(86,9,86,13): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '``some-non-null-value``' may indicate a case not covered by the pattern(s).
 
-neg03.fs(87,19,87,26): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '( some-other-subtype )' may indicate a case not covered by the pattern(s).
+neg03.fs(87,19,87,26): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '``some-other-subtype``' may indicate a case not covered by the pattern(s).
 
-neg03.fs(91,11,91,20): typecheck error FS0026: This rule will never be matched
+neg03.fs(91,11,91,26): typecheck error FS0026: This rule will never be matched
 
-neg03.fs(97,11,97,20): typecheck error FS0026: This rule will never be matched
+neg03.fs(97,11,97,26): typecheck error FS0026: This rule will never be matched
 
 neg03.fs(100,9,100,12): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '[_]' may indicate a case not covered by the pattern(s).
 

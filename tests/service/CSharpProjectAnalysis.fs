@@ -12,39 +12,40 @@ module FSharp.Compiler.Service.Tests.CSharpProjectAnalysis
 open NUnit.Framework
 open FsUnit
 open System.IO
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
+open FSharp.Compiler.IO
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Symbols
+open TestFramework
 
-let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) = 
+let internal getProjectReferences (content: string, dllFiles, libDirs, otherFlags) =
     let otherFlags = defaultArg otherFlags []
     let libDirs = defaultArg libDirs []
-    let base1 = Path.GetTempFileName()
+    let base1 = tryCreateTemporaryFileName ()
     let dllName = Path.ChangeExtension(base1, ".dll")
     let fileName1 = Path.ChangeExtension(base1, ".fs")
     let projFileName = Path.ChangeExtension(base1, ".fsproj")
-    File.WriteAllText(fileName1, content)
+    FileSystem.OpenFileForWriteShim(fileName1).Write(content)
     let options =
         checker.GetProjectOptionsFromCommandLineArgs(projFileName,
-            [| yield "--debug:full" 
-               yield "--define:DEBUG" 
-               yield "--optimize-" 
+            [| yield "--debug:full"
+               yield "--define:DEBUG"
+               yield "--optimize-"
                yield "--out:" + dllName
-               yield "--doc:test.xml" 
-               yield "--warn:3" 
-               yield "--fullpaths" 
-               yield "--flaterrors" 
-               yield "--target:library" 
+               yield "--doc:test.xml"
+               yield "--warn:3"
+               yield "--fullpaths"
+               yield "--flaterrors"
+               yield "--target:library"
                for dllFile in dllFiles do
                  yield "-r:"+dllFile
                for libDir in libDirs do
                  yield "-I:"+libDir
                yield! otherFlags
                yield fileName1 |])
-    let results = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let results = checker.ParseAndCheckProject(options) |> Async.RunImmediate
     if results.HasCriticalErrors then
-        let builder = new System.Text.StringBuilder()
+        let builder = System.Text.StringBuilder()
         for err in results.Diagnostics do
             builder.AppendLine(sprintf "**** %s: %s" (if err.Severity = FSharpDiagnosticSeverity.Error then "error" else "warning") err.Message)
             |> ignore
@@ -56,17 +57,19 @@ let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) =
     results, assemblies
 
 [<Test>]
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
-let ``Test that csharp references are recognized as such`` () = 
+#endif
+let ``Test that csharp references are recognized as such`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let _, table = getProjectReferences("""module M""", [csharpAssembly], None, None)
-    let assembly = table.["CSharp_Analysis"]
-    let search = assembly.Contents.Entities |> Seq.tryFind (fun e -> e.DisplayName = "CSharpClass") 
+    let assembly = table["CSharp_Analysis"]
+    let search = assembly.Contents.Entities |> Seq.tryFind (fun e -> e.DisplayName = "CSharpClass")
     Assert.True search.IsSome
     let found = search.Value
     // this is no F# thing
     found.IsFSharp |> shouldEqual false
-        
+
     // Check that we have members
     let members = found.MembersFunctionsAndValues |> Seq.map (fun e -> e.CompiledName, e) |> dict
     members.ContainsKey ".ctor" |> shouldEqual true
@@ -76,24 +79,30 @@ let ``Test that csharp references are recognized as such`` () =
     members.ContainsKey "InterfaceMethod" |> shouldEqual true
     members.ContainsKey "InterfaceProperty" |> shouldEqual true
     members.ContainsKey "InterfaceEvent" |> shouldEqual true
-    members.["Event"].IsEvent |> shouldEqual true
-    members.["Event"].EventIsStandard |> shouldEqual true
-    members.["Event"].EventAddMethod.DisplayName |> shouldEqual "add_Event"
-    members.["Event"].EventRemoveMethod.DisplayName |> shouldEqual "remove_Event"
-    members.["Event"].EventDelegateType.ToString() |> shouldEqual "type System.EventHandler"
+    members["Event"].IsEvent |> shouldEqual true
+    members["Event"].EventIsStandard |> shouldEqual true
+    members["Event"].EventAddMethod.DisplayName |> shouldEqual "add_Event"
+    members["Event"].EventRemoveMethod.DisplayName |> shouldEqual "remove_Event"
+    members["Event"].EventDelegateType.ToString() |> shouldEqual "type System.EventHandler"
 
     //// Check that we get xml docs
-    members.[".ctor"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.#ctor(System.Int32,System.String)"
-    members.["Method"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.Method(System.String)"
-    members.["Property"].XmlDocSig |> shouldEqual "P:FSharp.Compiler.Service.Tests.CSharpClass.Property"
-    members.["Event"].XmlDocSig |> shouldEqual "E:FSharp.Compiler.Service.Tests.CSharpClass.Event"
-    members.["InterfaceMethod"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceMethod(System.String)"
-    members.["InterfaceProperty"].XmlDocSig |> shouldEqual "P:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceProperty"
-    members.["InterfaceEvent"].XmlDocSig |> shouldEqual "E:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceEvent"
+    members[".ctor"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.#ctor(System.Int32,System.String)"
+    members["Method"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.Method(System.String)"
+    members["Method2"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.Method2(System.String)"
+    members["Method3"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.Method3(System.String[])"
+    members["MethodWithOutref"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.MethodWithOutref(System.Int32@)"
+    members["MethodWithInref"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.MethodWithInref(System.Int32@)"
+    members["Property"].XmlDocSig |> shouldEqual "P:FSharp.Compiler.Service.Tests.CSharpClass.Property"
+    members["Event"].XmlDocSig |> shouldEqual "E:FSharp.Compiler.Service.Tests.CSharpClass.Event"
+    members["InterfaceMethod"].XmlDocSig |> shouldEqual "M:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceMethod(System.String)"
+    members["InterfaceProperty"].XmlDocSig |> shouldEqual "P:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceProperty"
+    members["InterfaceEvent"].XmlDocSig |> shouldEqual "E:FSharp.Compiler.Service.Tests.CSharpClass.InterfaceEvent"
 
 [<Test>]
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
-let ``Test that symbols of csharp inner classes/enums are reported`` () = 
+#endif
+let ``Test that symbols of csharp inner classes/enums are reported`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let content = """
 module NestedEnumClass
@@ -106,13 +115,41 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
     let results, _ = getProjectReferences(content, [csharpAssembly], None, None)
     results.GetAllUsesOfAllSymbols()
     |> Array.map (fun su -> su.Symbol.ToString())
-    |> shouldEqual 
+    |> shouldEqual
           [|"FSharp"; "Compiler"; "Service"; "Tests"; "FSharp"; "InnerEnum";
             "CSharpOuterClass"; "field Case1"; "InnerClass"; "CSharpOuterClass";
             "member StaticMember"; "NestedEnumClass"|]
 
+
 [<Test>]
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
+let ``Test that symbols of csharp inner classes/enums are reported from dervied generic class`` () =
+    let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
+    let content = """
+module NestedEnumClass
+open FSharp.Compiler.Service.Tests
+
+let _ = CSharpGenericOuterClass<int>
+let _ = CSharpGenericOuterClass<int>.InnerEnum.Case1
+let _ = CSharpGenericOuterClass<int>.InnerClass.StaticMember()
+"""
+
+    let results, _ = getProjectReferences(content, [csharpAssembly], None, None)
+    results.GetAllUsesOfAllSymbols()
+    |> Array.map (fun su -> su.Symbol.ToString())
+    |> shouldEqual 
+        [|"FSharp"; "Compiler"; "Service"; "Tests"; "FSharp"; "member .ctor"; "int";
+          "CSharpGenericOuterClass`1"; "CSharpGenericOuterClass`1"; "int";
+          "CSharpGenericOuterClass`1"; "InnerEnum"; "field Case1";
+          "CSharpGenericOuterClass`1"; "int"; "CSharpGenericOuterClass`1"; "InnerClass";
+          "member StaticMember"; "NestedEnumClass"|]
+
+[<Test>]
+#if NETCOREAPP
+[<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Ctor test`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let content = """
@@ -126,7 +163,7 @@ let _ = CSharpClass(0)
             results.GetAllUsesOfAllSymbols()
             |> Seq.map (fun su -> su.Symbol)
             |> Seq.find (function :? FSharpMemberOrFunctionOrValue as mfv -> mfv.IsConstructor | _ -> false)
-    match (ctor :?> FSharpMemberOrFunctionOrValue).DeclaringEntity with 
+    match (ctor :?> FSharpMemberOrFunctionOrValue).DeclaringEntity with
     | Some e ->
         let members = e.MembersFunctionsAndValues
         Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsConstructor) members |> should be True
@@ -144,7 +181,9 @@ let getEntitiesUses source =
     |> List.ofSeq
 
 [<Test>]
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Different types with the same short name equality check`` () =
     let source = """
 module CtorTest
@@ -162,7 +201,9 @@ let (s2: FSharp.Compiler.Service.Tests.String) = null
     | _ -> sprintf "Expecting two symbols, got %A" stringSymbols |> failwith
 
 [<Test>]
+#if NETCOREAPP
 [<Ignore("SKIPPED: need to check if these tests can be enabled for .NET Core testing of FSharp.Compiler.Service")>]
+#endif
 let ``Different namespaces with the same short name equality check`` () =
     let source = """
 module CtorTest

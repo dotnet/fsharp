@@ -1,0 +1,519 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    The ProjectBasePath property should be defined to point to the directory where this file is located before importing this file.
+    Failure to define this will result in build error.
+  -->
+  <PropertyGroup>
+  <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="EnvDTE80">
+      <HintPath>EnvDTE80.dll</HintPath>
+      <Name>EnvDTE80</Name>
+      <SpecificVersion>False</SpecificVersion>
+      <Aliases>global</Aliases>
+    </Reference>
+    <Reference Include="Microsoft.Build.Framework">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Framework.$(MicrosoftBuildFrameworkVersion)\lib\net46\Microsoft.Build.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Utilities.Core">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Utilities.Core.$(MicrosoftBuildUtilitiesCoreVersion)\lib\net46\Microsoft.Build.Utilities.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Tasks.Core">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.$(MicrosoftBuildTasksCoreVersion)\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Tasks.Core">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Build.Tasks.Core.$(MicrosoftBuildTasksCoreVersion)\lib\net46\Microsoft.Build.Tasks.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.VSHelp, Version=7.0.3300.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"/>
+    <Reference Include="Microsoft.VisualStudio.Shell.Design" />
+    <Reference Include="Microsoft.VisualStudio.ProjectAggregator" />
+    <Reference Include="VsLangProj" />
+    <Reference Include="VSLangProj80, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="System.Design">      
+      <HintPath>System.Design.dll</HintPath>
+      <Name>System.Design</Name>
+      <SpecificVersion>False</SpecificVersion>
+      <Aliases>global</Aliases>
+    </Reference>
+    <Reference Include="System.Xml" />    
+    <Reference Include ="Microsoft.VisualStudio.CommonIDE, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+  </ItemGroup>
+
+	<!-- Provide a default value for $(ProjectBasePath) -->
+  <PropertyGroup>
+    <ProjectBasePath Condition="'$(ProjectBasePath)'==''">.</ProjectBasePath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(ProjectBasePath)\Diagrams\AutomationClasses.cd">
+      <Link>ProjectBase\Diagrams\AutomationClasses.cd</Link>
+      <Visible>true</Visible>
+    </None>
+    <None Include="$(ProjectBasePath)\Diagrams\ConfigurationClasses.cd">
+      <Link>ProjectBase\Diagrams\ConfigurationClasses.cd</Link>
+      <Visible>true</Visible>
+    </None>
+    <None Include="$(ProjectBasePath)\Diagrams\DocumentManagerClasses.cd">
+      <Link>ProjectBase\Diagrams\DocumentManagerClasses.cd</Link>
+      <Visible>true</Visible>
+    </None>
+    <None Include="$(ProjectBasePath)\Diagrams\HierarchyClasses.cd">
+      <Link>ProjectBase\Diagrams\HierarchyClasses.cd</Link>
+      <Visible>true</Visible>
+    </None>
+    <None Include="$(ProjectBasePath)\Diagrams\PropertiesClasses.cd">
+      <Link>ProjectBase\Diagrams\PropertiesClasses.cd</Link>
+      <Visible>true</Visible>
+    </None>
+    <None Include="$(ProjectBasePath)\Diagrams\ReferenceClasses.cd">
+      <Link>ProjectBase\Diagrams\ReferenceClasses.cd</Link>
+      <Visible>true</Visible>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="$(ProjectBasePath)\Misc\ConnectionPointContainer.cs">
+      <Link>ProjectBase\misc\ConnectionPointContainer.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Misc\ExternDll.cs">
+      <Link>ProjectBase\Misc\ExternDll.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Misc\NativeMethods.cs">
+      <Link>ProjectBase\Misc\NativeMethods.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Misc\UnsafeNativeMethods.cs">
+      <Link>ProjectBase\Misc\UnsafeNativeMethods.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+
+	<Compile Include="$(ProjectBasePath)\AssemblyReferenceNode.cs">
+	  <Link>ProjectBase\AssemblyReferenceNode.cs</Link>
+	  <Visible>true</Visible>
+	</Compile>
+	<Compile Include="$(ProjectBasePath)\Attributes.cs">
+      <Link>ProjectBase\Attributes.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+
+    <!-- Automation Objects -->
+    <Compile Include="$(ProjectBasePath)\Automation\OAFileItem.cs">
+      <Link>ProjectBase\OAFileItem.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\OAFolderItem.cs">
+      <Link>ProjectBase\OAFolderItem.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\OANestedProjectItem.cs">
+      <Link>ProjectBase\OANestedProjectItem.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\OANullProperty.cs">
+      <Link>ProjectBase\OANullProperty.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\OAProject.cs">
+      <Link>ProjectBase\OAProject.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\OAProjectItem.cs">
+      <Link>ProjectBase\OAProjectItem.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\OAProjectItems.cs">
+      <Link>ProjectBase\OAProjectItems.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\OAProperties.cs">
+      <Link>ProjectBase\OAProperties.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\OAProperty.cs">
+      <Link>ProjectBase\OAProperty.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\OANavigableProjectItems.cs">
+      <Link>ProjectBase\OANavigableProjectItems.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\OAReferenceFolderItem.cs">
+      <Link>ProjectBase\OAReferenceFolderItem.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\OAReferenceItem.cs">
+      <Link>ProjectBase\OARreferenceItem.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\OASolutionFolder.cs">
+      <Link>ProjectBase\OASolutionFolder.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+
+    <!-- Objects needed to implement a Language Project -->
+    <Compile Include="$(ProjectBasePath)\Automation\VSProject\OAAssemblyReference.cs">
+      <Link>ProjectBase\LangProj\OAAssemblyReference.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+	<Compile Include="$(ProjectBasePath)\Automation\VSProject\OABuildManager.cs">
+	  <Link>ProjectBase\LangProj\OABuildManager.cs</Link>
+	  <Visible>true</Visible>
+	</Compile>
+	<Compile Include="$(ProjectBasePath)\Automation\VSProject\OAComReference.cs">
+      <Link>ProjectBase\LangProj\OAComReference.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\VSProject\OAProjectReference.cs">
+      <Link>ProjectBase\LangProj\OAProjectReference.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\VSProject\OAReferenceBase.cs">
+      <Link>ProjectBase\LangProj\OAReferenceBase.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\VSProject\OAReferences.cs">
+      <Link>ProjectBase\LangProj\OAReferences.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\VSProject\OAVSProject.cs">
+      <Link>ProjectBase\LangProj\OAVSProject.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Automation\VSProject\OAVSProjectItem.cs">
+      <Link>ProjectBase\LangProj\OAVSProjectItem.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+
+    <Compile Include="$(ProjectBasePath)\BuildDependency.cs">
+      <Link>ProjectBase\BuildDependency.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\BuildPropertyPage.cs">
+      <Link>ProjectBase\BuildPropertyPage.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ComReferenceNode.cs">
+      <Link>ProjectBase\ComReferenceNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ConfigProvider.cs">
+      <Link>ProjectBase\ConfigProvider.cs</Link>
+      <Visible>true</Visible>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ConfigurationProperties.cs">
+      <Link>ProjectBase\ConfigurationProperties.cs</Link>
+      <Visible>true</Visible>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\DataObject.cs">
+      <Link>ProjectBase\DataObject.cs</Link>
+      <Visible>true</Visible>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\DesignPropertyDescriptor.cs">
+      <Link>ProjectBase\DesignPropertyDescriptor.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\DocumentManager.cs">
+      <Link>ProjectBase\DocumentManager.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\DontShowAgainDialog.cs">
+      <SubType>Form</SubType>
+      <Link>ProjectBase\DontShowAgainDialog.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\DontShowAgainDialog.Designer.cs">
+      <DependentUpon>$(ProjectBasePath)\DontShowAgainDialog.cs</DependentUpon>
+      <Link>ProjectBase\DontShowAgainDialog.Designer.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\EnumDependencies.cs">
+      <Link>ProjectBase\EnumDependencies.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\FileChangeManager.cs">
+      <Link>ProjectBase\FileChangeManager.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\FileDocumentManager.cs">
+      <Link>ProjectBase\FileDocumentManager.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\FileNode.cs">
+      <Link>ProjectBase\FileNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\DependentFileNode.cs">
+      <Link>ProjectBase\DependentFileNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\FolderNode.cs">
+      <Link>ProjectBase\FolderNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+   <Compile Include="$(ProjectBasePath)\GlobalPropertyHandler.cs">
+      <Link>ProjectBase\GlobalPropertyHandler.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\GlobalSuppressions.cs">
+      <Link>ProjectBase\GlobalSuppressions.cs</Link>
+      <Visible>true</Visible>
+    </Compile>    
+    <Compile Include="$(ProjectBasePath)\HierarchyNode.cs">
+      <Link>ProjectBase\HierarchyNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ImageHandler.cs">
+      <Link>ProjectBase\ImageHandler.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+
+    <Compile Include="$(ProjectBasePath)\Interfaces.cs">
+      <Link>ProjectBase\IAggregatedHierarchy.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\IDEBuildLogger.cs">
+      <Link>ProjectBase\IDEBuildLogger.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\LocalizableProperties.cs">
+      <Link>ProjectBase\LocalizableProperties.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Microsoft.VisualStudio.Package.Project.cs">
+      <Link>ProjectBase\Project.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\NestedProjectBuildDependency.cs">
+      <Link>ProjectBase\NestedProjectBuildDependency.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\NestedProjectNode.cs">
+      <Link>ProjectBase\NestedProjectNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\NodeProperties.cs">
+      <Link>ProjectBase\NodeProperties.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\OleServiceProvider.cs">
+      <Link>ProjectBase\OleServiceProvider.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Output.cs">
+      <Link>ProjectBase\Output.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\OutputGroup.cs">
+      <Link>ProjectBase\OutputGroup.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ProjectConfig.cs">
+      <Link>ProjectBase\ProjectConfig.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ProjectContainerNode.cs">
+      <Link>ProjectBase\ProjectContainerNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ProjectDesignerDocumentManager.cs">
+      <Link>ProjectBase\ProjectDesignerDocumentManager.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ProjectElement.cs">
+      <Link>ProjectBase\ProjectElement.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ProjectFactory.cs">
+      <Link>ProjectBase\ProjectFactory.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ProjectFileConstants.cs">
+      <Link>ProjectBase\ProjectFileConstants.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ProjectNode.cs">
+      <Link>ProjectBase\ProjectNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ProjectNode.CopyPaste.cs">
+      <Link>ProjectBase\ProjectNode.CopyPaste.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ProjectNode.Events.cs">
+      <Link>ProjectBase\ProjectNode.Events.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ProjectOptions.cs">
+      <Link>ProjectBase\ProjectOptions.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ProjectPackage.cs">
+      <Link>ProjectBase\ProjectPackage.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ProjectReferenceNode.cs">
+      <Link>ProjectBase\ProjectReferenceNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ProjectSecurityChecker.cs">
+      <Link>ProjectBase\ProjectSecurityChecker.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\PropertiesEditorLauncher.cs">
+      <Link>ProjectBase\PropertiesEditorLauncher.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ReferenceContainerNode.cs">
+      <Link>ProjectBase\ReferenceContainerNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ReferenceNode.cs">
+      <Link>ProjectBase\ReferenceNode.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\RegisteredProjectType.cs">
+      <Link>ProjectBase\RegisteredProjectType.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+     <Compile Include="$(ProjectBasePath)\SecurityWarningDialog.cs">
+      <SubType>Form</SubType>
+       <Link>ProjectBase\SecurityWarningDialog.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\SecurityWarningDialog.Designer.cs">
+      <DependentUpon>$(ProjectBasePath)\SecurityWarningDialog.cs</DependentUpon>
+      <Link>ProjectBase\SecurityWarningDialog.Designer.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\SettingsPage.cs">
+      <Link>ProjectBase\SettingsPage.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\SingleFileGenerator.cs">
+      <Link>ProjectBase\SingleFileGenerator.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\SingleFileGeneratorFactory.cs">
+      <Link>ProjectBase\SingleFileGeneratorFactory.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\SolutionListener.cs">
+      <Link>ProjectBase\SolutionListener.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\SolutionListenerForBuildDependencyUpdate.cs">
+      <Link>ProjectBase\SolutionListenerForBuildDependencyUpdate.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\SolutionListenerForProjectEvents.cs">
+      <Link>ProjectBase\SolutionListenerForProjectEvents.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\SolutionListenerForProjectOpen.cs">
+      <Link>ProjectBase\SolutionListenerForProjectOpen.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\SolutionListenerForProjectReferenceUpdate.cs">
+      <Link>ProjectBase\SolutionListenerForProjectReferenceUpdate.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\StructuresEnums.cs">
+      <Link>ProjectBase\StructuresEnums.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\SuspendFileChanges.cs">
+      <Link>ProjectBase\SuspendFileChanges.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Tracing.cs">
+      <Link>ProjectBase\Tracing.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\TokenProcessor.cs">
+      <Link>ProjectBase\TokenProcessor.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\TrackDocumentsHelper.cs">
+      <Link>ProjectBase\TrackDocumentsHelper.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\TypeConverters.cs">
+      <Link>ProjectBase\TypeConverters.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\UpdateSolutionEventsListener.cs">
+      <Link>ProjectBase\UpdateSolutionEventsListener.cs</Link>
+      <Visible>true</Visible>
+    </Compile>    
+    <Compile Include="$(ProjectBasePath)\Url.cs">
+      <Link>ProjectBase\Url.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\Utilities.cs">
+      <Link>ProjectBase\Utilities.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+     <Compile Include="$(ProjectBasePath)\UserProjectSecurityChecker.cs">
+      <Link>ProjectBase\UserProjectSecurityChecker.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\VsCommands.cs">
+      <Link>ProjectBase\VsCommands.cs</Link>
+      <Visible>true</Visible>
+    </Compile>  
+    <Compile Include="$(ProjectBasePath)\VSMDCodeDomProvider.cs">
+      <Link>ProjectBase\VSMDCodeDomProvider.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\VSShellUtilities.cs">
+      <Link>ProjectBase\VSShellUtilities.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\SelectionListener.cs">
+      <Link>ProjectBase\SelectionListener.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(ProjectBasePath)\ProjectDocumentsListener.cs">
+      <Link>ProjectBase\ProjectDocumentsListener.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+  </ItemGroup>
+ 
+  <ItemGroup>
+    <EmbeddedResource Include="$(ProjectBasePath)\Microsoft.VisualStudio.Package.Project.resx">
+      <Link>Microsoft.VisualStudio.Package.Project.resx</Link>
+      <Visible>true</Visible>
+      <LogicalName>Microsoft.VisualStudio.Package.Project.resources</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="$(ProjectBasePath)\Resources\imagelis.bmp">
+      <Link>Resources\imagelis.bmp</Link>
+      <Visible>true</Visible>
+      <LogicalName>Resources.imagelis.bmp</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(ProjectBasePath)\SecurityWarningDialog.resx">
+      <Link>ProjectBase\SecurityWarningDialog.resx</Link>
+      <Visible>true</Visible>
+      <SubType>Designer</SubType>
+      <DependentUpon>$(ProjectBasePath)\SecurityWarningDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(ProjectBasePath)\DontShowAgainDialog.resx">
+      <Link>ProjectBase\DontShowAgainDialog.resx</Link>
+      <Visible>true</Visible>
+      <SubType>Designer</SubType>
+      <DependentUpon>$(ProjectBasePath)\DontShowAgainDialog.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

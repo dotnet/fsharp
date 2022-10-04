@@ -2,10 +2,10 @@
 // Regression for FSB 3594
 // Verify System.Core.dll is referenced in FSI by default
 
-//<Expects status="success">val a : System\.Action<unit></Expects>
+//<Expects status="success">val a: System\.Action<unit></Expects>
 //<Expects status="success">stuff</Expects>
-//<Expects status="success">val it : unit = \(\)</Expects>
-//<Expects status="success">val hs : Collections\.Generic\.HashSet<int></Expects>
+//<Expects status="success">val it: unit = \(\)</Expects>
+//<Expects status="success">val hs: Collections\.Generic\.HashSet<int></Expects>
 //<Expects status="success">type A = Action<int></Expects>
 //<Expects status="success">type B = Action<int,int></Expects>
 

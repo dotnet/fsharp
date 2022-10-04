@@ -211,13 +211,11 @@ let MainMain argv =
             // Route GUI application exceptions to the exception handlers
             Application.add_ThreadException(new ThreadExceptionEventHandler(fun _ args -> fsiSession.ReportUnhandledException args.Exception));
 
-            let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e->  false        
-            if not runningOnMono then 
-                try 
-                    TrySetUnhandledExceptionMode() 
-                with _ -> 
-                    ()
-            
+            try 
+                TrySetUnhandledExceptionMode() 
+            with _ -> 
+                ()
+
 #if USE_WINFORMS_EVENT_LOOP
             try fsi.EventLoop <-  WinFormsEventLoop(fsiSession.LCID)
             with e ->

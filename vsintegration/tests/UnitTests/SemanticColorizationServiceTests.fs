@@ -1,5 +1,5 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+namespace VisualFSharp.UnitTests.Editor
 
 open System
 open NUnit.Framework
@@ -33,8 +33,8 @@ type SemanticClassificationServiceTests() =
 
     let getRanges (source: string) : SemanticClassificationItem list =
         asyncMaybe {
-
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, 0, SourceText.From(source), projectOptions, perfOptions, "")
+            let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, source)
+            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("SemanticClassificationServiceTests") |> liftAsync
             return checkFileResults.GetSemanticClassification(None)
         } 
         |> Async.RunSynchronously

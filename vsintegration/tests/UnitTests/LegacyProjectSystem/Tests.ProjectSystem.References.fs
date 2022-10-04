@@ -8,15 +8,12 @@ open System.IO
 open System.Reflection
 
 open NUnit.Framework
-open Salsa
 open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
-open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.Win32
 open System.Xml.Linq
 
 [<TestFixture>][<Category "ProjectSystem">]
@@ -25,31 +22,28 @@ type References() =
 
     //TODO: look for a way to remove the helper functions
     static let currentFrameworkDirectory = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
-    static let Net20AssemExPath () =
-        let key = @"SOFTWARE\Microsoft\.NETFramework\v2.0.50727\AssemblyFoldersEx\Public Assemblies (Common Files)"
-        let hklm = Registry.LocalMachine
-        let rkey = hklm.OpenSubKey(key)
-        let path = rkey.GetValue("") :?> string
-        if String.IsNullOrEmpty(path) then None
-        else Some(path)
 
     /////////////////////////////////
     // project helpers
     static let SaveProject(project : UnitTestingFSharpProjectNode) =
         project.Save(null, 1, 0u) |> ignore
 
-    static let DefaultBuildActionOfFilename(filename) : Salsa.BuildAction = 
-        match Path.GetExtension(filename) with 
-        | ".fsx" -> Salsa.BuildAction.None
-        | ".resx"
-        | ".resources" -> Salsa.BuildAction.EmbeddedResource
-        | _ -> Salsa.BuildAction.Compile            
-
     static let GetReferenceContainerNode(project : ProjectNode) =
         let l = new List<ReferenceContainerNode>()
         project.FindNodesOfType(l)
         l.[0]
 
+
+    /// Create a dummy project named 'Test', build it, and then call k with the full path to the resulting exe
+    member this.CreateDummyTestProjectBuildItAndDo(k : string -> unit) =
+        this.MakeProjectAndDo(["foo.fs"], [], "", (fun project ->
+        // Let's create a run-of-the-mill project just to have a spare assembly around
+        let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
+        File.AppendAllText(fooPath, "namespace Foo\nmodule Bar =\n  let x = 42")
+        let buildResult = project.Build("Build")
+        Assert.IsTrue buildResult.IsSuccessful
+        let exe = Path.Combine(project.ProjectFolder, "bin\\Debug\\Test.exe")
+        k exe))
 
     [<Test>]
     member this.``BasicAssemblyReferences1``() =
@@ -66,7 +60,7 @@ type References() =
         ))
             
     [<Test>]
-    member public this.``AddReference.StarredAssemblyName`` () = 
+    member this.``AddReference.StarredAssemblyName`` () = 
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
             use project = TheTests.CreateProject(projFile) 
@@ -86,7 +80,7 @@ type References() =
             )
 
     [<Test>]
-    member public this.``References.Bug787899.AddDuplicateUnresolved``() =
+    member this.``References.Bug787899.AddDuplicateUnresolved``() =
         // Let's create a run-of-the-mill project just to have a spare assembly around
         this.CreateDummyTestProjectBuildItAndDo(fun exe ->
             Assert.IsTrue(File.Exists exe, "failed to build exe")
@@ -103,7 +97,7 @@ type References() =
             )
 
     [<Test>]
-    member public this.``References.Bug787899.AddDuplicateResolved``() =
+    member this.``References.Bug787899.AddDuplicateResolved``() =
         // Let's create a run-of-the-mill project just to have a spare assembly around
         this.CreateDummyTestProjectBuildItAndDo(fun exe ->
             Assert.IsTrue(File.Exists exe, "failed to build exe")
@@ -123,7 +117,7 @@ type References() =
             )
 
     [<Test>]
-    member public this.``ReferenceResolution.Bug4423.LoadedFsProj.Works``() =
+    member this.``ReferenceResolution.Bug4423.LoadedFsProj.Works``() =
         this.MakeProjectAndDo(["doesNotMatter.fs"], ["mscorlib"; "System"; "System.Core"; "System.Net"], "", "v4.0", (fun project ->
             let expectedRefInfo = [ "mscorlib", true
                                     "System", true
@@ -131,63 +125,63 @@ type References() =
                                     "System.Net", true ]
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
-                let r = ref(refContainer.FirstChild :?> ReferenceNode)
-                while !r <> null do
-                    yield ((!r).Caption, ((!r).CanShowDefaultIcon()))
-                    r := (!r).NextSibling :?> ReferenceNode
+                let mutable r = (refContainer.FirstChild :?> ReferenceNode)
+                while r <> null do
+                    yield (r.Caption, (r.CanShowDefaultIcon()))
+                    r <- r.NextSibling :?> ReferenceNode
                 ]
             AssertEqual expectedRefInfo actualRefInfo
             ))
 
 
     [<Test>]
-    member public this.``ReferenceResolution.Bug4423.LoadedFsProj.WithExactDuplicates``() =
+    member this.``ReferenceResolution.Bug4423.LoadedFsProj.WithExactDuplicates``() =
         this.MakeProjectAndDo(["doesNotMatter.fs"], ["System"; "System"], "", "v4.0", (fun project ->
             let expectedRefInfo = [ "System", true  // In C#, one will be banged out, whereas
                                     "System", true] // one will be ok, but in F# both show up as ok.  Bug?  Not worth the effort to fix.
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
-                let r = ref(refContainer.FirstChild :?> ReferenceNode)
-                while !r <> null do
-                    yield ((!r).Caption, ((!r).CanShowDefaultIcon()))
-                    r := (!r).NextSibling :?> ReferenceNode
+                let mutable r = (refContainer.FirstChild :?> ReferenceNode)
+                while r <> null do
+                    yield (r.Caption, (r.CanShowDefaultIcon()))
+                    r <- r.NextSibling :?> ReferenceNode
                 ]
             AssertEqual expectedRefInfo actualRefInfo
             ))
 
     [<Test>]
-    member public this.``ReferenceResolution.Bug4423.LoadedFsProj.WithBadDuplicates``() =
+    member this.``ReferenceResolution.Bug4423.LoadedFsProj.WithBadDuplicates``() =
         this.MakeProjectAndDo(["doesNotMatter.fs"], ["System"; "System.dll"], "", "v4.0", (fun project ->
             let expectedRefInfo = [ "System", false     // one will be banged out
                                     "System.dll", true] // one will be ok
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
-                let r = ref(refContainer.FirstChild :?> ReferenceNode)
-                while !r <> null do
-                    yield ((!r).Caption, ((!r).CanShowDefaultIcon()))
-                    r := (!r).NextSibling :?> ReferenceNode
+                let mutable r = (refContainer.FirstChild :?> ReferenceNode)
+                while r <> null do
+                    yield (r.Caption, (r.CanShowDefaultIcon()))
+                    r <- (r.NextSibling :?> ReferenceNode)
                 ]
             AssertEqual expectedRefInfo actualRefInfo
             ))
 
     [<Test>]
-    member public this.``ReferenceResolution.Bug4423.LoadedFsProj.WorksWithFilenames``() =
+    member this.``ReferenceResolution.Bug4423.LoadedFsProj.WorksWithFilenames``() =
             let netDir = currentFrameworkDirectory
             let ssmw = Path.Combine(netDir, "System.ServiceModel.Web.dll")
             this.MakeProjectAndDo(["doesNotMatter.fs"], [ssmw], "", "v4.0", (fun project ->
             let expectedRefInfo = [ ssmw, true ]
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
-              let r = ref(refContainer.FirstChild :?> ReferenceNode)
-              while !r <> null do
-                  yield ((!r).Caption, ((!r).CanShowDefaultIcon()))
-                  r := (!r).NextSibling :?> ReferenceNode
+              let mutable r = (refContainer.FirstChild :?> ReferenceNode)
+              while r <> null do
+                  yield (r.Caption, (r.CanShowDefaultIcon()))
+                  r <- r.NextSibling :?> ReferenceNode
               ]
             AssertEqual expectedRefInfo actualRefInfo
             ))
 
     [<Test>]
-    member public this.``ReferenceResolution.Bug4423.LoadedFsProj.WeirdCases``() =
+    member this.``ReferenceResolution.Bug4423.LoadedFsProj.WeirdCases``() =
         this.MakeProjectAndDo(["doesNotMatter.fs"], ["mscorlib, Version=4.0.0.0"; "System, Version=4.0.0.0"; "System.Core, Version=4.0.0.0"; "System.Net, Version=4.0.0.0"], "", "v4.0", (fun project ->
             let expectedRefInfo = [ "mscorlib", true
                                     "System", true
@@ -195,24 +189,25 @@ type References() =
                                     "System.Net", true ]
             let refContainer = GetReferenceContainerNode(project)
             let actualRefInfo = [
-                let r = ref(refContainer.FirstChild :?> ReferenceNode)
-                while !r <> null do
-                    yield ((!r).Caption, ((!r).CanShowDefaultIcon()))
-                    r := (!r).NextSibling :?> ReferenceNode
+                let mutable r = (refContainer.FirstChild :?> ReferenceNode)
+                while r <> null do
+                    yield (r.Caption, (r.CanShowDefaultIcon()))
+                    r <- r.NextSibling :?> ReferenceNode
                 ]
             AssertEqual expectedRefInfo actualRefInfo
             ))
 
-    member public this.ReferenceResolutionHelper(tab : AddReferenceDialogTab, fullPath : string, expectedFsprojRegex : string) =
+    member this.ReferenceResolutionHelper(tab : AddReferenceDialogTab, fullPath : string, expectedFsprojRegex : string) =
         this.ReferenceResolutionHelper(tab, fullPath, expectedFsprojRegex, "v4.0", [])
         
-    member public this.ReferenceResolutionHelper(tab : AddReferenceDialogTab, fullPath : string, expectedFsprojRegex : string, targetFrameworkVersion : string, originalReferences : string list) =
+    member this.ReferenceResolutionHelper(tab : AddReferenceDialogTab, fullPath : string, expectedFsprojRegex : string, targetFrameworkVersion : string, originalReferences : string list) =
         // Trace.Log <- "ProjectSystemReferenceResolution" // can be useful
         this.MakeProjectAndDo(["doesNotMatter.fs"], originalReferences, "", targetFrameworkVersion, (fun project ->
-            let cType = match tab with
-                        | AddReferenceDialogTab.DotNetTab -> VSCOMPONENTTYPE.VSCOMPONENTTYPE_ComPlus
-                        | AddReferenceDialogTab.BrowseTab -> VSCOMPONENTTYPE.VSCOMPONENTTYPE_File
-                        | _ -> failwith "unexpected"
+            let cType = 
+                match tab with
+                | AddReferenceDialogTab.DotNetTab -> VSCOMPONENTTYPE.VSCOMPONENTTYPE_ComPlus
+                | AddReferenceDialogTab.BrowseTab -> VSCOMPONENTTYPE.VSCOMPONENTTYPE_File
+                | _ -> failwith "unexpected"
             let selectorData = new VSCOMPONENTSELECTORDATA(``type`` = cType, bstrFile = fullPath)
             let refContainer = GetReferenceContainerNode(project)
             refContainer.AddReferenceFromSelectorData(selectorData) |> Assert.IsNotNull
@@ -223,7 +218,7 @@ type References() =
             ))
 
     [<Test>]
-    member public this.``ReferenceResolution.Bug4423.FxAssembly.NetTab.AddDuplicate1``() =
+    member this.``ReferenceResolution.Bug4423.FxAssembly.NetTab.AddDuplicate1``() =
         let netDir = currentFrameworkDirectory
         try
             this.ReferenceResolutionHelper(AddReferenceDialogTab.DotNetTab, 
@@ -235,8 +230,8 @@ type References() =
         with e ->                                           
             TheTests.HelpfulAssertMatches ' ' "A reference to '.*' \\(with assembly name '.*'\\) could not be added. A reference to the component '.*' with the same assembly name already exists in the project." e.Message
 
-    // see 5491 [<Test>]
-    member public this.``ReferenceResolution.Bug4423.FxAssembly.NetTab.AddDuplicate2``() =
+// see 5491 [<Test>]
+    member this.``ReferenceResolution.Bug4423.FxAssembly.NetTab.AddDuplicate2``() =
         let netDir = currentFrameworkDirectory
         try
             this.ReferenceResolutionHelper(AddReferenceDialogTab.DotNetTab, 
@@ -248,87 +243,8 @@ type References() =
         with e ->
             TheTests.HelpfulAssertMatches ' ' "A reference to '.*' could not be added. A reference to the component '.*' already exists in the project." e.Message
 
-    [<Ignore("Legacy test, NRE trying to get UI thread.")>]
-    [<Test>]
-    member public this.``ReferenceResolution.Bug650591.AutomationReference.Add.FullPath``() = 
-        match Net20AssemExPath() with
-        | Some(net20) ->
-          let invoker = 
-              {
-                  new Microsoft.Internal.VisualStudio.Shell.Interop.IVsInvokerPrivate with
-                      member this.Invoke(invokable) = invokable.Invoke()
-              }
-          let log = 
-              {
-                  new Microsoft.VisualStudio.Shell.Interop.IVsActivityLog with
-                      member this.LogEntry(_, _, _) = VSConstants.S_OK
-                      member this.LogEntryGuid(_, _, _, _) = VSConstants.S_OK
-                      member this.LogEntryGuidHr(_, _, _, _, _) = VSConstants.S_OK
-                      member this.LogEntryGuidHrPath(_, _, _, _, _, _) = VSConstants.S_OK
-                      member this.LogEntryGuidPath(_, _, _, _, _) = VSConstants.S_OK
-                      member this.LogEntryHr(_, _, _, _) = VSConstants.S_OK
-                      member this.LogEntryHrPath(_, _, _, _, _) = VSConstants.S_OK
-                      member this.LogEntryPath(_, _, _, _) = VSConstants.S_OK
-              }
-          let mocks = 
-              [
-                  typeof<Microsoft.Internal.VisualStudio.Shell.Interop.SVsUIThreadInvokerPrivate>.GUID, box invoker
-                  typeof<Microsoft.VisualStudio.Shell.Interop.SVsActivityLog>.GUID, box log
-              ] |> dict
-          let mockProvider = 
-              {
-                  new Microsoft.VisualStudio.OLE.Interop.IServiceProvider with
-                      member this.QueryService(guidService, riid, punk) =
-                          match mocks.TryGetValue guidService with
-                          | true, v -> 
-                              punk <- System.Runtime.InteropServices.Marshal.GetIUnknownForObject(v)
-                              VSConstants.S_OK
-                          | _ ->
-                              punk <- IntPtr.Zero
-                              VSConstants.E_NOINTERFACE
-              }
-  
-          let _ = Microsoft.VisualStudio.Shell.ServiceProvider.CreateFromSetSite(mockProvider)
-          let envDte80RefAssemPath = Path.Combine(net20, "EnvDTE80.dll")
-          let dirName = Path.GetTempPath()
-          let copy = Path.Combine(dirName, "EnvDTE80.dll")
-          try
-              File.Copy(envDte80RefAssemPath, copy, true)
-              this.MakeProjectAndDo
-                  (
-                      ["DoesNotMatter.fs"], 
-                      [], 
-                      "",
-                      fun proj -> 
-                          let refContainer = GetReferenceContainerNode(proj)
-                          let automationRefs = refContainer.Object :?> Automation.OAReferences
-                          automationRefs.Add(copy) |> ignore
-                          SaveProject(proj)
-                          let fsprojFileText = File.ReadAllText(proj.FileName)
-                          printfn "%s" fsprojFileText
-                          let expectedFsProj = 
-                              @"<Reference Include=""EnvDTE80"">"
-                              + @"\s*<HintPath>\.\.\\EnvDTE80.dll</HintPath>"
-                              + @"\s*</Reference>"
-                          TheTests.HelpfulAssertMatches '<' expectedFsProj fsprojFileText
-                  )
-          finally
-              File.Delete(copy)
-        | _ -> ()
-
-    /// Create a dummy project named 'Test', build it, and then call k with the full path to the resulting exe
-    member public this.CreateDummyTestProjectBuildItAndDo(k : string -> unit) =
-        this.MakeProjectAndDo(["foo.fs"], [], "", (fun project ->
-        // Let's create a run-of-the-mill project just to have a spare assembly around
-        let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
-        File.AppendAllText(fooPath, "namespace Foo\nmodule Bar =\n  let x = 42")
-        let buildResult = project.Build("Build")
-        Assert.IsTrue buildResult.IsSuccessful
-        let exe = Path.Combine(project.ProjectFolder, "bin\\Debug\\Test.exe")
-        k exe))
-
     [<Test; Category("Expensive")>]
-    member public this.``ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.InsideProjectDir``() =
+    member this.``ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.InsideProjectDir``() =
         // Let's create a run-of-the-mill project just to have a spare assembly around
         this.CreateDummyTestProjectBuildItAndDo(fun exe ->
             Assert.IsTrue(File.Exists exe, "failed to build exe")
@@ -358,9 +274,9 @@ type References() =
                 Assert.IsTrue buildResult.IsSuccessful
                 ))
         )
-        
+
     [<Test>]
-    member public this.``ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.OutsideProjectDir``() =
+    member this.``ReferenceResolution.Bug4423.NonFxAssembly.BrowseTab.RelativeHintPath.OutsideProjectDir``() =
         this.MakeProjectAndDo(["foo.fs"], [], "", (fun project ->
             // Let's create a run-of-the-mill 
             let fooPath = Path.Combine(project.ProjectFolder, "foo.fs")
@@ -394,7 +310,7 @@ type References() =
         ))
 
     [<Test>]
-    member public this.``ReferenceResolution.Bug4423.NotAValidDll.BrowseTab``() =
+    member this.``ReferenceResolution.Bug4423.NotAValidDll.BrowseTab``() =
         let dirName = Path.GetTempPath()
         let dll = Path.Combine(dirName, "Foo.dll")
         File.AppendAllText(dll, "This is not actually a valid dll")
@@ -412,7 +328,7 @@ type References() =
             File.Delete(dll)
 
     [<Test>]
-    member public this.``PathReferences.Existing`` () =
+    member this.``PathReferences.Existing`` () =
         DoWithTempFile "Test.fsproj"(fun projFile ->
             let dirName = Path.GetDirectoryName(projFile)
             let libDirName = Directory.CreateDirectory(Path.Combine(dirName, "lib")).FullName
@@ -443,7 +359,7 @@ type References() =
         )
 
     [<Test>]
-    member public this.``PathReferences.Existing.Captions`` () =
+    member this.``PathReferences.Existing.Captions`` () =
         DoWithTempFile "Test.fsproj"(fun projFile ->
             File.AppendAllText(projFile, TheTests.FsprojTextWithProjectReferences(
                 [], // <Compile>
@@ -461,7 +377,7 @@ type References() =
         )
         
     [<Test>]
-    member public this.``PathReferences.NonExistent`` () =
+    member this.``PathReferences.NonExistent`` () =
         DoWithTempFile "Test.fsproj"(fun projFile ->
             let refLibPath = @"c:\foo\baz\blahblah.dll"
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [refLibPath], ""))
@@ -475,7 +391,7 @@ type References() =
 
         
     [<Test>]
-    member public this.``FsprojPreferencePage.ProjSupportsPrefReadWrite``() =
+    member this.``FsprojPreferencePage.ProjSupportsPrefReadWrite``() =
         let testProp = "AssemblyName"
         let compileItem = [@"foo.fs"]
         
@@ -507,11 +423,12 @@ type References() =
             AssertContains contents newPropVal
         )
 
-    // Disabled due to: https://github.com/Microsoft/visualfsharp/issues/1460
+
+    // Disabled due to: https://github.com/dotnet/fsharp/issues/1460
     // On DEV 15 Preview 4 the VS IDE Test fails with :
     //     System.InvalidOperationException : Operation is not valid due to the current state of the object.
-    // [<Test>]     // Disabled due to: https://github.com/Microsoft/visualfsharp/issues/1460
-    member public this.``AddReference.COM`` () = 
+    // [<Test>]     // Disabled due to: https://github.com/dotnet/fsharp/issues/1460
+    member this.``AddReference.COM`` () = 
         DoWithTempFile "Test.fsproj" (fun projFile ->
             File.AppendAllText(projFile, TheTests.SimpleFsprojText([], [], ""))
             use project = TheTests.CreateProject(projFile)

@@ -8,6 +8,8 @@
     <PackageTargetFallback>netcoreapp1.0</PackageTargetFallback>
     <IsShipping>true</IsShipping>
     <DependencyTargetFramework>net472</DependencyTargetFramework>
+    <!-- locally you should deploy VisualFSharpDebug.vsix instead -->
+    <DeployExtension>false</DeployExtension>
   </PropertyGroup>
 
   <Import Project="VisualFSharp.Core.targets" />

@@ -1588,7 +1588,7 @@ module DeepGenericInterfaceInheritance = begin
 end
 
 
-module PointTest =  struct
+module PointTest = begin
 
 
   type Point =
@@ -3468,7 +3468,12 @@ module AutoProps_2 = begin
     check "autoprops_262" c61.Property 44      
 end
 
+module MoreKindInferenceTests = 
 
+
+    type C1<'a> = class member _.Foo(x:'a) = x end
+
+ 
 #if TESTS_AS_APP
 let RUN() = !failures
 #else

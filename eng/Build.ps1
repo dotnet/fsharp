@@ -14,7 +14,7 @@
 # it's fine to call `build.ps1 -build -testDesktop` followed by repeated calls to
 # `.\build.ps1 -testDesktop`.
 
-[CmdletBinding(PositionalBinding=$false)]
+[CmdletBinding(PositionalBinding = $false)]
 param (
     [string][Alias('c')]$configuration = "Debug",
     [string][Alias('v')]$verbosity = "m",
@@ -51,6 +51,7 @@ param (
     [switch]$testCambridge,
     [switch]$testCompiler,
     [switch]$testCompilerService,
+    [switch]$testCompilerComponentTests,
     [switch]$testFSharpCore,
     [switch]$testFSharpQA,
     [switch]$testScripting,
@@ -60,8 +61,10 @@ param (
     [string]$officialSkipTests = "false",
     [switch]$noVisualStudio,
     [switch]$sourceBuild,
-
-    [parameter(ValueFromRemainingArguments=$true)][string[]]$properties)
+    [switch]$skipBuild,
+    [switch]$compressAllMetadata,
+    [switch]$verifypackageshipstatus = $false,
+    [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
 Set-StrictMode -version 2.0
 $ErrorActionPreference = "Stop"
@@ -70,48 +73,52 @@ $BuildMessage = ""
 
 function Print-Usage() {
     Write-Host "Common settings:"
-    Write-Host "  -configuration <value>    Build configuration: 'Debug' or 'Release' (short: -c)"
-    Write-Host "  -verbosity <value>        Msbuild verbosity: q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic]"
-    Write-Host "  -deployExtensions         Deploy built vsixes"
-    Write-Host "  -binaryLog                Create MSBuild binary log (short: -bl)"
-    Write-Host "  -noLog                    Turn off logging (short: -nolog)"
-    Write-Host "  -excludeCIBinaryLog       When running on CI, allow no binary log (short: -nobl)"
+    Write-Host "  -configuration <value>        Build configuration: 'Debug' or 'Release' (short: -c)"
+    Write-Host "  -verbosity <value>            Msbuild verbosity: q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic]"
+    Write-Host "  -deployExtensions             Deploy built vsixes"
+    Write-Host "  -binaryLog                    Create MSBuild binary log (short: -bl)"
+    Write-Host "  -noLog                        Turn off logging (short: -nolog)"
+    Write-Host "  -excludeCIBinaryLog           When running on CI, allow no binary log (short: -nobl)"
     Write-Host ""
     Write-Host "Actions:"
-    Write-Host "  -restore                  Restore packages (short: -r)"
-    Write-Host "  -norestore                Don't restore packages"
-    Write-Host "  -build                    Build main solution (short: -b)"
-    Write-Host "  -rebuild                  Rebuild main solution"
-    Write-Host "  -pack                     Build NuGet packages, VS insertion manifests and installer"
-    Write-Host "  -sign                     Sign our binaries"
-    Write-Host "  -publish                  Publish build artifacts (e.g. symbols)"
-    Write-Host "  -launch                   Launch Visual Studio in developer hive"
-    Write-Host "  -help                     Print help and exit"
+    Write-Host "  -restore                      Restore packages (short: -r)"
+    Write-Host "  -norestore                    Don't restore packages"
+    Write-Host "  -build                        Build main solution (short: -b)"
+    Write-Host "  -rebuild                      Rebuild main solution"
+    Write-Host "  -pack                         Build NuGet packages, VS insertion manifests and installer"
+    Write-Host "  -sign                         Sign our binaries"
+    Write-Host "  -publish                      Publish build artifacts (e.g. symbols)"
+    Write-Host "  -launch                       Launch Visual Studio in developer hive"
+    Write-Host "  -help                         Print help and exit"
     Write-Host ""
     Write-Host "Test actions"
-    Write-Host "  -testAll                  Run all tests"
-    Write-Host "  -testCambridge            Run Cambridge tests"
-    Write-Host "  -testCompiler             Run FSharpCompiler unit tests"
-    Write-Host "  -testCompilerService      Run FSharpCompilerService unit tests"
-    Write-Host "  -testDesktop              Run tests against full .NET Framework"
-    Write-Host "  -testCoreClr              Run tests against CoreCLR"
-    Write-Host "  -testFSharpCore           Run FSharpCore unit tests"
-    Write-Host "  -testFSharpQA             Run F# Cambridge tests"
-    Write-Host "  -testScripting            Run Scripting tests"
-    Write-Host "  -testVs                   Run F# editor unit tests"
-    Write-Host "  -testpack                 Verify built packages"
-    Write-Host "  -officialSkipTests <bool> Set to 'true' to skip running tests"
+    Write-Host "  -testAll                      Run all tests"
+    Write-Host "  -testCambridge                Run Cambridge tests"
+    Write-Host "  -testCompiler                 Run FSharpCompiler unit tests"
+    Write-Host "  -testCompilerService          Run FSharpCompilerService unit tests"
+    Write-Host "  -testCompilerComponentTests   Run FSharpCompilerService component tests"
+    Write-Host "  -testDesktop                  Run tests against full .NET Framework"
+    Write-Host "  -testCoreClr                  Run tests against CoreCLR"
+    Write-Host "  -testFSharpCore               Run FSharpCore unit tests"
+    Write-Host "  -testFSharpQA                 Run F# Cambridge tests"
+    Write-Host "  -testScripting                Run Scripting tests"
+    Write-Host "  -testVs                       Run F# editor unit tests"
+    Write-Host "  -testpack                     Verify built packages"
+    Write-Host "  -officialSkipTests <bool>     Set to 'true' to skip running tests"
     Write-Host ""
     Write-Host "Advanced settings:"
-    Write-Host "  -ci                       Set when running on CI server"
-    Write-Host "  -official                 Set when building an official build"
-    Write-Host "  -bootstrap                Build using a bootstrap compiler"
-    Write-Host "  -msbuildEngine <value>    Msbuild engine to use to run build ('dotnet', 'vs', or unspecified)."
-    Write-Host "  -procdump                 Monitor test runs with procdump"
-    Write-Host "  -prepareMachine           Prepare machine for CI run, clean up processes after build"
-    Write-Host "  -useGlobalNuGetCache      Use global NuGet cache."
-    Write-Host "  -noVisualStudio           Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
-    Write-Host "  -sourceBuild              Simulate building for source-build."
+    Write-Host "  -ci                           Set when running on CI server"
+    Write-Host "  -official                     Set when building an official build"
+    Write-Host "  -bootstrap                    Build using a bootstrap compiler"
+    Write-Host "  -msbuildEngine <value>        Msbuild engine to use to run build ('dotnet', 'vs', or unspecified)."
+    Write-Host "  -procdump                     Monitor test runs with procdump"
+    Write-Host "  -prepareMachine               Prepare machine for CI run, clean up processes after build"
+    Write-Host "  -useGlobalNuGetCache          Use global NuGet cache."
+    Write-Host "  -noVisualStudio               Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
+    Write-Host "  -sourceBuild                  Simulate building for source-build."
+    Write-Host "  -skipbuild                    Skip building product"
+    Write-Host "  -compressAllMetadata          Build product with compressed metadata"
+    Write-Host "  -verifypackageshipstatus     Verify whether the packages we are building have already shipped to nuget"
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -120,8 +127,8 @@ function Print-Usage() {
 # specified.
 function Process-Arguments() {
     if ($help -or (($properties -ne $null) -and ($properties.Contains("/help") -or $properties.Contains("/?")))) {
-       Print-Usage
-       exit 0
+        Print-Usage
+        exit 0
     }
 
     $script:nodeReuse = $False;
@@ -144,6 +151,7 @@ function Process-Arguments() {
         $script:testFSharpQA = $False
         $script:testVs = $False
         $script:testpack = $False
+        $script:verifypackageshipstatus = $True
     }
 
     if ($noRestore) {
@@ -166,6 +174,14 @@ function Process-Arguments() {
         $script:binaryLog = $False;
     }
 
+    if ($compressAllMetadata) {
+        $script:compressAllMetadata = $True;
+    }
+
+    if ($verifypackageshipstatus) {
+        $script:verifypackageshipstatus = $True;
+    }
+
     foreach ($property in $properties) {
         if (!$property.StartsWith("/p:", "InvariantCultureIgnoreCase")) {
             Write-Host "Invalid argument: $property"
@@ -177,15 +193,16 @@ function Process-Arguments() {
 
 function Update-Arguments() {
     if ($script:noVisualStudio) {
-        $script:bootstrapTfm = "net5.0"
+        $script:bootstrapTfm = "net7.0"
         $script:msbuildEngine = "dotnet"
     }
 
-    if ($bootstrapTfm -eq "net5.0") {
+    if ($bootstrapTfm -eq "net7.0") {
         if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
-    } else {
+    }
+    else {
         if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.exe") -or (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
@@ -195,13 +212,13 @@ function Update-Arguments() {
 function BuildSolution([string] $solutionName) {
     Write-Host "${solutionName}:"
 
-    $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.binlog") } else { "" }
+    $bl = if ($binaryLog) { "/bl:" + (Join-Path $LogDir "Build.$solutionName.binlog") } else { "" }
 
     $projects = Join-Path $RepoRoot  $solutionName
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
     $quietRestore = !$ci
-    $testTargetFrameworks = if ($testCoreClr) { "net5.0" } else { "" }
+    $testTargetFrameworks = if ($testCoreClr) { "net7.0" } else { "" }
 
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
@@ -223,6 +240,7 @@ function BuildSolution([string] $solutionName) {
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
         /p:DotNetBuildFromSource=$sourceBuild `
+        /p:CompressAllMetadata=$CompressAllMetadata `
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
@@ -271,6 +289,7 @@ function TestUsingMSBuild([string] $testProject, [string] $targetFramework, [str
     $testLogPath = "$ArtifactsDir\TestResults\$configuration\${projectName}_$targetFramework.xml"
     $testBinLogPath = "$LogDir\${projectName}_$targetFramework.binlog"
     $args = "test $testProject -c $configuration -f $targetFramework -v n --test-adapter-path $testadapterpath --logger ""nunit;LogFilePath=$testLogPath"" /bl:$testBinLogPath"
+    $args += " --blame --results-directory $ArtifactsDir\TestResults\$configuration"
 
     if (-not $noVisualStudio -or $norestore) {
         $args += " --no-restore"
@@ -323,8 +342,7 @@ function TryDownloadDotnetFrameworkSdk() {
     # If we are not running as admin user, don't bother grabbing ndp sdk -- since we don't need sn.exe
     $isAdmin = Test-IsAdmin
     Write-Host "TryDownloadDotnetFrameworkSdk -- Test-IsAdmin = '$isAdmin'"
-    if ($isAdmin -eq $true)
-    {
+    if ($isAdmin -eq $true) {
         # Get program files(x86) location
         if (${env:ProgramFiles(x86)} -eq $null) {
             $programFiles = $env:ProgramFiles
@@ -376,7 +394,7 @@ function TryDownloadDotnetFrameworkSdk() {
                 $windowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
                 # x86 environment variable
                 Write-Host "set WindowsSDK_ExecutablePath_x86=$WindowsSDK_ExecutablePath_x86"
-                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x86","$newWindowsSDK_ExecutablePath_x86",[System.EnvironmentVariableTarget]::Machine)
+                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x86", "$newWindowsSDK_ExecutablePath_x86", [System.EnvironmentVariableTarget]::Machine)
                 $env:WindowsSDK_ExecutablePath_x86 = $newWindowsSDK_ExecutablePath_x86
             }
         }
@@ -388,7 +406,7 @@ function TryDownloadDotnetFrameworkSdk() {
                 $windowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
                 # x64 environment variable
                 Write-Host "set WindowsSDK_ExecutablePath_x64=$WindowsSDK_ExecutablePath_x64"
-                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x64","$newWindowsSDK_ExecutablePath_x64",[System.EnvironmentVariableTarget]::Machine)
+                [System.Environment]::SetEnvironmentVariable("WindowsSDK_ExecutablePath_x64", "$newWindowsSDK_ExecutablePath_x64", [System.EnvironmentVariableTarget]::Machine)
                 $env:WindowsSDK_ExecutablePath_x64 = $newWindowsSDK_ExecutablePath_x64
             }
         }
@@ -396,27 +414,30 @@ function TryDownloadDotnetFrameworkSdk() {
 }
 
 function EnablePreviewSdks() {
-  if (Test-Path variable:global:_MSBuildExe) {
-    return
-  }
-  $vsInfo = LocateVisualStudio
-  if ($vsInfo -eq $null) {
-    # Preview SDKs are allowed when no Visual Studio instance is installed
-    return
-  }
+    if (Test-Path variable:global:_MSBuildExe) {
+        return
+    }
+    $vsInfo = LocateVisualStudio
+    if ($vsInfo -eq $null) {
+        # Preview SDKs are allowed when no Visual Studio instance is installed
+        return
+    }
 
-  $vsId = $vsInfo.instanceId
-  $vsMajorVersion = $vsInfo.installationVersion.Split('.')[0]
+    $vsId = $vsInfo.instanceId
+    $vsMajorVersion = $vsInfo.installationVersion.Split('.')[0]
 
-  $instanceDir = Join-Path ${env:USERPROFILE} "AppData\Local\Microsoft\VisualStudio\$vsMajorVersion.0_$vsId"
-  Create-Directory $instanceDir
-  $sdkFile = Join-Path $instanceDir "sdk.txt"
-  'UsePreviews=True' | Set-Content $sdkFile
+    $instanceDir = Join-Path ${env:USERPROFILE} "AppData\Local\Microsoft\VisualStudio\$vsMajorVersion.0_$vsId"
+    Create-Directory $instanceDir
+    $sdkFile = Join-Path $instanceDir "sdk.txt"
+    'UsePreviews=True' | Set-Content $sdkFile
 }
 
 try {
     $script:BuildCategory = "Build"
     $script:BuildMessage = "Failure preparing build"
+
+    [System.Environment]::SetEnvironmentVariable('DOTNET_ROLL_FORWARD_TO_PRERELEASE', '1', [System.EnvironmentVariableTarget]::User)
+
 
     Process-Arguments
 
@@ -429,6 +450,10 @@ try {
     Get-ChildItem ENV: | Sort-Object Name
     Write-Host ""
 
+    if($env:NativeToolsOnMachine) {
+        $variable:NativeToolsOnMachine = $env:NativeToolsOnMachine
+    }
+
     if ($ci) {
         Prepare-TempDir
         EnablePreviewSdks
@@ -438,8 +463,22 @@ try {
     $toolsetBuildProj = InitializeToolset
     TryDownloadDotnetFrameworkSdk
 
+    $nativeTools = InitializeNativeTools
+    if (-not (Test-Path variable:NativeToolsOnMachine)) {
+        $env:PERL5Path = Join-Path $nativeTools "perl\5.32.1.1\perl\bin\perl.exe"
+        write-host "variable:NativeToolsOnMachine = unset or false"
+        $nativeTools
+        write-host "Path = $env:PERL5Path"
+    }
+    else {
+        $env:PERL5Path = Join-Path $nativeTools["perl"] "perl\bin\perl.exe"
+        write-host "variable:NativeToolsOnMachine = $variable:NativeToolsOnMachine"
+        $nativeTools.values
+        write-host "Path = $env:PERL5Path"
+    }
+
     $dotnetPath = InitializeDotNetCli
-    $env:DOTNET_ROOT="$dotnetPath"
+    $env:DOTNET_ROOT = "$dotnetPath"
     Get-Item -Path Env:
 
     if ($bootstrap) {
@@ -448,14 +487,18 @@ try {
     }
 
     $script:BuildMessage = "Failure building product"
-    if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish) {
+    if ($restore -or $build -or $rebuild -or $pack -or $sign -or $publish -and -not $skipBuild) {
         if ($noVisualStudio) {
             BuildSolution "FSharp.sln"
-        } else {
+        }
+        else {
             BuildSolution "VisualFSharp.sln"
         }
     }
 
+    if ($pack) {
+        BuildSolution "Microsoft.FSharp.Compiler.sln"
+    }
     if ($build) {
         VerifyAssemblyVersionsAndSymbols
     }
@@ -463,7 +506,7 @@ try {
     $script:BuildCategory = "Test"
     $script:BuildMessage = "Failure running tests"
     $desktopTargetFramework = "net472"
-    $coreclrTargetFramework = "net5.0"
+    $coreclrTargetFramework = "net7.0"
 
     if ($testDesktop) {
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
@@ -492,17 +535,16 @@ try {
         $resultsLog = "test-net40-fsharpqa-results.log"
         $errorLog = "test-net40-fsharpqa-errors.log"
         $failLog = "test-net40-fsharpqa-errors"
-        $perlPackageRoot = "$nugetPackages\StrawberryPerl\5.28.0.1";
-        $perlExe = "$perlPackageRoot\bin\perl.exe"
         Create-Directory $resultsRoot
         UpdatePath
         $env:HOSTED_COMPILER = 1
-        $env:CSC_PIPE = "$nugetPackages\Microsoft.Net.Compilers\2.7.0\tools\csc.exe"
+        $env:CSC_PIPE = "$nugetPackages\Microsoft.Net.Compilers\4.3.0-1.22220.8\tools\csc.exe"
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
-        $env:PERL5LIB = "$perlPackageRoot\vendor\lib"
-        Exec-Console $perlExe """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+        write-host "Exec-Console $env:PERL5Path"
+        Exec-Console $env:PERL5Path """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+        write-host "Exec-Console finished"
         Pop-Location
     }
 
@@ -518,6 +560,13 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.UnitTests\FSharp.Compiler.UnitTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.UnitTests\"
     }
 
+
+    if ($testCompilerComponentTests) {
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
+        TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\"
+    }
+
+
     if ($testCompilerService) {
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Service.Tests\FSharp.Compiler.Service.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Service.Tests\"
@@ -527,15 +576,14 @@ try {
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\"
         TestUsingNUnit -testProject "$RepoRoot\tests\fsharp\FSharpSuite.Tests.fsproj" -targetFramework $coreclrTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharpSuite.Tests\"
     }
-`
+
     if ($testScripting) {
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $desktopTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.Private.Scripting.UnitTests\FSharp.Compiler.Private.Scripting.UnitTests.fsproj" -targetFramework $coreclrTargetFramework  -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.Private.Scripting.UnitTests\"
     }
 
     if ($testVs -and -not $noVisualStudio) {
-        TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\GetTypesVS.UnitTests\GetTypesVS.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\GetTypesVS.UnitTests"
-        TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\VisualFSharp.UnitTests"
+        TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\VisualFSharp.UnitTests\"
     }
 
     # verify nupkgs have access to the source code
@@ -557,11 +605,44 @@ try {
         $nupkgs = @(Get-ChildItem "$artifactsDir\packages\$configuration\Shipping\*.nupkg" -recurse)
         $nupkgs | Foreach {
             Exec-Console """$sourcelink"" test ""$_"""
-            if (-not $?) { $nupkgtestFailed = $true}
+            if (-not $?) { $nupkgtestFailed = $true }
         }
     }
     if ($nupkgtestFailed) {
-            throw "Error Verifying nupkgs have access to the source code"
+        throw "Error Verifying nupkgs have access to the source code"
+    }
+
+    $verifypackageshipstatusFailed = $false
+    if ($verifypackageshipstatus) {
+        $dotnetPath = InitializeDotNetCli
+        $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+
+        Write-Host "================================================================================================================================"
+        Write-Host "The error messages below are expected = They mean that FSharp.Core and FSharp.Compiler.Service are not yet published "
+        Write-Host "================================================================================================================================"
+        $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Compiler.Service_notshipped.fsproj"
+        if ($exitCode -eq 0) {
+            Write-Host -ForegroundColor Red "Command succeeded but was expected to fail: this means that the fsharp.compiler.service nuget package is already published"
+            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Servoce to be published"
+            $verifypackageshipstatusFailed = $True
+        }
+
+        $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Core_notshipped.fsproj"
+        if ($exitCode -eq 0) {
+            Write-Host -ForegroundColor Red "Command succeeded but was expected to fail: this means that the fsharp.core nuget package is already published"
+            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Servoce to be published"
+            $verifypackageshipstatusFailed = $True
+        }
+        if (-not $verifypackageshipstatusFailed)
+        {
+            Write-Host "================================================================================================================================"
+            Write-Host "The error messages above are expected = They mean that FSharp.Core and FSharp.Compiler.Service are not yet published "
+            Write-Host "================================================================================================================================"
+        }
+        else
+        {
+            throw "Error Verifying shipping status of shipping nupkgs"
+        }
     }
 
     ExitWithExitCode 0

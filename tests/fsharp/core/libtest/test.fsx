@@ -22,7 +22,7 @@ let test s b =
 
   
 let format_uint64 outc formatc width left_justify add_zeros num_prefix_if_pos (n:uint64) = 
-  let _ = match formatc with 'd' | 'i' | 'u' -> 10UL | 'o' -> 8UL | 'x' | 'X' -> 16UL in
+  let _ = match formatc with 'd' | 'i' | 'u' -> 10UL | 'o' -> 8UL | 'x' | 'X'-> 16UL | _ -> failwith "invalid value" in
   failwith "hello"
 
 
@@ -3657,6 +3657,46 @@ module Optimiations = begin
     let _ = check "opt.oi20c77tb" (0x8000000000000000L >>> 63) (0xFFFFFFFFFFFFFFFFL)
     let _ = check "opt.oi20c77yb" (0x8000000000000000L >>> 64) (0x8000000000000000L)
 
+    let _ = check "opt.oi20c77qc" ('a' + '\025') ('z')
+    let _ = check "opt.oi20c77wc" ('z' - '\025') ('a')
+    let _ = check "opt.oi20c77ec" (nativeint -3m) (-3n)
+    let _ = check "opt.oi20c77rc" (nativeint 3m) (3n)
+    let _ = check "opt.oi20c77tc" (unativeint 3m) (3un)
+    let _ = check "opt.oi20c77yc" (char 65535m) ('\uFFFF')
+    let _ = check "opt.oi20c77uc" (decimal '\uFFFF') (65535m)
+    let _ = check "opt.oi20c77ic" (nativeint "3") (3n)
+    let _ = check "opt.oi20c77oc" (nativeint "-3") (-3n)
+    let _ = check "opt.oi20c77pc" (unativeint "3") (3un)
+    let _ = check "opt.oi20c77ac" (Checked.(+) 'a' '\025') ('z')
+    let _ = check "opt.oi20c77sc" (Checked.(-) 'z' '\025') ('a')
+    let _ = check "opt.oi20c77dc" (Checked.nativeint -3m) (-3n)
+    let _ = check "opt.oi20c77fc" (Checked.nativeint 3m) (3n)
+    let _ = check "opt.oi20c77gc" (Checked.unativeint 3m) (3un)
+    let _ = check "opt.oi20c77hc" (Checked.char 65535m) ('\uFFFF')
+    let _ = check "opt.oi20c77jc" (Checked.nativeint "3") (3n)
+    let _ = check "opt.oi20c77kc" (Checked.nativeint "-3") (-3n)
+    let _ = check "opt.oi20c77lc" (Checked.unativeint "3") (3un)
+    let _ = check "opt.oi20c77zc" (int8 3.9m) (3y)
+    let _ = check "opt.oi20c77xc" (uint8 3.9m) (3uy)
+    let _ = check "opt.oi20c77cc" (int16 3.9m) (3s)
+    let _ = check "opt.oi20c77vc" (uint16 3.9m) (3us)
+    let _ = check "opt.oi20c77bc" (int32 3.9m) (3l)
+    let _ = check "opt.oi20c77nc" (uint32 3.9m) (3ul)
+    let _ = check "opt.oi20c77mc" (int64 3.9m) (3L)
+    let _ = check "opt.oi20c77,c" (uint64 3.9m) (3uL)
+    let _ = check "opt.oi20c77.c" (nativeint 3.9m) (3n)
+    let _ = check "opt.oi20c77/c" (unativeint 3.9m) (3un)
+    let _ = check "opt.oi20c77zc'" (Checked.int8 3.9m) (3y)
+    let _ = check "opt.oi20c77xc'" (Checked.uint8 3.9m) (3uy)
+    let _ = check "opt.oi20c77cc'" (Checked.int16 3.9m) (3s)
+    let _ = check "opt.oi20c77vc'" (Checked.uint16 3.9m) (3us)
+    let _ = check "opt.oi20c77bc'" (Checked.int32 3.9m) (3l)
+    let _ = check "opt.oi20c77nc'" (Checked.uint32 3.9m) (3ul)
+    let _ = check "opt.oi20c77mc'" (Checked.int64 3.9m) (3L)
+    let _ = check "opt.oi20c77,c'" (Checked.uint64 3.9m) (3uL)
+    let _ = check "opt.oi20c77.c'" (Checked.nativeint 3.9m) (3n)
+    let _ = check "opt.oi20c77/c'" (Checked.unativeint 3.9m) (3un)
+
 end
 
 
@@ -4082,9 +4122,14 @@ module SetTests = begin
       let xs = randomInts nx |> check in
       let ys = randomInts ny |> check in
       (* time union ops *)
-      let t0 = time (fun () -> rapp2 n union0 xs ys) in
-      let t1 = time (fun () -> rapp2 n union1 xs ys) in
-      test "vwnwer" (Set.toList (union0 xs ys |> check) = Set.toList (union1 xs ys |> check));
+      let t0 = time (fun () -> rapp2 n union0 xs ys)
+      let t1 = time (fun () -> rapp2 n union1 xs ys)
+
+      let lst0 = Set.toList (union0 xs ys |> check)
+      let lst1 = Set.toList (union1 xs ys |> check)
+      let listsNotEqual = not( List.exists2(fun a b -> a <> b) lst0 lst1)
+
+      test "vwnwer-e" (listsNotEqual)
       printf "-- Union times: (fold = %.6f) (divquonq = %.6f) with t0 = %f on sizes %8d,%-8d and x %d\n" (t0/t0) (t1/t0) t0 nx ny n;
 
       let test_fold() =
@@ -5263,8 +5308,8 @@ module Check1043 = begin
  (* LBRACKET STAR RBRACKET becomes a valid operator identifier *)
  let (*) = 12            
  let x   = (*)           
- let f (*) = 12 + (*) 
- let x24 = f 12
+ let test() = let f (*) = 12 + (*) in f 12
+ let x24 = test()
 end
 
 

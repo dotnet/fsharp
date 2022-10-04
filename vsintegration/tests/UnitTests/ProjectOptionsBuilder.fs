@@ -1,4 +1,4 @@
-﻿namespace VisualFSharp.UnitTests.Roslyn
+﻿namespace VisualFSharp.UnitTests.Editor
 
 open System
 open System.IO
@@ -124,7 +124,7 @@ module internal ProjectOptionsBuilder =
                 let otherOptions = Array.append projectOptions.Options.OtherOptions binaryRefs
                 { projectOptions with
                     Options = { projectOptions.Options with
-                        ReferencedProjects = referenceList
+                        ReferencedProjects = referenceList |> Array.map FSharpReferencedProject.CreateFSharp
                         OtherOptions = otherOptions
                     }
                 })

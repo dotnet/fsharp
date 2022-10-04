@@ -8,6 +8,7 @@
     <PackageTargetFallback>netcoreapp1.0</PackageTargetFallback>
     <IsShipping>true</IsShipping>
     <DependencyTargetFramework>net472</DependencyTargetFramework>
+    <DeployExtension>true</DeployExtension>
   </PropertyGroup>
 
   <Import Project="VisualFSharp.Core.targets" />
@@ -35,7 +36,32 @@
         <IncludeInVSIX>true</IncludeInVSIX>
       </Content>
 
+      <Content Include="$(ArtifactsBinDir)/fscAnyCpu/$(Configuration)/net472/**/%(_XlfLanguages.Identity)/*">
+        <VSixSubPath>Tools/%(_XlfLanguages.Identity)</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
+      <Content Include="$(ArtifactsBinDir)/fscArm64/$(Configuration)/net472/**/%(_XlfLanguages.Identity)/*">
+        <VSixSubPath>Tools/%(_XlfLanguages.Identity)</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
+      <Content Include="$(ArtifactsBinDir)/fsiArm64/$(Configuration)/net472/**/%(_XlfLanguages.Identity)/*">
+        <VSixSubPath>Tools/%(_XlfLanguages.Identity)</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
       <Content Include="$(ArtifactsBinDir)/fsc/$(Configuration)/net472/*">
+        <VSixSubPath>Tools</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
+      <Content Include="$(ArtifactsBinDir)/fscAnyCPU/$(Configuration)/net472/*">
+        <VSixSubPath>Tools</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
+
+      <Content Include="$(ArtifactsBinDir)/fscArm64/$(Configuration)/net472/*">
         <VSixSubPath>Tools</VSixSubPath>
         <IncludeInVSIX>true</IncludeInVSIX>
       </Content>
@@ -49,7 +75,11 @@
         <VSixSubPath>Tools</VSixSubPath>
         <IncludeInVSIX>true</IncludeInVSIX>
       </Content>
+
+      <Content Include="$(ArtifactsBinDir)/fsiArm64/$(Configuration)/net472/*">
+        <VSixSubPath>Tools</VSixSubPath>
+        <IncludeInVSIX>true</IncludeInVSIX>
+      </Content>
     </ItemGroup>
   </Target>
-
 </Project>

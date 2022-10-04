@@ -13,20 +13,19 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
+open Microsoft.CodeAnalysis
 
 [<Shared>]
 [<ExportLanguageService(typeof<IHelpContextService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpHelpContextService 
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
-    static let userOpName = "ImplementInterfaceCodeFix"
-    static member GetHelpTerm(checker: FSharpChecker, sourceText : SourceText, fileName, options, span: TextSpan, tokens: List<ClassifiedSpan>, textVersion, perfOptions) : Async<string option> = 
+    static member GetHelpTerm(document: Document, span: TextSpan, tokens: List<ClassifiedSpan>) : Async<string option> = 
         asyncMaybe {
-            let! _, _, check = checker.ParseAndCheckDocument(fileName, textVersion, sourceText, options, perfOptions, userOpName = userOpName)
+            let! _, check = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpHelpContextService)) |> liftAsync
+            let! sourceText = document.GetTextAsync() |> liftTaskAsync
             let textLines = sourceText.Lines
             let lineInfo = textLines.GetLineFromPosition(span.Start)
             let line = lineInfo.LineNumber
@@ -99,14 +98,11 @@ type internal FSharpHelpContextService
 
         member this.GetHelpTermAsync(document, textSpan, cancellationToken) = 
             asyncMaybe {
-                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! textVersion = document.GetTextVersionAsync(cancellationToken)
-                let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
+                let defines = document.GetFSharpQuickDefines() 
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
                 let classifiedSpans = Tokenizer.getClassifiedSpans(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
-                let perfOptions = document.FSharpOptions.LanguageServicePerformance
-                return! FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, projectOptions, textSpan, classifiedSpans, textVersion.GetHashCode(), perfOptions)
+                return! FSharpHelpContextService.GetHelpTerm(document, textSpan, classifiedSpans)
             } 
             |> Async.map (Option.defaultValue "")
             |> RoslynHelpers.StartAsyncAsTask cancellationToken

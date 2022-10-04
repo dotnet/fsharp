@@ -3,7 +3,8 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.Test.Utilities
+open FSharp.Test
+open FSharp.Test.Compiler
 open FSharp.Compiler.Diagnostics
 
 [<TestFixture>]
@@ -182,7 +183,7 @@ let check msg actual expected = if actual <> expected then failwithf "FAILED %s,
     let includeMinimal = { includeMergeSourcesOverloads = false; includeBindReturnExtras=false }
 
     let ApplicativeLibTest opts source =
-        CompilerAssert.CompileExeAndRunWithOptions [| "/langversion:preview" |] (applicativeLib opts + source)
+        CompilerAssert.CompileExeAndRunWithOptions([| "/langversion:preview" |], (Source (applicativeLib opts + source)))
 
     let ApplicativeLibErrorTest opts source errors =
         let lib = applicativeLib opts
@@ -720,7 +721,7 @@ type ContentBuilder() =
     member this.Run(c: Content) =
         let crlf = "\r\n"B
         [|for part in List.rev c do
-            yield! part.Array.[part.Offset..(part.Count+part.Offset-1)]
+            yield! part.Array[part.Offset..(part.Count+part.Offset-1)]
             yield! crlf |]
 
     member this.Yield(_) = []
@@ -784,7 +785,7 @@ let check msg actual expected = if actual <> expected then failwithf "FAILED %s,
         """
 
     let OverloadLibTest inclInternalExt inclExternalExt source =
-        CompilerAssert.CompileExeAndRunWithOptions [| "/langversion:preview" |] (overloadLib inclInternalExt inclExternalExt + source)
+        CompilerAssert.CompileExeAndRunWithOptions([| "/langversion:preview" |], (Source (overloadLib inclInternalExt inclExternalExt + source)))
 
     [<Test>]
     let ``OverloadLib accepts overloaded methods`` () =

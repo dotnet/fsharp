@@ -2401,8 +2401,7 @@ module NameLookupServiceExample =
 
 *)
 
-
-module ConstraintsInMembers = begin
+module ConstraintsInMembers =
 
     do printfn "ConstraintsInMembers"
     type IDuplex = 
@@ -2420,17 +2419,35 @@ module ConstraintsInMembers = begin
     type C() = 
         member x.Bind1(v:#IDuplex) : string = bind v 
         member x.Bind2(v:#IDuplex) : string = bind v 
-end
 
-module DelegateByrefCreation = begin
+module DelegateByrefCreation =
     type D = delegate of int byref -> int
     type D2 = delegate of int byref * int byref -> int
 
     let createImmediateDelegate = new D(fun b -> b)
     let createImmediateDelegate2 = new D2(fun b1 b2 -> b1  + b2)
-end
 
-module InterfaceCastingTests = begin
+
+module DelegateImmediateInvoke1 =
+
+    type Foo = delegate of unit -> unit 
+
+    let f1 = Foo(ignore)
+    check "clejweljkc" (f1.Invoke()) ()
+
+module DelegateImmediateInvoke2 =
+
+    type Foo = delegate of unit -> unit 
+
+    check "ou309lwnkc" (Foo(ignore).Invoke()) ()
+
+module DelegateImmediateInvoke3 =
+
+    type Foo<'T> = delegate of 'T -> unit 
+
+    check "lceljkewjl" (Foo<unit>(ignore).Invoke(())) ()
+
+module InterfaceCastingTests =
 
     do printfn "InterfaceCastingTests"
     type IBar = 
@@ -2505,9 +2522,6 @@ module InterfaceCastingTests = begin
         
     let checkDowncastInterfaceToUnsealedClassExplicit(l:IBar) =
         (downcast l : D)
-
-end
-
 
 module MiscGenericOverrideTest = 
    do printfn "MiscGenericOverrideTest"
@@ -5618,7 +5632,29 @@ module Devdiv2_5385_repro2 =
 
     printfn "test passed ok without NullReferenceException"
 
+module Fix11816 =
+    type IFoo<'T> = 
+        abstract X: 'T
 
+    type Bar<'T> =
+        // error FS0039: The type parameter 'T is not defined.
+        static member Do<'I when 'I :> IFoo<'T>> (i:'I) = i.X, i
+
+
+    type Test(x: int64) =
+        member _.X = x
+        interface IFoo<int64> with
+            member _.X = x
+
+
+    let t = Test(64L)
+
+    Bar<int64>.Do<Test> (t) |> printfn "%A"
+
+    let a,b = Bar<int64>.Do<Test>(t)
+
+    check "wwvwev" a 64L
+    check "wwvwev23" b.X 64L
 
 #if TESTS_AS_APP
 let RUN() = !failures

@@ -7,7 +7,7 @@ neg104.fs(20,23,20,24): parse error FS0010: Incomplete structured construct at o
 
 neg104.fs(23,25,23,26): parse error FS0010: Incomplete structured construct at or before this point in expression
 
-neg104.fs(26,28,26,29): parse error FS0010: Incomplete structured construct at or before this point in pattern
+neg104.fs(26,28,26,29): parse error FS0010: Incomplete structured construct at or before this point in pattern matching. Expected '->' or other token.
 
 neg104.fs(29,31,29,32): parse error FS0010: Incomplete structured construct at or before this point in pattern matching
 
@@ -23,11 +23,9 @@ neg104.fs(8,9,8,30): typecheck error FS0750: This construct may only be used wit
 
 neg104.fs(10,9,10,30): typecheck error FS0750: This construct may only be used within computation expressions
 
-neg104.fs(20,9,20,22): typecheck error FS0025: Incomplete pattern matches on this expression.
+neg104.fs(20,9,20,15): typecheck error FS0025: Incomplete pattern matches on this expression.
 
-neg104.fs(23,9,23,22): typecheck error FS0025: Incomplete pattern matches on this expression.
-
-neg104.fs(26,9,26,22): typecheck error FS0025: Incomplete pattern matches on this expression.
+neg104.fs(23,9,23,15): typecheck error FS0025: Incomplete pattern matches on this expression.
 
 neg104.fs(32,21,32,26): typecheck error FS0003: This value is not a function and cannot be applied.
 

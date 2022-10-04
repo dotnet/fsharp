@@ -8,6 +8,15 @@
   </PropertyGroup>
 
   <!-- directory locations -->
+
+  <PropertyGroup Condition="'$(OS)' != 'Unix' and '$(DisableAutoSetFscCompilerPath)' != 'true' and '$(Configuration)' != 'Proto' and '$(DOTNET_HOST_PATH)' != ''">
+    <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
+    <FSCoreVersion>$(FSCoreShippedVersion)</FSCoreVersion>
+  </PropertyGroup>
+
   <PropertyGroup>
     <FSharpSourcesRoot>$(RepoRoot)src</FSharpSourcesRoot>
     <FSharpTestsRoot>$(RepoRoot)tests</FSharpTestsRoot>
@@ -16,7 +25,9 @@
     <ValueTupleImplicitPackageVersion>4.4.0</ValueTupleImplicitPackageVersion>
     <WarningsAsErrors>1182;0025;$(WarningsAsErrors)</WarningsAsErrors>
     <OtherFlags>$(OtherFlags) --nowarn:3384</OtherFlags>
-</PropertyGroup>
+    <OtherFlags>$(OtherFlags) --times --nowarn:75</OtherFlags>
+    <OtherFlags Condition="$(ParallelCheckingWithSignatureFilesOn) == 'true'">$(OtherFlags) --test:ParallelCheckingWithSignatureFilesOn</OtherFlags>
+  </PropertyGroup>
 
   <!-- nuget -->
   <PropertyGroup>
@@ -44,7 +55,7 @@
     <StrongNameKeyId>Microsoft</StrongNameKeyId>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MonoPackaging)' == 'true'">
-    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\test.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\test.snk</AssemblyOriginatorKeyFile>
     <DelaySign>false</DelaySign>
     <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
@@ -74,6 +85,16 @@
     <DefineConstants>$(DefineConstants);TESTING_ON_LINUX</DefineConstants>
   </PropertyGroup>
 
+
+  <!-- CompressAllMetadata is a switch set by the CI to do a test pass where we compress the metadata for the assemblies -->
+  <!-- We don't compress the proto-compiler yet, because no shipped compiler, and the arcade compiler don't yet support compression -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto' or '$(CompressAllMetadata)' != 'true'">
+      <CompressMetadata>false</CompressMetadata>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(CompressAllMetadata)' == 'true'">
+      <CompressMetadata>true</CompressMetadata>
+  </PropertyGroup>
+
   <!-- SDK targets override -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')">
     <FSharpTargetsPath>$(ProtoOutputPath)\fsc\Microsoft.FSharp.Targets</FSharpTargetsPath>
@@ -82,4 +103,13 @@
     <FSharpOverridesTargetsShim>$(ProtoOutputPath)\fsc\Microsoft.FSharp.Overrides.NetSdk.targets</FSharpOverridesTargetsShim>
   </PropertyGroup>
 
+  <!-- use this to enable good debugging in the Proto bootstrap compiler -->
+  <!-- You'll have to remove it to get the actual compiler bo build because optimization is needed for some large methods -->
+  <!--
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+    <Tailcalls>true</Tailcalls>
+  </PropertyGroup>
+  -->
 </Project>

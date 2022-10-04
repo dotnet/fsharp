@@ -1,3 +1,27 @@
+
+let mutable failures = []
+
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures <- failures @ [s]
+
+let test s b =
+    stderr.Write(s:string)
+    if b then stderr.WriteLine " OK" else report_failure s
+    stderr.WriteLine "" 
+
+let check s v1 v2 = 
+   stderr.Write(s:string);  
+   if (v1 = v2) then 
+       stderr.WriteLine " OK" 
+       stderr.WriteLine "" 
+   else
+       eprintf " FAILED: got %A, expected %A" v1 v2 
+       stderr.WriteLine "" 
+       report_failure s
+
+
 type T() =
     member this.H<[<Measure>]'u> (x : int<'u>) = x
 
@@ -29,16 +53,36 @@ let foo =
     problem // Error: Incorrect number of type arguments to local call
 
 
-let nullReferenceError weightedList =
-    let rec loop accumululatedWeight (remaining : float<'u> list) =
-        match remaining with
-        | [] -> accumululatedWeight
-        | weight :: tail ->
-            loop (accumululatedWeight + weight) tail
+// This was causing bad codegen in debug code
+module InnerFunctionGenericOnlyByMeasure =
+    let nullReferenceError weightedList =
+        let rec loop accumululatedWeight (remaining : float<'u> list) =
+            match remaining with
+            | [] -> accumululatedWeight
+            | weight :: tail ->
+                loop (accumululatedWeight + weight) tail
 
-    loop 0.0<_> weightedList
+        loop 0.0<_> weightedList
 
-let ``is this null?`` = nullReferenceError [ 0.3; 0.3; 0.4 ]
+    let ``is this null?`` = nullReferenceError [ 0.3; 0.3; 0.4 ]
+
+// Another variation on the above test case, where the recursive thing is a type function generic unly by a unit of measure
+module TopLevelTypeFunctionGenericOnlyByMeasure =
+    type C< [<Measure>] 'u> =
+       abstract Invoke: float<'u> list -> int
+
+    let rec loop<[<Measure>]'u>  =
+        { new C<'u> with 
+            member _.Invoke(xs) =
+                match xs with
+                | [] -> 1
+                | weight :: tail ->
+                    loop<'u>.Invoke(tail) }
+
+    let nullReferenceError2 (weightedList: float<'u> list) =
+        loop<'u>.Invoke(weightedList)
+
+    let ``is this null 2?`` = nullReferenceError2 [ 0.3; 0.3; 0.4 ]
 
 module TestLibrary =
 
@@ -108,6 +152,47 @@ module TestLibrary =
     printfn "test 7: %i" (test7 1000)
     printfn "test 8: %i" (test8 1000)
 
+module InterfacesOfMeasureAnnotatedTypes =
+    open System
+    type IDerivedComparable<'T> =
+        inherit IComparable<'T>
+
+    type IRandomOtherInterface<'T> =
+        abstract M: 'T -> 'T
+
+    type IDerivedEquatable<'T> =
+        inherit IEquatable<'T>
+
+    type Prim() =
+        interface IComparable with 
+            member x.CompareTo(y) = 0
+        interface IDerivedComparable<Prim> with 
+            member x.CompareTo(y) = 0
+        interface IDerivedEquatable<Prim> with 
+            member x.Equals(y) = true
+        interface IRandomOtherInterface<Prim> with 
+            member x.M(y) = y
+        override x.Equals(y) = true
+        override x.GetHashCode() = 0
+
+    [<MeasureAnnotatedAbbreviation>]
+    type Prim<[<Measure>] 'm> = Prim
+
+    // Check that Prim<'m> supports the unit-annotated IComparable interface
+    let f1 (x: Prim<'m>) = (x :> IComparable<Prim<'m>>)
+    let f3 (x: Prim<'m>) = (x :> IEquatable<Prim<'m>>)
+    let f5 (x: Prim<'m>) = (x :> IComparable)
+    // Does not apply to other interfaces
+    let f6 (x: Prim<'m>) = (x :> IRandomOtherInterface<Prim>)
+
+module CheckModuleNames =
+    type WithMeasure<[<Measure>] 'u> =
+        | WithMeasure of float32<'u>
+
+    module WithMeasure = ()
+    type A = class end
+    
+    test "celjcelwj" (typeof<A>.DeclaringType.GetNestedType("WithMeasureModule") <> null)
 
 [<EntryPoint>]
 let main argv = 
@@ -118,4 +203,9 @@ let main argv =
 
     System.IO.File.WriteAllText("test.ok","ok"); 
 
+    match failures with 
+    | [] -> 
+        stdout.WriteLine "Test Passed"
+    | _ -> 
+        stdout.WriteLine "Test Failed"
     0

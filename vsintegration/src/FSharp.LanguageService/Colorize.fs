@@ -123,15 +123,15 @@ type internal FSharpScanner_DEPRECATED(makeLineTokenizer : string -> FSharpLineT
 
     /// Scan a token from a line. This should only be used in cases where color information is irrelevant.
     /// Used by GetFullLineInfo (and only thus in a small workaroud in GetDeclarations) and GetTokenInformationAt (thus GetF1KeywordString).
-    member ws.ScanTokenWithDetails lexState =
-        let colorInfoOption, newLexState = lineTokenizer.ScanToken(!lexState)
-        lexState := newLexState
+    member ws.ScanTokenWithDetails (lexState: _ ref) =
+        let colorInfoOption, newLexState = lineTokenizer.ScanToken(lexState.Value)
+        lexState.Value <- newLexState
         colorInfoOption
 
     /// Scan a token from a line and write information about it into the tokeninfo object.
-    member ws.ScanTokenAndProvideInfoAboutIt(_line, tokenInfo:TokenInfo, lexState) =
+    member ws.ScanTokenAndProvideInfoAboutIt(_line, tokenInfo:TokenInfo, lexState: _ ref) =
         let colorInfoOption, newLexState = lineTokenizer.ScanToken(!lexState)
-        lexState := newLexState
+        lexState.Value <- newLexState
         match colorInfoOption with
         | None -> false
         | Some colorInfo ->
@@ -265,7 +265,6 @@ type internal FSharpColorizer_DEPRECATED
                   | None -> () }
         tokens() |> Array.ofSeq
 
-    [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2233:OperationsShouldNotOverflow", MessageId="length-1")>] // exceeds EndIndex
     member private c.GetColorInfo(line,lineText,length,lastColorState) =
         let refState = ref (ColorStateLookup_DEPRECATED.LexStateOfColorState lastColorState)
         scanner.SetLineText lineText

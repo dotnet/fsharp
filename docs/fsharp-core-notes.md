@@ -1,53 +1,116 @@
 ---
-layout: default
-title: Notes on FSharp.Core
-subtitle: This technical guide discusses the FSharp.Core library.  
+title: Guidance
+category: FSharp.Core
+categoryindex: 500
+index: 100
 ---
-
 # Notes and Guidance on FSharp.Core
-{:.no_toc}
 
-This technical guide discusses the FSharp.Core library.  Please help improve this guide by editing it and submitting a pull-request.
+This technical guide discusses the FSharp.Core library.
+
+Reference documentation for FSharp.Core can be found here: https://fsharp.github.io/fsharp-core-docs/
 
 Much of the guidance below applies to any .NET library respecting binary compatibility.
 
-### FSharp.Core is binary compatible
+## FSharp.Core is binary compatible
 
-FSharp.Core is binary compatible across versions of the F# language. For example, FSharp.Core `5.0.0.0` (F# 5.0) is binary compatible with
-`4.7.0.0` (F# 4.7), `4.6.0.0` (F# 3.6), `4.4.0.0` (F# 4.0) , `4.4.1.0` (F# 4.1), , `4.4.3.0` (F# 4.1+)  and so on.
+FSharp.Core is binary compatible across versions of the F# language. For example, this means you can create a newer project with a newer FSharp.Core in an older codebase and things should generally "just work".
 
-Likewise, FSharp.Core is binary compatible from "netstandard" profiles to actual runtime implementations.
-For example, FSharp.Core  for `netstandard2.0` is binary compatible with the runtime implementation assembly `4.7.0.0` and so on.
+**Binary compatibility means that a component built for X can bind to Y at runtime. It doesn't mean that Y behaves 100% the same as X, though.** For example, an older compiler that doesn't know how to understand `inref<'T>` referencing a newer FSharp.Core that has `inref<'T>` defined may not behave correctly if `inref<'T>` is used in source.
 
-Binary compatibility means that a component built for X can instead bind to Y at runtime.
-It doesn't mean that Y behaves 100% the same as X (some bug fixes may have been made, and Y may have more functionality than X).
+## FSharp.Core and F# scripts
 
-### Application v. Library v. Script
-{:.no_toc}
+F# scripts, executed by F# interactive, execute against the FSharp.Core deployed with the .NET SDK you are using. If you're expecting to use a more modern library feature and find that it's missing, it's likely because you have an older .NET SDK and thus an older F# Interactive. Upgrade your .NET SDK.
 
-Each project is either an *application* or a *library*.
+## Guidance for package authors
 
-* Examples of application are `.exe` project or a `.dll` project that is a test project, addin, website, or an app.
+If you are authoring a NuGet package for consumption in the F# and .NET ecosystem, you already have to make a decision about functionality vs. reach by deciding what target framework(s) you support.
 
-* Libraries are just ordinary `.dll` components (excluding those above which are applications). 
+As an F# package author, you also need to make this decision with respect to FSharp.Core:
 
-* Scripts are not projects, just `.fsx` files, possibly referring to other files using `#load` and Libraries using `#r`
+* Targeting an earlier version of FSharp.Core increases your reach because older codebases can use it without issue
+* Targeting a newer version of FSharp.Core lets you use and extend newer features
 
-### Do *not* bundle FSharp.Core with a library 
+This decision is critical, because it can have a network effect. If you choose a higher FSharp.Core version, then that also becomes a dependency for any other package that may depend on your package.
 
-Do _not_ include a copy of FSharp.Core with your library or package.  If you do, you will create havoc for users of
-your library.
+### Package authors should pin their FSharp.Core reference
+
+The default templates for F# projects carry an implicit reference to FSharp.Core. This is ideal for application developers, since applications almost always want to be referencing the highest FSharp.Core available to them. As you upgrade your .NET SDK, the FSharp.Core package referenced implicitly will also be upgraded over time, since FSharp.Core is also distributed with the .NET SDK.
+
+However, as a package author this means that unless you reference FSharp.Core explicitly, you will default to the latest possible version and thus eliminate any hope of reaching older projects in older environments.
+
+### How to explicitly reference FSharp.Core
+
+It's a simple gesture in your project file that pins to FSharp.Core 4.7.2:
+
+```xml
+<ItemGroup>
+  <PackageReference Update="FSharp.Core" Version="4.7.2" />
+</ItemGroup>
+```
+
+Or if you're using Paket:
+
+```
+nuget FSharp.Core >= 4.7.2
+```
+
+And that's it!
+
+### Compatibility table
+
+The following table can help you decide the minimum language/package version you want to support:
+
+|Minimum F# language version|Minimum FSharp.Core package version|
+|------------------------------|------------------------------|
+|F# 4.1|4.3.4|
+|F# 4.5|4.5.2|
+|F# 4.6|4.6.2|
+|F# 4.7|4.7.2|
+|F# 5.0|5.0.0|
+|F# 6.0|6.0.0|
+
+If you want to be compatible with much older projects using an F# 4.0 compiler or earlier, you can still do that but it's not recommended. People using those codebases should upgrade instead.
+
+### Do *not* bundle FSharp.Core directly with a library 
+
+Do _not_ include a copy of FSharp.Core with your library or package, such in the `lib` folder of a package. If you do this, you will create havoc for users of your library.
 
 The decision about which `FSharp.Core` a library binds to is up to the application hosting of the library.
-The library and/or library package can place constraints on this, but it doesn't decide it.
 
-Especially, do _not_ include FSharp.Core in the ``lib`` folder of a NuGet package.
+## Guidance for everyone else
+
+If you're not authoring packages for distribution, you have a lot less to worry about.
+
+If you are distributing library code across a private organization as if it were a NuGet package, please see the above guidance, as it likely still applies. Otherwise, the below guidance applies.
+
+### Application authors don't have to explicitly reference FSharp.Core
+
+In general, applications can always just use the latest FSharp.Core bundled in the SDK they are built with.
+
+### C# projects referencing F# projects may need to pin FSharp.Core
+
+You can reference an F# project just fine without needing to be explicit about an FSharp.Core reference when using C# projects based on the .NET SDK. References flow transitively for SDK-style projects, so even if you need to use types directly from FSharp.Core (which you probably shouldn't do anyways) it will pick up the right types from the right assembly.
+
+If you do have an explicit FSharp.Core reference in your C# project that you **need**, you should pin your FSharp.Core reference across your entire codebase. Being in a mixed pinned/non-pinned world is difficult to keep straight over a long period of time.
+
+## Guidance for older projects, compilers, and tools
+
+Modern .NET development, including F#, uses SDK-style projects. You can read about that here: https://docs.microsoft.com/dotnet/core/project-sdk/overview
+
+If you are not using SDK-style projects F# projects and/or have an older toolset, the following guidance applies.
+
+### Consider upgrading
+
+Yes, really. The old project system that manages legacy projects is not that good, the compiler is older and unoptimized for supporting larger codebases, tooling is not as responsive, etc. You will really have a much better life if you upgrade. Try out the `try-convert` tool to do that: https://github.com/dotnet/try-convert
+
+If you cannot upgrade for some reason, the rest of the guidance applies.
 
 ### Always deploy FSharp.Core as part of a compiled application
 
 For applications, FSharp.Core is normally part of the application itself (so-called "xcopy deploy" of FSharp.Core).  
 
-For modern templates, this is the default. For older templates, you may need to use ``<Private>true</Private>`` in your project file. In  Visual Studio this is equivalent to setting the `CopyLocal` property to `true` properties for the `FSharp.Core` reference.
+For older project files, you may need to use ``<Private>true</Private>`` in your project file. In  Visual Studio this is equivalent to setting the `CopyLocal` property to `true` properties for the `FSharp.Core` reference.
 
 FSharp.Core.dll will normally appear in the `bin` output folder for your application. For example:
 
@@ -58,69 +121,7 @@ FSharp.Core.dll will normally appear in the `bin` output folder for your applica
     14/10/2020  12:12         1,400,472 FSharp.Core.dll
 ```
 
-### Always reference FSharp.Core via the NuGet package.
-
-FSharp.Core is now always referenced via [the NuGet package](http://www.nuget.org/packages/FSharp.Core). 
-
-### Make your FSharp.Core references explicit
-
-Templates for F# libraries use an **implicit** FSharp.Core package reference where the .NET SDK chooses one.  Consider
-using an **explicit** reference, especially when creating libraries.
-
-To select a particular FSharp.Core use `Update`:
-
-    <PackageReference Update="FSharp.Core" Version="4.7.2" />
-
-In C# projects use:
-
-    <PackageReference Include="FSharp.Core" Version="4.7.2" />
-
-If you make your FSharp.Core dependency explicit, you will have to explicitly upgrade your FSharp.Core reference in order to use
-new F# language or library features should those features depend on a particular minimal FSharp.Core version.
-
-### Libraries should target lower versions of FSharp.Core
-
-F# ecosystem libraries should generally target the *earliest, most portable* profile of FSharp.Core feasible, within reason.
-
-If your library is part of an ecosystem, it can be helpful to target the _earliest, most widespread language version_ 
-and the _earliest_ and _most supported_ profiles of the .NET Framework feasible.
-
-The version you choose should be based on the minimum F# language version you want to support. The minimum FSharp.Core version for each language version is listed below:
-
-|Minimum F# language version|Minimum FSharp.Core version|
-|------------------------------|------------------------------|
-|F# 4.1|4.3.4|
-|F# 4.5|4.5.2|
-|F# 4.6|4.6.2|
-|F# 4.7|4.7.2|
-|F# 5.0|5.0.0|
-
-A good choice for libraries is to target `netstandard2.0` and FSharp.Core 4.7.2.
-
-    <PackageReference Update="FSharp.Core" Version="4.7.2" />
-
-For "libraries" that are effectively part of an application, you can just target
-the latest language version and the framework you're using in your application.
-
-### Applications should target higher versions of FSharp.Core
-
-F# applications should generally use the *highest* language version and the most *platform-specific* version of FSharp.Core.
-
-Generally, when writing an application, you want to use the highest version of FSharp.Core available for the platform
-you are targeting.
-
-If your application in being developed by people using multiple versions of F# tooling (common
-in open source working) you may need to target a lower version of the language and a correspondingly earlier version
-of FSharp.Core.
-
-### The FSharp.Core used by a script depends on the tool processing the script
-
-If you run a script with `dotnet fsi` then the tool will decide which FSharp.Core is used, and which implementation assemblies are used.
-
-When editing a script, the editing tools will decide which FSharp.Core is referenced. 
-
 ### FSharp.Core and static linking
-{:.no_toc}
 
 The ILMerge tool and the F# compiler both allow static linking of assemblies including static linking of FSharp.Core.
 This can be useful to build a single standalone file for a tool.
@@ -131,28 +132,6 @@ However, these options must be used with caution.
 
 Searching on stackoverflow reveals further guidance on this topic.
 
-### FSharp.Core in components using FSharp.Compiler.Service
-{:.no_toc}
-
-If your application of component uses FSharp.Compiler.Service, 
-see [this guide](http://fsharp.github.io/FSharp.Compiler.Service/corelib.html). This scenario is more complicated
-because FSharp.Core is used both to run your script or application, and is referenced during compilation.
-
-Likewise, if you have a script or library using FSharp.Formatting, then beware that is using FSharp.Compiler.Service.
-For scripts that is normally OK because they are processed using F# Interactive, and the default FSharp.Core is used.
-If you have an application using FSharp.Formatting as a component then see the guide linked above.
-
-### FSharp.Core and new language features
-{:.no_toc}
-
-New versions of FSharp.Core must generally be consumable by previous generations of F# compiler tooling. There is nothing stopping
-older tooling from adding a reference to the new nuget package.
-
-This sometimes limits the new language features that can be used in FSharp.Core or requires careful coding in the serializing/deserializing of
-F# metadata stored in the FSharp.Core.dll binary as resources.
-
 ## Reference: FSharp.Core version and NuGet package numbers
 
 See [the F# version information RFC](https://github.com/fsharp/fslang-design/blob/master/tooling/FST-1004-versioning-plan.md).
-
-

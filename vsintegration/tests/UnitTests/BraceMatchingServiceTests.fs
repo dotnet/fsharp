@@ -1,5 +1,5 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+namespace VisualFSharp.UnitTests.Editor
 
 open System
 open System.Threading
@@ -37,7 +37,7 @@ type BraceMatchingServiceTests()  =
         Assert.IsTrue(position >= 0, "Cannot find marker '{0}' in file contents", marker)
 
         let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
-        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest") |> Async.RunSynchronously with
+        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, position, "UnitTest") |> Async.RunImmediate with
         | None -> ()
         | Some(left, right) -> Assert.Fail("Found match for brace '{0}'", marker)
         
@@ -50,7 +50,7 @@ type BraceMatchingServiceTests()  =
         Assert.IsTrue(endMarkerPosition >= 0, "Cannot find end marker '{0}' in file contents", endMarkerPosition)
         
         let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
-        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, startMarkerPosition, "UnitTest") |> Async.RunSynchronously with
+        match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, parsingOptions, startMarkerPosition, "UnitTest") |> Async.RunImmediate with
         | None -> Assert.Fail("Didn't find a match for start brace at position '{0}", startMarkerPosition)
         | Some(left, right) ->
             let endPositionInRange(range) = 
@@ -162,7 +162,7 @@ type BraceMatchingServiceTests()  =
         
     [<Test>]
     member this.BraceMatchingAtEndOfLine_Bug1597() = 
-        // https://github.com/Microsoft/visualfsharp/issues/1597
+        // https://github.com/dotnet/fsharp/issues/1597
         let code = """
 [<EntryPoint>]
 let main argv = 

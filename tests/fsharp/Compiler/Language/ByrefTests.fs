@@ -3,12 +3,10 @@
 namespace FSharp.Compiler.UnitTests
 
 open NUnit.Framework
-open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Utilities
 open FSharp.Compiler.Diagnostics
+open FSharp.Test
 open FSharp.Test.Utilities
-open FSharp.Test.Utilities.Compiler
-open FSharp.Tests
+open FSharp.Test.Compiler
 
 [<TestFixture>]
 module ByrefTests =
@@ -236,7 +234,7 @@ type MyClass() =
             |> CompilationReference.Create
 
         let fsCmpl =
-            Compilation.Create(fs, SourceKind.Fsx, Library, cmplRefs = [csCmpl])
+            Compilation.Create(fs, Library, cmplRefs = [csCmpl])
 
         CompilerAssert.Compile fsCmpl
 

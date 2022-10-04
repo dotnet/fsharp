@@ -1,3 +1,11 @@
+(**
+---
+title: Tutorial: Expressions
+category: FSharp.Compiler.Service
+categoryindex: 300
+index: 500
+---
+*)
 (*** hide ***)
 #I "../../artifacts/bin/FSharp.Compiler.Service/Debug/netstandard2.0"
 (**
@@ -45,7 +53,7 @@ let parseAndCheckSingleFile (input) =
     File.WriteAllText(file, input)
     // Get context representing a stand-alone (script) file
     let projOptions, _errors = 
-        checker.GetProjectOptionsFromScript(file, SourceText.ofString input)
+        checker.GetProjectOptionsFromScript(file, SourceText.ofString input, assumeDotNetFramework=false)
         |> Async.RunSynchronously
 
     checker.ParseAndCheckProject(projOptions) 
@@ -181,7 +189,7 @@ let rec visitExpr f (e:FSharpExpr) =
         visitObjArg f objExprOpt; visitExprs f argExprs
     | FSharpExprPatterns.Coerce(targetType, inpExpr) -> 
         visitExpr f inpExpr
-    | FSharpExprPatterns.FastIntegerForLoop(startExpr, limitExpr, consumeExpr, isUp) -> 
+    | FSharpExprPatterns.FastIntegerForLoop(startExpr, limitExpr, consumeExpr, isUp, _, _) -> 
         visitExpr f startExpr; visitExpr f limitExpr; visitExpr f consumeExpr
     | FSharpExprPatterns.ILAsm(asmCode, typeArgs, argExprs) -> 
         visitExprs f argExprs
@@ -193,10 +201,11 @@ let rec visitExpr f (e:FSharpExpr) =
         visitExpr f guardExpr; visitExpr f thenExpr; visitExpr f elseExpr
     | FSharpExprPatterns.Lambda(lambdaVar, bodyExpr) -> 
         visitExpr f bodyExpr
-    | FSharpExprPatterns.Let((bindingVar, bindingExpr), bodyExpr) -> 
+    | FSharpExprPatterns.Let((bindingVar, bindingExpr, dbg), bodyExpr) -> 
         visitExpr f bindingExpr; visitExpr f bodyExpr
-    | FSharpExprPatterns.LetRec(recursiveBindings, bodyExpr) -> 
-        List.iter (snd >> visitExpr f) recursiveBindings; visitExpr f bodyExpr
+    | FSharpExprPatterns.LetRec(recursiveBindings, bodyExpr) ->
+        for _,bindingExpr,_ in recursiveBindings do visitExpr f bindingExpr
+        visitExpr f bodyExpr
     | FSharpExprPatterns.NewArray(arrayType, argExprs) -> 
         visitExprs f argExprs
     | FSharpExprPatterns.NewDelegate(delegateType, delegateBodyExpr) -> 
@@ -221,9 +230,9 @@ let rec visitExpr f (e:FSharpExpr) =
         visitObjArg f objExprOpt; visitExpr f argExpr
     | FSharpExprPatterns.Sequential(firstExpr, secondExpr) -> 
         visitExpr f firstExpr; visitExpr f secondExpr
-    | FSharpExprPatterns.TryFinally(bodyExpr, finalizeExpr) -> 
+    | FSharpExprPatterns.TryFinally(bodyExpr, finalizeExpr, dbgTry, dbgFinally) -> 
         visitExpr f bodyExpr; visitExpr f finalizeExpr
-    | FSharpExprPatterns.TryWith(bodyExpr, _, _, catchVar, catchExpr) -> 
+    | FSharpExprPatterns.TryWith(bodyExpr, _, _, catchVar, catchExpr, dbgTry, dbgWith) -> 
         visitExpr f bodyExpr; visitExpr f catchExpr
     | FSharpExprPatterns.TupleGet(tupleType, tupleElemIndex, tupleExpr) -> 
         visitExpr f tupleExpr
@@ -251,7 +260,7 @@ let rec visitExpr f (e:FSharpExpr) =
         visitExprs f argExprs
     | FSharpExprPatterns.ValueSet(valToSet, valueExpr) -> 
         visitExpr f valueExpr
-    | FSharpExprPatterns.WhileLoop(guardExpr, bodyExpr) -> 
+    | FSharpExprPatterns.WhileLoop(guardExpr, bodyExpr, dbg) -> 
         visitExpr f guardExpr; visitExpr f bodyExpr
     | FSharpExprPatterns.BaseValue baseType -> ()
     | FSharpExprPatterns.DefaultValue defaultType -> ()
@@ -299,7 +308,7 @@ Note that
 
 Summary
 -------
-In this tutorial, we looked at basic of working with checked declarations and expressions. 
+In this tutorial, we looked at the basics of working with checked declarations and expressions. 
 
 In practice, it is also useful to combine the information here
 with some information you can obtain from the [symbols](symbols.html) 

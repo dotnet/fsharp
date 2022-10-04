@@ -2,23 +2,49 @@
 
 module TestFramework
 
-open Microsoft.Win32
 open System
 open System.IO
 open System.Reflection
-open System.Text.RegularExpressions
 open System.Diagnostics
 open Scripting
 open NUnit.Framework
+open FSharp.Compiler.IO
+
+let inline getTestsDirectory src dir = src ++ dir
+
+// Temporary directory is TempPath + "/FSharp.Test.Utilities/" date ("yyy-MM-dd")
+// Throws exception if it Fails
+let tryCreateTemporaryDirectory () =
+    let date() = DateTime.Now.ToString("yyyy-MM-dd")
+    let now() = $"{date()}-{Guid.NewGuid().ToString()}"
+    let directory = Path.Combine(Path.GetTempPath(), now()).Replace('-', '_')
+    Directory.CreateDirectory(directory).FullName
+
+// Create a temporaryFileName -- newGuid is random --- there is no point validating the file alread exists because: threading and Path.ChangeExtension() is commonly used after this API
+let tryCreateTemporaryFileName () =
+    let directory = tryCreateTemporaryDirectory ()
+    let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
+    let filePath = Path.Combine(directory, fileName)
+    filePath
+
+// Create a temporaryFileName -- newGuid is random --- there is no point validating the file alread exists because: threading and Path.ChangeExtension() is commonly used after this API
+let tryCreateTemporaryFileNameInDirectory (directory) =
+    let fileName = ("Temp-" + Guid.NewGuid().ToString() + ".tmp").Replace('-', '_')
+    let filePath = Path.Combine(directory, fileName)
+    filePath
+
 
 [<RequireQualifiedAccess>]
 module Commands =
 
+    let gate = obj()
+
     // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
     // returns exit code, stdio and stderr as string arrays
-    let executeProcess pathToExe arguments workingDir timeout =
+    let executeProcess pathToExe arguments workingDir (timeout:int) =
         match pathToExe with
         | Some path ->
+            let commandLine = ResizeArray()
             let errorsList = ResizeArray()
             let outputList = ResizeArray()
             let mutable errorslock = obj
@@ -31,6 +57,9 @@ module Commands =
                 if not (isNull message) then
                     lock errorslock (fun () -> errorsList.Add(message))
 
+            commandLine.Add $"cd {workingDir}"
+            commandLine.Add $"{path} {arguments} /bl"
+
             let psi = ProcessStartInfo()
             psi.FileName <- path
             psi.WorkingDirectory <- workingDir
@@ -38,6 +67,9 @@ module Commands =
             psi.RedirectStandardError <- true
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
+            // When running tests, we want to roll forward to minor versions (including previews).
+            psi.EnvironmentVariables["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
+            psi.EnvironmentVariables["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
             psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
             psi.UseShellExecute <- false
 
@@ -65,8 +97,11 @@ module Commands =
                 else
                     workingDir
 
-            File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
-            File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
+            lock gate (fun () ->
+                File.WriteAllLines(Path.Combine(workingDir', "commandline.txt"), commandLine)
+                File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
+                File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
+            )
     #endif
             p.ExitCode, outputList.ToArray(), errorsList.ToArray()
         | None -> -1, Array.empty, Array.empty
@@ -78,12 +113,12 @@ module Commands =
         rooted |> Path.GetFullPath
 
     let fileExists workDir path =
-        if path |> getfullpath workDir |> File.Exists then Some path else None
+        if path |> getfullpath workDir |> FileSystem.FileExistsShim then Some path else None
 
     let directoryExists workDir path =
         if path |> getfullpath workDir |> Directory.Exists then Some path else None
 
-    let copy_y workDir source dest =
+    let copy workDir source dest =
         log "copy /y %s %s" source dest
         File.Copy( source |> getfullpath workDir, dest |> getfullpath workDir, true)
         CmdResult.Success
@@ -94,7 +129,7 @@ module Commands =
 
     let rm dir path =
         let p = path |> getfullpath dir
-        if File.Exists(p) then
+        if FileSystem.FileExistsShim(p) then
             (log "rm %s" p) |> ignore
             File.Delete(p)
         else
@@ -175,11 +210,10 @@ module Commands =
         exec peverifyExe (sprintf "%s %s" (quotepath path) flags)
 
     let createTempDir () =
-        let path = Path.GetTempFileName ()
+        let path = tryCreateTemporaryFileName  ()
         File.Delete path
         Directory.CreateDirectory path |> ignore
         path
-
 
 type TestConfig =
     { EnvironmentVariables : Map<string, string>
@@ -194,7 +228,9 @@ type TestConfig =
       FSI : string
 #if !NETCOREAPP
       FSIANYCPU : string
+      FSCANYCPU : string
 #endif
+      DOTNETFSCCOMPILERPATH : string
       FSI_FOR_SCRIPTS : string
       FSharpBuild : string
       FSharpCompilerInteractiveSettings : string
@@ -263,14 +299,15 @@ let config configurationName envVars =
     let fsharpCoreArchitecture = "netstandard2.0"
     let fsharpBuildArchitecture = "netstandard2.0"
     let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
+    let dotnetArchitecture = "net7.0"
 #if NET472
     let fscArchitecture = "net472"
     let fsiArchitecture = "net472"
-    let peverifyArchitecture = "net472"
+    //let peverifyArchitecture = "net472"
 #else
-    let fscArchitecture = "net5.0"
-    let fsiArchitecture = "net5.0"
-    let peverifyArchitecture = "net5.0"
+    let fscArchitecture = dotnetArchitecture
+    let fsiArchitecture = dotnetArchitecture
+    //let peverifyArchitecture = dotnetArchitecture
 #endif
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
     let artifactsPath = repoRoot ++ "artifacts"
@@ -278,22 +315,22 @@ let config configurationName envVars =
     let coreClrRuntimePackageVersion = "5.0.0-preview.7.20364.11"
     let csc_flags = "/nologo"
     let vbc_flags = "/nologo"
-    let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED"
-    let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror"
+    let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED --preferreduilang:en-US" 
+    let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror --preferreduilang:en-US"
     let operatingSystem = getOperatingSystem ()
     let Is64BitOperatingSystem = DotnetPlatform.Is64BitOperatingSystem envVars
     let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
     let packagesDir = getPackagesDir ()
     let requirePackage = requireFile packagesDir
     let requireArtifact = requireFile artifactsBinPath
-    let CSC = requirePackage ("Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "csc.exe")
-    let VBC = requirePackage ("Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "vbc.exe")
+    let CSC = requirePackage ("Microsoft.Net.Compilers" ++ "4.3.0-1.22220.8" ++ "tools" ++ "csc.exe")
+    let VBC = requirePackage ("Microsoft.Net.Compilers" ++ "4.3.0-1.22220.8" ++ "tools" ++ "vbc.exe")
     let ILDASM_EXE = if operatingSystem = "win" then "ildasm.exe" else "ildasm"
     let ILDASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILDASM_EXE)
     let ILASM_EXE = if operatingSystem = "win" then "ilasm.exe" else "ilasm"
     let ILASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILASM_EXE)
-    let PEVERIFY_EXE = if operatingSystem = "win" then "PEVerify.exe" elif operatingSystem = "osx" then "PEVerify.dll" else "PEVerify"
-    let PEVERIFY = requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
+    //let PEVERIFY_EXE = if operatingSystem = "win" then "PEVerify.exe" elif operatingSystem = "osx" then "PEVerify.dll" else "PEVerify"
+    let PEVERIFY = "dummy" //requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
 //    let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"
     let FSharpBuild = requireArtifact ("FSharp.Build" ++ configurationName ++ fsharpBuildArchitecture ++ "FSharp.Build.dll")
     let FSharpCompilerInteractiveSettings = requireArtifact ("FSharp.Compiler.Interactive.Settings" ++ configurationName ++ fsharpCompilerInteractiveSettingsArchitecture ++ "FSharp.Compiler.Interactive.Settings.dll")
@@ -302,7 +339,7 @@ let config configurationName envVars =
         // first look for {repoRoot}\.dotnet\dotnet.exe, otherwise fallback to %PATH%
         let DOTNET_EXE = if operatingSystem = "win" then "dotnet.exe" else "dotnet"
         let repoLocalDotnetPath = repoRoot ++ ".dotnet" ++ DOTNET_EXE
-        if File.Exists(repoLocalDotnetPath) then repoLocalDotnetPath
+        if FileSystem.FileExistsShim(repoLocalDotnetPath) then repoLocalDotnetPath
         else DOTNET_EXE
 
 #if !NETCOREAPP
@@ -313,13 +350,14 @@ let config configurationName envVars =
     let FSI_FOR_SCRIPTS = requireArtifact FSI_PATH
     let FSI = requireArtifact FSI_PATH
 #if !NETCOREAPP
-    let FSIANYCPU = requireArtifact ("fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.exe")
+    let FSIANYCPU = requireArtifact ("fsiAnyCpu" ++ configurationName ++ "net472" ++ "fsiAnyCpu.exe")
+    let FSCANYCPU = requireArtifact ("fscAnyCpu" ++ configurationName ++ fscArchitecture ++ "fscAnyCpu.exe")
 #else
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.dll")
 #endif
     let FSCOREDLLPATH = requireArtifact ("FSharp.Core" ++ configurationName ++ fsharpCoreArchitecture ++ "FSharp.Core.dll")
-
+    let DOTNETFSCCOMPILERPATH = requireArtifact ("fsc" ++ configurationName ++ dotnetArchitecture ++ "fsc.dll")
     let defaultPlatform =
         match Is64BitOperatingSystem with
 //        | PlatformID.MacOSX, true -> "osx.10.10-x64"
@@ -338,8 +376,10 @@ let config configurationName envVars =
       FSC = FSC
       FSI = FSI
 #if !NETCOREAPP
+      FSCANYCPU = FSCANYCPU
       FSIANYCPU = FSIANYCPU
 #endif
+      DOTNETFSCCOMPILERPATH = DOTNETFSCCOMPILERPATH
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
       FSharpBuild = FSharpBuild
       FSharpCompilerInteractiveSettings = FSharpCompilerInteractiveSettings
@@ -370,6 +410,7 @@ let logConfig (cfg: TestConfig) =
     log "DOTNET_ROOT              = %s" cfg.DotNetRoot
 #else
     log "FSIANYCPU                = %s" cfg.FSIANYCPU
+    log "FSCANYCPU                = %s" cfg.FSCANYCPU
 #endif
     log "FSI_FOR_SCRIPTS          = %s" cfg.FSI_FOR_SCRIPTS
     log "fsi_flags                = %s" cfg.fsi_flags
@@ -429,22 +470,22 @@ type public InitializeSuiteAttribute () =
 
     override x.Targets = ActionTargets.Test ||| ActionTargets.Suite
 
-let fsharpSuiteDirectory = __SOURCE_DIRECTORY__
-
-let testConfig testDir =
+let testConfig (testDir: string) =
     let cfg = suiteHelpers.Value
-    let dir = Path.GetFullPath(fsharpSuiteDirectory ++ testDir)
-    log "------------------ %s ---------------" dir
-    log "cd %s" dir
-    { cfg with Directory =  dir}
+    if not (Path.IsPathRooted testDir) then
+      failwith $"path is not rooted: {testDir}"
+    let testDir = Path.GetFullPath testDir // mostly used to normalize / and \
+    log "------------------ %s ---------------" testDir
+    log "cd %s" testDir
+    { cfg with Directory = testDir }
 
 [<AllowNullLiteral>]
 type FileGuard(path: string) =
-    let remove path = if File.Exists(path) then Commands.rm (Path.GetTempPath()) path
+    let remove path = if FileSystem.FileExistsShim(path) then Commands.rm (Path.GetTempPath()) path
     do if not (Path.IsPathRooted(path)) then failwithf "path '%s' must be absolute" path
     do remove path
     member x.Path = path
-    member x.Exists = x.Path |> File.Exists
+    member x.Exists = x.Path |> FileSystem.FileExistsShim
     member x.CheckExists() =
         if not x.Exists then
              failwith (sprintf "exit code 0 but %s file doesn't exists" (x.Path |> Path.GetFileName))
@@ -577,8 +618,8 @@ let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
 let vbc cfg arg = Printf.ksprintf (Commands.vbc (exec cfg) cfg.VBC) arg
 let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
 let ilasm cfg arg = Printf.ksprintf (Commands.ilasm (exec cfg) cfg.ILASM) arg
-let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
-let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
+let peverify _cfg _test = printfn "PEVerify is disabled, need to migrate to ILVerify instead, see https://github.com/dotnet/fsharp/issues/13854" //Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
+let peverifyWithArgs _cfg _args _test = printfn "PEVerify is disabled, need to migrate to ILVerify instead, see https://github.com/dotnet/fsharp/issues/13854" //Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
 #if !NETCOREAPP
 let fsiAnyCpu cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSIANYCPU)
@@ -586,26 +627,26 @@ let fsiAnyCpu cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSIANYCPU)
 let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
 let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.FSI)
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
-let fileguard cfg = (Commands.getfullpath cfg.Directory) >> (fun x -> new FileGuard(x))
+let fileguard cfg fileName = Commands.getfullpath cfg.Directory fileName |> (fun x -> new FileGuard(x))
 let getfullpath cfg = Commands.getfullpath cfg.Directory
-let fileExists cfg = Commands.fileExists cfg.Directory >> Option.isSome
+let fileExists cfg fileName = Commands.fileExists cfg.Directory fileName |> Option.isSome
 let fsiStdin cfg stdinPath = Printf.ksprintf (Commands.fsi (execStdin cfg stdinPath) cfg.FSI)
 let fsiStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath = Printf.ksprintf (Commands.fsi (execStdinAppendBothIgnoreExitCode cfg stdoutPath stderrPath stdinPath) cfg.FSI)
 let rm cfg x = Commands.rm cfg.Directory x
 let rmdir cfg x = Commands.rmdir cfg.Directory x
 let mkdir cfg = Commands.mkdir_p cfg.Directory
-let copy_y cfg f = Commands.copy_y cfg.Directory f >> checkResult
-let copySystemValueTuple cfg = copy_y cfg (getDirectoryName(cfg.FSC) ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+let copy cfg fromFile toFile = Commands.copy cfg.Directory fromFile toFile |> checkResult
+let copySystemValueTuple cfg = copy cfg (getDirectoryName(cfg.FSC) ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
 
 let diff normalize path1 path2 =
     let result = System.Text.StringBuilder()
-    let append s = result.AppendLine s |> ignore
+    let append (s:string) = result.AppendLine s |> ignore
     let cwd = Directory.GetCurrentDirectory()
 
-    if not <| File.Exists(path1) then
+    if not <| FileSystem.FileExistsShim(path1) then
         // creating empty baseline file as this is likely someone initializing a new test
         File.WriteAllText(path1, String.Empty)
-    if not <| File.Exists(path2) then failwithf "Invalid path %s" path2
+    if not <| FileSystem.FileExistsShim(path2) then failwithf "Invalid path %s" path2
 
     let lines1 = File.ReadAllLines(path1)
     let lines2 = File.ReadAllLines(path2)
@@ -619,8 +660,8 @@ let diff normalize path1 path2 =
                 if x >= 0 then line.Substring(x+cwd.Length) else line
             else line
 
-        let line1 = normalizePath lines1.[i]
-        let line2 = normalizePath lines2.[i]
+        let line1 = lines1[i] |> normalizePath
+        let line2 = lines2[i] |> normalizePath
 
         if line1 <> line2 then
             append <| sprintf "diff between [%s] and [%s]" path1 path2
@@ -631,8 +672,8 @@ let diff normalize path1 path2 =
     if lines1.Length <> lines2.Length then
         append <| sprintf "diff between [%s] and [%s]" path1 path2
         append <| sprintf "diff at line %d" minLines
-        lines1.[minLines .. (lines1.Length - 1)] |> Array.iter (append << sprintf "- %s")
-        lines2.[minLines .. (lines2.Length - 1)] |> Array.iter (append << sprintf "+ %s")
+        lines1[minLines .. (lines1.Length - 1)] |> Array.iter (append << sprintf "- %s")
+        lines2[minLines .. (lines2.Length - 1)] |> Array.iter (append << sprintf "+ %s")
 
     result.ToString()
 

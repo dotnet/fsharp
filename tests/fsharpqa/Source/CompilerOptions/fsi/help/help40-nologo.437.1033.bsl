@@ -2,7 +2,7 @@
 Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
 
 
-		- INPUT FILES -
+                - INPUT FILES -
 --use:<file>                             Use the given file on startup as
                                          initial input
 --load:<file>                            #load the given file on startup
@@ -16,7 +16,7 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
                                          fsi.CommandLineArgs
 
 
-		- CODE GENERATION -
+                - CODE GENERATION -
 --debug[+|-]                             Emit debug information (Short form:
                                          -g)
 --debug:{full|pdbonly|portable|embedded} Specify debugging type: full,
@@ -38,9 +38,11 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
                                          names output by the compiler
 --crossoptimize[+|-]                     Enable or disable cross-module
                                          optimizations
+--reflectionfree                         Disable implicit generation of
+                                         constructs using reflection
 
 
-		- ERRORS AND WARNINGS -
+                - ERRORS AND WARNINGS -
 --warnaserror[+|-]                       Report all warnings as errors
 --warnaserror[+|-]:<warn;...>            Report specific warnings as errors
 --warn:<n>                               Set a warning level (0-5)
@@ -51,18 +53,18 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
                                          color
 
 
-		- LANGUAGE -
---langversion:{?|version|latest|preview} Display the allowed values for
-                                         language version, specify language
-                                         version such as 'latest' or
-                                         'preview'
+                - LANGUAGE -
+--langversion:?                          Display the allowed values for
+                                         language version.
+--langversion:{version|latest|preview}   Specify language version such as
+                                         'latest' or 'preview'.
 --checked[+|-]                           Generate overflow checks
 --define:<string>                        Define conditional compilation
                                          symbols (Short form: -d)
 --mlcompatibility                        Ignore ML compatibility warnings
 
 
-		- MISCELLANEOUS -
+                - MISCELLANEOUS -
 --nologo                                 Suppress compiler copyright message
 --version                                Display compiler version banner and
                                          exit
@@ -70,7 +72,7 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
                                          form: -?)
 
 
-		- ADVANCED -
+                - ADVANCED -
 --codepage:<n>                           Specify the codepage used to read
                                          source files
 --utf8output                             Output messages in UTF-8 encoding
@@ -90,6 +92,8 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
                                          this assembly. Valid values are
                                          mscorlib, netcore or netstandard.
                                          Default - mscorlib
+--clearResultsCache                      Clear the package manager results
+                                         cache
 --noframework                            Do not reference the default CLI
                                          assemblies by default
 --exec                                   Exit fsi after loading the files or
@@ -103,3 +107,5 @@ Usage: fsiAnyCpu <options> [script.fsx [<arguments>]]
 --quotations-debug[+|-]                  Emit debug information in quotations
 --shadowcopyreferences[+|-]              Prevents references from being
                                          locked by the F# Interactive process
+--multiemit[+|-]                         Emit multiple assemblies (off by
+                                         default for .NET Framework)

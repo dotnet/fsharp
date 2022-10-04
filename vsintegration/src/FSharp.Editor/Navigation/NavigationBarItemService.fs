@@ -17,20 +17,16 @@ type internal NavigationBarSymbolItem(text, glyph, spans, childItems) =
 type internal FSharpNavigationBarItemService
     [<ImportingConstructor>]
     (
-        checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
     ) =
     
-    static let userOpName = "NavigationBarItem"
     static let emptyResult: IList<FSharpNavigationBarItem> = upcast [||]
 
     interface IFSharpNavigationBarItemService with
         member _.GetItemsAsync(document, cancellationToken) : Task<IList<FSharpNavigationBarItem>> = 
             asyncMaybe {
-                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document, cancellationToken, userOpName)
+                let! parseResults = document.GetFSharpParseResultsAsync(nameof(FSharpNavigationBarItemService)) |> liftAsync
+                let navItems = Navigation.getNavigation parseResults.ParseTree
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! parsedInput = checkerProvider.Checker.ParseDocument(document, parsingOptions, sourceText=sourceText, userOpName=userOpName)
-                let navItems = Navigation.getNavigation parsedInput
                 let rangeToTextSpan range = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
                 return
                     navItems.Declarations
@@ -42,9 +38,9 @@ type internal FSharpNavigationBarItemService
                                 |> Array.choose (fun decl ->
                                     rangeToTextSpan(decl.Range)
                                     |> Option.map(fun textSpan ->
-                                        NavigationBarSymbolItem(decl.Name, decl.RoslynGlyph, [| textSpan |], null) :> FSharpNavigationBarItem))
+                                        NavigationBarSymbolItem(decl.LogicalName, decl.RoslynGlyph, [| textSpan |], null) :> FSharpNavigationBarItem))
                             
-                            NavigationBarSymbolItem(topLevelDecl.Declaration.Name, topLevelDecl.Declaration.RoslynGlyph, [| topLevelTextSpan |], childItems)
+                            NavigationBarSymbolItem(topLevelDecl.Declaration.LogicalName, topLevelDecl.Declaration.RoslynGlyph, [| topLevelTextSpan |], childItems)
                             :> FSharpNavigationBarItem)) :> IList<_>
             } 
             |> Async.map (Option.defaultValue emptyResult)

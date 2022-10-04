@@ -239,7 +239,7 @@ function Make-BootstrapBuild() {
     # prepare FsLex and Fsyacc and AssemblyCheck
     $dotnetPath = InitializeDotNetCli
     $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
-    $buildToolsProject = "`"$RepoRoot\src\buildtools\buildtools.proj`""
+    $buildToolsProject = "`"$RepoRoot\buildtools\buildtools.proj`""
 
     $argNoRestore = if ($norestore) { " --no-restore" } else { "" }
     $argNoIncremental = if ($rebuild) { " --no-incremental" } else { "" }
@@ -247,20 +247,20 @@ function Make-BootstrapBuild() {
     $args = "build $buildToolsProject -c $bootstrapConfiguration -v $verbosity" + $argNoRestore + $argNoIncremental
     if ($binaryLog) {
         $logFilePath = Join-Path $LogDir "toolsBootstrapLog.binlog"
-        $args += " /bl:$logFilePath"
+        $args += " /bl:`"$logFilePath`""
     }
     Exec-Console $dotnetExe $args
 
-    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\net5.0" -Destination "$dir\fslex" -Force -Recurse
-    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\net5.0" -Destination "$dir\fsyacc" -Force  -Recurse
-    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\net5.0" -Destination "$dir\AssemblyCheck" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\fslex\$bootstrapConfiguration\net7.0" -Destination "$dir\fslex" -Force -Recurse
+    Copy-Item "$ArtifactsDir\bin\fsyacc\$bootstrapConfiguration\net7.0" -Destination "$dir\fsyacc" -Force  -Recurse
+    Copy-Item "$ArtifactsDir\bin\AssemblyCheck\$bootstrapConfiguration\net7.0" -Destination "$dir\AssemblyCheck" -Force  -Recurse
 
     # prepare compiler
-    $protoProject = "`"$RepoRoot\proto.proj`""
-    $args = "build $protoProject -c $bootstrapConfiguration -v $verbosity -f $bootstrapTfm" + $argNoRestore + $argNoIncremental
+    $protoProject = "`"$RepoRoot\proto.sln`""
+    $args = "build $protoProject -c $bootstrapConfiguration -v $verbosity " + $argNoRestore + $argNoIncremental
     if ($binaryLog) {
         $logFilePath = Join-Path $LogDir "protoBootstrapLog.binlog"
-        $args += " /bl:$logFilePath"
+        $args += " /bl:`"$logFilePath`""
     }
     Exec-Console $dotnetExe $args
 

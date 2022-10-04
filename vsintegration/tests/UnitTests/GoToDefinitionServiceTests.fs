@@ -1,25 +1,8 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 //
-// To run the tests in this file:
-//
-// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
-//
-// Technique 2:
-//
-//   Enable some tests in the #if EXE section at the end of the file, 
-//   then compile this file as an EXE that has InternalsVisibleTo access into the
-//   appropriate DLLs.  This can be the quickest way to get turnaround on updating the tests
-//   and capturing large amounts of structured output.
-(*
-    cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Service.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\GoToDefinitionServiceTests.fs 
-    .\VisualFSharp.UnitTests.exe 
-*)
-// Technique 3: 
-// 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
+// To run the tests in this file: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 
-namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+namespace VisualFSharp.UnitTests.Editor
 
 open System
 open System.IO
@@ -34,28 +17,24 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open UnitTests.TestLib.LanguageService
 
-[<TestFixture>][<Category "Roslyn Services">]
+[<TestFixture; Category "Roslyn Services">]
 module GoToDefinitionServiceTests =
 
     let userOpName = "GoToDefinitionServiceTests"
 
     let private findDefinition
         (
-            checker: FSharpChecker, 
-            documentKey: DocumentId, 
-            sourceText: SourceText, 
-            filePath: string, 
+            document: Document,
+            sourceText: SourceText,
             position: int,
-            defines: string list, 
-            options: FSharpProjectOptions, 
-            textVersionHash: int
+            defines: string list 
         ) : range option = 
         maybe {
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument (filePath, textVersionHash,  sourceText, options, LanguageServicePerformanceOptions.Default, userOpName=userOpName)  |> Async.RunSynchronously
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false, false)
+            let _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(userOpName)) |> Async.RunSynchronously
 
             let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false)
             
@@ -79,23 +58,23 @@ module GoToDefinitionServiceTests =
             Stamp = None
         }
 
-    let GoToDefinitionTest (fileContents: string, caretMarker: string, expected) =
+    let GoToDefinitionTest (fileContents: string, caretMarker: string, expected, opts) =
 
         let filePath = Path.GetTempFileName() + ".fs"
-        let options = makeOptions filePath [| |]
         File.WriteAllText(filePath, fileContents)
+        let options = makeOptions filePath opts
 
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
-        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let document, sourceText = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = options)
         let actual = 
-           findDefinition(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0) 
+           findDefinition(document, sourceText, caretPosition, []) 
            |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
 
         if actual <> expected then 
             Assert.Fail(sprintf "Incorrect information returned for fileContents=<<<%s>>>, caretMarker=<<<%s>>>, expected =<<<%A>>>, actual = <<<%A>>>" fileContents caretMarker expected actual)
 
     [<Test>]
-    let VerifyDefinition() =
+    let ``goto definition smoke test``() =
 
       let manyTestCases = 
         [ 
@@ -132,10 +111,10 @@ let _ = Module1.foo 1
        for caretMarker, expected in testCases do
         
         printfn "Test case: caretMarker=<<<%s>>>" caretMarker 
-        GoToDefinitionTest (fileContents, caretMarker, expected)
+        GoToDefinitionTest (fileContents, caretMarker, expected, [| |])
 
     [<Test>]
-    let VerifyDefinitionStringInterpolation() =
+    let ``goto definition for string interpolation``() =
 
         let fileContents = """
 let xxxxx = 1
@@ -143,9 +122,19 @@ let yyyy = $"{abc{xxxxx}def}" """
         let caretMarker = "xxxxx"
         let expected = Some(2, 2, 4, 9)
 
-        GoToDefinitionTest (fileContents, caretMarker, expected)
+        GoToDefinitionTest (fileContents, caretMarker, expected, [| |])
 
-#if EXE
-    VerifyDefinition()
-    VerifyDefinitionStringInterpolation()
-#endif
+    [<Test>]
+    let ``goto definition for static abstract method invocation``() =
+
+        let fileContents = """
+type IStaticProperty<'T when 'T :> IStaticProperty<'T>> =
+    static abstract StaticProperty: 'T
+
+let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
+    'T.StaticProperty
+"""
+        let caretMarker = "'T.StaticProperty"
+        let expected = Some(3, 3, 20, 34)
+
+        GoToDefinitionTest (fileContents, caretMarker, expected, [| "/langversion:preview" |])

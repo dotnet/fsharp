@@ -3,8 +3,8 @@
 namespace FSharp.Compiler.ComponentTests.Conformance.LexicalAnalysis.Shift
 
 open Xunit
-open FSharp.Test.Utilities.Compiler
-open FSharp.Test.Utilities.Xunit.Attributes
+open FSharp.Test
+open FSharp.Test.Compiler
 
 module Generics =
 

@@ -64,7 +64,7 @@ neg04.fs(76,19,76,26): typecheck error FS0698: Invalid constraint: the type used
 neg04.fs(81,58,81,61): typecheck error FS0001: This expression was expected to have type
     'int'    
 but here has type
-    ''a * 'b'    
+    'int * int'    
 
 neg04.fs(83,39,83,46): typecheck error FS0752: The operator 'expr.[idx]' has been used on an object of indeterminate type based on information prior to this program point. Consider adding further type constraints
 
@@ -117,7 +117,7 @@ is not compatible with type
 
 
 neg04.fs(147,10,147,20): typecheck error FS0193: Type constraint mismatch. The type 
-    'int []'    
+    'int array'    
 is not compatible with type
     'IBar'    
 
