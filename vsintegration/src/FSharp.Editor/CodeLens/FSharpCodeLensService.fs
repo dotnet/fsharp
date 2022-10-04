@@ -12,18 +12,12 @@ open System.Windows.Media
 open System.Windows.Media.Animation
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Classification
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Extensions
 
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Diagnostics
-open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Text
-open FSharp.Compiler.Text
-open FSharp.Compiler.Tokenization
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 open Microsoft.VisualStudio.Shell.Interop
@@ -32,10 +26,10 @@ open Microsoft.VisualStudio.Text.Classification
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Utilities
 
-type internal CodeLens(taggedText, computed, fullTypeSignature, uiElement) =
+type internal CodeLens(taggedText, computed, funcID, uiElement) =
     member val TaggedText: Async<(ResizeArray<TaggedText> * FSharpNavigation) option> = taggedText
     member val Computed: bool = computed with get, set
-    member val FullTypeSignature: string = fullTypeSignature 
+    member val FuncID: string = funcID
     member val UiElement: UIElement = uiElement with get, set
 
 type internal FSharpCodeLensService
@@ -221,14 +215,12 @@ type internal FSharpCodeLensService
                     match symbolUse.Symbol with
                     | :? FSharpMemberOrFunctionOrValue as func when func.IsModuleValueOrMember || func.IsProperty ->
                         let funcID = func.LogicalName + (func.FullType.ToString() |> hash |> string)
-                        // Use a combination of the the function name + the hashed value of the type signature
-                        let fullTypeSignature = func.FullType.ToString()
                         // Try to re-use the last results
                         if lastResults.ContainsKey funcID then
                             // Make sure that the results are usable
                             let inline setNewResultsAndWarnIfOverridenLocal value = setNewResultsAndWarnIfOverriden funcID value
                             let lastTrackingSpan, codeLens as lastResult = lastResults.[funcID]
-                            if codeLens.FullTypeSignature = fullTypeSignature then
+                            if codeLens.FuncID = funcID then
                                 setNewResultsAndWarnIfOverridenLocal lastResult
                                 oldResults.Remove funcID |> ignore
                             else
@@ -247,7 +239,7 @@ type internal FSharpCodeLensService
                                 let res =
                                         CodeLens( Async.cache (useResults (symbolUse.DisplayContext, func, range)),
                                             false,
-                                            fullTypeSignature,
+                                            funcID,
                                             null)
                                 // The old results aren't computed at all, because the line might have changed create new results
                                 tagsToUpdate.[lastTrackingSpan] <- (newTrackingSpan, funcID, res)
@@ -257,12 +249,12 @@ type internal FSharpCodeLensService
                         else
                             // The symbol might be completely new or has slightly changed. 
                             // We need to track this and iterate over the left entries to ensure that there isn't anything
-                            unattachedSymbols.Add((symbolUse, func, funcID, fullTypeSignature))
+                            unattachedSymbols.Add(symbolUse, func, funcID)
                     | _ -> ()
             
             // In best case this works quite `covfefe` fine because often enough we change only a small part of the file and not the complete.
             for unattachedSymbol in unattachedSymbols do
-                let symbolUse, func, funcID, fullTypeSignature = unattachedSymbol
+                let symbolUse, func, funcID = unattachedSymbol
                 let declarationLine, range = 
                     match visit func.DeclarationLocation.Start parsedInput with
                     | Some range -> range.StartLine - 1, range
@@ -270,7 +262,7 @@ type internal FSharpCodeLensService
                     
                 let test (v:KeyValuePair<_, _>) =
                     let _, (codeLens:CodeLens) = v.Value
-                    codeLens.FullTypeSignature = fullTypeSignature
+                    codeLens.FuncID = funcID
                 match oldResults |> Seq.tryFind test with
                 | Some res ->
                     let (trackingSpan : ITrackingSpan), (codeLens : CodeLens) = res.Value
@@ -288,7 +280,7 @@ type internal FSharpCodeLensService
                             CodeLens(
                                 Async.cache (useResults (symbolUse.DisplayContext, func, range)),
                                 false,
-                                fullTypeSignature,
+                                funcID,
                                 null)
                         // The tag might be still valid but it hasn't been computed yet so create fresh results
                         tagsToUpdate.[trackingSpan] <- (newTrackingSpan, funcID, res)
@@ -303,7 +295,7 @@ type internal FSharpCodeLensService
                         CodeLens(
                             Async.cache (useResults (symbolUse.DisplayContext, func, range)),
                             false,
-                            fullTypeSignature,
+                            funcID,
                             null)
                     try
                         let declarationSpan = 
@@ -347,7 +339,7 @@ type internal FSharpCodeLensService
                             sb.Begin()
                         else
 #if DEBUG
-                            logWarningf "Couldn't retrieve code lens information for %A" codeLens.FullTypeSignature
+                            logWarningf "Couldn't retrieve code lens information for %A" codeLens.FuncID
 #endif
                             ()
                     } |> (RoslynHelpers.StartAsyncSafe CancellationToken.None) "UIElement creation"
