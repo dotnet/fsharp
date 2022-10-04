@@ -198,6 +198,11 @@ type MetadataAssemblyGeneration =
     /// Only emits the assembly as a reference assembly.
     | ReferenceOnly
 
+[<RequireQualifiedAccess>]
+type ParallelReferenceResolution =
+    | On
+    | Off
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -482,6 +487,8 @@ type TcConfigBuilder =
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
         mutable exiter: Exiter
+
+        mutable parallelReferenceResolution: ParallelReferenceResolution
     }
 
     static member CreateNew:
@@ -844,6 +851,8 @@ type TcConfig =
     member assumeDotNetFramework: bool
 
     member exiter: Exiter
+
+    member parallelReferenceResolution: ParallelReferenceResolution
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

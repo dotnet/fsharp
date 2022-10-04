@@ -345,7 +345,7 @@ module FSharpKeywords =
     val KeywordsWithDescription: (string * string) list
 
     /// A lookup from keywords to their descriptions
-    val KeywordsDescriptionLookup: System.Collections.Generic.IDictionary<string, string>
+    val internal KeywordsDescriptionLookup: (string -> string option)
 
     /// All the keywords in the F# language
     val KeywordNames: string list
