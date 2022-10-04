@@ -241,9 +241,9 @@
     <value>Parallelization (requires restart)</value>
   </data>
   <data name="Enable_Parallel_Checking_With_Signature_Files" xml:space="preserve">
-    <value>Parallel type checking with signature files</value>
+    <value>Enable parallel type checking with signature files</value>
   </data>
   <data name="Enable_Parallel_Reference_Resolution" xml:space="preserve">
-    <value>Parallel reference resolution</value>
+    <value>Enable parallel reference resolution</value>
   </data>
 </root>

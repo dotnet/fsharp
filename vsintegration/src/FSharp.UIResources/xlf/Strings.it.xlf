@@ -48,13 +48,13 @@
         <note />
       </trans-unit>
       <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
-        <source>Parallel type checking with signature files</source>
-        <target state="new">Parallel type checking with signature files</target>
+        <source>Enable parallel type checking with signature files</source>
+        <target state="new">Enable parallel type checking with signature files</target>
         <note />
       </trans-unit>
       <trans-unit id="Enable_Parallel_Reference_Resolution">
-        <source>Parallel reference resolution</source>
-        <target state="new">Parallel reference resolution</target>
+        <source>Enable parallel reference resolution</source>
+        <target state="new">Enable parallel reference resolution</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">

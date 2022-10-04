@@ -178,7 +178,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Parallel type checking with signature files.
+        ///   Looks up a localized string similar to Enable parallel type checking with signature files.
         /// </summary>
         public static string Enable_Parallel_Checking_With_Signature_Files {
             get {
@@ -187,7 +187,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Parallel reference resolution.
+        ///   Looks up a localized string similar to Enable parallel reference resolution.
         /// </summary>
         public static string Enable_Parallel_Reference_Resolution {
             get {
