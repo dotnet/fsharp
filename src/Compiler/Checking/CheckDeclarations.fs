@@ -1621,7 +1621,7 @@ module MutRecBindingChecking =
         defnsEs, envMutRec
 
 /// Check and generalize the interface implementations, members, 'let' definitions in a mutually recursive group of definitions.
-let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (envMutRec: TcEnv) (mutRecDefns: MutRecDefnsPhase2Data) = 
+let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (envMutRec: TcEnv) (mutRecDefns: MutRecDefnsPhase2Data) =     
     let g = cenv.g
     let interfacesFromTypeDefn envForTycon tyconMembersData = 
         let (MutRecDefnsPhase2DataForTycon(_, _, declKind, tcref, _, _, declaredTyconTypars, members, _, _, _)) = tyconMembersData
@@ -1650,11 +1650,12 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
                       (generatedHashAndEqualsWithComparerValues && typeEquiv g intfTyR (mkAppTy g.system_GenericIEquatable_tcref [ty])) ||
                       (generatedHashAndEqualsWithComparerValues && typeEquiv g intfTyR g.mk_IStructuralEquatable_ty) then
                       errorR(Error(FSComp.SR.tcDefaultImplementationForInterfaceHasAlreadyBeenAdded(), intfTy.Range))
-
-                  if overridesOK = WarnOnOverrides then  
-                      warning(IntfImplInIntrinsicAugmentation(intfTy.Range))
-                  if overridesOK = ErrorOnOverrides then  
-                      errorR(IntfImplInExtrinsicAugmentation(intfTy.Range))
+           
+                  match mutRecNSInfo, overridesOK with
+                  | _, OverridesOK | Some(_,_), WarnOnOverrides -> ()
+                  | None, WarnOnOverrides -> warning(IntfImplInIntrinsicAugmentation(intfTy.Range))
+                  | _, ErrorOnOverrides -> errorR(IntfImplInExtrinsicAugmentation(intfTy.Range))
+                
                   match defnOpt with 
                   | Some defn -> [ (intfTyR, defn, m) ]
                   | _-> []
