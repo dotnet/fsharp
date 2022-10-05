@@ -140,4 +140,15 @@ namespace TotallyDifferentNs.InnerNonRec
         |> withSingleDiagnostic (Warning 69, Line 11, Col 19, Line 11, Col 37,
                                  """Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data.  You may remove this warning using #nowarn "69" if you have checked this is not the case.""")
 
+    [<Fact>]
+    let ``Adding an interface to a previously defined type should still be just an 909 error and nothing else``() =
+        FSharp """
+type System.Random with
+    interface System.IComparable 
+    static member Factory() = 1     """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Error 909, Line 3, Col 15, Line 3, Col 33,
+                                 """All implemented interfaces should be declared on the initial declaration of the type""")
+
  
