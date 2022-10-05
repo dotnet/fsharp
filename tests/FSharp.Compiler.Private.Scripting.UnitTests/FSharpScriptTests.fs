@@ -17,6 +17,15 @@ open Xunit
 type InteractiveTests() =
 
     [<Fact>]
+    member _.``ValueRestriction error message should not have type variables fully solved``() =
+        use script = new FSharpScript()
+        let code = "id id"
+        let _, errors = script.Eval(code)
+        Assert.Equal(1, errors.Length)
+        let msg = errors[0].Message
+        Assert.DoesNotMatch("obj -> obj", msg)
+
+    [<Fact>]
     member _.``Eval object value``() =
         use script = new FSharpScript()
         let opt = script.Eval("1+1") |> getValue
