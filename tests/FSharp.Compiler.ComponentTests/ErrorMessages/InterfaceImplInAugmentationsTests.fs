@@ -103,7 +103,7 @@ module InnerNonRecursiveModule =
         |> withWarnings []
 
     [<Fact>]
-    let ``Type in non-recursive namespace nested in a bigger recursive namespace can be augmented``() =
+    let ``Type in non-recursive namespace nested in a bigger recursive namespace shows warning``() =
         FSharp """
 namespace rec OuuterRec
 namespace OuuterRec.InnerNonRec
@@ -115,6 +115,29 @@ namespace OuuterRec.InnerNonRec
         interface System.IDisposable with
                     member x.Dispose() = printfn "Finish"     """
         |> typecheck
-        |> shouldSucceed
-        |> withWarnings []
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 69, Line 9, Col 19, Line 9, Col 37,
+                                 """Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data.  You may remove this warning using #nowarn "69" if you have checked this is not the case.""")
+
+ 
    
+    [<Fact>]
+    let ``Type in non-rec ns show give a warning when augmented externally even when the same file has a recursive (but different) ns``() =
+        FSharp """
+namespace rec OuuterRec
+    module Stuff = 
+        let x = 5
+namespace TotallyDifferentNs.InnerNonRec
+    type MyCustomType<'T> = 
+        | Data of string
+        interface System.IDisposable
+
+    type MyCustomType<'T> with
+        interface System.IDisposable with
+                    member x.Dispose() = printfn "Finish"    """
+        |> typecheck
+        |> shouldFail
+        |> withSingleDiagnostic (Warning 69, Line 11, Col 19, Line 11, Col 37,
+                                 """Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data.  You may remove this warning using #nowarn "69" if you have checked this is not the case.""")
+
+ 
