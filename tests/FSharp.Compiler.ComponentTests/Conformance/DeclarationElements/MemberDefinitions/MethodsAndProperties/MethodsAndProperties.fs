@@ -429,6 +429,25 @@ module MethodsAndProperties =
         ]
         
     [<Fact>]
+    let ``Duplicate member signature error is reported in signature files`` () =
+        let encodeFsi =
+            Fsi """
+namespace Foo
+[<Class>]
+type FSharpMemberOrFunctionOrValue =
+    member IsFunction: bool
+    member IsFunction: bool
+    """
+        encodeFsi
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 438, Line 5, Col 5, Line 5, Col 28, "Duplicate method. The method 'IsFunction' has the same name and signature as another method in type 'FSharpMemberOrFunctionOrValue'.")
+            (Error 438, Line 6, Col 5, Line 6, Col 28, "Duplicate method. The method 'IsFunction' has the same name and signature as another method in type 'FSharpMemberOrFunctionOrValue'.") 
+            (Error 240, Line 2, Col 1, Line 6, Col 28, "The signature file 'Test' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
+        ]
+        
+    [<Fact>]
     let ``Error in signature file with not implementation file with abstract methods when reusing parameters`` () =
         let encodeFsi =
             Fsi """
