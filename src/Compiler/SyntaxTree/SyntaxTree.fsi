@@ -1231,6 +1231,8 @@ type SynMemberFlags =
         Trivia: SynMemberFlagsTrivia
     }
 
+    member IsConstructor: bool
+
 /// Note the member kind is actually computed partially by a syntax tree transformation in tc.fs
 [<StructuralEquality; NoComparison; RequireQualifiedAccess>]
 type SynMemberKind =

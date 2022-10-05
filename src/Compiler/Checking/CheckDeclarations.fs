@@ -381,58 +381,6 @@ exception NotUpperCaseConstructor of range: range
 
 exception NotUpperCaseConstructorWithoutRQA of range: range
 
-let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: Ident) = 
-    // type names '[]' etc. are used in fslib
-    if not g.compilingFSharpCore && id.idText.IndexOfAny IllegalCharactersInTypeAndNamespaceNames <> -1 then 
-        errorR(Error(FSComp.SR.tcInvalidNamespaceModuleTypeUnionName(), id.idRange))
-        
-let CheckDuplicatesArgNames (synVal: SynValSig) m =
-    let argNames =
-        synVal.SynInfo.ArgNames
-        |> List.countBy id
-        |> List.filter (fun (_, count) -> count > 1)
-        |> List.map fst
-    for name in argNames do
-        errorR(Error((FSComp.SR.chkDuplicatedMethodParameter(name), m)))
-        
-let CheckDuplicateMemberNames (typeInfo: SynComponentInfo) (synMembersSig: SynMemberSig list) m=
-    let (SynComponentInfo(longId = longId)) = typeInfo
-    let synMembers =
-        synMembersSig
-        |> List.choose(fun sms ->
-            match sms with
-            | SynMemberSig.Member(memberSig = synValSig) ->
-                 match synValSig with
-                 | SynValSig(ident = SynIdent(ident, _)) ->
-                     Some ident.idText
-            | _ -> None)
-        
-    let memberNames =
-        synMembers
-        |> List.countBy id
-        |> List.filter (fun (_, count) -> count > 1)
-        |> List.map fst
-        
-    let typeName =
-        longId
-        |> List.tryHead
-        |> Option.map(fun ident -> ident.idText)
-        |> Option.defaultValue ""
-        
-    for name in memberNames do
-        errorR(Error((FSComp.SR.chkDuplicateMethod(name, typeName), m)))
-
-let CheckDuplicatesAbstractMethodParmsSig (typeSpecs:  SynTypeDefnSig list) =
-    for SynTypeDefnSig(typeInfo= typeInfo; typeRepr= trepr) in typeSpecs do 
-        match trepr with 
-        | SynTypeDefnSigRepr.ObjectModel(_, synMemberSigs, _) ->
-         for sms in synMemberSigs do
-             match sms with
-             | SynMemberSig.Member(synValSig, _, m) ->
-                CheckDuplicatesArgNames synValSig m
-                CheckDuplicateMemberNames typeInfo synMemberSigs m
-             | _ -> ()
-        | _ -> ()
 
 let CheckDuplicates (idf: _ -> Ident) k elems = 
     elems |> List.iteri (fun i uc1 -> 
@@ -443,6 +391,43 @@ let CheckDuplicates (idf: _ -> Ident) k elems =
                 errorR (Duplicate(k, id1.idText, id1.idRange))))
     elems
 
+let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: Ident) = 
+    // type names '[]' etc. are used in fslib
+    if not g.compilingFSharpCore && id.idText.IndexOfAny IllegalCharactersInTypeAndNamespaceNames <> -1 then 
+        errorR(Error(FSComp.SR.tcInvalidNamespaceModuleTypeUnionName(), id.idRange))
+        
+let CheckDuplicatesArgNames (synVal: SynValSig) m =
+    let argNames = synVal.SynInfo.ArgNames |> List.duplicates
+    for name in argNames do
+        errorR(Error((FSComp.SR.chkDuplicatedMethodParameter(name), m)))
+        
+let CheckDuplicateMemberNames (synMembersSig: SynMemberSig list) =
+    let synValSig =
+        synMembersSig
+        |> List.choose(
+            fun synMember ->
+                match synMember with
+                | SynMemberSig.Member(synValSig, synMemberFlags, _)
+                    when not synMemberFlags.IsConstructor -> Some(synValSig)
+                |_ -> None)
+        
+    let memberNames =
+        synValSig
+        |> List.choose(function SynValSig(ident = SynIdent(ident, _)) -> Some(ident))
+        
+    memberNames |> CheckDuplicates id "member" |> ignore
+
+let CheckDuplicatesAbstractMethodParmsSig (typeSpecs:  SynTypeDefnSig list) =
+    for SynTypeDefnSig(typeRepr= trepr) in typeSpecs do
+        match trepr with 
+        | SynTypeDefnSigRepr.ObjectModel(_, synMemberSigs, _) ->
+            CheckDuplicateMemberNames synMemberSigs
+            for sms in synMemberSigs do
+                 match sms with
+                 | SynMemberSig.Member(synValSig, _, m) ->
+                    CheckDuplicatesArgNames synValSig m
+                 | _ -> ()
+        | _ -> ()
 
 module TcRecdUnionAndEnumDeclarations =
 

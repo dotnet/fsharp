@@ -1079,6 +1079,10 @@ type SynMemberFlags =
 
         Trivia: SynMemberFlagsTrivia
     }
+    
+    member this.IsConstructor =
+        this.MemberKind = SynMemberKind.Constructor
+        || this.MemberKind = SynMemberKind.ClassConstructor
 
     override this.Equals other =
         match other with

@@ -435,6 +435,8 @@ module MethodsAndProperties =
 namespace Foo
 [<Class>]
 type FSharpMemberOrFunctionOrValue =
+    new : unit -> int
+    new : int -> string
     member IsFunction: bool
     member IsFunction: bool
     """
@@ -442,9 +444,8 @@ type FSharpMemberOrFunctionOrValue =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 438, Line 5, Col 5, Line 5, Col 28, "Duplicate method. The method 'IsFunction' has the same name and signature as another method in type 'FSharpMemberOrFunctionOrValue'.")
-            (Error 438, Line 6, Col 5, Line 6, Col 28, "Duplicate method. The method 'IsFunction' has the same name and signature as another method in type 'FSharpMemberOrFunctionOrValue'.") 
-            (Error 240, Line 2, Col 1, Line 6, Col 28, "The signature file 'Test' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
+            (Error 37, Line 7, Col 12, Line 7, Col 22, "Two members called 'IsFunction' have the same signature")
+            (Error 240, Line 2, Col 1, Line 8, Col 28, "The signature file 'Test' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
         ]
         
     [<Fact>]
