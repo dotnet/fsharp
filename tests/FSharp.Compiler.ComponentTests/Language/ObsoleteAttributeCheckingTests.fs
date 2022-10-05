@@ -205,7 +205,77 @@ C.Update()
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 9, Col 1, Line 9, Col 9, "This construct is deprecated. Use B instead")
-        ]  
+        ]
+        
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used on a struct du and invocation`` () =
+        Fsx """
+open System
+[<Struct>]
+[<Obsolete("Use B instead", true)>]
+type Color =
+    | Red 
+    | Green
+    
+let c = Color.Red
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 9, Line 9, Col 14, "This construct is deprecated. Use B instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used on a du and invocation`` () =
+        Fsx """
+open System
+[<Obsolete("Use B instead", true)>]
+type Color =
+    | Red 
+    | Green
+    
+let c = Color.Red
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 8, Col 9, Line 8, Col 14, "This construct is deprecated. Use B instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used on a du field and invocation`` () =
+        Fsx """
+open System
+type Color =
+    | [<Obsolete("Use B instead", true)>] Red 
+    | Green
+    
+let c = Color.Red
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 7, Col 9, Line 7, Col 18, "This construct is deprecated. Use B instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used on a du field and invocation`` () =
+        Fsx """
+open System
+type Color =
+    | [<Obsolete("Use B instead")>] Red 
+    | Green
+    
+let c = Color.Red
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 7, Col 9, Line 7, Col 18, "This construct is deprecated. Use B instead")
+        ]
 
     [<Fact>]
     let ``Obsolete attribute error is taken into account when used on an enum and invocation`` () =
@@ -917,6 +987,7 @@ Class.ObsoleteEvent |> ignore
             (Warning 44, Line 3, Col 1, Line 3, Col 20, "This construct is deprecated. Field is obsolete");
             (Warning 44, Line 4, Col 1, Line 4, Col 21, "This construct is deprecated. Method is obsolete");
             (Warning 44, Line 5, Col 1, Line 5, Col 23, "This construct is deprecated. Property is obsolete")
+            (Warning 44, Line 6, Col 1, Line 6, Col 20, "This construct is deprecated. Event is obsolete")
         ]
 
     [<Fact>]
@@ -955,4 +1026,5 @@ Class.ObsoleteEvent |> ignore
             (Error 101, Line 3, Col 1, Line 3, Col 20, "This construct is deprecated. Field is obsolete");
             (Error 101, Line 4, Col 1, Line 4, Col 21, "This construct is deprecated. Method is obsolete");
             (Error 101, Line 5, Col 1, Line 5, Col 23, "This construct is deprecated. Property is obsolete")
+            (Error 101, Line 6, Col 1, Line 6, Col 20, "This construct is deprecated. Event is obsolete")
         ]
