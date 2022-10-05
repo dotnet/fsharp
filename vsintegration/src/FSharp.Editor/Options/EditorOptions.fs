@@ -77,13 +77,11 @@ type LanguageServicePerformanceOptions =
 [<CLIMutable>]
 type CodeLensOptions =
   { Enabled : bool
-    ReplaceWithLineLens: bool
     UseColors: bool
     Prefix : string }
     static member Default =
       { Enabled = false
         UseColors = false
-        ReplaceWithLineLens = true
         Prefix = "// " }
 
 [<CLIMutable>]
