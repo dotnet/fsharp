@@ -1621,7 +1621,7 @@ module MutRecBindingChecking =
         defnsEs, envMutRec
 
 /// Check and generalize the interface implementations, members, 'let' definitions in a mutually recursive group of definitions.
-let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (envMutRec: TcEnv) (mutRecDefns: MutRecDefnsPhase2Data) =     
+let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (envMutRec: TcEnv) (mutRecDefns: MutRecDefnsPhase2Data) skipExternalAugmWarning =     
     let g = cenv.g
     let interfacesFromTypeDefn envForTycon tyconMembersData = 
         let (MutRecDefnsPhase2DataForTycon(_, _, declKind, tcref, _, _, declaredTyconTypars, members, _, _, _)) = tyconMembersData
@@ -1651,9 +1651,9 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
                       (generatedHashAndEqualsWithComparerValues && typeEquiv g intfTyR g.mk_IStructuralEquatable_ty) then
                       errorR(Error(FSComp.SR.tcDefaultImplementationForInterfaceHasAlreadyBeenAdded(), intfTy.Range))
            
-                  match mutRecNSInfo, overridesOK with
-                  | _, OverridesOK | Some(_,_), WarnOnOverrides -> ()
-                  | None, WarnOnOverrides -> warning(IntfImplInIntrinsicAugmentation(intfTy.Range))
+                  match skipExternalAugmWarning, overridesOK with
+                  | _, OverridesOK | true, WarnOnOverrides -> ()
+                  | false, WarnOnOverrides -> warning(IntfImplInIntrinsicAugmentation(intfTy.Range))
                   | _, ErrorOnOverrides -> errorR(IntfImplInExtrinsicAugmentation(intfTy.Range))
                 
                   match defnOpt with 
@@ -2256,7 +2256,7 @@ module TcExceptionDeclarations =
         let envMutRec = AddLocalExnDefnAndReport cenv.tcSink scopem (AddLocalTycons g cenv.amap scopem [exnc] envInitial) exnc 
 
         let defns = [MutRecShape.Tycon(MutRecDefnsPhase2DataForTycon(Some exnc, parent, ModuleOrMemberBinding, mkLocalEntityRef exnc, None, NoSafeInitInfo, [], aug, m, NoNewSlots, (fun () -> ())))]
-        let binds2, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem None envMutRec defns
+        let binds2, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem None envMutRec defns true
         let binds2flat = binds2 |> MutRecShapes.collectTycons |> List.collect snd
         // Augment types with references to values that implement the pre-baked semantics of the type
         let binds3 = AddAugmentationDeclarations.AddGenericEqualityBindings cenv envFinal exnc
@@ -4140,7 +4140,7 @@ module TcDeclarations =
     //-------------------------------------------------------------------------
 
     /// Bind a collection of mutually recursive definitions in an implementation file
-    let TcMutRecDefinitions (cenv: cenv) envInitial parent typeNames tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecDefnsInitialData) =
+    let TcMutRecDefinitions (cenv: cenv) envInitial parent typeNames tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecDefnsInitialData) skipExternalAugmWarning =
 
         let g = cenv.g
 
@@ -4194,7 +4194,7 @@ module TcDeclarations =
                        cenv true scopem m 
 
         // Check the members and decide on representations for types with implicit constructors.
-        let withBindings, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem mutRecNSInfo envMutRecPrelimWithReprs withEnvs
+        let withBindings, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem mutRecNSInfo envMutRecPrelimWithReprs withEnvs skipExternalAugmWarning
 
         // Generate the hash/compare/equality bindings for all tycons.
         //
@@ -4650,7 +4650,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
       | SynModuleDecl.Types (typeDefs, m) -> 
           let scopem = unionRanges m scopem
           let mutRecDefns = typeDefs |> List.map MutRecShape.Tycon
-          let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv env parent typeNames tpenv m scopem None mutRecDefns
+          let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv env parent typeNames tpenv m scopem None mutRecDefns false
           // Check the non-escaping condition as we build the expression on the way back up 
           let defn = TcMutRecDefsFinish cenv mutRecDefnsChecked m
           let escapeCheck () = 
@@ -4701,7 +4701,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           // Treat 'module rec M = ...' as a single mutually recursive definition group 'module M = ...'
           if isRec then 
               assert (not isContinuingModule)
-              let modDecl = SynModuleDecl.NestedModule(compInfo, false, moduleDefs, isContinuingModule, m, trivia)
+              let modDecl = SynModuleDecl.NestedModule(compInfo, false, moduleDefs, isContinuingModule, m, trivia)            
               return! TcModuleOrNamespaceElementsMutRec cenv parent typeNames m env None [modDecl]
           else
               let (SynComponentInfo(Attributes attribs, _, _, longPath, xml, _, vis, im)) = compInfo
@@ -4903,7 +4903,7 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
       loop (match parent with ParentNone -> true | Parent _ -> false) m [] defs
 
     let tpenv = emptyUnscopedTyparEnv 
-    let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv envInitial parent typeNames tpenv m scopem mutRecNSInfo mutRecDefns 
+    let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv envInitial parent typeNames tpenv m scopem mutRecNSInfo mutRecDefns true
 
     // Check the assembly attributes
     let attrs, _ = TcAttributesWithPossibleTargets false cenv envAfter AttributeTargets.Top synAttrs
