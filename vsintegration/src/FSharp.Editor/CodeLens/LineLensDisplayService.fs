@@ -16,23 +16,16 @@ type internal LineLensDisplayService (view, buffer) =
     /// Layouts all stack panels on the line
     override self.LayoutUIElementOnLine _ (line:ITextViewLine) (ui:Grid) =
         let left, top = 
-            match self.UiElementNeighbour.TryGetValue ui with
-            | true, parent -> 
-                let left = Canvas.GetLeft parent
-                let top = Canvas.GetTop parent
-                let width = parent.ActualWidth
-                left + width, top
-            | _ -> 
-                try
-                    let bounds = line.GetCharacterBounds(line.Start)
-                    line.TextRight + 5.0, bounds.Top - 1.
-                with e ->
+            try
+                let bounds = line.GetCharacterBounds(line.Start)
+                line.TextRight + 5.0, bounds.Top - 1.
+            with e ->
 #if DEBUG
-                    logExceptionWithContext (e, "Error in layout ui element on line")
+                logExceptionWithContext (e, "Error in layout ui element on line")
 #else
-                    ignore e
+                ignore e
 #endif
-                    Canvas.GetLeft ui, Canvas.GetTop ui
+                Canvas.GetLeft ui, Canvas.GetTop ui
         Canvas.SetLeft(ui, left)
         Canvas.SetTop(ui, top)
 

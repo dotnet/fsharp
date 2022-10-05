@@ -63,12 +63,16 @@ type LanguageServicePerformanceOptions =
     { EnableInMemoryCrossProjectReferences: bool
       AllowStaleCompletionResults: bool
       TimeUntilStaleCompletion: int
-      ProjectCheckCacheSize: int }
+      ProjectCheckCacheSize: int
+      EnableParallelCheckingWithSignatureFiles: bool
+      EnableParallelReferenceResolution: bool }
     static member Default =
       { EnableInMemoryCrossProjectReferences = true
         AllowStaleCompletionResults = true
         TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
-        ProjectCheckCacheSize = 200 }
+        ProjectCheckCacheSize = 200
+        EnableParallelCheckingWithSignatureFiles = false
+        EnableParallelReferenceResolution = false }
 
 [<CLIMutable>]
 type CodeLensOptions =
