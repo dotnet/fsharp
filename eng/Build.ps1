@@ -44,7 +44,7 @@ param (
     [switch]$procdump,
     [switch]$deployExtensions,
     [switch]$prepareMachine,
-    [switch]$useGlobalNuGetCache = $true,
+    [switch]$useGlobalNuGetCache = $false,
     [switch]$warnAsError = $true,
     [switch][Alias('test')]$testDesktop,
     [switch]$testCoreClr,
