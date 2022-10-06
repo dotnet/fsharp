@@ -581,7 +581,7 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> ifPosInRange r (fun _ -> List.tryPick (walkSynModuleDecl isTopLevel) decls))
 
         and walkAttribute (attr: SynAttribute) =
-            if isPosInRange attr.Range then
+            if isPosInRange attr.TypeName.Range then
                 Some EntityKind.Attribute
             else
                 None
