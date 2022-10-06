@@ -17,9 +17,9 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 8, Col 5, Line 8, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
-            (Error 501, Line 9, Col 5, Line 9, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 28, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 31, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 9, Col 5, Line 9, Col 29, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test02.fs SCFLAGS="--test:ErrorRanges"        # Test02.fs
@@ -30,9 +30,9 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 8, Col 5, Line 8, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 9, Col 5, Line 9, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
-            (Error 501, Line 10, Col 5, Line 10, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 28, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 9, Col 5, Line 9, Col 31, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 10, Col 5, Line 10, Col 30, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test03.fs SCFLAGS="--test:ErrorRanges"        # Test03.fs
@@ -43,8 +43,8 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 8, Col 5, Line 8, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 28, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 31, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
         ]
 
     // SOURCE=Test04.fs SCFLAGS="--test:ErrorRanges"        # Test04.fs
@@ -55,9 +55,9 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 8, Col 5, Line 8, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
-            (Error 501, Line 9, Col 5, Line 9, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 28, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 32, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 9, Col 5, Line 9, Col 29, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test05.fs SCFLAGS="--test:ErrorRanges"        # Test05.fs
@@ -68,9 +68,9 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 8, Col 5, Line 8, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
-            (Error 501, Line 9, Col 5, Line 9, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 28, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 32, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 9, Col 5, Line 9, Col 30, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test06.fs SCFLAGS="--test:ErrorRanges"        # Test06.fs
@@ -81,8 +81,8 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 8, Col 5, Line 8, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 28, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 32, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
         ]
 
     // SOURCE=Test07.fs SCFLAGS="--test:ErrorRanges"        # Test07.fs
@@ -93,8 +93,8 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 9, Col 5, Line 9, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 28, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 9, Col 5, Line 9, Col 29, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test08.fs SCFLAGS="--test:ErrorRanges"        # Test08.fs
@@ -105,8 +105,8 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 9, Col 5, Line 9, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 28, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 9, Col 5, Line 9, Col 30, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test09.fs SCFLAGS="--test:ErrorRanges"        # Test09.fs
@@ -117,7 +117,7 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 6, Col 5, Line 6, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 6, Col 5, Line 6, Col 28, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
         ]
 
     // SOURCE=Test10.fs SCFLAGS="--test:ErrorRanges"        # Test10.fs
@@ -128,9 +128,9 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 8, Col 5, Line 8, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 9, Col 5, Line 9, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
-            (Error 501, Line 10, Col 5, Line 10, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 29, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 9, Col 5, Line 9, Col 31, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 10, Col 5, Line 10, Col 29, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test11.fs SCFLAGS="--test:ErrorRanges"        # Test11.fs
@@ -141,9 +141,9 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 8, Col 5, Line 8, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 9, Col 5, Line 9, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
-            (Error 501, Line 10, Col 5, Line 10, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 29, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 9, Col 5, Line 9, Col 31, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 10, Col 5, Line 10, Col 30, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test12.fs SCFLAGS="--test:ErrorRanges"        # Test12.fs
@@ -154,8 +154,8 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 8, Col 5, Line 8, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 29, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 31, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
         ]
 
     // SOURCE=Test13.fs SCFLAGS="--test:ErrorRanges"        # Test13.fs
@@ -166,9 +166,9 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 8, Col 5, Line 8, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
-            (Error 501, Line 9, Col 5, Line 9, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 29, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 32, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 9, Col 5, Line 9, Col 29, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test14.fs SCFLAGS="--test:ErrorRanges"        # Test14.fs
@@ -179,9 +179,9 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 9, Col 5, Line 9, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 10, Col 5, Line 10, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
-            (Error 501, Line 11, Col 5, Line 11, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 9, Col 5, Line 9, Col 29, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 10, Col 5, Line 10, Col 32, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 11, Col 5, Line 11, Col 30, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test15.fs SCFLAGS="--test:ErrorRanges"        # Test15.fs
@@ -192,8 +192,8 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 8, Col 5, Line 8, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 29, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 32, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
         ]
 
     // SOURCE=Test16.fs SCFLAGS="--test:ErrorRanges"        # Test16.fs
@@ -204,8 +204,8 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 9, Col 5, Line 9, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 29, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 9, Col 5, Line 9, Col 29, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test17.fs SCFLAGS="--test:ErrorRanges"        # Test17.fs
@@ -216,8 +216,8 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 6, Col 5, Line 6, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
-            (Error 501, Line 8, Col 5, Line 8, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 6, Col 5, Line 6, Col 29, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 30, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test18.fs SCFLAGS="--test:ErrorRanges"        # Test18.fs
@@ -228,7 +228,7 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 6, Col 5, Line 6, Col 22, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
+            (Error 501, Line 6, Col 5, Line 6, Col 29, "The object constructor 'ReferenceEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> ReferenceEqualityAttribute'.")
         ]
 
     // SOURCE=Test19.fs SCFLAGS="--test:ErrorRanges"        # Test19.fs
@@ -239,8 +239,8 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
-            (Error 501, Line 8, Col 5, Line 8, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 31, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 29, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test20.fs SCFLAGS="--test:ErrorRanges"        # Test20.fs
@@ -251,8 +251,8 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
-            (Error 501, Line 8, Col 5, Line 8, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 31, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 30, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test21.fs SCFLAGS="--test:ErrorRanges"        # Test21.fs
@@ -263,7 +263,7 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 6, Col 5, Line 6, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 6, Col 5, Line 6, Col 31, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
         ]
 
     // SOURCE=Test22.fs SCFLAGS="--test:ErrorRanges"        # Test22.fs
@@ -274,8 +274,8 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
-            (Error 501, Line 8, Col 5, Line 8, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 32, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 8, Col 5, Line 8, Col 29, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test23.fs SCFLAGS="--test:ErrorRanges"        # Test23.fs
@@ -286,8 +286,8 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 9, Col 5, Line 9, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
-            (Error 501, Line 10, Col 5, Line 10, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 9, Col 5, Line 9, Col 32, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 10, Col 5, Line 10, Col 30, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test24.fs SCFLAGS="--test:ErrorRanges"        # Test24.fs
@@ -298,7 +298,7 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 6, Col 5, Line 6, Col 25, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
+            (Error 501, Line 6, Col 5, Line 6, Col 32, "The object constructor 'StructuralComparisonAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralComparisonAttribute'.")
         ]
 
     // SOURCE=Test25.fs SCFLAGS="--test:ErrorRanges"        # Test25.fs
@@ -309,7 +309,7 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 29, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test26.fs SCFLAGS="--test:ErrorRanges"        # Test26.fs
@@ -320,7 +320,7 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 5, Line 7, Col 23, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 7, Col 5, Line 7, Col 30, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
     // SOURCE=Test27.fs SCFLAGS="--test:ErrorRanges"        # Test27.fs
@@ -340,7 +340,7 @@ module Legacy =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 501, Line 7, Col 3, Line 7, Col 21, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
+            (Error 501, Line 7, Col 3, Line 7, Col 28, "The object constructor 'StructuralEqualityAttribute' takes 0 argument(s) but is here given 1. The required signature is 'new: unit -> StructuralEqualityAttribute'.")
         ]
 
 
