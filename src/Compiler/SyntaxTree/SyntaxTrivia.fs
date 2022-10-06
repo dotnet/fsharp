@@ -123,6 +123,9 @@ type SynUnionCaseTrivia = { BarRange: range option }
 type SynPatOrTrivia = { BarRange: range }
 
 [<NoEquality; NoComparison>]
+type SynPatListConsTrivia = { ColonColonRange: range }
+
+[<NoEquality; NoComparison>]
 type SynTypeDefnTrivia =
     {
         TypeKeyword: range option
@@ -156,12 +159,14 @@ type SynTypeDefnSigTrivia =
 type SynBindingTrivia =
     {
         LetKeyword: range option
+        ExternKeyword: range option
         EqualsRange: range option
     }
 
     static member Zero: SynBindingTrivia =
         {
             LetKeyword = None
+            ExternKeyword = None
             EqualsRange = None
         }
 

@@ -295,15 +295,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Number of projects whose data is cached in memory.
-        /// </summary>
-        public static string Project_check_cache_size {
-            get {
-                return ResourceManager.GetString("Project_check_cache_size", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to F# Project and Caching Performance Options.
         /// </summary>
         public static string Project_Performance {
@@ -417,15 +408,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Tooltip_in_memory_cross_project_references {
             get {
                 return ResourceManager.GetString("Tooltip_in_memory_cross_project_references", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions..
-        /// </summary>
-        public static string Tooltip_project_check_cache_size {
-            get {
-                return ResourceManager.GetString("Tooltip_project_check_cache_size", resourceCulture);
             }
         }
         

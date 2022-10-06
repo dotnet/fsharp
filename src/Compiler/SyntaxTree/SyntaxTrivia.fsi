@@ -199,6 +199,14 @@ type SynPatOrTrivia =
         BarRange: range
     }
 
+/// Represents additional information for SynPat.Cons
+[<NoEquality; NoComparison>]
+type SynPatListConsTrivia =
+    {
+        /// The syntax range of the `::` token.
+        ColonColonRange: range
+    }
+
 /// Represents additional information for SynTypeDefn
 [<NoEquality; NoComparison>]
 type SynTypeDefnTrivia =
@@ -237,6 +245,9 @@ type SynBindingTrivia =
     {
         /// The syntax range of the `let` keyword.
         LetKeyword: range option
+
+        /// The syntax range of the `extern` keyword.
+        ExternKeyword: range option
 
         /// The syntax range of the `=` token.
         EqualsRange: range option
