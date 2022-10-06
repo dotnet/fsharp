@@ -438,6 +438,11 @@ type ILTypeInfo =
 
     member x.IsValueType = x.RawMetadata.IsStructOrEnum
 
+    /// Indicates if the type is marked with the [<IsReadOnly>] attribute.
+    member x.IsReadOnly (g: TcGlobals) =
+        x.RawMetadata.CustomAttrs
+        |> TryFindILAttribute g.attrib_IsReadOnlyAttribute
+
     member x.Instantiate inst =
         let (ILTypeInfo(g, ty, tref, tdef)) = x
         ILTypeInfo(g, instType inst ty, tref, tdef)
@@ -993,15 +998,22 @@ type MethInfo =
     member x.IsStruct =
         isStructTy x.TcGlobals x.ApparentEnclosingType
 
-    /// Indicates if this method is read-only; usually by the [<IsReadOnly>] attribute.
+    member x.IsOnReadOnlyType = 
+        let g = x.TcGlobals
+        let typeInfo = ILTypeInfo.FromType g x.ApparentEnclosingType
+        typeInfo.IsReadOnly g
+
+    /// Indicates if this method is read-only; usually by the [<IsReadOnly>] attribute on method or struct level.
     /// Must be an instance method.
     /// Receiver must be a struct type.
     member x.IsReadOnly =
-        // Perf Review: Is there a way we can cache this result?
+        // Perf Review: Is there a way we can cache this result?        
+
         x.IsInstance &&
         x.IsStruct &&
         match x with
-        | ILMeth (g, ilMethInfo, _) -> ilMethInfo.IsReadOnly g
+        | ILMeth (g, ilMethInfo, _) -> 
+             ilMethInfo.IsReadOnly g || x.IsOnReadOnlyType
         | FSMeth _ -> false // F# defined methods not supported yet. Must be a language feature.
         | _ -> false
 
@@ -2263,6 +2275,12 @@ type EventInfo =
         | ProvidedEvent (_, ei, _) -> ProvidedEventInfo.TaintedGetHashCode ei
 #endif
     override x.ToString() = "event " + x.EventName
+    
+    /// Get custom attributes for events (only applicable for IL events)
+    member x.GetCustomAttrs() =
+        match x with
+        | ILEvent(ILEventInfo(_, ilEventDef))-> ilEventDef.CustomAttrs
+        | _ -> ILAttributes.Empty
 
 //-------------------------------------------------------------------------
 // Helpers associated with getting and comparing method signatures
