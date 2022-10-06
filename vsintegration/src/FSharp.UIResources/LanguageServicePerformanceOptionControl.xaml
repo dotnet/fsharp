@@ -23,27 +23,6 @@
                                   IsChecked="{Binding EnableInMemoryCrossProjectReferences}"
                                   Content="{x:Static local:Strings.Enable_in_memory_cross_project_references}"
                                   ToolTip="{x:Static local:Strings.Tooltip_in_memory_cross_project_references}"/>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="auto"/>
-                                <ColumnDefinition Width="70" />
-                            </Grid.ColumnDefinitions>
-                            <Label Grid.Column="0"
-                                   x:Name="projectCheckCacheSizeLabel"
-                                   Content="{x:Static local:Strings.Project_check_cache_size}"
-                                   ToolTip="{x:Static local:Strings.Tooltip_project_check_cache_size}"/>
-                            <TextBox Grid.Column="1" 
-                                     HorizontalContentAlignment="Right" 
-                                     VerticalContentAlignment="Center">
-                                <TextBox.Text>
-                                    <Binding UpdateSourceTrigger="PropertyChanged" Path="ProjectCheckCacheSize">
-                                        <Binding.ValidationRules>
-                                            <local:IntegerRangeValidationRule Min="1" Max="1000" />
-                                        </Binding.ValidationRules>
-                                    </Binding>
-                                </TextBox.Text>
-                            </TextBox>
-                        </Grid>
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Header="{x:Static local:Strings.IntelliSense_Performance}">
