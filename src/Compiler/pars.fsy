@@ -1561,18 +1561,23 @@ attributeListElements:
 attribute:
   /* A custom attribute */
   | path opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
-     { let arg = match $3 with None -> mkSynUnit $1.Range | Some e -> e 
-       ({ TypeName=$1; ArgExpr=arg; Target=None; AppliesToGetterAndSetter=false; Range=$1.Range } : SynAttribute) }
+     { let arg = match $3 with None -> mkSynUnit $1.Range | Some e -> e
+       let m = unionRanges  $1.Range arg.Range
+       ({ TypeName=$1; ArgExpr=arg; Target=None; AppliesToGetterAndSetter=false; Range=m } : SynAttribute) }
 
   /* A custom attribute with an attribute target */
   | attributeTarget path opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
-     { let arg = match $4 with None -> mkSynUnit $2.Range | Some e -> e 
-       ({ TypeName=$2; ArgExpr=arg; Target=$1; AppliesToGetterAndSetter=false; Range=$2.Range } : SynAttribute) }
+     { let arg = match $4 with None -> mkSynUnit $2.Range | Some e -> e
+       let startRange = match $1 with Some (ident:Ident) -> ident.idRange | None -> $2.Range
+       let m = unionRanges startRange arg.Range
+       ({ TypeName=$2; ArgExpr=arg; Target=$1; AppliesToGetterAndSetter=false; Range=m } : SynAttribute) }
 
   /* A custom attribute with an attribute target */
   | attributeTarget OBLOCKBEGIN path oblockend opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
      { let arg = match $6 with None -> mkSynUnit $3.Range | Some e -> e 
-       ({ TypeName=$3; ArgExpr=arg; Target=$1; AppliesToGetterAndSetter=false; Range=$3.Range } : SynAttribute) }
+       let startRange = match $1 with Some ident -> ident.idRange | None -> $3.Range
+       let m = unionRanges startRange arg.Range
+       ({ TypeName=$3; ArgExpr=arg; Target=$1; AppliesToGetterAndSetter=false; Range=m } : SynAttribute) }
 
 
 /* The target of a custom attribute */
@@ -1863,7 +1868,7 @@ memberCore:
             let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
             let memberFlags = Some (memFlagsBuilder SynMemberKind.Member)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
-            let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = Some mEquals }
+            let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = Some mEquals; ExternKeyword = None }
             let binding = mkSynBinding (xmlDoc, bindingPat) (vis, $1, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, $5, mRhs, [], attrs, memberFlags, trivia)
             let memberRange = unionRanges rangeStart mRhs |> unionRangeWithXmlDoc xmlDoc
             [ SynMemberDefn.Member (binding, memberRange) ]) }
@@ -1980,7 +1985,7 @@ classDefnMember:
         let declPat = SynPat.LongIdent (SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
         // Check that 'SynPatForConstructorDecl' matches this correctly
         assert (match declPat with SynPatForConstructorDecl _ -> true | _ -> false)
-        let synBindingTrivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = Some mEquals }
+        let synBindingTrivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = Some mEquals; ExternKeyword = None }
         [ SynMemberDefn.Member(SynBinding (None, SynBindingKind.Normal, false, false, $1, xmlDoc, valSynData, declPat, None, expr, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, synBindingTrivia), m) ] }
         
   | opt_attributes opt_declVisibility STATIC typeKeyword tyconDefn 
@@ -2738,7 +2743,8 @@ hardwhiteDefnBindingsTerminator:
 /* An 'extern' DllImport function definition in C-style syntax */
 cPrototype: 
   | EXTERN cRetType opt_access ident opt_HIGH_PRECEDENCE_APP LPAREN externArgs rparen 
-      { let rty, vis, nm, args  = $2, $3, $4, $7
+      { let mExtern = rhs parseState 1 
+        let rty, vis, nm, args  = $2, $3, $4, $7
         let nmm = rhs parseState 3 
         let argsm = rhs parseState 6 
         let mBindLhs = lhs parseState
@@ -2755,10 +2761,11 @@ cPrototype:
             let bindingPat = SynPat.LongIdent (SynLongIdent([nm], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let xmlDoc = grabXmlDoc(parseState, attrs, 1)
+            let trivia = { LetKeyword = None; ExternKeyword = Some mExtern; EqualsRange = None }
             let binding =
                 mkSynBinding 
                     (xmlDoc, bindingPat) 
-                    (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None, SynBindingTrivia.Zero)
+                    (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None, trivia)
             [], [binding]) }
 
 /* A list of arguments in an 'extern' DllImport function definition */
@@ -2877,7 +2884,7 @@ localBinding:
             let mWhole = (unionRanges mLetKwd mRhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let spBind = if IsDebugPointBinding bindingPat expr then DebugPointAtBinding.Yes mWhole else DebugPointAtBinding.NoneAtLet
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
-            let trivia: SynBindingTrivia = { LetKeyword = Some mLetKwd; EqualsRange = Some mEquals }
+            let trivia: SynBindingTrivia = { LetKeyword = Some mLetKwd; EqualsRange = Some mEquals; ExternKeyword = None }
             mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mWholeBindLhs, spBind, optReturnType, expr, mRhs, opts, attrs, None, trivia))
         localBindingRange, localBindingBuilder }
 
@@ -2892,7 +2899,7 @@ localBinding:
             let zeroWidthAtEnd = mEquals.EndRange
             let rhsExpr = arbExpr("localBinding1", zeroWidthAtEnd)
             let spBind = if IsDebugPointBinding bindingPat rhsExpr then DebugPointAtBinding.Yes mWhole else DebugPointAtBinding.NoneAtLet
-            let trivia: SynBindingTrivia = { LetKeyword = Some mLetKwd; EqualsRange = Some mEquals }
+            let trivia: SynBindingTrivia = { LetKeyword = Some mLetKwd; EqualsRange = Some mEquals; ExternKeyword = None }
             mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mBindLhs, spBind, optReturnType, rhsExpr, mRhs, [], attrs, None, trivia))
         mWhole, localBindingBuilder }
 
@@ -2905,7 +2912,7 @@ localBinding:
         let localBindingBuilder = 
           (fun xmlDoc attrs vis mLetKwd ->
             let spBind = DebugPointAtBinding.Yes (unionRanges mLetKwd mRhs)
-            let trivia = { LetKeyword = Some mLetKwd; EqualsRange = None }
+            let trivia = { LetKeyword = Some mLetKwd; EqualsRange = None; ExternKeyword = None }
             let rhsExpr = arbExpr("localBinding2", mRhs)
             mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mBindLhs, spBind, optReturnType, rhsExpr, mRhs, [], attrs, None, trivia))
         mWhole, localBindingBuilder }
@@ -3124,10 +3131,13 @@ headBindingPattern:
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
   | headBindingPattern COLON_COLON  headBindingPattern 
-      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [ Some (IdentTrivia.OriginalNotation "::") ]), None, None, SynArgPats.Pats [SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3)], None, lhs parseState) }
+      { let mColonColon = rhs parseState 2
+        SynPat.ListCons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
 
-  | tuplePatternElements  %prec pat_tuple 
-      { SynPat.Tuple(false, List.rev $1, lhs parseState) }
+  | tuplePatternElements %prec pat_tuple
+      { let pats = normalizeTuplePat $1
+        let m = (rhs parseState 1, pats) ||> unionRangeWithListBy (fun p -> p.Range)
+        SynPat.Tuple(false, List.rev pats, m) }
 
   | conjPatternElements   %prec pat_conj
       { SynPat.Ands(List.rev $1, lhs parseState) }
@@ -3135,12 +3145,37 @@ headBindingPattern:
   | constrPattern 
       { $1 }
 
-tuplePatternElements: 
-  | tuplePatternElements COMMA headBindingPattern 
+tuplePatternElements:
+  | tuplePatternElements COMMA headBindingPattern
       { $3 :: $1 }
 
-  | headBindingPattern COMMA headBindingPattern 
-      { $3 :: $1 :: [] }
+  | headBindingPattern COMMA headBindingPattern
+      { [$3; $1] }
+
+  | tuplePatternElements COMMA ends_coming_soon_or_recover
+        { let commaRange = rhs parseState 2
+          reportParseErrorAt commaRange (FSComp.SR.parsExpectingPatternInTuple ())
+          let pat2 = SynPat.Wild(commaRange.EndRange)
+          pat2 :: $1 }
+
+  | headBindingPattern COMMA ends_coming_soon_or_recover
+      { let commaRange = rhs parseState 2
+        reportParseErrorAt commaRange (FSComp.SR.parsExpectingPatternInTuple ())
+        let pat2 = SynPat.Wild(commaRange.EndRange)
+        [pat2; $1] }
+
+  | COMMA headBindingPattern
+      { let commaRange = rhs parseState 1
+        reportParseErrorAt commaRange (FSComp.SR.parsExpectingPatternInTuple ())
+        let pat1 = SynPat.Wild(commaRange.StartRange)
+        [$2; pat1] }
+
+  | COMMA ends_coming_soon_or_recover
+      { let commaRange = rhs parseState 1
+        if not $2 then reportParseErrorAt commaRange (FSComp.SR.parsExpectedPatternAfterToken ())
+        let pat1 = SynPat.Wild(commaRange.StartRange)
+        let pat2 = SynPat.Wild(commaRange.EndRange)
+        [pat2; pat1] }
 
 conjPatternElements: 
   | conjPatternElements AMP headBindingPattern 
@@ -3210,7 +3245,10 @@ constrPattern:
 
 atomicPatsOrNamePatPairs:
   | LPAREN namePatPairs rparen
-      { SynArgPats.NamePatPairs $2, snd $2 }
+      { let mParen = rhs2 parseState 1 3
+        let pats, m = $2
+        let trivia = { ParenRange = mParen } 
+        SynArgPats.NamePatPairs(pats, m, trivia), snd $2 }
 
   | atomicPatterns
       { let mParsed = rhs parseState 1
@@ -3351,8 +3389,10 @@ parenPattern:
       { let mBar = rhs parseState 2
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
-  | tupleParenPatternElements 
-      { SynPat.Tuple(false, List.rev $1, lhs parseState) }
+  | tupleParenPatternElements
+      { let pats = normalizeTuplePat $1
+        let m = (rhs parseState 1, pats) ||> unionRangeWithListBy (fun p -> p.Range)
+        SynPat.Tuple(false, List.rev pats, m) }
 
   | conjParenPatternElements
       { SynPat.Ands(List.rev $1, rhs2 parseState 1 3) }
@@ -3366,16 +3406,42 @@ parenPattern:
         SynPat.Attrib($2, $1, mLhs) } 
 
   | parenPattern COLON_COLON  parenPattern 
-      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [ Some (IdentTrivia.OriginalNotation "::") ]), None, None, SynArgPats.Pats [ SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3) ], None, lhs parseState) }
+      { let mColonColon = rhs parseState 2
+        SynPat.ListCons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
 
   | constrPattern { $1 }
 
 tupleParenPatternElements:
-  | tupleParenPatternElements COMMA parenPattern  
+  | tupleParenPatternElements COMMA parenPattern
       { $3 :: $1 }
 
-  | parenPattern COMMA parenPattern  
-      { $3 :: $1 :: [] }
+  | parenPattern COMMA parenPattern
+      { [$3; $1] }
+
+  | tupleParenPatternElements COMMA ends_coming_soon_or_recover
+        { let commaRange = rhs parseState 2
+          reportParseErrorAt commaRange (FSComp.SR.parsExpectingPatternInTuple())
+          let pat2 = SynPat.Wild(commaRange.EndRange)
+          pat2 :: $1 }
+
+  | parenPattern COMMA ends_coming_soon_or_recover
+      { let commaRange = rhs parseState 2
+        reportParseErrorAt commaRange (FSComp.SR.parsExpectingPatternInTuple())
+        let pat2 = SynPat.Wild(commaRange.EndRange)
+        [pat2; $1] }
+
+  | COMMA parenPattern
+      { let commaRange = rhs parseState 1
+        reportParseErrorAt commaRange (FSComp.SR.parsExpectingPatternInTuple())
+        let pat1 = SynPat.Wild(commaRange.StartRange)
+        [$2; pat1] }
+
+  | COMMA ends_coming_soon_or_recover
+      { let commaRange = rhs parseState 1
+        if not $2 then reportParseErrorAt commaRange (FSComp.SR.parsExpectedPatternAfterToken ())
+        let pat1 = SynPat.Wild(commaRange.StartRange)
+        let pat2 = SynPat.Wild(commaRange.EndRange)
+        [pat2; pat1] }
   
 conjParenPatternElements: 
   | conjParenPatternElements AMP parenPattern 

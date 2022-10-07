@@ -1009,6 +1009,9 @@ type EventInfo =
     /// Get the delegate type associated with the event.
     member GetDelegateType: amap: ImportMap * m: range -> TType
 
+    /// Get custom attributes for events (only applicable for IL events)
+    member GetCustomAttrs: unit -> ILAttributes
+
 /// An exception type used to raise an error using the old error system.
 ///
 /// Error text: "A definition to be compiled as a .NET event does not have the expected form. Only property members can be compiled as .NET events."
