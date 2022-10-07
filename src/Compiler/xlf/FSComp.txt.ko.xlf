@@ -7539,7 +7539,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
-        <target state="new">Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</target>
+        <target state="translated">상호 재귀적 바인딩과 속성 선언에 사용되며 제네릭 매개 변수의 여러 제약 조건과 함께 사용됩니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionAs">
