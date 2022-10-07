@@ -469,6 +469,7 @@ let mkSynMemberDefnGetSet
             {
                 LetKeyword = None
                 EqualsRange = mEquals
+                ExternKeyword = None
             }
 
         let binding =
@@ -543,6 +544,7 @@ let mkSynMemberDefnGetSet
                 {
                     LetKeyword = None
                     EqualsRange = mEquals
+                    ExternKeyword = None
                 }
 
             let binding =
@@ -630,6 +632,7 @@ let mkSynMemberDefnGetSet
                     {
                         LetKeyword = None
                         EqualsRange = mEquals
+                        ExternKeyword = None
                     }
 
                 let bindingOuter =
