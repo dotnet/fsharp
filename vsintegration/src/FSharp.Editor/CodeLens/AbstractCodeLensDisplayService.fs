@@ -12,7 +12,7 @@ open System.Threading
 open System.Windows
 open System.Collections.Generic
 
-type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerName) as self =
+type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer) as self =
 
     // Add buffer changed event handler
     do (
@@ -46,7 +46,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer, layerNam
     /// Text view for accessing the adornment layer.
     member val View: IWpfTextView = view
 
-    member val CodeLensLayer = view.GetAdornmentLayer layerName
+    member val CodeLensLayer = view.GetAdornmentLayer "LineLens"
 
     /// Tracks the recent first + last visible line numbers for adornment layout logic.
     member val RecentFirstVsblLineNmbr = 0 with get, set
