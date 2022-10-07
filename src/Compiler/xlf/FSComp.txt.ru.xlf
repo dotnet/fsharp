@@ -1317,11 +1317,6 @@
         <target state="translated">Не удалось разрешить сборку "{0}".</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
-        <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">Не удалось разрешить сборку "{0}", необходимую для "{1}"</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
         <source>Error opening binary file '{0}': {1}</source>
         <target state="translated">Ошибка при открытии двоичного файла "{0}": {1}</target>
