@@ -497,3 +497,38 @@ type Bar =
             |> withReferences [ fsharp ]
         
         csharp |> compile |> shouldSucceed
+
+    [<Fact>]
+    let ``Multiple top level let binding with Extension attribute`` () =
+        let fsharp =
+            FSharp """
+    module Foo
+
+    [<System.Runtime.CompilerServices.Extension>]
+    let PlusOne (a:int) = a + 1
+    
+    [<System.Runtime.CompilerServices.Extension>]
+    let MinusOne (a:int) = a - 1
+    """
+           |> withName "FSLib"
+        
+        let csharp =
+            CSharp """
+    namespace Consumer
+    {
+        using static Foo;
+
+        public class Class1
+        {
+            public Class1()
+            {
+                var meh = 1.PlusOne().MinusOne();
+            }
+        }
+    }
+    """
+
+            |> withName "CSLib"
+            |> withReferences [ fsharp ]
+        
+        csharp |> compile |> shouldSucceed
