@@ -28,12 +28,14 @@ type internal FxResolver =
 
     member GetFrameworkRefsPackDirectory: unit -> string option
 
-    member GetSystemAssemblies: unit -> HashSet<string>
+    static member GetSystemAssemblies: unit -> HashSet<string>
 
     /// Gets the selected target framework moniker, e.g netcore3.0, net472, and the running rid of the current machine
     member GetTfmAndRid: unit -> string * string
 
-    member IsInReferenceAssemblyPackDirectory: fileName: string -> bool
+    /// Determines if an assembly is in the core set of assemblies with high likelihood of
+    /// being shared amongst a set of common scripting references
+    static member IsReferenceAssemblyPackDirectoryApprox: dirName: string -> bool
 
     member TryGetDesiredDotNetSdkVersionForDirectory: unit -> Result<string, exn>
 
