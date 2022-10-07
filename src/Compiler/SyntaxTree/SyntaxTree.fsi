@@ -1024,7 +1024,7 @@ type SynSimplePats =
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range
+    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member Patterns: SynPat list
 
@@ -1049,6 +1049,9 @@ type SynPat =
 
     /// A disjunctive pattern 'pat1 | pat2'
     | Or of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatOrTrivia
+
+    /// A conjunctive pattern 'pat1 :: pat2'
+    | ListCons of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatListConsTrivia
 
     /// A conjunctive pattern 'pat1 & pat2'
     | Ands of pats: SynPat list * range: range

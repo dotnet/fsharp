@@ -2648,6 +2648,22 @@ type FSharpCheckFileResults
         | None -> []
         | Some (scope, _builderOpt) -> scope.GetDeclarationListSymbols(parsedFileResults, line, lineText, partialName, getAllEntities)
 
+    member _.GetKeywordTooltip(names: string list) =
+        ToolTipText.ToolTipText
+            [
+                for kw in names do
+                    match Tokenization.FSharpKeywords.KeywordsDescriptionLookup kw with
+                    | None -> ()
+                    | Some kwDescription ->
+                        let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
+                        let kwTip = ToolTipElementData.Create(kwText, FSharpXmlDoc.None)
+
+                        let descText = kwDescription |> TaggedText.tagText |> wordL |> LayoutRender.toArray
+                        let descTip = ToolTipElementData.Create(descText, FSharpXmlDoc.None)
+
+                        yield ToolTipElement.Group [ kwTip; descTip ]
+            ]
+
     /// Resolve the names at the given location to give a data tip
     member _.GetToolTip(line, colAtEndOfNames, lineText, names, tokenTag) =
         match tokenTagToTokenId tokenTag with

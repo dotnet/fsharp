@@ -2197,6 +2197,13 @@ and [<Sealed>] TcImports
         node {
             CheckDisposed()
 
+            let tcConfig = tcConfigP.Get ctok
+
+            let runMethod =
+                match tcConfig.parallelReferenceResolution with
+                | ParallelReferenceResolution.On -> NodeCode.Parallel
+                | ParallelReferenceResolution.Off -> NodeCode.Sequential
+
             let! results =
                 nms
                 |> List.map (fun nm ->
@@ -2207,7 +2214,7 @@ and [<Sealed>] TcImports
                             errorR (Error(FSComp.SR.buildProblemReadingAssembly (nm.resolvedPath, e.Message), nm.originalReference.Range))
                             return None
                     })
-                |> NodeCode.Sequential
+                |> runMethod
 
             let _dllinfos, phase2s = results |> Array.choose id |> List.ofArray |> List.unzip
             fixupOrphanCcus ()

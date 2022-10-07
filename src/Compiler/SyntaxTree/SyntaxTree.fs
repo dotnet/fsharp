@@ -47,10 +47,14 @@ type SynLongIdent =
     member this.IdentsWithTrivia =
         let (SynLongIdent (lid, _, trivia)) = this
 
-        if lid.Length <> trivia.Length then
-            failwith "difference between idents and trivia"
-        else
+        if lid.Length = trivia.Length then
             List.zip lid trivia |> List.map SynIdent
+        elif lid.Length > trivia.Length then
+            let delta = lid.Length - trivia.Length
+            let trivia = [ yield! trivia; yield! List.replicate delta None ]
+            List.zip lid trivia |> List.map SynIdent
+        else
+            failwith "difference between idents and trivia"
 
     member this.ThereIsAnExtraDotAtTheEnd =
         match this with
@@ -882,12 +886,12 @@ type SynSimplePats =
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range
+    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member x.Patterns =
         match x with
         | Pats pats -> pats
-        | NamePatPairs (pats, _) -> pats |> List.map (fun (_, _, pat) -> pat)
+        | NamePatPairs (pats = pats) -> pats |> List.map (fun (_, _, pat) -> pat)
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynPat =
@@ -903,6 +907,8 @@ type SynPat =
     | Attrib of pat: SynPat * attributes: SynAttributes * range: range
 
     | Or of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatOrTrivia
+
+    | ListCons of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatListConsTrivia
 
     | Ands of pats: SynPat list * range: range
 
@@ -949,6 +955,7 @@ type SynPat =
         | SynPat.Wild (range = m)
         | SynPat.Named (range = m)
         | SynPat.Or (range = m)
+        | SynPat.ListCons (range = m)
         | SynPat.Ands (range = m)
         | SynPat.As (range = m)
         | SynPat.LongIdent (range = m)

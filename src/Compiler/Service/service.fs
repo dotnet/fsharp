@@ -139,113 +139,6 @@ module CompileHelpers =
 
         diagnostics.ToArray(), result
 
-    let compileFromAsts
-        (
-            ctok,
-            legacyReferenceResolver,
-            asts,
-            assemblyName,
-            outFile,
-            dependencies,
-            noframework,
-            pdbFile,
-            executable,
-            tcImportsCapture,
-            dynamicAssemblyCreator
-        ) =
-
-        let diagnostics, diagnosticsLogger, loggerProvider = mkCompilationDiagnosticsHandlers ()
-
-        let executable = defaultArg executable true
-
-        let target =
-            if executable then
-                CompilerTarget.ConsoleExe
-            else
-                CompilerTarget.Dll
-
-        let result =
-            tryCompile diagnosticsLogger (fun exiter ->
-                CompileFromSyntaxTrees(
-                    ctok,
-                    legacyReferenceResolver,
-                    ReduceMemoryFlag.Yes,
-                    assemblyName,
-                    target,
-                    outFile,
-                    pdbFile,
-                    dependencies,
-                    noframework,
-                    exiter,
-                    loggerProvider,
-                    asts,
-                    tcImportsCapture,
-                    dynamicAssemblyCreator
-                ))
-
-        diagnostics.ToArray(), result
-
-    let createDynamicAssembly
-        (debugInfo: bool, tcImportsRef: TcImports option ref, execute: bool, assemblyBuilderRef: _ option ref)
-        (tcConfig: TcConfig, tcGlobals: TcGlobals, outfile, ilxMainModule)
-        =
-
-        // Create an assembly builder
-        let assemblyName = AssemblyName(Path.GetFileNameWithoutExtension outfile)
-        let flags = AssemblyBuilderAccess.Run
-        let assemblyBuilder = System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(assemblyName, flags)
-        let moduleBuilder = assemblyBuilder.DefineDynamicModule("IncrementalModule")
-
-        // Omit resources in dynamic assemblies, because the module builder is constructed without a file name the module
-        // is tagged as transient and as such DefineManifestResource will throw an invalid operation if resources are present.
-        //
-        // Also, the dynamic assembly creator can't currently handle types called "<Module>" from statically linked assemblies.
-        let ilxMainModule =
-            { ilxMainModule with
-                TypeDefs =
-                    ilxMainModule.TypeDefs.AsList()
-                    |> List.filter (fun td -> not (isTypeNameForGlobalFunctions td.Name))
-                    |> mkILTypeDefs
-                Resources = mkILResources []
-            }
-
-        // The function used to resolve types while emitting the code
-        let assemblyResolver s =
-            match tcImportsRef.Value.Value.TryFindExistingFullyQualifiedPathByExactAssemblyRef s with
-            | Some res -> Some(Choice1Of2 res)
-            | None -> None
-
-        // Emit the code
-        let _emEnv, execs =
-            EmitDynamicAssemblyFragment(
-                tcGlobals.ilg,
-                tcConfig.emitTailcalls,
-                emEnv0,
-                assemblyBuilder,
-                moduleBuilder,
-                ilxMainModule,
-                debugInfo,
-                assemblyResolver,
-                tcGlobals.TryFindSysILTypeRef
-            )
-
-        // Execute the top-level initialization, if requested
-        if execute then
-            for exec in execs do
-                match exec () with
-                | None -> ()
-                | Some exn ->
-                    PreserveStackTrace exn
-                    raise exn
-
-        // Register the reflected definitions for the dynamically generated assembly
-        for resource in ilxMainModule.Resources.AsList() do
-            if IsReflectedDefinitionsResource resource then
-                Quotations.Expr.RegisterReflectedDefinitions(assemblyBuilder, moduleBuilder.Name, resource.GetBytes().ToArray())
-
-        // Save the result
-        assemblyBuilderRef.Value <- Some assemblyBuilder
-
     let setOutputStreams execute =
         // Set the output streams, if requested
         match execute with
@@ -282,7 +175,8 @@ type BackgroundCompiler
         keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
-        enableParallelCheckingWithSignatureFiles
+        enableParallelCheckingWithSignatureFiles,
+        parallelReferenceResolution
     ) as self =
 
     let beforeFileChecked = Event<string * FSharpProjectOptions>()
@@ -410,7 +304,8 @@ type BackgroundCompiler
                     enableBackgroundItemKeyStoreAndSemanticClassification,
                     enablePartialTypeChecking,
                     enableParallelCheckingWithSignatureFiles,
-                    dependencyProvider
+                    dependencyProvider,
+                    parallelReferenceResolution
                 )
 
             match builderOpt with
@@ -1203,7 +1098,8 @@ type FSharpChecker
         keepAllBackgroundSymbolUses,
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
-        enableParallelCheckingWithSignatureFiles
+        enableParallelCheckingWithSignatureFiles,
+        parallelReferenceResolution
     ) =
 
     let backgroundCompiler =
@@ -1217,7 +1113,8 @@ type FSharpChecker
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
-            enableParallelCheckingWithSignatureFiles
+            enableParallelCheckingWithSignatureFiles,
+            parallelReferenceResolution
         )
 
     static let globalInstance = lazy FSharpChecker.Create()
@@ -1228,6 +1125,24 @@ type FSharpChecker
     // This cache is safe for concurrent access.
     let braceMatchCache =
         MruCache<AnyCallerThreadToken, _, _>(braceMatchCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
+
+    static let inferParallelReferenceResolution (parallelReferenceResolution: bool option) =
+        let explicitValue =
+            parallelReferenceResolution
+            |> Option.defaultValue false
+            |> function
+                | true -> ParallelReferenceResolution.On
+                | false -> ParallelReferenceResolution.Off
+
+        let withEnvOverride =
+            // Override ParallelReferenceResolution set on the constructor with an environment setting if present.
+            getParallelReferenceResolutionFromEnvironment ()
+            |> Option.defaultValue explicitValue
+
+        withEnvOverride
+
+    static member getParallelReferenceResolutionFromEnvironment() =
+        getParallelReferenceResolutionFromEnvironment ()
 
     /// Instantiate an interactive checker.
     static member Create
@@ -1241,7 +1156,8 @@ type FSharpChecker
             ?keepAllBackgroundSymbolUses,
             ?enableBackgroundItemKeyStoreAndSemanticClassification,
             ?enablePartialTypeChecking,
-            ?enableParallelCheckingWithSignatureFiles
+            ?enableParallelCheckingWithSignatureFiles,
+            ?parallelReferenceResolution
         ) =
 
         let legacyReferenceResolver =
@@ -1265,6 +1181,8 @@ type FSharpChecker
         if keepAssemblyContents && enablePartialTypeChecking then
             invalidArg "enablePartialTypeChecking" "'keepAssemblyContents' and 'enablePartialTypeChecking' cannot be both enabled."
 
+        let parallelReferenceResolution = inferParallelReferenceResolution parallelReferenceResolution
+
         FSharpChecker(
             legacyReferenceResolver,
             projectCacheSizeReal,
@@ -1275,7 +1193,8 @@ type FSharpChecker
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
-            enableParallelCheckingWithSignatureFiles
+            enableParallelCheckingWithSignatureFiles,
+            parallelReferenceResolution
         )
 
     member _.ReferenceResolver = legacyReferenceResolver
@@ -1337,133 +1256,6 @@ type FSharpChecker
         async {
             let ctok = CompilationThreadToken()
             return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
-        }
-
-    member _.Compile
-        (
-            ast: ParsedInput list,
-            assemblyName: string,
-            outFile: string,
-            dependencies: string list,
-            ?pdbFile: string,
-            ?executable: bool,
-            ?noframework: bool,
-            ?userOpName: string
-        ) =
-        let _userOpName = defaultArg userOpName "Unknown"
-
-        async {
-            let ctok = CompilationThreadToken()
-            let noframework = defaultArg noframework false
-
-            return
-                CompileHelpers.compileFromAsts (
-                    ctok,
-                    legacyReferenceResolver,
-                    ast,
-                    assemblyName,
-                    outFile,
-                    dependencies,
-                    noframework,
-                    pdbFile,
-                    executable,
-                    None,
-                    None
-                )
-        }
-
-    member _.CompileToDynamicAssembly(otherFlags: string[], execute: (TextWriter * TextWriter) option, ?userOpName: string) =
-        let _userOpName = defaultArg userOpName "Unknown"
-
-        async {
-            let ctok = CompilationThreadToken()
-            CompileHelpers.setOutputStreams execute
-
-            // References used to capture the results of compilation
-            let tcImportsRef = ref None
-            let assemblyBuilderRef = ref None
-            let tcImportsCapture = Some(fun tcImports -> tcImportsRef.Value <- Some tcImports)
-
-            // Function to generate and store the results of compilation
-            let debugInfo =
-                otherFlags
-                |> Array.exists (fun arg -> arg = "-g" || arg = "--debug:+" || arg = "/debug:+")
-
-            let dynamicAssemblyCreator =
-                Some(CompileHelpers.createDynamicAssembly (debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
-
-            // Perform the compilation, given the above capturing function.
-            let diagnostics, result =
-                CompileHelpers.compileFromArgs (ctok, otherFlags, legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator)
-
-            // Retrieve and return the results
-            let assemblyOpt =
-                match assemblyBuilderRef.Value with
-                | None -> None
-                | Some a -> Some(a :> Assembly)
-
-            return diagnostics, result, assemblyOpt
-        }
-
-    member _.CompileToDynamicAssembly
-        (
-            ast: ParsedInput list,
-            assemblyName: string,
-            dependencies: string list,
-            execute: (TextWriter * TextWriter) option,
-            ?debug: bool,
-            ?noframework: bool,
-            ?userOpName: string
-        ) =
-        let _userOpName = defaultArg userOpName "Unknown"
-
-        async {
-            let ctok = CompilationThreadToken()
-            CompileHelpers.setOutputStreams execute
-
-            // References used to capture the results of compilation
-            let tcImportsRef = ref (None: TcImports option)
-            let assemblyBuilderRef = ref None
-            let tcImportsCapture = Some(fun tcImports -> tcImportsRef.Value <- Some tcImports)
-
-            let debugInfo = defaultArg debug false
-            let noframework = defaultArg noframework false
-            let location = Path.Combine(FileSystem.GetTempPathShim(), "test" + string (hash assemblyName))
-
-            try
-                Directory.CreateDirectory(location) |> ignore
-            with _ ->
-                ()
-
-            let outFile = Path.Combine(location, assemblyName + ".dll")
-
-            // Function to generate and store the results of compilation
-            let dynamicAssemblyCreator =
-                Some(CompileHelpers.createDynamicAssembly (debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
-
-            // Perform the compilation, given the above capturing function.
-            let diagnostics, result =
-                CompileHelpers.compileFromAsts (
-                    ctok,
-                    legacyReferenceResolver,
-                    ast,
-                    assemblyName,
-                    outFile,
-                    dependencies,
-                    noframework,
-                    None,
-                    Some execute.IsSome,
-                    tcImportsCapture,
-                    dynamicAssemblyCreator
-                )
-
-            // Retrieve and return the results
-            let assemblyOpt =
-                match assemblyBuilderRef.Value with
-                | None -> None
-                | Some a -> Some(a :> Assembly)
-
-            return diagnostics, result, assemblyOpt
         }
 
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.

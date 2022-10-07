@@ -70,6 +70,18 @@ module TestCompilerWarningLevel =
         |> withDiagnosticMessageMatches "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed$"
         |> ignore
 
+#if NETSTANDARD 
+// This test works with KeyValuePair, which is not  a 'readonly struct' in net472
+    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"nowarn_readonlystruct.fs"|])>]
+    let ``no error 52 with readonly struct`` compilation =
+        compilation
+        |> asExe
+        |> withOptions ["--warn:5"; "--warnaserror:52"]
+        |> compile
+        |> shouldSucceed
+        |> ignore
+#endif
+
     [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"warn_level6.fs"|])>]
     let ``warn_level6_fs --warn:6`` compilation =
         compilation
