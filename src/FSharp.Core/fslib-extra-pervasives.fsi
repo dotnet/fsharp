@@ -454,7 +454,12 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// If the class that implements ITypeProvider has a constructor that accepts TypeProviderConfig
     /// then it will be constructed with an instance of TypeProviderConfig.
     type TypeProviderConfig =
+
+        /// Create a configuration which calls the given function for the corresponding operation.
         new :  systemRuntimeContainsType : (string -> bool) -> TypeProviderConfig
+
+        /// Create a configuration which calls the given functions for the corresponding operation.
+        new :  systemRuntimeContainsType : (string -> bool) * getReferencedAssemblies : (unit -> string[]) -> TypeProviderConfig
 
         /// Get the full path to use to resolve relative paths in any file name arguments given to the type provider instance.
         member ResolutionFolder : string with get,set

@@ -5592,27 +5592,13 @@ FSharp.Compiler.Syntax.ParsedInput: System.String FileName
 FSharp.Compiler.Syntax.ParsedInput: System.String ToString()
 FSharp.Compiler.Syntax.ParsedInput: System.String get_FileName()
 FSharp.Compiler.Syntax.ParsedScriptInteraction
-FSharp.Compiler.Syntax.ParsedScriptInteraction+Definitions: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.ParsedScriptInteraction+Definitions: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.ParsedScriptInteraction+Definitions: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl] defns
-FSharp.Compiler.Syntax.ParsedScriptInteraction+Definitions: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl] get_defns()
-FSharp.Compiler.Syntax.ParsedScriptInteraction+HashDirective: FSharp.Compiler.Syntax.ParsedHashDirective get_hashDirective()
-FSharp.Compiler.Syntax.ParsedScriptInteraction+HashDirective: FSharp.Compiler.Syntax.ParsedHashDirective hashDirective
-FSharp.Compiler.Syntax.ParsedScriptInteraction+HashDirective: FSharp.Compiler.Text.Range get_range()
-FSharp.Compiler.Syntax.ParsedScriptInteraction+HashDirective: FSharp.Compiler.Text.Range range
-FSharp.Compiler.Syntax.ParsedScriptInteraction+Tags: Int32 Definitions
-FSharp.Compiler.Syntax.ParsedScriptInteraction+Tags: Int32 HashDirective
-FSharp.Compiler.Syntax.ParsedScriptInteraction: Boolean IsDefinitions
-FSharp.Compiler.Syntax.ParsedScriptInteraction: Boolean IsHashDirective
-FSharp.Compiler.Syntax.ParsedScriptInteraction: Boolean get_IsDefinitions()
-FSharp.Compiler.Syntax.ParsedScriptInteraction: Boolean get_IsHashDirective()
 FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Syntax.ParsedScriptInteraction NewDefinitions(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl], FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Syntax.ParsedScriptInteraction NewHashDirective(FSharp.Compiler.Syntax.ParsedHashDirective, FSharp.Compiler.Text.Range)
-FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Syntax.ParsedScriptInteraction+Definitions
-FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Syntax.ParsedScriptInteraction+HashDirective
-FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Syntax.ParsedScriptInteraction+Tags
+FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.ParsedScriptInteraction: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.ParsedScriptInteraction: Int32 Tag
 FSharp.Compiler.Syntax.ParsedScriptInteraction: Int32 get_Tag()
+FSharp.Compiler.Syntax.ParsedScriptInteraction: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl] defns
+FSharp.Compiler.Syntax.ParsedScriptInteraction: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleDecl] get_defns()
 FSharp.Compiler.Syntax.ParsedScriptInteraction: System.String ToString()
 FSharp.Compiler.Syntax.ParsedSigFile
 FSharp.Compiler.Syntax.ParsedSigFile: FSharp.Compiler.Syntax.ParsedSigFile NewParsedSigFile(Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedSigFileFragment])
