@@ -961,8 +961,7 @@ module MutRecBindingChecking =
                         tryAddExtensionAttributeIfNotAlreadyPresent
                             (fun tryFindExtensionAttribute ->
                                 tycon.MembersOfFSharpTyconSorted
-                                |> Seq.choose (fun m -> tryFindExtensionAttribute m.Attribs)
-                                |> Seq.tryHead
+                                |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
                             )
                             tycon
                     )
@@ -4232,8 +4231,7 @@ module TcDeclarations =
                         tryAddExtensionAttributeIfNotAlreadyPresent
                             (fun tryFindExtensionAttribute ->
                                 tycon.MembersOfFSharpTyconSorted
-                                |> Seq.choose (fun m -> tryFindExtensionAttribute m.Attribs)
-                                |> Seq.tryHead
+                                |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
                             )
                             tycon
                     MutRecShape.Tycon (Some tycon, bindings)
@@ -4242,8 +4240,8 @@ module TcDeclarations =
                         tryAddExtensionAttributeIfNotAlreadyPresent
                             (fun tryFindExtensionAttribute ->
                                 moduleOrNamespaceType.Value.AllValsAndMembers
-                                |> Seq.choose (fun v -> tryFindExtensionAttribute v.Attribs)
-                                |> Seq.tryHead
+                                |> Seq.filter(fun v -> v.IsModuleBinding)
+                                |> Seq.tryPick (fun v -> tryFindExtensionAttribute v.Attribs)
                             )
                             entity
 
@@ -4800,11 +4798,10 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
                         match moduleContents with
                         | ModuleOrNamespaceContents.TMDefs(defs) ->
                             defs
-                            |> Seq.choose (function
+                            |> Seq.tryPick (function
                                 | ModuleOrNamespaceContents.TMDefLet (Binding.TBind(var = v),_) ->
                                     tryFindExtensionAttribute v.Attribs
                                 | _ -> None)
-                            |> Seq.tryHead
                         | _ -> None
                     )
                     moduleEntity
