@@ -42,7 +42,7 @@ type internal CodeLensProvider
         |> Option.map (fun document -> workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath))
         |> Option.bind Seq.tryHead
         |> Option.map (fun documentId ->
-            let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, metadataAsSource, componentModel.GetService(), typeMap, LineLensDisplayService(wpfView, buffer), settings)
+            let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, metadataAsSource, componentModel.GetService(), typeMap, CodeLensDisplayService(wpfView, buffer, "LineLens"), settings)
             let provider = (wpfView, service)
             wpfView.Closed.Add (fun _ -> lineLensProviders.Remove provider |> ignore)
             lineLensProviders.Add(provider))
