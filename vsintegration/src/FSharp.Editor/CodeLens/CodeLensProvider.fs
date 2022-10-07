@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open Microsoft.VisualStudio.Text
@@ -42,7 +42,7 @@ type internal CodeLensProvider
         |> Option.map (fun document -> workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath))
         |> Option.bind Seq.tryHead
         |> Option.map (fun documentId ->
-            let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, metadataAsSource, componentModel.GetService(), typeMap, LineLensDisplayService(wpfView, buffer), settings)
+            let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, metadataAsSource, componentModel.GetService(), typeMap, CodeLensDisplayService(wpfView, buffer), settings)
             let provider = (wpfView, service)
             wpfView.Closed.Add (fun _ -> lineLensProviders.Remove provider |> ignore)
             lineLensProviders.Add(provider))
