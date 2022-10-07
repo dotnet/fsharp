@@ -246,6 +246,9 @@ type SynBindingTrivia =
         /// The syntax range of the `let` keyword.
         LetKeyword: range option
 
+        /// The syntax range of the `extern` keyword.
+        ExternKeyword: range option
+
         /// The syntax range of the `=` token.
         EqualsRange: range option
     }
