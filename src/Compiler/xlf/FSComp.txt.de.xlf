@@ -1317,11 +1317,6 @@
         <target state="translated">Assembly "{0}" konnte nicht aufgelöst werden.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
-        <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">Die für "{1}" erforderliche Assembly "{0}" konnte nicht aufgelöst werden.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
         <source>Error opening binary file '{0}': {1}</source>
         <target state="translated">Fehler beim Öffnen der Binärdatei "{0}": {1}</target>
