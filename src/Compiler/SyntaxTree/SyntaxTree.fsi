@@ -1050,6 +1050,9 @@ type SynPat =
     /// A disjunctive pattern 'pat1 | pat2'
     | Or of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatOrTrivia
 
+    /// A conjunctive pattern 'pat1 :: pat2'
+    | ListCons of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatListConsTrivia
+
     /// A conjunctive pattern 'pat1 & pat2'
     | Ands of pats: SynPat list * range: range
 
