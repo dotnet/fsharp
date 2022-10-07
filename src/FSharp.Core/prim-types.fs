@@ -6,7 +6,7 @@
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
 #nowarn "60" // Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.
 #nowarn "61" // The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.
-#nowarn "69" // Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data.  You may remove this warning using #nowarn "69" if you have checked this is not the case.
+#nowarn "69" // Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.
 #nowarn "77" // Member constraints with the name 'Exp' are given special status by the F# compiler...
 #nowarn "3218" // mismatch of parameter name for 'fst' and 'snd'
 

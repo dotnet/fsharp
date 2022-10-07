@@ -1621,7 +1621,7 @@ module MutRecBindingChecking =
         defnsEs, envMutRec
 
 /// Check and generalize the interface implementations, members, 'let' definitions in a mutually recursive group of definitions.
-let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (envMutRec: TcEnv) (mutRecDefns: MutRecDefnsPhase2Data) skipExternalAugmWarning =     
+let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (envMutRec: TcEnv) (mutRecDefns: MutRecDefnsPhase2Data) isMutRec =     
     let g = cenv.g
     let interfacesFromTypeDefn envForTycon tyconMembersData = 
         let (MutRecDefnsPhase2DataForTycon(_, _, declKind, tcref, _, _, declaredTyconTypars, members, _, _, _)) = tyconMembersData
@@ -1651,8 +1651,9 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
                       (generatedHashAndEqualsWithComparerValues && typeEquiv g intfTyR g.mk_IStructuralEquatable_ty) then
                       errorR(Error(FSComp.SR.tcDefaultImplementationForInterfaceHasAlreadyBeenAdded(), intfTy.Range))
            
-                  match skipExternalAugmWarning, overridesOK with
-                  | _, OverridesOK | true, WarnOnOverrides -> ()
+                  match isMutRec, overridesOK with
+                  | _, OverridesOK  -> () // No warning/error if overrides are allowed
+                  | true, WarnOnOverrides -> () // If we are in a recursive module/namespace, overrides of interface implementations are allowed and not considered a warning
                   | false, WarnOnOverrides -> warning(IntfImplInIntrinsicAugmentation(intfTy.Range))
                   | _, ErrorOnOverrides -> errorR(IntfImplInExtrinsicAugmentation(intfTy.Range))
                 
@@ -4140,7 +4141,7 @@ module TcDeclarations =
     //-------------------------------------------------------------------------
 
     /// Bind a collection of mutually recursive definitions in an implementation file
-    let TcMutRecDefinitions (cenv: cenv) envInitial parent typeNames tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecDefnsInitialData) skipExternalAugmWarning =
+    let TcMutRecDefinitions (cenv: cenv) envInitial parent typeNames tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecDefnsInitialData) isMutRec =
 
         let g = cenv.g
 
@@ -4194,7 +4195,7 @@ module TcDeclarations =
                        cenv true scopem m 
 
         // Check the members and decide on representations for types with implicit constructors.
-        let withBindings, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem mutRecNSInfo envMutRecPrelimWithReprs withEnvs skipExternalAugmWarning
+        let withBindings, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem mutRecNSInfo envMutRecPrelimWithReprs withEnvs isMutRec
 
         // Generate the hash/compare/equality bindings for all tycons.
         //
