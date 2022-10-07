@@ -1,0 +1,17 @@
+name: Add all issues to F# project
+
+on:
+  issues:
+    types:
+      - opened
+      - transferred
+
+jobs:
+  add-to-project:
+    name: Add issue to project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/add-to-project@0.3.0
+        with:
+          project-url: https://github.com/orgs/dotnet/projects/126/
+          github-token: ${{ secrets.GITHUB_TOKEN }}
