@@ -168,7 +168,7 @@ type internal CompilationDiagnosticLogger (debugName: string, options: FSharpDia
         let diagnostic =
             match preprocess with
             | Some f -> f diagnostic
-            | _ -> diagnostic
+            | None -> diagnostic
 
         if diagnostic.ReportAsError (options, severity) then
             diagnostics.Add(diagnostic, FSharpDiagnosticSeverity.Error)

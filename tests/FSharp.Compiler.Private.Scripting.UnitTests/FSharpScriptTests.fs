@@ -23,7 +23,7 @@ type InteractiveTests() =
         let _, errors = script.Eval(code)
         Assert.Equal(1, errors.Length)
         let msg = errors[0].Message
-        Assert.DoesNotMatch("obj -> obj", msg)
+        Assert.Matches("'_\\w+ -> '_\\w+", msg)
 
     [<Fact>]
     member _.``Eval object value``() =
