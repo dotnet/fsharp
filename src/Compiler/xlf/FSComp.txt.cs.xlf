@@ -1317,11 +1317,6 @@
         <target state="translated">Sestavení {0} se nedalo přeložit.</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
-        <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">Sestavení {0} požadované souborem {1} se nedalo přeložit.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
         <source>Error opening binary file '{0}': {1}</source>
         <target state="translated">Chyba při otevírání binárního souboru {0}: {1}</target>

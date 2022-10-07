@@ -1317,11 +1317,6 @@
         <target state="translated">無法解析組件 '{0}'</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
-        <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">無法解析 '{1}' 所需的組件 '{0}'</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
         <source>Error opening binary file '{0}': {1}</source>
         <target state="translated">開啟二進位檔案 '{0}' 時發生錯誤: {1}</target>

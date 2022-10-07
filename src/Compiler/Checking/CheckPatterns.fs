@@ -289,6 +289,11 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
     | SynPat.Or (pat1, pat2, m, _) ->
         TcPatOr warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m
 
+    | SynPat.ListCons(pat1, pat2, m, trivia) ->
+        let longDotId = SynLongIdent((mkSynCaseName trivia.ColonColonRange opNameCons), [], [Some (FSharp.Compiler.SyntaxTrivia.IdentTrivia.OriginalNotation "::")])
+        let args = SynArgPats.Pats [ SynPat.Tuple(false, [ pat1; pat2 ], m) ]
+        TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags patEnv ty (longDotId, None, args, None, m)
+
     | SynPat.Ands (pats, m) ->
         TcPatAnds warnOnUpper cenv env vFlags patEnv ty pats m
 
@@ -471,13 +476,13 @@ and TcNullPat cenv env patEnv ty m =
 and CheckNoArgsForLiteral args m =
     match args with
     | SynArgPats.Pats []
-    | SynArgPats.NamePatPairs ([], _) -> ()
+    | SynArgPats.NamePatPairs (pats = []) -> ()
     | _ -> errorR (Error (FSComp.SR.tcLiteralDoesNotTakeArguments (), m))
 
 and GetSynArgPatterns args =
     match args with
     | SynArgPats.Pats args -> args
-    | SynArgPats.NamePatPairs (pairs, _) -> List.map (fun (_, _, pat) -> pat) pairs
+    | SynArgPats.NamePatPairs (pats = pairs) -> List.map (fun (_, _, pat) -> pat) pairs
 
 and TcArgPats warnOnUpper (cenv: cenv) env vFlags patEnv args =
     let g = cenv.g
@@ -600,7 +605,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
     let args, extraPatternsFromNames =
         match args with
         | SynArgPats.Pats args -> args, []
-        | SynArgPats.NamePatPairs (pairs, m) ->
+        | SynArgPats.NamePatPairs (pairs, m, _) ->
             // rewrite patterns from the form (name-N = pat-N; ...) to (..._, pat-N, _...)
             // so type T = Case of name: int * value: int
             // | Case(value = v)
