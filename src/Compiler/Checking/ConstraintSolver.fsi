@@ -170,33 +170,39 @@ exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * 
 
 exception ConstraintSolverError of string * range * range
 
-exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * range
+exception ErrorFromApplyingDefault of
+    tcGlobals: TcGlobals *
+    displayEnv: DisplayEnv *
+    Typar *
+    TType *
+    error: exn *
+    range: range
 
 exception ErrorFromAddingTypeEquation of
     tcGlobals: TcGlobals *
     displayEnv: DisplayEnv *
     actualTy: TType *
     expectedTy: TType *
-    exn *
-    range
+    error: exn *
+    range: range
 
 exception ErrorsFromAddingSubsumptionConstraint of
     tcGlobals: TcGlobals *
     displayEnv: DisplayEnv *
     actualTy: TType *
     expectedTy: TType *
-    exn *
-    ContextInfo *
+    error: exn *
+    ctxtInfo: ContextInfo *
     parameterRange: range
 
-exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * exn * range
+exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * error: exn * range: range
 exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * range
 
 exception UnresolvedOverloading of
     displayEnv: DisplayEnv *
     callerArgs: CallerArgs<Expr> *
     failure: OverloadResolutionFailure *
-    range
+    range: range
 
 exception NonRigidTypar of displayEnv: DisplayEnv * string option * range * TType * TType * range
 

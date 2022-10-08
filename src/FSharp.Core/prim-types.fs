@@ -601,20 +601,19 @@ namespace Microsoft.FSharp.Core
             // duplicated from above since we're using integers in this section
             let CompilationRepresentationFlags_PermitNull = 8
 
-            let getTypeInfo (ty:Type) =
-                if ty.IsValueType 
+            let private getTypeInfo<'T> =
+                if typeof<'T>.IsValueType 
                 then TypeNullnessSemantics_NullNever else
-                let mappingAttrs = ty.GetCustomAttributes(typeof<CompilationMappingAttribute>, false)
-                if mappingAttrs.Length = 0 
+                if not (typeof<'T>.IsDefined(typeof<CompilationMappingAttribute>, false))
                 then TypeNullnessSemantics_NullIsExtraValue
-                elif ty.Equals(typeof<unit>) then 
+                elif typeof<'T>.Equals(typeof<unit>) then 
                     TypeNullnessSemantics_NullTrueValue
-                elif typeof<Delegate>.IsAssignableFrom(ty) then 
+                elif typeof<Delegate>.IsAssignableFrom(typeof<'T>) then 
                     TypeNullnessSemantics_NullIsExtraValue
-                elif ty.GetCustomAttributes(typeof<AllowNullLiteralAttribute>, false).Length > 0 then
+                elif typeof<'T>.IsDefined(typeof<AllowNullLiteralAttribute>, false) then
                     TypeNullnessSemantics_NullIsExtraValue
                 else
-                    let reprAttrs = ty.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false)
+                    let reprAttrs = typeof<'T>.GetCustomAttributes(typeof<CompilationRepresentationAttribute>, false)
                     if reprAttrs.Length = 0 then 
                         TypeNullnessSemantics_NullNotLiked 
                     else
@@ -627,7 +626,7 @@ namespace Microsoft.FSharp.Core
              
             type TypeInfo<'T>() = 
                // Compute an on-demand per-instantiation static field
-               static let info = getTypeInfo typeof<'T>
+               static let info = getTypeInfo<'T>
 
                // Publish the results of that computation
                static member TypeInfo = info
@@ -3854,7 +3853,7 @@ namespace Microsoft.FSharp.Core
     [<DebuggerDisplay("{DebugDisplay,nq}")>]
     type ValueOption<'T> =
         | ValueNone : 'T voption
-        | ValueSome : 'T -> 'T voption
+        | ValueSome : Item: 'T -> 'T voption
 
         member x.Value = match x with ValueSome x -> x | ValueNone -> raise (new InvalidOperationException("ValueOption.Value"))
 

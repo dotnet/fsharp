@@ -468,6 +468,7 @@ let mkSynMemberDefnGetSet
             {
                 LetKeyword = None
                 EqualsRange = mEquals
+                ExternKeyword = None
             }
 
         let binding =
@@ -542,6 +543,7 @@ let mkSynMemberDefnGetSet
                 {
                     LetKeyword = None
                     EqualsRange = mEquals
+                    ExternKeyword = None
                 }
 
             let binding =
@@ -629,6 +631,7 @@ let mkSynMemberDefnGetSet
                     {
                         LetKeyword = None
                         EqualsRange = mEquals
+                        ExternKeyword = None
                     }
 
                 let bindingOuter =
@@ -847,7 +850,7 @@ let adjustHatPrefixToTyparLookup mFull rightExpr =
     take rightExpr
 
 // The last element of elementTypes does not have a star or slash
-let mkSynTypeTuple (isStruct: bool) (elementTypes: SynTupleTypeSegment list) : SynType =
+let mkSynTypeTuple (elementTypes: SynTupleTypeSegment list) : SynType =
     let range =
         match elementTypes with
         | [] -> Range.Zero
@@ -856,4 +859,4 @@ let mkSynTypeTuple (isStruct: bool) (elementTypes: SynTupleTypeSegment list) : S
             (head.Range, tail)
             ||> List.fold (fun acc segment -> unionRanges acc segment.Range)
 
-    SynType.Tuple(isStruct, elementTypes, range)
+    SynType.Tuple(false, elementTypes, range)

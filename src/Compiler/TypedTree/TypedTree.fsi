@@ -3923,7 +3923,7 @@ type CheckedImplFile =
 
     member Signature: ModuleOrNamespaceType
 
-/// Represents a complete typechecked assembly, made up of multiple implementation files.
+/// Represents checked file, after optimization, equipped with the ability to do further optimization of expressions.
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type CheckedImplFileAfterOptimization =
     { ImplFile: CheckedImplFile

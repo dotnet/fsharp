@@ -85,10 +85,20 @@ val inline protectAssemblyExplorationNoReraise: dflt1: 'T -> dflt2: 'T -> f: (un
 
 val AttachRange: m: range -> exn: exn -> exn
 
+/// Represnts an early exit from parsing, checking etc, for example because 'maxerrors' has been reached.
 type Exiter =
-    abstract member Exit: int -> 'T
+    abstract Exit: int -> 'T
 
+/// An exiter that quits the process if Exit is called.
 val QuitProcessExiter: Exiter
+
+/// An exiter that raises StopProcessingException if Exit is called, saving the exit code in ExitCode.
+type StopProcessingExiter =
+    interface Exiter
+
+    new: unit -> StopProcessingExiter
+
+    member ExitCode: int with get, set
 
 /// Closed enumeration of build phases.
 [<RequireQualifiedAccess>]
@@ -166,6 +176,7 @@ type PhasedDiagnostic =
     ///
     member Subcategory: unit -> string
 
+/// Represents a capability to log diagnostics
 [<AbstractClass>]
 type DiagnosticsLogger =
 
@@ -173,18 +184,27 @@ type DiagnosticsLogger =
 
     member DebugDisplay: unit -> string
 
-    abstract member DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    /// Emit a diagnostic to the logger
+    abstract DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
-    abstract member ErrorCount: int
+    /// Get the number of error diagnostics reported
+    abstract ErrorCount: int
 
+    /// Checks if ErrorCount > 0
+    member CheckForErrors: unit -> bool
+
+/// Represents a DiagnosticsLogger that discards diagnostics
 val DiscardErrorsLogger: DiagnosticsLogger
 
+/// Represents a DiagnosticsLogger that ignores diagnostics and asserts
 val AssertFalseDiagnosticsLogger: DiagnosticsLogger
 
+/// Represents a DiagnosticsLogger that captures all diagnostics, optionally formatting them
+/// eagerly.
 type CapturingDiagnosticsLogger =
     inherit DiagnosticsLogger
 
-    new: nm: string -> CapturingDiagnosticsLogger
+    new: nm: string * ?eagerFormat: (PhasedDiagnostic -> PhasedDiagnostic) -> CapturingDiagnosticsLogger
 
     member CommitDelayedDiagnostics: diagnosticsLogger: DiagnosticsLogger -> unit
 
@@ -194,6 +214,7 @@ type CapturingDiagnosticsLogger =
 
     override ErrorCount: int
 
+/// Thread statics for the installed diagnostic logger
 [<Class>]
 type DiagnosticsThreadStatics =
 
@@ -216,26 +237,41 @@ module DiagnosticsLoggerExtensions =
 
     type DiagnosticsLogger with
 
+        /// Report a diagnostic as an error and recover
         member ErrorR: exn: exn -> unit
 
+        /// Report a diagnostic as a warning and recover
         member Warning: exn: exn -> unit
 
+        /// Report a diagnostic as an error and raise `ReportedError`
         member Error: exn: exn -> 'T
 
+        /// Simulates a diagnostic. For test purposes only.
         member SimulateError: diagnostic: PhasedDiagnostic -> 'T
 
+        /// Perform error recovery from an exception if possible.
+        /// - StopProcessingExn is not caught.
+        /// - ReportedError is caught and ignored.
+        /// - TargetInvocationException is unwrapped
+        /// - If precisely a System.Exception or ArgumentException then the range is attached as InternalError.
+        /// - Other exceptions are unchanged
+        ///
+        /// All are reported via the installed diagnostics logger
         member ErrorRecovery: exn: exn -> m: range -> unit
 
+        /// Perform error recovery from an exception if possible, including catching StopProcessingExn
         member StopProcessingRecovery: exn: exn -> m: range -> unit
 
+        /// Like ErrorRecover by no range is attached to System.Exception and ArgumentException.
         member ErrorRecoveryNoRange: exn: exn -> unit
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val PushThreadBuildPhaseUntilUnwind: phase: BuildPhase -> IDisposable
+val UseBuildPhase: phase: BuildPhase -> IDisposable
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-val PushDiagnosticsLoggerPhaseUntilUnwind:
-    diagnosticsLoggerTransformer: (DiagnosticsLogger -> #DiagnosticsLogger) -> IDisposable
+val UseTransformedDiagnosticsLogger: transformer: (DiagnosticsLogger -> #DiagnosticsLogger) -> IDisposable
+
+val UseDiagnosticsLogger: newLogger: DiagnosticsLogger -> IDisposable
 
 val SetThreadBuildPhaseNoUnwind: phase: BuildPhase -> unit
 
@@ -389,7 +425,7 @@ val tryLanguageFeatureErrorOption:
 val languageFeatureNotSupportedInLibraryError: langFeature: LanguageFeature -> m: range -> 'T
 
 type StackGuard =
-    new: maxDepth: int -> StackGuard
+    new: maxDepth: int * name: string -> StackGuard
 
     /// Execute the new function, on a new thread if necessary
     member Guard: f: (unit -> 'T) -> 'T
