@@ -1699,7 +1699,7 @@ type Exception with
                 os.AppendString(MatchIncomplete4E().Format)
 
         | PatternMatchCompilation.RuleNeverMatched _ -> os.AppendString(RuleNeverMatchedE().Format)
-        
+
         | PatternMatchCompilation.MatchNotAllowedForUnionCaseWithNoData _ ->
             os.AppendString(MatchNotAllowedForUnionCaseWithNoDataE().Format)
 
