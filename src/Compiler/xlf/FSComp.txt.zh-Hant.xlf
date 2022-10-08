@@ -137,6 +137,11 @@
         <target state="translated">自動產生 'exception' 宣告的 'Message' 屬性</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureCSharpExtensionAttributeNotRequired">
+        <source>Allow implicit Extension attribute on declaring types, modules</source>
+        <target state="new">Allow implicit Extension attribute on declaring types, modules</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">預設介面成員使用</target>

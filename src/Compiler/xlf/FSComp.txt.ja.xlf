@@ -137,6 +137,11 @@
         <target state="translated">`exception` 宣言の `Message` プロパティの自動生成</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureCSharpExtensionAttributeNotRequired">
+        <source>Allow implicit Extension attribute on declaring types, modules</source>
+        <target state="new">Allow implicit Extension attribute on declaring types, modules</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">既定のインターフェイス メンバーの消費</target>

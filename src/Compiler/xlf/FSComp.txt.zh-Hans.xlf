@@ -137,6 +137,11 @@
         <target state="translated">自动生成“异常”声明的“消息”属性</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureCSharpExtensionAttributeNotRequired">
+        <source>Allow implicit Extension attribute on declaring types, modules</source>
+        <target state="new">Allow implicit Extension attribute on declaring types, modules</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureDefaultInterfaceMemberConsumption">
         <source>default interface member consumption</source>
         <target state="translated">默认接口成员消耗</target>
