@@ -4150,7 +4150,7 @@ and GenApp (cenv: cenv) cgbuf eenv (f, fty, tyargs, curriedArgs, m) sequel =
     | Expr.Val (v, _, m), _, [ arg ] when valRefEq g v g.methodhandleof_vref ->
         let (|OptionalCoerce|) x =
             match stripDebugPoints x with
-            | Expr.Op (TOp.Coerce _, _, [ arg ], _) -> arg
+            | Expr.Op (TOp.Coerce, _, [ arg ], _) -> arg
             | x -> x
 
         let (|OptionalTyapp|) x =
@@ -4695,7 +4695,7 @@ and eligibleForFilter (cenv: cenv) expr =
         | Expr.Op (TOp.UnionCaseFieldGet _, _, _, _) -> true
         | Expr.Op (TOp.ValFieldGet _, _, _, _) -> true
         | Expr.Op (TOp.TupleFieldGet _, _, _, _) -> true
-        | Expr.Op (TOp.Coerce _, _, _, _) -> true
+        | Expr.Op (TOp.Coerce, _, _, _) -> true
         | Expr.Val _ -> true
         | _ -> false
 
@@ -7587,7 +7587,7 @@ and GenDecisionTreeSwitch
 
     // Use GenDecisionTreeTest to generate a single test for null (when no box required) where the success
     // is going to the immediate first node in the tree
-    | TCase (DecisionTreeTest.IsNull _, (TDSuccess ([], 0) as successTree)) :: rest when
+    | TCase (DecisionTreeTest.IsNull, (TDSuccess ([], 0) as successTree)) :: rest when
         rest.Length = (match defaultTargetOpt with
                        | None -> 1
                        | Some _ -> 0)
