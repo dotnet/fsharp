@@ -9,6 +9,7 @@ open System.IO
 open System.Reflection
 open System.Text
 
+open FSharp.Compiler.CheckPatterns
 open Internal.Utilities.Library.Extras
 open Internal.Utilities.Library
 open Internal.Utilities.Text
@@ -135,6 +136,7 @@ type Exception with
         | PatternMatchCompilation.MatchIncomplete (_, _, m)
         | PatternMatchCompilation.EnumMatchIncomplete (_, _, m)
         | PatternMatchCompilation.RuleNeverMatched m
+        | PatternMatchCompilation.MatchNotAllowedForUnionCaseWithNoData m
         | ValNotMutable (_, _, m)
         | ValNotLocal (_, _, m)
         | MissingFields (_, m)
@@ -239,7 +241,9 @@ type Exception with
         | NameClash _ -> 23
         // 24 cannot be reused
         | PatternMatchCompilation.MatchIncomplete _ -> 25
+        | PatternMatchCompilation.MatchNotAllowedForUnionCaseWithNoData _
         | PatternMatchCompilation.RuleNeverMatched _ -> 26
+
         | ValNotMutable _ -> 27
         | ValNotLocal _ -> 28
         | MissingFields _ -> 29
@@ -551,6 +555,7 @@ module OldStyleMessages =
     let MatchIncomplete3E () = Message("MatchIncomplete3", "%s")
     let MatchIncomplete4E () = Message("MatchIncomplete4", "")
     let RuleNeverMatchedE () = Message("RuleNeverMatched", "")
+    let MatchNotAllowedForUnionCaseWithNoDataE () = Message("MatchNotAllowedForUnionCaseWithNoData", "")
     let EnumMatchIncomplete1E () = Message("EnumMatchIncomplete1", "")
     let ValNotMutableE () = Message("ValNotMutable", "%s")
     let ValNotLocalE () = Message("ValNotLocal", "")
@@ -1694,6 +1699,9 @@ type Exception with
                 os.AppendString(MatchIncomplete4E().Format)
 
         | PatternMatchCompilation.RuleNeverMatched _ -> os.AppendString(RuleNeverMatchedE().Format)
+        
+        | PatternMatchCompilation.MatchNotAllowedForUnionCaseWithNoData _ ->
+            os.AppendString(MatchNotAllowedForUnionCaseWithNoDataE().Format)
 
         | ValNotMutable (_, vref, _) -> os.AppendString(ValNotMutableE().Format(vref.DisplayName))
 

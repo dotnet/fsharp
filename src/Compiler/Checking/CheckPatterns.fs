@@ -7,6 +7,7 @@ module internal FSharp.Compiler.CheckPatterns
 open System
 open System.Collections.Generic
 
+open FSharp.Compiler.Text
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AccessibilityLogic
@@ -604,7 +605,12 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
 
     let args, extraPatternsFromNames =
         match args with
-        | SynArgPats.Pats args -> args, []
+        | SynArgPats.Pats args ->
+            match args with
+            | [ SynPat.Wild _ ] when argNames.IsEmpty  ->
+                warning(MatchNotAllowedForUnionCaseWithNoData(m))
+                args, []
+            | _ -> args, []
         | SynArgPats.NamePatPairs (pairs, m, _) ->
             // rewrite patterns from the form (name-N = pat-N; ...) to (..._, pat-N, _...)
             // so type T = Case of name: int * value: int

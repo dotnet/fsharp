@@ -1110,4 +1110,7 @@
   <data name="NotUpperCaseConstructorWithoutRQA" xml:space="preserve">
     <value>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</value>
   </data>
+  <data name="MatchNotAllowedForUnionCaseWithNoData" xml:space="preserve">
+    <value>Pattern discard not allowed for union case that takes no data.</value>
+  </data>
 </root>

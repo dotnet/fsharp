@@ -70,3 +70,66 @@ let myVal =
     |> shouldFail   
     |> withSingleDiagnostic (Error 727, Line 10, Col 7, Line 10, Col 15, "This union case expects 3 arguments in tupled form, but was given 2. The missing field arguments may be any of:
 \tint")
+    
+    
+[<Fact>]
+let ``Union Pattern discard not allowed for union case that takes no data`` () =
+     FSharp """
+module Tests
+type X = X
+
+let x: X = X
+
+let myVal =
+    match x with
+    | X _ -> ()"""
+    |> typecheck
+    |> shouldFail
+    |> withSingleDiagnostic (Warning 26, Line 9, Col 7, Line 9, Col 10, "Pattern discard not allowed for union case that takes no data.")
+    
+[<Fact>]
+let ``Pattern discard not allowed for union case that takes no data`` () =
+     FSharp """
+module Tests
+type U =
+    | A
+    | B of int * int * int
+    | C of int * int * int
+    
+let a : U = A
+
+let myVal = 
+    match a with
+    | A _ -> 15
+    | B (x, _, _) -> 16
+    | C _ -> 17"""
+    |> typecheck
+    |> shouldFail
+    |> withSingleDiagnostic (Warning 26, Line 12, Col 7, Line 12, Col 10, "Pattern discard not allowed for union case that takes no data.")
+    
+[<Fact>]
+let ``Multiple pattern discards not allowed for union case that takes no data`` () =
+     FSharp """
+module Tests
+type U =
+    | A
+    | B of int * int * int
+    | C of int * int * int
+    
+type V =
+    | D
+    
+let a : U = A
+let d : V = D
+    
+let myVal = 
+    match a, d with
+    | A _, D -> 15
+    | B (x, _, _), D _ -> 16
+    | C _, _ -> 17"""
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Warning 26, Line 16, Col 7, Line 16, Col 10, "Pattern discard not allowed for union case that takes no data.")
+        (Warning 26, Line 17, Col 20, Line 17, Col 23, "Pattern discard not allowed for union case that takes no data.")
+    ]
