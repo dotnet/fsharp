@@ -402,6 +402,11 @@
         <target state="translated">Neplatný interpolovaný řetězec. V interpolovaných výrazech se nedají použít řetězcové literály s trojitými uvozovkami. Zvažte možnost použít pro interpolovaný výraz explicitní vazbu let.</target>
         <note />
       </trans-unit>
+      <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern discard not allowed for union case that takes no data.</source>
+        <target state="new">Pattern discard not allowed for union case that takes no data.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="mlCompatError">
         <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">Tento konstruktor je zastaralý. {0}. Tuto funkci můžete povolit pomocí parametrů --langversion:5.0 a --mlcompatibility.</target>

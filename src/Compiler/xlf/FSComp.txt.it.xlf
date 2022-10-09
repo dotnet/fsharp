@@ -402,6 +402,11 @@
         <target state="translated">La stringa interpolata non è valida. Non è possibile usare valori letterali stringa tra virgolette triple in espressioni interpolate. Provare a usare un binding 'let' esplicito per l'espressione di interpolazione.</target>
         <note />
       </trans-unit>
+      <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern discard not allowed for union case that takes no data.</source>
+        <target state="new">Pattern discard not allowed for union case that takes no data.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="mlCompatError">
         <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">Questo costrutto è deprecato. {0}. È possibile abilitare questa funzionalità usando '--langversion:5.0' and '--mlcompatibility'.</target>

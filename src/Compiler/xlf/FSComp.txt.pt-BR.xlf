@@ -402,6 +402,11 @@
         <target state="translated">Cadeia de caracteres interpolada inválida. Literais de cadeia de caracteres de aspas triplas não podem ser usados em expressões interpoladas. Considere usar uma associação 'let' explícita para a expressão de interpolação.</target>
         <note />
       </trans-unit>
+      <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern discard not allowed for union case that takes no data.</source>
+        <target state="new">Pattern discard not allowed for union case that takes no data.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="mlCompatError">
         <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">Esta construção foi preterida. {0} Você pode habilitar este recurso usando '--langversion:5.0' e '--mlcompatibility'.</target>

@@ -402,6 +402,11 @@
         <target state="translated">Cadena interpolada no válida. No se pueden usar literales de cadena de comillas triples en las expresiones interpoladas. Puede usar un enlace "let" explícito para la expresión de interpolación.</target>
         <note />
       </trans-unit>
+      <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern discard not allowed for union case that takes no data.</source>
+        <target state="new">Pattern discard not allowed for union case that takes no data.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="mlCompatError">
         <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">Esta construcción está en desuso. {0}. Puede habilitar esta característica usando '--langversion:5.0' y '--mlcompatibility'.</target>

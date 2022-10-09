@@ -402,6 +402,11 @@
         <target state="translated">Недопустимая интерполированная строка. Строковые литералы с тройными кавычками запрещено использовать в интерполированных выражениях. Рекомендуется использовать явную привязку "let" для выражения интерполяции.</target>
         <note />
       </trans-unit>
+      <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern discard not allowed for union case that takes no data.</source>
+        <target state="new">Pattern discard not allowed for union case that takes no data.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="mlCompatError">
         <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">Эта конструкция не рекомендуется к использованию. {0}. Вы можете включить эту функцию с помощью команд "--langversion:5.0" и "--mlcompatibility".</target>

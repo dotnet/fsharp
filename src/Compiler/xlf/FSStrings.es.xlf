@@ -7,11 +7,6 @@
         <target state="translated">Uno o más mensajes informativos en el archivo cargado.\n</target>
         <note />
       </trans-unit>
-      <trans-unit id="MatchNotAllowedForUnionCaseWithNoData">
-        <source>Pattern discard not allowed for union case that takes no data.</source>
-        <target state="new">Pattern discard not allowed for union case that takes no data.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="NotUpperCaseConstructorWithoutRQA">
         <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
         <target state="new">Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</target>

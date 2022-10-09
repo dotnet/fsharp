@@ -84,7 +84,7 @@ let myVal =
     | X _ -> ()"""
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Warning 26, Line 9, Col 7, Line 9, Col 10, "Pattern discard not allowed for union case that takes no data.")
+    |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard not allowed for union case that takes no data.")
     
 [<Fact>]
 let ``Pattern discard not allowed for union case that takes no data`` () =
@@ -104,7 +104,7 @@ let myVal =
     | C _ -> 17"""
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Warning 26, Line 12, Col 7, Line 12, Col 10, "Pattern discard not allowed for union case that takes no data.")
+    |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard not allowed for union case that takes no data.")
      
 [<Fact>]
 let ``Grouped Pattern discard not allowed for union case that takes no data`` () =
@@ -124,7 +124,7 @@ let myVal =
     | C _ -> 17"""
     |> typecheck
     |> shouldFail
-    |> withSingleDiagnostic (Warning 26, Line 12, Col 7, Line 12, Col 10, "Pattern discard not allowed for union case that takes no data.")
+    |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard not allowed for union case that takes no data.")
 [<Fact>]
 let ``Multiple pattern discards not allowed for union case that takes no data`` () =
      FSharp """
@@ -148,6 +148,6 @@ let myVal =
     |> typecheck
     |> shouldFail
     |> withDiagnostics [
-        (Warning 26, Line 16, Col 7, Line 16, Col 10, "Pattern discard not allowed for union case that takes no data.")
-        (Warning 26, Line 17, Col 20, Line 17, Col 23, "Pattern discard not allowed for union case that takes no data.")
+        (Warning 3548, Line 16, Col 7, Line 16, Col 10, "Pattern discard not allowed for union case that takes no data.")
+        (Warning 3548, Line 17, Col 20, Line 17, Col 23, "Pattern discard not allowed for union case that takes no data.")
     ]

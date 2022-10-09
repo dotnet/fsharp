@@ -27,7 +27,6 @@ open FSharp.Compiler.TypeRelations
 exception MatchIncomplete of bool * (string * bool) option * range
 exception RuleNeverMatched of range
 exception EnumMatchIncomplete of bool * (string * bool) option * range
-exception MatchNotAllowedForUnionCaseWithNoData of range
 
 type ActionOnFailure =
     | ThrowIncompleteMatchException

@@ -402,6 +402,11 @@
         <target state="translated">Ungültige interpolierte Zeichenfolge. Zeichenfolgenliterale mit dreifachen Anführungszeichen dürfen in interpolierten Ausdrücken nicht verwendet werden. Erwägen Sie die Verwendung einer expliziten let-Bindung für den Interpolationsausdruck.</target>
         <note />
       </trans-unit>
+      <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern discard not allowed for union case that takes no data.</source>
+        <target state="new">Pattern discard not allowed for union case that takes no data.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="mlCompatError">
         <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">Dieses Konstrukt ist veraltet. {0}. Sie können dieses Feature mithilfe von „--langversion:5.0“ und „--mlcompatibility“ aktivieren.</target>

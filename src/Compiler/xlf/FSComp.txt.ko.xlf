@@ -402,6 +402,11 @@
         <target state="translated">잘못된 보간 문자열. 삼중 따옴표 문자열 리터럴은 보간 식에 사용할 수 없습니다. 보간 식에 명시적 'let' 바인딩을 사용해 보세요.</target>
         <note />
       </trans-unit>
+      <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern discard not allowed for union case that takes no data.</source>
+        <target state="new">Pattern discard not allowed for union case that takes no data.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="mlCompatError">
         <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">이 구성은 더 이상 사용되지 않습니다. {0}. '--langversion:5.0' 및 '--mlcompatibility'를 사용하여 이 기능을 활성화할 수 있습니다.</target>

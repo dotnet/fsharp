@@ -74,5 +74,3 @@ exception internal MatchIncomplete of bool * (string * bool) option * range
 exception internal RuleNeverMatched of range
 
 exception internal EnumMatchIncomplete of bool * (string * bool) option * range
-
-exception MatchNotAllowedForUnionCaseWithNoData of range

@@ -402,6 +402,11 @@
         <target state="translated">Geçersiz düz metin arasına kod eklenmiş dize. Üç tırnaklı dize sabitleri, düz metin arasına kod eklenmiş ifadelerde kullanılamaz. Düz metin arasına kod ekleme ifadesi için açık bir 'let' bağlaması kullanmayı düşünün.</target>
         <note />
       </trans-unit>
+      <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern discard not allowed for union case that takes no data.</source>
+        <target state="new">Pattern discard not allowed for union case that takes no data.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="mlCompatError">
         <source>This construct is deprecated. {0}. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.</source>
         <target state="translated">Bu yapı kullanım dışı. {0}. Bu özelliği '--langversion:5.0' ve '--mlcompatibility' kullanarak etkinleştirebilirsiniz.</target>
