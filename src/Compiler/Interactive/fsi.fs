@@ -1199,7 +1199,7 @@ type internal FsiConsoleInput(fsi: FsiEvaluationSessionHostConfig, fsiOptions: F
 type FsiInteractionStepStatus =
     | CtrlC
     | EndOfFile
-    | Completed of option<FsiValue>
+    | Completed of FsiValue option
     | CompletedWithAlreadyReportedError
     | CompletedWithReportedError of exn
 
@@ -1349,7 +1349,9 @@ type internal FsiDynamicCompiler(
 
     let dynamicAssemblies = ResizeArray<Assembly>()
 
-    let mutable needsPackageResolution = false
+    let mutable hasDelayedDependencyManagerText = false
+
+    let mutable delayedReferences = ResizeArray<_>()
 
     let generateDebugInfo = tcConfigB.debuginfo
 
@@ -1368,6 +1370,8 @@ type internal FsiDynamicCompiler(
     //let _writer = moduleBuilder.GetSymWriter()
 
     let infoReader = InfoReader(tcGlobals,tcImports.GetImportMap())
+
+    let reportedAssemblies = Dictionary<string, DateTime>()
 
     /// Add attributes
     let CreateModuleFragment (tcConfigB: TcConfigBuilder, dynamicCcuName, codegenResults) =
@@ -1879,9 +1883,13 @@ type internal FsiDynamicCompiler(
 
              //
              let optValue = istate.ilxGenerator.LookupGeneratedValue(valuePrinter.GetEvaluationContext(istate.emEnv), vref.Deref)
-             match optValue with
-             | Some (res, ty) -> istate, Completed(Some(FsiValue(res, ty, FSharpType(tcGlobals, istate.tcState.Ccu, istate.tcState.CcuSig, istate.tcImports, vref.Type))))
-             | _ -> istate, Completed None
+
+             let fsiValue =
+                 match optValue with
+                 | Some (res, ty) -> Some(FsiValue(res, ty, FSharpType(tcGlobals, istate.tcState.Ccu, istate.tcState.CcuSig, istate.tcImports, vref.Type)))
+                 | _ -> None
+
+             istate, Completed fsiValue
 
         // Return the interactive state.
         | _ -> istate, Completed None
@@ -1905,30 +1913,90 @@ type internal FsiDynamicCompiler(
         let breakStatement = SynExpr.App (ExprAtomicFlag.Atomic, false, methCall, args, m)
         SynModuleDecl.Expr(breakStatement, m)
 
-    member _.EvalRequireReference (ctok, istate, m, path) =
+    /// Resolve and register an assembly reference, delaying the actual addition of the reference
+    /// to tcImports until a whole set of references has been collected.
+    ///
+    /// That is, references are collected across a group of #r declarations and only added to the
+    /// tcImports state once all are collected.
+    member _.AddDelayedReference (ctok, path, show, m) =
+
+        // Check the file can be resolved
         if FileSystem.IsInvalidPathShim(path) then
-            error(Error(FSIstrings.SR.fsiInvalidAssembly(path),m))
-        // Check the file can be resolved before calling requireDLLReference
-        let resolutions = tcImports.ResolveAssemblyReference(ctok, AssemblyReference(m,path,None), ResolveAssemblyReferenceMode.ReportErrors)
-        tcConfigB.AddReferencedAssemblyByPath(m,path)
+            error(Error(FSIstrings.SR.fsiInvalidAssembly(path), m))
+
+        // Do the resolution
+        let resolutions =
+            tcImports.ResolveAssemblyReference(ctok, AssemblyReference(m,path,None), ResolveAssemblyReferenceMode.ReportErrors)
+
+        // Delay the addition of the assembly to the interactive state
+        delayedReferences.Add((path, resolutions, show, m))
+
+    /// Indicates if there are delayed assembly additions to be processed.
+    member _.HasDelayedReferences = delayedReferences.Count > 0
+
+    /// Process any delayed assembly additions.
+    member _.ProcessDelayedReferences (ctok, istate) =
+
+        // Grab the dealyed assembly reference additions
+        let refs = delayedReferences |> Seq.toList
+        delayedReferences.Clear()
+        
+        // Print the explicit assembly resolutions. Only for explicit '#r' in direct inputs, not those
+        // in #load files. This means those resulting from nuget package resolution are not shown.
+        for (_, resolutions, show, _) in refs do
+            if show then
+                for ar in resolutions do
+                    let format =
+                        if tcConfigB.shadowCopyReferences then
+                            let resolvedPath = ar.resolvedPath.ToUpperInvariant()
+                            let fileTime = FileSystem.GetLastWriteTimeShim(resolvedPath)
+                            match reportedAssemblies.TryGetValue resolvedPath with
+                            | false, _ ->
+                                reportedAssemblies.Add(resolvedPath, fileTime)
+                                FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
+                            | true, time when time <> fileTime ->
+                                FSIstrings.SR.fsiDidAHashrWithStaleWarning(ar.resolvedPath)
+                            | _ ->
+                                FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
+                        else
+                            FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
+
+                    fsiConsoleOutput.uprintnfnn "%s" format
+
+        // Collect the overall resolutions
+        let resolutions =
+            [ for (_, resolutions, _, _) in refs do
+                yield! resolutions ]
+
+        // Add then to the config.
+        for (path, _, _, m) in refs do
+            tcConfigB.AddReferencedAssemblyByPath(m, path)
+
         let tcState = istate.tcState
-        let tcEnv,(_dllinfos,ccuinfos) =
+
+        let tcEnv, asms =
             try
-                RequireDLL (ctok, tcImports, tcState.TcEnvFromImpls, dynamicCcuName, m, path)
+                RequireReferences (ctok, tcImports, tcState.TcEnvFromImpls, dynamicCcuName, resolutions)
             with _ ->
-                tcConfigB.RemoveReferencedAssemblyByPath(m,path)
+                for (path, _, _, m) in refs do
+                    tcConfigB.RemoveReferencedAssemblyByPath(m,path)
                 reraise()
-        resolutions,
-        { addCcusToIncrementalEnv istate ccuinfos with tcState = tcState.NextStateAfterIncrementalFragment(tcEnv) }
 
-    member _.EvalDependencyManagerTextFragment (packageManager:IDependencyManagerProvider, lt, m, path: string) =
+        let istate = { addCcusToIncrementalEnv istate asms with tcState = tcState.NextStateAfterIncrementalFragment(tcEnv) }
+        
+        istate
 
+    // Dependency manager text is collected across a group of #r and #i declarations and
+    // only actually processed once all are collected.
+    member _.AddDelayedDependencyManagerText (packageManager:IDependencyManagerProvider, lt, m, path: string) =
         tcConfigB.packageManagerLines <- PackageManagerLine.AddLineWithKey packageManager.Key lt path m tcConfigB.packageManagerLines
-        needsPackageResolution <- true
+        hasDelayedDependencyManagerText <- true
 
-    member fsiDynamicCompiler.CommitDependencyManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, diagnosticsLogger) =
-        if not needsPackageResolution then istate else
-        needsPackageResolution <- false
+    member _.HasDelayedDependencyManagerText = hasDelayedDependencyManagerText
+
+    member fsiDynamicCompiler.ProcessDelayedDependencyManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, diagnosticsLogger) =
+        if not hasDelayedDependencyManagerText then istate else
+        hasDelayedDependencyManagerText <- false
 
         (istate, tcConfigB.packageManagerLines) ||> Seq.fold (fun istate kv ->
             let (KeyValue(packageManagerKey, packageManagerLines)) = kv
@@ -1990,38 +2058,47 @@ type internal FsiDynamicCompiler(
                         reraise ()
             )
 
-    member fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, inp) =
+    member fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective (ctok, istate, directiveKind, path, show, m) =
+        let dm = fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
+        match dm with
+        | Null, Null ->
+            // error already reported
+            istate, CompletedWithAlreadyReportedError
+
+        | _, NonNull dependencyManager ->
+            if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
+                fsiDynamicCompiler.AddDelayedDependencyManagerText(dependencyManager, directiveKind, m, path)
+                istate, Completed None
+            else
+                errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
+                istate, Completed None
+
+        | _, _ when directiveKind = Directive.Include ->
+            errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
+            istate, Completed None
+
+        | NonNull p, Null ->
+            let path =
+                if String.IsNullOrWhiteSpace(p) then ""
+                else p
+
+            fsiDynamicCompiler.AddDelayedReference(ctok, path, show, m)
+
+            istate, Completed None
+
+    /// Scrape #r, #I and package manager commands from a #load
+    member fsiDynamicCompiler.ProcessMetaCommandsFromParsedInputAsInteractiveCommands(ctok, istate: FsiDynamicCompilerState, sourceFile, input) =
         WithImplicitHome
            (tcConfigB, directoryName sourceFile)
            (fun () ->
                ProcessMetaCommandsFromInput
                    ((fun st (m,nm) -> tcConfigB.TurnWarningOff(m,nm); st),
                     (fun st (m, path, directive) ->
-
-                        let dm = tcImports.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
-
-                        match dm with
-                        | _, NonNull dependencyManager ->
-                            if tcConfigB.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                                fsiDynamicCompiler.EvalDependencyManagerTextFragment (dependencyManager, directive, m, path)
-                                st
-                            else
-                                errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
-                                st
-
-                        | _, _ when directive = Directive.Include ->
-                            errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
-                            st
-
-                        // #r "Assembly"
-                        | NonNull path, _ ->
-                            snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, path))
-
-                        | Null, Null ->
-                           st
+                        let st, _ = fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective (ctok, st, directive, path, false, m)
+                        st
                     ),
                     (fun _ _ -> ()))
-                   (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
+                   (tcConfigB, input, Path.GetDirectoryName sourceFile, istate))
 
     member fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, sourceFiles, lexResourceManager, diagnosticsLogger: DiagnosticsLogger) =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
@@ -2069,7 +2146,10 @@ type internal FsiDynamicCompiler(
                 |> List.unzip
 
             diagnosticsLogger.AbortOnError(fsiConsoleOutput);
-            let istate = (istate, sourceFiles, inputs) |||> List.fold2 (fun istate sourceFile input -> fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, input))
+            let istate = (istate, sourceFiles, inputs) |||> List.fold2 (fun istate sourceFile input -> fsiDynamicCompiler.ProcessMetaCommandsFromParsedInputAsInteractiveCommands(ctok, istate, sourceFile, input))
+
+            let istate = fsiDynamicCompiler.ProcessDelayedReferences (ctok, istate)
+
             fsiDynamicCompiler.EvalParsedSourceFiles (ctok, diagnosticsLogger, istate, inputs, m)
 
     member _.GetBoundValues istate =
@@ -2291,13 +2371,13 @@ type internal FsiInterruptController(
         exitViaKillThread <- false // don't exit via kill thread
 
     member _.PosixInvoke(n:int) =
-         // we run this code once with n = -1 to make sure it is JITted before execution begins
-         // since we are not allowed to JIT a signal handler.  This also ensures the "PosixInvoke"
-         // method is not eliminated by dead-code elimination
-         if n >= 0 then
-             posixReinstate()
-             stdinInterruptState <- StdinEOFPermittedBecauseCtrlCRecentlyPressed
-             killThreadRequest <- if (interruptAllowed = InterruptCanRaiseException) then ThreadAbortRequest else PrintInterruptRequest
+        // we run this code once with n = -1 to make sure it is JITted before execution begins
+        // since we are not allowed to JIT a signal handler.  This also ensures the "PosixInvoke"
+        // method is not eliminated by dead-code elimination
+        if n >= 0 then
+            posixReinstate()
+            stdinInterruptState <- StdinEOFPermittedBecauseCtrlCRecentlyPressed
+            killThreadRequest <- if (interruptAllowed = InterruptCanRaiseException) then ThreadAbortRequest else PrintInterruptRequest
 
 //----------------------------------------------------------------------------
 // assembly finder
@@ -2571,6 +2651,11 @@ type FsiStdinLexerProvider
     member _.CreateBufferLexer (sourceFileName, lexbuf, diagnosticsLogger) =
         CreateLexerForLexBuffer (sourceFileName, lexbuf, diagnosticsLogger)
 
+[<RequireQualifiedAccess>]
+type InteractionGroup =
+    | Definitions of defns: SynModuleDecl list * range: range
+
+    | HashDirectives of hashDirective: ParsedHashDirective list
 
 //----------------------------------------------------------------------------
 // Process one parsed interaction.  This runs on the GUI thread.
@@ -2590,8 +2675,6 @@ type FsiInteractionProcessor
         lexResourceManager : LexResourceManager,
         initialInteractiveState
     ) =
-
-    let referencedAssemblies = Dictionary<string, DateTime>()
 
     let mutable currState = initialInteractiveState
     let event = Control.Event<unit>()
@@ -2634,7 +2717,6 @@ type FsiInteractionProcessor
         else
             error(Error(FSIstrings.SR.fsiDirectoryDoesNotExist(path),m))
 
-
     /// Parse one interaction. Called on the parser thread.
     let ParseInteraction (tokenizer:LexFilter.LexFilter) =
         let mutable lastToken = Parser.ELSE // Any token besides SEMICOLON_SEMICOLON will do for initial value
@@ -2662,217 +2744,239 @@ type FsiInteractionProcessor
             stopProcessingRecovery e range0
             None
 
-    /// Execute a single parsed interaction. Called on the GUI/execute/main thread.
-    let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedScriptInteraction, diagnosticsLogger: DiagnosticsLogger) =
-        let packageManagerDirective directive path m =
-            let dm = fsiOptions.DependencyProvider.TryFindDependencyManagerInPath(tcConfigB.compilerToolPaths, getOutputDir tcConfigB, reportError m, path)
-            match dm with
-            | Null, Null ->
-                // error already reported
-                istate, CompletedWithAlreadyReportedError
+    /// Partially process a hash directive, leaving state in packageManagerLines and required assemblies
+    let PartiallyProcessHashDirective (ctok, istate, hash, diagnosticsLogger: DiagnosticsLogger) =
+        match hash with
+        | ParsedHashDirective("load", ParsedHashDirectiveArguments sourceFiles, m) ->
+            let istate = fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, diagnosticsLogger)
+            istate, Completed None
 
-            | _, NonNull dependencyManager ->
-               if tcConfig.langVersion.SupportsFeature(LanguageFeature.PackageManagement) then
-                   fsiDynamicCompiler.EvalDependencyManagerTextFragment(dependencyManager, directive, m, path)
-                   istate, Completed None
-               else
-                   errorR(Error(FSComp.SR.packageManagementRequiresVFive(), m))
-                   istate, Completed None
+        | ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveArguments [path], m) ->
+            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective (ctok, istate, Directive.Resolution, path, true, m)
 
-            | _, _ when directive = Directive.Include ->
-                errorR(Error(FSComp.SR.poundiNotSupportedByRegisteredDependencyManagers(), m))
-                istate,Completed None
+        | ParsedHashDirective("i", ParsedHashDirectiveArguments [path], m) ->
+            fsiDynamicCompiler.PartiallyProcessReferenceOrPackageIncudePathDirective (ctok, istate, Directive.Include, path, true, m)
 
-            | NonNull p, Null ->
-                let path =
-                    if String.IsNullOrWhiteSpace(p) then ""
-                    else p
-                let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
-                resolutions |> List.iter (fun ar ->
-                    let format =
-                        if tcConfig.shadowCopyReferences then
-                            let resolvedPath = ar.resolvedPath.ToUpperInvariant()
-                            let fileTime = FileSystem.GetLastWriteTimeShim(resolvedPath)
-                            match referencedAssemblies.TryGetValue resolvedPath with
-                            | false, _ ->
-                                referencedAssemblies.Add(resolvedPath, fileTime)
-                                FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
-                            | true, time when time <> fileTime ->
-                                FSIstrings.SR.fsiDidAHashrWithStaleWarning(ar.resolvedPath)
-                            | _ ->
-                                FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
-                        else
-                            FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
-                    fsiConsoleOutput.uprintnfnn "%s" format)
-                istate,Completed None
+        | ParsedHashDirective("I", ParsedHashDirectiveArguments [path], m) ->
+            tcConfigB.AddIncludePath (m, path, tcConfigB.implicitIncludeDir)
+            let tcConfig = TcConfig.Create(tcConfigB,validate=false)
+            fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiDidAHashI(tcConfig.MakePathAbsolute path))
+            istate, Completed None
 
-        istate |> InteractiveCatch diagnosticsLogger (fun istate ->
-            match action with
-            | ParsedScriptInteraction.Definitions ([], _) ->
-                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, diagnosticsLogger)
-                istate,Completed None
+        | ParsedHashDirective("cd", ParsedHashDirectiveArguments [path], m) ->
+            ChangeDirectory path m
+            istate, Completed None
 
-            | ParsedScriptInteraction.Definitions ([SynModuleDecl.Expr(expr, _)], _) ->
-                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, diagnosticsLogger)
-                fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr)
+        | ParsedHashDirective("silentCd", ParsedHashDirectiveArguments [path], m) ->
+            ChangeDirectory path m
+            fsiConsolePrompt.SkipNext() (* "silent" directive *)
+            istate, Completed None
 
-            | ParsedScriptInteraction.Definitions (defs,_) ->
-                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, diagnosticsLogger)
-                fsiDynamicCompiler.EvalParsedDefinitions (ctok, diagnosticsLogger, istate, true, false, defs)
+        | ParsedHashDirective("dbgbreak", [], _) ->
+            let istate = {istate with debugBreak = true}
+            istate, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("load", ParsedHashDirectiveArguments sourceFiles, m), _) ->
-                let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, diagnosticsLogger)
-                fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, diagnosticsLogger),Completed None
+        | ParsedHashDirective("time", [], _) ->
+            if istate.timing then
+                fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff())
+            else
+                fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
+            let istate = {istate with timing = not istate.timing}
+            istate, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("reference" | "r"), ParsedHashDirectiveArguments [path], m), _) ->
-                packageManagerDirective Directive.Resolution path m
+        | ParsedHashDirective("time", ParsedHashDirectiveArguments ["on" | "off" as v], _) ->
+            if v <> "on" then
+                fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff())
+            else
+                fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
+            let istate = {istate with timing = (v = "on")}
+            istate, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("i", ParsedHashDirectiveArguments [path], m), _) ->
-                packageManagerDirective Directive.Include path m
+        | ParsedHashDirective("nowarn", ParsedHashDirectiveArguments numbers, m) ->
+            List.iter (fun (d:string) -> tcConfigB.TurnWarningOff(m, d)) numbers
+            istate, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("I", ParsedHashDirectiveArguments [path], m), _) ->
-                tcConfigB.AddIncludePath (m, path, tcConfig.implicitIncludeDir)
-                fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiDidAHashI(tcConfig.MakePathAbsolute path))
-                istate, Completed None
+        | ParsedHashDirective("terms", [], _) ->
+            tcConfigB.showTerms <- not tcConfigB.showTerms
+            istate, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("cd", ParsedHashDirectiveArguments [path], m), _) ->
-                ChangeDirectory path m
-                istate, Completed None
+        | ParsedHashDirective("types", [], _) ->
+            fsiOptions.ShowTypes <- not fsiOptions.ShowTypes
+            istate, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("silentCd", ParsedHashDirectiveArguments [path], m), _) ->
-                ChangeDirectory path m
-                fsiConsolePrompt.SkipNext() (* "silent" directive *)
-                istate, Completed None
+#if DEBUG
+        | ParsedHashDirective("ilcode", [], _m) ->
+            fsiOptions.ShowILCode <- not fsiOptions.ShowILCode;
+            istate, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("dbgbreak", [], _), _) ->
-                {istate with debugBreak = true}, Completed None
-
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("time", [], _), _) ->
-                if istate.timing then
-                    fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff())
-                else
-                    fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
-                {istate with timing = not istate.timing}, Completed None
-
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("time", ParsedHashDirectiveArguments ["on" | "off" as v], _), _) ->
-                if v <> "on" then
-                    fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOff())
-                else
-                    fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
-                {istate with timing = (v = "on")}, Completed None
-
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("nowarn", ParsedHashDirectiveArguments numbers, m), _) ->
-                List.iter (fun (d:string) -> tcConfigB.TurnWarningOff(m, d)) numbers
-                istate, Completed None
-
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("terms", [], _), _) ->
-                tcConfigB.showTerms <- not tcConfig.showTerms
-                istate, Completed None
-
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("types", [], _), _) ->
-                fsiOptions.ShowTypes <- not fsiOptions.ShowTypes
-                istate, Completed None
-
-    #if DEBUG
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("ilcode", [], _m), _) ->
-                fsiOptions.ShowILCode <- not fsiOptions.ShowILCode;
-                istate, Completed None
-
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("info", [], _m), _) ->
-                PrintOptionInfo tcConfigB
-                istate, Completed None
-    #endif
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("clear"), [], _), _) ->
-                fsiOptions.ClearScreen()
-                istate, Completed None
+        | ParsedHashDirective("info", [], _m) ->
+            PrintOptionInfo tcConfigB
+            istate, Completed None
+#endif
+        | ParsedHashDirective(("clear"), [], _) ->
+            fsiOptions.ClearScreen()
+            istate, Completed None
                 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(("q" | "quit"), [], _), _) ->
-                fsiInterruptController.Exit()
+        | ParsedHashDirective(("q" | "quit"), [], _) ->
+            fsiInterruptController.Exit()
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective("help", [], m), _) ->
-                fsiOptions.ShowHelp(m)
-                istate, Completed None
+        | ParsedHashDirective("help", [], m) ->
+            fsiOptions.ShowHelp(m)
+            istate, Completed None
 
-            | ParsedScriptInteraction.HashDirective (ParsedHashDirective(c, ParsedHashDirectiveArguments arg, m), _) ->
-                warning(Error((FSComp.SR.fsiInvalidDirective(c, String.concat " " arg)), m))
-                istate, Completed None
+        | ParsedHashDirective(c, ParsedHashDirectiveArguments arg, m) ->
+            warning(Error((FSComp.SR.fsiInvalidDirective(c, String.concat " " arg)), m))
+            istate, Completed None
+
+    /// Most functions return a step status - this decides whether to continue and propogates the
+    /// last value produced
+    let ProcessStepStatus (istate, cont) lastResult f =
+        match cont with
+        | Completed newResult -> f newResult istate
+        // stop on error
+        | CompletedWithReportedError e -> istate, CompletedWithReportedError e
+        // stop on error 
+        | CompletedWithAlreadyReportedError -> istate, CompletedWithAlreadyReportedError   
+        // stop on EOF
+        | EndOfFile -> istate, Completed lastResult
+        // stop on CtrlC
+        | CtrlC -> istate, CtrlC
+
+    /// Execute a group of interactions. Called on the GUI/execute/main thread.
+    /// The action is either a group of definitions or a group of hash-references.
+    let ExecuteInteractionGroup (ctok, istate, action: InteractionGroup, diagnosticsLogger: DiagnosticsLogger) =
+        istate |> InteractiveCatch diagnosticsLogger (fun istate ->
+            let rec loop istate action =
+                // These following actions terminate a dependency manager and/or references group
+                // - nothing left to do
+                // - a group of non-hash definitions
+                // - a #load
+                match action with
+                | InteractionGroup.Definitions _
+                | InteractionGroup.HashDirectives [] 
+                | InteractionGroup.HashDirectives (ParsedHashDirective("load", _, _) :: _) ->
+                    if fsiDynamicCompiler.HasDelayedDependencyManagerText then
+                        let istate = fsiDynamicCompiler.ProcessDelayedDependencyManagerText(ctok, istate, lexResourceManager, diagnosticsLogger)
+                        loop istate action
+                    elif fsiDynamicCompiler.HasDelayedReferences then
+                        let istate = fsiDynamicCompiler.ProcessDelayedReferences (ctok, istate)
+                        loop istate action
+                    else
+                        match action with
+                        | InteractionGroup.Definitions ([], _)
+                        | InteractionGroup.HashDirectives [] ->
+                            istate,Completed None
+
+                        | InteractionGroup.Definitions ([SynModuleDecl.Expr(expr, _)], _) ->
+                            fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr)
+
+                        | InteractionGroup.Definitions (defs,_) ->
+                            fsiDynamicCompiler.EvalParsedDefinitions (ctok, diagnosticsLogger, istate, true, false, defs)
+
+                        | InteractionGroup.HashDirectives (hash :: rest) ->
+                            let status = PartiallyProcessHashDirective (ctok, istate, hash, diagnosticsLogger)
+                            ProcessStepStatus status None (fun _ istate -> 
+                                loop istate (InteractionGroup.HashDirectives rest)
+                            )
+
+                // Other hash directives do not terminate a dependency manager and/or references group
+                | InteractionGroup.HashDirectives (hash :: rest) ->
+                    let status = PartiallyProcessHashDirective (ctok, istate, hash, diagnosticsLogger)
+                    ProcessStepStatus status None (fun _ istate -> 
+                        loop istate (InteractionGroup.HashDirectives rest)
+                    )
+
+            loop istate action
         )
+
+    let isDefHash = function SynModuleDecl.HashDirective _ -> true | _ -> false
+
+    // Only add automatic debugger breaks before 'let' or 'do' expressions with sequence points
+    let isBreakable def =
+        match def with
+        | SynModuleDecl.Let (bindings=SynBinding(debugPoint=DebugPointAtBinding.Yes _) :: _) -> true
+        | _ -> false
 
     /// Execute a single parsed interaction which may contain multiple items to be executed
     /// independently, because some are #directives. Called on the GUI/execute/main thread.
     ///
     /// #directive comes through with other definitions as a SynModuleDecl.HashDirective.
     /// We split these out for individual processing.
-    let rec execParsedInteractions (ctok, tcConfig, istate, action, diagnosticsLogger: DiagnosticsLogger, lastResult: FsiInteractionStepStatus option, cancellationToken: CancellationToken)  =
+    let rec ExecuteParsedInteractionInGroups (ctok, istate, synInteraction, diagnosticsLogger: DiagnosticsLogger, lastResult: FsiValue option, cancellationToken: CancellationToken)  =
         cancellationToken.ThrowIfCancellationRequested()
-        let action,nextAction,istate =
-            match action with
+        let group, others, istate =
+            match synInteraction with
             | None -> None,None,istate
 
-            | Some (ParsedScriptInteraction.HashDirective _) -> action,None,istate
-
-            | Some (ParsedScriptInteraction.Definitions ([],_)) -> None,None,istate
-
-            | Some (ParsedScriptInteraction.Definitions (SynModuleDecl.HashDirective(hash,mh) :: defs,m)) ->
-                Some (ParsedScriptInteraction.HashDirective(hash,mh)),Some (ParsedScriptInteraction.Definitions(defs,m)),istate
-
             | Some (ParsedScriptInteraction.Definitions (defs,m)) ->
-                let isDefHash = function SynModuleDecl.HashDirective _ -> true | _ -> false
-                let isBreakable def =
-                    // only add automatic debugger breaks before 'let' or 'do' expressions with sequence points
-                    match def with
-                    | SynModuleDecl.Let (bindings=SynBinding(debugPoint=DebugPointAtBinding.Yes _) :: _) -> true
-                    | _ -> false
-                let defsA = Seq.takeWhile (isDefHash >> not) defs |> Seq.toList
-                let defsB = Seq.skipWhile (isDefHash >> not) defs |> Seq.toList
+                match defs with
+                | [] ->
+                    None, None, istate
 
-                // If user is debugging their script interactively, inject call
-                // to Debugger.Break() at the first "breakable" line.
-                // Update istate so that more Break() calls aren't injected when recursing
-                let defsA,istate =
-                    if istate.debugBreak then
-                        let preBreak = Seq.takeWhile (isBreakable >> not) defsA |> Seq.toList
-                        let postBreak = Seq.skipWhile (isBreakable >> not) defsA |> Seq.toList
-                        match postBreak with
-                        | h :: _ -> preBreak @ (fsiDynamicCompiler.CreateDebuggerBreak(h.Range) :: postBreak), { istate with debugBreak = false }
-                        | _ -> defsA, istate
-                    else defsA,istate
+                | SynModuleDecl.HashDirective _ :: _ ->
+                    let hashes = List.takeWhile isDefHash defs |> List.choose (function (SynModuleDecl.HashDirective(hash, _))-> Some(hash) | _ -> None)
+                    let defsB = List.skipWhile isDefHash defs
 
-                // When the last declaration has a shape of DoExp (i.e., non-binding),
-                // transform it to a shape of "let it = <exp>", so we can refer it.
-                let defsA =
-                    if not (isNil defsB) then defsA else
-                    match defsA with
-                    | [] -> defsA
-                    | [_] -> defsA
-                    | _ ->
-                        match List.rev defsA with
-                        | SynModuleDecl.Expr(expr, _) :: rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding expr)
-                        | _ -> defsA
+                    let group = InteractionGroup.HashDirectives(hashes)
+                    let others = ParsedScriptInteraction.Definitions(defsB, m)
+                    Some group, Some others, istate
 
-                Some (ParsedScriptInteraction.Definitions(defsA,m)),Some (ParsedScriptInteraction.Definitions(defsB,m)),istate
+                | _ ->
 
-        match action, lastResult with
-          | None, Some prev -> assert nextAction.IsNone; istate, prev
-          | None,_ -> assert nextAction.IsNone; istate, Completed None
-          | Some action, _ ->
-              let istate,cont = ExecInteraction (ctok, tcConfig, istate, action, diagnosticsLogger)
-              match cont with
-                | Completed _                  -> execParsedInteractions (ctok, tcConfig, istate, nextAction, diagnosticsLogger, Some cont, cancellationToken)
-                | CompletedWithReportedError e -> istate,CompletedWithReportedError e             (* drop nextAction on error *)
-                | CompletedWithAlreadyReportedError -> istate,CompletedWithAlreadyReportedError   (* drop nextAction on error *)
-                | EndOfFile                    -> istate,defaultArg lastResult (Completed None)   (* drop nextAction on EOF *)
-                | CtrlC                        -> istate,CtrlC                                    (* drop nextAction on CtrlC *)
+                    let defsA = Seq.takeWhile (isDefHash >> not) defs |> Seq.toList
+                    let defsB = Seq.skipWhile (isDefHash >> not) defs |> Seq.toList
+
+                    // If user is debugging their script interactively, inject call
+                    // to Debugger.Break() at the first "breakable" line.
+                    // Update istate so that more Break() calls aren't injected when recursing
+                    let defsA,istate =
+                        if istate.debugBreak then
+                            let preBreak = Seq.takeWhile (isBreakable >> not) defsA |> Seq.toList
+                            let postBreak = Seq.skipWhile (isBreakable >> not) defsA |> Seq.toList
+                            match postBreak with
+                            | h :: _ -> preBreak @ (fsiDynamicCompiler.CreateDebuggerBreak(h.Range) :: postBreak), { istate with debugBreak = false }
+                            | _ -> defsA, istate
+                        else defsA,istate
+
+                    // When the last declaration has a shape of DoExp (i.e., non-binding),
+                    // transform it to a shape of "let it = <exp>", so we can refer it.
+                    let defsA =
+                        if not (isNil defsB) then defsA else
+                        match defsA with
+                        | [] -> defsA
+                        | [_] -> defsA
+                        | _ ->
+                            match List.rev defsA with
+                            | SynModuleDecl.Expr(expr, _) :: rest -> (rest |> List.rev) @ (fsiDynamicCompiler.BuildItBinding expr)
+                            | _ -> defsA
+
+                    let group = InteractionGroup.Definitions(defsA,m)
+                    let others = ParsedScriptInteraction.Definitions(defsB,m)
+                    Some group,Some others, istate
+
+        match group with
+        | None ->
+            istate, Completed lastResult
+        | Some group ->
+            let status = ExecuteInteractionGroup (ctok, istate, group, diagnosticsLogger)
+            ProcessStepStatus status lastResult (fun lastResult istate -> 
+                ExecuteParsedInteractionInGroups (ctok, istate, others, diagnosticsLogger, lastResult, cancellationToken))
 
     /// Execute a single parsed interaction which may contain multiple items to be executed
     /// independently
-    let executeParsedInteractions (ctok, tcConfig, istate, action, diagnosticsLogger: DiagnosticsLogger, lastResult: FsiInteractionStepStatus option, cancellationToken: CancellationToken)  =
-        let istate, completed = execParsedInteractions (ctok, tcConfig, istate, action, diagnosticsLogger, lastResult, cancellationToken)
-        match completed with
-        | Completed _  ->
-            let istate = fsiDynamicCompiler.CommitDependencyManagerText(ctok, istate, lexResourceManager, diagnosticsLogger)
-            istate, completed
-        | _ -> istate, completed
+    let ExecuteParsedInteraction (ctok, istate, synInteraction, diagnosticsLogger: DiagnosticsLogger, lastResult: FsiValue option, cancellationToken: CancellationToken)  =
+        let status = ExecuteParsedInteractionInGroups (ctok, istate, synInteraction, diagnosticsLogger, lastResult, cancellationToken)
+        ProcessStepStatus status lastResult (fun lastResult istate -> 
+            let rec loop istate =
+                if fsiDynamicCompiler.HasDelayedDependencyManagerText then
+                    let istate = fsiDynamicCompiler.ProcessDelayedDependencyManagerText(ctok, istate, lexResourceManager, diagnosticsLogger)
+                    loop istate
+                elif fsiDynamicCompiler.HasDelayedReferences then
+                    let istate = fsiDynamicCompiler.ProcessDelayedReferences (ctok, istate)
+                    loop istate
+                else
+                    istate, Completed lastResult
+            loop istate)
 
     /// Execute a single parsed interaction on the parser/execute thread.
     let mainThreadProcessAction ctok action istate =
@@ -2880,10 +2984,9 @@ type FsiInteractionProcessor
             let mutable result = Unchecked.defaultof<'a * FsiInteractionStepStatus>
             fsiInterruptController.ControlledExecution().Run(
             fun () ->
-                let tcConfig = TcConfig.Create(tcConfigB,validate=false)
                 if progress then fprintfn fsiConsoleOutput.Out "In mainThreadProcessAction..."
                 fsiInterruptController.InterruptAllowed <- InterruptCanRaiseException;
-                let res = action ctok tcConfig istate
+                let res = action ctok istate
                 fsiInterruptController.ClearInterruptRequest()
                 fsiInterruptController.InterruptAllowed <- InterruptIgnored
                 result <- res)
@@ -2908,17 +3011,17 @@ type FsiInteractionProcessor
             stopProcessingRecovery e range0;
             istate, CompletedWithReportedError e
 
-    let mainThreadProcessParsedInteractions ctok diagnosticsLogger (action, istate) cancellationToken =
-      istate |> mainThreadProcessAction ctok (fun ctok tcConfig istate ->
-        executeParsedInteractions (ctok, tcConfig, istate, action, diagnosticsLogger, None, cancellationToken))
+    let ExecuteParsedInteractionOnMainThread (ctok, diagnosticsLogger, synInteraction, istate, cancellationToken) =
+      istate |> mainThreadProcessAction ctok (fun ctok istate ->
+        ExecuteParsedInteraction (ctok, istate, synInteraction, diagnosticsLogger, None, cancellationToken))
 
-    let parseExpression (tokenizer:LexFilter.LexFilter) =
+    let ParseExpression (tokenizer:LexFilter.LexFilter) =
         reusingLexbufForParsing tokenizer.LexBuffer (fun () ->
             Parser.typedSequentialExprEOF (fun _ -> tokenizer.GetToken()) tokenizer.LexBuffer)
 
-    let mainThreadProcessParsedExpression ctok diagnosticsLogger (expr, istate) =
+    let ExecuteParsedExpressionOnMainThread (ctok, diagnosticsLogger, expr, istate) =
       istate |> InteractiveCatch diagnosticsLogger (fun istate ->
-        istate |> mainThreadProcessAction ctok (fun ctok _tcConfig istate ->
+        istate |> mainThreadProcessAction ctok (fun ctok istate ->
           fsiDynamicCompiler.EvalParsedExpression(ctok, diagnosticsLogger, istate, expr)  ))
 
     let commitResult (istate, result) =
@@ -2944,7 +3047,7 @@ type FsiInteractionProcessor
     /// During processing of startup scripts, this runs on the main thread.
     ///
     /// This is blocking: it reads until one chunk of input have been received, unless IsPastEndOfStream is true
-    member _.ParseAndExecOneSetOfInteractionsFromLexbuf (runCodeOnMainThread, istate:FsiDynamicCompilerState, tokenizer:LexFilter.LexFilter, diagnosticsLogger, ?cancellationToken: CancellationToken) =
+    member _.ParseAndExecuteInteractionFromLexbuf (runCodeOnMainThread, istate:FsiDynamicCompilerState, tokenizer:LexFilter.LexFilter, diagnosticsLogger, ?cancellationToken: CancellationToken) =
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
         if tokenizer.LexBuffer.IsPastEndOfStream then
             let stepStatus =
@@ -2957,21 +3060,21 @@ type FsiInteractionProcessor
 
         else
 
-            fsiConsolePrompt.Print();
+            fsiConsolePrompt.Print()
             istate |> InteractiveCatch diagnosticsLogger (fun istate ->
-                if progress then fprintfn fsiConsoleOutput.Out "entering ParseInteraction...";
+                if progress then fprintfn fsiConsoleOutput.Out "entering ParseInteraction..."
 
                 // Parse the interaction. When FSI.EXE is waiting for input from the console the
                 // parser thread is blocked somewhere deep this call.
-                let action  = ParseInteraction tokenizer
+                let action = ParseInteraction tokenizer
 
-                if progress then fprintfn fsiConsoleOutput.Out "returned from ParseInteraction...calling runCodeOnMainThread...";
+                if progress then fprintfn fsiConsoleOutput.Out "returned from ParseInteraction...calling runCodeOnMainThread..."
 
                 // After we've unblocked and got something to run we switch
                 // over to the run-thread (e.g. the GUI thread)
-                let res = istate  |> runCodeOnMainThread (fun ctok istate -> mainThreadProcessParsedInteractions ctok diagnosticsLogger (action, istate) cancellationToken)
+                let res = istate  |> runCodeOnMainThread (fun ctok istate -> ExecuteParsedInteractionOnMainThread (ctok, diagnosticsLogger, action, istate, cancellationToken))
 
-                if progress then fprintfn fsiConsoleOutput.Out "Just called runCodeOnMainThread, res = %O..." res;
+                if progress then fprintfn fsiConsoleOutput.Out "Just called runCodeOnMainThread, res = %O..." res
                 res)
 
     member _.CurrentState = currState
@@ -2984,42 +3087,30 @@ type FsiInteractionProcessor
         // During the processing of the file, further filenames are
         // resolved relative to the home directory of the loaded file.
         WithImplicitHome (tcConfigB, directoryName sourceFile)  (fun () ->
-              // An included script file may contain maybe several interaction blocks.
-              // We repeatedly parse and process these, until an error occurs.
+            // An included script file may parse several interaction blocks.
+            // We repeatedly parse and process these, until an error occurs.
+            use fileStream = FileSystem.OpenFileForReadShim(sourceFile)
+            use reader = fileStream.GetReader(tcConfigB.inputCodePage, false)
 
-                use fileStream = FileSystem.OpenFileForReadShim(sourceFile)
-                use reader = fileStream.GetReader(tcConfigB.inputCodePage, false)
+            let tokenizer = fsiStdinLexerProvider.CreateIncludedScriptLexer (sourceFile, reader, diagnosticsLogger)
 
-                let tokenizer = fsiStdinLexerProvider.CreateIncludedScriptLexer (sourceFile, reader, diagnosticsLogger)
-                let rec run istate =
-                    let istate,cont = processor.ParseAndExecOneSetOfInteractionsFromLexbuf ((fun f istate -> f ctok istate), istate, tokenizer, diagnosticsLogger)
-                    match cont with Completed _ -> run istate | _ -> istate,cont
+            let rec run istate =
+                let status = processor.ParseAndExecuteInteractionFromLexbuf ((fun f istate -> f ctok istate), istate, tokenizer, diagnosticsLogger)
+                ProcessStepStatus status None (fun _ istate ->
+                    run istate)
 
-                let istate,cont = run istate
-
-                match cont with
-                | Completed _ -> failwith "EvalIncludedScript: Completed expected to have relooped"
-                | CompletedWithAlreadyReportedError -> istate,CompletedWithAlreadyReportedError
-                | CompletedWithReportedError e -> istate,CompletedWithReportedError e
-                | EndOfFile -> istate,Completed None// here file-EOF is normal, continue required
-                | CtrlC     -> istate,CtrlC
-          )
-
+            run istate
+        )
 
     /// Load the source files, one by one. Called on the main thread.
     member processor.EvalIncludedScripts (ctok, istate, sourceFiles, diagnosticsLogger) =
-      match sourceFiles with
-        | [] -> istate
+        match sourceFiles with
+        | [] -> istate, Completed None
         | sourceFile :: moreSourceFiles ->
             // Catch errors on a per-file basis, so results/bindings from pre-error files can be kept.
-            let istate,cont = InteractiveCatch diagnosticsLogger (fun istate -> processor.EvalIncludedScript (ctok, istate, sourceFile, rangeStdin0, diagnosticsLogger)) istate
-            match cont with
-              | Completed _                -> processor.EvalIncludedScripts (ctok, istate, moreSourceFiles, diagnosticsLogger)
-              | CompletedWithAlreadyReportedError -> istate // do not process any more files
-              | CompletedWithReportedError _ -> istate // do not process any more files
-              | CtrlC                      -> istate // do not process any more files
-              | EndOfFile                  -> assert false; istate // This is unexpected. EndOfFile is replaced by Completed in the called function
-
+            let status = InteractiveCatch diagnosticsLogger (fun istate -> processor.EvalIncludedScript (ctok, istate, sourceFile, rangeStdin0, diagnosticsLogger)) istate
+            ProcessStepStatus status None (fun _ istate -> 
+                processor.EvalIncludedScripts (ctok, istate, moreSourceFiles, diagnosticsLogger))
 
     member processor.LoadInitialFiles (ctok, diagnosticsLogger) =
         /// Consume initial source files in chunks of scripts or non-scripts
@@ -3029,11 +3120,11 @@ type FsiInteractionProcessor
             | (_,isScript1) :: _ ->
                 let sourceFiles,rest = List.takeUntil (fun (_,isScript2) -> isScript1 <> isScript2) sourceFiles
                 let sourceFiles = List.map fst sourceFiles
-                let istate =
+                let istate, _ =
                     if isScript1 then
                         processor.EvalIncludedScripts (ctok, istate, sourceFiles, diagnosticsLogger)
                     else
-                        istate |> InteractiveCatch diagnosticsLogger (fun istate -> fsiDynamicCompiler.EvalSourceFiles(ctok, istate, rangeStdin0, sourceFiles, lexResourceManager, diagnosticsLogger), Completed None) |> fst
+                        istate |> InteractiveCatch diagnosticsLogger (fun istate -> fsiDynamicCompiler.EvalSourceFiles(ctok, istate, rangeStdin0, sourceFiles, lexResourceManager, diagnosticsLogger), Completed None)
                 consume istate rest
 
         setCurrState (consume currState fsiOptions.SourceFiles)
@@ -3056,7 +3147,7 @@ type FsiInteractionProcessor
         currState
         |> InteractiveCatch diagnosticsLogger (fun istate ->
             let expr = ParseInteraction tokenizer
-            mainThreadProcessParsedInteractions ctok diagnosticsLogger (expr, istate) cancellationToken)
+            ExecuteParsedInteractionOnMainThread (ctok, diagnosticsLogger, expr, istate, cancellationToken))
         |> commitResult
 
     member this.EvalScript (ctok, scriptPath, diagnosticsLogger) =
@@ -3072,11 +3163,11 @@ type FsiInteractionProcessor
         let tokenizer = fsiStdinLexerProvider.CreateBufferLexer(scriptFileName, lexbuf, diagnosticsLogger)
         currState
         |> InteractiveCatch diagnosticsLogger (fun istate ->
-            let expr = parseExpression tokenizer
+            let expr = ParseExpression tokenizer
             let m = expr.Range
             // Make this into "(); expr" to suppress generalization and compilation-as-function
             let exprWithSeq = SynExpr.Sequential (DebugPointAtSequential.SuppressExpr, true, SynExpr.Const (SynConst.Unit,m.StartRange), expr, m)
-            mainThreadProcessParsedExpression ctok diagnosticsLogger (exprWithSeq, istate))
+            ExecuteParsedExpressionOnMainThread (ctok, diagnosticsLogger, exprWithSeq, istate))
         |> commitResult
 
     member _.AddBoundValue(ctok, diagnosticsLogger, name, value: obj) =
@@ -3118,12 +3209,12 @@ type FsiInteractionProcessor
                   // Keep going until EndOfFile on the inReader or console
                   let rec loop currTokenizer =
 
-                      let istateNew,contNew =
-                          processor.ParseAndExecOneSetOfInteractionsFromLexbuf (runCodeOnMainThread, currState, currTokenizer, diagnosticsLogger)
+                      let istateNew, cont =
+                          processor.ParseAndExecuteInteractionFromLexbuf (runCodeOnMainThread, currState, currTokenizer, diagnosticsLogger)
 
                       setCurrState istateNew
 
-                      match contNew with
+                      match cont with
                       | EndOfFile -> ()
                       | CtrlC -> loop (fsiStdinLexerProvider.CreateStdinLexer(diagnosticsLogger))   // After each interrupt, restart to a brand new tokenizer
                       | CompletedWithAlreadyReportedError
@@ -3131,7 +3222,6 @@ type FsiInteractionProcessor
                       | Completed _ -> loop currTokenizer
 
                   loop initialTokenizer
-
 
                   if progress then fprintfn fsiConsoleOutput.Out "- READER: Exiting stdinReaderThread";
 
@@ -3162,8 +3252,8 @@ type FsiInteractionProcessor
         let nenv = tcState.TcEnvFromImpls.NameEnv
 
         let nItems = ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox istate.tcGlobals amap rangeStdin0) rangeStdin0 ad lid false
-        let names  = nItems |> List.map (fun d -> d.DisplayName)
-        let names  = names |> List.filter (fun name -> name.StartsWithOrdinal(stem))
+        let names = nItems |> List.map (fun d -> d.DisplayName)
+        let names = names |> List.filter (fun name -> name.StartsWithOrdinal(stem))
         names
 
     member _.ParseAndCheckInteraction (legacyReferenceResolver, istate, text:string) =
@@ -3171,7 +3261,6 @@ type FsiInteractionProcessor
 
         let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
         fsiInteractiveChecker.ParseAndCheckInteraction(SourceText.ofString text)
-
 
 //----------------------------------------------------------------------------
 // Server mode:
@@ -3432,6 +3521,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let dummyScriptFileName = "input.fsx"
 
+    let eagerFormat (diag : PhasedDiagnostic) = diag.EagerlyFormatCore true
+
     interface IDisposable with
         member _.Dispose() =
             (tcImports :> IDisposable).Dispose()
@@ -3550,7 +3641,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).diagnosticsOptions
-        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions)
+        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions, eagerFormat)
         fsiInteractionProcessor.EvalExpression(ctok, code, dummyScriptFileName, diagnosticsLogger)
         |> commitResultNonThrowing errorOptions dummyScriptFileName diagnosticsLogger
 
@@ -3572,7 +3663,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).diagnosticsOptions
-        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions)
+        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions, eagerFormat)
         fsiInteractionProcessor.EvalInteraction(ctok, code, dummyScriptFileName, diagnosticsLogger, cancellationToken)
         |> commitResultNonThrowing errorOptions "input.fsx" diagnosticsLogger
 
@@ -3593,7 +3684,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
         let errorOptions = TcConfig.Create(tcConfigB, validate = false).diagnosticsOptions
-        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions)
+        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions, eagerFormat)
         fsiInteractionProcessor.EvalScript(ctok, filePath, diagnosticsLogger)
         |> commitResultNonThrowing errorOptions filePath diagnosticsLogger
         |> function Choice1Of2 _, errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs

@@ -55,7 +55,6 @@ tupleRequiredInAbstractMethod,"\nA tuple type is required for one or more argume
 226,buildInvalidSourceFileExtensionUpdated,"The file extension of '%s' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript"
 226,buildInvalidSourceFileExtensionML,"The file extension of '%s' is not recognized. Source files must have extension .fs, .fsi, .fsx or .fsscript. To enable the deprecated use of .ml or .mli extensions, use '--langversion:5.0' and '--mlcompatibility'."
 227,buildCouldNotResolveAssembly,"Could not resolve assembly '%s'"
-228,buildCouldNotResolveAssemblyRequiredByFile,"Could not resolve assembly '%s' required by '%s'"
 229,buildErrorOpeningBinaryFile,"Error opening binary file '%s': %s"
 231,buildDifferentVersionMustRecompile,"The F#-compiled DLL '%s' needs to be recompiled to be used with this version of F#"
 232,buildInvalidHashIDirective,"Invalid directive. Expected '#I \"<path>\"'."
