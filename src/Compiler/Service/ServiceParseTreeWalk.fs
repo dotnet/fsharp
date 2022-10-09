@@ -940,7 +940,7 @@ module SyntaxTraversal =
                         |> pick x
                 | ok -> ok
             | SynMemberDefn.Inherit (synType, _identOption, range) -> traverseInherit (synType, range)
-            | SynMemberDefn.ValField (_synField, _range) -> None
+            | SynMemberDefn.ValField _ -> None
             | SynMemberDefn.NestedType (synTypeDefn, _synAccessOption, _range) -> traverseSynTypeDefn path synTypeDefn
 
         and traverseSynMatchClause origPath mc =

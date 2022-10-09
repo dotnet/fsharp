@@ -428,7 +428,7 @@ let mkSynMemberDefnGetSet
     (propertyNameBindingPat: SynPat)
     (optPropertyType: SynReturnInfo option)
     (visNoLongerUsed: SynAccess option)
-    (memFlagsBuilder: SynMemberKind -> SynMemberFlags)
+    flagsBuilderAndLeadingKeyword
     (attrs: SynAttributeList list)
     (rangeStart: range)
     : SynMemberDefn list =
@@ -436,6 +436,7 @@ let mkSynMemberDefnGetSet
     let mutable hasGet = false
     let mutable hasSet = false
 
+    let memFlagsBuilder, leadingKeyword = flagsBuilderAndLeadingKeyword
     let xmlDoc = grabXmlDocAtRangeStart (parseState, attrs, rangeStart)
 
     let tryMkSynMemberDefnMember
@@ -467,9 +468,8 @@ let mkSynMemberDefnGetSet
 
         let trivia: SynBindingTrivia =
             {
-                LetKeyword = None
+                LeadingKeyword = leadingKeyword
                 EqualsRange = mEquals
-                ExternKeyword = None
             }
 
         let binding =
@@ -540,13 +540,6 @@ let mkSynMemberDefnGetSet
                 | _ -> optReturnType
 
             // REDO with the correct member kind
-            let trivia: SynBindingTrivia =
-                {
-                    LetKeyword = None
-                    EqualsRange = mEquals
-                    ExternKeyword = None
-                }
-
             let binding =
                 mkSynBinding
                     (PreXmlDoc.Empty, bindingPat)
@@ -627,14 +620,6 @@ let mkSynMemberDefnGetSet
             // replacing the get/set identifier. A little gross.
 
             let (bindingPatAdjusted, getOrSetIdentOpt), xmlDocAdjusted =
-
-                let trivia: SynBindingTrivia =
-                    {
-                        LetKeyword = None
-                        EqualsRange = mEquals
-                        ExternKeyword = None
-                    }
-
                 let bindingOuter =
                     mkSynBinding
                         (xmlDoc, propertyNameBindingPat)
@@ -1056,3 +1041,11 @@ let checkForMultipleAugmentations m a1 a2 =
 let rangeOfLongIdent (lid: LongIdent) =
     System.Diagnostics.Debug.Assert(not lid.IsEmpty, "the parser should never produce a long-id that is the empty list")
     (lid.Head.idRange, lid) ||> unionRangeWithListBy (fun id -> id.idRange)
+
+let appendValToLeadingKeyword mVal leadingKeyword =
+    match leadingKeyword with
+    | SynLeadingKeyword.StaticMember (mStatic, mMember) -> SynLeadingKeyword.StaticMemberVal(mStatic, mMember, mVal)
+    | SynLeadingKeyword.Member mMember -> SynLeadingKeyword.MemberVal(mMember, mVal)
+    | SynLeadingKeyword.Override mOverride -> SynLeadingKeyword.OverrideVal(mOverride, mVal)
+    | SynLeadingKeyword.Default (mDefault) -> SynLeadingKeyword.DefaultVal(mDefault, mVal)
+    | _ -> leadingKeyword
