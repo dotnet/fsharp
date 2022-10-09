@@ -82,9 +82,26 @@ let x: X = X
 let myVal =
     match x with
     | X _ -> ()"""
+    |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard not allowed for union case that takes no data.")
+    
+      
+[<Fact>]
+let ``Union Pattern discard not allowed for union case that takes no data with Lang version 7`` () =
+     FSharp """
+module Tests
+type X = X
+
+let x: X = X
+
+let myVal =
+    match x with
+    | X _ -> ()"""
+    |> withLangVersion70
+    |> typecheck
+    |> shouldSucceed
     
 [<Fact>]
 let ``Pattern discard not allowed for union case that takes no data`` () =
@@ -102,10 +119,31 @@ let myVal =
     | A _ -> 15
     | B (x, _, _) -> 16
     | C _ -> 17"""
+    |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard not allowed for union case that takes no data.")
-     
+    
+[<Fact>]
+let ``Pattern discard not allowed for union case that takes no data with Lang version 7`` () =
+     FSharp """
+module Tests
+type U =
+    | A
+    | B of int * int * int
+    | C of int * int * int
+    
+let a : U = A
+
+let myVal = 
+    match a with
+    | A _ -> 15
+    | B (x, _, _) -> 16
+    | C _ -> 17"""
+    |> withLangVersion70
+    |> typecheck
+    |> shouldSucceed
+ 
 [<Fact>]
 let ``Grouped Pattern discard not allowed for union case that takes no data`` () =
      FSharp """
@@ -122,9 +160,11 @@ let myVal =
     | A _
     | B _
     | C _ -> 17"""
+    |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard not allowed for union case that takes no data.")
+
 [<Fact>]
 let ``Multiple pattern discards not allowed for union case that takes no data`` () =
      FSharp """
@@ -145,6 +185,7 @@ let myVal =
     | A _, D -> 15
     | B (x, _, _), D _ -> 16
     | C _, _ -> 17"""
+    |> withLangVersionPreview
     |> typecheck
     |> shouldFail
     |> withDiagnostics [

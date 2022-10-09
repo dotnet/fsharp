@@ -212,6 +212,11 @@
         <target state="translated">ML-Kompatibilitätsrevisionen</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern match discard not allowed for union case that takes no data.</source>
+        <target state="new">Pattern match discard not allowed for union case that takes no data.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>

@@ -605,11 +605,14 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
     let args, extraPatternsFromNames =
         match args with
         | SynArgPats.Pats args ->
-            match args with
-            | [ SynPat.Wild _ ] when argNames.IsEmpty  ->
-                warning(Error(FSComp.SR.matchNotAllowedForUnionCaseWithNoData(), m))
+            if g.langVersion.SupportsFeature(LanguageFeature.MatchNotAllowedForUnionCaseWithNoData) then
+                match args with
+                | [ SynPat.Wild _ ] when argNames.IsEmpty  ->
+                    warning(Error(FSComp.SR.matchNotAllowedForUnionCaseWithNoData(), m))
+                    args, []
+                | _ -> args, []
+            else
                 args, []
-            | _ -> args, []
         | SynArgPats.NamePatPairs (pairs, m, _) ->
             // rewrite patterns from the form (name-N = pat-N; ...) to (..._, pat-N, _...)
             // so type T = Case of name: int * value: int
