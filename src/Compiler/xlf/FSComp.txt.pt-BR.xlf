@@ -907,6 +907,11 @@
         <target state="translated">O valor '{0}' não é uma função e não dá suporte à notação de índice.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOrTypeInvalidInDeclaration">
+        <source>Or type variables are not permitted in this declaration</source>
+        <target state="new">Or type variables are not permitted in this declaration</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
         <target state="translated">A sintaxe '[expr1][expr2]' é ambígua quando usada como um argumento. Consulte https://aka.ms/fsharp-index-notation. Se você pretende indexar ou colocar em fatias, deve usar '(expr1).[expr2]' na posição do argumento. Se chamar uma função com vários argumentos na forma curried, adicione um espaço entre eles, por exemplo, 'someFunction [expr1] [expr2]'.</target>

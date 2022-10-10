@@ -907,6 +907,11 @@
         <target state="translated">Hodnota {0} není funkce a nepodporuje zápis indexu.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOrTypeInvalidInDeclaration">
+        <source>Or type variables are not permitted in this declaration</source>
+        <target state="new">Or type variables are not permitted in this declaration</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
         <target state="translated">Syntaxe expr1[expr2] je při použití jako argument nejednoznačná. Více informací: https://aka.ms/fsharp-index-notation. Pokud plánujete indexování nebo vytváření řezů, musíte použít expr1.[expr2] na pozici argumentu. Pokud voláte funkci s vícenásobnými curryfikovanými argumenty, přidejte mezi ně mezeru, třeba someFunction expr1 [expr2].</target>

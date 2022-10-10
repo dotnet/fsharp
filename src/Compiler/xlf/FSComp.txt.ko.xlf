@@ -907,6 +907,11 @@
         <target state="translated">'{0}' 값은 함수가 아니며 인덱스 표기법을 지원하지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOrTypeInvalidInDeclaration">
+        <source>Or type variables are not permitted in this declaration</source>
+        <target state="new">Or type variables are not permitted in this declaration</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
         <target state="translated">'expr1[expr2]' 구문은 인수로 사용될 때 모호합니다. https://aka.ms/fsharp-index-notation을 참조하세요. 인덱싱이나 슬라이싱을 하려면 인수 위치에 'expr1.[expr2]'를 사용해야 합니다. 여러 개의 커리된 인수로 함수를 호출하는 경우 그 사이에 공백을 추가하세요(예: 'someFunction expr1 [expr2]').</target>

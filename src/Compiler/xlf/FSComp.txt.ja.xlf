@@ -907,6 +907,11 @@
         <target state="translated">値 '{0}' は関数ではなく、インデックス表記をサポートしていません。</target>
         <note />
       </trans-unit>
+      <trans-unit id="tcOrTypeInvalidInDeclaration">
+        <source>Or type variables are not permitted in this declaration</source>
+        <target state="new">Or type variables are not permitted in this declaration</target>
+        <note />
+      </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
         <target state="translated">構文 'expr1[expr2]' は引数として使用されている場合、あいまいです。https://aka.ms/fsharp-index-notation を参照してください。インデックス作成またはスライスを行う場合は、'expr1.[expr2]' を引数の位置に使用する必要があります。複数のカリー化された引数を持つ関数を呼び出す場合は、'expr1 [expr2]' のように間にスペースを追加します。</target>

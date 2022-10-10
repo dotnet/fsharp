@@ -2234,10 +2234,12 @@ typeConstraint:
 
   | typar COLON LPAREN classMemberSpfn rparen 
      { let tp = $1
-       SynTypeConstraint.WhereTyparSupportsMember([ SynType.Var(tp, tp.Range) ], $4, lhs parseState) }
+       SynTypeConstraint.WhereTyparSupportsMember(SynType.Var(tp, tp.Range), $4, lhs parseState) }
 
   | LPAREN typeAlts rparen COLON LPAREN classMemberSpfn rparen 
-     { SynTypeConstraint.WhereTyparSupportsMember(List.rev($2), $6, lhs parseState) }
+     { let mParen = rhs2 parseState 1 3
+       let t = SynType.Paren($2, mParen)
+       SynTypeConstraint.WhereTyparSupportsMember(t, $6, lhs parseState) }
 
   | typar COLON DELEGATE typeArgsNoHpaDeprecated
      { let _ltm, _gtm, args, _commas, mWhole = $4
@@ -2262,10 +2264,12 @@ typeConstraint:
 
 typeAlts:
   | typeAlts OR appType
-     { $3 :: $1 }
+     { let mOr = rhs parseState 2
+       let m = unionRanges $1.Range $3.Range
+       SynType.Or($1, $3, m, { OrKeyword = mOr }) }
 
   | appType
-     { [$1] }	
+     { $1 }
 
 /* The core of a union type definition */
 unionTypeRepr:
@@ -4493,17 +4497,20 @@ parenExprBody:
 
 typars:
   | typar 
-      { [SynType.Var($1, rhs parseState 1)] }
+      { SynType.Var($1, rhs parseState 1) }
 
-  | LPAREN typarAlts rparen 
-      { List.rev $2 }
+  | LPAREN typarAlts rparen
+      { let m = rhs2 parseState 1 3
+        SynType.Paren($2, m) }
 
 typarAlts:
   | typarAlts OR appType
-      {$3 :: $1}
+      { let mOr = rhs parseState 2
+        let m = unionRanges $1.Range $3.Range
+        SynType.Or($1, $3, m, { OrKeyword = mOr }) }
 
   | typar
-      { [SynType.Var($1, rhs parseState 1)] }
+      { SynType.Var($1, rhs parseState 1) }
 
 braceExpr:
   | LBRACE braceExprBody rbrace 
