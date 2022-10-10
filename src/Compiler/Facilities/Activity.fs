@@ -8,12 +8,6 @@ open System.Diagnostics
 [<RequireQualifiedAccess>]
 module Activity =    
     
-    let private dummyDisposable =
-        {
-            new IDisposable with 
-                member this.Dispose() = ()
-        }
-    
     let private activitySourceName = "fsc"
     let private activitySource = new ActivitySource(activitySourceName)
 
@@ -24,6 +18,6 @@ module Activity =
                 activity.AddTag(key, value) |> ignore
             activity :> IDisposable
         | None ->
-            dummyDisposable
+            null
 
     let startNoTags name: IDisposable = activitySource.StartActivity(name)
