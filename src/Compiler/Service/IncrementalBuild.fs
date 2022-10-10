@@ -125,7 +125,7 @@ module IncrementalBuildSyntaxTree =
                 IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
                 let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
                 use act =
-                    Activity.Start "IncrementalBuildSyntaxTree.parse"
+                    Activity.start "IncrementalBuildSyntaxTree.parse"
                         [|
                             "fileName", source.FilePath
                             "buildPhase", BuildPhase.Parse.ToString()
@@ -473,7 +473,7 @@ type BoundModel private (tcConfig: TcConfig,
                 let! res = defaultTypeCheck ()
                 return res
             | Some syntaxTree ->
-                use _ = Activity.Start "BoundModel.TypeCheck" [|"fileName", syntaxTree.FileName|]
+                use _ = Activity.start "BoundModel.TypeCheck" [|"fileName", syntaxTree.FileName|]
                 let sigNameOpt =
                     if partialCheck then
                         this.BackingSignature
@@ -536,7 +536,7 @@ type BoundModel private (tcConfig: TcConfig,
                         // Build symbol keys
                         let itemKeyStore, semanticClassification =
                             if enableBackgroundItemKeyStoreAndSemanticClassification then
-                                use _ = Activity.Start "IncrementalBuild.CreateItemKeyStoreAndSemanticClassification" [|"fileName", fileName|]
+                                use _ = Activity.start "IncrementalBuild.CreateItemKeyStoreAndSemanticClassification" [|"fileName", fileName|]
                                 let sResolutions = sink.GetResolutions()
                                 let builder = ItemKeyStoreBuilder()
                                 let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with
@@ -1041,7 +1041,7 @@ module IncrementalBuilderStateHelpers =
 
     let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
         GraphNode(node {
-            use _ = Activity.Start "GetCheckResultsAndImplementationsForProject" [|"projectOutFile", initialState.outfile|]
+            use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|"projectOutFile", initialState.outfile|]
             // Compute last bound model then get all the evaluated models.
             let! _ = boundModels[boundModels.Count - 1].GetOrComputeValue()
             let boundModels =

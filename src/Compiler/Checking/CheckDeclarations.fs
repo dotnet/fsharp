@@ -5178,7 +5178,7 @@ let CheckOneImplFile
 
     cancellable {
         use _ = 
-            Activity.Start "CheckDeclarations.CheckOneImplFile" 
+            Activity.start "CheckDeclarations.CheckOneImplFile" 
                 [|
                     "fileName", fileName
                     "qualifiedNameOfFile", qualNameOfFile.Text
@@ -5311,7 +5311,7 @@ let CheckOneImplFile
 let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (sigFile: ParsedSigFileInput) = 
  cancellable {     
     use _ =
-        Activity.Start "CheckDeclarations.CheckOneSigFile"
+        Activity.start "CheckDeclarations.CheckOneSigFile"
             [|
                 "fileName", sigFile.FileName
                 "qualifiedNameOfFile", sigFile.QualifiedName.Text
