@@ -261,10 +261,12 @@ type SynLeadingKeyword =
     | StaticVal of staticRange: range * valRange: range
     | StaticLet of staticRange: range * letRange: range
     | StaticLetRec of staticRange: range * letRange: range * recRange: range
+    | StaticDo of staticRange: range * doRange: range
     | Default of defaultRange: range
     | DefaultVal of defaultRange: range * valRange: range
     | Val of valRange: range
     | New of newRange: range
+    | Do of doRange: range
     | Synthetic
 
     member Range: range

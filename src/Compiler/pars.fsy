@@ -2539,7 +2539,7 @@ doBinding:
         let mWhole = unionRanges mDoKwd $2.Range
         // any attributes prior to the 'let' are left free, e.g. become top-level attributes 
         // associated with the module, 'main' function or assembly depending on their target 
-        BindingSetPreAttrs(mDoKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, $2, mWhole)]), mWhole) }
+        BindingSetPreAttrs(mDoKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, mDoKwd, $2, mWhole)]), mWhole) }
 
 
 /* A 'let ....' binding in the #light syntax */
@@ -2585,12 +2585,12 @@ hardwhiteLetBindings:
 /* A 'do ...' statement */
 hardwhiteDoBinding: 
   | ODO typedSequentialExprBlock hardwhiteDefnBindingsTerminator          
-      { let mLetKwd = rhs parseState 1 
-        let bindingSetRange = unionRanges mLetKwd $2.Range 
+      { let mDoKwd = rhs parseState 1 
+        let bindingSetRange = unionRanges mDoKwd $2.Range 
         let seqPt = DebugPointAtBinding.NoneAtDo 
         // any attributes prior to the 'let' are left free, e.g. become top-level attributes 
         // associated with the module, 'main' function or assembly depending on their target 
-        BindingSetPreAttrs(mLetKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, $2, bindingSetRange)]), bindingSetRange), $2 }
+        BindingSetPreAttrs(mDoKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, mDoKwd, $2, bindingSetRange)]), bindingSetRange), $2 }
 
 
 /* The bindings in a class type definition */

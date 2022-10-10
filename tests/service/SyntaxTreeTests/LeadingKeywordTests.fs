@@ -512,3 +512,50 @@ type X =
         assertRange (3, 11) (3, 14) mLet
         assertRange (3, 15) (3, 18) mRec
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let `` do keyword`` () =
+    let parseResults =
+        getParseResults """
+type X =
+    do ()
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
+                SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                    SynModuleDecl.Types(typeDefns = [
+                        SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                            SynMemberDefn.LetBindings(bindings = [
+                                SynBinding(trivia = { LeadingKeyword = SynLeadingKeyword.Do(mDo) })
+                            ])
+                        ]))
+                    ])
+                ])
+            ])) ->
+        assertRange (3, 4) (3, 6) mDo
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let `` do static keyword`` () =
+    let parseResults =
+        getParseResults """
+type X =
+    static do ()
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
+                SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                    SynModuleDecl.Types(typeDefns = [
+                        SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                            SynMemberDefn.LetBindings(bindings = [
+                                SynBinding(trivia = { LeadingKeyword = SynLeadingKeyword.StaticDo(mStatic, mDo) })
+                            ])
+                        ]))
+                    ])
+                ])
+            ])) ->
+        assertRange (3, 4) (3, 10) mStatic
+        assertRange (3, 11) (3, 13) mDo
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

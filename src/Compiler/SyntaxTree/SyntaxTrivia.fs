@@ -176,10 +176,12 @@ type SynLeadingKeyword =
     | StaticVal of staticRange: range * valRange: range
     | StaticLet of staticRange: range * letRange: range
     | StaticLetRec of staticRange: range * letRange: range * recRange: range
+    | StaticDo of staticRange: range * doRange: range
     | Default of defaultRange: range
     | DefaultVal of defaultRange: range * valRange: range
     | Val of valRange: range
     | New of newRange: range
+    | Do of doRange: range
     | Synthetic
 
     member this.Range =
@@ -193,7 +195,8 @@ type SynLeadingKeyword =
         | Abstract m
         | Default m
         | Val m
-        | New m -> m
+        | New m
+        | Do m -> m
         | LetRec (m1, m2)
         | UseRec (m1, m2)
         | AbstractMember (m1, m2)
@@ -203,6 +206,7 @@ type SynLeadingKeyword =
         | StaticVal (m1, m2)
         | StaticLet (m1, m2)
         | StaticLetRec (m1, _, m2)
+        | StaticDo (m1, m2)
         | DefaultVal (m1, m2)
         | MemberVal (m1, m2)
         | OverrideVal (m1, m2)

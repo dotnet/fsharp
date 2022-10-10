@@ -202,7 +202,7 @@ val mkUnderscoreRecdField: m: range -> SynLongIdent * bool
 
 val mkRecdField: lidwd: SynLongIdent -> SynLongIdent * bool
 
-val mkSynDoBinding: vis: SynAccess option * expr: SynExpr * m: range -> SynBinding
+val mkSynDoBinding: vis: SynAccess option * mDo: range * expr: SynExpr * m: range -> SynBinding
 
 val mkSynExprDecl: e: SynExpr -> SynModuleDecl
 

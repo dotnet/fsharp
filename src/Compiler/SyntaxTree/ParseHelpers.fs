@@ -879,7 +879,7 @@ let mkUnderscoreRecdField m =
 let mkRecdField (lidwd: SynLongIdent) = lidwd, true
 
 // Used for 'do expr' in a class.
-let mkSynDoBinding (vis: SynAccess option, expr, m) =
+let mkSynDoBinding (vis: SynAccess option, mDo, expr, m) =
     match vis with
     | Some vis -> errorR (Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations (vis.ToString()), m))
     | None -> ()
@@ -897,7 +897,10 @@ let mkSynDoBinding (vis: SynAccess option, expr, m) =
         expr,
         m,
         DebugPointAtBinding.NoneAtDo,
-        SynBindingTrivia.Zero
+        {
+            LeadingKeyword = SynLeadingKeyword.Do mDo
+            EqualsRange = None
+        }
     )
 
 let mkSynExprDecl (e: SynExpr) = SynModuleDecl.Expr(e, e.Range)
@@ -996,6 +999,10 @@ let mkClassMemberLocalBindings
                 | SynLeadingKeyword.Let mLet ->
                     { trivia with
                         LeadingKeyword = SynLeadingKeyword.StaticLet(mStatic, mLet)
+                    }
+                | SynLeadingKeyword.Do mDo ->
+                    { trivia with
+                        LeadingKeyword = SynLeadingKeyword.StaticDo(mStatic, mDo)
                     }
                 | _ -> trivia
 
