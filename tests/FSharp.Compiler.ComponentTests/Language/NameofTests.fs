@@ -60,3 +60,26 @@ if actual <> expected then failwith $"Expected nameof({{expected}}) to be '{{exp
         |> withLangVersion50
         |> compileAndRun
         |> shouldSucceed
+
+    [<Fact>]
+    let ``nameof() in a pattern should return the correct type`` () =    
+        let source = $"""
+open Microsoft.FSharp.Reflection
+let f x = match x with nameof x -> true | _ -> false
+
+let expected = "System.String -> System.Boolean"
+let elms s = if FSharpType.IsFunction s then
+               let domain, range = FSharpType.GetFunctionElements s
+               $"{{domain}} -> {{range}}"
+             else
+               ""
+let fType = f.GetType()
+let actual = elms fType
+if actual <> expected then failwith $"Expected type to be '{{expected}}', but got '{{actual}}'"
+        """
+        Fsx source
+        |> asExe
+        |> withLangVersion50
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed
