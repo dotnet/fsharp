@@ -607,7 +607,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
         | SynArgPats.Pats args ->
             if g.langVersion.SupportsFeature(LanguageFeature.MatchNotAllowedForUnionCaseWithNoData) then
                 match args with
-                | [ SynPat.Wild _ ] when argNames.IsEmpty  ->
+                | [ SynPat.Wild _ ] | [ SynPat.Named _ ] when argNames.IsEmpty  ->
                     warning(Error(FSComp.SR.matchNotAllowedForUnionCaseWithNoData(), m))
                     args, []
                 | _ -> args, []
@@ -669,10 +669,12 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (m
         // note: we allow both 'C _' and 'C (_)' regardless of number of argument of the pattern
         | [SynPatErrorSkip(SynPat.Wild _ as e) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Wild _ as e), _))] -> List.replicate numArgTys e, []
 
-
         | args when numArgTys = 0 ->
-            errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
-            [], args
+            if g.langVersion.SupportsFeature(LanguageFeature.MatchNotAllowedForUnionCaseWithNoData) then
+                [], args
+            else
+                errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
+                [], args
 
         | arg :: rest when numArgTys = 1 ->
             if numArgTys = 1 && not (List.isEmpty rest) then
