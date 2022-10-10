@@ -22,6 +22,8 @@ open FSharp.Compiler.Xml
 
 #if !NO_TYPEPROVIDERS
 open FSharp.Compiler.TypeProviders
+open FSharp.Compiler.AbstractIL
+
 #endif
 
 //-------------------------------------------------------------------------
@@ -55,7 +57,7 @@ type ValRef with
         | Some membInfo ->
         not membInfo.MemberFlags.IsDispatchSlot &&
         (match membInfo.ImplementedSlotSigs with
-         | TSlotSig(_, oty, _, _, _, _) :: _ -> isInterfaceTy g oty
+         | slotSig :: _ -> isInterfaceTy g slotSig.DeclaringType
          | [] -> false)
 
     member vref.ImplementedSlotSignatures =
@@ -116,14 +118,14 @@ let private AnalyzeTypeOfMemberVal isCSharpExt g (ty, vref: ValRef) =
 /// Get the object type for a member value which is an extension method  (C#-style or F#-style)
 let private GetObjTypeOfInstanceExtensionMethod g (vref: ValRef) =
     let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
-    let _, _, curriedArgInfos, _, _ = GetTopValTypeInCompiledForm g vref.ValReprInfo.Value numEnclosingTypars vref.Type vref.Range
+    let _, _, curriedArgInfos, _, _ = GetValReprTypeInCompiledForm g vref.ValReprInfo.Value numEnclosingTypars vref.Type vref.Range
     curriedArgInfos.Head.Head |> fst
 
 /// Get the object type for a member value, which might be a C#-style extension method
 let private GetArgInfosOfMember isCSharpExt g (vref: ValRef) =
     if isCSharpExt then
         let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
-        let _, _, curriedArgInfos, _, _ = GetTopValTypeInCompiledForm g vref.ValReprInfo.Value numEnclosingTypars vref.Type vref.Range
+        let _, _, curriedArgInfos, _, _ = GetValReprTypeInCompiledForm g vref.ValReprInfo.Value numEnclosingTypars vref.Type vref.Range
         [ curriedArgInfos.Head.Tail ]
     else
         ArgInfosOfMember  g vref
@@ -151,6 +153,11 @@ let private GetInstantiationForMemberVal g isCSharpExt (ty, vref, methTyArgs: Ty
 let private GetInstantiationForPropertyVal g (ty, vref) =
     let memberParentTypars, memberMethodTypars, _retTy, parentTyArgs = AnalyzeTypeOfMemberVal false g (ty, vref)
     CombineMethInsts memberParentTypars memberMethodTypars parentTyArgs (generalizeTypars memberMethodTypars)
+
+let private HasExternalInit (mref: ILMethodRef) : bool =
+    match mref.ReturnType with
+    | ILType.Modified(_, cls, _) -> cls.FullName = "System.Runtime.CompilerServices.IsExternalInit"
+    | _ -> false
 
 /// Describes the sequence order of the introduction of an extension method. Extension methods that are introduced
 /// later through 'open' get priority in overload resolution.
@@ -266,6 +273,70 @@ type ParamData =
         reflArgInfo: ReflectedArgInfo *
         ttype: TType
 
+type ParamAttribs = ParamAttribs of isParamArrayArg: bool * isInArg: bool * isOutArg: bool * optArgInfo: OptionalArgInfo * callerInfo: CallerInfo * reflArgInfo: ReflectedArgInfo
+
+let CrackParamAttribsInfo g (ty: TType, argInfo: ArgReprInfo) =
+    let isParamArrayArg = HasFSharpAttribute g g.attrib_ParamArrayAttribute argInfo.Attribs
+    let reflArgInfo =
+        match TryFindFSharpBoolAttributeAssumeFalse  g g.attrib_ReflectedDefinitionAttribute argInfo.Attribs  with
+        | Some b -> ReflectedArgInfo.Quote b
+        | None -> ReflectedArgInfo.None
+    let isOutArg = (HasFSharpAttribute g g.attrib_OutAttribute argInfo.Attribs && isByrefTy g ty) || isOutByrefTy g ty
+    let isInArg = (HasFSharpAttribute g g.attrib_InAttribute argInfo.Attribs && isByrefTy g ty) || isInByrefTy g ty
+    let isCalleeSideOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
+    let isCallerSideOptArg = HasFSharpAttributeOpt g g.attrib_OptionalAttribute argInfo.Attribs
+    let optArgInfo =
+        if isCalleeSideOptArg then
+            CalleeSide
+        elif isCallerSideOptArg then
+            let defaultParameterValueAttribute = TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute argInfo.Attribs
+            match defaultParameterValueAttribute with
+            | None ->
+                // Do a type-directed analysis of the type to determine the default value to pass.
+                // Similar rules as OptionalArgInfo.FromILParameter are applied here, except for the COM and byref-related stuff.
+                CallerSide (if isObjTy g ty then MissingValue else DefaultValue)
+            | Some attr ->
+                let defaultValue = OptionalArgInfo.ValueOfDefaultParameterValueAttrib attr
+                match defaultValue with
+                | Some (Expr.Const (_, m, ty2)) when not (typeEquiv g ty2 ty) ->
+                    // the type of the default value does not match the type of the argument.
+                    // Emit a warning, and ignore the DefaultParameterValue argument altogether.
+                    warning(Error(FSComp.SR.DefaultParameterValueNotAppropriateForArgument(), m))
+                    NotOptional
+                | Some (Expr.Const (ConstToILFieldInit fi, _, _)) ->
+                    // Good case - all is well.
+                    CallerSide (Constant fi)
+                | _ ->
+                    // Default value is not appropriate, i.e. not a constant.
+                    // Compiler already gives an error in that case, so just ignore here.
+                    NotOptional
+        else NotOptional
+
+    let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
+    let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
+    let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs
+
+    let callerInfo =
+        match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
+        | false, false, false -> NoCallerInfo
+        | true, false, false -> CallerLineNumber
+        | false, true, false -> CallerFilePath
+        | false, false, true -> CallerMemberName
+        | false, true, true -> 
+            match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
+            | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
+                warning(Error(FSComp.SR.CallerMemberNameIsOverriden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
+                CallerFilePath
+            | _ -> failwith "Impossible"
+        | _, _, _ ->
+            // if multiple caller info attributes are specified, pick the "wrong" one here
+            // so that we get an error later
+            match tryDestOptionTy g ty with
+            | ValueSome optTy when typeEquiv g g.int32_ty optTy -> CallerFilePath
+            | _ -> CallerLineNumber
+
+    ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo)
+
 #if !NO_TYPEPROVIDERS
 
 type ILFieldInit with
@@ -312,8 +383,8 @@ let OptionalArgInfoOfProvidedParameter (amap: ImportMap) m (provParam : Tainted<
                 elif isObjTy g ty then MissingValue
                 else  DefaultValue
 
-            let pty = ImportProvidedType amap m (provParam.PApply((fun p -> p.ParameterType), m))
-            CallerSide (analyze pty)
+            let paramTy = ImportProvidedType amap m (provParam.PApply((fun p -> p.ParameterType), m))
+            CallerSide (analyze paramTy)
         | _ ->
             let v = provParam.PUntaint((fun p ->  p.RawDefaultValue), m)
             CallerSide (Constant (ILFieldInit.FromProvidedObj m v))
@@ -589,7 +660,7 @@ type MethInfo =
     member x.DeclaringTyconRef   =
         match x with
         | ILMeth(_, ilminfo, _) when x.IsExtensionMember  -> ilminfo.DeclaringTyconRef
-        | FSMeth(_, _, vref, _) when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.TopValDeclaringEntity
+        | FSMeth(_, _, vref, _) when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.DeclaringEntity
         | _ -> x.ApparentEnclosingTyconRef
 
     /// Get the information about provided static parameters, if any
@@ -625,8 +696,9 @@ type MethInfo =
     /// Get the method name in DebuggerDisplayForm
     member x.DebuggerDisplayName =
         match x with
-        | ILMeth(_, y, _) -> "ILMeth: " + y.ILName
-        | FSMeth(_, _, vref, _) -> "FSMeth: " + vref.LogicalName
+        | ILMeth(_, y, _) -> y.DeclaringTyconRef.DisplayNameWithStaticParametersAndUnderscoreTypars + "::" + y.ILName
+        | FSMeth(_, AbbrevOrAppTy tcref, vref, _) -> tcref.DisplayNameWithStaticParametersAndUnderscoreTypars + "::" + vref.LogicalName
+        | FSMeth(_, _, vref, _) -> "??::" + vref.LogicalName
 #if !NO_TYPEPROVIDERS
         | ProvidedMeth(_, mi, _, m) -> "ProvidedMeth: " + mi.PUntaint((fun mi -> mi.Name), m)
 #endif
@@ -646,13 +718,13 @@ type MethInfo =
     member x.DisplayName =
         match x with
         | FSMeth(_, _, vref, _) -> vref.DisplayName
-        | _ -> x.LogicalName |> PrettyNaming.ConvertValNameToDisplayName false
+        | _ -> x.LogicalName |> PrettyNaming.ConvertValLogicalNameToDisplayName false
 
      /// Get the method name in DisplayName form
     member x.DisplayNameCore =
         match x with
         | FSMeth(_, _, vref, _) -> vref.DisplayNameCore
-        | _ -> x.LogicalName |> PrettyNaming.DecompileOpName
+        | _ -> x.LogicalName |> PrettyNaming.ConvertValLogicalNameToDisplayNameCore
 
      /// Indicates if this is a method defined in this assembly with an internal XML comment
     member x.HasDirectXmlComment =
@@ -663,7 +735,7 @@ type MethInfo =
 #endif
         | _ -> false
 
-    override x.ToString() =  x.ApparentEnclosingType.ToString() + x.LogicalName
+    override x.ToString() =  x.ApparentEnclosingType.ToString() + "::" + x.LogicalName
 
     /// Get the actual type instantiation of the declaring type associated with this use of the method.
     ///
@@ -933,6 +1005,12 @@ type MethInfo =
         | FSMeth _ -> false // F# defined methods not supported yet. Must be a language feature.
         | _ -> false
 
+    /// Indicates, wheter this method has `IsExternalInit` modreq.
+    member x.HasExternalInit =
+        match x with
+        | ILMeth (_, ilMethInfo, _) -> HasExternalInit ilMethInfo.ILMethodRef
+        | _ -> false
+
     /// Indicates if this method is an extension member that is read-only.
     /// An extension member is considered read-only if the first argument is a read-only byref (inref) type.
     member x.IsReadOnlyExtensionMember (amap: ImportMap, m) =
@@ -1053,6 +1131,12 @@ type MethInfo =
             else []
 #endif
 
+    /// Get custom attributes for method (only applicable for IL methods)
+    member x.GetCustomAttrs() =
+        match x with
+        | ILMeth(_, ilMethInfo, _) -> ilMethInfo.RawMetadata.CustomAttrs
+        | _ -> ILAttributes.Empty
+
     /// Get the parameter attributes of a method info, which get combined with the parameter names and types
     member x.GetParamAttribs(amap, m) =
         match x with
@@ -1086,72 +1170,11 @@ type MethInfo =
                         if p.Type.TypeRef.FullName = "System.Int32" then CallerFilePath
                         else CallerLineNumber
 
-                 yield (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo) ] ]
+                 ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo) ] ]
 
         | FSMeth(g, _, vref, _) ->
             GetArgInfosOfMember x.IsCSharpStyleExtensionMember g vref
-            |> List.mapSquared (fun (ty, argInfo) ->
-                let isParamArrayArg = HasFSharpAttribute g g.attrib_ParamArrayAttribute argInfo.Attribs
-                let reflArgInfo =
-                    match TryFindFSharpBoolAttributeAssumeFalse  g g.attrib_ReflectedDefinitionAttribute argInfo.Attribs  with
-                    | Some b -> ReflectedArgInfo.Quote b
-                    | None -> ReflectedArgInfo.None
-                let isOutArg = (HasFSharpAttribute g g.attrib_OutAttribute argInfo.Attribs && isByrefTy g ty) || isOutByrefTy g ty
-                let isInArg = (HasFSharpAttribute g g.attrib_InAttribute argInfo.Attribs && isByrefTy g ty) || isInByrefTy g ty
-                let isCalleeSideOptArg = HasFSharpAttribute g g.attrib_OptionalArgumentAttribute argInfo.Attribs
-                let isCallerSideOptArg = HasFSharpAttributeOpt g g.attrib_OptionalAttribute argInfo.Attribs
-                let optArgInfo =
-                    if isCalleeSideOptArg then
-                        CalleeSide
-                    elif isCallerSideOptArg then
-                        let defaultParameterValueAttribute = TryFindFSharpAttributeOpt g g.attrib_DefaultParameterValueAttribute argInfo.Attribs
-                        match defaultParameterValueAttribute with
-                        | None ->
-                            // Do a type-directed analysis of the type to determine the default value to pass.
-                            // Similar rules as OptionalArgInfo.FromILParameter are applied here, except for the COM and byref-related stuff.
-                            CallerSide (if isObjTy g ty then MissingValue else DefaultValue)
-                        | Some attr ->
-                            let defaultValue = OptionalArgInfo.ValueOfDefaultParameterValueAttrib attr
-                            match defaultValue with
-                            | Some (Expr.Const (_, m, ty2)) when not (typeEquiv g ty2 ty) ->
-                                // the type of the default value does not match the type of the argument.
-                                // Emit a warning, and ignore the DefaultParameterValue argument altogether.
-                                warning(Error(FSComp.SR.DefaultParameterValueNotAppropriateForArgument(), m))
-                                NotOptional
-                            | Some (Expr.Const (ConstToILFieldInit fi, _, _)) ->
-                                // Good case - all is well.
-                                CallerSide (Constant fi)
-                            | _ ->
-                                // Default value is not appropriate, i.e. not a constant.
-                                // Compiler already gives an error in that case, so just ignore here.
-                                NotOptional
-                    else NotOptional
-
-                let isCallerLineNumberArg = HasFSharpAttribute g g.attrib_CallerLineNumberAttribute argInfo.Attribs
-                let isCallerFilePathArg = HasFSharpAttribute g g.attrib_CallerFilePathAttribute argInfo.Attribs
-                let isCallerMemberNameArg = HasFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs
-
-                let callerInfo =
-                    match isCallerLineNumberArg, isCallerFilePathArg, isCallerMemberNameArg with
-                    | false, false, false -> NoCallerInfo
-                    | true, false, false -> CallerLineNumber
-                    | false, true, false -> CallerFilePath
-                    | false, false, true -> CallerMemberName
-                    | false, true, true -> 
-                        match TryFindFSharpAttribute g g.attrib_CallerMemberNameAttribute argInfo.Attribs with
-                        | Some(Attrib(_, _, _, _, _, _, callerMemberNameAttributeRange)) ->
-                            warning(Error(FSComp.SR.CallerMemberNameIsOverriden(argInfo.Name.Value.idText), callerMemberNameAttributeRange))
-                            CallerFilePath
-                        | _ -> failwith "Impossible"
-                    | _, _, _ ->
-                        // if multiple caller info attributes are specified, pick the "wrong" one here
-                        // so that we get an error later
-                        match tryDestOptionTy g ty with
-                        | ValueSome optTy when typeEquiv g g.int32_ty optTy -> CallerFilePath
-                        | _ -> CallerLineNumber
-
-                (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo))
-
+            |> List.mapSquared (CrackParamAttribsInfo g)
         | DefaultStructCtor _ ->
             [[]]
 
@@ -1168,7 +1191,7 @@ type MethInfo =
                     | None -> ReflectedArgInfo.None
                 let isOutArg = p.PUntaint((fun p -> p.IsOut && not p.IsIn), m)
                 let isInArg = p.PUntaint((fun p -> p.IsIn && not p.IsOut), m)
-                yield (isParamArrayArg, isInArg, isOutArg, optArgInfo, NoCallerInfo, reflArgInfo)] ]
+                ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, NoCallerInfo, reflArgInfo)] ]
 #endif
 
     /// Get the signature of an abstract method slot.
@@ -1205,9 +1228,9 @@ type MethInfo =
             // REVIEW: should we copy down attributes to slot params?
             let tcref =  tcrefOfAppTy g x.ApparentEnclosingAppType
             let formalEnclosingTyparsOrig = tcref.Typars m
-            let formalEnclosingTypars = copyTypars formalEnclosingTyparsOrig
+            let formalEnclosingTypars = copyTypars false formalEnclosingTyparsOrig
             let _, formalEnclosingTyparTys = FixupNewTypars m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
-            let formalMethTypars = copyTypars x.FormalMethodTypars
+            let formalMethTypars = copyTypars false x.FormalMethodTypars
             let _, formalMethTyparTys = FixupNewTypars m formalEnclosingTypars formalEnclosingTyparTys x.FormalMethodTypars formalMethTypars
 
             let formalRetTy, formalParams =
@@ -1217,8 +1240,8 @@ type MethInfo =
                     let formalRetTy = ImportReturnTypeFromMetadata amap m ilminfo.RawMetadata.Return.Type (fun _ -> ilminfo.RawMetadata.Return.CustomAttrs) ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys
                     let formalParams =
                         [ [ for p in ilminfo.RawMetadata.Parameters do
-                                let paramType = ImportILTypeFromMetadataWithAttributes amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type (fun _ -> p.CustomAttrs)
-                                yield TSlotParam(p.Name, paramType, p.IsIn, p.IsOut, p.IsOptional, []) ] ]
+                                let paramTy = ImportILTypeFromMetadataWithAttributes amap m ftinfo.ILScopeRef ftinfo.TypeInstOfRawMetadata formalMethTyparTys p.Type (fun _ -> p.CustomAttrs)
+                                yield TSlotParam(p.Name, paramTy, p.IsIn, p.IsOut, p.IsOptional, []) ] ]
                     formalRetTy, formalParams
 #if !NO_TYPEPROVIDERS
                 | ProvidedMeth (_, mi, _, _) ->
@@ -1230,9 +1253,9 @@ type MethInfo =
                     let formalParams =
                         [ [ for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
                                 let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some s), m)
-                                let paramType = ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
+                                let paramTy = ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
                                 let isIn, isOut, isOptional = p.PUntaint((fun p -> p.IsIn, p.IsOut, p.IsOptional), m)
-                                yield TSlotParam(paramName, paramType, isIn, isOut, isOptional, []) ] ]
+                                yield TSlotParam(paramName, paramTy, isIn, isOut, isOptional, []) ] ]
                     formalRetTy, formalParams
 #endif
                 | _ -> failwith "unreachable"
@@ -1256,20 +1279,21 @@ type MethInfo =
             | ProvidedMeth(amap, mi, _, _) ->
                 // A single set of tupled parameters
                 [ [for p in mi.PApplyArray((fun mi -> mi.GetParameters()), "GetParameters", m) do
-                        let pname =
+                        let paramName =
                             match p.PUntaint((fun p -> p.Name), m) with
                             | null -> None
                             | name -> Some (mkSynId m name)
-                        let pty =
+                        let paramTy =
                             match p.PApply((fun p -> p.ParameterType), m) with
                             | Tainted.Null ->  amap.g.unit_ty
                             | parameterType -> ImportProvidedType amap m parameterType
-                        yield ParamNameAndType(pname, pty) ] ]
+                        yield ParamNameAndType(paramName, paramTy) ] ]
 
 #endif
 
         let paramAttribs = x.GetParamAttribs(amap, m)
-        (paramAttribs, paramNamesAndTypes) ||> List.map2 (List.map2 (fun (isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo) (ParamNameAndType(nmOpt, pty)) ->
+        (paramAttribs, paramNamesAndTypes) ||> List.map2 (List.map2 (fun info (ParamNameAndType(nmOpt, pty)) ->
+             let (ParamAttribs(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, reflArgInfo)) = info
              ParamData(isParamArrayArg, isInArg, isOutArg, optArgInfo, callerInfo, nmOpt, reflArgInfo, pty)))
 
     /// Get the ParamData objects for the parameters of a MethInfo
@@ -1357,6 +1381,8 @@ type ILFieldInfo =
 #if !NO_TYPEPROVIDERS
         | ProvidedField(_, fi, m) -> fi.PUntaint((fun fi -> fi.Name), m)
 #endif
+
+    member x.DisplayNameCore = x.FieldName
 
      /// Indicates if the field is readonly (in the .NET/C# sense of readonly)
     member x.IsInitOnly =
@@ -1504,14 +1530,14 @@ type UnionCaseInfo =
     ///
     /// Backticks and parens are not added for non-identifiers.
     ///
-    /// Note logical names op_Nil and op_ConsCons become [] and :: respectively.
+    /// Note logical names op_Nil and op_ColonColon become [] and :: respectively.
     member x.DisplayNameCore = x.UnionCase.DisplayNameCore
 
     /// Get the display name of the union case
     ///
     /// Backticks and parens are added implicitly for non-identifiers.
     ///
-    /// Note logical names op_Nil and op_ConsCons become ([]) and (::) respectively.
+    /// Note logical names op_Nil and op_ColonColon become ([]) and (::) respectively.
     member x.DisplayName = x.UnionCase.DisplayName
 
     /// Get the instantiation of the type parameters of the declaring type of the union case
@@ -1562,6 +1588,10 @@ type ILPropInfo =
     /// Indicates if the IL property has a 'set' method
     member x.HasSetter = Option.isSome x.RawMetadata.SetMethod
 
+    /// Indidcates whether IL property has an init-only setter (i.e. has the `System.Runtime.CompilerServices.IsExternalInit` modifer)
+    member x.IsSetterInitOnly =
+        x.HasSetter && HasExternalInit x.SetterMethod.ILMethodRef
+
     /// Indicates if the IL property is static
     member x.IsStatic = (x.RawMetadata.CallingConv = ILThisConvention.Static)
 
@@ -1574,6 +1604,9 @@ type ILPropInfo =
     member x.IsNewSlot =
         (x.HasGetter && x.GetterMethod.IsNewSlot) ||
         (x.HasSetter && x.SetterMethod.IsNewSlot)
+
+    /// Indicates if the property is required, i.e. has RequiredMemberAttribute applied.
+    member x.IsRequired = TryFindILAttribute x.TcGlobals.attrib_RequiredMemberAttribute x.RawMetadata.CustomAttrs
 
     /// Get the names and types of the indexer arguments associated with the IL property.
     ///
@@ -1638,7 +1671,7 @@ type PropInfo =
     /// holding the value for the extension method.
     member x.DeclaringTyconRef   =
         match x.ArbitraryValRef with
-        | Some vref when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.TopValDeclaringEntity
+        | Some vref when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.DeclaringEntity
         | _ -> x.ApparentEnclosingTyconRef
 
     /// Try to get an arbitrary F# ValRef associated with the member. This is to determine if the member is virtual, amongst other things.
@@ -1670,6 +1703,20 @@ type PropInfo =
 #endif
         | FSProp _ -> failwith "unreachable"
 
+     /// Get the property name in DisplayName form
+    member x.DisplayName =
+        match x with
+        | FSProp(_, _, Some vref, _)
+        | FSProp(_, _, _, Some vref) -> vref.DisplayName
+        | _ -> x.PropertyName |> PrettyNaming.ConvertValLogicalNameToDisplayName false
+
+     /// Get the property name in DisplayNameCore form
+    member x.DisplayNameCore =
+        match x with
+        | FSProp(_, _, Some vref, _)
+        | FSProp(_, _, _, Some vref) -> vref.DisplayNameCore
+        | _ -> x.PropertyName |> PrettyNaming.ConvertValLogicalNameToDisplayNameCore
+
     /// Indicates if this property has an associated getter method.
     member x.HasGetter =
         match x with
@@ -1686,6 +1733,22 @@ type PropInfo =
         | FSProp(_, _, _, x) -> Option.isSome x
 #if !NO_TYPEPROVIDERS
         | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> pi.CanWrite), m)
+#endif
+
+    member x.IsSetterInitOnly =
+        match x with
+        | ILProp ilpinfo -> ilpinfo.IsSetterInitOnly
+        | FSProp _ -> false
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp _ -> false
+#endif
+
+    member x.IsRequired =
+        match x with
+        | ILProp ilpinfo -> ilpinfo.IsRequired
+        | FSProp _ -> false
+#if !NO_TYPEPROVIDERS
+        | ProvidedProp _ -> false
 #endif
 
     /// Indicates if this is an extension member
@@ -1866,14 +1929,14 @@ type PropInfo =
         | ProvidedProp (_, pi, m) ->
             [ for p in pi.PApplyArray((fun pi -> pi.GetIndexParameters()), "GetIndexParameters", m) do
                 let paramName = p.PUntaint((fun p -> match p.Name with null -> None | s -> Some (mkSynId m s)), m)
-                let paramType = ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
-                yield ParamNameAndType(paramName, paramType) ]
+                let paramTy = ImportProvidedType amap m (p.PApply((fun p -> p.ParameterType), m))
+                yield ParamNameAndType(paramName, paramTy) ]
 #endif
 
     /// Get the details of the indexer parameters associated with the property
     member x.GetParamDatas(amap, m) =
         x.GetParamNamesAndTypes(amap, m)
-        |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
+        |> List.map (fun (ParamNameAndType(nmOpt, paramTy)) -> ParamData(false, false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, paramTy))
 
     /// Get the types of the indexer parameters associated with the property
     member x.GetParamTypes(amap, m) =
@@ -1908,14 +1971,16 @@ type PropInfo =
     /// Uses the same techniques as 'MethInfosUseIdenticalDefinitions'.
     /// Must be compatible with ItemsAreEffectivelyEqual relation.
     static member PropInfosUseIdenticalDefinitions x1 x2 =
+
         let optVrefEq g = function
-          | Some v1, Some v2 -> valRefEq g v1 v2
+          | Some vref1, Some vref2 -> valRefEq g vref1 vref2
           | None, None -> true
           | _ -> false
+
         match x1, x2 with
         | ILProp ilpinfo1, ILProp ilpinfo2 -> (ilpinfo1.RawMetadata === ilpinfo2.RawMetadata)
         | FSProp(g, _, vrefa1, vrefb1), FSProp(_, _, vrefa2, vrefb2) ->
-            (optVrefEq g (vrefa1, vrefa2)) && (optVrefEq g (vrefb1, vrefb2))
+            optVrefEq g (vrefa1, vrefa2) && optVrefEq g (vrefb1, vrefb2)
 #if !NO_TYPEPROVIDERS
         | ProvidedProp(_, pi1, _), ProvidedProp(_, pi2, _) -> ProvidedPropertyInfo.TaintedEquals (pi1, pi2)
 #endif
@@ -1927,7 +1992,7 @@ type PropInfo =
         | ILProp ilpinfo -> hash ilpinfo.RawMetadata.Name
         | FSProp(_, _, vrefOpt1, vrefOpt2) ->
             // Hash on string option * string option
-            let vth = (vrefOpt1 |> Option.map (fun vr -> vr.LogicalName), (vrefOpt2 |> Option.map (fun vr -> vr.LogicalName)))
+            let vth = (vrefOpt1 |> Option.map (fun vr -> vr.LogicalName), (vrefOpt2 |> Option.map (fun vref -> vref.LogicalName)))
             hash vth
 #if !NO_TYPEPROVIDERS
         | ProvidedProp(_, pi, _) -> ProvidedPropertyInfo.TaintedGetHashCode pi
@@ -2039,6 +2104,7 @@ type EventInfo =
 #if !NO_TYPEPROVIDERS
         | ProvidedEvent (amap, ei, m) -> ImportProvidedType amap m (ei.PApply((fun ei -> ei.DeclaringType), m))
 #endif
+
     /// Get the enclosing type of the method info, using a nominal type for tuple types
     member x.ApparentEnclosingAppType =
         match x with
@@ -2053,7 +2119,7 @@ type EventInfo =
     /// holding the value for the extension method.
     member x.DeclaringTyconRef =
         match x.ArbitraryValRef with
-        | Some vref when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.TopValDeclaringEntity
+        | Some vref when x.IsExtensionMember && vref.HasDeclaringEntity -> vref.DeclaringEntity
         | _ -> x.ApparentEnclosingTyconRef
 
     /// Indicates if this event has an associated XML comment authored in this assembly.
@@ -2084,6 +2150,18 @@ type EventInfo =
 #if !NO_TYPEPROVIDERS
         | ProvidedEvent (_, ei, m) -> ei.PUntaint((fun ei -> ei.Name), m)
 #endif
+
+     /// Get the event name in DisplayName form
+    member x.DisplayName =
+        match x with
+        | FSEvent (_, p, _, _) -> p.DisplayName
+        | _ -> x.EventName |> PrettyNaming.ConvertValLogicalNameToDisplayName false
+
+     /// Get the event name in DisplayNameCore form
+    member x.DisplayNameCore =
+        match x with
+        | FSEvent (_, p, _, _) -> p.DisplayNameCore
+        | _ -> x.EventName |> PrettyNaming.ConvertValLogicalNameToDisplayNameCore
 
     /// Indicates if this property is static.
     member x.IsStatic =

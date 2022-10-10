@@ -7,6 +7,7 @@ open System.IO
 open System.Reflection
 open System.Collections.Immutable
 open System.Diagnostics
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.CSharp
@@ -14,7 +15,6 @@ open TestFramework
 open NUnit.Framework
 
 // This file mimics how Roslyn handles their compilation references for compilation testing
-
 module Utilities =
 
     type Async with
@@ -120,6 +120,7 @@ module Utilities =
         <TargetFramework>$TARGETFRAMEWORK</TargetFramework>
         <UseFSharpPreview>true</UseFSharpPreview>
         <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+        <DotnetFscCompilerPath>$DOTNETFSCCOMPILERPATH</DotnetFscCompilerPath>
   </PropertyGroup>
 
   <ItemGroup><Compile Include="Program.fs" /></ItemGroup>
@@ -170,6 +171,7 @@ let main argv = 0"""
             let pathToTemp = Path.Combine(pathToArtifacts, "Temp")
             let projectDirectory = Path.Combine(pathToTemp,Guid.NewGuid().ToString() + ".tmp")
             let pathToFSharpCore = typeof<RequireQualifiedAccessAttribute>.Assembly.Location
+            let dotNetFscCompilerPath = config.DOTNETFSCCOMPILERPATH
             try
                 try
                     Directory.CreateDirectory(projectDirectory) |> ignore
@@ -179,9 +181,9 @@ let main argv = 0"""
                     let directoryBuildTargetsFileName = Path.Combine(projectDirectory, "Directory.Build.targets")
                     let frameworkReferencesFileName = Path.Combine(projectDirectory, "FrameworkReferences.txt")
 #if NETCOREAPP
-                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net6.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net7.0").Replace("$FSHARPCORELOCATION", pathToFSharpCore).Replace("$DOTNETFSCCOMPILERPATH", dotNetFscCompilerPath))
 #else
-                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore))
+                    File.WriteAllText(projectFileName, projectFile.Replace("$TARGETFRAMEWORK", "net472").Replace("$FSHARPCORELOCATION", pathToFSharpCore).Replace("$DOTNETFSCCOMPILERPATH", dotNetFscCompilerPath))
 #endif
                     File.WriteAllText(programFsFileName, programFs)
                     File.WriteAllText(directoryBuildPropsFileName, directoryBuildProps)

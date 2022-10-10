@@ -337,18 +337,15 @@ module internal TestExpose =
     val TokenInfo: Parser.token -> FSharpTokenColorKind * FSharpTokenCharKind * FSharpTokenTriggerClass
 
 module FSharpKeywords =
-    /// Checks if adding backticks to identifier is needed.
-    val DoesIdentifierNeedBackticks: string -> bool
-
     /// Add backticks if the identifier is a keyword.
-    /// A utility to help determine if an identifier needs to be quoted, this doesn't quote F# keywords.
-    val AddBackticksToIdentifierIfNeeded: string -> string
-
-    /// Remove backticks if present.
+    /// Remove backticks if present and not needed.
     val NormalizeIdentifierBackticks: string -> string
 
     /// Keywords paired with their descriptions. Used in completion and quick info.
     val KeywordsWithDescription: (string * string) list
+
+    /// A lookup from keywords to their descriptions
+    val KeywordsDescriptionLookup: System.Collections.Generic.IDictionary<string, string>
 
     /// All the keywords in the F# language
     val KeywordNames: string list

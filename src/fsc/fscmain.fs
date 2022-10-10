@@ -26,18 +26,18 @@ let main (argv) =
 
     let compilerName =
         // the 64 bit desktop version of the compiler is name fscAnyCpu.exe, all others are fsc.exe
-        if Environment.Is64BitProcess
-           && typeof<obj>.Assembly.GetName().Name <> "System.Private.CoreLib" then
+        if
+            Environment.Is64BitProcess
+            && typeof<obj>.Assembly.GetName().Name <> "System.Private.CoreLib"
+        then
             "fscAnyCpu.exe"
         else
             "fsc.exe"
 
-    // Set the garbage collector to batch mode, which improves overall performance.
-    GCSettings.LatencyMode <- GCLatencyMode.Batch
     Thread.CurrentThread.Name <- "F# Main Thread"
 
     // Set the initial phase to garbage collector to batch mode, which improves overall performance.
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+    use _ = UseBuildPhase BuildPhase.Parameter
 
     // An SDL recommendation
     UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption()
@@ -58,7 +58,6 @@ let main (argv) =
             System.Console.ReadLine() |> ignore
 
         // Set up things for the --times testing flag
-#if !FX_NO_APP_DOMAINS
         let timesFlag = argv |> Array.exists (fun x -> x = "/times" || x = "--times")
 
         if timesFlag then
@@ -72,28 +71,9 @@ let main (argv) =
                     stats.memoryMapFileClosedCount
                     stats.rawMemoryFileCount
                     stats.weakByteFileCount)
-#endif
-
-        // This object gets invoked when two many errors have been accumulated, or an abort-on-error condition
-        // has been reached (e.g. type checking failed, so don't proceed to optimization).
-        let quitProcessExiter =
-            { new Exiter with
-                member _.Exit(n) =
-                    try
-                        exit n
-                    with _ ->
-                        ()
-
-                    failwithf "%s" (FSComp.SR.elSysEnvExitDidntExit ())
-            }
 
         // Get the handler for legacy resolution of references via MSBuild.
-        let legacyReferenceResolver =
-#if CROSS_PLATFORM_COMPILER
-            SimulatedMSBuildReferenceResolver.SimulatedMSBuildResolver
-#else
-            LegacyMSBuildReferenceResolver.getResolver ()
-#endif
+        let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
 
         // Perform the main compilation.
         //
@@ -108,7 +88,7 @@ let main (argv) =
             false,
             ReduceMemoryFlag.No,
             CopyFSharpCoreFlag.Yes,
-            quitProcessExiter,
+            QuitProcessExiter,
             ConsoleLoggerProvider(),
             None,
             None

@@ -175,3 +175,8 @@ val mkSynMemberDefnGetSet:
     attrs: SynAttributeList list ->
     rangeStart: range ->
         SynMemberDefn list
+
+/// Incorporate a '^' for an qualified access to a generic type parameter
+val adjustHatPrefixToTyparLookup: mFull: range -> rightExpr: SynExpr -> SynExpr
+
+val mkSynTypeTuple: elementTypes: SynTupleTypeSegment list -> SynType

@@ -86,7 +86,7 @@ module Basic =
         |> verifyCompileAndRun
         |> shouldSucceed
 
-#if !NETCOREAPP && !NETSTANDARD
+#if false && !NETCOREAPP && !NETSTANDARD
     // SOURCE=SanityCheck02.fs PEVER=/MD		# SanityCheck02.fs - /MD
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"SanityCheck02.fs"|])>]
     let ``SanityCheck02_fs_peverify`` compilation =
