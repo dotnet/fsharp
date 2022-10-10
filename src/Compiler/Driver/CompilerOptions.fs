@@ -2386,7 +2386,7 @@ let ReportTime (tcConfig: TcConfig) descr =
 
         tPrev <- Some(tStart, tNow, utNow, gcNow)
 
-    nPrev <- Some(descr, Activity.StartNoTags descr)
+    nPrev <- Some(descr, Activity.startNoTags descr)
 
 let ignoreFailureOnMono1_1_16 f =
     try

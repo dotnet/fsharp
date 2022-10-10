@@ -133,8 +133,8 @@
     <Compile Include="Utilities\range.fsi" />
     <Compile Include="Utilities\range.fs" />
     <EmbeddedText Include="Facilities\UtilsStrings.txt" />
-    <Compile Include="Facilities\Logger.fsi" />
-    <Compile Include="Facilities\Logger.fs" />
+    <Compile Include="Facilities\Activity.fsi" />
+    <Compile Include="Facilities\Activity.fs" />
     <Compile Include="Facilities\LanguageFeatures.fsi" />
     <Compile Include="Facilities\LanguageFeatures.fs" />
     <Compile Include="Facilities\DiagnosticOptions.fsi" />

@@ -1137,7 +1137,7 @@ type BackgroundCompiler
     member _.ProjectChecked = projectChecked.Publish
 
     member _.ClearCaches() =
-        use _ = Activity.StartNoTags "BackgroundCompiler.ClearCaches"
+        use _ = Activity.startNoTags "BackgroundCompiler.ClearCaches"
 
         lock gate (fun () ->
             parseCacheLock.AcquireLock(fun ltok ->
@@ -1149,7 +1149,7 @@ type BackgroundCompiler
             scriptClosureCache.Clear AnyCallerThread)
 
     member _.DownsizeCaches() =
-        use _ = Activity.StartNoTags "BackgroundCompiler.DownsizeCaches"
+        use _ = Activity.startNoTags "BackgroundCompiler.DownsizeCaches"
 
         lock gate (fun () ->
             parseCacheLock.AcquireLock(fun ltok ->
@@ -1241,7 +1241,7 @@ type FSharpChecker
             ?parallelReferenceResolution
         ) =
 
-        use _ = Activity.StartNoTags "FSharpChecker.Create"
+        use _ = Activity.startNoTags "FSharpChecker.Create"
 
         let legacyReferenceResolver =
             match legacyReferenceResolver with
@@ -1356,7 +1356,7 @@ type FSharpChecker
     // This is for unit testing only
     member ic.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() =
         use _ =
-            Activity.StartNoTags "FsharpChecker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients"
+            Activity.startNoTags "FsharpChecker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients"
 
         ic.ClearCaches()
         GC.Collect()
