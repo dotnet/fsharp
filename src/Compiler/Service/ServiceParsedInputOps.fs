@@ -556,7 +556,7 @@ module ParsedInput =
         let (|ConstructorPats|) pats =
             match pats with
             | SynArgPats.Pats ps -> ps
-            | SynArgPats.NamePatPairs (xs, _) -> List.map (fun (_, _, pat) -> pat) xs
+            | SynArgPats.NamePatPairs (pats = xs) -> List.map (fun (_, _, pat) -> pat) xs
 
         /// A recursive pattern that collect all sequential expressions to avoid StackOverflowException
         let rec (|Sequentials|_|) expr =
@@ -570,8 +570,8 @@ module ParsedInput =
         let inline ifPosInRange range f =
             if isPosInRange range then f () else None
 
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.tryPick (walkSynModuleOrNamespace true) moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.tryPick (walkSynModuleOrNamespace true) file.Contents
 
         and walkSynModuleOrNamespace isTopLevel inp =
             let (SynModuleOrNamespace (decls = decls; attribs = Attributes attrs; range = r)) =
@@ -581,7 +581,7 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> ifPosInRange r (fun _ -> List.tryPick (walkSynModuleDecl isTopLevel) decls))
 
         and walkAttribute (attr: SynAttribute) =
-            if isPosInRange attr.Range then
+            if isPosInRange attr.TypeName.Range then
                 Some EntityKind.Attribute
             else
                 None
@@ -619,7 +619,8 @@ module ParsedInput =
             | SynPat.As (pat1, pat2, _) -> List.tryPick walkPat [ pat1; pat2 ]
             | SynPat.Typed (pat, t, _) -> walkPat pat |> Option.orElseWith (fun () -> walkType t)
             | SynPat.Attrib (pat, Attributes attrs, _) -> walkPat pat |> Option.orElseWith (fun () -> List.tryPick walkAttribute attrs)
-            | SynPat.Or (pat1, pat2, _, _) -> List.tryPick walkPat [ pat1; pat2 ]
+            | SynPat.Or (pat1, pat2, _, _)
+            | SynPat.ListCons (pat1, pat2, _, _) -> List.tryPick walkPat [ pat1; pat2 ]
             | SynPat.LongIdent (typarDecls = typars; argPats = ConstructorPats pats; range = r) ->
                 ifPosInRange r (fun _ -> kind)
                 |> Option.orElseWith (fun () ->
@@ -1566,7 +1567,7 @@ module ParsedInput =
     let (|ConstructorPats|) pats =
         match pats with
         | SynArgPats.Pats ps -> ps
-        | SynArgPats.NamePatPairs (xs, _) -> List.map (fun (_, _, pat) -> pat) xs
+        | SynArgPats.NamePatPairs (pats = xs) -> List.map (fun (_, _, pat) -> pat) xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
     let getLongIdents (parsedInput: ParsedInput) : IDictionary<pos, LongIdent> =
@@ -1589,8 +1590,8 @@ module ParsedInput =
         let addIdent (ident: Ident) =
             identsByEndPos[ident.idRange.End] <- [ ident ]
 
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.iter walkSynModuleOrNamespace moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.iter walkSynModuleOrNamespace file.Contents
 
         and walkSynModuleOrNamespace (SynModuleOrNamespace (decls = decls; attribs = Attributes attrs)) =
             List.iter walkAttribute attrs
@@ -1638,7 +1639,8 @@ module ParsedInput =
                 walkPat pat
                 List.iter walkAttribute attrs
             | SynPat.As (pat1, pat2, _)
-            | SynPat.Or (pat1, pat2, _, _) -> List.iter walkPat [ pat1; pat2 ]
+            | SynPat.Or (pat1, pat2, _, _)
+            | SynPat.ListCons (pat1, pat2, _, _) -> List.iter walkPat [ pat1; pat2 ]
             | SynPat.LongIdent (longDotId = ident; typarDecls = typars; argPats = ConstructorPats pats) ->
                 addLongIdentWithDots ident
 
@@ -2069,8 +2071,8 @@ module ParsedInput =
                 | _ -> None
                 |> Option.map (fun r -> r.StartColumn)
 
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.iter (walkSynModuleOrNamespace []) moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.iter (walkSynModuleOrNamespace []) file.Contents
 
         and walkSynModuleOrNamespace (parent: LongIdent) modul =
             let (SynModuleOrNamespace (longId = ident; kind = kind; decls = decls; range = range)) =

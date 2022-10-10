@@ -40,7 +40,6 @@
   <!-- Reference a project -->
   <ItemGroup Condition="'$(FcsReferenceType)' == 'project'">
     <ProjectReference Include="$(FcsProjectPath)" />
-    <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
   <!-- Reference the FCS NuGet package with the specified $FcsVersion, use locally built FSharp.Core
        Arguably this could be changed to depend on the version of FSharp.Core that's pulled in via FSharp.Compiler.Service.
@@ -48,8 +47,16 @@
   -->
   <ItemGroup Condition=" '$(FcsReferenceType)' == 'nuget' ">
     <PackageReference Include="FSharp.Compiler.Service" Version="$(FcsNuGetVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
     <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+  </ItemGroup>
+
   <!-- Reference the dlls specified in $FcsDllPath and $FSharpCoreDllPath -->
   <ItemGroup Condition=" '$(FcsReferenceType)' == 'dll' ">
     <Reference Include="FSharp.Compiler.Service">
