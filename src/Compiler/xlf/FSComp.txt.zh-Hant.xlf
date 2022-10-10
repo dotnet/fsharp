@@ -213,8 +213,8 @@
         <note />
       </trans-unit>
       <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
-        <source>Pattern match discard not allowed for union case that takes no data.</source>
-        <target state="new">Pattern match discard not allowed for union case that takes no data.</target>
+        <source>Pattern match discard is not allowed for union case that takes no data.</source>
+        <target state="new">Pattern match discard is not allowed for union case that takes no data.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -408,8 +408,8 @@
         <note />
       </trans-unit>
       <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
-        <source>Pattern discard not allowed for union case that takes no data.</source>
-        <target state="new">Pattern discard not allowed for union case that takes no data.</target>
+        <source>Pattern discard is not allowed for union case that takes no data.</source>
+        <target state="new">Pattern discard is not allowed for union case that takes no data.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatError">
