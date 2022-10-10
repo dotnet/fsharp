@@ -6,18 +6,18 @@ open System
 open System.Diagnostics
 
 [<RequireQualifiedAccess>]
-module Activity =    
-    
+module Activity =
+
     let private activitySourceName = "fsc"
     let private activitySource = new ActivitySource(activitySourceName)
 
-    let start name (tags : (string * string) seq) : IDisposable = 
+    let start name (tags: (string * string) seq) : IDisposable =
         match activitySource.StartActivity(name) |> Option.ofObj with
         | Some activity ->
             for key, value in tags do
                 activity.AddTag(key, value) |> ignore
-            activity :> IDisposable
-        | None ->
-            null
 
-    let startNoTags name: IDisposable = activitySource.StartActivity(name)
+            activity :> IDisposable
+        | None -> null
+
+    let startNoTags name : IDisposable = activitySource.StartActivity(name)

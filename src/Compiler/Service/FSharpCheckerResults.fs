@@ -2488,12 +2488,7 @@ module internal ParseAndCheckFile =
 
         cancellable {
             use _ =
-                Activity.start
-                    "ParseAndCheckFile.CheckOneFile"
-                    [|
-                        "fileName", mainInputFileName
-                        "length", sourceText.Length.ToString()
-                    |]
+                Activity.start "ParseAndCheckFile.CheckOneFile" [| "fileName", mainInputFileName; "length", sourceText.Length.ToString() |]
 
             let parsedMainInput = parseResults.ParseTree
 
