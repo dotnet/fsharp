@@ -84,11 +84,11 @@ stages:
   #                                                  Signed build                                                     #
   #-------------------------------------------------------------------------------------------------------------------#
   - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
-    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.3') }}:
+    - ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/release/dev17.5') }}:
       - template: /eng/common/templates/job/onelocbuild.yml
         parameters:
           MirrorRepo: fsharp
-          MirrorBranch: release/dev17.3
+          MirrorBranch: release/dev17.5
           LclSource: lclFilesfromPackage
           LclPackageId: 'LCL-JUNO-PROD-FSHARP'
     - template: /eng/common/templates/jobs/jobs.yml
@@ -104,7 +104,7 @@ stages:
         jobs:
         - job: Full_Signed
           pool:
-            name: NetCore1ESPool-Internal
+            name: NetCore1ESPool-Svc-Internal
             demands: ImageOverride -equals windows.vs2022.amd64
           timeoutInMinutes: 300
           variables:
@@ -727,8 +727,9 @@ stages:
 - ${{ if and(ne(variables['System.TeamProject'], 'public'), notin(variables['Build.Reason'], 'PullRequest')) }}:
   - template: eng/release/insert-into-vs.yml
     parameters:
-      componentBranchName: refs/heads/release/dev17.3
-      insertTargetBranch: rel/d17.3
+      componentBranchName: refs/heads/release/dev17.5
+      insertTargetBranch: main
+
       insertTeamEmail: fsharpteam@microsoft.com
       insertTeamName: 'F#'
       completeInsertion: 'auto'

@@ -126,6 +126,7 @@
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fsi" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fs" />
     <Compile Include="CodeLens\AbstractCodeLensDisplayService.fs" />
+    <Compile Include="CodeLens\LineLensDisplayService.fs" />
     <Compile Include="CodeLens\FSharpCodeLensService.fs" />
     <Compile Include="CodeLens\CodeLensProvider.fs" />
   </ItemGroup>
