@@ -1317,11 +1317,6 @@
         <target state="translated">Nie można rozpoznać zestawu „{0}”</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
-        <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">Nie można rozpoznać zestawu „{0}” wymaganego przez „{1}”</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
         <source>Error opening binary file '{0}': {1}</source>
         <target state="translated">Błąd podczas otwierania pliku binarnego „{0}”: {1}</target>
@@ -3793,8 +3788,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
-        <source>This union case expects {0} arguments in tupled form</source>
-        <target state="translated">Ten przypadek unii oczekuje {0} argumentów w postaci spójnej kolekcji</target>
+        <source>This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</source>
+        <target state="new">This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">

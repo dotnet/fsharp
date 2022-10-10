@@ -1317,11 +1317,6 @@
         <target state="translated">無法解析組件 '{0}'</target>
         <note />
       </trans-unit>
-      <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
-        <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">無法解析 '{1}' 所需的組件 '{0}'</target>
-        <note />
-      </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
         <source>Error opening binary file '{0}': {1}</source>
         <target state="translated">開啟二進位檔案 '{0}' 時發生錯誤: {1}</target>
@@ -3793,8 +3788,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
-        <source>This union case expects {0} arguments in tupled form</source>
-        <target state="translated">這個聯集需要 {0} 個 Tuple 形式的引數</target>
+        <source>This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</source>
+        <target state="new">This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">

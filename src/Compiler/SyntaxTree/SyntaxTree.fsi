@@ -1024,7 +1024,7 @@ type SynSimplePats =
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range
+    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member Patterns: SynPat list
 
@@ -1049,6 +1049,9 @@ type SynPat =
 
     /// A disjunctive pattern 'pat1 | pat2'
     | Or of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatOrTrivia
+
+    /// A conjunctive pattern 'pat1 :: pat2'
+    | ListCons of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatListConsTrivia
 
     /// A conjunctive pattern 'pat1 & pat2'
     | Ands of pats: SynPat list * range: range
@@ -1839,10 +1842,7 @@ type ParsedSigFileFragment =
 
 /// Represents a parsed syntax tree for an F# Interactive interaction
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
-type ParsedScriptInteraction =
-    | Definitions of defns: SynModuleDecl list * range: range
-
-    | HashDirective of hashDirective: ParsedHashDirective * range: range
+type ParsedScriptInteraction = Definitions of defns: SynModuleDecl list * range: range
 
 /// Represents a parsed implementation file made up of fragments
 [<NoEquality; NoComparison>]
