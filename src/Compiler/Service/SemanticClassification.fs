@@ -212,10 +212,8 @@ module TcResolutionsExtensions =
                     resolutions
                     |> Array.iter (fun cnr ->
                         match cnr.Item, cnr.ItemOccurence, cnr.Range with
-                        | (Item.CustomBuilder _
-                          | Item.CustomOperation _),
-                          ItemOccurence.Use,
-                          m -> add m SemanticClassificationType.ComputationExpression
+                        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, m ->
+                            add m SemanticClassificationType.ComputationExpression
 
                         | Item.Value vref, _, m when isValRefMutable g vref -> add m SemanticClassificationType.MutableVar
 

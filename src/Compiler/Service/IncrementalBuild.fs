@@ -116,12 +116,7 @@ module IncrementalBuildSyntaxTree =
         let mutable weakCache: WeakReference<_> option = None
 
         let parse(sigNameOpt: QualifiedNameOfFile option) =
-            use act =
-                Activity.instance.Start "SyntaxTree.parse"
-                    [|
-                        "fileName", source.FilePath
-                        "buildPhase", BuildPhase.Parse.ToString()
-                    |]
+
             let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
             // Return the disposable object that cleans up
             use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
@@ -129,7 +124,13 @@ module IncrementalBuildSyntaxTree =
             try
                 IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
                 let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
-                act.AddTag "canSkip" canSkip
+                use act =
+                    Activity.Start "IncrementalBuildSyntaxTree.parse"
+                        [|
+                            "fileName", source.FilePath
+                            "buildPhase", BuildPhase.Parse.ToString()
+                            "canSkip", canSkip.ToString()
+                        |]             
                 let input =
                     if canSkip then
                         ParsedInput.ImplFile(
@@ -472,7 +473,7 @@ type BoundModel private (tcConfig: TcConfig,
                 let! res = defaultTypeCheck ()
                 return res
             | Some syntaxTree ->
-                use _ = Activity.instance.Start "TypeCheck" [|"fileName", syntaxTree.FileName|]
+                use _ = Activity.Start "BoundModel.TypeCheck" [|"fileName", syntaxTree.FileName|]
                 let sigNameOpt =
                     if partialCheck then
                         this.BackingSignature
@@ -483,7 +484,7 @@ type BoundModel private (tcConfig: TcConfig,
 
                     IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
                     let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
-                    let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
+                    let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
                     use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
                     beforeFileChecked.Trigger fileName
@@ -497,8 +498,6 @@ type BoundModel private (tcConfig: TcConfig,
                     let hadParseErrors = not (Array.isEmpty parseErrors)
                     let input, moduleNamesDict = DeduplicateParsedInputModuleName prevModuleNamesDict input
                         
-                    Logger.LogBlockMessageStart fileName LogCompilerFunctionId.IncrementalBuild_TypeCheck
-                        
                     let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
                         CheckOneInput
                             ((fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
@@ -509,9 +508,6 @@ type BoundModel private (tcConfig: TcConfig,
                                 prevTcState, input,
                                 partialCheck)
                         |> NodeCode.FromCancellable
-
-                    use _ = Activity.instance.StartNoTags("TypeCheck_BuildState")
-                    Logger.LogBlockMessageStop fileName LogCompilerFunctionId.IncrementalBuild_TypeCheck
 
                     fileChecked.Trigger fileName
                     let newErrors = Array.append parseErrors (capturingDiagnosticsLogger.Diagnostics |> List.toArray)
@@ -528,8 +524,8 @@ type BoundModel private (tcConfig: TcConfig,
                             tcDependencyFiles = fileName :: prevTcDependencyFiles
                             sigNameOpt =
                                 match input with
-                                | ParsedInput.SigFile(ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
-                                    Some(fileName, qualName)
+                                | ParsedInput.SigFile sigFile ->
+                                    Some(sigFile.FileName, sigFile.QualifiedName)
                                 | _ ->
                                     None
                         }
@@ -540,7 +536,7 @@ type BoundModel private (tcConfig: TcConfig,
                         // Build symbol keys
                         let itemKeyStore, semanticClassification =
                             if enableBackgroundItemKeyStoreAndSemanticClassification then
-                                Logger.LogBlockMessageStart fileName LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                                use _ = Activity.Start "IncrementalBuild.CreateItemKeyStoreAndSemanticClassification" [|"fileName",fileName|]
                                 let sResolutions = sink.GetResolutions()
                                 let builder = ItemKeyStoreBuilder()
                                 let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with
@@ -558,7 +554,6 @@ type BoundModel private (tcConfig: TcConfig,
                                 sckBuilder.WriteAll semanticClassification
                         
                                 let res = builder.TryBuildAndReset(), sckBuilder.TryBuildAndReset()
-                                Logger.LogBlockMessageStop fileName LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
                                 res
                             else
                                 None, None
@@ -754,7 +749,6 @@ module IncrementalBuilderHelpers =
         unresolvedReferences, 
         dependencyProvider, 
         loadClosureOpt: LoadClosure option, 
-        niceNameGen, 
         basicDependencies,
         keepAssemblyContents,
         keepAllBackgroundResolutions,
@@ -803,7 +797,7 @@ module IncrementalBuilderHelpers =
           }
 
         let tcInitial, openDecls0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
-        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial, openDecls0)
+        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, tcInitial, openDecls0)
         let loadClosureErrors =
            [ match loadClosureOpt with
              | None -> ()
@@ -1047,7 +1041,7 @@ module IncrementalBuilderStateHelpers =
 
     let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
         GraphNode(node {
-            use _ = Activity.instance.Start "GetCheckResultsAndImplementationsForProject" [|"projectOutFile", initialState.outfile|]
+            use _ = Activity.Start "GetCheckResultsAndImplementationsForProject" [|"projectOutFile", initialState.outfile|]
             // Compute last bound model then get all the evaluated models.
             let! _ = boundModels[boundModels.Count - 1].GetOrComputeValue()
             let boundModels =
@@ -1442,7 +1436,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking: bool,
-            dependencyProvider
+            enableParallelCheckingWithSignatureFiles: bool,
+            dependencyProvider,
+            parallelReferenceResolution
         ) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
@@ -1523,6 +1519,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     }
                     |> Some
 
+                tcConfigB.parallelCheckingWithSignatureFiles <- enableParallelCheckingWithSignatureFiles
+                tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+                
                 tcConfigB, sourceFilesNew
 
             // If this is a builder for a script, re-apply the settings inferred from the
@@ -1551,7 +1550,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             setupConfigFromLoadClosure()
 
             let tcConfig = TcConfig.Create(tcConfigB, validate=true)
-            let niceNameGen = NiceNameGenerator()
             let outfile, _, assemblyName = tcConfigB.DecideNames sourceFiles
 
             // Resolve assemblies and create the framework TcImports. This is done when constructing the
@@ -1635,7 +1633,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     unresolvedReferences,
                     dependencyProvider,
                     loadClosureOpt,
-                    niceNameGen,
                     basicDependencies,
                     keepAssemblyContents,
                     keepAllBackgroundResolutions,

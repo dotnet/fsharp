@@ -6,7 +6,6 @@ open System
 open System.Diagnostics
 open System.Threading
 open System.Threading.Tasks
-open FSharp.Compiler.Diagnostics.Activity
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
 
@@ -49,7 +48,7 @@ type NodeCodeBuilder =
     /// that a proper generic 'use' could be implemented but has not currently been necessary)
     member Using: CompilationGlobalsScope * (CompilationGlobalsScope -> NodeCode<'T>) -> NodeCode<'T>
 
-    member Using: ActivityFacade * (ActivityFacade -> NodeCode<'T>) -> NodeCode<'T>
+    member Using: IDisposable * (IDisposable -> NodeCode<'T>) -> NodeCode<'T>
 
 /// Specifies code that can be run as part of the build graph.
 val node: NodeCodeBuilder
@@ -68,6 +67,8 @@ type NodeCode =
     static member CancellationToken: NodeCode<CancellationToken>
 
     static member Sequential: computations: NodeCode<'T> seq -> NodeCode<'T[]>
+
+    static member Parallel: computations: (NodeCode<'T> seq) -> NodeCode<'T[]>
 
     /// Execute the cancellable computation synchronously using the ambient cancellation token of
     /// the NodeCode.

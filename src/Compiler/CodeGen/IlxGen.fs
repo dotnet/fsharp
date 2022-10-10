@@ -2840,9 +2840,7 @@ let ComputeDebugPointForBinding g bind =
         | DebugPointAtBinding.NoneAtDo, _ -> false, None
         | DebugPointAtBinding.NoneAtLet, _ -> false, None
         // Don't emit debug points for lambdas.
-        | _,
-          (Expr.Lambda _
-          | Expr.TyLambda _) -> false, None
+        | _, (Expr.Lambda _ | Expr.TyLambda _) -> false, None
         | DebugPointAtBinding.Yes m, _ -> false, Some m
 
 //-------------------------------------------------------------------------
@@ -5134,21 +5132,10 @@ and GenAsmCode cenv cgbuf eenv (il, tyargs, args, returnTys, m) sequel =
     // For these we can just generate the argument and change the test (from a brfalse to a brtrue and vice versa)
     | ([ AI_ceq ],
        [ arg1
-         Expr.Const ((Const.Bool false
-                     | Const.SByte 0y
-                     | Const.Int16 0s
-                     | Const.Int32 0
-                     | Const.Int64 0L
-                     | Const.Byte 0uy
-                     | Const.UInt16 0us
-                     | Const.UInt32 0u
-                     | Const.UInt64 0UL),
+         Expr.Const ((Const.Bool false | Const.SByte 0y | Const.Int16 0s | Const.Int32 0 | Const.Int64 0L | Const.Byte 0uy | Const.UInt16 0us | Const.UInt32 0u | Const.UInt64 0UL),
                      _,
                      _) ],
-       CmpThenBrOrContinue (1,
-                            [ I_brcmp ((BI_brfalse
-                                       | BI_brtrue) as bi,
-                                       label1) ]),
+       CmpThenBrOrContinue (1, [ I_brcmp ((BI_brfalse | BI_brtrue) as bi, label1) ]),
        _) ->
 
         let bi =
@@ -7903,9 +7890,7 @@ and GenDecisionTreeTest
             // If so, emit the failure logic, then came back and do the success target, then
             // do any postponed failure target.
             match successTree, failureTree with
-            | TDSuccess _,
-              (TDBind _
-              | TDSwitch _) ->
+            | TDSuccess _, (TDBind _ | TDSwitch _) ->
 
                 // OK, there is more logic in the decision tree on the failure branch
                 let success = CG.GenerateDelayMark cgbuf "testSuccess"
@@ -10641,10 +10626,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                     | None -> None
                     | Some memberInfo ->
                         match name, memberInfo.MemberFlags.MemberKind with
-                        | ("Item"
-                          | "op_IndexedLookup"),
-                          (SynMemberKind.PropertyGet
-                          | SynMemberKind.PropertySet) when not (isNil (ArgInfosOfPropertyVal g vref.Deref)) ->
+                        | ("Item" | "op_IndexedLookup"), (SynMemberKind.PropertyGet | SynMemberKind.PropertySet) when
+                            not (isNil (ArgInfosOfPropertyVal g vref.Deref))
+                            ->
                             Some(
                                 mkILCustomAttribute (
                                     g.FindSysILTypeRef "System.Reflection.DefaultMemberAttribute",
@@ -11552,6 +11536,11 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
     match List.tryFrontAndBack implFiles with
     | None -> ()
     | Some (firstImplFiles, lastImplFile) ->
+
+        // Generate the assembly sequentially, implementation file by implementation file.
+        //
+        // NOTE: In theory this could be done in parallel, except for the presence of linear
+        // state in the AssemblyBuilder
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
         let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
 
@@ -11626,7 +11615,7 @@ type IlxGenResults =
 
 let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization implFiles, assemAttribs, moduleAttribs) =
 
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
+    use _ = UseBuildPhase BuildPhase.IlxGen
     let g = cenv.g
 
     // Generate the implementations into the mgbuf
