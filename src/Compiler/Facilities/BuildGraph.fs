@@ -7,7 +7,6 @@ open System.Threading
 open System.Threading.Tasks
 open System.Diagnostics
 open System.Globalization
-open FSharp.Compiler.Diagnostics.Activity
 open FSharp.Compiler.DiagnosticsLogger
 open Internal.Utilities.Library
 
@@ -108,13 +107,11 @@ type NodeCodeBuilder() =
         )
     
     [<DebuggerHidden; DebuggerStepThrough>]
-    member _.Using(value: ActivityFacade, binder: ActivityFacade -> NodeCode<'U>) =
+    member _.Using(value: IDisposable, binder: IDisposable -> NodeCode<'U>) =
         Node(
             async {
-                try
-                    return! binder value |> Async.AwaitNodeCode
-                finally
-                    (value :> IDisposable).Dispose()
+                use _ = value
+                return! binder value |> Async.AwaitNodeCode
             }
         )
         

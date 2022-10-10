@@ -166,9 +166,6 @@ let TypeCheck
         inputs,
         exiter: Exiter
     ) =
-    use _ =
-        Activity.instance.Start "typecheck_inputs" [| "assemblyName", assemblyName |]
-
     try
         if isNil inputs then
             error (Error(FSComp.SR.fscNoImplementationFiles (), rangeStartup))
@@ -478,8 +475,6 @@ let main1
         disposables: DisposablesTracker
     ) =
 
-    use mainActivity = new Activity("main")
-
     // See Bug 735819
     let lcidFromCodePage =
         if
@@ -536,8 +531,6 @@ let main1
 
     // Process command line, flags and collect filenames
     let sourceFiles =
-        use parseActivity = Activity.instance.StartNoTags("determine_source_files")
-
         // The ParseCompilerOptions function calls imperative function to process "real" args
         // Rather than start processing, just collect names, then process them.
         try
@@ -570,8 +563,6 @@ let main1
 
     // If there's a problem building TcConfig, abort
     let tcConfig =
-        use createConfigActivity = Activity.instance.StartNoTags("create_tc_config")
-
         try
             TcConfig.Create(tcConfigB, validate = false)
         with e ->
@@ -596,14 +587,10 @@ let main1
     let foundationalTcConfigP = TcConfigProvider.Constant tcConfig
 
     let sysRes, otherRes, knownUnresolved =
-        use splitResolutionsActivity = Activity.instance.StartNoTags("split_resolutions")
         TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
 
     // Import basic assemblies
     let tcGlobals, frameworkTcImports =
-        use frameworkImportsActivity =
-            Activity.instance.StartNoTags("import_framework_references")
-
         TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes)
         |> NodeCode.RunImmediateWithoutCancellation
 
@@ -656,9 +643,6 @@ let main1
     ReportTime tcConfig "Import non-system references"
 
     let tcImports =
-        use nonFrameworkImportsActivity =
-            Activity.instance.StartNoTags("import_non_framework_references")
-
         TcImports.BuildNonFrameworkTcImports(tcConfigP, frameworkTcImports, otherRes, knownUnresolved, dependencyProvider)
         |> NodeCode.RunImmediateWithoutCancellation
 
@@ -677,7 +661,6 @@ let main1
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
 
     let tcEnv0, openDecls0 =
-        use initialTcEnvActivity = Activity.instance.StartNoTags("get_initial_tc_env")
         GetInitialTcEnv(assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
     // Type check the inputs
@@ -737,8 +720,6 @@ let main1OfAst
         disposables: DisposablesTracker,
         inputs: ParsedInput list
     ) =
-
-    use main1AstActivity = Activity.instance.StartNoTags("main1_of_ast")
 
     let tryGetMetadataSnapshot = (fun _ -> None)
 
@@ -924,8 +905,6 @@ let main2
            exiter: Exiter,
            ilSourceDocs))
     =
-    use main2Activity = Activity.instance.StartNoTags("main2")
-
     if tcConfig.typeCheckOnly then
         exiter.Exit 0
 
@@ -1033,7 +1012,6 @@ let main3
            exiter: Exiter,
            ilSourceDocs))
     =
-    use main3Activity = Activity.instance.StartNoTags("main3")
     // Encode the signature data
     ReportTime tcConfig "Encode Interface Data"
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
@@ -1129,8 +1107,6 @@ let main4
            exiter: Exiter,
            ilSourceDocs))
     =
-    use main4Activity = Activity.instance.StartNoTags("main4")
-
     match tcImportsCapture with
     | None -> ()
     | Some f -> f tcImports
@@ -1233,8 +1209,6 @@ let main5
            exiter: Exiter,
            ilSourceDocs))
     =
-    use main5Activity = Activity.instance.StartNoTags("main5")
-
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
 
     // Static linking, if any
@@ -1266,8 +1240,6 @@ let main6
            exiter: Exiter,
            ilSourceDocs))
     =
-    use main6Activity = Activity.instance.StartNoTags("main6")
-
     ReportTime tcConfig "Write .NET Binary"
 
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output

@@ -2347,7 +2347,7 @@ module internal ParseAndCheckFile =
 
     let parseFile (sourceText: ISourceText, fileName, options: FSharpParsingOptions, userOpName: string, suggestNamesForErrors: bool) =
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "parseFile", fileName)
-        use act = Activity.instance.Start "parseFile" [| "fileName", fileName |]
+        use act = Activity.Start "ParseAndCheckFile.parseFile" [| "fileName", fileName |]
 
         let errHandler =
             ErrorHandler(true, fileName, options.DiagnosticOptions, sourceText, suggestNamesForErrors)
@@ -2504,7 +2504,7 @@ module internal ParseAndCheckFile =
         ) =
 
         cancellable {
-            use _logBlock = Logger.LogBlock LogCompilerFunctionId.Service_CheckOneFile
+            use _ = Activity.Start "ParseAndCheckFile.CheckOneFile" [| "mainInputFileName", mainInputFileName; "Length", sourceText.Length.ToString() |]
 
             let parsedMainInput = parseResults.ParseTree
 

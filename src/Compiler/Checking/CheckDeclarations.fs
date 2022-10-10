@@ -5173,7 +5173,12 @@ let CheckOneImplFile
     let infoReader = InfoReader(g, amap)
 
     cancellable {
-        use _ = Activity.instance.Start "CheckOneImplFile" [|"fileName", fileName; "qualifiedNameOfFile", qualNameOfFile.Text|]
+        use _ = 
+            Activity.Start "CheckDeclarations.CheckOneImplFile" 
+                [|
+                    "fileName", fileName
+                    "qualifiedNameOfFile", qualNameOfFile.Text
+                |]
         let cenv = 
             cenv.Create (g, isScript, niceNameGen, amap, thisCcu, false, Option.isSome rootSigOpt,
                 conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
@@ -5302,7 +5307,7 @@ let CheckOneImplFile
 let CheckOneSigFile (g, niceNameGen, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (ParsedSigFileInput (fileName = fileName; qualifiedNameOfFile = qualNameOfFile; modules = sigFileFrags)) = 
  cancellable {
     use _ =
-        Activity.instance.Start "CheckOneSigFile"
+        Activity.Start "CheckDeclarations.CheckOneSigFile"
             [|
                 "fileName", fileName
                 "qualifiedNameOfFile", qualNameOfFile.Text

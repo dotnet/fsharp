@@ -1138,7 +1138,7 @@ let CheckOneInput
 
     cancellable {
         try
-            use _ = Activity.instance.Start "CheckOneInput" [| "inputName", inp.FileName |]
+            use _ = Activity.Start "ParseAndCheckInputs.CheckOneInput" [| "inputName", inp.FileName |]
 
             CheckSimulateException tcConfig
 
@@ -1320,10 +1320,8 @@ let CheckMultipleInputsFinish (results, tcState: TcState) =
 
 let CheckOneInputAndFinish (checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
     cancellable {
-        Logger.LogBlockStart LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
         let! results, tcState = CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input, false)
         let result = CheckMultipleInputsFinish([ results ], tcState)
-        Logger.LogBlockStop LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
         return result
     }
 
@@ -1341,7 +1339,6 @@ let CheckClosedInputSetFinish (declaredImpls: CheckedImplFile list, tcState) =
     tcState, declaredImpls, ccuContents
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
-    use tcActivity = Activity.instance.StartNoTags("CheckClosedInputSet")
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
         (tcState, inputs)
