@@ -4629,7 +4629,7 @@ let rec encodeCustomAttrElemTypeForObject x =
     | ILAttribElem.UInt64 _ -> [| et_U8 |]
     | ILAttribElem.Type _ -> [| 0x50uy |]
     | ILAttribElem.TypeRef _ -> [| 0x50uy |]
-    | ILAttribElem.Null _ -> [| et_STRING |] // yes, the 0xe prefix is used when passing a "null" to a property or argument of type "object" here
+    | ILAttribElem.Null -> [| et_STRING |] // yes, the 0xe prefix is used when passing a "null" to a property or argument of type "object" here
     | ILAttribElem.Single _ -> [| et_R4 |]
     | ILAttribElem.Double _ -> [| et_R8 |]
     | ILAttribElem.Array (elemTy, _) -> [| yield et_SZARRAY; yield! encodeCustomAttrElemType elemTy |]
