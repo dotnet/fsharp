@@ -2491,8 +2491,8 @@ module internal ParseAndCheckFile =
                 Activity.Start
                     "ParseAndCheckFile.CheckOneFile"
                     [|
-                        "mainInputFileName", mainInputFileName
-                        "Length", sourceText.Length.ToString()
+                        "fileName", mainInputFileName
+                        "length", sourceText.Length.ToString()
                     |]
 
             let parsedMainInput = parseResults.ParseTree

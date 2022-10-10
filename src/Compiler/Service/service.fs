@@ -467,7 +467,7 @@ type BackgroundCompiler
     member _.ParseFile(fileName: string, sourceText: ISourceText, options: FSharpParsingOptions, cache: bool, userOpName: string) =
         async {
             use _ =
-                Activity.Start "BackgroundCompiler.ParseFile" [| "filename", fileName; "UserOpName", userOpName; "cache", cache.ToString() |]
+                Activity.Start "BackgroundCompiler.ParseFile" [| "fileName", fileName; "userOpName", userOpName; "cache", cache.ToString() |]
 
             if cache then
                 let hash = sourceText.GetHashCode() |> int64
@@ -494,7 +494,7 @@ type BackgroundCompiler
     member _.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName) =
         node {
             use _ =
-                Activity.Start "BackgroundCompiler.GetBackgroundParseResultsForFileInProject" [| "filename", fileName; "UserOpName", userOpName |]
+                Activity.Start "BackgroundCompiler.GetBackgroundParseResultsForFileInProject" [| "fileName", fileName; "userOpName", userOpName |]
 
             let! builderOpt, creationDiags = getOrCreateBuilder (options, userOpName)
 
@@ -523,7 +523,7 @@ type BackgroundCompiler
 
     member _.GetCachedCheckFileResult(builder: IncrementalBuilder, fileName, sourceText: ISourceText, options) =
         node {
-            use _ = Activity.Start "BackgroundCompiler.GetCachedCheckFileResult" [| "filename", fileName |]
+            use _ = Activity.Start "BackgroundCompiler.GetCachedCheckFileResult" [| "fileName", fileName |]
             let hash = sourceText.GetHashCode() |> int64
             let key = (fileName, hash, options)
             let cachedResultsOpt = parseCacheLock.AcquireLock(fun ltok -> checkFileInProjectCache.TryGet(ltok, key))
@@ -630,9 +630,9 @@ type BackgroundCompiler
                 Activity.Start
                     "BackgroundCompiler.CheckFileInProjectAllowingStaleCachedResults"
                     [|
-                        "Project", options.ProjectFileName
-                        "filename", fileName
-                        "UserOpName", userOpName
+                        "project", options.ProjectFileName
+                        "fileName", fileName
+                        "userOpName", userOpName
                     |]
 
             let! cachedResults =

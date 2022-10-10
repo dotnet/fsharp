@@ -536,7 +536,7 @@ type BoundModel private (tcConfig: TcConfig,
                         // Build symbol keys
                         let itemKeyStore, semanticClassification =
                             if enableBackgroundItemKeyStoreAndSemanticClassification then
-                                use _ = Activity.Start "IncrementalBuild.CreateItemKeyStoreAndSemanticClassification" [|"fileName",fileName|]
+                                use _ = Activity.Start "IncrementalBuild.CreateItemKeyStoreAndSemanticClassification" [|"fileName", fileName|]
                                 let sResolutions = sink.GetResolutions()
                                 let builder = ItemKeyStoreBuilder()
                                 let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with

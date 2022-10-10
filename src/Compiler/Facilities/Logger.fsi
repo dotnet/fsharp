@@ -12,4 +12,4 @@ module internal Activity =
 
     val StartNoTags: name: string -> IDisposable
 
-    val Start: name: string -> tags: (string * #obj) seq -> IDisposable
+    val Start: name: string -> tags: (string * string) seq -> IDisposable

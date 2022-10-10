@@ -11,7 +11,7 @@ module Activity =
 
     let private activitySource = new ActivitySource("fsc")
 
-    let Start name (tags:(string * #obj) seq) : IDisposable = 
+    let Start name (tags:(string * string) seq) : IDisposable = 
             let act = activitySource.StartActivity(name)
             for key,value in tags do
                 act.AddTag(key,value) |> ignore
