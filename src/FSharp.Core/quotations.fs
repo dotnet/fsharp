@@ -942,14 +942,8 @@ module Patterns =
             | VarSetOp, _
             | AddressSetOp, _ -> typeof<Unit>
             | AddressOfOp, [ expr ] -> (typeOf expr).MakeByRefType()
-            | (AddressOfOp
-              | QuoteOp _
-              | SequentialOp
-              | TryWithOp
-              | TryFinallyOp
-              | IfThenElseOp
-              | AppOp),
-              _ -> failwith "unreachable"
+            | (AddressOfOp | QuoteOp _ | SequentialOp | TryWithOp | TryFinallyOp | IfThenElseOp | AppOp), _ ->
+                failwith "unreachable"
 
     //--------------------------------------------------------------------------
     // Constructors for building Raw quotations
@@ -2933,8 +2927,7 @@ module DerivedPatterns =
     let (|SpecificCall|_|) templateParameter =
         // Note: precomputation
         match templateParameter with
-        | (Lambdas (_, Call (_, minfo1, _))
-        | Call (_, minfo1, _)) ->
+        | (Lambdas (_, Call (_, minfo1, _)) | Call (_, minfo1, _)) ->
             let isg1 = minfo1.IsGenericMethod
 
             let gmd =

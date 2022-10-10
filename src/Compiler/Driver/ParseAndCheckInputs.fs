@@ -845,10 +845,7 @@ let ProcessMetaCommandsFromInput
             | ParsedHashDirective ("nowarn", ParsedHashDirectiveArguments numbers, m) ->
                 List.fold (fun state d -> nowarnF state (m, d)) state numbers
 
-            | ParsedHashDirective (("reference"
-                                   | "r"),
-                                   ParsedHashDirectiveArguments args,
-                                   m) ->
+            | ParsedHashDirective (("reference" | "r"), ParsedHashDirectiveArguments args, m) ->
                 matchedm <- m
                 ProcessDependencyManagerDirective Directive.Resolution args m state
 
