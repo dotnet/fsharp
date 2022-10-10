@@ -72,7 +72,7 @@ let myVal =
 \tint")
       
 [<Fact>]
-let ``Union Pattern discard not allowed for union case that takes no data`` () =
+let ``Union Pattern discard not allowed for union case that takes no data with Lang preview`` () =
      FSharp """
 module Tests
 type X = X
@@ -89,7 +89,7 @@ let myVal =
     
       
 [<Fact>]
-let ``Union Pattern discard not allowed for union case that takes no data with Lang version 7`` () =
+let ``Union Pattern discard allowed for union case that takes no data with Lang version 7`` () =
      FSharp """
 module Tests
 type X = X
@@ -104,7 +104,38 @@ let myVal =
     |> shouldSucceed
     
 [<Fact>]
-let ``Pattern discard not allowed for union case that takes no data`` () =
+let ``Union function Pattern discard allowed for union case that takes no data with Lang version 7`` () =
+     FSharp """
+module Tests
+type X = X
+
+let x: X = X
+
+let myVal =
+    function
+    | X _ -> ()"""
+    |> withLangVersion70
+    |> typecheck
+    |> shouldSucceed
+    
+[<Fact>]
+let ``Union function Pattern discard not allowed for union case that takes no data with Lang version preview`` () =
+     FSharp """
+module Tests
+type X = X
+
+let x: X = X
+
+let myVal =
+    function
+    | X _ -> ()"""
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withSingleDiagnostic (Warning 3548, Line 9, Col 7, Line 9, Col 10, "Pattern discard not allowed for union case that takes no data.")
+    
+[<Fact>]
+let ``Pattern discard not allowed for union case that takes no data with Lang preview`` () =
      FSharp """
 module Tests
 type U =
@@ -123,9 +154,30 @@ let myVal =
     |> typecheck
     |> shouldFail
     |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard not allowed for union case that takes no data.")
+
+[<Fact>]
+let ``Pattern function discard not allowed for union case that takes no data with Lang preview`` () =
+     FSharp """
+module Tests
+type U =
+    | A
+    | B of int * int * int
+    | C of int * int * int
+    
+let a : U = A
+
+let myVal = 
+    function
+    | A _ -> 15
+    | B (x, _, _) -> 16
+    | C _ -> 17"""
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard not allowed for union case that takes no data.")
     
 [<Fact>]
-let ``Pattern discard not allowed for union case that takes no data with Lang version 7`` () =
+let ``Pattern discard allowed for union case that takes no data with Lang version 7`` () =
      FSharp """
 module Tests
 type U =
@@ -145,7 +197,7 @@ let myVal =
     |> shouldSucceed
  
 [<Fact>]
-let ``Grouped Pattern discard not allowed for union case that takes no data`` () =
+let ``Grouped Pattern discard not allowed for union case that takes no data with Lang preview`` () =
      FSharp """
 module Tests
 type U =
@@ -166,7 +218,7 @@ let myVal =
     |> withSingleDiagnostic (Warning 3548, Line 12, Col 7, Line 12, Col 10, "Pattern discard not allowed for union case that takes no data.")
 
 [<Fact>]
-let ``Multiple pattern discards not allowed for union case that takes no data`` () =
+let ``Multiple pattern discards not allowed for union case that takes no data with Lang preview`` () =
      FSharp """
 module Tests
 type U =
@@ -182,6 +234,34 @@ let d : V = D
     
 let myVal = 
     match a, d with
+    | A _, D -> 15
+    | B (x, _, _), D _ -> 16
+    | C _, _ -> 17"""
+    |> withLangVersionPreview
+    |> typecheck
+    |> shouldFail
+    |> withDiagnostics [
+        (Warning 3548, Line 16, Col 7, Line 16, Col 10, "Pattern discard not allowed for union case that takes no data.")
+        (Warning 3548, Line 17, Col 20, Line 17, Col 23, "Pattern discard not allowed for union case that takes no data.")
+    ]
+    
+[<Fact>]
+let ``Multiple function pattern discards not allowed for union case that takes no data with Lang preview`` () =
+     FSharp """
+module Tests
+type U =
+    | A
+    | B of int * int * int
+    | C of int * int * int
+    
+type V =
+    | D
+    
+let a : U = A
+let d : V = D
+    
+let myVal = 
+    function
     | A _, D -> 15
     | B (x, _, _), D _ -> 16
     | C _, _ -> 17"""
