@@ -9538,6 +9538,16 @@ FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticAbstractMember: FSharp.Comp
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticAbstractMember: FSharp.Compiler.Text.Range get_staticRange()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticAbstractMember: FSharp.Compiler.Text.Range memberRange
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticAbstractMember: FSharp.Compiler.Text.Range staticRange
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticLet: FSharp.Compiler.Text.Range get_letRange()
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticLet: FSharp.Compiler.Text.Range get_staticRange()
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticLet: FSharp.Compiler.Text.Range letRange
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticLet: FSharp.Compiler.Text.Range staticRange
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticLetRec: FSharp.Compiler.Text.Range get_letRange()
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticLetRec: FSharp.Compiler.Text.Range get_recRange()
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticLetRec: FSharp.Compiler.Text.Range get_staticRange()
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticLetRec: FSharp.Compiler.Text.Range letRange
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticLetRec: FSharp.Compiler.Text.Range recRange
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticLetRec: FSharp.Compiler.Text.Range staticRange
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticMember: FSharp.Compiler.Text.Range get_memberRange()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticMember: FSharp.Compiler.Text.Range get_staticRange()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticMember: FSharp.Compiler.Text.Range memberRange
@@ -9567,6 +9577,8 @@ FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 Override
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 OverrideVal
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 StaticAbstract
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 StaticAbstractMember
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 StaticLet
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 StaticLetRec
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 StaticMember
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 StaticMemberVal
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+Tags: Int32 StaticVal
@@ -9597,6 +9609,8 @@ FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsOverride
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsOverrideVal
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsStaticAbstract
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsStaticAbstractMember
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsStaticLet
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsStaticLetRec
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsStaticMember
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsStaticMemberVal
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean IsStaticVal
@@ -9619,6 +9633,8 @@ FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsOverride()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsOverrideVal()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsStaticAbstract()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsStaticAbstractMember()
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsStaticLet()
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsStaticLetRec()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsStaticMember()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsStaticMemberVal()
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: Boolean get_IsStaticVal()
@@ -9641,6 +9657,8 @@ FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.Syn
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewOverrideVal(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewStaticAbstract(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewStaticAbstractMember(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewStaticLet(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewStaticLetRec(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewStaticMember(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewStaticMemberVal(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword NewStaticVal(FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
@@ -9664,6 +9682,8 @@ FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.Syn
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+OverrideVal
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticAbstract
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticAbstractMember
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticLet
+FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticLetRec
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticMember
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticMemberVal
 FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword: FSharp.Compiler.SyntaxTrivia.SynLeadingKeyword+StaticVal

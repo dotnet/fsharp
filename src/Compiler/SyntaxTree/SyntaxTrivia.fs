@@ -174,6 +174,8 @@ type SynLeadingKeyword =
     | StaticAbstract of staticRange: range * abstractRange: range
     | StaticAbstractMember of staticRange: range * abstractMember: range * memberRange: range
     | StaticVal of staticRange: range * valRange: range
+    | StaticLet of staticRange: range * letRange: range
+    | StaticLetRec of staticRange: range * letRange: range * recRange: range
     | Default of defaultRange: range
     | DefaultVal of defaultRange: range * valRange: range
     | Val of valRange: range
@@ -198,11 +200,13 @@ type SynLeadingKeyword =
         | StaticMember (m1, m2)
         | StaticAbstract (m1, m2)
         | StaticAbstractMember (m1, _, m2)
+        | StaticVal (m1, m2)
+        | StaticLet (m1, m2)
+        | StaticLetRec (m1, _, m2)
         | DefaultVal (m1, m2)
         | MemberVal (m1, m2)
         | OverrideVal (m1, m2)
-        | StaticMemberVal (m1, _, m2)
-        | StaticVal (m1, m2) -> Range.unionRanges m1 m2
+        | StaticMemberVal (m1, _, m2) -> Range.unionRanges m1 m2
         | Synthetic -> Range.Zero
 
 [<NoEquality; NoComparison>]

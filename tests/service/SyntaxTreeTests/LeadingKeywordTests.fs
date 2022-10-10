@@ -463,3 +463,52 @@ let ``synthetic keyword`` () =
             ])) ->
         Assert.Pass()
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let `` static let keyword`` () =
+    let parseResults =
+        getParseResults """
+type X =
+    static let PI = 3.14
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
+                SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                    SynModuleDecl.Types(typeDefns = [
+                        SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                            SynMemberDefn.LetBindings(bindings = [
+                                SynBinding(trivia = { LeadingKeyword = SynLeadingKeyword.StaticLet(mStatic, mLet) })
+                            ])
+                        ]))
+                    ])
+                ])
+            ])) ->
+        assertRange (3, 4) (3, 10) mStatic
+        assertRange (3, 11) (3, 14) mLet
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let `` static let rec keyword`` () =
+    let parseResults =
+        getParseResults """
+type X =
+    static let rec forever () = forever()
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
+                SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+                    SynModuleDecl.Types(typeDefns = [
+                        SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                            SynMemberDefn.LetBindings(bindings = [
+                                SynBinding(trivia = { LeadingKeyword = SynLeadingKeyword.StaticLetRec(mStatic, mLet, mRec) })
+                            ])
+                        ]))
+                    ])
+                ])
+            ])) ->
+        assertRange (3, 4) (3, 10) mStatic
+        assertRange (3, 11) (3, 14) mLet
+        assertRange (3, 15) (3, 18) mRec
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

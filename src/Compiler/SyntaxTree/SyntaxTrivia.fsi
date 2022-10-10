@@ -259,6 +259,8 @@ type SynLeadingKeyword =
     | StaticAbstract of staticRange: range * abstractRange: range
     | StaticAbstractMember of staticRange: range * abstractMember: range * memberRange: range
     | StaticVal of staticRange: range * valRange: range
+    | StaticLet of staticRange: range * letRange: range
+    | StaticLetRec of staticRange: range * letRange: range * recRange: range
     | Default of defaultRange: range
     | DefaultVal of defaultRange: range * valRange: range
     | Val of valRange: range

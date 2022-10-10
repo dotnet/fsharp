@@ -982,6 +982,26 @@ let mkClassMemberLocalBindings
     if isUse then
         errorR (Error(FSComp.SR.parsUseBindingsIllegalInImplicitClassConstructors (), mWhole))
 
+    let decls =
+        match initialRangeOpt, decls with
+        | _, [] -> []
+        | Some mStatic, SynBinding (a0, k, il, im, a, x, v, h, ri, e, m, dp, trivia) :: rest ->
+            // prepend static keyword to existing leading keyword.
+            let trivia =
+                match trivia.LeadingKeyword with
+                | SynLeadingKeyword.LetRec (mLet, mRec) ->
+                    { trivia with
+                        LeadingKeyword = SynLeadingKeyword.StaticLetRec(mStatic, mLet, mRec)
+                    }
+                | SynLeadingKeyword.Let mLet ->
+                    { trivia with
+                        LeadingKeyword = SynLeadingKeyword.StaticLet(mStatic, mLet)
+                    }
+                | _ -> trivia
+
+            SynBinding(a0, k, il, im, a, x, v, h, ri, e, m, dp, trivia) :: rest
+        | None, decls -> decls
+
     SynMemberDefn.LetBindings(decls, isStatic, isRec, mWhole)
 
 let mkLocalBindings (mWhole, BindingSetPreAttrs (_, isRec, isUse, declsPreAttrs, _), mIn, body: SynExpr) =
