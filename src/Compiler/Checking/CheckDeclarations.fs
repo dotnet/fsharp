@@ -5313,8 +5313,8 @@ let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSin
     use _ =
         Activity.Start "CheckDeclarations.CheckOneSigFile"
             [|
-                "fileName", fileName
-                "qualifiedNameOfFile", qualNameOfFile.Text
+                "fileName", sigFile.FileName
+                "qualifiedNameOfFile", sigFile.QualifiedName.Text
             |]
     let cenv = 
         cenv.Create 
