@@ -691,7 +691,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         match fileAnswer with
-        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+        | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
         Assert.IsEmpty(typeCheckResults.Diagnostics, sprintf "Type Check errors: %A" typeCheckResults.Diagnostics)
@@ -704,7 +704,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         match fileAnswer with
-        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+        | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
         Assert.IsEmpty(typeCheckResults.Diagnostics, sprintf "Type Check errors: %A" typeCheckResults.Diagnostics)
@@ -722,7 +722,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         match fileAnswer with
-        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+        | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
         let errorsExpectedBaseLine =
@@ -754,7 +754,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             else
 
                 match fileAnswer with
-                | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted"); [| |]
                 | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
 
         errors
@@ -774,7 +774,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             else
 
                 match fileAnswer with
-                | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted"); [| |]
                 | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
 
         errors
@@ -790,7 +790,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             |> Async.RunImmediate
 
         match fileAnswer with
-        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); failwith "Type Checker Aborted"
+        | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted"); failwith "Type Checker Aborted"
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> parseResults, typeCheckResults
 
     /// Parses and type checks the given source. Fails if the type checker is aborted or the parser returns any diagnostics.
@@ -816,7 +816,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             else
 
                 match fileAnswer with
-                | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted"); [| |]
                 | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
 
         assertErrors libAdjust false errors expectedTypeErrors

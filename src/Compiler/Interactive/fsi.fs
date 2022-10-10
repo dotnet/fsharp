@@ -279,7 +279,7 @@ type ILMultiInMemoryAssemblyEmitEnv(
         | ILScopeRef.Assembly asmref ->
             convResolveAssemblyRef asmref qualifiedName
         | ILScopeRef.Module _
-        | ILScopeRef.Local _ ->
+        | ILScopeRef.Local ->
             let typT = Type.GetType qualifiedName
             match typT with
             | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, "<emitted>"), range0))
