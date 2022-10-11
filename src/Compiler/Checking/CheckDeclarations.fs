@@ -396,37 +396,20 @@ let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: Ident) =
     if not g.compilingFSharpCore && id.idText.IndexOfAny IllegalCharactersInTypeAndNamespaceNames <> -1 then 
         errorR(Error(FSComp.SR.tcInvalidNamespaceModuleTypeUnionName(), id.idRange))
         
-let CheckDuplicatesArgNames (synVal: SynValSig) m =
+let private CheckDuplicatesArgNames (synVal: SynValSig) m =
     let argNames = synVal.SynInfo.ArgNames |> List.duplicates
     for name in argNames do
         errorR(Error((FSComp.SR.chkDuplicatedMethodParameter(name), m)))
-        
-let CheckDuplicateMemberNames (synMembersSig: SynMemberSig list) =
-    let synValSig =
-        synMembersSig
-        |> List.choose(
-            fun synMember ->
-                match synMember with
-                | SynMemberSig.Member(synValSig, synMemberFlags, _)
-                    when not synMemberFlags.IsConstructor -> Some(synValSig)
-                |_ -> None)
-        
-    let memberNames =
-        synValSig
-        |> List.choose(function SynValSig(ident = SynIdent(ident, _)) -> Some(ident))
-        
-    memberNames |> CheckDuplicates id "member" |> ignore
-
-let CheckDuplicatesAbstractMethodParmsSig (typeSpecs:  SynTypeDefnSig list) =
-    for SynTypeDefnSig(typeRepr= trepr) in typeSpecs do
+     
+let private CheckDuplicatesAbstractMethodParmsSig (typeSpecs:  SynTypeDefnSig list) =
+    for SynTypeDefnSig(typeRepr= trepr) in typeSpecs do 
         match trepr with 
         | SynTypeDefnSigRepr.ObjectModel(_, synMemberSigs, _) ->
-            CheckDuplicateMemberNames synMemberSigs
-            for sms in synMemberSigs do
-                 match sms with
-                 | SynMemberSig.Member(synValSig, _, m) ->
-                    CheckDuplicatesArgNames synValSig m
-                 | _ -> ()
+         for sms in synMemberSigs do
+             match sms with
+             | SynMemberSig.Member(synValSig, _, m) ->
+                CheckDuplicatesArgNames synValSig m
+             | _ -> ()
         | _ -> ()
 
 module TcRecdUnionAndEnumDeclarations =

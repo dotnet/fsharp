@@ -429,26 +429,6 @@ module MethodsAndProperties =
         ]
         
     [<Fact>]
-    let ``Duplicate member signature error is reported in signature files`` () =
-        let encodeFsi =
-            Fsi """
-namespace Foo
-[<Class>]
-type FSharpMemberOrFunctionOrValue =
-    new : unit -> int
-    new : int -> string
-    member IsFunction: bool
-    member IsFunction: bool
-    """
-        encodeFsi
-        |> verifyCompile
-        |> shouldFail
-        |> withDiagnostics [
-            (Error 37, Line 7, Col 12, Line 7, Col 22, "Two members called 'IsFunction' have the same signature")
-            (Error 240, Line 2, Col 1, Line 8, Col 28, "The signature file 'Test' does not have a corresponding implementation file. If an implementation file exists then check the 'module' and 'namespace' declarations in the signature and implementation files match.")
-        ]
-        
-    [<Fact>]
     let ``Error in signature file with not implementation file with abstract methods when reusing parameters`` () =
         let encodeFsi =
             Fsi """
