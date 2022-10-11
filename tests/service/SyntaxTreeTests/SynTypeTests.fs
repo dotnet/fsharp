@@ -111,3 +111,67 @@ let inline f_StaticMethod<'T1, 'T2 when ('T1 or 'T2) : (static member StaticMeth
         assertRange (2, 41) (2, 51) mOrType
         assertRange (2, 40) (2, 52) mParen
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``Nested SynType.Or inside SynExpr.TraitCall`` () =
+    let parseResults =
+        getParseResults
+             """
+let inline (!!) (x: ^a * ^b) : ^c = ((^a or ^b or ^c): (static member op_Implicit: ^a * ^b -> ^c) x)
+ """
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Let(bindings = [
+            SynBinding(expr =
+                SynExpr.Typed(expr =
+                    SynExpr.Paren(expr =
+                        SynExpr.TraitCall(supportTys =
+                            SynType.Paren(
+                                SynType.Or(
+                                    SynType.Or(
+                                        SynType.Var(range = mVarA),
+                                        SynType.Var(range = mVarB),
+                                        mOrType1,
+                                        { OrKeyword = mOrWord1 }
+                                    ),
+                                    SynType.Var(range = mVarC),
+                                    mOrType2,
+                                    { OrKeyword = mOrWord2 }),
+                            mParen))
+                    )))
+        ]) ]) ])) ->
+        assertRange (2, 38) (2, 40) mVarA
+        assertRange (2, 41) (2, 43) mOrWord1
+        assertRange (2, 44) (2, 46) mVarB
+        assertRange (2, 38) (2, 46) mOrType1
+        assertRange (2, 47) (2, 49) mOrWord2
+        assertRange (2, 50) (2, 52) mVarC
+        assertRange (2, 38) (2, 52) mOrType2
+        assertRange (2, 37) (2, 53) mParen
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+    
+[<Test>]
+let ``Single SynType inside SynExpr.TraitCall`` () =
+    let parseResults =
+        getParseResults
+             """
+type X =
+    static member inline replace< ^a, ^b, ^c when ^b: (static member replace: ^a * ^b -> ^c)>(a: ^a, f: ^b) =
+        (^b : (static member replace: ^a * ^b -> ^c) (a, f))
+ """
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Types(typeDefns = [
+            SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                SynMemberDefn.Member(memberDefn =
+                    SynBinding(expr =
+                            SynExpr.Paren(expr =
+                                SynExpr.TraitCall(supportTys =
+                                    SynType.Var(range = mVar))
+                    )))
+            ]))
+        ]) ]) ])) ->
+        assertRange (4, 9) (4, 11) mVar
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
