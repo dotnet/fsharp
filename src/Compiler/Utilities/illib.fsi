@@ -592,7 +592,7 @@ module internal MapAutoOpens =
 
         static member Empty: Map<'Key, 'Value> when 'Key: comparison
 
-#if USE_SHIPPED_FSCORE
+#if FSHARPCORE_USE_PACKAGE
         member Values: 'Value list
 #endif
 

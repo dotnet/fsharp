@@ -271,7 +271,7 @@ neg20.fs(216,5,216,12): typecheck error FS0842: This attribute is not valid for 
 
 neg20.fs(219,5,219,15): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(222,5,222,24): typecheck error FS0842: This attribute is not valid for use on this language element
+neg20.fs(222,5,222,31): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg20.fs(225,5,225,22): typecheck error FS0842: This attribute is not valid for use on this language element
 
@@ -289,9 +289,9 @@ neg20.fs(243,5,243,23): typecheck error FS0842: This attribute is not valid for 
 
 neg20.fs(249,9,249,27): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(255,5,255,21): typecheck error FS0842: This attribute is not valid for use on this language element
+neg20.fs(255,5,255,28): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(258,5,258,31): typecheck error FS0842: This attribute is not valid for use on this language element
+neg20.fs(258,5,258,38): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg20.fs(261,5,261,17): typecheck error FS0842: This attribute is not valid for use on this language element
 
@@ -299,7 +299,7 @@ neg20.fs(265,5,265,24): typecheck error FS0842: This attribute is not valid for 
 
 neg20.fs(268,5,268,27): typecheck error FS0842: This attribute is not valid for use on this language element
 
-neg20.fs(271,5,271,13): typecheck error FS0842: This attribute is not valid for use on this language element
+neg20.fs(271,5,271,15): typecheck error FS0842: This attribute is not valid for use on this language element
 
 neg20.fs(278,14,278,95): typecheck error FS0507: No accessible member or object constructor named 'ProcessStartInfo' takes 0 arguments. Note the call to this member also provides 2 named arguments.
 

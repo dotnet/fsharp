@@ -27,9 +27,6 @@
                             <CheckBox x:Name="useColors" IsChecked="{Binding UseColors}"
                                   Content="{x:Static local:Strings.CodeLens_UseColors}"
                                   IsEnabled="{Binding IsChecked, ElementName=enableCodeLens}"/>
-                            <CheckBox x:Name="replaceWithLineLens" IsChecked="{Binding ReplaceWithLineLens}"
-                                  Content="{x:Static local:Strings.CodeLens_Replace_LineLens}"
-                                  IsEnabled="{Binding IsChecked, ElementName=enableCodeLens}"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
