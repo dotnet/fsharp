@@ -9921,7 +9921,7 @@ and TcMethodArg cenv env (lambdaPropagationInfo, tpenv) (lambdaPropagationInfoFo
     let lambdaPropagationInfo =
         [| for info, argInfo in Array.zip lambdaPropagationInfo lambdaPropagationInfoForArg do
               match argInfo with
-              | ArgDoesNotMatch _ -> ()
+              | ArgDoesNotMatch -> ()
               | NoInfo | CallerLambdaHasArgTypes _ ->
                   yield info
               | CalledArgMatchesType (adjustedCalledArgTy, noEagerConstraintApplication) ->
