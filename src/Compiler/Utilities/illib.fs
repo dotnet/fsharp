@@ -10,7 +10,7 @@ open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
 open FSharp.Core.CompilerServices.StateMachineHelpers
 #endif
 
@@ -610,7 +610,7 @@ module ResizeArray =
                     // * doing a block copy using `List.CopyTo(index, array, index, count)` (requires more copies to do the mapping)
                     // none are significantly better.
                     for i in 0 .. takeCount - 1 do
-                        holder[i] <- f items[i]
+                        holder[i] <- f items[startIndex + i]
 
                     yield holder
             |]
@@ -931,7 +931,7 @@ type CancellableBuilder() =
 
     member inline _.Bind(comp, [<InlineIfLambda>] k) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -941,7 +941,7 @@ type CancellableBuilder() =
 
     member inline _.BindReturn(comp, [<InlineIfLambda>] k) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -951,7 +951,7 @@ type CancellableBuilder() =
 
     member inline _.Combine(comp1, comp2) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -961,7 +961,7 @@ type CancellableBuilder() =
 
     member inline _.TryWith(comp, [<InlineIfLambda>] handler) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -982,7 +982,7 @@ type CancellableBuilder() =
 
     member inline _.Using(resource, [<InlineIfLambda>] comp) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
             let body = comp resource
@@ -997,7 +997,7 @@ type CancellableBuilder() =
 
             match compRes with
             | ValueOrCancelled.Value res ->
-                (resource :> IDisposable).Dispose()
+                Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions.Dispose resource
 
                 match res with
                 | Choice1Of2 r -> ValueOrCancelled.Value r
@@ -1006,7 +1006,7 @@ type CancellableBuilder() =
 
     member inline _.TryFinally(comp, [<InlineIfLambda>] compensation) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -1396,7 +1396,7 @@ module MapAutoOpens =
 
         static member Empty: Map<'Key, 'Value> = Map.empty
 
-#if USE_SHIPPED_FSCORE
+#if FSHARPCORE_USE_PACKAGE
         member x.Values = [ for KeyValue (_, v) in x -> v ]
 #endif
 

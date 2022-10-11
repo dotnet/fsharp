@@ -388,6 +388,11 @@ type MetadataAssemblyGeneration =
     | ReferenceOut of outputPath: string
     | ReferenceOnly
 
+[<RequireQualifiedAccess>]
+type ParallelReferenceResolution =
+    | On
+    | Off
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -502,6 +507,7 @@ type TcConfigBuilder =
         mutable emitTailcalls: bool
         mutable deterministic: bool
         mutable concurrentBuild: bool
+        mutable parallelCheckingWithSignatureFiles: bool
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
         mutable preferredUiLang: string option
         mutable lcid: int option
@@ -579,6 +585,8 @@ type TcConfigBuilder =
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
         mutable exiter: Exiter
+
+        mutable parallelReferenceResolution: ParallelReferenceResolution
     }
 
     // Directories to start probing in
@@ -725,6 +733,7 @@ type TcConfigBuilder =
             emitTailcalls = true
             deterministic = false
             concurrentBuild = true
+            parallelCheckingWithSignatureFiles = false
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
             lcid = None
@@ -765,6 +774,7 @@ type TcConfigBuilder =
             sdkDirOverride = sdkDirOverride
             xmlDocInfoLoader = None
             exiter = QuitProcessExiter
+            parallelReferenceResolution = ParallelReferenceResolution.Off
         }
 
     member tcConfigB.FxResolver =
@@ -797,7 +807,7 @@ type TcConfigBuilder =
         tcConfigB.fxResolver <- None // this needs to be recreated when the primary assembly changes
 
     member tcConfigB.ResolveSourceFile(m, nm, pathLoadedFrom) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         let paths =
             seq {
@@ -809,7 +819,7 @@ type TcConfigBuilder =
 
     /// Decide names of output file, pdb and assembly
     member tcConfigB.DecideNames sourceFiles =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         if sourceFiles = [] then
             errorR (Error(FSComp.SR.buildNoInputsSpecified (), rangeCmdArgs))
@@ -860,7 +870,7 @@ type TcConfigBuilder =
         outfile, pdbfile, assemblyName
 
     member tcConfigB.TurnWarningOff(m, s: string) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         match GetWarningNumber(m, s) with
         | None -> ()
@@ -875,7 +885,7 @@ type TcConfigBuilder =
                 }
 
     member tcConfigB.TurnWarningOn(m, s: string) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         match GetWarningNumber(m, s) with
         | None -> ()
@@ -1276,6 +1286,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.emitTailcalls = data.emitTailcalls
     member _.deterministic = data.deterministic
     member _.concurrentBuild = data.concurrentBuild
+    member _.parallelCheckingWithSignatureFiles = data.parallelCheckingWithSignatureFiles
     member _.emitMetadataAssembly = data.emitMetadataAssembly
     member _.pathMap = data.pathMap
     member _.langVersion = data.langVersion
@@ -1307,9 +1318,10 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.applyLineDirectives = data.applyLineDirectives
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
     member _.exiter = data.exiter
+    member _.parallelReferenceResolution = data.parallelReferenceResolution
 
     static member Create(builder, validate) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
         TcConfig(builder, validate)
 
     member _.legacyReferenceResolver = data.legacyReferenceResolver
@@ -1326,7 +1338,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.GetTargetFrameworkDirectories() = targetFrameworkDirectories
 
     member tcConfig.ComputeIndentationAwareSyntaxInitialStatus fileName =
-        use _unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _unwindBuildPhase = UseBuildPhase BuildPhase.Parameter
 
         let indentationAwareSyntaxOnByDefault =
             List.exists (FileSystemUtils.checkSuffix fileName) FSharpIndentationAwareSyntaxFileSuffixes
@@ -1337,7 +1349,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             (tcConfig.indentationAwareSyntax = Some true)
 
     member tcConfig.GetAvailableLoadedSources() =
-        use _unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _unwindBuildPhase = UseBuildPhase BuildPhase.Parameter
 
         let resolveLoadedSource (m, originalPath, path) =
             try
@@ -1393,14 +1405,13 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     /// 'framework' reference set that is potentially shared across multiple compilations.
     member tcConfig.IsSystemAssembly(fileName: string) =
         try
+            let dirName = Path.GetDirectoryName fileName
+            let baseName = FileSystemUtils.fileNameWithoutExtension fileName
+
             FileSystem.FileExistsShim fileName
-            && ((tcConfig.GetTargetFrameworkDirectories()
-                 |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName fileName))
-                || (tcConfig
-                       .FxResolver
-                       .GetSystemAssemblies()
-                       .Contains(FileSystemUtils.fileNameWithoutExtension fileName))
-                || tcConfig.FxResolver.IsInReferenceAssemblyPackDirectory fileName)
+            && ((tcConfig.GetTargetFrameworkDirectories() |> List.contains dirName)
+                || FxResolver.GetSystemAssemblies().Contains baseName
+                || FxResolver.IsReferenceAssemblyPackDirectoryApprox dirName)
         with _ ->
             false
 

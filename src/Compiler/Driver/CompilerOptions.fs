@@ -257,7 +257,7 @@ module ResponseFile =
             Choice2Of2 e
 
 let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: CompilerOptionBlock list, args) =
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+    use _ = UseBuildPhase BuildPhase.Parameter
 
     let specs = List.collect GetOptionsOfBlock blocks
 
@@ -1387,6 +1387,7 @@ let testFlag tcConfigB =
             | "ShowLoadedAssemblies" -> tcConfigB.showLoadedAssemblies <- true
             | "ContinueAfterParseFailure" -> tcConfigB.continueAfterParseFailure <- true
             | "ParallelOff" -> tcConfigB.concurrentBuild <- false
+            | "ParallelCheckingWithSignatureFilesOn" -> tcConfigB.parallelCheckingWithSignatureFiles <- true
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
@@ -1676,6 +1677,14 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             tagNone,
             OptionUnit(fun () -> tcConfigB.noDebugAttributes <- true),
             Some(InternalCommandLineOption("nodebugdata", rangeCmdArgs)),
+            None
+        )
+
+        CompilerOption(
+            "parallelreferenceresolution",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.parallelReferenceResolution <- ParallelReferenceResolution.On),
+            Some(InternalCommandLineOption("--parallelreferenceresolution", rangeCmdArgs)),
             None
         )
 
@@ -2306,11 +2315,12 @@ let PrintWholeAssemblyImplementation (tcConfig: TcConfig) outfile header expr =
 let mutable tPrev: (DateTime * DateTime * float * int[]) option = None
 let mutable nPrev: (string * IDisposable) option = None
 
-let ReportTime (tcConfig: TcConfig) descr =    
+let ReportTime (tcConfig: TcConfig) descr =
     match nPrev with
     | None -> ()
-    | Some (prevDescr,prevActivity) ->
+    | Some (prevDescr, prevActivity) ->
         use _ = prevActivity // Finish the previous diagnostics activity by .Dispose() at the end of this block
+
         if tcConfig.pause then
             dprintf "[done '%s', entering '%s'] press <enter> to continue... " prevDescr descr
             Console.ReadLine() |> ignore
@@ -2376,7 +2386,7 @@ let ReportTime (tcConfig: TcConfig) descr =
 
         tPrev <- Some(tStart, tNow, utNow, gcNow)
 
-    nPrev <- Some (descr, Activity.StartNoTags descr)
+    nPrev <- Some(descr, Activity.startNoTags descr)
 
 let ignoreFailureOnMono1_1_16 f =
     try

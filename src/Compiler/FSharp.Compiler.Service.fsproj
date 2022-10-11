@@ -13,7 +13,7 @@
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
-    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);USE_SHIPPED_FSCORE</DefineConstants>
+    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
     <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
     <!-- 1182: Unused variables -->
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
@@ -133,8 +133,8 @@
     <Compile Include="Utilities\range.fsi" />
     <Compile Include="Utilities\range.fs" />
     <EmbeddedText Include="Facilities\UtilsStrings.txt" />
-    <Compile Include="Facilities\Logger.fsi" />
-    <Compile Include="Facilities\Logger.fs" />
+    <Compile Include="Facilities\Activity.fsi" />
+    <Compile Include="Facilities\Activity.fs" />
     <Compile Include="Facilities\LanguageFeatures.fsi" />
     <Compile Include="Facilities\LanguageFeatures.fs" />
     <Compile Include="Facilities\DiagnosticOptions.fsi" />

@@ -683,58 +683,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                 exn |> Option.iter raise)
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
-        CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))
-
-    /// Assert that the given source code compiles with the `defaultProjectOptions`, with no errors or warnings
-    static member CompileOfAst isExe source =
-        let outputFilePath = Path.ChangeExtension (tryCreateTemporaryFileName (), if isExe then "exe" else ".dll")
-        let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
-
-        let parseResults =
-            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions)
-            |> Async.RunImmediate
-
-        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
-
-        let dependencies =
-        #if NETCOREAPP
-            Array.toList TargetFrameworkUtil.currentReferences
-        #else
-            []
-        #endif
-
-        let compileErrors, statusCode =
-            checker.Compile([parseResults.ParseTree], "test", outputFilePath, dependencies, executable = isExe, noframework = true)
-            |> Async.RunImmediate
-
-        Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
-        Assert.AreEqual(0, statusCode, sprintf "Nonzero status code: %d" statusCode)
-        outputFilePath
-
-    static member CompileOfAstToDynamicAssembly source =
-        let assemblyName = sprintf "test-%O" (Guid.NewGuid())
-        let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
-        let parseResults =
-            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions)
-            |> Async.RunImmediate
-
-        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
-
-        let dependencies =
-            #if NETCOREAPP
-                Array.toList TargetFrameworkUtil.currentReferences
-            #else
-                []
-            #endif
-
-        let compileErrors, statusCode, assembly =
-            checker.CompileToDynamicAssembly([parseResults.ParseTree], assemblyName, dependencies, None, noframework = true)
-            |> Async.RunImmediate
-
-        Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
-        Assert.AreEqual(0, statusCode, sprintf "Nonzero status code: %d" statusCode)
-        Assert.IsTrue(assembly.IsSome, "no assembly returned")
-        Option.get assembly
+        CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))  
 
     static member Pass (source: string) =
         let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunImmediate
@@ -742,7 +691,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         match fileAnswer with
-        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+        | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
         Assert.IsEmpty(typeCheckResults.Diagnostics, sprintf "Type Check errors: %A" typeCheckResults.Diagnostics)
@@ -755,7 +704,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         match fileAnswer with
-        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+        | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
         Assert.IsEmpty(typeCheckResults.Diagnostics, sprintf "Type Check errors: %A" typeCheckResults.Diagnostics)
@@ -773,7 +722,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         match fileAnswer with
-        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+        | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
         let errorsExpectedBaseLine =
@@ -805,7 +754,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             else
 
                 match fileAnswer with
-                | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted"); [| |]
                 | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
 
         errors
@@ -825,7 +774,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             else
 
                 match fileAnswer with
-                | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted"); [| |]
                 | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
 
         errors
@@ -841,7 +790,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             |> Async.RunImmediate
 
         match fileAnswer with
-        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); failwith "Type Checker Aborted"
+        | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted"); failwith "Type Checker Aborted"
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> parseResults, typeCheckResults
 
     /// Parses and type checks the given source. Fails if the type checker is aborted or the parser returns any diagnostics.
@@ -867,7 +816,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             else
 
                 match fileAnswer with
-                | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted"); [| |]
                 | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
 
         assertErrors libAdjust false errors expectedTypeErrors
