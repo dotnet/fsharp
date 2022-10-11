@@ -102,11 +102,6 @@
         <target state="translated">_Activer les références de projet croisé en mémoire</target>
         <note />
       </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">Nombre de projets dont les données sont mises en cache dans la mémoire</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Show_navigation_links_as">
         <source>S_how navigation links as</source>
         <target state="translated">Affic_her les liens de navigation en tant que</target>
@@ -180,11 +175,6 @@
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
         <target state="translated">Les références inter-projets en mémoire stockent les données de niveau projet dans la mémoire pour permettre aux fonctionnalités de l'IDE de fonctionner sur plusieurs projets.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">Les données de projet sont mises en cache pour les fonctionnalités de l'IDE. Les valeurs plus élevées utilisent plus de mémoire, car davantage de projets sont mis en cache. L'ajustement de cette valeur ne devrait pas affecter les petites ou moyennes solutions.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

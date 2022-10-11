@@ -161,6 +161,7 @@
     <Compile Include="ErrorMessages\WarnIfDiscardedInList.fs" />
 	<Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs"/>
     <Compile Include="Language\IndexerSetterParamArray.fs" />
+	<Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
     <Compile Include="Language\ObsoleteAttributeCheckingTests.fs" />
