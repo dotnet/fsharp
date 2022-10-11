@@ -90,10 +90,8 @@ type internal FSharpWorkspaceServiceFactory
                     None
 
             let getSource filename =
-                workspace.CurrentSolution.Projects
-                |> Seq.collect (fun p -> p.Documents)
-                |> Seq.tryFind (fun d -> d.FilePath = filename)
-                |> Option.map (fun document ->
+                workspace.CurrentSolution.TryGetDocumentFromPath(filename)
+                |> Option.map(fun document ->
                     let text = document.GetTextAsync().Result
                     //let _version = document.GetTextVersionAsync().Result
                     //let _versionString = _version.ToString()

@@ -41,14 +41,14 @@ type Solution with
             proj.Documents |> Seq.tryFind (fun doc -> doc.Name = docName))
 
 
-     /// Try to find the documentId corresponding to the provided filepath within this solution  
+     /// Try to find the document corresponding to the provided filepath within this solution  
     member self.TryGetDocumentFromPath filePath =
         // It's crucial to normalize file path here (specificaly, remove relative parts),
         // otherwise Roslyn does not find documents.
         self.GetDocumentIdsWithFilePath (Path.GetFullPath filePath)
         |> Seq.tryHead |> Option.map (fun docId -> self.GetDocument docId)
 
-    /// Try to find the documentId corresponding to the provided filepath and ProjectId within this solution  
+    /// Try to find the document corresponding to the provided filepath and ProjectId within this solution  
     member self.TryGetDocumentFromPath(filePath, projId: ProjectId) =
        // It's crucial to normalize file path here (specificaly, remove relative parts),
        // otherwise Roslyn does not find documents.
