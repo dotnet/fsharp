@@ -505,7 +505,7 @@ let convTypeRefAux (cenv: cenv) (tref: ILTypeRef) =
     match tref.Scope with
     | ILScopeRef.Assembly asmref -> convResolveAssemblyRef cenv asmref qualifiedName
     | ILScopeRef.Module _
-    | ILScopeRef.Local _ ->
+    | ILScopeRef.Local ->
         let typT = Type.GetType qualifiedName
 
         match typT with
