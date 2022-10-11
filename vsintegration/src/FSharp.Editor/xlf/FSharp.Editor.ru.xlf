@@ -27,6 +27,11 @@
         <target state="translated">Добавить заметку типа</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertCSharpUsingToFSharpOpen">
+        <source>Convert C# 'using' to F# 'open'</source>
+        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
         <target state="translated">Преобразовать в анонимную запись</target>
