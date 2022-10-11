@@ -291,4 +291,7 @@
   <data name="UseTripleQuotedInterpolation" xml:space="preserve">
     <value>Use triple quoted string interpolation.</value>
   </data>
+  <data name="ConvertCSharpUsingToFSharpOpen" xml:space="preserve">
+    <value>Convert C# 'using' to F# 'open'</value>
+  </data>
 </root>
