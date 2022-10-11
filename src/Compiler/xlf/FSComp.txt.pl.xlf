@@ -492,11 +492,6 @@
         <target state="translated">Nieprawidłowa ścieżka zestawu odwołania“</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsLangVersion">
-        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
-        <target state="new">Display the allowed values for language version, specify language version such as 'latest' or 'preview'</target>
-        <note />
-      </trans-unit>
       <trans-unit id="optsOptimizationData">
         <source>Specify included optimization information, the default is file. Important for distributed libraries.</source>
         <target state="translated">Określ dołączone informacje o optymalizacji. Wartość domyślna to plik. Ważne dla bibliotek rozproszonych.</target>
@@ -3262,11 +3257,6 @@
         <target state="translated">Nieoczekiwany literał całkowity w wyrażeniu jednostki miary</target>
         <note />
       </trans-unit>
-      <trans-unit id="parsUnexpectedTypeParameter">
-        <source>Syntax error: unexpected type parameter specification</source>
-        <target state="new">Syntax error: unexpected type parameter specification</target>
-        <note />
-      </trans-unit>
       <trans-unit id="parsMismatchedQuotationName">
         <source>Mismatched quotation operator name, beginning with '{0}'</source>
         <target state="translated">Niezgodna nazwa operatora cytatu, począwszy od „{0}”</target>
@@ -5212,16 +5202,6 @@
         <target state="translated">Plik informacji o linku do źródła do osadzenia w przenośnym pliku PDB</target>
         <note />
       </trans-unit>
-      <trans-unit id="optsEmbeddedSourceRequirePortablePDBs">
-        <source>--embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="new">--embed switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsSourceLinkRequirePortablePDBs">
-        <source>--sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</source>
-        <target state="new">--sourcelink switch only supported when emitting a Portable PDB (--debug:portable or --debug:embedded)</target>
-        <note />
-      </trans-unit>
       <trans-unit id="srcFileTooLarge">
         <source>Source file is too large to embed in a portable PDB</source>
         <target state="translated">Plik źródłowy jest za duży, aby osadzić go w przenośnym pliku PDB</target>
@@ -6277,21 +6257,6 @@
         <target state="translated">Elementy członkowskie rozszerzeń nie mogą udostępniać przeciążeń operatorów. Zamiast tego rozważ zdefiniowanie operatora jako części definicji typu.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
-        <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="new">The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteMDBMemberMissing">
-        <source>MDB generation failed. Could not find compatible member {0}</source>
-        <target state="new">MDB generation failed. Could not find compatible member {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteErrorCreatingMdb">
-        <source>Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</source>
-        <target state="new">Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnionCaseNameConflictsWithGeneratedType">
         <source>The union case named '{0}' conflicts with the generated type '{1}'</source>
         <target state="translated">Przypadek unii o nazwie „{0}” powoduje konflikt z wygenerowanym typem „{1}”</target>
@@ -6565,11 +6530,6 @@
       <trans-unit id="fscAssemblyWildcardAndDeterminism">
         <source>An {0} specified version '{1}', but this value is a wildcard, and you have requested a deterministic build, these are in conflict.</source>
         <target state="translated">Element {0} określił wersję „{1}”, ale wartość jest symbolem wieloznacznym. Żądano kompilacji deterministycznej. Te wartości powodują konflikt.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fscDeterministicDebugRequiresPortablePdb">
-        <source>Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="new">Deterministic builds only support portable PDBs (--debug:portable or --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="etIllegalCharactersInNamespaceName">
@@ -8195,11 +8155,6 @@
       <trans-unit id="optsPathMap">
         <source>Maps physical paths to source path names output by the compiler</source>
         <target state="translated">Mapuje ścieżki fizyczne na wyjściowe nazwy ścieżek źródłowych z kompilatora</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fscPathMapDebugRequiresPortablePdb">
-        <source>--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</source>
-        <target state="new">--pathmap can only be used with portable PDBs (--debug:portable or --debug:embedded)</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidPathMapFormat">
