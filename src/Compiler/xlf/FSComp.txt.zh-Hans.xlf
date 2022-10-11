@@ -217,6 +217,11 @@
         <target state="translated">ML 兼容性修订</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern match discard is not allowed for union case that takes no data.</source>
+        <target state="new">Pattern match discard is not allowed for union case that takes no data.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
@@ -405,6 +410,11 @@
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">内插字符串无效。在内插表达式中不能使用三重引号字符串文字。请考虑对内插表达式使用显式的 "let" 绑定。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern discard is not allowed for union case that takes no data.</source>
+        <target state="new">Pattern discard is not allowed for union case that takes no data.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatError">
@@ -1320,11 +1330,6 @@
       <trans-unit id="buildCouldNotResolveAssembly">
         <source>Could not resolve assembly '{0}'</source>
         <target state="translated">无法解析程序集“{0}”</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
-        <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">无法解析“{1}”所需的程序集“{0}”</target>
         <note />
       </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
@@ -7554,7 +7559,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
-        <target state="translated">用于互相递归绑定、属性声明，并用于对泛型参数的多个约束。</target>
+        <target state="new">Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionAs">

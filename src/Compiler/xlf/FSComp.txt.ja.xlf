@@ -217,6 +217,11 @@
         <target state="translated">ML 互換性のリビジョン</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern match discard is not allowed for union case that takes no data.</source>
+        <target state="new">Pattern match discard is not allowed for union case that takes no data.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
@@ -405,6 +410,11 @@
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">補間された文字列が無効です。三重引用符文字列リテラルは、補間された式では使用できません。補間式に対して明示的な 'let' バインドを使用することをご検討ください。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern discard is not allowed for union case that takes no data.</source>
+        <target state="new">Pattern discard is not allowed for union case that takes no data.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatError">
@@ -1320,11 +1330,6 @@
       <trans-unit id="buildCouldNotResolveAssembly">
         <source>Could not resolve assembly '{0}'</source>
         <target state="translated">アセンブリ '{0}' を解決できませんでした</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
-        <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">{1}' に必要なアセンブリ '{0}' を解決できませんでした</target>
         <note />
       </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
@@ -7554,7 +7559,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
-        <target state="translated">相互に再帰的なバインディング、プロパティの宣言、およびジェネリック パラメーターの複数の制約に使用します。</target>
+        <target state="new">Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionAs">

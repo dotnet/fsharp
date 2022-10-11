@@ -217,6 +217,11 @@
         <target state="translated">Редакции совместимости ML</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern match discard is not allowed for union case that takes no data.</source>
+        <target state="new">Pattern match discard is not allowed for union case that takes no data.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureNameOf">
         <source>nameof</source>
         <target state="translated">nameof</target>
@@ -405,6 +410,11 @@
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">Недопустимая интерполированная строка. Строковые литералы с тройными кавычками запрещено использовать в интерполированных выражениях. Рекомендуется использовать явную привязку "let" для выражения интерполяции.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern discard is not allowed for union case that takes no data.</source>
+        <target state="new">Pattern discard is not allowed for union case that takes no data.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatError">
@@ -1320,11 +1330,6 @@
       <trans-unit id="buildCouldNotResolveAssembly">
         <source>Could not resolve assembly '{0}'</source>
         <target state="translated">Не удалось разрешить сборку "{0}".</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
-        <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">Не удалось разрешить сборку "{0}", необходимую для "{1}"</target>
         <note />
       </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
@@ -7554,7 +7559,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
-        <target state="translated">Используется во взаимно рекурсивных привязках, объявлениях свойств и с несколькими ограничениями для универсальных параметров.</target>
+        <target state="new">Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionAs">
