@@ -2,1659 +2,1659 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../FSStrings.resx">
     <body>
-      <trans-unit id="HashLoadedSourceHasIssues0">
-        <source>One or more informational messages in loaded file.\n</source>
-        <target state="translated">Nejméně jedna informační zpráva v načteném souboru\n</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NotUpperCaseConstructorWithoutRQA">
-        <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
-        <target state="translated">Případy sjednocení s malými písmeny jsou povolené jenom při použití atributu RequireQualifiedAccess.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
-        <source>symbol '..^'</source>
-        <target state="translated">symbol ..^</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.END">
-        <source>interpolated string</source>
-        <target state="translated">interpolovaný řetězec</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.PART">
-        <source>interpolated string (first part)</source>
-        <target state="translated">interpolovaný řetězec (první část)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INTERP.STRING.END">
-        <source>interpolated string (final part)</source>
-        <target state="translated">interpolovaný řetězec (poslední část)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
-        <source>interpolated string (part)</source>
-        <target state="translated">interpolovaný řetězec (část)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SeeAlso">
-        <source>. See also {0}.</source>
-        <target state="translated">. Viz taky {0}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConstraintSolverTupleDiffLengths">
-        <source>The tuples have differing lengths of {0} and {1}</source>
-        <target state="translated">{0} a {1} mají v řazených kolekcích členů různou délku.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConstraintSolverInfiniteTypes">
-        <source>The types '{0}' and '{1}' cannot be unified.</source>
-        <target state="translated">Typy {0} a {1} nemůžou být sjednocené.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConstraintSolverMissingConstraint">
-        <source>A type parameter is missing a constraint '{0}'</source>
-        <target state="translated">V parametru typu chybí omezení {0}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConstraintSolverTypesNotInEqualityRelation1">
-        <source>The unit of measure '{0}' does not match the unit of measure '{1}'</source>
-        <target state="translated">Měrná jednotka {0} se neshoduje s měrnou jednotkou {1}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConstraintSolverTypesNotInEqualityRelation2">
-        <source>The type '{0}' does not match the type '{1}'</source>
-        <target state="translated">Typ {0} se neshoduje s typem {1}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ConstraintSolverTypesNotInSubsumptionRelation">
-        <source>The type '{0}' is not compatible with the type '{1}'{2}</source>
-        <target state="translated">Typ {0} není kompatibilní s typem {1}{2}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ErrorFromAddingTypeEquation1">
-        <source>This expression was expected to have type\n    '{1}'    \nbut here has type\n    '{0}'    {2}</source>
-        <target state="translated">U tohoto výrazu se očekával typ\n    {1},    \nale tady je typu\n    {0}    {2}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ErrorFromAddingTypeEquation2">
-        <source>Type mismatch. Expecting a\n    '{0}'    \nbut given a\n    '{1}'    {2}\n</source>
-        <target state="translated">Neshoda v typu. Očekávaný typ je \n    {0},    \nale předávaný je\n    {1}    {2}.\n</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ErrorFromApplyingDefault1">
-        <source>Type constraint mismatch when applying the default type '{0}' for a type inference variable. </source>
-        <target state="translated">Neshoda v omezení typu při použití výchozího typu {0} na proměnnou rozhraní typu </target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ErrorFromApplyingDefault2">
-        <source> Consider adding further type constraints</source>
-        <target state="translated"> Zvažte přidání dalších omezení typu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ErrorsFromAddingSubsumptionConstraint">
-        <source>Type constraint mismatch. The type \n    '{0}'    \nis not compatible with type\n    '{1}'    {2}\n</source>
-        <target state="translated">Neshoda v omezení typu. Typ \n    {0}    \nnení kompatibilní s typem\n    {1}.    {2}\n</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UpperCaseIdentifierInPattern">
-        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
-        <target state="translated">Identifikátory proměnných psané velkými písmeny se ve vzorech obecně nedoporučují. Můžou označovat chybějící otevřenou deklaraci nebo špatně napsaný název vzoru.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NotUpperCaseConstructor">
-        <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
-        <target state="translated">Rozlišené případy typu union a popisky výjimek musí být identifikátory, které jsou psané velkými písmeny.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FunctionExpected">
-        <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
-        <target state="translated">Tato funkce přebírá příliš mnoho argumentů, nebo se používá v kontextu, ve kterém se funkce neočekává.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="BakedInMemberConstraintName">
-        <source>Member constraints with the name '{0}' are given special status by the F# compiler as certain .NET types are implicitly augmented with this member. This may result in runtime failures if you attempt to invoke the member constraint from your own code.</source>
-        <target state="translated">Kompilátor F# udělil omezením člena s názvem {0} zvláštní statut, protože některé typy .NET jsou o tento člen implicitně rozšířené. Pokud se budete pokoušet vyvolat omezení člena z vlastního kódu, může to způsobit potíže za běhu.</target>
+      <trans-unit id="AssemblyNotResolved">
+        <source>Assembly reference '{0}' was not found or is invalid</source>
+        <target state="new">Assembly reference '{0}' was not found or is invalid</target>
         <note />
       </trans-unit>
       <trans-unit id="BadEventTransformation">
         <source>A definition to be compiled as a .NET event does not have the expected form. Only property members can be compiled as .NET events.</source>
-        <target state="translated">Definice, která se má zkompilovat jako událost .NET, nemá očekávanou podobu. Jako události .NET se dají zkompilovat jenom členové vlastností.</target>
+        <target state="new">A definition to be compiled as a .NET event does not have the expected form. Only property members can be compiled as .NET events.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ParameterlessStructCtor">
-        <source>Implicit object constructors for structs must take at least one argument</source>
-        <target state="translated">Implicitní konstruktory objektu pro struktury musí přebírat aspoň jeden argument.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="InterfaceNotRevealed">
-        <source>The type implements the interface '{0}' but this is not revealed by the signature. You should list the interface in the signature, as the interface will be discoverable via dynamic type casts and/or reflection.</source>
-        <target state="translated">Typ implementuje rozhraní {0}, které ale signatura neposkytuje. Měli byste toto rozhraní uvést v signatuře, aby bylo prostřednictvím dynamického přetypování nebo reflexe zjistitelné.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="TyconBadArgs">
-        <source>The type '{0}' expects {1} type argument(s) but is given {2}</source>
-        <target state="translated">Počet argumentů typu, které typ {0} očekává, je {1}, ale počet předávaných je {2}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="IndeterminateType">
-        <source>Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.</source>
-        <target state="translated">Definovali jste vyhledávání u objektu neurčitého typu založeného na informacích před tímto místem v programu. Aby se typ objektu omezil, bude možná potřeba přidat před tímto místem v programu poznámku typu. Tím se problém s vyhledáváním pravděpodobně vyřeší.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NameClash1">
-        <source>Duplicate definition of {0} '{1}'</source>
-        <target state="translated">Duplicitní definice: {0} {1}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NameClash2">
-        <source>The {0} '{1}' can not be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
-        <target state="translated">{0} {1} se nedá definovat, protože název {2} a {3} {4} v tomto typu nebo modulu jsou v konfliktu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Duplicate1">
-        <source>Two members called '{0}' have the same signature</source>
-        <target state="translated">Dva členové s názvem {0} mají stejnou signaturu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Duplicate2">
-        <source>Duplicate definition of {0} '{1}'</source>
-        <target state="translated">Duplicitní definice: {0} {1}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UndefinedName2">
-        <source> A construct with this name was found in FSharp.PowerPack.dll, which contains some modules and types that were implicitly referenced in some previous versions of F#. You may need to add an explicit reference to this DLL in order to compile this code.</source>
-        <target state="translated"> Konstruktor s tímto názvem se našel v knihovně FSharp.PowerPack.dll, která obsahuje určité moduly a typy implicitně odkazované v některých dřívějších verzích F#. Abyste tento kód mohli zkompilovat, bude možná potřeba přidat explicitní odkaz na tuto knihovnu DLL.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FieldNotMutable">
-        <source>This field is not mutable</source>
-        <target state="translated">Toto pole není měnitelné.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FieldsFromDifferentTypes">
-        <source>The fields '{0}' and '{1}' are from different types</source>
-        <target state="translated">Pole {0} a {1} jsou odlišného typu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="VarBoundTwice">
-        <source>'{0}' is bound twice in this pattern</source>
-        <target state="translated">{0} má v tomto vzoru dvě vazby.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Recursion">
-        <source>A use of the function '{0}' does not match a type inferred elsewhere. The inferred type of the function is\n    {1}.    \nThe type of the function required at this point of use is\n    {2}    {3}\nThis error may be due to limitations associated with generic recursion within a 'let rec' collection or within a group of classes. Consider giving a full type signature for the targets of recursive calls including type annotations for both argument and return types.</source>
-        <target state="translated">Použití funkce {0} neodpovídá typu, který se odvozuje na jiném místě. Odvozený typ funkce je\n    {1}.    \nTyp funkce, který se na tomto místě požaduje, je \n    {2}    {3}.\nTato chyba může být způsobená omezeními, která jsou přidružená k obecné rekurzi v kolekci let rec nebo ve skupině tříd. Zvažte možnost zadat úplnou signaturu typu pro cíle rekurzivních volání včetně poznámek typu pro argumenty i návratových typů.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="InvalidRuntimeCoercion">
-        <source>Invalid runtime coercion or type test from type {0} to {1}\n{2}</source>
-        <target state="translated">Neplatný test typu nebo konverze za běhu z typu {0} na {1}\n{2}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="IndeterminateRuntimeCoercion">
-        <source>This runtime coercion or type test from type\n    {0}    \n to \n    {1}    \ninvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.</source>
-        <target state="translated">Tento test typu nebo konverze za běhu z typu\n    {0}    \n na \n    {1}    \nzahrnuje neurčitý typ založený na informacích před tímto místem v programu. Testy typu za běhu nejsou u některých typů povolené. Je potřeba, abyste k typu doplnili další poznámky.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="IndeterminateStaticCoercion">
-        <source>The static coercion from type\n    {0}    \nto \n    {1}    \n involves an indeterminate type based on information prior to this program point. Static coercions are not allowed on some types. Further type annotations are needed.</source>
-        <target state="translated">Statická konverze z typu\n    {0}    \nna typ \n    {1}    \n zahrnuje neurčitý typ založený na informacích před tímto místem v programu. Statické konverze nejsou u některých typů povolené. Je potřeba, abyste k typu doplnili další poznámky.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="StaticCoercionShouldUseBox">
-        <source>A coercion from the value type \n    {0}    \nto the type \n    {1}    \nwill involve boxing. Consider using 'box' instead</source>
-        <target state="translated">Při konverzi z typu hodnoty \n    {0}    \nna typ \n    {1}    \nproběhne zabalení. Zvažte možnost použít místo toho klíčové slovo box.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="TypeIsImplicitlyAbstract">
-        <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
-        <target state="translated">Tento typ je abstract, protože se neimplementovali někteří abstraktní členové. Pokud je to záměr, pak k typu přidejte atribut [&lt;AbstractClass&gt;].</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NonRigidTypar1">
-        <source>This construct causes code to be less generic than indicated by its type annotations. The type variable implied by the use of a '#', '_' or other type annotation at or near '{0}' has been constrained to be type '{1}'.</source>
-        <target state="translated">Konstruktor způsobuje, že kód je míň obecný, než udávají jeho poznámky typu. Proměnná typu odvozená pomocí #, _ nebo jiné poznámky typu na pozici {0} nebo blízko ní se omezila na typ {1}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NonRigidTypar2">
-        <source>This construct causes code to be less generic than indicated by the type annotations. The unit-of-measure variable '{0} has been constrained to be measure '{1}'.</source>
-        <target state="translated">Tento konstruktor způsobuje, že kód je míň obecný, než udávají jeho poznámky typu. Proměnná měrné jednotky {0} se omezila na měrnou jednotku {1}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NonRigidTypar3">
-        <source>This construct causes code to be less generic than indicated by the type annotations. The type variable '{0} has been constrained to be type '{1}'.</source>
-        <target state="translated">Tento konstruktor způsobuje, že kód je míň obecný, než udávají jeho poznámky typu. Proměnná typu {0} se omezila na typ {1}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.IDENT">
-        <source>identifier</source>
-        <target state="translated">identifikátor</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INT">
-        <source>integer literal</source>
-        <target state="translated">celočíselný literál</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.FLOAT">
-        <source>floating point literal</source>
-        <target state="translated">literál s plovoucí desetinnou čárkou</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.DECIMAL">
-        <source>decimal literal</source>
-        <target state="translated">desítkový literál</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.CHAR">
-        <source>character literal</source>
-        <target state="translated">znakový literál</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.BASE">
-        <source>keyword 'base'</source>
-        <target state="translated">klíčové slovo base</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.LPAREN.STAR.RPAREN">
-        <source>symbol '(*)'</source>
-        <target state="translated">symbol (*)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.DOLLAR">
-        <source>symbol '$'</source>
-        <target state="translated">symbol $</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INFIX.STAR.STAR.OP">
-        <source>infix operator</source>
-        <target state="translated">operátor vpony</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INFIX.COMPARE.OP">
-        <source>infix operator</source>
-        <target state="translated">operátor vpony</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.COLON.GREATER">
-        <source>symbol ':&gt;'</source>
-        <target state="translated">symbol :&gt;</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.COLON.COLON">
-        <source>symbol '::'</source>
-        <target state="translated">symbol ::</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.PERCENT.OP">
-        <source>symbol '{0}</source>
-        <target state="translated">symbol {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INFIX.AT.HAT.OP">
-        <source>infix operator</source>
-        <target state="translated">operátor vpony</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INFIX.BAR.OP">
-        <source>infix operator</source>
-        <target state="translated">operátor vpony</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.PLUS.MINUS.OP">
-        <source>infix operator</source>
-        <target state="translated">operátor vpony</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.PREFIX.OP">
-        <source>prefix operator</source>
-        <target state="translated">operátor předpony</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.COLON.QMARK.GREATER">
-        <source>symbol ':?&gt;'</source>
-        <target state="translated">symbol :?&gt;</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INFIX.STAR.DIV.MOD.OP">
-        <source>infix operator</source>
-        <target state="translated">operátor vpony</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INFIX.AMP.OP">
-        <source>infix operator</source>
-        <target state="translated">operátor vpony</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.AMP">
-        <source>symbol '&amp;'</source>
-        <target state="translated">symbol &amp;</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.AMP.AMP">
-        <source>symbol '&amp;&amp;'</source>
-        <target state="translated">symbol &amp;&amp;</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.BAR.BAR">
-        <source>symbol '||'</source>
-        <target state="translated">symbol ||</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.LESS">
-        <source>symbol '&lt;'</source>
-        <target state="translated">symbol &lt;</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.GREATER">
-        <source>symbol '&gt;'</source>
-        <target state="translated">symbol &gt;</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.QMARK">
-        <source>symbol '?'</source>
-        <target state="translated">symbol ?</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.QMARK.QMARK">
-        <source>symbol '??'</source>
-        <target state="translated">symbol ??</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.COLON.QMARK">
-        <source>symbol ':?'</source>
-        <target state="translated">symbol :?</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INT32.DOT.DOT">
-        <source>integer..</source>
-        <target state="translated">celé číslo..</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.DOT.DOT">
-        <source>symbol '..'</source>
-        <target state="translated">symbol ..</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.QUOTE">
-        <source>quote symbol</source>
-        <target state="translated">symbol citace</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.STAR">
-        <source>symbol '*'</source>
-        <target state="translated">symbol *</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.TYAPP">
-        <source>type application </source>
-        <target state="translated">použití typu </target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.COLON">
-        <source>symbol ':'</source>
-        <target state="translated">symbol :</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.COLON.EQUALS">
-        <source>symbol ':='</source>
-        <target state="translated">symbol :=</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.LARROW">
-        <source>symbol '&lt;-'</source>
-        <target state="translated">symbol &lt;-</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.EQUALS">
-        <source>symbol '='</source>
-        <target state="translated">symbol =</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.GREATER.BAR.RBRACK">
-        <source>symbol '&gt;|]'</source>
-        <target state="translated">symbol &gt;|]</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.MINUS">
-        <source>symbol '-'</source>
-        <target state="translated">symbol -</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.ADJACENT.PREFIX.OP">
-        <source>prefix operator</source>
-        <target state="translated">operátor předpony</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.FUNKY.OPERATOR.NAME">
-        <source>operator name</source>
-        <target state="translated">název operátora</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.COMMA">
-        <source>symbol ','</source>
-        <target state="translated">symbol ,</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.DOT">
-        <source>symbol '.'</source>
-        <target state="translated">symbol .</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.BAR">
-        <source>symbol '|'</source>
-        <target state="translated">symbol |</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.HASH">
-        <source>symbol #</source>
-        <target state="translated">symbol #</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.UNDERSCORE">
-        <source>symbol '_'</source>
-        <target state="translated">symbol _</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.SEMICOLON">
-        <source>symbol ';'</source>
-        <target state="translated">symbol ;</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.SEMICOLON.SEMICOLON">
-        <source>symbol ';;'</source>
-        <target state="translated">symbol ;;</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.LPAREN">
-        <source>symbol '('</source>
-        <target state="translated">symbol (</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.RPAREN">
-        <source>symbol ')'</source>
-        <target state="translated">symbol )</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.SPLICE.SYMBOL">
-        <source>symbol 'splice'</source>
-        <target state="translated">symbol splice</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.LQUOTE">
-        <source>start of quotation</source>
-        <target state="translated">začátek citace</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.LBRACK">
-        <source>symbol '['</source>
-        <target state="translated">symbol [</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.LBRACK.BAR">
-        <source>symbol '[|'</source>
-        <target state="translated">symbol [|</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.LBRACK.LESS">
-        <source>symbol '[&lt;'</source>
-        <target state="translated">symbol [&lt;</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.LBRACE">
-        <source>symbol '{'</source>
-        <target state="translated">symbol {</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.LBRACE.LESS">
-        <source>symbol '{&lt;'</source>
-        <target state="translated">symbol {&lt;</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.BAR.RBRACK">
-        <source>symbol '|]'</source>
-        <target state="translated">symbol |]</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.GREATER.RBRACE">
-        <source>symbol '&gt;}'</source>
-        <target state="translated">symbol &gt;}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.GREATER.RBRACK">
-        <source>symbol '&gt;]'</source>
-        <target state="translated">symbol &gt;]</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.RQUOTE">
-        <source>end of quotation</source>
-        <target state="translated">konec citace</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.RBRACK">
-        <source>symbol ']'</source>
-        <target state="translated">symbol ]</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.RBRACE">
-        <source>symbol '}'</source>
-        <target state="translated">symbol }</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.PUBLIC">
-        <source>keyword 'public'</source>
-        <target state="translated">klíčové slovo public</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.PRIVATE">
-        <source>keyword 'private'</source>
-        <target state="translated">klíčové slovo private</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INTERNAL">
-        <source>keyword 'internal'</source>
-        <target state="translated">klíčové slovo internal</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.FIXED">
-        <source>keyword 'fixed'</source>
-        <target state="translated">klíčové slovo fixed</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.CONSTRAINT">
-        <source>keyword 'constraint'</source>
-        <target state="translated">klíčové slovo constraint</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INSTANCE">
-        <source>keyword 'instance'</source>
-        <target state="translated">klíčové slovo instance</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.DELEGATE">
-        <source>keyword 'delegate'</source>
-        <target state="translated">klíčové slovo delegate</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INHERIT">
-        <source>keyword 'inherit'</source>
-        <target state="translated">klíčové slovo inherit</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.CONSTRUCTOR">
-        <source>keyword 'constructor'</source>
-        <target state="translated">klíčové slovo constructor</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.DEFAULT">
-        <source>keyword 'default'</source>
-        <target state="translated">klíčové slovo default</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.OVERRIDE">
-        <source>keyword 'override'</source>
-        <target state="translated">klíčové slovo override</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.ABSTRACT">
-        <source>keyword 'abstract'</source>
-        <target state="translated">klíčové slovo abstract</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.CLASS">
-        <source>keyword 'class'</source>
-        <target state="translated">klíčové slovo class</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.MEMBER">
-        <source>keyword 'member'</source>
-        <target state="translated">klíčové slovo member</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.STATIC">
-        <source>keyword 'static'</source>
-        <target state="translated">klíčové slovo static</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.NAMESPACE">
-        <source>keyword 'namespace'</source>
-        <target state="translated">klíčové slovo namespace</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.OBLOCKBEGIN">
-        <source>start of structured construct</source>
-        <target state="translated">začátek strukturovaného konstruktoru</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.OBLOCKEND">
-        <source>incomplete structured construct at or before this point</source>
-        <target state="translated">neúplný strukturovaný konstruktor na této pozici nebo před ní</target>
+      <trans-unit id="BakedInMemberConstraintName">
+        <source>Member constraints with the name '{0}' are given special status by the F# compiler as certain .NET types are implicitly augmented with this member. This may result in runtime failures if you attempt to invoke the member constraint from your own code.</source>
+        <target state="new">Member constraints with the name '{0}' are given special status by the F# compiler as certain .NET types are implicitly augmented with this member. This may result in runtime failures if you attempt to invoke the member constraint from your own code.</target>
         <note />
       </trans-unit>
       <trans-unit id="BlockEndSentence">
         <source>Incomplete structured construct at or before this point</source>
-        <target state="translated">Neúplný strukturovaný konstruktor na této pozici nebo před ní</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.OTHEN">
-        <source>keyword 'then'</source>
-        <target state="translated">klíčové slovo then</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.OELSE">
-        <source>keyword 'else'</source>
-        <target state="translated">klíčové slovo else</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.OLET">
-        <source>keyword 'let' or 'use'</source>
-        <target state="translated">klíčové slovo let nebo use</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.BINDER">
-        <source>binder keyword</source>
-        <target state="translated">klíčové slovo vazače</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.ODO">
-        <source>keyword 'do'</source>
-        <target state="translated">klíčové slovo do</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.CONST">
-        <source>keyword 'const'</source>
-        <target state="translated">klíčové slovo const</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.OWITH">
-        <source>keyword 'with'</source>
-        <target state="translated">klíčové slovo with</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.OFUNCTION">
-        <source>keyword 'function'</source>
-        <target state="translated">klíčové slovo function</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.OFUN">
-        <source>keyword 'fun'</source>
-        <target state="translated">klíčové slovo fun</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.ORESET">
-        <source>end of input</source>
-        <target state="translated">konec vstupu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.ODUMMY">
-        <source>internal dummy token</source>
-        <target state="translated">interní fiktivní token</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.ODO.BANG">
-        <source>keyword 'do!'</source>
-        <target state="translated">klíčové slovo do!</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.YIELD">
-        <source>yield</source>
-        <target state="translated">yield</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.YIELD.BANG">
-        <source>yield!</source>
-        <target state="translated">yield!</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.OINTERFACE.MEMBER">
-        <source>keyword 'interface'</source>
-        <target state="translated">klíčové slovo interface</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.ELIF">
-        <source>keyword 'elif'</source>
-        <target state="translated">klíčové slovo elif</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.RARROW">
-        <source>symbol '-&gt;'</source>
-        <target state="translated">symbol -&gt;</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.SIG">
-        <source>keyword 'sig'</source>
-        <target state="translated">klíčové slovo sig</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.STRUCT">
-        <source>keyword 'struct'</source>
-        <target state="translated">klíčové slovo struct</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.UPCAST">
-        <source>keyword 'upcast'</source>
-        <target state="translated">klíčové slovo upcast</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.DOWNCAST">
-        <source>keyword 'downcast'</source>
-        <target state="translated">klíčové slovo downcast</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.NULL">
-        <source>keyword 'null'</source>
-        <target state="translated">klíčové slovo null</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.RESERVED">
-        <source>reserved keyword</source>
-        <target state="translated">vyhrazené klíčové slovo</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.MODULE">
-        <source>keyword 'module'</source>
-        <target state="translated">klíčové slovo module</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.AND">
-        <source>keyword 'and'</source>
-        <target state="translated">klíčové slovo and</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.AS">
-        <source>keyword 'as'</source>
-        <target state="translated">klíčové slovo as</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.ASSERT">
-        <source>keyword 'assert'</source>
-        <target state="translated">klíčové slovo assert</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.ASR">
-        <source>keyword 'asr'</source>
-        <target state="translated">klíčové slovo asr</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.DOWNTO">
-        <source>keyword 'downto'</source>
-        <target state="translated">klíčové slovo downto</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.EXCEPTION">
-        <source>keyword 'exception'</source>
-        <target state="translated">klíčové slovo exception</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.FALSE">
-        <source>keyword 'false'</source>
-        <target state="translated">klíčové slovo false</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.FOR">
-        <source>keyword 'for'</source>
-        <target state="translated">klíčové slovo for</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.FUN">
-        <source>keyword 'fun'</source>
-        <target state="translated">klíčové slovo fun</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.FUNCTION">
-        <source>keyword 'function'</source>
-        <target state="translated">klíčové slovo function</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.FINALLY">
-        <source>keyword 'finally'</source>
-        <target state="translated">klíčové slovo finally</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.LAZY">
-        <source>keyword 'lazy'</source>
-        <target state="translated">klíčové slovo lazy</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.MATCH">
-        <source>keyword 'match'</source>
-        <target state="translated">klíčové slovo match</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.MATCH.BANG">
-        <source>keyword 'match!'</source>
-        <target state="translated">klíčové slovo match!</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.MUTABLE">
-        <source>keyword 'mutable'</source>
-        <target state="translated">klíčové slovo mutable</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.NEW">
-        <source>keyword 'new'</source>
-        <target state="translated">klíčové slovo new</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.OF">
-        <source>keyword 'of'</source>
-        <target state="translated">klíčové slovo of</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.OPEN">
-        <source>keyword 'open'</source>
-        <target state="translated">klíčové slovo open</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.OR">
-        <source>keyword 'or'</source>
-        <target state="translated">klíčové slovo or</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.VOID">
-        <source>keyword 'void'</source>
-        <target state="translated">klíčové slovo void</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.EXTERN">
-        <source>keyword 'extern'</source>
-        <target state="translated">klíčové slovo extern</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INTERFACE">
-        <source>keyword 'interface'</source>
-        <target state="translated">klíčové slovo interface</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.REC">
-        <source>keyword 'rec'</source>
-        <target state="translated">klíčové slovo rec</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.TO">
-        <source>keyword 'to'</source>
-        <target state="translated">klíčové slovo to</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.TRUE">
-        <source>keyword 'true'</source>
-        <target state="translated">klíčové slovo true</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.TRY">
-        <source>keyword 'try'</source>
-        <target state="translated">klíčové slovo try</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.TYPE">
-        <source>keyword 'type'</source>
-        <target state="translated">klíčové slovo type</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.VAL">
-        <source>keyword 'val'</source>
-        <target state="translated">klíčové slovo val</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INLINE">
-        <source>keyword 'inline'</source>
-        <target state="translated">klíčové slovo inline</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.WHEN">
-        <source>keyword 'when'</source>
-        <target state="translated">klíčové slovo when</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.WHILE">
-        <source>keyword 'while'</source>
-        <target state="translated">klíčové slovo while</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.WITH">
-        <source>keyword 'with'</source>
-        <target state="translated">klíčové slovo with</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.IF">
-        <source>keyword 'if'</source>
-        <target state="translated">klíčové slovo if</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.DO">
-        <source>keyword 'do'</source>
-        <target state="translated">klíčové slovo do</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.GLOBAL">
-        <source>keyword 'global'</source>
-        <target state="translated">klíčové slovo global</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.DONE">
-        <source>keyword 'done'</source>
-        <target state="translated">klíčové slovo done</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.IN">
-        <source>keyword 'in'</source>
-        <target state="translated">klíčové slovo in</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.PAREN.APP">
-        <source>symbol '('</source>
-        <target state="translated">symbol (</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.BRACK.APP">
-        <source>symbol'['</source>
-        <target state="translated">symbol [</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.BEGIN">
-        <source>keyword 'begin'</source>
-        <target state="translated">klíčové slovo begin</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.END">
-        <source>keyword 'end'</source>
-        <target state="translated">klíčové slovo end</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.HASH.ENDIF">
-        <source>directive</source>
-        <target state="translated">direktiva</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.INACTIVECODE">
-        <source>inactive code</source>
-        <target state="translated">neaktivní kód</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.LEX.FAILURE">
-        <source>lex failure</source>
-        <target state="translated">selhání lex</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.WHITESPACE">
-        <source>whitespace</source>
-        <target state="translated">prázdný znak</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.COMMENT">
-        <source>comment</source>
-        <target state="translated">Komentář</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.LINE.COMMENT">
-        <source>line comment</source>
-        <target state="translated">řádkový komentář</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.STRING.TEXT">
-        <source>string text</source>
-        <target state="translated">text řetězce</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.KEYWORD_STRING">
-        <source>compiler generated literal</source>
-        <target state="translated">literál generovaný kompilátorem</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.BYTEARRAY">
-        <source>byte array literal</source>
-        <target state="translated">literál bajtového pole</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.STRING">
-        <source>string literal</source>
-        <target state="translated">řetězcový literál</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Parser.TOKEN.EOF">
-        <source>end of input</source>
-        <target state="translated">konec vstupu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UnexpectedEndOfInput">
-        <source>Unexpected end of input</source>
-        <target state="translated">Neočekávaný konec vstupu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Unexpected">
-        <source>Unexpected {0}</source>
-        <target state="translated">Neočekávaný {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.interaction">
-        <source> in interaction</source>
-        <target state="translated"> v interakci</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.hashDirective">
-        <source> in directive</source>
-        <target state="translated"> v direktivě</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.fieldDecl">
-        <source> in field declaration</source>
-        <target state="translated"> v deklaraci pole</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.unionCaseRepr">
-        <source> in discriminated union case declaration</source>
-        <target state="translated"> v deklaracích rozlišených případů typu union</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.localBinding">
-        <source> in binding</source>
-        <target state="translated"> ve vazbě</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.hardwhiteLetBindings">
-        <source> in binding</source>
-        <target state="translated"> ve vazbě</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.classDefnMember">
-        <source> in member definition</source>
-        <target state="translated"> v definici člena</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.defnBindings">
-        <source> in definitions</source>
-        <target state="translated"> v definicích</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.classMemberSpfn">
-        <source> in member signature</source>
-        <target state="translated"> v signatuře člena</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.valSpfn">
-        <source> in value signature</source>
-        <target state="translated"> v signatuře hodnoty</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.tyconSpfn">
-        <source> in type signature</source>
-        <target state="translated"> v signatuře typu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.anonLambdaExpr">
-        <source> in lambda expression</source>
-        <target state="translated"> ve výrazu lambda</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.attrUnionCaseDecl">
-        <source> in union case</source>
-        <target state="translated"> v případu typu union</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.cPrototype">
-        <source> in extern declaration</source>
-        <target state="translated"> v externí deklaraci</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.objectImplementationMembers">
-        <source> in object expression</source>
-        <target state="translated"> v objektovém výrazu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.ifExprCases">
-        <source> in if/then/else expression</source>
-        <target state="translated"> ve výrazu if/then/else</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.openDecl">
-        <source> in open declaration</source>
-        <target state="translated"> v otevřené deklaraci</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.fileModuleSpec">
-        <source> in module or namespace signature</source>
-        <target state="translated"> v signatuře oboru názvů nebo modulu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.patternClauses">
-        <source> in pattern matching</source>
-        <target state="translated"> v porovnávání vzorů</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.beginEndExpr">
-        <source> in begin/end expression</source>
-        <target state="translated"> ve výrazu begin/end</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.recdExpr">
-        <source> in record expression</source>
-        <target state="translated"> ve výrazu záznamu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.tyconDefn">
-        <source> in type definition</source>
-        <target state="translated"> v definici typu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.exconCore">
-        <source> in exception definition</source>
-        <target state="translated"> v definici výjimky</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.typeNameInfo">
-        <source> in type name</source>
-        <target state="translated"> v názvu typu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.attributeList">
-        <source> in attribute list</source>
-        <target state="translated"> v seznamu atributů</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.quoteExpr">
-        <source> in quotation literal</source>
-        <target state="translated"> v literálu citace</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.typeConstraint">
-        <source> in type constraint</source>
-        <target state="translated"> v omezení typu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.Category.ImplementationFile">
-        <source> in implementation file</source>
-        <target state="translated"> v souboru implementace</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.Category.Definition">
-        <source> in definition</source>
-        <target state="translated"> v definici</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.Category.SignatureFile">
-        <source> in signature file</source>
-        <target state="translated"> v souboru signatury</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.Category.Pattern">
-        <source> in pattern</source>
-        <target state="translated"> ve vzoru</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.Category.Expr">
-        <source> in expression</source>
-        <target state="translated"> ve výrazu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.Category.Type">
-        <source> in type</source>
-        <target state="translated"> v typu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NONTERM.typeArgsActual">
-        <source> in type arguments</source>
-        <target state="translated"> v argumentech typu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FixKeyword">
-        <source>keyword </source>
-        <target state="translated">klíčové slovo </target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FixSymbol">
-        <source>symbol </source>
-        <target state="translated">symbol </target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FixReplace">
-        <source> (due to indentation-aware syntax)</source>
-        <target state="translated"> (kvůli syntaxi, která reflektuje odsazení)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="TokenName1">
-        <source>. Expected {0} or other token.</source>
-        <target state="translated">. Očekával se token {0} nebo nějaký jiný.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="TokenName1TokenName2">
-        <source>. Expected {0}, {1} or other token.</source>
-        <target state="translated">. Očekával se token {0}, {1} nebo nějaký jiný.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="TokenName1TokenName2TokenName3">
-        <source>. Expected {0}, {1}, {2} or other token.</source>
-        <target state="translated">. Očekával se token {0}, {1}, {2} nebo nějaký jiný.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="RuntimeCoercionSourceSealed1">
-        <source>The type '{0}' cannot be used as the source of a type test or runtime coercion</source>
-        <target state="translated">Typ {0} se jako zdroj testu typu nebo konverze za běhu použít nedá.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="RuntimeCoercionSourceSealed2">
-        <source>The type '{0}' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.</source>
-        <target state="translated">Typ {0} nemá žádné správné podtypy a nedá se použít jako zdroj testu typu nebo konverze za běhu.</target>
+        <target state="new">Incomplete structured construct at or before this point</target>
         <note />
       </trans-unit>
       <trans-unit id="CoercionTargetSealed">
         <source>The type '{0}' does not have any proper subtypes and need not be used as the target of a static coercion</source>
-        <target state="translated">Typ {0} nemá žádné správné podtypy a není potřeba ho používat jako cíl statické konverze.</target>
+        <target state="new">The type '{0}' does not have any proper subtypes and need not be used as the target of a static coercion</target>
         <note />
       </trans-unit>
-      <trans-unit id="UpcastUnnecessary">
-        <source>This upcast is unnecessary - the types are identical</source>
-        <target state="translated">Toto přetypování směrem nahoru není nutné: oba typy jsou identické.</target>
+      <trans-unit id="ConstraintSolverInfiniteTypes">
+        <source>The types '{0}' and '{1}' cannot be unified.</source>
+        <target state="new">The types '{0}' and '{1}' cannot be unified.</target>
         <note />
       </trans-unit>
-      <trans-unit id="TypeTestUnnecessary">
-        <source>This type test or downcast will always hold</source>
-        <target state="translated">Tento test typu nebo přetypování směrem dolů se vždycky uloží.</target>
+      <trans-unit id="ConstraintSolverMissingConstraint">
+        <source>A type parameter is missing a constraint '{0}'</source>
+        <target state="new">A type parameter is missing a constraint '{0}'</target>
         <note />
       </trans-unit>
-      <trans-unit id="OverrideDoesntOverride1">
-        <source>The member '{0}' does not have the correct type to override any given virtual method</source>
-        <target state="translated">Člen {0} není správného typu, aby mohl přepsat libovolné předané virtuální metody.</target>
+      <trans-unit id="ConstraintSolverTupleDiffLengths">
+        <source>The tuples have differing lengths of {0} and {1}</source>
+        <target state="new">The tuples have differing lengths of {0} and {1}</target>
         <note />
       </trans-unit>
-      <trans-unit id="OverrideDoesntOverride2">
-        <source>The member '{0}' does not have the correct type to override the corresponding abstract method.</source>
-        <target state="translated">Člen {0} není správného typu, aby mohl přepsat odpovídající abstraktní metodu.</target>
+      <trans-unit id="ConstraintSolverTypesNotInEqualityRelation1">
+        <source>The unit of measure '{0}' does not match the unit of measure '{1}'</source>
+        <target state="new">The unit of measure '{0}' does not match the unit of measure '{1}'</target>
         <note />
       </trans-unit>
-      <trans-unit id="OverrideDoesntOverride3">
-        <source> The required signature is '{0}'.</source>
-        <target state="translated"> Požadovaná signatura je {0}.</target>
+      <trans-unit id="ConstraintSolverTypesNotInEqualityRelation2">
+        <source>The type '{0}' does not match the type '{1}'</source>
+        <target state="new">The type '{0}' does not match the type '{1}'</target>
         <note />
       </trans-unit>
-      <trans-unit id="OverrideDoesntOverride4">
-        <source>The member '{0}' is specialized with 'unit' but 'unit' can't be used as return type of an abstract method parameterized on return type.</source>
-        <target state="translated">Člen {0} je specializovaný s typem unit, ale typ unit není možné použít jako návratový typ abstraktní metody parametrizované u návratového typu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UnionCaseWrongArguments">
-        <source>This constructor is applied to {0} argument(s) but expects {1}</source>
-        <target state="translated">Počet argumentů, pro které se používá tento konstruktor, je {0}, ale očekávaný počet je {1}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UnionPatternsBindDifferentNames">
-        <source>The two sides of this 'or' pattern bind different sets of variables</source>
-        <target state="translated">Obě strany tohoto vzoru or vážou jinou sadu proměnných.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValueNotContained">
-        <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \n{3}.</source>
-        <target state="translated">Modul {0} obsahuje hodnotu\n    {1},    \nale jeho signatura definuje hodnotu\n    {2}.    \n{3}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="RequiredButNotSpecified">
-        <source>Module '{0}' requires a {1} '{2}'</source>
-        <target state="translated">Modul {0} vyžaduje {1} {2}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UseOfAddressOfOperator">
-        <source>The use of native pointers may result in unverifiable .NET IL code</source>
-        <target state="translated">Použití nativních ukazatelů může způsobit vygenerování neověřitelného kódu .NET IL.</target>
+      <trans-unit id="ConstraintSolverTypesNotInSubsumptionRelation">
+        <source>The type '{0}' is not compatible with the type '{1}'{2}</source>
+        <target state="new">The type '{0}' is not compatible with the type '{1}'{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="DefensiveCopyWarning">
         <source>{0}</source>
-        <target state="translated">{0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="DeprecatedThreadStaticBindingWarning">
-        <source>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</source>
-        <target state="translated">Vazby let, které jsou statické na úrovni vlákna nebo kontextu, jsou zastaralé. Použijte místo nich deklaraci ve třídě v podobě static val mutable &lt;ident&gt; : &lt;type&gt;. Přidáním atributu DefaultValue do této deklarace můžete určit, že se bude hodnota v každém novém vláknu inicializovat na výchozí hodnotu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FunctionValueUnexpected">
-        <source>This expression is a function value, i.e. is missing arguments. Its type is {0}.</source>
-        <target state="translated">Tento výraz je hodnotou funkce, to znamená, že u něj chybí argumenty. Je typu {0}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UnitTypeExpected">
-        <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
-        <target state="translated">Výsledek tohoto výrazu má typ {0} a implicitně se ignoruje. Zvažte možnost zahodit tuto hodnotu explicitně pomocí klíčového slova ignore (například výraz |&gt; ignore) nebo vytvořit vazbu výsledku na název pomocí klíčového slova let (například let výsledek = výraz).</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UnitTypeExpectedWithEquality">
-        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</source>
-        <target state="translated">Výsledek tohoto výrazu rovnosti má typ {0} a implicitně se zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, např. let výsledek = výraz.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
-        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
-        <target state="translated">Výsledek tohoto výrazu rovnosti má typ {0} a implicitně se zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, například let výsledek = výraz. Pokud jste chtěli nastavit hodnotu na vlastnost, použijte operátor &lt;-, například {1}.{2} &lt;- výraz.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
-        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">Výsledek tohoto výrazu rovnosti má typ {0} a implicitně se zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, například let výsledek = výraz. Pokud jste chtěli mutovat hodnotu, označte hodnotu jako mutable a použijte operátor &lt;-, například {1} &lt;- výraz.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
-        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">Výsledek tohoto výrazu rovnosti má typ {0} a implicitně se zruší. Zvažte vytvoření vazby mezi výsledkem a názvem pomocí klíčového slova let, například let výsledek = výraz. Pokud jste chtěli mutovat hodnotu, použijte operátor &lt;-, například {1} &lt;- výraz.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="RecursiveUseCheckedAtRuntime">
-        <source>This recursive use will be checked for initialization-soundness at runtime. This warning is usually harmless, and may be suppressed by using '#nowarn "21"' or '--nowarn:21'.</source>
-        <target state="translated">U tohoto rekurzivního použití se bude kontrolovat stabilita inicializace za běhu. Toto upozornění je obvykle neškodné a pomocí #nowarn "21" nebo --nowarn:21 se dá potlačit.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="LetRecUnsound1">
-        <source>The value '{0}' will be evaluated as part of its own definition</source>
-        <target state="translated">Hodnota {0} se vyhodnotí v rámci její vlastní definice.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="LetRecUnsound2">
-        <source>This value will be eventually evaluated as part of its own definition. You may need to make the value lazy or a function. Value '{0}'{1}.</source>
-        <target state="translated">Tato hodnota se nakonec vyhodnotí v rámci její vlastní definice. Možná bude potřeba, abyste hodnotu změnili na opožděnou nebo na funkci. Hodnota {0}{1}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="LetRecUnsoundInner">
-        <source> will evaluate '{0}'</source>
-        <target state="translated"> se vyhodnotí jako {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="LetRecEvaluatedOutOfOrder">
-        <source>Bindings may be executed out-of-order because of this forward reference.</source>
-        <target state="translated">Vazby se můžou kvůli tomuto dopřednému odkazu provádět ve špatném pořadí.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="LetRecCheckedAtRuntime">
-        <source>This and other recursive references to the object(s) being defined will be checked for initialization-soundness at runtime through the use of a delayed reference. This is because you are defining one or more recursive objects, rather than recursive functions. This warning may be suppressed by using '#nowarn "40"' or '--nowarn:40'.</source>
-        <target state="translated">U tohoto a dalších rekurzivních odkazů na definované objekty se bude kontrolovat stabilita inicializace za běhu pomocí zpožděného odkazování. Je to kvůli tomu, že definujete rekurzivní objekty místo rekurzivních funkcí. Toto upozornění se dá pomocí #nowarn "40" nebo --nowarn:40 potlačit.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SelfRefObjCtor1">
-        <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">U rekurzivních odkazů na definované objekty se bude kontrolovat stabilita inicializace za běhu pomocí zpožděného odkazování. Zvažte možnost přidat odkazy na sebe sama do členů nebo koncového výrazu v podobě &lt;výraz-konstruktoru&gt; then &lt;výraz&gt;.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="SelfRefObjCtor2">
-        <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references within 'do' statements after the last 'let' binding in the construction sequence.</source>
-        <target state="translated">U rekurzivních odkazů na definované objekty se bude kontrolovat stabilita inicializace za běhu pomocí zpožděného odkazování. Zvažte možnost přidat do příkazů do za poslední vazbou let v sekvenci konstruktoru odkazy na sebe sama.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="VirtualAugmentationOnNullValuedType">
-        <source>The containing type can use 'null' as a representation value for its nullary union case. Invoking an abstract or virtual member or an interface implementation on a null value will lead to an exception. If necessary add a dummy data value to the nullary constructor to avoid 'null' being used as a representation for this type.</source>
-        <target state="translated">Nadřazený typ může použít null jako hodnotu reprezentace pro svůj prázdný případ typu union. Vyvolání abstraktního nebo virtuálního člena nebo implementace rozhraní u hodnoty null způsobí výjimku. Pokud je to nutné, přidejte do prázdného konstruktoru fiktivní datovou hodnotu, abyste předešli tomu, že se null použije jako reprezentace tohoto typu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NonVirtualAugmentationOnNullValuedType">
-        <source>The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.</source>
-        <target state="translated">Nadřazený typ může použít null jako hodnotu reprezentace pro svůj prázdný případ typu union. Tento člen se kompiluje jako statický.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NonUniqueInferredAbstractSlot1">
-        <source>The member '{0}' doesn't correspond to a unique abstract slot based on name and argument count alone</source>
-        <target state="translated">Člen {0} neodpovídá unikátní abstraktní datové oblasti založené jenom na názvu a počtu argumentů.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NonUniqueInferredAbstractSlot2">
-        <source>. Multiple implemented interfaces have a member with this name and argument count</source>
-        <target state="translated">. Víc implementovaných rozhraní má člena s tímto názvem a počtem argumentů.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NonUniqueInferredAbstractSlot3">
-        <source>. Consider implementing interfaces '{0}' and '{1}' explicitly.</source>
-        <target state="translated">. Zvažte explicitní implementaci rozhraní {0} a {1}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="NonUniqueInferredAbstractSlot4">
-        <source>. Additional type annotations may be required to indicate the relevant override. This warning can be disabled using '#nowarn "70"' or '--nowarn:70'.</source>
-        <target state="translated">. Můžou se vyžadovat další poznámky typu k určení příslušného přepsání. Toto upozornění se dá pomocí #nowarn "70" nebo --nowarn:70 vypnout.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Failure1">
-        <source>parse error</source>
-        <target state="translated">Chyba analýzy</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Failure2">
-        <source>parse error: unexpected end of file</source>
-        <target state="translated">Chyba analýzy: neočekávaný konec souboru</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Failure3">
-        <source>{0}</source>
-        <target state="translated">{0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Failure4">
-        <source>internal error: {0}</source>
-        <target state="translated">Vnitřní chyba: {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="FullAbstraction">
-        <source>{0}</source>
-        <target state="translated">{0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="MatchIncomplete1">
-        <source>Incomplete pattern matches on this expression.</source>
-        <target state="translated">Neúplné porovnávání vzorů u tohoto výrazu</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="MatchIncomplete2">
-        <source> For example, the value '{0}' may indicate a case not covered by the pattern(s).</source>
-        <target state="translated"> Třeba hodnota {0} může označovat případ, na který se vzor nevztahuje.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="MatchIncomplete3">
-        <source> For example, the value '{0}' may indicate a case not covered by the pattern(s). However, a pattern rule with a 'when' clause might successfully match this value.</source>
-        <target state="translated"> Třeba hodnota {0} může označovat případ, na který se vzor nevztahuje. Pravidlo vzoru s klauzulí with se ale s touto hodnotou úspěšně shodovat může.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="MatchIncomplete4">
-        <source> Unmatched elements will be ignored.</source>
-        <target state="translated"> Nespárované prvky se budou ignorovat.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="EnumMatchIncomplete1">
-        <source>Enums may take values outside known cases.</source>
-        <target state="translated">Výčty můžou získávat hodnoty mimo známé případy.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="RuleNeverMatched">
-        <source>This rule will never be matched</source>
-        <target state="translated">Pro toto pravidlo nebude nikdy existovat shoda.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValNotMutable">
-        <source>This value is not mutable. Consider using the mutable keyword, e.g. 'let mutable {0} = expression'.</source>
-        <target state="translated">Tato hodnota není proměnlivá. Zvažte použití proměnlivého klíčového slova, třeba let mutable {0} = expression.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ValNotLocal">
-        <source>This value is not local</source>
-        <target state="translated">Tato hodnota není lokální.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Obsolete1">
-        <source>This construct is deprecated</source>
-        <target state="translated">Tento konstruktor je zastaralý.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Obsolete2">
-        <source>. {0}</source>
-        <target state="translated">. {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Experimental">
-        <source>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
-        <target state="translated">{0}. Toto upozornění se dá pomocí --nowarn:57 nebo #nowarn "57" vypnout.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="PossibleUnverifiableCode">
-        <source>Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.</source>
-        <target state="translated">Použití tohoto konstruktoru může způsobit vygenerování neověřitelného kódu .NET IL. Toto upozornění se dá pomocí --nowarn:9 nebo #nowarn "9" vypnout.</target>
+        <target state="new">{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="Deprecated">
         <source>This construct is deprecated: {0}</source>
-        <target state="translated">Tento konstruktor je zastaralý: {0}</target>
+        <target state="new">This construct is deprecated: {0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="LibraryUseOnly">
-        <source>This construct is deprecated: it is only for use in the F# library</source>
-        <target state="translated">Tento konstruktor je zastaralý: používá se jenom v knihovně F#.</target>
+      <trans-unit id="DeprecatedThreadStaticBindingWarning">
+        <source>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</source>
+        <target state="new">Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</target>
         <note />
       </trans-unit>
-      <trans-unit id="MissingFields">
-        <source>The following fields require values: {0}</source>
-        <target state="translated">Následující pole vyžadují hodnoty: {0}</target>
+      <trans-unit id="Duplicate1">
+        <source>Two members called '{0}' have the same signature</source>
+        <target state="new">Two members called '{0}' have the same signature</target>
         <note />
       </trans-unit>
-      <trans-unit id="ValueRestriction1">
-        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Omezení hodnoty. Hodnota {0} je obecného typu\n    {1}.    \nBuď změňte argumenty pro {2} na explicitní, nebo (pokud hodnota nemá být obecná) přidejte poznámku typu.</target>
+      <trans-unit id="Duplicate2">
+        <source>Duplicate definition of {0} '{1}'</source>
+        <target state="new">Duplicate definition of {0} '{1}'</target>
         <note />
       </trans-unit>
-      <trans-unit id="ValueRestriction2">
-        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Omezení hodnoty. Hodnota {0} je obecného typu\n    {1}.    \nZměňte {2} na funkci s explicitními argumenty nebo (pokud hodnota nemá být obecná) přidejte poznámku typu.</target>
+      <trans-unit id="EnumMatchIncomplete1">
+        <source>Enums may take values outside known cases.</source>
+        <target state="new">Enums may take values outside known cases.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ValueRestriction3">
-        <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
-        <target state="translated">Omezení hodnoty. Tento člen se odvodil jako člen obecného typu\n    {0}.    \nKonstruktory a metody getter nebo setter vlastnosti nemůžou být obecnější než nadřazený typ. Přidejte poznámku typu, abyste přesně určili, které typy se mají zahrnout.</target>
+      <trans-unit id="ErrorFromAddingTypeEquation1">
+        <source>This expression was expected to have type\n    '{1}'    \nbut here has type\n    '{0}'    {2}</source>
+        <target state="new">This expression was expected to have type\n    '{1}'    \nbut here has type\n    '{0}'    {2}</target>
         <note />
       </trans-unit>
-      <trans-unit id="ValueRestriction4">
-        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Omezení hodnoty. Hodnota {0} se odvodila jako hodnota obecného typu\n    {1}.    \nBuď změňte argumenty pro {2} na explicitní, nebo (pokud hodnota nemá být obecná) přidejte poznámku typu.</target>
+      <trans-unit id="ErrorFromAddingTypeEquation2">
+        <source>Type mismatch. Expecting a\n    '{0}'    \nbut given a\n    '{1}'    {2}\n</source>
+        <target state="new">Type mismatch. Expecting a\n    '{0}'    \nbut given a\n    '{1}'    {2}\n</target>
         <note />
       </trans-unit>
-      <trans-unit id="ValueRestriction5">
-        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
-        <target state="translated">Omezení hodnoty. Hodnota {0} se odvodila jako hodnota obecného typu\n    {1}.    \nDefinujte {2} jako jednoduchý datový výraz, změňte ji na funkci s explicitními argumenty nebo (pokud hodnota nemá být obecná) přidejte poznámku typu.</target>
+      <trans-unit id="ErrorFromApplyingDefault1">
+        <source>Type constraint mismatch when applying the default type '{0}' for a type inference variable. </source>
+        <target state="new">Type constraint mismatch when applying the default type '{0}' for a type inference variable. </target>
         <note />
       </trans-unit>
-      <trans-unit id="RecoverableParseError">
-        <source>syntax error</source>
-        <target state="translated">chyba syntaxe</target>
+      <trans-unit id="ErrorFromApplyingDefault2">
+        <source> Consider adding further type constraints</source>
+        <target state="new"> Consider adding further type constraints</target>
         <note />
       </trans-unit>
-      <trans-unit id="ReservedKeyword">
+      <trans-unit id="ErrorsFromAddingSubsumptionConstraint">
+        <source>Type constraint mismatch. The type \n    '{0}'    \nis not compatible with type\n    '{1}'    {2}\n</source>
+        <target state="new">Type constraint mismatch. The type \n    '{0}'    \nis not compatible with type\n    '{1}'    {2}\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Experimental">
+        <source>{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</source>
+        <target state="new">{0}. This warning can be disabled using '--nowarn:57' or '#nowarn "57"'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Failure1">
+        <source>parse error</source>
+        <target state="new">parse error</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Failure2">
+        <source>parse error: unexpected end of file</source>
+        <target state="new">parse error: unexpected end of file</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Failure3">
         <source>{0}</source>
-        <target state="translated">{0}</target>
+        <target state="new">{0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="IndentationProblem">
-        <source>{0}</source>
-        <target state="translated">{0}</target>
+      <trans-unit id="Failure4">
+        <source>internal error: {0}</source>
+        <target state="new">internal error: {0}</target>
         <note />
       </trans-unit>
-      <trans-unit id="OverrideInIntrinsicAugmentation">
-        <source>Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.</source>
-        <target state="translated">Implementace přepsání v rozšířeních jsou už zastaralé. Implementace přepsání by se měly provádět při počáteční deklaraci typu.</target>
+      <trans-unit id="FieldNotMutable">
+        <source>This field is not mutable</source>
+        <target state="new">This field is not mutable</target>
         <note />
       </trans-unit>
-      <trans-unit id="OverrideInExtrinsicAugmentation">
-        <source>Override implementations should be given as part of the initial declaration of a type.</source>
-        <target state="translated">Implementace přepsání by se měly provádět při počáteční deklaraci typu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="IntfImplInIntrinsicAugmentation">
-        <source>Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.</source>
-        <target state="translated">Implementace rozhraní v rozšířeních jsou už zastaralé. Implementace rozhraní by se měly provádět při počáteční deklaraci typu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="IntfImplInExtrinsicAugmentation">
-        <source>Interface implementations should be given on the initial declaration of a type.</source>
-        <target state="translated">Implementace rozhraní by se měly provádět při počáteční deklaraci typu.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UnresolvedReferenceNoRange">
-        <source>A required assembly reference is missing. You must add a reference to assembly '{0}'.</source>
-        <target state="translated">Chybí požadovaný odkaz na sestavení. Musíte k sestavení {0} přidat odkaz.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="UnresolvedPathReferenceNoRange">
-        <source>The type referenced through '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'.</source>
-        <target state="translated">Typ odkazovaný pomocí {0} je definovaný v sestavení, na které se neodkazuje. Musíte přidat odkaz na sestavení {1}.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="HashIncludeNotAllowedInNonScript">
-        <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Direktivy #I se můžou vyskytovat jenom v souborech skriptu F# (s příponou .fsx nebo .fsscript). Přesuňte tento kód do souboru skriptu nebo přidejte pro tento odkaz možnost kompilátoru -I anebo direktivu ohraničte pomocí notace #if INTERACTIVE/#endif.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="HashReferenceNotAllowedInNonScript">
-        <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Direktivy #r se můžou vyskytovat jenom v souborech skriptu F# (s příponou .fsx nebo .fsscript). Buď přesuňte tento kód do souboru skriptu, nebo nahraďte tento odkaz možností kompilátoru -r. Pokud se tato direktiva provádí jako uživatelský vstup, můžete ji ohraničit pomocí notace #if INTERACTIVE'/'#endif.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="HashDirectiveNotAllowedInNonScript">
-        <source>This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.</source>
-        <target state="translated">Tato direktiva se dá použít jenom v souborech skriptu F# (s příponou .fsx nebo .fsscript). Buď direktivu odeberte, nebo tento kód přesuňte do souboru skriptu, anebo direktivu ohraničte pomocí notace #if INTERACTIVE/#endif.</target>
+      <trans-unit id="FieldsFromDifferentTypes">
+        <source>The fields '{0}' and '{1}' are from different types</source>
+        <target state="new">The fields '{0}' and '{1}' are from different types</target>
         <note />
       </trans-unit>
       <trans-unit id="FileNameNotResolved">
         <source>Unable to find the file '{0}' in any of\n {1}</source>
-        <target state="translated">Soubor {0} se nepovedlo najít v žádné(m)\n {1}.</target>
+        <target state="new">Unable to find the file '{0}' in any of\n {1}</target>
         <note />
       </trans-unit>
-      <trans-unit id="AssemblyNotResolved">
-        <source>Assembly reference '{0}' was not found or is invalid</source>
-        <target state="translated">Odkaz na sestavení {0} se nenašel nebo je neplatný.</target>
+      <trans-unit id="FixKeyword">
+        <source>keyword </source>
+        <target state="new">keyword </target>
         <note />
       </trans-unit>
-      <trans-unit id="HashLoadedSourceHasIssues1">
-        <source>One or more warnings in loaded file.\n</source>
-        <target state="translated">V načteném souboru je nejmíň jedno upozornění.\n</target>
+      <trans-unit id="FixReplace">
+        <source> (due to indentation-aware syntax)</source>
+        <target state="new"> (due to indentation-aware syntax)</target>
         <note />
       </trans-unit>
-      <trans-unit id="HashLoadedSourceHasIssues2">
-        <source>One or more errors in loaded file.\n</source>
-        <target state="translated">V načteném souboru je nejmíň jedna chyba.\n</target>
+      <trans-unit id="FixSymbol">
+        <source>symbol </source>
+        <target state="new">symbol </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FullAbstraction">
+        <source>{0}</source>
+        <target state="new">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FunctionExpected">
+        <source>This function takes too many arguments, or is used in a context where a function is not expected</source>
+        <target state="new">This function takes too many arguments, or is used in a context where a function is not expected</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="FunctionValueUnexpected">
+        <source>This expression is a function value, i.e. is missing arguments. Its type is {0}.</source>
+        <target state="new">This expression is a function value, i.e. is missing arguments. Its type is {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HashDirectiveNotAllowedInNonScript">
+        <source>This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="new">This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HashIncludeNotAllowedInNonScript">
+        <source>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="new">#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</target>
         <note />
       </trans-unit>
       <trans-unit id="HashLoadedScriptConsideredSource">
         <source>Loaded files may only be F# source files (extension .fs). This F# script file (.fsx or .fsscript) will be treated as an F# source file</source>
-        <target state="translated">Načtené soubory můžou být jenom zdrojové soubory F# (s příponou .fs). Tento soubor skriptu F# (s příponou .fsx nebo .fsscript) se zpracuje jako zdrojový soubor F#.</target>
+        <target state="new">Loaded files may only be F# source files (extension .fs). This F# script file (.fsx or .fsscript) will be treated as an F# source file</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HashLoadedSourceHasIssues0">
+        <source>One or more informational messages in loaded file.\n</source>
+        <target state="new">One or more informational messages in loaded file.\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HashLoadedSourceHasIssues1">
+        <source>One or more warnings in loaded file.\n</source>
+        <target state="new">One or more warnings in loaded file.\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HashLoadedSourceHasIssues2">
+        <source>One or more errors in loaded file.\n</source>
+        <target state="new">One or more errors in loaded file.\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="HashReferenceNotAllowedInNonScript">
+        <source>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</source>
+        <target state="new">#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IndentationProblem">
+        <source>{0}</source>
+        <target state="new">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IndeterminateRuntimeCoercion">
+        <source>This runtime coercion or type test from type\n    {0}    \n to \n    {1}    \ninvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.</source>
+        <target state="new">This runtime coercion or type test from type\n    {0}    \n to \n    {1}    \ninvolves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IndeterminateStaticCoercion">
+        <source>The static coercion from type\n    {0}    \nto \n    {1}    \n involves an indeterminate type based on information prior to this program point. Static coercions are not allowed on some types. Further type annotations are needed.</source>
+        <target state="new">The static coercion from type\n    {0}    \nto \n    {1}    \n involves an indeterminate type based on information prior to this program point. Static coercions are not allowed on some types. Further type annotations are needed.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IndeterminateType">
+        <source>Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.</source>
+        <target state="new">Lookup on object of indeterminate type based on information prior to this program point. A type annotation may be needed prior to this program point to constrain the type of the object. This may allow the lookup to be resolved.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InterfaceNotRevealed">
+        <source>The type implements the interface '{0}' but this is not revealed by the signature. You should list the interface in the signature, as the interface will be discoverable via dynamic type casts and/or reflection.</source>
+        <target state="new">The type implements the interface '{0}' but this is not revealed by the signature. You should list the interface in the signature, as the interface will be discoverable via dynamic type casts and/or reflection.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntfImplInExtrinsicAugmentation">
+        <source>Interface implementations should be given on the initial declaration of a type.</source>
+        <target state="new">Interface implementations should be given on the initial declaration of a type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="IntfImplInIntrinsicAugmentation">
+        <source>Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.</source>
+        <target state="new">Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.</target>
         <note />
       </trans-unit>
       <trans-unit id="InvalidInternalsVisibleToAssemblyName1">
         <source>Invalid assembly name '{0}' from InternalsVisibleTo attribute in {1}</source>
-        <target state="translated">Neplatný název sestavení {0} z atributu InternalsVisibleTo v {1}</target>
+        <target state="new">Invalid assembly name '{0}' from InternalsVisibleTo attribute in {1}</target>
         <note />
       </trans-unit>
       <trans-unit id="InvalidInternalsVisibleToAssemblyName2">
         <source>Invalid assembly name '{0}' from InternalsVisibleTo attribute (assembly filename not available)</source>
-        <target state="translated">Neplatný název sestavení {0} z atributu InternalsVisibleTo (název souboru sestavení není dostupný)</target>
+        <target state="new">Invalid assembly name '{0}' from InternalsVisibleTo attribute (assembly filename not available)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="InvalidRuntimeCoercion">
+        <source>Invalid runtime coercion or type test from type {0} to {1}\n{2}</source>
+        <target state="new">Invalid runtime coercion or type test from type {0} to {1}\n{2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LetRecCheckedAtRuntime">
+        <source>This and other recursive references to the object(s) being defined will be checked for initialization-soundness at runtime through the use of a delayed reference. This is because you are defining one or more recursive objects, rather than recursive functions. This warning may be suppressed by using '#nowarn "40"' or '--nowarn:40'.</source>
+        <target state="new">This and other recursive references to the object(s) being defined will be checked for initialization-soundness at runtime through the use of a delayed reference. This is because you are defining one or more recursive objects, rather than recursive functions. This warning may be suppressed by using '#nowarn "40"' or '--nowarn:40'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LetRecEvaluatedOutOfOrder">
+        <source>Bindings may be executed out-of-order because of this forward reference.</source>
+        <target state="new">Bindings may be executed out-of-order because of this forward reference.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LetRecUnsound1">
+        <source>The value '{0}' will be evaluated as part of its own definition</source>
+        <target state="new">The value '{0}' will be evaluated as part of its own definition</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LetRecUnsound2">
+        <source>This value will be eventually evaluated as part of its own definition. You may need to make the value lazy or a function. Value '{0}'{1}.</source>
+        <target state="new">This value will be eventually evaluated as part of its own definition. You may need to make the value lazy or a function. Value '{0}'{1}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LetRecUnsoundInner">
+        <source> will evaluate '{0}'</source>
+        <target state="new"> will evaluate '{0}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="LibraryUseOnly">
+        <source>This construct is deprecated: it is only for use in the F# library</source>
+        <target state="new">This construct is deprecated: it is only for use in the F# library</target>
         <note />
       </trans-unit>
       <trans-unit id="LoadedSourceNotFoundIgnoring">
         <source>Could not load file '{0}' because it does not exist or is inaccessible</source>
-        <target state="translated">Soubor {0} se nedal načíst, protože neexistuje nebo není dostupný.</target>
+        <target state="new">Could not load file '{0}' because it does not exist or is inaccessible</target>
         <note />
       </trans-unit>
       <trans-unit id="MSBuildReferenceResolutionError">
         <source>{0} (Code={1})</source>
-        <target state="translated">{0} (Kód={1})</target>
+        <target state="new">{0} (Code={1})</target>
         <note />
       </trans-unit>
-      <trans-unit id="TargetInvocationExceptionWrapper">
-        <source>internal error: {0}</source>
-        <target state="translated">Vnitřní chyba: {0}</target>
+      <trans-unit id="MatchIncomplete1">
+        <source>Incomplete pattern matches on this expression.</source>
+        <target state="new">Incomplete pattern matches on this expression.</target>
         <note />
       </trans-unit>
-      <trans-unit id="Parser.TOKEN.LBRACE.BAR">
-        <source>symbol '{|'</source>
-        <target state="translated">symbol {|</target>
+      <trans-unit id="MatchIncomplete2">
+        <source> For example, the value '{0}' may indicate a case not covered by the pattern(s).</source>
+        <target state="new"> For example, the value '{0}' may indicate a case not covered by the pattern(s).</target>
         <note />
       </trans-unit>
-      <trans-unit id="Parser.TOKEN.BAR.RBRACE">
-        <source>symbol '|}'</source>
-        <target state="translated">symbol |}</target>
+      <trans-unit id="MatchIncomplete3">
+        <source> For example, the value '{0}' may indicate a case not covered by the pattern(s). However, a pattern rule with a 'when' clause might successfully match this value.</source>
+        <target state="new"> For example, the value '{0}' may indicate a case not covered by the pattern(s). However, a pattern rule with a 'when' clause might successfully match this value.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MatchIncomplete4">
+        <source> Unmatched elements will be ignored.</source>
+        <target state="new"> Unmatched elements will be ignored.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="MissingFields">
+        <source>The following fields require values: {0}</source>
+        <target state="new">The following fields require values: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.Category.Definition">
+        <source> in definition</source>
+        <target state="new"> in definition</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.Category.Expr">
+        <source> in expression</source>
+        <target state="new"> in expression</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.Category.ImplementationFile">
+        <source> in implementation file</source>
+        <target state="new"> in implementation file</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.Category.Pattern">
+        <source> in pattern</source>
+        <target state="new"> in pattern</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.Category.SignatureFile">
+        <source> in signature file</source>
+        <target state="new"> in signature file</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.Category.Type">
+        <source> in type</source>
+        <target state="new"> in type</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.anonLambdaExpr">
+        <source> in lambda expression</source>
+        <target state="new"> in lambda expression</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.attrUnionCaseDecl">
+        <source> in union case</source>
+        <target state="new"> in union case</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.attributeList">
+        <source> in attribute list</source>
+        <target state="new"> in attribute list</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.beginEndExpr">
+        <source> in begin/end expression</source>
+        <target state="new"> in begin/end expression</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.cPrototype">
+        <source> in extern declaration</source>
+        <target state="new"> in extern declaration</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.classDefnMember">
+        <source> in member definition</source>
+        <target state="new"> in member definition</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.classMemberSpfn">
+        <source> in member signature</source>
+        <target state="new"> in member signature</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.defnBindings">
+        <source> in definitions</source>
+        <target state="new"> in definitions</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.exconCore">
+        <source> in exception definition</source>
+        <target state="new"> in exception definition</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.fieldDecl">
+        <source> in field declaration</source>
+        <target state="new"> in field declaration</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.fileModuleSpec">
+        <source> in module or namespace signature</source>
+        <target state="new"> in module or namespace signature</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.hardwhiteLetBindings">
+        <source> in binding</source>
+        <target state="new"> in binding</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.hashDirective">
+        <source> in directive</source>
+        <target state="new"> in directive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.ifExprCases">
+        <source> in if/then/else expression</source>
+        <target state="new"> in if/then/else expression</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.interaction">
+        <source> in interaction</source>
+        <target state="new"> in interaction</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.localBinding">
+        <source> in binding</source>
+        <target state="new"> in binding</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.objectImplementationMembers">
+        <source> in object expression</source>
+        <target state="new"> in object expression</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.openDecl">
+        <source> in open declaration</source>
+        <target state="new"> in open declaration</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.patternClauses">
+        <source> in pattern matching</source>
+        <target state="new"> in pattern matching</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.quoteExpr">
+        <source> in quotation literal</source>
+        <target state="new"> in quotation literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.recdExpr">
+        <source> in record expression</source>
+        <target state="new"> in record expression</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.tyconDefn">
+        <source> in type definition</source>
+        <target state="new"> in type definition</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.tyconSpfn">
+        <source> in type signature</source>
+        <target state="new"> in type signature</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.typeArgsActual">
+        <source> in type arguments</source>
+        <target state="new"> in type arguments</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.typeConstraint">
+        <source> in type constraint</source>
+        <target state="new"> in type constraint</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.typeNameInfo">
+        <source> in type name</source>
+        <target state="new"> in type name</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.unionCaseRepr">
+        <source> in discriminated union case declaration</source>
+        <target state="new"> in discriminated union case declaration</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NONTERM.valSpfn">
+        <source> in value signature</source>
+        <target state="new"> in value signature</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NameClash1">
+        <source>Duplicate definition of {0} '{1}'</source>
+        <target state="new">Duplicate definition of {0} '{1}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NameClash2">
+        <source>The {0} '{1}' can not be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</source>
+        <target state="new">The {0} '{1}' can not be defined because the name '{2}' clashes with the {3} '{4}' in this type or module</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonRigidTypar1">
+        <source>This construct causes code to be less generic than indicated by its type annotations. The type variable implied by the use of a '#', '_' or other type annotation at or near '{0}' has been constrained to be type '{1}'.</source>
+        <target state="new">This construct causes code to be less generic than indicated by its type annotations. The type variable implied by the use of a '#', '_' or other type annotation at or near '{0}' has been constrained to be type '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonRigidTypar2">
+        <source>This construct causes code to be less generic than indicated by the type annotations. The unit-of-measure variable '{0} has been constrained to be measure '{1}'.</source>
+        <target state="new">This construct causes code to be less generic than indicated by the type annotations. The unit-of-measure variable '{0} has been constrained to be measure '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonRigidTypar3">
+        <source>This construct causes code to be less generic than indicated by the type annotations. The type variable '{0} has been constrained to be type '{1}'.</source>
+        <target state="new">This construct causes code to be less generic than indicated by the type annotations. The type variable '{0} has been constrained to be type '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonUniqueInferredAbstractSlot1">
+        <source>The member '{0}' doesn't correspond to a unique abstract slot based on name and argument count alone</source>
+        <target state="new">The member '{0}' doesn't correspond to a unique abstract slot based on name and argument count alone</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonUniqueInferredAbstractSlot2">
+        <source>. Multiple implemented interfaces have a member with this name and argument count</source>
+        <target state="new">. Multiple implemented interfaces have a member with this name and argument count</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonUniqueInferredAbstractSlot3">
+        <source>. Consider implementing interfaces '{0}' and '{1}' explicitly.</source>
+        <target state="new">. Consider implementing interfaces '{0}' and '{1}' explicitly.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonUniqueInferredAbstractSlot4">
+        <source>. Additional type annotations may be required to indicate the relevant override. This warning can be disabled using '#nowarn "70"' or '--nowarn:70'.</source>
+        <target state="new">. Additional type annotations may be required to indicate the relevant override. This warning can be disabled using '#nowarn "70"' or '--nowarn:70'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NonVirtualAugmentationOnNullValuedType">
+        <source>The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.</source>
+        <target state="new">The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NotUpperCaseConstructor">
+        <source>Discriminated union cases and exception labels must be uppercase identifiers</source>
+        <target state="new">Discriminated union cases and exception labels must be uppercase identifiers</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NotUpperCaseConstructorWithoutRQA">
+        <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
+        <target state="new">Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Obsolete1">
+        <source>This construct is deprecated</source>
+        <target state="new">This construct is deprecated</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Obsolete2">
+        <source>. {0}</source>
+        <target state="new">. {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideDoesntOverride1">
+        <source>The member '{0}' does not have the correct type to override any given virtual method</source>
+        <target state="new">The member '{0}' does not have the correct type to override any given virtual method</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideDoesntOverride2">
+        <source>The member '{0}' does not have the correct type to override the corresponding abstract method.</source>
+        <target state="new">The member '{0}' does not have the correct type to override the corresponding abstract method.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideDoesntOverride3">
+        <source> The required signature is '{0}'.</source>
+        <target state="new"> The required signature is '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideDoesntOverride4">
+        <source>The member '{0}' is specialized with 'unit' but 'unit' can't be used as return type of an abstract method parameterized on return type.</source>
+        <target state="new">The member '{0}' is specialized with 'unit' but 'unit' can't be used as return type of an abstract method parameterized on return type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideInExtrinsicAugmentation">
+        <source>Override implementations should be given as part of the initial declaration of a type.</source>
+        <target state="new">Override implementations should be given as part of the initial declaration of a type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="OverrideInIntrinsicAugmentation">
+        <source>Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.</source>
+        <target state="new">Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ParameterlessStructCtor">
+        <source>Implicit object constructors for structs must take at least one argument</source>
+        <target state="new">Implicit object constructors for structs must take at least one argument</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ABSTRACT">
+        <source>keyword 'abstract'</source>
+        <target state="new">keyword 'abstract'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ADJACENT.PREFIX.OP">
+        <source>prefix operator</source>
+        <target state="new">prefix operator</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AMP">
+        <source>symbol '&amp;'</source>
+        <target state="new">symbol '&amp;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AMP.AMP">
+        <source>symbol '&amp;&amp;'</source>
+        <target state="new">symbol '&amp;&amp;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AND">
+        <source>keyword 'and'</source>
+        <target state="new">keyword 'and'</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.AND.BANG">
         <source>keyword 'and!'</source>
-        <target state="translated">klíčové slovo and!</target>
+        <target state="new">keyword 'and!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.AS">
+        <source>keyword 'as'</source>
+        <target state="new">keyword 'as'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ASR">
+        <source>keyword 'asr'</source>
+        <target state="new">keyword 'asr'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ASSERT">
+        <source>keyword 'assert'</source>
+        <target state="new">keyword 'assert'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR">
+        <source>symbol '|'</source>
+        <target state="new">symbol '|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR.BAR">
+        <source>symbol '||'</source>
+        <target state="new">symbol '||'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR.RBRACE">
+        <source>symbol '|}'</source>
+        <target state="new">symbol '|}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BAR.RBRACK">
+        <source>symbol '|]'</source>
+        <target state="new">symbol '|]'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BASE">
+        <source>keyword 'base'</source>
+        <target state="new">keyword 'base'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BEGIN">
+        <source>keyword 'begin'</source>
+        <target state="new">keyword 'begin'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BINDER">
+        <source>binder keyword</source>
+        <target state="new">binder keyword</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.BYTEARRAY">
+        <source>byte array literal</source>
+        <target state="new">byte array literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.CHAR">
+        <source>character literal</source>
+        <target state="new">character literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.CLASS">
+        <source>keyword 'class'</source>
+        <target state="new">keyword 'class'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON">
+        <source>symbol ':'</source>
+        <target state="new">symbol ':'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON.COLON">
+        <source>symbol '::'</source>
+        <target state="new">symbol '::'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON.EQUALS">
+        <source>symbol ':='</source>
+        <target state="new">symbol ':='</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON.GREATER">
+        <source>symbol ':&gt;'</source>
+        <target state="new">symbol ':&gt;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON.QMARK">
+        <source>symbol ':?'</source>
+        <target state="new">symbol ':?'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COLON.QMARK.GREATER">
+        <source>symbol ':?&gt;'</source>
+        <target state="new">symbol ':?&gt;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COMMA">
+        <source>symbol ','</source>
+        <target state="new">symbol ','</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.COMMENT">
+        <source>comment</source>
+        <target state="new">comment</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.CONST">
+        <source>keyword 'const'</source>
+        <target state="new">keyword 'const'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.CONSTRAINT">
+        <source>keyword 'constraint'</source>
+        <target state="new">keyword 'constraint'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.CONSTRUCTOR">
+        <source>keyword 'constructor'</source>
+        <target state="new">keyword 'constructor'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DECIMAL">
+        <source>decimal literal</source>
+        <target state="new">decimal literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DEFAULT">
+        <source>keyword 'default'</source>
+        <target state="new">keyword 'default'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DELEGATE">
+        <source>keyword 'delegate'</source>
+        <target state="new">keyword 'delegate'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DO">
+        <source>keyword 'do'</source>
+        <target state="new">keyword 'do'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DOLLAR">
+        <source>symbol '$'</source>
+        <target state="new">symbol '$'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DONE">
+        <source>keyword 'done'</source>
+        <target state="new">keyword 'done'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DOT">
+        <source>symbol '.'</source>
+        <target state="new">symbol '.'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DOT.DOT">
+        <source>symbol '..'</source>
+        <target state="new">symbol '..'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
+        <source>symbol '..^'</source>
+        <target state="new">symbol '..^'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DOWNCAST">
+        <source>keyword 'downcast'</source>
+        <target state="new">keyword 'downcast'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.DOWNTO">
+        <source>keyword 'downto'</source>
+        <target state="new">keyword 'downto'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ELIF">
+        <source>keyword 'elif'</source>
+        <target state="new">keyword 'elif'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.END">
+        <source>keyword 'end'</source>
+        <target state="new">keyword 'end'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.EOF">
+        <source>end of input</source>
+        <target state="new">end of input</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.EQUALS">
+        <source>symbol '='</source>
+        <target state="new">symbol '='</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.EXCEPTION">
+        <source>keyword 'exception'</source>
+        <target state="new">keyword 'exception'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.EXTERN">
+        <source>keyword 'extern'</source>
+        <target state="new">keyword 'extern'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FALSE">
+        <source>keyword 'false'</source>
+        <target state="new">keyword 'false'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FINALLY">
+        <source>keyword 'finally'</source>
+        <target state="new">keyword 'finally'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FIXED">
+        <source>keyword 'fixed'</source>
+        <target state="new">keyword 'fixed'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FLOAT">
+        <source>floating point literal</source>
+        <target state="new">floating point literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FOR">
+        <source>keyword 'for'</source>
+        <target state="new">keyword 'for'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FUN">
+        <source>keyword 'fun'</source>
+        <target state="new">keyword 'fun'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FUNCTION">
+        <source>keyword 'function'</source>
+        <target state="new">keyword 'function'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.FUNKY.OPERATOR.NAME">
+        <source>operator name</source>
+        <target state="new">operator name</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.GLOBAL">
+        <source>keyword 'global'</source>
+        <target state="new">keyword 'global'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.GREATER">
+        <source>symbol '&gt;'</source>
+        <target state="new">symbol '&gt;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.GREATER.BAR.RBRACK">
+        <source>symbol '&gt;|]'</source>
+        <target state="new">symbol '&gt;|]'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.GREATER.RBRACE">
+        <source>symbol '&gt;}'</source>
+        <target state="new">symbol '&gt;}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.GREATER.RBRACK">
+        <source>symbol '&gt;]'</source>
+        <target state="new">symbol '&gt;]'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.HASH">
+        <source>symbol #</source>
+        <target state="new">symbol #</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.HASH.ENDIF">
+        <source>directive</source>
+        <target state="new">directive</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.BRACK.APP">
+        <source>symbol'['</source>
+        <target state="new">symbol'['</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.PAREN.APP">
+        <source>symbol '('</source>
+        <target state="new">symbol '('</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.HIGH.PRECEDENCE.TYAPP">
+        <source>type application </source>
+        <target state="new">type application </target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.IDENT">
+        <source>identifier</source>
+        <target state="new">identifier</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.IF">
+        <source>keyword 'if'</source>
+        <target state="new">keyword 'if'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.IN">
+        <source>keyword 'in'</source>
+        <target state="new">keyword 'in'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INACTIVECODE">
+        <source>inactive code</source>
+        <target state="new">inactive code</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INFIX.AMP.OP">
+        <source>infix operator</source>
+        <target state="new">infix operator</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INFIX.AT.HAT.OP">
+        <source>infix operator</source>
+        <target state="new">infix operator</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INFIX.BAR.OP">
+        <source>infix operator</source>
+        <target state="new">infix operator</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INFIX.COMPARE.OP">
+        <source>infix operator</source>
+        <target state="new">infix operator</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INFIX.STAR.DIV.MOD.OP">
+        <source>infix operator</source>
+        <target state="new">infix operator</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INFIX.STAR.STAR.OP">
+        <source>infix operator</source>
+        <target state="new">infix operator</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INHERIT">
+        <source>keyword 'inherit'</source>
+        <target state="new">keyword 'inherit'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INLINE">
+        <source>keyword 'inline'</source>
+        <target state="new">keyword 'inline'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INSTANCE">
+        <source>keyword 'instance'</source>
+        <target state="new">keyword 'instance'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INT">
+        <source>integer literal</source>
+        <target state="new">integer literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INT32.DOT.DOT">
+        <source>integer..</source>
+        <target state="new">integer..</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERFACE">
+        <source>keyword 'interface'</source>
+        <target state="new">keyword 'interface'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERNAL">
+        <source>keyword 'internal'</source>
+        <target state="new">keyword 'internal'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.END">
+        <source>interpolated string</source>
+        <target state="new">interpolated string</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.BEGIN.PART">
+        <source>interpolated string (first part)</source>
+        <target state="new">interpolated string (first part)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.END">
+        <source>interpolated string (final part)</source>
+        <target state="new">interpolated string (final part)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.INTERP.STRING.PART">
+        <source>interpolated string (part)</source>
+        <target state="new">interpolated string (part)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.KEYWORD_STRING">
+        <source>compiler generated literal</source>
+        <target state="new">compiler generated literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LARROW">
+        <source>symbol '&lt;-'</source>
+        <target state="new">symbol '&lt;-'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LAZY">
+        <source>keyword 'lazy'</source>
+        <target state="new">keyword 'lazy'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACE">
+        <source>symbol '{'</source>
+        <target state="new">symbol '{'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACE.BAR">
+        <source>symbol '{|'</source>
+        <target state="new">symbol '{|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACE.LESS">
+        <source>symbol '{&lt;'</source>
+        <target state="new">symbol '{&lt;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACK">
+        <source>symbol '['</source>
+        <target state="new">symbol '['</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACK.BAR">
+        <source>symbol '[|'</source>
+        <target state="new">symbol '[|'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LBRACK.LESS">
+        <source>symbol '[&lt;'</source>
+        <target state="new">symbol '[&lt;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LESS">
+        <source>symbol '&lt;'</source>
+        <target state="new">symbol '&lt;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LEX.FAILURE">
+        <source>lex failure</source>
+        <target state="new">lex failure</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LINE.COMMENT">
+        <source>line comment</source>
+        <target state="new">line comment</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LPAREN">
+        <source>symbol '('</source>
+        <target state="new">symbol '('</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LPAREN.STAR.RPAREN">
+        <source>symbol '(*)'</source>
+        <target state="new">symbol '(*)'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.LQUOTE">
+        <source>start of quotation</source>
+        <target state="new">start of quotation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.MATCH">
+        <source>keyword 'match'</source>
+        <target state="new">keyword 'match'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.MATCH.BANG">
+        <source>keyword 'match!'</source>
+        <target state="new">keyword 'match!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.MEMBER">
+        <source>keyword 'member'</source>
+        <target state="new">keyword 'member'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.MINUS">
+        <source>symbol '-'</source>
+        <target state="new">symbol '-'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.MODULE">
+        <source>keyword 'module'</source>
+        <target state="new">keyword 'module'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.MUTABLE">
+        <source>keyword 'mutable'</source>
+        <target state="new">keyword 'mutable'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.NAMESPACE">
+        <source>keyword 'namespace'</source>
+        <target state="new">keyword 'namespace'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.NEW">
+        <source>keyword 'new'</source>
+        <target state="new">keyword 'new'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.NULL">
+        <source>keyword 'null'</source>
+        <target state="new">keyword 'null'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OBLOCKBEGIN">
+        <source>start of structured construct</source>
+        <target state="new">start of structured construct</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OBLOCKEND">
+        <source>incomplete structured construct at or before this point</source>
+        <target state="new">incomplete structured construct at or before this point</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ODO">
+        <source>keyword 'do'</source>
+        <target state="new">keyword 'do'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ODO.BANG">
+        <source>keyword 'do!'</source>
+        <target state="new">keyword 'do!'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ODUMMY">
+        <source>internal dummy token</source>
+        <target state="new">internal dummy token</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OELSE">
+        <source>keyword 'else'</source>
+        <target state="new">keyword 'else'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OF">
+        <source>keyword 'of'</source>
+        <target state="new">keyword 'of'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OFUN">
+        <source>keyword 'fun'</source>
+        <target state="new">keyword 'fun'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OFUNCTION">
+        <source>keyword 'function'</source>
+        <target state="new">keyword 'function'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OINTERFACE.MEMBER">
+        <source>keyword 'interface'</source>
+        <target state="new">keyword 'interface'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OLET">
+        <source>keyword 'let' or 'use'</source>
+        <target state="new">keyword 'let' or 'use'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OPEN">
+        <source>keyword 'open'</source>
+        <target state="new">keyword 'open'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OR">
+        <source>keyword 'or'</source>
+        <target state="new">keyword 'or'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.ORESET">
+        <source>end of input</source>
+        <target state="new">end of input</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OTHEN">
+        <source>keyword 'then'</source>
+        <target state="new">keyword 'then'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OVERRIDE">
+        <source>keyword 'override'</source>
+        <target state="new">keyword 'override'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.OWITH">
+        <source>keyword 'with'</source>
+        <target state="new">keyword 'with'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.PERCENT.OP">
+        <source>symbol '{0}</source>
+        <target state="new">symbol '{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.PLUS.MINUS.OP">
+        <source>infix operator</source>
+        <target state="new">infix operator</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.PREFIX.OP">
+        <source>prefix operator</source>
+        <target state="new">prefix operator</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.PRIVATE">
+        <source>keyword 'private'</source>
+        <target state="new">keyword 'private'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.PUBLIC">
+        <source>keyword 'public'</source>
+        <target state="new">keyword 'public'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.QMARK">
+        <source>symbol '?'</source>
+        <target state="new">symbol '?'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.QMARK.QMARK">
+        <source>symbol '??'</source>
+        <target state="new">symbol '??'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.QUOTE">
+        <source>quote symbol</source>
+        <target state="new">quote symbol</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.RARROW">
+        <source>symbol '-&gt;'</source>
+        <target state="new">symbol '-&gt;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.RBRACE">
+        <source>symbol '}'</source>
+        <target state="new">symbol '}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.RBRACK">
+        <source>symbol ']'</source>
+        <target state="new">symbol ']'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.REC">
+        <source>keyword 'rec'</source>
+        <target state="new">keyword 'rec'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.RESERVED">
+        <source>reserved keyword</source>
+        <target state="new">reserved keyword</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.RPAREN">
+        <source>symbol ')'</source>
+        <target state="new">symbol ')'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.RQUOTE">
+        <source>end of quotation</source>
+        <target state="new">end of quotation</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.SEMICOLON">
+        <source>symbol ';'</source>
+        <target state="new">symbol ';'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.SEMICOLON.SEMICOLON">
+        <source>symbol ';;'</source>
+        <target state="new">symbol ';;'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.SIG">
+        <source>keyword 'sig'</source>
+        <target state="new">keyword 'sig'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.SPLICE.SYMBOL">
+        <source>symbol 'splice'</source>
+        <target state="new">symbol 'splice'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.STAR">
+        <source>symbol '*'</source>
+        <target state="new">symbol '*'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.STATIC">
+        <source>keyword 'static'</source>
+        <target state="new">keyword 'static'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.STRING">
+        <source>string literal</source>
+        <target state="new">string literal</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.STRING.TEXT">
+        <source>string text</source>
+        <target state="new">string text</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.STRUCT">
+        <source>keyword 'struct'</source>
+        <target state="new">keyword 'struct'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.TO">
+        <source>keyword 'to'</source>
+        <target state="new">keyword 'to'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.TRUE">
+        <source>keyword 'true'</source>
+        <target state="new">keyword 'true'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.TRY">
+        <source>keyword 'try'</source>
+        <target state="new">keyword 'try'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.TYPE">
+        <source>keyword 'type'</source>
+        <target state="new">keyword 'type'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.UNDERSCORE">
+        <source>symbol '_'</source>
+        <target state="new">symbol '_'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.UPCAST">
+        <source>keyword 'upcast'</source>
+        <target state="new">keyword 'upcast'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.VAL">
+        <source>keyword 'val'</source>
+        <target state="new">keyword 'val'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.VOID">
+        <source>keyword 'void'</source>
+        <target state="new">keyword 'void'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.WHEN">
+        <source>keyword 'when'</source>
+        <target state="new">keyword 'when'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.WHILE">
+        <source>keyword 'while'</source>
+        <target state="new">keyword 'while'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.WHITESPACE">
+        <source>whitespace</source>
+        <target state="new">whitespace</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.WITH">
+        <source>keyword 'with'</source>
+        <target state="new">keyword 'with'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.YIELD">
+        <source>yield</source>
+        <target state="new">yield</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parser.TOKEN.YIELD.BANG">
+        <source>yield!</source>
+        <target state="new">yield!</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="PossibleUnverifiableCode">
+        <source>Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.</source>
+        <target state="new">Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RecoverableParseError">
+        <source>syntax error</source>
+        <target state="new">syntax error</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Recursion">
+        <source>A use of the function '{0}' does not match a type inferred elsewhere. The inferred type of the function is\n    {1}.    \nThe type of the function required at this point of use is\n    {2}    {3}\nThis error may be due to limitations associated with generic recursion within a 'let rec' collection or within a group of classes. Consider giving a full type signature for the targets of recursive calls including type annotations for both argument and return types.</source>
+        <target state="new">A use of the function '{0}' does not match a type inferred elsewhere. The inferred type of the function is\n    {1}.    \nThe type of the function required at this point of use is\n    {2}    {3}\nThis error may be due to limitations associated with generic recursion within a 'let rec' collection or within a group of classes. Consider giving a full type signature for the targets of recursive calls including type annotations for both argument and return types.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RecursiveUseCheckedAtRuntime">
+        <source>This recursive use will be checked for initialization-soundness at runtime. This warning is usually harmless, and may be suppressed by using '#nowarn "21"' or '--nowarn:21'.</source>
+        <target state="new">This recursive use will be checked for initialization-soundness at runtime. This warning is usually harmless, and may be suppressed by using '#nowarn "21"' or '--nowarn:21'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RequiredButNotSpecified">
+        <source>Module '{0}' requires a {1} '{2}'</source>
+        <target state="new">Module '{0}' requires a {1} '{2}'</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ReservedKeyword">
+        <source>{0}</source>
+        <target state="new">{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RuleNeverMatched">
+        <source>This rule will never be matched</source>
+        <target state="new">This rule will never be matched</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RuntimeCoercionSourceSealed1">
+        <source>The type '{0}' cannot be used as the source of a type test or runtime coercion</source>
+        <target state="new">The type '{0}' cannot be used as the source of a type test or runtime coercion</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="RuntimeCoercionSourceSealed2">
+        <source>The type '{0}' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.</source>
+        <target state="new">The type '{0}' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SeeAlso">
+        <source>. See also {0}.</source>
+        <target state="new">. See also {0}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SelfRefObjCtor1">
+        <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
+        <target state="new">Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="SelfRefObjCtor2">
+        <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references within 'do' statements after the last 'let' binding in the construction sequence.</source>
+        <target state="new">Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references within 'do' statements after the last 'let' binding in the construction sequence.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="StaticCoercionShouldUseBox">
+        <source>A coercion from the value type \n    {0}    \nto the type \n    {1}    \nwill involve boxing. Consider using 'box' instead</source>
+        <target state="new">A coercion from the value type \n    {0}    \nto the type \n    {1}    \nwill involve boxing. Consider using 'box' instead</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TargetInvocationExceptionWrapper">
+        <source>internal error: {0}</source>
+        <target state="new">internal error: {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TokenName1">
+        <source>. Expected {0} or other token.</source>
+        <target state="new">. Expected {0} or other token.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TokenName1TokenName2">
+        <source>. Expected {0}, {1} or other token.</source>
+        <target state="new">. Expected {0}, {1} or other token.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TokenName1TokenName2TokenName3">
+        <source>. Expected {0}, {1}, {2} or other token.</source>
+        <target state="new">. Expected {0}, {1}, {2} or other token.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TyconBadArgs">
+        <source>The type '{0}' expects {1} type argument(s) but is given {2}</source>
+        <target state="new">The type '{0}' expects {1} type argument(s) but is given {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TypeIsImplicitlyAbstract">
+        <source>This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</source>
+        <target state="new">This type is 'abstract' since some abstract members have not been given an implementation. If this is intentional then add the '[&lt;AbstractClass&gt;]' attribute to your type.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="TypeTestUnnecessary">
+        <source>This type test or downcast will always hold</source>
+        <target state="new">This type test or downcast will always hold</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UndefinedName2">
+        <source> A construct with this name was found in FSharp.PowerPack.dll, which contains some modules and types that were implicitly referenced in some previous versions of F#. You may need to add an explicit reference to this DLL in order to compile this code.</source>
+        <target state="new"> A construct with this name was found in FSharp.PowerPack.dll, which contains some modules and types that were implicitly referenced in some previous versions of F#. You may need to add an explicit reference to this DLL in order to compile this code.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Unexpected">
+        <source>Unexpected {0}</source>
+        <target state="new">Unexpected {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnexpectedEndOfInput">
+        <source>Unexpected end of input</source>
+        <target state="new">Unexpected end of input</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnionCaseWrongArguments">
+        <source>This constructor is applied to {0} argument(s) but expects {1}</source>
+        <target state="new">This constructor is applied to {0} argument(s) but expects {1}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnionPatternsBindDifferentNames">
+        <source>The two sides of this 'or' pattern bind different sets of variables</source>
+        <target state="new">The two sides of this 'or' pattern bind different sets of variables</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnitTypeExpected">
+        <source>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</source>
+        <target state="new">The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnitTypeExpectedWithEquality">
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</source>
+        <target state="new">The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
+        <target state="new">The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
+        <target state="new">The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
+        <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
+        <target state="new">The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnresolvedPathReferenceNoRange">
+        <source>The type referenced through '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'.</source>
+        <target state="new">The type referenced through '{0}' is defined in an assembly that is not referenced. You must add a reference to assembly '{1}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UnresolvedReferenceNoRange">
+        <source>A required assembly reference is missing. You must add a reference to assembly '{0}'.</source>
+        <target state="new">A required assembly reference is missing. You must add a reference to assembly '{0}'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpcastUnnecessary">
+        <source>This upcast is unnecessary - the types are identical</source>
+        <target state="new">This upcast is unnecessary - the types are identical</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UpperCaseIdentifierInPattern">
+        <source>Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</source>
+        <target state="new">Uppercase variable identifiers should not generally be used in patterns, and may indicate a missing open declaration or a misspelt pattern name.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseOfAddressOfOperator">
+        <source>The use of native pointers may result in unverifiable .NET IL code</source>
+        <target state="new">The use of native pointers may result in unverifiable .NET IL code</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValNotLocal">
+        <source>This value is not local</source>
+        <target state="new">This value is not local</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValNotMutable">
+        <source>This value is not mutable. Consider using the mutable keyword, e.g. 'let mutable {0} = expression'.</source>
+        <target state="new">This value is not mutable. Consider using the mutable keyword, e.g. 'let mutable {0} = expression'.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueNotContained">
+        <source>Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \n{3}.</source>
+        <target state="new">Module '{0}' contains\n    {1}    \nbut its signature specifies\n    {2}    \n{3}.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestriction1">
+        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
+        <target state="new">Value restriction. The value '{0}' has generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestriction2">
+        <source>Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
+        <target state="new">Value restriction. The value '{0}' has generic type\n    {1}    \nEither make '{2}' into a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestriction3">
+        <source>Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</source>
+        <target state="new">Value restriction. This member has been inferred to have generic type\n    {0}    \nConstructors and property getters/setters cannot be more generic than the enclosing type.  Add a type annotation to indicate the exact types involved.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestriction4">
+        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</source>
+        <target state="new">Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither make the arguments to '{2}' explicit or, if you do not intend for it to be generic, add a type annotation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="ValueRestriction5">
+        <source>Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</source>
+        <target state="new">Value restriction. The value '{0}' has been inferred to have generic type\n    {1}    \nEither define '{2}' as a simple data term, make it a function with explicit arguments or, if you do not intend for it to be generic, add a type annotation.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="VarBoundTwice">
+        <source>'{0}' is bound twice in this pattern</source>
+        <target state="new">'{0}' is bound twice in this pattern</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="VirtualAugmentationOnNullValuedType">
+        <source>The containing type can use 'null' as a representation value for its nullary union case. Invoking an abstract or virtual member or an interface implementation on a null value will lead to an exception. If necessary add a dummy data value to the nullary constructor to avoid 'null' being used as a representation for this type.</source>
+        <target state="new">The containing type can use 'null' as a representation value for its nullary union case. Invoking an abstract or virtual member or an interface implementation on a null value will lead to an exception. If necessary add a dummy data value to the nullary constructor to avoid 'null' being used as a representation for this type.</target>
         <note />
       </trans-unit>
     </body>
