@@ -7544,7 +7544,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
-        <target state="new">Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</target>
+        <target state="translated">Karşılıklı yinelemeli bağlamalarda, özellik bildirimlerinde ve genel parametreler üzerinde birden çok kısıtlamayla kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionAs">
