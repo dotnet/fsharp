@@ -12,6 +12,11 @@
         <target state="translated">無法辨識 '{0}' 的副檔名。來源檔案的副檔名必須是 .fs、.fsi、.fsx 或 .fsscript。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDuplicatedMethodParameter">
+        <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
+        <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">F# {1} 中無法使用 '{0}' 功能。請使用語言版本 {2} 或更新的版本。</target>
