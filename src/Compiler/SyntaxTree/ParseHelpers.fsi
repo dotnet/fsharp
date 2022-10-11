@@ -180,3 +180,56 @@ val mkSynMemberDefnGetSet:
 val adjustHatPrefixToTyparLookup: mFull: range -> rightExpr: SynExpr -> SynExpr
 
 val mkSynTypeTuple: elementTypes: SynTupleTypeSegment list -> SynType
+
+#if DEBUG
+val debugPrint: s: string -> unit
+#else
+val debugPrint: s: 'a -> unit
+#endif
+
+val exprFromParseError: e: SynExpr -> SynExpr
+
+val patFromParseError: e: SynPat -> SynPat
+
+val rebindRanges:
+    first: (RecordFieldName * range option * SynExpr option) ->
+    fields: ((RecordFieldName * range option * SynExpr option) * BlockSeparator option) list ->
+    lastSep: BlockSeparator option ->
+        SynExprRecordField list
+
+val mkUnderscoreRecdField: m: range -> SynLongIdent * bool
+
+val mkRecdField: lidwd: SynLongIdent -> SynLongIdent * bool
+
+val mkSynDoBinding: vis: SynAccess option * expr: SynExpr * m: range -> SynBinding
+
+val mkSynExprDecl: e: SynExpr -> SynModuleDecl
+
+val addAttribs: attrs: SynAttributes -> p: SynPat -> SynPat
+
+val unionRangeWithPos: r: range -> p: pos -> range
+
+val checkEndOfFileError: t: LexerContinuation -> unit
+
+type BindingSet =
+    | BindingSetPreAttrs of
+        range *
+        bool *
+        bool *
+        (SynAttributes -> SynAccess option -> SynAttributes * SynBinding list) *
+        range
+
+val mkClassMemberLocalBindings:
+    isStatic: bool * initialRangeOpt: range option * attrs: SynAttributes * vis: SynAccess option * BindingSet ->
+        SynMemberDefn
+
+val mkLocalBindings: mWhole: range * BindingSet * mIn: range option * body: SynExpr -> SynExpr
+
+val mkDefnBindings:
+    mWhole: range * BindingSet * attrs: SynAttributes * vis: SynAccess option * attrsm: range -> SynModuleDecl list
+
+val idOfPat: parseState: IParseState -> m: range -> p: SynPat -> Ident
+
+val checkForMultipleAugmentations: m: range -> a1: 'a list -> a2: 'a list -> 'a list
+
+val rangeOfLongIdent: lid: LongIdent -> range
