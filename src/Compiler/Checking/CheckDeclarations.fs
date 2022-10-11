@@ -381,7 +381,11 @@ exception NotUpperCaseConstructor of range: range
 
 exception NotUpperCaseConstructorWithoutRQA of range: range
 
-
+let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: Ident) = 
+    // type names '[]' etc. are used in fslib
+    if not g.compilingFSharpCore && id.idText.IndexOfAny IllegalCharactersInTypeAndNamespaceNames <> -1 then 
+        errorR(Error(FSComp.SR.tcInvalidNamespaceModuleTypeUnionName(), id.idRange))
+        
 let CheckDuplicates (idf: _ -> Ident) k elems = 
     elems |> List.iteri (fun i uc1 -> 
         elems |> List.iteri (fun j uc2 -> 
@@ -390,11 +394,6 @@ let CheckDuplicates (idf: _ -> Ident) k elems =
             if j > i && id1.idText = id2.idText then 
                 errorR (Duplicate(k, id1.idText, id1.idRange))))
     elems
-
-let CheckNamespaceModuleOrTypeName (g: TcGlobals) (id: Ident) = 
-    // type names '[]' etc. are used in fslib
-    if not g.compilingFSharpCore && id.idText.IndexOfAny IllegalCharactersInTypeAndNamespaceNames <> -1 then 
-        errorR(Error(FSComp.SR.tcInvalidNamespaceModuleTypeUnionName(), id.idRange))
         
 let private CheckDuplicatesArgNames (synVal: SynValSig) m =
     let argNames = synVal.SynInfo.ArgNames |> List.duplicates
