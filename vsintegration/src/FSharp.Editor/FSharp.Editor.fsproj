@@ -95,6 +95,7 @@
     <Compile Include="CodeFix\AddInstanceMemberParameter.fs" />
     <Compile Include="CodeFix\AddTypeAnnotationToObjectOfIndeterminateType.fs" />
     <Compile Include="CodeFix\AddMissingRecToMutuallyRecFunctions.fs" />
+    <Compile Include="CodeFix\ConvertCSharpUsingToFSharpOpen.fs" />
     <Compile Include="CodeFix\ConvertCSharpLambdaToFSharpLambda.fs" />
     <Compile Include="CodeFix\MakeOuterBindingRecursive.fs" />
     <Compile Include="CodeFix\RemoveReturnOrYield.fs" />
