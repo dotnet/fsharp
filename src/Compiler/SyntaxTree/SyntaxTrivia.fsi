@@ -199,6 +199,14 @@ type SynPatOrTrivia =
         BarRange: range
     }
 
+/// Represents additional information for SynPat.Cons
+[<NoEquality; NoComparison>]
+type SynPatListConsTrivia =
+    {
+        /// The syntax range of the `::` token.
+        ColonColonRange: range
+    }
+
 /// Represents additional information for SynTypeDefn
 [<NoEquality; NoComparison>]
 type SynTypeDefnTrivia =
@@ -215,12 +223,31 @@ type SynTypeDefnTrivia =
 
     static member Zero: SynTypeDefnTrivia
 
+/// Represents additional information for SynTypeDefnSig
+[<NoEquality; NoComparison>]
+type SynTypeDefnSigTrivia =
+    {
+        /// The syntax range of the `type` keyword.
+        TypeKeyword: range option
+
+        /// The syntax range of the `=` token.
+        EqualsRange: range option
+
+        /// The syntax range of the `with` keyword
+        WithKeyword: range option
+    }
+
+    static member Zero: SynTypeDefnSigTrivia
+
 /// Represents additional information for SynBinding
 [<NoEquality; NoComparison>]
 type SynBindingTrivia =
     {
         /// The syntax range of the `let` keyword.
         LetKeyword: range option
+
+        /// The syntax range of the `extern` keyword.
+        ExternKeyword: range option
 
         /// The syntax range of the `=` token.
         EqualsRange: range option
@@ -348,4 +375,12 @@ type SynMemberGetSetTrivia =
 
         /// The syntax range of the `set` keyword
         SetKeyword: range option
+    }
+
+/// Represents additional information for SynArgPats.NamePatPairs
+[<NoEquality; NoComparison>]
+type SynArgPatsNamePatPairsTrivia =
+    {
+        /// The syntax range from the beginning of the `(` token till the end of the `)` token.
+        ParenRange: range
     }

@@ -93,20 +93,39 @@ type internal FSharpWorkspaceServiceFactory
                 match checkerSingleton with
                 | Some _ -> ()
                 | _ ->
-                    let checker = 
+                    let checker =
                         lazy
-                            let checker = 
+                            let editorOptions =
+                                let editorOptions = workspace.Services.GetService<EditorOptions>()
+
+                                match box editorOptions with
+                                | null -> None
+                                | _ -> Some editorOptions
+
+                            let enableParallelCheckingWithSignatureFiles =
+                                editorOptions
+                                |> Option.map (fun options -> options.LanguageServicePerformance.EnableParallelCheckingWithSignatureFiles)
+                                |> Option.defaultValue false
+
+                            let enableParallelReferenceResolution =
+                                editorOptions
+                                |> Option.map (fun options -> options.LanguageServicePerformance.EnableParallelReferenceResolution)
+                                |> Option.defaultValue false
+
+                            let checker =
                                 FSharpChecker.Create(
-                                    projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine. 
+                                    projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine.
                                     keepAllBackgroundResolutions = false,
                                     legacyReferenceResolver=LegacyMSBuildReferenceResolver.getResolver(),
                                     tryGetMetadataSnapshot = tryGetMetadataSnapshot,
                                     keepAllBackgroundSymbolUses = false,
                                     enableBackgroundItemKeyStoreAndSemanticClassification = true,
-                                    enablePartialTypeChecking = true)
-                            checker    
-                    checkerSingleton <- Some checker                   
-            )          
+                                    enablePartialTypeChecking = true,
+                                    enableParallelCheckingWithSignatureFiles = enableParallelCheckingWithSignatureFiles,
+                                    parallelReferenceResolution = enableParallelReferenceResolution)
+                            checker
+                    checkerSingleton <- Some checker
+            )
 
             let optionsManager = 
                 lazy
@@ -259,14 +278,14 @@ type internal FSharpPackage() as this =
                     solutionEventsOpt <- Some(solutionEvents)
                     solution.AdviseSolutionEvents(solutionEvents) |> ignore
                     
-                    let projectContextFactory = this.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
+                    let projectContextFactory = this.ComponentModel.GetService<FSharpWorkspaceProjectContextFactory>()
                     let miscFilesWorkspace = this.ComponentModel.GetService<MiscellaneousFilesWorkspace>()
                     let _singleFileWorkspaceMap = 
                         new SingleFileWorkspaceMap(
                             FSharpMiscellaneousFileService(
                                 workspace,
                                 miscFilesWorkspace,
-                                FSharpWorkspaceProjectContextFactory(projectContextFactory)
+                                projectContextFactory
                             ),
                             rdt)
                     let _legacyProjectWorkspaceMap = new LegacyProjectWorkspaceMap(solution, optionsManager, projectContextFactory)

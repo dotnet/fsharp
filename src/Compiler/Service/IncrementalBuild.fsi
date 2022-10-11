@@ -5,6 +5,7 @@ namespace FSharp.Compiler.CodeAnalysis
 open System
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.CompilerConfig
@@ -48,7 +49,8 @@ module internal IncrementalBuilderEventTesting =
 type internal TcInfo =
     {
         tcState: TcState
-        tcEnvAtEndOfFile: CheckExpressions.TcEnv
+
+        tcEnvAtEndOfFile: TcEnv
 
         /// Disambiguation table for module names
         moduleNamesDict: ModuleNamesDict
@@ -261,7 +263,9 @@ type internal IncrementalBuilder =
         keepAllBackgroundSymbolUses: bool *
         enableBackgroundItemKeyStoreAndSemanticClassification: bool *
         enablePartialTypeChecking: bool *
-        dependencyProvider: DependencyProvider option ->
+        enableParallelCheckingWithSignatureFiles: bool *
+        dependencyProvider: DependencyProvider option *
+        parallelReferenceResolution: ParallelReferenceResolution ->
             NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.

@@ -41,7 +41,13 @@ val NewInferenceTypes: TcGlobals -> 'T list -> TType list
 ///   2. the instantiation mapping old type parameters to inference variables
 ///   3. the inference type variables as a list of types.
 val FreshenAndFixupTypars:
-    m: range -> rigid: TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInstantiation * TType list
+    g: TcGlobals ->
+    m: range ->
+    rigid: TyparRigidity ->
+    Typars ->
+    TType list ->
+    Typars ->
+        Typars * TyparInstantiation * TType list
 
 /// Given a set of type parameters, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted.
@@ -50,13 +56,13 @@ val FreshenAndFixupTypars:
 ///   1. the new type parameters
 ///   2. the instantiation mapping old type parameters to inference variables
 ///   3. the inference type variables as a list of types.
-val FreshenTypeInst: range -> Typars -> Typars * TyparInstantiation * TType list
+val FreshenTypeInst: g: TcGlobals -> range -> Typars -> Typars * TyparInstantiation * TType list
 
 /// Given a set of type parameters, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted.
 ///
 /// Returns the inference type variables as a list of types.
-val FreshenTypars: range -> Typars -> TType list
+val FreshenTypars: g: TcGlobals -> range -> Typars -> TType list
 
 /// Given a method, which may be generic, make new inference type variables for
 /// its generic parameters, and ensure that the constraints the new type variables are adjusted.
@@ -164,33 +170,39 @@ exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * 
 
 exception ConstraintSolverError of string * range * range
 
-exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * range
+exception ErrorFromApplyingDefault of
+    tcGlobals: TcGlobals *
+    displayEnv: DisplayEnv *
+    Typar *
+    TType *
+    error: exn *
+    range: range
 
 exception ErrorFromAddingTypeEquation of
     tcGlobals: TcGlobals *
     displayEnv: DisplayEnv *
     actualTy: TType *
     expectedTy: TType *
-    exn *
-    range
+    error: exn *
+    range: range
 
 exception ErrorsFromAddingSubsumptionConstraint of
     tcGlobals: TcGlobals *
     displayEnv: DisplayEnv *
     actualTy: TType *
     expectedTy: TType *
-    exn *
-    ContextInfo *
+    error: exn *
+    ctxtInfo: ContextInfo *
     parameterRange: range
 
-exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * exn * range
+exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * error: exn * range: range
 exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * range
 
 exception UnresolvedOverloading of
     displayEnv: DisplayEnv *
     callerArgs: CallerArgs<Expr> *
     failure: OverloadResolutionFailure *
-    range
+    range: range
 
 exception NonRigidTypar of displayEnv: DisplayEnv * string option * range * TType * TType * range
 
@@ -251,7 +263,10 @@ val UnifyUniqueOverloading:
         OverallTy ->
             OperationResult<bool>
 
-/// Remove the global constraints where these type variables appear in the support of the constraint
+/// Re-assess the staticness of the type parameters
+val UpdateStaticReqOfTypar: DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> Typar -> unit
+
+/// Remove the global constraints related to generalized type variables
 val EliminateConstraintsForGeneralizedTypars:
     DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> Typars -> unit
 
@@ -303,6 +318,10 @@ val ApplyTyparDefaultAtPriority: DisplayEnv -> ConstraintSolverState -> priority
 /// Generate a witness expression if none is otherwise available, e.g. in legacy non-witness-passing code
 val CodegenWitnessExprForTraitConstraint:
     TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
+
+/// Determine if a codegen witness for a trait will require witness args to be available, e.g. in generic code
+val CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs:
+    TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> OperationResult<bool>
 
 /// Generate the arguments passed when using a generic construct that accepts traits witnesses
 val CodegenWitnessesForTyparInst:

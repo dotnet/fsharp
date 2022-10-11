@@ -34,7 +34,7 @@ type ResolutionEnvironment =
     { ResolutionFolder: string
       OutputFile: string option
       ShowResolutionMessages: bool
-      ReferencedAssemblies: string[]
+      GetReferencedAssemblies: unit -> string[]
       TemporaryFolder: string }
 
 /// Load a the design-time part of a type-provider into the host process, and look for types
@@ -118,19 +118,32 @@ let CreateTypeProvider (
             let e = StripException (StripException err)
             raise (TypeProviderError(FSComp.SR.etTypeProviderConstructorException(e.Message), typeProviderImplementationType.FullName, m))
 
+    let getReferencedAssemblies () =
+        resolutionEnvironment.GetReferencedAssemblies() |> Array.distinct
+
     if typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]) <> null then
 
         // Create the TypeProviderConfig to pass to the type provider constructor
         let e =
-            TypeProviderConfig(systemRuntimeContainsType, 
+#if FSHARPCORE_USE_PACKAGE
+            TypeProviderConfig(systemRuntimeContainsType,
+                ReferencedAssemblies=getReferencedAssemblies(),
                 ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
                 RuntimeAssembly=runtimeAssemblyPath, 
-                ReferencedAssemblies=Array.copy resolutionEnvironment.ReferencedAssemblies, 
                 TemporaryFolder=resolutionEnvironment.TemporaryFolder, 
                 IsInvalidationSupported=isInvalidationSupported, 
                 IsHostedExecution= isInteractive, 
                 SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
-
+#else
+            TypeProviderConfig(systemRuntimeContainsType,
+                getReferencedAssemblies,
+                ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
+                RuntimeAssembly=runtimeAssemblyPath, 
+                TemporaryFolder=resolutionEnvironment.TemporaryFolder, 
+                IsInvalidationSupported=isInvalidationSupported, 
+                IsHostedExecution= isInteractive, 
+                SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
+#endif
         protect (fun () -> Activator.CreateInstance(typeProviderImplementationType, [| box e|]) :?> ITypeProvider )
 
     elif typeProviderImplementationType.GetConstructor [| |] <> null then 
@@ -1186,7 +1199,7 @@ let ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams: Tai
         staticParams.PApply((fun ps ->  ps |> Array.map (fun sp -> sp.Name, (if sp.IsOptional then Some (string sp.RawDefaultValue) else None ))), range=m)
 
     let defaultArgValues = defaultArgValues.PUntaint(id, m)
-    PrettyNaming.computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
+    PrettyNaming.ComputeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
 
 /// Apply the given provided method to the given static arguments (the arguments are assumed to have been sorted into application order)
 let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: obj[], m: range) =
@@ -1243,7 +1256,7 @@ let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, moduleOrNamespace: str
     // Demangle the static parameters
     let typeName, argNamesAndValues = 
         try 
-            PrettyNaming.demangleProvidedTypeName typeLogicalName 
+            PrettyNaming.DemangleProvidedTypeName typeLogicalName 
         with PrettyNaming.InvalidMangledStaticArg piece -> 
             error(Error(FSComp.SR.etProvidedTypeReferenceInvalidText piece, range0)) 
 

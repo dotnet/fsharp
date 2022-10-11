@@ -16,7 +16,7 @@ open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 
 module SourceFileImpl =
-    let IsInterfaceFile file =
+    let IsSignatureFile file =
         let ext = Path.GetExtension file
         0 = String.Compare(".fsi", ext, StringComparison.OrdinalIgnoreCase)
 
@@ -476,8 +476,8 @@ module ParsedInput =
                             ]
                             |> pick expr
 
-                        | SynExpr.DotGet (exprLeft, dotm, lidwd, _m) ->
-                            let afterDotBeforeLid = mkRange dotm.FileName dotm.End lidwd.Range.Start
+                        | SynExpr.DotGet (exprLeft, mDot, lidwd, _m) ->
+                            let afterDotBeforeLid = mkRange mDot.FileName mDot.End lidwd.Range.Start
 
                             [
                                 dive exprLeft exprLeft.Range traverseSynExpr
@@ -556,7 +556,7 @@ module ParsedInput =
         let (|ConstructorPats|) pats =
             match pats with
             | SynArgPats.Pats ps -> ps
-            | SynArgPats.NamePatPairs (xs, _) -> List.map (fun (_, _, pat) -> pat) xs
+            | SynArgPats.NamePatPairs (pats = xs) -> List.map (fun (_, _, pat) -> pat) xs
 
         /// A recursive pattern that collect all sequential expressions to avoid StackOverflowException
         let rec (|Sequentials|_|) expr =
@@ -570,8 +570,8 @@ module ParsedInput =
         let inline ifPosInRange range f =
             if isPosInRange range then f () else None
 
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.tryPick (walkSynModuleOrNamespace true) moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.tryPick (walkSynModuleOrNamespace true) file.Contents
 
         and walkSynModuleOrNamespace isTopLevel inp =
             let (SynModuleOrNamespace (decls = decls; attribs = Attributes attrs; range = r)) =
@@ -581,7 +581,7 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> ifPosInRange r (fun _ -> List.tryPick (walkSynModuleDecl isTopLevel) decls))
 
         and walkAttribute (attr: SynAttribute) =
-            if isPosInRange attr.Range then
+            if isPosInRange attr.TypeName.Range then
                 Some EntityKind.Attribute
             else
                 None
@@ -611,6 +611,7 @@ module ParsedInput =
                 List.tryPick walkType ts |> Option.orElseWith (fun () -> walkMemberSig sign)
             | SynTypeConstraint.WhereTyparIsEnum (t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
             | SynTypeConstraint.WhereTyparIsDelegate (t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
+            | SynTypeConstraint.WhereSelfConstrained (ts, _) -> walkType ts
 
         and walkPatWithKind (kind: EntityKind option) pat =
             match pat with
@@ -618,7 +619,8 @@ module ParsedInput =
             | SynPat.As (pat1, pat2, _) -> List.tryPick walkPat [ pat1; pat2 ]
             | SynPat.Typed (pat, t, _) -> walkPat pat |> Option.orElseWith (fun () -> walkType t)
             | SynPat.Attrib (pat, Attributes attrs, _) -> walkPat pat |> Option.orElseWith (fun () -> List.tryPick walkAttribute attrs)
-            | SynPat.Or (pat1, pat2, _, _) -> List.tryPick walkPat [ pat1; pat2 ]
+            | SynPat.Or (pat1, pat2, _, _)
+            | SynPat.ListCons (pat1, pat2, _, _) -> List.tryPick walkPat [ pat1; pat2 ]
             | SynPat.LongIdent (typarDecls = typars; argPats = ConstructorPats pats; range = r) ->
                 ifPosInRange r (fun _ -> kind)
                 |> Option.orElseWith (fun () ->
@@ -661,15 +663,22 @@ module ParsedInput =
                     None
             | SynType.App (ty, _, types, _, _, _, _) -> walkType ty |> Option.orElseWith (fun () -> List.tryPick walkType types)
             | SynType.LongIdentApp (_, _, _, types, _, _, _) -> List.tryPick walkType types
-            | SynType.Tuple (_, ts, _) -> ts |> List.tryPick (fun (_, t) -> walkType t)
+            | SynType.Tuple (path = segments) -> getTypeFromTuplePath segments |> List.tryPick walkType
             | SynType.Array (_, t, _) -> walkType t
             | SynType.Fun (argType = t1; returnType = t2) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.WithGlobalConstraints (t, _, _) -> walkType t
             | SynType.HashConstraint (t, _) -> walkType t
             | SynType.MeasureDivide (t1, t2, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.MeasurePower (t, _, _) -> walkType t
-            | SynType.Paren (t, _) -> walkType t
-            | _ -> None
+            | SynType.Paren (t, _)
+            | SynType.SignatureParameter (usedType = t) -> walkType t
+            | SynType.StaticConstantExpr (e, _) -> walkExpr e
+            | SynType.StaticConstantNamed (ident, value, _) -> List.tryPick walkType [ ident; value ]
+            | SynType.Anon _
+            | SynType.AnonRecd _
+            | SynType.LongIdent _
+            | SynType.Var _
+            | SynType.StaticConstant _ -> None
 
         and walkClause clause =
             let (SynMatchClause (pat = pat; whenExpr = e1; resultExpr = e2)) = clause
@@ -830,7 +839,7 @@ module ParsedInput =
             | SynExpr.DoBang (e, _) -> walkExprWithKind parentKind e
 
             | SynExpr.TraitCall (ts, sign, e, _) ->
-                List.tryPick walkTypar ts
+                List.tryPick walkType ts
                 |> Option.orElseWith (fun () -> walkMemberSig sign)
                 |> Option.orElseWith (fun () -> walkExprWithKind parentKind e)
 
@@ -1539,7 +1548,9 @@ module ParsedInput =
                     None
 
                 override this.VisitModuleOrNamespace(_, SynModuleOrNamespace (longId = longId; range = range)) =
-                    if rangeContainsPos range pos then path <- path @ longId
+                    if rangeContainsPos range pos then
+                        path <- path @ longId
+
                     None // we should traverse the rest of the AST to find the smallest module
             }
 
@@ -1556,7 +1567,7 @@ module ParsedInput =
     let (|ConstructorPats|) pats =
         match pats with
         | SynArgPats.Pats ps -> ps
-        | SynArgPats.NamePatPairs (xs, _) -> List.map (fun (_, _, pat) -> pat) xs
+        | SynArgPats.NamePatPairs (pats = xs) -> List.map (fun (_, _, pat) -> pat) xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
     let getLongIdents (parsedInput: ParsedInput) : IDictionary<pos, LongIdent> =
@@ -1579,8 +1590,8 @@ module ParsedInput =
         let addIdent (ident: Ident) =
             identsByEndPos[ident.idRange.End] <- [ ident ]
 
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.iter walkSynModuleOrNamespace moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.iter walkSynModuleOrNamespace file.Contents
 
         and walkSynModuleOrNamespace (SynModuleOrNamespace (decls = decls; attribs = Attributes attrs)) =
             List.iter walkAttribute attrs
@@ -1613,6 +1624,7 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparSupportsMember (ts, sign, _) ->
                 List.iter walkType ts
                 walkMemberSig sign
+            | SynTypeConstraint.WhereSelfConstrained (ty, _) -> walkType ty
 
         and walkPat pat =
             match pat with
@@ -1627,7 +1639,8 @@ module ParsedInput =
                 walkPat pat
                 List.iter walkAttribute attrs
             | SynPat.As (pat1, pat2, _)
-            | SynPat.Or (pat1, pat2, _, _) -> List.iter walkPat [ pat1; pat2 ]
+            | SynPat.Or (pat1, pat2, _, _)
+            | SynPat.ListCons (pat1, pat2, _, _) -> List.iter walkPat [ pat1; pat2 ]
             | SynPat.LongIdent (longDotId = ident; typarDecls = typars; argPats = ConstructorPats pats) ->
                 addLongIdentWithDots ident
 
@@ -1657,7 +1670,8 @@ module ParsedInput =
             | SynType.Array (_, t, _)
             | SynType.HashConstraint (t, _)
             | SynType.MeasurePower (t, _, _)
-            | SynType.Paren (t, _) -> walkType t
+            | SynType.Paren (t, _)
+            | SynType.SignatureParameter (usedType = t) -> walkType t
             | SynType.Fun (argType = t1; returnType = t2)
             | SynType.MeasureDivide (t1, t2, _) ->
                 walkType t1
@@ -1667,11 +1681,18 @@ module ParsedInput =
                 walkType ty
                 List.iter walkType types
             | SynType.LongIdentApp (_, _, _, types, _, _, _) -> List.iter walkType types
-            | SynType.Tuple (_, ts, _) -> ts |> List.iter (fun (_, t) -> walkType t)
+            | SynType.Tuple (path = segment) -> getTypeFromTuplePath segment |> List.iter walkType
             | SynType.WithGlobalConstraints (t, typeConstraints, _) ->
                 walkType t
                 List.iter walkTypeConstraint typeConstraints
-            | _ -> ()
+            | SynType.StaticConstantExpr (e, _) -> walkExpr e
+            | SynType.StaticConstantNamed (ident, value, _) ->
+                walkType ident
+                walkType value
+            | SynType.Anon _
+            | SynType.AnonRecd _
+            | SynType.Var _
+            | SynType.StaticConstant _ -> ()
 
         and walkClause (SynMatchClause (pat = pat; whenExpr = e1; resultExpr = e2)) =
             walkPat pat
@@ -1800,7 +1821,7 @@ module ParsedInput =
 
                 walkExpr e2
             | SynExpr.TraitCall (ts, sign, e, _) ->
-                List.iter walkTypar ts
+                List.iter walkType ts
                 walkMemberSig sign
                 walkExpr e
             | SynExpr.Const (SynConst.Measure (_, _, m), _) -> walkMeasure m
@@ -1916,7 +1937,9 @@ module ParsedInput =
             List.iter walkAttribute attrs
             List.iter walkTyparDecl typars
             List.iter walkTypeConstraint constraints
-            if isTypeExtensionOrAlias then addLongIdent longIdent
+
+            if isTypeExtensionOrAlias then
+                addLongIdent longIdent
 
         and walkTypeDefnRepr inp =
             match inp with
@@ -2014,10 +2037,7 @@ module ParsedInput =
                     result <- Some(oldScope, oldPos, true)
                 | Some (oldScope, oldPos, _), _ ->
                     match kind, oldScope.Kind with
-                    | (Namespace
-                      | NestedModule
-                      | TopModule),
-                      OpenDeclaration
+                    | (Namespace | NestedModule | TopModule), OpenDeclaration
                     | _ when oldPos.Line <= line ->
                         result <-
                             Some(
@@ -2048,8 +2068,8 @@ module ParsedInput =
                 | _ -> None
                 |> Option.map (fun r -> r.StartColumn)
 
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.iter (walkSynModuleOrNamespace []) moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.iter (walkSynModuleOrNamespace []) file.Contents
 
         and walkSynModuleOrNamespace (parent: LongIdent) modul =
             let (SynModuleOrNamespace (longId = ident; kind = kind; decls = decls; range = range)) =

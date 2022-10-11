@@ -47,10 +47,14 @@ type SynLongIdent =
     member this.IdentsWithTrivia =
         let (SynLongIdent (lid, _, trivia)) = this
 
-        if lid.Length <> trivia.Length then
-            failwith "difference between idents and trivia"
-        else
+        if lid.Length = trivia.Length then
             List.zip lid trivia |> List.map SynIdent
+        elif lid.Length > trivia.Length then
+            let delta = lid.Length - trivia.Length
+            let trivia = [ yield! trivia; yield! List.replicate delta None ]
+            List.zip lid trivia |> List.map SynIdent
+        else
+            failwith "difference between idents and trivia"
 
     member this.ThereIsAnExtraDotAtTheEnd =
         match this with
@@ -332,6 +336,8 @@ type SynTypeConstraint =
 
     | WhereTyparIsDelegate of typar: SynTypar * typeArgs: SynType list * range: range
 
+    | WhereSelfConstrained of selfConstraint: SynType * range: range
+
     member x.Range =
         match x with
         | WhereTyparIsValueType (range = range)
@@ -345,6 +351,7 @@ type SynTypeConstraint =
         | WhereTyparSupportsMember (range = range)
         | WhereTyparIsEnum (range = range)
         | WhereTyparIsDelegate (range = range) -> range
+        | WhereSelfConstrained (range = range) -> range
 
 [<RequireQualifiedAccess>]
 type SynTyparDecls =
@@ -370,6 +377,18 @@ type SynTyparDecls =
         | SinglePrefix (range = range) -> range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynTupleTypeSegment =
+    | Type of typeName: SynType
+    | Star of range: range
+    | Slash of range: range
+
+    member this.Range =
+        match this with
+        | SynTupleTypeSegment.Type t -> t.Range
+        | SynTupleTypeSegment.Star (range = range)
+        | SynTupleTypeSegment.Slash (range = range) -> range
+
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynType =
 
     | LongIdent of longDotId: SynLongIdent
@@ -392,7 +411,7 @@ type SynType =
         greaterRange: range option *
         range: range
 
-    | Tuple of isStruct: bool * elementTypes: (bool * SynType) list * range: range
+    | Tuple of isStruct: bool * path: SynTupleTypeSegment list * range: range
 
     | AnonRecd of isStruct: bool * fields: (Ident * SynType) list * range: range
 
@@ -420,6 +439,8 @@ type SynType =
 
     | Paren of innerType: SynType * range: range
 
+    | SignatureParameter of attributes: SynAttributes * optional: bool * id: Ident option * usedType: SynType * range: range
+
     member x.Range =
         match x with
         | SynType.App (range = m)
@@ -437,7 +458,8 @@ type SynType =
         | SynType.HashConstraint (range = m)
         | SynType.MeasureDivide (range = m)
         | SynType.MeasurePower (range = m)
-        | SynType.Paren (range = m) -> m
+        | SynType.Paren (range = m)
+        | SynType.SignatureParameter (range = m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -583,6 +605,8 @@ type SynExpr =
         range: range *
         trivia: SynExprIfThenElseTrivia
 
+    | Typar of typar: SynTypar * range: range
+
     | Ident of ident: Ident
 
     | LongIdent of isOptional: bool * longDotId: SynLongIdent * altNameRefCell: SynSimplePatAlternativeIdInfo ref option * range: range
@@ -623,7 +647,7 @@ type SynExpr =
 
     | AddressOf of isByref: bool * expr: SynExpr * opRange: range * range: range
 
-    | TraitCall of supportTys: SynTypar list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
+    | TraitCall of supportTys: SynType list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
 
     | JoinIn of lhsExpr: SynExpr * lhsRange: range * rhsExpr: SynExpr * range: range
 
@@ -757,6 +781,7 @@ type SynExpr =
         | SynExpr.InterpolatedString (range = m)
         | SynExpr.Dynamic (range = m) -> m
         | SynExpr.Ident id -> id.idRange
+        | SynExpr.Typar (range = m) -> m
         | SynExpr.DebugPoint (_, _, innerExpr) -> innerExpr.Range
 
     member e.RangeWithoutAnyExtraDot =
@@ -861,12 +886,12 @@ type SynSimplePats =
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range
+    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member x.Patterns =
         match x with
         | Pats pats -> pats
-        | NamePatPairs (pats, _) -> pats |> List.map (fun (_, _, pat) -> pat)
+        | NamePatPairs (pats = pats) -> pats |> List.map (fun (_, _, pat) -> pat)
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynPat =
@@ -882,6 +907,8 @@ type SynPat =
     | Attrib of pat: SynPat * attributes: SynAttributes * range: range
 
     | Or of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatOrTrivia
+
+    | ListCons of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatListConsTrivia
 
     | Ands of pats: SynPat list * range: range
 
@@ -928,6 +955,7 @@ type SynPat =
         | SynPat.Wild (range = m)
         | SynPat.Named (range = m)
         | SynPat.Or (range = m)
+        | SynPat.ListCons (range = m)
         | SynPat.Ands (range = m)
         | SynPat.As (range = m)
         | SynPat.LongIdent (range = m)
@@ -1047,6 +1075,9 @@ type SynMemberFlags =
 
         IsFinal: bool
 
+        // This is not persisted in pickling
+        GetterOrSetterIsCompilerGenerated: bool
+
         MemberKind: SynMemberKind
 
         Trivia: SynMemberFlagsTrivia
@@ -1059,6 +1090,7 @@ type SynMemberFlags =
             && this.IsDispatchSlot = other.IsDispatchSlot
             && this.IsOverrideOrExplicitImpl = other.IsOverrideOrExplicitImpl
             && this.IsFinal = other.IsFinal
+            && this.GetterOrSetterIsCompilerGenerated = other.GetterOrSetterIsCompilerGenerated
             && this.MemberKind = other.MemberKind
         | _ -> false
 
@@ -1067,6 +1099,7 @@ type SynMemberFlags =
         + hash this.IsDispatchSlot
         + hash this.IsOverrideOrExplicitImpl
         + hash this.IsFinal
+        + hash this.GetterOrSetterIsCompilerGenerated
         + hash this.MemberKind
 
 [<StructuralEquality; NoComparison; RequireQualifiedAccess>]
@@ -1218,11 +1251,10 @@ type SynTypeDefnSig =
 
     | SynTypeDefnSig of
         typeInfo: SynComponentInfo *
-        equalsRange: range option *
         typeRepr: SynTypeDefnSigRepr *
-        withKeyword: range option *
         members: SynMemberSig list *
-        range: range
+        range: range *
+        trivia: SynTypeDefnSigTrivia
 
     member this.Range =
         match this with
@@ -1401,7 +1433,8 @@ type SynMemberDefn =
         ident: Ident *
         typeOpt: SynType option *
         propKind: SynMemberKind *
-        memberFlags: (SynMemberKind -> SynMemberFlags) *
+        memberFlags: SynMemberFlags *
+        memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         equalsRange: range *
@@ -1472,7 +1505,7 @@ type SynModuleDecl =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynOpenDeclTarget =
 
-    | ModuleOrNamespace of longId: LongIdent * range: range
+    | ModuleOrNamespace of longId: SynLongIdent * range: range
 
     | Type of typeName: SynType * range: range
 
@@ -1618,10 +1651,7 @@ type ParsedSigFileFragment =
         trivia: SynModuleOrNamespaceSigTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
-type ParsedScriptInteraction =
-    | Definitions of defns: SynModuleDecl list * range: range
-
-    | HashDirective of hashDirective: ParsedHashDirective * range: range
+type ParsedScriptInteraction = Definitions of defns: SynModuleDecl list * range: range
 
 [<NoEquality; NoComparison>]
 type ParsedImplFile = ParsedImplFile of hashDirectives: ParsedHashDirective list * fragments: ParsedImplFileFragment list
@@ -1650,9 +1680,31 @@ type ParsedImplFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespace list *
-        isLastCompiland: (bool * bool) *
+        contents: SynModuleOrNamespace list *
+        flags: (bool * bool) *
         trivia: ParsedImplFileInputTrivia
+
+    member x.QualifiedName =
+        (let (ParsedImplFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
+
+    member x.ScopedPragmas =
+        (let (ParsedImplFileInput (scopedPragmas = scopedPragmas)) = x in scopedPragmas)
+
+    member x.HashDirectives =
+        (let (ParsedImplFileInput (hashDirectives = hashDirectives)) = x in hashDirectives)
+
+    member x.FileName = (let (ParsedImplFileInput (fileName = fileName)) = x in fileName)
+
+    member x.Contents = (let (ParsedImplFileInput (contents = contents)) = x in contents)
+
+    member x.IsScript = (let (ParsedImplFileInput (isScript = isScript)) = x in isScript)
+
+    member x.IsLastCompiland =
+        (let (ParsedImplFileInput (flags = (isLastCompiland, _))) = x in isLastCompiland)
+
+    member x.IsExe = (let (ParsedImplFileInput (flags = (_, isExe))) = x in isExe)
+
+    member x.Trivia = (let (ParsedImplFileInput (trivia = trivia)) = x in trivia)
 
 [<NoEquality; NoComparison>]
 type ParsedSigFileInput =
@@ -1661,8 +1713,23 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespaceSig list *
+        contents: SynModuleOrNamespaceSig list *
         trivia: ParsedSigFileInputTrivia
+
+    member x.QualifiedName =
+        (let (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
+
+    member x.ScopedPragmas =
+        (let (ParsedSigFileInput (scopedPragmas = scopedPragmas)) = x in scopedPragmas)
+
+    member x.HashDirectives =
+        (let (ParsedSigFileInput (hashDirectives = hashDirectives)) = x in hashDirectives)
+
+    member x.FileName = (let (ParsedSigFileInput (fileName = fileName)) = x in fileName)
+
+    member x.Contents = (let (ParsedSigFileInput (contents = contents)) = x in contents)
+
+    member x.Trivia = (let (ParsedSigFileInput (trivia = trivia)) = x in trivia)
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedInput =
@@ -1672,12 +1739,21 @@ type ParsedInput =
 
     member inp.FileName =
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput (fileName = fileName))
-        | ParsedInput.SigFile (ParsedSigFileInput (fileName = fileName)) -> fileName
+        | ParsedInput.ImplFile file -> file.FileName
+        | ParsedInput.SigFile file -> file.FileName
+
+    member inp.ScopedPragmas =
+        match inp with
+        | ParsedInput.ImplFile file -> file.ScopedPragmas
+        | ParsedInput.SigFile file -> file.ScopedPragmas
+
+    member inp.QualifiedName =
+        match inp with
+        | ParsedInput.ImplFile file -> file.QualifiedName
+        | ParsedInput.SigFile file -> file.QualifiedName
 
     member inp.Range =
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput(modules = SynModuleOrNamespace (range = m) :: _))
-        | ParsedInput.SigFile (ParsedSigFileInput(modules = SynModuleOrNamespaceSig (range = m) :: _)) -> m
-        | ParsedInput.ImplFile (ParsedImplFileInput (fileName = fileName))
-        | ParsedInput.SigFile (ParsedSigFileInput (fileName = fileName)) -> rangeN fileName 0
+        | ParsedInput.ImplFile (ParsedImplFileInput(contents = SynModuleOrNamespace (range = m) :: _))
+        | ParsedInput.SigFile (ParsedSigFileInput(contents = SynModuleOrNamespaceSig (range = m) :: _)) -> m
+        | _ -> rangeN inp.FileName 0

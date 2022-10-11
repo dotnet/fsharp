@@ -942,14 +942,8 @@ module Patterns =
             | VarSetOp, _
             | AddressSetOp, _ -> typeof<Unit>
             | AddressOfOp, [ expr ] -> (typeOf expr).MakeByRefType()
-            | (AddressOfOp
-              | QuoteOp _
-              | SequentialOp
-              | TryWithOp
-              | TryFinallyOp
-              | IfThenElseOp
-              | AppOp),
-              _ -> failwith "unreachable"
+            | (AddressOfOp | QuoteOp _ | SequentialOp | TryWithOp | TryFinallyOp | IfThenElseOp | AppOp), _ ->
+                failwith "unreachable"
 
     //--------------------------------------------------------------------------
     // Constructors for building Raw quotations
@@ -1408,11 +1402,11 @@ module Patterns =
         | Unique of 'T
         | Ambiguous of 'R
 
-    let typeEquals (s: Type) (t: Type) =
-        s.Equals t
+    let typeEquals (ty1: Type) (ty2: Type) =
+        ty1.Equals ty2
 
-    let typesEqual (ss: Type list) (tt: Type list) =
-        (ss.Length = tt.Length) && List.forall2 typeEquals ss tt
+    let typesEqual (tys1: Type list) (tys2: Type list) =
+        (tys1.Length = tys2.Length) && List.forall2 typeEquals tys1 tys2
 
     let instFormal (typarEnv: Type[]) (ty: Instantiable<'T>) =
         ty (fun i -> typarEnv.[i])
@@ -1469,9 +1463,11 @@ module Patterns =
                     else
 
                     // If a known-number-of-arguments-including-object-argument has been given then check that
-                    if (match knownArgCount with
-                        | ValueNone -> false
-                        | ValueSome n -> n <> (if methInfo.IsStatic then 0 else 1) + nargTs) then
+                    if
+                        (match knownArgCount with
+                         | ValueNone -> false
+                         | ValueSome n -> n <> (if methInfo.IsStatic then 0 else 1) + nargTs)
+                    then
                         false
                     else
 
@@ -2931,8 +2927,7 @@ module DerivedPatterns =
     let (|SpecificCall|_|) templateParameter =
         // Note: precomputation
         match templateParameter with
-        | (Lambdas (_, Call (_, minfo1, _))
-        | Call (_, minfo1, _)) ->
+        | (Lambdas (_, Call (_, minfo1, _)) | Call (_, minfo1, _)) ->
             let isg1 = minfo1.IsGenericMethod
 
             let gmd =
