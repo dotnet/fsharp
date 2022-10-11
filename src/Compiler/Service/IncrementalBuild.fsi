@@ -245,6 +245,8 @@ type internal IncrementalBuilder =
     member GetParseResultsForFile:
         fileName: string -> ParsedInput * range * string * (PhasedDiagnostic * FSharpDiagnosticSeverity)[]
 
+    member SetFileEditTimeStamp: fileName: string * timeStamp: DateTime -> NodeCode<unit>
+
     /// Create the incremental builder
     static member TryCreateIncrementalBuilderForProjectOptions:
         legacyReferenceResolver: LegacyReferenceResolver *
@@ -265,7 +267,8 @@ type internal IncrementalBuilder =
         enablePartialTypeChecking: bool *
         enableParallelCheckingWithSignatureFiles: bool *
         dependencyProvider: DependencyProvider option *
-        parallelReferenceResolution: ParallelReferenceResolution ->
+        parallelReferenceResolution: ParallelReferenceResolution *
+        getSource: (string -> ISourceText option) option ->
             NodeCode<IncrementalBuilder option * FSharpDiagnostic[]>
 
 /// Generalized Incremental Builder. This is exposed only for unit testing purposes.

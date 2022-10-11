@@ -176,7 +176,8 @@ type BackgroundCompiler
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
         enableParallelCheckingWithSignatureFiles,
-        parallelReferenceResolution
+        parallelReferenceResolution,
+        getSource: (string -> ISourceText option) option
     ) as self =
 
     let beforeFileChecked = Event<string * FSharpProjectOptions>()
@@ -305,7 +306,8 @@ type BackgroundCompiler
                     enablePartialTypeChecking,
                     enableParallelCheckingWithSignatureFiles,
                     dependencyProvider,
-                    parallelReferenceResolution
+                    parallelReferenceResolution,
+                    getSource
                 )
 
             match builderOpt with
@@ -708,10 +710,14 @@ type BackgroundCompiler
                     let parseResults =
                         FSharpParseFileResults(parseDiagnostics, parseTree, anyErrors, builder.AllDependenciesDeprecated)
 
+                    do! builder.SetFileEditTimeStamp(fileName, DateTime.UtcNow)
+
                     let! checkResults =
                         bc.CheckOneFileImpl(parseResults, sourceText, fileName, options, fileVersion, builder, tcPrior, tcInfo, creationDiags)
 
                     Logger.LogBlockMessageStop (fileName + strGuid + "-Successful") LogCompilerFunctionId.Service_ParseAndCheckFileInProject
+
+                    let _files = builder.SourceFiles
 
                     return (parseResults, checkResults)
         }
@@ -1099,7 +1105,8 @@ type FSharpChecker
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
         enableParallelCheckingWithSignatureFiles,
-        parallelReferenceResolution
+        parallelReferenceResolution,
+        getSource
     ) =
 
     let backgroundCompiler =
@@ -1114,7 +1121,8 @@ type FSharpChecker
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
             enableParallelCheckingWithSignatureFiles,
-            parallelReferenceResolution
+            parallelReferenceResolution,
+            getSource
         )
 
     static let globalInstance = lazy FSharpChecker.Create()
@@ -1157,7 +1165,8 @@ type FSharpChecker
             ?enableBackgroundItemKeyStoreAndSemanticClassification,
             ?enablePartialTypeChecking,
             ?enableParallelCheckingWithSignatureFiles,
-            ?parallelReferenceResolution
+            ?parallelReferenceResolution,
+            ?getSource: (string -> ISourceText option)
         ) =
 
         let legacyReferenceResolver =
@@ -1194,7 +1203,8 @@ type FSharpChecker
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
             enableParallelCheckingWithSignatureFiles,
-            parallelReferenceResolution
+            parallelReferenceResolution,
+            getSource
         )
 
     member _.ReferenceResolver = legacyReferenceResolver

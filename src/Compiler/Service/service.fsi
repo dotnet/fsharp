@@ -34,6 +34,7 @@ type public FSharpChecker =
     /// <param name="enablePartialTypeChecking">Indicates whether to perform partial type checking. Cannot be set to true if keepAssmeblyContents is true. If set to true, can cause duplicate type-checks when richer information on a file is needed, but can skip background type-checking entirely on implementation files with signature files.</param>
     /// <param name="enableParallelCheckingWithSignatureFiles">Type check implementation files that are backed by a signature file in parallel.</param>
     /// <param name="parallelReferenceResolution">Indicates whether to resolve references in parallel.</param>
+    /// <param name="getSource">Function to get source text for a file instead of reading it from the file system.</param>
     static member Create:
         ?projectCacheSize: int *
         ?keepAssemblyContents: bool *
@@ -45,7 +46,8 @@ type public FSharpChecker =
         ?enableBackgroundItemKeyStoreAndSemanticClassification: bool *
         ?enablePartialTypeChecking: bool *
         ?enableParallelCheckingWithSignatureFiles: bool *
-        ?parallelReferenceResolution: bool ->
+        ?parallelReferenceResolution: bool *
+        ?getSource: (string -> ISourceText option) ->
             FSharpChecker
 
     /// <summary>

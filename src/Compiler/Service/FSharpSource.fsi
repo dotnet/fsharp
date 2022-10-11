@@ -23,7 +23,7 @@ type internal FSharpSource =
     abstract FilePath: string
 
     /// The timestamp of the source.
-    abstract TimeStamp: DateTime
+    abstract GetTimeStamp: unit -> DateTime
 
     /// Gets the internal text container. Text may be on-disk, in a stream, or a source text.
     abstract internal GetTextContainer: unit -> TextContainer
@@ -32,7 +32,7 @@ type internal FSharpSource =
     static member internal CreateFromFile: filePath: string -> FSharpSource
 
     /// Creates a FSharpSource from the specified file path by shadow-copying the file.
-    static member CreateCopyFromFile: filePath: string -> FSharpSource
+    //static member CreateCopyFromFile: filePath: string -> FSharpSource
 
     /// Creates a FSharpSource.
     static member Create:

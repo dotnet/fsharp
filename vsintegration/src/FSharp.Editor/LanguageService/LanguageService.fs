@@ -89,6 +89,17 @@ type internal FSharpWorkspaceServiceFactory
                 | _ ->
                     None
 
+            let getSource filename =
+                workspace.CurrentSolution.Projects
+                |> Seq.collect (fun p -> p.Documents)
+                |> Seq.tryFind (fun d -> d.FilePath = filename)
+                |> Option.map (fun document ->
+                    let text = document.GetTextAsync().Result
+                    //let _version = document.GetTextVersionAsync().Result
+                    //let _versionString = _version.ToString()
+                    //let _debugText = text.ToString()
+                    text.ToFSharpSourceText())
+
             lock gate (fun () ->
                 match checkerSingleton with
                 | Some _ -> ()
@@ -122,7 +133,8 @@ type internal FSharpWorkspaceServiceFactory
                                     enableBackgroundItemKeyStoreAndSemanticClassification = true,
                                     enablePartialTypeChecking = true,
                                     enableParallelCheckingWithSignatureFiles = enableParallelCheckingWithSignatureFiles,
-                                    parallelReferenceResolution = enableParallelReferenceResolution)
+                                    parallelReferenceResolution = enableParallelReferenceResolution,
+                                    getSource = getSource)
                             checker
                     checkerSingleton <- Some checker
             )
