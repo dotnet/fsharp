@@ -22,6 +22,6 @@ module ListLiterals =
     let ``List literals have no limited length in langversion preview`` compilation =
         compilation
         |> asFsx
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> compile
         |> shouldSucceed

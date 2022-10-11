@@ -1,0 +1,167 @@
+<linker>
+  <!--
+    Attributes listed below here should be behind the 'System.AggressiveAttributeTrimming' feature switch, which
+    is only enabled by default on app models that need as much size savings as possible.
+  -->
+  <assembly fullname="FSharp.Core" feature="System.AggressiveAttributeTrimming" featurevalue="true">
+    <!-- Microsoft.FSharp.Core -->
+    <type fullname="Microsoft.FSharp.Core.AbstractClassAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.AutoOpenAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.AutoSerializableAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.ClassAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CLIEventAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CLIMutableAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.ComparisonConditionalOnAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CompilationArgumentCountsAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CompilationSourceNameAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CompiledNameAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CompilerMessageAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CustomComparisonAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CustomEqualityAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CustomOperationAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.DefaultAugmentationAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.DefaultValueAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.EntryPointAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.EqualityConditionalOnAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.ExperimentalAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.FSharpInterfaceDataVersionAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.GeneralizableValueAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.InlineIfLambdaAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.FSharpInterfaceDataVersionLiteralAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.MeasureAnnotatedAbbreviationAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.MeasureAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.NoComparisonAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.NoDynamicInvocationAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.NoEqualityAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.OptionalArgumentAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.ProjectionParameterAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.ReferenceEqualityAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.ReflectedDefinitionAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.RequireQualifiedAccessAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.RequiresExplicitTypeArgumentsAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.SealedAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.StructAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.StructuralComparisonAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.StructuralEqualityAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.UnverifiableAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.ValueAsStaticPropertyAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.VolatileFieldAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+
+    <!-- The following attributes are accessed by FSharp.Core at runtime.
+    Removing them would cause behavior changes but the feature switch allows them. -->
+    <type fullname="Microsoft.FSharp.Core.AllowNullLiteralAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CompilationMappingAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CompilationRepresentationAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.StructuredFormatDisplayAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+
+    <!-- Microsoft.FSharp.Core.CompilerServices -->
+    <type fullname="Microsoft.FSharp.Core.CompilerServices.NoEagerConstraintApplicationAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CompilerServices.TypeProviderAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CompilerServices.TypeProviderDefinitionLocationAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CompilerServices.TypeProviderEditorHideMethodsAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+    <type fullname="Microsoft.FSharp.Core.CompilerServices.TypeProviderXmlDocAttribute">
+      <attribute internal="RemoveAttributeInstances" />
+    </type>
+  </assembly>
+</linker>
