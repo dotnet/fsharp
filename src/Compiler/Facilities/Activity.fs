@@ -17,7 +17,7 @@ module Activity =
 
         match activity with
         | null -> ()
-        | activity -> 
+        | activity ->
             for key, value in tags do
                 activity.AddTag(key, value) |> ignore
 
