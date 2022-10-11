@@ -12,7 +12,7 @@ module Activity =
     let private activitySourceName = "fsc"
     let private activitySource = new ActivitySource(activitySourceName)
 
-    let start (name:string) (tags: (string * string) seq) : IDisposable =
+    let start (name: string) (tags: (string * string) seq) : IDisposable =
         let activity = activitySource.StartActivity(name)
 
         match activity with
@@ -23,4 +23,4 @@ module Activity =
 
         activity
 
-    let startNoTags (name:string) : IDisposable = activitySource.StartActivity(name)
+    let startNoTags (name: string) : IDisposable = activitySource.StartActivity(name)
