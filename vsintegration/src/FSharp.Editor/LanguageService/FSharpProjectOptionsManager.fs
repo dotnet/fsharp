@@ -182,7 +182,7 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
                 let! scriptProjectOptions, _ =
                     checker.GetProjectOptionsFromScript(document.FilePath,
                         sourceText.ToFSharpSourceText(),
-                        SessionsProperties.fsiPreview,
+                        previewEnabled=SessionsProperties.fsiPreview,
                         assumeDotNetFramework=not SessionsProperties.fsiUseNetCore,
                         userOpName=userOpName)
 
