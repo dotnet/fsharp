@@ -3521,6 +3521,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let dummyScriptFileName = "input.fsx"
 
+    let eagerFormat (diag : PhasedDiagnostic) = diag.EagerlyFormatCore true
+
     interface IDisposable with
         member _.Dispose() =
             (tcImports :> IDisposable).Dispose()
@@ -3639,7 +3641,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).diagnosticsOptions
-        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions)
+        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions, eagerFormat)
         fsiInteractionProcessor.EvalExpression(ctok, code, dummyScriptFileName, diagnosticsLogger)
         |> commitResultNonThrowing errorOptions dummyScriptFileName diagnosticsLogger
 
@@ -3661,7 +3663,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         let cancellationToken = defaultArg cancellationToken CancellationToken.None
 
         let errorOptions = TcConfig.Create(tcConfigB,validate = false).diagnosticsOptions
-        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions)
+        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions, eagerFormat)
         fsiInteractionProcessor.EvalInteraction(ctok, code, dummyScriptFileName, diagnosticsLogger, cancellationToken)
         |> commitResultNonThrowing errorOptions "input.fsx" diagnosticsLogger
 
@@ -3682,7 +3684,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         let ctok = AssumeCompilationThreadWithoutEvidence()
 
         let errorOptions = TcConfig.Create(tcConfigB, validate = false).diagnosticsOptions
-        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions)
+        let diagnosticsLogger = CompilationDiagnosticLogger("EvalInteraction", errorOptions, eagerFormat)
         fsiInteractionProcessor.EvalScript(ctok, filePath, diagnosticsLogger)
         |> commitResultNonThrowing errorOptions filePath diagnosticsLogger
         |> function Choice1Of2 _, errs -> Choice1Of2 (), errs | Choice2Of2 exn, errs -> Choice2Of2 exn, errs
