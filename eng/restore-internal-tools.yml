@@ -5,7 +5,6 @@ steps:
       forceReinstallCredentialProvider: true
 
   - script: $(Build.SourcesDirectory)/eng/Build.cmd
-            -restore
             -ci
             -projects $(Build.SourcesDirectory)/eng/common/internal/Tools.csproj
             /bl:$(Build.SourcesDirectory)/artifacts/log/$(_BuildConfig)/RestoreInternal.binlog
