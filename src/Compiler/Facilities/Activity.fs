@@ -4,6 +4,7 @@ namespace FSharp.Compiler.Diagnostics
 
 open System
 open System.Diagnostics
+open Internal.Utilities.Library
 
 [<RequireQualifiedAccess>]
 module Activity =
@@ -12,12 +13,14 @@ module Activity =
     let private activitySource = new ActivitySource(activitySourceName)
 
     let start name (tags: (string * string) seq) : IDisposable =
-        match activitySource.StartActivity(name) |> Option.ofObj with
-        | Some activity ->
+        let activity = activitySource.StartActivity(name)
+
+        match activity with
+        | null -> ()
+        | activity -> 
             for key, value in tags do
                 activity.AddTag(key, value) |> ignore
 
-            activity :> IDisposable
-        | None -> null
+        activity
 
     let startNoTags name : IDisposable = activitySource.StartActivity(name)
