@@ -88,51 +88,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to CodeLens.
-        /// </summary>
-        public static string CodeLens {
-            get {
-                return ResourceManager.GetString("CodeLens", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Annotation prefix.
-        /// </summary>
-        public static string CodeLens_Prefix {
-            get {
-                return ResourceManager.GetString("CodeLens_Prefix", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Show annotations to the right instead of above the line.
-        /// </summary>
-        public static string CodeLens_Replace_LineLens {
-            get {
-                return ResourceManager.GetString("CodeLens_Replace_LineLens", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Enable CodeLens (Experimental).
-        /// </summary>
-        public static string CodeLens_Switch {
-            get {
-                return ResourceManager.GetString("CodeLens_Switch", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Use colors in annotations.
-        /// </summary>
-        public static string CodeLens_UseColors {
-            get {
-                return ResourceManager.GetString("CodeLens_UseColors", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Completion Lists.
         /// </summary>
         public static string Completion_Lists {
@@ -264,6 +219,42 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Language_Service_Performance {
             get {
                 return ResourceManager.GetString("Language_Service_Performance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Lens.
+        /// </summary>
+        public static string Lens {
+            get {
+                return ResourceManager.GetString("Lens", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Annotation prefix.
+        /// </summary>
+        public static string Lens_Prefix {
+            get {
+                return ResourceManager.GetString("Lens_Prefix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enable Lens (Experimental).
+        /// </summary>
+        public static string Lens_Switch {
+            get {
+                return ResourceManager.GetString("Lens_Switch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use colors in annotations.
+        /// </summary>
+        public static string Lens_UseColors {
+            get {
+                return ResourceManager.GetString("Lens_UseColors", resourceCulture);
             }
         }
         
