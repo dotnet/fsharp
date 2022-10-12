@@ -265,3 +265,6 @@ type SynMemberGetSetTrivia =
 
 [<NoEquality; NoComparison>]
 type SynArgPatsNamePatPairsTrivia = { ParenRange: range }
+
+[<NoEquality; NoComparison>]
+type SynTypeOrTrivia = { OrKeyword: range }
