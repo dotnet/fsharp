@@ -13,7 +13,7 @@ type WriteCodeFragmentFSharpTests() =
     let verifyAttribute (attributeName:string) (parameters:(string*string) list) (expectedAttributeText:string) =
         let taskItem = TaskItem(attributeName)
         parameters |> List.iter (fun (key, value) -> taskItem.SetMetadata(key, value))
-        let actualAttributeText = WriteCodeFragment.GenerateAttribute (taskItem :> ITaskItem, "f#")
+        let actualAttributeText = (new WriteCodeFragment()).GenerateAttribute (taskItem :> ITaskItem, "f#")
         let fullExpectedAttributeText = "[<assembly: " + expectedAttributeText + ">]"
         Assert.AreEqual(fullExpectedAttributeText, actualAttributeText)
 
@@ -43,7 +43,7 @@ type WriteCodeFragmentCSharpTests() =
     let verifyAttribute (attributeName:string) (parameters:(string*string) list) (expectedAttributeText:string) =
         let taskItem = TaskItem(attributeName)
         parameters |> List.iter (fun (key, value) -> taskItem.SetMetadata(key, value))
-        let actualAttributeText = WriteCodeFragment.GenerateAttribute (taskItem :> ITaskItem, "c#")
+        let actualAttributeText = (new WriteCodeFragment()).GenerateAttribute (taskItem :> ITaskItem, "c#")
         let fullExpectedAttributeText = "[assembly: " + expectedAttributeText + "]"
         Assert.AreEqual(fullExpectedAttributeText, actualAttributeText)
 
@@ -75,7 +75,7 @@ type WriteCodeFragmentVisualBasicTests() =
     let verifyAttribute (attributeName:string) (parameters:(string*string) list) (expectedAttributeText:string) =
         let taskItem = TaskItem(attributeName)
         parameters |> List.iter (fun (key, value) -> taskItem.SetMetadata(key, value))
-        let actualAttributeText = WriteCodeFragment.GenerateAttribute (taskItem :> ITaskItem, "vb")
+        let actualAttributeText = (new WriteCodeFragment()).GenerateAttribute (taskItem :> ITaskItem, "vb")
         let fullExpectedAttributeText = "<Assembly: " + expectedAttributeText + ">"
         Assert.AreEqual(fullExpectedAttributeText, actualAttributeText)
 
