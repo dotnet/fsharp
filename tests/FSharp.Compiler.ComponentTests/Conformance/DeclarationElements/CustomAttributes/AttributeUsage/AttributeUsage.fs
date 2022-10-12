@@ -79,8 +79,8 @@ module AttributeUsage =
         |> shouldFail
         |> withDiagnostics [
             (Error 842, Line 21, Col 21, Line 21, Col 22, "This attribute is not valid for use on this language element")
-            (Error 842, Line 24, Col 28, Line 24, Col 29, "This attribute is not valid for use on this language element")
-            (Error 842, Line 27, Col 15, Line 27, Col 16, "This attribute is not valid for use on this language element")
+            (Error 842, Line 24, Col 21, Line 24, Col 29, "This attribute is not valid for use on this language element")
+            (Error 842, Line 27, Col 7, Line 27, Col 16, "This attribute is not valid for use on this language element")
         ]
 
     // SOURCE=E_AttributeTargets02.fs					# E_AttributeTargets02.fs
@@ -90,9 +90,9 @@ module AttributeUsage =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 842, Line 14, Col 17, Line 14, Col 34, "This attribute is not valid for use on this language element")
-            (Error 842, Line 24, Col 14, Line 24, Col 29, "This attribute is not valid for use on this language element")
-            (Error 842, Line 29, Col 25, Line 29, Col 40, "This attribute is not valid for use on this language element")
+            (Error 842, Line 14, Col 7, Line 14, Col 34, "This attribute is not valid for use on this language element")
+            (Error 842, Line 24, Col 7, Line 24, Col 36, "This attribute is not valid for use on this language element")
+            (Error 842, Line 29, Col 15, Line 29, Col 47, "This attribute is not valid for use on this language element")
         ]
 
     // SOURCE=E_ConditionalAttribute.fs SCFLAGS="--test:ErrorRanges"	# E_ConditionalAttribute.fs
