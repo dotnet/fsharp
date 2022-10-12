@@ -1462,7 +1462,7 @@ let CheckMultipleInputsInParallel
         let partialResults, (tcState, _) =
             let sequentialFiles, parallelFiles =
                 List.take MAGIC_NUMBER inputsWithLoggers, List.skip MAGIC_NUMBER inputsWithLoggers
-            
+
             let checkOneInput tcState priorErrors input logger =
                 use _ = UseDiagnosticsLogger logger
 
@@ -1496,9 +1496,30 @@ let CheckMultipleInputsInParallel
                     checkOneInput sequentialTcState sequentialPriorErrors input logger
                 )
                 |> fun results ->
-                    let partialResult = Array.map fst results |> List.ofArray
-                    let _, (tcState, priorErrors) = Array.head results
-                    partialResult, (tcState, priorErrors)
+                    let partialResults = Array.map fst results |> List.ofArray
+                    let tcState =
+                        (sequentialTcState, partialResults)
+                        ||> List.fold(fun tcState partialResult ->
+                            match partialResult with
+                            | Choice1Of2 (tcEnvAtEnd, _topAttrs, Some implFile, ccuSigForFile) ->
+                                AddCheckResultsToTcState(
+                                    tcGlobals,
+                                    tcImports.GetImportMap(),
+                                    false,
+                                    prefixPathOpt,
+                                    TcResultsSink.NoSink,
+                                    tcEnvAtEnd,
+                                    implFile.QualifiedNameOfFile,
+                                    ccuSigForFile
+                                ) tcState
+                                |> snd
+                            | _ ->
+                                // No signature files for now
+                                tcState
+                        )
+
+                    let priorErrors = Array.fold (fun acc (_, (_, priorError)) -> acc || priorError) sequentialPriorErrors results
+                    partialResults, (tcState, priorErrors)
 
             [ yield! sequentialPartialResults; yield! parallelPartialResults ], (parallelTcState, parallelPriorErrors)
 
