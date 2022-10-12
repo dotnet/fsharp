@@ -4363,7 +4363,7 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
         TcTypeOrMeasure kindOpt cenv newOk checkConstraints occ iwsam env tpenv innerType
     
     | SynType.Or(range = m) ->
-        error(Error((FSComp.SR.tcOrTypeInvalidInDeclaration()), m))
+        error(Error((FSComp.SR.tcSynTypeOrInvalidInDeclaration()), m))
 
 and CheckIWSAM (cenv: cenv) (env: TcEnv) checkConstraints iwsam m tcref =
     let g = cenv.g

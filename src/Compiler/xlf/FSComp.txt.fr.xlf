@@ -912,11 +912,6 @@
         <target state="translated">La valeur « {0} » n’est pas une fonction et ne prend pas en charge la notation d’index.</target>
         <note />
       </trans-unit>
-      <trans-unit id="tcOrTypeInvalidInDeclaration">
-        <source>Or type variables are not permitted in this declaration</source>
-        <target state="new">Or type variables are not permitted in this declaration</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcOtherThenAdjacentListArgumentNeedsAdjustment">
         <source>The syntax 'expr1[expr2]' is ambiguous when used as an argument. See https://aka.ms/fsharp-index-notation. If you intend indexing or slicing then you must use 'expr1.[expr2]' in argument position. If calling a function with multiple curried arguments, add a space between them, e.g. 'someFunction expr1 [expr2]'.</source>
         <target state="translated">La syntaxe « expr1[expr2] » est ambiguë lorsqu’elle est utilisée comme argument. Voir https://aka.ms/fsharp-index-notation. Si vous avez l’intention d’indexer ou de découper, vous devez utiliser « expr1.[expr2] » en position d’argument. Si vous appelez une fonction avec plusieurs arguments codés, ajoutez un espace entre eux, par exemple « someFunction expr1 [expr2] ».</target>
@@ -980,6 +975,11 @@
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">Cette expression convertit implicitement le type « {0} » en type « {1} ». Voir https://aka.ms/fsharp-implicit-convs.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcSynTypeOrInvalidInDeclaration">
+        <source>SynType.Or is not permitted in this declaration</source>
+        <target state="new">SynType.Or is not permitted in this declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
