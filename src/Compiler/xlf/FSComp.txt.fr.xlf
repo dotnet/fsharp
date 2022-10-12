@@ -187,14 +187,14 @@
         <target state="translated">Notation expr[idx] pour l’indexation et le découpage</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
-        <source>static abstract interface members</source>
-        <target state="translated">membres d’interface abstraite statiques</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInitProperties">
         <source>support for consuming init properties</source>
         <target state="translated">prise en charge de la consommation des propriétés init</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
+        <source>static abstract interface members</source>
+        <target state="translated">membres d’interface abstraite statiques</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -370,6 +370,11 @@
       <trans-unit id="invalidXmlDocPosition">
         <source>XML comment is not placed on a valid language element.</source>
         <target state="translated">Le commentaire XML n'est pas placé dans un élément valide du langage.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="keywordDescriptionAnd">
+        <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
+        <target state="new">Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionConst">
@@ -607,6 +612,11 @@
         <target state="new">Expected a pattern after this point</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectingExpressionInTuple">
+        <source>Expecting expression</source>
+        <target state="translated"> Expression attendue</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsExpectingPatternInTuple">
         <source>Expecting pattern</source>
         <target state="new">Expecting pattern</target>
@@ -620,11 +630,6 @@
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
         <target state="translated">Expression d’opérateur incomplète (exemple a^b) ou appel de type qualifié (exemple : ^T.Name)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsExpectingExpressionInTuple">
-        <source>Expecting expression</source>
-        <target state="translated"> Expression attendue</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -7550,11 +7555,6 @@
       <trans-unit id="keywordDescriptionAbstract">
         <source>Indicates a method that either has no implementation in the type in which it is declared or that is virtual and has a default implementation.</source>
         <target state="translated">Indique une méthode qui n'a aucune implémentation dans le type dans lequel elle est déclarée, ou qui est virtuelle avec une implémentation par défaut.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="keywordDescriptionAnd">
-        <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
-        <target state="translated">Utilisé dans les liaisons mutuellement récursives, dans les déclarations de propriété et avec plusieurs contraintes sur des paramètres génériques.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionAs">
