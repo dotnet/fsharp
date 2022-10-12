@@ -321,4 +321,3 @@ type SynFieldTrivia =
     static member Zero: SynFieldTrivia = { LeadingKeyword = None }
 
 type SynTypeOrTrivia = { OrKeyword: range }
-

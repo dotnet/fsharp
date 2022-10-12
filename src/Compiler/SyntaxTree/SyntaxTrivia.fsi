@@ -394,7 +394,6 @@ type SynArgPatsNamePatPairsTrivia =
         ParenRange: range
     }
 
-
 /// Represents additional information for SynMemberDefn.AutoProperty
 [<NoEquality; NoComparison>]
 type SynMemberDefnAutoPropertyTrivia =
@@ -429,4 +428,3 @@ type SynTypeOrTrivia =
         /// The syntax range of the `or` keyword
         OrKeyword: range
     }
-
