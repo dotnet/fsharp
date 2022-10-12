@@ -374,7 +374,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
-        <target state="new">Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</target>
+        <target state="translated">Wird in gegenseitig rekursiven Bindungen, in Eigenschaftendeklarationen und bei mehreren Beschränkungen in Bezug auf generische Parameter verwendet.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionConst">
