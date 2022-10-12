@@ -2037,10 +2037,7 @@ module ParsedInput =
                     result <- Some(oldScope, oldPos, true)
                 | Some (oldScope, oldPos, _), _ ->
                     match kind, oldScope.Kind with
-                    | (Namespace
-                      | NestedModule
-                      | TopModule),
-                      OpenDeclaration
+                    | (Namespace | NestedModule | TopModule), OpenDeclaration
                     | _ when oldPos.Line <= line ->
                         result <-
                             Some(
