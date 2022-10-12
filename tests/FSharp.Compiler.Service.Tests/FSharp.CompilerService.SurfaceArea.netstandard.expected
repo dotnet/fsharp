@@ -9826,8 +9826,13 @@ FSharp.Compiler.SyntaxTrivia.SynTypeFunTrivia: FSharp.Compiler.Text.Range get_Ar
 FSharp.Compiler.SyntaxTrivia.SynTypeFunTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynTypeFunTrivia: Void .ctor(FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia
+FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: Boolean Equals(FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia)
+FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: Boolean Equals(System.Object)
+FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: FSharp.Compiler.Text.Range OrKeyword
 FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: FSharp.Compiler.Text.Range get_OrKeyword()
+FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: Int32 GetHashCode()
+FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: System.String ToString()
 FSharp.Compiler.SyntaxTrivia.SynTypeOrTrivia: Void .ctor(FSharp.Compiler.Text.Range)
 FSharp.Compiler.SyntaxTrivia.SynUnionCaseTrivia
