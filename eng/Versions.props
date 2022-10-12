@@ -33,7 +33,7 @@
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>42</FCSMajorVersion>
     <FCSMinorVersion>7</FCSMinorVersion>
-    <FCSBuildVersion>100</FCSBuildVersion>
+    <FCSBuildVersion>200</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
     <FSharpCompilerServiceVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion).$(FCSRevisionVersion)</FSharpCompilerServiceVersion>
@@ -56,7 +56,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <VSMajorVersion>17</VSMajorVersion>
-    <VSMinorVersion>3</VSMinorVersion>
+
+    <VSMinorVersion>5</VSMinorVersion>
+
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
@@ -107,7 +109,6 @@
     <MicrosoftCodeAnalysisEditorFeaturesWpfVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesWpfVersion>
     <MicrosoftCodeAnalysisExternalAccessFSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
     <MicrosoftCodeAnalysisVersion>$(RoslynVersion)</MicrosoftCodeAnalysisVersion>
-    <MicrosoftCodeAnalysisWorkspacesCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisWorkspacesCommonVersion>
     <MicrosoftCodeAnalysisCSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(RoslynVersion)</MicrosoftVisualStudioLanguageServicesVersion>
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
