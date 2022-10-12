@@ -175,3 +175,33 @@ type X =
         ]) ]) ])) ->
         assertRange (4, 9) (4, 11) mVar
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``SynType.Or with appType on the right hand side`` () =
+    let parseResults =
+        getParseResults
+             """
+let inline f (x: 'T) = ((^T or int) : (static member A: int) ())
+ """
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Let(bindings = [
+            SynBinding(expr =
+                    SynExpr.Paren(expr =
+                        SynExpr.TraitCall(supportTys =
+                            SynType.Paren(
+                                SynType.Or(
+                                    SynType.Var(range = mVar),
+                                    (SynType.LongIdent _ as appType),
+                                    mOrType,
+                                    { OrKeyword = mOrWord }),
+                            mParen))
+                    ))
+        ]) ]) ])) ->
+        assertRange (2, 25) (2,27) mVar
+        assertRange (2, 28) (2, 30) mOrWord
+        assertRange (2, 31) (2, 34) appType.Range
+        assertRange (2,25) (2, 34) mOrType
+        assertRange (2,24) (2, 35) mParen
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
