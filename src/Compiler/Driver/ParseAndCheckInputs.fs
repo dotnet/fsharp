@@ -4,6 +4,7 @@
 module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System
+open System.Collections.Immutable
 open System.IO
 open System.Collections.Generic
 
@@ -1463,63 +1464,96 @@ let CheckMultipleInputsInParallel
             let sequentialFiles, parallelFiles =
                 List.take MAGIC_NUMBER inputsWithLoggers, List.skip MAGIC_NUMBER inputsWithLoggers
 
-            let checkOneInput tcState priorErrors input logger =
-                use _ = UseDiagnosticsLogger logger
-
-                let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
-
-                let partialResult, tcState =
-                    CheckOneInputAux(
-                        checkForErrors2,
-                        tcConfig,
-                        tcImports,
-                        tcGlobals,
-                        prefixPathOpt,
-                        TcResultsSink.NoSink,
-                        tcState,
-                        input,
-                        true
-                    )
-                    |> Cancellable.runWithoutCancellation
-
-                let priorErrors = checkForErrors2 ()
-                partialResult, (tcState, priorErrors)
-            
             let sequentialPartialResults, (sequentialTcState, sequentialPriorErrors) =
                 ((tcState, priorErrors), sequentialFiles)
                 ||> List.mapFold (fun (tcState, priorErrors) (input, logger) ->
-                    checkOneInput tcState priorErrors input logger)
+                    use _ = UseDiagnosticsLogger logger
+                    let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
+
+                    let partialResult, tcState =
+                        CheckOneInputAux(
+                            checkForErrors2,
+                            tcConfig,
+                            tcImports,
+                            tcGlobals,
+                            prefixPathOpt,
+                            TcResultsSink.NoSink,
+                            tcState,
+                            input,
+                            true
+                        )
+                        |> Cancellable.runWithoutCancellation
+
+                    let priorErrors = checkForErrors2 ()
+                    partialResult, (tcState, priorErrors)
+                )
+
+            let amap = tcImports.GetImportMap()
+            let conditionalDefines =
+                if tcConfig.noConditionalErasure then
+                    None
+                else
+                    Some tcConfig.conditionalDefines
 
             let parallelPartialResults, (parallelTcState, parallelPriorErrors) =
                 List.toArray parallelFiles
                 |> ArrayParallel.map (fun (input, logger) ->
-                    checkOneInput sequentialTcState sequentialPriorErrors input logger
+                    cancellable {
+                        printfn "Start with %s" input.FileName
+                        // Nojaf: this is taken mostly from CheckOneInputAux, the case where the impl has no signature file
+
+                        
+                        let file =
+                            match input with
+                            | ParsedInput.ImplFile file -> file
+                            | ParsedInput.SigFile _ -> failwith "not expecting a signature file for now"
+                        
+                        let tcSink = TcResultsSink.NoSink
+                        
+                        // Typecheck the implementation file
+                        let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
+                            CheckOneImplFile(
+                                tcGlobals,
+                                amap,
+                                sequentialTcState.tcsCcu,
+                                sequentialTcState.tcsImplicitOpenDeclarations,
+                                checkForErrors,
+                                conditionalDefines,
+                                TcResultsSink.NoSink,
+                                tcConfig.internalTestSpanStackReferring,
+                                sequentialTcState.tcsTcImplEnv,
+                                None,
+                                file
+                            )
+
+                        return (fun tcState ->
+                            ()
+
+                            let tcState =
+                                { tcState with
+                                    tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                                }
+
+                            let ccuSigForFile, updateTcState =
+                                AddCheckResultsToTcState
+                                    (tcGlobals, amap, false, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, input.QualifiedName, implFile.Signature)
+                                    tcState
+
+                            Choice1Of2(tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), logger, updateTcState
+                        )
+                    }
+                    |> Cancellable.runWithoutCancellation
                 )
                 |> fun results ->
-                    let partialResults = Array.map fst results |> List.ofArray
-                    let tcState =
-                        (sequentialTcState, partialResults)
-                        ||> List.fold(fun tcState partialResult ->
-                            match partialResult with
-                            | Choice1Of2 (tcEnvAtEnd, _topAttrs, Some implFile, ccuSigForFile) ->
-                                AddCheckResultsToTcState(
-                                    tcGlobals,
-                                    tcImports.GetImportMap(),
-                                    false,
-                                    prefixPathOpt,
-                                    TcResultsSink.NoSink,
-                                    tcEnvAtEnd,
-                                    implFile.QualifiedNameOfFile,
-                                    ccuSigForFile
-                                ) tcState
-                                |> snd
-                            | _ ->
-                                // No signature files for now
-                                tcState
-                        )
+                        ()
 
-                    let priorErrors = Array.fold (fun acc (_, (_, priorError)) -> acc || priorError) sequentialPriorErrors results
-                    partialResults, (tcState, priorErrors)
+                        ((sequentialTcState, sequentialPriorErrors, ImmutableQueue.Empty), results)
+                        ||> Array.fold (fun (tcState, priorErrors, partialResults) result ->
+                            let partialResult, logger, nextTcState = result tcState
+                            let priorErrors = priorErrors || (logger.ErrorCount > 0)
+                            (nextTcState, priorErrors, partialResults.Enqueue partialResult)
+                        )
+                        |> fun (tcState, priorErrors, partialResults) -> Seq.toList partialResults, (tcState, priorErrors)
 
             [ yield! sequentialPartialResults; yield! parallelPartialResults ], (parallelTcState, parallelPriorErrors)
 
