@@ -384,3 +384,11 @@ type SynArgPatsNamePatPairsTrivia =
         /// The syntax range from the beginning of the `(` token till the end of the `)` token.
         ParenRange: range
     }
+
+/// Represents additional information for SynType.Or
+[<NoEquality; NoComparison>]
+type SynTypeOrTrivia =
+    {
+        /// The syntax range of the `or` keyword
+        OrKeyword: range
+    }
