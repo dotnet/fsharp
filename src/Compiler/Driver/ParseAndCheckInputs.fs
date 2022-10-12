@@ -1454,12 +1454,16 @@ let CheckMultipleInputsInParallel
         // somewhere in the files processed prior to each one, or in the processing of this particular file.
         let priorErrors = checkForErrors ()
 
+        let MAGIC_NUMBER = 4
+        
         // Do the first linear phase, checking all signatures and any implementation files that don't have a signature.
         // Implementation files that do have a signature will result in a Choice2Of2 indicating to next do some of the
         // checking in parallel.
         let partialResults, (tcState, _) =
-            ((tcState, priorErrors), inputsWithLoggers)
-            ||> List.mapFold (fun (tcState, priorErrors) (input, logger) ->
+            let sequentialFiles, parallelFiles =
+                List.take MAGIC_NUMBER inputsWithLoggers, List.skip MAGIC_NUMBER inputsWithLoggers
+            
+            let checkOneInput tcState priorErrors input logger =
                 use _ = UseDiagnosticsLogger logger
 
                 let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
@@ -1479,7 +1483,24 @@ let CheckMultipleInputsInParallel
                     |> Cancellable.runWithoutCancellation
 
                 let priorErrors = checkForErrors2 ()
-                partialResult, (tcState, priorErrors))
+                partialResult, (tcState, priorErrors)
+            
+            let sequentialPartialResults, (sequentialTcState, sequentialPriorErrors) =
+                ((tcState, priorErrors), sequentialFiles)
+                ||> List.mapFold (fun (tcState, priorErrors) (input, logger) ->
+                    checkOneInput tcState priorErrors input logger)
+
+            let parallelPartialResults, (parallelTcState, parallelPriorErrors) =
+                List.toArray parallelFiles
+                |> ArrayParallel.map (fun (input, logger) ->
+                    checkOneInput sequentialTcState sequentialPriorErrors input logger
+                )
+                |> fun results ->
+                    let partialResult = Array.map fst results |> List.ofArray
+                    let _, (tcState, priorErrors) = Array.head results
+                    partialResult, (tcState, priorErrors)
+
+            [ yield! sequentialPartialResults; yield! parallelPartialResults ], (parallelTcState, parallelPriorErrors)
 
         // Do the parallel phase, checking all implementation files that did have a signature, in parallel.
         let results, createsGeneratedProvidedTypesFlags =
