@@ -24,7 +24,7 @@ type MyCustomType<'T> with
                                  """Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.""")
 
     [<Fact>]
-    let ``Exception type in non-recursive namespace show give a warning when augmented externally``() =
+    let ``Exception type in non-recursive namespace gives a warning when augmented externally``() =
         FSharp """
 namespace AugmentationsTest
 type MyCustomExcType<'T>() = 
