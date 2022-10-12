@@ -606,7 +606,7 @@ namespace Microsoft.FSharp.Core
                 then TypeNullnessSemantics_NullNever else
                 if not (typeof<'T>.IsDefined(typeof<CompilationMappingAttribute>, false))
                 then TypeNullnessSemantics_NullIsExtraValue
-                elif typeof<'T>.Equals(typeof<unit>) then 
+                elif Type.op_Equality (typeof<'T>, typeof<unit>) then 
                     TypeNullnessSemantics_NullTrueValue
                 elif typeof<Delegate>.IsAssignableFrom(typeof<'T>) then 
                     TypeNullnessSemantics_NullIsExtraValue
@@ -2098,22 +2098,22 @@ namespace Microsoft.FSharp.Core
         type FastGenericEqualityComparerTable<'T>() = 
             static let f : IEqualityComparer<'T> = 
                 match typeof<'T> with 
-                | ty when ty.Equals(typeof<bool>)       -> unboxPrim (box BoolIEquality)
-                | ty when ty.Equals(typeof<byte>)       -> unboxPrim (box ByteIEquality)
-                | ty when ty.Equals(typeof<int32>)      -> unboxPrim (box Int32IEquality)
-                | ty when ty.Equals(typeof<uint32>)     -> unboxPrim (box UInt32IEquality)
-                | ty when ty.Equals(typeof<char>)       -> unboxPrim (box CharIEquality)
-                | ty when ty.Equals(typeof<sbyte>)      -> unboxPrim (box SByteIEquality)
-                | ty when ty.Equals(typeof<int16>)      -> unboxPrim (box Int16IEquality)
-                | ty when ty.Equals(typeof<int64>)      -> unboxPrim (box Int64IEquality)
-                | ty when ty.Equals(typeof<nativeint>)  -> unboxPrim (box IntPtrIEquality)
-                | ty when ty.Equals(typeof<uint16>)     -> unboxPrim (box UInt16IEquality)
-                | ty when ty.Equals(typeof<uint64>)     -> unboxPrim (box UInt64IEquality)
-                | ty when ty.Equals(typeof<unativeint>) -> unboxPrim (box UIntPtrIEquality)
-                | ty when ty.Equals(typeof<float>)      -> unboxPrim (box FloatIEquality)
-                | ty when ty.Equals(typeof<float32>)    -> unboxPrim (box Float32IEquality)
-                | ty when ty.Equals(typeof<decimal>)    -> unboxPrim (box DecimalIEquality)
-                | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringIEquality)
+                | ty when Type.op_Equality(ty, typeof<bool>)       -> unboxPrim (box BoolIEquality)
+                | ty when Type.op_Equality(ty, typeof<byte>)       -> unboxPrim (box ByteIEquality)
+                | ty when Type.op_Equality(ty, typeof<int32>)      -> unboxPrim (box Int32IEquality)
+                | ty when Type.op_Equality(ty, typeof<uint32>)     -> unboxPrim (box UInt32IEquality)
+                | ty when Type.op_Equality(ty, typeof<char>)       -> unboxPrim (box CharIEquality)
+                | ty when Type.op_Equality(ty, typeof<sbyte>)      -> unboxPrim (box SByteIEquality)
+                | ty when Type.op_Equality(ty, typeof<int16>)      -> unboxPrim (box Int16IEquality)
+                | ty when Type.op_Equality(ty, typeof<int64>)      -> unboxPrim (box Int64IEquality)
+                | ty when Type.op_Equality(ty, typeof<nativeint>)  -> unboxPrim (box IntPtrIEquality)
+                | ty when Type.op_Equality(ty, typeof<uint16>)     -> unboxPrim (box UInt16IEquality)
+                | ty when Type.op_Equality(ty, typeof<uint64>)     -> unboxPrim (box UInt64IEquality)
+                | ty when Type.op_Equality(ty, typeof<unativeint>) -> unboxPrim (box UIntPtrIEquality)
+                | ty when Type.op_Equality(ty, typeof<float>)      -> unboxPrim (box FloatIEquality)
+                | ty when Type.op_Equality(ty, typeof<float32>)    -> unboxPrim (box Float32IEquality)
+                | ty when Type.op_Equality(ty, typeof<decimal>)    -> unboxPrim (box DecimalIEquality)
+                | ty when Type.op_Equality(ty, typeof<string>)     -> unboxPrim (box StringIEquality)
                 | _ -> MakeGenericEqualityComparer<'T>()
             static member Function : IEqualityComparer<'T> = f
 
@@ -2193,42 +2193,42 @@ namespace Microsoft.FSharp.Core
             // REVIEW: in a future version we could extend this to include additional types 
             static let fCanBeNull : IComparer<'T>  = 
                 match typeof<'T> with 
-                | ty when ty.Equals(typeof<nativeint>)  -> unboxPrim (box IntPtrComparer)
-                | ty when ty.Equals(typeof<unativeint>) -> unboxPrim (box UIntPtrComparer)
-                | ty when ty.Equals(typeof<byte>)       -> null    
-                | ty when ty.Equals(typeof<char>)       -> null    
-                | ty when ty.Equals(typeof<sbyte>)      -> null     
-                | ty when ty.Equals(typeof<int16>)      -> null    
-                | ty when ty.Equals(typeof<int32>)      -> null    
-                | ty when ty.Equals(typeof<int64>)      -> null    
-                | ty when ty.Equals(typeof<uint16>)     -> null    
-                | ty when ty.Equals(typeof<uint32>)     -> null    
-                | ty when ty.Equals(typeof<uint64>)     -> null    
-                | ty when ty.Equals(typeof<float>)      -> null    
-                | ty when ty.Equals(typeof<float32>)    -> null    
-                | ty when ty.Equals(typeof<decimal>)    -> null    
-                | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
-                | ty when ty.Equals(typeof<bool>)       -> null
+                | ty when Type.op_Equality(ty, typeof<nativeint>)  -> unboxPrim (box IntPtrComparer)
+                | ty when Type.op_Equality(ty, typeof<unativeint>) -> unboxPrim (box UIntPtrComparer)
+                | ty when Type.op_Equality(ty, typeof<byte>)       -> null
+                | ty when Type.op_Equality(ty, typeof<char>)       -> null
+                | ty when Type.op_Equality(ty, typeof<sbyte>)      -> null
+                | ty when Type.op_Equality(ty, typeof<int16>)      -> null
+                | ty when Type.op_Equality(ty, typeof<int32>)      -> null
+                | ty when Type.op_Equality(ty, typeof<int64>)      -> null
+                | ty when Type.op_Equality(ty, typeof<uint16>)     -> null
+                | ty when Type.op_Equality(ty, typeof<uint32>)     -> null
+                | ty when Type.op_Equality(ty, typeof<uint64>)     -> null
+                | ty when Type.op_Equality(ty, typeof<float>)      -> null
+                | ty when Type.op_Equality(ty, typeof<float32>)    -> null
+                | ty when Type.op_Equality(ty, typeof<decimal>)    -> null
+                | ty when Type.op_Equality(ty, typeof<string>)     -> unboxPrim (box StringComparer)
+                | ty when Type.op_Equality(ty, typeof<bool>)       -> null
                 | _ -> MakeGenericComparer<'T>()
 
             static let f : IComparer<'T>  = 
                 match typeof<'T> with 
-                | ty when ty.Equals(typeof<byte>)       -> unboxPrim (box ByteComparer)
-                | ty when ty.Equals(typeof<char>)       -> unboxPrim (box CharComparer)
-                | ty when ty.Equals(typeof<sbyte>)      -> unboxPrim (box SByteComparer)
-                | ty when ty.Equals(typeof<int16>)      -> unboxPrim (box Int16Comparer)
-                | ty when ty.Equals(typeof<int32>)      -> unboxPrim (box Int32Comparer)
-                | ty when ty.Equals(typeof<int64>)      -> unboxPrim (box Int64Comparer)
-                | ty when ty.Equals(typeof<nativeint>)  -> unboxPrim (box IntPtrComparer)
-                | ty when ty.Equals(typeof<uint16>)     -> unboxPrim (box UInt16Comparer)
-                | ty when ty.Equals(typeof<uint32>)     -> unboxPrim (box UInt32Comparer)
-                | ty when ty.Equals(typeof<uint64>)     -> unboxPrim (box UInt64Comparer)
-                | ty when ty.Equals(typeof<unativeint>) -> unboxPrim (box UIntPtrComparer)
-                | ty when ty.Equals(typeof<float>)      -> unboxPrim (box FloatComparer)
-                | ty when ty.Equals(typeof<float32>)    -> unboxPrim (box Float32Comparer)
-                | ty when ty.Equals(typeof<decimal>)    -> unboxPrim (box DecimalComparer)
-                | ty when ty.Equals(typeof<string>)     -> unboxPrim (box StringComparer)
-                | ty when ty.Equals(typeof<bool>)       -> unboxPrim (box BoolComparer)
+                | ty when Type.op_Equality(ty, typeof<byte>)       -> unboxPrim (box ByteComparer)
+                | ty when Type.op_Equality(ty, typeof<char>)       -> unboxPrim (box CharComparer)
+                | ty when Type.op_Equality(ty, typeof<sbyte>)      -> unboxPrim (box SByteComparer)
+                | ty when Type.op_Equality(ty, typeof<int16>)      -> unboxPrim (box Int16Comparer)
+                | ty when Type.op_Equality(ty, typeof<int32>)      -> unboxPrim (box Int32Comparer)
+                | ty when Type.op_Equality(ty, typeof<int64>)      -> unboxPrim (box Int64Comparer)
+                | ty when Type.op_Equality(ty, typeof<nativeint>)  -> unboxPrim (box IntPtrComparer)
+                | ty when Type.op_Equality(ty, typeof<uint16>)     -> unboxPrim (box UInt16Comparer)
+                | ty when Type.op_Equality(ty, typeof<uint32>)     -> unboxPrim (box UInt32Comparer)
+                | ty when Type.op_Equality(ty, typeof<uint64>)     -> unboxPrim (box UInt64Comparer)
+                | ty when Type.op_Equality(ty, typeof<unativeint>) -> unboxPrim (box UIntPtrComparer)
+                | ty when Type.op_Equality(ty, typeof<float>)      -> unboxPrim (box FloatComparer)
+                | ty when Type.op_Equality(ty, typeof<float32>)    -> unboxPrim (box Float32Comparer)
+                | ty when Type.op_Equality(ty, typeof<decimal>)    -> unboxPrim (box DecimalComparer)
+                | ty when Type.op_Equality(ty, typeof<string>)     -> unboxPrim (box StringComparer)
+                | ty when Type.op_Equality(ty, typeof<bool>)       -> unboxPrim (box BoolComparer)
                 | _ -> 
                     // Review: There are situations where we should be able
                     // to return Generic.Comparer<'T>.Default here.
@@ -2450,46 +2450,46 @@ namespace Microsoft.FSharp.Core
         type GenericZeroDynamicImplTable<'T>() = 
             static let result : 'T = 
                 // The dynamic implementation
-                let aty = typeof<'T>
-                if   aty.Equals(typeof<sbyte>)      then unboxPrim<'T> (box 0y)
-                elif aty.Equals(typeof<int16>)      then unboxPrim<'T> (box 0s)
-                elif aty.Equals(typeof<int32>)      then unboxPrim<'T> (box 0)
-                elif aty.Equals(typeof<int64>)      then unboxPrim<'T> (box 0L)
-                elif aty.Equals(typeof<nativeint>)  then unboxPrim<'T> (box 0n)
-                elif aty.Equals(typeof<byte>)       then unboxPrim<'T> (box 0uy)
-                elif aty.Equals(typeof<uint16>)     then unboxPrim<'T> (box 0us)
-                elif aty.Equals(typeof<char>)       then unboxPrim<'T> (box '\000')
-                elif aty.Equals(typeof<uint32>)     then unboxPrim<'T> (box 0u)
-                elif aty.Equals(typeof<uint64>)     then unboxPrim<'T> (box 0UL)
-                elif aty.Equals(typeof<unativeint>) then unboxPrim<'T> (box 0un)
-                elif aty.Equals(typeof<decimal>)    then unboxPrim<'T> (box 0M)
-                elif aty.Equals(typeof<float>)      then unboxPrim<'T> (box 0.0)
-                elif aty.Equals(typeof<float32>)    then unboxPrim<'T> (box 0.0f)
+                let ty = typeof<'T>
+                if   Type.op_Equality(ty, typeof<sbyte>)      then unboxPrim<'T> (box 0y)
+                elif Type.op_Equality(ty, typeof<int16>)      then unboxPrim<'T> (box 0s)
+                elif Type.op_Equality(ty, typeof<int32>)      then unboxPrim<'T> (box 0)
+                elif Type.op_Equality(ty, typeof<int64>)      then unboxPrim<'T> (box 0L)
+                elif Type.op_Equality(ty, typeof<nativeint>)  then unboxPrim<'T> (box 0n)
+                elif Type.op_Equality(ty, typeof<byte>)       then unboxPrim<'T> (box 0uy)
+                elif Type.op_Equality(ty, typeof<uint16>)     then unboxPrim<'T> (box 0us)
+                elif Type.op_Equality(ty, typeof<char>)       then unboxPrim<'T> (box '\000')
+                elif Type.op_Equality(ty, typeof<uint32>)     then unboxPrim<'T> (box 0u)
+                elif Type.op_Equality(ty, typeof<uint64>)     then unboxPrim<'T> (box 0UL)
+                elif Type.op_Equality(ty, typeof<unativeint>) then unboxPrim<'T> (box 0un)
+                elif Type.op_Equality(ty, typeof<decimal>)    then unboxPrim<'T> (box 0M)
+                elif Type.op_Equality(ty, typeof<float>)      then unboxPrim<'T> (box 0.0)
+                elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<'T> (box 0.0f)
                 else 
-                   let pinfo = aty.GetProperty("Zero")
+                   let pinfo = ty.GetProperty("Zero")
                    unboxPrim<'T> (pinfo.GetValue(null,null))
             static member Result : 'T = result
                    
         type GenericOneDynamicImplTable<'T>() = 
             static let result : 'T = 
                 // The dynamic implementation
-                let aty = typeof<'T>
-                if   aty.Equals(typeof<sbyte>)      then unboxPrim<'T> (box 1y)
-                elif aty.Equals(typeof<int16>)      then unboxPrim<'T> (box 1s)
-                elif aty.Equals(typeof<int32>)      then unboxPrim<'T> (box 1)
-                elif aty.Equals(typeof<int64>)      then unboxPrim<'T> (box 1L)
-                elif aty.Equals(typeof<nativeint>)  then unboxPrim<'T> (box 1n)
-                elif aty.Equals(typeof<byte>)       then unboxPrim<'T> (box 1uy)
-                elif aty.Equals(typeof<uint16>)     then unboxPrim<'T> (box 1us)
-                elif aty.Equals(typeof<char>)       then unboxPrim<'T> (box '\001')
-                elif aty.Equals(typeof<uint32>)     then unboxPrim<'T> (box 1u)
-                elif aty.Equals(typeof<uint64>)     then unboxPrim<'T> (box 1UL)
-                elif aty.Equals(typeof<unativeint>) then unboxPrim<'T> (box 1un)
-                elif aty.Equals(typeof<decimal>)    then unboxPrim<'T> (box 1M)
-                elif aty.Equals(typeof<float>)      then unboxPrim<'T> (box 1.0)
-                elif aty.Equals(typeof<float32>)    then unboxPrim<'T> (box 1.0f)
+                let ty = typeof<'T>
+                if   Type.op_Equality(ty, typeof<sbyte>)      then unboxPrim<'T> (box 1y)
+                elif Type.op_Equality(ty, typeof<int16>)      then unboxPrim<'T> (box 1s)
+                elif Type.op_Equality(ty, typeof<int32>)      then unboxPrim<'T> (box 1)
+                elif Type.op_Equality(ty, typeof<int64>)      then unboxPrim<'T> (box 1L)
+                elif Type.op_Equality(ty, typeof<nativeint>)  then unboxPrim<'T> (box 1n)
+                elif Type.op_Equality(ty, typeof<byte>)       then unboxPrim<'T> (box 1uy)
+                elif Type.op_Equality(ty, typeof<uint16>)     then unboxPrim<'T> (box 1us)
+                elif Type.op_Equality(ty, typeof<char>)       then unboxPrim<'T> (box '\001')
+                elif Type.op_Equality(ty, typeof<uint32>)     then unboxPrim<'T> (box 1u)
+                elif Type.op_Equality(ty, typeof<uint64>)     then unboxPrim<'T> (box 1UL)
+                elif Type.op_Equality(ty, typeof<unativeint>) then unboxPrim<'T> (box 1un)
+                elif Type.op_Equality(ty, typeof<decimal>)    then unboxPrim<'T> (box 1M)
+                elif Type.op_Equality(ty, typeof<float>)      then unboxPrim<'T> (box 1.0)
+                elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<'T> (box 1.0f)
                 else 
-                   let pinfo = aty.GetProperty("One")
+                   let pinfo = ty.GetProperty("One")
                    unboxPrim<'T> (pinfo.GetValue(null,null))
 
             static member Result : 'T = result
@@ -2604,7 +2604,7 @@ namespace Microsoft.FSharp.Core
 
                     let ameth = aty.GetSingleStaticMethodByTypes(opName, [| aty; bty |])
                     let bmeth = 
-                        if aty.Equals(bty) then null else 
+                        if Type.op_Equality(aty, bty) then null else
                         bty.GetSingleStaticMethodByTypes(opName, [| aty; bty |])
                     match ameth, bmeth with
                     | null, null -> raise (NotSupportedException (SR.GetString(SR.dyInvOpAddCoerce)))
@@ -4175,7 +4175,7 @@ namespace Microsoft.FSharp.Core
         let Failure message = new Exception(message)
         
         [<CompiledName("FailurePattern")>]
-        let (|Failure|_|) (error: exn) = if error.GetType().Equals(typeof<Exception>) then Some error.Message else None
+        let (|Failure|_|) (error: exn) = if Type.op_Equality(error.GetType(), typeof<Exception>) then Some error.Message else None
 
         let inline (<) x y = GenericLessThan x y
 
@@ -5002,7 +5002,7 @@ namespace Microsoft.FSharp.Core
                 when ^T : string     = not (# "clt" (String.CompareOrdinal((# "" x : string #),(# "" y : string #))) 0 : bool #)             
                 when ^T : ^T = ((^T or ^U): (static member (>=) : ^T * ^U -> bool) (x,y))
 
-            /// Static greater-than-or-equal with static optimizations for some well-known cases.
+            /// Static equal with static optimizations for some well-known cases.
             let inline (=) (x:^T) (y:^T) = 
                 EqualityDynamic<(^T), (^T), bool> x y
                 when ^T : bool    = (# "ceq" x y : bool #)
@@ -5023,6 +5023,7 @@ namespace Microsoft.FSharp.Core
                 when ^T : decimal = Decimal.op_Equality((# "" x:decimal #), (# "" y:decimal #))
                 when ^T : ^T = (^T : (static member (=) : ^T * ^T -> bool) (x,y))
 
+            /// Static unequal with static optimizations for some well-known cases.
             let inline (<>) (x:^T) (y:^T) = 
                 InequalityDynamic<(^T), (^T), bool> x y
                 when ^T : bool    = not (# "ceq" x y : bool #)
@@ -6472,181 +6473,181 @@ namespace Microsoft.FSharp.Core
 
             type AbsDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if   aty.Equals(typeof<sbyte>)      then unboxPrim<_>(fun (x:sbyte)     -> absImpl x)
-                    elif aty.Equals(typeof<int16>)      then unboxPrim<_>(fun (x:int16)     -> absImpl x)
-                    elif aty.Equals(typeof<int32>)      then unboxPrim<_>(fun (x:int32)     -> absImpl x)
-                    elif aty.Equals(typeof<int64>)      then unboxPrim<_>(fun (x:int64)     -> absImpl x)
-                    elif aty.Equals(typeof<nativeint>)  then unboxPrim<_>(fun (x:nativeint) -> absImpl x)
-                    elif aty.Equals(typeof<float>)      then unboxPrim<_>(fun (x:float)     -> absImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> absImpl x)
-                    elif aty.Equals(typeof<decimal>)    then unboxPrim<_>(fun (x:decimal)   -> absImpl x)
+                    let ty = typeof<'T>
+                    if   Type.op_Equality(ty, typeof<sbyte>)      then unboxPrim<_>(fun (x:sbyte)     -> absImpl x)
+                    elif Type.op_Equality(ty, typeof<int16>)      then unboxPrim<_>(fun (x:int16)     -> absImpl x)
+                    elif Type.op_Equality(ty, typeof<int32>)      then unboxPrim<_>(fun (x:int32)     -> absImpl x)
+                    elif Type.op_Equality(ty, typeof<int64>)      then unboxPrim<_>(fun (x:int64)     -> absImpl x)
+                    elif Type.op_Equality(ty, typeof<nativeint>)  then unboxPrim<_>(fun (x:nativeint) -> absImpl x)
+                    elif Type.op_Equality(ty, typeof<float>)      then unboxPrim<_>(fun (x:float)     -> absImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> absImpl x)
+                    elif Type.op_Equality(ty, typeof<decimal>)    then unboxPrim<_>(fun (x:decimal)   -> absImpl x)
                     else UnaryDynamicImpl "Abs" 
                 static member Result : ('T -> 'T) = result
 
             type AcosDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> acosImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> acosImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> acosImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> acosImpl x)
                     else UnaryDynamicImpl "Acos" 
                 static member Result : ('T -> 'T) = result
 
             type AsinDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> asinImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> asinImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> asinImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> asinImpl x)
                     else UnaryDynamicImpl "Asin" 
                 static member Result : ('T -> 'T) = result
 
             type AtanDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> atanImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> atanImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> atanImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> atanImpl x)
                     else UnaryDynamicImpl "Atan" 
                 static member Result : ('T -> 'T) = result
 
             type Atan2DynamicImplTable<'T,'U>() = 
                 static let result : ('T -> 'T -> 'U) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)  (y:float)   -> atan2Impl x y)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32) (y:float32)  -> atan2Impl x y)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)  (y:float)      -> atan2Impl x y)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32) (y:float32)   -> atan2Impl x y)
                     else BinaryDynamicImpl "Atan2"
                 static member Result : ('T -> 'T -> 'U) = result
 
             type CeilingDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> ceilImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> ceilImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> ceilImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> ceilImpl x)
                     else UnaryDynamicImpl "Ceiling" 
                 static member Result : ('T -> 'T) = result
 
             type ExpDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> expImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> expImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> expImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> expImpl x)
                     else UnaryDynamicImpl "Exp" 
                 static member Result : ('T -> 'T) = result
 
             type FloorDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> floorImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> floorImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> floorImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> floorImpl x)
                     else UnaryDynamicImpl "Floor" 
                 static member Result : ('T -> 'T) = result
 
             type TruncateDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> truncateImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> truncateImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> truncateImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> truncateImpl x)
                     else UnaryDynamicImpl "Truncate" 
                 static member Result : ('T -> 'T) = result
 
             type RoundDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> roundImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> roundImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> roundImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> roundImpl x)
                     else UnaryDynamicImpl "Round" 
                 static member Result : ('T -> 'T) = result
 
             type SignDynamicImplTable<'T>() = 
                 static let result : ('T -> int) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> signImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> signImpl x)
-                    elif aty.Equals(typeof<nativeint>)    then unboxPrim<_>(fun (x:nativeint)   -> signImpl x)
-                    elif aty.Equals(typeof<decimal>)    then unboxPrim<_>(fun (x:decimal)   -> signImpl x)
-                    elif aty.Equals(typeof<int16>)    then unboxPrim<_>(fun (x:int16)   -> signImpl x)
-                    elif aty.Equals(typeof<int32>)    then unboxPrim<_>(fun (x:int32)   -> signImpl x)
-                    elif aty.Equals(typeof<int64>)    then unboxPrim<_>(fun (x:int64)   -> signImpl x)
-                    elif aty.Equals(typeof<sbyte>)    then unboxPrim<_>(fun (x:sbyte)   -> signImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)       -> signImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)     -> signImpl x)
+                    elif Type.op_Equality(ty, typeof<nativeint>)  then unboxPrim<_>(fun (x:nativeint)   -> signImpl x)
+                    elif Type.op_Equality(ty, typeof<decimal>)    then unboxPrim<_>(fun (x:decimal)     -> signImpl x)
+                    elif Type.op_Equality(ty, typeof<int16>)      then unboxPrim<_>(fun (x:int16)       -> signImpl x)
+                    elif Type.op_Equality(ty, typeof<int32>)      then unboxPrim<_>(fun (x:int32)       -> signImpl x)
+                    elif Type.op_Equality(ty, typeof<int64>)      then unboxPrim<_>(fun (x:int64)       -> signImpl x)
+                    elif Type.op_Equality(ty, typeof<sbyte>)      then unboxPrim<_>(fun (x:sbyte)       -> signImpl x)
                     else UnaryDynamicImpl "Sign" 
                 static member Result : ('T -> int) = result
 
             type LogDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> logImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> logImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> logImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> logImpl x)
                     else UnaryDynamicImpl "Log" 
                 static member Result : ('T -> 'T) = result
 
             type Log10DynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> log10Impl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> log10Impl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> log10Impl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> log10Impl x)
                     else UnaryDynamicImpl "Log10" 
                 static member Result : ('T -> 'T) = result
 
             type SqrtDynamicImplTable<'T,'U>() = 
                 static let result : ('T -> 'U) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> sqrtImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> sqrtImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> sqrtImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> sqrtImpl x)
                     else UnaryDynamicImpl "Sqrt" 
                 static member Result : ('T -> 'U) = result
 
             type CosDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> cosImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> cosImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> cosImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> cosImpl x)
                     else UnaryDynamicImpl "Cos" 
                 static member Result : ('T -> 'T) = result
 
             type CoshDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> coshImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> coshImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> coshImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> coshImpl x)
                     else UnaryDynamicImpl "Cosh" 
                 static member Result : ('T -> 'T) = result
 
             type SinDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> sinImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> sinImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> sinImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> sinImpl x)
                     else UnaryDynamicImpl "Sin" 
                 static member Result : ('T -> 'T) = result
 
             type SinhDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> sinhImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> sinhImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> sinhImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> sinhImpl x)
                     else UnaryDynamicImpl "Sinh" 
                 static member Result : ('T -> 'T) = result
 
             type TanDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> tanImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> tanImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> tanImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> tanImpl x)
                     else UnaryDynamicImpl "Tan" 
                 static member Result : ('T -> 'T) = result
 
             type TanhDynamicImplTable<'T>() = 
                 static let result : ('T -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)     -> tanhImpl x)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> tanhImpl x)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)     -> tanhImpl x)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32)   -> tanhImpl x)
                     else UnaryDynamicImpl "Tanh" 
                 static member Result : ('T -> 'T) = result
 
             type PowDynamicImplTable<'T,'U>() = 
                 static let result : ('T -> 'U -> 'T) = 
-                    let aty = typeof<'T>
-                    if aty.Equals(typeof<float>)        then unboxPrim<_>(fun (x:float)   (y:float)  -> powImpl x y)
-                    elif aty.Equals(typeof<float32>)    then unboxPrim<_>(fun (x:float32) (y:float32)  -> powImpl x y)
+                    let ty = typeof<'T>
+                    if Type.op_Equality(ty, typeof<float>)        then unboxPrim<_>(fun (x:float)   (y:float)    -> powImpl x y)
+                    elif Type.op_Equality(ty, typeof<float32>)    then unboxPrim<_>(fun (x:float32) (y:float32)  -> powImpl x y)
                     else BinaryDynamicImpl "Pow" 
                 static member Result : ('T -> 'U -> 'T) = result
 
