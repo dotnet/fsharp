@@ -20,6 +20,7 @@ type SubstituteText() =
 
     [<Output>]
     member _.CopiedFiles = copiedFiles.ToArray()
+
     override _.Execute() =
         copiedFiles.Clear()
 

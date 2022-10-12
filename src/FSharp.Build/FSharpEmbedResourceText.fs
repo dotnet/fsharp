@@ -23,10 +23,13 @@ type FSharpEmbedResourceText() as this =
 
     let Err (fileName, line, msg) =
         PrintErr(fileName, line, msg)
-        let hint = "Note that the syntax of each line is one of these three alternatives:
+
+        let hint =
+            "Note that the syntax of each line is one of these three alternatives:
 # comment
 ident,\"string\"
 errNum,ident,\"string\""
+
         this.Log.LogMessage(MessageImportance.High, hint)
         raise TaskFailed
 
@@ -399,7 +402,7 @@ open Printf
 
                 Some(fileName, outFileName, outXmlFileName)
             else
-                printMessage 
+                printMessage
                     "Generating %s and %s from %s, because condition %d is false, see FSharpEmbedResourceText.fs in the F# source"
                     outFileName
                     outXmlFileName
@@ -571,6 +574,7 @@ open Printf
 
     [<Output>]
     member _.GeneratedResx = _generatedResx
+
     override this.Execute() =
 
         try
@@ -603,5 +607,5 @@ open Printf
             _generatedSource <- generatedSource
             _generatedResx <- generatedResx
             generatedResult && not this.Log.HasLoggedErrors
-        with
-        | TaskFailed -> false
+        with TaskFailed ->
+            false

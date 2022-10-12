@@ -15,11 +15,13 @@ type WriteCodeFragment() as this =
     let mutable _outputFile: ITaskItem MaybeNull = null
     let mutable _language: string = ""
     let mutable _assemblyAttributes: ITaskItem[] = [||]
-    
+
     let failTask fmt =
-        Printf.ksprintf (fun msg ->
-            this.Log.LogError msg
-            raise TaskFailed) fmt
+        Printf.ksprintf
+            (fun msg ->
+                this.Log.LogError msg
+                raise TaskFailed)
+            fmt
 
     static let escapeString (str: string) =
         let sb =
@@ -119,6 +121,7 @@ type WriteCodeFragment() as this =
     member _.OutputFile
         with get () = _outputFile
         and set (value) = _outputFile <- value
+
     override this.Execute() =
         try
             match _outputFile with
@@ -159,5 +162,5 @@ type WriteCodeFragment() as this =
                 File.WriteAllText(fileName, codeText)
                 _outputFile <- outputFileItem
                 not this.Log.HasLoggedErrors
-        with
-        | TaskFailed -> false
+        with TaskFailed ->
+            false
