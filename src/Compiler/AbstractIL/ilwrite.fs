@@ -1310,7 +1310,7 @@ and GenTypeDefPass2 pidx enc cenv (tdef: ILTypeDef) =
         tdef.Methods |> Seq.iter (GenMethodDefPass2 tdef cenv tidx)
         // Generation of property definitions for **ref assemblies** is checking existence of generated method definitions.
         // Therefore, due to mutable state within "cenv", order of operations matters.
-        // Who could have thought that mutating shared state can bring unexpected bugs...?
+        // Who could have thought that using shared mutable state can bring unexpected bugs...?
         props |> List.iter (GenPropertyDefPass2 cenv tidx)
         tdef.NestedTypes.AsList() |> GenTypeDefsPass2 tidx (enc@[tdef.Name]) cenv
    with exn ->
