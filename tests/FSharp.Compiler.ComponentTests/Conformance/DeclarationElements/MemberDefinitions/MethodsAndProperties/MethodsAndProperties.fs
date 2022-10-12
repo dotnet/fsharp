@@ -439,7 +439,7 @@ type I =
         ]
         
     [<Fact>]
-    let ``Error in signature file with not implementation file with abstract methods when reusing parameters`` () =
+    let ``Error in signature file with no implementation file with abstract methods when reusing parameters`` () =
         let encodeFsi =
             Fsi """
 namespace Foo
