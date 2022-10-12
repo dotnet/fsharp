@@ -340,3 +340,5 @@ val desugarGetSetMembers: memberDefns: SynMemberDefns -> SynMemberDefns
 val getTypeFromTuplePath: path: SynTupleTypeSegment list -> SynType list
 
 val (|MultiDimensionArrayType|_|): t: SynType -> (int * SynType * range) option
+
+val (|TypesForTypar|): t: SynType -> SynType list

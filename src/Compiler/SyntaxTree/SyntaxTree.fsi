@@ -405,7 +405,7 @@ type SynTypeConstraint =
     | WhereTyparSubtypeOfType of typar: SynTypar * typeName: SynType * range: range
 
     /// F# syntax is ^T: (static member MemberName: ^T * int -> ^T)
-    | WhereTyparSupportsMember of typars: SynType list * memberSig: SynMemberSig * range: range
+    | WhereTyparSupportsMember of typars: SynType * memberSig: SynMemberSig * range: range
 
     /// F# syntax is 'typar: enum<'UnderlyingType>
     | WhereTyparIsEnum of typar: SynTypar * typeArgs: SynType list * range: range
@@ -517,6 +517,9 @@ type SynType =
         id: Ident option *
         usedType: SynType *
         range: range
+
+    /// F# syntax: ^a or ^b, used in trait calls
+    | Or of lhsType: SynType * rhsType: SynType * range: range * trivia: SynTypeOrTrivia
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -817,7 +820,7 @@ type SynExpr =
     | AddressOf of isByref: bool * expr: SynExpr * opRange: range * range: range
 
     /// F# syntax: ((type1 or ... or typeN): (member-dig) expr)
-    | TraitCall of supportTys: SynType list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
+    | TraitCall of supportTys: SynType * traitSig: SynMemberSig * argExpr: SynExpr * range: range
 
     /// F# syntax: ... in ...
     /// Computation expressions only, based on JOIN_IN token from lex filter
