@@ -581,7 +581,7 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> ifPosInRange r (fun _ -> List.tryPick (walkSynModuleDecl isTopLevel) decls))
 
         and walkAttribute (attr: SynAttribute) =
-            if isPosInRange attr.Range then
+            if isPosInRange attr.TypeName.Range then
                 Some EntityKind.Attribute
             else
                 None
@@ -607,7 +607,7 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparIsComparable (t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparIsEquatable (t, _) -> walkTypar t
             | SynTypeConstraint.WhereTyparSubtypeOfType (t, ty, _) -> walkTypar t |> Option.orElseWith (fun () -> walkType ty)
-            | SynTypeConstraint.WhereTyparSupportsMember (ts, sign, _) ->
+            | SynTypeConstraint.WhereTyparSupportsMember (TypesForTypar ts, sign, _) ->
                 List.tryPick walkType ts |> Option.orElseWith (fun () -> walkMemberSig sign)
             | SynTypeConstraint.WhereTyparIsEnum (t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
             | SynTypeConstraint.WhereTyparIsDelegate (t, ts, _) -> walkTypar t |> Option.orElseWith (fun () -> List.tryPick walkType ts)
@@ -619,7 +619,8 @@ module ParsedInput =
             | SynPat.As (pat1, pat2, _) -> List.tryPick walkPat [ pat1; pat2 ]
             | SynPat.Typed (pat, t, _) -> walkPat pat |> Option.orElseWith (fun () -> walkType t)
             | SynPat.Attrib (pat, Attributes attrs, _) -> walkPat pat |> Option.orElseWith (fun () -> List.tryPick walkAttribute attrs)
-            | SynPat.Or (pat1, pat2, _, _) -> List.tryPick walkPat [ pat1; pat2 ]
+            | SynPat.Or (pat1, pat2, _, _)
+            | SynPat.ListCons (pat1, pat2, _, _) -> List.tryPick walkPat [ pat1; pat2 ]
             | SynPat.LongIdent (typarDecls = typars; argPats = ConstructorPats pats; range = r) ->
                 ifPosInRange r (fun _ -> kind)
                 |> Option.orElseWith (fun () ->
@@ -667,7 +668,8 @@ module ParsedInput =
             | SynType.Fun (argType = t1; returnType = t2) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.WithGlobalConstraints (t, _, _) -> walkType t
             | SynType.HashConstraint (t, _) -> walkType t
-            | SynType.MeasureDivide (t1, t2, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
+            | SynType.MeasureDivide (t1, t2, _)
+            | SynType.Or (t1, t2, _, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.MeasurePower (t, _, _) -> walkType t
             | SynType.Paren (t, _)
             | SynType.SignatureParameter (usedType = t) -> walkType t
@@ -837,7 +839,7 @@ module ParsedInput =
 
             | SynExpr.DoBang (e, _) -> walkExprWithKind parentKind e
 
-            | SynExpr.TraitCall (ts, sign, e, _) ->
+            | SynExpr.TraitCall (TypesForTypar ts, sign, e, _) ->
                 List.tryPick walkType ts
                 |> Option.orElseWith (fun () -> walkMemberSig sign)
                 |> Option.orElseWith (fun () -> walkExprWithKind parentKind e)
@@ -1620,7 +1622,7 @@ module ParsedInput =
             | SynTypeConstraint.WhereTyparIsDelegate (t, ts, _) ->
                 walkTypar t
                 List.iter walkType ts
-            | SynTypeConstraint.WhereTyparSupportsMember (ts, sign, _) ->
+            | SynTypeConstraint.WhereTyparSupportsMember (TypesForTypar ts, sign, _) ->
                 List.iter walkType ts
                 walkMemberSig sign
             | SynTypeConstraint.WhereSelfConstrained (ty, _) -> walkType ty
@@ -1638,7 +1640,8 @@ module ParsedInput =
                 walkPat pat
                 List.iter walkAttribute attrs
             | SynPat.As (pat1, pat2, _)
-            | SynPat.Or (pat1, pat2, _, _) -> List.iter walkPat [ pat1; pat2 ]
+            | SynPat.Or (pat1, pat2, _, _)
+            | SynPat.ListCons (pat1, pat2, _, _) -> List.iter walkPat [ pat1; pat2 ]
             | SynPat.LongIdent (longDotId = ident; typarDecls = typars; argPats = ConstructorPats pats) ->
                 addLongIdentWithDots ident
 
@@ -1671,7 +1674,8 @@ module ParsedInput =
             | SynType.Paren (t, _)
             | SynType.SignatureParameter (usedType = t) -> walkType t
             | SynType.Fun (argType = t1; returnType = t2)
-            | SynType.MeasureDivide (t1, t2, _) ->
+            | SynType.MeasureDivide (t1, t2, _)
+            | SynType.Or (t1, t2, _, _) ->
                 walkType t1
                 walkType t2
             | SynType.LongIdent ident -> addLongIdentWithDots ident
@@ -1818,7 +1822,7 @@ module ParsedInput =
                     walkExpr eAndBang
 
                 walkExpr e2
-            | SynExpr.TraitCall (ts, sign, e, _) ->
+            | SynExpr.TraitCall (TypesForTypar ts, sign, e, _) ->
                 List.iter walkType ts
                 walkMemberSig sign
                 walkExpr e
@@ -2035,10 +2039,7 @@ module ParsedInput =
                     result <- Some(oldScope, oldPos, true)
                 | Some (oldScope, oldPos, _), _ ->
                     match kind, oldScope.Kind with
-                    | (Namespace
-                      | NestedModule
-                      | TopModule),
-                      OpenDeclaration
+                    | (Namespace | NestedModule | TopModule), OpenDeclaration
                     | _ when oldPos.Line <= line ->
                         result <-
                             Some(

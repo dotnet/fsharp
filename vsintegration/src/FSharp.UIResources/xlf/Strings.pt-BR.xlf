@@ -7,27 +7,22 @@
         <target state="translated">Sempre coloque as instruções abertas no nível superior</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
+      <trans-unit id="Lens">
+        <source>Lens</source>
+        <target state="translated">Lens</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Replace_LineLens">
-        <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">Mostrar anotações à direita da linha, em vez de acima dela</target>
+      <trans-unit id="Lens_Switch">
+        <source>Enable Lens (Experimental)</source>
+        <target state="translated">Habilitar Lens (Experimental)</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Switch">
-        <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">Habilitar CodeLens (Experimental)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Prefix">
+      <trans-unit id="Lens_Prefix">
         <source>Annotation prefix</source>
         <target state="translated">Prefixo da anotação</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_UseColors">
+      <trans-unit id="Lens_UseColors">
         <source>Use colors in annotations</source>
         <target state="translated">Usar cores em anotações</target>
         <note />
@@ -100,11 +95,6 @@
       <trans-unit id="Enable_in_memory_cross_project_references">
         <source>_Enable in-memory cross project references</source>
         <target state="translated">_Habilitar referências de projeto cruzado na memória</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">Número de projetos cujos dados estão em cache na memória</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -180,11 +170,6 @@
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
         <target state="translated">As referências entre projetos na memória armazenam os dados de nível de projeto na memória para permitir que os recursos do IDE funcionem nos projetos.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">Os dados do projeto são colocados em cache para os recursos do IDE. Os valores mais altos utilizam mais memória porque mais projetos são colocados em cache. O ajuste desses valores não deve afetar as soluções de pequeno ou médio porte.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

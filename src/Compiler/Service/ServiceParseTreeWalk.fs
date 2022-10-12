@@ -789,7 +789,8 @@ module SyntaxTraversal =
                 match p with
                 | SynPat.Paren (p, _) -> traversePat path p
                 | SynPat.As (p1, p2, _)
-                | SynPat.Or (p1, p2, _, _) -> [ p1; p2 ] |> List.tryPick (traversePat path)
+                | SynPat.Or (p1, p2, _, _)
+                | SynPat.ListCons (p1, p2, _, _) -> [ p1; p2 ] |> List.tryPick (traversePat path)
                 | SynPat.Ands (ps, _)
                 | SynPat.Tuple (_, ps, _)
                 | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick (traversePat path)
@@ -820,7 +821,8 @@ module SyntaxTraversal =
                 | SynType.WithGlobalConstraints (ty, _, _)
                 | SynType.Array (_, ty, _) -> traverseSynType path ty
                 | SynType.StaticConstantNamed (ty1, ty2, _)
-                | SynType.MeasureDivide (ty1, ty2, _) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
+                | SynType.MeasureDivide (ty1, ty2, _)
+                | SynType.Or (ty1, ty2, _, _) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
                 | SynType.Tuple (path = segments) -> getTypeFromTuplePath segments |> List.tryPick (traverseSynType path)
                 | SynType.StaticConstantExpr (expr, _) -> traverseSynExpr [] expr
                 | SynType.Paren (innerType = t)

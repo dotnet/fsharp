@@ -199,6 +199,14 @@ type SynPatOrTrivia =
         BarRange: range
     }
 
+/// Represents additional information for SynPat.Cons
+[<NoEquality; NoComparison>]
+type SynPatListConsTrivia =
+    {
+        /// The syntax range of the `::` token.
+        ColonColonRange: range
+    }
+
 /// Represents additional information for SynTypeDefn
 [<NoEquality; NoComparison>]
 type SynTypeDefnTrivia =
@@ -237,6 +245,9 @@ type SynBindingTrivia =
     {
         /// The syntax range of the `let` keyword.
         LetKeyword: range option
+
+        /// The syntax range of the `extern` keyword.
+        ExternKeyword: range option
 
         /// The syntax range of the `=` token.
         EqualsRange: range option
@@ -372,4 +383,12 @@ type SynArgPatsNamePatPairsTrivia =
     {
         /// The syntax range from the beginning of the `(` token till the end of the `)` token.
         ParenRange: range
+    }
+
+/// Represents additional information for SynType.Or
+[<NoEquality; NoComparison>]
+type SynTypeOrTrivia =
+    {
+        /// The syntax range of the `or` keyword
+        OrKeyword: range
     }

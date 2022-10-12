@@ -7,27 +7,22 @@
         <target state="translated">Vždy umístit otevřené příkazy na nejvyšší úroveň</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
+      <trans-unit id="Lens">
+        <source>Lens</source>
+        <target state="translated">Lens</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Replace_LineLens">
-        <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">Zobrazí poznámky napravo místo nad řádkem.</target>
+      <trans-unit id="Lens_Switch">
+        <source>Enable Lens (Experimental)</source>
+        <target state="translated">Povolit funkci Lens (experimentální)</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Switch">
-        <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">Povolit funkci CodeLens (experimentální)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Prefix">
+      <trans-unit id="Lens_Prefix">
         <source>Annotation prefix</source>
         <target state="translated">Předpona poznámky</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_UseColors">
+      <trans-unit id="Lens_UseColors">
         <source>Use colors in annotations</source>
         <target state="translated">Použít barvy v poznámkách</target>
         <note />
@@ -100,11 +95,6 @@
       <trans-unit id="Enable_in_memory_cross_project_references">
         <source>_Enable in-memory cross project references</source>
         <target state="translated">_Povolit odkazy mezi projekty v paměti</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">Počet projektů, jejichž data jsou uložená v mezipaměti</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -180,11 +170,6 @@
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
         <target state="translated">V odkazech v paměti pro různé projekty jsou uložená data na úrovni projektů, aby mohly mezi projekty fungovat funkce IDE.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">Projektová data jsou uložená v mezipaměti pro funkce IDE. Vyšší hodnoty znamenají využití více paměti, protože je uloženo více projektů. Vyladění této hodnoty by nemělo mít vliv na malá a středně velká řešení.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

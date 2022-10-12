@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 
 open System
@@ -26,13 +26,13 @@ open Microsoft.VisualStudio.Text.Classification
 
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor.Shared.Utilities
 
-type internal CodeLens(taggedText, computed, funcID, uiElement) =
+type internal Lens(taggedText, computed, funcID, uiElement) =
     member val TaggedText: Async<(ResizeArray<TaggedText> * FSharpNavigation) option> = taggedText
     member val Computed: bool = computed with get, set
     member val FuncID: string = funcID
     member val UiElement: UIElement = uiElement with get, set
 
-type internal FSharpCodeLensService
+type internal LensService
     (
         serviceProvider: IServiceProvider,
         workspace: Workspace, 
@@ -41,11 +41,9 @@ type internal FSharpCodeLensService
         metadataAsSource: FSharpMetadataAsSourceService,
         classificationFormatMapService: IClassificationFormatMapService,
         typeMap: Lazy<FSharpClassificationTypeMap>,
-        codeLens : CodeLensDisplayService,
+        lensDisplayService : LensDisplayService,
         settings: EditorOptions
     ) as self =
-
-    let lineLens = codeLens
 
     let visit pos parseTree = 
         SyntaxTraversal.Traverse(pos, parseTree, { new SyntaxVisitorBase<_>() with 
@@ -72,7 +70,7 @@ type internal FSharpCodeLensService
 
     let formatMap = lazy classificationFormatMapService.GetClassificationFormatMap "tooltip"
 
-    let mutable lastResults = Dictionary<string, ITrackingSpan * CodeLens>()
+    let mutable lastResults = Dictionary<string, ITrackingSpan * Lens>()
     let mutable firstTimeChecked = false
     let mutable bufferChangedCts = new CancellationTokenSource()
     let uiContext = SynchronizationContext.Current
@@ -84,7 +82,7 @@ type internal FSharpCodeLensService
         |> typeMap.Value.GetClassificationType
         |> formatMap.Value.GetTextProperties   
 
-    let createTextBox (lens:CodeLens) =
+    let createTextBox (lens:Lens) =
         async {
             do! Async.SwitchToContext uiContext
             let! res = lens.TaggedText
@@ -96,7 +94,7 @@ type internal FSharpCodeLensService
                 let textBlock = new TextBlock(Background = Brushes.AliceBlue, Opacity = 0.0, TextTrimming = TextTrimming.None)
                 FSharpDependencyObjectExtensions.SetDefaultTextProperties(textBlock, formatMap.Value)
 
-                let prefix = Documents.Run settings.CodeLens.Prefix
+                let prefix = Documents.Run settings.Lens.Prefix
                 prefix.Foreground <- SolidColorBrush(Color.FromRgb(153uy, 153uy, 153uy))
                 textBlock.Inlines.Add prefix
 
@@ -104,7 +102,7 @@ type internal FSharpCodeLensService
 
                     let coloredProperties = layoutTagToFormatting text.Tag
                     let actualProperties =
-                        if settings.CodeLens.UseColors
+                        if settings.Lens.UseColors
                         then
                             // If color is gray (R=G=B), change to correct gray color.
                             // Otherwise, use the provided color.
@@ -141,7 +139,7 @@ type internal FSharpCodeLensService
                 return false
         }  
 
-    let executeCodeLenseAsync () =  
+    let executeLensAsync () =  
         asyncMaybe {
             do! Async.Sleep 800 |> liftAsync
 #if DEBUG
@@ -168,7 +166,7 @@ type internal FSharpCodeLensService
             let unattachedSymbols = ResizeArray()
             // Tags which are new or need to be updated due to changes.
             let tagsToUpdate = Dictionary()
-            let codeLensToAdd = ResizeArray()
+            let lensToAdd = ResizeArray()
 
             let useResults (displayContext: FSharpDisplayContext, func: FSharpMemberOrFunctionOrValue, realPosition: range) =
                 async {
@@ -190,13 +188,13 @@ type internal FSharpCodeLensService
                                 return Some (taggedText, navigation)
                             | None -> 
 #if DEBUG
-                                logWarningf "Couldn't acquire CodeLens data for function %A" func
+                                logWarningf "Couldn't acquire Lens data for function %A" func
 #endif
                                 return None
                         else return None
                     with e ->
 #if DEBUG
-                        logErrorf "Error in lazy line lens computation. %A" e
+                        logErrorf "Error in lazy lens computation. %A" e
 #else
                         ignore e
 #endif
@@ -219,8 +217,8 @@ type internal FSharpCodeLensService
                         if lastResults.ContainsKey funcID then
                             // Make sure that the results are usable
                             let inline setNewResultsAndWarnIfOverridenLocal value = setNewResultsAndWarnIfOverriden funcID value
-                            let lastTrackingSpan, codeLens as lastResult = lastResults.[funcID]
-                            if codeLens.FuncID = funcID then
+                            let lastTrackingSpan, lens as lastResult = lastResults.[funcID]
+                            if lens.FuncID = funcID then
                                 setNewResultsAndWarnIfOverridenLocal lastResult
                                 oldResults.Remove funcID |> ignore
                             else
@@ -237,7 +235,7 @@ type internal FSharpCodeLensService
                                     textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeExclusive)
                                 // Push back the new results
                                 let res =
-                                        CodeLens( Async.cache (useResults (symbolUse.DisplayContext, func, range)),
+                                        Lens( Async.cache (useResults (symbolUse.DisplayContext, func, range)),
                                             false,
                                             funcID,
                                             null)
@@ -261,23 +259,23 @@ type internal FSharpCodeLensService
                     | _ -> func.DeclarationLocation.StartLine - 1, func.DeclarationLocation
                     
                 let test (v:KeyValuePair<_, _>) =
-                    let _, (codeLens:CodeLens) = v.Value
-                    codeLens.FuncID = funcID
+                    let _, (lens:Lens) = v.Value
+                    lens.FuncID = funcID
                 match oldResults |> Seq.tryFind test with
                 | Some res ->
-                    let (trackingSpan : ITrackingSpan), (codeLens : CodeLens) = res.Value
+                    let (trackingSpan : ITrackingSpan), (lens : Lens) = res.Value
                     let declarationSpan = 
                         let line = textSnapshot.GetLineFromLineNumber declarationLine
                         let offset = line.GetText() |> Seq.findIndex (Char.IsWhiteSpace >> not)
                         SnapshotSpan(line.Start.Add offset, line.End).Span
                     let newTrackingSpan = 
                         textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeExclusive)
-                    if codeLens.Computed && (isNull codeLens.UiElement |> not) then
-                        newResults.[funcID] <- (newTrackingSpan, codeLens)
-                        tagsToUpdate.[trackingSpan] <- (newTrackingSpan, funcID, codeLens)
+                    if lens.Computed && (isNull lens.UiElement |> not) then
+                        newResults.[funcID] <- (newTrackingSpan, lens)
+                        tagsToUpdate.[trackingSpan] <- (newTrackingSpan, funcID, lens)
                     else
                         let res = 
-                            CodeLens(
+                            Lens(
                                 Async.cache (useResults (symbolUse.DisplayContext, func, range)),
                                 false,
                                 funcID,
@@ -292,7 +290,7 @@ type internal FSharpCodeLensService
                     // So create completely new results
                     // And finally add a tag for this.
                     let res = 
-                        CodeLens(
+                        Lens(
                             Async.cache (useResults (symbolUse.DisplayContext, func, range)),
                             false,
                             funcID,
@@ -304,26 +302,26 @@ type internal FSharpCodeLensService
                             SnapshotSpan(line.Start.Add offset, line.End).Span
                         let trackingSpan = 
                             textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeExclusive)
-                        codeLensToAdd.Add (trackingSpan, res)
+                        lensToAdd.Add (trackingSpan, res)
                         newResults.[funcID] <- (trackingSpan, res)
                     with e ->
 #if DEBUG
-                        logExceptionWithContext (e, "Line Lens tracking tag span creation")
+                        logExceptionWithContext (e, "Lens tracking tag span creation")
 #endif
                         ignore e
                 ()
             lastResults <- newResults
             do! Async.SwitchToContext uiContext |> liftAsync
-            let createCodeLensUIElement (codeLens:CodeLens) trackingSpan _ =
-                if codeLens.Computed |> not then
+            let createLensUIElement (lens:Lens) trackingSpan _ =
+                if lens.Computed |> not then
                     async {
-                        let! res = createTextBox codeLens
+                        let! res = createTextBox lens
                         if res then
                             do! Async.SwitchToContext uiContext
 #if DEBUG
-                            logInfof "Adding ui element for %A" (codeLens.TaggedText)
+                            logInfof "Adding ui element for %A" (lens.TaggedText)
 #endif
-                            let uiElement = codeLens.UiElement
+                            let uiElement = lens.UiElement
                             let animation = 
                                 DoubleAnimation(
                                     To = Nullable 0.8,
@@ -334,44 +332,44 @@ type internal FSharpCodeLensService
                             Storyboard.SetTarget(sb, uiElement)
                             Storyboard.SetTargetProperty(sb, PropertyPath Control.OpacityProperty)
                             sb.Children.Add animation
-                            lineLens.AddUiElementToCodeLensOnce (trackingSpan, uiElement)
-                            lineLens.RelayoutRequested.Enqueue ()
+                            lensDisplayService.AddUiElementToLensOnce (trackingSpan, uiElement)
+                            lensDisplayService.RelayoutRequested.Enqueue ()
                             sb.Begin()
                         else
 #if DEBUG
-                            logWarningf "Couldn't retrieve code lens information for %A" codeLens.FuncID
+                            logWarningf "Couldn't retrieve lens information for %A" lens.FuncID
 #endif
                             ()
                     } |> (RoslynHelpers.StartAsyncSafe CancellationToken.None) "UIElement creation"
 
             for value in tagsToUpdate do
-                let trackingSpan, (newTrackingSpan, _, codeLens) = value.Key, value.Value
-                lineLens.RemoveCodeLens trackingSpan |> ignore
-                let Grid = lineLens.AddCodeLens newTrackingSpan
-                if codeLens.Computed && (isNull codeLens.UiElement |> not) then
-                    let uiElement = codeLens.UiElement
-                    lineLens.AddUiElementToCodeLensOnce (newTrackingSpan, uiElement)
+                let trackingSpan, (newTrackingSpan, _, lens) = value.Key, value.Value
+                lensDisplayService.RemoveLens trackingSpan |> ignore
+                let Grid = lensDisplayService.AddLens newTrackingSpan
+                if lens.Computed && (isNull lens.UiElement |> not) then
+                    let uiElement = lens.UiElement
+                    lensDisplayService.AddUiElementToLensOnce (newTrackingSpan, uiElement)
                 else
                     Grid.IsVisibleChanged
                     |> Event.filter (fun eventArgs -> eventArgs.NewValue :?> bool)
-                    |> Event.add (createCodeLensUIElement codeLens newTrackingSpan)
+                    |> Event.add (createLensUIElement lens newTrackingSpan)
 
-            for value in codeLensToAdd do
-                let trackingSpan, codeLens = value
-                let Grid = lineLens.AddCodeLens trackingSpan
+            for value in lensToAdd do
+                let trackingSpan, lens = value
+                let Grid = lensDisplayService.AddLens trackingSpan
 #if DEBUG
                 logInfof "Trackingspan %A is being added." trackingSpan
 #endif
                 
                 Grid.IsVisibleChanged
                 |> Event.filter (fun eventArgs -> eventArgs.NewValue :?> bool)
-                |> Event.add (createCodeLensUIElement codeLens trackingSpan)
+                |> Event.add (createLensUIElement lens trackingSpan)
 
             for oldResult in oldResults do
                 let trackingSpan, _ = oldResult.Value
-                lineLens.RemoveCodeLens trackingSpan |> ignore
+                lensDisplayService.RemoveLens trackingSpan |> ignore
 #if DEBUG
-            logInfof "Finished updating line lens."
+            logInfof "Finished updating lens."
 #endif
             
             if not firstTimeChecked then
@@ -385,12 +383,12 @@ type internal FSharpCodeLensService
               let mutable numberOfFails = 0
               while not firstTimeChecked && numberOfFails < 10 do
                   try
-                      do! executeCodeLenseAsync()
+                      do! executeLensAsync()
                       do! Async.Sleep(1000)
                   with
                   | e ->
 #if DEBUG
-                      logErrorf "Line Lens startup failed with: %A" e
+                      logErrorf "Lens startup failed with: %A" e
 #else
                       ignore e
 #endif
@@ -402,4 +400,4 @@ type internal FSharpCodeLensService
         bufferChangedCts.Cancel() // Stop all ongoing async workflow. 
         bufferChangedCts.Dispose()
         bufferChangedCts <- new CancellationTokenSource()
-        executeCodeLenseAsync () |> Async.Ignore |> RoslynHelpers.StartAsyncSafe bufferChangedCts.Token "Buffer Changed"
+        executeLensAsync () |> Async.Ignore |> RoslynHelpers.StartAsyncSafe bufferChangedCts.Token "Buffer Changed"
