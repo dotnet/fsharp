@@ -8,7 +8,7 @@ open FSharp.Test.Compiler
 
 module InterfaceImplAugmentation =
     [<Fact>]
-    let ``Type in non-recursive namespace show give a warning when augmented externally``() =
+    let ``Type in non-recursive namespace gives a warning when augmented externally``() =
         FSharp """
 namespace AugmentationsTest
 type MyCustomType<'T> = 
