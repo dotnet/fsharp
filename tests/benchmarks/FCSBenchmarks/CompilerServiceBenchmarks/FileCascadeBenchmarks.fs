@@ -101,6 +101,7 @@ type FileCascadeBenchmarks() =
 
     [<Benchmark(Baseline=true)>]
     member x.ParseProjectWithFullCacheClear() =
+        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
         checker.ClearCache([getProject()])
         checker.InvalidateConfiguration(getProject())
         x.CheckFinalFile()
