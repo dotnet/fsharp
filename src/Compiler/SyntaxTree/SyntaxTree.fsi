@@ -1232,9 +1232,6 @@ type SynMemberFlags =
 
         /// The kind of the member
         MemberKind: SynMemberKind
-
-        /// Additional information
-        Trivia: SynMemberFlagsTrivia
     }
 
 /// Note the member kind is actually computed partially by a syntax tree transformation in tc.fs
@@ -1429,7 +1426,8 @@ type SynField =
         isMutable: bool *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynFieldTrivia
 
 /// Represents the syntax tree associated with the name of a type definition or module
 /// in signature or implementation.
@@ -1623,11 +1621,9 @@ type SynMemberDefn =
         memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        equalsRange: range *
         synExpr: SynExpr *
-        withKeyword: range option *
-        getSetRange: range option *
-        range: range
+        range: range *
+        trivia: SynMemberDefnAutoPropertyTrivia
 
     /// Gets the syntax range of this construct
     member Range: range
