@@ -90,30 +90,35 @@ type FileCascadeBenchmarks() =
         finally
             File.WriteAllText(fileName,fullOriginalSource)
 
-    member x.CheckFinalFile () =
+    member x.ParseAndCheckLastFileInTheProject () =
         let project = getProject()
         let lastFile = project.SourceFiles |> Array.last
-        checker.ParseAndCheckFileInProject(lastFile,999,finalFileContents,project)
+        checker.ParseAndCheckFileInProject(lastFile,999,finalFileContents,project) |> Async.RunSynchronously
                
     [<Benchmark>]
-    member x.ParseProjectAsIs() =
-        x.CheckFinalFile()
+    member x.ParseAndCheckLastFileProjectAsIs() =
+        x.ParseAndCheckLastFileInTheProject()
 
     [<Benchmark(Baseline=true)>]
     member x.ParseProjectWithFullCacheClear() =
         checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
         checker.ClearCache([getProject()])
         checker.InvalidateConfiguration(getProject())
-        x.CheckFinalFile()
+        checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+        x.ParseAndCheckLastFileInTheProject()
 
     [<Benchmark>]
     member x.ParseProjectWithChangingFirstFile() =
-        x.ChangeFile(fileIndex=0, action= fun () -> x.CheckFinalFile())  
+        x.ChangeFile(fileIndex=0, action= fun () -> x.ParseAndCheckLastFileInTheProject())  
 
     [<Benchmark>]
     member x.ParseProjectWithChanging25thPercentileFile() =
-        x.ChangeFile(fileIndex=filesToCreate/4, action= fun () -> x.CheckFinalFile())  
+        x.ChangeFile(fileIndex=filesToCreate/4, action= fun () -> x.ParseAndCheckLastFileInTheProject())  
 
     [<Benchmark>]
     member x.ParseProjectWithChangingMiddleFile() =
-        x.ChangeFile(fileIndex=filesToCreate/2, action= fun () -> x.CheckFinalFile())  
+        x.ChangeFile(fileIndex=filesToCreate/2, action= fun () -> x.ParseAndCheckLastFileInTheProject())  
+
+    [<Benchmark>]
+    member x.ParseProjectWithChangingPenultimateFile() =
+        x.ChangeFile(fileIndex=(filesToCreate-2), action= fun () -> x.ParseAndCheckLastFileInTheProject()) 
