@@ -395,7 +395,22 @@ let CheckDuplicates (idf: _ -> Ident) k elems =
                 errorR (Duplicate(k, id1.idText, id1.idRange))))
     elems
 
+let private CheckDuplicatesArgNames (synVal: SynValSig) m =
+    let argNames = synVal.SynInfo.ArgNames |> List.duplicates
+    for name in argNames do
+        errorR(Error((FSComp.SR.chkDuplicatedMethodParameter(name), m)))
 
+let private CheckDuplicatesAbstractMethodParmsSig (typeSpecs:  SynTypeDefnSig list) =
+    for SynTypeDefnSig(typeRepr= trepr) in typeSpecs do 
+        match trepr with 
+        | SynTypeDefnSigRepr.ObjectModel(_, synMemberSigs, _) ->
+         for sms in synMemberSigs do
+             match sms with
+             | SynMemberSig.Member(synValSig, _, m) ->
+                CheckDuplicatesArgNames synValSig m
+             | _ -> ()
+        | _ -> ()
+        
 module TcRecdUnionAndEnumDeclarations =
 
     let CombineReprAccess parent vis = 
@@ -3946,6 +3961,14 @@ module TcDeclarations =
              | SynMemberDefn.NestedType (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
              | _ -> ()
         | ds ->
+             // Check for duplicated parameters in abstract methods
+            for slot in ds do
+                if isAbstractSlot slot then
+                    match slot with
+                    | SynMemberDefn.AbstractSlot (synVal, _, m) ->
+                        CheckDuplicatesArgNames synVal m
+                    | _ -> ()
+                    
             // Classic class construction 
             let _, ds = List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isInherit;isField;isTycon]) ds
             match ds with
@@ -4351,7 +4374,8 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
             let _, _, _, env = TcExceptionDeclarations.TcExnSignature cenv env parent emptyUnscopedTyparEnv (edef, scopem)
             return env
 
-        | SynModuleSigDecl.Types (typeSpecs, m) -> 
+        | SynModuleSigDecl.Types (typeSpecs, m) ->
+            CheckDuplicatesAbstractMethodParmsSig typeSpecs
             let scopem = unionRanges m endm
             let mutRecDefns = typeSpecs |> List.map MutRecShape.Tycon
             let env = TcDeclarations.TcMutRecSignatureDecls cenv env parent typeNames emptyUnscopedTyparEnv m scopem None mutRecDefns
@@ -4521,7 +4545,8 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
           let rec loop isNamespace moduleRange defs: MutRecSigsInitialData = 
             ((true, true), defs) ||> List.collectFold (fun (openOk, moduleAbbrevOk) def -> 
                 match def with 
-                | SynModuleSigDecl.Types (typeSpecs, _) -> 
+                | SynModuleSigDecl.Types (typeSpecs, _) ->
+                    CheckDuplicatesAbstractMethodParmsSig typeSpecs
                     let decls = typeSpecs |> List.map MutRecShape.Tycon
                     decls, (false, false)
 

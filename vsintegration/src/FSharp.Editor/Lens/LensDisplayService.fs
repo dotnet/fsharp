@@ -12,7 +12,7 @@ open System.Threading
 open System.Windows
 open System.Collections.Generic
 
-type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer) as self =
+type LensDisplayService (view : IWpfTextView, buffer : ITextBuffer) as self =
 
     // Add buffer changed event handler
     do (
@@ -21,7 +21,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer) as self 
        )
        
     /// <summary>
-    /// Enqueing an unit signals to the tagger that all visible line lens must be layouted again,
+    /// Enqueing an unit signals to the tagger that all visible lens must be layouted again,
     /// to respect single line changes.
     /// </summary>
     member val RelayoutRequested : Queue<_> = Queue() with get
@@ -46,7 +46,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer) as self 
     /// Text view for accessing the adornment layer.
     member val View: IWpfTextView = view
 
-    member val CodeLensLayer = view.GetAdornmentLayer "LineLens"
+    member val LensLayer = view.GetAdornmentLayer "Lens"
 
     /// Tracks the recent first + last visible line numbers for adornment layout logic.
     member val RecentFirstVsblLineNmbr = 0 with get, set
@@ -154,30 +154,30 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer) as self 
             self.RelayoutRequested.Enqueue(())
          with e ->
 #if DEBUG
-            logErrorf "Error in line lens provider: %A" e
+            logErrorf "Error in lens provider: %A" e
 #else
             ignore e
 #endif
 
-    /// Public non-thread-safe method to add line lens for a given tracking span.
-    /// Returns an UIElement which can be used to add Ui elements and to remove the line lens later.
-    member self.AddCodeLens (trackingSpan:ITrackingSpan) =
-        if trackingSpan.TextBuffer <> buffer then failwith "TrackingSpan text buffer does not equal with CodeLens text buffer"
+    /// Public non-thread-safe method to add lens for a given tracking span.
+    /// Returns an UIElement which can be used to add Ui elements and to remove the lens later.
+    member self.AddLens (trackingSpan:ITrackingSpan) =
+        if trackingSpan.TextBuffer <> buffer then failwith "TrackingSpan text buffer does not equal with Lens text buffer"
         let Grid = self.AddTrackingSpan trackingSpan
         self.RelayoutRequested.Enqueue(())
         Grid :> UIElement
     
-    /// Public non-thread-safe method to remove line lens for a given tracking span.
-    member self.RemoveCodeLens (trackingSpan:ITrackingSpan) =
+    /// Public non-thread-safe method to remove lens for a given tracking span.
+    member self.RemoveLens (trackingSpan:ITrackingSpan) =
         if self.UiElements.ContainsKey trackingSpan then
             let Grid = self.UiElements.[trackingSpan]
             Grid.Children.Clear()
             self.UiElements.Remove trackingSpan |> ignore
             try
-                self.CodeLensLayer.RemoveAdornment(Grid) 
+                self.LensLayer.RemoveAdornment(Grid) 
             with e ->
 #if DEBUG
-                logExceptionWithContext(e, "Removing line lens")
+                logExceptionWithContext(e, "Removing lens")
 #else
                 ignore e
 #endif
@@ -200,16 +200,16 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer) as self 
             logWarningf "No tracking span is accociated with this line number %d!" lineNumber
 #endif
 
-    member self.AddUiElementToCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement) =
+    member self.AddUiElementToLens (trackingSpan:ITrackingSpan, uiElement:UIElement) =
         let Grid = self.UiElements.[trackingSpan]
         Grid.Children.Add uiElement |> ignore
 
-    member self.AddUiElementToCodeLensOnce (trackingSpan:ITrackingSpan, uiElement:UIElement)=
+    member self.AddUiElementToLensOnce (trackingSpan:ITrackingSpan, uiElement:UIElement)=
         let Grid = self.UiElements.[trackingSpan]
         if uiElement |> Grid.Children.Contains |> not then
-            self.AddUiElementToCodeLens (trackingSpan, uiElement)
+            self.AddUiElementToLens (trackingSpan, uiElement)
 
-    member self.RemoveUiElementFromCodeLens (trackingSpan:ITrackingSpan, uiElement:UIElement) =
+    member self.RemoveUiElementFromLens (trackingSpan:ITrackingSpan, uiElement:UIElement) =
         let Grid = self.UiElements.[trackingSpan]
         Grid.Children.Remove(uiElement) |> ignore
     
@@ -317,7 +317,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer) as self 
             // and would consume too much performance
             do! Async.Sleep(5) |> liftAsync // Skip at least one frames
             do! Async.SwitchToContext self.UiContext |> liftAsync
-            let layer = self.CodeLensLayer
+            let layer = self.LensLayer
             do! Async.Sleep(495) |> liftAsync
             try
                 for visibleLineNumber in visibleLineNumbers do
