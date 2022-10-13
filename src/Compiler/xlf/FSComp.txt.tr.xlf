@@ -12,6 +12,11 @@
         <target state="translated">'{0}' kaynak dosyasının dosya uzantısı tanınmadı. Kaynak dosyaların uzantısı .fs, .fsi, .fsx veya .fsscript olmalıdır.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDuplicatedMethodParameter">
+        <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
+        <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">'{0}' özelliği F# {1} sürümünde kullanılamıyor. Lütfen {2} veya daha yüksek bir dil sürümünü kullanın.</target>
@@ -980,6 +985,11 @@
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">Bu ifade '{0}' türünü örtülü olarak '{1}' türüne dönüştürür. https://aka.ms/fsharp-implicit-convs adresine bakın.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcSynTypeOrInvalidInDeclaration">
+        <source>SynType.Or is not permitted in this declaration</source>
+        <target state="new">SynType.Or is not permitted in this declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
