@@ -1485,10 +1485,10 @@ let CheckMultipleInputsInParallel
                         |> Cancellable.runWithoutCancellation
 
                     let priorErrors = checkForErrors2 ()
-                    partialResult, (tcState, priorErrors)
-                )
+                    partialResult, (tcState, priorErrors))
 
             let amap = tcImports.GetImportMap()
+
             let conditionalDefines =
                 if tcConfig.noConditionalErasure then
                     None
@@ -1499,17 +1499,14 @@ let CheckMultipleInputsInParallel
                 List.toArray parallelFiles
                 |> ArrayParallel.map (fun (input, logger) ->
                     cancellable {
-                        printfn "Start with %s" input.FileName
-                        // Nojaf: this is taken mostly from CheckOneInputAux, the case where the impl has no signature file
-
-                        
+                        // this is taken mostly from CheckOneInputAux, the case where the impl has no signature file
                         let file =
                             match input with
                             | ParsedInput.ImplFile file -> file
                             | ParsedInput.SigFile _ -> failwith "not expecting a signature file for now"
-                        
+
                         let tcSink = TcResultsSink.NoSink
-                        
+
                         // Typecheck the implementation file
                         let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
                             CheckOneImplFile(
@@ -1526,34 +1523,36 @@ let CheckMultipleInputsInParallel
                                 file
                             )
 
-                        return (fun tcState ->
-                            ()
+                        return
+                            (fun tcState ->
+                                let tcState =
+                                    { tcState with
+                                        tcsCreatesGeneratedProvidedTypes =
+                                            tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                                    }
 
-                            let tcState =
-                                { tcState with
-                                    tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
-                                }
+                                let ccuSigForFile, updateTcState =
+                                    AddCheckResultsToTcState
+                                        (tcGlobals,
+                                         amap,
+                                         false,
+                                         prefixPathOpt,
+                                         tcSink,
+                                         tcState.tcsTcImplEnv,
+                                         input.QualifiedName,
+                                         implFile.Signature)
+                                        tcState
 
-                            let ccuSigForFile, updateTcState =
-                                AddCheckResultsToTcState
-                                    (tcGlobals, amap, false, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, input.QualifiedName, implFile.Signature)
-                                    tcState
-
-                            Choice1Of2(tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), logger, updateTcState
-                        )
+                                Choice1Of2(tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), logger, updateTcState)
                     }
-                    |> Cancellable.runWithoutCancellation
-                )
+                    |> Cancellable.runWithoutCancellation)
                 |> fun results ->
-                        ()
-
-                        ((sequentialTcState, sequentialPriorErrors, ImmutableQueue.Empty), results)
-                        ||> Array.fold (fun (tcState, priorErrors, partialResults) result ->
-                            let partialResult, logger, nextTcState = result tcState
-                            let priorErrors = priorErrors || (logger.ErrorCount > 0)
-                            (nextTcState, priorErrors, partialResults.Enqueue partialResult)
-                        )
-                        |> fun (tcState, priorErrors, partialResults) -> Seq.toList partialResults, (tcState, priorErrors)
+                    ((sequentialTcState, sequentialPriorErrors, ImmutableQueue.Empty), results)
+                    ||> Array.fold (fun (tcState, priorErrors, partialResults) result ->
+                        let partialResult, logger, nextTcState = result tcState
+                        let priorErrors = priorErrors || (logger.ErrorCount > 0)
+                        (nextTcState, priorErrors, partialResults.Enqueue partialResult))
+                    |> fun (tcState, priorErrors, partialResults) -> Seq.toList partialResults, (tcState, priorErrors)
 
             [ yield! sequentialPartialResults; yield! parallelPartialResults ], (parallelTcState, parallelPriorErrors)
 
