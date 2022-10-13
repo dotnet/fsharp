@@ -1137,21 +1137,24 @@ let TryGetMethodRefAsMethodDefIdx cenv (mref: ILMethodRef) =
 let canGenMethodDef (tdef: ILTypeDef) cenv (mdef: ILMethodDef) =
     if not cenv.referenceAssemblyOnly then
         true
-    // If the method is part of attribute type, generate get_* and set_* methods for it, consider the following case:
+    // If the method is part of attribute type, generate get_* and set_* methods and .ctors for it, consider the following case:
     //      [<AttributeUsage(AttributeTargets.All)>]
     //      type PublicWithInternalSetterPropertyAttribute() =
     //          inherit Attribute()
     //          member val internal Prop1 : int = 0 with get, set
     //      [<PublicWithInternalSetterPropertyAttribute(Prop1=4)>]
     //      type ClassPublicWithAttributes() = class end
-    else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsConstructor) && (not mdef.IsClassInitializer) then
+
+    // We want to generate pretty much everything for attributes, because of serialization scenarios, and the fact that non-visible constructors, properties and fields can still be part of reference assembly.
+    // Example: NoDynamicInvocationAttribute has an internal constructor, which should be included in the reference assembly.
+    else if tdef.IsKnownToBeAttribute && mdef.IsSpecialName && (not mdef.IsClassInitializer) then
         true
     else
         match mdef.Access with
         | ILMemberAccess.Public -> true
         // When emitting a reference assembly, do not emit methods that are private/protected/internal unless they are virtual/abstract or provide an explicit interface implementation.
         | ILMemberAccess.Private | ILMemberAccess.Family | ILMemberAccess.Assembly | ILMemberAccess.FamilyOrAssembly
-            when mdef.IsVirtual || mdef.IsAbstract || mdef.IsNewSlot || mdef.IsFinal -> true
+            when mdef.IsVirtual || mdef.IsAbstract || mdef.IsNewSlot || mdef.IsFinal || mdef.IsEntryPoint -> true
         // When emitting a reference assembly, only generate internal methods if the assembly contains a System.Runtime.CompilerServices.InternalsVisibleToAttribute.
         | ILMemberAccess.FamilyOrAssembly | ILMemberAccess.Assembly
             when cenv.hasInternalsVisibleToAttrib -> true
@@ -1189,7 +1192,7 @@ let canGenPropertyDef cenv (prop: ILPropertyDef) =
         // If we have GetMethod or SetMethod set (i.e. not None), try and see if we have MethodDefs for them.
         // NOTE: They can be not-None and missing MethodDefs if we skip generating them for reference assembly in the earlier pass.
         // Only generate property if we have at least getter or setter, otherwise, we skip.
-        [| prop.GetMethod; prop.SetMethod |]
+        [| prop.GetMethod; prop.SetMethod |]      
         |> Array.choose id
         |> Array.map (TryGetMethodRefAsMethodDefIdx cenv)
         |> Array.exists (function | Ok _ -> true | _ -> false)
@@ -1301,11 +1304,14 @@ and GenTypeDefPass2 pidx enc cenv (tdef: ILTypeDef) =
         // Now generate or assign index numbers for tables referenced by the maps.
         // Don't yet generate contents of these tables - leave that to pass3, as
         // code may need to embed these entries.
-        tdef.Implements |> List.iter (GenImplementsPass2 cenv env tidx)
-        props |> List.iter (GenPropertyDefPass2 cenv tidx)
+        tdef.Implements |> List.iter (GenImplementsPass2 cenv env tidx)        
         events |> List.iter (GenEventDefPass2 cenv tidx)
         tdef.Fields.AsList() |> List.iter (GenFieldDefPass2 tdef cenv tidx)
         tdef.Methods |> Seq.iter (GenMethodDefPass2 tdef cenv tidx)
+        // Generation of property definitions for **ref assemblies** is checking existence of generated method definitions.
+        // Therefore, due to mutable state within "cenv", order of operations matters.
+        // Who could have thought that using shared mutable state can bring unexpected bugs...?
+        props |> List.iter (GenPropertyDefPass2 cenv tidx)
         tdef.NestedTypes.AsList() |> GenTypeDefsPass2 tidx (enc@[tdef.Name]) cenv
    with exn ->
      failwith ("Error in pass2 for type "+tdef.Name+", error: " + exn.Message)
@@ -1919,10 +1925,11 @@ module Codebuf =
             emitTailness cenv codebuf tl
             emitMethodSpecInstr cenv codebuf env i_callvirt (mspec, varargs)
             //emitAfterTailcall codebuf tl
-        | I_callconstraint (tl, ty, mspec, varargs) ->
+        | I_callconstraint (callvirt, tl, ty, mspec, varargs) ->
             emitTailness cenv codebuf tl
             emitConstrained cenv codebuf env ty
-            emitMethodSpecInstr cenv codebuf env i_callvirt (mspec, varargs)
+            let instr = if callvirt then i_callvirt else i_call
+            emitMethodSpecInstr cenv codebuf env instr (mspec, varargs)
             //emitAfterTailcall codebuf tl
         | I_newobj (mspec, varargs) ->
             emitMethodSpecInstr cenv codebuf env i_newobj (mspec, varargs)
@@ -3197,29 +3204,6 @@ module FileSystemUtilities =
     open System.Reflection
     open System.Globalization
     let progress = try Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
-    let setExecutablePermission (fileName: string) =
-
-#if ENABLE_MONO_SUPPORT
-      if runningOnMono then
-        try
-            let monoPosix = Assembly.Load("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
-            if progress then eprintf "loading type Mono.Unix.UnixFileInfo...\n"
-            let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo")
-            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box fileName |], CultureInfo.InvariantCulture)
-            let prevPermissions = monoUnixFileInfo.InvokeMember("get_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| |], CultureInfo.InvariantCulture)
-            let prevPermissionsValue = prevPermissions |> unbox<int>
-            let newPermissionsValue = prevPermissionsValue ||| 0x000001ED
-            let newPermissions = Enum.ToObject(prevPermissions.GetType(), newPermissionsValue)
-            // Add 0x000001ED (UserReadWriteExecute, GroupReadExecute, OtherReadExecute) to the access permissions on Unix
-            monoUnixFileInfo.InvokeMember("set_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| newPermissions |], CultureInfo.InvariantCulture) |> ignore
-        with exn ->
-            if progress then eprintf "failure: %s...\n" (exn.ToString())
-            // Fail silently
-      else
-#else
-        ignore fileName
-#endif
-        ()
 
 /// Arbitrary value
 [<Literal>]
@@ -3708,7 +3692,6 @@ let writeBytes (os: BinaryWriter) (chunk: byte[]) = os.Write(chunk, 0, chunk.Len
 let writePdb (
     dumpDebugInfo,
     showTimes,
-    portablePDB,
     embeddedPDB,
     pdbfile,
     outfile,
@@ -3734,10 +3717,6 @@ let writePdb (
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary.
     match pdbfile with
     | None -> ()
-#if ENABLE_MONO_SUPPORT
-    | Some fmdb when runningOnMono && not portablePDB ->
-        writeMdbInfo fmdb outfile pdbData
-#endif
     | Some pdbfile ->
         let idd =
             match pdbInfoOpt with
@@ -3751,16 +3730,17 @@ let writePdb (
                         ms.Close()
                         pdbBytes <- Some (ms.ToArray())
                     else
+                        let outfileInfo = FileInfo(outfile).FullName
+                        let pdbfileInfo = FileInfo(pdbfile).FullName
+
+                        // If pdbfilepath matches output filepath then error
+                        if String.Compare(outfileInfo, pdbfileInfo, StringComparison.InvariantCulture) = 0 then
+                            errorR(Error(FSComp.SR.optsPdbMatchesOutputFileName(), rangeStartup))
                         try FileSystem.FileDeleteShim pdbfile with _ -> ()
                         use fs = FileSystem.OpenFileForWriteShim(pdbfile, fileMode = FileMode.Create, fileAccess = FileAccess.ReadWrite)
                         stream.WriteTo fs
                     getInfoForPortablePdb contentId pdbfile pathMap debugDataChunk debugDeterministicPdbChunk debugChecksumPdbChunk algorithmName checkSum embeddedPDB deterministic
-            | None ->
-#if FX_NO_PDB_WRITER
-                [| |]
-#else
-                writePdbInfo showTimes outfile pdbfile pdbData debugDataChunk
-#endif
+            | None -> [| |]
         reportTime showTimes "Generate PDB Info"
 
         // Now we have the debug data we can go back and fill in the debug directory in the image
@@ -4550,21 +4530,27 @@ let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
             try FileSystem.FileDeleteShim options.outfile with | _ -> ()
             reraise()
 
-    try
-        FileSystemUtilities.setExecutablePermission options.outfile
-    with _ ->
-        ()
-
     let reopenOutput () =
         FileSystem.OpenFileForWriteShim(options.outfile, FileMode.Open, FileAccess.Write, FileShare.Read)
 
     writePdb (options.dumpDebugInfo,
-        options.showTimes, options.portablePDB,
-        options.embeddedPDB, options.pdbfile, options.outfile,
-        reopenOutput, false, options.signer, options.deterministic, options.pathMap,
-        pdbData, pdbInfoOpt, debugDirectoryChunk,
-        debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk,
-        debugDeterministicPdbChunk, textV2P) |> ignore
+        options.showTimes,
+        options.embeddedPDB,
+        options.pdbfile,
+        options.outfile,
+        reopenOutput,
+        false,
+        options.signer,
+        options.deterministic,
+        options.pathMap,
+        pdbData,
+        pdbInfoOpt,
+        debugDirectoryChunk,
+        debugDataChunk,
+        debugChecksumPdbChunk,
+        debugEmbeddedPdbChunk,
+        debugDeterministicPdbChunk,
+        textV2P) |> ignore
 
     mappings
 
@@ -4580,7 +4566,6 @@ let writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) =
     let pdbBytes =
         writePdb (options.dumpDebugInfo,
             options.showTimes,
-            options.portablePDB,
             options.embeddedPDB,
             options.pdbfile,
             options.outfile,
@@ -4589,9 +4574,13 @@ let writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) =
             options.signer,
             options.deterministic,
             options.pathMap,
-            pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk,
-            debugChecksumPdbChunk, debugEmbeddedPdbChunk,
-            debugDeterministicPdbChunk, textV2P)
+            pdbData, pdbInfoOpt,
+            debugDirectoryChunk,
+            debugDataChunk,
+            debugChecksumPdbChunk,
+            debugEmbeddedPdbChunk,
+            debugDeterministicPdbChunk,
+            textV2P)
 
     stream.Close()
 

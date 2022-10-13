@@ -2,8 +2,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
@@ -71,6 +71,7 @@
     <Compile Include="Compiler\Language\StringConcatOptimizationTests.fs" />
     <Compile Include="Compiler\Language\ComputationExpressionTests.fs" />
     <Compile Include="Compiler\Language\StructActivePatternTests.fs" />
+    <Compile Include="Compiler\Language\TypeDirectedConversionTests.fs" />
     <Compile Include="Compiler\Stress\LargeExprTests.fs" />
     <Compile Include="Compiler\Regressions\NullableOptionalRegressionTests.fs" />
     <Compile Include="Compiler\Regressions\IndexerRegressionTests.fs" />
@@ -94,7 +95,6 @@
     <Compile Include="Compiler\Libraries\Core\Reflection\SprintfTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Reflection\PreComputedTupleConstructorTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Unchecked\DefaultOfTests.fs" />
-    <Compile Include="Compiler\Infrastructure\AstCompiler.fs" />
     <None Include="update.base.line.with.actuals.fsx" />
     <!-- don't include test resources in subdirectories -->
     <EmbeddedResource Remove="**" />
@@ -105,8 +105,7 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\shims\shims.csproj"
-                      Condition="'$(TargetFramework)' == 'net472'">
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\shims\shims.csproj" Condition="'$(TargetFramework)' == 'net472'">
         <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
@@ -118,8 +117,7 @@
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
-    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="$(MicrosoftCodeAnalysisCSharpVersion)" />
     <PackageReference Include="Microsoft.CodeAnalysis.Test.Resources.Proprietary" Version="$(MicrosoftCodeAnalysisTestResourcesProprietaryVersion)" />
   </ItemGroup>

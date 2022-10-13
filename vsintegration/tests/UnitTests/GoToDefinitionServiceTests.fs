@@ -2,7 +2,7 @@
 //
 // To run the tests in this file: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 
-namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+namespace VisualFSharp.UnitTests.Editor
 
 open System
 open System.IO
@@ -17,7 +17,7 @@ open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open UnitTests.TestLib.LanguageService
 
-[<TestFixture>][<Category "Roslyn Services">]
+[<TestFixture; Category "Roslyn Services">]
 module GoToDefinitionServiceTests =
 
     let userOpName = "GoToDefinitionServiceTests"
@@ -58,13 +58,14 @@ module GoToDefinitionServiceTests =
             Stamp = None
         }
 
-    let GoToDefinitionTest (fileContents: string, caretMarker: string, expected) =
+    let GoToDefinitionTest (fileContents: string, caretMarker: string, expected, opts) =
 
         let filePath = Path.GetTempFileName() + ".fs"
         File.WriteAllText(filePath, fileContents)
+        let options = makeOptions filePath opts
 
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
-        let document, sourceText = RoslynTestHelpers.CreateDocument(filePath, fileContents)
+        let document, sourceText = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = options)
         let actual = 
            findDefinition(document, sourceText, caretPosition, []) 
            |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
@@ -73,7 +74,7 @@ module GoToDefinitionServiceTests =
             Assert.Fail(sprintf "Incorrect information returned for fileContents=<<<%s>>>, caretMarker=<<<%s>>>, expected =<<<%A>>>, actual = <<<%A>>>" fileContents caretMarker expected actual)
 
     [<Test>]
-    let VerifyDefinition() =
+    let ``goto definition smoke test``() =
 
       let manyTestCases = 
         [ 
@@ -110,10 +111,10 @@ let _ = Module1.foo 1
        for caretMarker, expected in testCases do
         
         printfn "Test case: caretMarker=<<<%s>>>" caretMarker 
-        GoToDefinitionTest (fileContents, caretMarker, expected)
+        GoToDefinitionTest (fileContents, caretMarker, expected, [| |])
 
     [<Test>]
-    let VerifyDefinitionStringInterpolation() =
+    let ``goto definition for string interpolation``() =
 
         let fileContents = """
 let xxxxx = 1
@@ -121,9 +122,19 @@ let yyyy = $"{abc{xxxxx}def}" """
         let caretMarker = "xxxxx"
         let expected = Some(2, 2, 4, 9)
 
-        GoToDefinitionTest (fileContents, caretMarker, expected)
+        GoToDefinitionTest (fileContents, caretMarker, expected, [| |])
 
-#if EXE
-    VerifyDefinition()
-    VerifyDefinitionStringInterpolation()
-#endif
+    [<Test>]
+    let ``goto definition for static abstract method invocation``() =
+
+        let fileContents = """
+type IStaticProperty<'T when 'T :> IStaticProperty<'T>> =
+    static abstract StaticProperty: 'T
+
+let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
+    'T.StaticProperty
+"""
+        let caretMarker = "'T.StaticProperty"
+        let expected = Some(3, 3, 20, 34)
+
+        GoToDefinitionTest (fileContents, caretMarker, expected, [| "/langversion:preview" |])
