@@ -27,6 +27,11 @@
         <target state="translated">Aggiungere l'annotazione di tipo</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertCSharpUsingToFSharpOpen">
+        <source>Convert C# 'using' to F# 'open'</source>
+        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
         <target state="translated">Converti in record anonimo</target>
@@ -238,8 +243,8 @@
         <note />
       </trans-unit>
       <trans-unit id="6013">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
+        <source>Lens</source>
+        <target state="new">Lens</target>
         <note />
       </trans-unit>
       <trans-unit id="6014">
