@@ -95,6 +95,7 @@
     <Compile Include="CodeFix\AddInstanceMemberParameter.fs" />
     <Compile Include="CodeFix\AddTypeAnnotationToObjectOfIndeterminateType.fs" />
     <Compile Include="CodeFix\AddMissingRecToMutuallyRecFunctions.fs" />
+    <Compile Include="CodeFix\ConvertCSharpUsingToFSharpOpen.fs" />
     <Compile Include="CodeFix\ConvertCSharpLambdaToFSharpLambda.fs" />
     <Compile Include="CodeFix\MakeOuterBindingRecursive.fs" />
     <Compile Include="CodeFix\RemoveReturnOrYield.fs" />
@@ -125,11 +126,9 @@
     <Compile Include="Build\SetGlobalPropertiesForSdkProjects.fs" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fsi" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fs" />
-    <Compile Include="CodeLens\AbstractCodeLensDisplayService.fs" />
-    <Compile Include="CodeLens\CodeLensGeneralTagger.fs" />
-    <Compile Include="CodeLens\LineLensDisplayService.fs" />
-    <Compile Include="CodeLens\FSharpCodeLensService.fs" />
-    <Compile Include="CodeLens\CodeLensProvider.fs" />
+    <Compile Include="Lens\LensDisplayService.fs" />
+    <Compile Include="Lens\LensService.fs" />
+    <Compile Include="Lens\LensProvider.fs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -152,11 +151,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Interop" Version="$(MicrosoftVisualStudioInteropVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.Internal.VisualStudio.Interop" Version="$(MicrosoftInternalVisualStudioInteropVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures" Version="$(MicrosoftCodeAnalysisEditorFeaturesVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="$(MicrosoftCodeAnalysisEditorFeaturesTextVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Wpf" Version="$(MicrosoftCodeAnalysisEditorFeaturesWpfVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.CodeAnalysis.ExternalAccess.FSharp" Version="$(MicrosoftCodeAnalysisExternalAccessFSharpVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="$(MicrosoftCodeAnalysisWorkspacesCommonVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.Composition" Version="$(MicrosoftCompositionVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.ComponentModelHost" Version="$(MicrosoftVisualStudioComponentModelHostVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Editor" Version="$(MicrosoftVisualStudioEditorVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
@@ -175,7 +172,6 @@
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Validation" Version="$(MicrosoftVisualStudioValidationVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="System.Design" Version="$(SystemDesignVersion)" />
     <PackageReference Include="StreamJsonRpc" Version="$(StreamJsonRpcVersion)" />
     <PackageReference Include="Nerdbank.Streams" Version="$(NerdbankStreamsVersion)" />
   </ItemGroup>

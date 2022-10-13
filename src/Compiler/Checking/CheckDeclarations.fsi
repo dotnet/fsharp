@@ -3,7 +3,7 @@
 module internal FSharp.Compiler.CheckDeclarations
 
 open Internal.Utilities.Library
-open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CompilerGlobalState
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Import
@@ -49,7 +49,6 @@ val AddLocalSubModule:
 
 val CheckOneImplFile:
     TcGlobals *
-    NiceNameGenerator *
     ImportMap *
     CcuThunk *
     OpenDeclaration list *
@@ -60,19 +59,14 @@ val CheckOneImplFile:
     TcEnv *
     ModuleOrNamespaceType option *
     ParsedImplFileInput ->
-        Cancellable<TopAttribs * CheckedImplFile * ModuleOrNamespaceType * TcEnv * bool>
+        Cancellable<TopAttribs * CheckedImplFile * TcEnv * bool>
 
 val CheckOneSigFile:
-    TcGlobals *
-    NiceNameGenerator *
-    ImportMap *
-    CcuThunk *
-    (unit -> bool) *
-    ConditionalDefines option *
-    TcResultsSink *
-    bool ->
+    TcGlobals * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines option * TcResultsSink * bool ->
         TcEnv ->
         ParsedSigFileInput ->
             Cancellable<TcEnv * ModuleOrNamespaceType * bool>
 
 exception NotUpperCaseConstructor of range: range
+
+exception NotUpperCaseConstructorWithoutRQA of range: range

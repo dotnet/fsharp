@@ -86,8 +86,8 @@ let isDelayedRepr (f: Val) e =
 
 // REVIEW: these should just be replaced by direct calls to mkLocal, mkCompGenLocal etc.
 // REVIEW: However these set an arity whereas the others don't
-let mkLocalNameTypeArity compgen m name ty topValInfo =
-    Construct.NewVal(name, m, None, ty, Immutable, compgen, topValInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
+let mkLocalNameTypeArity compgen m name ty valReprInfo =
+    Construct.NewVal(name, m, None, ty, Immutable, compgen, valReprInfo, taccessPublic, ValNotInRecScope, None, NormalVal, [], ValInline.Optional, XmlDoc.Empty, false, false, false, false, false, false, None, ParentNone)
 
 //-------------------------------------------------------------------------
 // definitions: TLR, arity, arity-met, arity-short
@@ -758,7 +758,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
        let aenvs = Zmap.values cmap
        let pack = cmapPairs |> List.map (fun (v, aenv) -> mkInvisibleBind aenv (exprForVal env.m v))
        let unpack =
-           let unpackCarrier (v, aenv) = mkInvisibleBind (setValHasNoArity v) (exprForVal env.m aenv)
+           let unpackCarrier (v, aenv) = mkInvisibleBind (ClearValReprInfo v) (exprForVal env.m aenv)
            let unpackSubenv f =
                let subCMap = carrierMapFor f
                let vaenvs = Zmap.toList subCMap
@@ -947,10 +947,10 @@ module Pass4_RewriteAssembly =
     // pass4: lowertop - convert_vterm_bind on TopLevel binds
     //-------------------------------------------------------------------------
 
-    let AdjustBindToTopVal g (TBind(v, repr, _)) =
+    let AdjustBindToValRepr g (TBind(v, repr, _)) =
         match v.ValReprInfo with
         | None -> 
-            v.SetValReprInfo (Some (InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v repr ))
+            v.SetValReprInfo (Some (InferValReprInfoOfBinding g AllowTypeDirectedDetupling.Yes v repr ))
             // Things that don't have an arity from type inference but are top-level are compiler-generated
             v.SetIsCompilerGenerated(true)
         | Some _ -> ()
@@ -979,7 +979,7 @@ module Pass4_RewriteAssembly =
 
             // REVIEW: is this mutation really, really necessary? 
             // Why are we applying TLR if the thing already has an arity? 
-            let fOrig = setValHasNoArity fOrig
+            let fOrig = ClearValReprInfo fOrig
 
             let fBind =
                  mkMultiLambdaBind g fOrig letSeqPtOpt m tps vss
@@ -1028,7 +1028,7 @@ module Pass4_RewriteAssembly =
         | Some envp -> envp.ep_pack // environment pack bindings
 
     let forceTopBindToHaveArity penv (bind: Binding) =
-        if penv.topValS.Contains(bind.Var) then AdjustBindToTopVal penv.g bind
+        if penv.topValS.Contains(bind.Var) then AdjustBindToValRepr penv.g bind
 
     let TransBindings xisRec penv (binds: Bindings) =
         let tlrBs, nonTlrBs = binds |> List.partition (fun b -> Zset.contains b.Var penv.tlrS)
@@ -1366,7 +1366,7 @@ let MakeTopLevelRepresentationDecisions ccu g expr =
                 recShortCallS = recShortCallS
                 envPackM = envPackM
                 fHatM = fHatM
-                stackGuard = StackGuard(InnerLambdasToTopLevelFunctionsStackGuardDepth) }
+                stackGuard = StackGuard(InnerLambdasToTopLevelFunctionsStackGuardDepth, "InnerLambdasToTopLevelFunctionsStackGuardDepth") }
           let z = Pass4_RewriteAssembly.rewriteState0
           Pass4_RewriteAssembly.TransImplFile penv z expr
 

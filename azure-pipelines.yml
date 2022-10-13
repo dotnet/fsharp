@@ -12,6 +12,9 @@ trigger:
     exclude:
     - .github/*
     - docs/
+    - .vscode/*
+    - .devcontainer/*
+    - tests/scripts/
     - attributions.md
     - CODE_OF_CONDUCT.md
     - DEVGUIDE.md
@@ -101,8 +104,8 @@ stages:
         jobs:
         - job: Full_Signed
           pool:
-            name: NetCore1ESPool-Svc-Internal
-            demands: ImageOverride -equals Build.Windows.Amd64.VS2022
+            name: NetCore1ESPool-Internal
+            demands: ImageOverride -equals windows.vs2022.amd64
           timeoutInMinutes: 300
           variables:
           - group: DotNet-Blob-Feed
@@ -331,6 +334,64 @@ stages:
             continueOnError: true
             condition: failed()
 
+        # Windows With Compressed Metadata
+        - job: WindowsCompressedMetadata
+          pool:
+            # The PR build definition sets this variable:
+            #   WindowsMachineQueueName=Windows.vs2022.amd64.open
+            # and there is an alternate build definition that sets this to a queue that is always scouting the
+            # next preview of Visual Studio.
+            name: NetCore-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 120
+          strategy:
+            maxParallel: 4
+            matrix:
+              desktop_release:
+                _configuration: Release
+                _testKind: testDesktop
+              coreclr_release:
+                _configuration: Release
+                _testKind: testCoreclr
+              fsharpqa_release:
+                _configuration: Release
+                _testKind: testFSharpQA
+              vs_release:
+                _configuration: Release
+                _testKind: testVs
+          steps:
+          - checkout: self
+            clean: true
+          - script: eng\CIBuild.cmd -compressallmetadata -configuration $(_configuration) -$(_testKind)
+            displayName: Build / Test
+          - task: PublishTestResults@2
+            displayName: Publish Test Results
+            inputs:
+              testResultsFormat: 'NUnit'
+              testResultsFiles: '*.xml'
+              searchFolder: '$(Build.SourcesDirectory)/artifacts/TestResults/$(_configuration)'
+            continueOnError: true
+            condition: ne(variables['_testKind'], 'testFSharpQA')
+          - task: PublishBuildArtifacts@1
+            displayName: Publish Test Logs
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\TestResults\$(_configuration)'
+              ArtifactName: 'Windows $(_configuration) $(_testKind) test logs'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
+          - script: dotnet build $(Build.SourcesDirectory)/eng/DumpPackageRoot/DumpPackageRoot.csproj
+            displayName: Dump NuGet cache contents
+            condition: failed()
+          - task: PublishBuildArtifacts@1
+            displayName: Publish NuGet cache contents
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)\artifacts\NugetPackageRootContents'
+              ArtifactName: 'NuGetPackageContents Windows $(_testKind)'
+              publishLocation: Container
+            continueOnError: true
+            condition: failed()
+
         # Mock official build
         - job: MockOfficial
           pool:
@@ -447,6 +508,36 @@ stages:
         #      filePath: eng\tests\UpToDate.ps1
         #      arguments: -configuration $(_BuildConfig) -ci -binaryLog
 
+        # Run Build with --test:ParallelCheckingWithSignatureFilesOn
+        - job: ParallelCheckingWithSignatureFiles
+          condition: eq(variables['Build.Reason'], 'PullRequest')
+          variables:
+            - name: _SignType
+              value: Test
+          pool:
+            name: NetCore-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          timeoutInMinutes: 90
+          steps:
+            - checkout: self
+              clean: true
+            - task: UseDotNet@2
+              displayName: install SDK
+              inputs:
+                packageType: sdk
+                useGlobalJson: true
+                includePreviewVersions: false
+                workingDirectory: $(Build.SourcesDirectory)
+                installationPath: $(Build.SourcesDirectory)/.dotnet
+            - script: .\build.cmd -c Release -binaryLog /p:ParallelCheckingWithSignatureFilesOn=true
+              displayName: ParallelCheckingWithSignatureFiles build with Debug configuration
+            - task: PublishPipelineArtifact@1
+              displayName: Publish ParallelCheckingWithSignatureFiles Logs
+              inputs:
+                targetPath: '$(Build.SourcesDirectory)/artifacts/log/Release'
+                artifactName: 'ParallelCheckingWithSignatureFiles Attempt $(System.JobAttempt) Logs'
+              continueOnError: true
+
         # Plain build Windows
         - job: Plain_Build_Windows
           pool:
@@ -544,6 +635,50 @@ stages:
               DOTNET_ROLL_FORWARD_TO_PRERELEASE: 1
             displayName: Regular rebuild of FSharp.Compiler.Service.sln
 
+        # Test trimming on Windows
+        - job: Build_And_Test_Trimming_Windows
+          pool:
+            name: NetCore-Public
+            demands: ImageOverride -equals $(WindowsMachineQueueName)
+          strategy:
+            maxParallel: 2
+            matrix:
+              compressed_metadata:
+                _kind: "-compressAllMetadata"
+              classic_metadata:
+                _kind: ""
+          variables:
+          - name: _BuildConfig
+            value: Release
+          steps:
+          - checkout: self
+            clean: true
+          - task: UseDotNet@2
+            displayName: install SDK
+            inputs:
+              packageType: sdk
+              useGlobalJson: true
+              includePreviewVersions: true
+              workingDirectory: $(Build.SourcesDirectory)
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          - script: dotnet --list-sdks
+            displayName: Report dotnet SDK versions
+          - script: .\Build.cmd $(_kind) -pack -c $(_BuildConfig)
+            displayName: Initial build and prepare packages.
+          - script:  dotnet publish -c $(_BuildConfig)  -bl:\"./bin/$(_BuildConfig)/net7.0/win-x64/publish/Trimming.binlog\"
+            displayName: Build and publish a trim test package.
+            workingDirectory: $(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test
+          - script: .\check.cmd
+            displayName: Check the state of the trimmed app.
+            workingDirectory: $(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test
+          - task: PublishPipelineArtifact@1
+            displayName: Publish Trim Tests Logs
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/tests/projects/SelfContained_Trimming_Test/bin/$(_BuildConfig)/net7.0/win-x64/publish'
+              artifactName: 'Trim Test Logs Attempt $(System.JobAttempt) Logs $(_kind)'
+            continueOnError: true
+            condition: always()
+
     # Arcade-powered source build
     # turned off until https://github.com/dotnet/source-build/issues/1795 is fixed
     # - template: /eng/common/templates/jobs/jobs.yml
@@ -584,6 +719,7 @@ stages:
           -TsaRepositoryName "FSharp"
           -TsaCodebaseName "FSharp-GitHub"
           -TsaPublish $True
+          -PoliCheckAdditionalRunConfigParams @("UserExclusionPath < $(Build.SourcesDirectory)/eng/policheck_exclusions.xml")
 
 #---------------------------------------------------------------------------------------------------------------------#
 #                                                   VS Insertion                                                      #

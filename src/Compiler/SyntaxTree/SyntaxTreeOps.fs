@@ -172,10 +172,10 @@ let inline unionRangeWithXmlDoc (xmlDoc: PreXmlDoc) range =
         unionRanges xmlDoc.Range range
 
 let mkSynAnonField (ty: SynType, xmlDoc) =
-    SynField([], false, None, ty, false, xmlDoc, None, unionRangeWithXmlDoc xmlDoc ty.Range)
+    SynField([], false, None, ty, false, xmlDoc, None, unionRangeWithXmlDoc xmlDoc ty.Range, SynFieldTrivia.Zero)
 
 let mkSynNamedField (ident, ty: SynType, xmlDoc, m) =
-    SynField([], false, Some ident, ty, false, xmlDoc, None, m)
+    SynField([], false, Some ident, ty, false, xmlDoc, None, m, SynFieldTrivia.Zero)
 
 let mkSynPatVar vis (id: Ident) =
     SynPat.Named(SynIdent(id, None), false, vis, id.idRange)
@@ -373,12 +373,12 @@ let mkSynOperator (opm: range) (oper: string) =
 
 let mkSynInfix opm (l: SynExpr) oper (r: SynExpr) =
     let firstTwoRange = unionRanges l.Range opm
-    let wholeRange = unionRanges l.Range r.Range
+    let mWhole = unionRanges l.Range r.Range
 
     let app1 =
         SynExpr.App(ExprAtomicFlag.NonAtomic, true, mkSynOperator opm oper, l, firstTwoRange)
 
-    SynExpr.App(ExprAtomicFlag.NonAtomic, false, app1, r, wholeRange)
+    SynExpr.App(ExprAtomicFlag.NonAtomic, false, app1, r, mWhole)
 
 let mkSynBifix m oper x1 x2 =
     let app1 = SynExpr.App(ExprAtomicFlag.NonAtomic, true, mkSynOperator m oper, x1, m)
@@ -417,17 +417,17 @@ let mkSynDotBrackGet m mDot a b = SynExpr.DotIndexedGet(a, b, mDot, m)
 
 let mkSynQMarkSet m a b c = mkSynTrifix m qmarkSet a b c
 
-let mkSynDotParenGet lhsm dotm a b =
+let mkSynDotParenGet mLhs mDot a b =
     match b with
     | SynExpr.Tuple (false, [ _; _ ], _, _) ->
-        errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), lhsm))
-        SynExpr.Const(SynConst.Unit, lhsm)
+        errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), mLhs))
+        SynExpr.Const(SynConst.Unit, mLhs)
 
     | SynExpr.Tuple (false, [ _; _; _ ], _, _) ->
-        errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), lhsm))
-        SynExpr.Const(SynConst.Unit, lhsm)
+        errorR (Deprecated(FSComp.SR.astDeprecatedIndexerNotation (), mLhs))
+        SynExpr.Const(SynConst.Unit, mLhs)
 
-    | _ -> mkSynInfix dotm a parenGet b
+    | _ -> mkSynInfix mDot a parenGet b
 
 let mkSynUnit m = SynExpr.Const(SynConst.Unit, m)
 
@@ -452,24 +452,24 @@ let mkSynAssign (l: SynExpr) (r: SynExpr) =
     | SynExpr.App (_, _, SynExpr.DotGet (e, _, v, _), x, _) -> SynExpr.DotNamedIndexedPropertySet(e, v, x, r, m)
     | l -> SynExpr.Set(l, r, m)
 
-let mkSynDot dotm m l (SynIdent (r, rTrivia)) =
+let mkSynDot mDot m l (SynIdent (r, rTrivia)) =
     match l with
     | SynExpr.LongIdent (isOpt, SynLongIdent (lid, dots, trivia), None, _) ->
         // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
-        SynExpr.LongIdent(isOpt, SynLongIdent(lid @ [ r ], dots @ [ dotm ], trivia @ [ rTrivia ]), None, m)
-    | SynExpr.Ident id -> SynExpr.LongIdent(false, SynLongIdent([ id; r ], [ dotm ], [ None; rTrivia ]), None, m)
+        SynExpr.LongIdent(isOpt, SynLongIdent(lid @ [ r ], dots @ [ mDot ], trivia @ [ rTrivia ]), None, m)
+    | SynExpr.Ident id -> SynExpr.LongIdent(false, SynLongIdent([ id; r ], [ mDot ], [ None; rTrivia ]), None, m)
     | SynExpr.DotGet (e, dm, SynLongIdent (lid, dots, trivia), _) ->
         // REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
-        SynExpr.DotGet(e, dm, SynLongIdent(lid @ [ r ], dots @ [ dotm ], trivia @ [ rTrivia ]), m)
-    | expr -> SynExpr.DotGet(expr, dotm, SynLongIdent([ r ], [], [ rTrivia ]), m)
+        SynExpr.DotGet(e, dm, SynLongIdent(lid @ [ r ], dots @ [ mDot ], trivia @ [ rTrivia ]), m)
+    | expr -> SynExpr.DotGet(expr, mDot, SynLongIdent([ r ], [], [ rTrivia ]), m)
 
-let mkSynDotMissing dotm m l =
+let mkSynDotMissing mDot m l =
     match l with
     | SynExpr.LongIdent (isOpt, SynLongIdent (lid, dots, trivia), None, _) ->
         // REVIEW: MEMORY PERFORMANCE: This list operation is memory intensive (we create a lot of these list nodes)
-        SynExpr.LongIdent(isOpt, SynLongIdent(lid, dots @ [ dotm ], trivia), None, m)
-    | SynExpr.Ident id -> SynExpr.LongIdent(false, SynLongIdent([ id ], [ dotm ], []), None, m)
-    | SynExpr.DotGet (e, dm, SynLongIdent (lid, dots, trivia), _) -> SynExpr.DotGet(e, dm, SynLongIdent(lid, dots @ [ dotm ], trivia), m) // REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
+        SynExpr.LongIdent(isOpt, SynLongIdent(lid, dots @ [ mDot ], trivia), None, m)
+    | SynExpr.Ident id -> SynExpr.LongIdent(false, SynLongIdent([ id ], [ mDot ], [ None ]), None, m)
+    | SynExpr.DotGet (e, dm, SynLongIdent (lid, dots, trivia), _) -> SynExpr.DotGet(e, dm, SynLongIdent(lid, dots @ [ mDot ], trivia), m) // REVIEW: MEMORY PERFORMANCE: This is memory intensive (we create a lot of these list nodes)
     | expr -> SynExpr.DiscardAfterMissingQualificationAfterDot(expr, m)
 
 let mkSynFunMatchLambdas synArgNameGenerator isMember wholem ps arrow e =
@@ -690,118 +690,74 @@ let mkSynBinding
     let mBind = unionRangeWithXmlDoc xmlDoc mBind
     SynBinding(vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind, trivia)
 
-let NonVirtualMemberFlags trivia k : SynMemberFlags =
+let NonVirtualMemberFlags k : SynMemberFlags =
     {
         MemberKind = k
         IsInstance = true
         IsDispatchSlot = false
         IsOverrideOrExplicitImpl = false
         IsFinal = false
-        Trivia = trivia
+        GetterOrSetterIsCompilerGenerated = false
     }
 
-let CtorMemberFlags trivia : SynMemberFlags =
+let CtorMemberFlags: SynMemberFlags =
     {
         MemberKind = SynMemberKind.Constructor
         IsInstance = false
         IsDispatchSlot = false
         IsOverrideOrExplicitImpl = false
         IsFinal = false
-        Trivia = trivia
+        GetterOrSetterIsCompilerGenerated = false
     }
 
-let ClassCtorMemberFlags trivia : SynMemberFlags =
+let ClassCtorMemberFlags: SynMemberFlags =
     {
         MemberKind = SynMemberKind.ClassConstructor
         IsInstance = false
         IsDispatchSlot = false
         IsOverrideOrExplicitImpl = false
         IsFinal = false
-        Trivia = trivia
+        GetterOrSetterIsCompilerGenerated = false
     }
 
-let OverrideMemberFlags trivia k : SynMemberFlags =
+let OverrideMemberFlags k : SynMemberFlags =
     {
         MemberKind = k
         IsInstance = true
         IsDispatchSlot = false
         IsOverrideOrExplicitImpl = true
         IsFinal = false
-        Trivia = trivia
+        GetterOrSetterIsCompilerGenerated = false
     }
 
-let AbstractMemberFlags trivia k : SynMemberFlags =
+let AbstractMemberFlags isInstance k : SynMemberFlags =
     {
         MemberKind = k
-        IsInstance = true
+        IsInstance = isInstance
         IsDispatchSlot = true
         IsOverrideOrExplicitImpl = false
         IsFinal = false
-        Trivia = trivia
+        GetterOrSetterIsCompilerGenerated = false
     }
 
-let StaticMemberFlags trivia k : SynMemberFlags =
+let StaticMemberFlags k : SynMemberFlags =
     {
         MemberKind = k
         IsInstance = false
         IsDispatchSlot = false
         IsOverrideOrExplicitImpl = false
         IsFinal = false
-        Trivia = trivia
+        GetterOrSetterIsCompilerGenerated = false
     }
 
-let MemberSynMemberFlagsTrivia (mMember: range) : SynMemberFlagsTrivia =
+let ImplementStaticMemberFlags k : SynMemberFlags =
     {
-        MemberRange = Some mMember
-        OverrideRange = None
-        AbstractRange = None
-        StaticRange = None
-        DefaultRange = None
-    }
-
-let OverrideSynMemberFlagsTrivia (mOverride: range) : SynMemberFlagsTrivia =
-    {
-        MemberRange = None
-        OverrideRange = Some mOverride
-        AbstractRange = None
-        StaticRange = None
-        DefaultRange = None
-    }
-
-let StaticMemberSynMemberFlagsTrivia (mStatic: range) (mMember: range) : SynMemberFlagsTrivia =
-    {
-        MemberRange = Some mMember
-        OverrideRange = None
-        AbstractRange = None
-        StaticRange = Some mStatic
-        DefaultRange = None
-    }
-
-let DefaultSynMemberFlagsTrivia (mDefault: range) : SynMemberFlagsTrivia =
-    {
-        MemberRange = None
-        OverrideRange = None
-        AbstractRange = None
-        StaticRange = None
-        DefaultRange = Some mDefault
-    }
-
-let AbstractSynMemberFlagsTrivia (mAbstract: range) : SynMemberFlagsTrivia =
-    {
-        MemberRange = None
-        OverrideRange = None
-        AbstractRange = Some mAbstract
-        StaticRange = None
-        DefaultRange = None
-    }
-
-let AbstractMemberSynMemberFlagsTrivia (mAbstract: range) (mMember: range) : SynMemberFlagsTrivia =
-    {
-        MemberRange = Some mMember
-        OverrideRange = None
-        AbstractRange = Some mAbstract
-        StaticRange = None
-        DefaultRange = None
+        MemberKind = k
+        IsInstance = false
+        IsDispatchSlot = false
+        IsOverrideOrExplicitImpl = true
+        IsFinal = false
+        GetterOrSetterIsCompilerGenerated = false
     }
 
 let inferredTyparDecls = SynValTyparDecls(None, true)
@@ -844,6 +800,7 @@ let rec synExprContainsError inpExpr =
         | SynExpr.LibraryOnlyStaticOptimization _
         | SynExpr.Null _
         | SynExpr.Ident _
+        | SynExpr.Typar _
         | SynExpr.ImplicitZero _
         | SynExpr.Const _
         | SynExpr.Dynamic _ -> false
@@ -974,9 +931,9 @@ let (|ParsedHashDirectiveArguments|) (input: ParsedHashDirectiveArgument list) =
         | ParsedHashDirectiveArgument.SourceIdentifier (_, v, _) -> v)
         input
 
-let prependIdentInLongIdentWithTrivia (SynIdent (ident, identTrivia)) dotm lid =
+let prependIdentInLongIdentWithTrivia (SynIdent (ident, identTrivia)) mDot lid =
     match lid with
-    | SynLongIdent (lid, dots, trivia) -> SynLongIdent(ident :: lid, dotm :: dots, identTrivia :: trivia)
+    | SynLongIdent (lid, dots, trivia) -> SynLongIdent(ident :: lid, mDot :: dots, identTrivia :: trivia)
 
 let mkDynamicArgExpr expr =
     match expr with
@@ -994,6 +951,13 @@ let rec normalizeTupleExpr exprs commas : SynExpr list * range list =
 
         innerExprs @ rest, innerCommas @ commas
     | _ -> exprs, commas
+
+let rec normalizeTuplePat pats : SynPat list =
+    match pats with
+    | SynPat.Tuple (false, innerPats, _) :: rest ->
+        let innerExprs = normalizeTuplePat (List.rev innerPats)
+        innerExprs @ rest
+    | _ -> pats
 
 /// Remove all members that were captures as SynMemberDefn.GetSetMember
 let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =
@@ -1017,3 +981,34 @@ let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =
             let members = Option.map desugarGetSetMembers members
             [ SynMemberDefn.Interface(interfaceType, withKeyword, members, m) ]
         | md -> [ md ])
+
+let getTypeFromTuplePath (path: SynTupleTypeSegment list) : SynType list =
+    path
+    |> List.choose (function
+        | SynTupleTypeSegment.Type t -> Some t
+        | _ -> None)
+
+let (|MultiDimensionArrayType|_|) (t: SynType) =
+    match t with
+    | SynType.App (StripParenTypes (SynType.LongIdent (SynLongIdent ([ identifier ], _, _))), _, [ elementType ], _, _, true, m) ->
+        if System.Text.RegularExpressions.Regex.IsMatch(identifier.idText, "^array\d\d?d$") then
+            let rank =
+                identifier.idText
+                |> Seq.filter System.Char.IsDigit
+                |> Seq.toArray
+                |> System.String
+                |> int
+
+            Some(rank, elementType, m)
+        else
+            None
+    | _ -> None
+
+let (|TypesForTypar|) (t: SynType) =
+    let rec visit continuation t =
+        match t with
+        | SynType.Paren (innerT, _) -> visit continuation innerT
+        | SynType.Or (lhsT, rhsT, _, _) -> visit (fun lhsTs -> [ yield! lhsTs; yield rhsT ] |> continuation) lhsT
+        | _ -> continuation [ t ]
+
+    visit id t

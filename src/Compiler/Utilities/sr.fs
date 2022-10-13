@@ -37,7 +37,7 @@ module internal DiagnosticMessage =
     let isFunctionType (ty1: System.Type) =
         isNamedType (ty1)
         && ty1.IsGenericType
-        && (ty1.GetGenericTypeDefinition()).Equals(funTyC)
+        && System.Type.op_Equality (ty1.GetGenericTypeDefinition(), funTyC)
 
     let rec destFunTy (ty: System.Type) =
         if isFunctionType ty then

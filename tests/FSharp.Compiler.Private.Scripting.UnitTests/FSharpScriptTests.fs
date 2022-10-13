@@ -17,6 +17,15 @@ open Xunit
 type InteractiveTests() =
 
     [<Fact>]
+    member _.``ValueRestriction error message should not have type variables fully solved``() =
+        use script = new FSharpScript()
+        let code = "id id"
+        let _, errors = script.Eval(code)
+        Assert.Equal(1, errors.Length)
+        let msg = errors[0].Message
+        Assert.Matches("'_\\w+ -> '_\\w+", msg)
+
+    [<Fact>]
     member _.``Eval object value``() =
         use script = new FSharpScript()
         let opt = script.Eval("1+1") |> getValue
@@ -316,19 +325,6 @@ typeof<System.Device.Gpio.GpioController>.Assembly.Location
         else
             // Only Windows/Linux supported.
             ()
-
-    [<Fact>]
-    member _.``Reference -- Azure.ResourceManager.Resources``() =
-        let code = """
-#r "nuget: Azure.Identity, 1.3.0"
-#r "nuget: Azure.ResourceManager.Resources, 1.0.0-preview.2"
-let creds = Azure.Identity.DefaultAzureCredential()
-let client = Azure.ResourceManager.Resources.ResourcesManagementClient("mySubscriptionId", creds)
-true"""
-        use script = new FSharpScript(additionalArgs=[|"/langversion:preview"|])
-        let opt = script.Eval(code)  |> getValue
-        let value = opt.Value
-        Assert.True(true = downcast value.ReflectionValue)
 
     [<Fact>]
     member _.``Simple pinvoke should not be impacted by native resolver``() =

@@ -7,27 +7,22 @@
         <target state="translated">Açık deyimleri her zaman en üst düzeye yerleştir</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
+      <trans-unit id="Lens">
+        <source>Lens</source>
+        <target state="translated">Lens</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Replace_LineLens">
-        <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">Ek açıklamaları satırın üstü yerine sağ tarafta göster</target>
+      <trans-unit id="Lens_Switch">
+        <source>Enable Lens (Experimental)</source>
+        <target state="translated">Lens’i Etkinleştir (Deneysel)</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Switch">
-        <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">CodeLens’i Etkinleştir (Deneysel)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Prefix">
+      <trans-unit id="Lens_Prefix">
         <source>Annotation prefix</source>
         <target state="translated">Ek açıklama ön eki</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_UseColors">
+      <trans-unit id="Lens_UseColors">
         <source>Use colors in annotations</source>
         <target state="translated">Ek açıklamalarda renk kullan</target>
         <note />
@@ -45,6 +40,16 @@
       <trans-unit id="Diagnostics">
         <source>Diagnostics</source>
         <target state="translated">Tanılama</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
+        <source>Enable parallel type checking with signature files</source>
+        <target state="new">Enable parallel type checking with signature files</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Parallel_Reference_Resolution">
+        <source>Enable parallel reference resolution</source>
+        <target state="new">Enable parallel reference resolution</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -67,6 +72,11 @@
         <target state="translated">Gezinti bağlantıları</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parallelization">
+        <source>Parallelization (requires restart)</source>
+        <target state="new">Parallelization (requires restart)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Show_all_symbols">
         <source>Show s_ymbols in unopened namespaces</source>
         <target state="translated">Açılmamış ad alanlarında s_embolleri göster</target>
@@ -85,11 +95,6 @@
       <trans-unit id="Enable_in_memory_cross_project_references">
         <source>_Enable in-memory cross project references</source>
         <target state="translated">_Bellek içi çapraz proje başvurularını etkinleştir</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">Verileri bellekte önbelleğe alınan proje sayısı</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -165,11 +170,6 @@
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
         <target state="translated">Bellek içi projeler arası başvurular, IDE özelliklerinin farklı projelerde çalışmasına imkan tanımak için bellekte proje düzeyi veriler depolar.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">IDE özellikleri için proje verileri önbelleğe alınır. Değer yüksek olduğunda daha fazla proje önbelleğe alındığından daha fazla bellek kullanılır. Bu değerin ayarlanması küçük veya orta ölçekli çözümleri etkilememelidir.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

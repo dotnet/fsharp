@@ -206,9 +206,11 @@ module InterfaceStubGenerator =
         let nm =
             match arg.Name with
             | None ->
-                if arg.Type.HasTypeDefinition
-                   && arg.Type.TypeDefinition.CompiledName = "unit"
-                   && arg.Type.TypeDefinition.Namespace = Some "Microsoft.FSharp.Core" then
+                if
+                    arg.Type.HasTypeDefinition
+                    && arg.Type.TypeDefinition.CompiledName = "unit"
+                    && arg.Type.TypeDefinition.Namespace = Some "Microsoft.FSharp.Core"
+                then
                     "()"
                 else
                     sprintf "arg%d" (namesWithIndices |> Map.toSeq |> Seq.map snd |> Seq.sumBy Set.count |> max 1)
@@ -303,8 +305,10 @@ module InterfaceStubGenerator =
     let internal normalizePropertyName (v: FSharpMemberOrFunctionOrValue) =
         let displayName = v.DisplayName
 
-        if (v.IsPropertyGetterMethod && displayName.StartsWithOrdinal("get_"))
-           || (v.IsPropertySetterMethod && displayName.StartsWithOrdinal("set_")) then
+        if
+            (v.IsPropertyGetterMethod && displayName.StartsWithOrdinal("get_"))
+            || (v.IsPropertySetterMethod && displayName.StartsWithOrdinal("set_"))
+        then
             displayName[4..]
         else
             displayName
@@ -362,7 +366,8 @@ module InterfaceStubGenerator =
                 [
                     if v.InlineAnnotation = FSharpInlineAnnotation.AlwaysInline then
                         yield "inline"
-                    if v.Accessibility.IsInternal then yield "internal"
+                    if v.Accessibility.IsInternal then
+                        yield "internal"
                 ]
 
             let argInfos, retType = getArgTypes ctx v
@@ -371,9 +376,13 @@ module InterfaceStubGenerator =
 
         // A couple of helper methods for emitting close declarations of members and stub method bodies.
         let closeDeclaration (returnType: string) (writer: ColumnIndentedTextWriter) =
-            if verboseMode then writer.Write(": {0}", returnType)
+            if verboseMode then
+                writer.Write(": {0}", returnType)
+
             writer.Write(" = ", returnType)
-            if verboseMode then writer.WriteLine("")
+
+            if verboseMode then
+                writer.WriteLine("")
 
         let writeImplementation (ctx: Context) (writer: ColumnIndentedTextWriter) =
             match verboseMode, ctx.MethodBody with
@@ -435,7 +444,10 @@ module InterfaceStubGenerator =
             let closeDeclaration = closeDeclaration retType
             let writeImplementation = writeImplementation ctx
             let writer = ctx.Writer
-            if isEventMember v then writer.WriteLine("[<CLIEvent>]")
+
+            if isEventMember v then
+                writer.WriteLine("[<CLIEvent>]")
+
             writer.Write("member ")
 
             for modifier in modifiers do
@@ -464,7 +476,9 @@ module InterfaceStubGenerator =
                         writer.Write(")")
 
                     writer.Write(" = ")
-                    if verboseMode then writer.WriteLine("")
+
+                    if verboseMode then
+                        writer.WriteLine("")
 
                 writer |> writeImplementation
                 writer.Unindent ctx.Indentation
@@ -766,8 +780,8 @@ module InterfaceStubGenerator =
 
     /// Find corresponding interface declaration at a given position
     let TryFindInterfaceDeclaration (pos: pos) (parsedInput: ParsedInput) =
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.tryPick walkSynModuleOrNamespace moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.tryPick walkSynModuleOrNamespace file.Contents
 
         and walkSynModuleOrNamespace (SynModuleOrNamespace (decls = decls; range = range)) =
             if not <| rangeContainsPos range pos then
@@ -827,7 +841,7 @@ module InterfaceStubGenerator =
                     | None, Some binding -> walkBinding binding
                     | Some getBinding, Some setBinding -> walkBinding getBinding |> Option.orElseWith (fun () -> walkBinding setBinding)
                 | SynMemberDefn.NestedType (typeDef, _access, _range) -> walkSynTypeDefn typeDef
-                | SynMemberDefn.ValField (_field, _range) -> None
+                | SynMemberDefn.ValField _ -> None
                 | SynMemberDefn.LetBindings (bindings, _isStatic, _isRec, _range) -> List.tryPick walkBinding bindings
                 | SynMemberDefn.Open _
                 | SynMemberDefn.ImplicitCtor _

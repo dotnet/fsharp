@@ -49,7 +49,6 @@
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.LanguageService.Base.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.LanguageService.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.Editor.pkgdef" />
-    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.PropertyPages.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.Compiler.Server.Shared.pkgdef" />
 
     <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="FSharp.Editor" Path="|FSharp.Editor|" />

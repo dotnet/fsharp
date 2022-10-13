@@ -13,18 +13,18 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 
-[<AbstractClass>]
-type DiagnosticsLoggerProvider =
-    new: unit -> DiagnosticsLoggerProvider
-    abstract CreateDiagnosticsLoggerUpToMaxErrors:
-        tcConfigBuilder: TcConfigBuilder * exiter: Exiter -> DiagnosticsLogger
+/// DiagnosticLoggers can be sensitive to the TcConfig flags. During the checking
+/// of the flags themselves we have to create temporary loggers, until the full configuration is
+/// available.
+type IDiagnosticsLoggerProvider =
+    abstract CreateLogger: tcConfigB: TcConfigBuilder * exiter: Exiter -> DiagnosticsLogger
 
 /// The default DiagnosticsLoggerProvider implementation, reporting messages to the Console up to the maxerrors maximum
 type ConsoleLoggerProvider =
     new: unit -> ConsoleLoggerProvider
-    inherit DiagnosticsLoggerProvider
+    interface IDiagnosticsLoggerProvider
 
-/// An error logger that reports errors up to some maximum, notifying the exiter when that maximum is reached
+/// An diagnostic logger that reports errors up to some maximum, notifying the exiter when that maximum is reached
 ///
 /// Used only in LegacyHostedCompilerForTesting
 [<AbstractClass>]
@@ -33,8 +33,7 @@ type DiagnosticsLoggerUpToMaxErrors =
     new: tcConfigB: TcConfigBuilder * exiter: Exiter * nameForDebugging: string -> DiagnosticsLoggerUpToMaxErrors
 
     /// Called when a diagnostic occurs
-    abstract HandleIssue:
-        tcConfigB: TcConfigBuilder * diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    abstract HandleIssue: tcConfig: TcConfig * diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
     /// Called when 'too many errors' has occurred
     abstract HandleTooManyErrors: text: string -> unit
@@ -52,25 +51,10 @@ val CompileFromCommandLineArguments:
     reduceMemoryUsage: ReduceMemoryFlag *
     defaultCopyFSharpCore: CopyFSharpCoreFlag *
     exiter: Exiter *
-    loggerProvider: DiagnosticsLoggerProvider *
+    loggerProvider: IDiagnosticsLoggerProvider *
     tcImportsCapture: (TcImports -> unit) option *
     dynamicAssemblyCreator: (TcConfig * TcGlobals * string * ILModuleDef -> unit) option ->
         unit
 
-/// An additional compilation entry point used by FSharp.Compiler.Service taking syntax trees as input
-val CompileFromSyntaxTrees:
-    ctok: CompilationThreadToken *
-    legacyReferenceResolver: LegacyReferenceResolver *
-    reduceMemoryUsage: ReduceMemoryFlag *
-    assemblyName: string *
-    target: CompilerTarget *
-    targetDll: string *
-    targetPdb: string option *
-    dependencies: string list *
-    noframework: bool *
-    exiter: Exiter *
-    loggerProvider: DiagnosticsLoggerProvider *
-    inputs: ParsedInput list *
-    tcImportsCapture: (TcImports -> unit) option *
-    dynamicAssemblyCreator: (TcConfig * TcGlobals * string * ILModuleDef -> unit) option ->
-        unit
+/// Read the parallelReferenceResolution flag from environment variables
+val internal getParallelReferenceResolutionFromEnvironment: unit -> ParallelReferenceResolution option

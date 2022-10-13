@@ -106,6 +106,8 @@ type FSharpSymbol =
     member DisplayNameCore: string
 
     /// Gets the display name for the symbol. Double backticks are added if the name is not a valid identifier.
+    ///
+    /// For FSharpParameter symbols without a name for the paramater, this returns "````"
     member DisplayName: string
 
     /// Get the implementation location for the symbol if it was declared in a signature that has an implementation
@@ -635,6 +637,8 @@ type FSharpStaticParameter =
 /// Represents further information about a member constraint on a generic type parameter
 [<Class; NoEquality; NoComparison>]
 type FSharpGenericParameterMemberConstraint =
+
+    inherit FSharpSymbol
 
     /// Get the types that may be used to satisfy the constraint
     member MemberSources: IList<FSharpType>
