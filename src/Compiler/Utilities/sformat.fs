@@ -455,9 +455,9 @@ module ReflectUtils =
         isNamedType (ty1)
         && if ty1.IsGenericType then
                ty2.IsGenericType
-               && (ty1.GetGenericTypeDefinition()).Equals(ty2.GetGenericTypeDefinition())
+               && Type.op_Equality (ty1.GetGenericTypeDefinition(), ty2.GetGenericTypeDefinition())
            else
-               ty1.Equals(ty2)
+               Type.op_Equality (ty1, ty2)
 
     let option = typedefof<obj option>
 
