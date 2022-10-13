@@ -3256,9 +3256,12 @@ module EstablishTypeDefinitionCores =
                     let hasRQAAttribute = HasFSharpAttribute cenv.g cenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
                     let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst hasRQAAttribute tpenv unionCases
                     if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
-                      let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield ft.LogicalName ]
-                      if fieldNames |> List.distinct |> List.length <> fieldNames.Length then 
-                          errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(), m))
+                      let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield ft ]
+                      let fieldNamesDis =  fieldNames |> List.map(fun field -> field.LogicalName)
+                      if fieldNamesDis |> List.distinct |> List.length <> fieldNamesDis.Length then
+                          for field in fieldNames do
+                            if field.rfield_name_generated then
+                                errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(), field.Range))
 
                     writeFakeUnionCtorsToSink unionCases
                     let repr = Construct.MakeUnionRepr unionCases
