@@ -15,7 +15,7 @@
     <!-- F# Version components -->
     <FSMajorVersion>7</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>0</FSBuildVersion>
+    <FSBuildVersion>1</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -40,15 +40,15 @@
     <FSharpCompilerServiceReleaseNotesVersion>$(FCSMajorVersion)$(FCSMinorVersion)$(FCSBuildVersion)</FSharpCompilerServiceReleaseNotesVersion>
     <!-- -->
     <!-- The current published nuget package -->
-    <FSharpCoreShippedPackageVersionValue>6.0.5</FSharpCoreShippedPackageVersionValue>
+    <FSharpCoreShippedPackageVersionValue>6.0.6</FSharpCoreShippedPackageVersionValue>
     <!-- -->
     <!-- The pattern for specifying the preview package -->
     <FSharpCorePreviewPackageVersionValue>$(FSCorePackageVersionValue)-$(PreReleaseVersionLabel).*</FSharpCorePreviewPackageVersionValue>
     <!-- -->
     <!-- FSharp tools for Visual Studio version number -->
     <FSToolsMajorVersion>12</FSToolsMajorVersion>
-    <FSToolsMinorVersion>0</FSToolsMinorVersion>
-    <FSToolsBuildVersion>5</FSToolsBuildVersion>
+    <FSToolsMinorVersion>5</FSToolsMinorVersion>
+    <FSToolsBuildVersion>0</FSToolsBuildVersion>
     <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
     <FSProductVersionPrefix>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion)</FSProductVersionPrefix>
     <FSProductVersionReleaseNotesVersion>$(FSToolsMajorVersion)-$(FSToolsMinorVersion)-$(FSToolsBuildVersion)</FSProductVersionReleaseNotesVersion>
