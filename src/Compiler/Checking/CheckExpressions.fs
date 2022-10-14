@@ -10246,7 +10246,7 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
                      |> fun (r, v) -> (List.map fst r, List.map snd r, List.map snd v)
             let retAttribs =
                 match rtyOpt with
-                | Some (SynBindingReturnInfo(_, _, Attributes retAttrs)) ->
+                | Some (SynBindingReturnInfo(attributes = Attributes retAttrs)) ->
                     rotRetAttribs @ TcAttrs AttributeTargets.ReturnValue true retAttrs
                 | None -> rotRetAttribs
             let valSynData =
@@ -10894,7 +10894,7 @@ and ApplyTypesFromArgumentPatterns (cenv: cenv, env, optionalArgsOK, ty, m, tpen
     | [] ->
         match retInfoOpt with
         | None -> ()
-        | Some (SynBindingReturnInfo (retInfoTy, m, _)) ->
+        | Some (SynBindingReturnInfo (typeName = retInfoTy; range = m)) ->
             let retInfoTy, _ = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv retInfoTy
             UnifyTypes cenv env m ty retInfoTy
         // Property setters always have "unit" return type
