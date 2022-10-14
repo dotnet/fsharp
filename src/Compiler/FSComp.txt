@@ -1372,7 +1372,7 @@ tcTupleStructMismatch,"One tuple type is a struct tuple, the other is a referenc
 3201,tcModuleAbbrevFirstInMutRec,"In a recursive declaration group, module abbreviations must come after all 'open' declarations and before other declarations"
 3202,tcUnsupportedMutRecDecl,"This declaration is not supported in recursive declaration groups"
 3203,parsInvalidUseOfRec,"Invalid use of 'rec' keyword"
-3204,tcStructUnionMultiCaseDistinctFields,"If a union type has more than one case and is a struct, then all fields within the union type must be given unique names."
+3204,tcStructUnionMultiCaseDistinctFields,"If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned)."
 3206,CallerMemberNameIsOverriden,"The CallerMemberNameAttribute applied to parameter '%s' will have no effect. It is overridden by the CallerFilePathAttribute."
 3207,tcFixedNotAllowed,"Invalid use of 'fixed'. 'fixed' may only be used in a declaration of the form 'use x = fixed expr' where the expression is an array, the address of a field, the address of an array element or a string'"
 3208,tcCouldNotFindOffsetToStringData,"Could not find method System.Runtime.CompilerServices.OffsetToStringData in references when building 'fixed' expression."

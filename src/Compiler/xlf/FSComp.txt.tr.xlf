@@ -7513,8 +7513,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
-        <source>If a union type has more than one case and is a struct, then all fields within the union type must be given unique names.</source>
-        <target state="translated">Bir birleşim türü büyük ve küçük harfler içeriyorsa ve bir yapıysa, birleşim türü içindeki tüm alanlara benzersiz adlar verilmelidir.</target>
+        <source>If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).</source>
+        <target state="needs-review-translation">Bir birleşim türü büyük ve küçük harfler içeriyorsa ve bir yapıysa, birleşim türü içindeki tüm alanlara benzersiz adlar verilmelidir.</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
