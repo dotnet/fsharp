@@ -7,29 +7,24 @@
         <target state="translated">Всегда располагайте открытые операторы на верхнем уровне</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
+      <trans-unit id="Lens">
+        <source>Lens</source>
+        <target state="new">Lens</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Replace_LineLens">
-        <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">Показать примечания справа от строки, а не над ней</target>
+      <trans-unit id="Lens_Switch">
+        <source>Enable Lens (Experimental)</source>
+        <target state="new">Enable Lens (Experimental)</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Switch">
-        <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">Включить CodeLens (экспериментальная функция)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Prefix">
+      <trans-unit id="Lens_Prefix">
         <source>Annotation prefix</source>
-        <target state="translated">Префикс примечания</target>
+        <target state="new">Annotation prefix</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_UseColors">
+      <trans-unit id="Lens_UseColors">
         <source>Use colors in annotations</source>
-        <target state="translated">Использовать цветные примечания</target>
+        <target state="new">Use colors in annotations</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -45,6 +40,16 @@
       <trans-unit id="Diagnostics">
         <source>Diagnostics</source>
         <target state="translated">Диагностика</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
+        <source>Enable parallel type checking with signature files</source>
+        <target state="new">Enable parallel type checking with signature files</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Parallel_Reference_Resolution">
+        <source>Enable parallel reference resolution</source>
+        <target state="new">Enable parallel reference resolution</target>
         <note />
       </trans-unit>
       <trans-unit id="Language_Service_Performance">
@@ -67,6 +72,11 @@
         <target state="translated">Ссылки навигации</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parallelization">
+        <source>Parallelization (requires restart)</source>
+        <target state="new">Parallelization (requires restart)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Show_all_symbols">
         <source>Show s_ymbols in unopened namespaces</source>
         <target state="translated">По_казать символы в неоткрытых пространствах имен</target>
@@ -85,11 +95,6 @@
       <trans-unit id="Enable_in_memory_cross_project_references">
         <source>_Enable in-memory cross project references</source>
         <target state="translated">_Включить перекрестные ссылки между проектами в памяти</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">Число проектов, данные которых кэшируются в памяти</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -165,11 +170,6 @@
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
         <target state="translated">Перекрестные ссылки между проектами в памяти хранят данные уровня проекта в памяти, поэтому функции и компоненты IDE могут работать в разных проектах.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">Для функций и компонентов IDE используются кэшированные данные проекта. Более высокие значения потребляют больший объем памяти, так как кэшируется больше проектов. Настройка этого значения не должна влиять на решения небольших или средних размеров.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

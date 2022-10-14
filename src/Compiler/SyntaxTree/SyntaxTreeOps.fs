@@ -1031,6 +1031,13 @@ let rec normalizeTupleExpr exprs commas : SynExpr list * range list =
         innerExprs @ rest, innerCommas @ commas
     | _ -> exprs, commas
 
+let rec normalizeTuplePat pats : SynPat list =
+    match pats with
+    | SynPat.Tuple (false, innerPats, _) :: rest ->
+        let innerExprs = normalizeTuplePat (List.rev innerPats)
+        innerExprs @ rest
+    | _ -> pats
+
 /// Remove all members that were captures as SynMemberDefn.GetSetMember
 let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =
     memberDefns
@@ -1075,3 +1082,12 @@ let (|MultiDimensionArrayType|_|) (t: SynType) =
         else
             None
     | _ -> None
+
+let (|TypesForTypar|) (t: SynType) =
+    let rec visit continuation t =
+        match t with
+        | SynType.Paren (innerT, _) -> visit continuation innerT
+        | SynType.Or (lhsT, rhsT, _, _) -> visit (fun lhsTs -> [ yield! lhsTs; yield rhsT ] |> continuation) lhsT
+        | _ -> continuation [ t ]
+
+    visit id t

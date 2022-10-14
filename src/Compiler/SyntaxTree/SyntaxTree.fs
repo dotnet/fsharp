@@ -330,7 +330,7 @@ type SynTypeConstraint =
 
     | WhereTyparSubtypeOfType of typar: SynTypar * typeName: SynType * range: range
 
-    | WhereTyparSupportsMember of typars: SynType list * memberSig: SynMemberSig * range: range
+    | WhereTyparSupportsMember of typars: SynType * memberSig: SynMemberSig * range: range
 
     | WhereTyparIsEnum of typar: SynTypar * typeArgs: SynType list * range: range
 
@@ -441,6 +441,8 @@ type SynType =
 
     | SignatureParameter of attributes: SynAttributes * optional: bool * id: Ident option * usedType: SynType * range: range
 
+    | Or of lhsType: SynType * rhsType: SynType * range: range * trivia: SynTypeOrTrivia
+
     member x.Range =
         match x with
         | SynType.App (range = m)
@@ -459,7 +461,8 @@ type SynType =
         | SynType.MeasureDivide (range = m)
         | SynType.MeasurePower (range = m)
         | SynType.Paren (range = m)
-        | SynType.SignatureParameter (range = m) -> m
+        | SynType.SignatureParameter (range = m)
+        | SynType.Or (range = m) -> m
         | SynType.LongIdent lidwd -> lidwd.Range
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -647,7 +650,7 @@ type SynExpr =
 
     | AddressOf of isByref: bool * expr: SynExpr * opRange: range * range: range
 
-    | TraitCall of supportTys: SynType list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
+    | TraitCall of supportTys: SynType * traitSig: SynMemberSig * argExpr: SynExpr * range: range
 
     | JoinIn of lhsExpr: SynExpr * lhsRange: range * rhsExpr: SynExpr * range: range
 
@@ -886,12 +889,12 @@ type SynSimplePats =
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range
+    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member x.Patterns =
         match x with
         | Pats pats -> pats
-        | NamePatPairs (pats, _) -> pats |> List.map (fun (_, _, pat) -> pat)
+        | NamePatPairs (pats = pats) -> pats |> List.map (fun (_, _, pat) -> pat)
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynPat =
@@ -907,6 +910,8 @@ type SynPat =
     | Attrib of pat: SynPat * attributes: SynAttributes * range: range
 
     | Or of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatOrTrivia
+
+    | ListCons of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatListConsTrivia
 
     | Ands of pats: SynPat list * range: range
 
@@ -953,6 +958,7 @@ type SynPat =
         | SynPat.Wild (range = m)
         | SynPat.Named (range = m)
         | SynPat.Or (range = m)
+        | SynPat.ListCons (range = m)
         | SynPat.Ands (range = m)
         | SynPat.As (range = m)
         | SynPat.LongIdent (range = m)
@@ -1648,10 +1654,7 @@ type ParsedSigFileFragment =
         trivia: SynModuleOrNamespaceSigTrivia
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
-type ParsedScriptInteraction =
-    | Definitions of defns: SynModuleDecl list * range: range
-
-    | HashDirective of hashDirective: ParsedHashDirective * range: range
+type ParsedScriptInteraction = Definitions of defns: SynModuleDecl list * range: range
 
 [<NoEquality; NoComparison>]
 type ParsedImplFile = ParsedImplFile of hashDirectives: ParsedHashDirective list * fragments: ParsedImplFileFragment list
