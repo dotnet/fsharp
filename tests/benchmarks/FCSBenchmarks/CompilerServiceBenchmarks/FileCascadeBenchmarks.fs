@@ -37,13 +37,23 @@ module private CascadeProjectHelpers =
         $"""
 module Benchmark0
 let returnValue = 5
-let myFunc0 () = 5"""
+let myFunc0 () = returnValue
+type MyType0 = MyType0 of string
+type MyOtherType0 = MyOtherType0 of int"""
 
     let generateSourceCode number =
         $"""
 module Benchmark%i{number}
 open Benchmark%i{number-1}
 let myFunc%i{number} () = myFunc%i{number-1}()
+type MyType{number} = MyType{number} of string
+type MyOtherType{number} = MyOtherType{number} of int
+type MyFunctionType{number} = MyType{number} -> MyOtherType{number}
+
+let processFunc{number} (x) (func:MyFunctionType{number}) = 
+    async {{
+        return func(x)
+    }}
 //$COMMENTAREA$"""
 
 [<MemoryDiagnoser>]
@@ -56,7 +66,7 @@ type FileCascadeBenchmarks() =
     let getProject() = project.Value
     
     let checker = FSharpChecker.Create(projectCacheSize = 5, enableParallelCheckingWithSignatureFiles = true, parallelReferenceResolution = true)
-    let filesToCreate = 64
+    let filesToCreate = 1024
 
     let mutable finalFileContents = SourceText.ofString ""
         
@@ -97,7 +107,14 @@ type FileCascadeBenchmarks() =
                
     [<Benchmark>]
     member x.ParseAndCheckLastFileProjectAsIs() =
-        x.ParseAndCheckLastFileInTheProject()
+        let parse,check = x.ParseAndCheckLastFileInTheProject()
+        printfn $"ParseHadErrors = {parse.ParseHadErrors}"
+        let checkResult = 
+            match check with 
+            | FSharpCheckFileAnswer.Aborted -> "abort" 
+            | FSharpCheckFileAnswer.Succeeded a ->                
+                $"Signature.Size = {a.GenerateSignature() |> Option.map (fun s -> s.Length) |> Option.defaultValue 0}"
+        printfn $"Check = {checkResult }"
 
     [<Benchmark(Baseline=true)>]
     member x.ParseProjectWithFullCacheClear() =
@@ -117,7 +134,14 @@ type FileCascadeBenchmarks() =
 
     [<Benchmark>]
     member x.ParseProjectWithChangingMiddleFile() =
-        x.ChangeFile(fileIndex=filesToCreate/2, action= fun () -> x.ParseAndCheckLastFileInTheProject())  
+        let parse,check = x.ChangeFile(fileIndex=filesToCreate/2, action= fun () -> x.ParseAndCheckLastFileInTheProject())  
+        printfn $"ParseHadErrors = {parse.ParseHadErrors}"
+        let checkResult = 
+            match check with 
+            | FSharpCheckFileAnswer.Aborted -> "abort" 
+            | FSharpCheckFileAnswer.Succeeded a ->                
+                $"Signature.Size = {a.GenerateSignature() |> Option.map (fun s -> s.Length) |> Option.defaultValue 0}"
+        printfn $"Check = {checkResult }"
 
     [<Benchmark>]
     member x.ParseProjectWithChangingPenultimateFile() =
