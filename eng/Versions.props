@@ -15,7 +15,7 @@
     <!-- F# Version components -->
     <FSMajorVersion>7</FSMajorVersion>
     <FSMinorVersion>0</FSMinorVersion>
-    <FSBuildVersion>0</FSBuildVersion>
+    <FSBuildVersion>1</FSBuildVersion>
     <FSRevisionVersion>0</FSRevisionVersion>
     <!-- -->
     <!-- F# Language version -->
@@ -33,7 +33,7 @@
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>42</FCSMajorVersion>
     <FCSMinorVersion>7</FCSMinorVersion>
-    <FCSBuildVersion>100</FCSBuildVersion>
+    <FCSBuildVersion>200</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
     <FSharpCompilerServiceVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion).$(FCSRevisionVersion)</FSharpCompilerServiceVersion>
@@ -47,8 +47,9 @@
     <!-- -->
     <!-- FSharp tools for Visual Studio version number -->
     <FSToolsMajorVersion>12</FSToolsMajorVersion>
-    <FSToolsMinorVersion>0</FSToolsMinorVersion>
-    <FSToolsBuildVersion>5</FSToolsBuildVersion>
+
+    <FSToolsMinorVersion>5</FSToolsMinorVersion>
+    <FSToolsBuildVersion>0</FSToolsBuildVersion>
     <FSToolsRevisionVersion>$(FSRevisionVersion)</FSToolsRevisionVersion>
     <FSProductVersionPrefix>$(FSToolsMajorVersion).$(FSToolsMinorVersion).$(FSToolsBuildVersion)</FSProductVersionPrefix>
     <FSProductVersionReleaseNotesVersion>$(FSToolsMajorVersion)-$(FSToolsMinorVersion)-$(FSToolsBuildVersion)</FSProductVersionReleaseNotesVersion>
@@ -56,7 +57,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <VSMajorVersion>17</VSMajorVersion>
-    <VSMinorVersion>3</VSMinorVersion>
+
+    <VSMinorVersion>5</VSMinorVersion>
+
     <VSGeneralVersion>$(VSMajorVersion).0</VSGeneralVersion>
     <VSAssemblyVersionPrefix>$(VSMajorVersion).$(VSMinorVersion).0</VSAssemblyVersionPrefix>
     <VSAssemblyVersion>$(VSAssemblyVersionPrefix).0</VSAssemblyVersion>
@@ -107,7 +110,6 @@
     <MicrosoftCodeAnalysisEditorFeaturesWpfVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesWpfVersion>
     <MicrosoftCodeAnalysisExternalAccessFSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisExternalAccessFSharpVersion>
     <MicrosoftCodeAnalysisVersion>$(RoslynVersion)</MicrosoftCodeAnalysisVersion>
-    <MicrosoftCodeAnalysisWorkspacesCommonVersion>$(RoslynVersion)</MicrosoftCodeAnalysisWorkspacesCommonVersion>
     <MicrosoftCodeAnalysisCSharpVersion>$(RoslynVersion)</MicrosoftCodeAnalysisCSharpVersion>
     <MicrosoftVisualStudioLanguageServicesVersion>$(RoslynVersion)</MicrosoftVisualStudioLanguageServicesVersion>
     <MicrosoftCodeAnalysisTestResourcesProprietaryVersion>2.0.28</MicrosoftCodeAnalysisTestResourcesProprietaryVersion>
