@@ -79,7 +79,8 @@ namespace FSharpTest
         | Children of struct (int * string)
 """
         |> compile
-        |> shouldSucceed
+        |> shouldFail
+        |> withErrorCode 3204
         |> ignore
 
     [<Fact>]

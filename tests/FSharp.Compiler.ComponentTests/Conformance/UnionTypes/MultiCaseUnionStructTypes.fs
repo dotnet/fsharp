@@ -221,3 +221,30 @@ type StructUnion = A of X:int | B of Y:StructUnion
         |> withDiagnostics [
             (Error 954, Line 4, Col 6, Line 4, Col 17, "This type definition involves an immediate cyclic reference through a struct field or inheritance relation")
         ]
+        
+    [<Fact>]
+    let ``If a union type has more than one case and is a struct, field must be given unique name 14`` () =
+        Fsx """
+namespace Foo
+[<Struct>]
+type NotATree =
+    | Empty
+    | Children of struct (int * string)
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 3204, Line 6, Col 19, Line 6, Col 40, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
+        ]
+        
+    [<Fact>]
+    let ``If a union type has more than one case and is a struct, field must be given unique name 15`` () =
+        Fsx """
+namespace Foo
+[<Struct>]
+type NotATree =
+    | Empty
+    | Children of a: struct (int * string)
+        """
+        |> compile
+        |> shouldSucceed
