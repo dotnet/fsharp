@@ -7,7 +7,15 @@ open FSharp.Compiler.SyntaxTrivia
 open NUnit.Framework
 
 let unsupported = "unsupported"
-type Stuff = SynLongIdent seq
+type Kind =
+    | Type
+    | ModuleOrNamespace
+type Item =
+    {
+        Ident : LongIdent
+        Kind : Kind
+    }
+type Stuff = Item seq
 
 let rec visitSynModuleDecl (decl : SynModuleDecl) : Stuff =
     // TODO
@@ -27,7 +35,15 @@ let rec visitSynModuleDecl (decl : SynModuleDecl) : Stuff =
     | SynModuleDecl.Types(synTypeDefns, range) ->
         visitSynTypeDefns synTypeDefns
     | SynModuleDecl.ModuleAbbrev(ident, longId, range) ->
-        visitLongIdent longId
+        // TODO Module abbrevation can break the algorithm.
+        // We need to either give up when seeing this or handle it properly.
+        //
+        // Consider the following:
+        // module A = module A1 = let x = 1
+        // module B = A
+        // let x = B.A1.x
+        failwith "Module abbreviations are not currently supported"
+        //visitLongIdent longId
     | SynModuleDecl.NamespaceFragment synModuleOrNamespace ->
         visitSynModuleOrNamespace synModuleOrNamespace
     | SynModuleDecl.NestedModule(synComponentInfo, isRecursive, synModuleDecls, isContinuing, range, synModuleDeclNestedModuleTrivia) ->
@@ -651,6 +667,7 @@ and visitSynOpenDeclTarget (target : SynOpenDeclTarget) : Stuff =
         visitType typeName
     | SynOpenDeclTarget.ModuleOrNamespace(synLongIdent, range) ->
         visitSynLongIdent synLongIdent
+        |> Seq.map (fun s -> {s with Kind = Kind.ModuleOrNamespace})
 
 and visitSynComponentInfo (info : SynComponentInfo) : Stuff =
     match info with
@@ -658,16 +675,17 @@ and visitSynComponentInfo (info : SynComponentInfo) : Stuff =
         seq {
             yield! visitSynAttributeLists synAttributeLists
             match synTyparDeclsOption with | Some decls -> yield! visitSynTyparDecls decls | None -> ()
-            yield! visitLongIdent longId
+            // Don't include this as it's a module definition rather than reference
+            // yield! visitLongIdent longId
             yield! visitPreXmlDoc preXmlDoc
             match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
         }
 
 and visitLongIdent (ident : LongIdent) : Stuff =
-    [] // TODO Check - probably wrong. LongIdents *might* be used for the same purpose as SynLongIdent
+    [{Ident = ident; Kind = Kind.Type}]
     
 and visitSynLongIdent (ident : SynLongIdent) : Stuff  =
-    [ident]
+    [{Ident = ident.LongIdent; Kind = Kind.Type}]
    
 and visitSynMatchClause (x : SynMatchClause) : Stuff =
     match x with
@@ -727,7 +745,7 @@ and visitSynMemberSig (x : SynMemberSig) : Stuff =
         visitSynField synField
       
 and visitExpr (expr : SynExpr) =
-    let l = System.Collections.Generic.List<SynLongIdent>()
+    let l = System.Collections.Generic.List<Item>()
     let go (items : Stuff) =
         l.AddRange(items)
         
@@ -995,16 +1013,29 @@ and visitSynModuleOrNamespace (x : SynModuleOrNamespace) : Stuff  =
     match x with
     | SynModuleOrNamespace.SynModuleOrNamespace(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
         seq {
+            // Don't include 'longId' as that's module definition rather than reference
             yield! synModuleDecls |> Seq.collect visitSynModuleDecl
             yield! visitSynAttributeLists synAttributeLists 
         }
 
 and visit (input : ParsedInput) : Stuff  =
     match input with
-    | ParsedInput.SigFile _ -> failwith unsupported
+    | ParsedInput.SigFile _ -> failwith "Signature files are not currently supported"
     | ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, parsedHashDirectives, synModuleOrNamespaces, flags, parsedImplFileInputTrivia)) ->
         synModuleOrNamespaces
         |> Seq.collect visitSynModuleOrNamespace
+
+let topModuleOrNamespace (input : ParsedInput) =
+    match input with
+    | ParsedInput.ImplFile f ->
+        match f.Contents with
+        | [] -> failwith "No modules or namespaces"
+        | first :: rest ->
+            match first with
+            | SynModuleOrNamespace(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
+                longId
+    | ParsedInput.SigFile _ ->
+        failwith "Sig files not supported atm"
 
 [<Test>]
 let ``Single SynEnumCase contains range of constant`` () =
@@ -1048,13 +1079,37 @@ open A4
 let e = A1.a
 open A1
 let f = a
-
-module X = B
 """
 
-    printfn $"%+A{parseResults}"
     let stuff = visit parseResults
+    let top = topModuleOrNamespace parseResults
+    printfn $"%+A{top}"
     printfn $"%+A{stuff}"
+    ()
+
+let depends ()
+
+[<Test>]
+let ``Test two`` () =
+    
+    let A =
+        """
+module A
+open B
+let x = B.x
+"""
+    let B =
+        """
+module B
+let x = 3
+"""
+    
+    let parsedA = getParseResults A
+    let visitedA = visit parsedA
+    let parsedB = getParseResults B
+    let topB = topModuleOrNamespace parsedB 
+    printfn $"Top B: %+A{topB}"
+    printfn $"A refs: %+A{visitedA}"
     ()
 
 module A1 = let a = 3

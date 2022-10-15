@@ -27,6 +27,7 @@
       <Link>Common.fs</Link>
     </Compile>
     <Compile Include="TypeTests.fs" />
+    <Compile Include="Test.fs" />
     <Compile Include="..\service\Program.fs">
       <Link>Program.fs</Link>
     </Compile>
