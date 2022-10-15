@@ -75,14 +75,28 @@ and visitSynTypes (x : SynType list) : Stuff =
 and visitTypeConstraints (x : SynTypeConstraint list) : Stuff =
     Seq.collect visitTypeConstraint x
 
+and visitSynTyparDecl (x : SynTyparDecl) : Stuff =
+    match x with
+    | SynTyparDecl(synAttributeLists, synTypar) ->
+        seq {
+            yield! visitSynAttributeLists synAttributeLists
+            yield! visitSynTypar synTypar
+        }
+
+and visitSynTyparDeclList (x : SynTyparDecl list) : Stuff =
+    Seq.collect visitSynTyparDecl x
+
 and visitSynTyparDecls (x : SynTyparDecls) : Stuff =
     match x with
     | SynTyparDecls.PostfixList(synTyparDecls, synTypeConstraints, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynTyparDeclList synTyparDecls
+            yield! visitTypeConstraints synTypeConstraints
+        }
     | SynTyparDecls.PrefixList(synTyparDecls, range) ->
-        failwith unsupported
+        visitSynTyparDeclList synTyparDecls
     | SynTyparDecls.SinglePrefix(synTyparDecl, range) ->
-        failwith unsupported
+        visitSynTyparDecl synTyparDecl
 
 and visitSynValTyparDecls (x : SynValTyparDecls) : Stuff =
     match x with
@@ -100,6 +114,26 @@ and visitValSig (x : SynValSig) : Stuff =
             yield! visitSynValTyparDecls synValTyparDecls
         }
 
+and visitSynTypeDefnSignRepr (x : SynTypeDefnSigRepr) : Stuff =
+    match x with
+    | SynTypeDefnSigRepr.Exception synExceptionDefnRepr ->
+        visitSynExceptionDefnRepr synExceptionDefnRepr
+    | SynTypeDefnSigRepr.Simple(synTypeDefnSimpleRepr, range) ->
+        visitTypeDefnSimpleRepr synTypeDefnSimpleRepr
+    | SynTypeDefnSigRepr.ObjectModel(synTypeDefnKind, synMemberSigs, range) ->
+        seq {
+            yield! visitSynTypeDefnKind synTypeDefnKind
+            yield! (Seq.collect visitMemberSig synMemberSigs)
+        }    
+
+and visitSynTypeDefnSign (x : SynTypeDefnSig) : Stuff =
+    match x with
+    | SynTypeDefnSig(synComponentInfo, synTypeDefnSigRepr, synMemberSigs, range, synTypeDefnSigTrivia) ->
+        seq {
+            yield! visitSynComponentInfo synComponentInfo
+            yield! visitSynTypeDefnSignRepr synTypeDefnSigRepr
+        }
+
 and visitMemberSig (x : SynMemberSig) : Stuff =
     match x with
     | SynMemberSig.Inherit(inheritedType, range) ->
@@ -111,9 +145,9 @@ and visitMemberSig (x : SynMemberSig) : Stuff =
             yield! visitValSig synValSig
         }
     | SynMemberSig.NestedType(synTypeDefnSig, range) ->
-        failwith unsupported
+        visitSynTypeDefnSign synTypeDefnSig
     | SynMemberSig.ValField(synField, range) ->
-        failwith unsupported
+        visitSynField synField
 
 and visitTypeConstraint (x : SynTypeConstraint) : Stuff =
     match x with
@@ -232,7 +266,7 @@ and visitPreXmlDoc (doc : FSharp.Compiler.Xml.PreXmlDoc) : Stuff =
     [] // TODO Check
 
 and visitSynAccess (x : SynAccess) : Stuff =
-    failwith unsupported
+    [] // TODO check
 
 and visitSynField (x : SynField) : Stuff =
     match x with
@@ -270,11 +304,29 @@ and visitSynExceptionDefnRepr (x : SynExceptionDefnRepr) : Stuff =
         seq {
             yield! visitSynAttributeLists synAttributeLists
             yield! visitSynUnionCase synUnionCase
-            // TODO
+            match identsOption with | Some ident -> yield! visitLongIdent ident | None -> ()
+            yield! visitPreXmlDoc preXmlDoc
+            match synAccessOption with | Some synAccess -> yield! visitSynAccess synAccess | None -> ()
         }
 
 and visitTypeDefnSimpleRepr (x : SynTypeDefnSimpleRepr) : Stuff =
-    failwith unsupported
+    match x with
+    | SynTypeDefnSimpleRepr.Enum(synEnumCases, range) ->
+        failwith unsupported
+    | SynTypeDefnSimpleRepr.Exception synExceptionDefnRepr ->
+        failwith unsupported
+    | SynTypeDefnSimpleRepr.General(synTypeDefnKind, inherits, slotsigs, synFields, isConcrete, isIncrClass, implicitCtorSynPats, range) ->
+        failwith unsupported
+    | SynTypeDefnSimpleRepr.None range ->
+        failwith unsupported
+    | SynTypeDefnSimpleRepr.Record(synAccessOption, recordFields, range) ->
+        failwith unsupported
+    | SynTypeDefnSimpleRepr.Union(synAccessOption, synUnionCases, range) ->
+        failwith unsupported
+    | SynTypeDefnSimpleRepr.TypeAbbrev(parserDetail, rhsType, range) ->
+        failwith unsupported
+    | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly(ilType, range) ->
+        failwith unsupported
 
 and visitSynTypeDefnKind (x : SynTypeDefnKind) : Stuff =
     failwith unsupported
