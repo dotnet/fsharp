@@ -309,27 +309,88 @@ and visitSynExceptionDefnRepr (x : SynExceptionDefnRepr) : Stuff =
             match synAccessOption with | Some synAccess -> yield! visitSynAccess synAccess | None -> ()
         }
 
+and visitEnumCase (x : SynEnumCase) : Stuff =
+    match x with
+    | SynEnumCase(synAttributeLists, synIdent, synConst, valueRange, preXmlDoc, range, synEnumCaseTrivia) ->
+        seq {
+            yield! visitSynAttributeLists synAttributeLists
+            yield! visitSynIdent synIdent
+            yield! visitSynConst synConst
+            yield! visitPreXmlDoc preXmlDoc
+        }
+
+and visitMulti (f) (items) : Stuff = Seq.collect f items
+
+and visitEnumCases = visitMulti visitEnumCase
+
+and visitSynUnionCases = visitMulti visitSynUnionCase
+
+and visitParserDetail (x : ParserDetail) : Stuff =
+    []
+
 and visitTypeDefnSimpleRepr (x : SynTypeDefnSimpleRepr) : Stuff =
     match x with
     | SynTypeDefnSimpleRepr.Enum(synEnumCases, range) ->
-        failwith unsupported
+        visitEnumCases synEnumCases
     | SynTypeDefnSimpleRepr.Exception synExceptionDefnRepr ->
-        failwith unsupported
+        visitSynExceptionDefnRepr synExceptionDefnRepr
     | SynTypeDefnSimpleRepr.General(synTypeDefnKind, inherits, slotsigs, synFields, isConcrete, isIncrClass, implicitCtorSynPats, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynTypeDefnKind synTypeDefnKind
+            let inheritTypes = inherits |> List.map (fun (t, range, ident) -> t)
+            yield! visitSynTypes inheritTypes
+        }
     | SynTypeDefnSimpleRepr.None range ->
-        failwith unsupported
+        []
     | SynTypeDefnSimpleRepr.Record(synAccessOption, recordFields, range) ->
-        failwith unsupported
+        seq {
+            match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
+            yield! visitSynFields recordFields
+        }
     | SynTypeDefnSimpleRepr.Union(synAccessOption, synUnionCases, range) ->
-        failwith unsupported
+        seq {
+            match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
+            yield! visitSynUnionCases synUnionCases
+        }
     | SynTypeDefnSimpleRepr.TypeAbbrev(parserDetail, rhsType, range) ->
-        failwith unsupported
+        seq {
+            yield! visitParserDetail parserDetail
+            yield! visitSynType rhsType
+        }
     | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly(ilType, range) ->
-        failwith unsupported
+        []
+
+and visitSynArgInfo (x : SynArgInfo) : Stuff =
+    match x with
+    | SynArgInfo(synAttributeLists, optional, identOption) ->
+        visitSynAttributeLists synAttributeLists
+
+and visitSynValInfo (x : SynValInfo) : Stuff =
+    match x with
+    | SynValInfo(curriedArgInfos, synArgInfo) ->
+        seq {
+            yield! curriedArgInfos |> Seq.concat |> Seq.collect visitSynArgInfo
+            yield! visitSynArgInfo synArgInfo
+        }
 
 and visitSynTypeDefnKind (x : SynTypeDefnKind) : Stuff =
-    failwith unsupported
+    match x with
+    | SynTypeDefnKind.Delegate(synType, synValInfo) ->
+        seq {
+            yield! visitSynType synType
+            yield! visitSynValInfo synValInfo
+        }
+    | SynTypeDefnKind.Abbrev
+    | SynTypeDefnKind.Augmentation _
+    | SynTypeDefnKind.Class
+    | SynTypeDefnKind.Interface
+    | SynTypeDefnKind.Opaque
+    | SynTypeDefnKind.Record
+    | SynTypeDefnKind.Struct
+    | SynTypeDefnKind.Union
+    | SynTypeDefnKind.Unspecified
+    | SynTypeDefnKind.IL ->
+        []
 
 and visitSynTypeDefnRepr (x : SynTypeDefnRepr) : Stuff =
     match x with
