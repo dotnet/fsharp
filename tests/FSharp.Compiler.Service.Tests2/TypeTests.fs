@@ -525,29 +525,61 @@ and visitSynTypeDefn (defn : SynTypeDefn) : Stuff =
 and visitSynTypeDefns (defns : SynTypeDefn list) : Stuff =
     Seq.collect visitSynTypeDefn defns
 
-and visitSynExceptionDefn (defn : SynExceptionDefn) : Stuff =
-    []
+and visitSynExceptionDefn (x : SynExceptionDefn) : Stuff =
+    match x with
+    | SynExceptionDefn(synExceptionDefnRepr, withKeyword, synMemberDefns, range) ->
+        seq {
+            yield! visitSynExceptionDefnRepr synExceptionDefnRepr
+            yield! visitSynMemberDefns synMemberDefns
+        }
 
-and visitSynBinding (binding : SynBinding) : Stuff =
-    [] // TODO
+and visitSynValData (x : SynValData) : Stuff =
+    match x with
+    | SynValData(synMemberFlagsOption, synValInfo, thisIdOpt) ->
+        seq {
+            match synMemberFlagsOption with | Some flags -> yield! visitSynMemberFlags flags | None -> ()
+            yield! visitSynValInfo synValInfo
+        } 
+
+and visitSynPats (x : SynPat list) : Stuff =
+    Seq.collect visitSynPat x
+
+and visitSynPat (x : SynPat) : Stuff =
+    match x with
+    | SynPat.Ands(synPats, range) ->
+        visitSynPats synPats
+    | SynPat.As(lhsPat, rhsPat, range) ->
+        visitSynPats [lhsPat; rhsPat]
+
+and visitSynBinding (x : SynBinding) : Stuff =
+    match x with
+    | SynBinding.SynBinding(synAccessOption, synBindingKind, isInline, isMutable, synAttributeLists, preXmlDoc, synValData, headPat, synBindingReturnInfoOption, synExpr, range, debugPointAtBinding, synBindingTrivia) ->
+        seq {
+            match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
+            yield! visitSynAttributeLists synAttributeLists
+            yield! visitPreXmlDoc preXmlDoc
+            yield! visitSynValData synValData
+            yield! visitSynPat headPat
+        }
+    failwith unsupported
 
 and visitSynBindings (bindings : SynBinding list) : Stuff =
     Seq.collect visitSynBinding bindings
 
 and visitSynOpenDeclTarget (target : SynOpenDeclTarget) : Stuff =
-    [] // TODO
+    failwith unsupported
 
 and visitSynComponentInfo (info : SynComponentInfo) : Stuff =
-    [] // TODO
+    failwith unsupported
 
 and visitLongIdent (ident : LongIdent) : Stuff =
-    [] // TODO
+    failwith unsupported
     
 and visitSynLongIdent (ident : SynLongIdent) : Stuff  =
     [ident]
     
 and visitSynExpr (expr : SynExpr) =
-    // TODO
+    failwith unsupported
     match expr with
     | _ -> []
     
@@ -584,14 +616,37 @@ let ``Single SynEnumCase contains range of constant`` () =
     let parseResults = 
         getParseResults
             """
-type Foo = One = 0x00000001
+module A1 = let a = 3
+module B =
+    let b = [|
+        A1.a
+    |]
 """
 
-    match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-        SynModuleDecl.Types(typeDefns = [
-            SynTypeDefn.SynTypeDefn(typeRepr =
-                SynTypeDefnRepr.Simple(simpleRepr = SynTypeDefnSimpleRepr.Enum(cases = [ SynEnumCase.SynEnumCase(valueRange = r) ])))])
-    ]) ])) ->
-        assertRange (2, 17) (2, 27) r
-    | _ -> Assert.Fail "Could not get valid AST"
+    printfn $"%+A{parseResults}"
+    let stuff = visit parseResults
+    printfn $"%+A{stuff}"
+    ()
+
+module A1 = let a = 3
+module A2 = let a = 3
+module A3 = let a = 3
+module A4 =
+    let a = 3
+    module A1 =
+        let a = 3
+
+module B =
+    open A2
+    let b = [|
+        A1.a
+        A2.a
+        A3.a
+    |]
+
+let c = A4.a
+let d = A4.A1.a
+open A4
+let e = A1.a
+open A1
+let f = a
