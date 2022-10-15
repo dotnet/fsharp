@@ -550,6 +550,14 @@ and visitSynPat (x : SynPat) : Stuff =
         visitSynPats synPats
     | SynPat.As(lhsPat, rhsPat, range) ->
         visitSynPats [lhsPat; rhsPat]
+    | SynPat.Attrib(synPat, synAttributeLists, range) ->
+        seq {
+            yield! visitSynPat synPat
+            
+        }
+
+and visitBindingReturnInfo (x : SynBindingReturnInfo) : Stuff =
+    failwith unsupported
 
 and visitSynBinding (x : SynBinding) : Stuff =
     match x with
@@ -560,28 +568,176 @@ and visitSynBinding (x : SynBinding) : Stuff =
             yield! visitPreXmlDoc preXmlDoc
             yield! visitSynValData synValData
             yield! visitSynPat headPat
+            match synBindingReturnInfoOption with | Some info -> yield! visitBindingReturnInfo info | None -> ()
+            yield! visitSynExpr synExpr
         }
-    failwith unsupported
 
 and visitSynBindings (bindings : SynBinding list) : Stuff =
     Seq.collect visitSynBinding bindings
 
 and visitSynOpenDeclTarget (target : SynOpenDeclTarget) : Stuff =
-    failwith unsupported
+    match target with
+    | SynOpenDeclTarget.Type(typeName, range) ->
+        visitSynType typeName
+    | SynOpenDeclTarget.ModuleOrNamespace(synLongIdent, range)
+        visitSynLongIdent synLongIdent
 
 and visitSynComponentInfo (info : SynComponentInfo) : Stuff =
-    failwith unsupported
+    match info with
+    | SynComponentInfo(synAttributeLists, synTyparDeclsOption, synTypeConstraints, longId, preXmlDoc, preferPostfix, synAccessOption, range) ->
+        seq {
+            yield! visitSynAttributeLists synAttributeLists
+            match synTyparDeclsOption with | Some decls -> yield! visitSynTyparDecls decls | None -> ()
+            yield! visitLongIdent longId
+            yield! visitPreXmlDoc preXmlDoc
+            match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
+        }
 
 and visitLongIdent (ident : LongIdent) : Stuff =
-    failwith unsupported
+    [] // TODO Check - probably wrong. LongIdents *might* be used for the same purpose as SynLongIdent
     
 and visitSynLongIdent (ident : SynLongIdent) : Stuff  =
     [ident]
     
 and visitSynExpr (expr : SynExpr) =
-    failwith unsupported
     match expr with
-    | _ -> []
+    | SynExpr.App(exprAtomicFlag, isInfix, funcExpr, argExpr, range) ->
+        failwith unsupported
+    | SynExpr.Assert(synExpr, range) ->
+        failwith unsupported
+    | SynExpr.Const(synConst, range) ->
+        failwith unsupported
+    | SynExpr.Do(synExpr, range) ->
+        failwith unsupported
+    | SynExpr.Downcast(synExpr, targetType, range) ->
+        failwith unsupported
+    | SynExpr.Dynamic(funcExpr, qmark, argExpr, range) ->
+        failwith unsupported
+    | SynExpr.Fixed(synExpr, range) ->
+        failwith unsupported
+    | SynExpr.For(debugPointAtFor, debugPointAtInOrTo, ident, equalsRange, identBody, direction, synExpr, doBody, range) ->
+        failwith unsupported
+    | SynExpr.Ident ident ->
+        failwith unsupported
+    | SynExpr.Lambda(fromMethod, inLambdaSeq, synSimplePats, synExpr, tupleOption, range, synExprLambdaTrivia) ->
+        failwith unsupported
+    | SynExpr.Lazy(synExpr, range) ->
+        failwith unsupported
+    | SynExpr.Match(debugPointAtBinding, synExpr, synMatchClauses, range, synExprMatchTrivia) ->
+        failwith unsupported
+    | SynExpr.New(isProtected, targetType, synExpr, range) ->
+        failwith unsupported
+    | SynExpr.Null range ->
+        failwith unsupported
+    | SynExpr.Paren(synExpr, leftParenRange, rightParenRange, range) ->
+        failwith unsupported
+    | SynExpr.Quote(synExpr, isRaw, quotedExpr, isFromQueryExpression, range) ->
+        failwith unsupported
+    | SynExpr.Record(tupleOption, copyInfo, synExprRecordFields, range) ->
+        failwith unsupported
+    | SynExpr.Sequential(debugPointAtSequential, isTrueSeq, synExpr, expr2, range) ->
+        failwith unsupported
+    | SynExpr.Set(targetExpr, rhsExpr, range) ->
+        failwith unsupported
+    | SynExpr.Tuple(isStruct, synExprs, commaRanges, range) ->
+        failwith unsupported
+    | SynExpr.Typar(synTypar, range) ->
+        failwith unsupported
+    | SynExpr.Typed(synExpr, targetType, range) ->
+        failwith unsupported
+    | SynExpr.Upcast(synExpr, targetType, range) ->
+        failwith unsupported
+    | SynExpr.While(debugPointAtWhile, whileExpr, synExpr, range) ->
+        failwith unsupported
+    | SynExpr.AddressOf(isByref, synExpr, opRange, range) ->
+        failwith unsupported
+    | SynExpr.AnonRecd(isStruct, tupleOption, recordFields, range) ->
+        failwith unsupported
+    | SynExpr.ComputationExpr(hasSeqBuilder, synExpr, range) ->
+        failwith unsupported
+    | SynExpr.DebugPoint(debugPointAtLeafExpr, isControlFlow, innerExpr) ->
+        failwith unsupported
+    | SynExpr.DoBang(synExpr, range) ->
+        failwith unsupported
+    | SynExpr.DotGet(synExpr, rangeOfDot, synLongIdent, range) ->
+        failwith unsupported
+    | SynExpr.DotSet(targetExpr, synLongIdent, rhsExpr, range) ->
+        failwith unsupported
+    | SynExpr.ForEach(debugPointAtFor, debugPointAtInOrTo, seqExprOnly, isFromSource, synPat, enumExpr, bodyExpr, range) ->
+        failwith unsupported
+    | SynExpr.ImplicitZero range ->
+        failwith unsupported
+    | SynExpr.IndexRange(synExprOption, range, exprOption, range1, range2, range3) ->
+        failwith unsupported
+    | SynExpr.InferredDowncast(synExpr, range) ->
+        failwith unsupported
+    | SynExpr.InferredUpcast(synExpr, range) ->
+        failwith unsupported
+    | SynExpr.InterpolatedString(synInterpolatedStringParts, synStringKind, range) ->
+        failwith unsupported
+    | SynExpr.JoinIn(lhsExpr, lhsRange, rhsExpr, range) ->
+        failwith unsupported
+    | SynExpr.LongIdent(isOptional, synLongIdent, synSimplePatAlternativeIdInfoRefOption, range) ->
+        failwith unsupported
+    | SynExpr.MatchBang(debugPointAtBinding, synExpr, synMatchClauses, range, synExprMatchBangTrivia) ->
+        failwith unsupported
+    | SynExpr.MatchLambda(isExnMatch, keywordRange, synMatchClauses, debugPointAtBinding, range) ->
+        failwith unsupported
+    | SynExpr.ObjExpr(objType, tupleOption, withKeyword, synBindings, synMemberDefns, synInterfaceImpls, newExprRange, range) ->
+        failwith unsupported
+    | SynExpr.TraitCall(supportTys, synMemberSig, argExpr, range) ->
+        failwith unsupported
+    | SynExpr.TryFinally(tryExpr, finallyExpr, range, debugPointAtTry, debugPointAtFinally, synExprTryFinallyTrivia) ->
+        failwith unsupported
+    | SynExpr.TryWith(tryExpr, synMatchClauses, range, debugPointAtTry, debugPointAtWith, synExprTryWithTrivia) ->
+        failwith unsupported
+    | SynExpr.TypeApp(synExpr, lessRange, typeArgs, commaRanges, greaterRange, typeArgsRange, range) ->
+        failwith unsupported
+    | SynExpr.TypeTest(synExpr, targetType, range) ->
+        failwith unsupported
+    | SynExpr.ArbitraryAfterError(debugStr, range) ->
+        failwith unsupported
+    | SynExpr.ArrayOrList(isArray, synExprs, range) ->
+        failwith unsupported
+    | SynExpr.DotIndexedGet(objectExpr, indexArgs, dotRange, range) ->
+        failwith unsupported
+    | SynExpr.DotIndexedSet(objectExpr, indexArgs, valueExpr, leftOfSetRange, dotRange, range) ->
+        failwith unsupported
+    | SynExpr.FromParseError(synExpr, range) ->
+        failwith unsupported
+    | SynExpr.IfThenElse(synExpr, thenExpr, synExprOption, debugPointAtBinding, isFromErrorRecovery, range, synExprIfThenElseTrivia) ->
+        failwith unsupported
+    | SynExpr.IndexFromEnd(synExpr, range) ->
+        failwith unsupported
+    | SynExpr.LetOrUse(isRecursive, isUse, synBindings, synExpr, range, synExprLetOrUseTrivia) ->
+        failwith unsupported
+    | SynExpr.LongIdentSet(synLongIdent, synExpr, range) ->
+        failwith unsupported
+    | SynExpr.YieldOrReturn(flags, synExpr, range) ->
+        failwith unsupported
+    | SynExpr.ArrayOrListComputed(isArray, synExpr, range) ->
+        failwith unsupported
+    | SynExpr.LetOrUseBang(debugPointAtBinding, isUse, isFromSource, synPat, synExpr, synExprAndBangs, body, range, synExprLetOrUseBangTrivia) ->
+        failwith unsupported
+    | SynExpr.LibraryOnlyStaticOptimization(synStaticOptimizationConstraints, synExpr, optimizedExpr, range) ->
+        failwith unsupported
+    | SynExpr.NamedIndexedPropertySet(synLongIdent, synExpr, expr2, range) ->
+        failwith unsupported
+    | SynExpr.SequentialOrImplicitYield(debugPointAtSequential, synExpr, expr2, ifNotStmt, range) ->
+        failwith unsupported
+    | SynExpr.YieldOrReturnFrom(flags, synExpr, range) ->
+        failwith unsupported
+    | SynExpr.DotNamedIndexedPropertySet(targetExpr, synLongIdent, argExpr, rhsExpr, range) ->
+        failwith unsupported
+    | SynExpr.LibraryOnlyILAssembly(ilCode, typeArgs, synExprs, synTypes, range) ->
+        failwith unsupported
+    | SynExpr.DiscardAfterMissingQualificationAfterDot(synExpr, range) ->
+        failwith unsupported
+    | SynExpr.LibraryOnlyUnionCaseFieldGet(synExpr, longId, fieldNum, range) ->
+        failwith unsupported
+    | SynExpr.LibraryOnlyUnionCaseFieldSet(synExpr, longId, fieldNum, rhsExpr, range) ->
+        failwith unsupported
+    
     
 and visitSynAttribute (attribute : SynAttribute) : Stuff  =
     seq {
@@ -650,3 +806,6 @@ open A4
 let e = A1.a
 open A1
 let f = a
+
+module X = B
+X.b
