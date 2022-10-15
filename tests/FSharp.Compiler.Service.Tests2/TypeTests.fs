@@ -606,23 +606,28 @@ and visitPat (x : SynPat) : Stuff =
     | SynPat.LongIdent(synLongIdent, identOption, synValTyparDeclsOption, synArgPats, synAccessOption, range) ->
         seq {
             yield! visitSynLongIdent synLongIdent
-            match synValTyparDeclsOption with | Some decls -> yield! visitSynTyparDecls decls | None -> ()
+            match synValTyparDeclsOption with | Some decls -> yield! visitSynValTyparDecls decls | None -> ()
             yield! visitSynArgPats synArgPats
+            match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
         }
-        ()
     | SynPat.OptionalVal(ident, range) ->
-        ()
+        []
     | SynPat.QuoteExpr(synExpr, range) ->
-        ()
+        visitExpr synExpr
     | SynPat.ArrayOrList(isArray, elementPats, range) ->
-        ()
+        visitSynPats elementPats
     | SynPat.DeprecatedCharRange(startChar, endChar, range) ->
-        ()
+        []
     | SynPat.FromParseError(synPat, range) ->
-        ()
+        visitPat synPat
 
 and visitBindingReturnInfo (x : SynBindingReturnInfo) : Stuff =
-    failwith unsupported
+    match x with
+    | SynBindingReturnInfo(typeName, range, synAttributeLists) ->
+        seq {
+            yield! visitType typeName
+            yield! visitSynAttributeLists synAttributeLists
+        }
 
 and visitSynBinding (x : SynBinding) : Stuff =
     match x with
@@ -665,7 +670,13 @@ and visitSynLongIdent (ident : SynLongIdent) : Stuff  =
     [ident]
    
 and visitSynMatchClause (x : SynMatchClause) : Stuff =
-    failwith unsupported
+    match x with
+    | SynMatchClause(synPat, synExprOption, resultExpr, range, debugPointAtTarget, synMatchClauseTrivia) ->
+        seq {
+            yield! visitPat synPat
+            match synExprOption with | Some expr -> yield! visitExpr expr | None -> ()
+            yield! visitExpr resultExpr
+        }
    
 and visitSynMatchClauses = visitMulti visitSynMatchClause
       
@@ -675,7 +686,7 @@ and visitExprOnly (x : SeqExprOnly) : Stuff =
 and visitSynInterpolatedStringPart (x : SynInterpolatedStringPart) : Stuff =
     match x with
     | SynInterpolatedStringPart.String(value, range) ->
-        failwith unsupported
+        []
     | SynInterpolatedStringPart.FillExpr(fillExpr, identOption) ->
         visitExpr fillExpr
       
@@ -709,13 +720,11 @@ and visitSynMemberSig (x : SynMemberSig) : Stuff =
     | SynMemberSig.Interface(interfaceType, range) ->
         visitType interfaceType
     | SynMemberSig.Member(synValSig, synMemberFlags, range) ->
-        seq {
-            yield! visitValSig synValSig
-        }
+        visitValSig synValSig
     | SynMemberSig.NestedType(synTypeDefnSig, range) ->
-        failwith unsupported
+        visitSynTypeDefnSign synTypeDefnSig
     | SynMemberSig.ValField(synField, range) ->
-        failwith unsupported
+        visitSynField synField
       
 and visitExpr (expr : SynExpr) =
     let l = System.Collections.Generic.List<SynLongIdent>()
@@ -768,13 +777,18 @@ and visitExpr (expr : SynExpr) =
     | SynExpr.Record(tupleOption, copyInfo, synExprRecordFields, range) ->
         match tupleOption with
         | Some(synType, synExpr, range, tupleOption, range1) ->
-            failwith unsupported
+            seq {
+                yield! visitType synType
+                yield! visitExpr synExpr
+            }
+            |> go
         | None ->
             ()
         match copyInfo with
         | Some(synExpr, tuple) ->
             visitExpr synExpr |> go
-        | None -> ()
+        | None ->
+            ()
     | SynExpr.Sequential(debugPointAtSequential, isTrueSeq, synExpr, expr2, range) ->
         visitExpr synExpr |> go
         visitExpr expr2 |> go
@@ -858,60 +872,109 @@ and visitExpr (expr : SynExpr) =
         visitSynInterfaceImpls synInterfaceImpls |> go
     | SynExpr.TraitCall(supportTys, synMemberSig, argExpr, range) ->
         visitType supportTys |> go
-        synmembersig
-        failwith unsupported
+        visitSynMemberSig synMemberSig |> go
+        visitExpr argExpr |> go
     | SynExpr.TryFinally(tryExpr, finallyExpr, range, debugPointAtTry, debugPointAtFinally, synExprTryFinallyTrivia) ->
-        failwith unsupported
+        visitExpr tryExpr |> go
+        visitExpr finallyExpr |> go
     | SynExpr.TryWith(tryExpr, synMatchClauses, range, debugPointAtTry, debugPointAtWith, synExprTryWithTrivia) ->
-        failwith unsupported
+        visitExpr tryExpr |> go
+        visitSynMatchClauses synMatchClauses |> go
     | SynExpr.TypeApp(synExpr, lessRange, typeArgs, commaRanges, greaterRange, typeArgsRange, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
+        visitSynTypes typeArgs |> go
     | SynExpr.TypeTest(synExpr, targetType, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
+        visitType targetType |> go
     | SynExpr.ArbitraryAfterError(debugStr, range) ->
-        failwith unsupported
+        ()
     | SynExpr.ArrayOrList(isArray, synExprs, range) ->
-        failwith unsupported
+        visitExprs synExprs |> go
     | SynExpr.DotIndexedGet(objectExpr, indexArgs, dotRange, range) ->
-        failwith unsupported
+        visitExpr objectExpr |> go
+        visitExpr indexArgs |> go
     | SynExpr.DotIndexedSet(objectExpr, indexArgs, valueExpr, leftOfSetRange, dotRange, range) ->
-        failwith unsupported
+        visitExpr objectExpr |> go
+        visitExpr indexArgs |> go
+        visitExpr valueExpr |> go
     | SynExpr.FromParseError(synExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.IfThenElse(synExpr, thenExpr, synExprOption, debugPointAtBinding, isFromErrorRecovery, range, synExprIfThenElseTrivia) ->
-        failwith unsupported
+        visitExpr synExpr |> go
+        visitExpr thenExpr |> go
+        match synExprOption with | Some expr -> visitExpr expr |> go | None -> ()
     | SynExpr.IndexFromEnd(synExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.LetOrUse(isRecursive, isUse, synBindings, synExpr, range, synExprLetOrUseTrivia) ->
-        failwith unsupported
+        visitBindings synBindings |> go
+        visitExpr synExpr |> go
     | SynExpr.LongIdentSet(synLongIdent, synExpr, range) ->
-        failwith unsupported
+        visitSynLongIdent synLongIdent |> go
+        visitExpr synExpr |> go
     | SynExpr.YieldOrReturn(flags, synExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.ArrayOrListComputed(isArray, synExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.LetOrUseBang(debugPointAtBinding, isUse, isFromSource, synPat, synExpr, synExprAndBangs, body, range, synExprLetOrUseBangTrivia) ->
-        failwith unsupported
+        visitPat synPat |> go
+        visitExpr synExpr |> go
+        Seq.collect visitExprAndBang synExprAndBangs |> go
+        visitExpr body |> go
     | SynExpr.LibraryOnlyStaticOptimization(synStaticOptimizationConstraints, synExpr, optimizedExpr, range) ->
-        failwith unsupported
+        visitStaticOptimizationConstraints synStaticOptimizationConstraints |> go
+        visitExpr synExpr |> go
+        visitExpr optimizedExpr |> go
     | SynExpr.NamedIndexedPropertySet(synLongIdent, synExpr, expr2, range) ->
+        visitSynLongIdent synLongIdent |> go
+        visitExpr synExpr |> go
+        visitExpr expr2 |> go
         failwith unsupported
     | SynExpr.SequentialOrImplicitYield(debugPointAtSequential, synExpr, expr2, ifNotStmt, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
+        visitExpr expr2 |> go
+        visitExpr ifNotStmt |> go
     | SynExpr.YieldOrReturnFrom(flags, synExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.DotNamedIndexedPropertySet(targetExpr, synLongIdent, argExpr, rhsExpr, range) ->
-        failwith unsupported
+        visitExpr targetExpr |> go
+        visitSynLongIdent synLongIdent |> go
+        visitExpr argExpr |> go
+        visitExpr rhsExpr |> go
     | SynExpr.LibraryOnlyILAssembly(ilCode, typeArgs, synExprs, synTypes, range) ->
-        failwith unsupported
+        visitSynTypes typeArgs |> go
+        visitExprs synExprs |> go
+        visitSynTypes synTypes |> go
     | SynExpr.DiscardAfterMissingQualificationAfterDot(synExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.LibraryOnlyUnionCaseFieldGet(synExpr, longId, fieldNum, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
+        visitLongIdent longId |> go
     | SynExpr.LibraryOnlyUnionCaseFieldSet(synExpr, longId, fieldNum, rhsExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
+        visitLongIdent longId |> go
+        visitExpr rhsExpr |> go
     
     l
+    
+and visitStaticOptimizationConstraint (x : SynStaticOptimizationConstraint) : Stuff =
+    match x with
+    | SynStaticOptimizationConstraint.WhenTyparIsStruct(synTypar, range) ->
+        visitTypar synTypar
+    | SynStaticOptimizationConstraint.WhenTyparTyconEqualsTycon(synTypar, rhsType, range) ->
+        seq {
+            yield! visitTypar synTypar
+            yield! visitType rhsType
+        }
+    
+and visitStaticOptimizationConstraints = visitMulti visitStaticOptimizationConstraint
+    
+and visitExprAndBang (x : SynExprAndBang) : Stuff =
+    match x with
+    | SynExprAndBang(debugPointAtBinding, isUse, isFromSource, synPat, synExpr, range, synExprAndBangTrivia) ->
+        seq {
+            yield! visitPat synPat
+            yield! visitExpr synExpr
+        }
     
 and visitExprs = visitMulti visitExpr
     
@@ -984,4 +1047,3 @@ open A1
 let f = a
 
 module X = B
-X.b
