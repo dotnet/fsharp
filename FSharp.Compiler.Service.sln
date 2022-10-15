@@ -40,6 +40,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		src\Compiler\FSComp.txt = src\Compiler\FSComp.txt
 	EndProjectSection
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Service.Tests2", "tests\FSharp.Compiler.Service.Tests2\FSharp.Compiler.Service.Tests2.fsproj", "{60EDC1C4-5B8B-4211-94CD-4CF5F9E0FC8B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -86,6 +88,10 @@ Global
 		{07CD957A-3C31-4F75-A735-16CE72E1BD71}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{07CD957A-3C31-4F75-A735-16CE72E1BD71}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{07CD957A-3C31-4F75-A735-16CE72E1BD71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60EDC1C4-5B8B-4211-94CD-4CF5F9E0FC8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60EDC1C4-5B8B-4211-94CD-4CF5F9E0FC8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60EDC1C4-5B8B-4211-94CD-4CF5F9E0FC8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60EDC1C4-5B8B-4211-94CD-4CF5F9E0FC8B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
