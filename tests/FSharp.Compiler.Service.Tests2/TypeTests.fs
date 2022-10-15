@@ -405,10 +405,21 @@ and visitSynTypeDefnRepr (x : SynTypeDefnRepr) : Stuff =
         }
 
 and visitSynValSig (x : SynValSig) : Stuff =
-    failwith unsupported
+    match x with
+    | SynValSig(synAttributeLists, synIdent, synValTyparDecls, synType, synValInfo, isInline, isMutable, preXmlDoc, synAccessOption, synExprOption, range, synValSigTrivia) ->
+        seq {
+            yield! visitSynAttributeLists synAttributeLists
+            yield! visitSynIdent synIdent
+            yield! visitSynValTyparDecls synValTyparDecls
+            yield! visitSynType synType
+            yield! visitSynValInfo synValInfo
+            yield! visitPreXmlDoc preXmlDoc
+            match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
+            match synExprOption with | Some expr -> yield! visitSynExpr expr | None -> ()
+        }
 
 and visitSynMemberKind (x : SynMemberKind) : Stuff =
-    failwith unsupported
+    []
 
 and visitSynMemberFlags (x : SynMemberFlags) : Stuff =
     []
@@ -479,15 +490,24 @@ and visitSynMemberDefn (defn : SynMemberDefn) : Stuff =
             yield! visitSynSimplePats synSimplePats
         }
     | SynMemberDefn.ImplicitInherit(inheritType, inheritArgs, inheritAlias, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynType inheritType
+            yield! visitSynExpr inheritArgs
+        }
     | SynMemberDefn.LetBindings(synBindings, isStatic, isRecursive, range) ->
-        failwith unsupported
+        visitSynBindings synBindings
     | SynMemberDefn.NestedType(synTypeDefn, synAccessOption, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynTypeDefn synTypeDefn
+            match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
+        }
     | SynMemberDefn.ValField(fieldInfo, range) ->
-        failwith unsupported
+        visitSynField fieldInfo
     | SynMemberDefn.GetSetMember(memberDefnForGet, memberDefnForSet, range, synMemberGetSetTrivia) ->
-    failwith unsupported
+        seq {
+            match memberDefnForGet with | Some binding -> yield! visitSynBinding binding | None -> ()
+            match memberDefnForSet with | Some binding -> yield! visitSynBinding binding | None -> ()
+        }
 
 and visitSynMemberDefns (defns : SynMemberDefn list) : Stuff =
     Seq.collect visitSynMemberDefn defns
