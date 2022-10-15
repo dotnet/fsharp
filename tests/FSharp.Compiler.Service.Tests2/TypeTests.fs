@@ -17,11 +17,11 @@ let rec visitSynModuleDecl (decl : SynModuleDecl) : Stuff =
     | SynModuleDecl.Exception(synExceptionDefn, range) ->
         visitSynExceptionDefn synExceptionDefn
     | SynModuleDecl.Expr(synExpr, range) ->
-        visitSynExpr synExpr
+        visitExpr synExpr
     | SynModuleDecl.HashDirective(parsedHashDirective, range) ->
         visitHashDirective parsedHashDirective
     | SynModuleDecl.Let(isRecursive, synBindings, range) ->
-        visitSynBindings synBindings
+        visitBindings synBindings
     | SynModuleDecl.Open(synOpenDeclTarget, range) -> 
         visitSynOpenDeclTarget synOpenDeclTarget
     | SynModuleDecl.Types(synTypeDefns, range) ->
@@ -53,12 +53,12 @@ and visitSynTupleTypeSegment (x : SynTupleTypeSegment) : Stuff =
     | SynTupleTypeSegment.Star range ->
         []
     | SynTupleTypeSegment.Type typeName ->
-        visitSynType typeName
+        visitType typeName
 
 and visitSynTupleTypeSegments (x : SynTupleTypeSegment list) : Stuff =
     Seq.collect visitSynTupleTypeSegment x 
 
-and visitSynTypar (x : SynTypar) : Stuff =
+and visitTypar (x : SynTypar) : Stuff =
     match x with
     | SynTypar.SynTypar(ident, typarStaticReq, isCompGen) ->
         [] // TODO check
@@ -70,7 +70,7 @@ and visitSynConst (x : SynConst) : Stuff =
     [] // TODO Check
 
 and visitSynTypes (x : SynType list) : Stuff =
-    Seq.collect visitSynType x
+    Seq.collect visitType x
 
 and visitTypeConstraints (x : SynTypeConstraint list) : Stuff =
     Seq.collect visitTypeConstraint x
@@ -80,7 +80,7 @@ and visitSynTyparDecl (x : SynTyparDecl) : Stuff =
     | SynTyparDecl(synAttributeLists, synTypar) ->
         seq {
             yield! visitSynAttributeLists synAttributeLists
-            yield! visitSynTypar synTypar
+            yield! visitTypar synTypar
         }
 
 and visitSynTyparDeclList (x : SynTyparDecl list) : Stuff =
@@ -112,6 +112,11 @@ and visitValSig (x : SynValSig) : Stuff =
             yield! visitSynAttributeLists synAttributeLists
             yield! visitSynIdent synIdent
             yield! visitSynValTyparDecls synValTyparDecls
+            yield! visitType synType
+            yield! visitSynValInfo synValInfo
+            yield! visitPreXmlDoc preXmlDoc
+            match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
+            match synExprOption with | Some expr -> yield! visitExpr expr | None -> ()
         }
 
 and visitSynTypeDefnSignRepr (x : SynTypeDefnSigRepr) : Stuff =
@@ -137,9 +142,9 @@ and visitSynTypeDefnSign (x : SynTypeDefnSig) : Stuff =
 and visitMemberSig (x : SynMemberSig) : Stuff =
     match x with
     | SynMemberSig.Inherit(inheritedType, range) ->
-        visitSynType inheritedType
+        visitType inheritedType
     | SynMemberSig.Interface(interfaceType, range) ->
-        visitSynType interfaceType
+        visitType interfaceType
     | SynMemberSig.Member(synValSig, synMemberFlags, range) ->
         seq {
             yield! visitValSig synValSig
@@ -152,113 +157,113 @@ and visitMemberSig (x : SynMemberSig) : Stuff =
 and visitTypeConstraint (x : SynTypeConstraint) : Stuff =
     match x with
     | SynTypeConstraint.WhereTyparIsValueType(typar, range) ->
-        visitSynTypar typar
+        visitTypar typar
     | SynTypeConstraint.WhereTyparIsReferenceType(typar, range) ->
-        visitSynTypar typar
+        visitTypar typar
     | SynTypeConstraint.WhereTyparIsUnmanaged(typar, range) ->
-        visitSynTypar typar
+        visitTypar typar
     | SynTypeConstraint.WhereTyparSupportsNull(typar, range) ->
-        visitSynTypar typar
+        visitTypar typar
     | SynTypeConstraint.WhereTyparIsComparable(typar, range) ->
-        visitSynTypar typar
+        visitTypar typar
     | SynTypeConstraint.WhereTyparIsEquatable(typar, range) ->
-        visitSynTypar typar
+        visitTypar typar
     | SynTypeConstraint.WhereTyparDefaultsToType(typar, typeName: SynType, range) ->
         seq {
-            yield! visitSynTypar typar
-            yield! visitSynType typeName
+            yield! visitTypar typar
+            yield! visitType typeName
         }
     | SynTypeConstraint.WhereTyparSubtypeOfType(typar, typeName: SynType, range) ->
         seq {
-            yield! visitSynTypar typar
-            yield! visitSynType typeName
+            yield! visitTypar typar
+            yield! visitType typeName
         }
     | SynTypeConstraint.WhereTyparSupportsMember(typars: SynType, memberSig: SynMemberSig, range) ->
         seq {
-            yield! visitSynType typars
+            yield! visitType typars
             yield! visitMemberSig memberSig
         }
     | SynTypeConstraint.WhereTyparIsEnum(typar, typeArgs: SynType list, range) ->
         seq {
-            yield! visitSynTypar typar
+            yield! visitTypar typar
             yield! visitSynTypes typeArgs
         }
     | SynTypeConstraint.WhereTyparIsDelegate(typar, typeArgs: SynType list, range) ->
         seq {
-            yield! visitSynTypar typar
+            yield! visitTypar typar
             yield! visitSynTypes typeArgs
         }
     | SynTypeConstraint.WhereSelfConstrained(selfConstraint, range) ->
-        visitSynType selfConstraint
+        visitType selfConstraint
 
-and visitSynType (x : SynType) : Stuff =
+and visitType (x : SynType) : Stuff =
     match x with
     | SynType.Anon range ->
         []
     | SynType.App(typeName, rangeOption, typeArgs, commaRanges, greaterRange, isPostfix, range) ->
         seq {
-            yield! visitSynType typeName
-            yield! typeArgs |> Seq.collect visitSynType
+            yield! visitType typeName
+            yield! typeArgs |> Seq.collect visitType
         }
     | SynType.Array(rank, elementType, range) ->
-        visitSynType elementType
+        visitType elementType
     | SynType.Fun(argType, returnType, range, synTypeFunTrivia) ->
         seq {
-            yield! visitSynType argType
-            yield! visitSynType returnType
+            yield! visitType argType
+            yield! visitType returnType
         }
     | SynType.Or(lhsType, rhsType, range, synTypeOrTrivia) ->
         seq {
-            yield! visitSynType lhsType
-            yield! visitSynType rhsType
+            yield! visitType lhsType
+            yield! visitType rhsType
         }
     | SynType.Paren(innerType, range) ->
-        visitSynType innerType
+        visitType innerType
     | SynType.Tuple(isStruct, synTupleTypeSegments, range) ->
         visitSynTupleTypeSegments synTupleTypeSegments
     | SynType.Var(synTypar, range) ->
-        visitSynTypar synTypar
+        visitTypar synTypar
     | SynType.AnonRecd(isStruct, fields, range) ->
-        fields |> Seq.collect (fun (id, f) -> visitSynType f)
+        fields |> Seq.collect (fun (id, f) -> visitType f)
     | SynType.HashConstraint(innerType, range) ->
-        visitSynType innerType
+        visitType innerType
     | SynType.LongIdent synLongIdent ->
         visitSynLongIdent synLongIdent
     | SynType.MeasureDivide(synType, divisor, range) ->
         seq {
-            yield! visitSynType synType
-            yield! visitSynType divisor
+            yield! visitType synType
+            yield! visitType divisor
         }
     | SynType.MeasurePower(baseMeasure, synRationalConst, range) ->
         seq {
-            yield! visitSynType baseMeasure
+            yield! visitType baseMeasure
             yield! visitSynRationalConst synRationalConst
         }
     | SynType.SignatureParameter(synAttributeLists, optional, identOption, usedType, range) ->
         seq {
             yield! visitSynAttributeLists synAttributeLists
-            yield! visitSynType usedType
+            yield! visitType usedType
         }
     | SynType.StaticConstant(synConst, range) ->
         visitSynConst synConst
     | SynType.LongIdentApp(typeName, synLongIdent, rangeOption, typeArgs, commaRanges, greaterRange, range) ->
         seq {
-            yield! visitSynType typeName
+            yield! visitType typeName
             yield! visitSynLongIdent synLongIdent
             yield! visitSynTypes typeArgs
         }
     | SynType.StaticConstantExpr(synExpr, range) ->
         seq {
-            yield! visitSynExpr synExpr
+            yield! visitExpr synExpr
         }
     | SynType.StaticConstantNamed(synType, value, range) ->
         seq {
-            yield! visitSynType synType
-            yield! visitSynType value
+            yield! visitType synType
+            yield! visitType value
         }
     | SynType.WithGlobalConstraints(typeName, synTypeConstraints, range) ->
         seq {
-            yield! visitSynType typeName
+            yield! visitType typeName
             yield! visitTypeConstraints synTypeConstraints
         }
 
@@ -273,7 +278,7 @@ and visitSynField (x : SynField) : Stuff =
     | SynField.SynField(synAttributeLists, isStatic, identOption, fieldType, isMutable, preXmlDoc, synAccessOption, range, synFieldTrivia) ->
         seq {
             yield! visitSynAttributeLists synAttributeLists
-            yield! visitSynType fieldType
+            yield! visitType fieldType
             yield! visitPreXmlDoc preXmlDoc
             match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
         }
@@ -355,7 +360,7 @@ and visitTypeDefnSimpleRepr (x : SynTypeDefnSimpleRepr) : Stuff =
     | SynTypeDefnSimpleRepr.TypeAbbrev(parserDetail, rhsType, range) ->
         seq {
             yield! visitParserDetail parserDetail
-            yield! visitSynType rhsType
+            yield! visitType rhsType
         }
     | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly(ilType, range) ->
         []
@@ -377,7 +382,7 @@ and visitSynTypeDefnKind (x : SynTypeDefnKind) : Stuff =
     match x with
     | SynTypeDefnKind.Delegate(synType, synValInfo) ->
         seq {
-            yield! visitSynType synType
+            yield! visitType synType
             yield! visitSynValInfo synValInfo
         }
     | SynTypeDefnKind.Abbrev
@@ -411,11 +416,11 @@ and visitSynValSig (x : SynValSig) : Stuff =
             yield! visitSynAttributeLists synAttributeLists
             yield! visitSynIdent synIdent
             yield! visitSynValTyparDecls synValTyparDecls
-            yield! visitSynType synType
+            yield! visitType synType
             yield! visitSynValInfo synValInfo
             yield! visitPreXmlDoc preXmlDoc
             match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
-            match synExprOption with | Some expr -> yield! visitSynExpr expr | None -> ()
+            match synExprOption with | Some expr -> yield! visitExpr expr | None -> ()
         }
 
 and visitSynMemberKind (x : SynMemberKind) : Stuff =
@@ -429,7 +434,7 @@ and visitSynSimplePats (x : SynSimplePats) : Stuff =
     | SynSimplePats.Typed(synSimplePats, targetType, range) ->
         seq {
             yield! visitSynSimplePats synSimplePats
-            yield! visitSynType targetType
+            yield! visitType targetType
         }
     | SynSimplePats.SimplePats(synSimplePats, range) ->
         Seq.collect visitSynSimplePat synSimplePats
@@ -451,16 +456,16 @@ and visitSynSimplePat (x : SynSimplePat) : Stuff =
     | SynSimplePat.Typed(synSimplePat, targetType, range) ->
         seq {
             yield! visitSynSimplePat synSimplePat
-            yield! visitSynType targetType
+            yield! visitType targetType
         }
 
 and visitSynMemberDefn (defn : SynMemberDefn) : Stuff =
     match defn with
     | SynMemberDefn.Inherit(baseType, identOption, range) ->
-        visitSynType baseType
+        visitType baseType
     | SynMemberDefn.Interface(interfaceType, withKeyword, synMemberDefnsOption, range) ->
         seq {
-            yield! visitSynType interfaceType
+            yield! visitType interfaceType
             match synMemberDefnsOption with | Some defns -> yield! visitSynMemberDefns defns | None -> ()
         }
     | SynMemberDefn.Member(memberDefn, range) ->
@@ -475,13 +480,13 @@ and visitSynMemberDefn (defn : SynMemberDefn) : Stuff =
     | SynMemberDefn.AutoProperty(synAttributeLists, isStatic, ident, synTypeOption, synMemberKind, synMemberFlags, memberFlagsForSet, preXmlDoc, synAccessOption, synExpr, range, synMemberDefnAutoPropertyTrivia) ->
         seq {
             yield! visitSynAttributeLists synAttributeLists
-            match synTypeOption with | Some synType -> yield! visitSynType synType | None -> ()
+            match synTypeOption with | Some synType -> yield! visitType synType | None -> ()
             yield! visitSynMemberKind synMemberKind
             yield! visitSynMemberFlags synMemberFlags
             yield! visitSynMemberFlags memberFlagsForSet
             yield! visitPreXmlDoc preXmlDoc
             match synAccessOption with | Some synAccess -> yield! visitSynAccess synAccess | None -> ()
-            yield! visitSynExpr synExpr
+            yield! visitExpr synExpr
         }
     | SynMemberDefn.ImplicitCtor(synAccessOption, synAttributeLists, synSimplePats, selfIdentifier, preXmlDoc, range) ->
         seq {
@@ -491,11 +496,11 @@ and visitSynMemberDefn (defn : SynMemberDefn) : Stuff =
         }
     | SynMemberDefn.ImplicitInherit(inheritType, inheritArgs, inheritAlias, range) ->
         seq {
-            yield! visitSynType inheritType
-            yield! visitSynExpr inheritArgs
+            yield! visitType inheritType
+            yield! visitExpr inheritArgs
         }
     | SynMemberDefn.LetBindings(synBindings, isStatic, isRecursive, range) ->
-        visitSynBindings synBindings
+        visitBindings synBindings
     | SynMemberDefn.NestedType(synTypeDefn, synAccessOption, range) ->
         seq {
             yield! visitSynTypeDefn synTypeDefn
@@ -542,9 +547,9 @@ and visitSynValData (x : SynValData) : Stuff =
         } 
 
 and visitSynPats (x : SynPat list) : Stuff =
-    Seq.collect visitSynPat x
+    Seq.collect visitPat x
 
-and visitSynPat (x : SynPat) : Stuff =
+and visitPat (x : SynPat) : Stuff =
     match x with
     | SynPat.Ands(synPats, range) ->
         visitSynPats synPats
@@ -552,9 +557,69 @@ and visitSynPat (x : SynPat) : Stuff =
         visitSynPats [lhsPat; rhsPat]
     | SynPat.Attrib(synPat, synAttributeLists, range) ->
         seq {
-            yield! visitSynPat synPat
-            
+            yield! visitPat synPat
+            yield! visitSynAttributeLists synAttributeLists
         }
+    | SynPat.Const(synConst, range) ->
+        visitSynConst synConst
+    | SynPat.Named(synIdent, isThisVal, synAccessOption, range) ->
+        seq {
+            yield! visitSynIdent synIdent
+            match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
+        }
+    | SynPat.Null range ->
+        []
+    | SynPat.Or(lhsPat, rhsPat, range, synPatOrTrivia) ->
+        seq {
+            yield! visitSynPats [lhsPat; rhsPat]
+        }
+    | SynPat.Paren(synPat, range) ->
+        visitPat synPat
+    | SynPat.Record(fieldPats, range) ->
+        fieldPats
+        |> Seq.collect (fun ((longId, id), range, pat) ->
+            seq {
+                yield! visitLongIdent longId
+                yield! visitPat pat
+            }
+        )
+    | SynPat.Tuple(isStruct, elementPats, range) ->
+        visitSynPats elementPats
+    | SynPat.Typed(synPat, targetType, range) ->
+        seq {
+            yield! visitPat synPat
+            yield! visitType targetType
+        }
+    | SynPat.Wild range ->
+        []
+    | SynPat.InstanceMember(thisId, memberId, identOption, synAccessOption, range) ->
+        seq {
+            match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
+        }
+    | SynPat.IsInst(synType, range) ->
+        visitType synType
+    | SynPat.ListCons(lhsPat, rhsPat, range, synPatListConsTrivia) ->
+        seq {
+            yield! visitPat lhsPat
+            yield! visitPat rhsPat
+        }
+    | SynPat.LongIdent(synLongIdent, identOption, synValTyparDeclsOption, synArgPats, synAccessOption, range) ->
+        seq {
+            yield! visitSynLongIdent synLongIdent
+            match synValTyparDeclsOption with | Some decls -> yield! visitSynTyparDecls decls | None -> ()
+            yield! visitSynArgPats synArgPats
+        }
+        ()
+    | SynPat.OptionalVal(ident, range) ->
+        ()
+    | SynPat.QuoteExpr(synExpr, range) ->
+        ()
+    | SynPat.ArrayOrList(isArray, elementPats, range) ->
+        ()
+    | SynPat.DeprecatedCharRange(startChar, endChar, range) ->
+        ()
+    | SynPat.FromParseError(synPat, range) ->
+        ()
 
 and visitBindingReturnInfo (x : SynBindingReturnInfo) : Stuff =
     failwith unsupported
@@ -567,19 +632,19 @@ and visitSynBinding (x : SynBinding) : Stuff =
             yield! visitSynAttributeLists synAttributeLists
             yield! visitPreXmlDoc preXmlDoc
             yield! visitSynValData synValData
-            yield! visitSynPat headPat
+            yield! visitPat headPat
             match synBindingReturnInfoOption with | Some info -> yield! visitBindingReturnInfo info | None -> ()
-            yield! visitSynExpr synExpr
+            yield! visitExpr synExpr
         }
 
-and visitSynBindings (bindings : SynBinding list) : Stuff =
+and visitBindings (bindings : SynBinding list) : Stuff =
     Seq.collect visitSynBinding bindings
 
 and visitSynOpenDeclTarget (target : SynOpenDeclTarget) : Stuff =
     match target with
     | SynOpenDeclTarget.Type(typeName, range) ->
-        visitSynType typeName
-    | SynOpenDeclTarget.ModuleOrNamespace(synLongIdent, range)
+        visitType typeName
+    | SynOpenDeclTarget.ModuleOrNamespace(synLongIdent, range) ->
         visitSynLongIdent synLongIdent
 
 and visitSynComponentInfo (info : SynComponentInfo) : Stuff =
@@ -598,94 +663,202 @@ and visitLongIdent (ident : LongIdent) : Stuff =
     
 and visitSynLongIdent (ident : SynLongIdent) : Stuff  =
     [ident]
-    
-and visitSynExpr (expr : SynExpr) =
+   
+and visitSynMatchClause (x : SynMatchClause) : Stuff =
+    failwith unsupported
+   
+and visitSynMatchClauses = visitMulti visitSynMatchClause
+      
+and visitExprOnly (x : SeqExprOnly) : Stuff =
+    []
+      
+and visitSynInterpolatedStringPart (x : SynInterpolatedStringPart) : Stuff =
+    match x with
+    | SynInterpolatedStringPart.String(value, range) ->
+        failwith unsupported
+    | SynInterpolatedStringPart.FillExpr(fillExpr, identOption) ->
+        visitExpr fillExpr
+      
+and visitSynInterpolatedStringParts (x : SynInterpolatedStringPart list) : Stuff =
+    Seq.collect visitSynInterpolatedStringPart x
+      
+and visitSynInterfaceImpl (x : SynInterfaceImpl) : Stuff =
+    match x with
+    | SynInterfaceImpl(interfaceTy, withKeyword, synBindings, synMemberDefns, range) ->
+        seq {
+            yield! visitType interfaceTy
+            yield! visitBindings synBindings
+            yield! visitSynMemberDefns synMemberDefns
+        }
+      
+and visitSynInterfaceImpls (x : SynInterfaceImpl list) : Stuff =
+    Seq.collect visitSynInterfaceImpl x
+      
+and visitSynArgPats (x : SynArgPats) : Stuff =
+    match x with
+    | SynArgPats.Pats synPats ->
+        visitSynPats synPats
+    | SynArgPats.NamePatPairs(tuples, range, synArgPatsNamePatPairsTrivia) ->
+        tuples
+        |> Seq.collect (fun (ident, range, pat) -> visitPat pat)
+      
+and visitSynMemberSig (x : SynMemberSig) : Stuff =
+    match x with
+    | SynMemberSig.Inherit(inheritedType, range) ->
+        visitType inheritedType
+    | SynMemberSig.Interface(interfaceType, range) ->
+        visitType interfaceType
+    | SynMemberSig.Member(synValSig, synMemberFlags, range) ->
+        seq {
+            yield! visitValSig synValSig
+        }
+    | SynMemberSig.NestedType(synTypeDefnSig, range) ->
+        failwith unsupported
+    | SynMemberSig.ValField(synField, range) ->
+        failwith unsupported
+      
+and visitExpr (expr : SynExpr) =
+    let l = System.Collections.Generic.List<SynLongIdent>()
+    let go (items : Stuff) =
+        l.AddRange(items)
+        
     match expr with
     | SynExpr.App(exprAtomicFlag, isInfix, funcExpr, argExpr, range) ->
-        failwith unsupported
+        visitExpr funcExpr |> go
+        visitExpr argExpr |> go
     | SynExpr.Assert(synExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.Const(synConst, range) ->
-        failwith unsupported
+        visitSynConst synConst |> go
     | SynExpr.Do(synExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.Downcast(synExpr, targetType, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
+        visitType targetType |> go
     | SynExpr.Dynamic(funcExpr, qmark, argExpr, range) ->
-        failwith unsupported
+        visitExpr funcExpr |> go
+        visitExpr argExpr |> go
     | SynExpr.Fixed(synExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.For(debugPointAtFor, debugPointAtInOrTo, ident, equalsRange, identBody, direction, synExpr, doBody, range) ->
-        failwith unsupported
+        visitExpr identBody |> go
+        visitExpr synExpr |> go
+        visitExpr doBody |> go
     | SynExpr.Ident ident ->
-        failwith unsupported
+        ()
     | SynExpr.Lambda(fromMethod, inLambdaSeq, synSimplePats, synExpr, tupleOption, range, synExprLambdaTrivia) ->
-        failwith unsupported
+        visitSynSimplePats synSimplePats |> go
+        visitExpr synExpr |> go
+        match tupleOption with | Some (simplePats, expr) -> visitSynPats simplePats |> go; visitExpr expr |> go | None -> ()
     | SynExpr.Lazy(synExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.Match(debugPointAtBinding, synExpr, synMatchClauses, range, synExprMatchTrivia) ->
-        failwith unsupported
+        visitExpr synExpr |> go
+        visitSynMatchClauses synMatchClauses |> go
     | SynExpr.New(isProtected, targetType, synExpr, range) ->
-        failwith unsupported
+        visitType targetType |> go
+        visitExpr synExpr |> go
     | SynExpr.Null range ->
-        failwith unsupported
+        ()
     | SynExpr.Paren(synExpr, leftParenRange, rightParenRange, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.Quote(synExpr, isRaw, quotedExpr, isFromQueryExpression, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
+        visitExpr quotedExpr |> go
     | SynExpr.Record(tupleOption, copyInfo, synExprRecordFields, range) ->
-        failwith unsupported
+        match tupleOption with
+        | Some(synType, synExpr, range, tupleOption, range1) ->
+            failwith unsupported
+        | None ->
+            ()
+        match copyInfo with
+        | Some(synExpr, tuple) ->
+            visitExpr synExpr |> go
+        | None -> ()
     | SynExpr.Sequential(debugPointAtSequential, isTrueSeq, synExpr, expr2, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
+        visitExpr expr2 |> go
     | SynExpr.Set(targetExpr, rhsExpr, range) ->
-        failwith unsupported
+        visitExpr targetExpr |> go
+        visitExpr rhsExpr |> go
     | SynExpr.Tuple(isStruct, synExprs, commaRanges, range) ->
-        failwith unsupported
+        visitExprs synExprs |> go
     | SynExpr.Typar(synTypar, range) ->
-        failwith unsupported
+        visitTypar synTypar |> go
     | SynExpr.Typed(synExpr, targetType, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
+        visitType targetType |> go
     | SynExpr.Upcast(synExpr, targetType, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
+        visitType targetType |> go
     | SynExpr.While(debugPointAtWhile, whileExpr, synExpr, range) ->
-        failwith unsupported
+        visitExpr whileExpr |> go
+        visitExpr synExpr |> go
     | SynExpr.AddressOf(isByref, synExpr, opRange, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.AnonRecd(isStruct, tupleOption, recordFields, range) ->
-        failwith unsupported
+        match tupleOption with
+        | Some(synExpr, tuple) ->
+            ()
+        | None ->
+            ()
+        recordFields
+        |> Seq.collect (fun (ident, range, f) -> visitExpr f)
+        |> go
     | SynExpr.ComputationExpr(hasSeqBuilder, synExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.DebugPoint(debugPointAtLeafExpr, isControlFlow, innerExpr) ->
-        failwith unsupported
+        visitExpr innerExpr |> go
     | SynExpr.DoBang(synExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.DotGet(synExpr, rangeOfDot, synLongIdent, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
+        visitSynLongIdent synLongIdent |> go
     | SynExpr.DotSet(targetExpr, synLongIdent, rhsExpr, range) ->
-        failwith unsupported
+        visitExpr targetExpr |> go
+        visitSynLongIdent synLongIdent |> go
+        visitExpr rhsExpr |> go
     | SynExpr.ForEach(debugPointAtFor, debugPointAtInOrTo, seqExprOnly, isFromSource, synPat, enumExpr, bodyExpr, range) ->
-        failwith unsupported
+        visitExprOnly seqExprOnly |> go
+        visitPat synPat |> go
+        visitExpr enumExpr |> go
+        visitExpr bodyExpr |> go
     | SynExpr.ImplicitZero range ->
-        failwith unsupported
+        ()
     | SynExpr.IndexRange(synExprOption, range, exprOption, range1, range2, range3) ->
-        failwith unsupported
+        match synExprOption with | Some expr -> visitExpr expr |> go | None -> ()
+        match exprOption with | Some expr -> visitExpr expr |> go | None -> ()
     | SynExpr.InferredDowncast(synExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.InferredUpcast(synExpr, range) ->
-        failwith unsupported
+        visitExpr synExpr |> go
     | SynExpr.InterpolatedString(synInterpolatedStringParts, synStringKind, range) ->
-        failwith unsupported
+        visitSynInterpolatedStringParts synInterpolatedStringParts |> go
     | SynExpr.JoinIn(lhsExpr, lhsRange, rhsExpr, range) ->
-        failwith unsupported
+        visitExpr lhsExpr |> go
+        visitExpr rhsExpr |> go
     | SynExpr.LongIdent(isOptional, synLongIdent, synSimplePatAlternativeIdInfoRefOption, range) ->
-        failwith unsupported
+        visitSynLongIdent synLongIdent |> go
+        match synSimplePatAlternativeIdInfoRefOption with
+        | Some info -> visitSynSimplePatAlternativeIdInfoRef info |> go
+        | None -> ()
     | SynExpr.MatchBang(debugPointAtBinding, synExpr, synMatchClauses, range, synExprMatchBangTrivia) ->
-        failwith unsupported
+        visitExpr synExpr |> go
+        visitSynMatchClauses synMatchClauses |> go
     | SynExpr.MatchLambda(isExnMatch, keywordRange, synMatchClauses, debugPointAtBinding, range) ->
-        failwith unsupported
+        visitSynMatchClauses synMatchClauses |> go
     | SynExpr.ObjExpr(objType, tupleOption, withKeyword, synBindings, synMemberDefns, synInterfaceImpls, newExprRange, range) ->
-        failwith unsupported
+        visitType objType |> go
+        match tupleOption with
+        | Some(synExpr, identOption) ->
+            visitExpr synExpr |> go
+        | None ->
+            ()
+        visitSynMemberDefns synMemberDefns |> go
+        visitSynInterfaceImpls synInterfaceImpls |> go
     | SynExpr.TraitCall(supportTys, synMemberSig, argExpr, range) ->
+        visitType supportTys |> go
+        synmembersig
         failwith unsupported
     | SynExpr.TryFinally(tryExpr, finallyExpr, range, debugPointAtTry, debugPointAtFinally, synExprTryFinallyTrivia) ->
         failwith unsupported
@@ -738,11 +911,14 @@ and visitSynExpr (expr : SynExpr) =
     | SynExpr.LibraryOnlyUnionCaseFieldSet(synExpr, longId, fieldNum, rhsExpr, range) ->
         failwith unsupported
     
+    l
+    
+and visitExprs = visitMulti visitExpr
     
 and visitSynAttribute (attribute : SynAttribute) : Stuff  =
     seq {
         yield! visitSynLongIdent attribute.TypeName
-        yield! visitSynExpr attribute.ArgExpr
+        yield! visitExpr attribute.ArgExpr
     }
                 
 and visitSynAttributeList (attributeList : SynAttributeList) : Stuff  =
