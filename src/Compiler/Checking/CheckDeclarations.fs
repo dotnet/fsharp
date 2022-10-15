@@ -3162,8 +3162,21 @@ module EstablishTypeDefinitionCores =
                     if not ctorArgNames.IsEmpty then errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), m))
                 
             let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
-            let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false 
+            let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false
+            
+            let multiCaseUnionStructCheck (unionCases: UnionCase list) =
+                if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
+                    let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield ft ]
+                    let fieldNames = fieldNames |> List.map(fun x -> (x.LogicalName, x.rfield_name_generated, x.Range))
 
+                    if fieldNames |> List.distinctBy(fun (name, _, _) -> name) |> List.length <> fieldNames.Length then
+                        let fieldRanges =
+                            fieldNames
+                            |> List.filter(fun (name, isGenerated, _) -> (not isGenerated || name = "Item") || isGenerated)
+                            |> List.map(fun (_, _, m) -> m)
+
+                        for m in fieldRanges do
+                            errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(), m))
 
             // Notify the Language Service about field names in record/class declaration
             let ad = envinner.AccessRights
@@ -3255,11 +3268,7 @@ module EstablishTypeDefinitionCores =
 
                     let hasRQAAttribute = HasFSharpAttribute cenv.g cenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
                     let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst hasRQAAttribute tpenv unionCases
-                    if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
-                      let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield ft ]
-                      for field in fieldNames do
-                        if field.rfield_name_generated then
-                            errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(), field.Range))
+                    multiCaseUnionStructCheck unionCases
 
                     writeFakeUnionCtorsToSink unionCases
                     let repr = Construct.MakeUnionRepr unionCases

@@ -79,9 +79,7 @@ namespace FSharpTest
         | Children of struct (int * string)
 """
         |> compile
-        |> shouldFail
-        |> withErrorCode 3204
-        |> ignore
+        |> shouldSucceed
 
     [<Fact>]
     let ``CheckingSyntacticTypes - TcTyconDefnCore_CheckForCyclicStructsAndInheritance - Non-Struct DU Tree Cyclic Tree`` () =
