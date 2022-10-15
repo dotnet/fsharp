@@ -75,32 +75,87 @@ and visitSynTypes (x : SynType list) : Stuff =
 and visitTypeConstraints (x : SynTypeConstraint list) : Stuff =
     Seq.collect visitTypeConstraint x
 
+and visitSynTyparDecls (x : SynTyparDecls) : Stuff =
+    match x with
+    | SynTyparDecls.PostfixList(synTyparDecls, synTypeConstraints, range) ->
+        failwith unsupported
+    | SynTyparDecls.PrefixList(synTyparDecls, range) ->
+        failwith unsupported
+    | SynTyparDecls.SinglePrefix(synTyparDecl, range) ->
+        failwith unsupported
+
+and visitSynValTyparDecls (x : SynValTyparDecls) : Stuff =
+    match x with
+    | SynValTyparDecls(synTyparDeclsOption, canInfer) ->
+        match synTyparDeclsOption with
+        | Some decls -> visitSynTyparDecls decls
+        | None -> []
+
+and visitValSig (x : SynValSig) : Stuff =
+    match x with
+    | SynValSig(synAttributeLists, synIdent, synValTyparDecls, synType, synValInfo, isInline, isMutable, preXmlDoc, synAccessOption, synExprOption, range, synValSigTrivia) ->
+        seq {
+            yield! visitSynAttributeLists synAttributeLists
+            yield! visitSynIdent synIdent
+            yield! visitSynValTyparDecls synValTyparDecls
+        }
+
+and visitMemberSig (x : SynMemberSig) : Stuff =
+    match x with
+    | SynMemberSig.Inherit(inheritedType, range) ->
+        visitSynType inheritedType
+    | SynMemberSig.Interface(interfaceType, range) ->
+        visitSynType interfaceType
+    | SynMemberSig.Member(synValSig, synMemberFlags, range) ->
+        seq {
+            yield! visitValSig synValSig
+        }
+    | SynMemberSig.NestedType(synTypeDefnSig, range) ->
+        failwith unsupported
+    | SynMemberSig.ValField(synField, range) ->
+        failwith unsupported
+
 and visitTypeConstraint (x : SynTypeConstraint) : Stuff =
     match x with
     | SynTypeConstraint.WhereTyparIsValueType(typar, range) ->
-        failwith unsupported
+        visitSynTypar typar
     | SynTypeConstraint.WhereTyparIsReferenceType(typar, range) ->
-        failwith unsupported
+        visitSynTypar typar
     | SynTypeConstraint.WhereTyparIsUnmanaged(typar, range) ->
-        failwith unsupported
+        visitSynTypar typar
     | SynTypeConstraint.WhereTyparSupportsNull(typar, range) ->
-        failwith unsupported
+        visitSynTypar typar
     | SynTypeConstraint.WhereTyparIsComparable(typar, range) ->
-        failwith unsupported
+        visitSynTypar typar
     | SynTypeConstraint.WhereTyparIsEquatable(typar, range) ->
-        failwith unsupported
+        visitSynTypar typar
     | SynTypeConstraint.WhereTyparDefaultsToType(typar, typeName: SynType, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynTypar typar
+            yield! visitSynType typeName
+        }
     | SynTypeConstraint.WhereTyparSubtypeOfType(typar, typeName: SynType, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynTypar typar
+            yield! visitSynType typeName
+        }
     | SynTypeConstraint.WhereTyparSupportsMember(typars: SynType, memberSig: SynMemberSig, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynType typars
+            yield! visitMemberSig memberSig
+        }
     | SynTypeConstraint.WhereTyparIsEnum(typar, typeArgs: SynType list, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynTypar typar
+            yield! visitSynTypes typeArgs
+        }
     | SynTypeConstraint.WhereTyparIsDelegate(typar, typeArgs: SynType list, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynTypar typar
+            yield! visitSynTypes typeArgs
+        }
     | SynTypeConstraint.WhereSelfConstrained(selfConstraint, range) ->
-        failwith unsupported
+        visitSynType selfConstraint
 
 and visitSynType (x : SynType) : Stuff =
     match x with
@@ -172,7 +227,6 @@ and visitSynType (x : SynType) : Stuff =
             yield! visitSynType typeName
             yield! visitTypeConstraints synTypeConstraints
         }
-        failwith unsupported
 
 and visitPreXmlDoc (doc : FSharp.Compiler.Xml.PreXmlDoc) : Stuff =
     [] // TODO Check
@@ -219,13 +273,108 @@ and visitSynExceptionDefnRepr (x : SynExceptionDefnRepr) : Stuff =
             // TODO
         }
 
+and visitTypeDefnSimpleRepr (x : SynTypeDefnSimpleRepr) : Stuff =
+    failwith unsupported
+
+and visitSynTypeDefnKind (x : SynTypeDefnKind) : Stuff =
+    failwith unsupported
+
 and visitSynTypeDefnRepr (x : SynTypeDefnRepr) : Stuff =
     match x with
     | SynTypeDefnRepr.Exception synExceptionDefnRepr ->
         visitSynExceptionDefnRepr synExceptionDefnRepr
+    | SynTypeDefnRepr.Simple(synTypeDefnSimpleRepr, range) ->
+        visitTypeDefnSimpleRepr synTypeDefnSimpleRepr
+    | SynTypeDefnRepr.ObjectModel(synTypeDefnKind, synMemberDefns, range) ->
+        seq {
+            yield! visitSynTypeDefnKind synTypeDefnKind
+            yield! visitSynMemberDefns synMemberDefns
+        }
+
+and visitSynValSig (x : SynValSig) : Stuff =
+    failwith unsupported
+
+and visitSynMemberKind (x : SynMemberKind) : Stuff =
+    failwith unsupported
+
+and visitSynMemberFlags (x : SynMemberFlags) : Stuff =
+    []
+    
+and visitSynSimplePats (x : SynSimplePats) : Stuff =
+    match x with
+    | SynSimplePats.Typed(synSimplePats, targetType, range) ->
+        seq {
+            yield! visitSynSimplePats synSimplePats
+            yield! visitSynType targetType
+        }
+    | SynSimplePats.SimplePats(synSimplePats, range) ->
+        Seq.collect visitSynSimplePat synSimplePats
+
+and visitSynSimplePatAlternativeIdInfoRef (x : SynSimplePatAlternativeIdInfo ref) : Stuff =
+    [] // TODO Check
+
+and visitSynSimplePat (x : SynSimplePat) : Stuff =
+    match x with
+    | SynSimplePat.Attrib(synSimplePat, synAttributeLists, range) ->
+        seq {
+            yield! visitSynSimplePat synSimplePat
+            yield! visitSynAttributeLists synAttributeLists
+        }
+    | SynSimplePat.Id(ident, synSimplePatAlternativeIdInfoRefOption, isCompilerGenerated, isThisVal, isOptional, range) ->
+        seq {
+            match synSimplePatAlternativeIdInfoRefOption with | Some info -> yield! visitSynSimplePatAlternativeIdInfoRef info | None -> ()
+        }
+    | SynSimplePat.Typed(synSimplePat, targetType, range) ->
+        seq {
+            yield! visitSynSimplePat synSimplePat
+            yield! visitSynType targetType
+        }
 
 and visitSynMemberDefn (defn : SynMemberDefn) : Stuff =
-    [] // TODO
+    match defn with
+    | SynMemberDefn.Inherit(baseType, identOption, range) ->
+        visitSynType baseType
+    | SynMemberDefn.Interface(interfaceType, withKeyword, synMemberDefnsOption, range) ->
+        seq {
+            yield! visitSynType interfaceType
+            match synMemberDefnsOption with | Some defns -> yield! visitSynMemberDefns defns | None -> ()
+        }
+    | SynMemberDefn.Member(memberDefn, range) ->
+        visitSynBinding memberDefn
+    | SynMemberDefn.Open(synOpenDeclTarget, range) ->
+        visitSynOpenDeclTarget synOpenDeclTarget
+    | SynMemberDefn.AbstractSlot(synValSig, synMemberFlags, range) ->
+        seq {
+            yield! visitSynValSig synValSig
+            yield! visitSynMemberFlags synMemberFlags
+        }
+    | SynMemberDefn.AutoProperty(synAttributeLists, isStatic, ident, synTypeOption, synMemberKind, synMemberFlags, memberFlagsForSet, preXmlDoc, synAccessOption, synExpr, range, synMemberDefnAutoPropertyTrivia) ->
+        seq {
+            yield! visitSynAttributeLists synAttributeLists
+            match synTypeOption with | Some synType -> yield! visitSynType synType | None -> ()
+            yield! visitSynMemberKind synMemberKind
+            yield! visitSynMemberFlags synMemberFlags
+            yield! visitSynMemberFlags memberFlagsForSet
+            yield! visitPreXmlDoc preXmlDoc
+            match synAccessOption with | Some synAccess -> yield! visitSynAccess synAccess | None -> ()
+            yield! visitSynExpr synExpr
+        }
+    | SynMemberDefn.ImplicitCtor(synAccessOption, synAttributeLists, synSimplePats, selfIdentifier, preXmlDoc, range) ->
+        seq {
+            match synAccessOption with | Some synAccess -> yield! visitSynAccess synAccess | None -> ()
+            yield! visitSynAttributeLists synAttributeLists
+            yield! visitSynSimplePats synSimplePats
+        }
+    | SynMemberDefn.ImplicitInherit(inheritType, inheritArgs, inheritAlias, range) ->
+        failwith unsupported
+    | SynMemberDefn.LetBindings(synBindings, isStatic, isRecursive, range) ->
+        failwith unsupported
+    | SynMemberDefn.NestedType(synTypeDefn, synAccessOption, range) ->
+        failwith unsupported
+    | SynMemberDefn.ValField(fieldInfo, range) ->
+        failwith unsupported
+    | SynMemberDefn.GetSetMember(memberDefnForGet, memberDefnForSet, range, synMemberGetSetTrivia) ->
+    failwith unsupported
 
 and visitSynMemberDefns (defns : SynMemberDefn list) : Stuff =
     Seq.collect visitSynMemberDefn defns
