@@ -19,7 +19,7 @@ let rec visitSynModuleDecl (decl : SynModuleDecl) : Stuff =
     | SynModuleDecl.Expr(synExpr, range) ->
         visitSynExpr synExpr
     | SynModuleDecl.HashDirective(parsedHashDirective, range) ->
-        []
+        visitHashDirective parsedHashDirective
     | SynModuleDecl.Let(isRecursive, synBindings, range) ->
         visitSynBindings synBindings
     | SynModuleDecl.Open(synOpenDeclTarget, range) -> 
@@ -34,50 +34,144 @@ let rec visitSynModuleDecl (decl : SynModuleDecl) : Stuff =
         seq {
             yield! visitSynComponentInfo synComponentInfo
             yield! Seq.collect visitSynModuleDecl synModuleDecls
+            yield! visitSynModuleDeclNestedModuleTrivia synModuleDeclNestedModuleTrivia
         }
 
+and visitSynModuleDeclNestedModuleTrivia (x : SynModuleDeclNestedModuleTrivia) : Stuff =
+    [] // TODO check
+
+and visitHashDirective (x : ParsedHashDirective) : Stuff =
+    [] // TODO Check
+
 and visitSynIdent (x : SynIdent) : Stuff =
-    [] // TODO Correct?
+    [] // TODO Check
+
+and visitSynTupleTypeSegment (x : SynTupleTypeSegment) : Stuff =
+    match x with
+    | SynTupleTypeSegment.Slash range ->
+        []
+    | SynTupleTypeSegment.Star range ->
+        []
+    | SynTupleTypeSegment.Type typeName ->
+        visitSynType typeName
+
+and visitSynTupleTypeSegments (x : SynTupleTypeSegment list) : Stuff =
+    Seq.collect visitSynTupleTypeSegment x 
+
+and visitSynTypar (x : SynTypar) : Stuff =
+    match x with
+    | SynTypar.SynTypar(ident, typarStaticReq, isCompGen) ->
+        [] // TODO check
+
+and visitSynRationalConst (x : SynRationalConst) =
+    [] // TODO check
+
+and visitSynConst (x : SynConst) : Stuff =
+    [] // TODO Check
+
+and visitSynTypes (x : SynType list) : Stuff =
+    Seq.collect visitSynType x
+
+and visitTypeConstraints (x : SynTypeConstraint list) : Stuff =
+    Seq.collect visitTypeConstraint x
+
+and visitTypeConstraint (x : SynTypeConstraint) : Stuff =
+    match x with
+    | SynTypeConstraint.WhereTyparIsValueType(typar, range) ->
+        failwith unsupported
+    | SynTypeConstraint.WhereTyparIsReferenceType(typar, range) ->
+        failwith unsupported
+    | SynTypeConstraint.WhereTyparIsUnmanaged(typar, range) ->
+        failwith unsupported
+    | SynTypeConstraint.WhereTyparSupportsNull(typar, range) ->
+        failwith unsupported
+    | SynTypeConstraint.WhereTyparIsComparable(typar, range) ->
+        failwith unsupported
+    | SynTypeConstraint.WhereTyparIsEquatable(typar, range) ->
+        failwith unsupported
+    | SynTypeConstraint.WhereTyparDefaultsToType(typar, typeName: SynType, range) ->
+        failwith unsupported
+    | SynTypeConstraint.WhereTyparSubtypeOfType(typar, typeName: SynType, range) ->
+        failwith unsupported
+    | SynTypeConstraint.WhereTyparSupportsMember(typars: SynType, memberSig: SynMemberSig, range) ->
+        failwith unsupported
+    | SynTypeConstraint.WhereTyparIsEnum(typar, typeArgs: SynType list, range) ->
+        failwith unsupported
+    | SynTypeConstraint.WhereTyparIsDelegate(typar, typeArgs: SynType list, range) ->
+        failwith unsupported
+    | SynTypeConstraint.WhereSelfConstrained(selfConstraint, range) ->
+        failwith unsupported
 
 and visitSynType (x : SynType) : Stuff =
     match x with
     | SynType.Anon range ->
         []
     | SynType.App(typeName, rangeOption, typeArgs, commaRanges, greaterRange, isPostfix, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynType typeName
+            yield! typeArgs |> Seq.collect visitSynType
+        }
     | SynType.Array(rank, elementType, range) ->
-        failwith unsupported
+        visitSynType elementType
     | SynType.Fun(argType, returnType, range, synTypeFunTrivia) ->
-        failwith unsupported
+        seq {
+            yield! visitSynType argType
+            yield! visitSynType returnType
+        }
     | SynType.Or(lhsType, rhsType, range, synTypeOrTrivia) ->
-        failwith unsupported
+        seq {
+            yield! visitSynType lhsType
+            yield! visitSynType rhsType
+        }
     | SynType.Paren(innerType, range) ->
-        failwith unsupported
+        visitSynType innerType
     | SynType.Tuple(isStruct, synTupleTypeSegments, range) ->
-        failwith unsupported
+        visitSynTupleTypeSegments synTupleTypeSegments
     | SynType.Var(synTypar, range) ->
-        failwith unsupported
+        visitSynTypar synTypar
     | SynType.AnonRecd(isStruct, fields, range) ->
-        failwith unsupported
+        fields |> Seq.collect (fun (id, f) -> visitSynType f)
     | SynType.HashConstraint(innerType, range) ->
-        failwith unsupported
+        visitSynType innerType
     | SynType.LongIdent synLongIdent ->
-        failwith unsupported
+        visitSynLongIdent synLongIdent
     | SynType.MeasureDivide(synType, divisor, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynType synType
+            yield! visitSynType divisor
+        }
     | SynType.MeasurePower(baseMeasure, synRationalConst, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynType baseMeasure
+            yield! visitSynRationalConst synRationalConst
+        }
     | SynType.SignatureParameter(synAttributeLists, optional, identOption, usedType, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynAttributeLists synAttributeLists
+            yield! visitSynType usedType
+        }
     | SynType.StaticConstant(synConst, range) ->
-        failwith unsupported
+        visitSynConst synConst
     | SynType.LongIdentApp(typeName, synLongIdent, rangeOption, typeArgs, commaRanges, greaterRange, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynType typeName
+            yield! visitSynLongIdent synLongIdent
+            yield! visitSynTypes typeArgs
+        }
     | SynType.StaticConstantExpr(synExpr, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynExpr synExpr
+        }
     | SynType.StaticConstantNamed(synType, value, range) ->
-        failwith unsupported
+        seq {
+            yield! visitSynType synType
+            yield! visitSynType value
+        }
     | SynType.WithGlobalConstraints(typeName, synTypeConstraints, range) ->
+        seq {
+            yield! visitSynType typeName
+            yield! visitTypeConstraints synTypeConstraints
+        }
         failwith unsupported
 
 and visitPreXmlDoc (doc : FSharp.Compiler.Xml.PreXmlDoc) : Stuff =
