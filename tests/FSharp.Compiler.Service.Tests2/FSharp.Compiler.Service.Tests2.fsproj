@@ -27,10 +27,13 @@
       <Link>Common.fs</Link>
     </Compile>
     <Compile Include="TypeTests.fs" />
-    <Compile Include="Test.fs" />
+    <Compile Include="DepResolving.fs" />
     <Compile Include="..\service\Program.fs">
       <Link>Program.fs</Link>
     </Compile>
+    <None Include="Big.fs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
