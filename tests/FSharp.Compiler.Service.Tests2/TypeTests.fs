@@ -1018,12 +1018,13 @@ and visitSynModuleOrNamespace (x : SynModuleOrNamespace) : Stuff  =
             yield! visitSynAttributeLists synAttributeLists 
         }
 
-and visit (input : ParsedInput) : Stuff  =
+and visit (input : ParsedInput) =
     match input with
     | ParsedInput.SigFile _ -> failwith "Signature files are not currently supported"
     | ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, parsedHashDirectives, synModuleOrNamespaces, flags, parsedImplFileInputTrivia)) ->
         synModuleOrNamespaces
         |> Seq.collect visitSynModuleOrNamespace
+        |> Seq.toArray
 
 let topModuleOrNamespace (input : ParsedInput) =
     match input with

@@ -1,5 +1,6 @@
 ﻿
+
 [<EntryPoint>]
 let main argv = 
-    printfn "Dotnet Core NUnit Tests..."
+    FSharp.Compiler.Service.Tests.DepResolving.Test()
     0

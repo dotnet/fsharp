@@ -1,9 +1,15 @@
 ﻿module FSharp.Compiler.Service.Tests.DepResolving
 
+open System
 open System.Collections.Generic
+open Buildalyzer
 open FSharp.Compiler.Service.Tests2.SyntaxTreeTests.TypeTests
 open FSharp.Compiler.Syntax
 open NUnit.Framework
+
+let log (msg : string) =
+    let d = DateTime.Now.ToString("HH:mm:ss.fff")
+    printfn $"{d} {msg}"
 
 /// File * AST
 type FileAST = string * ParsedInput
@@ -122,12 +128,13 @@ let rec searchInTrie (trie : TrieNode) (path : LongIdent) : TrieNode option =
         | false, _ ->
             None
 
-let detectFileDependencies (nodes : FileAST list) : Graph =
+let detectFileDependencies (nodes : FileAST[]) : Graph =
     // Create ASTs, extract module refs
     let nodes =
         nodes
-        |> List.mapi (fun i (name, ast) ->
-            let typeAndModuleRefs = visit ast 
+        |> Array.mapi (fun i (name, ast) ->
+            printfn $"Visiting {name}"
+            let typeAndModuleRefs = visit ast
             let top = topModuleOrNamespace ast
             let moduleRefs = extractModuleSegments typeAndModuleRefs
             {
@@ -138,7 +145,6 @@ let detectFileDependencies (nodes : FileAST list) : Graph =
                 Idx = i
             }
         )
-        |> List.toArray
         
     let trie = buildTrie nodes
     
@@ -282,9 +288,47 @@ type B = int
     let nodes =
         files
         |> List.map (fun (name, code) -> name, getParseResults code)
+        |> List.toArray
     
     let graph = detectFileDependencies nodes
 
     printfn "Detected file dependencies:"
     graph
     |> Array.iter (fun (file, deps) -> printfn $"{file} -> %+A{deps}")
+
+[<Test>]
+let Test () =
+    log "start"
+    let m = AnalyzerManager()
+    let analyzer = m.GetProject(@"C:\projekty\fsharp\fsharp_main\src\Compiler\FSharp.Compiler.Service.fsproj")
+    let results = analyzer.Build()
+    log "built"
+    
+    let res = results.Results |> Seq.head
+    let files = res.SourceFiles
+    let files =
+        files
+        |> Array.take 3
+        |> Array.Parallel.map (fun f -> f, System.IO.File.ReadAllText(f))
+        |> Array.chunkBySize 5
+        |> Array.map (fun chunk ->
+            chunk
+            |> Array.Parallel.map (fun (f, code) ->
+                printfn $"Parsing {f}"
+                let ast = getParseResults code
+                f, ast
+            )
+        )
+        |> Array.concat
+    let N = files.Length
+    log $"{N} files read"
+    
+    let graph = detectFileDependencies files
+    log "deps detected"
+    
+    let totalDeps = graph |> Array.sumBy (fun (f, deps) -> deps.Length)
+    let maxPossibleDeps = (N * (N-1)) / 2 
+    printfn $"Analysed {N} files, detected {totalDeps}/{maxPossibleDeps} file dependencies:"
+    graph
+    |> Array.iter (fun (file, deps) -> printfn $"{file} -> %+A{deps}")
+    ()
