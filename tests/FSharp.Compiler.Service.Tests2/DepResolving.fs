@@ -16,10 +16,12 @@ type Node =
         AST : ParsedInput
         Top : LongIdent
         ModuleRefs : LongIdent[]
+        // Order of the file in the project. Files with lower number cannot depend on files with higher number
+        Idx : int
     }
 
 /// Filenames with dependencies
-type Graph = (Node * Node[])[]
+type Graph = (string * string[])[]
 
 let extractModuleSegments (stuff : Stuff) : LongIdent[] =
     stuff
@@ -40,7 +42,7 @@ type TrieNode =
     {
         // parent?
         // TODO Use ValueTuples if not already
-        Children : System.Collections.Generic.IDictionary<ModuleSegment, TrieNode>
+        Children : IDictionary<ModuleSegment, TrieNode>
         mutable Reachable : bool
         mutable Visited : bool
         /// Files/graph nodes represented by this TrieNode
@@ -61,7 +63,7 @@ let rec cloneTrie (trie : TrieNode) : TrieNode =
             )
             |> dict
         // TODO Avoid tow dicts
-        System.Collections.Generic.Dictionary<_,_>(children)
+        Dictionary<_,_>(children)
     {
         GraphNodes = List<_>(trie.GraphNodes)
         Children = children
@@ -109,22 +111,22 @@ let buildTrie (nodes : Node[]) : TrieNode =
         
     root
 
-let rec search (trie : TrieNode) (path : LongIdent) : TrieNode option =
+let rec searchInTrie (trie : TrieNode) (path : LongIdent) : TrieNode option =
     let mutable node = trie
     match path with
     | [] -> Some trie
     | segment :: rest ->
         match trie.Children.TryGetValue(segment.idText) with
         | true, child ->
-            search child rest
+            searchInTrie child rest
         | false, _ ->
             None
 
-let algorithm (nodes : FileAST list) : Graph =
+let detectFileDependencies (nodes : FileAST list) : Graph =
     // Create ASTs, extract module refs
     let nodes =
         nodes
-        |> List.map (fun (name, ast) ->
+        |> List.mapi (fun i (name, ast) ->
             let typeAndModuleRefs = visit ast 
             let top = topModuleOrNamespace ast
             let moduleRefs = extractModuleSegments typeAndModuleRefs
@@ -133,6 +135,7 @@ let algorithm (nodes : FileAST list) : Graph =
                 AST = ast
                 Top = top
                 ModuleRefs = moduleRefs
+                Idx = i
             }
         )
         |> List.toArray
@@ -149,7 +152,6 @@ let algorithm (nodes : FileAST list) : Graph =
         
         let markVisited (node : TrieNode) =
             if not node.Visited then
-                printfn $"New node visited"
                 node.Visited <- true
                 visited.Add(node)
         
@@ -158,13 +160,12 @@ let algorithm (nodes : FileAST list) : Graph =
         
         let markReachable (node : TrieNode) =
             if not node.Reachable then
-                printfn $"New node reachable"
                 node.Reachable <- true
                 reachable.Add(node)
+            markVisited node
         
         // Mark root (no prefix) as reachable and visited
         markReachable trie
-        markVisited trie
         
         let rec extend (id : LongIdent) (node : TrieNode) =
             let rec extend (node : TrieNode) (id : LongIdent) =
@@ -193,7 +194,8 @@ let algorithm (nodes : FileAST list) : Graph =
                 // extend a reachable node by 'id', but without creating new nodes, mark all seen nodes as visited and the final one as reachable
                 |> Seq.choose (extend id)
                 |> Seq.toArray
-            reachable.AddRange(newReachables)
+            newReachables
+            |> Array.iter markReachable
         
         // Add top-level module/namespace as the first reference (possibly not necessary as maybe already in the list)
         let moduleRefs =
@@ -210,32 +212,79 @@ let algorithm (nodes : FileAST list) : Graph =
             |> Seq.toArray
             
         // Return the node and its dependencies
-        node, reachableItems
+        let deps =
+            reachableItems
+            // We know a file can't depend on a file further down in the project definition (or on itself)
+            |> Seq.filter (fun n -> n.Idx < node.Idx)
+            |> Seq.map (fun n -> n.Name)
+            |> Seq.toArray
+        node.Name, deps
     )
 
 [<Test>]
-let Foo() =
-    
+let TestDepsResolver() =
+   
     let A =
         """
 module A
-open B
-let x = B.x
-"""
+let a = 3
+type X = int
+""" 
     let B =
         """
-module B
-let x = 3
+namespace B
+let b = 3
+"""
+    let C =
+        """
+module C.X
+let c = 3
+"""
+    let D =
+        """
+module D
+let d : A.X = 3
+"""
+    let E =
+        """
+module E
+let e = C.X.x
+open A
+let x = a
+"""
+    let F =
+        """
+module F
+open C
+let x = X.c
+"""
+    let G =
+        """
+namespace GH
+type A = int
+"""
+    let H =
+        """
+namespace GH
+type B = int
 """
 
     let files = [
-        "A", A
-        "B", B
+        "A.fs", A
+        "B.fs", B
+        "C.fs", C
+        "D.fs", D
+        "E.fs", E
+        "F.fs", F
+        "G.fs", G
+        "H.fs", H
     ]
     let nodes =
         files
         |> List.map (fun (name, code) -> name, getParseResults code)
     
-    let graph = algorithm nodes
-    
-    printfn $"%+A{graph}"
+    let graph = detectFileDependencies nodes
+
+    printfn "Detected file dependencies:"
+    graph
+    |> Array.iter (fun (file, deps) -> printfn $"{file} -> %+A{deps}")
