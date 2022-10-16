@@ -1,5 +1,6 @@
 ﻿module FSharp.Compiler.Service.Tests.DepResolving
 
+open System.Collections.Generic
 open FSharp.Compiler.Service.Tests2.SyntaxTreeTests.TypeTests
 open FSharp.Compiler.Syntax
 open NUnit.Framework
@@ -18,7 +19,7 @@ type Node =
     }
 
 /// Filenames with dependencies
-type Graph = (Node * List<Node>)[]
+type Graph = (Node * Node[])[]
 
 let extractModuleSegments (stuff : Stuff) : LongIdent[] =
     stuff
@@ -29,7 +30,7 @@ let extractModuleSegments (stuff : Stuff) : LongIdent[] =
             match x.Ident.Length with
             | 0
             | 1 -> None
-            | n -> x.Ident.GetSlice(Some 0, n - 1 |> Some) |> Some
+            | n -> x.Ident.GetSlice(Some 0, n - 2 |> Some) |> Some
     )
     |> Seq.toArray
 
@@ -41,6 +42,7 @@ type TrieNode =
         // TODO Use ValueTuples if not already
         Children : System.Collections.Generic.IDictionary<ModuleSegment, TrieNode>
         mutable Reachable : bool
+        mutable Visited : bool
         /// Files/graph nodes represented by this TrieNode
         /// All files whose top-level module/namespace are same as this TrieNode's 'path'
         GraphNodes : System.Collections.Generic.List<Node>
@@ -49,13 +51,29 @@ type TrieNode =
 let emptyList<'a> () =
     System.Collections.Generic.List<'a>()
 
-let cloneTrie (trie : TrieNode) : TrieNode =
-    failwith unsupported // TODO
+let rec cloneTrie (trie : TrieNode) : TrieNode =
+    let children =
+        // TODO Perf
+        let children =
+            trie.Children
+            |> Seq.map (fun (KeyValue(segment, child)) ->
+                segment, cloneTrie child
+            )
+            |> dict
+        // TODO Avoid tow dicts
+        System.Collections.Generic.Dictionary<_,_>(children)
+    {
+        GraphNodes = List<_>(trie.GraphNodes)
+        Children = children
+        Reachable = trie.Reachable
+        Visited = trie.Visited
+    }
 
 let emptyTrie () : TrieNode =
     {
-        TrieNode.Children = dict([])
+        TrieNode.Children = Dictionary([])
         Reachable = false
+        Visited = false
         GraphNodes = emptyList()
     }
 
@@ -91,8 +109,16 @@ let buildTrie (nodes : Node[]) : TrieNode =
         
     root
 
-let search (trie : TrieNode) (path : LongIdent) =
-    trie
+let rec search (trie : TrieNode) (path : LongIdent) : TrieNode option =
+    let mutable node = trie
+    match path with
+    | [] -> Some trie
+    | segment :: rest ->
+        match trie.Children.TryGetValue(segment.idText) with
+        | true, child ->
+            search child rest
+        | false, _ ->
+            None
 
 let algorithm (nodes : FileAST list) : Graph =
     // Create ASTs, extract module refs
@@ -118,7 +144,16 @@ let algorithm (nodes : FileAST list) : Graph =
     |> Array.map (fun node ->
         let trie = cloneTrie trie
         
-        // Keep a list of reachable nodes
+        // Keep a list of visited nodes (ie. all reachable nodes and all their ancestors)
+        let visited = emptyList<TrieNode>()
+        
+        let markVisited (node : TrieNode) =
+            if not node.Visited then
+                printfn $"New node visited"
+                node.Visited <- true
+                visited.Add(node)
+        
+        // Keep a list of reachable nodes (ie. ones that can be prefixes for later module/type references)
         let reachable = emptyList<TrieNode>()
         
         let markReachable (node : TrieNode) =
@@ -127,24 +162,55 @@ let algorithm (nodes : FileAST list) : Graph =
                 node.Reachable <- true
                 reachable.Add(node)
         
-        // Mark two nodes as reachable:
-        // - root (no prefix)
-        // - top-level module/namespace
+        // Mark root (no prefix) as reachable and visited
         markReachable trie
-        let topNode = search trie node.Top
-        markReachable topNode
+        markVisited trie
+        
+        let rec extend (id : LongIdent) (node : TrieNode) =
+            let rec extend (node : TrieNode) (id : LongIdent) =
+                match id with
+                // Reached end of the identifier - new reachable node 
+                | [] ->
+                    Some node
+                // More segments exist
+                | segment :: rest ->
+                    // Visit (not 'reach') the TrieNode
+                    markVisited node
+                    match node.Children.TryGetValue(segment.idText) with
+                    // A child for the segment exists - continue there
+                    | true, child ->
+                        extend child rest
+                    // A child for the segment doesn't exist - stop, since we don't care about the non-existent part of the Trie
+                    | false, _ ->
+                        None
+            extend node id
         
         // Process module refs in order, marking more and more TrieNodes as reachable
         let processRef (id : LongIdent) =
-            ()
-        node.ModuleRefs
+            let newReachables =
+                // Start at every reachable node,
+                reachable
+                // extend a reachable node by 'id', but without creating new nodes, mark all seen nodes as visited and the final one as reachable
+                |> Seq.choose (extend id)
+                |> Seq.toArray
+            reachable.AddRange(newReachables)
+        
+        // Add top-level module/namespace as the first reference (possibly not necessary as maybe already in the list)
+        let moduleRefs =
+            Array.append [|node.Top|] node.ModuleRefs
+        
+        // Process all refs
+        moduleRefs
         |> Array.iter processRef
         
-        // Collect files from all reachable TrieNodes
+        // Collect files from all visited TrieNodes
         let reachableItems =
-            reachable
+            visited
             |> Seq.collect (fun node -> node.GraphNodes)
-        node, List<Node>(reachableItems)
+            |> Seq.toArray
+            
+        // Return the node and its dependencies
+        node, reachableItems
     )
 
 [<Test>]
