@@ -3076,6 +3076,12 @@ module TypecheckTests =
     let ``type check neg101`` () = singleNegTest (testConfig "typecheck/sigs") "neg101"
 
     [<Test>]
+    let ``type check neg101 preview`` () =
+        let cfg = testConfig "typecheck/sigs"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags }
+        singleVersionedNegTest cfg "preview" "neg101-preview"
+
+    [<Test>]
     let ``type check neg102`` () = singleNegTest (testConfig "typecheck/sigs") "neg102"
 
     [<Test>]
