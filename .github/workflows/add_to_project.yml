@@ -6,6 +6,10 @@ on:
       - opened
       - transferred
 
+permissions:
+  issues: write
+  repository-projects: write
+
 jobs:
   cleanup_old_runs:
       runs-on: ubuntu-20.04
