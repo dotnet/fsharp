@@ -1780,7 +1780,7 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
 //-------------------------------------------------------------------------
 
 /// Helper used to check record expressions and record patterns
-let BuildFieldMap (cenv: cenv) env isPartial ty flds m =
+let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * 'T) list) m =
     let g = cenv.g
     let ad = env.eAccessRights
 
@@ -1792,7 +1792,8 @@ let BuildFieldMap (cenv: cenv) env isPartial ty flds m =
         let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
         flds
         |> List.map (fun (fld, fldExpr) ->
-            let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fld allFields
+            let (fldPath, fldId) = fld
+            let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
             fld, frefSet, fldExpr)
 
     let relevantTypeSets =
@@ -6167,7 +6168,8 @@ and TcTyparExprThen (cenv: cenv) overallTy env tpenv synTypar m delayed =
         let tp, tpenv = TcTypar cenv env NoNewTypars tpenv synTypar
         let mExprAndLongId = unionRanges synTypar.Range ident.idRange
         let ty = mkTyparTy tp
-        let item, _rest = ResolveLongIdentInType cenv.tcSink cenv.nameResolver env.NameEnv LookupKind.Expr ident.idRange ad ident IgnoreOverrides TypeNameResolutionInfo.Default ty
+        let lookupKind = LookupKind.Expr LookupIsInstance.Ambivalent
+        let item, _rest = ResolveLongIdentInType cenv.tcSink cenv.nameResolver env.NameEnv lookupKind ident.idRange ad ident IgnoreOverrides TypeNameResolutionInfo.Default ty
         let delayed3 =
             match rest with
             | [] -> delayed2
@@ -10618,7 +10620,8 @@ and TcAttributeEx canFail (cenv: cenv) (env: TcEnv) attrTgt attrEx (synAttr: Syn
                   attributeAssignedNamedItems |> List.map (fun (CallerNamedArg(id, CallerArg(callerArgTy, m, isOpt, callerArgExpr))) ->
                     if isOpt then error(Error(FSComp.SR.tcOptionalArgumentsCannotBeUsedInCustomAttribute(), m))
                     let m = callerArgExpr.Range
-                    let setterItem, _ = ResolveLongIdentInType cenv.tcSink cenv.nameResolver env.NameEnv LookupKind.Expr m ad id IgnoreOverrides TypeNameResolutionInfo.Default ty
+                    let lookupKind = LookupKind.Expr LookupIsInstance.Ambivalent
+                    let setterItem, _ = ResolveLongIdentInType cenv.tcSink cenv.nameResolver env.NameEnv lookupKind m ad id IgnoreOverrides TypeNameResolutionInfo.Default ty
                     let nm, isProp, argTy =
                       match setterItem with
                       | Item.Property (_, [pinfo]) ->
