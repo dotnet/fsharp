@@ -320,4 +320,8 @@ type SynFieldTrivia =
 
     static member Zero: SynFieldTrivia = { LeadingKeyword = None }
 
+[<NoEquality; NoComparison>]
 type SynTypeOrTrivia = { OrKeyword: range }
+
+[<NoEquality; NoComparison>]
+type SynBindingReturnInfoTrivia = { ColonRange: range option }
