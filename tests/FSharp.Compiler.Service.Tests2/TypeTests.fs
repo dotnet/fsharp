@@ -43,7 +43,6 @@ let rec visitSynModuleDecl (decl : SynModuleDecl) : Stuff =
         // module B = A
         // let x = B.A1.x
         failwith "Module abbreviations are not currently supported"
-        //visitLongIdent longId
     | SynModuleDecl.NamespaceFragment synModuleOrNamespace ->
         visitSynModuleOrNamespace synModuleOrNamespace
     | SynModuleDecl.NestedModule(synComponentInfo, isRecursive, synModuleDecls, isContinuing, range, synModuleDeclNestedModuleTrivia) ->
@@ -1025,10 +1024,67 @@ and visitSynModuleOrNamespace (x : SynModuleOrNamespace) : Stuff  =
             yield! synModuleDecls |> Seq.collect visitSynModuleDecl
             yield! visitSynAttributeLists synAttributeLists 
         }
+        
+// Sigs
+
+and visitSynMemberSigs = visitMulti visitSynMemberSig
+
+and visitSynExceptionSig (x : SynExceptionSig) : Stuff =
+    match x with
+    | SynExceptionSig(synExceptionDefnRepr, withKeyword, synMemberSigs, range) ->
+        seq {
+            yield! visitSynExceptionDefnRepr synExceptionDefnRepr
+            yield! visitSynMemberSigs synMemberSigs
+        }
+
+and visitSynTypeDefnSigs = visitMulti visitSynTypeDefnSign
+
+and visitSynModuleSigDecl (x : SynModuleSigDecl) : Stuff =
+    match x with
+    | SynModuleSigDecl.Exception(synExceptionSig, range) ->
+        visitSynExceptionSig synExceptionSig
+    | SynModuleSigDecl.Open(synOpenDeclTarget, range) ->
+        visitSynOpenDeclTarget synOpenDeclTarget
+    | SynModuleSigDecl.Types(synTypeDefnSigs, range) ->
+        visitSynTypeDefnSigs synTypeDefnSigs
+    | SynModuleSigDecl.Val(synValSig, range) ->
+        visitSynValSig synValSig
+    | SynModuleSigDecl.HashDirective(parsedHashDirective, range) ->
+        []
+    | SynModuleSigDecl.ModuleAbbrev(ident, longId, range) ->
+        // TODO Module abbrevation can break the algorithm.
+        // We need to either give up when seeing this or handle it properly.
+        //
+        // Consider the following:
+        // module A = module A1 = let x = 1
+        // module B = A
+        // let x = B.A1.x
+        failwith "Module abbreviations are not currently supported"
+    | SynModuleSigDecl.NamespaceFragment synModuleOrNamespaceSig ->
+        visitSynModuleOrNamespaceSig synModuleOrNamespaceSig
+    | SynModuleSigDecl.NestedModule(synComponentInfo, isRecursive, synModuleSigDecls, range, synModuleSigDeclNestedModuleTrivia) ->
+        seq {
+            yield! visitSynComponentInfo synComponentInfo
+            yield! visitSynModuleSigDecls synModuleSigDecls
+        }
+
+and visitSynModuleSigDecls = visitMulti visitSynModuleSigDecl
+
+and visitSynModuleOrNamespaceSig (x : SynModuleOrNamespaceSig) : Stuff  =
+    match x with
+    | SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
+        seq {
+            // Don't include 'longId' as that's module definition rather than reference
+            yield! synModuleDecls |> Seq.collect visitSynModuleSigDecl
+            yield! visitSynAttributeLists synAttributeLists 
+        }
 
 and visit (input : ParsedInput) =
     match input with
-    | ParsedInput.SigFile _ -> failwith "Signature files are not currently supported"
+    | ParsedInput.SigFile(ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, parsedHashDirectives, synModuleOrNamespaceSigs, parsedSigFileInputTrivia)) ->
+        synModuleOrNamespaceSigs
+        |> Seq.collect visitSynModuleOrNamespaceSig
+        |> Seq.toArray
     | ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, parsedHashDirectives, synModuleOrNamespaces, flags, parsedImplFileInputTrivia)) ->
         synModuleOrNamespaces
         |> Seq.collect visitSynModuleOrNamespace
@@ -1058,8 +1114,18 @@ let topModuleOrNamespace (input : ParsedInput) =
                     LongIdent.Empty
                 else
                     longId
-    | ParsedInput.SigFile _ ->
-        failwith "Sig files not supported atm"
+    | ParsedInput.SigFile f ->
+        match f.Contents with
+        | [] -> failwith "No modules or namespaces"
+        | first :: rest ->
+            match first with
+            | SynModuleOrNamespaceSig(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
+                if mightHaveAutoOpen synAttributeLists then
+                    // Contents of a module that's potentially AutoOpen are available everywhere, so treat it as if it had no name ('root' module).
+                    // This makes the dependency tracking algorithm detect it as a dependency for all further files.
+                    LongIdent.Empty
+                else
+                    longId
 
 [<Test>]
 let ``Single SynEnumCase contains range of constant`` () =
@@ -1126,10 +1192,10 @@ module B
 let x = 3
 """
     
-    let parsedA = getParseResults A
+    let parsedA = parseSourceCode("A.fs", A)
     let visitedA = visit parsedA
-    let parsedB = getParseResults B
-    let topB = topModuleOrNamespace parsedB 
+    let parsedB = parseSourceCode("B.fs", B)
+    let topB = topModuleOrNamespace parsedB
     printfn $"Top B: %+A{topB}"
     printfn $"A refs: %+A{visitedA}"
     ()

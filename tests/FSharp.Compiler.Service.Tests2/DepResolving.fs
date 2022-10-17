@@ -239,6 +239,13 @@ let detectFileDependencies (nodes : FileAST[]) : Graph =
 [<Test>]
 let TestDepsResolver() =
    
+    let A_fsi =
+        """
+module A
+val a : int
+type X = int
+"""
+    
     let A =
         """
 module A
@@ -285,6 +292,7 @@ type B = int
 """
 
     let files = [
+        "A.fsi", A_fsi
         "A.fs", A
         "B.fs", B
         "C.fs", C
