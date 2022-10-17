@@ -1558,8 +1558,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
-        <source>Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.</source>
-        <target state="translated">Le implementazioni di interfaccia negli aumenti sono ora deprecate. Le implementazioni di interfaccia devono essere specificate nella dichiarazione iniziale di un tipo.</target>
+        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
+        <target state="needs-review-translation">Le implementazioni di interfaccia negli aumenti sono ora deprecate. Le implementazioni di interfaccia devono essere specificate nella dichiarazione iniziale di un tipo.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">
