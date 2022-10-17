@@ -3166,15 +3166,10 @@ module EstablishTypeDefinitionCores =
             
             let multiCaseUnionStructCheck (unionCases: UnionCase list) =
                 if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
-                    let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield ft ]
-                    let fieldNames = fieldNames |> List.map(fun x -> (x.LogicalName, x.rfield_name_generated, x.Range))
-
-                    if fieldNames |> List.distinctBy(fun (name, _, _) -> name) |> List.length <> fieldNames.Length then
-                        let fieldRanges =
-                            fieldNames
-                            |> List.filter(fun (name, isGenerated, _) -> (not isGenerated || name = "Item") || isGenerated)
-                            |> List.map(fun (_, _, m) -> m)
-
+                    let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield (ft.LogicalName, ft.Range) ]
+                    let distFieldNames = fieldNames |> List.distinctBy fst
+                    if distFieldNames.Length <> fieldNames.Length then
+                        let fieldRanges = distFieldNames |> List.map snd
                         for m in fieldRanges do
                             errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(), m))
 

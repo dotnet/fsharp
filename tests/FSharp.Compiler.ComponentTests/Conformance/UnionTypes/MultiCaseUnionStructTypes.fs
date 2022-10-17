@@ -131,8 +131,6 @@ type StructUnion =
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 15, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 6, Col 12, Line 6, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 7, Col 12, Line 7, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]
         
         
@@ -151,7 +149,6 @@ type StructUnion =
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 13, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 6, Col 12, Line 6, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 7, Col 12, Line 7, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]
         
     [<Fact>]
@@ -169,7 +166,6 @@ type StructUnion =
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 15, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 6, Col 12, Line 6, Col 13, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 7, Col 12, Line 7, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]  
         
     [<Fact>]
@@ -211,7 +207,6 @@ type StructUnion =
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 16, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 6, Col 12, Line 6, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]
         
     [<Fact>]
@@ -227,7 +222,6 @@ type StructUnion =
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 16, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 6, Col 12, Line 6, Col 16, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]
         
     [<Fact>]
@@ -255,7 +249,6 @@ type StructUnion =
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 16, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 6, Col 12, Line 6, Col 16, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]
         
     [<Fact>]
@@ -272,7 +265,6 @@ type StructUnion =
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 16, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 5, Col 24, Line 5, Col 30, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 6, Col 12, Line 6, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]
         
     [<Fact>]
@@ -289,7 +281,6 @@ type StructUnion =
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 16, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 5, Col 24, Line 5, Col 28, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 6, Col 12, Line 6, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]
         
     [<Fact>]
@@ -306,7 +297,6 @@ type StructUnion =
         |> withDiagnostics [
             (Error 3204, Line 5, Col 12, Line 5, Col 16, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 5, Col 24, Line 5, Col 28, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 6, Col 12, Line 6, Col 16, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]
             
     [<Fact>]
@@ -468,7 +458,6 @@ type StructUnion = A of int | B of string
         |> shouldFail
         |> withDiagnostics [
             (Error 3204, Line 4, Col 25, Line 4, Col 28, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 4, Col 36, Line 4, Col 42, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]
         
     [<Fact>]
@@ -499,7 +488,6 @@ type StructUnion =
             (Error 3204, Line 5, Col 12, Line 5, Col 15, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 5, Col 18, Line 5, Col 24, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 6, Col 12, Line 6, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 7, Col 12, Line 7, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]
         
     [<Fact>]
@@ -518,7 +506,6 @@ type StructUnion =
             (Error 3204, Line 5, Col 12, Line 5, Col 13, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 5, Col 21, Line 5, Col 27, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 6, Col 12, Line 6, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 7, Col 12, Line 7, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]
         
     [<Fact>]
@@ -537,7 +524,6 @@ type StructUnion =
             (Error 3204, Line 5, Col 12, Line 5, Col 15, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 5, Col 18, Line 5, Col 19, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 6, Col 12, Line 6, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 7, Col 12, Line 7, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]
         
     [<Fact>]
@@ -556,7 +542,6 @@ type StructUnion =
             (Error 3204, Line 5, Col 12, Line 5, Col 13, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 5, Col 21, Line 5, Col 23, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 6, Col 12, Line 6, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 7, Col 12, Line 7, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]
         
     [<Fact>]
@@ -616,7 +601,6 @@ type StructUnion =
             (Error 3204, Line 6, Col 12, Line 6, Col 18, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 6, Col 21, Line 6, Col 22, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 7, Col 12, Line 7, Col 13, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
-            (Error 3204, Line 7, Col 24, Line 7, Col 30, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
             (Error 3204, Line 7, Col 33, Line 7, Col 35, "If a union type has more than one case and is a struct, then all fields within the union type must be given unique field names. For example: 'type A = B of b: int | C of c: int' (unique field names 'b' and 'c' assigned).")
         ]
         
