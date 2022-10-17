@@ -126,6 +126,9 @@
     <Compile Include="Build\SetGlobalPropertiesForSdkProjects.fs" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fsi" />
     <Compile Include="AutomaticCompletion\BraceCompletionSessionProvider.fs" />
+    <Compile Include="Hints\HintService.fs" />
+    <Compile Include="Hints\NativeToRoslynHintConverter.fs" />
+    <Compile Include="Hints\RoslynAdapter.fs" />
     <Compile Include="Lens\LensDisplayService.fs" />
     <Compile Include="Lens\LensService.fs" />
     <Compile Include="Lens\LensProvider.fs" />

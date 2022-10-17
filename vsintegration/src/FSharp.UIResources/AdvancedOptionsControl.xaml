@@ -24,6 +24,10 @@
                     <CheckBox x:Name="toggleOutloning" IsChecked="{Binding IsOutliningEnabled}"
                               Content="{x:Static local:Strings.Show_Outlining}"/>
                 </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.Inline_Hints}">
+                    <CheckBox x:Name="toggleInlineHints" IsChecked="{Binding IsInlineHintsEnabled}"
+                              Content="{x:Static local:Strings.Show_Inline_Hints}"/>
+                </GroupBox>
             </StackPanel>
         </ScrollViewer>
     </Grid>

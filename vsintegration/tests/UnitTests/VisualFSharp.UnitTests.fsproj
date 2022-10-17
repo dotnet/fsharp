@@ -102,6 +102,12 @@
     <Compile Include="QuickInfoTests.fs">
       <Link>Editor\QuickInfoTests.fs</Link>
     </Compile>
+    <Compile Include="HintTestFramework.fs">
+      <Link>Editor\Hints\HintTestFramework.fs</Link>
+    </Compile>
+    <Compile Include="HintServiceTests.fs">
+      <Link>Editor\Hints\HintServiceTests.fs</Link>
+    </Compile>
     <Compile Include="GoToDefinitionServiceTests.fs">
       <Link>Editor\GoToDefinitionServiceTests.fs</Link>
     </Compile>

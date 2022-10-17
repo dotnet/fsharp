@@ -85,10 +85,12 @@ type LensOptions =
 [<CLIMutable>]
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool
-      IsOutliningEnabled: bool }
+      IsOutliningEnabled: bool
+      IsInlineHintsEnabled: bool }
     static member Default =
       { IsBlockStructureEnabled = true
-        IsOutliningEnabled = true }
+        IsOutliningEnabled = true
+        IsInlineHintsEnabled = false }
 
 [<CLIMutable>]
 type FormattingOptions =
