@@ -7,7 +7,9 @@ module CheckNewSyntax =
         static member StaticMethod x = x + 5
         member val Length = 0 with get, set
         member _.Item with get x = "Hello"
-        member _.InstanceMethod x = x + 5
+        member _.InstanceMethod0 () = 5
+        member _.InstanceMethod1 x = x + 5
+        member _.InstanceMethod2 (x, y) = x + y + 5
 
     // Check that "property" and "get_ method" constraints are considered logically equivalent
     let inline f_StaticProperty<'T when 'T : (static member StaticProperty: int) >() : int = 'T.StaticProperty
@@ -16,7 +18,11 @@ module CheckNewSyntax =
 
     let inline f_set_StaticProperty<'T when 'T : (static member StaticProperty: int with set) >() = 'T.set_StaticProperty(3)
 
-    let inline f_InstanceMethod<'T when 'T : (member InstanceMethod: int -> int) >(x: 'T) : int = x.InstanceMethod(3)
+    let inline f_InstanceMethod0<'T when 'T : (member InstanceMethod0: unit -> int) >(x: 'T) : int = x.InstanceMethod0()
+
+    let inline f_InstanceMethod1<'T when 'T : (member InstanceMethod1: int -> int) >(x: 'T) : int = x.InstanceMethod1(3)
+
+    let inline f_InstanceMethod2<'T when 'T : (member InstanceMethod2: int * int -> int) >(x: 'T) : int = x.InstanceMethod2(3, 3)
 
     let inline f_Length<'T when 'T : (member Length: int) >(x: 'T) = x.Length
 
@@ -47,7 +53,13 @@ module CheckNewSyntax =
     if f_Length(myInstance) <> 0 then
         failwith "Unexpected result"
 
-    if f_InstanceMethod(myInstance) <> 8 then
+    if f_InstanceMethod0(myInstance) <> 5 then
+        failwith "Unexpected result"
+
+    if f_InstanceMethod1(myInstance) <> 8 then
+        failwith "Unexpected result"
+
+    if f_InstanceMethod2(myInstance) <> 11 then
         failwith "Unexpected result"
 
     if f_set_Length(myInstance) <> () then
