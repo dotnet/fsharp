@@ -388,6 +388,11 @@ type MetadataAssemblyGeneration =
     | ReferenceOut of outputPath: string
     | ReferenceOnly
 
+[<RequireQualifiedAccess>]
+type ParallelReferenceResolution =
+    | On
+    | Off
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -580,6 +585,8 @@ type TcConfigBuilder =
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
 
         mutable exiter: Exiter
+
+        mutable parallelReferenceResolution: ParallelReferenceResolution
     }
 
     // Directories to start probing in
@@ -767,6 +774,7 @@ type TcConfigBuilder =
             sdkDirOverride = sdkDirOverride
             xmlDocInfoLoader = None
             exiter = QuitProcessExiter
+            parallelReferenceResolution = ParallelReferenceResolution.Off
         }
 
     member tcConfigB.FxResolver =
@@ -1310,6 +1318,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.applyLineDirectives = data.applyLineDirectives
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
     member _.exiter = data.exiter
+    member _.parallelReferenceResolution = data.parallelReferenceResolution
 
     static member Create(builder, validate) =
         use _ = UseBuildPhase BuildPhase.Parameter
@@ -1396,14 +1405,13 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     /// 'framework' reference set that is potentially shared across multiple compilations.
     member tcConfig.IsSystemAssembly(fileName: string) =
         try
+            let dirName = Path.GetDirectoryName fileName
+            let baseName = FileSystemUtils.fileNameWithoutExtension fileName
+
             FileSystem.FileExistsShim fileName
-            && ((tcConfig.GetTargetFrameworkDirectories()
-                 |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName fileName))
-                || (tcConfig
-                       .FxResolver
-                       .GetSystemAssemblies()
-                       .Contains(FileSystemUtils.fileNameWithoutExtension fileName))
-                || tcConfig.FxResolver.IsInReferenceAssemblyPackDirectory fileName)
+            && ((tcConfig.GetTargetFrameworkDirectories() |> List.contains dirName)
+                || FxResolver.GetSystemAssemblies().Contains baseName
+                || FxResolver.IsReferenceAssemblyPackDirectoryApprox dirName)
         with _ ->
             false
 
