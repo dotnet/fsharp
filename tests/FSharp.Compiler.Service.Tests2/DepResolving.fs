@@ -6,6 +6,7 @@ open Buildalyzer
 open FSharp.Compiler.Service.Tests2.SyntaxTreeTests.TypeTests
 open FSharp.Compiler.Syntax
 open NUnit.Framework
+open Newtonsoft.Json
 
 let log (msg : string) =
     let d = DateTime.Now.ToString("HH:mm:ss.fff")
@@ -134,17 +135,26 @@ let detectFileDependencies (nodes : FileAST[]) : Graph =
         nodes
         |> Array.mapi (fun i (name, ast) ->
             printfn $"Visiting {name}"
-            let typeAndModuleRefs = visit ast
-            let top = topModuleOrNamespace ast
-            let moduleRefs = extractModuleSegments typeAndModuleRefs
-            {
-                Name = name
-                AST = ast
-                Top = top
-                ModuleRefs = moduleRefs
-                Idx = i
-            }
+            let typeAndModuleRefs =
+                try
+                    visit ast |> Some
+                with ex when (ex.Message.Contains("sig") || ex.Message.Contains("abbreviations")) ->
+                    None
+            match typeAndModuleRefs with
+            | None -> None
+            | Some typeAndModuleRefs ->
+                let top = topModuleOrNamespace ast
+                let moduleRefs = extractModuleSegments typeAndModuleRefs
+                {
+                    Name = name
+                    AST = ast
+                    Top = top
+                    ModuleRefs = moduleRefs
+                    Idx = i
+                }
+                |> Some
         )
+        |> Array.choose id
         
     let trie = buildTrie nodes
     
@@ -287,7 +297,7 @@ type B = int
     ]
     let nodes =
         files
-        |> List.map (fun (name, code) -> name, getParseResults code)
+        |> List.map (fun (name, code) -> name, parseSourceCode(name, code))
         |> List.toArray
     
     let graph = detectFileDependencies nodes
@@ -300,35 +310,47 @@ type B = int
 let Test () =
     log "start"
     let m = AnalyzerManager()
-    let analyzer = m.GetProject(@"C:\projekty\fsharp\fsharp_main\src\Compiler\FSharp.Compiler.Service.fsproj")
+    let projectFile = @"C:\projekty\fsharp\fsharp_main\src\Compiler\FSharp.Compiler.Service.fsproj"
+    let analyzer = m.GetProject(projectFile)
     let results = analyzer.Build()
     log "built"
     
     let res = results.Results |> Seq.head
     let files = res.SourceFiles
+    // Filter out FSI files as they are not supported (ignore FSX too)
     let files =
         files
-        |> Array.take 3
-        |> Array.Parallel.map (fun f -> f, System.IO.File.ReadAllText(f))
-        |> Array.chunkBySize 5
-        |> Array.map (fun chunk ->
-            chunk
-            |> Array.Parallel.map (fun (f, code) ->
-                printfn $"Parsing {f}"
-                let ast = getParseResults code
-                f, ast
-            )
+        |> Array.filter (fun f -> f.EndsWith(".fs"))
+    let n =
+        let args = Environment.GetCommandLineArgs()
+        match args.Length with
+        | 0 | 1 -> files.Length
+        | l ->
+            match System.Int32.TryParse(args[1]) with
+            | true, n -> n
+            | false, _ -> files.Length
+    let files =
+        files
+        |> Array.take n
+        |> Array.Parallel.map (fun f ->
+            let code = System.IO.File.ReadAllText(f)
+            let ast = getParseResults code
+            f, ast
         )
-        |> Array.concat
     let N = files.Length
-    log $"{N} files read"
+    log $"{N} files read and parsed"
     
     let graph = detectFileDependencies files
     log "deps detected"
     
     let totalDeps = graph |> Array.sumBy (fun (f, deps) -> deps.Length)
     let maxPossibleDeps = (N * (N-1)) / 2 
-    printfn $"Analysed {N} files, detected {totalDeps}/{maxPossibleDeps} file dependencies:"
     graph
     |> Array.iter (fun (file, deps) -> printfn $"{file} -> %+A{deps}")
-    ()
+    
+    let graph = graph |> dict
+    let json = JsonConvert.SerializeObject(graph, Formatting.Indented)
+    System.IO.File.WriteAllText("deps_graph.json", json)
+    
+    printfn $"Analysed {N} files, detected {totalDeps}/{maxPossibleDeps} file dependencies:"
+    printfn "Wrote graph as json in deps_graph.json"

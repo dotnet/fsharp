@@ -809,7 +809,16 @@ and visitExpr (expr : SynExpr) =
             ()
     | SynExpr.Sequential(debugPointAtSequential, isTrueSeq, synExpr, expr2, range) ->
         visitExpr synExpr |> go
-        visitExpr expr2 |> go
+        let mutable expr = expr2
+        let mutable stop = false
+        while not stop do
+            match expr with
+            | SynExpr.Sequential(debugPointAtSequential, isTrueSeq, synExpr, expr2, range) ->
+                visitExpr synExpr |> go
+                expr <- expr2
+            | _ ->
+                stop <- true
+        visitExpr expr |> go
     | SynExpr.Set(targetExpr, rhsExpr, range) ->
         visitExpr targetExpr |> go
         visitExpr rhsExpr |> go
@@ -946,7 +955,6 @@ and visitExpr (expr : SynExpr) =
         visitSynLongIdent synLongIdent |> go
         visitExpr synExpr |> go
         visitExpr expr2 |> go
-        failwith unsupported
     | SynExpr.SequentialOrImplicitYield(debugPointAtSequential, synExpr, expr2, ifNotStmt, range) ->
         visitExpr synExpr |> go
         visitExpr expr2 |> go
