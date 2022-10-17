@@ -395,7 +395,22 @@ let CheckDuplicates (idf: _ -> Ident) k elems =
                 errorR (Duplicate(k, id1.idText, id1.idRange))))
     elems
 
+let private CheckDuplicatesArgNames (synVal: SynValSig) m =
+    let argNames = synVal.SynInfo.ArgNames |> List.duplicates
+    for name in argNames do
+        errorR(Error((FSComp.SR.chkDuplicatedMethodParameter(name), m)))
 
+let private CheckDuplicatesAbstractMethodParmsSig (typeSpecs:  SynTypeDefnSig list) =
+    for SynTypeDefnSig(typeRepr= trepr) in typeSpecs do 
+        match trepr with 
+        | SynTypeDefnSigRepr.ObjectModel(_, synMemberSigs, _) ->
+         for sms in synMemberSigs do
+             match sms with
+             | SynMemberSig.Member(synValSig, _, m) ->
+                CheckDuplicatesArgNames synValSig m
+             | _ -> ()
+        | _ -> ()
+        
 module TcRecdUnionAndEnumDeclarations =
 
     let CombineReprAccess parent vis = 
@@ -437,13 +452,13 @@ module TcRecdUnionAndEnumDeclarations =
         | _ -> ()
         rfspec
 
-    let TcAnonFieldDecl cenv env parent tpenv nm (SynField(Attributes attribs, isStatic, idOpt, ty, isMutable, xmldoc, vis, m)) =
+    let TcAnonFieldDecl cenv env parent tpenv nm (SynField(Attributes attribs, isStatic, idOpt, ty, isMutable, xmldoc, vis, m, _)) =
         let mName = m.MakeSynthetic()
         let id = match idOpt with None -> mkSynId mName nm | Some id -> id
         let xmlDoc = xmldoc.ToXmlDoc(true, Some [])
         TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmlDoc, vis, m)
 
-    let TcNamedFieldDecl cenv env parent isIncrClass tpenv (SynField(Attributes attribs, isStatic, id, ty, isMutable, xmldoc, vis, m)) =
+    let TcNamedFieldDecl cenv env parent isIncrClass tpenv (SynField(Attributes attribs, isStatic, id, ty, isMutable, xmldoc, vis, m, _)) =
         match id with 
         | None -> error (Error(FSComp.SR.tcFieldRequiresName(), m))
         | Some id ->
@@ -479,10 +494,10 @@ module TcRecdUnionAndEnumDeclarations =
             match seen.TryGetValue f.LogicalName with
             | true, synField ->
                 match sf, synField with
-                | SynField(_, _, Some id, _, _, _, _, _), SynField(_, _, Some _, _, _, _, _, _) ->
+                | SynField(idOpt = Some id), SynField(idOpt = Some _) ->
                     error(Error(FSComp.SR.tcFieldNameIsUsedModeThanOnce(id.idText), id.idRange))
-                | SynField(_, _, Some id, _, _, _, _, _), SynField(_, _, None, _, _, _, _, _)
-                | SynField(_, _, None, _, _, _, _, _), SynField(_, _, Some id, _, _, _, _, _) ->
+                | SynField(idOpt = Some id), SynField(idOpt = None)
+                | SynField(idOpt = None), SynField(idOpt = Some id) ->
                     error(Error(FSComp.SR.tcFieldNameConflictsWithGeneratedNameForAnonymousField(id.idText), id.idRange))
                 | _ -> assert false
             | _ ->
@@ -1621,7 +1636,7 @@ module MutRecBindingChecking =
         defnsEs, envMutRec
 
 /// Check and generalize the interface implementations, members, 'let' definitions in a mutually recursive group of definitions.
-let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (envMutRec: TcEnv) (mutRecDefns: MutRecDefnsPhase2Data) = 
+let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (envMutRec: TcEnv) (mutRecDefns: MutRecDefnsPhase2Data) isMutRec =     
     let g = cenv.g
     let interfacesFromTypeDefn envForTycon tyconMembersData = 
         let (MutRecDefnsPhase2DataForTycon(_, _, declKind, tcref, _, _, declaredTyconTypars, members, _, _, _)) = tyconMembersData
@@ -1650,11 +1665,13 @@ let TcMutRecDefns_Phase2 (cenv: cenv) envInitial mBinds scopem mutRecNSInfo (env
                       (generatedHashAndEqualsWithComparerValues && typeEquiv g intfTyR (mkAppTy g.system_GenericIEquatable_tcref [ty])) ||
                       (generatedHashAndEqualsWithComparerValues && typeEquiv g intfTyR g.mk_IStructuralEquatable_ty) then
                       errorR(Error(FSComp.SR.tcDefaultImplementationForInterfaceHasAlreadyBeenAdded(), intfTy.Range))
-
-                  if overridesOK = WarnOnOverrides then  
-                      warning(IntfImplInIntrinsicAugmentation(intfTy.Range))
-                  if overridesOK = ErrorOnOverrides then  
-                      errorR(IntfImplInExtrinsicAugmentation(intfTy.Range))
+           
+                  match isMutRec, overridesOK with
+                  | _, OverridesOK  -> () // No warning/error if overrides are allowed
+                  | true, WarnOnOverrides -> () // If we are in a recursive module/namespace, overrides of interface implementations are allowed and not considered a warning
+                  | false, WarnOnOverrides -> warning(IntfImplInIntrinsicAugmentation(intfTy.Range))
+                  | _, ErrorOnOverrides -> errorR(IntfImplInExtrinsicAugmentation(intfTy.Range))
+                
                   match defnOpt with 
                   | Some defn -> [ (intfTyR, defn, m) ]
                   | _-> []
@@ -2255,7 +2272,7 @@ module TcExceptionDeclarations =
         let envMutRec = AddLocalExnDefnAndReport cenv.tcSink scopem (AddLocalTycons g cenv.amap scopem [exnc] envInitial) exnc 
 
         let defns = [MutRecShape.Tycon(MutRecDefnsPhase2DataForTycon(Some exnc, parent, ModuleOrMemberBinding, mkLocalEntityRef exnc, None, NoSafeInitInfo, [], aug, m, NoNewSlots, (fun () -> ())))]
-        let binds2, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem None envMutRec defns
+        let binds2, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem None envMutRec defns true
         let binds2flat = binds2 |> MutRecShapes.collectTycons |> List.collect snd
         // Augment types with references to values that implement the pre-baked semantics of the type
         let binds3 = AddAugmentationDeclarations.AddGenericEqualityBindings cenv envFinal exnc
@@ -2362,7 +2379,7 @@ module EstablishTypeDefinitionCores =
               for SynUnionCase (caseType=args; range=m) in unionCases do 
                 match args with
                 | SynUnionCaseKind.Fields flds -> 
-                    for SynField(_, _, _, ty, _, _, _, m) in flds do 
+                    for SynField(fieldType = ty; range = m) in flds do 
                         let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
                         yield (tyR, m)
 
@@ -2379,7 +2396,7 @@ module EstablishTypeDefinitionCores =
 
           | SynTypeDefnSimpleRepr.General (_, _, _, fields, _, _, implicitCtorSynPats, _) when tycon.IsFSharpStructOrEnumTycon -> // for structs
               for field in fields do 
-                  let (SynField(_, isStatic, _, ty, _, _, _, m)) = field
+                  let (SynField(isStatic = isStatic; fieldType = ty; range = m)) = field
                   if not isStatic then 
                       let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
                       yield (tyR, m)
@@ -2399,7 +2416,7 @@ module EstablishTypeDefinitionCores =
                       yield (ty, m)
 
           | SynTypeDefnSimpleRepr.Record (_, fields, _) -> 
-              for SynField(_, _, _, ty, _, _, _, m) in fields do 
+              for SynField(fieldType = ty; range = m) in fields do 
                   let tyR, _ = TcTypeAndRecover cenv NoNewTypars NoCheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv ty
                   yield (tyR, m)
 
@@ -3946,6 +3963,14 @@ module TcDeclarations =
              | SynMemberDefn.NestedType (range=m) :: _ -> errorR(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
              | _ -> ()
         | ds ->
+             // Check for duplicated parameters in abstract methods
+            for slot in ds do
+                if isAbstractSlot slot then
+                    match slot with
+                    | SynMemberDefn.AbstractSlot (synVal, _, m) ->
+                        CheckDuplicatesArgNames synVal m
+                    | _ -> ()
+                    
             // Classic class construction 
             let _, ds = List.takeUntil (allFalse [isMember;isAbstractSlot;isInterface;isInherit;isField;isTycon]) ds
             match ds with
@@ -3975,7 +4000,7 @@ module TcDeclarations =
         | SynTypeDefnRepr.ObjectModel(kind, cspec, m) ->
             let cspec = desugarGetSetMembers cspec
             CheckMembersForm cspec
-            let fields = cspec |> List.choose (function SynMemberDefn.ValField (f, _) -> Some f | _ -> None)
+            let fields = cspec |> List.choose (function SynMemberDefn.ValField (fieldInfo = f) -> Some f | _ -> None)
             let implements2 = cspec |> List.choose (function SynMemberDefn.Interface (interfaceType=ty) -> Some(ty, ty.Range) | _ -> None)
             let inherits =
                 cspec |> List.choose (function 
@@ -4012,7 +4037,7 @@ module TcDeclarations =
                         let mLetPortion = synExpr.Range
                         let fldId = ident (CompilerGeneratedName id.idText, mLetPortion)
                         let headPat = SynPat.LongIdent (SynLongIdent([fldId], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [], None, mLetPortion)
-                        let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
+                        let retInfo = match tyOpt with None -> None | Some ty -> Some (None, SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                         let isMutable = 
                             match propKind with 
                             | SynMemberKind.PropertySet 
@@ -4033,7 +4058,7 @@ module TcDeclarations =
                 // Convert auto properties to member bindings in the post-list
                 let rec postAutoProps memb =
                     match memb with 
-                    | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; memberFlagsForSet=memberFlagsForSet; xmlDoc=xmlDoc; accessibility=access; getSetRange=mGetSetOpt) ->
+                    | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; memberFlagsForSet=memberFlagsForSet; xmlDoc=xmlDoc; accessibility=access; trivia = { GetSetKeyword = mGetSetOpt }) ->
                         let mMemberPortion = id.idRange
                         // Only the keep the non-field-targeted attributes
                         let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
@@ -4054,7 +4079,7 @@ module TcDeclarations =
                             | SynMemberKind.PropertyGetSet -> 
                                 let getter = 
                                     let rhsExpr = SynExpr.Ident fldId
-                                    let retInfo = match tyOpt with None -> None | Some ty -> Some (SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
+                                    let retInfo = match tyOpt with None -> None | Some ty -> Some (None, SynReturnInfo((ty, SynInfo.unnamedRetVal), ty.Range))
                                     let attribs = mkAttributeList attribs mMemberPortion
                                     let binding = mkSynBinding (xmlDoc, headPat) (access, false, false, mMemberPortion, DebugPointAtBinding.NoneAtInvisible, retInfo, rhsExpr, rhsExpr.Range, [], attribs, Some memberFlags, SynBindingTrivia.Zero)
                                     SynMemberDefn.Member (binding, mMemberPortion) 
@@ -4139,7 +4164,7 @@ module TcDeclarations =
     //-------------------------------------------------------------------------
 
     /// Bind a collection of mutually recursive definitions in an implementation file
-    let TcMutRecDefinitions (cenv: cenv) envInitial parent typeNames tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecDefnsInitialData) =
+    let TcMutRecDefinitions (cenv: cenv) envInitial parent typeNames tpenv m scopem mutRecNSInfo (mutRecDefns: MutRecDefnsInitialData) isMutRec =
 
         let g = cenv.g
 
@@ -4193,7 +4218,7 @@ module TcDeclarations =
                        cenv true scopem m 
 
         // Check the members and decide on representations for types with implicit constructors.
-        let withBindings, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem mutRecNSInfo envMutRecPrelimWithReprs withEnvs
+        let withBindings, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem mutRecNSInfo envMutRecPrelimWithReprs withEnvs isMutRec
 
         // Generate the hash/compare/equality bindings for all tycons.
         //
@@ -4351,7 +4376,8 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
             let _, _, _, env = TcExceptionDeclarations.TcExnSignature cenv env parent emptyUnscopedTyparEnv (edef, scopem)
             return env
 
-        | SynModuleSigDecl.Types (typeSpecs, m) -> 
+        | SynModuleSigDecl.Types (typeSpecs, m) ->
+            CheckDuplicatesAbstractMethodParmsSig typeSpecs
             let scopem = unionRanges m endm
             let mutRecDefns = typeSpecs |> List.map MutRecShape.Tycon
             let env = TcDeclarations.TcMutRecSignatureDecls cenv env parent typeNames emptyUnscopedTyparEnv m scopem None mutRecDefns
@@ -4521,7 +4547,8 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
           let rec loop isNamespace moduleRange defs: MutRecSigsInitialData = 
             ((true, true), defs) ||> List.collectFold (fun (openOk, moduleAbbrevOk) def -> 
                 match def with 
-                | SynModuleSigDecl.Types (typeSpecs, _) -> 
+                | SynModuleSigDecl.Types (typeSpecs, _) ->
+                    CheckDuplicatesAbstractMethodParmsSig typeSpecs
                     let decls = typeSpecs |> List.map MutRecShape.Tycon
                     decls, (false, false)
 
@@ -4649,7 +4676,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
       | SynModuleDecl.Types (typeDefs, m) -> 
           let scopem = unionRanges m scopem
           let mutRecDefns = typeDefs |> List.map MutRecShape.Tycon
-          let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv env parent typeNames tpenv m scopem None mutRecDefns
+          let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv env parent typeNames tpenv m scopem None mutRecDefns false
           // Check the non-escaping condition as we build the expression on the way back up 
           let defn = TcMutRecDefsFinish cenv mutRecDefnsChecked m
           let escapeCheck () = 
@@ -4700,7 +4727,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
           // Treat 'module rec M = ...' as a single mutually recursive definition group 'module M = ...'
           if isRec then 
               assert (not isContinuingModule)
-              let modDecl = SynModuleDecl.NestedModule(compInfo, false, moduleDefs, isContinuingModule, m, trivia)
+              let modDecl = SynModuleDecl.NestedModule(compInfo, false, moduleDefs, isContinuingModule, m, trivia)            
               return! TcModuleOrNamespaceElementsMutRec cenv parent typeNames m env None [modDecl]
           else
               let (SynComponentInfo(Attributes attribs, _, _, longPath, xml, _, vis, im)) = compInfo
@@ -4902,7 +4929,7 @@ and TcModuleOrNamespaceElementsMutRec (cenv: cenv) parent typeNames m envInitial
       loop (match parent with ParentNone -> true | Parent _ -> false) m [] defs
 
     let tpenv = emptyUnscopedTyparEnv 
-    let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv envInitial parent typeNames tpenv m scopem mutRecNSInfo mutRecDefns 
+    let mutRecDefnsChecked, envAfter = TcDeclarations.TcMutRecDefinitions cenv envInitial parent typeNames tpenv m scopem mutRecNSInfo mutRecDefns true
 
     // Check the assembly attributes
     let attrs, _ = TcAttributesWithPossibleTargets false cenv envAfter AttributeTargets.Top synAttrs

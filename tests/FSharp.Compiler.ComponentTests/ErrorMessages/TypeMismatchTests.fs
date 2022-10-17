@@ -7,6 +7,103 @@ open FSharp.Test.Compiler
 
 module ``Type Mismatch`` =
 
+    module ``Different tuple lengths`` =
+
+        [<Fact>]
+        let ``Known type on the left``() =
+            FSharp """
+let x a b c : int * int = a, b, c
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 2, Col 27, Line 2, Col 34,
+                 "Type mismatch. Expecting a tuple of length 2 of type\n    int * int    \nbut given a tuple of length 3 of type\n    'a * 'b * 'c    \n")
+            ]
+
+        [<Fact>]
+        let ``Type annotation propagates to the error message``() =
+            FSharp """
+let x a b (c: string) : int * int = a, b, c
+let y a (b: string) c : int * int = a, b, c
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 2, Col 37, Line 2, Col 44,
+                 "Type mismatch. Expecting a tuple of length 2 of type\n    int * int    \nbut given a tuple of length 3 of type\n    'a * 'b * string    \n")
+                (Error 1, Line 3, Col 37, Line 3, Col 44,
+                 "Type mismatch. Expecting a tuple of length 2 of type\n    int * int    \nbut given a tuple of length 3 of type\n    'a * string * 'b    \n")
+            ]
+
+        [<Fact>]
+        let ``Known type on the right``() =
+            FSharp """
+let x : int * string = 1, ""
+let a, b, c = x
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 3, Col 15, Line 3, Col 16,
+                 "Type mismatch. Expecting a tuple of length 3 of type\n    'a * 'b * 'c    \nbut given a tuple of length 2 of type\n    int * string    \n")
+            ]
+
+        [<Fact>]
+        let ``Known types on both sides``() =
+            FSharp """
+let x: int * int * int = 1, ""
+let x: int * string * int = "", 1
+let x: int * int = "", "", 1
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 2, Col 26, Line 2, Col 31,
+                 "Type mismatch. Expecting a tuple of length 3 of type\n    int * int * int    \nbut given a tuple of length 2 of type\n    int * string    \n")
+                (Error 1, Line 3, Col 29, Line 3, Col 34,
+                 "Type mismatch. Expecting a tuple of length 3 of type\n    int * string * int    \nbut given a tuple of length 2 of type\n    string * int    \n")
+                (Error 1, Line 4, Col 20, Line 4, Col 29,
+                 "Type mismatch. Expecting a tuple of length 2 of type\n    int * int    \nbut given a tuple of length 3 of type\n    string * string * int    \n")
+            ]
+
+        [<Fact>]
+        let ``Patterns minimal`` () =
+            FSharp """
+let test (x : int * string * char) =
+    match x with
+    | 10, "20"      -> true
+    | _ -> false
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 4, Col 7, Line 4, Col 15,
+                 "Type mismatch. Expecting a tuple of length 3 of type\n    int * string * char    \nbut given a tuple of length 2 of type\n    int * string    \n")
+            ]
+
+        [<Fact>]
+        let ``Patterns with inference`` () =
+            FSharp """
+let test x =
+    match x with
+    |  0,  "1", '2' -> true
+    | 10, "20"      -> true
+    |     "-1", '0' -> true
+    | 99,       '9' -> true
+    | _ -> false
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 5, Col 7, Line 5, Col 15,
+                 "Type mismatch. Expecting a tuple of length 3 of type\n    int * string * char    \nbut given a tuple of length 2 of type\n    int * string    \n")
+                (Error 1, Line 6, Col 11, Line 6, Col 20,
+                 "Type mismatch. Expecting a tuple of length 3 of type\n    int * string * char    \nbut given a tuple of length 2 of type\n    string * char    \n")
+                (Error 1, Line 7, Col 7, Line 7, Col 20,
+                 "Type mismatch. Expecting a tuple of length 3 of type\n    int * string * char    \nbut given a tuple of length 2 of type\n    int * char    \n")
+            ]
+
     [<Fact>]
     let ``return Instead Of return!``() =
         FSharp """

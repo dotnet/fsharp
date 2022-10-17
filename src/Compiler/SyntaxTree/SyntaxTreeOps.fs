@@ -172,10 +172,10 @@ let inline unionRangeWithXmlDoc (xmlDoc: PreXmlDoc) range =
         unionRanges xmlDoc.Range range
 
 let mkSynAnonField (ty: SynType, xmlDoc) =
-    SynField([], false, None, ty, false, xmlDoc, None, unionRangeWithXmlDoc xmlDoc ty.Range)
+    SynField([], false, None, ty, false, xmlDoc, None, unionRangeWithXmlDoc xmlDoc ty.Range, SynFieldTrivia.Zero)
 
 let mkSynNamedField (ident, ty: SynType, xmlDoc, m) =
-    SynField([], false, Some ident, ty, false, xmlDoc, None, m)
+    SynField([], false, Some ident, ty, false, xmlDoc, None, m, SynFieldTrivia.Zero)
 
 let mkSynPatVar vis (id: Ident) =
     SynPat.Named(SynIdent(id, None), false, vis, id.idRange)
@@ -673,8 +673,8 @@ let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
 
     let rhsExpr, retTyOpt =
         match retInfo with
-        | Some (SynReturnInfo ((ty, SynArgInfo (rAttribs, _, _)), tym)) ->
-            SynExpr.Typed(rhsExpr, ty, rhsExpr.Range), Some(SynBindingReturnInfo(ty, tym, rAttribs))
+        | Some (mColon, SynReturnInfo ((ty, SynArgInfo (rAttribs, _, _)), tym)) ->
+            SynExpr.Typed(rhsExpr, ty, rhsExpr.Range), Some(SynBindingReturnInfo(ty, tym, rAttribs, { ColonRange = mColon }))
         | None -> rhsExpr, None
 
     rhsExpr, retTyOpt
@@ -684,13 +684,13 @@ let mkSynBinding
     (vis, isInline, isMutable, mBind, spBind, retInfo, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt, trivia)
     =
     let info =
-        SynInfo.InferSynValData(memberFlagsOpt, Some headPat, retInfo, origRhsExpr)
+        SynInfo.InferSynValData(memberFlagsOpt, Some headPat, Option.map snd retInfo, origRhsExpr)
 
     let rhsExpr, retTyOpt = mkSynBindingRhs staticOptimizations origRhsExpr mRhs retInfo
     let mBind = unionRangeWithXmlDoc xmlDoc mBind
     SynBinding(vis, SynBindingKind.Normal, isInline, isMutable, attrs, xmlDoc, info, headPat, retTyOpt, rhsExpr, mBind, spBind, trivia)
 
-let NonVirtualMemberFlags trivia k : SynMemberFlags =
+let NonVirtualMemberFlags k : SynMemberFlags =
     {
         MemberKind = k
         IsInstance = true
@@ -698,10 +698,9 @@ let NonVirtualMemberFlags trivia k : SynMemberFlags =
         IsOverrideOrExplicitImpl = false
         IsFinal = false
         GetterOrSetterIsCompilerGenerated = false
-        Trivia = trivia
     }
 
-let CtorMemberFlags trivia : SynMemberFlags =
+let CtorMemberFlags: SynMemberFlags =
     {
         MemberKind = SynMemberKind.Constructor
         IsInstance = false
@@ -709,10 +708,9 @@ let CtorMemberFlags trivia : SynMemberFlags =
         IsOverrideOrExplicitImpl = false
         IsFinal = false
         GetterOrSetterIsCompilerGenerated = false
-        Trivia = trivia
     }
 
-let ClassCtorMemberFlags trivia : SynMemberFlags =
+let ClassCtorMemberFlags: SynMemberFlags =
     {
         MemberKind = SynMemberKind.ClassConstructor
         IsInstance = false
@@ -720,10 +718,9 @@ let ClassCtorMemberFlags trivia : SynMemberFlags =
         IsOverrideOrExplicitImpl = false
         IsFinal = false
         GetterOrSetterIsCompilerGenerated = false
-        Trivia = trivia
     }
 
-let OverrideMemberFlags trivia k : SynMemberFlags =
+let OverrideMemberFlags k : SynMemberFlags =
     {
         MemberKind = k
         IsInstance = true
@@ -731,10 +728,9 @@ let OverrideMemberFlags trivia k : SynMemberFlags =
         IsOverrideOrExplicitImpl = true
         IsFinal = false
         GetterOrSetterIsCompilerGenerated = false
-        Trivia = trivia
     }
 
-let AbstractMemberFlags isInstance trivia k : SynMemberFlags =
+let AbstractMemberFlags isInstance k : SynMemberFlags =
     {
         MemberKind = k
         IsInstance = isInstance
@@ -742,10 +738,9 @@ let AbstractMemberFlags isInstance trivia k : SynMemberFlags =
         IsOverrideOrExplicitImpl = false
         IsFinal = false
         GetterOrSetterIsCompilerGenerated = false
-        Trivia = trivia
     }
 
-let StaticMemberFlags trivia k : SynMemberFlags =
+let StaticMemberFlags k : SynMemberFlags =
     {
         MemberKind = k
         IsInstance = false
@@ -753,10 +748,9 @@ let StaticMemberFlags trivia k : SynMemberFlags =
         IsOverrideOrExplicitImpl = false
         IsFinal = false
         GetterOrSetterIsCompilerGenerated = false
-        Trivia = trivia
     }
 
-let ImplementStaticMemberFlags trivia k : SynMemberFlags =
+let ImplementStaticMemberFlags k : SynMemberFlags =
     {
         MemberKind = k
         IsInstance = false
@@ -764,79 +758,6 @@ let ImplementStaticMemberFlags trivia k : SynMemberFlags =
         IsOverrideOrExplicitImpl = true
         IsFinal = false
         GetterOrSetterIsCompilerGenerated = false
-        Trivia = trivia
-    }
-
-let MemberSynMemberFlagsTrivia (mMember: range) : SynMemberFlagsTrivia =
-    {
-        MemberRange = Some mMember
-        OverrideRange = None
-        AbstractRange = None
-        StaticRange = None
-        DefaultRange = None
-    }
-
-let OverrideSynMemberFlagsTrivia (mOverride: range) : SynMemberFlagsTrivia =
-    {
-        MemberRange = None
-        OverrideRange = Some mOverride
-        AbstractRange = None
-        StaticRange = None
-        DefaultRange = None
-    }
-
-let StaticMemberSynMemberFlagsTrivia (mStatic: range) (mMember: range) : SynMemberFlagsTrivia =
-    {
-        MemberRange = Some mMember
-        OverrideRange = None
-        AbstractRange = None
-        StaticRange = Some mStatic
-        DefaultRange = None
-    }
-
-let DefaultSynMemberFlagsTrivia (mDefault: range) : SynMemberFlagsTrivia =
-    {
-        MemberRange = None
-        OverrideRange = None
-        AbstractRange = None
-        StaticRange = None
-        DefaultRange = Some mDefault
-    }
-
-let AbstractSynMemberFlagsTrivia (mAbstract: range) : SynMemberFlagsTrivia =
-    {
-        MemberRange = None
-        OverrideRange = None
-        AbstractRange = Some mAbstract
-        StaticRange = None
-        DefaultRange = None
-    }
-
-let AbstractMemberSynMemberFlagsTrivia (mAbstract: range) (mMember: range) : SynMemberFlagsTrivia =
-    {
-        MemberRange = Some mMember
-        OverrideRange = None
-        AbstractRange = Some mAbstract
-        StaticRange = None
-        DefaultRange = None
-    }
-
-let StaticAbstractSynMemberFlagsTrivia mStatic mAbstract =
-    {
-        MemberRange = None
-        OverrideRange = None
-        AbstractRange = Some mAbstract
-        StaticRange = Some mStatic
-        DefaultRange = None
-    }
-
-let StaticAbstractMemberSynMemberFlagsTrivia mStatic mAbstract mMember =
-    {
-        MemberRange = Some mMember
-        OverrideRange = None
-        AbstractRange = Some mAbstract
-        StaticRange = Some mStatic
-        DefaultRange = None
     }
 
 let inferredTyparDecls = SynValTyparDecls(None, true)
@@ -1082,3 +1003,12 @@ let (|MultiDimensionArrayType|_|) (t: SynType) =
         else
             None
     | _ -> None
+
+let (|TypesForTypar|) (t: SynType) =
+    let rec visit continuation t =
+        match t with
+        | SynType.Paren (innerT, _) -> visit continuation innerT
+        | SynType.Or (lhsT, rhsT, _, _) -> visit (fun lhsTs -> [ yield! lhsTs; yield rhsT ] |> continuation) lhsT
+        | _ -> continuation [ t ]
+
+    visit id t
