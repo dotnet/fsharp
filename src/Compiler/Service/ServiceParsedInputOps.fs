@@ -647,7 +647,7 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> walkExpr e)
             |> Option.orElseWith (fun () ->
                 match returnInfo with
-                | Some (SynBindingReturnInfo (t, _, _)) -> walkType t
+                | Some (SynBindingReturnInfo (typeName = t)) -> walkType t
                 | None -> None)
 
         and walkInterfaceImpl (SynInterfaceImpl (bindings = bindings)) = List.tryPick walkBinding bindings
@@ -857,7 +857,7 @@ module ParsedInput =
             | _ -> None
 
         and walkField synField =
-            let (SynField (Attributes attrs, _, _, t, _, _, _, _)) = synField
+            let (SynField (attributes = Attributes attrs; fieldType = t)) = synField
             List.tryPick walkAttribute attrs |> Option.orElseWith (fun () -> walkType t)
 
         and walkValSig synValSig =
@@ -906,7 +906,7 @@ module ParsedInput =
 
             | SynMemberDefn.Inherit (t, _, _) -> walkType t
 
-            | SynMemberDefn.ValField (field, _) -> walkField field
+            | SynMemberDefn.ValField (fieldInfo = field) -> walkField field
 
             | SynMemberDefn.NestedType (tdef, _, _) -> walkTypeDefn tdef
 
@@ -1662,7 +1662,9 @@ module ParsedInput =
             List.iter walkAttribute attrs
             walkPat pat
             walkExpr e
-            returnInfo |> Option.iter (fun (SynBindingReturnInfo (t, _, _)) -> walkType t)
+
+            returnInfo
+            |> Option.iter (fun (SynBindingReturnInfo (typeName = t)) -> walkType t)
 
         and walkInterfaceImpl (SynInterfaceImpl (bindings = bindings)) = List.iter walkBinding bindings
 
@@ -1853,7 +1855,7 @@ module ParsedInput =
                 walkType t
             | _ -> ()
 
-        and walkField (SynField (Attributes attrs, _, _, t, _, _, _, _)) =
+        and walkField (SynField (attributes = Attributes attrs; fieldType = t)) =
             List.iter walkAttribute attrs
             walkType t
 
@@ -1904,7 +1906,7 @@ module ParsedInput =
                 walkType t
                 members |> Option.iter (List.iter walkMember)
             | SynMemberDefn.Inherit (t, _, _) -> walkType t
-            | SynMemberDefn.ValField (field, _) -> walkField field
+            | SynMemberDefn.ValField (fieldInfo = field) -> walkField field
             | SynMemberDefn.NestedType (tdef, _, _) -> walkTypeDefn tdef
             | SynMemberDefn.AutoProperty (attributes = Attributes attrs; typeOpt = t; synExpr = e) ->
                 List.iter walkAttribute attrs

@@ -1065,7 +1065,8 @@ type SynBinding =
     member x.RangeOfHeadPattern = let (SynBinding (headPat = headPat)) = x in headPat.Range
 
 [<NoEquality; NoComparison>]
-type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
+type SynBindingReturnInfo =
+    | SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes * trivia: SynBindingReturnInfoTrivia
 
 [<NoComparison; RequireQualifiedAccess; CustomEquality>]
 type SynMemberFlags =
@@ -1082,8 +1083,6 @@ type SynMemberFlags =
         GetterOrSetterIsCompilerGenerated: bool
 
         MemberKind: SynMemberKind
-
-        Trivia: SynMemberFlagsTrivia
     }
 
     override this.Equals other =
@@ -1273,7 +1272,8 @@ type SynField =
         isMutable: bool *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynFieldTrivia
 
 [<NoEquality; NoComparison>]
 type SynComponentInfo =
@@ -1440,11 +1440,9 @@ type SynMemberDefn =
         memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        equalsRange: range *
         synExpr: SynExpr *
-        withKeyword: range option *
-        getSetRange: range option *
-        range: range
+        range: range *
+        trivia: SynMemberDefnAutoPropertyTrivia
 
     member d.Range =
         match d with
