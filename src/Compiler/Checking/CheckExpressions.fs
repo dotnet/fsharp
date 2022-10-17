@@ -5288,13 +5288,13 @@ and TcExprThenDynamic (cenv: cenv) overallTy env tpenv isArg e1 mQmark e2 delaye
    
    TcExprThen cenv overallTy env tpenv isArg appExpr delayed
 
-and TcExprsWithFlexes (cenv: cenv) env m tpenv flexes argTys args =
-    if List.length args <> List.length argTys then error(Error(FSComp.SR.tcExpressionCountMisMatch((List.length argTys), (List.length args)), m))
+and TcExprsWithFlexes (cenv: cenv) env m tpenv flexes (argTys: TType list) (args: SynExpr list) =
+    if args.Length <> argTys.Length then error(Error(FSComp.SR.tcExpressionCountMisMatch((argTys.Length), (args.Length)), m))
     (tpenv, List.zip3 flexes argTys args) ||> List.mapFold (fun tpenv (flex, ty, e) ->
          TcExprFlex cenv flex false ty env tpenv e)
 
-and TcExprsNoFlexes (cenv: cenv) env m tpenv argTys args =
-    if List.length args <> List.length argTys then error(Error(FSComp.SR.tcExpressionCountMisMatch((List.length argTys), (List.length args)), m))
+and TcExprsNoFlexes (cenv: cenv) env m tpenv (argTys: TType list) (args: SynExpr list) =
+    if args.Length <> argTys.Length then error(Error(FSComp.SR.tcExpressionCountMisMatch((argTys.Length), (args.Length)), m))
     (tpenv, List.zip argTys args) ||> List.mapFold (fun tpenv (ty, e) ->
          TcExprFlex2 cenv ty env false tpenv e)
 
@@ -5804,13 +5804,13 @@ and TcExprLazy (cenv: cenv) overallTy env tpenv (synInnerExpr, m) =
     let expr = mkLazyDelayed g m innerTy (mkUnitDelayLambda g m innerExpr)
     expr, tpenv
 
-and CheckTupleIsCorrectLength g (env: TcEnv) m tupleTy args typeCheckArgs =
+and CheckTupleIsCorrectLength g (env: TcEnv) m tupleTy (args: 'a list) tcArgs =
     if isAnyTupleTy g tupleTy then
         let tupInfo, ptys = destAnyTupleTy g tupleTy
 
-        if List.length args <> List.length ptys then
+        if args.Length <> ptys.Length then
             let argTys = NewInferenceTypes g args
-            suppressErrorReporting (fun () -> typeCheckArgs argTys)
+            suppressErrorReporting (fun () -> tcArgs argTys)
             let expectedTy = TType_tuple (tupInfo, argTys)
 
             // We let error recovery handle this exception
