@@ -266,18 +266,22 @@ type SynModuleSigDeclNestedModuleTrivia =
             EqualsRange = None
         }
 
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynModuleOrNamespaceLeadingKeyword =
+    | Module of moduleRange: range
+    | Namespace of namespaceRange: range
+    | None
+
 [<NoEquality; NoComparison>]
 type SynModuleOrNamespaceTrivia =
     {
-        ModuleKeyword: range option
-        NamespaceKeyword: range option
+        LeadingKeyword: SynModuleOrNamespaceLeadingKeyword
     }
 
 [<NoEquality; NoComparison>]
 type SynModuleOrNamespaceSigTrivia =
     {
-        ModuleKeyword: range option
-        NamespaceKeyword: range option
+        LeadingKeyword: SynModuleOrNamespaceLeadingKeyword
     }
 
 [<NoEquality; NoComparison>]

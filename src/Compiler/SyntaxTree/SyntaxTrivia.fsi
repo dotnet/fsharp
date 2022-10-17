@@ -330,26 +330,27 @@ type SynModuleSigDeclNestedModuleTrivia =
 
     static member Zero: SynModuleSigDeclNestedModuleTrivia
 
+/// Represents the leading keyword in a SynModuleOrNamespace or SynModuleOrNamespaceSig
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynModuleOrNamespaceLeadingKeyword =
+    | Module of moduleRange: range
+    | Namespace of namespaceRange: range
+    | None
+
 /// Represents additional information for SynModuleOrNamespace
 [<NoEquality; NoComparison>]
 type SynModuleOrNamespaceTrivia =
     {
-        /// The syntax range of the `module` keyword
-        ModuleKeyword: range option
-
-        /// The syntax range of the `namespace` keyword
-        NamespaceKeyword: range option
+        /// The syntax range of the `module` or `namespace` keyword
+        LeadingKeyword: SynModuleOrNamespaceLeadingKeyword
     }
 
 /// Represents additional information for SynModuleOrNamespaceSig
 [<NoEquality; NoComparison>]
 type SynModuleOrNamespaceSigTrivia =
     {
-        /// The syntax range of the `module` keyword
-        ModuleKeyword: range option
-
-        /// The syntax range of the `namespace` keyword
-        NamespaceKeyword: range option
+        /// The syntax range of the `module` or `namespace` keyword
+        LeadingKeyword: SynModuleOrNamespaceLeadingKeyword
     }
 
 /// Represents additional information for SynValSig

@@ -576,7 +576,7 @@ fileModuleSpec:
       (fun (mNamespaceOpt, isRec2, path, _) ->
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
         let lid = path@path2
-        let trivia: SynModuleOrNamespaceSigTrivia = { ModuleKeyword = Some mModule; NamespaceKeyword = mNamespaceOpt }
+        let trivia: SynModuleOrNamespaceSigTrivia = { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.Module mModule }
         ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xmlDoc, $1 @ attribs2, vis, m, trivia)))  }
 
   | moduleSpfnsPossiblyEmptyBlock 
@@ -588,7 +588,10 @@ fileModuleSpec:
             let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
             let m = mkRange lastDeclRange.FileName (lhs parseState).Start lastDeclRange.End
             xml.MarkAsInvalid()
-            let trivia = { ModuleKeyword = None; NamespaceKeyword = mNamespaceOpt }
+            let trivia: SynModuleOrNamespaceSigTrivia = 
+                match mNamespaceOpt with
+                | None -> { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.None }
+                | Some mNamespace -> { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.Namespace mNamespace }
             ParsedSigFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, PreXmlDoc.Empty, [], m, trivia))  } 
 
 
@@ -1096,7 +1099,7 @@ fileModuleImpl:
       (fun (mNamespaceOpt, isRec, path, _) ->
         if not (isNil path) then errorR(Error(FSComp.SR.parsNamespaceOrModuleNotBoth(), m2))
         let lid = path@path2
-        let trivia: SynModuleOrNamespaceTrivia = { ModuleKeyword = Some mModule; NamespaceKeyword = mNamespaceOpt }
+        let trivia: SynModuleOrNamespaceTrivia = { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.Module mModule }
         ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid, (isRec || isRec2), SynModuleOrNamespaceKind.NamedModule, $4, xmlDoc, $1@attribs2, vis, m, trivia))) }
 
   | moduleDefnsOrExprPossiblyEmptyOrBlock 
@@ -1108,7 +1111,10 @@ fileModuleImpl:
             let lastDeclRange = List.tryLast $1 |> Option.map (fun decl -> decl.Range) |> Option.defaultValue (rhs parseState 1)
             let m = mkRange lastDeclRange.FileName (lhs parseState).Start lastDeclRange.End
             xml.MarkAsInvalid()
-            let trivia: SynModuleOrNamespaceTrivia = { ModuleKeyword = None; NamespaceKeyword = mNamespaceOpt }
+            let trivia: SynModuleOrNamespaceTrivia = 
+                match mNamespaceOpt with
+                 | None -> { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.None }
+                 | Some mNamespace -> { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.Namespace mNamespace }
             ParsedImplFileFragment.NamespaceFragment(path, isRec, SynModuleOrNamespaceKind.DeclaredNamespace, $1, PreXmlDoc.Empty, [], m, trivia)) } 
 
 
