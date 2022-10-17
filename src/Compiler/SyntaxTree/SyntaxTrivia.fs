@@ -125,17 +125,24 @@ type SynPatOrTrivia = { BarRange: range }
 [<NoEquality; NoComparison>]
 type SynPatListConsTrivia = { ColonColonRange: range }
 
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynTypeDefnLeadingKeyword =
+    | Type of range
+    | And of range
+    | StaticType of staticRange: range * typeRange: range
+    | Synthetic
+
 [<NoEquality; NoComparison>]
 type SynTypeDefnTrivia =
     {
-        TypeKeyword: range option
+        LeadingKeyword: SynTypeDefnLeadingKeyword
         EqualsRange: range option
         WithKeyword: range option
     }
 
     static member Zero: SynTypeDefnTrivia =
         {
-            TypeKeyword = None
+            LeadingKeyword = SynTypeDefnLeadingKeyword.Synthetic
             EqualsRange = None
             WithKeyword = None
         }
@@ -143,14 +150,14 @@ type SynTypeDefnTrivia =
 [<NoEquality; NoComparison>]
 type SynTypeDefnSigTrivia =
     {
-        TypeKeyword: range option
+        LeadingKeyword: SynTypeDefnLeadingKeyword
         EqualsRange: range option
         WithKeyword: range option
     }
 
     static member Zero: SynTypeDefnSigTrivia =
         {
-            TypeKeyword = None
+            LeadingKeyword = SynTypeDefnLeadingKeyword.Synthetic
             EqualsRange = None
             WithKeyword = None
         }
