@@ -309,7 +309,8 @@ type B = int
 let Test () =
     log "start"
     let m = AnalyzerManager()
-    let projectFile = @"C:\projekty\fsharp\fsharp_main\src\Compiler\FSharp.Compiler.Service.fsproj"
+    //let projectFile = @"C:\projekty\fsharp\fsharp_main\src\Compiler\FSharp.Compiler.Service.fsproj"
+    let projectFile = @"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj"
     let analyzer = m.GetProject(projectFile)
     let results = analyzer.Build()
     log "built"

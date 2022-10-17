@@ -1034,6 +1034,16 @@ and visit (input : ParsedInput) =
         |> Seq.collect visitSynModuleOrNamespace
         |> Seq.toArray
 
+let mightHaveAutoOpen (synAttributeLists : SynAttributeList list) : bool =
+    let attributes =
+        synAttributeLists
+        |> List.collect (fun attributes -> attributes.Attributes)
+    match attributes with
+    // No attributes found - no [<AutoOpen>] possible
+    | [] -> false
+    // Some attributes found - we can't know for sure if one of them is the AutoOpenAttribute (possibly hidden with a type alias), so we say 'yes'.
+    | _ -> true
+
 let topModuleOrNamespace (input : ParsedInput) =
     match input with
     | ParsedInput.ImplFile f ->
@@ -1042,7 +1052,12 @@ let topModuleOrNamespace (input : ParsedInput) =
         | first :: rest ->
             match first with
             | SynModuleOrNamespace(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
-                longId
+                if mightHaveAutoOpen synAttributeLists then
+                    // Contents of a module that's potentially AutoOpen are available everywhere, so treat it as if it had no name ('root' module).
+                    // This makes the dependency tracking algorithm detect it as a dependency for all further files.
+                    LongIdent.Empty
+                else
+                    longId
     | ParsedInput.SigFile _ ->
         failwith "Sig files not supported atm"
 
