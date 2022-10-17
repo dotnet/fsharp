@@ -133,8 +133,7 @@ let detectFileDependencies (nodes : FileAST[]) : Graph =
     // Create ASTs, extract module refs
     let nodes =
         nodes
-        |> Array.mapi (fun i (name, ast) ->
-            printfn $"Visiting {name}"
+        |> Array.Parallel.mapi (fun i (name, ast) -> 
             let typeAndModuleRefs =
                 try
                     visit ast |> Some
@@ -160,7 +159,7 @@ let detectFileDependencies (nodes : FileAST[]) : Graph =
     
     // Find dependencies for all files (can be in parallel)
     nodes
-    |> Array.map (fun node ->
+    |> Array.Parallel.map (fun node ->
         let trie = cloneTrie trie
         
         // Keep a list of visited nodes (ie. all reachable nodes and all their ancestors)
@@ -345,8 +344,8 @@ let Test () =
     
     let totalDeps = graph |> Array.sumBy (fun (f, deps) -> deps.Length)
     let maxPossibleDeps = (N * (N-1)) / 2 
-    graph
-    |> Array.iter (fun (file, deps) -> printfn $"{file} -> %+A{deps}")
+    //graph
+    //|> Array.iter (fun (file, deps) -> printfn $"{file} -> %+A{deps}")
     
     let graph = graph |> dict
     let json = JsonConvert.SerializeObject(graph, Formatting.Indented)
