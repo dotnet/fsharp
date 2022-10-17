@@ -161,6 +161,7 @@
     <Compile Include="ErrorMessages\WarnIfDiscardedInList.fs" />
 	<Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs"/>
     <Compile Include="Language\IndexerSetterParamArray.fs" />
+	<Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
     <Compile Include="Language\ObsoleteAttributeCheckingTests.fs" />
@@ -203,6 +204,7 @@
     <Compile Include="Signatures\ModuleOrNamespaceTests.fs" />
     <Compile Include="Signatures\RecordTests.fs" />
     <Compile Include="Signatures\ArrayTests.fs" />
+    <Compile Include="Signatures\TypeTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />

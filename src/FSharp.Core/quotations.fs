@@ -942,14 +942,8 @@ module Patterns =
             | VarSetOp, _
             | AddressSetOp, _ -> typeof<Unit>
             | AddressOfOp, [ expr ] -> (typeOf expr).MakeByRefType()
-            | (AddressOfOp
-              | QuoteOp _
-              | SequentialOp
-              | TryWithOp
-              | TryFinallyOp
-              | IfThenElseOp
-              | AppOp),
-              _ -> failwith "unreachable"
+            | (AddressOfOp | QuoteOp _ | SequentialOp | TryWithOp | TryFinallyOp | IfThenElseOp | AppOp), _ ->
+                failwith "unreachable"
 
     //--------------------------------------------------------------------------
     // Constructors for building Raw quotations
@@ -1409,7 +1403,7 @@ module Patterns =
         | Ambiguous of 'R
 
     let typeEquals (ty1: Type) (ty2: Type) =
-        ty1.Equals ty2
+        Type.op_Equality (ty1, ty2)
 
     let typesEqual (tys1: Type list) (tys2: Type list) =
         (tys1.Length = tys2.Length) && List.forall2 typeEquals tys1 tys2
@@ -2933,8 +2927,7 @@ module DerivedPatterns =
     let (|SpecificCall|_|) templateParameter =
         // Note: precomputation
         match templateParameter with
-        | (Lambdas (_, Call (_, minfo1, _))
-        | Call (_, minfo1, _)) ->
+        | (Lambdas (_, Call (_, minfo1, _)) | Call (_, minfo1, _)) ->
             let isg1 = minfo1.IsGenericMethod
 
             let gmd =

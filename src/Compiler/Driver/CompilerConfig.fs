@@ -1405,14 +1405,13 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     /// 'framework' reference set that is potentially shared across multiple compilations.
     member tcConfig.IsSystemAssembly(fileName: string) =
         try
+            let dirName = Path.GetDirectoryName fileName
+            let baseName = FileSystemUtils.fileNameWithoutExtension fileName
+
             FileSystem.FileExistsShim fileName
-            && ((tcConfig.GetTargetFrameworkDirectories()
-                 |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName fileName))
-                || (tcConfig
-                       .FxResolver
-                       .GetSystemAssemblies()
-                       .Contains(FileSystemUtils.fileNameWithoutExtension fileName))
-                || tcConfig.FxResolver.IsInReferenceAssemblyPackDirectory fileName)
+            && ((tcConfig.GetTargetFrameworkDirectories() |> List.contains dirName)
+                || FxResolver.GetSystemAssemblies().Contains baseName
+                || FxResolver.IsReferenceAssemblyPackDirectoryApprox dirName)
         with _ ->
             false
 
