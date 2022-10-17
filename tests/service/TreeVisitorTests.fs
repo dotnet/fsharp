@@ -31,7 +31,7 @@ let ``Visit record definition test`` () =
     let parseTree = parseSourceCode("C:\\test.fs", source)
 
     match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
-    | Some [ SynField (_, _, Some id1, _, _, _, _, _); SynField (_, _, Some id2, _, _, _, _, _) ] when id1.idText = "A" && id2.idText = "B" -> ()
+    | Some [ SynField (idOpt = Some id1); SynField (idOpt = Some id2) ] when id1.idText = "A" && id2.idText = "B" -> ()
     | _ -> failwith "Did not visit record definition"
 
 [<Test>]
