@@ -27,171 +27,10 @@ open FSharp.Compiler.Text.Position
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Xml
 
-#if DEBUG
-let debugPrint s =
-    if Internal.Utilities.Text.Parsing.Flags.debug then 
-        printfn "\n%s" s
-#else
-let debugPrint s = ignore s
-#endif
-
-let exprFromParseError (e:SynExpr) = SynExpr.FromParseError (e, e.Range)
-
-let patFromParseError (e:SynPat) = SynPat.FromParseError(e, e.Range)
-
-// record bindings returned by the recdExprBindings rule has shape:
-// (binding, separator-before-this-binding)
-// this function converts arguments from form
-// binding1 (binding2*sep1, binding3*sep2...) sepN
-// to form
-// binding1*sep1, binding2*sep2
-let rebindRanges first fields lastSep = 
-    let rec run (name, mEquals, value) l acc = 
-        match l with
-        | [] -> List.rev (SynExprRecordField(name, mEquals, value, lastSep) :: acc)
-        | (f, m) :: xs -> run f xs (SynExprRecordField(name, mEquals, value, m) :: acc)
-    run first fields []
-
-let mkUnderscoreRecdField m = SynLongIdent([ident("_", m)], [], [None]), false
-
-let mkRecdField lidwd = lidwd, true
-
-// Used for 'do expr' in a class.
-let mkSynDoBinding (vis, expr, m) = 
-    match vis with
-    | Some vis -> errorR(Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations (vis.ToString()), m))
-    | None -> ()
-    SynBinding(None,
-             SynBindingKind.Do,
-             false, false, [], PreXmlDoc.Empty, SynInfo.emptySynValData,
-             SynPat.Const(SynConst.Unit, m),
-             None, expr, m, DebugPointAtBinding.NoneAtDo,
-             SynBindingTrivia.Zero)
-
-let mkSynExprDecl (e: SynExpr) = 
-    SynModuleDecl.Expr(e, e.Range)
-
-let addAttribs attrs p =  SynPat.Attrib(p, attrs, p.Range)
-
-
 // This function is called by the generated parser code. Returning initiates error recovery 
 // It must be called precisely "parse_error_rich"
 let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) -> 
     errorR(SyntaxError(box ctxt, ctxt.ParseState.LexBuffer.LexemeRange)))
-
-let unionRangeWithPos (r:range) p =
-    let r2 = mkRange r.FileName p p
-    unionRanges r r2
-
-/// Report a good error at the end of file, e.g. for non-terminated strings
-let checkEndOfFileError t = 
-  match t with 
-  | LexCont.IfDefSkip(_, _, _, m) ->
-      reportParseErrorAt m (FSComp.SR.parsEofInHashIf())
-
-  | LexCont.String (_, _, LexerStringStyle.SingleQuote, kind, m) -> 
-     if kind.IsInterpolated then
-         reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedString())
-     else
-         reportParseErrorAt m (FSComp.SR.parsEofInString())
-
-  | LexCont.String (_, _, LexerStringStyle.TripleQuote, kind, m) ->
-     if kind.IsInterpolated then
-         reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedTripleQuoteString())
-     else
-         reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteString())
-
-  | LexCont.String (_, _, LexerStringStyle.Verbatim, kind, m) ->
-     if kind.IsInterpolated then
-         reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedVerbatimString())
-     else
-         reportParseErrorAt m (FSComp.SR.parsEofInVerbatimString())
-
-  | LexCont.Comment (_, _, _, m) ->
-     reportParseErrorAt m (FSComp.SR.parsEofInComment())
-
-  | LexCont.SingleLineComment (_, _, _, m) ->
-     reportParseErrorAt m (FSComp.SR.parsEofInComment())
-
-  | LexCont.StringInComment (_, _, LexerStringStyle.SingleQuote, _, m) ->
-     reportParseErrorAt m (FSComp.SR.parsEofInStringInComment())
-
-  | LexCont.StringInComment (_, _, LexerStringStyle.Verbatim, _, m) ->
-     reportParseErrorAt m (FSComp.SR.parsEofInVerbatimStringInComment())
-
-  | LexCont.StringInComment (_, _, LexerStringStyle.TripleQuote, _, m) ->
-     reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteStringInComment())
-
-  | LexCont.MLOnly (_, _, m) ->
-     reportParseErrorAt m (FSComp.SR.parsEofInIfOcaml())
-
-  | LexCont.EndLine(_, _, LexerEndlineContinuation.Skip(_, m)) ->
-     reportParseErrorAt m (FSComp.SR.parsEofInDirective())
-
-  | LexCont.EndLine(endifs, nesting, LexerEndlineContinuation.Token)
-  | LexCont.Token(endifs, nesting) -> 
-      match endifs with 
-      | [] -> ()
-      | (_, m) :: _  -> reportParseErrorAt m (FSComp.SR.parsNoHashEndIfFound())
-      match nesting with 
-      | [] -> ()
-      | (_, _, m) :: _  -> reportParseErrorAt m (FSComp.SR.parsEofInInterpolatedStringFill())
-
-type BindingSet = BindingSetPreAttrs of range * bool * bool * (SynAttributes -> SynAccess option -> SynAttributes * SynBinding list) * range
-
-let mkClassMemberLocalBindings(isStatic, initialRangeOpt, attrs, vis, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, bindingSetRange)) = 
-   let ignoredFreeAttrs, decls = declsPreAttrs attrs vis
-   let mWhole = 
-       match initialRangeOpt with 
-       | None -> bindingSetRange
-       | Some m -> unionRanges m bindingSetRange
-       // decls could have a leading attribute
-       |> fun m -> (m, decls) ||> unionRangeWithListBy (fun (SynBinding(range = m)) -> m)
-   if not (isNil ignoredFreeAttrs) then warning(Error(FSComp.SR.parsAttributesIgnored(), mWhole));
-   if isUse then errorR(Error(FSComp.SR.parsUseBindingsIllegalInImplicitClassConstructors(), mWhole))
-   SynMemberDefn.LetBindings (decls, isStatic, isRec, mWhole)
-
-let mkLocalBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _), mIn, body: SynExpr) = 
-   let ignoredFreeAttrs, decls = declsPreAttrs [] None
-   let mWhole =
-       match decls with
-       | SynBinding(xmlDoc = xmlDoc) :: _ -> unionRangeWithXmlDoc xmlDoc mWhole
-       | _ -> mWhole
-   if not (isNil ignoredFreeAttrs) then warning(Error(FSComp.SR.parsAttributesIgnored(), mWhole))
-   let mIn =
-       mIn
-       |> Option.bind (fun (mIn: range) -> 
-           if Position.posEq mIn.Start body.Range.Start then
-              None
-           else
-              Some mIn)
-
-   SynExpr.LetOrUse (isRec, isUse, decls, body, mWhole, { InKeyword = mIn }) 
-
-let mkDefnBindings (mWhole, BindingSetPreAttrs(_, isRec, isUse, declsPreAttrs, _bindingSetRange), attrs, vis, attrsm) = 
-    if isUse then warning(Error(FSComp.SR.parsUseBindingsIllegalInModules(), mWhole))
-    let freeAttrs, decls = declsPreAttrs attrs vis
-    // decls might have an extended range due to leading attributes
-    let mWhole = (mWhole, decls) ||> unionRangeWithListBy (fun (SynBinding(range = m)) -> m)
-    let letDecls = [ SynModuleDecl.Let (isRec, decls, mWhole) ] 
-    let attrDecls = if not (isNil freeAttrs) then [ SynModuleDecl.Attributes (freeAttrs, attrsm) ] else [] 
-    attrDecls @ letDecls
-
-let idOfPat (parseState:IParseState) m p = 
-    match p with
-    | SynPat.Wild r when parseState.LexBuffer.SupportsFeature LanguageFeature.WildCardInForLoop ->
-        mkSynId r "_"
-    | SynPat.Named (SynIdent(id,_), false, _, _) -> id
-    | SynPat.LongIdent(longDotId=SynLongIdent([id], _, _); typarDecls=None; argPats=SynArgPats.Pats []; accessibility=None) -> id
-    | _ -> raiseParseErrorAt m (FSComp.SR.parsIntegerForLoopRequiresSimpleIdentifier())
-
-let checkForMultipleAugmentations m a1 a2 = 
-    if not (isNil a1) && not (isNil a2) then raiseParseErrorAt m (FSComp.SR.parsOnlyOneWithAugmentationAllowed())
-    a1 @ a2
-
-let rangeOfLongIdent(lid:LongIdent) =
-    System.Diagnostics.Debug.Assert(not lid.IsEmpty, "the parser should never produce a long-id that is the empty list") 
-    (lid.Head.idRange, lid) ||> unionRangeWithListBy (fun id -> id.idRange) 
 
 %} 
 
@@ -602,18 +441,17 @@ interactiveDefns:
 
 /* An expression as part of one interaction in F# Interactive */
 interactiveExpr:
-  | opt_attributes opt_declVisibility declExpr
+  | opt_attributes opt_access declExpr
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()), rhs parseState 3))
         | _ -> ()
-        let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] in 
+        let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else []
         attrDecls @ [ mkSynExprDecl $3 ] }
 
 /* A #directive interaction in F# Interactive */
 interactiveHash:      
   | hashDirective 
       { [SynModuleDecl.HashDirective($1, rhs parseState 1)] }
-
 
 /* One or more separators between interactions in F# Interactive */
 interactiveSeparators: 
@@ -728,7 +566,7 @@ fileNamespaceSpec:
 
 /* The single module declaration that can make up a signature file */
 fileModuleSpec: 
-  | opt_attributes opt_declVisibility moduleIntro moduleSpfnsPossiblyEmptyBlock 
+  | opt_attributes opt_access moduleIntro moduleSpfnsPossiblyEmptyBlock 
     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
       let m2 = rhs parseState 3
       let mDeclsAndAttrs = (List.map (fun (a: SynAttributeList) -> a.Range) $1) @ (List.map (fun (d: SynModuleSigDecl) -> d.Range) $4)
@@ -800,7 +638,7 @@ moduleSpfn:
   | valSpfn 
       { $1 }
 
-  | opt_attributes opt_declVisibility moduleIntro colonOrEquals namedModuleAbbrevBlock 
+  | opt_attributes opt_access moduleIntro colonOrEquals namedModuleAbbrevBlock 
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let _mModule, isRec, path, vis, attribs2 = $3
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
@@ -811,7 +649,7 @@ moduleSpfn:
         | Some vis -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate(vis.ToString()))
         | _ -> SynModuleSigDecl.ModuleAbbrev(List.head path, $5, rhs2 parseState 1 5) } 
 
-  | opt_attributes opt_declVisibility moduleIntro colonOrEquals moduleSpecBlock
+  | opt_attributes opt_access moduleIntro colonOrEquals moduleSpecBlock
       { let mModule, isRec, path, vis, attribs2 = $3
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
         if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleDefnMustBeSimpleName())
@@ -824,7 +662,7 @@ moduleSpfn:
         let trivia: SynModuleSigDeclNestedModuleTrivia = { ModuleKeyword = Some mModule; EqualsRange = $4 }
         SynModuleSigDecl.NestedModule(info, isRec, $5, m, trivia) }
 
-  | opt_attributes opt_declVisibility typeKeyword tyconSpfn tyconSpfnList
+  | opt_attributes opt_access typeKeyword tyconSpfn tyconSpfnList
       { if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
         let (SynTypeDefnSig (SynComponentInfo (cas, a, cs, b, _xmlDoc, d, d2, d3), typeRepr, members, range, trivia)) = $4
         _xmlDoc.MarkAsInvalid()
@@ -839,7 +677,7 @@ moduleSpfn:
         let m = (mDefn, $5) ||> unionRangeWithListBy (fun (a: SynTypeDefnSig) -> a.Range) |> unionRanges (rhs parseState 3)
         SynModuleSigDecl.Types (tc :: $5, m) }
 
-  | opt_attributes opt_declVisibility exconSpfn
+  | opt_attributes opt_access exconSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let (SynExceptionSig(SynExceptionDefnRepr(cas, a, b, c, d, d2), withKeyword, members, range)) = $3
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
@@ -852,7 +690,7 @@ moduleSpfn:
       { SynModuleSigDecl.Open($1, (rhs parseState 1)) }
 
 valSpfn: 
-  | opt_attributes opt_declVisibility VAL opt_attributes opt_inline opt_mutable opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
+  | opt_attributes opt_access VAL opt_attributes opt_inline opt_mutable opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints optLiteralValueSpfn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let attr1, attr2, isInline, isMutable, vis2, id, doc, explicitValTyparDecls, (ty, arity), (mEquals, konst: SynExpr option) = ($1), ($4), ($5), ($6), ($7), ($8), grabXmlDoc(parseState, $1, 1), ($9), ($11), ($12)
         if not (isNil attr2) then errorR(Deprecated(FSComp.SR.parsAttributesMustComeBeforeVal(), rhs parseState 4))
@@ -864,7 +702,8 @@ valSpfn:
                 | None -> m
                 | Some e -> unionRanges m e.Range
         let mVal = rhs parseState 3
-        let valSpfn = SynValSig((attr1@attr2), id, explicitValTyparDecls, ty, arity, isInline, isMutable, doc, vis2, konst, m, { ValKeyword = Some mVal; WithKeyword = None; EqualsRange = mEquals }) 
+        let trivia: SynValSigTrivia = { LeadingKeyword = SynLeadingKeyword.Val mVal; WithKeyword = None; EqualsRange = mEquals }
+        let valSpfn = SynValSig((attr1@attr2), id, explicitValTyparDecls, ty, arity, isInline, isMutable, doc, vis2, konst, m, trivia) 
         SynModuleSigDecl.Val(valSpfn, m)
       }
 
@@ -994,7 +833,7 @@ tyconSpfnRhs:
   | DELEGATE OF topType
      { let m = lhs parseState 
        let ty, arity = $3
-       let flags = AbstractMemberFlags true SynMemberFlagsTrivia.Zero SynMemberKind.Member
+       let flags = AbstractMemberFlags true SynMemberKind.Member
        let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero)
        let invoke = SynMemberSig.Member(valSig, flags, m) 
        (fun nameRange nameInfo mEquals augmentation -> 
@@ -1067,7 +906,7 @@ classSpfnMembersAtLeastOne:
 
 /* A object member in a signature */
 classMemberSpfn:
-  | opt_attributes opt_declVisibility memberSpecFlags opt_inline opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet optLiteralValueSpfn
+  | opt_attributes opt_access memberSpecFlags opt_inline opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet optLiteralValueSpfn
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        let isInline, doc, vis2, id, explicitValTyparDecls, (ty, arity), (mEquals, optLiteralValue) = $4, grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
        let mWith, getSetRangeOpt, getSet = $10 
@@ -1083,43 +922,50 @@ classMemberSpfn:
                match optLiteralValue with
                | None -> m
                | Some e -> unionRanges m e.Range
-       let trivia = { ValKeyword = None; WithKeyword = mWith; EqualsRange = mEquals }
+       
+       let flags, leadingKeyword = $3
+       let flags = flags (getSetAdjuster arity)
+       let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = mEquals }
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, mWhole, trivia)
-       let flags = $3 (getSetAdjuster arity)
        SynMemberSig.Member(valSpfn, flags, mWhole) }
 
-  | opt_attributes opt_declVisibility interfaceMember appType  
+  | opt_attributes opt_access interfaceMember appType  
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        SynMemberSig.Interface ($4, unionRanges (rhs parseState 3) ($4).Range) }
 
-  | opt_attributes opt_declVisibility INHERIT appType 
+  | opt_attributes opt_access INHERIT appType 
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        SynMemberSig.Inherit ($4, unionRanges (rhs parseState 3) ($4).Range) }
 
-  | opt_attributes opt_declVisibility VAL fieldDecl 
+  | opt_attributes opt_access VAL fieldDecl 
      { let mWhole = rhs2 parseState 1 4
        if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-       let (SynField(_, _, _, _, _, xmlDoc, _, _)) as field = $4 $1 false mWhole
+       let mVal = rhs parseState 3
+       let (SynField(xmlDoc = xmlDoc)) as field = $4 $1 false mWhole (Some (SynLeadingKeyword.Val mVal))
        let mWhole = unionRangeWithXmlDoc xmlDoc mWhole
        SynMemberSig.ValField (field, mWhole) }
 
-  | opt_attributes opt_declVisibility STATIC VAL fieldDecl 
+  | opt_attributes opt_access STATIC VAL fieldDecl 
      { let mWhole = rhs2 parseState 1 5
        if Option.isSome $2 then errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
-       let (SynField(_, _, _, _, _, xmlDoc, _, _)) as field = $5 $1 true mWhole
+       let mStatic = rhs parseState 3
+       let mVal = rhs parseState 4
+       let (SynField(xmlDoc = xmlDoc)) as field = $5 $1 true mWhole (Some (SynLeadingKeyword.StaticVal(mStatic, mVal)))
        let mWhole = unionRangeWithXmlDoc xmlDoc mWhole
        SynMemberSig.ValField(field, mWhole) }
 
-  | opt_attributes  opt_declVisibility STATIC typeKeyword tyconSpfn 
+  | opt_attributes  opt_access STATIC typeKeyword tyconSpfn 
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        SynMemberSig.NestedType($5, rhs2 parseState 1 5) }
 
-  | opt_attributes opt_declVisibility NEW COLON topTypeWithTypeConstraints  
+  | opt_attributes opt_access NEW COLON topTypeWithTypeConstraints  
      { let vis, doc, (ty, valSynInfo) = $2, grabXmlDoc(parseState, $1, 1), $5
+       let mNew = rhs parseState 3
        let m = unionRanges (rhs parseState 1) ty.Range |> unionRangeWithXmlDoc doc
-       let isInline = false 
-       let valSpfn = SynValSig ($1, (SynIdent(mkSynId (rhs parseState 3) "new", None)), noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, m, SynValSigTrivia.Zero)
-       SynMemberSig.Member(valSpfn, CtorMemberFlags SynMemberFlagsTrivia.Zero, m) }
+       let isInline = false
+       let trivia: SynValSigTrivia = { LeadingKeyword = SynLeadingKeyword.New mNew; WithKeyword = None; EqualsRange = None }
+       let valSpfn = SynValSig ($1, (SynIdent(mkSynId (rhs parseState 3) "new", None)), noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, m, trivia)
+       SynMemberSig.Member(valSpfn, CtorMemberFlags, m) }
 
 
 /* The optional "with get, set" on a member in a signature */
@@ -1237,7 +1083,7 @@ fileNamespaceImpl:
 
 /* A single module definition in an implementation file */
 fileModuleImpl: 
-  | opt_attributes opt_declVisibility moduleIntro moduleDefnsOrExprPossiblyEmptyOrBlock
+  | opt_attributes opt_access moduleIntro moduleDefnsOrExprPossiblyEmptyOrBlock
     { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
       let m2 = rhs parseState 3
       let mDeclsAndAttrs = (List.map (fun (a: SynAttributeList) -> a.Range) $1) @ (List.map (fun (d: SynModuleDecl) -> d.Range) $4)
@@ -1292,21 +1138,21 @@ moduleDefnsOrExprPossiblyEmpty:
 /* A collection of definitions or expressions making up a module or namespace */
 /* A naked expression is only allowed at the start of a module/file, or straight after a topSeparators */
 moduleDefnsOrExpr:
-  | opt_attributes opt_declVisibility declExpr topSeparators moduleDefnsOrExpr 
+  | opt_attributes opt_access declExpr topSeparators moduleDefnsOrExpr 
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()), rhs parseState 3))
         | _ -> ()
         let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
         attrDecls @ mkSynExprDecl $3 :: $5 }
 
-  | opt_attributes opt_declVisibility declExpr topSeparators
+  | opt_attributes opt_access declExpr topSeparators
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()), rhs parseState 3))
         | _ -> ()
         let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
         attrDecls @ [ mkSynExprDecl $3 ] }
 
-  | opt_attributes opt_declVisibility declExpr
+  | opt_attributes opt_access declExpr
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()), rhs parseState 3))
         | _ -> ()
@@ -1352,27 +1198,27 @@ moduleDefnOrDirective:
 moduleDefn:
 
   /* 'let' definitions in non-#light*/
-  | opt_attributes opt_declVisibility defnBindings                   %prec decl_let 
+  | opt_attributes opt_access defnBindings                   %prec decl_let 
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         parseState.ResetSynArgNameGenerator()
         let (BindingSetPreAttrs(_, _, _, _, mWhole)) = $3 
         mkDefnBindings (mWhole, $3, $1, $2, mWhole)  }
 
   /* 'let' or 'do' definitions in #light */
-  | opt_attributes opt_declVisibility hardwhiteLetBindings          %prec decl_let 
+  | opt_attributes opt_access hardwhiteLetBindings          %prec decl_let 
       { let hwlb, m, _ = $3
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         parseState.ResetSynArgNameGenerator()
         mkDefnBindings (m, hwlb, $1, $2, m)  }
 
   /* 'do' definitions in non-#light*/
-  | opt_attributes opt_declVisibility doBinding %prec decl_let 
+  | opt_attributes opt_access doBinding %prec decl_let 
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let mWhole = rhs parseState 3 
         mkDefnBindings (mWhole, $3, $1, $2, mWhole) }
   
   /* 'type' definitions */
-  | opt_attributes opt_declVisibility typeKeyword tyconDefn tyconDefnList
+  | opt_attributes opt_access typeKeyword tyconDefn tyconDefnList
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
         let (SynTypeDefn(SynComponentInfo(cas, a, cs, b, _xmlDoc, d, d2, d3), e, f, g, h, trivia)) = $4
@@ -1385,7 +1231,7 @@ moduleDefn:
         [ SynModuleDecl.Types(types, (rhs parseState 3, types) ||> unionRangeWithListBy (fun t -> t.Range) ) ] }
 
   /* 'exception' definitions */
-  | opt_attributes opt_declVisibility exconDefn
+  | opt_attributes opt_access exconDefn
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let (SynExceptionDefn(SynExceptionDefnRepr(cas, a, b, c, d, d2), withKeyword, e, f)) = $3
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
@@ -1395,7 +1241,7 @@ moduleDefn:
         [ SynModuleDecl.Exception(synExnDefn, mWhole) ] }
 
   /* 'module' definitions */
-  | opt_attributes opt_declVisibility moduleIntro EQUALS namedModuleDefnBlock
+  | opt_attributes opt_access moduleIntro EQUALS namedModuleDefnBlock
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let attribs, (mModule, isRec, path, vis, attribs2) = $1, $3
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
@@ -1561,18 +1407,23 @@ attributeListElements:
 attribute:
   /* A custom attribute */
   | path opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
-     { let arg = match $3 with None -> mkSynUnit $1.Range | Some e -> e 
-       ({ TypeName=$1; ArgExpr=arg; Target=None; AppliesToGetterAndSetter=false; Range=$1.Range } : SynAttribute) }
+     { let arg = match $3 with None -> mkSynUnit $1.Range | Some e -> e
+       let m = unionRanges  $1.Range arg.Range
+       ({ TypeName=$1; ArgExpr=arg; Target=None; AppliesToGetterAndSetter=false; Range=m } : SynAttribute) }
 
   /* A custom attribute with an attribute target */
   | attributeTarget path opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
-     { let arg = match $4 with None -> mkSynUnit $2.Range | Some e -> e 
-       ({ TypeName=$2; ArgExpr=arg; Target=$1; AppliesToGetterAndSetter=false; Range=$2.Range } : SynAttribute) }
+     { let arg = match $4 with None -> mkSynUnit $2.Range | Some e -> e
+       let startRange = match $1 with Some (ident:Ident) -> ident.idRange | None -> $2.Range
+       let m = unionRanges startRange arg.Range
+       ({ TypeName=$2; ArgExpr=arg; Target=$1; AppliesToGetterAndSetter=false; Range=m } : SynAttribute) }
 
   /* A custom attribute with an attribute target */
   | attributeTarget OBLOCKBEGIN path oblockend opt_HIGH_PRECEDENCE_APP opt_atomicExprAfterType 
      { let arg = match $6 with None -> mkSynUnit $3.Range | Some e -> e 
-       ({ TypeName=$3; ArgExpr=arg; Target=$1; AppliesToGetterAndSetter=false; Range=$3.Range } : SynAttribute) }
+       let startRange = match $1 with Some ident -> ident.idRange | None -> $3.Range
+       let m = unionRanges startRange arg.Range
+       ({ TypeName=$3; ArgExpr=arg; Target=$1; AppliesToGetterAndSetter=false; Range=m } : SynAttribute) }
 
 
 /* The target of a custom attribute */
@@ -1595,16 +1446,16 @@ memberFlags:
   | STATIC MEMBER 
       { let mStatic = rhs parseState 1
         let mMember = rhs parseState 2
-        StaticMemberFlags(StaticMemberSynMemberFlagsTrivia mStatic mMember) }  
+        StaticMemberFlags, (SynLeadingKeyword.StaticMember(mStatic, mMember)) }  
   | MEMBER
       { let mMember = rhs parseState 1
-        NonVirtualMemberFlags(MemberSynMemberFlagsTrivia mMember) }
+        NonVirtualMemberFlags, (SynLeadingKeyword.Member mMember) }
   | OVERRIDE
       { let mOverride = rhs parseState 1
-        OverrideMemberFlags(OverrideSynMemberFlagsTrivia mOverride) }
+        OverrideMemberFlags, (SynLeadingKeyword.Override mOverride) }
   | DEFAULT
       { let mDefault = rhs parseState 1
-        OverrideMemberFlags(DefaultSynMemberFlagsTrivia mDefault) }
+        OverrideMemberFlags, (SynLeadingKeyword.Default mDefault) }
 
 /* The name of a type in a signature or implementation, possibly with type parameters and constraints */
 typeNameInfo: 
@@ -1660,7 +1511,7 @@ tyconDefn:
        let m = (rhs parseState 1, classDefns) ||> unionRangeWithListBy (fun mem -> mem.Range)
        SynTypeDefn($1, SynTypeDefnRepr.ObjectModel(SynTypeDefnKind.Augmentation mWithKwd, [], m), classDefns, None, m, SynTypeDefnTrivia.Zero) }
 
-  | typeNameInfo opt_attributes opt_declVisibility opt_HIGH_PRECEDENCE_APP  simplePatterns optAsSpec EQUALS tyconDefnRhsBlock
+  | typeNameInfo opt_attributes opt_access opt_HIGH_PRECEDENCE_APP  simplePatterns optAsSpec EQUALS tyconDefnRhsBlock
      { let vis, spats, az = $3, $5, $6
        let nameRange = rhs parseState 1
        let (tcDefRepr, mWith, members) = $8 nameRange
@@ -1741,7 +1592,7 @@ tyconDefnRhs:
        let ty, arity = $3
        (fun nameRange augmentation -> 
            let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero) 
-           let flags = AbstractMemberFlags true SynMemberFlagsTrivia.Zero SynMemberKind.Member
+           let flags = AbstractMemberFlags true SynMemberKind.Member
            let invoke = SynMemberDefn.AbstractSlot(valSig, flags, m) 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            SynTypeDefnRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), []) }
@@ -1859,12 +1710,13 @@ memberCore:
        let optReturnType = $3
        let mEquals = rhs parseState 4
        let bindingPat, mBindLhs = $2 
-       (fun vis memFlagsBuilder attrs rangeStart ->
+       (fun vis flagsBuilderAndLeadingKeyword attrs rangeStart ->
             let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, rangeStart)
-            let memberFlags = Some (memFlagsBuilder SynMemberKind.Member)
+            let memFlagsBuilder, leadingKeyword = flagsBuilderAndLeadingKeyword 
+            let memberFlags = memFlagsBuilder SynMemberKind.Member
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
-            let trivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = Some mEquals }
-            let binding = mkSynBinding (xmlDoc, bindingPat) (vis, $1, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, $5, mRhs, [], attrs, memberFlags, trivia)
+            let trivia: SynBindingTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = Some mEquals }
+            let binding = mkSynBinding (xmlDoc, bindingPat) (vis, $1, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, optReturnType, $5, mRhs, [], attrs, Some memberFlags, trivia)
             let memberRange = unionRanges rangeStart mRhs |> unionRangeWithXmlDoc xmlDoc
             [ SynMemberDefn.Member (binding, memberRange) ]) }
 
@@ -1874,17 +1726,26 @@ memberCore:
        let mWhole = (rhs parseState 2, classDefnMemberGetSetElements) ||> unionRangeWithListBy (fun (_, _, _, _, _, _, m2) -> m2) 
        let propertyNameBindingPat, _ = $2 
        let optPropertyType = $3
-       mkSynMemberDefnGetSet parseState $1 mWith classDefnMemberGetSetElements mAnd mWhole propertyNameBindingPat optPropertyType }
+
+       mkSynMemberDefnGetSet
+           parseState 
+           $1 
+           mWith 
+           classDefnMemberGetSetElements 
+           mAnd 
+           mWhole 
+           propertyNameBindingPat 
+           optPropertyType }
 
 abstractMemberFlags: 
   | ABSTRACT
       { let mAbstract = rhs parseState 1
-        AbstractMemberFlags true (AbstractSynMemberFlagsTrivia mAbstract) }
+        AbstractMemberFlags true, SynLeadingKeyword.Abstract mAbstract }
 
   | ABSTRACT MEMBER
       { let mAbstract = rhs parseState 1
         let mMember = rhs parseState 2
-        AbstractMemberFlags true (AbstractMemberSynMemberFlagsTrivia mAbstract mMember) }
+        AbstractMemberFlags true, SynLeadingKeyword.AbstractMember(mAbstract, mMember) }
 
   | STATIC ABSTRACT
       { let mWhole = rhs2 parseState 1 2
@@ -1893,7 +1754,7 @@ abstractMemberFlags:
             warning(Error(FSComp.SR.tcUsingInterfacesWithStaticAbstractMethods(), mWhole))
         let mStatic = rhs parseState 1
         let mAbstract = rhs parseState 2
-        AbstractMemberFlags false (StaticAbstractSynMemberFlagsTrivia mStatic mAbstract) }
+        AbstractMemberFlags false, SynLeadingKeyword.StaticAbstract(mStatic, mAbstract) }
 
   | STATIC ABSTRACT MEMBER
       { let mWhole = rhs2 parseState 1 2
@@ -1903,26 +1764,26 @@ abstractMemberFlags:
         let mStatic = rhs parseState 1
         let mAbstract = rhs parseState 2
         let mMember = rhs parseState 3
-        AbstractMemberFlags false (StaticAbstractMemberSynMemberFlagsTrivia mStatic mAbstract mMember) }
+        AbstractMemberFlags false, SynLeadingKeyword.StaticAbstractMember(mStatic, mAbstract, mMember) }
 
 /* A member definition */
 classDefnMember:
-  | opt_attributes opt_declVisibility classDefnBindings
+  | opt_attributes opt_access classDefnBindings
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        [mkClassMemberLocalBindings(false, None, $1, $2, $3)] }
        
-  | opt_attributes opt_declVisibility STATIC classDefnBindings  
+  | opt_attributes opt_access STATIC classDefnBindings  
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        [mkClassMemberLocalBindings(true, Some (rhs parseState 3), $1, $2, $4)] }
               
-  | opt_attributes opt_declVisibility memberFlags memberCore opt_ODECLEND
+  | opt_attributes opt_access memberFlags memberCore opt_ODECLEND
      { let rangeStart = rhs parseState 1
        if Option.isSome $2 then
            errorR (Error (FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier (), rhs parseState 2))
        let flags = $3
        $4 $2 flags $1 rangeStart }
        
-  | opt_attributes opt_declVisibility interfaceMember appType opt_interfaceImplDefn  
+  | opt_attributes opt_access interfaceMember appType opt_interfaceImplDefn  
      {  if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesAreNotPermittedOnInterfaceImplementations(), rhs parseState 1))
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsInterfacesHaveSameVisibilityAsEnclosingType(), rhs parseState 3))
         let mWithKwd, members, mWhole =
@@ -1931,7 +1792,7 @@ classDefnMember:
             | Some (mWithKwd, members, m) -> Some mWithKwd, Some members, unionRanges (rhs2 parseState 1 4) m
         [ SynMemberDefn.Interface ($4, mWithKwd, members, mWhole) ] }
         
-  | opt_attributes opt_declVisibility abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet  opt_ODECLEND
+  | opt_attributes opt_access abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet  opt_ODECLEND
      { let ty, arity = $8
        let isInline, doc, id, explicitValTyparDecls = $4, grabXmlDoc(parseState, $1, 1), $5, $6
        let mWith, getSetRangeOpt, getSet = $9
@@ -1943,47 +1804,51 @@ classDefnMember:
            | Some m2 -> unionRanges m m2
            |> unionRangeWithXmlDoc doc
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
-       let trivia = { ValKeyword = None; WithKeyword = mWith; EqualsRange = None }
+       let mkFlags, leadingKeyword = $3
+       let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = None }
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWhole, trivia)
-       [ SynMemberDefn.AbstractSlot(valSpfn, $3 (getSetAdjuster arity), mWhole) ] }
        
-  | opt_attributes opt_declVisibility inheritsDefn
+       [ SynMemberDefn.AbstractSlot(valSpfn, mkFlags (getSetAdjuster arity), mWhole) ] }
+       
+  | opt_attributes opt_access inheritsDefn
      {  if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalOnInherit(), rhs parseState 1))
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityIllegalOnInherit(), rhs parseState 1))
         [ $3 ] }
 
-  | opt_attributes opt_declVisibility valDefnDecl opt_ODECLEND
+  | opt_attributes opt_access valDefnDecl opt_ODECLEND
      {  if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         let rangeStart = rhs parseState 1
-        $3 rangeStart $1 false }
+        $3 rangeStart $1 None }
         
-  | opt_attributes opt_declVisibility STATIC valDefnDecl opt_ODECLEND
+  | opt_attributes opt_access STATIC valDefnDecl opt_ODECLEND
      {  if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
+        let mStatic = rhs parseState 3
         let rangeStart = rhs parseState 1
-        $4 rangeStart $1 true  }
+        $4 rangeStart $1 (Some mStatic)  }
 
-  | opt_attributes opt_declVisibility memberFlags autoPropsDefnDecl opt_ODECLEND
+  | opt_attributes opt_access memberFlags autoPropsDefnDecl opt_ODECLEND
      { let rangeStart = rhs parseState 1 
        if Option.isSome $2 then
            errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        let flags = $3
        $4 $1 flags rangeStart }
 
-  | opt_attributes opt_declVisibility NEW  atomicPattern optAsSpec EQUALS typedSequentialExprBlock opt_ODECLEND
+  | opt_attributes opt_access NEW  atomicPattern optAsSpec EQUALS typedSequentialExprBlock opt_ODECLEND
      {  let mWholeBindLhs = rhs2 parseState 1 (if Option.isSome $5 then 5 else 4)
+        let mNew = rhs parseState 3
         let xmlDoc = grabXmlDoc(parseState, $1, 1)
         let m = unionRanges mWholeBindLhs $7.Range |> unionRangeWithXmlDoc xmlDoc
         let mEquals = rhs parseState 6
         let expr = $7
-        let valSynData = SynValData (Some (CtorMemberFlags SynMemberFlagsTrivia.Zero), SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), $5) 
+        let valSynData = SynValData (Some CtorMemberFlags, SynValInfo([SynInfo.InferSynArgInfoFromPat $4], SynInfo.unnamedRetVal), $5) 
         let vis = $2 
         let declPat = SynPat.LongIdent (SynLongIdent([mkSynId (rhs parseState 3) "new"], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [$4], vis, rhs parseState 3)
         // Check that 'SynPatForConstructorDecl' matches this correctly
         assert (match declPat with SynPatForConstructorDecl _ -> true | _ -> false)
-        let synBindingTrivia: SynBindingTrivia = { LetKeyword = None; EqualsRange = Some mEquals }
+        let synBindingTrivia: SynBindingTrivia = { LeadingKeyword = SynLeadingKeyword.New mNew; EqualsRange = Some mEquals }
         [ SynMemberDefn.Member(SynBinding (None, SynBindingKind.Normal, false, false, $1, xmlDoc, valSynData, declPat, None, expr, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, synBindingTrivia), m) ] }
         
-  | opt_attributes opt_declVisibility STATIC typeKeyword tyconDefn 
+  | opt_attributes opt_access STATIC typeKeyword tyconDefn 
      {  if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
         [ SynMemberDefn.NestedType($5, None, rhs2 parseState 1 5) ] }
 
@@ -1991,29 +1856,39 @@ classDefnMember:
 /* A 'val' definition in an object type definition */
 valDefnDecl:
   | VAL opt_mutable opt_access ident COLON  typ 
-     {  let mRhs = rhs2 parseState 4 6
+     {  let mVal = rhs parseState 1
+        let mRhs = rhs2 parseState 4 6
         let mValDecl = rhs2 parseState 1 6
-        (fun rangeStart attribs isStatic ->
+        (fun rangeStart attribs mStaticOpt ->
+            let isStatic = Option.isSome mStaticOpt
             let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
             let mValDecl = unionRanges rangeStart mValDecl |> unionRangeWithXmlDoc xmlDoc
-            let fld = SynField(attribs, isStatic, Some $4, $6, $2, xmlDoc, $3, mRhs)
+            let leadingKeyword = 
+                match mStaticOpt with
+                | None -> SynLeadingKeyword.Val mVal
+                | Some mStatic -> SynLeadingKeyword.StaticVal(mStatic, mVal)
+            let fld = SynField(attribs, isStatic, Some $4, $6, $2, xmlDoc, $3, mRhs, { LeadingKeyword = Some leadingKeyword })
             [ SynMemberDefn.ValField(fld, mValDecl) ]) }
 
 
 /* An auto-property definition in an object type definition */
 autoPropsDefnDecl:
   | VAL opt_mutable opt_access ident opt_typ EQUALS typedSequentialExprBlock classMemberSpfnGetSet
-     { let mWith, mGetSetOpt, getSet = $8
+     { let mVal = rhs parseState 1
+       let mWith, mGetSetOpt, getSet = $8
        let mEquals = rhs parseState 6
        if $2 then
            errorR (Error (FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 3))
        (fun attribs flags rangeStart ->
            let xmlDoc = grabXmlDocAtRangeStart(parseState, attribs, rangeStart)
            let memberRange = unionRanges rangeStart $7.Range |> unionRangeWithXmlDoc xmlDoc
+           let flags, leadingKeyword = flags
+           let leadingKeyword = appendValToLeadingKeyword mVal leadingKeyword
            let memberFlags = flags SynMemberKind.Member
            let memberFlagsForSet = flags SynMemberKind.PropertySet
            let isStatic = not memberFlags.IsInstance
-           [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, memberFlags, memberFlagsForSet, xmlDoc, $3, mEquals, $7, mWith, mGetSetOpt, memberRange) ]) }
+           let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = Some mEquals; GetSetKeyword = mGetSetOpt }
+           [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, memberFlags, memberFlagsForSet, xmlDoc, $3, $7, memberRange, trivia) ]) }
 
 /* An optional type on an auto-property definition */
 opt_typ:
@@ -2071,14 +1946,6 @@ access:
      { let m = rhs parseState 1
        SynAccess.Internal m }
 
-/* only valid on 'NEW' */
-opt_declVisibility:
-  | access
-     { Some($1) } 
-
-  | /* EMPTY */
-     { None }
-  
 
 opt_interfaceImplDefn:
   | WITH objectImplementationBlock declEnd
@@ -2191,31 +2058,31 @@ staticMemberOrMemberOrOverride:
   | STATIC MEMBER
       { let mStatic = rhs parseState 1
         let mMember = rhs parseState 2
-        ImplementStaticMemberFlags(StaticMemberSynMemberFlagsTrivia mStatic mMember) }  
+        ImplementStaticMemberFlags, (SynLeadingKeyword.StaticMember(mStatic, mMember)) }  
   | MEMBER 
       { let mMember = rhs parseState 1
-        OverrideMemberFlags(MemberSynMemberFlagsTrivia mMember) }
+        OverrideMemberFlags, (SynLeadingKeyword.Member mMember) }
   | OVERRIDE 
       { let mOverride = rhs parseState 1
-        OverrideMemberFlags(OverrideSynMemberFlagsTrivia mOverride) }
+        OverrideMemberFlags, (SynLeadingKeyword.Override mOverride) }
 
 
 /* The core of the right-hand-side of a simple type definition */
 tyconDefnOrSpfnSimpleRepr: 
 
   /* type MyAlias = SomeTypeProvider<@"foo">    is a common error, special-case it */
-  | opt_attributes opt_declVisibility path LQUOTE STRING recover     
+  | opt_attributes opt_access path LQUOTE STRING recover     
      { errorR(Error(FSComp.SR.parsUnexpectedQuotationOperatorInTypeAliasDidYouMeanVerbatimString(), rhs parseState 4)) 
        SynTypeDefnSimpleRepr.TypeAbbrev (ParserDetail.ErrorRecovery, SynType.LongIdent($3), unionRanges (rhs parseState 1) $3.Range)  }
 
   /* A type abbreviation */
-  | opt_attributes opt_declVisibility typ
+  | opt_attributes opt_access typ
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(), rhs parseState 1))
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsTypeAbbreviationsCannotHaveVisibilityDeclarations(), rhs parseState 2))
        SynTypeDefnSimpleRepr.TypeAbbrev (ParserDetail.Ok, $3, unionRanges (rhs parseState 1) $3.Range) }
 
   /* A union type definition */
-  | opt_attributes opt_declVisibility unionTypeRepr
+  | opt_attributes opt_access unionTypeRepr
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(), rhs parseState 1))
        let rangesOf3 = $3 |> List.map (function Choice1Of2 ec -> ec.Range | Choice2Of2 uc -> uc.Range)
        let mWhole = (rhs2 parseState 1 2, rangesOf3) ||> List.fold unionRanges 
@@ -2233,12 +2100,12 @@ tyconDefnOrSpfnSimpleRepr:
                             mWhole) }
 
   /* A record type definition */
-  | opt_attributes opt_declVisibility braceFieldDeclList
+  | opt_attributes opt_access braceFieldDeclList
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(), rhs parseState 1))
        SynTypeDefnSimpleRepr.Record ($2, $3, lhs parseState) }
 
   /* An inline-assembly type definition, for FSharp.Core library only */
-  | opt_attributes opt_declVisibility LPAREN HASH string HASH rparen
+  | opt_attributes opt_access LPAREN HASH string HASH rparen
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(), rhs parseState 1))
        let mLhs = lhs parseState
        if parseState.LexBuffer.ReportLibraryOnlyFeatures then libraryOnlyError mLhs
@@ -2391,10 +2258,12 @@ typeConstraint:
 
   | typar COLON LPAREN classMemberSpfn rparen 
      { let tp = $1
-       SynTypeConstraint.WhereTyparSupportsMember([ SynType.Var(tp, tp.Range) ], $4, lhs parseState) }
+       SynTypeConstraint.WhereTyparSupportsMember(SynType.Var(tp, tp.Range), $4, lhs parseState) }
 
   | LPAREN typeAlts rparen COLON LPAREN classMemberSpfn rparen 
-     { SynTypeConstraint.WhereTyparSupportsMember(List.rev($2), $6, lhs parseState) }
+     { let mParen = rhs2 parseState 1 3
+       let t = SynType.Paren($2, mParen)
+       SynTypeConstraint.WhereTyparSupportsMember(t, $6, lhs parseState) }
 
   | typar COLON DELEGATE typeArgsNoHpaDeprecated
      { let _ltm, _gtm, args, _commas, mWhole = $4
@@ -2419,10 +2288,12 @@ typeConstraint:
 
 typeAlts:
   | typeAlts OR appType
-     { $3 :: $1 }
+     { let mOr = rhs parseState 2
+       let m = unionRanges $1.Range $3.Range
+       SynType.Or($1, $3, m, { OrKeyword = mOr }) }
 
   | appType
-     { [$1] }	
+     { $1 }
 
 /* The core of a union type definition */
 unionTypeRepr:
@@ -2576,18 +2447,18 @@ recdFieldDeclList:
 recdFieldDecl: 
   | opt_attributes fieldDecl
      { let mWhole = rhs2 parseState 1 2
-       let fld = $2 $1 false mWhole
-       let (SynField (a, b, c, d, e, xmlDoc, vis, mWhole)) = fld
+       let fld = $2 $1 false mWhole None
+       let (SynField (a, b, c, d, e, xmlDoc, vis, mWhole, trivia)) = fld
        if Option.isSome vis then errorR (Error (FSComp.SR.parsRecordFieldsCannotHaveVisibilityDeclarations (), rhs parseState 2))
        let mWhole = unionRangeWithXmlDoc xmlDoc mWhole
-       SynField (a, b, c, d, e, xmlDoc, None, mWhole) }
+       SynField (a, b, c, d, e, xmlDoc, None, mWhole, trivia) }
 
 /* Part of a field or val declaration in a record type or object type */
 fieldDecl: 
   | opt_mutable opt_access ident COLON  typ 
-     { fun attrs stat mWhole ->
+     { fun attrs stat mWhole leadingKeyword ->
            let xmlDoc = grabXmlDocAtRangeStart(parseState, attrs, mWhole)
-           SynField(attrs, stat, Some $3, $5, $1, xmlDoc, $2, mWhole) }
+           SynField(attrs, stat, Some $3, $5, $1, xmlDoc, $2, mWhole, { LeadingKeyword = leadingKeyword }) }
 
 /* An exception definition */
 exconDefn: 
@@ -2626,7 +2497,13 @@ defnBindings:
   | LET opt_rec localBindings 
       { let mLetKwd = rhs parseState 1 
         let isUse = $1
-        let isRec = $2 
+        let isRec = $2
+        let leadingKeyword =
+            if isRec then
+                SynLeadingKeyword.LetRec(mLetKwd, rhs parseState 2)
+            else
+                SynLeadingKeyword.Let(mLetKwd)
+
         let localBindingsLastRangeOpt, localBindingsBuilder = $3
         
         // Calculate the precise range of the binding set, up to the end of the last r.h.s. expression
@@ -2640,7 +2517,7 @@ defnBindings:
             (fun attrs vis ->
                 let xmlDoc = grabXmlDoc(parseState, attrs, 1)
                 // apply the builder
-                let binds = localBindingsBuilder xmlDoc attrs vis mLetKwd
+                let binds = localBindingsBuilder xmlDoc attrs vis leadingKeyword
                 if not isRec && not (isNilOrSingleton binds) then 
                       reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
                 [], binds),
@@ -2658,7 +2535,7 @@ doBinding:
         let mWhole = unionRanges mDoKwd $2.Range
         // any attributes prior to the 'let' are left free, e.g. become top-level attributes 
         // associated with the module, 'main' function or assembly depending on their target 
-        BindingSetPreAttrs(mDoKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, $2, mWhole)]), mWhole) }
+        BindingSetPreAttrs(mDoKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, mDoKwd, $2, mWhole)]), mWhole) }
 
 
 /* A 'let ....' binding in the #light syntax */
@@ -2667,6 +2544,16 @@ hardwhiteLetBindings:
       { let mLetKwd = rhs parseState 1 
         let isUse = $1
         let isRec = $2
+        let leadingKeyword =
+            if not isUse && isRec then
+                SynLeadingKeyword.LetRec(mLetKwd, rhs parseState 2)
+            elif isUse && not isRec then
+                SynLeadingKeyword.Use mLetKwd
+            elif isUse && isRec then
+                SynLeadingKeyword.UseRec(mLetKwd, rhs parseState 2)
+            else
+                SynLeadingKeyword.Let(mLetKwd)
+
         let report, mIn = $4
         report (if isUse then "use" else "let") mLetKwd  // report unterminated error 
         
@@ -2682,7 +2569,7 @@ hardwhiteLetBindings:
         BindingSetPreAttrs(mLetKwd, isRec, isUse,
           (fun attrs vis ->
             let xmlDoc = grabXmlDoc(parseState, attrs, 1)
-            let binds = localBindingsBuilder xmlDoc attrs vis mLetKwd
+            let binds = localBindingsBuilder xmlDoc attrs vis leadingKeyword
             if not isRec && not (isNilOrSingleton binds) then
                 reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
             [], binds),
@@ -2694,12 +2581,12 @@ hardwhiteLetBindings:
 /* A 'do ...' statement */
 hardwhiteDoBinding: 
   | ODO typedSequentialExprBlock hardwhiteDefnBindingsTerminator          
-      { let mLetKwd = rhs parseState 1 
-        let bindingSetRange = unionRanges mLetKwd $2.Range 
+      { let mDoKwd = rhs parseState 1 
+        let bindingSetRange = unionRanges mDoKwd $2.Range 
         let seqPt = DebugPointAtBinding.NoneAtDo 
         // any attributes prior to the 'let' are left free, e.g. become top-level attributes 
         // associated with the module, 'main' function or assembly depending on their target 
-        BindingSetPreAttrs(mLetKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, $2, bindingSetRange)]), bindingSetRange), $2 }
+        BindingSetPreAttrs(mDoKwd, false, false, (fun attrs vis -> attrs, [mkSynDoBinding (vis, mDoKwd, $2, bindingSetRange)]), bindingSetRange), $2 }
 
 
 /* The bindings in a class type definition */
@@ -2738,7 +2625,8 @@ hardwhiteDefnBindingsTerminator:
 /* An 'extern' DllImport function definition in C-style syntax */
 cPrototype: 
   | EXTERN cRetType opt_access ident opt_HIGH_PRECEDENCE_APP LPAREN externArgs rparen 
-      { let rty, vis, nm, args  = $2, $3, $4, $7
+      { let mExtern = rhs parseState 1 
+        let rty, vis, nm, args  = $2, $3, $4, $7
         let nmm = rhs parseState 3 
         let argsm = rhs parseState 6 
         let mBindLhs = lhs parseState
@@ -2755,10 +2643,11 @@ cPrototype:
             let bindingPat = SynPat.LongIdent (SynLongIdent([nm], [], [None]), None, Some noInferredTypars, SynArgPats.Pats [SynPat.Tuple(false, args, argsm)], vis, nmm)
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let xmlDoc = grabXmlDoc(parseState, attrs, 1)
+            let trivia = { LeadingKeyword = SynLeadingKeyword.Extern mExtern; EqualsRange = None }
             let binding =
                 mkSynBinding 
                     (xmlDoc, bindingPat) 
-                    (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None, SynBindingTrivia.Zero)
+                    (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some (None, rty), rhsExpr, mRhs, [], attrs, None, trivia)
             [], [binding]) }
 
 /* A list of arguments in an 'extern' DllImport function definition */
@@ -2832,19 +2721,19 @@ localBindings:
                match moreLocalBindingsLastRange with 
                | None -> localBindingRange 
                | Some m -> m
-           Some lastRange, (fun xmlDoc attrs vis mLetKwd -> attrLocalBindingBuilder xmlDoc attrs vis mLetKwd true ::  moreBindings)
+           Some lastRange, (fun xmlDoc attrs vis leadingKeyword -> attrLocalBindingBuilder xmlDoc attrs vis leadingKeyword true ::  moreBindings)
         | None -> 
-           moreLocalBindingsLastRange, (fun _xmlDoc _attrs _vis _letm -> moreBindings) }
+           moreLocalBindingsLastRange, (fun _xmlDoc _attrs _vis _leadingKeyword -> moreBindings) }
 
 
 moreLocalBindings: 
   | AND attr_localBinding moreLocalBindings 
-      { let mLetKwd = rhs parseState 1
+      { let leadingKeyword = SynLeadingKeyword.And(rhs parseState 1)
         (match $2 with 
          | Some (localBindingRange, attrLocalBindingBuilder) ->
             let xmlDoc = grabXmlDoc(parseState, [], 1)
             let xmlDoc = if xmlDoc.IsEmpty then grabXmlDoc(parseState, [], 2) else xmlDoc
-            (attrLocalBindingBuilder xmlDoc [] None mLetKwd false, localBindingRange) :: $3
+            (attrLocalBindingBuilder xmlDoc [] None leadingKeyword false, localBindingRange) :: $3
          | None -> $3) }
 
   | %prec prec_no_more_attr_bindings 
@@ -2856,7 +2745,7 @@ attr_localBinding:
   | opt_attributes localBinding 
       { let attrs2 = $1
         let localBindingRange, localBindingBuilder = $2
-        let attrLocalBindingBuilder = (fun xmlDoc attrs vis mLetKwd _ -> localBindingBuilder xmlDoc (attrs@attrs2) vis mLetKwd)
+        let attrLocalBindingBuilder = (fun xmlDoc attrs vis leadingKeyword _ -> localBindingBuilder xmlDoc (attrs@attrs2) vis leadingKeyword)
         Some(localBindingRange, attrLocalBindingBuilder) }
 
   | error 
@@ -2873,11 +2762,11 @@ localBinding:
         let bindingPat, mBindLhs = $3 
         let localBindingRange = unionRanges (rhs2 parseState 1 5) mRhs
         let localBindingBuilder = 
-          (fun xmlDoc attrs vis mLetKwd ->
-            let mWhole = (unionRanges mLetKwd mRhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
+          (fun xmlDoc attrs vis (leadingKeyword: SynLeadingKeyword) ->
+            let mWhole = (unionRanges leadingKeyword.Range mRhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
             let spBind = if IsDebugPointBinding bindingPat expr then DebugPointAtBinding.Yes mWhole else DebugPointAtBinding.NoneAtLet
             let mWholeBindLhs = (mBindLhs, attrs) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
-            let trivia: SynBindingTrivia = { LetKeyword = Some mLetKwd; EqualsRange = Some mEquals }
+            let trivia: SynBindingTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = Some mEquals }
             mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mWholeBindLhs, spBind, optReturnType, expr, mRhs, opts, attrs, None, trivia))
         localBindingRange, localBindingBuilder }
 
@@ -2887,12 +2776,12 @@ localBinding:
         let optReturnType = $4 
         let bindingPat, mBindLhs = $3
         let localBindingBuilder = 
-          (fun xmlDoc attrs vis mLetKwd ->
+          (fun xmlDoc attrs vis leadingKeyword ->
             let mEquals = rhs parseState 5
             let zeroWidthAtEnd = mEquals.EndRange
             let rhsExpr = arbExpr("localBinding1", zeroWidthAtEnd)
             let spBind = if IsDebugPointBinding bindingPat rhsExpr then DebugPointAtBinding.Yes mWhole else DebugPointAtBinding.NoneAtLet
-            let trivia: SynBindingTrivia = { LetKeyword = Some mLetKwd; EqualsRange = Some mEquals }
+            let trivia: SynBindingTrivia = { LeadingKeyword = leadingKeyword; EqualsRange = Some mEquals }
             mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mBindLhs, spBind, optReturnType, rhsExpr, mRhs, [], attrs, None, trivia))
         mWhole, localBindingBuilder }
 
@@ -2903,9 +2792,9 @@ localBinding:
         let mRhs = mWhole.EndRange  // zero-width range at end of last good token
         let bindingPat, mBindLhs = $3 
         let localBindingBuilder = 
-          (fun xmlDoc attrs vis mLetKwd ->
-            let spBind = DebugPointAtBinding.Yes (unionRanges mLetKwd mRhs)
-            let trivia = { LetKeyword = Some mLetKwd; EqualsRange = None }
+          (fun xmlDoc attrs vis (leadingKeyword: SynLeadingKeyword) ->
+            let spBind = DebugPointAtBinding.Yes (unionRanges leadingKeyword.Range mRhs)
+            let trivia = { LeadingKeyword = leadingKeyword; EqualsRange = None }
             let rhsExpr = arbExpr("localBinding2", mRhs)
             mkSynBinding (xmlDoc, bindingPat) (vis, $1, $2, mBindLhs, spBind, optReturnType, rhsExpr, mRhs, [], attrs, None, trivia))
         mWhole, localBindingBuilder }
@@ -3124,7 +3013,8 @@ headBindingPattern:
         SynPat.Or($1, $3, rhs2 parseState 1 3, { BarRange = mBar }) }
 
   | headBindingPattern COLON_COLON  headBindingPattern 
-      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [ Some (IdentTrivia.OriginalNotation "::") ]), None, None, SynArgPats.Pats [SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3)], None, lhs parseState) }
+      { let mColonColon = rhs parseState 2
+        SynPat.ListCons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
 
   | tuplePatternElements %prec pat_tuple
       { let pats = normalizeTuplePat $1
@@ -3237,7 +3127,10 @@ constrPattern:
 
 atomicPatsOrNamePatPairs:
   | LPAREN namePatPairs rparen
-      { SynArgPats.NamePatPairs $2, snd $2 }
+      { let mParen = rhs2 parseState 1 3
+        let pats, m = $2
+        let trivia = { ParenRange = mParen } 
+        SynArgPats.NamePatPairs(pats, m, trivia), snd $2 }
 
   | atomicPatterns
       { let mParsed = rhs parseState 1
@@ -3395,7 +3288,8 @@ parenPattern:
         SynPat.Attrib($2, $1, mLhs) } 
 
   | parenPattern COLON_COLON  parenPattern 
-      { SynPat.LongIdent (SynLongIdent(mkSynCaseName (rhs parseState 2) opNameCons, [], [ Some (IdentTrivia.OriginalNotation "::") ]), None, None, SynArgPats.Pats [ SynPat.Tuple (false, [$1;$3], rhs2 parseState 1 3) ], None, lhs parseState) }
+      { let mColonColon = rhs parseState 2
+        SynPat.ListCons($1, $3, rhs2 parseState 1 3, { ColonColonRange = mColonColon }) }
 
   | constrPattern { $1 }
 
@@ -4643,17 +4537,20 @@ parenExprBody:
 
 typars:
   | typar 
-      { [SynType.Var($1, rhs parseState 1)] }
+      { SynType.Var($1, rhs parseState 1) }
 
-  | LPAREN typarAlts rparen 
-      { List.rev $2 }
+  | LPAREN typarAlts rparen
+      { let m = rhs2 parseState 1 3
+        SynType.Paren($2, m) }
 
 typarAlts:
   | typarAlts OR appType
-      {$3 :: $1}
+      { let mOr = rhs parseState 2
+        let m = unionRanges $1.Range $3.Range
+        SynType.Or($1, $3, m, { OrKeyword = mOr }) }
 
   | typar
-      { [SynType.Var($1, rhs parseState 1)] }
+      { SynType.Var($1, rhs parseState 1) }
 
 braceExpr:
   | LBRACE braceExprBody rbrace 
@@ -4944,12 +4841,12 @@ objExprBindings:
   | WITH localBindings 
       { let mWithKwd = (rhs parseState 1)
         let _localBindingsLastRange, localBindingsBuilder = $2 
-        mWithKwd, (localBindingsBuilder PreXmlDoc.Empty [] None mWithKwd), [] }
+        mWithKwd, (localBindingsBuilder PreXmlDoc.Empty [] None SynLeadingKeyword.Synthetic), [] }
 
   | OWITH localBindings OEND
       { let mWithKwd = (rhs parseState 1)
         let _localBindingsLastRange, localBindingsBuilder = $2 
-        mWithKwd, (localBindingsBuilder PreXmlDoc.Empty [] None mWithKwd), [] }
+        mWithKwd, (localBindingsBuilder PreXmlDoc.Empty [] None SynLeadingKeyword.Synthetic), [] }
 
   | WITH objectImplementationBlock opt_declEnd
       { let mWithKwd = rhs parseState 1
@@ -5098,9 +4995,10 @@ opt_topReturnTypeWithTypeConstraints:
      { None } 
 
   | COLON topTypeWithTypeConstraints 
-     { let ty, arity = $2 
+     { let mColon = rhs parseState 1
+       let ty, arity = $2 
        let arity = (match arity with SynValInfo([], rmdata)-> rmdata | _ -> SynInfo.unnamedRetVal)
-       Some (SynReturnInfo((ty, arity), rhs parseState 2)) }
+       Some (Some mColon, SynReturnInfo((ty, arity), rhs parseState 2)) }
 
 topType: 
   | topTupleType RARROW topType 
@@ -5261,14 +5159,98 @@ arrayTypeSuffix:
   | LBRACK RBRACK 
       { 1 }
 
-  | LBRACK COMMA RBRACK 
+  | LBRACK COMMA RBRACK
       { 2 }
 
-  | LBRACK COMMA COMMA RBRACK 
+  | LBRACK COMMA COMMA RBRACK
       { 3 }
 
-  | LBRACK COMMA COMMA COMMA RBRACK 
+  | LBRACK COMMA COMMA COMMA RBRACK
       { 4 }
+
+  | LBRACK COMMA COMMA COMMA COMMA RBRACK
+      { 5 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 6 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 7 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 8 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 9 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 10 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 11 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 12 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 13 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 14 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 15 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 16 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 17 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 18 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 19 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 20 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 21 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 22 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 23 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 24 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 25 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 26 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 27 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 28 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 29 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 30 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 31 }
+
+  | LBRACK COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA COMMA RBRACK
+      { 32 }
 
 appTypePrefixArguments:
   | typeArgActual COMMA typeArgActual typeArgListElements 
@@ -5319,7 +5301,7 @@ atomTypeOrAnonRecdType:
      { let flds, isStruct = $1
        let flds2 = 
            flds |> List.choose (function 
-             | (SynField([], false, Some id, ty, false, _xmldoc, None, _m)) -> Some (id, ty) 
+             | (SynField([], false, Some id, ty, false, _xmldoc, None, _m, _trivia)) -> Some (id, ty) 
              | _ -> reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsInvalidAnonRecdType()); None)
        SynType.AnonRecd (isStruct, flds2, rhs parseState 1) }  
 

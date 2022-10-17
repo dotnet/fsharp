@@ -120,19 +120,16 @@
   <data name="Always_place_opens_at_top_level" xml:space="preserve">
     <value>Always place open statements at the top level</value>
   </data>
-  <data name="CodeLens" xml:space="preserve">
-    <value>CodeLens</value>
+  <data name="Lens" xml:space="preserve">
+    <value>Lens</value>
   </data>
-  <data name="CodeLens_Replace_LineLens" xml:space="preserve">
-    <value>Show annotations to the right instead of above the line</value>
+  <data name="Lens_Switch" xml:space="preserve">
+    <value>Enable Lens (Experimental)</value>
   </data>
-  <data name="CodeLens_Switch" xml:space="preserve">
-    <value>Enable CodeLens (Experimental)</value>
-  </data>
-  <data name="CodeLens_Prefix" xml:space="preserve">
+  <data name="Lens_Prefix" xml:space="preserve">
     <value>Annotation prefix</value>
   </data>
-  <data name="CodeLens_UseColors" xml:space="preserve">
+  <data name="Lens_UseColors" xml:space="preserve">
     <value>Use colors in annotations</value>
   </data>
   <data name="Code_Fixes" xml:space="preserve">
@@ -164,9 +161,6 @@
   </data>
   <data name="Enable_in_memory_cross_project_references" xml:space="preserve">
     <value>_Enable in-memory cross project references</value>
-  </data>
-  <data name="Project_check_cache_size" xml:space="preserve">
-    <value>Number of projects whose data is cached in memory</value>
   </data>
   <data name="Show_navigation_links_as" xml:space="preserve">
     <value>S_how navigation links as</value>
@@ -210,9 +204,6 @@
   <data name="Tooltip_in_memory_cross_project_references" xml:space="preserve">
     <value>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</value>
   </data>
-  <data name="Tooltip_project_check_cache_size" xml:space="preserve">
-    <value>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</value>
-  </data>
   <data name="Enter_key_always" xml:space="preserve">
     <value>Always add new line on enter</value>
   </data>
@@ -236,5 +227,14 @@
   </data>
   <data name="Diagnostics" xml:space="preserve">
     <value>Diagnostics</value>
+  </data>
+  <data name="Parallelization" xml:space="preserve">
+    <value>Parallelization (requires restart)</value>
+  </data>
+  <data name="Enable_Parallel_Checking_With_Signature_Files" xml:space="preserve">
+    <value>Enable parallel type checking with signature files</value>
+  </data>
+  <data name="Enable_Parallel_Reference_Resolution" xml:space="preserve">
+    <value>Enable parallel reference resolution</value>
   </data>
 </root>

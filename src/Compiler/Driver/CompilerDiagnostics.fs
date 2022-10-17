@@ -240,6 +240,7 @@ type Exception with
         // 24 cannot be reused
         | PatternMatchCompilation.MatchIncomplete _ -> 25
         | PatternMatchCompilation.RuleNeverMatched _ -> 26
+
         | ValNotMutable _ -> 27
         | ValNotLocal _ -> 28
         | MissingFields _ -> 29
@@ -1089,7 +1090,7 @@ type Exception with
                 | Parser.TOKEN_BAR_RBRACK -> SR.GetString("Parser.TOKEN.BAR.RBRACK")
                 | Parser.TOKEN_BAR_RBRACE -> SR.GetString("Parser.TOKEN.BAR.RBRACE")
                 | Parser.TOKEN_GREATER_RBRACK -> SR.GetString("Parser.TOKEN.GREATER.RBRACK")
-                | Parser.TOKEN_RQUOTE_DOT _
+                | Parser.TOKEN_RQUOTE_DOT
                 | Parser.TOKEN_RQUOTE -> SR.GetString("Parser.TOKEN.RQUOTE")
                 | Parser.TOKEN_RBRACK -> SR.GetString("Parser.TOKEN.RBRACK")
                 | Parser.TOKEN_RBRACE
@@ -1116,8 +1117,8 @@ type Exception with
                 | Parser.TOKEN_OTHEN -> SR.GetString("Parser.TOKEN.OTHEN")
                 | Parser.TOKEN_ELSE
                 | Parser.TOKEN_OELSE -> SR.GetString("Parser.TOKEN.OELSE")
-                | Parser.TOKEN_LET _
-                | Parser.TOKEN_OLET _ -> SR.GetString("Parser.TOKEN.OLET")
+                | Parser.TOKEN_LET
+                | Parser.TOKEN_OLET -> SR.GetString("Parser.TOKEN.OLET")
                 | Parser.TOKEN_OBINDER
                 | Parser.TOKEN_BINDER -> SR.GetString("Parser.TOKEN.BINDER")
                 | Parser.TOKEN_OAND_BANG
