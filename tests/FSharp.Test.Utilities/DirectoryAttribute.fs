@@ -28,7 +28,7 @@ type DirectoryAttribute(dir: string) =
         result
 
     let dirInfo = normalizePathSeparator (Path.GetFullPath(dir))
-    let outputDirectory name =
+    let outputDirectory methodName extraDirectory =
         // If the executing assembly has 'artifacts\bin' in it's path then we are operating normally in the CI or dev tests
         // Thus the output directory will be in a subdirectory below where we are executing.
         // The subdirectory will be relative to the source directory containing the test source file,
@@ -36,7 +36,7 @@ type DirectoryAttribute(dir: string) =
         //    When the source code is in:
         //        $(repo-root)\tests\FSharp.Compiler.ComponentTests\Conformance\PseudoCustomAttributes
         //    and the test is running in the FSharp.Compiler.ComponentTeststest library
-        //    The output directory will be: 
+        //    The output directory will be:
         //        artifacts\bin\FSharp.Compiler.ComponentTests\$(Flavour)\$(TargetFramework)\tests\FSharp.Compiler.ComponentTests\Conformance\PseudoCustomAttributes
         //
         //    If we can't find anything then we execute in the directory containing the source
@@ -51,7 +51,7 @@ type DirectoryAttribute(dir: string) =
                     let testPaths = dirInfo.Replace(testRoot, "").Split('/')
                     testPaths[0] <- "tests"
                     Path.Combine(testPaths)
-                let n = Path.Combine(testlibraryLocation, testSourceDirectory.Trim('/'), normalizeName name)
+                let n = Path.Combine(testlibraryLocation, testSourceDirectory.Trim('/'), normalizeName methodName, extraDirectory)
                 let outputDirectory = new DirectoryInfo(n)
                 Some outputDirectory
             else
@@ -61,41 +61,50 @@ type DirectoryAttribute(dir: string) =
         with | e ->
             raise (new InvalidOperationException($" '{e.Message}'.  Can't get the location of the executing assembly"))
 
+    let mutable baselineSuffix = ""
     let mutable includes = Array.empty<string>
 
     let readFileOrDefault (path: string) : string option =
         match FileSystem.FileExistsShim(path) with
-            | true -> Some <| File.ReadAllText path
-            | _ -> None
+        | true -> Some (File.ReadAllText path)
+        | _ -> None
 
-    let createCompilationUnit path fs name =
-        let outputDirectory =  outputDirectory name
+    let createCompilationUnit path (filename: string) methodName multipleFiles =
+        // if there are multiple files being processed, add extra directory for each test to avoid reference file conflicts
+        let extraDirectory =
+            if multipleFiles then
+                filename.Substring(0, filename.Length - 3) // remove .fs
+                |> normalizeName
+            else ""
+        let outputDirectory = outputDirectory methodName extraDirectory
         let outputDirectoryPath =
             match outputDirectory with
             | Some path -> path.FullName
             | None -> failwith "Can't set the output directory"
-        let sourceFilePath = normalizePathSeparator (path ++ fs)
+        let sourceFilePath = normalizePathSeparator (path ++ filename)
         let fsBslFilePath = sourceFilePath + ".err.bsl"
         let ilBslFilePath =
             let ilBslPaths = [|
 #if DEBUG
     #if NETCOREAPP
-                yield sourceFilePath + ".il.netcore.debug.bsl"
-                yield sourceFilePath + ".il.netcore.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.netcore.debug.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
     #else
-                yield sourceFilePath + ".il.net472.debug.bsl"
-                yield sourceFilePath + ".il.net472.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.net472.debug.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
     #endif
-                yield sourceFilePath + ".il.debug.bsl"
-                yield sourceFilePath + ".il.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.debug.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.bsl"
 #else
     #if NETCOREAPP
-                yield sourceFilePath + ".il.netcore.release.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.netcore.release.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.netcore.bsl"
     #else
-                yield sourceFilePath + ".il.net472.release.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.net472.release.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.net472.bsl"
     #endif
-                yield sourceFilePath + ".il.release.bsl"
-                yield sourceFilePath + ".il.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.release.bsl"
+                yield sourceFilePath + baselineSuffix + ".il.bsl"
 #endif
             |]
 
@@ -104,10 +113,10 @@ type DirectoryAttribute(dir: string) =
                 |> Array.tryPick(fun p -> if File.Exists(p) then Some p else None)
             match findBaseline with
             | Some s -> s
-            | None -> sourceFilePath + ".il.bsl"
+            | None -> sourceFilePath + baselineSuffix + ".il.bsl"
 
-        let fsOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ fs, ".err"))
-        let ilOutFilePath = normalizePathSeparator ( Path.ChangeExtension(outputDirectoryPath ++ fs, ".il"))
+        let fsOutFilePath = normalizePathSeparator (Path.ChangeExtension(outputDirectoryPath ++ filename, ".err"))
+        let ilOutFilePath = normalizePathSeparator ( Path.ChangeExtension(outputDirectoryPath ++ filename, ".il"))
         let fsBslSource = readFileOrDefault fsBslFilePath
         let ilBslSource = readFileOrDefault ilBslFilePath
 
@@ -123,11 +132,12 @@ type DirectoryAttribute(dir: string) =
                     }
             Options             = []
             OutputType          = Library
-            Name                = Some fs
+            Name                = Some filename
             IgnoreWarnings      = false
             References          = []
             OutputDirectory     = outputDirectory } |> FS
 
+    member _.BaselineSuffix with get() = baselineSuffix and set v = baselineSuffix <- v
     member _.Includes with get() = includes and set v = includes <- v
 
     override _.GetData(method: MethodInfo) =
@@ -150,6 +160,8 @@ type DirectoryAttribute(dir: string) =
             if not <| FileSystem.FileExistsShim(f) then
                 failwithf "Requested file \"%s\" not found.\nAll files: %A.\nIncludes:%A." f allFiles includes
 
+        let multipleFiles = fsFiles |> Array.length > 1
+
         fsFiles
-        |> Array.map (fun fs -> createCompilationUnit dirInfo fs method.Name)
+        |> Array.map (fun fs -> createCompilationUnit dirInfo fs method.Name multipleFiles)
         |> Seq.map (fun c -> [| c |])

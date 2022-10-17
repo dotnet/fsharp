@@ -33,7 +33,7 @@ type internal FSharpCompletionProvider
     inherit FSharpCompletionProviderBase()
 
     // Save the backing data in a cache, we need to save for at least the length of the completion session
-    // See https://github.com/Microsoft/visualfsharp/issues/4714
+    // See https://github.com/dotnet/fsharp/issues/4714
     static let mutable declarationItems: DeclarationListItem[] = [||]
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
@@ -128,7 +128,7 @@ type internal FSharpCompletionProvider
                         if n <> 0 then n else
                             n <- (not x.IsOwnMember).CompareTo(not y.IsOwnMember)
                             if n <> 0 then n else
-                                n <- String.Compare(x.Name, y.Name, StringComparison.OrdinalIgnoreCase)
+                                n <- String.Compare(x.NameInList, y.NameInList, StringComparison.OrdinalIgnoreCase)
                                 if n <> 0 then n else
                                     x.MinorPriority.CompareTo(y.MinorPriority))
 
@@ -142,7 +142,7 @@ type internal FSharpCompletionProvider
                     | _ -> null // Icky, but this is how roslyn handles it
                     
                 let filterText =
-                    match declarationItem.NamespaceToOpen, declarationItem.Name.Split '.' with
+                    match declarationItem.NamespaceToOpen, declarationItem.NameInList.Split '.' with
                     // There is no namespace to open and the item name does not contain dots, so we don't need to pass special FilterText to Roslyn.
                     | None, [|_|] -> null
                     // Either we have a namespace to open ("DateTime (open System)") or item name contains dots ("Array.map"), or both.
@@ -151,7 +151,7 @@ type internal FSharpCompletionProvider
 
                 let completionItem = 
                     FSharpCommonCompletionItem.Create(
-                        declarationItem.Name,
+                        declarationItem.NameInList,
                         null,
                         rules = noCommitOnSpaceRules,
                         glyph = Nullable glyph,
@@ -166,7 +166,7 @@ type internal FSharpCompletionProvider
                     | _ -> completionItem
                 
                 let completionItem =
-                    if declarationItem.Name <> declarationItem.NameInCode then
+                    if declarationItem.NameInList <> declarationItem.NameInCode then
                         completionItem.AddProperty(NameInCodePropName, declarationItem.NameInCode)
                     else completionItem
 

@@ -1,8 +1,11 @@
 # The F# compiler, F# core library, and F# editor tools
+[![Build Status](https://dev.azure.com/dnceng-public/public/_apis/build/status/dotnet/fsharp/fsharp-ci?branchName=main)](https://dev.azure.com/dnceng-public/public/_build/latest?definitionId=90&branchName=main)
+[![Help Wanted](https://img.shields.io/github/issues/dotnet/fsharp/help%20wanted?style=flat-square&color=%232EA043&label=help%20wanted)](https://github.com/dotnet/runtime/labels/help%20wanted)
+
 
 You're invited to contribute to future releases of the F# compiler, core library, and tools. Development of this repository can be done on any OS supported by [.NET](https://dotnet.microsoft.com/).
 
-You will also need the latest .NET 6 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/6.0).
+You will also need the latest .NET 7 SDK installed from [here](https://dotnet.microsoft.com/download/dotnet/7.0).
 
 ## Contributing
 
@@ -34,13 +37,17 @@ After it's finished, open `FSharp.sln` in your editor of choice.
 
 ### Documentation for contributors
 
+* The [Compiler Documentation](docs/index.md) is essential reading for any larger contributions to the F# compiler codebase and contains links to learning videos, architecture diagrams and other resources.
+
+* The same docs are also published as the [The F# Compiler Guide](https://fsharp.github.io/fsharp-compiler-docs/). It also contains the public searchable docs for FSharp.Compiler.Service component.
+
 * See [DEVGUIDE.md](DEVGUIDE.md) for more details on configurations for building the codebase. In practice, you only really need to run `build.cmd`/`build.sh`.
 
 * See [TESTGUIDE.md](TESTGUIDE.md) for information about the various test suites in this codebase and how to run them individually.
 
-* [The F# Documentation](https://docs.microsoft.com/en-us/dotnet/fsharp/) is the primary documentation for F#. The source for the content is [here](https://github.com/dotnet/docs/tree/main/docs/fsharp).
+### Documentation for F# community
 
-* [The F# Compiler Guide](https://fsharp.github.io/fsharp-compiler-docs/) is essential reading for any larger contributions to the F# compiler codebase and contains links to learning videos, architecture diagrams and other resources. It also contains the public searchable docs for FSharp.Compiler.Service (or equivalent of Roslyn). The source for the content is [in this repo under `docs/`](docs/) and the site is built automatically by [this small repo](https://github.com/fsharp/fsharp-compiler-docs).
+* [The F# Documentation](https://docs.microsoft.com/dotnet/fsharp/) is the primary documentation for F#. The source for the content is [here](https://github.com/dotnet/docs/tree/main/docs/fsharp).
 
 * [The F# Language Design Process](https://github.com/fsharp/fslang-design/) is the fundamental design process for the language, from [suggestions](https://github.com/fsharp/fslang-suggestions) to completed RFCs.  There are also [tooling RFCs](https://github.com/fsharp/fslang-design/tree/main/tooling) for some topics where cross-community co-operation and visibility is most useful.
 
@@ -49,12 +56,6 @@ After it's finished, open `FSharp.sln` in your editor of choice.
 ### No contribution is too small
 
 Even if you find a single-character typo, we're happy to take the change! Although the codebase can feel daunting for beginners, we and other contributors are happy to help you along.
-
-## Build Status
-
-| Branch | Status |
-|:------:|:------:|
-|main|[![Build Status](https://dev.azure.com/dnceng/public/_apis/build/status/dotnet/fsharp/fsharp-ci?branchName=main)](https://dev.azure.com/dnceng/public/_build/latest?definitionId=496&branchName=main)|
 
 ## Per-build NuGet packages
 

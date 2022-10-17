@@ -54,7 +54,7 @@ type UsingMSBuild() =
         AssertContains(trimnewlines tooltip, trimnewlines expected) 
         gpatcc.AssertExactly(0,0)
 
-    member public this.CheckTooltip(code : string,marker,atStart, f, ?addtlRefAssy : list<string>) =
+    member public this.CheckTooltip(code : string,marker,atStart, f, ?addtlRefAssy : string list) =
         let (_, _, file) = this.CreateSingleFileProject(code, ?references = addtlRefAssy)
 
         let gpatcc = GlobalParseAndTypeCheckCounter.StartNew(this.VS)
@@ -67,14 +67,14 @@ type UsingMSBuild() =
         f (tooltip, pos)
         gpatcc.AssertExactly(0,0)
                          
-    member public this.InfoInDeclarationTestQuickInfoImpl(code,marker,expected,atStart, ?addtlRefAssy : list<string>) =
+    member public this.InfoInDeclarationTestQuickInfoImpl(code,marker,expected,atStart, ?addtlRefAssy : string list) =
         let check ((tooltip, _), _) = AssertContains(tooltip, expected)
         this.CheckTooltip(code, marker, atStart, check, ?addtlRefAssy=addtlRefAssy )
 
-    member public this.AssertQuickInfoContainsAtEndOfMarker(code,marker,expected, ?addtlRefAssy : list<string>) =
+    member public this.AssertQuickInfoContainsAtEndOfMarker(code,marker,expected, ?addtlRefAssy : string list) =
         this.InfoInDeclarationTestQuickInfoImpl(code,marker,expected,false,?addtlRefAssy=addtlRefAssy)
 
-    member public this.AssertQuickInfoContainsAtStartOfMarker(code, marker, expected, ?addtlRefAssy : list<string>) =
+    member public this.AssertQuickInfoContainsAtStartOfMarker(code, marker, expected, ?addtlRefAssy : string list) =
         this.InfoInDeclarationTestQuickInfoImpl(code,marker,expected,true,?addtlRefAssy=addtlRefAssy)
         
     member public this.VerifyQuickInfoDoesNotContainAnyAtEndOfMarker (code : string) marker notexpected =
@@ -310,7 +310,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                             let y(*MInt[]*) : int []    = [| 1; 2; 3 |]
                             """
         this.AssertQuickInfoContainsAtStartOfMarker(fileContents, "x(*MIntArray1*)", "int array")
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "y(*MInt[]*)", "int[]")
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "y(*MInt[]*)", "int array")
         
     //Verify no quickinfo -- link name string have 
     [<Test>]
@@ -588,7 +588,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let t = new N.T.M(*Marker*)()"""
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
-         "N.T.M() : int[]", 
+         "N.T.M() : int array", 
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
@@ -601,7 +601,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let t = new N.T.M(*Marker*)()"""
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "M(*Marker*)",
-         "N.T.M() : int[]",
+         "N.T.M() : int array",
          addtlRefAssy = [PathRelativeToTestAssembly( @"XmlDocAttributeWithEmptyComment.dll")])
     
 
@@ -764,7 +764,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
             type A() = 
                 let fff n = n + 1                
             """
-        this.AssertQuickInfoContainsAtEndOfMarker(code, "let ff", "val fff: (int -> int)")
+        this.AssertQuickInfoContainsAtEndOfMarker(code, "let ff", "val fff: n: int -> int")
 
     // Regression for 2494
     [<Test>]
@@ -1684,7 +1684,7 @@ let f (tp:ITypeProvider(*$$$*)) = tp.Invalidate
 
     /// Complete a member completion and confirm that its data tip contains the fragments
     /// in rhsContainsOrder
-    member public this.AssertMemberDataTipContainsInOrder(code : list<string>,marker,completionName,rhsContainsOrder) =
+    member public this.AssertMemberDataTipContainsInOrder(code : string list,marker,completionName,rhsContainsOrder) =
         let code = code |> Seq.collect (fun s -> s.Split [|'\r'; '\n'|]) |> List.ofSeq
         let (_, project, file) = this.CreateSingleFileProject(code, fileKind = SourceFileKind.FSX)
         TakeCoffeeBreak(this.VS) (* why needed? *)       
@@ -2070,7 +2070,7 @@ query."
              ["type Random =";
               "  new: unit -> unit + 1 overload"
               "  member Next: unit -> int + 2 overloads";  
-              "  member NextBytes: buffer: byte[] -> unit";
+              "  member NextBytes: buffer: byte array -> unit";
               "  member NextDouble: unit -> float"]
             )
 

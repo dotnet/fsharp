@@ -1,22 +1,5 @@
 ﻿
-// To run the tests in this file:
-//
-// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
-//
-// Technique 2:
-//
-//   Enable some tests in the #if EXE section at the end of the file,
-//   then compile this file as an EXE that has InternalsVisibleTo access into the
-//   appropriate DLLs.  This can be the quickest way to get turnaround on updating the tests
-//   and capturing large amounts of structured output.
-(*
-    cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\tests\service\EditorTests.fs
-    .\VisualFSharp.UnitTests.exe
-*)
-// Technique 3:
-//
-//    Use F# Interactive.  This only works for FSHarp.Compiler.Service.dll which has a public API
+// To run the tests in this file: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 
 #if INTERACTIVE
 #r "../../artifacts/bin/fcs/net461/FSharp.Compiler.Service.dll" // note, build FSharp.Compiler.Service.Tests.fsproj to generate this, this DLL has a public API so can be used from F# Interactive
@@ -101,14 +84,14 @@ let ``Intro test`` () =
         msg.Message.Contains("Missing qualification after '.'") |> shouldEqual true
 
     // Get tool tip at the specified location
-    let tip = typeCheckResults.GetToolTip(4, 7, inputLines.[1], ["foo"], identToken)
+    let tip = typeCheckResults.GetToolTip(4, 7, inputLines[1], ["foo"], identToken)
     // (sprintf "%A" tip).Replace("\n","") |> shouldEqual """ToolTipText [Single ("val foo: unit -> unitFull name: Test.foo",None)]"""
     // Get declarations (autocomplete) for a location
     let partialName = { QualifyingIdents = []; PartialIdent = "msg"; EndColumn = 22; LastDotPos = None }
-    let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines.[6], partialName, (fun _ -> []))
-    CollectionAssert.AreEquivalent(stringMethods,[ for item in decls.Items -> item.Name ])
+    let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines[6], partialName, (fun _ -> []))
+    CollectionAssert.AreEquivalent(stringMethods,[ for item in decls.Items -> item.NameInList ])
     // Get overloads of the String.Concat method
-    let methods = typeCheckResults.GetMethods(5, 27, inputLines.[4], Some ["String"; "Concat"])
+    let methods = typeCheckResults.GetMethods(5, 27, inputLines[4], Some ["String"; "Concat"])
 
     methods.MethodName  |> shouldEqual "Concat"
 
@@ -145,7 +128,7 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
     let inputLines = input.Split('\n')
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
-    let methodsSymbols = typeCheckResults.GetMethodsAsSymbols(5, 27, inputLines.[4], ["String"; "Concat"])
+    let methodsSymbols = typeCheckResults.GetMethodsAsSymbols(5, 27, inputLines[4], ["String"; "Concat"])
     match methodsSymbols with
     | Some methods ->
         let results =
@@ -156,8 +139,8 @@ let ``GetMethodsAsSymbols should return all overloads of a method as FSharpSymbo
             [("Concat", [("values", "Collections.Generic.IEnumerable<'T>")]);
              ("Concat", [("values", "Collections.Generic.IEnumerable<string>")]);
              ("Concat", [("arg0", "obj")]);
-             ("Concat", [("args", "obj[]")]);
-             ("Concat", [("values", "string[]")]);
+             ("Concat", [("args", "obj array")]);
+             ("Concat", [("values", "string array")]);
 #if NETCOREAPP
              ("Concat", [("str0", "ReadOnlySpan<char>");("str1", "ReadOnlySpan<char>")]);
 #endif
@@ -213,22 +196,22 @@ let ``Symbols many tests`` () =
     let partialAssemblySignature = typeCheckResults2.PartialAssemblySignature
 
     partialAssemblySignature.Entities.Count |> shouldEqual 1  // one entity
-    let moduleEntity = partialAssemblySignature.Entities.[0]
+    let moduleEntity = partialAssemblySignature.Entities[0]
 
     moduleEntity.DisplayName |> shouldEqual "Test"
 
-    let classEntity = moduleEntity.NestedEntities.[0]
+    let classEntity = moduleEntity.NestedEntities[0]
 
-    let fnVal = moduleEntity.MembersFunctionsAndValues.[0]
+    let fnVal = moduleEntity.MembersFunctionsAndValues[0]
 
     fnVal.Accessibility.IsPublic |> shouldEqual true
     fnVal.Attributes.Count |> shouldEqual 1
     fnVal.CurriedParameterGroups.Count |> shouldEqual 1
-    fnVal.CurriedParameterGroups.[0].Count |> shouldEqual 2
-    fnVal.CurriedParameterGroups.[0].[0].Name.IsSome |> shouldEqual true
-    fnVal.CurriedParameterGroups.[0].[1].Name.IsSome |> shouldEqual true
-    fnVal.CurriedParameterGroups.[0].[0].Name.Value |> shouldEqual "x"
-    fnVal.CurriedParameterGroups.[0].[1].Name.Value |> shouldEqual "y"
+    fnVal.CurriedParameterGroups[0].Count |> shouldEqual 2
+    fnVal.CurriedParameterGroups[0].[0].Name.IsSome |> shouldEqual true
+    fnVal.CurriedParameterGroups[0].[1].Name.IsSome |> shouldEqual true
+    fnVal.CurriedParameterGroups[0].[0].Name.Value |> shouldEqual "x"
+    fnVal.CurriedParameterGroups[0].[1].Name.Value |> shouldEqual "y"
     fnVal.DeclarationLocation.StartLine |> shouldEqual 3
     fnVal.DisplayName |> shouldEqual "foo"
     fnVal.DeclaringEntity.Value.DisplayName |> shouldEqual "Test"
@@ -249,8 +232,8 @@ let ``Symbols many tests`` () =
     fnVal.IsTypeFunction |> shouldEqual false
 
     fnVal.FullType.IsFunctionType |> shouldEqual true // int * int -> unit
-    fnVal.FullType.GenericArguments.[0].IsTupleType |> shouldEqual true // int * int
-    let argTy1 = fnVal.FullType.GenericArguments.[0].GenericArguments.[0]
+    fnVal.FullType.GenericArguments[0].IsTupleType |> shouldEqual true // int * int
+    let argTy1 = fnVal.FullType.GenericArguments[0].GenericArguments[0]
 
     argTy1.TypeDefinition.DisplayName |> shouldEqual "int" // int
 
@@ -296,8 +279,8 @@ let ``Expression typing test`` () =
     // gives the results for the string type.
     //
     for col in 42..43 do
-        let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 2, inputLines.[1], PartialLongName.Empty(col), (fun _ -> []))
-        let autoCompleteSet = set [ for item in decls.Items -> item.Name ]
+        let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 2, inputLines[1], PartialLongName.Empty(col), (fun _ -> []))
+        let autoCompleteSet = set [ for item in decls.Items -> item.NameInList ]
         autoCompleteSet |> shouldEqual (set stringMethods)
 
 // The underlying problem is that the parser error recovery doesn't include _any_ information for
@@ -317,9 +300,9 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(20), (fun _ -> []))
-    let item = decls.Items |> Array.tryFind (fun d -> d.Name = "abc")
-    decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines[3], PartialLongName.Empty(20), (fun _ -> []))
+    let item = decls.Items |> Array.tryFind (fun d -> d.NameInList = "abc")
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "abc") |> shouldEqual true
 
 [<Test>]
 let ``Find function from member 2`` () =
@@ -334,9 +317,9 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(21), (fun _ -> []))
-    let item = decls.Items |> Array.tryFind (fun d -> d.Name = "abc")
-    decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines[3], PartialLongName.Empty(21), (fun _ -> []))
+    let item = decls.Items |> Array.tryFind (fun d -> d.NameInList = "abc")
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "abc") |> shouldEqual true
 
 [<Test>]
 let ``Find function from var`` () =
@@ -351,8 +334,8 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), (fun _ -> []))
-    decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines[3], PartialLongName.Empty(14), (fun _ -> []))
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "abc") |> shouldEqual true
 
 
 [<Test>]
@@ -371,8 +354,8 @@ type B(bar) =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines.[6], PartialLongName.Empty(17), (fun _ -> []))
-    decls.Items |> Seq.exists (fun d -> d.Name = "bar") |> shouldEqual true
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines[6], PartialLongName.Empty(17), (fun _ -> []))
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "bar") |> shouldEqual true
 
 
 
@@ -394,8 +377,8 @@ type B(bar) =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 9, inputLines.[8], PartialLongName.Empty(7), (fun _ -> []))
-    decls.Items |> Seq.exists (fun d -> d.Name = "bar") |> shouldEqual true
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 9, inputLines[8], PartialLongName.Empty(7), (fun _ -> []))
+    decls.Items |> Seq.exists (fun d -> d.NameInList = "bar") |> shouldEqual true
 
 
 [<Test; Ignore("SKIPPED: see #139")>]
@@ -411,7 +394,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(20), (fun () -> []))
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines[3], PartialLongName.Empty(20), (fun () -> []))
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -428,7 +411,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(21), (fun () -> []))
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines[3], PartialLongName.Empty(21), (fun () -> []))
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -445,7 +428,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input)
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), (fun () -> []))
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines[3], PartialLongName.Empty(14), (fun () -> []))
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -711,6 +694,9 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
                              ("RightToLeft", Some (box 64))
                              ("ECMAScript", Some (box 256))
                              ("CultureInvariant", Some (box 512))
+#if NETCOREAPP
+                             ("NonBacktracking", Some 1024)
+#endif
                            ]
         |]
 
@@ -1165,12 +1151,12 @@ let getBreakpointLocations (input: string) (parseResult: FSharpParseFileResults)
         | Some r -> 
             let text = 
                 [ if r.StartLine = r.EndLine then
-                      lines.[r.StartLine-1].[r.StartColumn..r.EndColumn-1]
+                      lines[r.StartLine-1][r.StartColumn..r.EndColumn-1]
                   else
-                      lines.[r.StartLine-1].[r.StartColumn..]
+                      lines[r.StartLine-1][r.StartColumn..]
                       for l in r.StartLine..r.EndLine-2 do 
-                            lines.[l]
-                      lines.[r.EndLine-1].[..r.EndColumn-1] ]
+                            lines[l]
+                      lines[r.EndLine-1][..r.EndColumn-1] ]
                 |> String.concat "$"
             ((pos.Line, pos.Column), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn, text))
         | None -> 
@@ -1926,3 +1912,4 @@ do let x = 1 in ()
     | ToolTipText [ToolTipElement.Group [data]] ->
         data.MainDescription |> Array.map (fun text -> text.Text) |> String.concat "" |> shouldEqual "val x: int"
     | elements -> failwith $"Tooltip elements: {elements}"
+

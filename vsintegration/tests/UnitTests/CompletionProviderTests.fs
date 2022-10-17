@@ -1,25 +1,8 @@
 
-// To run the tests in this file:
-//
-// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
-//
-// Technique 2:
-//
-//   Enable some tests in the #if EXE section at the end of the file, 
-//   then compile this file as an EXE that has InternalsVisibleTo access into the
-//   appropriate DLLs.  This can be the quickest way to get turnaround on updating the tests
-//   and capturing large amounts of structured output.
-(*
-    cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Service.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\CompletionProviderTests.fs 
-    .\VisualFSharp.UnitTests.exe 
-*)
-// Technique 3: 
-// 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
+// To run the tests in this file: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.CompletionProviderTests
+module VisualFSharp.UnitTests.Editor.CompletionProviderTests
 
 open System
 open System.Linq
@@ -53,8 +36,9 @@ let formatCompletions(completions : string seq) =
     "\n\t" + String.Join("\n\t", completions)
 
 let VerifyCompletionListWithOptions(fileContents: string, marker: string, expected: string list, unexpected: string list, opts) =
+    let options = projectOptions opts
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
-    let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
+    let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = options)
     let results = 
         FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [])) 
         |> Async.RunSynchronously 
@@ -63,23 +47,23 @@ let VerifyCompletionListWithOptions(fileContents: string, marker: string, expect
 
     let expectedFound =
         expected
-        |> Seq.filter results.Contains
+        |> List.filter results.Contains
 
     let expectedNotFound =
         expected
-        |> Seq.filter (expectedFound.Contains >> not)
+        |> List.filter (expectedFound.Contains >> not)
 
     let unexpectedNotFound =
         unexpected
-        |> Seq.filter (results.Contains >> not)
+        |> List.filter (results.Contains >> not)
 
     let unexpectedFound =
         unexpected
-        |> Seq.filter (unexpectedNotFound.Contains >> not)
+        |> List.filter (unexpectedNotFound.Contains >> not)
 
     // If either of these are true, then the test fails.
-    let hasExpectedNotFound = not (Seq.isEmpty expectedNotFound)
-    let hasUnexpectedFound = not (Seq.isEmpty unexpectedFound)
+    let hasExpectedNotFound = not (List.isEmpty expectedNotFound)
+    let hasUnexpectedFound = not (List.isEmpty unexpectedFound)
 
     if hasExpectedNotFound || hasUnexpectedFound then
         let expectedNotFoundMsg = 
@@ -99,13 +83,15 @@ let VerifyCompletionListWithOptions(fileContents: string, marker: string, expect
         let msg = sprintf "%s%s%s" expectedNotFoundMsg unexpectedFoundMsg completionsMsg
 
         Assert.Fail(msg)
+
 let VerifyCompletionList(fileContents, marker, expected, unexpected) =
    VerifyCompletionListWithOptions(fileContents, marker, expected, unexpected, [| |])
 
 
-let VerifyCompletionListExactly(fileContents: string, marker: string, expected: string list) =
+let VerifyCompletionListExactlyWithOptions(fileContents: string, marker: string, expected: string list, opts) =
+    let options = projectOptions opts
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
-    let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
+    let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents, options = options)
     let actual = 
         FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [])) 
         |> Async.RunSynchronously 
@@ -121,6 +107,9 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
                             (String.Join("; ", expected |> List.map (sprintf "\"%s\""))) 
                             (String.Join("; ", actualNames |> List.map (sprintf "\"%s\"")))
                             (String.Join("\n", actual |> List.map (fun x -> sprintf "%s => %s" x.DisplayText x.SortText))))
+
+let VerifyCompletionListExactly(fileContents: string, marker: string, expected: string list) =
+    VerifyCompletionListExactlyWithOptions(fileContents, marker, expected, [| |])
 
 let VerifyNoCompletionList(fileContents: string, marker: string) =
     VerifyCompletionListExactly(fileContents, marker, [])
@@ -350,7 +339,7 @@ type T1 =
     member this.M2 = "literal"
 let x = $"1 not the same as {System.Int32.MaxValue} is it"
 """
-    VerifyCompletionListWithOptions(fileContents, "System.", ["Console"; "Array"; "String"], ["T1"; "M1"; "M2"], [| "/langversion:preview" |])
+    VerifyCompletionList(fileContents, "System.", ["Console"; "Array"; "String"], ["T1"; "M1"; "M2"])
 
 [<Test>]
 let ``Class instance members are ordered according to their kind and where they are defined (simple case, by a variable)``() =
@@ -457,7 +446,7 @@ let _ = new A(Setta)
     let notExpected = ["SettableProperty@"; "AnotherSettableProperty@"; "NonSettableProperty@"]
     VerifyCompletionList(fileContents, "(Setta", expected, notExpected)
 
-[<Test;Ignore("https://github.com/Microsoft/visualfsharp/issues/3954")>]
+[<Test;Ignore("https://github.com/dotnet/fsharp/issues/3954")>]
 let ``Constructing a new fully qualified class with object initializer syntax without ending paren``() =
     let fileContents = """
 module M =
@@ -648,6 +637,25 @@ let _ = fun (p:l) -> ()
     VerifyCompletionList(fileContents, "let _ = fun (p:l", ["LanguagePrimitives"; "List"], ["let"; "log"])
 
 [<Test>]
+let ``Completions in match clause type test contain modules and types but not keywords or functions``() =
+    let fileContents = """
+match box 5 with
+| :? l as x -> ()
+| _ -> ()
+"""
+    VerifyCompletionList(fileContents, ":? l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``Completions in catch clause type test contain modules and types but not keywords or functions``() =
+    let fileContents = """
+try
+    ()
+with :? l as x ->
+    ()
+"""
+    VerifyCompletionList(fileContents, ":? l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
 let ``Extensions.Bug5162``() =
     let fileContents = """
 module Extensions =
@@ -751,11 +759,25 @@ type A = { le: string }
     VerifyNoCompletionList(fileContents, "le")
 
 [<Test>]
-let ``Completion list on record field type at declaration site contains modules and types but not keywords or functions``() =
+let ``Completion list on record field type at declaration site contains modules, types and type parameters but not keywords or functions``() =
     let fileContents = """
-type A = { Field: l }
+type A<'lType> = { Field: l }
 """
     VerifyCompletionList(fileContents, "Field: l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+
+[<Test>]
+let ``No completion on record stub with no fields at declaration site``() =
+    let fileContents = """
+type A = {  }
+"""
+    VerifyNoCompletionList(fileContents, "{ ")
+
+[<Test>]
+let ``No completion on record outside of all fields at declaration site``() =
+    let fileContents = """
+type A = { Field: string; }
+"""
+    VerifyNoCompletionList(fileContents, "; ")
 
 [<Test>]
 let ``No completion on union case identifier at declaration site``() =
@@ -774,20 +796,28 @@ type A =
     VerifyNoCompletionList(fileContents, "str")
 
 [<Test>]
-let ``Completion list on union case type at declaration site contains modules and types but not keywords or functions``() =
+let ``Completion list on union case type at declaration site contains modules, types and type parameters but not keywords or functions``() =
     let fileContents = """
-type A =
+type A<'lType> =
     | Case of blah: int * str: l
 """
-    VerifyCompletionList(fileContents, "str: l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+    VerifyCompletionList(fileContents, "str: l", ["LanguagePrimitives"; "List"; "lType"], ["let"; "log"])
 
 [<Test>]
-let ``Completion list on union case type at declaration site contains modules and types but not keywords or functions2``() =
+let ``Completion list on union case type at declaration site contains modules, types and type parameters but not keywords or functions2``() =
     let fileContents = """
-type A =
+type A<'lType> =
     | Case of l
 """
-    VerifyCompletionList(fileContents, "of l", ["LanguagePrimitives"; "List"], ["let"; "log"])
+    VerifyCompletionList(fileContents, "of l", ["LanguagePrimitives"; "List"; "lType"], ["let"; "log"])
+
+[<Test>]
+let ``Completion list on union case type at declaration site contains type parameter``() =
+    let fileContents = """
+type A<'keyType> =
+    | Case of key
+"""
+    VerifyCompletionList(fileContents, "of key", ["keyType"], [])
 
 [<Test>]
 let ``Completion list on type alias contains modules and types but not keywords or functions``() =
@@ -804,6 +834,76 @@ type A =
 """
     VerifyNoCompletionList(fileContents, "| C")
 
-#if EXE
-ShouldDisplaySystemNamespace()
-#endif
+[<Test>]
+let ``Completion list in generic function body contains type parameter``() =
+    let fileContents = """
+let Null<'wrappedType> () =
+    Unchecked.defaultof<wrapp>
+"""
+    VerifyCompletionList(fileContents, "defaultof<wrapp", ["wrappedType"], [])
+
+[<Test>]
+let ``Completion list in generic method body contains type parameter``() =
+    let fileContents = """
+type A () =
+    member _.Null<'wrappedType> () = Unchecked.defaultof<wrapp>
+"""
+    VerifyCompletionList(fileContents, "defaultof<wrapp", ["wrappedType"], [])
+
+[<Test>]
+let ``Completion list in generic class method body contains type parameter``() =
+    let fileContents = """
+type A<'wrappedType> () =
+    member _.Null () = Unchecked.defaultof<wrapp>
+"""
+    VerifyCompletionList(fileContents, "defaultof<wrapp", ["wrappedType"], [])
+
+[<Test>]
+let ``Completion list in type application contains modules, types and type parameters but not keywords or functions``() =
+    let fileContents = """
+let emptyMap<'keyType, 'lValueType> () =
+    Map.empty<'keyType, l>
+"""
+    VerifyCompletionList(fileContents, ", l", ["LanguagePrimitives"; "List"; "lValueType"], ["let"; "log"])
+
+[<Test>]
+let ``Completion list for interface with static abstract method type invocation contains static property with residue``() =
+    let fileContents = """
+type IStaticProperty<'T when 'T :> IStaticProperty<'T>> =
+    static abstract StaticProperty: 'T
+
+let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
+    'T.StaticProperty
+"""
+    VerifyCompletionListWithOptions(fileContents, "'T.Stati", ["StaticProperty"], [], [| "/langversion:preview" |])
+
+[<Test>]
+let ``Completion list for interface with static abstract method type invocation contains static property after dot``() =
+    let fileContents = """
+type IStaticProperty<'T when 'T :> IStaticProperty<'T>> =
+    static abstract StaticProperty: 'T
+
+let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
+    'T.StaticProperty
+"""
+    VerifyCompletionListWithOptions(fileContents, "'T.", ["StaticProperty"], [], [| "/langversion:preview" |])
+
+
+[<Test>]
+let ``Completion list for SRTP invocation contains static property with residue``() =
+    let fileContents = """
+let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticProperty: 'T) >() =
+    'T.StaticProperty
+
+"""
+    VerifyCompletionListWithOptions(fileContents, "'T.Stati", ["StaticProperty"], [], [| "/langversion:preview" |])
+
+[<Test>]
+let ``Completion list for SRTP invocation contains static property after dot``() =
+    let fileContents = """
+let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticProperty: 'T) >() =
+    'T.StaticProperty
+
+"""
+    VerifyCompletionListWithOptions(fileContents, "'T.", ["StaticProperty"], [], [| "/langversion:preview" |])
+

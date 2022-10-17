@@ -94,7 +94,7 @@ type UsingMSBuild() as this =
                 (errorTexts.ToString())
 
     //Verify the warning list Count
-    member private this.VerifyWarningListCountAtOpenProject(fileContents : string, expectedNum : int, ?addtlRefAssy : list<string>) = 
+    member private this.VerifyWarningListCountAtOpenProject(fileContents : string, expectedNum : int, ?addtlRefAssy : string list) = 
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
@@ -102,7 +102,7 @@ type UsingMSBuild() as this =
         Assert.AreEqual(expectedNum,warnList.Length)
 
     //verify no the error list 
-    member private this.VerifyNoErrorListAtOpenProject(fileContents : string, ?addtlRefAssy : list<string>) = 
+    member private this.VerifyNoErrorListAtOpenProject(fileContents : string, ?addtlRefAssy : string list) = 
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
@@ -113,7 +113,7 @@ type UsingMSBuild() as this =
         Assert.IsTrue(errorList.IsEmpty)
     
     //Verify the error list containd the expected string
-    member private this.VerifyErrorListContainedExpectedString(fileContents : string, expectedStr : string, ?addtlRefAssy : list<string>) =
+    member private this.VerifyErrorListContainedExpectedString(fileContents : string, expectedStr : string, ?addtlRefAssy : string list) =
         let (solution, project, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         
         TakeCoffeeBreak(this.VS) // Wait for the background compiler to catch up.
@@ -169,7 +169,7 @@ let g (t : T) = t.Count()
                 "#r \"System2\""
             ]
         TakeCoffeeBreak(this.VS)
-        checkErrors 2
+        checkErrors 1
 
         ReplaceFileInMemory file <|
             [
@@ -297,8 +297,8 @@ let x =
 Known type of argument: 'a0 when 'a0: null
 
 Candidates:
- - System.Console.WriteLine(buffer: char[]) : unit
- - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj[]) : unit
+ - System.Console.WriteLine(buffer: char array) : unit
+ - System.Console.WriteLine(format: string, [<System.ParamArray>] arg: obj array) : unit
  - System.Console.WriteLine(value: obj) : unit
  - System.Console.WriteLine(value: string) : unit""" ]
         CheckErrorList content (assertExpectedErrorMessages expectedMessages)
@@ -395,9 +395,11 @@ type staticInInterface =
         end
     end"""
             
-        CheckErrorList fileContent <| function
-                | [err] -> Assert.IsTrue(err.Message.Contains("Unexpected keyword 'static' in member definition. Expected 'member', 'override' or other token"))
-                | x -> Assert.Fail(sprintf "Unexpected errors: %A" x)
+        CheckErrorList fileContent (function
+            | err1 :: _ ->
+                Assert.IsTrue(err1.Message.Contains("No abstract or interface member was found that corresponds to this override"))
+            | x ->
+                Assert.Fail(sprintf "Unexpected errors: %A" x))
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -571,7 +573,7 @@ but here has type
         Assert.IsTrue(errorList.IsEmpty)
 
     [<Test>]
-    [<Ignore("https://github.com/Microsoft/visualfsharp/issues/6166")>]
+    [<Ignore("https://github.com/dotnet/fsharp/issues/6166")>]
     member public this.``UnicodeCharacters``() = 
         use _guard = this.UsingNewVS()
         let solution = this.CreateSolution()

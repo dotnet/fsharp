@@ -16,6 +16,7 @@
     <RuntimeIdentifiers>win</RuntimeIdentifiers>
     <ImportVsSDK>true</ImportVsSDK>
     <CreateVsixContainer>false</CreateVsixContainer>
+    <GeneratePkgDefFile>false</GeneratePkgDefFile>
     <DeployExtension>false</DeployExtension>
     <UseCodebase>true</UseCodebase>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
@@ -23,6 +24,7 @@
     <IsShipping>true</IsShipping>
     <OldToolsVersion>2.0</OldToolsVersion>
     <ProjectGuid>{FCFB214C-462E-42B3-91CA-FC557EFEE74F}</ProjectGuid>
+    <GenerateResourceUsePreserializedResources>true</GenerateResourceUsePreserializedResources>
   </PropertyGroup>
   <ItemGroup>
     <Import Include="Microsoft.VisualBasic" />
@@ -52,7 +54,6 @@
     <PackageReference Include="Microsoft.VisualStudio.Shell.15.0" Version="$(MicrosoftVisualStudioShell150Version)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="$(MicrosoftVisualStudioThreadingVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" PrivateAssets="all" ExcludeAssets="runtime;contentFiles;build;analyzers;native" />
   </ItemGroup>
 
   <ItemGroup>
@@ -62,7 +63,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AssemblyInfo.vb" />
     <Compile Include="Common\ArgumentValidation.vb" />
     <Compile Include="Common\DTEUtils.vb" />
     <Compile Include="Common\ShellUtil.vb" />

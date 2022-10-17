@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <!-- Workaround to get rid of:
+        error NU1505: Duplicate 'PackageDownload' items found.
+        Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
+        The duplicate 'PackageDownload' items are:
+          Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2].
+    -->
+    <NoWarn>$(NoWarn);NU1505</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="SourceText.fs" />
+    <Compile Include="DecentlySizedStandAloneFileBenchmark.fs" />
+    <Compile Include="CompilerServiceBenchmarks.fs" />
+    <Compile Include="FileCascadeBenchmarks.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="$(BenchmarkDotNetVersion)" />
+    <!-- <PackageReference Include="Microsoft.CodeAnalysis.EditorFeatures.Text" Version="2.9.0" /> -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="..\BenchmarkComparison\HistoricalBenchmark.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
+    <ProjectReference Include="..\..\..\..\src\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+  </ItemGroup>
+
+</Project>

@@ -11,7 +11,7 @@ module ImplicitObjectConstructors =
     // This test was automatically generated (moved from FSharpQA suite - Conformance/ClassTypes/ImplicitObjectConstructors)
     //<Expects id="FS0044" span="(9,9-9,15)" status="warning">Message1</Expects>
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"WithAttribute.fs"|])>]
-    let ``ImplicitObjectConstructors - WithAttribute.fs - -a --test:ErrorRanges`` compilation =
+    let ``WithAttribute_fs`` compilation =
         compilation
         |> asFs
         |> withOptions ["-a"; "--test:ErrorRanges"]

@@ -680,3 +680,49 @@ type MapModule() =
         // empty
         let m = Map.ofArray [| |]
         Assert.AreEqual([], Map.values m |> Seq.toList)
+
+    [<Fact>]
+    member _.MinKeyValue() =
+        // value keys
+        let valueKeyMap = Map.ofSeq [(5,"e"); (2,"b"); (3,"c"); (4,"d"); ]
+        let resultValueMap = Map.minKeyValue valueKeyMap        
+        Assert.AreEqual(resultValueMap, (2, "b"))
+        
+        // reference keys
+        let refMap = Map.ofSeq [for c in ["."; ".."; "..."; "...."] do yield (c, c.Length) ]
+        let resultRefMap = Map.minKeyValue refMap        
+        Assert.AreEqual(resultRefMap, (".",1))
+        
+        // One-element Map
+        let oeleMap = Map.ofSeq [(1, "one")]
+        let resultOele = Map.minKeyValue oeleMap
+        Assert.AreEqual(resultOele, (1, "one"))
+        
+        // empty Map
+        let eptMap = Map.empty
+        CheckThrowsKeyNotFoundException (fun () -> Map.minKeyValue eptMap |> ignore)
+               
+        ()
+
+    [<Fact>]
+    member _.MaxKeyValue() =
+        // value keys
+        let valueKeyMap = Map.ofSeq [(2,"b"); (5,"e"); (3,"c"); (4,"d"); ]
+        let resultValueMap = Map.maxKeyValue valueKeyMap        
+        Assert.AreEqual(resultValueMap, (5, "e"))
+        
+        // reference keys
+        let refMap = Map.ofSeq [for c in ["."; ".."; "..."; "...."] do yield (c, c.Length) ]
+        let resultRefMap = Map.maxKeyValue refMap        
+        Assert.AreEqual(resultRefMap, ("....",4))
+        
+        // One-element Map
+        let oeleMap = Map.ofSeq [(1, "one")]
+        let resultOele = Map.maxKeyValue oeleMap
+        Assert.AreEqual(resultOele, (1, "one"))
+        
+        // empty Map
+        let eptMap = Map.empty
+        CheckThrowsKeyNotFoundException (fun () -> Map.maxKeyValue eptMap |> ignore)
+               
+        ()

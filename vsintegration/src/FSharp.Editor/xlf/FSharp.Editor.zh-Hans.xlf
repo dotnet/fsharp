@@ -27,6 +27,11 @@
         <target state="translated">添加类型注释</target>
         <note />
       </trans-unit>
+      <trans-unit id="ConvertCSharpUsingToFSharpOpen">
+        <source>Convert C# 'using' to F# 'open'</source>
+        <target state="new">Convert C# 'using' to F# 'open'</target>
+        <note />
+      </trans-unit>
       <trans-unit id="ConvertToAnonymousRecord">
         <source>Convert to Anonymous Record</source>
         <target state="translated">转换为匿名记录</target>
@@ -238,8 +243,8 @@
         <note />
       </trans-unit>
       <trans-unit id="6013">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
+        <source>Lens</source>
+        <target state="translated">Lens</target>
         <note />
       </trans-unit>
       <trans-unit id="6014">
@@ -260,6 +265,11 @@
       <trans-unit id="UseNameof">
         <source>Use 'nameof'</source>
         <target state="translated">使用 "nameof"</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="UseTripleQuotedInterpolation">
+        <source>Use triple quoted string interpolation.</source>
+        <target state="translated">使用三引号字符串内插。</target>
         <note />
       </trans-unit>
       <trans-unit id="UseUpcastKeyword">

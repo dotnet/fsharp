@@ -1,0 +1,307 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en" target-language="pl" original="../FSIstrings.resx">
+    <body>
+      <trans-unit id="fsiEntryPointWontBeInvoked">
+        <source>Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</source>
+        <target state="translated">Funkcje z elementem [&lt;EntryPoint&gt;] nie są wywoływane w interfejsie FSI. „{0}” nie został wywołany. Wykonaj polecenie „{1} &lt;args&gt;”, aby wywołać „{2}” z odpowiednią tablicą ciągów argumentów wiersza polecenia.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiInternalAccess">
+        <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
+        <target state="translated">Uzyskiwanie dostępu do typu wewnętrznego, metody lub pola „{0}“ z poprzedniej oceny w programie F# Interactive jest przestarzałe i może powodować kolejne błędy dostępu. Aby włączyć starszą generację pojedynczego zestawu dynamicznego, który może uzyskiwać dostęp wewnętrzny, użyj opcji „--multiemit-“.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiIntroPackageSourceUriInfo">
+        <source>Include package source uri when searching for packages</source>
+        <target state="translated">Uwzględnij identyfikator URI źródła pakietów podczas wyszukiwania pakietów</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiIntroTextHashclearInfo">
+        <source>Clear screen</source>
+        <target state="translated">Wyczyść ekran</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
+        <source>Emit multiple assemblies (off by default for .NET Framework)</source>
+        <target state="translated">Emituj wiele zestawów (domyślnie wyłączone dla programu .NET Framework)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiOperationCouldNotBeCompleted">
+        <source>Operation could not be completed due to earlier error</source>
+        <target state="translated">Nie udało się ukończyć operacji z powodu wcześniejszego błędu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiOperationFailed">
+        <source>Operation failed. The error text has been printed in the error stream. To return the corresponding FSharpDiagnostic use the EvalInteractionNonThrowing, EvalScriptNonThrowing or EvalExpressionNonThrowing</source>
+        <target state="translated">Operacja nie powiodła się. Tekst błędu został umieszczony w strumieniu błędów. Aby zwrócić odpowiedni element FSharpDiagnostic, użyj elementu EvalInteractionNonThrowing, eEvalScriptNonThrowing lub EvalExpressionNonThrowing</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiMultiAssemblyEmitOption">
+        <source>Emit multiple assemblies (on by default)</source>
+        <target state="translated">Emituj wiele zestawów (domyślnie włączone)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="stoppedDueToError">
+        <source>Stopped due to error\n</source>
+        <target state="translated">Zatrzymano ze względu na błąd\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiUsage">
+        <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
+        <target state="translated">Użycie: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiInputFiles">
+        <source>- INPUT FILES -</source>
+        <target state="translated">- PLIKI WEJŚCIOWE -</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiCodeGeneration">
+        <source>- CODE GENERATION -</source>
+        <target state="translated">- GENEROWANIE KODU -</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiErrorsAndWarnings">
+        <source>- ERRORS AND WARNINGS -</source>
+        <target state="translated">- BŁĘDY I OSTRZEŻENIA -</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiLanguage">
+        <source>- LANGUAGE -</source>
+        <target state="translated">- JĘZYK -</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiMiscellaneous">
+        <source>- MISCELLANEOUS -</source>
+        <target state="translated">- RÓŻNE -</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiAdvanced">
+        <source>- ADVANCED -</source>
+        <target state="translated">- ZAAWANSOWANE -</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiExceptionRaisedStartingServer">
+        <source>Exception raised when starting remoting server.\n{0}</source>
+        <target state="translated">Wystąpił wyjątek podczas uruchamiania serwera usług zdalnych.\n{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiUse">
+        <source>Use the given file on startup as initial input</source>
+        <target state="translated">Użyj danego pliku przy uruchamianiu jako początkowych danych wejściowych</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiLoad">
+        <source>#load the given file on startup</source>
+        <target state="translated">#load załaduj dany plik przy uruchamianiu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiRemaining">
+        <source>Treat remaining arguments as command line arguments, accessed using fsi.CommandLineArgs</source>
+        <target state="translated">Traktuj pozostałe argumenty jak argumenty wiersza polecenia, do których uzyskano dostęp przy użyciu elementu fsi.CommandLineArgs</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiHelp">
+        <source>Display this usage message (Short form: -?)</source>
+        <target state="translated">Wyświetl ten komunikat dotyczący składni (krótka wersja: -?)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiExec">
+        <source>Exit fsi after loading the files or running the .fsx script given on the command line</source>
+        <target state="translated">Po załadowaniu plików lub uruchomieniu skryptu .fsx podanego w wierszu polecenia zakończ działanie programu fsi</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiGui">
+        <source>Execute interactions on a Windows Forms event loop (on by default)</source>
+        <target state="translated">Wykonaj interakcje w pętli zdarzenia Windows Forms (domyślnie włączone)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiQuiet">
+        <source>Suppress fsi writing to stdout</source>
+        <target state="translated">Pomiń zapisywanie przez program fsi w stdout</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiReadline">
+        <source>Support TAB completion in console (on by default)</source>
+        <target state="translated">Obsługa uzupełniania po naciśnięciu klawisza TAB w konsoli (domyślnie włączona)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiEmitDebugInfoInQuotations">
+        <source>Emit debug information in quotations</source>
+        <target state="translated">Emituj informacje debugowania w cudzysłowach</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiBanner3">
+        <source>For help type #help;;</source>
+        <target state="translated">Aby uzyskać pomoc, wpisz #help;;</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiConsoleProblem">
+        <source>A problem occurred starting the F# Interactive process. This may be due to a known problem with background process console support for Unicode-enabled applications on some Windows systems. Try selecting Tools-&gt;Options-&gt;F# Interactive for Visual Studio and enter '--fsi-server-no-unicode'.</source>
+        <target state="translated">Wystąpił problem podczas uruchamiania procesu narzędzia F# Interactive. Może to być spowodowane znanym problemem z obsługą konsoli procesu w tle dla aplikacji obsługujących standard Unicode w niektórych systemach Windows. Spróbuj wybrać pozycje Narzędzia-&gt;Opcje-&gt;F# Interactive dla programu Visual Studio i wprowadź ciąg „--fsi-server-no-unicode”.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiInvalidAssembly">
+        <source>'{0}' is not a valid assembly name</source>
+        <target state="translated">Nazwa „{0}” nie jest prawidłową nazwą zestawu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiDirectoryDoesNotExist">
+        <source>Directory '{0}' doesn't exist</source>
+        <target state="translated">Katalog „{0}” nie istnieje</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiLineTooLong">
+        <source>Warning: line too long, ignoring some characters\n</source>
+        <target state="translated">Ostrzeżenie: wiersz jest zbyt długi, niektóre znaki zostaną zignorowane\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiTimeInfoMainString">
+        <source>Real: {0}, CPU: {1}, GC {2}</source>
+        <target state="translated">Czas rzeczywisty: {0}, czas procesora: {1}, operacje odzyskiwania pamięci: {2}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiTimeInfoGCGenerationLabelSomeShorthandForTheWordGeneration">
+        <source>gen</source>
+        <target state="translated">generacja</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiExceptionDuringPrettyPrinting">
+        <source>\n\nException raised during pretty printing.\nPlease report this so it can be fixed.\nTrace: {0}\n</source>
+        <target state="translated">\n\nWystąpił wyjątek podczas formatowania kodu.\nZgłoś go, aby można było rozwiązać ten problem.\nŚlad: {0}\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiIntroTextHeader1directives">
+        <source>  F# Interactive directives:</source>
+        <target state="translated">  Dyrektywy narzędzia F# Interactive:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiIntroTextHashrInfo">
+        <source>Reference (dynamically load) the given DLL</source>
+        <target state="translated">Przywołaj (załaduj dynamicznie) daną bibliotekę DLL</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiIntroTextHashIInfo">
+        <source>Add the given search path for referenced DLLs</source>
+        <target state="translated">Dodaj daną ścieżkę wyszukiwania dla przywoływanych bibliotek DLL</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiIntroTextHashloadInfo">
+        <source>Load the given file(s) as if compiled and referenced</source>
+        <target state="translated">Załaduj dane pliki tak, jakby były skompilowane i przywoływane</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiIntroTextHashtimeInfo">
+        <source>Toggle timing on/off</source>
+        <target state="translated">Włącz/wyłącz funkcję chronometrażu</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiIntroTextHashhelpInfo">
+        <source>Display help</source>
+        <target state="translated">Wyświetl pomoc</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiIntroTextHashquitInfo">
+        <source>Exit</source>
+        <target state="translated">Zakończ</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiIntroTextHeader2commandLine">
+        <source>  F# Interactive command line options:</source>
+        <target state="translated">  Opcje wiersza polecenia narzędzia F# Interactive:</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiIntroTextHeader3">
+        <source>      See '{0}' for options</source>
+        <target state="translated">      Aby uzyskać informacje o opcjach, zobacz „{0}”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiLoadingFilesPrefixText">
+        <source>Loading</source>
+        <target state="translated">Ładowanie</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiInterrupt">
+        <source>\n- Interrupt\n</source>
+        <target state="translated">\n- Przerwanie\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiExit">
+        <source>\n- Exit...\n</source>
+        <target state="translated">\n- Trwa kończenie działania...\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiAbortingMainThread">
+        <source>- Aborting main thread...</source>
+        <target state="translated">- Trwa przerywanie głównego wątku...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiCouldNotInstallCtrlCHandler">
+        <source>Failed to install ctrl-c handler - Ctrl-C handling will not be available. Error was:\n\t{0}</source>
+        <target state="translated">Nie powiodło się zainstalowanie procedury obsługi ctrl-c. Obsługa Ctrl-C będzie niedostępna. Błąd:\n\t{0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiDidAHashr">
+        <source>--&gt; Referenced '{0}'</source>
+        <target state="translated">--&gt; Przywołano element „{0}”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiDidAHashrWithLockWarning">
+        <source>--&gt; Referenced '{0}' (file may be locked by F# Interactive process)</source>
+        <target state="translated">--&gt; Przywołano element „{0}” (plik może być zablokowany przez proces narzędzia F# Interactive)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiDidAHashrWithStaleWarning">
+        <source>--&gt; Referenced '{0}' (an assembly with a different timestamp has already been referenced from this location, reset fsi to load the updated assembly)</source>
+        <target state="translated">--&gt; Przywołano element „{0}” (z tej lokalizacji przywołano już zestaw z inną sygnaturą czasową, zresetuj narzędzie fsi, aby załadować zaktualizowany zestaw)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiDidAHashI">
+        <source>--&gt; Added '{0}' to library include path</source>
+        <target state="translated">--&gt; Dodano element „{0}” do ścieżki dołączania biblioteki</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiTurnedTimingOn">
+        <source>--&gt; Timing now on</source>
+        <target state="translated">--&gt; Chronometraż jest teraz włączony</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiTurnedTimingOff">
+        <source>--&gt; Timing now off</source>
+        <target state="translated">--&gt; Chronometraż jest teraz wyłączony</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiUnexpectedThreadAbortException">
+        <source>- Unexpected ThreadAbortException (Ctrl-C) during event handling: Trying to restart...</source>
+        <target state="translated">- Nieoczekiwany element ThreadAbortException (Ctrl-C) podczas obsługi zdarzenia: trwa próba ponownego uruchomienia...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiFailedToResolveAssembly">
+        <source>Failed to resolve assembly '{0}'</source>
+        <target state="translated">Nie powiodło się rozpoznanie zestawu „{0}”</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiBindingSessionTo">
+        <source>Binding session to '{0}'...</source>
+        <target state="translated">Trwa tworzenie powiązania sesji z „{0}”...</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiProductName">
+        <source>Microsoft (R) F# Interactive version {0}</source>
+        <target state="translated">Microsoft (R) F# Interactive, wersja {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiProductNameCommunity">
+        <source>F# Interactive for F# {0}</source>
+        <target state="translated">F# Interactive dla języka F# {0}</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="shadowCopyReferences">
+        <source>Prevents references from being locked by the F# Interactive process</source>
+        <target state="translated">Uniemożliwia blokowanie odwołań przez proces narzędzia F# Interactive</target>
+        <note />
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

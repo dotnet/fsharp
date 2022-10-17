@@ -51,7 +51,7 @@ type CodeFixesOptions =
       SuggestNamesForErrors: bool }
     static member Default =
       { // We have this off by default, disable until we work out how to make this low priority 
-        // See https://github.com/Microsoft/visualfsharp/pull/3238#issue-237699595
+        // See https://github.com/dotnet/fsharp/pull/3238#issue-237699595
         SimplifyName = false 
         AlwaysPlaceOpensAtTopLevel = true
         UnusedOpens = true 
@@ -63,23 +63,23 @@ type LanguageServicePerformanceOptions =
     { EnableInMemoryCrossProjectReferences: bool
       AllowStaleCompletionResults: bool
       TimeUntilStaleCompletion: int
-      ProjectCheckCacheSize: int }
+      EnableParallelCheckingWithSignatureFiles: bool
+      EnableParallelReferenceResolution: bool }
     static member Default =
       { EnableInMemoryCrossProjectReferences = true
         AllowStaleCompletionResults = true
         TimeUntilStaleCompletion = 2000 // In ms, so this is 2 seconds
-        ProjectCheckCacheSize = 200 }
+        EnableParallelCheckingWithSignatureFiles = false
+        EnableParallelReferenceResolution = false }
 
 [<CLIMutable>]
-type CodeLensOptions =
+type LensOptions =
   { Enabled : bool
-    ReplaceWithLineLens: bool
     UseColors: bool
     Prefix : string }
     static member Default =
       { Enabled = false
         UseColors = false
-        ReplaceWithLineLens = true
         Prefix = "// " }
 
 [<CLIMutable>]
@@ -112,7 +112,7 @@ type EditorOptions
         store.Register LanguageServicePerformanceOptions.Default
         store.Register AdvancedOptions.Default
         store.Register IntelliSenseOptions.Default
-        store.Register CodeLensOptions.Default
+        store.Register LensOptions.Default
         store.Register FormattingOptions.Default
 
     member _.IntelliSense : IntelliSenseOptions = store.Get()
@@ -120,7 +120,7 @@ type EditorOptions
     member _.CodeFixes : CodeFixesOptions = store.Get()
     member _.LanguageServicePerformance : LanguageServicePerformanceOptions = store.Get()
     member _.Advanced: AdvancedOptions = store.Get()
-    member _.CodeLens: CodeLensOptions = store.Get()
+    member _.Lens: LensOptions = store.Get()
     member _.Formatting : FormattingOptions = store.Get()
 
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
@@ -171,11 +171,11 @@ module internal OptionsUI =
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
 
-    [<Guid(Guids.codeLensOptionPageIdString)>]
-    type internal CodeLensOptionPage() =
-        inherit AbstractOptionPage<CodeLensOptions>()
+    [<Guid(Guids.lensOptionPageIdString)>]
+    type internal LensOptionPage() =
+        inherit AbstractOptionPage<LensOptions>()
         override this.CreateView() =
-            upcast CodeLensOptionControl()
+            upcast LensOptionControl()
 
     [<Guid(Guids.advancedSettingsPageIdSring)>]
     type internal AdvancedSettingsOptionPage() =

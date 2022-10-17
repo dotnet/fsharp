@@ -41,9 +41,10 @@ module Commands =
 
     // Execute the process pathToExe passing the arguments: arguments with the working directory: workingDir timeout after timeout milliseconds -1 = wait forever
     // returns exit code, stdio and stderr as string arrays
-    let executeProcess pathToExe arguments workingDir timeout =
+    let executeProcess pathToExe arguments workingDir (timeout:int) =
         match pathToExe with
         | Some path ->
+            let commandLine = ResizeArray()
             let errorsList = ResizeArray()
             let outputList = ResizeArray()
             let mutable errorslock = obj
@@ -56,6 +57,9 @@ module Commands =
                 if not (isNull message) then
                     lock errorslock (fun () -> errorsList.Add(message))
 
+            commandLine.Add $"cd {workingDir}"
+            commandLine.Add $"{path} {arguments} /bl"
+
             let psi = ProcessStartInfo()
             psi.FileName <- path
             psi.WorkingDirectory <- workingDir
@@ -64,8 +68,8 @@ module Commands =
             psi.Arguments <- arguments
             psi.CreateNoWindow <- true
             // When running tests, we want to roll forward to minor versions (including previews).
-            psi.EnvironmentVariables.["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
-            psi.EnvironmentVariables.["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
+            psi.EnvironmentVariables["DOTNET_ROLL_FORWARD"] <- "LatestMajor"
+            psi.EnvironmentVariables["DOTNET_ROLL_FORWARD_TO_PRERELEASE"] <- "1"
             psi.EnvironmentVariables.Remove("MSBuildSDKsPath")          // Host can sometimes add this, and it can break things
             psi.UseShellExecute <- false
 
@@ -94,6 +98,7 @@ module Commands =
                     workingDir
 
             lock gate (fun () ->
+                File.WriteAllLines(Path.Combine(workingDir', "commandline.txt"), commandLine)
                 File.WriteAllLines(Path.Combine(workingDir', "StandardOutput.txt"), outputList)
                 File.WriteAllLines(Path.Combine(workingDir', "StandardError.txt"), errorsList)
             )
@@ -225,6 +230,7 @@ type TestConfig =
       FSIANYCPU : string
       FSCANYCPU : string
 #endif
+      DOTNETFSCCOMPILERPATH : string
       FSI_FOR_SCRIPTS : string
       FSharpBuild : string
       FSharpCompilerInteractiveSettings : string
@@ -293,14 +299,15 @@ let config configurationName envVars =
     let fsharpCoreArchitecture = "netstandard2.0"
     let fsharpBuildArchitecture = "netstandard2.0"
     let fsharpCompilerInteractiveSettingsArchitecture = "netstandard2.0"
+    let dotnetArchitecture = "net7.0"
 #if NET472
     let fscArchitecture = "net472"
     let fsiArchitecture = "net472"
-    let peverifyArchitecture = "net472"
+    //let peverifyArchitecture = "net472"
 #else
-    let fscArchitecture = "net6.0"
-    let fsiArchitecture = "net6.0"
-    let peverifyArchitecture = "net6.0"
+    let fscArchitecture = dotnetArchitecture
+    let fsiArchitecture = dotnetArchitecture
+    //let peverifyArchitecture = dotnetArchitecture
 #endif
     let repoRoot = SCRIPT_ROOT ++ ".." ++ ".."
     let artifactsPath = repoRoot ++ "artifacts"
@@ -308,22 +315,22 @@ let config configurationName envVars =
     let coreClrRuntimePackageVersion = "5.0.0-preview.7.20364.11"
     let csc_flags = "/nologo"
     let vbc_flags = "/nologo"
-    let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED"
-    let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror"
+    let fsc_flags = "-r:System.Core.dll --nowarn:20 --define:COMPILED --preferreduilang:en-US" 
+    let fsi_flags = "-r:System.Core.dll --nowarn:20 --define:INTERACTIVE --maxerrors:1 --abortonerror --preferreduilang:en-US"
     let operatingSystem = getOperatingSystem ()
     let Is64BitOperatingSystem = DotnetPlatform.Is64BitOperatingSystem envVars
     let architectureMoniker = if Is64BitOperatingSystem then "x64" else "x86"
     let packagesDir = getPackagesDir ()
     let requirePackage = requireFile packagesDir
     let requireArtifact = requireFile artifactsBinPath
-    let CSC = requirePackage ("Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "csc.exe")
-    let VBC = requirePackage ("Microsoft.Net.Compilers" ++ "2.7.0" ++ "tools" ++ "vbc.exe")
+    let CSC = requirePackage ("Microsoft.Net.Compilers" ++ "4.3.0-1.22220.8" ++ "tools" ++ "csc.exe")
+    let VBC = requirePackage ("Microsoft.Net.Compilers" ++ "4.3.0-1.22220.8" ++ "tools" ++ "vbc.exe")
     let ILDASM_EXE = if operatingSystem = "win" then "ildasm.exe" else "ildasm"
     let ILDASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILDAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILDASM_EXE)
     let ILASM_EXE = if operatingSystem = "win" then "ilasm.exe" else "ilasm"
     let ILASM = requirePackage (("runtime." + operatingSystem + "-" + architectureMoniker + ".Microsoft.NETCore.ILAsm") ++ coreClrRuntimePackageVersion ++ "runtimes" ++ (operatingSystem + "-" + architectureMoniker) ++ "native" ++ ILASM_EXE)
-    let PEVERIFY_EXE = if operatingSystem = "win" then "PEVerify.exe" elif operatingSystem = "osx" then "PEVerify.dll" else "PEVerify"
-    let PEVERIFY = requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
+    //let PEVERIFY_EXE = if operatingSystem = "win" then "PEVerify.exe" elif operatingSystem = "osx" then "PEVerify.dll" else "PEVerify"
+    let PEVERIFY = "dummy" //requireArtifact ("PEVerify" ++ configurationName ++ peverifyArchitecture ++ PEVERIFY_EXE)
 //    let FSI_FOR_SCRIPTS = artifactsBinPath ++ "fsi" ++ configurationName ++ fsiArchitecture ++ "fsi.exe"
     let FSharpBuild = requireArtifact ("FSharp.Build" ++ configurationName ++ fsharpBuildArchitecture ++ "FSharp.Build.dll")
     let FSharpCompilerInteractiveSettings = requireArtifact ("FSharp.Compiler.Interactive.Settings" ++ configurationName ++ fsharpCompilerInteractiveSettingsArchitecture ++ "FSharp.Compiler.Interactive.Settings.dll")
@@ -350,7 +357,7 @@ let config configurationName envVars =
     let FSC = requireArtifact ("fsc" ++ configurationName ++ fscArchitecture ++ "fsc.dll")
 #endif
     let FSCOREDLLPATH = requireArtifact ("FSharp.Core" ++ configurationName ++ fsharpCoreArchitecture ++ "FSharp.Core.dll")
-
+    let DOTNETFSCCOMPILERPATH = requireArtifact ("fsc" ++ configurationName ++ dotnetArchitecture ++ "fsc.dll")
     let defaultPlatform =
         match Is64BitOperatingSystem with
 //        | PlatformID.MacOSX, true -> "osx.10.10-x64"
@@ -372,6 +379,7 @@ let config configurationName envVars =
       FSCANYCPU = FSCANYCPU
       FSIANYCPU = FSIANYCPU
 #endif
+      DOTNETFSCCOMPILERPATH = DOTNETFSCCOMPILERPATH
       FSI_FOR_SCRIPTS = FSI_FOR_SCRIPTS
       FSharpBuild = FSharpBuild
       FSharpCompilerInteractiveSettings = FSharpCompilerInteractiveSettings
@@ -610,8 +618,8 @@ let csc cfg arg = Printf.ksprintf (Commands.csc (exec cfg) cfg.CSC) arg
 let vbc cfg arg = Printf.ksprintf (Commands.vbc (exec cfg) cfg.VBC) arg
 let ildasm cfg arg = Printf.ksprintf (Commands.ildasm (exec cfg) cfg.ILDASM) arg
 let ilasm cfg arg = Printf.ksprintf (Commands.ilasm (exec cfg) cfg.ILASM) arg
-let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
-let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
+let peverify _cfg _test = printfn "PEVerify is disabled, need to migrate to ILVerify instead, see https://github.com/dotnet/fsharp/issues/13854" //Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
+let peverifyWithArgs _cfg _args _test = printfn "PEVerify is disabled, need to migrate to ILVerify instead, see https://github.com/dotnet/fsharp/issues/13854" //Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
 #if !NETCOREAPP
 let fsiAnyCpu cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSIANYCPU)
@@ -652,8 +660,8 @@ let diff normalize path1 path2 =
                 if x >= 0 then line.Substring(x+cwd.Length) else line
             else line
 
-        let line1 = normalizePath lines1.[i]
-        let line2 = normalizePath lines2.[i]
+        let line1 = lines1[i] |> normalizePath
+        let line2 = lines2[i] |> normalizePath
 
         if line1 <> line2 then
             append <| sprintf "diff between [%s] and [%s]" path1 path2
@@ -664,8 +672,8 @@ let diff normalize path1 path2 =
     if lines1.Length <> lines2.Length then
         append <| sprintf "diff between [%s] and [%s]" path1 path2
         append <| sprintf "diff at line %d" minLines
-        lines1.[minLines .. (lines1.Length - 1)] |> Array.iter (append << sprintf "- %s")
-        lines2.[minLines .. (lines2.Length - 1)] |> Array.iter (append << sprintf "+ %s")
+        lines1[minLines .. (lines1.Length - 1)] |> Array.iter (append << sprintf "- %s")
+        lines2[minLines .. (lines2.Length - 1)] |> Array.iter (append << sprintf "+ %s")
 
     result.ToString()
 

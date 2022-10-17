@@ -4,7 +4,6 @@ namespace FSharp.Test
 
 open System
 open System.IO
-open System.Diagnostics
 open System.Text.RegularExpressions
 
 open NUnit.Framework
@@ -30,14 +29,48 @@ module ILChecker =
             (fun me -> String.Empty)
         )
 
-    let private checkILPrim ildasmArgs dllFilePath expectedIL =
+    let private normalizeILText assemblyName (ilCode: string) =
+        let blockComments = @"/\*(.*?)\*/"
+        let lineComments = @"//(.*?)\r?\n"
+        let lineCommentsEof = @"//(.*?)$"
+        let strings = @"""((\\[^\n]|[^""\n])*)"""
+        let verbatimStrings = @"@(""[^""]*"")+"
+        let stripComments (text:string) =
+            Regex.Replace(text,
+                $"{blockComments}|{lineComments}|{lineCommentsEof}|{strings}|{verbatimStrings}",
+                (fun me ->
+                    if (me.Value.StartsWith("/*") || me.Value.StartsWith("//")) then
+                        if me.Value.StartsWith("//") then Environment.NewLine else String.Empty
+                    else
+                        me.Value), RegexOptions.Singleline)
+            |> filterSpecialComment
+
+        let replace input (pattern, replacement: string) = Regex.Replace(input, pattern, replacement, RegexOptions.Singleline)
+
+        let unifyRuntimeAssemblyName ilCode =
+            List.fold replace ilCode [
+                "\[System\.Runtime\]|\[System\.Console\]|\[System\.Runtime\.Extensions\]|\[mscorlib\]|\[System\.Memory\]", "[runtime]"
+                "(\.assembly extern (System\.Runtime|System\.Console|System\.Runtime\.Extensions|mscorlib|System\.Memory)){1}([^\}]*)\}", ".assembly extern runtime { }"
+                "(\.assembly extern (FSharp.Core)){1}([^\}]*)\}", ".assembly extern FSharp.Core { }" ]
+
+        let unifyImageBase ilCode = replace ilCode ("\.imagebase\s*0x\d*", ".imagebase {value}")
+
+        let unifyingAssemblyNames (text: string) =
+            match assemblyName with
+            | Some name -> text.Replace(name, "assembly")
+            | None -> text
+            |> unifyRuntimeAssemblyName
+            |> unifyImageBase
+
+        ilCode.Trim() |> stripComments |> unifyingAssemblyNames
+
+
+    let private generateIlFile dllFilePath ildasmArgs =
         let ilFilePath = Path.ChangeExtension(dllFilePath, ".il")
 
-        let mutable errorMsgOpt = None
-        let mutable actualIL = String.Empty
         let ildasmPath = config.ILDASM
 
-        let ildasmFullArgs = [ yield dllFilePath; yield sprintf "-out=%s" ilFilePath; yield! ildasmArgs  ]
+        let ildasmFullArgs = [ dllFilePath; $"-out=%s{ilFilePath}"; yield! ildasmArgs  ]
 
         let stdErr, exitCode =
             let ildasmCommandPath = Path.ChangeExtension(dllFilePath, ".ildasmCommandPath")
@@ -45,92 +78,55 @@ module ILChecker =
             exec ildasmPath ildasmFullArgs
 
         if exitCode <> 0 then
-            failwith (sprintf "ILASM Expected exit code \"0\", got \"%d\"\nSTDERR: %s" exitCode stdErr)
+            failwith $"ILASM Expected exit code \"0\", got \"%d{exitCode}\"\nSTDERR: %s{stdErr}"
 
         if not (String.IsNullOrWhiteSpace stdErr) then
-            failwith (sprintf "ILASM Stderr is not empty:\n %s" stdErr)
+            failwith $"ILASM Stderr is not empty:\n %s{stdErr}"
 
-        let blockComments = @"/\*(.*?)\*/"
-        let lineComments = @"//(.*?)\r?\n"
-        let lineCommentsEof = @"//(.*?)$"
-        let strings = @"""((\\[^\n]|[^""\n])*)"""
-        let verbatimStrings = @"@(""[^""]*"")+"
-        let stripComments (text:string) =
-            System.Text.RegularExpressions.Regex.Replace(text,
-                blockComments + "|" + lineComments + "|" + lineCommentsEof + "|" + strings + "|" + verbatimStrings,
-                (fun me ->
-                    if (me.Value.StartsWith("/*") || me.Value.StartsWith("//")) then
-                        if me.Value.StartsWith("//") then Environment.NewLine else String.Empty
-                    else
-                        me.Value), System.Text.RegularExpressions.RegexOptions.Singleline)
-            |> filterSpecialComment
+        ilFilePath
 
-        let unifyRuntimeAssemblyName ilCode =
-            let pass1 =
-                Regex.Replace(
-                    ilCode,
-                    "\[System\.Runtime\]|\[System\.Console\]|\[System\.Runtime\.Extensions\]|\[mscorlib\]|\[System\.Memory\]","[runtime]",
-                    RegexOptions.Singleline)
-            let pass2 =
-                Regex.Replace(
-                    pass1,
-                    "(\.assembly extern (System\.Runtime|System\.Console|System\.Runtime\.Extensions|mscorlib|System\.Memory)){1}([^\}]*)\}",".assembly extern runtime { }",
-                    RegexOptions.Singleline)
-            let pass3 =
-                Regex.Replace(
-                    pass2,
-                    "(\.assembly extern (FSharp.Core)){1}([^\}]*)\}",".assembly extern FSharp.Core { }",
-                    RegexOptions.Singleline)
-            pass3
+    let private generateIL (dllFilePath: string) =
+        let assemblyName = Some (Path.GetFileNameWithoutExtension dllFilePath)
+        generateIlFile dllFilePath >> File.ReadAllText >> normalizeILText assemblyName
 
-        let unifyIlText (text:string) =
-            let unifyingAssemblyNames (text:string)=
-                let asmName = Path.GetFileNameWithoutExtension(dllFilePath)
-                text.Replace(asmName, "assembly")
-                |> unifyRuntimeAssemblyName
-            text.Trim() |> stripComments |> unifyingAssemblyNames
+    let private compareIL assemblyName (actualIL: string) expectedIL =
 
-        let raw = File.ReadAllText(ilFilePath)
-        let unifiedInputText = raw |> unifyIlText
+        let mutable errorMsgOpt = None
+
+        let prepareLines (s: string) =
+            s.Split('\n')
+                |> Array.map(fun e -> e.Trim('\r'))
+                |> Array.skipWhile(String.IsNullOrWhiteSpace)
+                |> Array.rev
+                |> Array.skipWhile(String.IsNullOrWhiteSpace)
+                |> Array.rev
 
         expectedIL
         |> List.map (fun (ilCode: string) -> ilCode.Trim())
         |> List.iter (fun (ilCode: string) ->
-            let expectedLines =
-                (ilCode |> unifyIlText).Split('\n')
-                |> Array.map(fun e -> e.Trim('\r'))
-                |> Array.skipWhile(fun s -> String.IsNullOrWhiteSpace(s))
-                |> Array.rev
-                |> Array.skipWhile(fun s -> String.IsNullOrWhiteSpace(s))
-                |> Array.rev
+            let expectedLines = ilCode |> normalizeILText (Some assemblyName) |> prepareLines
 
             if expectedLines.Length = 0 then
                 errorMsgOpt <- Some("ExpectedLines length invalid: 0")
             else
                 let startIndex =
-                    let index = unifiedInputText.IndexOf(expectedLines[0].Trim())
+                    let index = actualIL.IndexOf(expectedLines[0].Trim())
                     if index > 0 then
                         index
                     else
                         0
-                let actualLines =
-                    unifiedInputText.Substring(startIndex).Split('\n')
-                    |> Array.map(fun e -> e.Trim('\r'))
-                    |> Array.skipWhile(fun s -> String.IsNullOrWhiteSpace(s))
-                    |> Array.rev
-                    |> Array.skipWhile(fun s -> String.IsNullOrWhiteSpace(s))
-                    |> Array.rev
+                let actualLines = actualIL.Substring(startIndex) |> prepareLines
 
                 let errors = ResizeArray()
                 if actualLines.Length < expectedLines.Length then
-                    let msg = sprintf "\nExpected at least %d lines but found only %d\n" expectedLines.Length actualLines.Length
+                    let msg = $"\nExpected at least %d{expectedLines.Length} lines but found only %d{actualLines.Length}\n"
                     errorMsgOpt <- Some(msg + "\nExpected:\n" + ilCode + "\n")
                 else
                     for i = 0 to expectedLines.Length - 1 do
                         let expected = expectedLines[i].Trim()
                         let actual = actualLines[i].Trim()
                         if expected <> actual then
-                            errors.Add(sprintf "\n==\nName: '%s'\n\nExpected:\t %s\nActual:\t\t %s\n==" actualLines.[0] expected actual)
+                            errors.Add $"\n==\nName: '%s{actualLines[0]}'\n\nExpected:\t %s{expected}\nActual:\t\t %s{actual}\n=="
 
                     if errors.Count > 0 then
                         let msg = String.concat "\n" errors + "\n\n\Expected:\n" + ilCode + "\n"
@@ -140,21 +136,22 @@ module ILChecker =
         if expectedIL.Length = 0 then
             errorMsgOpt <- Some ("No Expected IL")
 
-        actualIL <- unifiedInputText
-
         match errorMsgOpt with
-        | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\nEntire actual:\n" + unifiedInputText)
+        | Some(msg) -> errorMsgOpt <- Some(msg + "\n\n\nEntire actual:\n" + actualIL)
         | _ -> ()
 
         match errorMsgOpt with
         | Some(errorMsg) -> (false, errorMsg, actualIL)
         | _ -> (true, String.Empty, String.Empty)
 
+    let private checkILPrim ildasmArgs dllFilePath =
+        let actualIL = generateIL dllFilePath ildasmArgs
+        compareIL (Path.GetFileNameWithoutExtension dllFilePath) actualIL
+
     let private checkILAux ildasmArgs dllFilePath expectedIL =
         let (success, errorMsg, _) = checkILPrim ildasmArgs dllFilePath expectedIL
         if not success then
             Assert.Fail(errorMsg)
-        else ()
 
     // This doesn't work because the '/linenum' is being ignored by
     // the version of ILDASM we are using, which we acquire from a nuget package
@@ -170,7 +167,20 @@ module ILChecker =
     let verifyILAndReturnActual (dllFilePath: string) (expectedIL: string) =
         checkILPrim [] dllFilePath [expectedIL]
 
+    let checkILNotPresent dllFilePath unexpectedIL =
+        let actualIL = generateIL dllFilePath []
+        if unexpectedIL = [] then
+            Assert.Fail $"No unexpected IL given. This is actual IL: \n{actualIL}"
+        let errors =
+            unexpectedIL
+            |> Seq.map (normalizeILText None)
+            |> Seq.filter actualIL.Contains
+            |> Seq.map (sprintf "Found in actual IL: '%s'")
+            |> String.concat "\n"
+        if errors <> "" then
+            Assert.Fail $"{errors}\n\n\nEntire actual:\n{actualIL}"
+
     let reassembleIL ilFilePath dllFilePath =
         let ilasmPath = config.ILASM
-        let errors, _ = exec ilasmPath ([ sprintf "%s /output=%s /dll" ilFilePath dllFilePath ])
+        let errors, _ = exec ilasmPath [ $"%s{ilFilePath} /output=%s{dllFilePath} /dll" ]
         errors

@@ -32,12 +32,11 @@ module PEVerifier =
     let private verifyPEFileCore peverifierArgs dllFilePath =
         let mutable errors = ResizeArray ()
         let peverifierPath = config.PEVERIFY
-
         let peverifyFullArgs = [ yield dllFilePath; yield "/NOLOGO"; yield! peverifierArgs  ]
-
         let stdErr, exitCode =
             let peverifierCommandPath = Path.ChangeExtension(dllFilePath, ".peverifierCommandPath")
             File.WriteAllLines(peverifierCommandPath, [| $"{peverifierPath} {peverifyFullArgs}" |] )
+            File.Copy(typeof<RequireQualifiedAccessAttribute>.Assembly.Location, Path.GetDirectoryName(dllFilePath) ++ "FSharp.Core.dll", true)
             exec peverifierPath peverifyFullArgs
 
         if exitCode <> 0 then
@@ -47,6 +46,7 @@ module PEVerifier =
             errors.Add (sprintf "PEVERIFIER stderr is not empty:\n %s" stdErr)
 
         let error = { ExitCode=exitCode; Lines = errors.ToArray() }
+
         match errors.Count with
         | 0 -> PEVerifyResult.Success error
         | _ -> PEVerifyResult.Failure error

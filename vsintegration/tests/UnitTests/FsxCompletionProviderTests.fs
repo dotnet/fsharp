@@ -1,24 +1,8 @@
-// To run the tests in this file:
-//
-// Technique 1: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
-//
-// Technique 2:
-//
-//   Enable some tests in the #if EXE section at the end of the file, 
-//   then compile this file as an EXE that has InternalsVisibleTo access into the
-//   appropriate DLLs.  This can be the quickest way to get turnaround on updating the tests
-//   and capturing large amounts of structured output.
-(*
-    cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.UnitTests.exe -g --optimize- -r .\FSharp.Compiler.Service.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\UnitTests\FsxCompletionProviderTests.fs 
-    .\VisualFSharp.UnitTests.exe 
-*)
-// Technique 3: 
-// 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
-
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+//
+// To run the tests in this file: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
+
+namespace VisualFSharp.UnitTests.Editor
 
 open System
 open System.Collections.Generic
@@ -56,7 +40,7 @@ type Worker () =
 
     member _.VerifyCompletionListExactly(fileContents: string, marker: string, expected: List<string>) =
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
-        let document = RoslynTestHelpers.CreateDocument(filePath, SourceText.From(fileContents), options = projectOptions)
+        let document = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, SourceText.From(fileContents), options = projectOptions)
         let expected = expected |> Seq.toList
         let actual = 
             let x = FSharpCompletionProvider.ProvideCompletionsAsyncAux(document, caretPosition, (fun _ -> [])) 
@@ -92,6 +76,3 @@ module FsxCompletionProviderTests =
         // We execute in a seperate appdomain so that we can set BaseDirectory to a non-existent location
         getWorker().VerifyCompletionListExactly(fileContents, "fsi.", expected)
 
-#if EXE
-ShouldTriggerCompletionInFsxFile()
-#endif

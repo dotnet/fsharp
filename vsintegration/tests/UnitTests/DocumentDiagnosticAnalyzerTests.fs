@@ -1,5 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+namespace VisualFSharp.UnitTests.Editor
 
 open System
 open System.Threading
@@ -40,7 +40,7 @@ type DocumentDiagnosticAnalyzerTests()  =
 
     let getDiagnostics (fileContents: string) = 
         async {
-            let document, _ = RoslynTestHelpers.CreateDocument(filePath, fileContents)
+            let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
             let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Syntax) 
             let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(document, DiagnosticsType.Semantic) 
             return syntacticDiagnostics.AddRange(semanticDiagnostics)
@@ -392,7 +392,7 @@ let g (t : T) = t.Count()
             
     [<Test>]
     member public this.DocumentDiagnosticsDontReportProjectErrors_Bug1596() =
-        // https://github.com/Microsoft/visualfsharp/issues/1596
+        // https://github.com/dotnet/fsharp/issues/1596
         this.VerifyNoErrors(
             fileContents = """
 let x = 3

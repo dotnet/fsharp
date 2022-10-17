@@ -18,7 +18,7 @@ open FSharp.Compiler.Text.Range
 
 let internal longIdentToString (longIdent: LongIdent) =
     String.Join(".", longIdent |> List.map (fun ident -> ident.ToString()))
-let internal longIdentWithDotsToString (LongIdentWithDots (longIdent, _)) = longIdentToString longIdent
+let internal longIdentWithDotsToString (SynLongIdent (longIdent, _, _)) = longIdentToString longIdent
 
 let internal posToTuple (pos: pos) = (pos.Line, pos.Column)
 let internal rangeToTuple (range: range) = (posToTuple range.Start, posToTuple range.End)
@@ -42,19 +42,19 @@ let internal identsAndRanges (input: ParsedInput) =
         | SynModuleDecl.Let _ -> failwith "Not implemented yet"
         | SynModuleDecl.Expr _ -> failwith "Not implemented yet"
         | SynModuleDecl.Exception _ -> failwith "Not implemented yet"
-        | SynModuleDecl.Open(SynOpenDeclTarget.ModuleOrNamespace (lid, range), _) -> [ identAndRange (longIdentToString lid) range ]
+        | SynModuleDecl.Open(SynOpenDeclTarget.ModuleOrNamespace (lid, range), _) -> [ identAndRange (longIdentToString lid.LongIdent) range ]
         | SynModuleDecl.Open(SynOpenDeclTarget.Type _, _) -> failwith "Not implemented yet"
         | SynModuleDecl.Attributes _ -> failwith "Not implemented yet"
         | SynModuleDecl.HashDirective _ -> failwith "Not implemented yet"
         | SynModuleDecl.NamespaceFragment(moduleOrNamespace) -> extractFromModuleOrNamespace moduleOrNamespace
-    and extractFromModuleOrNamespace (SynModuleOrNamespace(longIdent, _, _, moduleDecls, _, _, _, _)) =
+    and extractFromModuleOrNamespace (SynModuleOrNamespace(longId = longIdent; decls = moduleDecls)) =
         let xs = moduleDecls |> List.collect extractFromModuleDecl
         if longIdent.IsEmpty then xs
         else
             (identAndRange (longIdentToString longIdent) (longIdent |> List.map (fun id -> id.idRange) |> List.reduce unionRanges)) :: xs
 
     match input with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = modulesOrNamespaces)) ->
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = modulesOrNamespaces)) ->
          modulesOrNamespaces |> List.collect extractFromModuleOrNamespace
     | ParsedInput.SigFile _ -> []
 

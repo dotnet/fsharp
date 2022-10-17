@@ -1,5 +1,5 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+namespace VisualFSharp.UnitTests.Editor
 
 open System
 open System.Threading
@@ -162,7 +162,7 @@ type BraceMatchingServiceTests()  =
         
     [<Test>]
     member this.BraceMatchingAtEndOfLine_Bug1597() = 
-        // https://github.com/Microsoft/visualfsharp/issues/1597
+        // https://github.com/dotnet/fsharp/issues/1597
         let code = """
 [<EntryPoint>]
 let main argv = 

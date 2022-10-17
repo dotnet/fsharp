@@ -838,7 +838,7 @@ type ListProperties () =
         let check = xs |> List.collect (List.replicate ys.Length)
         pairsFst = check
 
-    [<Fact>]
+    [<Fact(Skip="Test is flaky and bugged on .NET7, will be re-enabled when https://github.com/dotnet/fsharp/issues/13563 is fixed")>]
     member this.``List.allPairs first elements are correct`` () =
         Check.QuickThrowOnFailure this.allPairsFst<int, int>
         Check.QuickThrowOnFailure this.allPairsFst<string, string>

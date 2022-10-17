@@ -276,20 +276,25 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
                 | Some projectSite ->             
 
                 let otherOptions =
-                    project.ProjectReferences
-                    |> Seq.map (fun x -> "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath)
-                    |> Array.ofSeq
-                    |> Array.append (
-                            project.MetadataReferences.OfType<PortableExecutableReference>()
-                            |> Seq.map (fun x -> "-r:" + x.FilePath)
-                            |> Array.ofSeq
-                            |> Array.append (
-                                    // Clear any references from CompilationOptions. 
-                                    // We get the references from Project.ProjectReferences/Project.MetadataReferences.
-                                    projectSite.CompilationOptions
-                                    |> Array.filter (fun x -> not (x.Contains("-r:")))
-                                )
-                        )
+                    [|
+                        // Clear any references from CompilationOptions. 
+                        // We get the references from Project.ProjectReferences/Project.MetadataReferences.
+                        for x in projectSite.CompilationOptions do
+                            if not (x.Contains("-r:")) then
+                               x
+
+                        for x in project.MetadataReferences.OfType<PortableExecutableReference>() do
+                            "-r:" + x.FilePath
+                    
+                        for x in project.ProjectReferences do
+                            "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath
+
+                        // In the IDE we always ignore all #line directives for all purposes.  This means
+                        // IDE features work correctly within generated source files, but diagnostics are
+                        // reported in the IDE with respect to the generated source, and will not unify with
+                        // diagnostics from the build.
+                        "--ignorelinedirectives"
+                    |]
 
                 let! ver = project.GetDependentVersionAsync(ct) |> Async.AwaitTask
 
@@ -494,53 +499,48 @@ type internal FSharpProjectOptionsManager
         reactor.SetLegacyProjectSite (projectId, projectSite)
 
     /// Clear a project from the project table
-    member this.ClearInfoForProject(projectId:ProjectId) = 
+    member _.ClearInfoForProject(projectId:ProjectId) = 
         reactor.ClearOptionsByProjectId(projectId)
 
-    member this.ClearSingleFileOptionsCache(documentId) =
+    member _.ClearSingleFileOptionsCache(documentId) =
         reactor.ClearSingleFileOptionsCache(documentId)
 
     /// Get compilation defines relevant for syntax processing.  
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project 
     /// options for a script.
-    member this.GetCompilationDefinesForEditingDocument(document:Document) = 
+    member _.GetCompilationDefinesForEditingDocument(document:Document) = 
         let parsingOptions =
             match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
             | Some (_, parsingOptions, _) -> parsingOptions
-            | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile document.Name }
-        CompilerEnvironment.GetCompilationDefinesForEditing parsingOptions     
+            | _ ->
+                { FSharpParsingOptions.Default with
+                    ApplyLineDirectives = false
+                    IsInteractive = CompilerEnvironment.IsScriptFile document.Name
+                }
+        CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions     
 
-    member this.TryGetOptionsByProject(project) =
+    member _.TryGetOptionsByProject(project) =
         reactor.TryGetOptionsByProjectAsync(project)
 
     /// Get the exact options for a document or project
-    member this.TryGetOptionsForDocumentOrProject(document: Document, cancellationToken, userOpName) =
-        async { 
-            match! reactor.TryGetOptionsByDocumentAsync(document, cancellationToken, userOpName) with
-            | Some(parsingOptions, projectOptions) ->
-                return Some(parsingOptions, None, projectOptions)
-            | _ ->
-                return None
-        }
+    member _.TryGetOptionsForDocumentOrProject(document: Document, cancellationToken, userOpName) =
+        reactor.TryGetOptionsByDocumentAsync(document, cancellationToken, userOpName)
 
     /// Get the exact options for a document or project relevant for syntax processing.
     member this.TryGetOptionsForEditingDocumentOrProject(document:Document, cancellationToken, userOpName) = 
-        async {
-            let! result = this.TryGetOptionsForDocumentOrProject(document, cancellationToken, userOpName) 
-            return result |> Option.map(fun (parsingOptions, _, projectOptions) -> parsingOptions, projectOptions)
-        }
+        this.TryGetOptionsForDocumentOrProject(document, cancellationToken, userOpName) 
 
     /// Get the options for a document or project relevant for syntax processing.
     /// Quicker it doesn't need to recompute the exact project options for a script.
-    member this.TryGetQuickParsingOptionsForEditingDocumentOrProject(document:Document) = 
-        match reactor.TryGetCachedOptionsByProjectId(document.Project.Id) with
+    member this.TryGetQuickParsingOptionsForEditingDocumentOrProject(documentId: DocumentId, path: string) = 
+        match reactor.TryGetCachedOptionsByProjectId(documentId.ProjectId) with
         | Some (_, parsingOptions, _) -> parsingOptions
-        | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile document.Name }
+        | _ -> { FSharpParsingOptions.Default with IsInteractive = CompilerEnvironment.IsScriptFile path }
 
-    member this.SetCommandLineOptions(projectId, sourcePaths, options: ImmutableArray<string>) =
+    member _.SetCommandLineOptions(projectId, sourcePaths, options: ImmutableArray<string>) =
         reactor.SetCommandLineOptions(projectId, sourcePaths, options.ToArray())
 
-    member this.ClearAllCaches() =
+    member _.ClearAllCaches() =
         reactor.ClearAllCaches()
 
     member _.Checker = checker

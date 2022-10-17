@@ -31,7 +31,7 @@ let ``Visit record definition test`` () =
     let parseTree = parseSourceCode("C:\\test.fs", source)
 
     match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
-    | Some [ SynField (_, _, Some id1, _, _, _, _, _); SynField (_, _, Some id2, _, _, _, _, _) ] when id1.idText = "A" && id2.idText = "B" -> ()
+    | Some [ SynField (idOpt = Some id1); SynField (idOpt = Some id2) ] when id1.idText = "A" && id2.idText = "B" -> ()
     | _ -> failwith "Did not visit record definition"
 
 [<Test>]
@@ -44,7 +44,7 @@ let ``Visit union definition test`` () =
     let parseTree = parseSourceCode("C:\\test.fs", source)
 
     match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
-    | Some [ SynUnionCase (ident=id1); SynUnionCase (ident=id2) ] when id1.idText = "A" && id2.idText = "B" -> ()
+    | Some [ SynUnionCase (ident = SynIdent(id1,_)); SynUnionCase (ident = SynIdent(id2,_)) ] when id1.idText = "A" && id2.idText = "B" -> ()
     | _ -> failwith "Did not visit union definition"
 
 [<Test>]
@@ -57,5 +57,5 @@ let ``Visit enum definition test`` () =
     let parseTree = parseSourceCode("C:\\test.fs", source)
 
     match SyntaxTraversal.Traverse(pos0, parseTree, visitor) with
-    | Some [ SynEnumCase (_, id1, _, _, _, _, _); SynEnumCase (_, id2, _, _, _, _, _) ] when id1.idText = "A" && id2.idText = "B" -> ()
+    | Some [ SynEnumCase (_, SynIdent(id1,_), _, _, _, _, _); SynEnumCase (_, SynIdent(id2,_), _, _, _, _, _) ] when id1.idText = "A" && id2.idText = "B" -> ()
     | _ -> failwith "Did not visit enum definition"

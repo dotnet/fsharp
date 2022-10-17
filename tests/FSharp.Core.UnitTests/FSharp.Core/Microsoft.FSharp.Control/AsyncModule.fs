@@ -580,7 +580,7 @@ type AsyncModule() =
 
 
 #if IGNORED
-    [<Test; Ignore("See https://github.com/Microsoft/visualfsharp/issues/4887")>]
+    [<Test; Ignore("See https://github.com/dotnet/fsharp/issues/4887")>]
     member _.``SleepContinuations``() = 
         let okCount = ref 0
         let errCount = ref 0
@@ -764,3 +764,15 @@ type AsyncModule() =
                 lock gate <| fun () -> printfn "Unhandled exception: %s" exn.Message
                 lock gate <| fun () -> printfn "Semaphore count available: %i" semaphore.CurrentCount
             Assert.AreEqual(acquiredCount, releaseCount)
+
+    [<Fact>]
+    member _.``Async.Parallel blows stack when cancelling many`` () =
+        let gen (i : int) = async {
+            if i <> 0 then do! Async.Sleep i
+            else return failwith "OK"}
+        let count = 3600
+        let comps = Seq.init count gen
+        let result = Async.Parallel(comps, 16) |> Async.Catch |> Async.RunSynchronously
+        match result with
+        | Choice2Of2 e -> Assert.AreEqual("OK", e.Message)
+        | x -> failwithf "unexpected %A" x

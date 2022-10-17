@@ -1,0 +1,80 @@
+{
+    // For further information about `coreclr` debugging, see https://github.com/OmniSharp/omnisharp-vscode/blob/master/debugger-launchjson.md
+    "version": "0.2.0",
+    "inputs": [
+        {
+            "id": "argsPrompt",
+            "description": "Enter arguments for fsc",
+            "default": "",
+            "type": "promptString",
+        }
+    ],
+    "configurations": [
+        {
+            "name": "Launch FSI (Debug, .NET 6.0)",
+            "type": "coreclr",
+            "request": "launch",
+            // TODO: Shall we assume that it's already been built, or build it every time we debug?
+            // "preLaunchTask": "Build (Debug)",
+            // If you have changed target frameworks, make sure to update the program p
+            "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net7.0/fsi.dll",
+            "cwd": "${workspaceFolder}/src",
+            "console": "integratedTerminal", // This is the default to be able to run in Codespaces.
+            "internalConsoleOptions": "neverOpen",
+            "suppressJITOptimizations": true,
+            "stopAtEntry": false,
+            "justMyCode": true,
+            "enableStepFiltering": true,
+            "symbolOptions": {
+                "searchMicrosoftSymbolServer": true,
+                "searchNuGetOrgSymbolServer": true
+            },
+            "sourceLinkOptions": {
+                "*": {
+                    "enabled": true
+                }
+            },
+        },
+        {
+            "name": "Launch FSC (Debug, .NET 6.0)",
+            "type": "coreclr",
+            "request": "launch",
+            // TODO: Shall we assume that it's already been built, or build it every time we debug?
+            // "preLaunchTask": "Build (Debug)",
+            // If you have changed target frameworks, make sure to update the program path.
+            "program": "${workspaceFolder}/artifacts/bin/fsc/Debug/net7.0/fsc.dll",
+            "args": [
+                "${input:argsPrompt}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal", // This is the default to be able to run in Codespaces.
+            "internalConsoleOptions": "neverOpen",
+            "suppressJITOptimizations": true,
+            "stopAtEntry": false,
+            "justMyCode": true,
+            "enableStepFiltering": true,
+            "symbolOptions": {
+                "searchMicrosoftSymbolServer": true,
+                "searchNuGetOrgSymbolServer": true
+            },
+            "sourceLinkOptions": {
+                "*": {
+                    "enabled": true
+                }
+            },
+        },
+        {
+            "name": "Attach to a .NET process",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:pickProcess}",
+            "sourceLinkOptions": {
+                "*": {
+                    "enabled": true
+                }
+            },
+            "justMyCode": true,
+            "enableStepFiltering": false,
+        }
+    ]
+}

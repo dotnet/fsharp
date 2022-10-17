@@ -11,7 +11,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Diagnostics
 open FSharp.Compiler.Text
-#if FX_NO_APP_DOMAINS
+#if NETCOREAPP
 open System.Runtime.Loader
 #endif
 open FSharp.Test.Utilities
@@ -130,6 +130,7 @@ type TestCompilation =
 type CSharpLanguageVersion =
     | CSharp8 = 0
     | CSharp9 = 1
+    | Preview = 99
 
 [<AbstractClass; Sealed>]
 type CompilationUtil private () =
@@ -139,10 +140,18 @@ type CompilationUtil private () =
             match lv with
                 | CSharpLanguageVersion.CSharp8 -> LanguageVersion.CSharp8
                 | CSharpLanguageVersion.CSharp9 -> LanguageVersion.CSharp9
+                | CSharpLanguageVersion.Preview -> LanguageVersion.Preview
                 | _ -> LanguageVersion.Default
 
         let tf = defaultArg tf TargetFramework.NetStandard20
-        let source = source.GetSourceText |> Option.defaultValue ""
+        let source =
+            match source.GetSourceText with
+            | Some text ->
+                // In memory source file copy it to the build directory
+                text
+            | None ->
+                // On Disk file
+                File.ReadAllText(source.GetSourceFileName)
         let name = defaultArg name (Guid.NewGuid().ToString ())
         let additionalReferences = defaultArg additionalReferences ImmutableArray<PortableExecutableReference>.Empty
         let references = TargetFrameworkUtil.getReferences tf
@@ -247,19 +256,22 @@ module rec CompilerAssertHelpers =
             yield Array.empty<string>
     |]
 
-#if FX_NO_APP_DOMAINS
+    let executeAssemblyEntryPoint (asm: Assembly) =
+        let entryPoint = asm.EntryPoint
+        let args = mkDefaultArgs entryPoint
+        captureConsoleOutputs (fun () -> entryPoint.Invoke(Unchecked.defaultof<obj>, args) |> ignore)
+
+#if NETCOREAPP
     let executeBuiltApp assembly deps =
         let ctxt = AssemblyLoadContext("ContextName", true)
         try
-            let asm = ctxt.LoadFromAssemblyPath(assembly)
-            let entryPoint = asm.EntryPoint
             ctxt.add_Resolving(fun ctxt name ->
                 deps
                 |> List.tryFind (fun (x: string) -> Path.GetFileNameWithoutExtension x = name.Name)
                 |> Option.map ctxt.LoadFromAssemblyPath
                 |> Option.defaultValue null)
-            let args = mkDefaultArgs entryPoint
-            (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
+
+            ctxt.LoadFromAssemblyPath assembly |> executeAssemblyEntryPoint
         finally
             ctxt.Unload()
 #else
@@ -273,10 +285,8 @@ module rec CompilerAssertHelpers =
                 |> Option.bind (fun x -> if FileSystem.FileExistsShim x then Some x else None)
                 |> Option.map Assembly.LoadFile
                 |> Option.defaultValue null))
-            let asm = Assembly.LoadFrom(assemblyPath)
-            let entryPoint = asm.EntryPoint
-            let args = mkDefaultArgs entryPoint
-            (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
+
+            Assembly.LoadFrom assemblyPath |> executeAssemblyEntryPoint
 
     let adSetup =
         let setup = new System.AppDomainSetup ()
@@ -289,7 +299,7 @@ module rec CompilerAssertHelpers =
         let worker =
             use _ = new AlreadyLoadedAppDomainResolver()
             (ad.CreateInstanceFromAndUnwrap(typeof<Worker>.Assembly.CodeBase, typeof<Worker>.FullName)) :?> Worker
-        worker.ExecuteTestCase assembly (deps |> Array.ofList) |>ignore
+        worker.ExecuteTestCase assembly (deps |> Array.ofList)
 #endif
 
     let defaultProjectOptions =
@@ -299,10 +309,11 @@ module rec CompilerAssertHelpers =
             SourceFiles = [|"test.fs"|]
             OtherOptions =
                 let assemblies = TargetFrameworkUtil.currentReferences |> Array.map (fun x -> sprintf "-r:%s" x)
+                let defaultOptions =  Array.append [|"--preferreduilang:en-US"; "--noframework"; "--warn:5"|] assemblies
 #if NETCOREAPP
-                Array.append [|"--preferreduilang:en-US"; "--targetprofile:netcore"; "--noframework"; "--simpleresolution"; "--warn:5"|] assemblies
+                Array.append [|"--targetprofile:netcore"|] defaultOptions
 #else
-                Array.append [|"--preferreduilang:en-US"; "--targetprofile:mscorlib"; "--noframework"; "--warn:5"|] assemblies
+                Array.append [|"--targetprofile:mscorlib"|] defaultOptions
 #endif
             ReferencedProjects = [||]
             IsIncompleteTypeCheckEnvironment = false
@@ -387,8 +398,8 @@ module rec CompilerAssertHelpers =
                 (info.Severity, info.ErrorNumber, (info.StartLine - libAdjust, info.StartColumn + 1, info.EndLine - libAdjust, info.EndColumn + 1), info.Message))
 
         let checkEqual k a b =
-            if a <> b then
-                Assert.AreEqual(a, b, sprintf "Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" k a b errors)
+           if a <> b then
+               Assert.AreEqual(a, b, sprintf "Mismatch in %s, expected '%A', got '%A'.\nAll errors:\n%A" k a b errors)
 
         checkEqual "Errors"  (Array.length expectedErrors) errors.Length
 
@@ -433,11 +444,11 @@ module rec CompilerAssertHelpers =
                         | CompilationReference (cmpl, staticLink) ->
                             compileCompilationAux outputPath disposals ignoreWarnings cmpl, staticLink
                         | TestCompilationReference (cmpl) ->
-                            let filename =
+                            let fileName =
                                 match cmpl with
                                 | TestCompilation.CSharp c when not (String.IsNullOrWhiteSpace c.AssemblyName) -> c.AssemblyName
                                 | _ -> tryCreateTemporaryFileName()
-                            let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(filename, ".dll"))
+                            let tmp = Path.Combine(outputPath.FullName, Path.ChangeExtension(fileName, ".dll"))
                             disposals.Add({ new IDisposable with member _.Dispose() = File.Delete tmp })
                             cmpl.EmitAsFile tmp
                             (([||], tmp), []), false)
@@ -462,7 +473,7 @@ module rec CompilerAssertHelpers =
 
             compilationRefs, deps
 
-    let rec compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
+    let compileCompilationAux outputDirectory (disposals: ResizeArray<IDisposable>) ignoreWarnings (cmpl: Compilation) : (FSharpDiagnostic[] * string) * string list =
 
         let compilationRefs, deps = evaluateReferences outputDirectory disposals ignoreWarnings cmpl
         let isExe, sources, options, name =
@@ -484,7 +495,7 @@ module rec CompilerAssertHelpers =
 
         res, (deps @ deps2)
 
-    let rec compileCompilation ignoreWarnings (cmpl: Compilation) f =
+    let compileCompilation ignoreWarnings (cmpl: Compilation) f =
         let disposals = ResizeArray()
         try
             let outputDirectory = DirectoryInfo(tryCreateTemporaryDirectory())
@@ -500,53 +511,58 @@ module rec CompilerAssertHelpers =
     let rec returnCompilation (cmpl: Compilation) ignoreWarnings =
         let outputDirectory =
             match cmpl with
-            | Compilation(_, _, _, _, _, Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
-            | Compilation(_, _, _, _, _, _) -> DirectoryInfo(tryCreateTemporaryDirectory())
+            | Compilation(outputDirectory = Some outputDirectory) -> DirectoryInfo(outputDirectory.FullName)
+            | Compilation _ -> DirectoryInfo(tryCreateTemporaryDirectory())
 
-        outputDirectory.Create() |> ignore
+        outputDirectory.Create()
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
 
-    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
+    let captureConsoleOutputs (func: unit -> unit) =
         let out = Console.Out
         let err = Console.Error
 
         let stdout = StringBuilder ()
         let stderr = StringBuilder ()
 
-        let outWriter = new StringWriter (stdout)
-        let errWriter = new StringWriter (stderr)
+        use outWriter = new StringWriter (stdout)
+        use errWriter = new StringWriter (stderr)
 
-        let mutable exitCode = 0
-
-        try
+        let succeeded, exn =
             try
-                Console.SetOut(outWriter)
-                Console.SetError(errWriter)
-                (executeBuiltApp outputFilePath deps) |> ignore
-            with e ->
-                let errorMessage = if e.InnerException <> null then (e.InnerException.ToString()) else (e.ToString())
-                stderr.Append (errorMessage) |> ignore
-                exitCode <- -1
-        finally
-            Console.SetOut(out)
-            Console.SetError(err)
-            outWriter.Close()
-            errWriter.Close()
+                try
+                    Console.SetOut outWriter
+                    Console.SetError errWriter
+                    func ()
+                    true, None
+                with e ->
+                    let errorMessage = if e.InnerException <> null then e.InnerException.ToString() else e.ToString()
+                    stderr.Append errorMessage |> ignore
+                    false, Some e
+            finally
+                Console.SetOut out
+                Console.SetError err
+                outWriter.Close()
+                errWriter.Close()
 
-        (exitCode, stdout.ToString(), stderr.ToString())
+        succeeded, stdout.ToString(), stderr.ToString(), exn
+
+    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
+        let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps
+        let exitCode = if succeeded then 0 else -1
+        exitCode, stdout, stderr
 
     let executeBuiltAppNewProcessAndReturnResult (outputFilePath: string) : (int * string * string) =
 #if !NETCOREAPP
-        let filename = outputFilePath
+        let fileName = outputFilePath
         let arguments = ""
 #else
-        let filename = "dotnet"
+        let fileName = "dotnet"
         let arguments = outputFilePath
 
         let runtimeconfig = """
 {
     "runtimeOptions": {
-        "tfm": "net6.0",
+        "tfm": "net7.0",
         "framework": {
             "name": "Microsoft.NETCore.App",
             "version": "6.0"
@@ -560,7 +576,7 @@ module rec CompilerAssertHelpers =
               member _.Dispose() = try File.Delete runtimeconfigPath with | _ -> () }
 #endif
         let timeout = 30000
-        let exitCode, output, errors = Commands.executeProcess (Some filename) arguments (Path.GetDirectoryName(outputFilePath)) timeout
+        let exitCode, output, errors = Commands.executeProcess (Some fileName) arguments (Path.GetDirectoryName(outputFilePath)) timeout
         (exitCode, output |> String.concat "\n", errors |> String.concat "\n")
 open CompilerAssertHelpers
 
@@ -573,7 +589,7 @@ type CompilerAssert private () =
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
-            executeBuiltApp outputExe []
+            executeBuiltApp outputExe [] |> ignore
         )
 
     static let compileLibraryAndVerifyILWithOptions options (source: SourceCodeFileKind) (f: ILVerifier -> unit) =
@@ -612,6 +628,16 @@ Updated automatically, please check diffs in your pull request, changes must be 
     static member Checker = checker
 
     static member DefaultProjectOptions = defaultProjectOptions
+
+    static member GenerateFsInputPath() =
+        let path = Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".fs"))
+        printfn $"input path = {path}"
+        path
+
+    static member GenerateDllOutputPath() =
+        let path = Path.Combine(Path.GetTempPath(), Path.ChangeExtension(Path.GetRandomFileName(), ".dll"))
+        printfn $"output path = {path}"
+        path
 
     static member CompileWithErrors(cmpl: Compilation, expectedErrors, ?ignoreWarnings) =
         let ignoreWarnings = defaultArg ignoreWarnings false
@@ -653,61 +679,11 @@ Updated automatically, please check diffs in your pull request, changes must be 
                     Assert.Fail errors
                 onOutput output
             else
-                executeBuiltApp outputFilePath deps)
+                let _succeeded, _stdout, _stderr, exn = executeBuiltApp outputFilePath deps 
+                exn |> Option.iter raise)
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
-        CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))
-
-    /// Assert that the given source code compiles with the `defaultProjectOptions`, with no errors or warnings
-    static member CompileOfAst isExe source =
-        let outputFilePath = Path.ChangeExtension (tryCreateTemporaryFileName (), if isExe then "exe" else ".dll")
-        let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
-
-        let parseResults =
-            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions)
-            |> Async.RunImmediate
-
-        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
-
-        let dependencies =
-        #if NETCOREAPP
-            Array.toList TargetFrameworkUtil.currentReferences
-        #else
-            []
-        #endif
-
-        let compileErrors, statusCode =
-            checker.Compile([parseResults.ParseTree], "test", outputFilePath, dependencies, executable = isExe, noframework = true)
-            |> Async.RunImmediate
-
-        Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
-        Assert.AreEqual(0, statusCode, sprintf "Nonzero status code: %d" statusCode)
-        outputFilePath
-
-    static member CompileOfAstToDynamicAssembly source =
-        let assemblyName = sprintf "test-%O" (Guid.NewGuid())
-        let parseOptions = { FSharpParsingOptions.Default with SourceFiles = [|"test.fs"|] }
-        let parseResults =
-            checker.ParseFile("test.fs", SourceText.ofString source, parseOptions)
-            |> Async.RunImmediate
-
-        Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
-
-        let dependencies =
-            #if NETCOREAPP
-                Array.toList TargetFrameworkUtil.currentReferences
-            #else
-                []
-            #endif
-
-        let compileErrors, statusCode, assembly =
-            checker.CompileToDynamicAssembly([parseResults.ParseTree], assemblyName, dependencies, None, noframework = true)
-            |> Async.RunImmediate
-
-        Assert.IsEmpty(compileErrors, sprintf "Compile errors: %A" compileErrors)
-        Assert.AreEqual(0, statusCode, sprintf "Nonzero status code: %d" statusCode)
-        Assert.IsTrue(assembly.IsSome, "no assembly returned")
-        Option.get assembly
+        CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))  
 
     static member Pass (source: string) =
         let parseResults, fileAnswer = checker.ParseAndCheckFileInProject("test.fs", 0, SourceText.ofString source, defaultProjectOptions) |> Async.RunImmediate
@@ -715,7 +691,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         match fileAnswer with
-        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+        | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
         Assert.IsEmpty(typeCheckResults.Diagnostics, sprintf "Type Check errors: %A" typeCheckResults.Diagnostics)
@@ -728,7 +704,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         match fileAnswer with
-        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+        | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
         Assert.IsEmpty(typeCheckResults.Diagnostics, sprintf "Type Check errors: %A" typeCheckResults.Diagnostics)
@@ -746,7 +722,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
         Assert.IsEmpty(parseResults.Diagnostics, sprintf "Parse errors: %A" parseResults.Diagnostics)
 
         match fileAnswer with
-        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted")
+        | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted")
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) ->
 
         let errorsExpectedBaseLine =
@@ -778,7 +754,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             else
 
                 match fileAnswer with
-                | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted"); [| |]
                 | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
 
         errors
@@ -798,7 +774,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             else
 
                 match fileAnswer with
-                | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted"); [| |]
                 | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
 
         errors
@@ -814,7 +790,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             |> Async.RunImmediate
 
         match fileAnswer with
-        | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); failwith "Type Checker Aborted"
+        | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted"); failwith "Type Checker Aborted"
         | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> parseResults, typeCheckResults
 
     /// Parses and type checks the given source. Fails if the type checker is aborted or the parser returns any diagnostics.
@@ -840,7 +816,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
             else
 
                 match fileAnswer with
-                | FSharpCheckFileAnswer.Aborted _ -> Assert.Fail("Type Checker Aborted"); [| |]
+                | FSharpCheckFileAnswer.Aborted -> Assert.Fail("Type Checker Aborted"); [| |]
                 | FSharpCheckFileAnswer.Succeeded(typeCheckResults) -> typeCheckResults.Diagnostics
 
         assertErrors libAdjust false errors expectedTypeErrors
@@ -956,7 +932,7 @@ Updated automatically, please check diffs in your pull request, changes must be 
                 LangVersionText = langVersion }
         checker.ParseFile(sourceFileName, SourceText.ofString source, parsingOptions) |> Async.RunImmediate
 
-    static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors -> 
+    static member ParseWithErrors (source: string, ?langVersion: string) = fun expectedParseErrors ->
         let parseResults = CompilerAssert.Parse (source, ?langVersion=langVersion)
 
         Assert.True(parseResults.ParseHadErrors)
