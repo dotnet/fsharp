@@ -627,13 +627,7 @@ val TcExpr:
 /// If not, use 'tcArgs' to type check the given elements to show
 /// their correct types (if known) in the error message and raise the error
 val CheckTupleIsCorrectLength:
-    g: TcGlobals ->
-    env: TcEnv ->
-    m: range ->
-    tupleTy: TType ->
-    args: 'a list ->
-    tcArgs: (TType list -> unit) ->
-        unit
+    g: TcGlobals -> env: TcEnv -> m: range -> tupleTy: TType -> args: 'a list -> tcArgs: (TType list -> unit) -> unit
 
 /// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
 /// Converts 'a..b..c' to a call to the '(.. ..)' operator in FSharp.Core
