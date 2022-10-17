@@ -614,7 +614,7 @@ let conditionallySuppressErrorReporting cond f =
 //------------------------------------------------------------------------
 // Errors as data: Sometimes we have to reify errors as data, e.g. if backtracking
 
-/// The result type of a computational modality to colelct warnings and possibly fail
+/// The result type of a computational modality to collect warnings and possibly fail
 [<NoEquality; NoComparison>]
 type OperationResult<'T> =
     | OkResult of warnings: exn list * result: 'T
