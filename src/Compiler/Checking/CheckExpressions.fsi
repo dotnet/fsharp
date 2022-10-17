@@ -624,7 +624,7 @@ val TcExpr:
         Expr * UnscopedTyparEnv
 
 /// Check that 'args' have the correct number of elements for a tuple expression.
-/// If not, use 'typeCheckArgs' to type check the given elements to show
+/// If not, use 'tcArgs' to type check the given elements to show
 /// their correct types (if known) in the error message and raise the error
 val CheckTupleIsCorrectLength:
     g: TcGlobals ->
@@ -632,7 +632,7 @@ val CheckTupleIsCorrectLength:
     m: range ->
     tupleTy: TType ->
     args: 'a list ->
-    typeCheckArgs: (TType list -> unit) ->
+    tcArgs: (TType list -> unit) ->
         unit
 
 /// Converts 'a..b' to a call to the '(..)' operator in FSharp.Core
