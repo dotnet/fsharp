@@ -4,6 +4,7 @@ module internal FSharp.Compiler.ParseHelpers
 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
@@ -84,7 +85,7 @@ module LexbufIfdefStore =
 
     val SaveEndIfHash: lexbuf: UnicodeLexing.Lexbuf * lexed: string * range: range -> unit
 
-    val GetTrivia: lexbuf: UnicodeLexing.Lexbuf -> SyntaxTrivia.ConditionalDirectiveTrivia list
+    val GetTrivia: lexbuf: UnicodeLexing.Lexbuf -> ConditionalDirectiveTrivia list
 
 module LexbufCommentStore =
 
@@ -92,7 +93,7 @@ module LexbufCommentStore =
 
     val SaveBlockComment: lexbuf: UnicodeLexing.Lexbuf * startRange: range * endRange: range -> unit
 
-    val GetComments: lexbuf: UnicodeLexing.Lexbuf -> SyntaxTrivia.CommentTrivia list
+    val GetComments: lexbuf: UnicodeLexing.Lexbuf -> CommentTrivia list
 
     val ClearComments: lexbuf: UnicodeLexing.Lexbuf -> unit
 
@@ -171,10 +172,10 @@ val mkSynMemberDefnGetSet:
     propertyNameBindingPat: SynPat ->
     optPropertyType: SynReturnInfo option ->
     visNoLongerUsed: SynAccess option ->
-    memFlagsBuilder: (SynMemberKind -> SynMemberFlags) ->
-    attrs: SynAttributeList list ->
-    rangeStart: range ->
-        SynMemberDefn list
+    flagsBuilderAndLeadingKeyword: (SynMemberKind -> SynMemberFlags) * SynLeadingKeyword ->
+        attrs: SynAttributeList list ->
+        rangeStart: range ->
+            SynMemberDefn list
 
 /// Incorporate a '^' for an qualified access to a generic type parameter
 val adjustHatPrefixToTyparLookup: mFull: range -> rightExpr: SynExpr -> SynExpr
@@ -201,7 +202,7 @@ val mkUnderscoreRecdField: m: range -> SynLongIdent * bool
 
 val mkRecdField: lidwd: SynLongIdent -> SynLongIdent * bool
 
-val mkSynDoBinding: vis: SynAccess option * expr: SynExpr * m: range -> SynBinding
+val mkSynDoBinding: vis: SynAccess option * mDo: range * expr: SynExpr * m: range -> SynBinding
 
 val mkSynExprDecl: e: SynExpr -> SynModuleDecl
 
@@ -233,3 +234,5 @@ val idOfPat: parseState: IParseState -> m: range -> p: SynPat -> Ident
 val checkForMultipleAugmentations: m: range -> a1: 'a list -> a2: 'a list -> 'a list
 
 val rangeOfLongIdent: lid: LongIdent -> range
+
+val appendValToLeadingKeyword: mVal: range -> leadingKeyword: SynLeadingKeyword -> SynLeadingKeyword
