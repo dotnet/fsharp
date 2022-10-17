@@ -4,7 +4,9 @@ module CheckNewSyntax =
 
     type MyType() = 
         static member val StaticProperty = 0 with get, set
-        static member StaticMethod x = x + 5
+        static member StaticMethod0 () = 5
+        static member StaticMethod1 x = x + 5
+        static member StaticMethod2 (x, y) = x + y + 5
         member val Length = 0 with get, set
         member _.Item with get x = "Hello"
         member _.InstanceMethod0 () = 5
@@ -14,7 +16,11 @@ module CheckNewSyntax =
     // Check that "property" and "get_ method" constraints are considered logically equivalent
     let inline f_StaticProperty<'T when 'T : (static member StaticProperty: int) >() : int = 'T.StaticProperty
 
-    let inline f_StaticMethod<'T when 'T : (static member StaticMethod: int -> int) >() : int = 'T.StaticMethod(3)
+    let inline f_StaticMethod0<'T when 'T : (static member StaticMethod0: unit -> int) >() : int = 'T.StaticMethod0()
+
+    let inline f_StaticMethod1<'T when 'T : (static member StaticMethod1: int -> int) >() : int = 'T.StaticMethod1(3)
+
+    let inline f_StaticMethod2<'T when 'T : (static member StaticMethod2: int * int -> int) >() : int = 'T.StaticMethod2(3, 3)
 
     let inline f_set_StaticProperty<'T when 'T : (static member StaticProperty: int with set) >() = 'T.set_StaticProperty(3)
 
@@ -39,7 +45,13 @@ module CheckNewSyntax =
     //let inline f_set_Length2<'T when 'T : (member Length: int with set) >(x: 'T) = x.Length <- 3
     //let inline f_Item2<'T when 'T : (member Item: int -> string with get) >(x: 'T) = x[3]
         
-    if f_StaticMethod<MyType>() <> 8 then
+    if f_StaticMethod0<MyType>() <> 5 then
+        failwith "Unexpected result"
+
+    if f_StaticMethod1<MyType>() <> 8 then
+        failwith "Unexpected result"
+
+    if f_StaticMethod2<MyType>() <> 11 then
         failwith "Unexpected result"
 
     if f_set_StaticProperty<MyType>() <> () then
