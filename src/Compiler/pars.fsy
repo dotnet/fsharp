@@ -2647,7 +2647,7 @@ cPrototype:
             let binding =
                 mkSynBinding 
                     (xmlDoc, bindingPat) 
-                    (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some rty, rhsExpr, mRhs, [], attrs, None, trivia)
+                    (vis, false, false, mWholeBindLhs, DebugPointAtBinding.NoneAtInvisible, Some (None, rty), rhsExpr, mRhs, [], attrs, None, trivia)
             [], [binding]) }
 
 /* A list of arguments in an 'extern' DllImport function definition */
@@ -4995,9 +4995,10 @@ opt_topReturnTypeWithTypeConstraints:
      { None } 
 
   | COLON topTypeWithTypeConstraints 
-     { let ty, arity = $2 
+     { let mColon = rhs parseState 1
+       let ty, arity = $2 
        let arity = (match arity with SynValInfo([], rmdata)-> rmdata | _ -> SynInfo.unnamedRetVal)
-       Some (SynReturnInfo((ty, arity), rhs parseState 2)) }
+       Some (Some mColon, SynReturnInfo((ty, arity), rhs parseState 2)) }
 
 topType: 
   | topTupleType RARROW topType 

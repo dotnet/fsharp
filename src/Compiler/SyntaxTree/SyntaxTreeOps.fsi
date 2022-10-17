@@ -269,7 +269,7 @@ val mkSynBindingRhs:
     staticOptimizations: (SynStaticOptimizationConstraint list * SynExpr) list ->
     rhsExpr: SynExpr ->
     mRhs: range ->
-    retInfo: SynReturnInfo option ->
+    retInfo: (range option * SynReturnInfo) option ->
         SynExpr * SynBindingReturnInfo option
 
 val mkSynBinding:
@@ -279,7 +279,7 @@ val mkSynBinding:
         isMutable: bool *
         mBind: range *
         spBind: DebugPointAtBinding *
-        retInfo: SynReturnInfo option *
+        retInfo: (range option * SynReturnInfo) option *
         origRhsExpr: SynExpr *
         mRhs: range *
         staticOptimizations: (SynStaticOptimizationConstraint list * SynExpr) list *
