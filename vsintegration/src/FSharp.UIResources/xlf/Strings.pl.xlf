@@ -9,22 +9,22 @@
       </trans-unit>
       <trans-unit id="Lens">
         <source>Lens</source>
-        <target state="translated">Lens</target>
+        <target state="new">Lens</target>
         <note />
       </trans-unit>
       <trans-unit id="Lens_Switch">
         <source>Enable Lens (Experimental)</source>
-        <target state="translated">Włącz funkcję Lens (eksperymentalna)</target>
+        <target state="new">Enable Lens (Experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Lens_Prefix">
         <source>Annotation prefix</source>
-        <target state="translated">Prefiks adnotacji</target>
+        <target state="new">Annotation prefix</target>
         <note />
       </trans-unit>
       <trans-unit id="Lens_UseColors">
         <source>Use colors in annotations</source>
-        <target state="translated">Stosuj kolory w adnotacjach</target>
+        <target state="new">Use colors in annotations</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
