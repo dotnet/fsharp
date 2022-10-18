@@ -1421,7 +1421,7 @@ let CheckMultipleInputsSequential (ctok, checkForErrors, tcConfig, tcImports, tc
     ||> List.mapFold (CheckOneInputEntry(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, false))
 
 
-let private getParallelCompilationGroup (pi: ParsedInput) =
+let private getParallelCompilationGroupFromHashDirective (pi: ParsedInput) =
     pi.HashDirectives 
     |> List.filter (fun (ParsedHashDirective(ident = hashIdentifier)) -> hashIdentifier = "paralell_compilation_group")
     |> List.choose (fun (ParsedHashDirective(args = argList)) -> 
@@ -1469,16 +1469,8 @@ let CheckMultipleInputsInParallel
         // Implementation files that do have a signature will result in a Choice2Of2 indicating to next do some of the
         // checking in parallel.
         let partialResults, (tcState, _) =
-            let sequentialFiles, parallelFiles =
-                // Looking for pattern like this: #paralell_compilation_group "groupName"
-                for pi,dl in inputsWithLoggers do
-                    let paraCompilationGroup = 
-                        pi.HashDirectives 
-                        |> List.tryFind (fun (ParsedHashDirective(ident = hashIdentifier)) -> hashIdentifier = "paralell_compilation_group")
-                    pragmas |> ignore
-                    ()
-
-                List.take 999 inputsWithLoggers, List.skip 999 inputsWithLoggers
+            let fileChunks = inputsWithLoggers |> List.chunkConsequtiveElementsVia (fst >> getParallelCompilationGroupFromHashDirective)
+           
 
             let sequentialPartialResults, (sequentialTcState, sequentialPriorErrors) =
                 ((tcState, priorErrors), sequentialFiles)
