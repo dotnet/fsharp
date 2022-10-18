@@ -7513,8 +7513,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
-        <source>If a union type has more than one case and is a struct, then all fields within the union type must be given unique names.</source>
-        <target state="translated">Si un tipo de unión tiene más de un caso y un struct, a todos los campos dentro del tipo de unión se les deben dar nombres únicos.</target>
+        <source>If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</source>
+        <target state="needs-review-translation">Si un tipo de unión tiene más de un caso y un struct, a todos los campos dentro del tipo de unión se les deben dar nombres únicos.</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
