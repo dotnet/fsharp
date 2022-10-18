@@ -1192,7 +1192,7 @@ let canGenPropertyDef cenv (prop: ILPropertyDef) =
         // If we have GetMethod or SetMethod set (i.e. not None), try and see if we have MethodDefs for them.
         // NOTE: They can be not-None and missing MethodDefs if we skip generating them for reference assembly in the earlier pass.
         // Only generate property if we have at least getter or setter, otherwise, we skip.
-        [| prop.GetMethod; prop.SetMethod |]
+        [| prop.GetMethod; prop.SetMethod |]      
         |> Array.choose id
         |> Array.map (TryGetMethodRefAsMethodDefIdx cenv)
         |> Array.exists (function | Ok _ -> true | _ -> false)
@@ -1304,11 +1304,14 @@ and GenTypeDefPass2 pidx enc cenv (tdef: ILTypeDef) =
         // Now generate or assign index numbers for tables referenced by the maps.
         // Don't yet generate contents of these tables - leave that to pass3, as
         // code may need to embed these entries.
-        tdef.Implements |> List.iter (GenImplementsPass2 cenv env tidx)
-        props |> List.iter (GenPropertyDefPass2 cenv tidx)
+        tdef.Implements |> List.iter (GenImplementsPass2 cenv env tidx)        
         events |> List.iter (GenEventDefPass2 cenv tidx)
         tdef.Fields.AsList() |> List.iter (GenFieldDefPass2 tdef cenv tidx)
         tdef.Methods |> Seq.iter (GenMethodDefPass2 tdef cenv tidx)
+        // Generation of property definitions for **ref assemblies** is checking existence of generated method definitions.
+        // Therefore, due to mutable state within "cenv", order of operations matters.
+        // Who could have thought that using shared mutable state can bring unexpected bugs...?
+        props |> List.iter (GenPropertyDefPass2 cenv tidx)
         tdef.NestedTypes.AsList() |> GenTypeDefsPass2 tidx (enc@[tdef.Name]) cenv
    with exn ->
      failwith ("Error in pass2 for type "+tdef.Name+", error: " + exn.Message)
