@@ -923,9 +923,6 @@ module MutRecBindingChecking =
                                 // Code for potential future design change to allow functions-compiled-as-members in structs
                                     errorR(Error(FSComp.SR.tcStructsMayNotContainLetBindings(), (trimRangeToLine m)))
 
-                            //if isStatic && Option.isNone incrCtorInfoOpt then 
-                            //    errorR(Error(FSComp.SR.tcStaticLetBindingsRequireClassesWithImplicitConstructors(), m))
-                              
                             // Phase2A: let-bindings - pass through 
                             let innerState = (incrCtorInfoOpt, envForTycon, tpenv, recBindIdx, uncheckedBindsRev)     
                             [Phase2AIncrClassBindings (tcref, letBinds, isStatic, isRec, m)], innerState
