@@ -590,8 +590,8 @@ let UnifyTupleTypeAndInferCharacteristics contextInfo (cenv: cenv) denv m knownT
         if isAnyTupleTy g knownTy then
             let tupInfo, ptys = destAnyTupleTy g knownTy
             let tupInfo = (if isExplicitStruct then tupInfoStruct else tupInfo)
-            let ptys = 
-                if List.length ps = List.length ptys then ptys 
+            let ptys =
+                if List.length ps = List.length ptys then ptys
                 else NewInferenceTypes g ps
             tupInfo, ptys
         else
@@ -5288,10 +5288,15 @@ and TcExprThenDynamic (cenv: cenv) overallTy env tpenv isArg e1 mQmark e2 delaye
    
    TcExprThen cenv overallTy env tpenv isArg appExpr delayed
 
-and TcExprsWithFlexes (cenv: cenv) env m tpenv flexes argTys args =
-    if List.length args <> List.length argTys then error(Error(FSComp.SR.tcExpressionCountMisMatch((List.length argTys), (List.length args)), m))
+and TcExprsWithFlexes (cenv: cenv) env m tpenv flexes (argTys: TType list) (args: SynExpr list) =
+    if args.Length <> argTys.Length then error(Error(FSComp.SR.tcExpressionCountMisMatch((argTys.Length), (args.Length)), m))
     (tpenv, List.zip3 flexes argTys args) ||> List.mapFold (fun tpenv (flex, ty, e) ->
          TcExprFlex cenv flex false ty env tpenv e)
+
+and TcExprsNoFlexes (cenv: cenv) env m tpenv (argTys: TType list) (args: SynExpr list) =
+    if args.Length <> argTys.Length then error(Error(FSComp.SR.tcExpressionCountMisMatch((argTys.Length), (args.Length)), m))
+    (tpenv, List.zip argTys args) ||> List.mapFold (fun tpenv (ty, e) ->
+         TcExprFlex2 cenv ty env false tpenv e)
 
 and CheckSuperInit (cenv: cenv) objTy m =
     let g = cenv.g
@@ -5348,7 +5353,7 @@ and TcPropagatingExprLeafThenConvert (cenv: cenv) overallTy actualTy (env: TcEnv
         UnifyTypes cenv env m overallTy.Commit actualTy
         f ()
 
-/// Process a leaf construct, for cases where we propogate the overall type eagerly in
+/// Process a leaf construct, for cases where we propagate the overall type eagerly in
 /// some cases. Then apply additional type-directed conversions.
 ///
 /// However in some cases favour propagating characteristics of the overall type.
@@ -5360,7 +5365,7 @@ and TcPropagatingExprLeafThenConvert (cenv: cenv) overallTy actualTy (env: TcEnv
 ///  - tuple       (except if overallTy is a tuple type or a variable type that can become one)
 ///  - anon record (except if overallTy is an anon record type or a variable type that can become one)
 ///  - record      (except if overallTy is requiresCtor || haveCtor or a record type or a variable type that can become one))
-and TcPossiblyPropogatingExprLeafThenConvert isPropagating (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) m processExpr =
+and TcPossiblyPropagatingExprLeafThenConvert isPropagating (cenv: cenv) (overallTy: OverallTy) (env: TcEnv) m processExpr =
 
     let g = cenv.g
 
@@ -5538,7 +5543,7 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
 
     | SynExpr.AnonRecd (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr) ->
         TcNonControlFlowExpr env <| fun env ->
-        TcPossiblyPropogatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
+        TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnonRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
             TcAnonRecdExpr cenv overallTy env tpenv (isStruct, withExprOpt, unsortedFieldExprs, mWholeExpr)
         )
 
@@ -5799,13 +5804,27 @@ and TcExprLazy (cenv: cenv) overallTy env tpenv (synInnerExpr, m) =
     let expr = mkLazyDelayed g m innerTy (mkUnitDelayLambda g m innerExpr)
     expr, tpenv
 
+and CheckTupleIsCorrectLength g (env: TcEnv) m tupleTy (args: 'a list) tcArgs =
+    if isAnyTupleTy g tupleTy then
+        let tupInfo, ptys = destAnyTupleTy g tupleTy
+
+        if args.Length <> ptys.Length then
+            let argTys = NewInferenceTypes g args
+            suppressErrorReporting (fun () -> tcArgs argTys)
+            let expectedTy = TType_tuple (tupInfo, argTys)
+
+            // We let error recovery handle this exception
+            error (ErrorFromAddingTypeEquation(g, env.DisplayEnv, tupleTy, expectedTy,
+                   (ConstraintSolverTupleDiffLengths(env.DisplayEnv, ptys, argTys, m, m)), m))
+
 and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
     let g = cenv.g
-    TcPossiblyPropogatingExprLeafThenConvert (fun ty -> isAnyTupleTy g ty || isTyparTy g ty) cenv overallTy env m (fun overallTy ->
-        let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
+    TcPossiblyPropagatingExprLeafThenConvert (fun ty -> isAnyTupleTy g ty || isTyparTy g ty) cenv overallTy env m (fun overallTy ->
 
-        let flexes = argTys |> List.map (fun _ -> false)
-        let argsR, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys args
+        CheckTupleIsCorrectLength g env m overallTy args (fun argTys -> TcExprsNoFlexes cenv env m tpenv argTys args |> ignore)
+
+        let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m overallTy isExplicitStruct args
+        let argsR, tpenv = TcExprsNoFlexes cenv env m tpenv argTys args
         let expr = mkAnyTupled g m tupInfo argsR argTys
         expr, tpenv
     )
@@ -5882,7 +5901,7 @@ and TcExprRecord (cenv: cenv) overallTy env tpenv (inherits, withExprOpt, synRec
     CallExprHasTypeSink cenv.tcSink (mWholeExpr, env.NameEnv, overallTy.Commit, env.AccessRights)
     let requiresCtor = (GetCtorShapeCounter env = 1) // Get special expression forms for constructors
     let haveCtor = Option.isSome inherits
-    TcPossiblyPropogatingExprLeafThenConvert (fun ty -> requiresCtor || haveCtor || isRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
+    TcPossiblyPropagatingExprLeafThenConvert (fun ty -> requiresCtor || haveCtor || isRecdTy g ty || isTyparTy g ty) cenv overallTy env mWholeExpr (fun overallTy ->
         TcRecdExpr cenv overallTy env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr)
     )
 
@@ -6085,8 +6104,7 @@ and TcExprILAssembly (cenv: cenv) overallTy env tpenv (ilInstrs, synTyArgs, synA
     let argTys = NewInferenceTypes g synArgs
     let tyargs, tpenv = TcTypes cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synTyArgs
     // No subsumption at uses of IL assembly code
-    let flexes = argTys |> List.map (fun _ -> false)
-    let args, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys synArgs
+    let args, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synArgs
     let retTys, tpenv = TcTypes cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synRetTys
     let returnTy =
         match retTys with
@@ -7151,8 +7169,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
                 mkCallNewFormat g m printerTy printerArgTy printerResidueTy printerResultTy printerTupleTy str, tpenv
         else
             // Type check the expressions filling the holes
-            let flexes = argTys |> List.map (fun _ -> false)
-            let fillExprs, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys synFillExprs
+            let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
 
             let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
@@ -7178,8 +7195,7 @@ and TcInterpolatedStringExpr cenv (overallTy: OverallTy) env m tpenv (parts: Syn
     | Choice2Of2 createFormattableStringMethod ->
 
         // Type check the expressions filling the holes
-        let flexes = argTys |> List.map (fun _ -> false)
-        let fillExprs, tpenv = TcExprsWithFlexes cenv env m tpenv flexes argTys synFillExprs
+        let fillExprs, tpenv = TcExprsNoFlexes cenv env m tpenv argTys synFillExprs
 
         let fillExprsBoxed = (argTys, fillExprs) ||> List.map2 (mkCallBox g m)
 
@@ -8540,7 +8556,12 @@ and TcTraitItemThen (cenv: cenv) overallTy env objOpt traitInfo tpenv mItem dela
             applicableExpr, exprTy
         | _ ->
             let vs, ves = argTys |> List.mapi (fun i ty -> mkCompGenLocal mItem ("arg" + string i) ty) |> List.unzip
-            let traitCall = Expr.Op (TOp.TraitCall traitInfo, [], objArgs@ves, mItem)
+            // Account for a unit mismtach in logical v. compiled arguments
+            let compiledArgExprs =
+                match argTys, traitInfo.GetCompiledArgumentTypes() with
+                | [_], [] -> []
+                | _ -> ves
+            let traitCall = Expr.Op (TOp.TraitCall traitInfo, [], objArgs@compiledArgExprs, mItem)
             let v, body = MultiLambdaToTupledLambda g vs traitCall
             let expr = mkLambda mItem v (body, retTy)
             let exprTy = tyOfExpr g expr
