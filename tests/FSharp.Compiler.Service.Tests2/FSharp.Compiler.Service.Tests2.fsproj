@@ -35,6 +35,7 @@
     <None Include="Big.fs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Content Include="Docs.md" />
   </ItemGroup>
 
   <ItemGroup>
