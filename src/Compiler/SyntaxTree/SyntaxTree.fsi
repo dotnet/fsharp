@@ -1947,3 +1947,6 @@ type ParsedInput =
 
     /// Gets the #nowarn and other scoped pragmas
     member ScopedPragmas: ScopedPragma list
+
+    /// Gets all hash directives
+    member HashDirectives: ParsedHashDirective list

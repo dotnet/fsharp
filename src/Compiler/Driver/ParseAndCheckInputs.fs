@@ -1420,6 +1420,16 @@ let CheckMultipleInputsSequential (ctok, checkForErrors, tcConfig, tcImports, tc
     (tcState, inputs)
     ||> List.mapFold (CheckOneInputEntry(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, false))
 
+
+let private getParallelCompilationGroup (pi: ParsedInput) =
+    pi.HashDirectives 
+    |> List.filter (fun (ParsedHashDirective(ident = hashIdentifier)) -> hashIdentifier = "paralell_compilation_group")
+    |> List.choose (fun (ParsedHashDirective(args = argList)) -> 
+            argList 
+            |> List.choose (function | ParsedHashDirectiveArgument.String(value=name) -> Some name | _ -> None)
+            |> List.tryExactlyOne)
+    |> List.tryExactlyOne
+
 /// Use parallel checking of implementation files that have signature files
 let CheckMultipleInputsInParallel
     (
@@ -1454,15 +1464,21 @@ let CheckMultipleInputsInParallel
         // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
         // somewhere in the files processed prior to each one, or in the processing of this particular file.
         let priorErrors = checkForErrors ()
-
-        let MAGIC_NUMBER = 4
         
         // Do the first linear phase, checking all signatures and any implementation files that don't have a signature.
         // Implementation files that do have a signature will result in a Choice2Of2 indicating to next do some of the
         // checking in parallel.
         let partialResults, (tcState, _) =
             let sequentialFiles, parallelFiles =
-                List.take MAGIC_NUMBER inputsWithLoggers, List.skip MAGIC_NUMBER inputsWithLoggers
+                // Looking for pattern like this: #paralell_compilation_group "groupName"
+                for pi,dl in inputsWithLoggers do
+                    let paraCompilationGroup = 
+                        pi.HashDirectives 
+                        |> List.tryFind (fun (ParsedHashDirective(ident = hashIdentifier)) -> hashIdentifier = "paralell_compilation_group")
+                    pragmas |> ignore
+                    ()
+
+                List.take 999 inputsWithLoggers, List.skip 999 inputsWithLoggers
 
             let sequentialPartialResults, (sequentialTcState, sequentialPriorErrors) =
                 ((tcState, priorErrors), sequentialFiles)

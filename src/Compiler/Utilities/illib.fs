@@ -480,6 +480,22 @@ module List =
             | x :: xs -> if p x then List.rev acc, l else loop (x :: acc) xs
 
         loop [] l
+    
+    let chunkConsequtiveElementsVia (selector: 'T -> 'a option) (l: 'T list) =
+        let rec loop l = 
+            [ let withoutAnyValue,toBeProcessed = l |> takeUntil (selector >> Option.isSome)
+              for i in withoutAnyValue do
+                yield [i]
+              match toBeProcessed with
+              | [] -> ()
+              | x :: xs ->
+                 let chunkId = x |> selector
+                 let sameIdGroup,withDifferentId = xs |> takeUntil (selector >> ((<>)chunkId))
+                 yield x :: sameIdGroup
+                 yield! loop withDifferentId
+             ]
+
+        loop  l
 
     let order (eltOrder: IComparer<'T>) =
         { new IComparer<'T list> with

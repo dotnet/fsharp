@@ -1757,3 +1757,8 @@ type ParsedInput =
         | ParsedInput.ImplFile (ParsedImplFileInput(contents = SynModuleOrNamespace (range = m) :: _))
         | ParsedInput.SigFile (ParsedSigFileInput(contents = SynModuleOrNamespaceSig (range = m) :: _)) -> m
         | _ -> rangeN inp.FileName 0
+
+    member inp.HashDirectives = 
+        match inp with
+        | ParsedInput.ImplFile file -> file.HashDirectives
+        | ParsedInput.SigFile file -> file.HashDirectives

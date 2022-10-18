@@ -1,5 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-
+#paralell_compilation_group "groupName"
 namespace FSharp.Compiler.ComponentTests.Conformance.BasicGrammarElements
 
 open Xunit
