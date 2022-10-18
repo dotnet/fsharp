@@ -75,7 +75,7 @@ module Benchmark{number}
 
 val myFunc{number}: unit -> int
 
-type MyType{number} = | MyType6 of string
+type MyType{number} = | MyType{number} of string
 
 type MyOtherType{number} = | MyOtherType{number} of int
 
