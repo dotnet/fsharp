@@ -458,6 +458,13 @@ let getParallelReferenceResolutionFromEnvironment () =
                 Some ParallelReferenceResolution.Off
         | false, _ -> None)
 
+type Timer(name : string) =
+    let sw = Stopwatch.StartNew()
+    do printfn $"{name} - start"
+    member this.Dispose() = printfn $"{name} - end - {sw.Elapsed.TotalSeconds}s"
+    interface IDisposable with
+        member this.Dispose() = this.Dispose()
+
 /// First phase of compilation.
 ///   - Set up console encoding and code page settings
 ///   - Process command line, flags and collect filenames
@@ -477,7 +484,8 @@ let main1
         diagnosticsLoggerProvider: IDiagnosticsLoggerProvider,
         disposables: DisposablesTracker
     ) =
-
+    use _ = new Timer("main1")
+    use init = new Timer("main1.init")
     // See Bug 735819
     let lcidFromCodePage =
         if
@@ -553,7 +561,9 @@ let main1
     // Display the banner text, if necessary
     if not bannerAlreadyPrinted then
         Console.Write(GetBannerText tcConfigB)
-
+        
+    init.Dispose()
+    
     // Create tcGlobals and frameworkTcImports
     let outfile, pdbfile, assemblyName =
         try
@@ -595,6 +605,7 @@ let main1
     let sysRes, otherRes, knownUnresolved =
         TcAssemblyResolutions.SplitNonFoundationalResolutions(tcConfig)
 
+    let basic = new Timer("import basic assemblies")
     // Import basic assemblies
     let tcGlobals, frameworkTcImports =
         TcImports.BuildFrameworkTcImports(foundationalTcConfigP, sysRes, otherRes)
@@ -604,10 +615,13 @@ let main1
         [
             for sourceFile in sourceFiles -> tcGlobals.memoize_file (FileIndex.fileIndexOfFile sourceFile)
         ]
-
+        
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
-
+    basic.Dispose()
+    
+    let parse = new Timer("Parse sourceFiles")
+    
     // Parse sourceFiles
     ReportTime tcConfig "Parse inputs"
     use unwindParsePhase = UseBuildPhase BuildPhase.Parse
@@ -620,7 +634,7 @@ let main1
         ||> List.mapFold (fun state (input, x) ->
             let inputT, stateT = DeduplicateParsedInputModuleName state input
             (inputT, x), stateT)
-
+    
     // Print the AST if requested
     if tcConfig.printAst then
         for input, _filename in inputs do
@@ -633,7 +647,10 @@ let main1
 
     if not tcConfig.continueAfterParseFailure then
         AbortOnError(diagnosticsLogger, exiter)
+        
+    parse.Dispose()
 
+    let importOther = new Timer("Import other assemblies")
     // Apply any nowarn flags
     let tcConfig =
         (tcConfig, inputs)
@@ -658,6 +675,9 @@ let main1
     if tcConfig.importAllReferencesOnly then
         exiter.Exit 0
 
+    importOther.Dispose()
+    
+    let typeCheck = new Timer("Typecheck")
     // Build the initial type checking environment
     ReportTime tcConfig "Typecheck"
 
@@ -675,6 +695,8 @@ let main1
     AbortOnError(diagnosticsLogger, exiter)
     ReportTime tcConfig "Typechecked"
 
+    typeCheck.Dispose()
+    
     Args(
         ctok,
         tcGlobals,
@@ -710,7 +732,7 @@ let main2
            exiter: Exiter,
            ilSourceDocs))
     =
-
+    use _ = new Timer("main2")
     if tcConfig.typeCheckOnly then
         exiter.Exit 0
 
@@ -818,7 +840,7 @@ let main3
            exiter: Exiter,
            ilSourceDocs))
     =
-
+    use _ = new Timer("main3")
     // Encode the signature data
     ReportTime tcConfig "Encode Interface Data"
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
@@ -914,7 +936,7 @@ let main4
            exiter: Exiter,
            ilSourceDocs))
     =
-
+    use _ = new Timer("main4")
     match tcImportsCapture with
     | None -> ()
     | Some f -> f tcImports
@@ -1017,7 +1039,7 @@ let main5
            exiter: Exiter,
            ilSourceDocs))
     =
-
+    use _ = new Timer("main5")
     use _ = UseBuildPhase BuildPhase.Output
 
     // Static linking, if any
@@ -1049,7 +1071,7 @@ let main6
            exiter: Exiter,
            ilSourceDocs))
     =
-
+    use _ = new Timer("main6")
     ReportTime tcConfig "Write .NET Binary"
 
     use _ = UseBuildPhase BuildPhase.Output

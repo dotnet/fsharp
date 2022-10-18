@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.CommandLineMain
 
 open System
+
 open System.Reflection
 open System.Runtime
 open System.Runtime.CompilerServices
@@ -21,9 +22,20 @@ open FSharp.Compiler.Text
 [<Dependency("FSharp.Compiler.Service", LoadHint.Always)>]
 do ()
 
+
+type Timer(name : string) =
+    let sw = System.Diagnostics.Stopwatch.StartNew()
+    do printfn $"{name} - start"
+    member this.Dispose() = printfn $"{name} - end - {sw.Elapsed.TotalSeconds}s"
+    interface IDisposable with
+        member this.Dispose() = this.Dispose()
+
+
 [<EntryPoint>]
 let main (argv) =
 
+    use _ = new Timer("main")
+    
     let compilerName =
         // the 64 bit desktop version of the compiler is name fscAnyCpu.exe, all others are fsc.exe
         if
