@@ -1209,7 +1209,12 @@ type SynBinding =
 
 /// Represents the return information in a binding for a 'let' or 'member' declaration
 [<NoEquality; NoComparison>]
-type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
+type SynBindingReturnInfo =
+    | SynBindingReturnInfo of
+        typeName: SynType *
+        range: range *
+        attributes: SynAttributes *
+        trivia: SynBindingReturnInfoTrivia
 
 /// Represents the flags for a 'member' declaration
 [<NoComparison; RequireQualifiedAccess; CustomEquality>]
@@ -1232,9 +1237,6 @@ type SynMemberFlags =
 
         /// The kind of the member
         MemberKind: SynMemberKind
-
-        /// Additional information
-        Trivia: SynMemberFlagsTrivia
     }
 
 /// Note the member kind is actually computed partially by a syntax tree transformation in tc.fs
@@ -1429,7 +1431,8 @@ type SynField =
         isMutable: bool *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynFieldTrivia
 
 /// Represents the syntax tree associated with the name of a type definition or module
 /// in signature or implementation.
@@ -1623,11 +1626,9 @@ type SynMemberDefn =
         memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        equalsRange: range *
         synExpr: SynExpr *
-        withKeyword: range option *
-        getSetRange: range option *
-        range: range
+        range: range *
+        trivia: SynMemberDefnAutoPropertyTrivia
 
     /// Gets the syntax range of this construct
     member Range: range

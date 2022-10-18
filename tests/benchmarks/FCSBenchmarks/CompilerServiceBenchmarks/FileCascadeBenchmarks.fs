@@ -1,5 +1,4 @@
-﻿#PARALLEL_COMPILATION_NAMEOFTHEGROUPLIKE_UNITTESTS
-namespace FSharp.Compiler.Benchmarks
+﻿namespace FSharp.Compiler.Benchmarks
 
 open System
 open System.IO
@@ -110,6 +109,7 @@ type FileCascadeBenchmarks() =
                 projectCacheSize = 5, 
                 enablePartialTypeChecking = this.PartialCheck,
                 enableParallelCheckingWithSignatureFiles = this.ParaChecking)
+
 
         let projectFolder = Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(),"CascadeBenchmarkProject"))                    
         if(projectFolder.Exists) then

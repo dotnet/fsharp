@@ -12,6 +12,11 @@
         <target state="translated">Estensione di file di '{0}' non riconosciuta. I file di origine devono avere estensione .fs, .fsi, .fsx or .fsscript</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDuplicatedMethodParameter">
+        <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
+        <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">La funzionalità '{0}' non è disponibile in F# {1}. Usare la versione {2} o versioni successive del linguaggio.</target>
@@ -7508,8 +7513,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
-        <source>If a union type has more than one case and is a struct, then all fields within the union type must be given unique names.</source>
-        <target state="translated">Se un tipo di unione contiene più di un case ed è una struttura, è necessario assegnare nomi univoci a tutti i campi all'interno del tipo di unione.</target>
+        <source>If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</source>
+        <target state="needs-review-translation">Se un tipo di unione contiene più di un case ed è una struttura, è necessario assegnare nomi univoci a tutti i campi all'interno del tipo di unione.</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
