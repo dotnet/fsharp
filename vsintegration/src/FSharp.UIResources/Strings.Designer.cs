@@ -88,51 +88,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to CodeLens.
-        /// </summary>
-        public static string CodeLens {
-            get {
-                return ResourceManager.GetString("CodeLens", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Annotation prefix.
-        /// </summary>
-        public static string CodeLens_Prefix {
-            get {
-                return ResourceManager.GetString("CodeLens_Prefix", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Show annotations to the right instead of above the line.
-        /// </summary>
-        public static string CodeLens_Replace_LineLens {
-            get {
-                return ResourceManager.GetString("CodeLens_Replace_LineLens", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Enable CodeLens (Experimental).
-        /// </summary>
-        public static string CodeLens_Switch {
-            get {
-                return ResourceManager.GetString("CodeLens_Switch", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Use colors in annotations.
-        /// </summary>
-        public static string CodeLens_UseColors {
-            get {
-                return ResourceManager.GetString("CodeLens_UseColors", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Completion Lists.
         /// </summary>
         public static string Completion_Lists {
@@ -268,6 +223,42 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Lens.
+        /// </summary>
+        public static string Lens {
+            get {
+                return ResourceManager.GetString("Lens", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Annotation prefix.
+        /// </summary>
+        public static string Lens_Prefix {
+            get {
+                return ResourceManager.GetString("Lens_Prefix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enable Lens (Experimental).
+        /// </summary>
+        public static string Lens_Switch {
+            get {
+                return ResourceManager.GetString("Lens_Switch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use colors in annotations.
+        /// </summary>
+        public static string Lens_UseColors {
+            get {
+                return ResourceManager.GetString("Lens_UseColors", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Navigation links.
         /// </summary>
         public static string Navigation_links {
@@ -291,15 +282,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Parallelization {
             get {
                 return ResourceManager.GetString("Parallelization", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Number of projects whose data is cached in memory.
-        /// </summary>
-        public static string Project_check_cache_size {
-            get {
-                return ResourceManager.GetString("Project_check_cache_size", resourceCulture);
             }
         }
         
@@ -417,15 +399,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Tooltip_in_memory_cross_project_references {
             get {
                 return ResourceManager.GetString("Tooltip_in_memory_cross_project_references", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions..
-        /// </summary>
-        public static string Tooltip_project_check_cache_size {
-            get {
-                return ResourceManager.GetString("Tooltip_project_check_cache_size", resourceCulture);
             }
         }
         

@@ -862,7 +862,7 @@ module internal DescriptionListsImpl =
                 | TFSharpInterface -> FSharpGlyph.Interface
                 | TFSharpStruct -> FSharpGlyph.Struct
                 | TFSharpDelegate _ -> FSharpGlyph.Delegate
-                | TFSharpEnum _ -> FSharpGlyph.Enum
+                | TFSharpEnum -> FSharpGlyph.Enum
             | TFSharpRecdRepr _ -> FSharpGlyph.Type
             | TFSharpUnionRepr _ -> FSharpGlyph.Union
             | TILObjectRepr (TILObjectReprData (_, _, td)) -> 

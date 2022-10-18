@@ -1744,7 +1744,7 @@ module TastDefinitionPrinting =
             let overallL = modifierAndMember ^^ (nameL |> addColonL) ^^ typL
             layoutXmlDocOfPropInfo denv infoReader pinfo overallL
 
-    let layoutTyconDefn (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified typewordL (tcref: TyconRef) =
+    let layoutTyconDefn (denv: DisplayEnv) (infoReader: InfoReader) ad m simplified isFirstType (tcref: TyconRef) =        
         let g = denv.g
         // use 4-indent 
         let (-*) = if denv.printVerboseSignatures then (-----) else (---)
@@ -1773,6 +1773,12 @@ module TastDefinitionPrinting =
                     None, tagClass
             else
                 None, tagUnknownType
+
+        let typewordL =
+            if isFirstType then
+                WordL.keywordType
+            else
+                wordL (tagKeyword "and") ^^ layoutAttribs denv start false tycon.TypeOrMeasureKind tycon.Attribs emptyL
 
         let nameL = ConvertLogicalNameToDisplayLayout (tagger >> mkNav tycon.DefinitionRange >> wordL) tycon.DisplayNameCore
 
@@ -2125,7 +2131,7 @@ module TastDefinitionPrinting =
                 |> addLhs
 
         typeDeclL 
-        |> layoutAttribs denv start false tycon.TypeOrMeasureKind tycon.Attribs 
+        |> fun tdl -> if isFirstType then layoutAttribs denv start false tycon.TypeOrMeasureKind tycon.Attribs tdl else tdl
         |> layoutXmlDocOfEntity denv infoReader tcref 
 
     // Layout: exception definition
@@ -2155,8 +2161,8 @@ module TastDefinitionPrinting =
         | [] -> emptyL
         | [h] when h.IsFSharpException -> layoutExnDefn denv infoReader (mkLocalEntityRef h)
         | h :: t -> 
-            let x = layoutTyconDefn denv infoReader ad m false WordL.keywordType (mkLocalEntityRef h)
-            let xs = List.map (mkLocalEntityRef >> layoutTyconDefn denv infoReader ad m false (wordL (tagKeyword "and"))) t
+            let x = layoutTyconDefn denv infoReader ad m false true (mkLocalEntityRef h)
+            let xs = List.map (mkLocalEntityRef >> layoutTyconDefn denv infoReader ad m false false) t
             aboveListL (x :: xs)
 
     let rec fullPath (mspec: ModuleOrNamespace) acc =
@@ -2268,7 +2274,7 @@ module TastDefinitionPrinting =
         elif eref.IsFSharpException then
             layoutExnDefn denv infoReader eref
         else
-            layoutTyconDefn denv infoReader ad m true WordL.keywordType eref
+            layoutTyconDefn denv infoReader ad m true true eref
 
 //--------------------------------------------------------------------------
 
@@ -2562,7 +2568,7 @@ let layoutExnDef denv infoReader x = x |> TastDefinitionPrinting.layoutExnDefn d
 
 let stringOfTyparConstraints denv x = x |> PrintTypes.layoutConstraintsWithInfo denv SimplifyTypes.typeSimplificationInfo0 |> showL
 
-let layoutTyconDefn denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTyconDefn denv infoReader ad m true WordL.keywordType (mkLocalEntityRef x) (* |> Display.squashTo width *)
+let layoutTyconDefn denv infoReader ad m (* width *) x = TastDefinitionPrinting.layoutTyconDefn denv infoReader ad m true true (mkLocalEntityRef x) (* |> Display.squashTo width *)
 
 let layoutEntityDefn denv infoReader ad m x = TastDefinitionPrinting.layoutEntityDefn denv infoReader ad m x
 

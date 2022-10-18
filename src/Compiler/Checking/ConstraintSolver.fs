@@ -1225,9 +1225,9 @@ and SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln origl1 origl2 =
        let rec loop l1 l2 = 
            match l1, l2 with 
            | [], [] -> CompleteD 
-           | h1 :: t1, h2 :: t2 -> 
+           | h1 :: t1, h2 :: t2 when t1.Length = t2.Length -> 
                SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln h1 h2 ++ (fun () -> loop t1 t2) 
-           | _ -> 
+           | _ ->
                ErrorD(ConstraintSolverTupleDiffLengths(csenv.DisplayEnv, origl1, origl2, csenv.m, m2)) 
        loop origl1 origl2
 

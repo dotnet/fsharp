@@ -199,6 +199,14 @@ type SynPatOrTrivia =
         BarRange: range
     }
 
+/// Represents additional information for SynPat.Cons
+[<NoEquality; NoComparison>]
+type SynPatListConsTrivia =
+    {
+        /// The syntax range of the `::` token.
+        ColonColonRange: range
+    }
+
 /// Represents additional information for SynTypeDefn
 [<NoEquality; NoComparison>]
 type SynTypeDefnTrivia =
@@ -231,40 +239,50 @@ type SynTypeDefnSigTrivia =
 
     static member Zero: SynTypeDefnSigTrivia
 
+/// Represents the leading keyword in a SynBinding or SynValSig
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynLeadingKeyword =
+    | Let of letRange: range
+    | LetRec of letRange: range * recRange: range
+    | And of andRange: range
+    | Use of useRange: range
+    | UseRec of useRange: range * recRange: range
+    | Extern of externRange: range
+    | Member of memberRange: range
+    | MemberVal of memberRange: range * valRange: range
+    | Override of overrideRange: range
+    | OverrideVal of overrideRange: range * valRange: range
+    | Abstract of abstractRange: range
+    | AbstractMember of abstractRange: range * memberRange: range
+    | StaticMember of staticRange: range * memberRange: range
+    | StaticMemberVal of staticRange: range * memberRange: range * valRange: range
+    | StaticAbstract of staticRange: range * abstractRange: range
+    | StaticAbstractMember of staticRange: range * abstractMember: range * memberRange: range
+    | StaticVal of staticRange: range * valRange: range
+    | StaticLet of staticRange: range * letRange: range
+    | StaticLetRec of staticRange: range * letRange: range * recRange: range
+    | StaticDo of staticRange: range * doRange: range
+    | Default of defaultRange: range
+    | DefaultVal of defaultRange: range * valRange: range
+    | Val of valRange: range
+    | New of newRange: range
+    | Do of doRange: range
+    | Synthetic
+
+    member Range: range
+
 /// Represents additional information for SynBinding
 [<NoEquality; NoComparison>]
 type SynBindingTrivia =
     {
-        /// The syntax range of the `let` keyword.
-        LetKeyword: range option
+        /// Used leading keyword of SynBinding
+        LeadingKeyword: SynLeadingKeyword
 
         /// The syntax range of the `=` token.
         EqualsRange: range option
     }
 
     static member Zero: SynBindingTrivia
-
-/// Represents additional information for SynMemberFlags
-[<NoEquality; NoComparison>]
-type SynMemberFlagsTrivia =
-    {
-        /// The syntax range of the `member` keyword
-        MemberRange: range option
-
-        /// The syntax range of the `override` keyword
-        OverrideRange: range option
-
-        /// The syntax range of the `abstract` keyword
-        AbstractRange: range option
-
-        /// The syntax range of the `member` keyword
-        StaticRange: range option
-
-        /// The syntax range of the `default` keyword
-        DefaultRange: range option
-    }
-
-    static member Zero: SynMemberFlagsTrivia
 
 /// Represents additional information for SynExprAndBang
 [<NoEquality; NoComparison>]
@@ -329,8 +347,10 @@ type SynModuleOrNamespaceSigTrivia =
 [<NoEquality; NoComparison>]
 type SynValSigTrivia =
     {
-        /// The syntax range of the `val` keyword
-        ValKeyword: range option
+        /// Used leading keyword of SynValSig
+        /// In most cases this will be `val`,
+        /// but in case of `SynMemberDefn.AutoProperty` or `SynMemberDefn.AbstractSlot` it could be something else.
+        LeadingKeyword: SynLeadingKeyword
 
         /// The syntax range of the `with` keyword
         WithKeyword: range option
@@ -372,4 +392,47 @@ type SynArgPatsNamePatPairsTrivia =
     {
         /// The syntax range from the beginning of the `(` token till the end of the `)` token.
         ParenRange: range
+    }
+
+/// Represents additional information for SynMemberDefn.AutoProperty
+[<NoEquality; NoComparison>]
+type SynMemberDefnAutoPropertyTrivia =
+    {
+        /// Used leading keyword of AutoProperty
+        LeadingKeyword: SynLeadingKeyword
+
+        /// The syntax range of the `with` keyword
+        WithKeyword: range option
+
+        /// The syntax range of the `=` token
+        EqualsRange: range option
+
+        /// The syntax range of 'get, set'
+        GetSetKeyword: range option
+    }
+
+/// Represents additional information for SynField
+[<NoEquality; NoComparison>]
+type SynFieldTrivia =
+    {
+        /// Used leading keyword of SynField
+        LeadingKeyword: SynLeadingKeyword option
+    }
+
+    static member Zero: SynFieldTrivia
+
+/// Represents additional information for SynType.Or
+[<NoEquality; NoComparison>]
+type SynTypeOrTrivia =
+    {
+        /// The syntax range of the `or` keyword
+        OrKeyword: range
+    }
+
+/// Represents additional information for SynBindingReturnInfo
+[<NoEquality; NoComparison>]
+type SynBindingReturnInfoTrivia =
+    {
+        /// The syntax range of the `:` token
+        ColonRange: range option
     }
