@@ -8,6 +8,10 @@
     <TargetExt>.exe</TargetExt>
     <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests2" />
+  </ItemGroup>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('fsc.targets', '$(MSBuildThisFileDirectory)../'))" />
 

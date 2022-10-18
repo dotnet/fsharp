@@ -2,5 +2,5 @@
 
 [<EntryPoint>]
 let main argv = 
-    FSharp.Compiler.Service.Tests.DepResolving.Test()
-    0
+    //FSharp.Compiler.Service.Tests.DepResolving.Test()
+    FSharp.Compiler.Service.Tests.RunCompiler.runCompiler()

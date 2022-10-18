@@ -48,7 +48,6 @@ type ModuleSegment = string
 
 type TrieNode =
     {
-        // parent?
         // TODO Use ValueTuples if not already
         Children : IDictionary<ModuleSegment, TrieNode>
         mutable Reachable : bool

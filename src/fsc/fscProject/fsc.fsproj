@@ -15,6 +15,10 @@
     <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests2" />
+  </ItemGroup>
+
   <Import Project="$([MSBuild]::GetPathOfFileAbove('fsc.targets', '$(MSBuildThisFileDirectory)../'))" />
 
 </Project>

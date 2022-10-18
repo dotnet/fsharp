@@ -28,6 +28,7 @@
     </Compile>
     <Compile Include="TypeTests.fs" />
     <Compile Include="DepResolving.fs" />
+    <Compile Include="RunCompiler.fs" />
     <Compile Include="..\service\Program.fs">
       <Link>Program.fs</Link>
     </Compile>
@@ -43,6 +44,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
     <PackageReference Include="Buildalyzer" Version="4.1.2" />
     <ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="..\..\src\fsc\fscProject\fsc.fsproj" />
     <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
   </ItemGroup>
 
