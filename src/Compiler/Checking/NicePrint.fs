@@ -1696,11 +1696,13 @@ module TastDefinitionPrinting =
     let breakTypeDefnEqn repr =
         match repr with 
         | TILObjectRepr _ -> true
-        | TFSharpObjectRepr _ -> true
-        | TFSharpRecdRepr _ -> true
-        | TFSharpUnionRepr r ->
-             not (isNilOrSingleton r.CasesTable.UnionCasesAsList) ||
-             r.CasesTable.UnionCasesAsList |> List.exists (fun uc -> not uc.XmlDoc.IsEmpty)
+        | TFSharpTyconRepr d ->
+            match d.fsobjmodel_kind with
+            | TFSharpUnion ->
+                let r = d.fsobjmodel_cases
+                not (isNilOrSingleton r.UnionCasesAsList) ||
+                r.UnionCasesAsList |> List.exists (fun uc -> not uc.XmlDoc.IsEmpty)
+            | _ -> true
         | TAsmRepr _ 
         | TMeasureableRepr _ 
 #if !NO_TYPEPROVIDERS
@@ -2002,7 +2004,7 @@ module TastDefinitionPrinting =
         let typeDeclL = 
 
             match repr with 
-            | TFSharpRecdRepr _ ->
+            | TFSharpTyconRepr { fsobjmodel_kind=TFSharpRecord } ->
                 let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
 
                 // For records, use multi-line layout as soon as there is XML doc 
@@ -2038,7 +2040,7 @@ module TastDefinitionPrinting =
                 |> addMaxMembers
                 |> addLhs
 
-            | TFSharpUnionRepr _ -> 
+            | TFSharpTyconRepr { fsobjmodel_kind = TFSharpUnion } ->
                 let denv = denv.AddAccessibility tycon.TypeReprAccessibility 
                 tycon.UnionCasesAsList
                 |> layoutUnionCases denv infoReader tcref
@@ -2048,7 +2050,7 @@ module TastDefinitionPrinting =
                 |> addMaxMembers
                 |> addLhs
                   
-            | TFSharpObjectRepr { fsobjmodel_kind = TFSharpDelegate slotSig } ->
+            | TFSharpTyconRepr { fsobjmodel_kind = TFSharpDelegate slotSig } ->
                 let (TSlotSig(_, _, _, _, paraml, retTy)) = slotSig
                 let retTy = GetFSharpViewOfReturnType denv.g retTy
                 let delegateL = WordL.keywordDelegate ^^ WordL.keywordOf -* layoutTopType denv SimplifyTypes.typeSimplificationInfo0 (paraml |> List.mapSquared (fun sp -> (sp.Type, ValReprInfo.unnamedTopArg1))) retTy []
@@ -2056,10 +2058,10 @@ module TastDefinitionPrinting =
                 |> addLhs
 
             // Measure declarations are '[<Measure>] type kg' unless abbreviations
-            | TFSharpObjectRepr _ when isMeasure ->
+            | TFSharpTyconRepr _ when isMeasure ->
                 lhsL
 
-            | TFSharpObjectRepr { fsobjmodel_kind = TFSharpEnum } ->
+            | TFSharpTyconRepr { fsobjmodel_kind = TFSharpEnum } ->
                 tycon.TrueFieldsAsList
                 |> List.map (fun f -> 
                     match f.LiteralValue with 
@@ -2072,7 +2074,7 @@ module TastDefinitionPrinting =
                 |> aboveListL
                 |> addLhs
 
-            | TFSharpObjectRepr objRepr when isNil allDecls ->
+            | TFSharpTyconRepr objRepr when isNil allDecls ->
                 match objRepr.fsobjmodel_kind with
                 | TFSharpClass ->
                     WordL.keywordClass ^^ WordL.keywordEnd
@@ -2085,7 +2087,7 @@ module TastDefinitionPrinting =
                     |> addLhs
                 | _ -> lhsL
 
-            | TFSharpObjectRepr _ ->
+            | TFSharpTyconRepr _ ->
                 allDecls
                 |> applyMaxMembers denv.maxMembers
                 |> aboveListL

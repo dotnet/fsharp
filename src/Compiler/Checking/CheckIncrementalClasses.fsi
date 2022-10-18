@@ -13,21 +13,26 @@ open FSharp.Compiler.Xml
 
 exception ParameterlessStructCtor of range: range
 
-/// Typechecked info for implicit constructor and it's arguments
-type IncrClassCtorLhs =
+/// Typechecked info for implicit static constructor
+type StaticCtorInfo =
     {
         /// The TyconRef for the type being defined
         TyconRef: TyconRef
 
-        /// The type parameters allocated for the implicit instance constructor.
-        /// These may be equated with other (WillBeRigid) type parameters through equi-recursive inference, and so
-        /// should always be renormalized/canonicalized when used.
-        InstanceCtorDeclaredTypars: Typars
+        /// The copy of the type parameters allocated for implicit construction
+        IncrCtorDeclaredTypars: Typars
 
         /// The value representing the static implicit constructor.
         /// Lazy to ensure the static ctor value is only published if needed.
         StaticCtorValInfo: Lazy<Val list * Val * ValScheme>
 
+        /// The name generator used to generate the names of fields etc. within the type.
+        NameGenerator: NiceNameGenerator
+    }
+
+/// Typechecked info for implicit instance constructor and it's arguments
+type IncrClassCtorInfo =
+    {
         /// The value representing the implicit constructor.
         InstanceCtorVal: Val
 
@@ -49,9 +54,6 @@ type IncrClassCtorLhs =
 
         /// The value representing the 'this' variable within the implicit instance constructor.
         InstanceCtorThisVal: Val
-
-        /// The name generator used to generate the names of fields etc. within the type.
-        NameGenerator: NiceNameGenerator
     }
 
 /// Indicates how is a 'let' bound value in a class with implicit construction is represented in
@@ -90,7 +92,7 @@ type IncrClassReprInfo =
         cenv: TcFileState *
         denv: DisplayEnv *
         cpath: CompilationPath *
-        ctorInfo: IncrClassCtorLhs *
+        staticCtorInfo: StaticCtorInfo *
         safeStaticInitInfo: SafeInitData ->
             unit
 
@@ -116,7 +118,17 @@ type IncrClassConstructionBindingsPhase2C =
 
 /// Check and elaborate the "left hand side" of the implicit class construction
 /// syntax.
-val TcImplicitCtorLhs_Phase2A:
+val TcStaticImplicitCtorInfo_Phase2A:
+    cenv: TcFileState *
+    env: TcEnv *
+    tcref: TyconRef *
+    m: range *
+    copyOfTyconTypars: Typar list ->
+        StaticCtorInfo
+
+/// Check and elaborate the "left hand side" of the implicit class construction
+/// syntax.
+val TcImplicitCtorInfo_Phase2A:
     cenv: TcFileState *
     env: TcEnv *
     tpenv: UnscopedTyparEnv *
@@ -132,7 +144,7 @@ val TcImplicitCtorLhs_Phase2A:
     objTy: TType *
     thisTy: TType *
     xmlDoc: PreXmlDoc ->
-        IncrClassCtorLhs
+        IncrClassCtorInfo
 
 /// <summary>
 /// Given a set of 'let' bindings (static or not, recursive or not) that make up a class,
@@ -140,9 +152,8 @@ val TcImplicitCtorLhs_Phase2A:
 /// </summary>
 /// <param name='cenv'></param>
 /// <param name='env'></param>
-/// <param name='ctorInfo'>The lhs information about the implicit constructor</param>
-/// <param name='inheritsExpr'>The call to the super class constructor</param>
-/// <param name='inheritsIsVisible'>Should we place a sequence point at the 'inheritedTys call?</param>
+/// <param name='staticCtorInfo'>The information about the static implicit constructor</param>
+/// <param name='instanceInfo'>The lhs information about the implicit constructor, the call to the super class constructor and whether we should we place a sequence point at the 'inheritedTys call?</param>
 /// <param name='decs'>The declarations</param>
 /// <param name='memberBinds'></param>
 /// <param name='generalizedTyparsForRecursiveBlock'>Record any unconstrained type parameters generalized for the outer members as "free choices" in the let bindings</param>
@@ -150,11 +161,10 @@ val TcImplicitCtorLhs_Phase2A:
 val MakeCtorForIncrClassConstructionPhase2C:
     cenv: TcFileState *
     env: TcEnv *
-    ctorInfo: IncrClassCtorLhs *
-    inheritsExpr: Expr *
-    inheritsIsVisible: bool *
+    staticCtorInfo: StaticCtorInfo *
+    instanceInfo: (IncrClassCtorInfo * Expr * bool) option *
     decs: IncrClassConstructionBindingsPhase2C list *
     memberBinds: Binding list *
     generalizedTyparsForRecursiveBlock: Typar list *
     safeStaticInitInfo: SafeInitData ->
-        Expr * Expr option * Binding list * IncrClassReprInfo
+        Expr option * Expr option * Binding list * IncrClassReprInfo

@@ -554,7 +554,7 @@ type Entity =
     member ExceptionInfo: ExceptionInfo
 
     /// Get the blob of information associated with an F# object-model type definition, i.e. class, interface, struct etc.
-    member FSharpObjectModelTypeInfo: TyconObjModelData
+    member FSharpTyconRepresentationData: FSharpTyconData
 
     /// Gets any implicit CompareTo methods added to an F# record, union or struct type definition.
     member GeneratedCompareToValues: (ValRef * ValRef) option
@@ -871,13 +871,7 @@ type TyconAugmentation =
 type TyconRepresentation =
 
     /// Indicates the type is a class, struct, enum, delegate or interface
-    | TFSharpObjectRepr of TyconObjModelData
-
-    /// Indicates the type is a record
-    | TFSharpRecdRepr of TyconRecdFields
-
-    /// Indicates the type is a discriminated union
-    | TFSharpUnionRepr of TyconUnionData
+    | TFSharpTyconRepr of FSharpTyconData
 
     /// Indicates the type is a type from a .NET assembly without F# metadata.
     | TILObjectRepr of TILObjectReprData
@@ -984,7 +978,12 @@ type TProvidedTypeInfo =
 
 #endif
 
-type TyconFSharpObjModelKind =
+type FSharpTyconKind =
+    /// Indicates the type is an F#-declared record
+    | TFSharpRecord
+
+    /// Indicates the type is an F#-declared union
+    | TFSharpUnion
 
     /// Indicates the type is an F#-declared class (also used for units-of-measure)
     | TFSharpClass
@@ -1001,16 +1000,15 @@ type TyconFSharpObjModelKind =
     /// Indicates the type is an F#-declared enumeration
     | TFSharpEnum
 
-    /// Indicates if the type definition is a value type
-    member IsValueType: bool
-
 /// Represents member values type class fields relating to the F# object model
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type TyconObjModelData =
+type FSharpTyconData =
     {
+        /// Indicates the cases of a union type
+        fsobjmodel_cases: TyconUnionData
 
         /// Indicates whether the type declaration is an F# class, interface, enum, delegate or struct
-        fsobjmodel_kind: TyconFSharpObjModelKind
+        fsobjmodel_kind: FSharpTyconKind
 
         /// The declared abstract slots of the class, interface or struct
         fsobjmodel_vslots: ValRef list
@@ -2411,7 +2409,7 @@ type EntityRef =
     member ExceptionInfo: ExceptionInfo
 
     /// Get the blob of information associated with an F# object-model type definition, i.e. class, interface, struct etc.
-    member FSharpObjectModelTypeInfo: TyconObjModelData
+    member FSharpTyconRepresentationData: FSharpTyconData
 
     /// Gets any implicit CompareTo methods added to an F# record, union or struct type definition.
     member GeneratedCompareToValues: (ValRef * ValRef) option
@@ -4221,9 +4219,8 @@ type FreeVars =
     member DebugText: string
 
 /// A set of static methods for constructing types.
+[<Class>]
 type Construct =
-
-    new: unit -> Construct
 
 #if !NO_TYPEPROVIDERS
     /// Compute the definition location of a provided item
@@ -4260,6 +4257,9 @@ type Construct =
 
     /// Create a new node for an empty module or namespace contents
     static member NewEmptyModuleOrNamespaceType: mkind: ModuleOrNamespaceKind -> ModuleOrNamespaceType
+
+    /// Create a new node for an empty F# tycon data
+    static member NewEmptyFSharpTyconData: kind: FSharpTyconKind -> FSharpTyconData
 
     /// Create a new TAST Entity node for an F# exception definition
     static member NewExn:

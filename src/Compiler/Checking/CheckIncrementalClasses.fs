@@ -35,20 +35,32 @@ type IncrClassBindingGroup =
     | IncrClassDo of expr: Expr * isStatic: bool * range: Range 
 
 /// Typechecked info for implicit constructor and it's arguments 
-type IncrClassCtorLhs = 
+type StaticCtorInfo = 
     {
         /// The TyconRef for the type being defined
         TyconRef: TyconRef
 
-        /// The type parameters allocated for the implicit instance constructor. 
-        /// These may be equated with other (WillBeRigid) type parameters through equi-recursive inference, and so 
-        /// should always be renormalized/canonicalized when used.
-        InstanceCtorDeclaredTypars: Typars     
+        /// The type parameters allocated for the implicit construction. 
+        IncrCtorDeclaredTypars: Typars     
 
         /// The value representing the static implicit constructor.
         /// Lazy to ensure the static ctor value is only published if needed.
         StaticCtorValInfo: Lazy<Val list * Val * ValScheme>
 
+        /// The name generator used to generate the names of fields etc. within the type.
+        NameGenerator: NiceNameGenerator
+    }
+        
+    /// Get the type parameters of the implicit constructor, after taking equi-recursive inference into account.
+    member ctorInfo.GetNormalizedIncrCtorDeclaredTypars (cenv: cenv) denv m = 
+        let g = cenv.g
+        let ctorDeclaredTypars = ctorInfo.IncrCtorDeclaredTypars
+        let ctorDeclaredTypars = ChooseCanonicalDeclaredTyparsAfterInference g denv ctorDeclaredTypars m
+        ctorDeclaredTypars
+
+/// Typechecked info for implicit constructor and it's arguments 
+type IncrClassCtorInfo = 
+    {
         /// The value representing the implicit constructor.
         InstanceCtorVal: Val
 
@@ -71,20 +83,46 @@ type IncrClassCtorLhs =
         /// The value representing the 'this' variable within the implicit instance constructor.
         InstanceCtorThisVal: Val
 
-        /// The name generator used to generate the names of fields etc. within the type.
-        NameGenerator: NiceNameGenerator
     }
         
-    /// Get the type parameters of the implicit constructor, after taking equi-recursive inference into account.
-    member ctorInfo.GetNormalizedInstanceCtorDeclaredTypars (cenv: cenv) denv m = 
-        let g = cenv.g
-        let ctorDeclaredTypars = ctorInfo.InstanceCtorDeclaredTypars
-        let ctorDeclaredTypars = ChooseCanonicalDeclaredTyparsAfterInference g denv ctorDeclaredTypars m
-        ctorDeclaredTypars
+/// Check and elaborate the "left hand side" of the implicit class construction 
+/// syntax.
+let TcStaticImplicitCtorInfo_Phase2A(cenv: cenv, env, tcref: TyconRef, m, copyOfTyconTypars) =
+
+    let g = cenv.g
+
+    // Add class typars to env 
+    let env = AddDeclaredTypars CheckForDuplicateTypars copyOfTyconTypars env
+
+    // We only generate the cctor on demand, because we don't need it if there are no cctor actions. 
+    // The code below has a side-effect (MakeAndPublishVal), so we only want to run it once if at all. 
+    // The .cctor is never referenced by any other code.
+    let cctorValInfo = 
+        lazy 
+            let cctorArgs = [ fst(mkCompGenLocal m "unitVar" g.unit_ty) ]
+
+            let cctorTy = mkFunTy g g.unit_ty g.unit_ty
+            let valSynData = SynValInfo([[]], SynInfo.unnamedRetVal)
+            let id = ident ("cctor", m)
+            CheckForNonAbstractInterface ModuleOrMemberBinding tcref ClassCtorMemberFlags id.idRange
+            let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], ClassCtorMemberFlags, valSynData, id, false)
+            let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
+            let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, cctorTy)
+            let valReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
+            let cctorValScheme = ValScheme(id, prelimTyschemeG, Some valReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, Some (SynAccess.Private Range.Zero), false, true, false, false)
+                 
+            let cctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValNotInRecScope, cctorValScheme, [(* no attributes*)], XmlDoc.Empty, None, false) 
+            cctorArgs, cctorVal, cctorValScheme
+
+    {   TyconRef = tcref
+        IncrCtorDeclaredTypars = copyOfTyconTypars
+        StaticCtorValInfo = cctorValInfo
+        NameGenerator = NiceNameGenerator()
+    }
 
 /// Check and elaborate the "left hand side" of the implicit class construction 
 /// syntax.
-let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attrs, spats, thisIdOpt, baseValOpt: Val option, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy, xmlDoc: PreXmlDoc) =
+let TcImplicitCtorInfo_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attrs, spats, thisIdOpt, baseValOpt: Val option, safeInitInfo, m, copyOfTyconTypars, objTy, thisTy, xmlDoc: PreXmlDoc) =
 
     let g = cenv.g
     let baseValOpt = 
@@ -139,26 +177,6 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
         let ctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValInRecScope isComplete, ctorValScheme, attribs, xmlDoc, None, false) 
         ctorValScheme, ctorVal
 
-    // We only generate the cctor on demand, because we don't need it if there are no cctor actions. 
-    // The code below has a side-effect (MakeAndPublishVal), so we only want to run it once if at all. 
-    // The .cctor is never referenced by any other code.
-    let cctorValInfo = 
-        lazy 
-            let cctorArgs = [ fst(mkCompGenLocal m "unitVar" g.unit_ty) ]
-
-            let cctorTy = mkFunTy g g.unit_ty g.unit_ty
-            let valSynData = SynValInfo([[]], SynInfo.unnamedRetVal)
-            let id = ident ("cctor", m)
-            CheckForNonAbstractInterface ModuleOrMemberBinding tcref ClassCtorMemberFlags id.idRange
-            let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], ClassCtorMemberFlags, valSynData, id, false)
-            let prelimValReprInfo = TranslateSynValInfo m (TcAttributes cenv env) valSynData
-            let prelimTyschemeG = GeneralizedType(copyOfTyconTypars, cctorTy)
-            let valReprInfo = InferGenericArityFromTyScheme prelimTyschemeG prelimValReprInfo
-            let cctorValScheme = ValScheme(id, prelimTyschemeG, Some valReprInfo, None, Some memberInfo, false, ValInline.Never, NormalVal, Some (SynAccess.Private Range.Zero), false, true, false, false)
-                 
-            let cctorVal = MakeAndPublishVal cenv env (Parent tcref, false, ModuleOrMemberBinding, ValNotInRecScope, cctorValScheme, [(* no attributes*)], XmlDoc.Empty, None, false) 
-            cctorArgs, cctorVal, cctorValScheme
-
     let thisVal = 
         // --- Create this for use inside constructor 
         let thisId = ident ("this", m)
@@ -166,18 +184,13 @@ let TcImplicitCtorLhs_Phase2A(cenv: cenv, env, tpenv, tcref: TyconRef, vis, attr
         let thisVal = MakeAndPublishVal cenv env (ParentNone, false, ClassLetBinding false, ValNotInRecScope, thisValScheme, [], XmlDoc.Empty, None, false)
         thisVal
 
-    {   TyconRef = tcref
-        InstanceCtorDeclaredTypars = copyOfTyconTypars
-        StaticCtorValInfo = cctorValInfo
-        InstanceCtorArgs = ctorArgs
+    {   InstanceCtorArgs = ctorArgs
         InstanceCtorVal = ctorVal
         InstanceCtorValScheme = ctorValScheme
         InstanceCtorBaseValOpt = baseValOpt
         InstanceCtorSafeThisValOpt = safeThisValOpt
         InstanceCtorSafeInitInfo = safeInitInfo
         InstanceCtorThisVal = thisVal
-        // For generating names of local fields
-        NameGenerator = NiceNameGenerator()
     }
 
 
@@ -256,13 +269,15 @@ type IncrClassReprInfo =
     /// <param name='env'></param>
     /// <param name='isStatic'></param>
     /// <param name='isCtorArg'></param>
-    /// <param name='ctorInfo'></param>
+    /// <param name='staticCtorInfo'></param>
+    /// <param name='ctorInfoOpt'></param>
     /// <param name='staticForcedFieldVars'>The vars forced to be fields due to static member bindings, instance initialization expressions or instance member bindings</param>
     /// <param name='instanceForcedFieldVars'>The vars forced to be fields due to instance member bindings</param>
     /// <param name='takenFieldNames'></param>
     /// <param name='bind'></param>
     member localRep.ChooseRepresentation (cenv: cenv, env: TcEnv, isStatic, isCtorArg,
-                                            ctorInfo: IncrClassCtorLhs,
+                                            staticCtorInfo: StaticCtorInfo,
+                                            ctorInfoOpt: IncrClassCtorInfo option,
                                             staticForcedFieldVars: FreeLocals,
                                             instanceForcedFieldVars: FreeLocals, 
                                             takenFieldNames: Set<string>, 
@@ -271,7 +286,7 @@ type IncrClassReprInfo =
         let v = bind.Var
         let relevantForcedFieldVars = (if isStatic then staticForcedFieldVars else instanceForcedFieldVars)
             
-        let tcref = ctorInfo.TyconRef
+        let tcref = staticCtorInfo.TyconRef
         let name, takenFieldNames = 
 
             let isNameTaken = 
@@ -282,7 +297,7 @@ type IncrClassReprInfo =
 
             let nm = 
                 if isNameTaken then 
-                    ctorInfo.NameGenerator.FreshCompilerGeneratedName (v.LogicalName, v.Range)
+                    staticCtorInfo.NameGenerator.FreshCompilerGeneratedName (v.LogicalName, v.Range)
                 else 
                     v.LogicalName
             nm, takenFieldNames.Add nm
@@ -326,7 +341,7 @@ type IncrClassReprInfo =
                 let id = mkSynId v.Range name
                 let memberInfo = MakeMemberDataAndMangledNameForMemberVal(g, tcref, false, [], [], memberFlags, valSynInfo, mkSynId v.Range name, true)
 
-                let copyOfTyconTypars = ctorInfo.GetNormalizedInstanceCtorDeclaredTypars cenv env.DisplayEnv ctorInfo.TyconRef.Range
+                let copyOfTyconTypars = staticCtorInfo.GetNormalizedIncrCtorDeclaredTypars cenv env.DisplayEnv staticCtorInfo.TyconRef.Range
                 
                 AdjustValToHaveValReprInfo v (Parent tcref) valReprInfo
 
@@ -336,10 +351,13 @@ type IncrClassReprInfo =
                     if isStatic then 
                         tauTy, valReprInfo 
                     else 
-                        let tauTy = mkFunTy g ctorInfo.InstanceCtorThisVal.Type v.TauType
-                        let (ValReprInfo(tpNames, args, ret)) = valReprInfo
-                        let valReprInfo = ValReprInfo(tpNames, ValReprInfo.selfMetadata :: args, ret)
-                        tauTy, valReprInfo
+                        match ctorInfoOpt with
+                        | None -> tauTy, valReprInfo
+                        | Some ctorInfo ->
+                            let tauTy = mkFunTy g ctorInfo.InstanceCtorThisVal.Type v.TauType
+                            let (ValReprInfo(tpNames, args, ret)) = valReprInfo
+                            let valReprInfo = ValReprInfo(tpNames, ValReprInfo.selfMetadata :: args, ret)
+                            tauTy, valReprInfo
 
                 // Add the enclosing type parameters on to the function
                 let valReprInfo = 
@@ -360,9 +378,9 @@ type IncrClassReprInfo =
         repr, takenFieldNames
 
     /// Extend the known local representations by choosing a representation for a binding
-    member localRep.ChooseAndAddRepresentation(cenv: cenv, env: TcEnv, isStatic, isCtorArg, ctorInfo: IncrClassCtorLhs, staticForcedFieldVars: FreeLocals, instanceForcedFieldVars: FreeLocals, bind: Binding) = 
+    member localRep.ChooseAndAddRepresentation(cenv, env, isStatic, isCtorArg, staticCtorInfo, ctorInfoOpt, staticForcedFieldVars, instanceForcedFieldVars, bind: Binding) = 
         let v = bind.Var
-        let repr, takenFieldNames = localRep.ChooseRepresentation (cenv, env, isStatic, isCtorArg, ctorInfo, staticForcedFieldVars, instanceForcedFieldVars, localRep.TakenFieldNames, bind )
+        let repr, takenFieldNames = localRep.ChooseRepresentation (cenv, env, isStatic, isCtorArg, staticCtorInfo, ctorInfoOpt, staticForcedFieldVars, instanceForcedFieldVars, localRep.TakenFieldNames, bind )
         // OK, representation chosen, now add it 
         {localRep with 
             TakenFieldNames=takenFieldNames 
@@ -448,8 +466,8 @@ type IncrClassReprInfo =
 
     /// Mutate a type definition by adding fields 
     /// Used as part of processing "let" bindings in a type definition. 
-    member localRep.PublishIncrClassFields (cenv, denv, cpath, ctorInfo: IncrClassCtorLhs, safeStaticInitInfo) =    
-        let tcref = ctorInfo.TyconRef
+    member localRep.PublishIncrClassFields (cenv, denv, cpath, staticCtorInfo: StaticCtorInfo, safeStaticInitInfo) =    
+        let tcref = staticCtorInfo.TyconRef
         let rfspecs = 
             [ for KeyValue(v, repr) in localRep.ValReprs do
                     match repr with 
@@ -458,7 +476,7 @@ type IncrClassReprInfo =
                         // constructor arguments. This is important for the "default value" and "does it have an implicit default constructor" 
                         // semantic conditions for structs - see bug FSharp 1.0 5304.
                         if isStatic || not tcref.IsFSharpStructOrEnumTycon then 
-                            let ctorDeclaredTypars = ctorInfo.GetNormalizedInstanceCtorDeclaredTypars cenv denv ctorInfo.TyconRef.Range
+                            let ctorDeclaredTypars = staticCtorInfo.GetNormalizedIncrCtorDeclaredTypars cenv denv staticCtorInfo.TyconRef.Range
 
                             // Note: tcrefObjTy contains the original "formal" typars, thisTy is the "fresh" one... f<>fresh. 
                             let revTypeInst = List.zip ctorDeclaredTypars (tcref.TyparsNoRange |> List.map mkTyparTy)
@@ -474,7 +492,7 @@ type IncrClassReprInfo =
         let recdFields = Construct.MakeRecdFieldsTable (rfspecs @ tcref.AllFieldsAsList)
 
         // Mutate the entity_tycon_repr to publish the fields
-        tcref.Deref.entity_tycon_repr <- TFSharpObjectRepr { tcref.FSharpObjectModelTypeInfo with fsobjmodel_rfields = recdFields}  
+        tcref.Deref.entity_tycon_repr <- TFSharpTyconRepr { tcref.FSharpTyconRepresentationData with fsobjmodel_rfields = recdFields}  
 
 
     /// Given localRep saying how locals have been represented, e.g. as fields.
@@ -533,25 +551,13 @@ type IncrClassConstructionBindingsPhase2C =
     | Phase2CCtorJustAfterSuperInit     
     | Phase2CCtorJustAfterLastLet    
 
-/// <summary>
 /// Given a set of 'let' bindings (static or not, recursive or not) that make up a class,
 /// generate their initialization expression(s).
-/// </summary>
-/// <param name='cenv'></param>
-/// <param name='env'></param>
-/// <param name='ctorInfo'>The lhs information about the implicit constructor</param>
-/// <param name='inheritsExpr'>The call to the super class constructor</param>
-/// <param name='inheritsIsVisible'>Should we place a sequence point at the 'inheritedTys call?</param>
-/// <param name='decs'>The declarations</param>
-/// <param name='memberBinds'></param>
-/// <param name='generalizedTyparsForRecursiveBlock'>Record any unconstrained type parameters generalized for the outer members as "free choices" in the let bindings</param>
-/// <param name='safeStaticInitInfo'></param>
 let MakeCtorForIncrClassConstructionPhase2C(
     cenv: cenv, 
     env: TcEnv,
-    ctorInfo: IncrClassCtorLhs,
-    inheritsExpr,
-    inheritsIsVisible,
+    staticCtorInfo: StaticCtorInfo,
+    instanceInfo: (IncrClassCtorInfo * Expr * bool) option,
     decs: IncrClassConstructionBindingsPhase2C list, 
     memberBinds: Binding list,
     generalizedTyparsForRecursiveBlock, 
@@ -561,15 +567,30 @@ let MakeCtorForIncrClassConstructionPhase2C(
 
     let denv = env.DisplayEnv 
     let g = cenv.g
-    let thisVal = ctorInfo.InstanceCtorThisVal 
 
-    let m = thisVal.Range
-    let ctorDeclaredTypars = ctorInfo.GetNormalizedInstanceCtorDeclaredTypars cenv denv m
+    let thisValOpt =
+        match instanceInfo with
+        | None -> None
+        | Some (ctorInfo, _, _) -> Some ctorInfo.InstanceCtorThisVal 
+
+    let ctorInfoOpt =
+        match instanceInfo with
+        | None -> None
+        | Some (ctorInfo, _, _) -> Some ctorInfo
+
+    let m =
+        match thisValOpt with
+        | Some thisVal -> thisVal.Range
+        | None -> staticCtorInfo.TyconRef.Range
+
+    let ctorDeclaredTypars = staticCtorInfo.GetNormalizedIncrCtorDeclaredTypars cenv denv m
 
     ctorDeclaredTypars |> List.iter (SetTyparRigid env.DisplayEnv m)  
 
     // Reconstitute the type with the correct quantified type variables.
-    ctorInfo.InstanceCtorVal.SetType (mkForallTyIfNeeded ctorDeclaredTypars ctorInfo.InstanceCtorVal.TauType)
+    match instanceInfo with
+    | Some (ctorInfo, _, _) -> ctorInfo.InstanceCtorVal.SetType (mkForallTyIfNeeded ctorDeclaredTypars ctorInfo.InstanceCtorVal.TauType)
+    | None -> ()
 
     let freeChoiceTypars = ListSet.subtract typarEq generalizedTyparsForRecursiveBlock ctorDeclaredTypars
 
@@ -624,7 +645,10 @@ let MakeCtorForIncrClassConstructionPhase2C(
             let instanceForcedFieldVars = (instanceForcedFieldVars, memberBinds) ||> accFreeInBindings 
              
             // Any references to static variables in the 'inherits' expression force those static variables to be represented as fields
-            let staticForcedFieldVars = (staticForcedFieldVars, inheritsExpr) ||> accFreeInExpr
+            let staticForcedFieldVars =
+                match instanceInfo with 
+                | Some (_, inheritsExpr, _) -> (staticForcedFieldVars, inheritsExpr) ||> accFreeInExpr
+                | None -> staticForcedFieldVars
 
             (staticForcedFieldVars.FreeLocals, instanceForcedFieldVars.FreeLocals)
 
@@ -634,13 +658,16 @@ let MakeCtorForIncrClassConstructionPhase2C(
     let TransBind (reps: IncrClassReprInfo) (TBind(v, rhsExpr, spBind)) =
         if v.MustInline then
             error(Error(FSComp.SR.tcLocalClassBindingsCannotBeInline(), v.Range))
-        let rhsExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst rhsExpr
+        let rhsExpr = reps.FixupIncrClassExprPhase2C cenv thisValOpt safeStaticInitInfo thisTyInst rhsExpr
             
         // The initialization of the 'ref cell' variable for 'this' is the only binding which comes prior to the super init
         let isPriorToSuperInit = 
-            match ctorInfo.InstanceCtorSafeThisValOpt with 
+            match instanceInfo with
             | None -> false
-            | Some v2 -> valEq v v2
+            | Some (ctorInfo, _, _) -> 
+                match ctorInfo.InstanceCtorSafeThisValOpt with 
+                | None -> false
+                | Some v2 -> valEq v v2
                             
         match reps.LookupRepr v with
         | InMethod(isStatic, methodVal, _) -> 
@@ -658,8 +685,11 @@ let MakeCtorForIncrClassConstructionPhase2C(
                 if isStatic then 
                     tauExpr, tauTy
                 else
-                    let e = mkLambda m thisVal (tauExpr, tauTy)
-                    e, tyOfExpr g e
+                    match thisValOpt with
+                    | None -> tauExpr, tauTy
+                    | Some thisVal ->
+                        let e = mkLambda m thisVal (tauExpr, tauTy)
+                        e, tyOfExpr g e
 
             // Replace the type parameters that used to be on the rhs with 
             // the full set of type parameters including the type parameters of the enclosing class
@@ -681,14 +711,14 @@ let MakeCtorForIncrClassConstructionPhase2C(
                     | DebugPointAtBinding.Yes m, _ -> m 
                     | _ -> v.Range
 
-            let assignExpr = reps.MakeValueAssign (Some thisVal) thisTyInst NoSafeInitInfo v rhsExpr m
+            let assignExpr = reps.MakeValueAssign thisValOpt thisTyInst NoSafeInitInfo v rhsExpr m
 
             let adjustSafeInitFieldExprOpt = 
                 if isStatic then 
                     match safeStaticInitInfo with 
                     | SafeInitField (rfref, _) -> 
                         let setExpr = mkStaticRecdFieldSet (rfref, thisTyInst, mkInt g m idx, m)
-                        let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) NoSafeInitInfo thisTyInst setExpr
+                        let setExpr = reps.FixupIncrClassExprPhase2C cenv thisValOpt NoSafeInitInfo thisTyInst setExpr
                         Some setExpr
                     | NoSafeInitInfo -> 
                         None
@@ -714,7 +744,7 @@ let MakeCtorForIncrClassConstructionPhase2C(
             match dec with 
             | IncrClassBindingGroup(binds, isStatic, isRec) ->
                 let actions, reps, methodBinds = 
-                    let reps = (reps, binds) ||> List.fold (fun rep bind -> rep.ChooseAndAddRepresentation(cenv, env, isStatic, isCtorArg, ctorInfo, staticForcedFieldVars, instanceForcedFieldVars, bind)) // extend
+                    let reps = (reps, binds) ||> List.fold (fun rep bind -> rep.ChooseAndAddRepresentation(cenv, env, isStatic, isCtorArg, staticCtorInfo, ctorInfoOpt, staticForcedFieldVars, instanceForcedFieldVars, bind)) // extend
                     if isRec then
                         // Note: the recursive calls are made via members on the object
                         // or via access to fields. This means the recursive loop is "broken", 
@@ -733,7 +763,7 @@ let MakeCtorForIncrClassConstructionPhase2C(
                     ([], actions, methodBinds), reps
 
             | IncrClassDo (doExpr, isStatic, mFull) -> 
-                let doExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst doExpr
+                let doExpr = reps.FixupIncrClassExprPhase2C cenv thisValOpt safeStaticInitInfo thisTyInst doExpr
                 // Extend the range of any immediate debug point to include the 'do'
                 let doExpr =
                     match doExpr with
@@ -754,11 +784,14 @@ let MakeCtorForIncrClassConstructionPhase2C(
         // The call to the base class constructor is done so we can set the ref cell 
         | Phase2CCtorJustAfterSuperInit ->  
             let binders = 
-                [ match ctorInfo.InstanceCtorSafeThisValOpt with 
+                [ match instanceInfo with
+                  | None -> ()
+                  | Some (ctorInfo, _, _) ->
+                    match ctorInfo.InstanceCtorSafeThisValOpt with 
                     | None -> ()
                     | Some v -> 
                     let setExpr = mkRefCellSet g m ctorInfo.InstanceCtorThisVal.Type (exprForVal m v) (exprForVal m ctorInfo.InstanceCtorThisVal)
-                    let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst setExpr
+                    let setExpr = reps.FixupIncrClassExprPhase2C cenv thisValOpt safeStaticInitInfo thisTyInst setExpr
                     let binder = (fun e -> mkSequential setExpr.Range setExpr e)
                     let isPriorToSuperInit = false
                     yield (isPriorToSuperInit, binder) ]
@@ -769,10 +802,13 @@ let MakeCtorForIncrClassConstructionPhase2C(
         // which now allows members to be called.
         | Phase2CCtorJustAfterLastLet ->  
             let binders = 
-                [ match ctorInfo.InstanceCtorSafeInitInfo with 
+                [ match instanceInfo with
+                  | None -> ()
+                  | Some (ctorInfo, _, _) ->
+                  match ctorInfo.InstanceCtorSafeInitInfo with 
                   | SafeInitField (rfref, _) ->  
-                    let setExpr = mkRecdFieldSetViaExprAddr (exprForVal m thisVal, rfref, thisTyInst, mkOne g m, m)
-                    let setExpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst setExpr
+                    let setExpr = mkRecdFieldSetViaExprAddr (exprForVal m ctorInfo.InstanceCtorThisVal, rfref, thisTyInst, mkOne g m, m)
+                    let setExpr = reps.FixupIncrClassExprPhase2C cenv thisValOpt safeStaticInitInfo thisTyInst setExpr
                     let binder = (fun e -> mkSequential setExpr.Range setExpr e)
                     let isPriorToSuperInit = false
                     yield (isPriorToSuperInit, binder)  
@@ -801,7 +837,11 @@ let MakeCtorForIncrClassConstructionPhase2C(
     // the value is already available as an argument, and that nothing special needs to be done unless the 
     // value is being stored into a field.
     let (cctorInitActions1, ctorInitActions1, methodBinds1), reps = 
-        let binds = ctorInfo.InstanceCtorArgs |> List.map (fun v -> mkInvisibleBind v (exprForVal v.Range v))
+        let binds =
+            match instanceInfo with
+            | None -> []
+            | Some (ctorInfo, _, _) ->
+                ctorInfo.InstanceCtorArgs |> List.map (fun v -> mkInvisibleBind v (exprForVal v.Range v))
         TransTrueDec true reps (IncrClassBindingGroup(binds, false, false))
 
     // We expect that only ctorInitActions1 will be non-empty here, and even then only if some elements are stored in the field
@@ -815,7 +855,10 @@ let MakeCtorForIncrClassConstructionPhase2C(
     let ctorInitActions = ctorInitActions1 @ List.concat ctorInitActions2
     let methodBinds = methodBinds1 @ List.concat methodBinds2
 
-    let ctorBody =
+    let ctorBodyOpt =
+        match instanceInfo with
+        | None -> None
+        | Some (ctorInfo, inheritsExpr, inheritsIsVisible) ->
         // Build the elements of the implicit constructor body, starting from the bottom
         //     <optional-this-ref-cell-init>
         //     <super init>
@@ -840,7 +883,7 @@ let MakeCtorForIncrClassConstructionPhase2C(
             // 
             // As a result, the most natural way to implement this would be to simply capture arg0 if needed
             // and access all variables via that. This would be done by rewriting the inheritsExpr as follows:
-            //    let inheritsExpr = reps.FixupIncrClassExprPhase2C (Some thisVal) thisTyInst inheritsExpr
+            //    let inheritsExpr = reps.FixupIncrClassExprPhase2C thisValOpt thisTyInst inheritsExpr
             // However, the rules of IL mean we are not actually allowed to capture arg0 
             // and store it as a closure field before the base class constructor is called.
             // 
@@ -854,7 +897,7 @@ let MakeCtorForIncrClassConstructionPhase2C(
                     // Rewrite the expression to convert it to a load of a field if needed.
                     // We are allowed to load fields from our own object even though we haven't called
                     // the super class constructor yet.
-                    let ldexpr = reps.FixupIncrClassExprPhase2C cenv (Some thisVal) safeStaticInitInfo thisTyInst (exprForVal m v) 
+                    let ldexpr = reps.FixupIncrClassExprPhase2C cenv thisValOpt safeStaticInitInfo thisTyInst (exprForVal m v) 
                     mkInvisibleLet m v ldexpr inheritsExpr
                 | _ -> 
                     inheritsExpr
@@ -872,9 +915,9 @@ let MakeCtorForIncrClassConstructionPhase2C(
         let ctorBody = List.foldBack (fun (_, binder) acc -> binder acc) ctorInitActionsPre ctorBody
 
         // Add the final wrapping to make this into a method
-        let ctorBody = mkMemberLambdas g m [] (Some thisVal) ctorInfo.InstanceCtorBaseValOpt [ctorInfo.InstanceCtorArgs] (ctorBody, g.unit_ty)
+        let ctorBody = mkMemberLambdas g m [] thisValOpt ctorInfo.InstanceCtorBaseValOpt [ctorInfo.InstanceCtorArgs] (ctorBody, g.unit_ty)
 
-        ctorBody
+        Some ctorBody
 
     let cctorBodyOpt =
         // Omit the .cctor if it's empty
@@ -882,11 +925,10 @@ let MakeCtorForIncrClassConstructionPhase2C(
         | [] -> None 
         | _ -> 
             let cctorInitAction = List.foldBack (fun (_, binder) acc -> binder acc) cctorInitActions (mkUnit g m)
-            let m = thisVal.Range
-            let cctorArgs, cctorVal, _ = ctorInfo.StaticCtorValInfo.Force()
+            let cctorArgs, cctorVal, _ = staticCtorInfo.StaticCtorValInfo.Force()
             // Reconstitute the type of the implicit class constructor with the correct quantified type variables.
             cctorVal.SetType (mkForallTyIfNeeded ctorDeclaredTypars cctorVal.TauType)
             let cctorBody = mkMemberLambdas g m [] None None [cctorArgs] (cctorInitAction, g.unit_ty)
             Some cctorBody
         
-    ctorBody, cctorBodyOpt, methodBinds, reps
+    ctorBodyOpt, cctorBodyOpt, methodBinds, reps

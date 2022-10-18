@@ -856,15 +856,15 @@ module internal DescriptionListsImpl =
          /// Find the glyph for the given representation.    
          let reprToGlyph repr = 
             match repr with
-            | TFSharpObjectRepr om -> 
+            | TFSharpTyconRepr om -> 
                 match om.fsobjmodel_kind with 
+                | TFSharpUnion -> FSharpGlyph.Union
+                | TFSharpRecord -> FSharpGlyph.Type
                 | TFSharpClass -> FSharpGlyph.Class
                 | TFSharpInterface -> FSharpGlyph.Interface
                 | TFSharpStruct -> FSharpGlyph.Struct
                 | TFSharpDelegate _ -> FSharpGlyph.Delegate
                 | TFSharpEnum -> FSharpGlyph.Enum
-            | TFSharpRecdRepr _ -> FSharpGlyph.Type
-            | TFSharpUnionRepr _ -> FSharpGlyph.Union
             | TILObjectRepr (TILObjectReprData (_, _, td)) -> 
                 if td.IsClass        then FSharpGlyph.Class
                 elif td.IsStruct     then FSharpGlyph.Struct

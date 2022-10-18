@@ -945,7 +945,7 @@ type Entity =
     /// static fields, 'val' declarations and hidden fields from the compilation of implicit class constructions.
     member x.AllFieldTable = 
         match x.TypeReprInfo with 
-        | TFSharpRecdRepr x | TFSharpObjectRepr {fsobjmodel_rfields=x} -> x
+        | TFSharpTyconRepr {fsobjmodel_rfields=x} -> x
         | _ -> 
         match x.ExceptionInfo with 
         | TExnFresh x -> x
@@ -981,12 +981,15 @@ type Entity =
     member x.GetFieldByName n = x.AllFieldTable.FieldByName n
 
     /// Indicate if this is a type whose r.h.s. is known to be a union type definition.
-    member x.IsUnionTycon = match x.TypeReprInfo with | TFSharpUnionRepr _ -> true | _ -> false
+    member x.IsUnionTycon =
+        match x.TypeReprInfo with 
+        | TFSharpTyconRepr {fsobjmodel_kind=TFSharpUnion} -> true
+        | _ -> false
 
     /// Get the union cases and other union-type information for a type, if any
     member x.UnionTypeInfo = 
         match x.TypeReprInfo with 
-        | TFSharpUnionRepr x -> ValueSome x 
+        | TFSharpTyconRepr {fsobjmodel_kind=TFSharpUnion; fsobjmodel_cases=x} -> ValueSome x
         | _ -> ValueNone
 
     /// Get the union cases for a type, if any
@@ -1057,9 +1060,9 @@ type Entity =
     member x.IsLinked = match box x.entity_attribs with null -> false | _ -> true 
 
     /// Get the blob of information associated with an F# object-model type definition, i.e. class, interface, struct etc.
-    member x.FSharpObjectModelTypeInfo = 
+    member x.FSharpTyconRepresentationData = 
          match x.TypeReprInfo with 
-         | TFSharpObjectRepr x -> x 
+         | TFSharpTyconRepr x -> x 
          | _ -> failwith "not an F# object model type definition"
 
     /// Indicate if this is a type definition backed by Abstract IL metadata.
@@ -1073,10 +1076,17 @@ type Entity =
     member x.ILTyconRawMetadata = let (TILObjectReprData(_, _, td)) = x.ILTyconInfo in td
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition.
-    member x.IsRecordTycon = match x.TypeReprInfo with | TFSharpRecdRepr _ -> true | _ -> false
+    member x.IsRecordTycon =
+        match x.TypeReprInfo with 
+        | TFSharpTyconRepr {fsobjmodel_kind=TFSharpRecord} -> true
+        | _ -> false
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition that is a value type.
-    member x.IsStructRecordOrUnionTycon = match x.TypeReprInfo with TFSharpRecdRepr _ | TFSharpUnionRepr _ -> x.entity_flags.IsStructRecordOrUnionType | _ -> false
+    member x.IsStructRecordOrUnionTycon =
+        match x.TypeReprInfo with 
+        | TFSharpTyconRepr { fsobjmodel_kind=TFSharpRecord } -> x.entity_flags.IsStructRecordOrUnionType
+        | TFSharpTyconRepr { fsobjmodel_kind=TFSharpUnion } -> x.entity_flags.IsStructRecordOrUnionType
+        | _ -> false
 
     /// The on-demand analysis about whether the entity has the IsByRefLike attribute
     member x.TryIsByRefLike = x.entity_flags.TryIsByRefLike
@@ -1097,7 +1107,7 @@ type Entity =
     member x.SetIsAssumedReadOnly b = x.entity_flags <- x.entity_flags.WithIsAssumedReadOnly b 
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
-    member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFSharpObjectRepr _ -> true | _ -> false
+    member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFSharpTyconRepr _ -> true | _ -> false
 
     /// Indicates if this is an F# type definition which is one of the special types in FSharp.Core.dll which uses 
     /// an assembly-code representation for the type, e.g. the primitive array type constructor.
@@ -1112,16 +1122,16 @@ type Entity =
     member x.IsHiddenReprTycon = match x.TypeAbbrev, x.TypeReprInfo with | None, TNoRepr -> true | _ -> false
 
     /// Indicates if this is an F#-defined interface type definition 
-    member x.IsFSharpInterfaceTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpInterface -> true | _ -> false
+    member x.IsFSharpInterfaceTycon = x.IsFSharpObjectModelTycon && match x.FSharpTyconRepresentationData.fsobjmodel_kind with TFSharpInterface -> true | _ -> false
 
     /// Indicates if this is an F#-defined delegate type definition 
-    member x.IsFSharpDelegateTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpDelegate _ -> true | _ -> false
+    member x.IsFSharpDelegateTycon = x.IsFSharpObjectModelTycon && match x.FSharpTyconRepresentationData.fsobjmodel_kind with TFSharpDelegate _ -> true | _ -> false
 
     /// Indicates if this is an F#-defined enum type definition 
-    member x.IsFSharpEnumTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpEnum -> true | _ -> false
+    member x.IsFSharpEnumTycon = x.IsFSharpObjectModelTycon && match x.FSharpTyconRepresentationData.fsobjmodel_kind with TFSharpEnum -> true | _ -> false
 
     /// Indicates if this is an F#-defined class type definition 
-    member x.IsFSharpClassTycon = x.IsFSharpObjectModelTycon && match x.FSharpObjectModelTypeInfo.fsobjmodel_kind with TFSharpClass -> true | _ -> false
+    member x.IsFSharpClassTycon = x.IsFSharpObjectModelTycon && match x.FSharpTyconRepresentationData.fsobjmodel_kind with TFSharpClass -> true | _ -> false
 
     /// Indicates if this is a .NET-defined enum type definition 
     member x.IsILEnumTycon = x.IsILTycon && x.ILTyconRawMetadata.IsEnum
@@ -1140,10 +1150,9 @@ type Entity =
     /// Indicates if this is an F#-defined struct or enum type definition, i.e. a value type definition
     member x.IsFSharpStructOrEnumTycon =
         match x.TypeReprInfo with
-        | TFSharpRecdRepr _ -> x.IsStructRecordOrUnionTycon
-        | TFSharpUnionRepr _ -> x.IsStructRecordOrUnionTycon
-        | TFSharpObjectRepr info ->
+        | TFSharpTyconRepr info ->
             match info.fsobjmodel_kind with
+            | TFSharpRecord | TFSharpUnion -> x.IsStructRecordOrUnionTycon
             | TFSharpClass | TFSharpInterface | TFSharpDelegate _ -> false
             | TFSharpStruct | TFSharpEnum -> true
         | _ -> false
@@ -1409,13 +1418,7 @@ type TyconAugmentation =
 type TyconRepresentation = 
 
     /// Indicates the type is a class, struct, enum, delegate or interface 
-    | TFSharpObjectRepr of TyconObjModelData
-
-    /// Indicates the type is a record 
-    | TFSharpRecdRepr of TyconRecdFields
-
-    /// Indicates the type is a discriminated union 
-    | TFSharpUnionRepr of TyconUnionData 
+    | TFSharpTyconRepr of FSharpTyconData
 
     /// Indicates the type is a type from a .NET assembly without F# metadata.
     | TILObjectRepr of TILObjectReprData
@@ -1529,7 +1532,13 @@ type TProvidedTypeInfo =
 
 #endif
 
-type TyconFSharpObjModelKind = 
+type FSharpTyconKind = 
+    /// Indicates the type is an F#-declared record
+    | TFSharpRecord
+
+    /// Indicates the type is an F#-declared union
+    | TFSharpUnion
+
     /// Indicates the type is an F#-declared class (also used for units-of-measure)
     | TFSharpClass 
 
@@ -1545,18 +1554,15 @@ type TyconFSharpObjModelKind =
     /// Indicates the type is an F#-declared enumeration 
     | TFSharpEnum
     
-    /// Indicates if the type definition is a value type
-    member x.IsValueType =
-        match x with 
-        | TFSharpClass | TFSharpInterface | TFSharpDelegate _ -> false
-        | TFSharpStruct | TFSharpEnum -> true
-
 /// Represents member values and class fields relating to the F# object model
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
-type TyconObjModelData = 
+type FSharpTyconData = 
     { 
+      /// Indicates the cases of a union type
+      fsobjmodel_cases: TyconUnionData
+
       /// Indicates whether the type declaration is an F# class, interface, enum, delegate or struct 
-      fsobjmodel_kind: TyconFSharpObjModelKind
+      fsobjmodel_kind: FSharpTyconKind
 
       /// The declared abstract slots of the class, interface or struct 
       fsobjmodel_vslots: ValRef list
@@ -1568,7 +1574,7 @@ type TyconObjModelData =
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
 
-    override x.ToString() = "TyconObjModelData(...)"
+    override x.ToString() = "FSharpTyconData(...)"
 
 /// Represents record fields in an F# type definition
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
@@ -1631,6 +1637,7 @@ type TyconUnionCases =
 [<NoEquality; NoComparison; RequireQualifiedAccess; StructuredFormatDisplay("{DebugText}")>]
 type TyconUnionData =
     {
+
       /// The cases contained in the discriminated union. 
       CasesTable: TyconUnionCases
 
@@ -3604,7 +3611,7 @@ type EntityRef =
     member x.GetUnionCaseByName n = x.Deref.GetUnionCaseByName n
 
     /// Get the blob of information associated with an F# object-model type definition, i.e. class, interface, struct etc.
-    member x.FSharpObjectModelTypeInfo = x.Deref.FSharpObjectModelTypeInfo
+    member x.FSharpTyconRepresentationData = x.Deref.FSharpTyconRepresentationData
 
     /// Gets the immediate interface definitions of an F# type definition. Further interfaces may be supported through class and interface inheritance.
     member x.ImmediateInterfacesOfFSharpTycon = x.Deref.ImmediateInterfacesOfFSharpTycon
@@ -5673,6 +5680,12 @@ type Construct() =
     static member NewEmptyModuleOrNamespaceType mkind = 
         Construct.NewModuleOrNamespaceType mkind [] []
 
+    static member NewEmptyFSharpTyconData kind =
+        { fsobjmodel_cases = Construct.MakeUnionCases []
+          fsobjmodel_kind = kind 
+          fsobjmodel_vslots = []
+          fsobjmodel_rfields = Construct.MakeRecdFieldsTable [] }
+
 #if !NO_TYPEPROVIDERS
 
     /// Create a new node for the representation information for a provided type definition
@@ -5801,7 +5814,15 @@ type Construct() =
           CompiledRepresentation=newCache() }
 
     /// Create a node for a union type
-    static member MakeUnionRepr ucs = TFSharpUnionRepr (Construct.MakeUnionCases ucs)
+    static member MakeUnionRepr ucs =
+        let repr =
+            {
+                fsobjmodel_cases = Construct.MakeUnionCases ucs
+                fsobjmodel_rfields = Construct.MakeRecdFieldsTable []
+                fsobjmodel_kind = TFSharpUnion
+                fsobjmodel_vslots = []
+            }
+        TFSharpTyconRepr repr
 
     /// Create a new type parameter node
     static member NewTypar (kind, rigid, SynTypar(id, staticReq, isCompGen), isFromError, dynamicReq, attribs, eqDep, compDep) = 
