@@ -102,6 +102,11 @@
         <target state="translated">参数 "{0}" 不匹配</target>
         <note />
       </trans-unit>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
         <target state="translated">无法从文件夹“{1}”加载类型提供程序设计器程序集“{0}”，因为依赖项缺失或无法加载。类型提供程序设计器程序集的所有依赖项必须与该程序集位于同一文件夹中。报告的异常是: {2} - {3}</target>

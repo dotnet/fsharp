@@ -102,6 +102,11 @@
         <target state="translated">'{0}' 인수가 일치하지 않습니다.</target>
         <note />
       </trans-unit>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
         <target state="translated">종속성이 없거나 로드되지 않았으므로 '{0}' 형식 공급자 디자이너 어셈블리를 '{1}' 폴더에서 로드할 수 없습니다. 형식 공급자 디자이너 어셈블리의 모든 종속성은 해당 어셈블리와 동일한 폴더에 있어야 합니다. 보고된 예외: {2} - {3}</target>

@@ -102,6 +102,11 @@
         <target state="translated">L'argument '{0}' ne correspond pas</target>
         <note />
       </trans-unit>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
         <target state="translated">Impossible de charger l'assembly de concepteur de fournisseur de type '{0}' à partir du dossier '{1}', car une dépendance est manquante ou n'a pas pu être chargée. Toutes les dépendances de l'assembly de concepteur de fournisseur de type doivent se trouver dans le même dossier que cet assembly. Exception signalée : {2} - {3}</target>

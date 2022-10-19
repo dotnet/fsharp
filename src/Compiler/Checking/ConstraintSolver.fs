@@ -2163,6 +2163,10 @@ and EnforceConstraintConsistency (csenv: ConstraintSolverEnv) ndeep m2 trace ret
     | TyparConstraint.IsNonNullableStruct _, TyparConstraint.IsReferenceType _
     | TyparConstraint.IsReferenceType _, TyparConstraint.IsNonNullableStruct _   ->
         return! ErrorD (Error(FSComp.SR.csStructConstraintInconsistent(), m))
+    
+    | TyparConstraint.IsUnmanaged _, TyparConstraint.IsReferenceType _
+    | TyparConstraint.IsReferenceType _, TyparConstraint.IsUnmanaged _ ->
+        return! ErrorD (Error(FSComp.SR.csUnmanagedConstraintInconsistent(), m))
 
     | TyparConstraint.SupportsComparison _, TyparConstraint.SupportsComparison _
     | TyparConstraint.SupportsEquality _, TyparConstraint.SupportsEquality _
@@ -2445,17 +2449,24 @@ and SolveTypeIsNonNullableValueType (csenv: ConstraintSolverEnv) ndeep m2 trace 
     }            
 
 and SolveTypeIsUnmanaged (csenv: ConstraintSolverEnv) ndeep m2 trace ty =
-    let g = csenv.g
-    let m = csenv.m
-    let denv = csenv.DisplayEnv
-    match tryDestTyparTy g ty with
-    | ValueSome destTypar ->
-        AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsUnmanaged m)
-    | _ ->
-        if isUnmanagedTy g ty then
-            CompleteD
-        else
-            ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresUnmanagedType(NicePrint.minimalStringOfType denv ty), m, m2))
+    trackErrors {
+        let g = csenv.g
+        let m = csenv.m
+        let denv = csenv.DisplayEnv
+        match tryDestTyparTy g ty with
+        | ValueSome destTypar ->
+            return! AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.IsUnmanaged m)
+        | _ ->
+            if isStructAnonRecdTy g ty then
+                return! destStructAnonRecdTy g ty |> IterateD (SolveTypeIsUnmanaged csenv (ndeep + 1) m2 trace)
+            else if isStructTupleTy g ty then
+                return! destStructTupleTy g ty |> IterateD (SolveTypeIsUnmanaged csenv (ndeep + 1) m2 trace)
+            else
+                if isUnmanagedTy g ty then
+                    return! CompleteD
+                else
+                    return! ErrorD (ConstraintSolverError(FSComp.SR.csGenericConstructRequiresUnmanagedType(NicePrint.minimalStringOfType denv ty), m, m2))
+    }
 
 
 and SolveTypeChoice (csenv: ConstraintSolverEnv) ndeep m2 trace ty choiceTys =

@@ -102,6 +102,11 @@
         <target state="translated">Argument „{0}” nie jest zgodny</target>
         <note />
       </trans-unit>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
         <target state="translated">Nie można załadować zestawu projektanta dostawców typów „{0}” z folderu „{1}”, ponieważ brakuje zależności lub nie można jej załadować. Wszystkie zależności zestawu projektanta dostawców typów muszą znajdować się w tym samym folderze co ten zestaw. Zgłoszony wyjątek: {2} — {3}</target>

@@ -102,6 +102,11 @@
         <target state="translated">'{0}' bağımsız değişkeni eşleşmiyor</target>
         <note />
       </trans-unit>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
         <target state="translated">'{0}' tür sağlayıcısı tasarımcı bütünleştirilmiş kodu, bir bağımlılık eksik olduğundan veya yüklenemediğinden '{1}' klasöründen yüklenemedi. Tür sağlayıcısı tasarımcısı bütünleştirilmiş kodunun tüm bağımlılıkları, ilgili bütünleştirilmiş kodun bulunduğu klasörde bulunmalıdır. Bildirilen özel durum: {2} - {3}</target>

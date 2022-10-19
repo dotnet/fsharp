@@ -102,6 +102,11 @@
         <target state="translated">L'argomento '{0}' non corrisponde</target>
         <note />
       </trans-unit>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
         <target state="translated">Non è stato possibile caricare l'assembly '{0}' della finestra di progettazione del provider di tipi dalla cartella '{1}' perché una dipendenza non è presente o non è stato possibile caricarla. Tutte le dipendenze dell'assembly della finestra di progettazione del provider di tipi devono trovarsi nella stessa cartella dell'assembly. L'eccezione restituita è {2} - {3}</target>

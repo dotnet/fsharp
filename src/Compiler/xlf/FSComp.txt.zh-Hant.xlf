@@ -102,6 +102,11 @@
         <target state="translated">引數 '{0}' 不相符</target>
         <note />
       </trans-unit>
+      <trans-unit id="csUnmanagedConstraintInconsistent">
+        <source>The constraints 'unmanaged' and 'not struct' are inconsistent</source>
+        <target state="new">The constraints 'unmanaged' and 'not struct' are inconsistent</target>
+        <note />
+      </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
         <source>The type provider designer assembly '{0}' could not be loaded from folder '{1}' because a dependency was missing or could not loaded. All dependencies of the type provider designer assembly must be located in the same folder as that assembly. The exception reported was: {2} - {3}</source>
         <target state="translated">因為缺少相依性或相依性無法載入，導致無法從資料夾 '{1}' 載入類型提供者設計工具組件 '{0}'。類型提供者設計工具組件的所有相依性都必須位於該組件所在的資料夾內。回報的例外狀況: {2} - {3}</target>

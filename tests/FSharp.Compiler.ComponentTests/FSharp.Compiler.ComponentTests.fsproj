@@ -27,6 +27,12 @@
     <Compile Include="..\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
     <Compile Include="Conformance\BasicGrammarElements\OperatorNames\OperatorNames.fs" />
     <Compile Include="Conformance\BasicGrammarElements\PrecedenceAndOperators\PrecedenceAndOperators.fs" />
     <Compile Include="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\ExceptionDefinitions.fs" />
@@ -40,7 +46,8 @@
     <Compile Include="Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations\TypeAbbreviations.fs" />
     <Compile Include="Conformance\ClassTypes\ExplicitObjectConstructors\ExplicitObjectConstructors.fs" />
     <Compile Include="Conformance\ClassTypes\ImplicitObjectConstructors\ImplicitObjectConstructors.fs" />
-    <Compile Include="Conformance\ClassTypes\ValueRestriction\ValueRestriction.fs" />
+	<Compile Include="Conformance\ClassTypes\ValueRestriction\ValueRestriction.fs" />
+	<Compile Include="Conformance\Constraints\Unmanaged.fs" />
     <Compile Include="Conformance\DelegateTypes\DelegateDefinition.fs" />
     <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\Basic\Basic.fs" />
     <Compile Include="Conformance\DeclarationElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs" />
@@ -159,7 +166,7 @@
     <Compile Include="ErrorMessages\FS0988AtEndOfFile.fs" />
     <Compile Include="ErrorMessages\Repro1548.fs" />
     <Compile Include="ErrorMessages\WarnIfDiscardedInList.fs" />
-	<Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs"/>
+	<Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs" />
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
@@ -173,12 +180,6 @@
     <Compile Include="Language\NameofTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-    </None>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-    </None>
     <Compile Include="Interop\SimpleInteropTests.fs" />
 	<Compile Include="Interop\RequiredAndInitOnlyProperties.fs" />
 	<Compile Include="Interop\StaticsInInterfaces.fs" />

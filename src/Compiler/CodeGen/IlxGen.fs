@@ -5582,7 +5582,7 @@ and GenGenericParam cenv eenv (tp: Typar) =
     let refTypeConstraint =
         tp.Constraints
         |> List.exists (function
-            | TyparConstraint.IsReferenceType _ -> true
+            | TyparConstraint.IsReferenceType _
             | TyparConstraint.SupportsNull _ -> true
             | _ -> false)
 
