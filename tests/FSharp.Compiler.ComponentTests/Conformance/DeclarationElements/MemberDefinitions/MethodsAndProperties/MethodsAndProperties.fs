@@ -508,7 +508,7 @@ type I =
     abstract P : i:int * j:int * i:int * j:int -> int
     """
         let encodeFs =
-            SourceCodeFileKind.Create("impl.fs", """
+            SourceCodeFileKind.Create("test.fs", """
 namespace Foo
 type I =
     abstract M : i:int * i:int -> int
@@ -526,11 +526,11 @@ type I =
             ("test.fsi", Error 3550, Line 9, Col 5, Line 9, Col 47, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
             ("test.fsi", Error 3550, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
             ("test.fsi", Error 3550, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
-            ("impl.fs", Error 3550, Line 4, Col 5, Line 4, Col 38, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
-            ("impl.fs", Error 3550, Line 5, Col 5, Line 5, Col 39, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
-            ("impl.fs", Error 3550, Line 6, Col 5, Line 6, Col 47, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
-            ("impl.fs", Error 3550, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
-            ("impl.fs", Error 3550, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
+            ("test.fs", Error 3550, Line 4, Col 5, Line 4, Col 38, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            ("test.fs", Error 3550, Line 5, Col 5, Line 5, Col 39, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            ("test.fs", Error 3550, Line 6, Col 5, Line 6, Col 47, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            ("test.fs", Error 3550, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            ("test.fs", Error 3550, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
         ]
 
     [<Fact>]
@@ -549,7 +549,7 @@ type I =
     abstract P : i:int * j:int * i:int * j:int -> int
     """
         let encodeFs =
-            SourceCodeFileKind.Create("impl.fs", """
+            SourceCodeFileKind.Create("test.fs", """
 namespace rec Foo
 type I =
     abstract M : i:int * i:int -> int
@@ -567,10 +567,10 @@ type I =
             ("test.fsi", Error 3550, Line 9, Col 5, Line 9, Col 47, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
             ("test.fsi", Error 3550, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
             ("test.fsi", Error 3550, Line 11, Col 5, Line 11, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
-            ("impl.fs", Error 3550, Line 4, Col 5, Line 4, Col 38, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
-            ("impl.fs", Error 3550, Line 5, Col 5, Line 5, Col 39, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
-            ("impl.fs", Error 3550, Line 6, Col 5, Line 6, Col 47, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
-            ("impl.fs", Error 3550, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
-            ("impl.fs", Error 3550, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
+            ("test.fs", Error 3550, Line 4, Col 5, Line 4, Col 38, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            ("test.fs", Error 3550, Line 5, Col 5, Line 5, Col 39, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            ("test.fs", Error 3550, Line 6, Col 5, Line 6, Col 47, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            ("test.fs", Error 3550, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'i' has been used more that once in this method.")
+            ("test.fs", Error 3550, Line 7, Col 5, Line 7, Col 54, "Duplicate parameter. The parameter 'j' has been used more that once in this method.")
         ]
 
