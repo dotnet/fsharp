@@ -194,6 +194,8 @@ let detectFileDependencies (nodes : FileAST[]) : Graph =
         )
         |> Array.choose id
         
+    log "ASTs traversed"
+        
     let trie = buildTrie nodes
     
     // Find dependencies for all files (can be in parallel)
@@ -275,7 +277,8 @@ let detectFileDependencies (nodes : FileAST[]) : Graph =
                 |> Seq.toArray
             node.Name, (int64)node.Code.Length, deps
         )
-    analyseEfficiency graph
+    log "Done"
+    //analyseEfficiency graph
     graph
 
 [<Test>]
@@ -359,8 +362,8 @@ type B = int
 let Test () =
     log "start"
     let m = AnalyzerManager()
-    // let projectFile = @"C:\projekty\fsharp\fsharp_main\src\Compiler\FSharp.Compiler.Service.fsproj"
-    let projectFile = @"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj"
+    let projectFile = @"C:\projekty\fsharp\fsharp_main\src\Compiler\FSharp.Compiler.Service.fsproj"
+    // let projectFile = @"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj"
     let analyzer = m.GetProject(projectFile)
     let results = analyzer.Build()
     log "built"

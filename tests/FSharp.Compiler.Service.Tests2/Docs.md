@@ -65,6 +65,13 @@ For more details see https://github.com/dotnet/fsharp/pull/13521
 
 ## Parallel type-checking of independent files
 
+The main idea is quite simple:
+- process files in a graph order instead of sequential order
+- reduce the dependency graph used for type-checking, increasing parallelism
+- implement branching and merging of type-checking information
+
+Below is some quasi-theoretical background on this.
+
 ### Background
 Files in an F# project are ordered and processed from the top (first) and the bottom (last) file.
 The compiler ensures that no information, including type information, flows upwards.
@@ -105,8 +112,92 @@ A few slightly imprecise/vague statements about all the graphs:
 3. Type-checking _must_ process files in an order that is compatible with the topological order in the _necessary dependencies_ graph.
 4. If using a dependency graph as an ordering mechanism for (parallel) type-checking, the closer it is to the _necessary dependencies_ graph, the higher parallelism is possible.
 5. Type-checking files in appearance order is equivalent to using the `allowed dependencies` graph for ordering.
-6. Removing an edge from a _dependency_ graph _can_ increase (but not decrease) the level of parallelism possible and improve wall-clock time.
+6. Removing an edge from the _dependency_ graph used _can_ increase (but not decrease) the level of parallelism possible and improve wall-clock time.
 
-Let's look at point `5.` in detail.
+Let's look at point `6.` in more detail.
 
-### The impact of reducing the dependency graph 
+### The impact of reducing the dependency graph on type-checking parallelisation and wall-clock time.
+
+Let's make a few definitions and assumptions:
+1. Time it takes to type-check file f = 'T(f)'
+2. Time it takes to type-check files f1...fn in parallel = 'T(f1+...fn)'
+3. Time it takes to type-check a file f and all its dependencies = 'D(f)'
+4. Type-checking is performed on a machine with infinite number of parallel processors.
+5. There is no slowdowns due to parallel processing, ie. T(f1+...+fn) = max(T(f1),...,T(fn))
+
+With the above it can be observed that:
+```
+D(f) = max(D(n)) + T(f), for n = any necessary dependency of f
+```
+In other words wall-clock time for type-checking using a given dependency graph is equal to the "longest" path in the graph.
+
+Therefore the main goal that the idea presented here aims to achieve is to replace the _allowed dependencies_ graph as currently used with a reduced graph that's much closer to the _necessary dependencies_ graph, therefore optimising the type-checking process.
+
+## A way to reduce the dependency graph used
+
+For all practical purposes the only way to calculate the _necessary dependencies_ graph fully accurately is to perform the type-checking process, which misses the point of this exercise.
+
+However, there exist cheaper solutions that reduce the initial graph significantly with low computational cost, providing a good trade-off.
+
+As noted in https://github.com/dotnet/fsharp/discussions/11634 , scanning the ASTs can provide a lot information that helps narrow down the set of types, modules/namespaces and files that a given file _might_ depend on.
+
+This is the approach we're taking.
+
+The dependency detection algorithm can be summarised as follows:
+1. For each parsed file in parallel:
+   1. Extract its top-level module or a list of top-level namespaces
+   2. Find all partial module references in the AST by traversing it once.
+2. Build a single [Trie](https://en.wikipedia.org/wiki/Trie) by adding all top-level items extracted in 1.i. Every module/namespace _segment_ (eg. `FSharp, Compiler, Service in FSharp.Compiler.Service`) is represented by a single edge in the Trie. Note down positions of all added files in the Trie.
+3. For each file in parallel:
+   1. Clone the Trie.
+   2. Start by marking the root as 'reachable'.
+   3. Process all partial module references found in this file in 1.ii one-by-one, in order of appearance in the AST:
+      1. For a given partial reference:
+         1. Start at every 'reachable' node.
+         2. 'Extend' the node with the new partial reference by walking down the Trie. If a leaf is reached, do not go further/do not extend the Trie.
+         3. Mark the reached node as 'reachable'
+   4. Collect all reachable nodes and their ancestors.
+   5. Find all files that added one or more modules/namespaces to any of the nodes found in 5.
+   6. Return those as dependencies.
+
+### Performance
+
+Little to no effort has been invested in optimising the algorithm.
+
+However, initial tests show that in its current unoptimised form it is very performant.
+
+Sample results for `FSharp.Compiler.Service`:
+
+| Phase                                    | Time                                |
+|------------------------------------------|-------------------------------------|
+| Parallel Parsing                         | 1.70s                               |
+| Type-Checking                            | 21.6s (13s with fsi optimisation)   |
+| Total compilation time w/o optimisations | 40.3s (33.3s with fsi optimisation) |
+| Dependency resolution - total            | 0.23s                               |
+| Dependency resolution - AST traversal    | 0.18s                               |
+| Dependency resolution - Trie processing  | 0.05s                               |
+
+Things that can be easily improved:
+- Quicker AST traversal - tail-recursion, not using `seq`, avoid allocations
+- Quicker Trie operations
+
+#### Overhead of dispatching work and branching/merging state
+
+On top of dependency resolution, the feature will add some overhead for dispatching work and allowing separation of type-checking state in the graph.
+
+No timings are available at the moment.
+
+## The problem of maintaining multiple instances of type-checking information
+
+The parallel type-checking idea generates a problem that needs to be solved.
+Instead of one instance of the type-checking information, we now have to:
+- 'clone' an instance multiple times when passing the state from one file to one or more of its dependants
+- 'merge' an instance when receiving state instances from one or more dependencies
+
+We believe this is doable, although no implementation exists as of yet.
+
+### Ordering of diagnostics/errors
+
+As noted in https://github.com/dotnet/fsharp/pull/13737#issuecomment-1224124532 , disrupting the processing order makes it difficult to retain the original behaviour when it comes to the order in which diagnostics are presented and suppressed.
+
+The importance of this problem and potential solutions are open questions.
