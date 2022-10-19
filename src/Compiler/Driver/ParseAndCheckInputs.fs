@@ -1480,11 +1480,11 @@ let CheckMultipleInputsInParallel
 
             let sequentialAndParallelResults, (finalTcState, allErrors) =
                 ((tcState, priorErrors), fileChunks)
-                ||> List.mapFold (fun (tcState, priorErrors) (inputsWithloggers) ->
-                    match inputsWithLoggers with
-                    | [input,logger] ->
-                        use _ = UseDiagnosticsLogger logger
-                        let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
+                ||> List.mapFold (fun (tcState, priorErrors) (currentBatchOfInputs) ->
+                    match currentBatchOfInputs with
+                    | [singleInput,singleLogger] ->
+                        use _ = UseDiagnosticsLogger singleLogger
+                        let checkForErrors2 () = priorErrors || (singleLogger.ErrorCount > 0)
 
                         let partialResult, tcState =
                             CheckOneInputAux(
@@ -1495,7 +1495,7 @@ let CheckMultipleInputsInParallel
                                 prefixPathOpt,
                                 TcResultsSink.NoSink,
                                 tcState,
-                                input,
+                                singleInput,
                                 true
                             )
                             |> Cancellable.runWithoutCancellation
@@ -1509,7 +1509,7 @@ let CheckMultipleInputsInParallel
                             let file =
                                 match input with
                                 | ParsedInput.ImplFile file -> file
-                                | ParsedInput.SigFile sf -> failwith "#paralell_compilation_group is only supported for .fs implementation files, %s is a signature file" sf.FileName
+                                | ParsedInput.SigFile sf -> failwith $"#paralell_compilation_group is only supported for .fs implementation files, {sf.FileName} is a signature file" 
 
                             let tcSink = TcResultsSink.NoSink
 
@@ -1536,7 +1536,7 @@ let CheckMultipleInputsInParallel
                                             tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
                                     }
 
-                                let ccuSigForFile, updateTcState =
+                                let ccuSigForFile, updatedTcState =
                                     AddCheckResultsToTcState
                                         (tcGlobals,
                                             amap,
@@ -1548,7 +1548,7 @@ let CheckMultipleInputsInParallel
                                             implFile.Signature)
                                         tcState
 
-                                Choice1Of2(tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), logger, updateTcState))
+                                Choice1Of2(tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), logger, updatedTcState))
                         |> fun results ->
                             ((tcState, priorErrors, ImmutableQueue.Empty), results)
                             ||> Array.fold (fun (tcState, priorErrors, partialResults) result ->

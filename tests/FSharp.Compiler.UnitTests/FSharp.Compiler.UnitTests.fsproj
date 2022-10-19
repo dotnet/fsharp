@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <Compile Include="CompilerTestHelpers.fs" />
+    <Compile Include="InternalCollectionUtilitiesTests.fs" />
     <Compile Include="ManglingNameOfProvidedTypes.fs" />
     <Compile Include="HashIfExpression.fs" />
     <Compile Include="ProductVersion.fs" />

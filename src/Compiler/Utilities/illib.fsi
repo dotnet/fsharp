@@ -165,7 +165,7 @@ module internal List =
     val takeUntil: p: ('a -> bool) -> l: 'a list -> 'a list * 'a list
 
     /// If consequtive elements produce the same non-empty value using the selector function, they are put into the same chunk
-    val chunkConsequtiveElementsVia: ('T -> 'a option) -> 'T list -> 'T list list
+    val chunkConsequtiveElementsVia: ('T -> 'a option) -> 'T list -> 'T list list when 'a: equality
 
     val order: eltOrder: IComparer<'T> -> IComparer<'T list>
 

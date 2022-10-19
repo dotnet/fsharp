@@ -181,8 +181,7 @@
     </Compile>
     <Compile Include="..\service\PrettyNaming.fs">
       <Link>PrettyNaming.fs</Link>
-    </Compile>
-    <Compile Include="..\..\..\fsharp-compiler-playground\PlaygroundTests.fs"/>
+    </Compile>  
     <Compile Include="..\service\Program.fs">
       <Link>Program.fs</Link>
     </Compile>
