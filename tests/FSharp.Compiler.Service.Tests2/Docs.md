@@ -146,7 +146,7 @@ This is the approach we're taking.
 The dependency detection algorithm can be summarised as follows:
 1. For each parsed file in parallel:
    1. Extract its top-level module or a list of top-level namespaces
-   2. Find all partial module references in the AST by traversing it once.
+   2. Find all partial module references in the AST by traversing it once. Consider `AutoOpens`, module abbreviations, partial opens etc.
 2. Build a single [Trie](https://en.wikipedia.org/wiki/Trie) by adding all top-level items extracted in 1.i. Every module/namespace _segment_ (eg. `FSharp, Compiler, Service in FSharp.Compiler.Service`) is represented by a single edge in the Trie. Note down positions of all added files in the Trie.
 3. For each file in parallel:
    1. Clone the Trie.
@@ -159,6 +159,36 @@ The dependency detection algorithm can be summarised as follows:
    4. Collect all reachable nodes and their ancestors.
    5. Find all files that added one or more modules/namespaces to any of the nodes found in 5.
    6. Return those as dependencies.
+
+### Graph optimisation - going deeper than just top-level module
+
+In 1.i of the above algorithm we only consider the top-level module/namespace(s) for each file.
+As soon as some other file is able to navigate to that top-level item, we consider it a dependency.
+
+A more or less straightforward optimisation of this behaviour would be to:
+1. In 1.i Collect a tree of modules/namespaces that contain any types/exceptions that can be used for type inference.
+2. In 2. add all the leaves from the tree to the Trie.
+
+This should further reduce the graph.
+
+### Edge-case 1. - `[<AutoOpen>]`
+
+Modules with `[<AutoOpen>]` are in a way 'transparent', meaning that all the types/nested modules inside them are surfaced as if they were on a level above.
+
+The algorithm needs to consider that.
+
+The main problem with that is that `AutoOpenAttribute` could be aliased and hide behind a different name.
+Therefore it's not easy to see whether the attribute is being used based only on the AST.
+
+There are ways to evaluate this, which involve scanning all module abbreviations in the project and in any referenced dlls.
+
+However, for now, the algorithm simply treats every module with _any_ attributes as an `[<AutoOpen>]` module.
+
+This retains correctness, but reduces efficiency of the graph reduction. Optimisation ideas here are welcome.
+
+### Edge-case 2. - module abbreviations
+
+At the moment the algorithm doesn't support files with module abbreviations. Adding support should be doable.
 
 ### Performance
 
