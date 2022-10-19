@@ -12,6 +12,11 @@
         <target state="translated">'{0}' kaynak dosyasının dosya uzantısı tanınmadı. Kaynak dosyaların uzantısı .fs, .fsi, .fsx veya .fsscript olmalıdır.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDuplicatedMethodParameter">
+        <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
+        <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">'{0}' özelliği F# {1} sürümünde kullanılamıyor. Lütfen {2} veya daha yüksek bir dil sürümünü kullanın.</target>
@@ -975,6 +980,11 @@
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">Bu ifade '{0}' türünü örtülü olarak '{1}' türüne dönüştürür. https://aka.ms/fsharp-implicit-convs adresine bakın.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcSynTypeOrInvalidInDeclaration">
+        <source>SynType.Or is not permitted in this declaration</source>
+        <target state="new">SynType.Or is not permitted in this declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
@@ -7503,8 +7513,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
-        <source>If a union type has more than one case and is a struct, then all fields within the union type must be given unique names.</source>
-        <target state="translated">Bir birleşim türü büyük ve küçük harfler içeriyorsa ve bir yapıysa, birleşim türü içindeki tüm alanlara benzersiz adlar verilmelidir.</target>
+        <source>If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</source>
+        <target state="needs-review-translation">Bir birleşim türü büyük ve küçük harfler içeriyorsa ve bir yapıysa, birleşim türü içindeki tüm alanlara benzersiz adlar verilmelidir.</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">

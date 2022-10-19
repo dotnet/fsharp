@@ -12,6 +12,11 @@
         <target state="translated">無法辨識 '{0}' 的副檔名。來源檔案的副檔名必須是 .fs、.fsi、.fsx 或 .fsscript。</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDuplicatedMethodParameter">
+        <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
+        <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">F# {1} 中無法使用 '{0}' 功能。請使用語言版本 {2} 或更新的版本。</target>
@@ -975,6 +980,11 @@
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">此運算式將類型 '{0}' 隱含轉換為類型 '{1}'。請參閱 https://aka.ms/fsharp-implicit-convs。</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcSynTypeOrInvalidInDeclaration">
+        <source>SynType.Or is not permitted in this declaration</source>
+        <target state="new">SynType.Or is not permitted in this declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
@@ -7503,8 +7513,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
-        <source>If a union type has more than one case and is a struct, then all fields within the union type must be given unique names.</source>
-        <target state="translated">如果等位型別有一個以上的案例並且為結構，等位型別內所有欄位的名稱就都不得重複。</target>
+        <source>If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</source>
+        <target state="needs-review-translation">如果等位型別有一個以上的案例並且為結構，等位型別內所有欄位的名稱就都不得重複。</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">

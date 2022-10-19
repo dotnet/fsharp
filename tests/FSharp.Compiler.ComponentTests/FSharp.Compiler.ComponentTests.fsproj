@@ -94,6 +94,7 @@
     <Compile Include="Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes\LogicalPropertiesOfTypes.fs" />
     <Compile Include="Conformance\TypesAndTypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs" />
     <Compile Include="Conformance\UnionTypes\UnionTypes.fs" />
+    <Compile Include="Conformance\UnionTypes\MultiCaseUnionStructTypes.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Basic.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Diagnostics.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Parsing.fs" />
@@ -134,7 +135,7 @@
     <Compile Include="EmittedIL\Structure\Structure.fs" />
     <Compile Include="EmittedIL\TestFunctions\TestFunctions.fs" />
     <Compile Include="EmittedIL\Tuples\Tuples.fs" />
-	<Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />
+    <Compile Include="EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs" />
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
@@ -159,9 +160,10 @@
     <Compile Include="ErrorMessages\FS0988AtEndOfFile.fs" />
     <Compile Include="ErrorMessages\Repro1548.fs" />
     <Compile Include="ErrorMessages\WarnIfDiscardedInList.fs" />
-	<Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs"/>
+    <Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs"/>
+    <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs"/>	
     <Compile Include="Language\IndexerSetterParamArray.fs" />
-	<Compile Include="Language\MultiDimensionalArrayTests.fs" />
+    <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
     <Compile Include="Language\ObsoleteAttributeCheckingTests.fs" />
@@ -181,8 +183,8 @@
       <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
     </None>
     <Compile Include="Interop\SimpleInteropTests.fs" />
-	<Compile Include="Interop\RequiredAndInitOnlyProperties.fs" />
-	<Compile Include="Interop\StaticsInInterfaces.fs" />
+    <Compile Include="Interop\RequiredAndInitOnlyProperties.fs" />
+    <Compile Include="Interop\StaticsInInterfaces.fs" />
     <Compile Include="Interop\VisibilityTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
@@ -205,6 +207,7 @@
     <Compile Include="Signatures\ModuleOrNamespaceTests.fs" />
     <Compile Include="Signatures\RecordTests.fs" />
     <Compile Include="Signatures\ArrayTests.fs" />
+    <Compile Include="Signatures\TypeTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />

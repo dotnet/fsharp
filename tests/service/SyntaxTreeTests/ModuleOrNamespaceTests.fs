@@ -97,7 +97,9 @@ let a = 42
 
     match parseResults with
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [
-        SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.NamedModule; trivia = { ModuleKeyword = Some mModule; NamespaceKeyword = None }) ])) ->
+        SynModuleOrNamespace.SynModuleOrNamespace(
+            kind = SynModuleOrNamespaceKind.NamedModule
+            trivia = { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.Module mModule }) ])) ->
         assertRange (5, 0) (5, 6) mModule
     | _ -> Assert.Fail "Could not get valid AST"
 
@@ -113,7 +115,9 @@ let a = 42
 
     match parseResults with
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [
-        SynModuleOrNamespace.SynModuleOrNamespace(kind = SynModuleOrNamespaceKind.DeclaredNamespace; trivia = { ModuleKeyword = None; NamespaceKeyword = Some mNamespace }) ])) ->
+        SynModuleOrNamespace.SynModuleOrNamespace(
+            kind = SynModuleOrNamespaceKind.DeclaredNamespace
+            trivia = { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.Namespace mNamespace }) ])) ->
         assertRange (2, 0) (2, 9) mNamespace
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
 
