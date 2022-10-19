@@ -612,10 +612,12 @@ type Entity =
     /// Indicates if this is an F#-defined interface type definition
     member IsFSharpInterfaceTycon: bool
 
-    /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
+    /// Indicates if this is an F# type definition known to be an F# class, interface, struct,
+    /// delegate or enum. This isn't generally a particularly useful thing to know,
+    /// it is better to use more specific predicates.
     member IsFSharpObjectModelTycon: bool
 
-    /// Indicates if this is an F#-defined struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is an F#-defined value type definition, including struct records and unions
     member IsFSharpStructOrEnumTycon: bool
 
     /// Indicates if this is an F# type definition whose r.h.s. definition is unknown (i.e. a traditional ML 'abstract' type in a signature,
@@ -625,7 +627,7 @@ type Entity =
     /// Indicates if this is a .NET-defined enum type definition
     member IsILEnumTycon: bool
 
-    /// Indicates if this is a .NET-defined struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is a .NET-defined struct or enum type definition
     member IsILStructOrEnumTycon: bool
 
     /// Indicate if this is a type definition backed by Abstract IL metadata.
@@ -674,7 +676,7 @@ type Entity =
     member IsStaticInstantiationTycon: bool
 #endif
 
-    /// Indicates if this is a struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is a struct or enum type definition, i.e. a value type definition, including struct records and unions
     member IsStructOrEnumTycon: bool
 
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition that is a value type.
@@ -2464,10 +2466,12 @@ type EntityRef =
     /// Indicates if this is an F#-defined interface type definition
     member IsFSharpInterfaceTycon: bool
 
-    /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
+    /// Indicates if this is an F# type definition known to be an F# class, interface, struct,
+    /// delegate or enum. This isn't generally a particularly useful thing to know,
+    /// it is better to use more specific predicates.
     member IsFSharpObjectModelTycon: bool
 
-    /// Indicates if this is an F#-defined struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is an F#-defined value type definition, including struct records and unions
     member IsFSharpStructOrEnumTycon: bool
 
     /// Indicates if this is an F# type definition whose r.h.s. definition is unknown (i.e. a traditional ML 'abstract' type in a signature,
@@ -2527,7 +2531,7 @@ type EntityRef =
     member IsStaticInstantiationTycon: bool
 #endif
 
-    /// Indicates if this is a struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is a struct or enum type definition, i.e. a value type definition, including struct records and unions
     member IsStructOrEnumTycon: bool
 
     /// Indicates if this entity is an F# type abbreviation definition

@@ -1106,8 +1106,21 @@ type Entity =
     /// Set the on-demand analysis about whether the entity is assumed to be a readonly struct
     member x.SetIsAssumedReadOnly b = x.entity_flags <- x.entity_flags.WithIsAssumedReadOnly b 
 
-    /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
-    member x.IsFSharpObjectModelTycon = match x.TypeReprInfo with | TFSharpTyconRepr _ -> true | _ -> false
+    /// Indicates if this is an F# type definition known to be an F# class, interface, struct,
+    /// delegate or enum. This isn't generally a particularly useful thing to know,
+    /// it is better to use more specific predicates.
+    member x.IsFSharpObjectModelTycon =
+        match x.TypeReprInfo with
+        | TFSharpTyconRepr { fsobjmodel_kind = kind } ->
+            match kind with
+            | TFSharpRecord
+            | TFSharpUnion -> false
+            | TFSharpClass
+            | TFSharpInterface
+            | TFSharpDelegate _
+            | TFSharpStruct
+            | TFSharpEnum -> true
+        | _ -> false
 
     /// Indicates if this is an F# type definition which is one of the special types in FSharp.Core.dll which uses 
     /// an assembly-code representation for the type, e.g. the primitive array type constructor.
@@ -1146,8 +1159,7 @@ type Entity =
 #endif
         x.IsILEnumTycon || x.IsFSharpEnumTycon
 
-
-    /// Indicates if this is an F#-defined struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is an F#-defined value type definition, including struct records and unions
     member x.IsFSharpStructOrEnumTycon =
         match x.TypeReprInfo with
         | TFSharpTyconRepr info ->
@@ -1162,7 +1174,7 @@ type Entity =
         x.IsILTycon && 
         x.ILTyconRawMetadata.IsStructOrEnum
 
-    /// Indicates if this is a struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is a struct or enum type definition, i.e. a value type definition, including struct records and unions
     member x.IsStructOrEnumTycon = 
 #if !NO_TYPEPROVIDERS
         match x.TypeReprInfo with 
@@ -3627,7 +3639,7 @@ type EntityRef =
     /// Note: result is a indexed table, and for each name the results are in reverse declaration order
     member x.MembersOfFSharpTyconByName = x.Deref.MembersOfFSharpTyconByName
 
-    /// Indicates if this is a struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is a struct or enum type definition, i.e. a value type definition, including struct records and unions
     member x.IsStructOrEnumTycon = x.Deref.IsStructOrEnumTycon
 
     /// Indicates if this is an F# type definition which is one of the special types in FSharp.Core.dll which uses 
@@ -3669,7 +3681,9 @@ type EntityRef =
     /// Indicates if this is an F# type definition whose r.h.s. is known to be a record type definition.
     member x.IsRecordTycon = x.Deref.IsRecordTycon
 
-    /// Indicates if this is an F# type definition whose r.h.s. is known to be some kind of F# object model definition
+    /// Indicates if this is an F# type definition known to be an F# class, interface, struct,
+    /// delegate or enum. This isn't generally a particularly useful thing to know,
+    /// it is better to use more specific predicates.
     member x.IsFSharpObjectModelTycon = x.Deref.IsFSharpObjectModelTycon
 
     /// The on-demand analysis about whether the entity has the IsByRefLike attribute
@@ -3709,7 +3723,7 @@ type EntityRef =
     /// Indicates if this is an enum type definition 
     member x.IsEnumTycon = x.Deref.IsEnumTycon
 
-    /// Indicates if this is an F#-defined struct or enum type definition, i.e. a value type definition
+    /// Indicates if this is an F#-defined value type definition, including struct records and unions
     member x.IsFSharpStructOrEnumTycon = x.Deref.IsFSharpStructOrEnumTycon
 
     /// Indicates if this is a .NET-defined struct or enum type definition, i.e. a value type definition

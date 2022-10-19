@@ -487,7 +487,7 @@ type InfoReader(g: TcGlobals, amap: Import.ImportMap) as this =
                     | Some name when name = overridesName -> true
                     | _ -> false
                 if canAccumulate then
-                    match mdefs.TryFindInstanceByNameAndCallingSignature (overrideBy.Name, overrideBy.MethodRef.CallingSignature) with
+                    match mdefs.TryFindInstanceByNameAndCallingSignature (overrideBy.Name, overrideBy.MethodRef.GetCallingSignature()) with
                     | Some mdef ->
                         let overridesILTy = ilMethImpl.Overrides.DeclaringType
                         let overridesTyFullName = overridesILTy.TypeRef.FullName

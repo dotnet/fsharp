@@ -15,10 +15,16 @@ let mkLowerName (nm: string) =
 [<Sealed>]
 type IlxUnionCaseField(fd: ILFieldDef) =
     let lowerName = mkLowerName fd.Name
-    member x.ILField = fd
+
+    member _.ILField = fd
+
     member x.Type = x.ILField.FieldType
+
     member x.Name = x.ILField.Name
-    member x.LowerName = lowerName
+
+    member _.LowerName = lowerName
+
+    override x.ToString() = x.Name
 
 type IlxUnionCase =
     {
@@ -28,10 +34,16 @@ type IlxUnionCase =
     }
 
     member x.FieldDefs = x.altFields
+
     member x.FieldDef n = x.altFields[n]
+
     member x.Name = x.altName
+
     member x.IsNullary = (x.FieldDefs.Length = 0)
+
     member x.FieldTypes = x.FieldDefs |> Array.map (fun fd -> fd.Type)
+
+    override x.ToString() = x.Name
 
 type IlxUnionHasHelpers =
     | NoHelpers
@@ -48,7 +60,9 @@ type IlxUnionSpec =
         let (IlxUnionSpec (IlxUnionRef (bx, tref, _, _, _), inst)) = x in mkILNamedTy bx tref inst
 
     member x.Boxity = let (IlxUnionSpec (IlxUnionRef (bx, _, _, _, _), _)) = x in bx
+
     member x.TypeRef = let (IlxUnionSpec (IlxUnionRef (_, tref, _, _, _), _)) = x in tref
+
     member x.GenericArgs = let (IlxUnionSpec (_, inst)) = x in inst
 
     member x.AlternativesArray =
@@ -58,9 +72,14 @@ type IlxUnionSpec =
         let (IlxUnionSpec (IlxUnionRef (_, _, _, np, _), _)) = x in np
 
     member x.HasHelpers = let (IlxUnionSpec (IlxUnionRef (_, _, _, _, b), _)) = x in b
+
     member x.Alternatives = Array.toList x.AlternativesArray
+
     member x.Alternative idx = x.AlternativesArray[idx]
+
     member x.FieldDef idx fidx = x.Alternative(idx).FieldDef(fidx)
+
+    override x.ToString() = x.TypeRef.Name
 
 type IlxClosureLambdas =
     | Lambdas_forall of ILGenericParameterDef * IlxClosureLambdas
@@ -99,6 +118,8 @@ type IlxClosureFreeVar =
         fvType: ILType
     }
 
+    override x.ToString() = x.fvName
+
 let mkILFreeVar (name, compgen, ty) =
     {
         fvName = name
@@ -106,7 +127,8 @@ let mkILFreeVar (name, compgen, ty) =
         fvType = ty
     }
 
-type IlxClosureRef = IlxClosureRef of ILTypeRef * IlxClosureLambdas * IlxClosureFreeVar[]
+type IlxClosureRef =
+    | IlxClosureRef of ILTypeRef * IlxClosureLambdas * IlxClosureFreeVar[]
 
 type IlxClosureSpec =
     | IlxClosureSpec of IlxClosureRef * ILGenericArgs * ILType * useStaticField: bool
@@ -141,6 +163,8 @@ type IlxClosureSpec =
         let formalCloTy = mkILFormalBoxedTy x.TypeRef (mkILFormalTypars x.GenericArgs)
         mkILFieldSpecInTy (x.ILType, "@_instance", formalCloTy)
 
+    override x.ToString() = x.TypeRef.ToString()
+
 // Define an extension of the IL algebra of type definitions
 type IlxClosureInfo =
     {
@@ -171,12 +195,14 @@ type IlxUnionInfo =
         DebugImports: ILDebugImports option
     }
 
+    override _.ToString() = "<union info>"
+
 // --------------------------------------------------------------------
 // Define these as extensions of the IL types
 // --------------------------------------------------------------------
 
-let destTyFuncApp =
-    function
+let destTyFuncApp input =
+    match input with
     | Apps_tyapp (b, c) -> b, c
     | _ -> failwith "destTyFuncApp"
 

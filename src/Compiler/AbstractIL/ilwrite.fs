@@ -407,6 +407,8 @@ type MetadataTable<'T> =
 
     member tbl.GetTableEntry x = tbl.dict[x]
 
+    override x.ToString() = "table " + x.name
+
 //---------------------------------------------------------------------
 // Keys into some of the tables
 //---------------------------------------------------------------------
@@ -452,6 +454,8 @@ type MethodDefKey(ilg:ILGlobals, tidx: int, garity: int, nm: string, retTy: ILTy
             retTy = y.ReturnType && List.lengthsEqAndForall2 compareILTypes argTys y.ArgTypes &&
             isStatic = y.IsStatic
         | _ -> false
+
+    override x.ToString() = nm
 
 /// We use this key type to help find ILFieldDefs for FieldRefs
 type FieldDefKey(tidx: int, nm: string, ty: ILType) =

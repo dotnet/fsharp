@@ -1203,7 +1203,7 @@ module MutRecBindingChecking =
                             // envStatic contains class typars and the (ungeneralized) members on the class(es).
                             // envStatic has no instance-variables (local let-bindings or ctor args). 
 
-                            let v = rbind.RecBindingInfo .Val
+                            let v = rbind.RecBindingInfo.Val
                             let envForBinding = if v.IsInstanceMember then envInstance else envStatic
 
                             // Type variables derived from the type definition (or implicit constructor) are always generalizable (we check their generalizability later).
@@ -3320,7 +3320,15 @@ module EstablishTypeDefinitionCores =
                     let recdFields = TcRecdUnionAndEnumDeclarations.TcNamedFieldDecls cenv envinner innerParent false tpenv fields
                     recdFields |> CheckDuplicates (fun f -> f.Id) "field" |> ignore
                     writeFakeRecordFieldsToSink recdFields
-                    let repr = TFSharpTyconRepr (Construct.NewEmptyFSharpTyconData TFSharpRecord)
+                    let data =
+                        {
+                            fsobjmodel_cases = Construct.MakeUnionCases []
+                            fsobjmodel_kind = TFSharpRecord
+                            fsobjmodel_vslots = []
+                            fsobjmodel_rfields = Construct.MakeRecdFieldsTable recdFields
+                        }
+
+                    let repr = TFSharpTyconRepr data
                     repr, None, NoSafeInitInfo
 
                 | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly (s, _) -> 
@@ -3451,13 +3459,14 @@ module EstablishTypeDefinitionCores =
                         let baseValOpt = MakeAndPublishBaseVal cenv envinner baseIdOpt (superOfTycon g tycon)
                         let safeInitInfo = ComputeInstanceSafeInitInfo cenv envinner thisTyconRef.Range thisTy
                         let safeInitFields = match safeInitInfo with SafeInitField (_, fld) -> [fld] | NoSafeInitInfo -> []
-                        
-                        let repr = 
-                            TFSharpTyconRepr 
-                                { fsobjmodel_cases = Construct.MakeUnionCases []
-                                  fsobjmodel_kind = kind 
-                                  fsobjmodel_vslots = abstractSlots
-                                  fsobjmodel_rfields = Construct.MakeRecdFieldsTable (userFields @ implicitStructFields @ safeInitFields) } 
+                        let data =
+                            {
+                                fsobjmodel_cases = Construct.MakeUnionCases []
+                                fsobjmodel_kind = kind 
+                                fsobjmodel_vslots = abstractSlots
+                                fsobjmodel_rfields = Construct.MakeRecdFieldsTable (userFields @ implicitStructFields @ safeInitFields)
+                            } 
+                        let repr = TFSharpTyconRepr data
                         repr, baseValOpt, safeInitInfo
 
                 | SynTypeDefnSimpleRepr.Enum (decls, m) -> 
@@ -3475,12 +3484,14 @@ module EstablishTypeDefinitionCores =
                         errorR(Error(FSComp.SR.tcInvalidTypeForLiteralEnumeration(), m))
 
                     writeFakeRecordFieldsToSink fields' 
-                    let repr = 
-                        TFSharpTyconRepr 
-                            { fsobjmodel_cases = Construct.MakeUnionCases []
-                              fsobjmodel_kind=kind 
-                              fsobjmodel_vslots=[]
-                              fsobjmodel_rfields= Construct.MakeRecdFieldsTable (vfld :: fields') }
+                    let data =
+                        {
+                            fsobjmodel_cases = Construct.MakeUnionCases []
+                            fsobjmodel_kind = kind 
+                            fsobjmodel_vslots = []
+                            fsobjmodel_rfields = Construct.MakeRecdFieldsTable (vfld :: fields')
+                        }
+                    let repr = TFSharpTyconRepr data
                     repr, None, NoSafeInitInfo
             
             tycon.entity_tycon_repr <- typeRepr

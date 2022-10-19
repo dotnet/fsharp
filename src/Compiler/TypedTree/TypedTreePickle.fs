@@ -2077,13 +2077,13 @@ and p_member_info (x: ValMemberInfo) st =
 
 and p_tycon_objmodel_kind x st =
     match x with
-    | TFSharpUnion       -> failwith "unreachable, see p_tycon_repr"
-    | TFSharpRecord      -> failwith "unreachable, see p_tycon_repr"
     | TFSharpClass       -> p_byte 0 st
     | TFSharpInterface   -> p_byte 1 st
     | TFSharpStruct      -> p_byte 2 st
     | TFSharpDelegate ss -> p_byte 3 st; p_slotsig ss st
     | TFSharpEnum        -> p_byte 4 st
+    | TFSharpUnion       -> p_byte 5 st
+    | TFSharpRecord      -> p_byte 6 st
 
 and p_vrefFlags x st =
     match x with
@@ -2133,6 +2133,7 @@ and u_tycon_repr st =
     | 1 ->
         let tag2 = u_byte st
         match tag2 with
+        // Records historically use a different format to other FSharpTyconRepr
         | 0 ->
             let v = u_rfield_table st
             (fun _flagBit ->
@@ -2143,9 +2144,12 @@ and u_tycon_repr st =
                         fsobjmodel_vslots=[]
                         fsobjmodel_rfields=v
                     })
+
+        // Unions  without static fields historically use a different format to other FSharpTyconRepr
         | 1 ->
             let v = u_list u_unioncase_spec  st
             (fun _flagBit -> Construct.MakeUnionRepr v)
+
         | 2 ->
             let v = u_ILType st
             // This is the F# 3.0 extension to the format used for F# provider-generated types, which record an ILTypeRef in the format
@@ -2171,13 +2175,18 @@ and u_tycon_repr st =
                         TNoRepr
                 else
                     TAsmRepr v)
+
         | 3 ->
             let v = u_tycon_objmodel_data  st
             (fun _flagBit -> TFSharpTyconRepr v)
+
         | 4 ->
             let v = u_ty st
             (fun _flagBit -> TMeasureableRepr v)
+
         | _ -> ufailwith st "u_tycon_repr"
+
+    // Unions with static fields use a different format to other FSharpTyconRepr
     | 2 ->
         let cases = u_array u_unioncase_spec st
         let data = u_tycon_objmodel_data st
@@ -2385,6 +2394,8 @@ and u_tycon_objmodel_kind st =
     | 2 -> TFSharpStruct
     | 3 -> u_slotsig st |> TFSharpDelegate
     | 4 -> TFSharpEnum
+    | 5 -> TFSharpUnion
+    | 6 -> TFSharpRecord
     | _ -> ufailwith st "u_tycon_objmodel_kind"
 
 and u_vrefFlags st =
