@@ -35,4 +35,14 @@ jobs:
       - uses: actions/add-to-project@v0.3.0
         with:
           project-url: https://github.com/orgs/dotnet/projects/126/
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.REPO_PROJECT_PAT }}
+  label_issues:
+      runs-on: ubuntu-latest
+      permissions:
+        issues: write
+      steps:
+        - name: Label issues
+          uses: actions/labeler@v4.0.2
+          with:
+            add-labels: "Needs-Triage"
+            repo-token: ${{ secrets.GITHUB_TOKEN }}
