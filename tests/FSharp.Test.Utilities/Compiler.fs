@@ -1197,6 +1197,26 @@ module rec Compiler =
                         Message     = message } ]
             withResults expectedResults result
 
+        let withPerFileDiagnostics (expected: (string * ErrorType * Line * Col * Line * Col * string) list) (result: CompilationResult) : CompilationResult =
+            let expectedResultsPerFile =
+                [ for e in expected do
+                      let (filename,error, Line startLine, Col startCol, Line endLine, Col endCol, message) = e
+                      filename,
+                      { Error = error
+                        Range =
+                            { StartLine   = startLine
+                              StartColumn = startCol
+                              EndLine     = endLine
+                              EndColumn   = endCol }
+                        Message     = message } ]
+                |> List.groupBy fst
+                |> List.map (fun (file,rows) -> file, rows |> List.map snd)
+
+            for (file,expectedResultsInFile) in expectedResultsPerFile do                
+                assertResultsCategory "Results" (fun r -> r.PerFileErrors |> Map.tryFind file |> Option.defaultValue []) expectedResultsInFile result |> ignore
+            
+            result
+
         let withSingleDiagnostic (expected: (ErrorType * Line * Col * Line * Col * string)) (result: CompilationResult) : CompilationResult =
             withDiagnostics [expected] result
 
