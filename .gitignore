@@ -125,3 +125,4 @@ nCrunchTemp_*
 /test.fsx
 
 tests/FSharp.Compiler.Service.Tests/FSharp.CompilerService.SurfaceArea.netstandard.actual
+*.vsp
