@@ -668,7 +668,6 @@ module ParsedInput =
             | SynType.Fun (argType = t1; returnType = t2) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.WithGlobalConstraints (t, _, _) -> walkType t
             | SynType.HashConstraint (t, _) -> walkType t
-            | SynType.MeasureDivide (t1, t2, _)
             | SynType.Or (t1, t2, _, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.MeasurePower (t, _, _) -> walkType t
             | SynType.Paren (t, _)
@@ -1676,7 +1675,6 @@ module ParsedInput =
             | SynType.Paren (t, _)
             | SynType.SignatureParameter (usedType = t) -> walkType t
             | SynType.Fun (argType = t1; returnType = t2)
-            | SynType.MeasureDivide (t1, t2, _)
             | SynType.Or (t1, t2, _, _) ->
                 walkType t1
                 walkType t2
