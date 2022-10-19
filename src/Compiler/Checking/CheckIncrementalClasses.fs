@@ -489,11 +489,18 @@ type IncrClassReprInfo =
               | SafeInitField (_, fld) -> yield fld
               | NoSafeInitInfo -> () ]
 
-        let recdFields = Construct.MakeRecdFieldsTable (rfspecs @ tcref.AllFieldsAsList)
+        let allFields = rfspecs @ tcref.AllFieldsAsList
+        match allFields with
+        | [] -> ()
+        | _ ->
+            match tcref.TypeReprInfo with
+            | TFSharpTyconRepr info ->
+                let recdFields = Construct.MakeRecdFieldsTable (rfspecs @ tcref.AllFieldsAsList)
 
-        // Mutate the entity_tycon_repr to publish the fields
-        tcref.Deref.entity_tycon_repr <- TFSharpTyconRepr { tcref.FSharpTyconRepresentationData with fsobjmodel_rfields = recdFields}  
-
+                // Mutate the entity_tycon_repr to publish the fields
+                tcref.Deref.entity_tycon_repr <- TFSharpTyconRepr { info with fsobjmodel_rfields = recdFields}
+            | _ ->
+                errorR(InternalError("unreachable, anything that can have fields should be a TFSharpTyconRepr", tcref.Range))
 
     /// Given localRep saying how locals have been represented, e.g. as fields.
     /// Given an expr under a given thisVal context.
