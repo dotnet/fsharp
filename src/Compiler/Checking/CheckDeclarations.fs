@@ -3164,8 +3164,16 @@ module EstablishTypeDefinitionCores =
                     if not ctorArgNames.IsEmpty then errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), m))
                 
             let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
-            let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false 
-
+            let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false
+            
+            let multiCaseUnionStructCheck (unionCases: UnionCase list) =
+                if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
+                    let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield (ft.LogicalName, ft.Range) ]
+                    let distFieldNames = fieldNames |> List.distinctBy fst
+                    if distFieldNames.Length <> fieldNames.Length then
+                        let fieldRanges = distFieldNames |> List.map snd
+                        for m in fieldRanges do
+                            errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(), m))
 
             // Notify the Language Service about field names in record/class declaration
             let ad = envinner.AccessRights
@@ -3257,10 +3265,7 @@ module EstablishTypeDefinitionCores =
 
                     let hasRQAAttribute = HasFSharpAttribute cenv.g cenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
                     let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst hasRQAAttribute tpenv unionCases
-                    if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
-                      let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield ft.LogicalName ]
-                      if fieldNames |> List.distinct |> List.length <> fieldNames.Length then 
-                          errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(), m))
+                    multiCaseUnionStructCheck unionCases
 
                     writeFakeUnionCtorsToSink unionCases
                     let repr = Construct.MakeUnionRepr unionCases
@@ -4560,7 +4565,7 @@ and TcSignatureElementsMutRec cenv parent typeNames m mutRecNSInfo envInitial (d
                 | SynModuleSigDecl.Exception (exnSig=SynExceptionSig(exnRepr=exnRepr; withKeyword=withKeyword; members=members)) ->
                       let ( SynExceptionDefnRepr(synAttrs, SynUnionCase(ident=SynIdent(id,_)), _, xmlDoc, vis, m)) = exnRepr
                       let compInfo = SynComponentInfo(synAttrs, None, [], [id], xmlDoc, false, vis, id.idRange)
-                      let decls = [ MutRecShape.Tycon(SynTypeDefnSig.SynTypeDefnSig(compInfo, SynTypeDefnSigRepr.Exception exnRepr, members, m, { TypeKeyword = None; WithKeyword = withKeyword; EqualsRange = None })) ]
+                      let decls = [ MutRecShape.Tycon(SynTypeDefnSig.SynTypeDefnSig(compInfo, SynTypeDefnSigRepr.Exception exnRepr, members, m, { LeadingKeyword = SynTypeDefnLeadingKeyword.Synthetic; WithKeyword = withKeyword; EqualsRange = None })) ]
                       decls, (false, false)
 
                 | SynModuleSigDecl.Val (vspec, _) -> 
