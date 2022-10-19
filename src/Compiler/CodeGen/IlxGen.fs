@@ -2165,6 +2165,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
             if isStruct then
                 tycon.SetIsStructRecordOrUnion true
+
             let rfields =
                 (tps, flds)
                 ||> List.map2 (fun tp (propName, _fldName, _fldTy) ->
@@ -2181,6 +2182,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                         XmlDoc.Empty
                         taccessPublic
                         false)
+
             let data =
                 {
                     fsobjmodel_cases = Construct.MakeUnionCases []
@@ -2188,6 +2190,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                     fsobjmodel_kind = TFSharpRecord
                     fsobjmodel_vslots = []
                 }
+
             tycon.entity_tycon_repr <- TFSharpTyconRepr data
             let tcref = mkLocalTyconRef tycon
             let ty = generalizedTyconRef g tcref
@@ -10694,8 +10697,10 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                     match o.fsobjmodel_kind with
                     | TFSharpUnion
                     | TFSharpRecord ->
-                        if tycon.IsStructOrEnumTycon then ILTypeDefKind.ValueType
-                        else ILTypeDefKind.Class
+                        if tycon.IsStructOrEnumTycon then
+                            ILTypeDefKind.ValueType
+                        else
+                            ILTypeDefKind.Class
                     | TFSharpClass -> ILTypeDefKind.Class
                     | TFSharpStruct -> ILTypeDefKind.ValueType
                     | TFSharpInterface -> ILTypeDefKind.Interface
@@ -11113,7 +11118,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                     tdef, None
 
-                | TFSharpTyconRepr { fsobjmodel_kind = k } when (match k with TFSharpUnion -> false | _ -> true) ->
+                | TFSharpTyconRepr { fsobjmodel_kind = k } when
+                    (match k with
+                     | TFSharpUnion -> false
+                     | _ -> true)
+                    ->
                     let super = superOfTycon g tycon
                     let ilBaseTy = GenType cenv m eenvinner.tyenv super
 
@@ -11253,7 +11262,11 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
 
                     tdef, None
 
-                | TFSharpTyconRepr { fsobjmodel_kind = k } when (match k with TFSharpUnion -> true | _ -> false) ->
+                | TFSharpTyconRepr { fsobjmodel_kind = k } when
+                    (match k with
+                     | TFSharpUnion -> true
+                     | _ -> false)
+                    ->
                     let alternatives =
                         tycon.UnionCasesArray
                         |> Array.mapi (fun i ucspec ->
@@ -11340,7 +11353,12 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon: Tycon) =
                             .WithAccess(access)
                             // If there are static fields in the union, use the same kind of trigger as
                             // for class types
-                            .WithInitSemantics(if ilFields.AsList().IsEmpty then ILTypeInit.BeforeField else typeDefTrigger)
+                            .WithInitSemantics(
+                                if ilFields.AsList().IsEmpty then
+                                    ILTypeInit.BeforeField
+                                else
+                                    typeDefTrigger
+                            )
 
                     let tdef2 =
                         EraseUnions.mkClassUnionDef

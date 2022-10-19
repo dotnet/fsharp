@@ -119,12 +119,7 @@ type IncrClassConstructionBindingsPhase2C =
 /// Check and elaborate the "left hand side" of the implicit class construction
 /// syntax.
 val TcStaticImplicitCtorInfo_Phase2A:
-    cenv: TcFileState *
-    env: TcEnv *
-    tcref: TyconRef *
-    m: range *
-    copyOfTyconTypars: Typar list ->
-        StaticCtorInfo
+    cenv: TcFileState * env: TcEnv * tcref: TyconRef * m: range * copyOfTyconTypars: Typar list -> StaticCtorInfo
 
 /// Check and elaborate the "left hand side" of the implicit class construction
 /// syntax.

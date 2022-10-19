@@ -432,6 +432,7 @@ type AssemblyRefData =
         assemRefVersion: ILVersionInfo option
         assemRefLocale: Locale option
     }
+
     override x.ToString() = x.assemRefName
 
 /// Global state: table of all assembly references keyed by AssemblyRefData.
@@ -683,7 +684,8 @@ type ILCallingConv =
 
     static member Static = ILCallingConvStatics.Static
 
-    override x.ToString() = if x.IsStatic then "static" else "instance"
+    override x.ToString() =
+        if x.IsStatic then "static" else "instance"
 
 /// Static storage to amortize the allocation of <c>ILCallingConv.Instance</c> and <c>ILCallingConv.Static</c>.
 and ILCallingConvStatics() =
@@ -1004,7 +1006,8 @@ type ILMethodRef =
 
     member x.ReturnType = x.mrefReturn
 
-    member x.GetCallingSignature() = mkILCallSig (x.CallingConv, x.ArgTypes, x.ReturnType)
+    member x.GetCallingSignature() =
+        mkILCallSig (x.CallingConv, x.ArgTypes, x.ReturnType)
 
     static member Create(enclosingTypeRef, callingConv, name, genericArity, argTypes, returnType) =
         {
@@ -1470,7 +1473,9 @@ type ILLocalDebugInfo =
         Range: ILCodeLabel * ILCodeLabel
         DebugMappings: ILLocalDebugMapping list
     }
-    override x.ToString() = (fst x.Range).ToString() + "-" + (snd x.Range).ToString()
+
+    override x.ToString() =
+        (fst x.Range).ToString() + "-" + (snd x.Range).ToString()
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ILCode =
@@ -1480,6 +1485,7 @@ type ILCode =
         Exceptions: ILExceptionSpec list
         Locals: ILLocalDebugInfo list
     }
+
     override x.ToString() = "<code>"
 
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
@@ -1489,6 +1495,7 @@ type ILLocal =
         IsPinned: bool
         DebugInfo: (string * int * int) option
     }
+
     override x.ToString() = "<local>"
 
 type ILLocals = ILLocal list
@@ -1506,6 +1513,7 @@ type ILDebugImports =
         Parent: ILDebugImports option
         Imports: ILDebugImport[]
     }
+
     override x.ToString() = "<imports>"
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -1520,6 +1528,7 @@ type ILMethodBody =
         DebugRange: ILDebugPoint option
         DebugImports: ILDebugImports option
     }
+
     override x.ToString() = "<method body>"
 
 [<RequireQualifiedAccess>]
@@ -1761,6 +1770,7 @@ type PInvokeMethod =
         ThrowOnUnmappableChar: PInvokeThrowOnUnmappableChar
         CharBestFit: PInvokeCharBestFit
     }
+
     override x.ToString() = x.Name
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -1779,7 +1789,8 @@ type ILParameter =
 
     member x.CustomAttrs = x.CustomAttrsStored.GetCustomAttrs x.MetadataIndex
 
-    override x.ToString() = x.Name |> Option.defaultValue "<no name>"
+    override x.ToString() =
+        x.Name |> Option.defaultValue "<no name>"
 
 type ILParameters = ILParameter list
 
@@ -1808,7 +1819,8 @@ type ILOverridesSpec =
 
     member x.DeclaringType = let (OverridesSpec (_mr, ty)) = x in ty
 
-    override x.ToString() = "overrides " + x.DeclaringType.ToString() + "::" + x.MethodRef.ToString()
+    override x.ToString() =
+        "overrides " + x.DeclaringType.ToString() + "::" + x.MethodRef.ToString()
 
 type ILMethodVirtualInfo =
     {

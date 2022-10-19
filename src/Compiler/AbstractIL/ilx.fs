@@ -127,8 +127,7 @@ let mkILFreeVar (name, compgen, ty) =
         fvType = ty
     }
 
-type IlxClosureRef =
-    | IlxClosureRef of ILTypeRef * IlxClosureLambdas * IlxClosureFreeVar[]
+type IlxClosureRef = IlxClosureRef of ILTypeRef * IlxClosureLambdas * IlxClosureFreeVar[]
 
 type IlxClosureSpec =
     | IlxClosureSpec of IlxClosureRef * ILGenericArgs * ILType * useStaticField: bool
