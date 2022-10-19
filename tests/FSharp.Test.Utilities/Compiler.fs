@@ -156,12 +156,13 @@ module rec Compiler =
         | ExecutionOutput of ExecutionOutput
 
     type CompilationOutput =
-        { OutputPath:   string option
-          Dependencies: string list
-          Adjust:       int
-          Diagnostics:  ErrorInfo list
-          Output:       RunOutput option
-          Compilation:  CompilationUnit }
+        { OutputPath:    string option
+          Dependencies:  string list
+          Adjust:        int
+          Diagnostics:   ErrorInfo list
+          PerFileErrors: Map<string,ErrorInfo list>
+          Output:        RunOutput option
+          Compilation:   CompilationUnit }
 
     [<RequireQualifiedAccess>]
     type CompilationResult =
@@ -217,13 +218,21 @@ module rec Compiler =
             References      = []
         }
 
-    let private fromFSharpDiagnostic (errors: FSharpDiagnostic[]) : ErrorInfo list =
-        let toErrorInfo (e: FSharpDiagnostic) : ErrorInfo =
+    let private collectDiagnostics (perFile:Map<string,ErrorInfo list>) : ErrorInfo list =
+        perFile
+        |> Map.values
+        |> Seq.collect id
+        |> Seq.distinct
+        |> List.ofSeq
+
+    let private fromFSharpDiagnostic (errors: FSharpDiagnostic[]) : Map<string,ErrorInfo list> =
+        let toErrorInfo (e: FSharpDiagnostic) : string * ErrorInfo =
             let errorNumber = e.ErrorNumber
             let severity = e.Severity
 
             let error = if severity = FSharpDiagnosticSeverity.Warning then Warning errorNumber else Error errorNumber
 
+            e.FileName |> Path.GetFileName, 
             { Error   = error
               Range   =
                   { StartLine   = e.StartLine
@@ -233,9 +242,12 @@ module rec Compiler =
               Message = e.Message }
 
         errors
-        |> List.ofArray
-        |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message)
+        |> List.ofArray      
+        |> List.distinctBy (fun e -> e.Severity, e.ErrorNumber, e.StartLine, e.StartColumn, e.EndLine, e.EndColumn, e.Message, e.FileName)
         |> List.map toErrorInfo
+        |> List.groupBy fst
+        |> List.map (fun (file,errors) -> file, errors |> List.map snd)
+        |> Map.ofList
 
     let private partitionErrors diagnostics = diagnostics |> List.partition (fun e -> match e.Error with Error _ -> true | _ -> false)
 
@@ -549,14 +561,15 @@ module rec Compiler =
         let diagnostics = err |> fromFSharpDiagnostic
 
         let result =
-            { OutputPath   = None
-              Dependencies = deps
-              Adjust       = 0
-              Diagnostics  = diagnostics
-              Output       = None
-              Compilation  = cUnit }
+            { OutputPath    = None
+              Dependencies  = deps
+              Adjust        = 0
+              PerFileErrors = diagnostics
+              Diagnostics   = diagnostics |> collectDiagnostics
+              Output        = None
+              Compilation   = cUnit }
 
-        let (errors, warnings) = partitionErrors diagnostics
+        let (errors, warnings) = partitionErrors result.Diagnostics
 
         // Treat warnings as errors if "IgnoreWarnings" is false
         if errors.Length > 0 || (warnings.Length > 0 && not ignoreWarnings) then
@@ -598,12 +611,13 @@ module rec Compiler =
     let private compileCSharpCompilation (compilation: CSharpCompilation) csSource (filePath : string) dependencies : CompilationResult =
         let cmplResult = compilation.Emit filePath
         let result =
-            { OutputPath   = None
-              Dependencies = dependencies
-              Adjust       = 0
-              Diagnostics  = cmplResult.Diagnostics |> Seq.map toErrorInfo |> Seq.toList
-              Output       = None
-              Compilation  = CS csSource }
+            { OutputPath    = None
+              Dependencies  = dependencies
+              Adjust        = 0
+              Diagnostics   = cmplResult.Diagnostics |> Seq.map toErrorInfo |> Seq.toList
+              PerFileErrors = Map.empty // WHEN this is needed for C#, division by file needed here
+              Output        = None
+              Compilation   = CS csSource }
 
         if cmplResult.Success then
             CompilationResult.Success { result with OutputPath  = Some filePath }
@@ -698,12 +712,13 @@ module rec Compiler =
         let failed = parseResults.ParseHadErrors
         let diagnostics =  parseResults.Diagnostics |> fromFSharpDiagnostic
         let result =
-            { OutputPath   = None
-              Dependencies = []
-              Adjust       = 0
-              Diagnostics  = diagnostics
-              Output       = None
-              Compilation  = FS fsSource }
+            { OutputPath    = None
+              Dependencies  = []
+              Adjust        = 0
+              PerFileErrors = diagnostics
+              Diagnostics   = diagnostics |> collectDiagnostics
+              Output        = None
+              Compilation   = FS fsSource }
 
         if failed then
             CompilationResult.Failure result
@@ -728,13 +743,14 @@ module rec Compiler =
         let (err: FSharpDiagnostic []) = typecheckFSharpSourceAndReturnErrors fsSource
         let diagnostics = err |> fromFSharpDiagnostic
         let result =
-            { OutputPath   = None
-              Dependencies = []
-              Adjust       = 0
-              Diagnostics  = diagnostics
-              Output       = None
-              Compilation  = FS fsSource }
-        let (errors, warnings) = partitionErrors diagnostics
+            { OutputPath    = None
+              Dependencies  = []
+              Adjust        = 0
+              PerFileErrors = diagnostics
+              Diagnostics   = diagnostics |> collectDiagnostics
+              Output        = None
+              Compilation   = FS fsSource }
+        let (errors, warnings) = partitionErrors result.Diagnostics
 
         // Treat warnings as errors if "IgnoreWarnings" is false;
         if errors.Length > 0 || (warnings.Length > 0 && not fsSource.IgnoreWarnings) then
@@ -788,14 +804,15 @@ module rec Compiler =
         let (evalResult: Result<FsiValue option, exn>), (err: FSharpDiagnostic[]) = script.Eval(source)
         let diagnostics = err |> fromFSharpDiagnostic
         let result =
-            { OutputPath   = None
-              Dependencies = []
-              Adjust       = 0
-              Diagnostics  = diagnostics
-              Output       = Some (EvalOutput evalResult)
-              Compilation  = FS fs }
+            { OutputPath    = None
+              Dependencies  = []
+              Adjust        = 0
+              PerFileErrors = diagnostics
+              Diagnostics   = diagnostics |> collectDiagnostics
+              Output        = Some (EvalOutput evalResult)
+              Compilation   = FS fs }
 
-        let (errors, warnings) = partitionErrors diagnostics
+        let (errors, warnings) = partitionErrors result.Diagnostics
         let evalError = match evalResult with Ok _ -> false | _ -> true
         if evalError || errors.Length > 0 || (warnings.Length > 0 && not fs.IgnoreWarnings) then
             CompilationResult.Failure result
@@ -841,12 +858,13 @@ module rec Compiler =
                 let errors = CompilerAssert.RunScriptWithOptionsAndReturnResult options source
 
                 let result =
-                    { OutputPath   = None
-                      Dependencies = []
-                      Adjust       = 0
-                      Diagnostics  = []
-                      Output       = None
-                      Compilation  = cUnit }
+                    { OutputPath    = None
+                      Dependencies  = []
+                      Adjust        = 0
+                      Diagnostics   = []
+                      PerFileErrors = Map.empty
+                      Output        = None
+                      Compilation   = cUnit }
 
                 if errors.Count > 0 then
                     let output = ExecutionOutput {
@@ -1197,6 +1215,9 @@ module rec Compiler =
 
         let withErrorCodes (expectedCodes: int list) (result: CompilationResult) : CompilationResult =
             checkCodes expectedCodes (fun r -> getErrors r.Diagnostics) result
+
+        let withErrorCodesInSpecificFile (filename:string) (expectedCodes: int list) (result: CompilationResult) : CompilationResult =         
+            checkCodes expectedCodes (fun r -> getErrors (r.PerFileErrors.TryFind filename |> Option.defaultValue [])) result
 
         let withErrorCode (expectedCode: int) (result: CompilationResult) : CompilationResult =
             withErrorCodes [expectedCode] result

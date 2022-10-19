@@ -1504,8 +1504,9 @@ let CheckMultipleInputsInParallel
                         [partialResult], (tcState, priorErrors)
                     | parallelGroup ->
                         List.toArray parallelGroup
-                        |> ArrayParallel.map (fun (input, logger) ->                   
-                            // this is taken mostly from CheckOneInputAux, the case where the impl has no signature file
+                        |> ArrayParallel.map (fun (input, singleLogger) ->  
+                            use _ = UseDiagnosticsLogger singleLogger
+                            // this code is copied mostly from CheckOneInputAux, the case where the impl has no signature file
                             let file =
                                 match input with
                                 | ParsedInput.ImplFile file -> file
@@ -1548,7 +1549,7 @@ let CheckMultipleInputsInParallel
                                             implFile.Signature)
                                         tcState
 
-                                Choice1Of2(tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), logger, updatedTcState))
+                                Choice1Of2(tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), singleLogger, updatedTcState))
                         |> fun results ->
                             ((tcState, priorErrors, ImmutableQueue.Empty), results)
                             ||> Array.fold (fun (tcState, priorErrors, partialResults) result ->
