@@ -240,6 +240,7 @@ type Exception with
         // 24 cannot be reused
         | PatternMatchCompilation.MatchIncomplete _ -> 25
         | PatternMatchCompilation.RuleNeverMatched _ -> 26
+
         | ValNotMutable _ -> 27
         | ValNotLocal _ -> 28
         | MissingFields _ -> 29
@@ -439,6 +440,7 @@ module OldStyleMessages =
     let ConstraintSolverTypesNotInSubsumptionRelationE () = Message("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
     let ErrorFromAddingTypeEquation1E () = Message("ErrorFromAddingTypeEquation1", "%s%s%s")
     let ErrorFromAddingTypeEquation2E () = Message("ErrorFromAddingTypeEquation2", "%s%s%s")
+    let ErrorFromAddingTypeEquationTuplesE () = Message("ErrorFromAddingTypeEquationTuples", "%d%s%d%s%s")
     let ErrorFromApplyingDefault1E () = Message("ErrorFromApplyingDefault1", "%s")
     let ErrorFromApplyingDefault2E () = Message("ErrorFromApplyingDefault2", "")
     let ErrorsFromAddingSubsumptionConstraintE () = Message("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
@@ -735,6 +737,12 @@ type Exception with
         | ErrorFromAddingTypeEquation(error = ConstraintSolverTypesNotInSubsumptionRelation _ as e) -> e.Output(os, suggestNames)
 
         | ErrorFromAddingTypeEquation(error = ConstraintSolverError _ as e) -> e.Output(os, suggestNames)
+
+        | ErrorFromAddingTypeEquation (_g, denv, ty1, ty2, ConstraintSolverTupleDiffLengths (_, tl1, tl2, _, _), _) ->
+            let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+
+            if ty1 <> ty2 + tpcs then
+                os.AppendString(ErrorFromAddingTypeEquationTuplesE().Format tl1.Length ty1 tl2.Length ty2 tpcs)
 
         | ErrorFromAddingTypeEquation (g, denv, ty1, ty2, e, _) ->
             if not (typeEquiv g ty1 ty2) then
@@ -1083,7 +1091,7 @@ type Exception with
                 | Parser.TOKEN_BAR_RBRACK -> SR.GetString("Parser.TOKEN.BAR.RBRACK")
                 | Parser.TOKEN_BAR_RBRACE -> SR.GetString("Parser.TOKEN.BAR.RBRACE")
                 | Parser.TOKEN_GREATER_RBRACK -> SR.GetString("Parser.TOKEN.GREATER.RBRACK")
-                | Parser.TOKEN_RQUOTE_DOT _
+                | Parser.TOKEN_RQUOTE_DOT
                 | Parser.TOKEN_RQUOTE -> SR.GetString("Parser.TOKEN.RQUOTE")
                 | Parser.TOKEN_RBRACK -> SR.GetString("Parser.TOKEN.RBRACK")
                 | Parser.TOKEN_RBRACE
@@ -1110,8 +1118,8 @@ type Exception with
                 | Parser.TOKEN_OTHEN -> SR.GetString("Parser.TOKEN.OTHEN")
                 | Parser.TOKEN_ELSE
                 | Parser.TOKEN_OELSE -> SR.GetString("Parser.TOKEN.OELSE")
-                | Parser.TOKEN_LET _
-                | Parser.TOKEN_OLET _ -> SR.GetString("Parser.TOKEN.OLET")
+                | Parser.TOKEN_LET
+                | Parser.TOKEN_OLET -> SR.GetString("Parser.TOKEN.OLET")
                 | Parser.TOKEN_OBINDER
                 | Parser.TOKEN_BINDER -> SR.GetString("Parser.TOKEN.BINDER")
                 | Parser.TOKEN_OAND_BANG

@@ -412,6 +412,9 @@ let CheckEntityAttributes g (tcref: TyconRef) m =
         CheckILAttributes g (isByrefLikeTyconRef g m tcref) tcref.ILTyconRawMetadata.CustomAttrs m
     else 
         CheckFSharpAttributes g tcref.Attribs m
+        
+let CheckILEventAttributes g (tcref: TyconRef) cattrs m  =    
+    CheckILAttributes g (isByrefLikeTyconRef g m tcref) cattrs m 
 
 /// Check the attributes associated with a method, returning warnings and errors as data.
 let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) = 
@@ -507,7 +510,8 @@ let CheckUnionCaseAttributes g (x:UnionCaseRef) m =
 /// Check the attributes on a record field, returning errors and warnings as data.
 let CheckRecdFieldAttributes g (x:RecdFieldRef) m =
     CheckEntityAttributes g x.TyconRef m ++ (fun () ->
-    CheckFSharpAttributes g x.PropertyAttribs m)
+    CheckFSharpAttributes g x.PropertyAttribs m) ++ (fun () ->
+    CheckFSharpAttributes g x.RecdField.FieldAttribs m)
 
 /// Check the attributes on an F# value, returning errors and warnings as data.
 let CheckValAttributes g (x:ValRef) m =

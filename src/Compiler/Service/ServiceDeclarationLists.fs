@@ -39,7 +39,7 @@ type ToolTipElementData =
       Remarks: TaggedText[] option
       ParamName : string option }
 
-    static member Create(layout, xml, ?typeMapping, ?paramName, ?remarks) = 
+    static member internal Create(layout, xml, ?typeMapping, ?paramName, ?remarks) = 
         { MainDescription=layout; XmlDoc=xml; TypeMapping=defaultArg typeMapping []; ParamName=paramName; Remarks=remarks }
 
 /// A single data tip display element
@@ -862,7 +862,7 @@ module internal DescriptionListsImpl =
                 | TFSharpInterface -> FSharpGlyph.Interface
                 | TFSharpStruct -> FSharpGlyph.Struct
                 | TFSharpDelegate _ -> FSharpGlyph.Delegate
-                | TFSharpEnum _ -> FSharpGlyph.Enum
+                | TFSharpEnum -> FSharpGlyph.Enum
             | TFSharpRecdRepr _ -> FSharpGlyph.Type
             | TFSharpUnionRepr _ -> FSharpGlyph.Union
             | TILObjectRepr (TILObjectReprData (_, _, td)) -> 

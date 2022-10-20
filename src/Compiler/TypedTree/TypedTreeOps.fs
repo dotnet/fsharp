@@ -6049,7 +6049,7 @@ and remapTyconRepr ctxt tmenv repr =
                          let ctxt = st.Context.RemapTyconRefs(unbox >> remapTyconRef tmenv.tyconRefRemap >> box) 
                          ProvidedType.ApplyContext (st, ctxt)) }
 #endif
-    | TNoRepr _ -> repr
+    | TNoRepr -> repr
     | TAsmRepr _ -> repr
     | TMeasureableRepr x -> TMeasureableRepr (remapType tmenv x)
 
@@ -9684,10 +9684,10 @@ let rec EvalAttribArgExpr g x =
         | Const.Double _
         | Const.Single _
         | Const.Char _
-        | Const.Zero _
+        | Const.Zero
         | Const.String _ -> 
             x
-        | Const.Decimal _ | Const.IntPtr _ | Const.UIntPtr _ | Const.Unit _ ->
+        | Const.Decimal _ | Const.IntPtr _ | Const.UIntPtr _ | Const.Unit ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), m))
             x
 
@@ -10410,18 +10410,4 @@ let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceC
             Some emptyModuleOrNamespaces
         else
             None
-    | _ -> None
-
-let (|TTypeMultiDimensionalArrayAsGeneric|_|) (t: TType) =
-    let rec (|Impl|_|) t =
-        match t with
-        | TType_app(tc, [Impl(outerTc, innerT, currentLevel)], _) when tc.DisplayNameCore = "array" ->
-            Some (outerTc, innerT, currentLevel + 1)
-        | TType_app(tc, [arg], _) when tc.DisplayNameCore = "array" ->
-            Some (tc, arg, 1)
-        | _ -> None
-
-    match t with
-    | Impl (tc, arg, level) ->
-        if level > 2 then Some (tc, arg, level) else None
     | _ -> None

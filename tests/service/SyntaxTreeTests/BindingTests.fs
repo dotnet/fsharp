@@ -2,6 +2,7 @@ module FSharp.Compiler.Service.Tests.SyntaxTreeTests.BindingTestsTests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open NUnit.Framework
 
 [<Test>]
@@ -329,7 +330,7 @@ let ``Range of let keyword should be present in SynModuleDecl.Let binding`` () =
 
     match parseResults with
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-        SynModuleDecl.Let(bindings = [SynBinding(trivia={ LetKeyword = Some mLet })])
+        SynModuleDecl.Let(bindings = [SynBinding(trivia={ LeadingKeyword = SynLeadingKeyword.Let mLet })])
     ]) ])) ->
         assertRange (1, 0) (1, 3) mLet
     | _ -> Assert.Fail "Could not get valid AST"
@@ -346,7 +347,7 @@ let v = 12
 
     match parseResults with
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-        SynModuleDecl.Let(bindings = [SynBinding(trivia={ LetKeyword = Some mLet })])
+        SynModuleDecl.Let(bindings = [SynBinding(trivia={ LeadingKeyword = SynLeadingKeyword.Let mLet })])
     ]) ])) ->
         assertRange (5, 0) (5, 3) mLet
     | _ -> Assert.Fail "Could not get valid AST"
@@ -362,7 +363,7 @@ let a =
 
     match parseResults with
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-        SynModuleDecl.Let(bindings = [SynBinding(expr=SynExpr.LetOrUse(bindings=[SynBinding(trivia={ LetKeyword = Some mLet })]))])
+        SynModuleDecl.Let(bindings = [SynBinding(expr=SynExpr.LetOrUse(bindings=[SynBinding(trivia={ LeadingKeyword = SynLeadingKeyword.Let mLet })]))])
     ]) ])) ->
         assertRange (3, 4) (3, 7) mLet
     | _ -> Assert.Fail "Could not get valid AST"
@@ -397,4 +398,44 @@ let b : int * string * bool = 1, "", false
         ])
     ]) ])) ->
         Assert.Pass ()
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``Colon before return type is part of trivia`` () =
+    let parseResults = 
+        getParseResults """
+let x y : int = failwith "todo"
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Let(bindings = [
+            SynBinding(returnInfo =
+                Some (SynBindingReturnInfo(trivia = { ColonRange = Some mColon })))
+        ])
+    ]) ])) ->
+        assertRange (2,8) (2,9) mColon
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``Colon before return type is part of trivia in properties`` () =
+    let parseResults = 
+        getParseResults """
+type X =
+    member this.Y with get():int = 1 and set (_:int):unit = ()
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Types(typeDefns = [
+            SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                SynMemberDefn.GetSetMember(
+                    memberDefnForGet = Some(SynBinding(returnInfo = Some (SynBindingReturnInfo(trivia = { ColonRange = Some mColon1 }))))
+                    memberDefnForSet = Some(SynBinding(returnInfo = Some (SynBindingReturnInfo(trivia = { ColonRange = Some mColon2 }))))
+                )
+            ]))
+        ])
+    ]) ])) ->
+        assertRange (3,28) (3,29) mColon1
+        assertRange (3,52) (3,53) mColon2
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

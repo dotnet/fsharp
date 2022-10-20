@@ -2,6 +2,7 @@ module FSharp.Compiler.Service.Tests.SyntaxTreeTests.SignatureTypeTests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open NUnit.Framework
 
 [<Test>]
@@ -378,7 +379,7 @@ val a : int
     match parseResults with
     | ParsedInput.SigFile (ParsedSigFileInput (contents=[
         SynModuleOrNamespaceSig(decls=[
-            SynModuleSigDecl.Val(valSig = SynValSig(trivia = { ValKeyword = Some mVal }))
+            SynModuleSigDecl.Val(valSig = SynValSig(trivia = { LeadingKeyword = SynLeadingKeyword.Val mVal }))
         ] ) ])) ->
         assertRange (6, 0) (6, 3) mVal
     | _ -> Assert.Fail "Could not get valid AST"
@@ -451,15 +452,15 @@ type Z with
     | ParsedInput.SigFile (ParsedSigFileInput (contents=[
         SynModuleOrNamespaceSig(decls=[
             SynModuleSigDecl.Types(types = [
-                SynTypeDefnSig(trivia = { TypeKeyword = Some mType1
+                SynTypeDefnSig(trivia = { LeadingKeyword = SynTypeDefnLeadingKeyword.Type mType1
                                           EqualsRange = Some mEq1
                                           WithKeyword = None }) ])
             SynModuleSigDecl.Types(types = [
-                SynTypeDefnSig(trivia = { TypeKeyword = Some mType2
+                SynTypeDefnSig(trivia = { LeadingKeyword = SynTypeDefnLeadingKeyword.Type mType2
                                           EqualsRange = Some mEq2
                                           WithKeyword = None  }) ])
             SynModuleSigDecl.Types(types = [
-                SynTypeDefnSig(trivia = { TypeKeyword = Some mType3
+                SynTypeDefnSig(trivia = { LeadingKeyword = SynTypeDefnLeadingKeyword.Type mType3
                                           EqualsRange = None
                                           WithKeyword = Some mWith3 }) ])
         ] ) ])) ->
@@ -511,4 +512,55 @@ val InferSynValData:
         Assert.AreEqual("pat", pat.idText)
         Assert.AreEqual("origRhsExpr", origRhsExpr.idText)
         Assert.AreEqual("x", x.idText)
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``Leading keyword in recursive types`` () =
+    let parseResults =
+        getParseResultsOfSignatureFile
+             """
+type A = obj
+and B = int
+ """
+
+    match parseResults with
+    | ParsedInput.SigFile (ParsedSigFileInput(contents = [
+        SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.Types(types = [
+                SynTypeDefnSig(trivia = { LeadingKeyword = SynTypeDefnLeadingKeyword.Type mType })
+                SynTypeDefnSig(trivia = { LeadingKeyword = SynTypeDefnLeadingKeyword.And mAnd })
+            ])
+        ])
+    ])) ->
+        assertRange (2, 0) (2, 4) mType
+        assertRange (3, 0) (3, 3) mAnd
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+
+[<Test>]
+let ``Nested type has static type as leading keyword`` () =
+    let parseResults =
+        getParseResultsOfSignatureFile
+             """
+type A =
+    static type B =
+                    class
+                    end
+ """
+
+    match parseResults with
+    | ParsedInput.SigFile (ParsedSigFileInput(contents = [
+        SynModuleOrNamespaceSig(decls = [
+            SynModuleSigDecl.Types(types = [
+                SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.ObjectModel(
+                    memberSigs = [
+                        SynMemberSig.NestedType(nestedType =
+                            SynTypeDefnSig(trivia = { LeadingKeyword = SynTypeDefnLeadingKeyword.StaticType(mStatic, mType) }))
+                    ]
+                ))
+            ])
+        ])
+    ])) ->
+        assertRange (3, 4) (3, 10) mStatic
+        assertRange (3, 11) (3, 15) mType
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
