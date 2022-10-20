@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-module FSharp.Compiler.ComponentTests.Conformance.Printing
+namespace FSharp.Compiler.ComponentTests.Conformance
+module Printing =
 
     open Xunit
     open FSharp.Test

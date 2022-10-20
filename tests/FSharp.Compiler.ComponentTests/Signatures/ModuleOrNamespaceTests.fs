@@ -1,221 +1,223 @@
-module FSharp.Compiler.ComponentTests.Signatures.ModuleOrNamespaceTests
+namespace FSharp.Compiler.ComponentTests.Signatures
 
-open Xunit
-open FsUnit
-open FSharp.Test.Compiler
-open FSharp.Compiler.ComponentTests.Signatures.TestHelpers
+module ModuleOrNamespaceTests = 
 
-[<Fact>]
-let ``Type from shared namespace`` () =
-    FSharp
-        """
-namespace Foo.Types
+    open Xunit
+    open FsUnit
+    open FSharp.Test.Compiler
+    open FSharp.Compiler.ComponentTests.Signatures.TestHelpers
 
-type Area = | Area of string * int
+    [<Fact>]
+    let ``Type from shared namespace`` () =
+        FSharp
+            """
+    namespace Foo.Types
 
-namespace Foo.Other
+    type Area = | Area of string * int
 
-type Map<'t,'v> =
-    member this.Calculate : Foo.Types.Area = failwith "todo"
-"""
-    |> printSignatures
-    |> prependNewline
-    |> should
-        equal
-        """
-namespace Foo.Types
+    namespace Foo.Other
 
-  type Area = | Area of string * int
-namespace Foo.Other
+    type Map<'t,'v> =
+        member this.Calculate : Foo.Types.Area = failwith "todo"
+    """
+        |> printSignatures
+        |> prependNewline
+        |> should
+            equal
+            """
+    namespace Foo.Types
 
-  type Map<'t,'v> =
+      type Area = | Area of string * int
+    namespace Foo.Other
 
-    member Calculate: Foo.Types.Area"""
+      type Map<'t,'v> =
 
-[<Fact>]
-let ``Return type used in own type definition`` () =
-    FSharp
-        """
-namespace Hey.There
+        member Calculate: Foo.Types.Area"""
 
-type Foo =
-    static member Zero : Foo = failwith "todo"
-"""
-    |> printSignatures
-    |> prependNewline
-    |> should
-        equal
-        """
-namespace Hey.There
+    [<Fact>]
+    let ``Return type used in own type definition`` () =
+        FSharp
+            """
+    namespace Hey.There
 
-  type Foo =
+    type Foo =
+        static member Zero : Foo = failwith "todo"
+    """
+        |> printSignatures
+        |> prependNewline
+        |> should
+            equal
+            """
+    namespace Hey.There
 
-    static member Zero: Foo"""
+      type Foo =
 
-[<Fact>]
-let ``Function types`` () =
-    FSharp
-        """
-namespace Fantomas.Core
+        static member Zero: Foo"""
 
-module Context =
-    type Context = { SourceCode: string }
+    [<Fact>]
+    let ``Function types`` () =
+        FSharp
+            """
+    namespace Fantomas.Core
 
-namespace FSharp.Compiler
+    module Context =
+        type Context = { SourceCode: string }
 
-module Syntax =
+    namespace FSharp.Compiler
 
-    type SynExpr =
-        | IfThenElse
-        | While
+    module Syntax =
 
-module Text =
-    type Range =
-        struct
-            val startLine: int
-            val startColumn: int
-            val endLine: int
-            val endColumn: int
-        end
+        type SynExpr =
+            | IfThenElse
+            | While
 
-namespace Fantomas.Core
+    module Text =
+        type Range =
+            struct
+                val startLine: int
+                val startColumn: int
+                val endLine: int
+                val endColumn: int
+            end
 
-module internal CodePrinter =
+    namespace Fantomas.Core
 
-    open FSharp.Compiler
-    open FSharp.Compiler.Syntax
-    open FSharp.Compiler.Text
-    open Fantomas.Core.Context
+    module internal CodePrinter =
 
-    type ASTContext =
-        { Meh: bool }
-        static member Default = { Meh = false }
+        open FSharp.Compiler
+        open FSharp.Compiler.Syntax
+        open FSharp.Compiler.Text
+        open Fantomas.Core.Context
 
-    let rec genExpr (e: SynExpr) (ctx: Context) = ctx
+        type ASTContext =
+            { Meh: bool }
+            static member Default = { Meh = false }
 
-    and genLambdaArrowWithTrivia
-        (bodyExpr: SynExpr -> Context -> Context)
-        (body: SynExpr)
-        (arrowRange: Range option)
-        : Context -> Context =
-        id"""
-    |> printSignatures
-    |> prependNewline
-    |> should
-        equal
-        """
-namespace Fantomas.Core
+        let rec genExpr (e: SynExpr) (ctx: Context) = ctx
 
-  module Context =
+        and genLambdaArrowWithTrivia
+            (bodyExpr: SynExpr -> Context -> Context)
+            (body: SynExpr)
+            (arrowRange: Range option)
+            : Context -> Context =
+            id"""
+        |> printSignatures
+        |> prependNewline
+        |> should
+            equal
+            """
+    namespace Fantomas.Core
 
-    type Context =
-      { SourceCode: string }
-namespace FSharp.Compiler
+      module Context =
 
-  module Syntax =
+        type Context =
+          { SourceCode: string }
+    namespace FSharp.Compiler
 
-    type SynExpr =
-      | IfThenElse
-      | While
+      module Syntax =
 
-  module Text =
+        type SynExpr =
+          | IfThenElse
+          | While
 
-    [<Struct>]
-    type Range =
+      module Text =
 
-      val startLine: int
+        [<Struct>]
+        type Range =
 
-      val startColumn: int
+          val startLine: int
 
-      val endLine: int
+          val startColumn: int
 
-      val endColumn: int
-namespace Fantomas.Core
+          val endLine: int
 
-  module internal CodePrinter =
+          val endColumn: int
+    namespace Fantomas.Core
 
-    type ASTContext =
-      { Meh: bool }
+      module internal CodePrinter =
 
-      static member Default: ASTContext
+        type ASTContext =
+          { Meh: bool }
 
-    val genExpr: e: FSharp.Compiler.Syntax.SynExpr -> ctx: Context.Context -> Context.Context
+          static member Default: ASTContext
 
-    val genLambdaArrowWithTrivia: bodyExpr: (FSharp.Compiler.Syntax.SynExpr -> Context.Context -> Context.Context) -> body: FSharp.Compiler.Syntax.SynExpr -> arrowRange: FSharp.Compiler.Text.Range option -> (Context.Context -> Context.Context)"""
+        val genExpr: e: FSharp.Compiler.Syntax.SynExpr -> ctx: Context.Context -> Context.Context
 
-[<Fact>]
-let ``Empty namespace`` () =
-    FSharp
-        """
-namespace System
+        val genLambdaArrowWithTrivia: bodyExpr: (FSharp.Compiler.Syntax.SynExpr -> Context.Context -> Context.Context) -> body: FSharp.Compiler.Syntax.SynExpr -> arrowRange: FSharp.Compiler.Text.Range option -> (Context.Context -> Context.Context)"""
 
-open System.Runtime.CompilerServices
+    [<Fact>]
+    let ``Empty namespace`` () =
+        FSharp
+            """
+    namespace System
 
-[<assembly: InternalsVisibleTo("Fantomas.Core.Tests")>]
+    open System.Runtime.CompilerServices
 
-do ()
-"""
-    |> printSignatures
-    |> should equal "namespace System"
+    [<assembly: InternalsVisibleTo("Fantomas.Core.Tests")>]
+
+    do ()
+    """
+        |> printSignatures
+        |> should equal "namespace System"
         
-[<Fact>]
-let ``Empty module`` () =
-    FSharp
-        """
-module Foobar
+    [<Fact>]
+    let ``Empty module`` () =
+        FSharp
+            """
+    module Foobar
 
-do ()
-"""
-    |> printSignatures
-    |> should equal "module Foobar"
+    do ()
+    """
+        |> printSignatures
+        |> should equal "module Foobar"
 
-[<Fact>]
-let ``Two empty namespaces`` () =
-    FSharp
-        """
-namespace Foo
+    [<Fact>]
+    let ``Two empty namespaces`` () =
+        FSharp
+            """
+    namespace Foo
 
-do ()
+    do ()
 
-namespace Bar
+    namespace Bar
 
-do ()
-"""
-    |> printSignatures
-    |> prependNewline
-    |> should equal """
-namespace Foo
-namespace Bar"""
+    do ()
+    """
+        |> printSignatures
+        |> prependNewline
+        |> should equal """
+    namespace Foo
+    namespace Bar"""
 
-[<Fact>]
-let ``Empty namespace module`` () =
-    FSharp
-        """
-namespace rec Foobar
+    [<Fact>]
+    let ``Empty namespace module`` () =
+        FSharp
+            """
+    namespace rec Foobar
 
-do ()
-"""
-    |> printSignatures
-    |> should equal "namespace Foobar"
+    do ()
+    """
+        |> printSignatures
+        |> should equal "namespace Foobar"
 
-[<Fact>]
-let ``Attribute on nested module`` () =
-    FSharp
-        """
-namespace MyApp.Types
+    [<Fact>]
+    let ``Attribute on nested module`` () =
+        FSharp
+            """
+    namespace MyApp.Types
 
-[<RequireQualifiedAccess>]
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Area =
-    type Meh =  class end
-"""
-    |> printSignatures
-    |> prependNewline
-    |> should equal """
-namespace MyApp.Types
+    [<RequireQualifiedAccess>]
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module Area =
+        type Meh =  class end
+    """
+        |> printSignatures
+        |> prependNewline
+        |> should equal """
+    namespace MyApp.Types
 
-  [<RequireQualifiedAccess; CompilationRepresentation (enum<CompilationRepresentationFlags> (4))>]
-  module Area =
+      [<RequireQualifiedAccess; CompilationRepresentation (enum<CompilationRepresentationFlags> (4))>]
+      module Area =
 
-    type Meh =
-      class end"""
+        type Meh =
+          class end"""
