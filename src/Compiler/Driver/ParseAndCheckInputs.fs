@@ -148,8 +148,7 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, fileName, impl) 
 
         let trivia: SynModuleOrNamespaceTrivia =
             {
-                ModuleKeyword = None
-                NamespaceKeyword = None
+                LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.None
             }
 
         SynModuleOrNamespace(modname, false, SynModuleOrNamespaceKind.AnonModule, defs, PreXmlDoc.Empty, [], None, m, trivia)
@@ -194,8 +193,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
         let trivia: SynModuleOrNamespaceSigTrivia =
             {
-                ModuleKeyword = None
-                NamespaceKeyword = None
+                LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.None
             }
 
         SynModuleOrNamespaceSig(modname, false, SynModuleOrNamespaceKind.AnonModule, defs, PreXmlDoc.Empty, [], None, m, trivia)
