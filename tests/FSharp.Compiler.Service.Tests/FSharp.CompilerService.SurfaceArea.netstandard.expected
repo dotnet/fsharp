@@ -5586,6 +5586,8 @@ FSharp.Compiler.Syntax.ParsedInput: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.Syntax.ParsedInput: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.Syntax.ParsedInput: Int32 Tag
 FSharp.Compiler.Syntax.ParsedInput: Int32 get_Tag()
+FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] HashDirectives
+FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective] get_HashDirectives()
 FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] ScopedPragmas
 FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] get_ScopedPragmas()
 FSharp.Compiler.Syntax.ParsedInput: System.String FileName
