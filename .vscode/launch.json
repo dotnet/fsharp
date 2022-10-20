@@ -11,7 +11,7 @@
     ],
     "configurations": [
         {
-            "name": "Launch FSI (Debug, .NET 6.0)",
+            "name": "Launch FSI (Debug, .NET 7.0)",
             "type": "coreclr",
             "request": "launch",
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
@@ -36,7 +36,7 @@
             },
         },
         {
-            "name": "Launch FSC (Debug, .NET 6.0)",
+            "name": "Launch FSC (Debug, .NET 7.0)",
             "type": "coreclr",
             "request": "launch",
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
