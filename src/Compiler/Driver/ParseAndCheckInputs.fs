@@ -1418,14 +1418,15 @@ let CheckMultipleInputsSequential (ctok, checkForErrors, tcConfig, tcImports, tc
     (tcState, inputs)
     ||> List.mapFold (CheckOneInputEntry(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, false))
 
-
 let private getParallelCompilationGroupFromHashDirective (pi: ParsedInput) =
-    pi.HashDirectives 
-    |> List.filter (fun (ParsedHashDirective(ident = hashIdentifier)) -> hashIdentifier = "paralell_compilation_group")
-    |> List.choose (fun (ParsedHashDirective(args = argList)) -> 
-            argList 
-            |> List.choose (function | ParsedHashDirectiveArgument.String(value=name) -> Some name | _ -> None)
-            |> List.tryExactlyOne)
+    pi.HashDirectives
+    |> List.filter (fun (ParsedHashDirective (ident = hashIdentifier)) -> hashIdentifier = "paralell_compilation_group")
+    |> List.choose (fun (ParsedHashDirective (args = argList)) ->
+        argList
+        |> List.choose (function
+            | ParsedHashDirectiveArgument.String (value = name) -> Some name
+            | _ -> None)
+        |> List.tryExactlyOne)
     |> List.tryExactlyOne
 
 /// Use parallel checking of implementation files that have signature files
@@ -1462,12 +1463,15 @@ let CheckMultipleInputsInParallel
         // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
         // somewhere in the files processed prior to each one, or in the processing of this particular file.
         let priorErrors = checkForErrors ()
-        
+
         // Do the first linear phase, checking all signatures and any implementation files that don't have a signature.
         // Implementation files that do have a signature will result in a Choice2Of2 indicating to next do some of the
         // checking in parallel.
         let partialResults, (tcState, _) =
-            let fileChunks = inputsWithLoggers |> List.chunkConsequtiveElementsVia (fst >> getParallelCompilationGroupFromHashDirective)
+            let fileChunks =
+                inputsWithLoggers
+                |> List.chunkConsequtiveElementsVia (fst >> getParallelCompilationGroupFromHashDirective)
+
             let amap = tcImports.GetImportMap()
 
             let conditionalDefines =
@@ -1480,9 +1484,11 @@ let CheckMultipleInputsInParallel
                 ((tcState, priorErrors), fileChunks)
                 ||> List.mapFold (fun (tcState, priorErrors) (currentBatchOfInputs) ->
                     match currentBatchOfInputs with
-                    | [singleInput,singleLogger] ->
+                    | [ singleInput, singleLogger ] ->
                         use _ = UseDiagnosticsLogger singleLogger
-                        let checkForErrors2 () = priorErrors || (singleLogger.ErrorCount > 0)
+
+                        let checkForErrors2 () =
+                            priorErrors || (singleLogger.ErrorCount > 0)
 
                         let partialResult, tcState =
                             CheckOneInputAux(
@@ -1499,16 +1505,18 @@ let CheckMultipleInputsInParallel
                             |> Cancellable.runWithoutCancellation
 
                         let priorErrors = checkForErrors2 ()
-                        [partialResult], (tcState, priorErrors)
+                        [ partialResult ], (tcState, priorErrors)
                     | parallelGroup ->
                         List.toArray parallelGroup
-                        |> ArrayParallel.map (fun (input, singleLogger) ->  
+                        |> ArrayParallel.map (fun (input, singleLogger) ->
                             use _ = UseDiagnosticsLogger singleLogger
                             // this code is copied mostly from CheckOneInputAux, the case where the impl has no signature file
                             let file =
                                 match input with
                                 | ParsedInput.ImplFile file -> file
-                                | ParsedInput.SigFile sf -> failwith $"#paralell_compilation_group is only supported for .fs implementation files, {sf.FileName} is a signature file" 
+                                | ParsedInput.SigFile sf ->
+                                    failwith
+                                        $"#paralell_compilation_group is only supported for .fs implementation files, {sf.FileName} is a signature file"
 
                             let tcSink = TcResultsSink.NoSink
 
@@ -1526,8 +1534,9 @@ let CheckMultipleInputsInParallel
                                     tcState.tcsTcImplEnv,
                                     None,
                                     file
-                                ) |> Cancellable.runWithoutCancellation
-                         
+                                )
+                                |> Cancellable.runWithoutCancellation
+
                             (fun tcState ->
                                 let tcState =
                                     { tcState with
@@ -1538,13 +1547,13 @@ let CheckMultipleInputsInParallel
                                 let ccuSigForFile, updatedTcState =
                                     AddCheckResultsToTcState
                                         (tcGlobals,
-                                            amap,
-                                            false,
-                                            prefixPathOpt,
-                                            tcSink,
-                                            tcState.tcsTcImplEnv,
-                                            input.QualifiedName,
-                                            implFile.Signature)
+                                         amap,
+                                         false,
+                                         prefixPathOpt,
+                                         tcSink,
+                                         tcState.tcsTcImplEnv,
+                                         input.QualifiedName,
+                                         implFile.Signature)
                                         tcState
 
                                 Choice1Of2(tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), singleLogger, updatedTcState))
@@ -1554,8 +1563,7 @@ let CheckMultipleInputsInParallel
                                 let partialResult, logger, nextTcState = result tcState
                                 let priorErrors = priorErrors || (logger.ErrorCount > 0)
                                 (nextTcState, priorErrors, partialResults.Enqueue partialResult))
-                            |> fun (tcState, priorErrors, partialResults) -> Seq.toList partialResults, (tcState, priorErrors)
-                )
+                            |> fun (tcState, priorErrors, partialResults) -> Seq.toList partialResults, (tcState, priorErrors))
 
             sequentialAndParallelResults |> List.collect id, (finalTcState, allErrors)
 
