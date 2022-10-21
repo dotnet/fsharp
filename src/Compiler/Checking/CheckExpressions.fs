@@ -12071,7 +12071,8 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
             | None -> None
             | Some valReprInfo -> Some valReprInfo.ArgNames
 
-        let xmlDoc = xmlDoc.ToXmlDoc(true, paramNames)
+        let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs 
+        let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, paramNames)
         let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, xmlDoc, literalValue, false)
 
         assert(vspec.InlineInfo = inlineFlag)
