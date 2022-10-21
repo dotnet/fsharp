@@ -5,6 +5,7 @@ module internal FSharp.Compiler.CheckDeclarations
 open System
 open System.Collections.Generic
 
+open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -455,14 +456,17 @@ module TcRecdUnionAndEnumDeclarations =
     let TcAnonFieldDecl cenv env parent tpenv nm (SynField(Attributes attribs, isStatic, idOpt, ty, isMutable, xmldoc, vis, m, _)) =
         let mName = m.MakeSynthetic()
         let id = match idOpt with None -> mkSynId mName nm | Some id -> id
-        let xmlDoc = xmldoc.ToXmlDoc(true, Some [])
+
+        let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+        let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
         TcFieldDecl cenv env parent false tpenv (isStatic, attribs, id, idOpt.IsNone, ty, isMutable, xmlDoc, vis, m)
 
     let TcNamedFieldDecl cenv env parent isIncrClass tpenv (SynField(Attributes attribs, isStatic, id, ty, isMutable, xmldoc, vis, m, _)) =
         match id with 
         | None -> error (Error(FSComp.SR.tcFieldRequiresName(), m))
         | Some id ->
-            let xmlDoc = xmldoc.ToXmlDoc(true, Some [])
+            let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+            let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
             TcFieldDecl cenv env parent isIncrClass tpenv (isStatic, attribs, id, false, ty, isMutable, xmlDoc, vis, m) 
 
     let TcNamedFieldDecls cenv env parent isIncrClass tpenv fields =
@@ -551,7 +555,8 @@ module TcRecdUnionAndEnumDeclarations =
                     |> Seq.map (fun f -> f.DisplayNameCore)
                     |> Seq.toList
 
-        let xmlDoc = xmldoc.ToXmlDoc(true, Some names)
+        let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+        let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some names)
         Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
     let TcUnionCaseDecls (cenv: cenv) env (parent: ParentRef) (thisTy: TType) (thisTyInst: TypeInst) hasRQAAttribute tpenv unionCases =
@@ -570,7 +575,8 @@ module TcRecdUnionAndEnumDeclarations =
             let vis, _ = ComputeAccessAndCompPath env None m None None parent
             let vis = CombineReprAccess parent vis
             if id.idText = "value__" then errorR(Error(FSComp.SR.tcNotValidEnumCaseName(), id.idRange))
-            let xmlDoc = xmldoc.ToXmlDoc(true, Some [])
+            let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+            let xmlDoc = xmldoc.ToXmlDoc(checkXmlDocs, Some [])
             Construct.NewRecdField true (Some v) id false thisTy false false [] attrs xmlDoc vis false
       
     let TcEnumDecls (cenv: cenv) env parent thisTy enumCases =
@@ -2182,7 +2188,9 @@ module TcExceptionDeclarations =
         CheckForDuplicateConcreteType env (id.idText + "Exception") id.idRange
         CheckForDuplicateConcreteType env id.idText id.idRange
         let repr = TExnFresh (Construct.MakeRecdFieldsTable [])
-        let xmlDoc = xmlDoc.ToXmlDoc(true, Some [])
+
+        let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+        let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, Some [])
         Construct.NewExn cpath id vis repr attrs xmlDoc
 
     let TcExnDefnCore_Phase1G_EstablishRepresentation (cenv: cenv) (env: TcEnv) parent (exnc: Entity) (SynExceptionDefnRepr(_, SynUnionCase(caseType=args), reprIdOpt, _, _, m)) =
@@ -2516,7 +2524,9 @@ module EstablishTypeDefinitionCores =
 
         let envForDecls, moduleTyAcc = MakeInnerEnv true envInitial id moduleKind    
         let moduleTy = Construct.NewEmptyModuleOrNamespaceType moduleKind
-        let xmlDoc = xml.ToXmlDoc(true, Some [])
+
+        let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+        let xmlDoc = xml.ToXmlDoc(checkXmlDocs, Some [])
         let moduleEntity = Construct.NewModuleOrNamespace (Some envInitial.eCompPath) vis id xmlDoc modAttrs (MaybeLazy.Strict moduleTy)
         let innerParent = Parent (mkLocalModuleRef moduleEntity)
         let innerTypeNames = TypeNamesInMutRecDecls cenv envForDecls decls
@@ -2584,7 +2594,9 @@ module EstablishTypeDefinitionCores =
 
                 patNames
             | _ -> []
-        let xmlDoc = xmlDoc.ToXmlDoc(true, Some paramNames )
+
+        let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+        let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, Some paramNames )
         Construct.NewTycon
             (cpath, id.idText, id.idRange, vis, visOfRepr, TyparKind.Type, LazyWithContext.NotLazy checkedTypars,
              xmlDoc, preferPostfix, preEstablishedHasDefaultCtor, hasSelfReferentialCtor, lmodTy)
@@ -4423,7 +4435,9 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
                 let id = ident (modName, id.idRange)
 
                 let moduleTy = Construct.NewEmptyModuleOrNamespaceType moduleKind
-                let xmlDoc = xml.ToXmlDoc(true, Some [])
+
+                let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+                let xmlDoc = xml.ToXmlDoc(checkXmlDocs, Some [])
                 let moduleEntity = Construct.NewModuleOrNamespace (Some env.eCompPath) vis id xmlDoc attribs (MaybeLazy.Strict moduleTy) 
 
                 let! moduleTy, _ = TcModuleOrNamespaceSignatureElementsNonMutRec cenv (Parent (mkLocalModuleRef moduleEntity)) env (id, moduleKind, moduleDefs, m, xml)
@@ -4528,8 +4542,9 @@ let rec TcSignatureElementNonMutRec (cenv: cenv) parent typeNames endm (env: TcE
 and TcSignatureElements cenv parent endm env xml mutRecNSInfo defs = 
     cancellable {
         // Ensure the .Deref call in UpdateAccModuleOrNamespaceType succeeds 
-        if cenv.compilingCanonicalFslibModuleType then 
-            let xmlDoc = xml.ToXmlDoc(true, Some [])
+        if cenv.compilingCanonicalFslibModuleType then
+            let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+            let xmlDoc = xml.ToXmlDoc(checkXmlDocs, Some [])
             ensureCcuHasModuleOrNamespaceAtPath cenv.thisCcu env.ePath env.eCompPath xmlDoc
 
         let typeNames = EstablishTypeDefinitionCores.TypeNamesInNonMutRecSigDecls defs
@@ -4755,7 +4770,9 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
               // Create the new module specification to hold the accumulated results of the type of the module 
               // Also record this in the environment as the accumulator 
               let moduleTy = Construct.NewEmptyModuleOrNamespaceType moduleKind
-              let xmlDoc = xml.ToXmlDoc(true, Some [])
+
+              let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+              let xmlDoc = xml.ToXmlDoc(checkXmlDocs, Some [])
               let moduleEntity = Construct.NewModuleOrNamespace (Some env.eCompPath) vis id xmlDoc modAttrs (MaybeLazy.Strict moduleTy)
 
               // Now typecheck. 
@@ -4975,8 +4992,9 @@ and TcMutRecDefsFinish cenv defs m =
 and TcModuleOrNamespaceElements cenv parent endm env xml mutRecNSInfo openDecls0 synModuleDecls =
   cancellable {
     // Ensure the deref_nlpath call in UpdateAccModuleOrNamespaceType succeeds 
-    if cenv.compilingCanonicalFslibModuleType then 
-        let xmlDoc = xml.ToXmlDoc(true, Some [])
+    if cenv.compilingCanonicalFslibModuleType then
+        let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+        let xmlDoc = xml.ToXmlDoc(checkXmlDocs, Some [])
         ensureCcuHasModuleOrNamespaceAtPath cenv.thisCcu env.ePath env.eCompPath xmlDoc
 
     // Collect the type names so we can implicitly add the compilation suffix to module names
@@ -5202,7 +5220,8 @@ let CheckOneImplFile
         isInternalTestSpanStackReferring,
         env,
         rootSigOpt: ModuleOrNamespaceType option,
-        synImplFile) =
+        synImplFile,
+        diagnosticOptions) =
 
     let (ParsedImplFileInput (_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland, _)) = synImplFile
     let infoReader = InfoReader(g, amap)
@@ -5211,6 +5230,7 @@ let CheckOneImplFile
         let cenv = 
             cenv.Create (g, isScript, amap, thisCcu, false, Option.isSome rootSigOpt,
                 conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
+                diagnosticOptions,
                 tcPat=TcPat,
                 tcSimplePats=TcSimplePats,
                 tcSequenceExpressionEntry=TcSequenceExpressionEntry,
@@ -5333,12 +5353,13 @@ let CheckOneImplFile
 
 
 /// Check an entire signature file
-let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (sigFile: ParsedSigFileInput) = 
+let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring, diagnosticOptions) tcEnv (sigFile: ParsedSigFileInput) = 
  cancellable {     
     let cenv = 
         cenv.Create 
             (g, false, amap, thisCcu, true, false, conditionalDefines, tcSink,
              (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
+             diagnosticOptions,
              tcPat=TcPat,
              tcSimplePats=TcSimplePats,
              tcSequenceExpressionEntry=TcSequenceExpressionEntry,

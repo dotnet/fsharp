@@ -31,3 +31,7 @@ type FSharpDiagnosticOptions =
             WarnAsError = []
             WarnAsWarn = []
         }
+
+    member x.CheckXmlDocs =
+        // xmlDocBadlyFormed - off by default
+        List.contains 3390 x.WarnOn && not (List.contains 3390 x.WarnOff)

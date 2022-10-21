@@ -2,6 +2,7 @@
 
 module internal FSharp.Compiler.CheckDeclarations
 
+open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Library
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CompilerGlobalState
@@ -58,11 +59,12 @@ val CheckOneImplFile:
     bool *
     TcEnv *
     ModuleOrNamespaceType option *
-    ParsedImplFileInput ->
+    ParsedImplFileInput *
+    FSharpDiagnosticOptions ->
         Cancellable<TopAttribs * CheckedImplFile * TcEnv * bool>
 
 val CheckOneSigFile:
-    TcGlobals * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines option * TcResultsSink * bool ->
+    TcGlobals * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines option * TcResultsSink * bool * FSharpDiagnosticOptions ->
         TcEnv ->
         ParsedSigFileInput ->
             Cancellable<TcEnv * ModuleOrNamespaceType * bool>
