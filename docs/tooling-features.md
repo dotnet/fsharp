@@ -42,7 +42,7 @@ Most of the syntax operations require an entire document's source text or parse 
 |---------|---------------|---------------|-----------------|
 | Most code fixes | Current document's typecheck data | Set (1 or more) of suggested text replacements | S-M |
 | Semantic classification | Current document's typecheck data | Spans of text with semantic classification type for all constructs in a document | S-L |
-| Code lenses | Current document's typecheck data and top-level declarations (for showing signatures); graph of all projects that reference the current one (for showing references) | Signature data for each top-level construct; spans of text for each reference to a top-level construct with navigation information | S-XL |
+| Lenses | Current document's typecheck data and top-level declarations (for showing signatures); graph of all projects that reference the current one (for showing references) | Signature data for each top-level construct; spans of text for each reference to a top-level construct with navigation information | S-XL |
 | Code generation / refactorings | Current document's typecheck data and/or current resolved symbol/symbols | Text replacement(s) | S-L |
 | Code completion | Current document's typecheck data and currently-resolved symbol user is typing at | List of all symbols in scope that are "completable" based on where completion is invoked | S-L |
 | Editor tooltips | Current document's typecheck data and resolved symbol where user invoked a tooltip | F# tooltip data based on inspecting a type and its declarations, then pretty-printing them | S-XL |

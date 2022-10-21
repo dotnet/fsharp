@@ -143,7 +143,7 @@ val mkSynQMarkSet: m: range -> a: SynExpr -> b: SynExpr -> c: SynExpr -> SynExpr
 
 //val mkSynDotBrackSeqSliceGet: m:range -> mDot:range -> arr:SynExpr -> argsList:SynIndexerArg list -> SynExpr
 
-val mkSynDotParenGet: lhsm: range -> dotm: range -> a: SynExpr -> b: SynExpr -> SynExpr
+val mkSynDotParenGet: mLhs: range -> mDot: range -> a: SynExpr -> b: SynExpr -> SynExpr
 
 val mkSynUnit: m: range -> SynExpr
 
@@ -153,9 +153,9 @@ val mkSynDelay: m: range -> e: SynExpr -> SynExpr
 
 val mkSynAssign: l: SynExpr -> r: SynExpr -> SynExpr
 
-val mkSynDot: dotm: range -> m: range -> l: SynExpr -> r: SynIdent -> SynExpr
+val mkSynDot: mDot: range -> m: range -> l: SynExpr -> r: SynIdent -> SynExpr
 
-val mkSynDotMissing: dotm: range -> m: range -> l: SynExpr -> SynExpr
+val mkSynDotMissing: mDot: range -> m: range -> l: SynExpr -> SynExpr
 
 val mkSynFunMatchLambdas:
     synArgNameGenerator: SynArgNameGenerator ->
@@ -269,7 +269,7 @@ val mkSynBindingRhs:
     staticOptimizations: (SynStaticOptimizationConstraint list * SynExpr) list ->
     rhsExpr: SynExpr ->
     mRhs: range ->
-    retInfo: SynReturnInfo option ->
+    retInfo: (range option * SynReturnInfo) option ->
         SynExpr * SynBindingReturnInfo option
 
 val mkSynBinding:
@@ -279,7 +279,7 @@ val mkSynBinding:
         isMutable: bool *
         mBind: range *
         spBind: DebugPointAtBinding *
-        retInfo: SynReturnInfo option *
+        retInfo: (range option * SynReturnInfo) option *
         origRhsExpr: SynExpr *
         mRhs: range *
         staticOptimizations: (SynStaticOptimizationConstraint list * SynExpr) list *
@@ -288,29 +288,19 @@ val mkSynBinding:
         trivia: SynBindingTrivia ->
             SynBinding
 
-val NonVirtualMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+val NonVirtualMemberFlags: k: SynMemberKind -> SynMemberFlags
 
-val CtorMemberFlags: trivia: SynMemberFlagsTrivia -> SynMemberFlags
+val CtorMemberFlags: SynMemberFlags
 
-val ClassCtorMemberFlags: trivia: SynMemberFlagsTrivia -> SynMemberFlags
+val ClassCtorMemberFlags: SynMemberFlags
 
-val OverrideMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+val OverrideMemberFlags: k: SynMemberKind -> SynMemberFlags
 
-val AbstractMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+val AbstractMemberFlags: isInstance: bool -> k: SynMemberKind -> SynMemberFlags
 
-val StaticMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+val StaticMemberFlags: k: SynMemberKind -> SynMemberFlags
 
-val MemberSynMemberFlagsTrivia: mMember: range -> SynMemberFlagsTrivia
-
-val OverrideSynMemberFlagsTrivia: mOverride: range -> SynMemberFlagsTrivia
-
-val StaticMemberSynMemberFlagsTrivia: mStatic: range -> mMember: range -> SynMemberFlagsTrivia
-
-val DefaultSynMemberFlagsTrivia: mDefault: range -> SynMemberFlagsTrivia
-
-val AbstractSynMemberFlagsTrivia: mAbstract: range -> SynMemberFlagsTrivia
-
-val AbstractMemberSynMemberFlagsTrivia: mAbstract: range -> mMember: range -> SynMemberFlagsTrivia
+val ImplementStaticMemberFlags: k: SynMemberKind -> SynMemberFlags
 
 val inferredTyparDecls: SynValTyparDecls
 
@@ -337,8 +327,18 @@ val (|SynPipeRight2|_|): SynExpr -> (SynExpr * SynExpr * SynExpr) option
 /// 'e1 |||> e2'
 val (|SynPipeRight3|_|): SynExpr -> (SynExpr * SynExpr * SynExpr * SynExpr) option
 
-val prependIdentInLongIdentWithTrivia: ident: SynIdent -> dotm: range -> lid: SynLongIdent -> SynLongIdent
+val prependIdentInLongIdentWithTrivia: ident: SynIdent -> mDot: range -> lid: SynLongIdent -> SynLongIdent
 
 val mkDynamicArgExpr: expr: SynExpr -> SynExpr
 
 val normalizeTupleExpr: exprs: SynExpr list -> commas: range list -> SynExpr list * range List
+
+val normalizeTuplePat: pats: SynPat list -> SynPat list
+
+val desugarGetSetMembers: memberDefns: SynMemberDefns -> SynMemberDefns
+
+val getTypeFromTuplePath: path: SynTupleTypeSegment list -> SynType list
+
+val (|MultiDimensionArrayType|_|): t: SynType -> (int * SynType * range) option
+
+val (|TypesForTypar|): t: SynType -> SynType list

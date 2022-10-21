@@ -2,9 +2,19 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ko" original="../FSStrings.resx">
     <body>
+      <trans-unit id="ErrorFromAddingTypeEquationTuples">
+        <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
+        <target state="new">Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="HashLoadedSourceHasIssues0">
         <source>One or more informational messages in loaded file.\n</source>
         <target state="translated">로드된 파일에 하나 이상의 정보 메시지가 있습니다.\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NotUpperCaseConstructorWithoutRQA">
+        <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
+        <target state="new">Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -1364,7 +1374,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">정의 대상 개체에 대한 재귀 참조는 런타임에 지연된 참조를 사용하여 초기화 적합성이 확인됩니다. 멤버 또는 '&lt;ctor-expr&gt; then &lt;expr&gt;' 형식의 후행 식 내에 자기 참조를 배치하세요.</target>
+        <target state="translated">정의되는 객체에 대한 재귀 참조는 지연 참조를 사용하여 런타임에 초기화 건전성을 확인합니다. 자체 참조를 구성원 또는 '&lt;ctor-expr&gt; 다음 &lt;expr&gt;' 형식의 후행 식에 배치하는 것을 고려하세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
@@ -1553,8 +1563,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
-        <source>Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.</source>
-        <target state="translated">확대의 인터페이스 구현은 이제 사용되지 않습니다. 인터페이스 구현은 초기 형식 선언 시 지정해야 합니다.</target>
+        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
+        <target state="needs-review-translation">확대의 인터페이스 구현은 이제 사용되지 않습니다. 인터페이스 구현은 초기 형식 선언 시 지정해야 합니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">

@@ -367,9 +367,11 @@ type Range(code1: int64, code2: int64) =
 
         let name = m.FileName
 
-        if name = unknownFileName
-           || name = startupFileName
-           || name = commandLineArgsFileName then
+        if
+            name = unknownFileName
+            || name = startupFileName
+            || name = commandLineArgsFileName
+        then
             name
         else
             try
@@ -477,20 +479,26 @@ module Range =
         else
 
         // If all identical then return m1. This preserves NotedSourceConstruct when no merging takes place
-        if m1.Code1 = m2.Code1 && m1.Code2 = m2.Code2 then
+        if
+            m1.Code1 = m2.Code1 && m1.Code2 = m2.Code2
+        then
             m1
         else
 
             let start =
-                if (m1.StartLine > m2.StartLine
-                    || (m1.StartLine = m2.StartLine && m1.StartColumn > m2.StartColumn)) then
+                if
+                    (m1.StartLine > m2.StartLine
+                     || (m1.StartLine = m2.StartLine && m1.StartColumn > m2.StartColumn))
+                then
                     m2
                 else
                     m1
 
             let finish =
-                if (m1.EndLine > m2.EndLine
-                    || (m1.EndLine = m2.EndLine && m1.EndColumn > m2.EndColumn)) then
+                if
+                    (m1.EndLine > m2.EndLine
+                     || (m1.EndLine = m2.EndLine && m1.EndColumn > m2.EndColumn))
+                then
                     m1
                 else
                     m2

@@ -260,7 +260,7 @@ and [<Sealed>] internal LexBuffer<'Char>(filler: LexBufferFiller<'Char>, reportL
 
     member _.SupportsFeature featureId = langVersion.SupportsFeature featureId
 
-    member _.CheckLanguageFeatureErrorRecover featureId range =
+    member _.CheckLanguageFeatureAndRecover featureId range =
         FSharp.Compiler.DiagnosticsLogger.checkLanguageFeatureAndRecover langVersion featureId range
 
     static member FromFunction(reportLibraryOnlyFeatures, langVersion, f: 'Char[] * int * int -> int) : LexBuffer<'Char> =

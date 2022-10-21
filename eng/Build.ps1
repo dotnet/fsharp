@@ -62,7 +62,8 @@ param (
     [switch]$noVisualStudio,
     [switch]$sourceBuild,
     [switch]$skipBuild,
-
+    [switch]$compressAllMetadata,
+    [switch]$verifypackageshipstatus = $false,
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
 Set-StrictMode -version 2.0
@@ -116,6 +117,8 @@ function Print-Usage() {
     Write-Host "  -noVisualStudio               Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
     Write-Host "  -sourceBuild                  Simulate building for source-build."
     Write-Host "  -skipbuild                    Skip building product"
+    Write-Host "  -compressAllMetadata          Build product with compressed metadata"
+    Write-Host "  -verifypackageshipstatus     Verify whether the packages we are building have already shipped to nuget"
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -148,6 +151,7 @@ function Process-Arguments() {
         $script:testFSharpQA = $False
         $script:testVs = $False
         $script:testpack = $False
+        $script:verifypackageshipstatus = $True
     }
 
     if ($noRestore) {
@@ -170,6 +174,14 @@ function Process-Arguments() {
         $script:binaryLog = $False;
     }
 
+    if ($compressAllMetadata) {
+        $script:compressAllMetadata = $True;
+    }
+
+    if ($verifypackageshipstatus) {
+        $script:verifypackageshipstatus = $True;
+    }
+
     foreach ($property in $properties) {
         if (!$property.StartsWith("/p:", "InvariantCultureIgnoreCase")) {
             Write-Host "Invalid argument: $property"
@@ -181,11 +193,11 @@ function Process-Arguments() {
 
 function Update-Arguments() {
     if ($script:noVisualStudio) {
-        $script:bootstrapTfm = "net6.0"
+        $script:bootstrapTfm = "net7.0"
         $script:msbuildEngine = "dotnet"
     }
 
-    if ($bootstrapTfm -eq "net6.0") {
+    if ($bootstrapTfm -eq "net7.0") {
         if (-Not (Test-Path "$ArtifactsDir\Bootstrap\fsc\fsc.runtimeconfig.json")) {
             $script:bootstrap = $True
         }
@@ -206,7 +218,7 @@ function BuildSolution([string] $solutionName) {
     $officialBuildId = if ($official) { $env:BUILD_BUILDNUMBER } else { "" }
     $toolsetBuildProj = InitializeToolset
     $quietRestore = !$ci
-    $testTargetFrameworks = if ($testCoreClr) { "net6.0" } else { "" }
+    $testTargetFrameworks = if ($testCoreClr) { "net7.0" } else { "" }
 
     # Do not set the property to true explicitly, since that would override value projects might set.
     $suppressExtensionDeployment = if (!$deployExtensions) { "/p:DeployExtension=false" } else { "" }
@@ -228,6 +240,7 @@ function BuildSolution([string] $solutionName) {
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
         /p:DotNetBuildFromSource=$sourceBuild `
+        /p:CompressAllMetadata=$CompressAllMetadata `
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties
@@ -425,7 +438,6 @@ try {
 
     [System.Environment]::SetEnvironmentVariable('DOTNET_ROLL_FORWARD_TO_PRERELEASE', '1', [System.EnvironmentVariableTarget]::User)
 
-    $env:NativeToolsOnMachine = $true
 
     Process-Arguments
 
@@ -438,6 +450,10 @@ try {
     Get-ChildItem ENV: | Sort-Object Name
     Write-Host ""
 
+    if($env:NativeToolsOnMachine) {
+        $variable:NativeToolsOnMachine = $env:NativeToolsOnMachine
+    }
+
     if ($ci) {
         Prepare-TempDir
         EnablePreviewSdks
@@ -447,10 +463,19 @@ try {
     $toolsetBuildProj = InitializeToolset
     TryDownloadDotnetFrameworkSdk
 
-    $nativeToolsDir = InitializeNativeTools
-    write-host "Native tools: $nativeToolsDir"
-    $env:PERL5Path = Join-Path "$nativeToolsDir" "perl\5.32.1.1\perl\bin\perl.exe"
-    $env:PERL5LIB = Join-Path "$nativeToolsDir" "perl\5.32.1.1\perl\vendor\lib"
+    $nativeTools = InitializeNativeTools
+    if (-not (Test-Path variable:NativeToolsOnMachine)) {
+        $env:PERL5Path = Join-Path $nativeTools "perl\5.32.1.1\perl\bin\perl.exe"
+        write-host "variable:NativeToolsOnMachine = unset or false"
+        $nativeTools
+        write-host "Path = $env:PERL5Path"
+    }
+    else {
+        $env:PERL5Path = Join-Path $nativeTools["perl"] "perl\bin\perl.exe"
+        write-host "variable:NativeToolsOnMachine = $variable:NativeToolsOnMachine"
+        $nativeTools.values
+        write-host "Path = $env:PERL5Path"
+    }
 
     $dotnetPath = InitializeDotNetCli
     $env:DOTNET_ROOT = "$dotnetPath"
@@ -472,7 +497,10 @@ try {
     }
 
     if ($pack) {
+        $properties_storage = $properties
+        $properties += "/p:GenerateSbom=false"
         BuildSolution "Microsoft.FSharp.Compiler.sln"
+        $properties = $properties_storage
     }
     if ($build) {
         VerifyAssemblyVersionsAndSymbols
@@ -481,7 +509,7 @@ try {
     $script:BuildCategory = "Test"
     $script:BuildMessage = "Failure running tests"
     $desktopTargetFramework = "net472"
-    $coreclrTargetFramework = "net6.0"
+    $coreclrTargetFramework = "net7.0"
 
     if ($testDesktop) {
         TestUsingXUnit -testProject "$RepoRoot\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Compiler.ComponentTests\" -noTestFilter $true
@@ -517,7 +545,9 @@ try {
         $env:FSCOREDLLPATH = "$ArtifactsDir\bin\fsc\$configuration\net472\FSharp.Core.dll"
         $env:LINK_EXE = "$RepoRoot\tests\fsharpqa\testenv\bin\link\link.exe"
         $env:OSARCH = $env:PROCESSOR_ARCHITECTURE
+        write-host "Exec-Console $env:PERL5Path"
         Exec-Console $env:PERL5Path """$RepoRoot\tests\fsharpqa\testenv\bin\runall.pl"" -resultsroot ""$resultsRoot"" -results $resultsLog -log $errorLog -fail $failLog -cleanup:no -procs:$env:NUMBER_OF_PROCESSORS"
+        write-host "Exec-Console finished"
         Pop-Location
     }
 
@@ -583,6 +613,39 @@ try {
     }
     if ($nupkgtestFailed) {
         throw "Error Verifying nupkgs have access to the source code"
+    }
+
+    $verifypackageshipstatusFailed = $false
+    if ($verifypackageshipstatus) {
+        $dotnetPath = InitializeDotNetCli
+        $dotnetExe = Join-Path $dotnetPath "dotnet.exe"
+
+        Write-Host "================================================================================================================================"
+        Write-Host "The error messages below are expected = They mean that FSharp.Core and FSharp.Compiler.Service are not yet published "
+        Write-Host "================================================================================================================================"
+        $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Compiler.Service_notshipped.fsproj"
+        if ($exitCode -eq 0) {
+            Write-Host -ForegroundColor Red "Command succeeded but was expected to fail: this means that the fsharp.compiler.service nuget package is already published"
+            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Servoce to be published"
+            $verifypackageshipstatusFailed = $True
+        }
+
+        $exitCode = Exec-Process "$dotnetExe" "restore $RepoRoot\buildtools\checkpackages\FSharp.Core_notshipped.fsproj"
+        if ($exitCode -eq 0) {
+            Write-Host -ForegroundColor Red "Command succeeded but was expected to fail: this means that the fsharp.core nuget package is already published"
+            Write-Host -ForegroundColor Red "Modify the version number of FSharp.Compiler.Servoce to be published"
+            $verifypackageshipstatusFailed = $True
+        }
+        if (-not $verifypackageshipstatusFailed)
+        {
+            Write-Host "================================================================================================================================"
+            Write-Host "The error messages above are expected = They mean that FSharp.Core and FSharp.Compiler.Service are not yet published "
+            Write-Host "================================================================================================================================"
+        }
+        else
+        {
+            throw "Error Verifying shipping status of shipping nupkgs"
+        }
     }
 
     ExitWithExitCode 0

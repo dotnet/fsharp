@@ -17,12 +17,12 @@ open FsUnit
 open NUnit.Framework
 
 let (|Types|TypeSigs|) = function
-     | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+     | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.Types(range = range; typeDefns = types)])])) ->
         Types(range, types)
 
-     | ParsedInput.SigFile(ParsedSigFileInput(modules = [
+     | ParsedInput.SigFile(ParsedSigFileInput(contents = [
         SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(decls = [
             SynModuleSigDecl.Types(range = range; types = types)])])) ->
          TypeSigs(range, types)
@@ -38,34 +38,34 @@ let (|TypeSigRange|) = function
         typeRange, componentInfoRange
 
 let (|Module|NestedModules|NestedModulesSigs|) = function
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(decls = [
             SynModuleDecl.NestedModule(range = range1)
             SynModuleDecl.NestedModule(range = range2)])])) ->
                 NestedModules(range1, range2)
-    | ParsedInput.SigFile(ParsedSigFileInput(modules = [
+    | ParsedInput.SigFile(ParsedSigFileInput(contents = [
         SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(decls = [
             SynModuleSigDecl.NestedModule(range = range1)
             SynModuleSigDecl.NestedModule(range = range2)])])) ->
                 NestedModulesSigs(range1, range2)
 
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
         SynModuleOrNamespace.SynModuleOrNamespace(range = range)]))
-    | ParsedInput.SigFile(ParsedSigFileInput(modules = [
+    | ParsedInput.SigFile(ParsedSigFileInput(contents = [
         SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(range = range)])) ->
             Module(range)
 
     | x -> failwith $"Unexpected ParsedInput %A{x}"
 
 let (|Exception|) = function
-     | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+     | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Exception(range = range; exnDefn =
                     SynExceptionDefn(range = exnDefnRange; exnRepr =
                         SynExceptionDefnRepr(range = exnDefnReprRange)))])])) ->
          Exception(range, exnDefnRange, exnDefnReprRange)
 
-     | ParsedInput.SigFile(ParsedSigFileInput(modules = [
+     | ParsedInput.SigFile(ParsedSigFileInput(contents = [
             SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(decls = [
                 SynModuleSigDecl.Exception(range = range; exnSig =
                     SynExceptionSig(range = exnSpfnRange; exnRepr =
@@ -99,26 +99,26 @@ let (|Members|MemberSigs|) = function
     | x -> failwith $"Unexpected ParsedInput %A{x}"
 
 let (|Decls|LetBindings|ValSig|LetOrUse|) = function
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(bindings = [SynBinding(expr = SynExpr.LetOrUse(range = range; bindings = bindings))])])])) ->
         LetOrUse(range, bindings)
 
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Let(range = range; bindings = bindings)])])) ->
         LetBindings(range, bindings)
 
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                 SynModuleDecl.Expr(expr = SynExpr.LetOrUse(range = range; bindings = bindings))])])) ->
         LetBindings(range, bindings)
 
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
             SynModuleOrNamespace.SynModuleOrNamespace(decls = decls)])) ->
         Decls(decls)
 
-     | ParsedInput.SigFile(ParsedSigFileInput(modules = [
+     | ParsedInput.SigFile(ParsedSigFileInput(contents = [
          SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(decls = [
             SynModuleSigDecl.Val(valSig = SynValSig(range = valSigRange); range = range)])])) ->
          ValSig(range, valSigRange)
@@ -897,7 +897,7 @@ type B =
     |]
 
     match parseResults.ParseTree with
-    | Members(SynMemberDefn.Member(range = range; memberDefn = SynBinding(xmlDoc = xmlDoc) as binding) :: _) ->
+    | Members([ SynMemberDefn.GetSetMember(Some (SynBinding(xmlDoc = xmlDoc) as binding), _, range, _); _ ]) ->
         assertRange (3, 4) (10, 37) range
         assertRange (3, 4) (8, 37) binding.RangeOfBindingWithRhs
         assertRange (3, 4) (4, 9) xmlDoc.Range
@@ -1374,8 +1374,8 @@ namespace N
             checkParsingErrors [|Information 3520, Line 2, Col 0, Line 2, Col 4, "XML comment is not placed on a valid language element."|]
 
             match parseResults.ParseTree with
-            | ParsedInput.ImplFile(ParsedImplFileInput(modules = [SynModuleOrNamespace.SynModuleOrNamespace(range = range)]))
-            | ParsedInput.SigFile(ParsedSigFileInput(modules = [SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(range = range)])) ->
+            | ParsedInput.ImplFile(ParsedImplFileInput(contents = [SynModuleOrNamespace.SynModuleOrNamespace(range = range)]))
+            | ParsedInput.SigFile(ParsedSigFileInput(contents = [SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(range = range)])) ->
                 assertRange (3, 0) (3, 11) range
             | x ->
                 failwith $"Unexpected ParsedInput %A{x}")

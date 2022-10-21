@@ -25,6 +25,7 @@ module XmlDocParsing =
         | SynPat.Typed (pat, _type, _range) -> digNamesFrom pat
         | SynPat.Attrib (pat, _attrs, _range) -> digNamesFrom pat
         | SynPat.LongIdent(argPats = ConstructorPats pats) -> pats |> List.collect digNamesFrom
+        | SynPat.ListCons (p1, p2, _, _) -> List.collect digNamesFrom [ p1; p2 ]
         | SynPat.Tuple (_, pats, _range) -> pats |> List.collect digNamesFrom
         | SynPat.Paren (pat, _range) -> digNamesFrom pat
         | SynPat.OptionalVal (id, _) -> [ id.idText ]
@@ -161,6 +162,19 @@ module XmlDocParsing =
                         let paramNames = digNamesFrom synPat
                         XmlDocable(line, indent, paramNames)
 
+                | SynMemberDefn.GetSetMember (getBinding, setBinding, m, _) ->
+                    yield!
+                        getBinding
+                        |> Option.map (fun b -> SynMemberDefn.Member(b, m))
+                        |> Option.toList
+                        |> List.collect getXmlDocablesSynMemberDefn
+
+                    yield!
+                        setBinding
+                        |> Option.map (fun b -> SynMemberDefn.Member(b, m))
+                        |> Option.toList
+                        |> List.collect getXmlDocablesSynMemberDefn
+
                 | SynMemberDefn.AbstractSlot (valSig, _, range) ->
                     let (SynValSig (attributes = synAttributes; arity = synValInfo; xmlDoc = preXmlDoc)) =
                         valSig
@@ -197,8 +211,7 @@ module XmlDocParsing =
 
         and getXmlDocablesInput input =
             match input with
-            | ParsedInput.ImplFile (ParsedImplFileInput (modules = symModules)) ->
-                symModules |> List.collect getXmlDocablesSynModuleOrNamespace
+            | ParsedInput.ImplFile file -> file.Contents |> List.collect getXmlDocablesSynModuleOrNamespace
             | ParsedInput.SigFile _ -> []
 
         // Get compiler options for the 'project' implied by a single script file

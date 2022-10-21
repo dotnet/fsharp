@@ -349,17 +349,16 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
 
     /// Navigate to the positon of the textSpan in the provided document
     /// used by quickinfo link navigation when the tooltip contains the correct destination range.
-    member _.TryNavigateToTextSpan(document: Document, textSpan: Microsoft.CodeAnalysis.Text.TextSpan, statusBar: StatusBar) =
+    member _.TryNavigateToTextSpan(document: Document, textSpan: Microsoft.CodeAnalysis.Text.TextSpan, statusBar: StatusBar, cancellationToken: CancellationToken) =
         let navigableItem = FSharpGoToDefinitionNavigableItem(document, textSpan)
         let workspace = document.Project.Solution.Workspace
         let navigationService = workspace.Services.GetService<IFSharpDocumentNavigationService>()
-        let options = workspace.Options.WithChangedOption(FSharpNavigationOptions.PreferProvisionalTab, true)
-        let navigationSucceeded = navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
+        let navigationSucceeded = navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, cancellationToken)
 
         if not navigationSucceeded then 
             statusBar.TempMessage (SR.CannotNavigateUnknown())
 
-    member _.NavigateToItem(navigableItem: FSharpNavigableItem, statusBar: StatusBar) =
+    member _.NavigateToItem(navigableItem: FSharpNavigableItem, statusBar: StatusBar, cancellationToken: CancellationToken) =
         use __ = statusBar.Animate()
 
         statusBar.Message (SR.NavigatingTo())
@@ -368,8 +367,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
         let navigationService = workspace.Services.GetService<IFSharpDocumentNavigationService>()
 
         // Prefer open documents in the preview tab.
-        let options = workspace.Options.WithChangedOption(FSharpNavigationOptions.PreferProvisionalTab, true)
-        let result = navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
+        let result = navigationService.TryNavigateToSpan(workspace, navigableItem.Document.Id, navigableItem.SourceSpan, cancellationToken)
             
         if result then 
             statusBar.Clear()
@@ -377,17 +375,17 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
             statusBar.TempMessage (SR.CannotNavigateUnknown())
 
     /// Find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition 
-    member this.NavigateToSymbolDeclarationAsync(targetDocument: Document, targetSourceText: SourceText, symbolRange: range, statusBar: StatusBar) =
+    member this.NavigateToSymbolDeclarationAsync(targetDocument: Document, targetSourceText: SourceText, symbolRange: range, statusBar: StatusBar, cancellationToken: CancellationToken) =
         asyncMaybe {
             let! item = this.FindDeclarationOfSymbolAtRange(targetDocument, symbolRange, targetSourceText)
-            return this.NavigateToItem(item, statusBar)
+            return this.NavigateToItem(item, statusBar, cancellationToken)
         }
 
     /// Find the definition location (implementation file/.fs) of the target symbol
-    member this.NavigateToSymbolDefinitionAsync(targetDocument: Document, targetSourceText: SourceText, symbolRange: range, statusBar: StatusBar) =
+    member this.NavigateToSymbolDefinitionAsync(targetDocument: Document, targetSourceText: SourceText, symbolRange: range, statusBar: StatusBar, cancellationToken: CancellationToken) =
         asyncMaybe {
             let! item = this.FindDefinitionOfSymbolAtRange(targetDocument, symbolRange, targetSourceText)
-            return this.NavigateToItem(item, statusBar)
+            return this.NavigateToItem(item, statusBar, cancellationToken)
         }
 
     member this.NavigateToExternalDeclaration(targetSymbolUse: FSharpSymbolUse, metadataReferences: seq<MetadataReference>, cancellationToken: CancellationToken, statusBar: StatusBar) =
@@ -481,7 +479,7 @@ type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
                         | _ -> TextSpan()
 
                     let navItem = FSharpGoToDefinitionNavigableItem(tmpShownDoc, span)                               
-                    this.NavigateToItem(navItem, statusBar)
+                    this.NavigateToItem(navItem, statusBar, cancellationToken)
                     true
                 | _ ->
                     false
@@ -569,8 +567,11 @@ module internal FSharpQuickInfo =
             let getTargetSymbolQuickInfo (symbol, tag) =
                 asyncMaybe {
                     let targetQuickInfo =
-                        checkFileResults.GetToolTip
-                            (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland,tag)
+                        match lexerSymbol.Kind with
+                        | LexerSymbolKind.Keyword -> checkFileResults.GetKeywordTooltip(lexerSymbol.FullIsland)
+                        | _ ->
+                            checkFileResults.GetToolTip
+                                (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland,tag)
 
                     match targetQuickInfo with
                     | ToolTipText []
@@ -584,6 +585,7 @@ module internal FSharpQuickInfo =
                 }
 
             match lexerSymbol.Kind with 
+            | LexerSymbolKind.Keyword
             | LexerSymbolKind.String ->
                 let! targetQuickInfo = getTargetSymbolQuickInfo (None, FSharpTokenTag.STRING)
                 return lexerSymbol.Range, None, Some targetQuickInfo
@@ -654,11 +656,11 @@ type internal FSharpNavigation
                 Uri(sfp).MakeRelativeUri(targetUri).ToString()
         relativePathEscaped |> Uri.UnescapeDataString
 
-    member _.NavigateTo (range: range) =
+    member _.NavigateTo (range: range, cancellationToken: CancellationToken) =
         asyncMaybe {
             let targetPath = range.FileName
             let! targetDoc = solution.TryGetDocumentFromFSharpRange (range, initialDoc.Project.Id)
-            let! targetSource = targetDoc.GetTextAsync()
+            let! targetSource = targetDoc.GetTextAsync(cancellationToken)
             let! targetTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (targetSource, range)
             let gtd = GoToDefinition(metadataAsSource)
 
@@ -672,15 +674,15 @@ type internal FSharpNavigation
             match initialDoc.FilePath, targetPath with
             | Signature, Signature
             | Implementation, Implementation ->
-                return gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, statusBar)
+                return gtd.TryNavigateToTextSpan(targetDoc, targetTextSpan, statusBar, cancellationToken)
 
             // Adjust the target from signature to implementation.
             | Implementation, Signature  ->
-                return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, range, statusBar)
+                return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, range, statusBar, cancellationToken)
                     
             // Adjust the target from implmentation to signature.
             | Signature, Implementation ->
-                return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, range, statusBar)
+                return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, range, statusBar, cancellationToken)
         }
         |> Async.Ignore |> Async.StartImmediate
 
@@ -709,7 +711,7 @@ type internal FSharpNavigation
             if gtdTask.Status = TaskStatus.RanToCompletion && gtdTask.Result.IsSome then
                 match gtdTask.Result.Value with
                 | FSharpGoToDefinitionResult.NavigableItem(navItem), _ ->
-                    gtd.NavigateToItem(navItem, statusBar)
+                    gtd.NavigateToItem(navItem, statusBar, cancellationToken)
                     // 'true' means do it, like Sheev Palpatine would want us to.
                     true
                 | FSharpGoToDefinitionResult.ExternalAssembly(targetSymbolUse, metadataReferences), _ ->

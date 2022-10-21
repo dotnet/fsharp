@@ -2,9 +2,19 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="pl" original="../FSStrings.resx">
     <body>
+      <trans-unit id="ErrorFromAddingTypeEquationTuples">
+        <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
+        <target state="new">Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="HashLoadedSourceHasIssues0">
         <source>One or more informational messages in loaded file.\n</source>
         <target state="translated">Jeden lub więcej komunikatów informacyjnych w załadowanym pliku.\n</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="NotUpperCaseConstructorWithoutRQA">
+        <source>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</source>
+        <target state="new">Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</target>
         <note />
       </trans-unit>
       <trans-unit id="Parser.TOKEN.DOT.DOT.HAT">
@@ -1299,7 +1309,7 @@
       </trans-unit>
       <trans-unit id="DeprecatedThreadStaticBindingWarning">
         <source>Thread static and context static 'let' bindings are deprecated. Instead use a declaration of the form 'static val mutable &lt;ident&gt; : &lt;type&gt;' in a class. Add the 'DefaultValue' attribute to this declaration to indicate that the value is initialized to the default value on each new thread.</source>
-        <target state="translated">Powiązania „let” statyczne dla wątku i kontekstu są przestarzałe. Zamiast tego użyj deklaracji w postaci „static val mutable &lt;identyfikator&gt; : &lt;typ&gt;” w klasie. Dodaj atrybut „DefaultValue” do tej deklaracji, aby określić, że wartość jest inicjowana przy użyciu wartości domyślnej w każdym nowym wątku.</target>
+        <target state="translated">Powiązania „let” statyczne dla wątku i kontekstu są przestarzałe. Zamiast tego użyj deklaracji w postaci „static val mutable &lt;ident&gt; : &lt;type&gt;” w klasie. Dodaj atrybut „DefaultValue” do tej deklaracji, aby określić, że wartość jest inicjowana do wartości domyślnej w przypadku każdego nowego wątku.</target>
         <note />
       </trans-unit>
       <trans-unit id="FunctionValueUnexpected">
@@ -1319,17 +1329,17 @@
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossiblePropertySetter">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to set a value to a property, then use the '&lt;-' operator e.g. '{1}.{2} &lt;- expression'.</source>
-        <target state="translated">Wynik tego wyrażenia równości ma typ „{0}” i jest niejawnie odrzucany. Rozważ użycie słowa kluczowego „let” do powiązania wyniku z nazwą, np. „let wynik = wyrażenie”. Jeśli zamiarem było ustawienie wartości właściwości, użyj operatora „&lt;-”, np. „{1}.{2} &lt;- wyrażenie”.</target>
+        <target state="translated">Wynik tego wyrażenia równości ma typ „{0}” i jest niejawnie odrzucany. Rozważ użycie powiązania „let” do powiązania wyniku z nazwą, np. „let result = wyrażenie”. Jeśli zamiarem było ustawienie wartości właściwości, użyj operatora „&lt;-”, np. „{1}.{2} &lt;- expression”.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignment">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then mark the value 'mutable' and use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">Wynik tego wyrażenia równości ma typ „{0}” i jest niejawnie odrzucany. Rozważ użycie słowa kluczowego „let” do powiązania wyniku z nazwą, np. „let wynik = wyrażenie”. Jeśli zamiarem było zmodyfikowanie wartości, oznacz ją za pomocą deklaratora „mutable” i użyj operatora „&lt;-”, np. „{1} &lt;- wyrażenie”.</target>
+        <target state="translated">Wynik tego wyrażenia równości ma typ „{0}” i jest niejawnie odrzucany. Rozważ użycie powiązania „let” do powiązania wyniku z nazwą, np. „let result = expression”. Jeśli zamiarem było zmodyfikowanie wartości, oznacz ją za pomocą deklaratora „mutable” i użyj operatora „&lt;-”, np. {1} &lt;- expression”.</target>
         <note />
       </trans-unit>
       <trans-unit id="UnitTypeExpectedWithPossibleAssignmentToMutable">
         <source>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'. If you intended to mutate a value, then use the '&lt;-' operator e.g. '{1} &lt;- expression'.</source>
-        <target state="translated">Wynik tego wyrażenia równości ma typ „{0}” i jest niejawnie odrzucany. Rozważ użycie słowa kluczowego „let” do powiązania wyniku z nazwą, np. „let wynik = wyrażenie”. Jeśli zamiarem było zmodyfikowanie wartości, użyj operatora „&lt;-”, np. „{1} &lt;- wyrażenie”.</target>
+        <target state="translated">Wynik tego wyrażenia równości ma typ „{0}“ i jest niejawnie odrzucany. Rozważ użycie powiązania „let” do powiązania wyniku z nazwą, np. „let result = expression”. Jeśli zamiarem było zmodyfikowanie wartości, użyj operatora „&lt;-”, np. {1} &lt;- expression”.</target>
         <note />
       </trans-unit>
       <trans-unit id="RecursiveUseCheckedAtRuntime">
@@ -1364,7 +1374,7 @@
       </trans-unit>
       <trans-unit id="SelfRefObjCtor1">
         <source>Recursive references to the object being defined will be checked for initialization soundness at runtime through the use of a delayed reference. Consider placing self-references in members or within a trailing expression of the form '&lt;ctor-expr&gt; then &lt;expr&gt;'.</source>
-        <target state="translated">Odwołania cykliczne do definiowanego obiektu będą sprawdzane pod kątem poprawności inicjowania w czasie wykonywania przy użyciu opóźnionego odwołania. Rozważ umieszczenie odwołań własnych w składowych lub w wyrażeniu końcowym w postaci „&lt;wyrażenie-konstruktora&gt; then &lt;wyrażenie&gt;”.</target>
+        <target state="translated">Odwołania cykliczne do definiowanego obiektu będą sprawdzane pod kątem poprawności inicjowania w czasie wykonywania przy użyciu opóźnionego odwołania. Rozważ umieszczenie odwołań własnych w składowych lub w wyrażeniu końcowym w postaci „&lt;ctor-expr&gt; then &lt;expr&gt;”.</target>
         <note />
       </trans-unit>
       <trans-unit id="SelfRefObjCtor2">
@@ -1553,8 +1563,8 @@
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInIntrinsicAugmentation">
-        <source>Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.</source>
-        <target state="translated">Implementacje interfejsów w powiększeniach są teraz przestarzałe. Implementacje interfejsów powinny występować w początkowej deklaracji typu.</target>
+        <source>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</source>
+        <target state="needs-review-translation">Implementacje interfejsów w powiększeniach są teraz przestarzałe. Implementacje interfejsów powinny występować w początkowej deklaracji typu.</target>
         <note />
       </trans-unit>
       <trans-unit id="IntfImplInExtrinsicAugmentation">

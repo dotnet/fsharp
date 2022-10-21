@@ -4,6 +4,7 @@ module internal FSharp.Compiler.ParseHelpers
 
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open FSharp.Compiler.Features
 open FSharp.Compiler.Text
 open FSharp.Compiler.Xml
@@ -84,7 +85,7 @@ module LexbufIfdefStore =
 
     val SaveEndIfHash: lexbuf: UnicodeLexing.Lexbuf * lexed: string * range: range -> unit
 
-    val GetTrivia: lexbuf: UnicodeLexing.Lexbuf -> SyntaxTrivia.ConditionalDirectiveTrivia list
+    val GetTrivia: lexbuf: UnicodeLexing.Lexbuf -> ConditionalDirectiveTrivia list
 
 module LexbufCommentStore =
 
@@ -92,7 +93,7 @@ module LexbufCommentStore =
 
     val SaveBlockComment: lexbuf: UnicodeLexing.Lexbuf * startRange: range * endRange: range -> unit
 
-    val GetComments: lexbuf: UnicodeLexing.Lexbuf -> SyntaxTrivia.CommentTrivia list
+    val GetComments: lexbuf: UnicodeLexing.Lexbuf -> CommentTrivia list
 
     val ClearComments: lexbuf: UnicodeLexing.Lexbuf -> unit
 
@@ -165,13 +166,73 @@ val mkSynMemberDefnGetSet:
     parseState: IParseState ->
     opt_inline: bool ->
     mWith: range ->
-    classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * SynReturnInfo option * range option * SynExpr * range) list ->
+    classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * (range option * SynReturnInfo) option * range option * SynExpr * range) list ->
     mAnd: range option ->
     mWhole: range ->
     propertyNameBindingPat: SynPat ->
-    optPropertyType: SynReturnInfo option ->
+    optPropertyType: (range option * SynReturnInfo) option ->
     visNoLongerUsed: SynAccess option ->
-    memFlagsBuilder: (SynMemberKind -> SynMemberFlags) ->
-    attrs: SynAttributeList list ->
-    rangeStart: range ->
-        SynMemberDefn list
+    flagsBuilderAndLeadingKeyword: (SynMemberKind -> SynMemberFlags) * SynLeadingKeyword ->
+        attrs: SynAttributeList list ->
+        rangeStart: range ->
+            SynMemberDefn list
+
+/// Incorporate a '^' for an qualified access to a generic type parameter
+val adjustHatPrefixToTyparLookup: mFull: range -> rightExpr: SynExpr -> SynExpr
+
+val mkSynTypeTuple: elementTypes: SynTupleTypeSegment list -> SynType
+
+#if DEBUG
+val debugPrint: s: string -> unit
+#else
+val debugPrint: s: 'a -> unit
+#endif
+
+val exprFromParseError: e: SynExpr -> SynExpr
+
+val patFromParseError: e: SynPat -> SynPat
+
+val rebindRanges:
+    first: (RecordFieldName * range option * SynExpr option) ->
+    fields: ((RecordFieldName * range option * SynExpr option) * BlockSeparator option) list ->
+    lastSep: BlockSeparator option ->
+        SynExprRecordField list
+
+val mkUnderscoreRecdField: m: range -> SynLongIdent * bool
+
+val mkRecdField: lidwd: SynLongIdent -> SynLongIdent * bool
+
+val mkSynDoBinding: vis: SynAccess option * mDo: range * expr: SynExpr * m: range -> SynBinding
+
+val mkSynExprDecl: e: SynExpr -> SynModuleDecl
+
+val addAttribs: attrs: SynAttributes -> p: SynPat -> SynPat
+
+val unionRangeWithPos: r: range -> p: pos -> range
+
+val checkEndOfFileError: t: LexerContinuation -> unit
+
+type BindingSet =
+    | BindingSetPreAttrs of
+        range *
+        bool *
+        bool *
+        (SynAttributes -> SynAccess option -> SynAttributes * SynBinding list) *
+        range
+
+val mkClassMemberLocalBindings:
+    isStatic: bool * initialRangeOpt: range option * attrs: SynAttributes * vis: SynAccess option * BindingSet ->
+        SynMemberDefn
+
+val mkLocalBindings: mWhole: range * BindingSet * mIn: range option * body: SynExpr -> SynExpr
+
+val mkDefnBindings:
+    mWhole: range * BindingSet * attrs: SynAttributes * vis: SynAccess option * attrsm: range -> SynModuleDecl list
+
+val idOfPat: parseState: IParseState -> m: range -> p: SynPat -> Ident
+
+val checkForMultipleAugmentations: m: range -> a1: 'a list -> a2: 'a list -> 'a list
+
+val rangeOfLongIdent: lid: LongIdent -> range
+
+val appendValToLeadingKeyword: mVal: range -> leadingKeyword: SynLeadingKeyword -> SynLeadingKeyword

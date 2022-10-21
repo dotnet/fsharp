@@ -749,14 +749,14 @@ val destTopForallTy: TcGlobals -> ValReprInfo -> TType -> Typars * TType
 
 val GetTopTauTypeInFSharpForm: TcGlobals -> ArgReprInfo list list -> TType -> range -> CurriedArgInfos * TType
 
-val GetTopValTypeInFSharpForm:
+val GetValReprTypeInFSharpForm:
     TcGlobals -> ValReprInfo -> TType -> range -> Typars * CurriedArgInfos * TType * ArgReprInfo
 
 val IsCompiledAsStaticProperty: TcGlobals -> Val -> bool
 
 val IsCompiledAsStaticPropertyWithField: TcGlobals -> Val -> bool
 
-val GetTopValTypeInCompiledForm:
+val GetValReprTypeInCompiledForm:
     TcGlobals ->
     ValReprInfo ->
     int ->
@@ -796,7 +796,12 @@ val emptyFreeLocals: FreeLocals
 
 val unionFreeLocals: FreeLocals -> FreeLocals -> FreeLocals
 
-type FreeVarOptions
+/// Represents the options to activate when collecting free variables
+[<Sealed>]
+type FreeVarOptions =
+    /// During backend code generation of state machines, register a template replacement for struct types.
+    /// This may introduce new free variables related to the instantiation of the struct type.
+    member WithTemplateReplacement: (TyconRef -> bool) * Typars -> FreeVarOptions
 
 val CollectLocalsNoCaching: FreeVarOptions
 
@@ -845,7 +850,7 @@ val isDimensionless: TcGlobals -> TType -> bool
 // TType modifications and comparisons
 //---------------------------------------------------------------------------
 
-val stripMeasuresFromTType: TcGlobals -> TType -> TType
+val stripMeasuresFromTy: TcGlobals -> TType -> TType
 
 //-------------------------------------------------------------------------
 // Equivalence of types (up to substitution of type variables in the left-hand type)
@@ -1167,8 +1172,8 @@ val freeVarsAllPublic: FreeVars -> bool
 /// Compute the type of an expression from the expression itself
 val tyOfExpr: TcGlobals -> Expr -> TType
 
-/// A flag to govern whether arity inference should be type-directed or syntax-directed when
-/// inferring an arity from a lambda expression.
+/// A flag to govern whether ValReprInfo inference should be type-directed or syntax-directed when
+/// inferring from a lambda expression.
 [<RequireQualifiedAccess>]
 type AllowTypeDirectedDetupling =
     | Yes
@@ -1178,15 +1183,15 @@ type AllowTypeDirectedDetupling =
 val stripTopLambda: Expr * TType -> Typars * Val list list * Expr * TType
 
 /// Given a lambda expression, extract the ValReprInfo for its arguments and other details
-val InferArityOfExpr:
+val InferValReprInfoOfExpr:
     TcGlobals -> AllowTypeDirectedDetupling -> TType -> Attribs list list -> Attribs -> Expr -> ValReprInfo
 
 /// Given a lambda binding, extract the ValReprInfo for its arguments and other details
-val InferArityOfExprBinding: TcGlobals -> AllowTypeDirectedDetupling -> Val -> Expr -> ValReprInfo
+val InferValReprInfoOfBinding: TcGlobals -> AllowTypeDirectedDetupling -> Val -> Expr -> ValReprInfo
 
 /// Mutate a value to indicate it should be considered a local rather than a module-bound definition
 // REVIEW: this mutation should not be needed
-val setValHasNoArity: Val -> Val
+val ClearValReprInfo: Val -> Val
 
 /// Indicate what should happen to value definitions when copying expressions
 type ValCopyFlag =
@@ -1385,7 +1390,7 @@ val IterateRecursiveFixups:
 val MultiLambdaToTupledLambda: TcGlobals -> Val list -> Expr -> Val * Expr
 
 /// Given a lambda expression, adjust it to have be one or two lambda expressions (fun a -> (fun b -> ...))
-/// where the first has the given arity.
+/// where the first has the given arguments.
 val AdjustArityOfLambdaBody: TcGlobals -> int -> Val list -> Expr -> Val list * Expr
 
 /// Make an application expression, doing beta reduction by introducing let-bindings
@@ -1403,14 +1408,23 @@ val JoinTyparStaticReq: TyparStaticReq -> TyparStaticReq -> TyparStaticReq
 /// Layout for internal compiler debugging purposes
 module DebugPrint =
 
+    /// A global flag indicating whether debug output should include ValReprInfo
+    val mutable layoutValReprInfo: bool
+
+    /// A global flag indicating whether debug output should include stamps of Val and Entity
+    val mutable layoutStamps: bool
+
     /// A global flag indicating whether debug output should include ranges
-    val layoutRanges: bool ref
+    val mutable layoutRanges: bool
+
+    /// A global flag indicating whether debug output should include type information
+    val mutable layoutTypes: bool
 
     /// Convert a type to a string for debugging purposes
     val showType: TType -> string
 
     /// Convert an expression to a string for debugging purposes
-    val showExpr: TcGlobals -> Expr -> string
+    val showExpr: Expr -> string
 
     /// Debug layout for a reference to a value
     val valRefL: ValRef -> Layout
@@ -1419,7 +1433,7 @@ module DebugPrint =
     val unionCaseRefL: UnionCaseRef -> Layout
 
     /// Debug layout for an value definition at its binding site
-    val valAtBindL: TcGlobals -> Val -> Layout
+    val valAtBindL: Val -> Layout
 
     /// Debug layout for an integer
     val intL: int -> Layout
@@ -1445,43 +1459,33 @@ module DebugPrint =
     /// Debug layout for a method slot signature
     val slotSigL: SlotSig -> Layout
 
-    /// Debug layout for the type signature of a module or namespace definition
-    val entityTypeL: TcGlobals -> ModuleOrNamespaceType -> Layout
-
     /// Debug layout for a module or namespace definition
-    val entityL: TcGlobals -> ModuleOrNamespace -> Layout
-
-    /// Debug layout for the type of a value
-    val typeOfValL: Val -> Layout
+    val entityL: ModuleOrNamespace -> Layout
 
     /// Debug layout for a binding of an expression to a value
-    val bindingL: TcGlobals -> Binding -> Layout
+    val bindingL: Binding -> Layout
 
     /// Debug layout for an expression
-    val exprL: TcGlobals -> Expr -> Layout
+    val exprL: Expr -> Layout
 
     /// Debug layout for a type definition
-    val tyconL: TcGlobals -> Tycon -> Layout
+    val tyconL: Tycon -> Layout
 
     /// Debug layout for a decision tree
-    val decisionTreeL: TcGlobals -> DecisionTree -> Layout
+    val decisionTreeL: DecisionTree -> Layout
 
     /// Debug layout for an implementation file
-    val implFileL: TcGlobals -> CheckedImplFile -> Layout
+    val implFileL: CheckedImplFile -> Layout
 
     /// Debug layout for a list of implementation files
-    val implFilesL: TcGlobals -> CheckedImplFile list -> Layout
+    val implFilesL: CheckedImplFile list -> Layout
 
     /// Debug layout for class and record fields
     val recdFieldRefL: RecdFieldRef -> Layout
 
 /// A set of function parameters (visitor) for folding over expressions
 type ExprFolder<'State> =
-    { exprIntercept: ('State -> Expr -> 'State) (* noInterceptF *)
-        -> ('State -> Expr -> 'State)
-        -> 'State
-        -> Expr
-        -> 'State (* recurseF *)
+    { exprIntercept: ('State -> Expr -> 'State) -> ('State -> Expr -> 'State) -> 'State -> Expr -> 'State
       valBindingSiteIntercept: 'State -> bool * Val -> 'State
       nonRecBindingsIntercept: 'State -> Binding -> 'State
       recBindingsIntercept: 'State -> Bindings -> 'State
@@ -1493,10 +1497,10 @@ type ExprFolder<'State> =
 val ExprFolder0: ExprFolder<'State>
 
 /// Fold over all the expressions in an implementation file
-val FoldImplFile: ExprFolder<'State> -> ('State -> CheckedImplFile -> 'State)
+val FoldImplFile: ExprFolder<'State> -> 'State -> CheckedImplFile -> 'State
 
 /// Fold over all the expressions in an expression
-val FoldExpr: ExprFolder<'State> -> ('State -> Expr -> 'State)
+val FoldExpr: ExprFolder<'State> -> 'State -> Expr -> 'State
 
 #if DEBUG
 /// Extract some statistics from an expression
@@ -1661,6 +1665,9 @@ val underlyingTypeOfEnumTy: TcGlobals -> TType -> TType
 
 /// If the input type is an enum type, then convert to its underlying type, otherwise return the input type
 val normalizeEnumTy: TcGlobals -> TType -> TType
+
+/// Determine if TyconRef is to a struct type
+val isStructTyconRef: TyconRef -> bool
 
 /// Determine if a type is a struct type
 val isStructTy: TcGlobals -> TType -> bool
@@ -2083,8 +2090,6 @@ val mkCallToInt16Operator: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallToUInt16Operator: TcGlobals -> range -> TType -> Expr -> Expr
 
-val mkCallToIntOperator: TcGlobals -> range -> TType -> Expr -> Expr
-
 val mkCallToInt32Operator: TcGlobals -> range -> TType -> Expr -> Expr
 
 val mkCallToUInt32Operator: TcGlobals -> range -> TType -> Expr -> Expr
@@ -2335,9 +2340,9 @@ val mkAnyAnonRecdTy: TcGlobals -> AnonRecdTypeInfo -> TType list -> TType
 
 val mkAnonRecd: TcGlobals -> range -> AnonRecdTypeInfo -> Ident[] -> Exprs -> TType list -> Expr
 
-val AdjustValForExpectedArity: TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
+val AdjustValForExpectedValReprInfo: TcGlobals -> range -> ValRef -> ValUseFlag -> ValReprInfo -> Expr * TType
 
-val AdjustValToTopVal: Val -> ParentRef -> ValReprInfo -> unit
+val AdjustValToHaveValReprInfo: Val -> ParentRef -> ValReprInfo -> unit
 
 val LinearizeTopMatch: TcGlobals -> ParentRef -> Expr -> Expr
 
@@ -2376,7 +2381,8 @@ type StaticOptimizationAnswer =
     | No = -1y
     | Unknown = 0y
 
-val DecideStaticOptimizations: TcGlobals -> StaticOptimization list -> haveWitnesses: bool -> StaticOptimizationAnswer
+val DecideStaticOptimizations:
+    TcGlobals -> StaticOptimization list -> canDecideTyparEqn: bool -> StaticOptimizationAnswer
 
 val mkStaticOptimizationExpr: TcGlobals -> StaticOptimization list * Expr * Expr * range -> Expr
 
@@ -2389,7 +2395,11 @@ val mkFastForLoop: TcGlobals -> DebugPointAtFor * DebugPointAtInOrTo * range * V
 
 type ActivePatternElemRef with
 
-    member Name: string
+    member LogicalName: string
+
+    member DisplayNameCore: string
+
+    member DisplayName: string
 
 val TryGetActivePatternInfo: ValRef -> PrettyNaming.ActivePatternInfo option
 
@@ -2397,10 +2407,16 @@ val mkChoiceCaseRef: g: TcGlobals -> m: range -> n: int -> i: int -> UnionCaseRe
 
 type PrettyNaming.ActivePatternInfo with
 
-    member Names: string list
+    /// Get the core of the display name for one of the cases of the active pattern, by index
+    member DisplayNameCoreByIdx: idx: int -> string
 
+    /// Get the display name for one of the cases of the active pattern, by index
+    member DisplayNameByIdx: idx: int -> string
+
+    /// Get the result type for the active pattern
     member ResultType: g: TcGlobals -> range -> TType list -> bool -> TType
 
+    /// Get the overall type for a function that implements the active pattern
     member OverallType: g: TcGlobals -> m: range -> argTy: TType -> retTys: TType list -> isStruct: bool -> TType
 
 val doesActivePatternHaveFreeTypars: TcGlobals -> ValRef -> bool
@@ -2549,7 +2565,7 @@ val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * Expr * Expr *
 /// Match 'if __useResumableCode then ... else ...' expressions
 val (|IfUseResumableStateMachinesExpr|_|): TcGlobals -> Expr -> (Expr * Expr) option
 
-val CombineCcuContentFragments: range -> ModuleOrNamespaceType list -> ModuleOrNamespaceType
+val CombineCcuContentFragments: ModuleOrNamespaceType list -> ModuleOrNamespaceType
 
 /// Recognise a 'match __resumableEntry() with ...' expression
 val (|ResumableEntryMatchExpr|_|): g: TcGlobals -> Expr -> (Expr * Val * Expr * (Expr * Expr -> Expr)) option
@@ -2647,3 +2663,27 @@ val (|Seq|_|): TcGlobals -> Expr -> (Expr * TType) option
 
 /// Indicates if an F# type is the type associated with an F# exception declaration
 val isFSharpExceptionTy: g: TcGlobals -> ty: TType -> bool
+
+type TraitConstraintInfo with
+
+    /// Get the argument types recorded in the member constraint suitable for building a TypedTree call.
+    member GetCompiledArgumentTypes: unit -> TType list
+
+    /// Get the argument types when the trait is used as a first-class value "^T.TraitName" which can then be applied
+    member GetLogicalArgumentTypes: g: TcGlobals -> TType list
+
+    member GetObjectType: unit -> TType option
+
+    member GetReturnType: g: TcGlobals -> TType
+
+    /// Get the name of the trait for textual call.
+    member MemberDisplayNameCore: string
+
+    /// Get the key associated with the member constraint.
+    member GetWitnessInfo: unit -> TraitWitnessInfo
+
+/// Matches a ModuleOrNamespaceContents that is empty from a signature printing point of view.
+/// Signatures printed via the typed tree in NicePrint don't print TMDefOpens or TMDefDo.
+/// This will match anything that does not have any types or bindings.
+val (|EmptyModuleOrNamespaces|_|):
+    moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) option

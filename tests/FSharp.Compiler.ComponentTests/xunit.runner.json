@@ -1,6 +1,6 @@
 ﻿{
     "$schema": "https://xunit.net/schema/current/xunit.runner.schema.json",
-    "appDomain": "denied",
+    "appDomain": "ifAvailable",
     "shadowCopy": false,
     "parallelizeTestCollections": false,
     "maxParallelThreads": 1

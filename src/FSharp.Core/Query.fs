@@ -314,26 +314,27 @@ module Query =
         match prop.GetGetMethod true with
         | null -> None
         | v -> Some v
+    let (|GenericArgs|) (minfo: MethodInfo) = minfo.GetGenericArguments() |> Array.toList
 
     // Match 'f x'
     let (|SpecificCall1|_|) q =
        let (|CallQ|_|) = (|SpecificCallToMethod|_|) q
        function
-       | CallQ (Some builderObj, tyargs, [arg1]) -> Some(builderObj, tyargs, arg1)
+       | CallQ (Some builderObj, GenericArgs tyargs, [arg1]) -> Some(builderObj, tyargs, arg1)
        | _ -> None
 
     // Match 'f x y' or 'f (x, y)'
     let (|SpecificCall2|_|) q =
        let (|CallQ|_|) = (|SpecificCallToMethod|_|) q
        function
-       | CallQ (Some builderObj, tyargs, [arg1; arg2]) -> Some(builderObj, tyargs, arg1, arg2)
+       | CallQ (Some builderObj, GenericArgs tyargs, [arg1; arg2]) -> Some(builderObj, tyargs, arg1, arg2)
        | _ -> None
 
     // Match 'f x y z' or 'f (x, y, z)'
     let (|SpecificCall3|_|) q =
        let (|CallQ|_|) = (|SpecificCallToMethod|_|) q
        function
-       | CallQ (Some builderObj, tyargs, [arg1; arg2; arg3]) -> Some(builderObj, tyargs, arg1, arg2, arg3)
+       | CallQ (Some builderObj, GenericArgs tyargs, [arg1; arg2; arg3]) -> Some(builderObj, tyargs, arg1, arg2, arg3)
        | _ -> None
 
     /// (fun (x, y) -> z) is represented as 'fun p -> let x = p#0 let y = p#1' etc.
@@ -439,7 +440,7 @@ module Query =
     let IsIEnumerableTy (ty: System.Type) = ty.IsGenericType && ty.GetGenericTypeDefinition() = IEnumerableTypeDef
 
     // Check a tag type on QuerySource is IQueryable
-    let qTyIsIQueryable (ty : System.Type) = not (ty.Equals(typeof<IEnumerable>))
+    let qTyIsIQueryable (ty : System.Type) = not (Type.op_Equality(ty, typeof<IEnumerable>))
 
     let FuncExprToDelegateExpr (srcTy, targetTy, v, body) =
         Expr.NewDelegate (Linq.Expressions.Expression.GetFuncType [| srcTy; targetTy |], [v], body)
@@ -587,21 +588,21 @@ module Query =
                 let selector = MakeImplicitExpressionConversion selector
                 let maker =
                     match resTyNoNullable with
-                    | ty when ty = typeof<double>  -> mq_double
-                    | ty when ty = typeof<single>  -> mq_single
-                    | ty when ty = typeof<decimal> -> mq_decimal
-                    | ty when ty = typeof<int32>   -> mq_int32
-                    | ty when ty = typeof<int64>   -> mq_int64
+                    | ty when Type.op_Equality(ty, typeof<double>)  -> mq_double
+                    | ty when Type.op_Equality(ty, typeof<single>)  -> mq_single
+                    | ty when Type.op_Equality(ty, typeof<decimal>) -> mq_decimal
+                    | ty when Type.op_Equality(ty, typeof<int32>)   -> mq_int32
+                    | ty when Type.op_Equality(ty, typeof<int64>)   -> mq_int64
                     | _ -> failDueToUnsupportedInputTypeInSumByOrAverageBy()
                 maker ([srcItemTy], [src; selector])
             else
                 // Try to dynamically invoke a LINQ method if one exists, since these may be optimized over arrays etc.
                 match resTyNoNullable with
-                | ty when ty = typeof<double>  -> me_double ([srcItemTy], [src; selector])
-                | ty when ty = typeof<single>  -> me_single ([srcItemTy], [src; selector])
-                | ty when ty = typeof<decimal> -> me_decimal ([srcItemTy], [src; selector])
-                | ty when ty = typeof<int32>   -> me_int32 ([srcItemTy], [src; selector])
-                | ty when ty = typeof<int64>   -> me_int64 ([srcItemTy], [src; selector])
+                | ty when Type.op_Equality(ty, typeof<double>)  -> me_double ([srcItemTy], [src; selector])
+                | ty when Type.op_Equality(ty, typeof<single>)  -> me_single ([srcItemTy], [src; selector])
+                | ty when Type.op_Equality(ty, typeof<decimal>) -> me_decimal ([srcItemTy], [src; selector])
+                | ty when Type.op_Equality(ty, typeof<int32>)   -> me_int32 ([srcItemTy], [src; selector])
+                | ty when Type.op_Equality(ty, typeof<int64>)   -> me_int64 ([srcItemTy], [src; selector])
                 | _ ->
                     // The F# implementation needs a QuerySource as a parameter.
                     let qTy = typeof<IEnumerable>
@@ -616,22 +617,22 @@ module Query =
                 let selector = FuncExprToLinqFunc2Expression (srcItemTy, resTy, v, res)
                 let caller =
                     match resTyNoNullable with
-                    | ty when ty = typeof<double>  -> cq_double
-                    | ty when ty = typeof<single>  -> cq_single
-                    | ty when ty = typeof<decimal> -> cq_decimal
-                    | ty when ty = typeof<int32>   -> cq_int32
-                    | ty when ty = typeof<int64>   -> cq_int64
+                    | ty when Type.op_Equality(ty, typeof<double>)  -> cq_double
+                    | ty when Type.op_Equality(ty, typeof<single>)  -> cq_single
+                    | ty when Type.op_Equality(ty, typeof<decimal>) -> cq_decimal
+                    | ty when Type.op_Equality(ty, typeof<int32>)   -> cq_int32
+                    | ty when Type.op_Equality(ty, typeof<int64>)   -> cq_int64
                     | _ -> failDueToUnsupportedInputTypeInSumByOrAverageBy()
                 caller ([srcItemTy], [src; box selector]) : obj
             else
                 // Try to dynamically invoke a LINQ method if one exists, since these may be optimized over arrays etc.
                 let linqMethOpt =
                     match resTyNoNullable with
-                    | ty when ty = typeof<double>  -> Some ce_double
-                    | ty when ty = typeof<single>  -> Some ce_single
-                    | ty when ty = typeof<decimal> -> Some ce_decimal
-                    | ty when ty = typeof<int32>   -> Some ce_int32
-                    | ty when ty = typeof<int64>   -> Some ce_int64
+                    | ty when Type.op_Equality(ty, typeof<double>)  -> Some ce_double
+                    | ty when Type.op_Equality(ty, typeof<single>)  -> Some ce_single
+                    | ty when Type.op_Equality(ty, typeof<decimal>) -> Some ce_decimal
+                    | ty when Type.op_Equality(ty, typeof<int32>)   -> Some ce_int32
+                    | ty when Type.op_Equality(ty, typeof<int64>)   -> Some ce_int64
                     | _ -> None
                 match linqMethOpt with
                 | Some ce ->
@@ -1286,7 +1287,7 @@ module Query =
         // rewrite has had the custom operator translation mechanism applied. In this case, the
         // body of the "for" will simply contain "yield".
 
-        | CallQueryBuilderFor (_, [_; qTy; immutResElemTy; _], [immutSource; Lambda(immutSelectorVar, immutSelector) ]) ->
+        | CallQueryBuilderFor (_, GenericArgs [_; qTy; immutResElemTy; _], [immutSource; Lambda(immutSelectorVar, immutSelector) ]) ->
 
             let mutSource, sourceConv = TransInner CanEliminate.Yes check immutSource
 
@@ -1467,7 +1468,7 @@ module Query =
                 | _ -> GroupingConv (immutKeySelector.Type, immutElementSelector.Type, selectorConv)
             TransInnerResult.Other(MakeGroupValBy(qTyIsIQueryable qTy, mutVar1.Type, mutKeySelector.Type, mutElementSelector.Type, mutSource, mutVar2, mutKeySelector, mutVar1, mutElementSelector)), conv
 
-        | CallJoin(_, [_; qTy; _; _; _],
+        | CallJoin(_, GenericArgs [_; qTy; _; _; _],
                    [ immutOuterSource
                      immutInnerSource
                      Lambda(immutOuterKeyVar, immutOuterKeySelector)
@@ -1491,7 +1492,7 @@ module Query =
             TransInnerResult.Other joinExpr, elementSelectorConv
 
         | CallGroupJoin
-              (_, [_; qTy; _; _; _], 
+              (_, GenericArgs [_; qTy; _; _; _], 
                [ immutOuterSource
                  immutInnerSource
                  Lambda(immutOuterKeyVar, immutOuterKeySelector)
@@ -1517,7 +1518,7 @@ module Query =
             TransInnerResult.Other joinExpr, elementSelectorConv
 
         | CallLeftOuterJoin
-             (_, [ _; qTy; immutInnerSourceTy; _; _],
+             (_, GenericArgs [ _; qTy; immutInnerSourceTy; _; _],
               [ immutOuterSource
                 immutInnerSource
                 Lambda(immutOuterKeyVar, immutOuterKeySelector)
@@ -1616,7 +1617,7 @@ module Query =
                 let IQueryableTySpec = MakeIQueryableTy tyArg
                 // if result type of nested query is derived from IQueryable but not IQueryable itself (i.e. IOrderedQueryable)
                 // then add coercion to IQueryable so result type will match expected signature of QuerySource.Run
-                if (IQueryableTySpec.IsAssignableFrom replNestedQuery.Type) && not (IQueryableTySpec.Equals replNestedQuery.Type) then
+                if (IQueryableTySpec.IsAssignableFrom replNestedQuery.Type) && not (Type.op_Equality(IQueryableTySpec, replNestedQuery.Type)) then
                     Expr.Coerce (replNestedQuery, IQueryableTySpec)
                 else
                     replNestedQuery

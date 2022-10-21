@@ -74,21 +74,30 @@ type LongUnicodeLexResult =
     | SingleChar of uint16
     | Invalid
 
-let mkLexargs (conditionalDefines, indentationSyntaxStatus, resourceManager, ifdefStack, diagnosticsLogger, pathMap: PathMap) =
+let mkLexargs
+    (
+        conditionalDefines,
+        indentationSyntaxStatus,
+        resourceManager,
+        ifdefStack,
+        diagnosticsLogger,
+        pathMap: PathMap,
+        applyLineDirectives
+    ) =
     {
         conditionalDefines = conditionalDefines
         ifdefStack = ifdefStack
         indentationSyntaxStatus = indentationSyntaxStatus
         resourceManager = resourceManager
         diagnosticsLogger = diagnosticsLogger
-        applyLineDirectives = true
+        applyLineDirectives = applyLineDirectives
         stringNest = []
         pathMap = pathMap
     }
 
 /// Register the lexbuf and call the given function
 let reusingLexbufForParsing lexbuf f =
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+    use _ = UseBuildPhase BuildPhase.Parse
     LexbufLocalXmlDocStore.ClearXmlDoc lexbuf
     LexbufCommentStore.ClearComments lexbuf
 
@@ -211,7 +220,8 @@ let stringBufferIsBytes (buf: ByteBuffer) =
     let mutable ok = true
 
     for i = 0 to bytes.Length / 2 - 1 do
-        if bytes.Span[i * 2 + 1] <> 0uy then ok <- false
+        if bytes.Span[i * 2 + 1] <> 0uy then
+            ok <- false
 
     ok
 
@@ -237,15 +247,20 @@ let hexdigit d =
     else failwith "hexdigit"
 
 let unicodeGraphShort (s: string) =
-    if s.Length <> 4 then failwith "unicodegraph"
+    if s.Length <> 4 then
+        failwith "unicodegraph"
+
     uint16 (hexdigit s[0] * 4096 + hexdigit s[1] * 256 + hexdigit s[2] * 16 + hexdigit s[3])
 
 let hexGraphShort (s: string) =
-    if s.Length <> 2 then failwith "hexgraph"
+    if s.Length <> 2 then
+        failwith "hexgraph"
+
     uint16 (hexdigit s[0] * 16 + hexdigit s[1])
 
 let unicodeGraphLong (s: string) =
-    if s.Length <> 8 then failwith "unicodeGraphLong"
+    if s.Length <> 8 then
+        failwith "unicodeGraphLong"
 
     let high =
         hexdigit s[0] * 4096 + hexdigit s[1] * 256 + hexdigit s[2] * 16 + hexdigit s[3] in

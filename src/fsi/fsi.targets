@@ -4,6 +4,13 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+    <!-- Workaround to get rid of:
+        error NU1505: Duplicate 'PackageDownload' items found.
+        Remove the duplicate items or use the Update functionality to ensure a consistent restore behavior.
+        The duplicate 'PackageDownload' items are:
+          Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2].
+    -->
+    <NoWarn>$(NoWarn);NU1505</NoWarn>
     <NoWarn>$(NoWarn);44</NoWarn> <!-- Obsolete -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
@@ -15,6 +22,13 @@
 
   <PropertyGroup Condition="'$(TargetFramework)' == 'net472'">
     <DefineConstants>$(DefineConstants);FSI_SHADOW_COPY_REFERENCES;FSI_SERVER</DefineConstants>
+  </PropertyGroup>
+
+  <!--  The fsi application does not provide a referencable public interface  -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <NoOptimizationData>true</NoOptimizationData>
+      <NoInterfaceData>true</NoInterfaceData>
+      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
   </PropertyGroup>
 
   <ItemGroup>
@@ -41,17 +55,6 @@
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="WindowsBase" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessVersion)" />
-    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
-    <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
-    <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsVersion)" />
-    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
-    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />
-    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadVersion)" />
   </ItemGroup>
 
 </Project>

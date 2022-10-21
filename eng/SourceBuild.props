@@ -23,8 +23,15 @@
           DependsOnTargets="PrepareInnerSourceBuildRepoRoot"
           BeforeTargets="RunInnerSourceBuildCommand">
 
+    <!-- this runs the source-build bootstrap path as described in https://github.com/dotnet/fsharp/blob/95df49e380ea8dbf33653fa4209f89dba29413f5/eng/build.sh#L247
+         Note that we *are not* passing -source-build here so we do this bootstrap build in the outer build.
+         the important parts here are:
+         -bootstrap will build the "Proto" config of F# which includes tools and a bootstrap compiler
+         -skipBuild skips the rest of the build
+         -bl enables the binlogs for the tools and Proto builds, which make debugging failures here easier
+    -->
     <Exec
-      Command="./build.sh --bootstrap --skipBuild"
+      Command="./build.sh --bootstrap --skipBuild -bl"
       WorkingDirectory="$(InnerSourceBuildRepoRoot)"
       EnvironmentVariables="@(InnerBuildEnv);DotNetBuildFromSource=true" />
   </Target>

@@ -7,13 +7,14 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
+open System.IO.Compression
 open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Collections
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
@@ -29,6 +30,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
@@ -473,7 +475,7 @@ type BoundModel private (tcConfig: TcConfig,
 
                     IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked fileName)
                     let capturingDiagnosticsLogger = CapturingDiagnosticsLogger("TypeCheck")
-                    let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, GetScopedPragmasForInput input, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
+                    let diagnosticsLogger = GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, capturingDiagnosticsLogger)
                     use _ = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.TypeCheck)
 
                     beforeFileChecked.Trigger fileName
@@ -517,8 +519,8 @@ type BoundModel private (tcConfig: TcConfig,
                             tcDependencyFiles = fileName :: prevTcDependencyFiles
                             sigNameOpt =
                                 match input with
-                                | ParsedInput.SigFile(ParsedSigFileInput(fileName=fileName;qualifiedNameOfFile=qualName)) ->
-                                    Some(fileName, qualName)
+                                | ParsedInput.SigFile sigFile ->
+                                    Some(sigFile.FileName, sigFile.QualifiedName)
                                 | _ ->
                                     None
                         }
@@ -701,8 +703,8 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
     let sigData =
         let _sigDataAttributes, sigDataResources = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
         [ for r in sigDataResources  do
-            let ccuName = GetSignatureDataResourceName r
-            yield (ccuName, (fun () -> r.GetBytes())) ]
+            GetResourceNameAndSignatureDataFunc r
+        ]
 
     let autoOpenAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_AutoOpenAttribute)
 
@@ -743,7 +745,6 @@ module IncrementalBuilderHelpers =
         unresolvedReferences, 
         dependencyProvider, 
         loadClosureOpt: LoadClosure option, 
-        niceNameGen, 
         basicDependencies,
         keepAssemblyContents,
         keepAllBackgroundResolutions,
@@ -792,7 +793,7 @@ module IncrementalBuilderHelpers =
           }
 
         let tcInitial, openDecls0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
-        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcInitial, openDecls0)
+        let tcState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, tcInitial, openDecls0)
         let loadClosureErrors =
            [ match loadClosureOpt with
              | None -> ()
@@ -1430,7 +1431,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             keepAllBackgroundSymbolUses,
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking: bool,
-            dependencyProvider
+            enableParallelCheckingWithSignatureFiles: bool,
+            dependencyProvider,
+            parallelReferenceResolution
         ) =
 
       let useSimpleResolutionSwitch = "--simpleresolution"
@@ -1511,6 +1514,9 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     }
                     |> Some
 
+                tcConfigB.parallelCheckingWithSignatureFiles <- enableParallelCheckingWithSignatureFiles
+                tcConfigB.parallelReferenceResolution <- parallelReferenceResolution
+                
                 tcConfigB, sourceFilesNew
 
             // If this is a builder for a script, re-apply the settings inferred from the
@@ -1539,7 +1545,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
             setupConfigFromLoadClosure()
 
             let tcConfig = TcConfig.Create(tcConfigB, validate=true)
-            let niceNameGen = NiceNameGenerator()
             let outfile, _, assemblyName = tcConfigB.DecideNames sourceFiles
 
             // Resolve assemblies and create the framework TcImports. This is done when constructing the
@@ -1623,7 +1628,6 @@ type IncrementalBuilder(initialState: IncrementalBuilderInitialState, state: Inc
                     unresolvedReferences,
                     dependencyProvider,
                     loadClosureOpt,
-                    niceNameGen,
                     basicDependencies,
                     keepAssemblyContents,
                     keepAllBackgroundResolutions,
