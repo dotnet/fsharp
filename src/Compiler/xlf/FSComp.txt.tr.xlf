@@ -12,6 +12,11 @@
         <target state="translated">'{0}' kaynak dosyasının dosya uzantısı tanınmadı. Kaynak dosyaların uzantısı .fs, .fsi, .fsx veya .fsscript olmalıdır.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDuplicatedMethodParameter">
+        <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
+        <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">'{0}' özelliği F# {1} sürümünde kullanılamıyor. Lütfen {2} veya daha yüksek bir dil sürümünü kullanın.</target>
@@ -187,14 +192,14 @@
         <target state="translated">Dizin oluşturma ve dilimleme için expr[idx] gösterimi</target>
         <note />
       </trans-unit>
-      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
-        <source>static abstract interface members</source>
-        <target state="new">static abstract interface members</target>
-        <note />
-      </trans-unit>
       <trans-unit id="featureInitProperties">
         <source>support for consuming init properties</source>
         <target state="new">support for consuming init properties</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureInterfacesWithAbstractStaticMembers">
+        <source>static abstract interface members</source>
+        <target state="new">static abstract interface members</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -210,6 +215,11 @@
       <trans-unit id="featureMLCompatRevisions">
         <source>ML compatibility revisions</source>
         <target state="translated">ML uyumluluk düzeltmeleri</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="featureMatchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern match discard is not allowed for union case that takes no data.</source>
+        <target state="new">Pattern match discard is not allowed for union case that takes no data.</target>
         <note />
       </trans-unit>
       <trans-unit id="featureNameOf">
@@ -367,6 +377,11 @@
         <target state="translated">XML açıklaması geçerli bir dil öğesine yerleştirilmemiş.</target>
         <note />
       </trans-unit>
+      <trans-unit id="keywordDescriptionAnd">
+        <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
+        <target state="new">Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="keywordDescriptionConst">
         <source>Keyword to specify a constant literal as a type parameter argument in Type Providers.</source>
         <target state="translated">Tür Sağlayıcılarında tür parametresi bağımsız değişkeni olarak sabit değişmez değeri belirtmek için anahtar sözcük.</target>
@@ -400,6 +415,11 @@
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">Geçersiz düz metin arasına kod eklenmiş dize. Üç tırnaklı dize sabitleri, düz metin arasına kod eklenmiş ifadelerde kullanılamaz. Düz metin arasına kod ekleme ifadesi için açık bir 'let' bağlaması kullanmayı düşünün.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="matchNotAllowedForUnionCaseWithNoData">
+        <source>Pattern discard is not allowed for union case that takes no data.</source>
+        <target state="new">Pattern discard is not allowed for union case that takes no data.</target>
         <note />
       </trans-unit>
       <trans-unit id="mlCompatError">
@@ -477,6 +497,11 @@
         <target state="new">Compress interface and optimization data files</target>
         <note />
       </trans-unit>
+      <trans-unit id="optsGetLangVersions">
+        <source>Display the allowed values for language version.</source>
+        <target state="new">Display the allowed values for language version.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--staticlink', or '--refonly' and '--refout' together.</source>
         <target state="translated">Başvuru bütünleştirilmiş kodunun oluşturulması için geçersiz kullanım: '--staticlink' veya '--refonly' ile '--refout' birlikte kullanılmaz.</target>
@@ -485,11 +510,6 @@
       <trans-unit id="optsInvalidRefOut">
         <source>Invalid reference assembly path'</source>
         <target state="translated">Geçersiz başvuru bütünleştirilmiş kodu yolu'</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="optsLangVersion">
-        <source>Display the allowed values for language version, specify language version such as 'latest' or 'preview'</source>
-        <target state="translated">Dil sürümü için izin verilen değerleri görüntüleyin, dil sürümünü 'en son' veya 'önizleme' örneklerindeki gibi belirtin</target>
         <note />
       </trans-unit>
       <trans-unit id="optsOptimizationData">
@@ -515,6 +535,11 @@
       <trans-unit id="optsReflectionFree">
         <source>Disable implicit generation of constructs using reflection</source>
         <target state="new">Disable implicit generation of constructs using reflection</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="optsSetLangVersion">
+        <source>Specify language version such as 'latest' or 'preview'.</source>
+        <target state="new">Specify language version such as 'latest' or 'preview'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSignatureData">
@@ -587,6 +612,21 @@
         <target state="translated">Tür tanımında beklenmeyen belirteç var. '{0}' türünden sonra '=' bekleniyordu.</target>
         <note />
       </trans-unit>
+      <trans-unit id="parsExpectedPatternAfterToken">
+        <source>Expected a pattern after this point</source>
+        <target state="new">Expected a pattern after this point</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingExpressionInTuple">
+        <source>Expecting expression</source>
+        <target state="translated">İfade bekleniyor</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="parsExpectingPatternInTuple">
+        <source>Expecting pattern</source>
+        <target state="new">Expecting pattern</target>
+        <note />
+      </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
         <target state="new">Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</target>
@@ -595,11 +635,6 @@
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
         <target state="new">Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="parsExpectingExpressionInTuple">
-        <source>Expecting expression</source>
-        <target state="translated">İfade bekleniyor</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -945,6 +980,11 @@
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
         <source>This expression implicitly converts type '{0}' to type '{1}'. See https://aka.ms/fsharp-implicit-convs.</source>
         <target state="translated">Bu ifade '{0}' türünü örtülü olarak '{1}' türüne dönüştürür. https://aka.ms/fsharp-implicit-convs adresine bakın.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="tcSynTypeOrInvalidInDeclaration">
+        <source>SynType.Or is not permitted in this declaration</source>
+        <target state="new">SynType.Or is not permitted in this declaration</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
@@ -1300,11 +1340,6 @@
       <trans-unit id="buildCouldNotResolveAssembly">
         <source>Could not resolve assembly '{0}'</source>
         <target state="translated">'{0}' bütünleştirilmiş kodu çözümlenemedi</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="buildCouldNotResolveAssemblyRequiredByFile">
-        <source>Could not resolve assembly '{0}' required by '{1}'</source>
-        <target state="translated">{1}' tarafından istenen '{0}' bütünleştirilmiş kodu çözümlenemedi</target>
         <note />
       </trans-unit>
       <trans-unit id="buildErrorOpeningBinaryFile">
@@ -2250,11 +2285,6 @@
       <trans-unit id="chkLimitationsOfBaseKeyword">
         <source>'base' values may only be used to make direct calls to the base implementations of overridden members</source>
         <target state="translated">'base' değerleri yalnızca geçersiz kılınmış üyelerin taban uygulamalarına doğrudan çağrı yapmak için kullanılabilir</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">Nesne oluşturucular, nesnenin başlatılmasından önce try/with ve try/finally ifadelerini doğrudan kullanamazlar. Buna bu yapıların kullanımını çeşitlendirebilen 'for x in ...' gibi yapılar da dahildir. Bu, Ortak Ara Dilin getirdiği bir kısıtlamadır.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">
@@ -3783,8 +3813,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcUnionCaseExpectsTupledArguments">
-        <source>This union case expects {0} arguments in tupled form</source>
-        <target state="translated">Bu birleşim durumu grup olarak tanımlanmış biçimde {0} bağımsız değişken bekliyor</target>
+        <source>This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</source>
+        <target state="new">This union case expects {0} arguments in tupled form, but was given {1}. The missing field arguments may be any of:{2}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcFieldIsNotStatic">
@@ -7483,8 +7513,8 @@
         <note />
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
-        <source>If a union type has more than one case and is a struct, then all fields within the union type must be given unique names.</source>
-        <target state="translated">Bir birleşim türü büyük ve küçük harfler içeriyorsa ve bir yapıysa, birleşim türü içindeki tüm alanlara benzersiz adlar verilmelidir.</target>
+        <source>If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</source>
+        <target state="needs-review-translation">Bir birleşim türü büyük ve küçük harfler içeriyorsa ve bir yapıysa, birleşim türü içindeki tüm alanlara benzersiz adlar verilmelidir.</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
@@ -7535,11 +7565,6 @@
       <trans-unit id="keywordDescriptionAbstract">
         <source>Indicates a method that either has no implementation in the type in which it is declared or that is virtual and has a default implementation.</source>
         <target state="translated">İçinde bildirildiği türde hiç uygulaması olmayan veya sanal olup varsayılan uygulaması olan bir metodu belirtir.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="keywordDescriptionAnd">
-        <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
-        <target state="translated">Karşılıklı yinelemeli bağlamalarda, özellik bildirimlerinde ve genel parametreler üzerinde birden çok kısıtlamayla kullanılır.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionAs">

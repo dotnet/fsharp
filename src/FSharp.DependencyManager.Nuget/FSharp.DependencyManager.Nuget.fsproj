@@ -48,26 +48,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
-    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessVersion)" />
-    <PackageReference Include="System.Diagnostics.TraceSource" Version="$(SystemDiagnosticsTraceSourceVersion)" />
-    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
-    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqExpressionsVersion)" />
-    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
-    <PackageReference Include="System.Net.Security" Version="$(SystemNetSecurityVersion)" />
     <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsVersion)" />
-    <PackageReference Include="System.Runtime" Version="$(SystemRuntimeVersion)" />
-    <PackageReference Include="System.Runtime.InteropServices" Version="$(SystemRuntimeInteropServicesVersion)" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
-    <PackageReference Include="System.Security.Claims" Version="$(SystemSecurityClaimsVersion)" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(SystemSecurityCryptographyAlgorithmsVersion)" />
-    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />
-    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
-    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadVersion)" />
-    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolVersion)" />
   </ItemGroup>
 
 </Project>

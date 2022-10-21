@@ -328,20 +328,21 @@ type TcFileState =
 
     /// Create a new compilation environment
     static member Create
-         (g, isScript, niceNameGen, amap, thisCcu, isSig, haveSig, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring,
+         (g, isScript, amap, thisCcu, isSig, haveSig, conditionalDefines, tcSink, tcVal, isInternalTestSpanStackReferring,
           tcPat,
           tcSimplePats,
           tcSequenceExpressionEntry,
           tcArrayOrListSequenceExpression,
           tcComputationExpression) =
 
+        let niceNameGen = NiceNameGenerator()
         let infoReader = InfoReader(g, amap)
         let instantiationGenerator m tpsorig = FreshenTypars g m tpsorig
         let nameResolver = NameResolver(g, amap, infoReader, instantiationGenerator)
         { g = g
           amap = amap
           recUses = ValMultiMap<_>.Empty
-          stackGuard = StackGuard(TcStackGuardDepth)
+          stackGuard = StackGuard(TcStackGuardDepth, "TcFileState")
           createsGeneratedProvidedTypes = false
           thisCcu = thisCcu
           isScript = isScript

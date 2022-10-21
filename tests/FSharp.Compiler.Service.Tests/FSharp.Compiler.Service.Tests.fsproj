@@ -101,6 +101,9 @@
     <Compile Include="..\service\SyntaxTreeTests\MemberFlagTests.fs">
       <Link>SyntaxTree\MemberFlagTests.fs</Link>
     </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\MemberTests.fs">
+      <Link>SyntaxTree\MemberTests.fs</Link>
+    </Compile>
     <Compile Include="..\service\SyntaxTreeTests\ComputationExpressionTests.fs">
       <Link>SyntaxTree\ComputationExpressionTests.fs</Link>
     </Compile>
@@ -112,6 +115,21 @@
     </Compile>
     <Compile Include="..\service\SyntaxTreeTests\OperatorNameTests.fs">
       <Link>SyntaxTree\OperatorNameTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\SynIdentTests.fs">
+      <Link>SyntaxTree\SynIdentTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\SynTypeTests.fs">
+      <Link>SyntaxTree\SynTypeTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\AttributeTests.fs">
+      <Link>SyntaxTree\AttributeTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\ExternTests.fs">
+      <Link>SyntaxTree\ExternTests.fs</Link>
+    </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\LeadingKeywordTests.fs">
+      <Link>SyntaxTree\LeadingKeywordTests.fs</Link>
     </Compile>
     <Compile Include="..\service\FileSystemTests.fs">
       <Link>FileSystemTests.fs</Link>
@@ -174,6 +192,8 @@
 
   <ItemGroup>
     <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
+    <!-- Force a newer Newtonsoft.Json version to avoid conflicts. -->
+    <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
     <ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
     <ProjectReference Include="..\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />

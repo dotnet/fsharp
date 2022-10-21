@@ -405,7 +405,7 @@ type SynTypeConstraint =
     | WhereTyparSubtypeOfType of typar: SynTypar * typeName: SynType * range: range
 
     /// F# syntax is ^T: (static member MemberName: ^T * int -> ^T)
-    | WhereTyparSupportsMember of typars: SynType list * memberSig: SynMemberSig * range: range
+    | WhereTyparSupportsMember of typars: SynType * memberSig: SynMemberSig * range: range
 
     /// F# syntax is 'typar: enum<'UnderlyingType>
     | WhereTyparIsEnum of typar: SynTypar * typeArgs: SynType list * range: range
@@ -509,6 +509,17 @@ type SynType =
     | StaticConstantNamed of ident: SynType * value: SynType * range: range
 
     | Paren of innerType: SynType * range: range
+
+    /// F# syntax: a: b, used in signatures and type annotations
+    | SignatureParameter of
+        attributes: SynAttributes *
+        optional: bool *
+        id: Ident option *
+        usedType: SynType *
+        range: range
+
+    /// F# syntax: ^a or ^b, used in trait calls
+    | Or of lhsType: SynType * rhsType: SynType * range: range * trivia: SynTypeOrTrivia
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -809,7 +820,7 @@ type SynExpr =
     | AddressOf of isByref: bool * expr: SynExpr * opRange: range * range: range
 
     /// F# syntax: ((type1 or ... or typeN): (member-dig) expr)
-    | TraitCall of supportTys: SynType list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
+    | TraitCall of supportTys: SynType * traitSig: SynMemberSig * argExpr: SynExpr * range: range
 
     /// F# syntax: ... in ...
     /// Computation expressions only, based on JOIN_IN token from lex filter
@@ -1016,7 +1027,7 @@ type SynSimplePats =
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range
+    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member Patterns: SynPat list
 
@@ -1041,6 +1052,9 @@ type SynPat =
 
     /// A disjunctive pattern 'pat1 | pat2'
     | Or of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatOrTrivia
+
+    /// A conjunctive pattern 'pat1 :: pat2'
+    | ListCons of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatListConsTrivia
 
     /// A conjunctive pattern 'pat1 & pat2'
     | Ands of pats: SynPat list * range: range
@@ -1195,7 +1209,12 @@ type SynBinding =
 
 /// Represents the return information in a binding for a 'let' or 'member' declaration
 [<NoEquality; NoComparison>]
-type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
+type SynBindingReturnInfo =
+    | SynBindingReturnInfo of
+        typeName: SynType *
+        range: range *
+        attributes: SynAttributes *
+        trivia: SynBindingReturnInfoTrivia
 
 /// Represents the flags for a 'member' declaration
 [<NoComparison; RequireQualifiedAccess; CustomEquality>]
@@ -1218,9 +1237,6 @@ type SynMemberFlags =
 
         /// The kind of the member
         MemberKind: SynMemberKind
-
-        /// Additional information
-        Trivia: SynMemberFlagsTrivia
     }
 
 /// Note the member kind is actually computed partially by a syntax tree transformation in tc.fs
@@ -1415,7 +1431,8 @@ type SynField =
         isMutable: bool *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        range: range
+        range: range *
+        trivia: SynFieldTrivia
 
 /// Represents the syntax tree associated with the name of a type definition or module
 /// in signature or implementation.
@@ -1609,11 +1626,9 @@ type SynMemberDefn =
         memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
-        equalsRange: range *
         synExpr: SynExpr *
-        withKeyword: range option *
-        getSetRange: range option *
-        range: range
+        range: range *
+        trivia: SynMemberDefnAutoPropertyTrivia
 
     /// Gets the syntax range of this construct
     member Range: range
@@ -1831,10 +1846,7 @@ type ParsedSigFileFragment =
 
 /// Represents a parsed syntax tree for an F# Interactive interaction
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
-type ParsedScriptInteraction =
-    | Definitions of defns: SynModuleDecl list * range: range
-
-    | HashDirective of hashDirective: ParsedHashDirective * range: range
+type ParsedScriptInteraction = Definitions of defns: SynModuleDecl list * range: range
 
 /// Represents a parsed implementation file made up of fragments
 [<NoEquality; NoComparison>]
@@ -1874,9 +1886,27 @@ type ParsedImplFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespace list *
-        isLastCompiland: (bool * bool) *
+        contents: SynModuleOrNamespace list *
+        flags: (bool * bool) *
         trivia: ParsedImplFileInputTrivia
+
+    member FileName: string
+
+    member IsScript: bool
+
+    member QualifiedName: QualifiedNameOfFile
+
+    member ScopedPragmas: ScopedPragma list
+
+    member HashDirectives: ParsedHashDirective list
+
+    member Contents: SynModuleOrNamespace list
+
+    member Trivia: ParsedImplFileInputTrivia
+
+    member IsLastCompiland: bool
+
+    member IsExe: bool
 
 /// Represents the full syntax tree, file name and other parsing information for a signature file
 [<NoEquality; NoComparison>]
@@ -1886,8 +1916,20 @@ type ParsedSigFileInput =
         qualifiedNameOfFile: QualifiedNameOfFile *
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
-        modules: SynModuleOrNamespaceSig list *
+        contents: SynModuleOrNamespaceSig list *
         trivia: ParsedSigFileInputTrivia
+
+    member FileName: string
+
+    member QualifiedName: QualifiedNameOfFile
+
+    member ScopedPragmas: ScopedPragma list
+
+    member HashDirectives: ParsedHashDirective list
+
+    member Contents: SynModuleOrNamespaceSig list
+
+    member Trivia: ParsedSigFileInputTrivia
 
 /// Represents the syntax tree for a parsed implementation or signature file
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1903,3 +1945,9 @@ type ParsedInput =
 
     /// Gets the syntax range of this construct
     member Range: range
+
+    /// Gets the qualified name used to help match signature and implementation files
+    member QualifiedName: QualifiedNameOfFile
+
+    /// Gets the #nowarn and other scoped pragmas
+    member ScopedPragmas: ScopedPragma list

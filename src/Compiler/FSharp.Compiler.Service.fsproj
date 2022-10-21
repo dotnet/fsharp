@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project Sdk="Microsoft.NET.Sdk">
 
@@ -13,7 +13,7 @@
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
-    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);USE_SHIPPED_FSCORE</DefineConstants>
+    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
     <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
     <!-- 1182: Unused variables -->
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
@@ -56,25 +56,9 @@
     <NuspecProperty Include="MicrosoftBuildUtilitiesCorePackageVersion=$(MicrosoftBuildUtilitiesCoreVersion)" />
     <NuspecProperty Include="SystemBuffersPackageVersion=$(SystemBuffersVersion)" />
     <NuspecProperty Include="SystemCollectionsImmutablePackageVersion=$(SystemCollectionsImmutableVersion)" />
-    <NuspecProperty Include="SystemDiagnosticsProcessPackageVersion=$(SystemDiagnosticsProcessVersion)" />
-    <NuspecProperty Include="SystemDiagnosticsTraceSourcePackageVersion=$(SystemDiagnosticsTraceSourceVersion)" />
-    <NuspecProperty Include="SystemLinqExpressionsPackageVersion=$(SystemLinqExpressionsVersion)" />
-    <NuspecProperty Include="SystemLinqQueryablePackageVersion=$(SystemLinqQueryableVersion)" />
     <NuspecProperty Include="SystemMemoryPackageVersion=$(SystemMemoryVersion)" />
-    <NuspecProperty Include="SystemNetRequestsPackageVersion=$(SystemNetRequestsVersion)" />
-    <NuspecProperty Include="SystemNetSecurityPackageVersion=$(SystemNetSecurityVersion)" />
     <NuspecProperty Include="SystemReflectionEmitPackageVersion=$(SystemReflectionEmitVersion)" />
     <NuspecProperty Include="SystemReflectionMetadataPackageVersion=$(SystemReflectionMetadataVersion)" />
-    <NuspecProperty Include="SystemReflectionTypeExtensionsPackageVersion=$(SystemReflectionTypeExtensionsVersion)" />
-    <NuspecProperty Include="SystemRuntimePackageVersion=$(SystemRuntimeVersion)" />
-    <NuspecProperty Include="SystemRuntimeInteropServicesPackageVersion=$(SystemRuntimeInteropServicesVersion)" />
-    <NuspecProperty Include="SystemRuntimeLoaderPackageVersion=$(SystemRuntimeLoaderVersion)" />
-    <NuspecProperty Include="SystemSecurityClaimsPackageVersion=$(SystemSecurityClaimsVersion)" />
-    <NuspecProperty Include="SystemSecurityCryptographyAlgorithmsPackageVersion=$(SystemSecurityCryptographyAlgorithmsVersion)" />
-    <NuspecProperty Include="SystemSecurityPrincipalPackageVersion=$(SystemSecurityPrincipalVersion)" />
-    <NuspecProperty Include="SystemThreadingTasksParallelPackageVersion=$(SystemThreadingTasksParallelVersion)" />
-    <NuspecProperty Include="SystemThreadingThreadPackageVersion=$(SystemThreadingThreadVersion)" />
-    <NuspecProperty Include="SystemThreadingThreadPoolPackageVersion=$(SystemThreadingThreadPoolVersion)" />
     <NuspecProperty Include="SystemRuntimeCompilerServicesUnsafePackageVersion=$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
 
@@ -432,8 +416,8 @@
     <Compile Include="Service\ItemKey.fsi" />
     <Compile Include="Service\ItemKey.fs" />
     <Compile Include="Service\SemanticClassificationKey.fsi" />
-	  <Compile Include="Service\SemanticClassificationKey.fs" />
-	  <Compile Include="Service\FSharpSource.fsi" />
+    <Compile Include="Service\SemanticClassificationKey.fs" />
+    <Compile Include="Service\FSharpSource.fsi" />
     <Compile Include="Service\FSharpSource.fs" />
     <Compile Include="Service\IncrementalBuild.fsi" />
     <Compile Include="Service\IncrementalBuild.fs" />
@@ -501,25 +485,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Runtime.Loader" Version="$(SystemRuntimeLoaderVersion)" />
     <PackageReference Include="System.Collections.Immutable" Version="$(SystemCollectionsImmutableVersion)" />
-    <PackageReference Include="System.Diagnostics.Process" Version="$(SystemDiagnosticsProcessVersion)" />
-    <PackageReference Include="System.Diagnostics.TraceSource" Version="$(SystemDiagnosticsTraceSourceVersion)" />
-    <PackageReference Include="System.Linq.Expressions" Version="$(SystemLinqExpressionsVersion)" />
-    <PackageReference Include="System.Linq.Queryable" Version="$(SystemLinqExpressionsVersion)" />
-    <PackageReference Include="System.Net.Requests" Version="$(SystemNetRequestsVersion)" />
-    <PackageReference Include="System.Net.Security" Version="$(SystemNetSecurityVersion)" />
     <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="$(SystemReflectionTypeExtensionsVersion)" />
-    <PackageReference Include="System.Runtime" Version="$(SystemRuntimeVersion)" />
-    <PackageReference Include="System.Runtime.InteropServices" Version="$(SystemRuntimeInteropServicesVersion)" />
-    <PackageReference Include="System.Security.Claims" Version="$(SystemSecurityClaimsVersion)" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="$(SystemSecurityCryptographyAlgorithmsVersion)" />
-    <PackageReference Include="System.Security.Principal" Version="$(SystemSecurityPrincipalVersion)" />
-    <PackageReference Include="System.Threading.Tasks.Parallel" Version="$(SystemThreadingTasksParallelVersion)" />
-    <PackageReference Include="System.Threading.Thread" Version="$(SystemThreadingThreadVersion)" />
-    <PackageReference Include="System.Threading.ThreadPool" Version="$(SystemThreadingThreadPoolVersion)" />
     <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />

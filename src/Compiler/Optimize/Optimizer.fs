@@ -1575,7 +1575,7 @@ let IsKnownOnlyMutableBeforeUse (vref: ValRef) =
 
 let IsDiscardableEffectExpr expr = 
     match stripDebugPoints expr with 
-    | Expr.Op (TOp.LValueOp (LByrefGet _, _), [], [], _) -> true 
+    | Expr.Op (TOp.LValueOp (LByrefGet, _), [], [], _) -> true 
     | _ -> false
 
 /// Checks is a value binding is non-discardable
@@ -4325,7 +4325,7 @@ let OptimizeImplFile (settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncr
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
           casApplied=Dictionary<Stamp, bool>() 
-          stackGuard = StackGuard(OptimizerStackGuardDepth) 
+          stackGuard = StackGuard(OptimizerStackGuardDepth, "OptimizerStackGuardDepth") 
         }
 
     let env, _, _, _ as results = OptimizeImplFileInternal cenv optEnv isIncrementalFragment fsiMultiAssemblyEmit hidden mimpls  

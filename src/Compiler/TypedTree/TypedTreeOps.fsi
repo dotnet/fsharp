@@ -796,7 +796,12 @@ val emptyFreeLocals: FreeLocals
 
 val unionFreeLocals: FreeLocals -> FreeLocals -> FreeLocals
 
-type FreeVarOptions
+/// Represents the options to activate when collecting free variables
+[<Sealed>]
+type FreeVarOptions =
+    /// During backend code generation of state machines, register a template replacement for struct types.
+    /// This may introduce new free variables related to the instantiation of the struct type.
+    member WithTemplateReplacement: (TyconRef -> bool) * Typars -> FreeVarOptions
 
 val CollectLocalsNoCaching: FreeVarOptions
 
@@ -2560,7 +2565,7 @@ val (|DelegateInvokeExpr|_|): TcGlobals -> Expr -> (Expr * TType * Expr * Expr *
 /// Match 'if __useResumableCode then ... else ...' expressions
 val (|IfUseResumableStateMachinesExpr|_|): TcGlobals -> Expr -> (Expr * Expr) option
 
-val CombineCcuContentFragments: range -> ModuleOrNamespaceType list -> ModuleOrNamespaceType
+val CombineCcuContentFragments: ModuleOrNamespaceType list -> ModuleOrNamespaceType
 
 /// Recognise a 'match __resumableEntry() with ...' expression
 val (|ResumableEntryMatchExpr|_|): g: TcGlobals -> Expr -> (Expr * Val * Expr * (Expr * Expr -> Expr)) option

@@ -864,7 +864,7 @@ let passImplFile penv assembly =
           PreInterceptBinding = None
           PostTransform = postTransformExpr penv
           RewriteQuotations = false
-          StackGuard = StackGuard(DetupleRewriteStackGuardDepth) } 
+          StackGuard = StackGuard(DetupleRewriteStackGuardDepth, "RewriteImplFile") } 
     assembly |> RewriteImplFile rwenv
 
 //-------------------------------------------------------------------------

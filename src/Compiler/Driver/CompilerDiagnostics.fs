@@ -42,9 +42,7 @@ open FSharp.Compiler.TypedTreeBasics
 open FSharp.Compiler.TypedTreeOps
 
 #if DEBUG
-[<AutoOpen>]
-module internal CompilerService =
-    let showAssertForUnexpectedException = ref true
+let showAssertForUnexpectedException = ref true
 #endif
 
 /// This exception is an old-style way of reporting a diagnostic
@@ -77,12 +75,13 @@ exception DeprecatedCommandLineOptionNoDescription of string * range
 /// This exception is an old-style way of reporting a diagnostic
 exception InternalCommandLineOption of string * range
 
-let GetRangeOfDiagnostic (diagnostic: PhasedDiagnostic) =
-    let rec RangeFromException exn =
+type Exception with
+
+    member exn.DiagnosticRange =
         match exn with
-        | ErrorFromAddingConstraint (_, exn2, _) -> RangeFromException exn2
+        | ErrorFromAddingConstraint (_, exn2, _) -> exn2.DiagnosticRange
 #if !NO_TYPEPROVIDERS
-        | TypeProviders.ProvidedTypeResolutionNoRange exn -> RangeFromException exn
+        | TypeProviders.ProvidedTypeResolutionNoRange exn -> exn.DiagnosticRange
         | TypeProviders.ProvidedTypeResolution (m, _)
 #endif
         | ReservedKeyword (_, m)
@@ -203,17 +202,13 @@ let GetRangeOfDiagnostic (diagnostic: PhasedDiagnostic) =
         | HashLoadedSourceHasIssues (_, _, _, m)
         | HashLoadedScriptConsideredSource m -> Some m
         // Strip TargetInvocationException wrappers
-        | :? System.Reflection.TargetInvocationException as e -> RangeFromException e.InnerException
+        | :? System.Reflection.TargetInvocationException as e -> e.InnerException.DiagnosticRange
 #if !NO_TYPEPROVIDERS
         | :? TypeProviderError as e -> e.Range |> Some
 #endif
-
         | _ -> None
 
-    RangeFromException diagnostic.Exception
-
-let GetDiagnosticNumber (diagnostic: PhasedDiagnostic) =
-    let rec GetFromException (exn: exn) =
+    member exn.DiagnosticNumber =
         match exn with
         // DO NOT CHANGE THESE NUMBERS
         | ErrorFromAddingTypeEquation _ -> 1
@@ -245,6 +240,7 @@ let GetDiagnosticNumber (diagnostic: PhasedDiagnostic) =
         // 24 cannot be reused
         | PatternMatchCompilation.MatchIncomplete _ -> 25
         | PatternMatchCompilation.RuleNeverMatched _ -> 26
+
         | ValNotMutable _ -> 27
         | ValNotLocal _ -> 28
         | MissingFields _ -> 29
@@ -328,13 +324,10 @@ let GetDiagnosticNumber (diagnostic: PhasedDiagnostic) =
         | TypeProviders.ProvidedTypeResolution _ -> 103
 #endif
         | PatternMatchCompilation.EnumMatchIncomplete _ -> 104
-        // DO NOT CHANGE THE NUMBERS
 
         // Strip TargetInvocationException wrappers
-        | :? System.Reflection.TargetInvocationException as e -> GetFromException e.InnerException
-
-        | WrappedError (e, _) -> GetFromException e
-
+        | :? TargetInvocationException as e -> e.InnerException.DiagnosticNumber
+        | WrappedError (e, _) -> e.DiagnosticNumber
         | DiagnosticWithText (n, _, _) -> n
         | DiagnosticWithSuggestions (n, _, _, _, _) -> n
         | Failure _ -> 192
@@ -346,275 +339,289 @@ let GetDiagnosticNumber (diagnostic: PhasedDiagnostic) =
             fst (FSComp.SR.considerUpcast ("", ""))
         | _ -> 193
 
-    GetFromException diagnostic.Exception
+type PhasedDiagnostic with
 
-let GetWarningLevel diagnostic =
-    match diagnostic.Exception with
-    // Level 5 warnings
-    | RecursiveUseCheckedAtRuntime _
-    | LetRecEvaluatedOutOfOrder _
-    | DefensiveCopyWarning _ -> 5
+    member x.Range = x.Exception.DiagnosticRange
 
-    | DiagnosticWithText (n, _, _)
-    | DiagnosticWithSuggestions (n, _, _, _, _) ->
-        // 1178, tcNoComparisonNeeded1, "The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint..."
-        // 1178, tcNoComparisonNeeded2, "The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint...."
-        // 1178, tcNoEqualityNeeded1, "The struct, record or union type '%s' does not support structural equality because the type parameter %s does not satisfy the 'equality' constraint..."
-        // 1178, tcNoEqualityNeeded2, "The struct, record or union type '%s' does not support structural equality because the type '%s' does not satisfy the 'equality' constraint...."
-        if (n = 1178) then 5 else 2
-    // Level 2
-    | _ -> 2
+    member x.Number = x.Exception.DiagnosticNumber
 
-let IsWarningOrInfoEnabled (diagnostic, severity) n level specificWarnOn =
-    List.contains n specificWarnOn
-    ||
-    // Some specific warnings/informational are never on by default, i.e. unused variable warnings
-    match n with
-    | 1182 -> false // chkUnusedValue - off by default
-    | 3180 -> false // abImplicitHeapAllocation - off by default
-    | 3186 -> false // pickleMissingDefinition - off by default
-    | 3366 -> false //tcIndexNotationDeprecated - currently off by default
-    | 3517 -> false // optFailedToInlineSuggestedValue - off by default
-    | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default
-    | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
-    | 3390 -> false // xmlDocBadlyFormed - off by default
-    | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
-    | _ ->
-        (severity = FSharpDiagnosticSeverity.Info)
-        || (severity = FSharpDiagnosticSeverity.Warning
-            && level >= GetWarningLevel diagnostic)
+    member x.WarningLevel =
+        match x.Exception with
+        // Level 5 warnings
+        | RecursiveUseCheckedAtRuntime _
+        | LetRecEvaluatedOutOfOrder _
+        | DefensiveCopyWarning _ -> 5
 
-let SplitRelatedDiagnostics (diagnostic: PhasedDiagnostic) : PhasedDiagnostic * PhasedDiagnostic list =
-    let ToPhased exn =
-        {
-            Exception = exn
-            Phase = diagnostic.Phase
-        }
+        | DiagnosticWithText (n, _, _)
+        | DiagnosticWithSuggestions (n, _, _, _, _) ->
+            // 1178, tcNoComparisonNeeded1, "The struct, record or union type '%s' is not structurally comparable because the type parameter %s does not satisfy the 'comparison' constraint..."
+            // 1178, tcNoComparisonNeeded2, "The struct, record or union type '%s' is not structurally comparable because the type '%s' does not satisfy the 'comparison' constraint...."
+            // 1178, tcNoEqualityNeeded1, "The struct, record or union type '%s' does not support structural equality because the type parameter %s does not satisfy the 'equality' constraint..."
+            // 1178, tcNoEqualityNeeded2, "The struct, record or union type '%s' does not support structural equality because the type '%s' does not satisfy the 'equality' constraint...."
+            if (n = 1178) then 5 else 2
+        // Level 2
+        | _ -> 2
 
-    let rec SplitRelatedException exn =
-        match exn with
-        | ErrorFromAddingTypeEquation (g, denv, ty1, ty2, exn2, m) ->
-            let diag2, related = SplitRelatedException exn2
-            ErrorFromAddingTypeEquation(g, denv, ty1, ty2, diag2.Exception, m) |> ToPhased, related
-        | ErrorFromApplyingDefault (g, denv, tp, defaultType, exn2, m) ->
-            let diag2, related = SplitRelatedException exn2
+    member x.IsEnabled(severity, options) =
+        let level = options.WarnLevel
+        let specificWarnOn = options.WarnOn
+        let n = x.Number
 
-            ErrorFromApplyingDefault(g, denv, tp, defaultType, diag2.Exception, m)
-            |> ToPhased,
-            related
-        | ErrorsFromAddingSubsumptionConstraint (g, denv, ty1, ty2, exn2, contextInfo, m) ->
-            let diag2, related = SplitRelatedException exn2
+        List.contains n specificWarnOn
+        ||
+        // Some specific warnings/informational are never on by default, i.e. unused variable warnings
+        match n with
+        | 1182 -> false // chkUnusedValue - off by default
+        | 3180 -> false // abImplicitHeapAllocation - off by default
+        | 3186 -> false // pickleMissingDefinition - off by default
+        | 3366 -> false //tcIndexNotationDeprecated - currently off by default
+        | 3517 -> false // optFailedToInlineSuggestedValue - off by default
+        | 3388 -> false // tcSubsumptionImplicitConversionUsed - off by default
+        | 3389 -> false // tcBuiltInImplicitConversionUsed - off by default
+        | 3390 -> false // xmlDocBadlyFormed - off by default
+        | 3395 -> false // tcImplicitConversionUsedForMethodArg - off by default
+        | _ ->
+            (severity = FSharpDiagnosticSeverity.Info)
+            || (severity = FSharpDiagnosticSeverity.Warning && level >= x.WarningLevel)
 
-            ErrorsFromAddingSubsumptionConstraint(g, denv, ty1, ty2, diag2.Exception, contextInfo, m)
-            |> ToPhased,
-            related
-        | ErrorFromAddingConstraint (x, exn2, m) ->
-            let diag2, related = SplitRelatedException exn2
-            ErrorFromAddingConstraint(x, diag2.Exception, m) |> ToPhased, related
-        | WrappedError (exn2, m) ->
-            let diag2, related = SplitRelatedException exn2
-            WrappedError(diag2.Exception, m) |> ToPhased, related
-        // Strip TargetInvocationException wrappers
-        | :? TargetInvocationException as exn -> SplitRelatedException exn.InnerException
-        | _ -> ToPhased exn, []
+    /// Indicates if a diagnostic should be reported as an informational
+    member x.ReportAsInfo(options, severity) =
+        match severity with
+        | FSharpDiagnosticSeverity.Error -> false
+        | FSharpDiagnosticSeverity.Warning -> false
+        | FSharpDiagnosticSeverity.Info -> x.IsEnabled(severity, options) && not (List.contains x.Number options.WarnOff)
+        | FSharpDiagnosticSeverity.Hidden -> false
 
-    SplitRelatedException diagnostic.Exception
+    /// Indicates if a diagnostic should be reported as a warning
+    member x.ReportAsWarning(options, severity) =
+        match severity with
+        | FSharpDiagnosticSeverity.Error -> false
 
-let Message (name, format) = DeclareResourceString(name, format)
+        | FSharpDiagnosticSeverity.Warning -> x.IsEnabled(severity, options) && not (List.contains x.Number options.WarnOff)
 
-do FSComp.SR.RunStartupValidation()
-let SeeAlsoE () = Message("SeeAlso", "%s")
-let ConstraintSolverTupleDiffLengthsE () = Message("ConstraintSolverTupleDiffLengths", "%d%d")
-let ConstraintSolverInfiniteTypesE () = Message("ConstraintSolverInfiniteTypes", "%s%s")
-let ConstraintSolverMissingConstraintE () = Message("ConstraintSolverMissingConstraint", "%s")
-let ConstraintSolverTypesNotInEqualityRelation1E () = Message("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
-let ConstraintSolverTypesNotInEqualityRelation2E () = Message("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
-let ConstraintSolverTypesNotInSubsumptionRelationE () = Message("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
-let ErrorFromAddingTypeEquation1E () = Message("ErrorFromAddingTypeEquation1", "%s%s%s")
-let ErrorFromAddingTypeEquation2E () = Message("ErrorFromAddingTypeEquation2", "%s%s%s")
-let ErrorFromApplyingDefault1E () = Message("ErrorFromApplyingDefault1", "%s")
-let ErrorFromApplyingDefault2E () = Message("ErrorFromApplyingDefault2", "")
-let ErrorsFromAddingSubsumptionConstraintE () = Message("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
-let UpperCaseIdentifierInPatternE () = Message("UpperCaseIdentifierInPattern", "")
-let NotUpperCaseConstructorE () = Message("NotUpperCaseConstructor", "")
-let NotUpperCaseConstructorWithoutRQAE () = Message("NotUpperCaseConstructorWithoutRQA", "")
-let FunctionExpectedE () = Message("FunctionExpected", "")
-let BakedInMemberConstraintNameE () = Message("BakedInMemberConstraintName", "%s")
-let BadEventTransformationE () = Message("BadEventTransformation", "")
-let ParameterlessStructCtorE () = Message("ParameterlessStructCtor", "")
-let InterfaceNotRevealedE () = Message("InterfaceNotRevealed", "%s")
-let TyconBadArgsE () = Message("TyconBadArgs", "%s%d%d")
-let IndeterminateTypeE () = Message("IndeterminateType", "")
-let NameClash1E () = Message("NameClash1", "%s%s")
-let NameClash2E () = Message("NameClash2", "%s%s%s%s%s")
-let Duplicate1E () = Message("Duplicate1", "%s")
-let Duplicate2E () = Message("Duplicate2", "%s%s")
-let UndefinedName2E () = Message("UndefinedName2", "")
-let FieldNotMutableE () = Message("FieldNotMutable", "")
-let FieldsFromDifferentTypesE () = Message("FieldsFromDifferentTypes", "%s%s")
-let VarBoundTwiceE () = Message("VarBoundTwice", "%s")
-let RecursionE () = Message("Recursion", "%s%s%s%s")
-let InvalidRuntimeCoercionE () = Message("InvalidRuntimeCoercion", "%s%s%s")
-let IndeterminateRuntimeCoercionE () = Message("IndeterminateRuntimeCoercion", "%s%s")
-let IndeterminateStaticCoercionE () = Message("IndeterminateStaticCoercion", "%s%s")
-let StaticCoercionShouldUseBoxE () = Message("StaticCoercionShouldUseBox", "%s%s")
-let TypeIsImplicitlyAbstractE () = Message("TypeIsImplicitlyAbstract", "")
-let NonRigidTypar1E () = Message("NonRigidTypar1", "%s%s")
-let NonRigidTypar2E () = Message("NonRigidTypar2", "%s%s")
-let NonRigidTypar3E () = Message("NonRigidTypar3", "%s%s")
-let OBlockEndSentenceE () = Message("BlockEndSentence", "")
-let UnexpectedEndOfInputE () = Message("UnexpectedEndOfInput", "")
-let UnexpectedE () = Message("Unexpected", "%s")
-let NONTERM_interactionE () = Message("NONTERM.interaction", "")
-let NONTERM_hashDirectiveE () = Message("NONTERM.hashDirective", "")
-let NONTERM_fieldDeclE () = Message("NONTERM.fieldDecl", "")
-let NONTERM_unionCaseReprE () = Message("NONTERM.unionCaseRepr", "")
-let NONTERM_localBindingE () = Message("NONTERM.localBinding", "")
-let NONTERM_hardwhiteLetBindingsE () = Message("NONTERM.hardwhiteLetBindings", "")
-let NONTERM_classDefnMemberE () = Message("NONTERM.classDefnMember", "")
-let NONTERM_defnBindingsE () = Message("NONTERM.defnBindings", "")
-let NONTERM_classMemberSpfnE () = Message("NONTERM.classMemberSpfn", "")
-let NONTERM_valSpfnE () = Message("NONTERM.valSpfn", "")
-let NONTERM_tyconSpfnE () = Message("NONTERM.tyconSpfn", "")
-let NONTERM_anonLambdaExprE () = Message("NONTERM.anonLambdaExpr", "")
-let NONTERM_attrUnionCaseDeclE () = Message("NONTERM.attrUnionCaseDecl", "")
-let NONTERM_cPrototypeE () = Message("NONTERM.cPrototype", "")
-let NONTERM_objectImplementationMembersE () = Message("NONTERM.objectImplementationMembers", "")
-let NONTERM_ifExprCasesE () = Message("NONTERM.ifExprCases", "")
-let NONTERM_openDeclE () = Message("NONTERM.openDecl", "")
-let NONTERM_fileModuleSpecE () = Message("NONTERM.fileModuleSpec", "")
-let NONTERM_patternClausesE () = Message("NONTERM.patternClauses", "")
-let NONTERM_beginEndExprE () = Message("NONTERM.beginEndExpr", "")
-let NONTERM_recdExprE () = Message("NONTERM.recdExpr", "")
-let NONTERM_tyconDefnE () = Message("NONTERM.tyconDefn", "")
-let NONTERM_exconCoreE () = Message("NONTERM.exconCore", "")
-let NONTERM_typeNameInfoE () = Message("NONTERM.typeNameInfo", "")
-let NONTERM_attributeListE () = Message("NONTERM.attributeList", "")
-let NONTERM_quoteExprE () = Message("NONTERM.quoteExpr", "")
-let NONTERM_typeConstraintE () = Message("NONTERM.typeConstraint", "")
-let NONTERM_Category_ImplementationFileE () = Message("NONTERM.Category.ImplementationFile", "")
-let NONTERM_Category_DefinitionE () = Message("NONTERM.Category.Definition", "")
-let NONTERM_Category_SignatureFileE () = Message("NONTERM.Category.SignatureFile", "")
-let NONTERM_Category_PatternE () = Message("NONTERM.Category.Pattern", "")
-let NONTERM_Category_ExprE () = Message("NONTERM.Category.Expr", "")
-let NONTERM_Category_TypeE () = Message("NONTERM.Category.Type", "")
-let NONTERM_typeArgsActualE () = Message("NONTERM.typeArgsActual", "")
-let TokenName1E () = Message("TokenName1", "%s")
-let TokenName1TokenName2E () = Message("TokenName1TokenName2", "%s%s")
-let TokenName1TokenName2TokenName3E () = Message("TokenName1TokenName2TokenName3", "%s%s%s")
-let RuntimeCoercionSourceSealed1E () = Message("RuntimeCoercionSourceSealed1", "%s")
-let RuntimeCoercionSourceSealed2E () = Message("RuntimeCoercionSourceSealed2", "%s")
-let CoercionTargetSealedE () = Message("CoercionTargetSealed", "%s")
-let UpcastUnnecessaryE () = Message("UpcastUnnecessary", "")
-let TypeTestUnnecessaryE () = Message("TypeTestUnnecessary", "")
-let OverrideDoesntOverride1E () = Message("OverrideDoesntOverride1", "%s")
-let OverrideDoesntOverride2E () = Message("OverrideDoesntOverride2", "%s")
-let OverrideDoesntOverride3E () = Message("OverrideDoesntOverride3", "%s")
-let OverrideDoesntOverride4E () = Message("OverrideDoesntOverride4", "%s")
-let UnionCaseWrongArgumentsE () = Message("UnionCaseWrongArguments", "%d%d")
-let UnionPatternsBindDifferentNamesE () = Message("UnionPatternsBindDifferentNames", "")
-let RequiredButNotSpecifiedE () = Message("RequiredButNotSpecified", "%s%s%s")
-let UseOfAddressOfOperatorE () = Message("UseOfAddressOfOperator", "")
-let DefensiveCopyWarningE () = Message("DefensiveCopyWarning", "%s")
-let DeprecatedThreadStaticBindingWarningE () = Message("DeprecatedThreadStaticBindingWarning", "")
-let FunctionValueUnexpectedE () = Message("FunctionValueUnexpected", "%s")
-let UnitTypeExpectedE () = Message("UnitTypeExpected", "%s")
-let UnitTypeExpectedWithEqualityE () = Message("UnitTypeExpectedWithEquality", "%s")
-let UnitTypeExpectedWithPossiblePropertySetterE () = Message("UnitTypeExpectedWithPossiblePropertySetter", "%s%s%s")
-let UnitTypeExpectedWithPossibleAssignmentE () = Message("UnitTypeExpectedWithPossibleAssignment", "%s%s")
-let UnitTypeExpectedWithPossibleAssignmentToMutableE () = Message("UnitTypeExpectedWithPossibleAssignmentToMutable", "%s%s")
-let RecursiveUseCheckedAtRuntimeE () = Message("RecursiveUseCheckedAtRuntime", "")
-let LetRecUnsound1E () = Message("LetRecUnsound1", "%s")
-let LetRecUnsound2E () = Message("LetRecUnsound2", "%s%s")
-let LetRecUnsoundInnerE () = Message("LetRecUnsoundInner", "%s")
-let LetRecEvaluatedOutOfOrderE () = Message("LetRecEvaluatedOutOfOrder", "")
-let LetRecCheckedAtRuntimeE () = Message("LetRecCheckedAtRuntime", "")
-let SelfRefObjCtor1E () = Message("SelfRefObjCtor1", "")
-let SelfRefObjCtor2E () = Message("SelfRefObjCtor2", "")
-let VirtualAugmentationOnNullValuedTypeE () = Message("VirtualAugmentationOnNullValuedType", "")
-let NonVirtualAugmentationOnNullValuedTypeE () = Message("NonVirtualAugmentationOnNullValuedType", "")
-let NonUniqueInferredAbstractSlot1E () = Message("NonUniqueInferredAbstractSlot1", "%s")
-let NonUniqueInferredAbstractSlot2E () = Message("NonUniqueInferredAbstractSlot2", "")
-let NonUniqueInferredAbstractSlot3E () = Message("NonUniqueInferredAbstractSlot3", "%s%s")
-let NonUniqueInferredAbstractSlot4E () = Message("NonUniqueInferredAbstractSlot4", "")
-let Failure3E () = Message("Failure3", "%s")
-let Failure4E () = Message("Failure4", "%s")
-let MatchIncomplete1E () = Message("MatchIncomplete1", "")
-let MatchIncomplete2E () = Message("MatchIncomplete2", "%s")
-let MatchIncomplete3E () = Message("MatchIncomplete3", "%s")
-let MatchIncomplete4E () = Message("MatchIncomplete4", "")
-let RuleNeverMatchedE () = Message("RuleNeverMatched", "")
-let EnumMatchIncomplete1E () = Message("EnumMatchIncomplete1", "")
-let ValNotMutableE () = Message("ValNotMutable", "%s")
-let ValNotLocalE () = Message("ValNotLocal", "")
-let Obsolete1E () = Message("Obsolete1", "")
-let Obsolete2E () = Message("Obsolete2", "%s")
-let ExperimentalE () = Message("Experimental", "%s")
-let PossibleUnverifiableCodeE () = Message("PossibleUnverifiableCode", "")
-let DeprecatedE () = Message("Deprecated", "%s")
-let LibraryUseOnlyE () = Message("LibraryUseOnly", "")
-let MissingFieldsE () = Message("MissingFields", "%s")
-let ValueRestriction1E () = Message("ValueRestriction1", "%s%s%s")
-let ValueRestriction2E () = Message("ValueRestriction2", "%s%s%s")
-let ValueRestriction3E () = Message("ValueRestriction3", "%s")
-let ValueRestriction4E () = Message("ValueRestriction4", "%s%s%s")
-let ValueRestriction5E () = Message("ValueRestriction5", "%s%s%s")
-let RecoverableParseErrorE () = Message("RecoverableParseError", "")
-let ReservedKeywordE () = Message("ReservedKeyword", "%s")
-let IndentationProblemE () = Message("IndentationProblem", "%s")
-let OverrideInIntrinsicAugmentationE () = Message("OverrideInIntrinsicAugmentation", "")
-let OverrideInExtrinsicAugmentationE () = Message("OverrideInExtrinsicAugmentation", "")
-let IntfImplInIntrinsicAugmentationE () = Message("IntfImplInIntrinsicAugmentation", "")
-let IntfImplInExtrinsicAugmentationE () = Message("IntfImplInExtrinsicAugmentation", "")
-let UnresolvedReferenceNoRangeE () = Message("UnresolvedReferenceNoRange", "%s")
-let UnresolvedPathReferenceNoRangeE () = Message("UnresolvedPathReferenceNoRange", "%s%s")
-let HashIncludeNotAllowedInNonScriptE () = Message("HashIncludeNotAllowedInNonScript", "")
-let HashReferenceNotAllowedInNonScriptE () = Message("HashReferenceNotAllowedInNonScript", "")
-let HashDirectiveNotAllowedInNonScriptE () = Message("HashDirectiveNotAllowedInNonScript", "")
-let FileNameNotResolvedE () = Message("FileNameNotResolved", "%s%s")
-let AssemblyNotResolvedE () = Message("AssemblyNotResolved", "%s")
-let HashLoadedSourceHasIssues0E () = Message("HashLoadedSourceHasIssues0", "")
-let HashLoadedSourceHasIssues1E () = Message("HashLoadedSourceHasIssues1", "")
-let HashLoadedSourceHasIssues2E () = Message("HashLoadedSourceHasIssues2", "")
-let HashLoadedScriptConsideredSourceE () = Message("HashLoadedScriptConsideredSource", "")
-let InvalidInternalsVisibleToAssemblyName1E () = Message("InvalidInternalsVisibleToAssemblyName1", "%s%s")
-let InvalidInternalsVisibleToAssemblyName2E () = Message("InvalidInternalsVisibleToAssemblyName2", "%s")
-let LoadedSourceNotFoundIgnoringE () = Message("LoadedSourceNotFoundIgnoring", "%s")
-let MSBuildReferenceResolutionErrorE () = Message("MSBuildReferenceResolutionError", "%s%s")
-let TargetInvocationExceptionWrapperE () = Message("TargetInvocationExceptionWrapper", "%s")
+        // Informational become warning if explicitly on and not explicitly off
+        | FSharpDiagnosticSeverity.Info ->
+            let n = x.Number
+            List.contains n options.WarnOn && not (List.contains n options.WarnOff)
+
+        | FSharpDiagnosticSeverity.Hidden -> false
+
+    /// Indicates if a diagnostic should be reported as an error
+    member x.ReportAsError(options, severity) =
+
+        match severity with
+        | FSharpDiagnosticSeverity.Error -> true
+
+        // Warnings become errors in some situations
+        | FSharpDiagnosticSeverity.Warning ->
+            let n = x.Number
+
+            x.IsEnabled(severity, options)
+            && not (List.contains n options.WarnAsWarn)
+            && ((options.GlobalWarnAsError && not (List.contains n options.WarnOff))
+                || List.contains n options.WarnAsError)
+
+        // Informational become errors if explicitly WarnAsError
+        | FSharpDiagnosticSeverity.Info -> List.contains x.Number options.WarnAsError
+
+        | FSharpDiagnosticSeverity.Hidden -> false
+
+[<AutoOpen>]
+module OldStyleMessages =
+    let Message (name, format) = DeclareResourceString(name, format)
+
+    do FSComp.SR.RunStartupValidation()
+    let SeeAlsoE () = Message("SeeAlso", "%s")
+    let ConstraintSolverTupleDiffLengthsE () = Message("ConstraintSolverTupleDiffLengths", "%d%d")
+    let ConstraintSolverInfiniteTypesE () = Message("ConstraintSolverInfiniteTypes", "%s%s")
+    let ConstraintSolverMissingConstraintE () = Message("ConstraintSolverMissingConstraint", "%s")
+    let ConstraintSolverTypesNotInEqualityRelation1E () = Message("ConstraintSolverTypesNotInEqualityRelation1", "%s%s")
+    let ConstraintSolverTypesNotInEqualityRelation2E () = Message("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
+    let ConstraintSolverTypesNotInSubsumptionRelationE () = Message("ConstraintSolverTypesNotInSubsumptionRelation", "%s%s%s")
+    let ErrorFromAddingTypeEquation1E () = Message("ErrorFromAddingTypeEquation1", "%s%s%s")
+    let ErrorFromAddingTypeEquation2E () = Message("ErrorFromAddingTypeEquation2", "%s%s%s")
+    let ErrorFromAddingTypeEquationTuplesE () = Message("ErrorFromAddingTypeEquationTuples", "%d%s%d%s%s")
+    let ErrorFromApplyingDefault1E () = Message("ErrorFromApplyingDefault1", "%s")
+    let ErrorFromApplyingDefault2E () = Message("ErrorFromApplyingDefault2", "")
+    let ErrorsFromAddingSubsumptionConstraintE () = Message("ErrorsFromAddingSubsumptionConstraint", "%s%s%s")
+    let UpperCaseIdentifierInPatternE () = Message("UpperCaseIdentifierInPattern", "")
+    let NotUpperCaseConstructorE () = Message("NotUpperCaseConstructor", "")
+    let NotUpperCaseConstructorWithoutRQAE () = Message("NotUpperCaseConstructorWithoutRQA", "")
+    let FunctionExpectedE () = Message("FunctionExpected", "")
+    let BakedInMemberConstraintNameE () = Message("BakedInMemberConstraintName", "%s")
+    let BadEventTransformationE () = Message("BadEventTransformation", "")
+    let ParameterlessStructCtorE () = Message("ParameterlessStructCtor", "")
+    let InterfaceNotRevealedE () = Message("InterfaceNotRevealed", "%s")
+    let TyconBadArgsE () = Message("TyconBadArgs", "%s%d%d")
+    let IndeterminateTypeE () = Message("IndeterminateType", "")
+    let NameClash1E () = Message("NameClash1", "%s%s")
+    let NameClash2E () = Message("NameClash2", "%s%s%s%s%s")
+    let Duplicate1E () = Message("Duplicate1", "%s")
+    let Duplicate2E () = Message("Duplicate2", "%s%s")
+    let UndefinedName2E () = Message("UndefinedName2", "")
+    let FieldNotMutableE () = Message("FieldNotMutable", "")
+    let FieldsFromDifferentTypesE () = Message("FieldsFromDifferentTypes", "%s%s")
+    let VarBoundTwiceE () = Message("VarBoundTwice", "%s")
+    let RecursionE () = Message("Recursion", "%s%s%s%s")
+    let InvalidRuntimeCoercionE () = Message("InvalidRuntimeCoercion", "%s%s%s")
+    let IndeterminateRuntimeCoercionE () = Message("IndeterminateRuntimeCoercion", "%s%s")
+    let IndeterminateStaticCoercionE () = Message("IndeterminateStaticCoercion", "%s%s")
+    let StaticCoercionShouldUseBoxE () = Message("StaticCoercionShouldUseBox", "%s%s")
+    let TypeIsImplicitlyAbstractE () = Message("TypeIsImplicitlyAbstract", "")
+    let NonRigidTypar1E () = Message("NonRigidTypar1", "%s%s")
+    let NonRigidTypar2E () = Message("NonRigidTypar2", "%s%s")
+    let NonRigidTypar3E () = Message("NonRigidTypar3", "%s%s")
+    let OBlockEndSentenceE () = Message("BlockEndSentence", "")
+    let UnexpectedEndOfInputE () = Message("UnexpectedEndOfInput", "")
+    let UnexpectedE () = Message("Unexpected", "%s")
+    let NONTERM_interactionE () = Message("NONTERM.interaction", "")
+    let NONTERM_hashDirectiveE () = Message("NONTERM.hashDirective", "")
+    let NONTERM_fieldDeclE () = Message("NONTERM.fieldDecl", "")
+    let NONTERM_unionCaseReprE () = Message("NONTERM.unionCaseRepr", "")
+    let NONTERM_localBindingE () = Message("NONTERM.localBinding", "")
+    let NONTERM_hardwhiteLetBindingsE () = Message("NONTERM.hardwhiteLetBindings", "")
+    let NONTERM_classDefnMemberE () = Message("NONTERM.classDefnMember", "")
+    let NONTERM_defnBindingsE () = Message("NONTERM.defnBindings", "")
+    let NONTERM_classMemberSpfnE () = Message("NONTERM.classMemberSpfn", "")
+    let NONTERM_valSpfnE () = Message("NONTERM.valSpfn", "")
+    let NONTERM_tyconSpfnE () = Message("NONTERM.tyconSpfn", "")
+    let NONTERM_anonLambdaExprE () = Message("NONTERM.anonLambdaExpr", "")
+    let NONTERM_attrUnionCaseDeclE () = Message("NONTERM.attrUnionCaseDecl", "")
+    let NONTERM_cPrototypeE () = Message("NONTERM.cPrototype", "")
+    let NONTERM_objectImplementationMembersE () = Message("NONTERM.objectImplementationMembers", "")
+    let NONTERM_ifExprCasesE () = Message("NONTERM.ifExprCases", "")
+    let NONTERM_openDeclE () = Message("NONTERM.openDecl", "")
+    let NONTERM_fileModuleSpecE () = Message("NONTERM.fileModuleSpec", "")
+    let NONTERM_patternClausesE () = Message("NONTERM.patternClauses", "")
+    let NONTERM_beginEndExprE () = Message("NONTERM.beginEndExpr", "")
+    let NONTERM_recdExprE () = Message("NONTERM.recdExpr", "")
+    let NONTERM_tyconDefnE () = Message("NONTERM.tyconDefn", "")
+    let NONTERM_exconCoreE () = Message("NONTERM.exconCore", "")
+    let NONTERM_typeNameInfoE () = Message("NONTERM.typeNameInfo", "")
+    let NONTERM_attributeListE () = Message("NONTERM.attributeList", "")
+    let NONTERM_quoteExprE () = Message("NONTERM.quoteExpr", "")
+    let NONTERM_typeConstraintE () = Message("NONTERM.typeConstraint", "")
+    let NONTERM_Category_ImplementationFileE () = Message("NONTERM.Category.ImplementationFile", "")
+    let NONTERM_Category_DefinitionE () = Message("NONTERM.Category.Definition", "")
+    let NONTERM_Category_SignatureFileE () = Message("NONTERM.Category.SignatureFile", "")
+    let NONTERM_Category_PatternE () = Message("NONTERM.Category.Pattern", "")
+    let NONTERM_Category_ExprE () = Message("NONTERM.Category.Expr", "")
+    let NONTERM_Category_TypeE () = Message("NONTERM.Category.Type", "")
+    let NONTERM_typeArgsActualE () = Message("NONTERM.typeArgsActual", "")
+    let TokenName1E () = Message("TokenName1", "%s")
+    let TokenName1TokenName2E () = Message("TokenName1TokenName2", "%s%s")
+    let TokenName1TokenName2TokenName3E () = Message("TokenName1TokenName2TokenName3", "%s%s%s")
+    let RuntimeCoercionSourceSealed1E () = Message("RuntimeCoercionSourceSealed1", "%s")
+    let RuntimeCoercionSourceSealed2E () = Message("RuntimeCoercionSourceSealed2", "%s")
+    let CoercionTargetSealedE () = Message("CoercionTargetSealed", "%s")
+    let UpcastUnnecessaryE () = Message("UpcastUnnecessary", "")
+    let TypeTestUnnecessaryE () = Message("TypeTestUnnecessary", "")
+    let OverrideDoesntOverride1E () = Message("OverrideDoesntOverride1", "%s")
+    let OverrideDoesntOverride2E () = Message("OverrideDoesntOverride2", "%s")
+    let OverrideDoesntOverride3E () = Message("OverrideDoesntOverride3", "%s")
+    let OverrideDoesntOverride4E () = Message("OverrideDoesntOverride4", "%s")
+    let UnionCaseWrongArgumentsE () = Message("UnionCaseWrongArguments", "%d%d")
+    let UnionPatternsBindDifferentNamesE () = Message("UnionPatternsBindDifferentNames", "")
+    let RequiredButNotSpecifiedE () = Message("RequiredButNotSpecified", "%s%s%s")
+    let UseOfAddressOfOperatorE () = Message("UseOfAddressOfOperator", "")
+    let DefensiveCopyWarningE () = Message("DefensiveCopyWarning", "%s")
+    let DeprecatedThreadStaticBindingWarningE () = Message("DeprecatedThreadStaticBindingWarning", "")
+    let FunctionValueUnexpectedE () = Message("FunctionValueUnexpected", "%s")
+    let UnitTypeExpectedE () = Message("UnitTypeExpected", "%s")
+    let UnitTypeExpectedWithEqualityE () = Message("UnitTypeExpectedWithEquality", "%s")
+    let UnitTypeExpectedWithPossiblePropertySetterE () = Message("UnitTypeExpectedWithPossiblePropertySetter", "%s%s%s")
+    let UnitTypeExpectedWithPossibleAssignmentE () = Message("UnitTypeExpectedWithPossibleAssignment", "%s%s")
+    let UnitTypeExpectedWithPossibleAssignmentToMutableE () = Message("UnitTypeExpectedWithPossibleAssignmentToMutable", "%s%s")
+    let RecursiveUseCheckedAtRuntimeE () = Message("RecursiveUseCheckedAtRuntime", "")
+    let LetRecUnsound1E () = Message("LetRecUnsound1", "%s")
+    let LetRecUnsound2E () = Message("LetRecUnsound2", "%s%s")
+    let LetRecUnsoundInnerE () = Message("LetRecUnsoundInner", "%s")
+    let LetRecEvaluatedOutOfOrderE () = Message("LetRecEvaluatedOutOfOrder", "")
+    let LetRecCheckedAtRuntimeE () = Message("LetRecCheckedAtRuntime", "")
+    let SelfRefObjCtor1E () = Message("SelfRefObjCtor1", "")
+    let SelfRefObjCtor2E () = Message("SelfRefObjCtor2", "")
+    let VirtualAugmentationOnNullValuedTypeE () = Message("VirtualAugmentationOnNullValuedType", "")
+    let NonVirtualAugmentationOnNullValuedTypeE () = Message("NonVirtualAugmentationOnNullValuedType", "")
+    let NonUniqueInferredAbstractSlot1E () = Message("NonUniqueInferredAbstractSlot1", "%s")
+    let NonUniqueInferredAbstractSlot2E () = Message("NonUniqueInferredAbstractSlot2", "")
+    let NonUniqueInferredAbstractSlot3E () = Message("NonUniqueInferredAbstractSlot3", "%s%s")
+    let NonUniqueInferredAbstractSlot4E () = Message("NonUniqueInferredAbstractSlot4", "")
+    let Failure3E () = Message("Failure3", "%s")
+    let Failure4E () = Message("Failure4", "%s")
+    let MatchIncomplete1E () = Message("MatchIncomplete1", "")
+    let MatchIncomplete2E () = Message("MatchIncomplete2", "%s")
+    let MatchIncomplete3E () = Message("MatchIncomplete3", "%s")
+    let MatchIncomplete4E () = Message("MatchIncomplete4", "")
+    let RuleNeverMatchedE () = Message("RuleNeverMatched", "")
+    let EnumMatchIncomplete1E () = Message("EnumMatchIncomplete1", "")
+    let ValNotMutableE () = Message("ValNotMutable", "%s")
+    let ValNotLocalE () = Message("ValNotLocal", "")
+    let Obsolete1E () = Message("Obsolete1", "")
+    let Obsolete2E () = Message("Obsolete2", "%s")
+    let ExperimentalE () = Message("Experimental", "%s")
+    let PossibleUnverifiableCodeE () = Message("PossibleUnverifiableCode", "")
+    let DeprecatedE () = Message("Deprecated", "%s")
+    let LibraryUseOnlyE () = Message("LibraryUseOnly", "")
+    let MissingFieldsE () = Message("MissingFields", "%s")
+    let ValueRestriction1E () = Message("ValueRestriction1", "%s%s%s")
+    let ValueRestriction2E () = Message("ValueRestriction2", "%s%s%s")
+    let ValueRestriction3E () = Message("ValueRestriction3", "%s")
+    let ValueRestriction4E () = Message("ValueRestriction4", "%s%s%s")
+    let ValueRestriction5E () = Message("ValueRestriction5", "%s%s%s")
+    let RecoverableParseErrorE () = Message("RecoverableParseError", "")
+    let ReservedKeywordE () = Message("ReservedKeyword", "%s")
+    let IndentationProblemE () = Message("IndentationProblem", "%s")
+    let OverrideInIntrinsicAugmentationE () = Message("OverrideInIntrinsicAugmentation", "")
+    let OverrideInExtrinsicAugmentationE () = Message("OverrideInExtrinsicAugmentation", "")
+    let IntfImplInIntrinsicAugmentationE () = Message("IntfImplInIntrinsicAugmentation", "")
+    let IntfImplInExtrinsicAugmentationE () = Message("IntfImplInExtrinsicAugmentation", "")
+    let UnresolvedReferenceNoRangeE () = Message("UnresolvedReferenceNoRange", "%s")
+    let UnresolvedPathReferenceNoRangeE () = Message("UnresolvedPathReferenceNoRange", "%s%s")
+    let HashIncludeNotAllowedInNonScriptE () = Message("HashIncludeNotAllowedInNonScript", "")
+    let HashReferenceNotAllowedInNonScriptE () = Message("HashReferenceNotAllowedInNonScript", "")
+    let HashDirectiveNotAllowedInNonScriptE () = Message("HashDirectiveNotAllowedInNonScript", "")
+    let FileNameNotResolvedE () = Message("FileNameNotResolved", "%s%s")
+    let AssemblyNotResolvedE () = Message("AssemblyNotResolved", "%s")
+    let HashLoadedSourceHasIssues0E () = Message("HashLoadedSourceHasIssues0", "")
+    let HashLoadedSourceHasIssues1E () = Message("HashLoadedSourceHasIssues1", "")
+    let HashLoadedSourceHasIssues2E () = Message("HashLoadedSourceHasIssues2", "")
+    let HashLoadedScriptConsideredSourceE () = Message("HashLoadedScriptConsideredSource", "")
+    let InvalidInternalsVisibleToAssemblyName1E () = Message("InvalidInternalsVisibleToAssemblyName1", "%s%s")
+    let InvalidInternalsVisibleToAssemblyName2E () = Message("InvalidInternalsVisibleToAssemblyName2", "%s")
+    let LoadedSourceNotFoundIgnoringE () = Message("LoadedSourceNotFoundIgnoring", "%s")
+    let MSBuildReferenceResolutionErrorE () = Message("MSBuildReferenceResolutionError", "%s%s")
+    let TargetInvocationExceptionWrapperE () = Message("TargetInvocationExceptionWrapper", "%s")
 
 #if DEBUG
 let mutable showParserStackOnParseError = false
 #endif
-
-let getErrorString key = SR.GetString key
 
 let (|InvalidArgument|_|) (exn: exn) =
     match exn with
     | :? ArgumentException as e -> Some e.Message
     | _ -> None
 
-let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSuggestNames: bool) =
+let OutputNameSuggestions (os: StringBuilder) suggestNames suggestionsF idText =
+    if suggestNames then
+        let buffer = DiagnosticResolutionHints.SuggestionBuffer idText
 
-    let suggestNames suggestionsF idText =
-        if canSuggestNames then
-            let buffer = DiagnosticResolutionHints.SuggestionBuffer idText
+        if not buffer.Disabled then
+            suggestionsF buffer.Add
 
-            if not buffer.Disabled then
-                suggestionsF buffer.Add
+            if not buffer.IsEmpty then
+                os.AppendString " "
+                os.AppendString(FSComp.SR.undefinedNameSuggestionsIntro ())
 
-                if not buffer.IsEmpty then
-                    os.AppendString " "
-                    os.AppendString(FSComp.SR.undefinedNameSuggestionsIntro ())
+                for value in buffer do
+                    os.AppendLine() |> ignore
+                    os.AppendString "   "
+                    os.AppendString(ConvertValLogicalNameToDisplayNameCore value)
 
-                    for value in buffer do
-                        os.AppendLine() |> ignore
-                        os.AppendString "   "
-                        os.AppendString(ConvertValLogicalNameToDisplayNameCore value)
+type Exception with
 
-    let rec OutputExceptionR (os: StringBuilder) error =
+    member exn.Output(os: StringBuilder, suggestNames) =
 
-        match error with
+        match exn with
         | ConstraintSolverTupleDiffLengths (_, tl1, tl2, m, m2) ->
             os.AppendString(ConstraintSolverTupleDiffLengthsE().Format tl1.Length tl2.Length)
 
@@ -725,15 +732,17 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
              | ContextInfo.NoContext -> false
              | _ -> true)
             ->
-            OutputExceptionR os e
+            e.Output(os, suggestNames)
 
-        | ErrorFromAddingTypeEquation (_,
-                                       _,
-                                       _,
-                                       _,
-                                       (ConstraintSolverTypesNotInSubsumptionRelation _
-                                       | ConstraintSolverError _ as e),
-                                       _) -> OutputExceptionR os e
+        | ErrorFromAddingTypeEquation(error = ConstraintSolverTypesNotInSubsumptionRelation _ as e) -> e.Output(os, suggestNames)
+
+        | ErrorFromAddingTypeEquation(error = ConstraintSolverError _ as e) -> e.Output(os, suggestNames)
+
+        | ErrorFromAddingTypeEquation (_g, denv, ty1, ty2, ConstraintSolverTupleDiffLengths (_, tl1, tl2, _, _), _) ->
+            let ty1, ty2, tpcs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
+
+            if ty1 <> ty2 + tpcs then
+                os.AppendString(ErrorFromAddingTypeEquationTuplesE().Format tl1.Length ty1 tl2.Length ty2 tpcs)
 
         | ErrorFromAddingTypeEquation (g, denv, ty1, ty2, e, _) ->
             if not (typeEquiv g ty1 ty2) then
@@ -742,12 +751,12 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
                 if ty1 <> ty2 + tpcs then
                     os.AppendString(ErrorFromAddingTypeEquation2E().Format ty1 ty2 tpcs)
 
-            OutputExceptionR os e
+            e.Output(os, suggestNames)
 
         | ErrorFromApplyingDefault (_, denv, _, defaultType, e, _) ->
             let defaultType = NicePrint.minimalStringOfType denv defaultType
             os.AppendString(ErrorFromApplyingDefault1E().Format defaultType)
-            OutputExceptionR os e
+            e.Output(os, suggestNames)
             os.AppendString(ErrorFromApplyingDefault2E().Format)
 
         | ErrorsFromAddingSubsumptionConstraint (g, denv, ty1, ty2, e, contextInfo, _) ->
@@ -766,9 +775,9 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
                     if ty1 <> (ty2 + tpcs) then
                         os.AppendString(ErrorsFromAddingSubsumptionConstraintE().Format ty2 ty1 tpcs)
                     else
-                        OutputExceptionR os e
+                        e.Output(os, suggestNames)
                 else
-                    OutputExceptionR os e
+                    e.Output(os, suggestNames)
 
         | UpperCaseIdentifierInPattern _ -> os.AppendString(UpperCaseIdentifierInPatternE().Format)
 
@@ -776,12 +785,12 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | NotUpperCaseConstructorWithoutRQA _ -> os.AppendString(NotUpperCaseConstructorWithoutRQAE().Format)
 
-        | ErrorFromAddingConstraint (_, e, _) -> OutputExceptionR os e
+        | ErrorFromAddingConstraint (_, e, _) -> e.Output(os, suggestNames)
 
 #if !NO_TYPEPROVIDERS
         | TypeProviders.ProvidedTypeResolutionNoRange e
 
-        | TypeProviders.ProvidedTypeResolution (_, e) -> OutputExceptionR os e
+        | TypeProviders.ProvidedTypeResolution (_, e) -> e.Output(os, suggestNames)
 
         | :? TypeProviderError as e -> os.AppendString(e.ContextualErrorMessage)
 #endif
@@ -944,7 +953,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | UndefinedName (_, k, id, suggestionsF) ->
             os.AppendString(k (ConvertValLogicalNameToDisplayNameCore id.idText))
-            suggestNames suggestionsF id.idText
+            OutputNameSuggestions os suggestNames suggestionsF id.idText
 
         | InternalUndefinedItemRef (f, smr, ccuName, s) ->
             let _, errs = f (smr, ccuName, s)
@@ -1008,7 +1017,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
             let tokenIdToText tid =
                 match tid with
-                | Parser.TOKEN_IDENT -> getErrorString ("Parser.TOKEN.IDENT")
+                | Parser.TOKEN_IDENT -> SR.GetString("Parser.TOKEN.IDENT")
                 | Parser.TOKEN_BIGNUM
                 | Parser.TOKEN_INT8
                 | Parser.TOKEN_UINT8
@@ -1019,191 +1028,191 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
                 | Parser.TOKEN_INT64
                 | Parser.TOKEN_UINT64
                 | Parser.TOKEN_UNATIVEINT
-                | Parser.TOKEN_NATIVEINT -> getErrorString ("Parser.TOKEN.INT")
+                | Parser.TOKEN_NATIVEINT -> SR.GetString("Parser.TOKEN.INT")
                 | Parser.TOKEN_IEEE32
-                | Parser.TOKEN_IEEE64 -> getErrorString ("Parser.TOKEN.FLOAT")
-                | Parser.TOKEN_DECIMAL -> getErrorString ("Parser.TOKEN.DECIMAL")
-                | Parser.TOKEN_CHAR -> getErrorString ("Parser.TOKEN.CHAR")
+                | Parser.TOKEN_IEEE64 -> SR.GetString("Parser.TOKEN.FLOAT")
+                | Parser.TOKEN_DECIMAL -> SR.GetString("Parser.TOKEN.DECIMAL")
+                | Parser.TOKEN_CHAR -> SR.GetString("Parser.TOKEN.CHAR")
 
-                | Parser.TOKEN_BASE -> getErrorString ("Parser.TOKEN.BASE")
-                | Parser.TOKEN_LPAREN_STAR_RPAREN -> getErrorString ("Parser.TOKEN.LPAREN.STAR.RPAREN")
-                | Parser.TOKEN_DOLLAR -> getErrorString ("Parser.TOKEN.DOLLAR")
-                | Parser.TOKEN_INFIX_STAR_STAR_OP -> getErrorString ("Parser.TOKEN.INFIX.STAR.STAR.OP")
-                | Parser.TOKEN_INFIX_COMPARE_OP -> getErrorString ("Parser.TOKEN.INFIX.COMPARE.OP")
-                | Parser.TOKEN_COLON_GREATER -> getErrorString ("Parser.TOKEN.COLON.GREATER")
-                | Parser.TOKEN_COLON_COLON -> getErrorString ("Parser.TOKEN.COLON.COLON")
-                | Parser.TOKEN_PERCENT_OP -> getErrorString ("Parser.TOKEN.PERCENT.OP")
-                | Parser.TOKEN_INFIX_AT_HAT_OP -> getErrorString ("Parser.TOKEN.INFIX.AT.HAT.OP")
-                | Parser.TOKEN_INFIX_BAR_OP -> getErrorString ("Parser.TOKEN.INFIX.BAR.OP")
-                | Parser.TOKEN_PLUS_MINUS_OP -> getErrorString ("Parser.TOKEN.PLUS.MINUS.OP")
-                | Parser.TOKEN_PREFIX_OP -> getErrorString ("Parser.TOKEN.PREFIX.OP")
-                | Parser.TOKEN_COLON_QMARK_GREATER -> getErrorString ("Parser.TOKEN.COLON.QMARK.GREATER")
-                | Parser.TOKEN_INFIX_STAR_DIV_MOD_OP -> getErrorString ("Parser.TOKEN.INFIX.STAR.DIV.MOD.OP")
-                | Parser.TOKEN_INFIX_AMP_OP -> getErrorString ("Parser.TOKEN.INFIX.AMP.OP")
-                | Parser.TOKEN_AMP -> getErrorString ("Parser.TOKEN.AMP")
-                | Parser.TOKEN_AMP_AMP -> getErrorString ("Parser.TOKEN.AMP.AMP")
-                | Parser.TOKEN_BAR_BAR -> getErrorString ("Parser.TOKEN.BAR.BAR")
-                | Parser.TOKEN_LESS -> getErrorString ("Parser.TOKEN.LESS")
-                | Parser.TOKEN_GREATER -> getErrorString ("Parser.TOKEN.GREATER")
-                | Parser.TOKEN_QMARK -> getErrorString ("Parser.TOKEN.QMARK")
-                | Parser.TOKEN_QMARK_QMARK -> getErrorString ("Parser.TOKEN.QMARK.QMARK")
-                | Parser.TOKEN_COLON_QMARK -> getErrorString ("Parser.TOKEN.COLON.QMARK")
-                | Parser.TOKEN_INT32_DOT_DOT -> getErrorString ("Parser.TOKEN.INT32.DOT.DOT")
-                | Parser.TOKEN_DOT_DOT -> getErrorString ("Parser.TOKEN.DOT.DOT")
-                | Parser.TOKEN_DOT_DOT_HAT -> getErrorString ("Parser.TOKEN.DOT.DOT")
-                | Parser.TOKEN_QUOTE -> getErrorString ("Parser.TOKEN.QUOTE")
-                | Parser.TOKEN_STAR -> getErrorString ("Parser.TOKEN.STAR")
-                | Parser.TOKEN_HIGH_PRECEDENCE_TYAPP -> getErrorString ("Parser.TOKEN.HIGH.PRECEDENCE.TYAPP")
-                | Parser.TOKEN_COLON -> getErrorString ("Parser.TOKEN.COLON")
-                | Parser.TOKEN_COLON_EQUALS -> getErrorString ("Parser.TOKEN.COLON.EQUALS")
-                | Parser.TOKEN_LARROW -> getErrorString ("Parser.TOKEN.LARROW")
-                | Parser.TOKEN_EQUALS -> getErrorString ("Parser.TOKEN.EQUALS")
-                | Parser.TOKEN_GREATER_BAR_RBRACK -> getErrorString ("Parser.TOKEN.GREATER.BAR.RBRACK")
-                | Parser.TOKEN_MINUS -> getErrorString ("Parser.TOKEN.MINUS")
-                | Parser.TOKEN_ADJACENT_PREFIX_OP -> getErrorString ("Parser.TOKEN.ADJACENT.PREFIX.OP")
-                | Parser.TOKEN_FUNKY_OPERATOR_NAME -> getErrorString ("Parser.TOKEN.FUNKY.OPERATOR.NAME")
-                | Parser.TOKEN_COMMA -> getErrorString ("Parser.TOKEN.COMMA")
-                | Parser.TOKEN_DOT -> getErrorString ("Parser.TOKEN.DOT")
-                | Parser.TOKEN_BAR -> getErrorString ("Parser.TOKEN.BAR")
-                | Parser.TOKEN_HASH -> getErrorString ("Parser.TOKEN.HASH")
-                | Parser.TOKEN_UNDERSCORE -> getErrorString ("Parser.TOKEN.UNDERSCORE")
-                | Parser.TOKEN_SEMICOLON -> getErrorString ("Parser.TOKEN.SEMICOLON")
-                | Parser.TOKEN_SEMICOLON_SEMICOLON -> getErrorString ("Parser.TOKEN.SEMICOLON.SEMICOLON")
-                | Parser.TOKEN_LPAREN -> getErrorString ("Parser.TOKEN.LPAREN")
+                | Parser.TOKEN_BASE -> SR.GetString("Parser.TOKEN.BASE")
+                | Parser.TOKEN_LPAREN_STAR_RPAREN -> SR.GetString("Parser.TOKEN.LPAREN.STAR.RPAREN")
+                | Parser.TOKEN_DOLLAR -> SR.GetString("Parser.TOKEN.DOLLAR")
+                | Parser.TOKEN_INFIX_STAR_STAR_OP -> SR.GetString("Parser.TOKEN.INFIX.STAR.STAR.OP")
+                | Parser.TOKEN_INFIX_COMPARE_OP -> SR.GetString("Parser.TOKEN.INFIX.COMPARE.OP")
+                | Parser.TOKEN_COLON_GREATER -> SR.GetString("Parser.TOKEN.COLON.GREATER")
+                | Parser.TOKEN_COLON_COLON -> SR.GetString("Parser.TOKEN.COLON.COLON")
+                | Parser.TOKEN_PERCENT_OP -> SR.GetString("Parser.TOKEN.PERCENT.OP")
+                | Parser.TOKEN_INFIX_AT_HAT_OP -> SR.GetString("Parser.TOKEN.INFIX.AT.HAT.OP")
+                | Parser.TOKEN_INFIX_BAR_OP -> SR.GetString("Parser.TOKEN.INFIX.BAR.OP")
+                | Parser.TOKEN_PLUS_MINUS_OP -> SR.GetString("Parser.TOKEN.PLUS.MINUS.OP")
+                | Parser.TOKEN_PREFIX_OP -> SR.GetString("Parser.TOKEN.PREFIX.OP")
+                | Parser.TOKEN_COLON_QMARK_GREATER -> SR.GetString("Parser.TOKEN.COLON.QMARK.GREATER")
+                | Parser.TOKEN_INFIX_STAR_DIV_MOD_OP -> SR.GetString("Parser.TOKEN.INFIX.STAR.DIV.MOD.OP")
+                | Parser.TOKEN_INFIX_AMP_OP -> SR.GetString("Parser.TOKEN.INFIX.AMP.OP")
+                | Parser.TOKEN_AMP -> SR.GetString("Parser.TOKEN.AMP")
+                | Parser.TOKEN_AMP_AMP -> SR.GetString("Parser.TOKEN.AMP.AMP")
+                | Parser.TOKEN_BAR_BAR -> SR.GetString("Parser.TOKEN.BAR.BAR")
+                | Parser.TOKEN_LESS -> SR.GetString("Parser.TOKEN.LESS")
+                | Parser.TOKEN_GREATER -> SR.GetString("Parser.TOKEN.GREATER")
+                | Parser.TOKEN_QMARK -> SR.GetString("Parser.TOKEN.QMARK")
+                | Parser.TOKEN_QMARK_QMARK -> SR.GetString("Parser.TOKEN.QMARK.QMARK")
+                | Parser.TOKEN_COLON_QMARK -> SR.GetString("Parser.TOKEN.COLON.QMARK")
+                | Parser.TOKEN_INT32_DOT_DOT -> SR.GetString("Parser.TOKEN.INT32.DOT.DOT")
+                | Parser.TOKEN_DOT_DOT -> SR.GetString("Parser.TOKEN.DOT.DOT")
+                | Parser.TOKEN_DOT_DOT_HAT -> SR.GetString("Parser.TOKEN.DOT.DOT")
+                | Parser.TOKEN_QUOTE -> SR.GetString("Parser.TOKEN.QUOTE")
+                | Parser.TOKEN_STAR -> SR.GetString("Parser.TOKEN.STAR")
+                | Parser.TOKEN_HIGH_PRECEDENCE_TYAPP -> SR.GetString("Parser.TOKEN.HIGH.PRECEDENCE.TYAPP")
+                | Parser.TOKEN_COLON -> SR.GetString("Parser.TOKEN.COLON")
+                | Parser.TOKEN_COLON_EQUALS -> SR.GetString("Parser.TOKEN.COLON.EQUALS")
+                | Parser.TOKEN_LARROW -> SR.GetString("Parser.TOKEN.LARROW")
+                | Parser.TOKEN_EQUALS -> SR.GetString("Parser.TOKEN.EQUALS")
+                | Parser.TOKEN_GREATER_BAR_RBRACK -> SR.GetString("Parser.TOKEN.GREATER.BAR.RBRACK")
+                | Parser.TOKEN_MINUS -> SR.GetString("Parser.TOKEN.MINUS")
+                | Parser.TOKEN_ADJACENT_PREFIX_OP -> SR.GetString("Parser.TOKEN.ADJACENT.PREFIX.OP")
+                | Parser.TOKEN_FUNKY_OPERATOR_NAME -> SR.GetString("Parser.TOKEN.FUNKY.OPERATOR.NAME")
+                | Parser.TOKEN_COMMA -> SR.GetString("Parser.TOKEN.COMMA")
+                | Parser.TOKEN_DOT -> SR.GetString("Parser.TOKEN.DOT")
+                | Parser.TOKEN_BAR -> SR.GetString("Parser.TOKEN.BAR")
+                | Parser.TOKEN_HASH -> SR.GetString("Parser.TOKEN.HASH")
+                | Parser.TOKEN_UNDERSCORE -> SR.GetString("Parser.TOKEN.UNDERSCORE")
+                | Parser.TOKEN_SEMICOLON -> SR.GetString("Parser.TOKEN.SEMICOLON")
+                | Parser.TOKEN_SEMICOLON_SEMICOLON -> SR.GetString("Parser.TOKEN.SEMICOLON.SEMICOLON")
+                | Parser.TOKEN_LPAREN -> SR.GetString("Parser.TOKEN.LPAREN")
                 | Parser.TOKEN_RPAREN
                 | Parser.TOKEN_RPAREN_COMING_SOON
-                | Parser.TOKEN_RPAREN_IS_HERE -> getErrorString ("Parser.TOKEN.RPAREN")
-                | Parser.TOKEN_LQUOTE -> getErrorString ("Parser.TOKEN.LQUOTE")
-                | Parser.TOKEN_LBRACK -> getErrorString ("Parser.TOKEN.LBRACK")
-                | Parser.TOKEN_LBRACE_BAR -> getErrorString ("Parser.TOKEN.LBRACE.BAR")
-                | Parser.TOKEN_LBRACK_BAR -> getErrorString ("Parser.TOKEN.LBRACK.BAR")
-                | Parser.TOKEN_LBRACK_LESS -> getErrorString ("Parser.TOKEN.LBRACK.LESS")
-                | Parser.TOKEN_LBRACE -> getErrorString ("Parser.TOKEN.LBRACE")
-                | Parser.TOKEN_BAR_RBRACK -> getErrorString ("Parser.TOKEN.BAR.RBRACK")
-                | Parser.TOKEN_BAR_RBRACE -> getErrorString ("Parser.TOKEN.BAR.RBRACE")
-                | Parser.TOKEN_GREATER_RBRACK -> getErrorString ("Parser.TOKEN.GREATER.RBRACK")
-                | Parser.TOKEN_RQUOTE_DOT _
-                | Parser.TOKEN_RQUOTE -> getErrorString ("Parser.TOKEN.RQUOTE")
-                | Parser.TOKEN_RBRACK -> getErrorString ("Parser.TOKEN.RBRACK")
+                | Parser.TOKEN_RPAREN_IS_HERE -> SR.GetString("Parser.TOKEN.RPAREN")
+                | Parser.TOKEN_LQUOTE -> SR.GetString("Parser.TOKEN.LQUOTE")
+                | Parser.TOKEN_LBRACK -> SR.GetString("Parser.TOKEN.LBRACK")
+                | Parser.TOKEN_LBRACE_BAR -> SR.GetString("Parser.TOKEN.LBRACE.BAR")
+                | Parser.TOKEN_LBRACK_BAR -> SR.GetString("Parser.TOKEN.LBRACK.BAR")
+                | Parser.TOKEN_LBRACK_LESS -> SR.GetString("Parser.TOKEN.LBRACK.LESS")
+                | Parser.TOKEN_LBRACE -> SR.GetString("Parser.TOKEN.LBRACE")
+                | Parser.TOKEN_BAR_RBRACK -> SR.GetString("Parser.TOKEN.BAR.RBRACK")
+                | Parser.TOKEN_BAR_RBRACE -> SR.GetString("Parser.TOKEN.BAR.RBRACE")
+                | Parser.TOKEN_GREATER_RBRACK -> SR.GetString("Parser.TOKEN.GREATER.RBRACK")
+                | Parser.TOKEN_RQUOTE_DOT
+                | Parser.TOKEN_RQUOTE -> SR.GetString("Parser.TOKEN.RQUOTE")
+                | Parser.TOKEN_RBRACK -> SR.GetString("Parser.TOKEN.RBRACK")
                 | Parser.TOKEN_RBRACE
                 | Parser.TOKEN_RBRACE_COMING_SOON
-                | Parser.TOKEN_RBRACE_IS_HERE -> getErrorString ("Parser.TOKEN.RBRACE")
-                | Parser.TOKEN_PUBLIC -> getErrorString ("Parser.TOKEN.PUBLIC")
-                | Parser.TOKEN_PRIVATE -> getErrorString ("Parser.TOKEN.PRIVATE")
-                | Parser.TOKEN_INTERNAL -> getErrorString ("Parser.TOKEN.INTERNAL")
-                | Parser.TOKEN_CONSTRAINT -> getErrorString ("Parser.TOKEN.CONSTRAINT")
-                | Parser.TOKEN_INSTANCE -> getErrorString ("Parser.TOKEN.INSTANCE")
-                | Parser.TOKEN_DELEGATE -> getErrorString ("Parser.TOKEN.DELEGATE")
-                | Parser.TOKEN_INHERIT -> getErrorString ("Parser.TOKEN.INHERIT")
-                | Parser.TOKEN_CONSTRUCTOR -> getErrorString ("Parser.TOKEN.CONSTRUCTOR")
-                | Parser.TOKEN_DEFAULT -> getErrorString ("Parser.TOKEN.DEFAULT")
-                | Parser.TOKEN_OVERRIDE -> getErrorString ("Parser.TOKEN.OVERRIDE")
-                | Parser.TOKEN_ABSTRACT -> getErrorString ("Parser.TOKEN.ABSTRACT")
-                | Parser.TOKEN_CLASS -> getErrorString ("Parser.TOKEN.CLASS")
-                | Parser.TOKEN_MEMBER -> getErrorString ("Parser.TOKEN.MEMBER")
-                | Parser.TOKEN_STATIC -> getErrorString ("Parser.TOKEN.STATIC")
-                | Parser.TOKEN_NAMESPACE -> getErrorString ("Parser.TOKEN.NAMESPACE")
-                | Parser.TOKEN_OBLOCKBEGIN -> getErrorString ("Parser.TOKEN.OBLOCKBEGIN")
-                | EndOfStructuredConstructToken -> getErrorString ("Parser.TOKEN.OBLOCKEND")
+                | Parser.TOKEN_RBRACE_IS_HERE -> SR.GetString("Parser.TOKEN.RBRACE")
+                | Parser.TOKEN_PUBLIC -> SR.GetString("Parser.TOKEN.PUBLIC")
+                | Parser.TOKEN_PRIVATE -> SR.GetString("Parser.TOKEN.PRIVATE")
+                | Parser.TOKEN_INTERNAL -> SR.GetString("Parser.TOKEN.INTERNAL")
+                | Parser.TOKEN_CONSTRAINT -> SR.GetString("Parser.TOKEN.CONSTRAINT")
+                | Parser.TOKEN_INSTANCE -> SR.GetString("Parser.TOKEN.INSTANCE")
+                | Parser.TOKEN_DELEGATE -> SR.GetString("Parser.TOKEN.DELEGATE")
+                | Parser.TOKEN_INHERIT -> SR.GetString("Parser.TOKEN.INHERIT")
+                | Parser.TOKEN_CONSTRUCTOR -> SR.GetString("Parser.TOKEN.CONSTRUCTOR")
+                | Parser.TOKEN_DEFAULT -> SR.GetString("Parser.TOKEN.DEFAULT")
+                | Parser.TOKEN_OVERRIDE -> SR.GetString("Parser.TOKEN.OVERRIDE")
+                | Parser.TOKEN_ABSTRACT -> SR.GetString("Parser.TOKEN.ABSTRACT")
+                | Parser.TOKEN_CLASS -> SR.GetString("Parser.TOKEN.CLASS")
+                | Parser.TOKEN_MEMBER -> SR.GetString("Parser.TOKEN.MEMBER")
+                | Parser.TOKEN_STATIC -> SR.GetString("Parser.TOKEN.STATIC")
+                | Parser.TOKEN_NAMESPACE -> SR.GetString("Parser.TOKEN.NAMESPACE")
+                | Parser.TOKEN_OBLOCKBEGIN -> SR.GetString("Parser.TOKEN.OBLOCKBEGIN")
+                | EndOfStructuredConstructToken -> SR.GetString("Parser.TOKEN.OBLOCKEND")
                 | Parser.TOKEN_THEN
-                | Parser.TOKEN_OTHEN -> getErrorString ("Parser.TOKEN.OTHEN")
+                | Parser.TOKEN_OTHEN -> SR.GetString("Parser.TOKEN.OTHEN")
                 | Parser.TOKEN_ELSE
-                | Parser.TOKEN_OELSE -> getErrorString ("Parser.TOKEN.OELSE")
-                | Parser.TOKEN_LET _
-                | Parser.TOKEN_OLET _ -> getErrorString ("Parser.TOKEN.OLET")
+                | Parser.TOKEN_OELSE -> SR.GetString("Parser.TOKEN.OELSE")
+                | Parser.TOKEN_LET
+                | Parser.TOKEN_OLET -> SR.GetString("Parser.TOKEN.OLET")
                 | Parser.TOKEN_OBINDER
-                | Parser.TOKEN_BINDER -> getErrorString ("Parser.TOKEN.BINDER")
+                | Parser.TOKEN_BINDER -> SR.GetString("Parser.TOKEN.BINDER")
                 | Parser.TOKEN_OAND_BANG
-                | Parser.TOKEN_AND_BANG -> getErrorString ("Parser.TOKEN.AND.BANG")
-                | Parser.TOKEN_ODO -> getErrorString ("Parser.TOKEN.ODO")
-                | Parser.TOKEN_OWITH -> getErrorString ("Parser.TOKEN.OWITH")
-                | Parser.TOKEN_OFUNCTION -> getErrorString ("Parser.TOKEN.OFUNCTION")
-                | Parser.TOKEN_OFUN -> getErrorString ("Parser.TOKEN.OFUN")
-                | Parser.TOKEN_ORESET -> getErrorString ("Parser.TOKEN.ORESET")
-                | Parser.TOKEN_ODUMMY -> getErrorString ("Parser.TOKEN.ODUMMY")
+                | Parser.TOKEN_AND_BANG -> SR.GetString("Parser.TOKEN.AND.BANG")
+                | Parser.TOKEN_ODO -> SR.GetString("Parser.TOKEN.ODO")
+                | Parser.TOKEN_OWITH -> SR.GetString("Parser.TOKEN.OWITH")
+                | Parser.TOKEN_OFUNCTION -> SR.GetString("Parser.TOKEN.OFUNCTION")
+                | Parser.TOKEN_OFUN -> SR.GetString("Parser.TOKEN.OFUN")
+                | Parser.TOKEN_ORESET -> SR.GetString("Parser.TOKEN.ORESET")
+                | Parser.TOKEN_ODUMMY -> SR.GetString("Parser.TOKEN.ODUMMY")
                 | Parser.TOKEN_DO_BANG
-                | Parser.TOKEN_ODO_BANG -> getErrorString ("Parser.TOKEN.ODO.BANG")
-                | Parser.TOKEN_YIELD -> getErrorString ("Parser.TOKEN.YIELD")
-                | Parser.TOKEN_YIELD_BANG -> getErrorString ("Parser.TOKEN.YIELD.BANG")
-                | Parser.TOKEN_OINTERFACE_MEMBER -> getErrorString ("Parser.TOKEN.OINTERFACE.MEMBER")
-                | Parser.TOKEN_ELIF -> getErrorString ("Parser.TOKEN.ELIF")
-                | Parser.TOKEN_RARROW -> getErrorString ("Parser.TOKEN.RARROW")
-                | Parser.TOKEN_SIG -> getErrorString ("Parser.TOKEN.SIG")
-                | Parser.TOKEN_STRUCT -> getErrorString ("Parser.TOKEN.STRUCT")
-                | Parser.TOKEN_UPCAST -> getErrorString ("Parser.TOKEN.UPCAST")
-                | Parser.TOKEN_DOWNCAST -> getErrorString ("Parser.TOKEN.DOWNCAST")
-                | Parser.TOKEN_NULL -> getErrorString ("Parser.TOKEN.NULL")
-                | Parser.TOKEN_RESERVED -> getErrorString ("Parser.TOKEN.RESERVED")
+                | Parser.TOKEN_ODO_BANG -> SR.GetString("Parser.TOKEN.ODO.BANG")
+                | Parser.TOKEN_YIELD -> SR.GetString("Parser.TOKEN.YIELD")
+                | Parser.TOKEN_YIELD_BANG -> SR.GetString("Parser.TOKEN.YIELD.BANG")
+                | Parser.TOKEN_OINTERFACE_MEMBER -> SR.GetString("Parser.TOKEN.OINTERFACE.MEMBER")
+                | Parser.TOKEN_ELIF -> SR.GetString("Parser.TOKEN.ELIF")
+                | Parser.TOKEN_RARROW -> SR.GetString("Parser.TOKEN.RARROW")
+                | Parser.TOKEN_SIG -> SR.GetString("Parser.TOKEN.SIG")
+                | Parser.TOKEN_STRUCT -> SR.GetString("Parser.TOKEN.STRUCT")
+                | Parser.TOKEN_UPCAST -> SR.GetString("Parser.TOKEN.UPCAST")
+                | Parser.TOKEN_DOWNCAST -> SR.GetString("Parser.TOKEN.DOWNCAST")
+                | Parser.TOKEN_NULL -> SR.GetString("Parser.TOKEN.NULL")
+                | Parser.TOKEN_RESERVED -> SR.GetString("Parser.TOKEN.RESERVED")
                 | Parser.TOKEN_MODULE
                 | Parser.TOKEN_MODULE_COMING_SOON
-                | Parser.TOKEN_MODULE_IS_HERE -> getErrorString ("Parser.TOKEN.MODULE")
-                | Parser.TOKEN_AND -> getErrorString ("Parser.TOKEN.AND")
-                | Parser.TOKEN_AS -> getErrorString ("Parser.TOKEN.AS")
-                | Parser.TOKEN_ASSERT -> getErrorString ("Parser.TOKEN.ASSERT")
-                | Parser.TOKEN_OASSERT -> getErrorString ("Parser.TOKEN.ASSERT")
-                | Parser.TOKEN_ASR -> getErrorString ("Parser.TOKEN.ASR")
-                | Parser.TOKEN_DOWNTO -> getErrorString ("Parser.TOKEN.DOWNTO")
-                | Parser.TOKEN_EXCEPTION -> getErrorString ("Parser.TOKEN.EXCEPTION")
-                | Parser.TOKEN_FALSE -> getErrorString ("Parser.TOKEN.FALSE")
-                | Parser.TOKEN_FOR -> getErrorString ("Parser.TOKEN.FOR")
-                | Parser.TOKEN_FUN -> getErrorString ("Parser.TOKEN.FUN")
-                | Parser.TOKEN_FUNCTION -> getErrorString ("Parser.TOKEN.FUNCTION")
-                | Parser.TOKEN_FINALLY -> getErrorString ("Parser.TOKEN.FINALLY")
-                | Parser.TOKEN_LAZY -> getErrorString ("Parser.TOKEN.LAZY")
-                | Parser.TOKEN_OLAZY -> getErrorString ("Parser.TOKEN.LAZY")
-                | Parser.TOKEN_MATCH -> getErrorString ("Parser.TOKEN.MATCH")
-                | Parser.TOKEN_MATCH_BANG -> getErrorString ("Parser.TOKEN.MATCH.BANG")
-                | Parser.TOKEN_MUTABLE -> getErrorString ("Parser.TOKEN.MUTABLE")
-                | Parser.TOKEN_NEW -> getErrorString ("Parser.TOKEN.NEW")
-                | Parser.TOKEN_OF -> getErrorString ("Parser.TOKEN.OF")
-                | Parser.TOKEN_OPEN -> getErrorString ("Parser.TOKEN.OPEN")
-                | Parser.TOKEN_OR -> getErrorString ("Parser.TOKEN.OR")
-                | Parser.TOKEN_VOID -> getErrorString ("Parser.TOKEN.VOID")
-                | Parser.TOKEN_EXTERN -> getErrorString ("Parser.TOKEN.EXTERN")
-                | Parser.TOKEN_INTERFACE -> getErrorString ("Parser.TOKEN.INTERFACE")
-                | Parser.TOKEN_REC -> getErrorString ("Parser.TOKEN.REC")
-                | Parser.TOKEN_TO -> getErrorString ("Parser.TOKEN.TO")
-                | Parser.TOKEN_TRUE -> getErrorString ("Parser.TOKEN.TRUE")
-                | Parser.TOKEN_TRY -> getErrorString ("Parser.TOKEN.TRY")
+                | Parser.TOKEN_MODULE_IS_HERE -> SR.GetString("Parser.TOKEN.MODULE")
+                | Parser.TOKEN_AND -> SR.GetString("Parser.TOKEN.AND")
+                | Parser.TOKEN_AS -> SR.GetString("Parser.TOKEN.AS")
+                | Parser.TOKEN_ASSERT -> SR.GetString("Parser.TOKEN.ASSERT")
+                | Parser.TOKEN_OASSERT -> SR.GetString("Parser.TOKEN.ASSERT")
+                | Parser.TOKEN_ASR -> SR.GetString("Parser.TOKEN.ASR")
+                | Parser.TOKEN_DOWNTO -> SR.GetString("Parser.TOKEN.DOWNTO")
+                | Parser.TOKEN_EXCEPTION -> SR.GetString("Parser.TOKEN.EXCEPTION")
+                | Parser.TOKEN_FALSE -> SR.GetString("Parser.TOKEN.FALSE")
+                | Parser.TOKEN_FOR -> SR.GetString("Parser.TOKEN.FOR")
+                | Parser.TOKEN_FUN -> SR.GetString("Parser.TOKEN.FUN")
+                | Parser.TOKEN_FUNCTION -> SR.GetString("Parser.TOKEN.FUNCTION")
+                | Parser.TOKEN_FINALLY -> SR.GetString("Parser.TOKEN.FINALLY")
+                | Parser.TOKEN_LAZY -> SR.GetString("Parser.TOKEN.LAZY")
+                | Parser.TOKEN_OLAZY -> SR.GetString("Parser.TOKEN.LAZY")
+                | Parser.TOKEN_MATCH -> SR.GetString("Parser.TOKEN.MATCH")
+                | Parser.TOKEN_MATCH_BANG -> SR.GetString("Parser.TOKEN.MATCH.BANG")
+                | Parser.TOKEN_MUTABLE -> SR.GetString("Parser.TOKEN.MUTABLE")
+                | Parser.TOKEN_NEW -> SR.GetString("Parser.TOKEN.NEW")
+                | Parser.TOKEN_OF -> SR.GetString("Parser.TOKEN.OF")
+                | Parser.TOKEN_OPEN -> SR.GetString("Parser.TOKEN.OPEN")
+                | Parser.TOKEN_OR -> SR.GetString("Parser.TOKEN.OR")
+                | Parser.TOKEN_VOID -> SR.GetString("Parser.TOKEN.VOID")
+                | Parser.TOKEN_EXTERN -> SR.GetString("Parser.TOKEN.EXTERN")
+                | Parser.TOKEN_INTERFACE -> SR.GetString("Parser.TOKEN.INTERFACE")
+                | Parser.TOKEN_REC -> SR.GetString("Parser.TOKEN.REC")
+                | Parser.TOKEN_TO -> SR.GetString("Parser.TOKEN.TO")
+                | Parser.TOKEN_TRUE -> SR.GetString("Parser.TOKEN.TRUE")
+                | Parser.TOKEN_TRY -> SR.GetString("Parser.TOKEN.TRY")
                 | Parser.TOKEN_TYPE
                 | Parser.TOKEN_TYPE_COMING_SOON
-                | Parser.TOKEN_TYPE_IS_HERE -> getErrorString ("Parser.TOKEN.TYPE")
-                | Parser.TOKEN_VAL -> getErrorString ("Parser.TOKEN.VAL")
-                | Parser.TOKEN_INLINE -> getErrorString ("Parser.TOKEN.INLINE")
-                | Parser.TOKEN_WHEN -> getErrorString ("Parser.TOKEN.WHEN")
-                | Parser.TOKEN_WHILE -> getErrorString ("Parser.TOKEN.WHILE")
-                | Parser.TOKEN_WITH -> getErrorString ("Parser.TOKEN.WITH")
-                | Parser.TOKEN_IF -> getErrorString ("Parser.TOKEN.IF")
-                | Parser.TOKEN_DO -> getErrorString ("Parser.TOKEN.DO")
-                | Parser.TOKEN_GLOBAL -> getErrorString ("Parser.TOKEN.GLOBAL")
-                | Parser.TOKEN_DONE -> getErrorString ("Parser.TOKEN.DONE")
+                | Parser.TOKEN_TYPE_IS_HERE -> SR.GetString("Parser.TOKEN.TYPE")
+                | Parser.TOKEN_VAL -> SR.GetString("Parser.TOKEN.VAL")
+                | Parser.TOKEN_INLINE -> SR.GetString("Parser.TOKEN.INLINE")
+                | Parser.TOKEN_WHEN -> SR.GetString("Parser.TOKEN.WHEN")
+                | Parser.TOKEN_WHILE -> SR.GetString("Parser.TOKEN.WHILE")
+                | Parser.TOKEN_WITH -> SR.GetString("Parser.TOKEN.WITH")
+                | Parser.TOKEN_IF -> SR.GetString("Parser.TOKEN.IF")
+                | Parser.TOKEN_DO -> SR.GetString("Parser.TOKEN.DO")
+                | Parser.TOKEN_GLOBAL -> SR.GetString("Parser.TOKEN.GLOBAL")
+                | Parser.TOKEN_DONE -> SR.GetString("Parser.TOKEN.DONE")
                 | Parser.TOKEN_IN
-                | Parser.TOKEN_JOIN_IN -> getErrorString ("Parser.TOKEN.IN")
-                | Parser.TOKEN_HIGH_PRECEDENCE_PAREN_APP -> getErrorString ("Parser.TOKEN.HIGH.PRECEDENCE.PAREN.APP")
-                | Parser.TOKEN_HIGH_PRECEDENCE_BRACK_APP -> getErrorString ("Parser.TOKEN.HIGH.PRECEDENCE.BRACK.APP")
-                | Parser.TOKEN_BEGIN -> getErrorString ("Parser.TOKEN.BEGIN")
-                | Parser.TOKEN_END -> getErrorString ("Parser.TOKEN.END")
+                | Parser.TOKEN_JOIN_IN -> SR.GetString("Parser.TOKEN.IN")
+                | Parser.TOKEN_HIGH_PRECEDENCE_PAREN_APP -> SR.GetString("Parser.TOKEN.HIGH.PRECEDENCE.PAREN.APP")
+                | Parser.TOKEN_HIGH_PRECEDENCE_BRACK_APP -> SR.GetString("Parser.TOKEN.HIGH.PRECEDENCE.BRACK.APP")
+                | Parser.TOKEN_BEGIN -> SR.GetString("Parser.TOKEN.BEGIN")
+                | Parser.TOKEN_END -> SR.GetString("Parser.TOKEN.END")
                 | Parser.TOKEN_HASH_LIGHT
                 | Parser.TOKEN_HASH_LINE
                 | Parser.TOKEN_HASH_IF
                 | Parser.TOKEN_HASH_ELSE
-                | Parser.TOKEN_HASH_ENDIF -> getErrorString ("Parser.TOKEN.HASH.ENDIF")
-                | Parser.TOKEN_INACTIVECODE -> getErrorString ("Parser.TOKEN.INACTIVECODE")
-                | Parser.TOKEN_LEX_FAILURE -> getErrorString ("Parser.TOKEN.LEX.FAILURE")
-                | Parser.TOKEN_WHITESPACE -> getErrorString ("Parser.TOKEN.WHITESPACE")
-                | Parser.TOKEN_COMMENT -> getErrorString ("Parser.TOKEN.COMMENT")
-                | Parser.TOKEN_LINE_COMMENT -> getErrorString ("Parser.TOKEN.LINE.COMMENT")
-                | Parser.TOKEN_STRING_TEXT -> getErrorString ("Parser.TOKEN.STRING.TEXT")
-                | Parser.TOKEN_BYTEARRAY -> getErrorString ("Parser.TOKEN.BYTEARRAY")
-                | Parser.TOKEN_STRING -> getErrorString ("Parser.TOKEN.STRING")
-                | Parser.TOKEN_KEYWORD_STRING -> getErrorString ("Parser.TOKEN.KEYWORD_STRING")
-                | Parser.TOKEN_EOF -> getErrorString ("Parser.TOKEN.EOF")
-                | Parser.TOKEN_CONST -> getErrorString ("Parser.TOKEN.CONST")
-                | Parser.TOKEN_FIXED -> getErrorString ("Parser.TOKEN.FIXED")
-                | Parser.TOKEN_INTERP_STRING_BEGIN_END -> getErrorString ("Parser.TOKEN.INTERP.STRING.BEGIN.END")
-                | Parser.TOKEN_INTERP_STRING_BEGIN_PART -> getErrorString ("Parser.TOKEN.INTERP.STRING.BEGIN.PART")
-                | Parser.TOKEN_INTERP_STRING_PART -> getErrorString ("Parser.TOKEN.INTERP.STRING.PART")
-                | Parser.TOKEN_INTERP_STRING_END -> getErrorString ("Parser.TOKEN.INTERP.STRING.END")
+                | Parser.TOKEN_HASH_ENDIF -> SR.GetString("Parser.TOKEN.HASH.ENDIF")
+                | Parser.TOKEN_INACTIVECODE -> SR.GetString("Parser.TOKEN.INACTIVECODE")
+                | Parser.TOKEN_LEX_FAILURE -> SR.GetString("Parser.TOKEN.LEX.FAILURE")
+                | Parser.TOKEN_WHITESPACE -> SR.GetString("Parser.TOKEN.WHITESPACE")
+                | Parser.TOKEN_COMMENT -> SR.GetString("Parser.TOKEN.COMMENT")
+                | Parser.TOKEN_LINE_COMMENT -> SR.GetString("Parser.TOKEN.LINE.COMMENT")
+                | Parser.TOKEN_STRING_TEXT -> SR.GetString("Parser.TOKEN.STRING.TEXT")
+                | Parser.TOKEN_BYTEARRAY -> SR.GetString("Parser.TOKEN.BYTEARRAY")
+                | Parser.TOKEN_STRING -> SR.GetString("Parser.TOKEN.STRING")
+                | Parser.TOKEN_KEYWORD_STRING -> SR.GetString("Parser.TOKEN.KEYWORD_STRING")
+                | Parser.TOKEN_EOF -> SR.GetString("Parser.TOKEN.EOF")
+                | Parser.TOKEN_CONST -> SR.GetString("Parser.TOKEN.CONST")
+                | Parser.TOKEN_FIXED -> SR.GetString("Parser.TOKEN.FIXED")
+                | Parser.TOKEN_INTERP_STRING_BEGIN_END -> SR.GetString("Parser.TOKEN.INTERP.STRING.BEGIN.END")
+                | Parser.TOKEN_INTERP_STRING_BEGIN_PART -> SR.GetString("Parser.TOKEN.INTERP.STRING.BEGIN.PART")
+                | Parser.TOKEN_INTERP_STRING_PART -> SR.GetString("Parser.TOKEN.INTERP.STRING.PART")
+                | Parser.TOKEN_INTERP_STRING_END -> SR.GetString("Parser.TOKEN.INTERP.STRING.END")
                 | unknown ->
                     Debug.Assert(false, "unknown token tag")
                     let result = sprintf "%+A" unknown
@@ -1650,12 +1659,10 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
 
         | DiagnosticWithSuggestions (_, s, _, idText, suggestionF) ->
             os.AppendString(ConvertValLogicalNameToDisplayNameCore s)
-            suggestNames suggestionF idText
+            OutputNameSuggestions os suggestNames suggestionF idText
 
         | InternalError (s, _)
-
         | InvalidArgument s
-
         | Failure s as exn ->
             ignore exn // use the argument, even in non DEBUG
             let f1 = SR.GetString("Failure1")
@@ -1670,7 +1677,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             Debug.Assert(false, sprintf "Unexpected exception seen in compiler: %s\n%s" s (exn.ToString()))
 #endif
 
-        | WrappedError (exn, _) -> OutputExceptionR os exn
+        | WrappedError (e, _) -> e.Output(os, suggestNames)
 
         | PatternMatchCompilation.MatchIncomplete (isComp, cexOpt, _) ->
             os.AppendString(MatchIncomplete1E().Format)
@@ -1825,17 +1832,17 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
             os.AppendString(FSComp.SR.buildUnexpectedFileNameCharacter (fileName, string invalidChar) |> snd)
 
         | HashLoadedSourceHasIssues (infos, warnings, errors, _) ->
-            let Emit (l: exn list) = OutputExceptionR os (List.head l)
 
-            if isNil warnings && isNil errors then
-                os.AppendString(HashLoadedSourceHasIssues0E().Format)
-                Emit infos
-            elif isNil errors then
-                os.AppendString(HashLoadedSourceHasIssues1E().Format)
-                Emit warnings
-            else
+            match warnings, errors with
+            | _, e :: _ ->
                 os.AppendString(HashLoadedSourceHasIssues2E().Format)
-                Emit errors
+                e.Output(os, suggestNames)
+            | e :: _, _ ->
+                os.AppendString(HashLoadedSourceHasIssues1E().Format)
+                e.Output(os, suggestNames)
+            | [], [] ->
+                os.AppendString(HashLoadedSourceHasIssues0E().Format)
+                infos.Head.Output(os, suggestNames)
 
         | HashLoadedScriptConsideredSource _ -> os.AppendString(HashLoadedScriptConsideredSourceE().Format)
 
@@ -1851,7 +1858,7 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
         | MSBuildReferenceResolutionError (code, message, _) -> os.AppendString(MSBuildReferenceResolutionErrorE().Format message code)
 
         // Strip TargetInvocationException wrappers
-        | :? System.Reflection.TargetInvocationException as exn -> OutputExceptionR os exn.InnerException
+        | :? TargetInvocationException as exn -> exn.InnerException.Output(os, suggestNames)
 
         | :? FileNotFoundException as exn -> Printf.bprintf os "%s" exn.Message
 
@@ -1874,21 +1881,37 @@ let OutputPhasedErrorR (os: StringBuilder) (diagnostic: PhasedDiagnostic) (canSu
                 Debug.Assert(false, sprintf "Unknown exception seen in compiler: %s" (exn.ToString()))
 #endif
 
-    OutputExceptionR os diagnostic.Exception
+/// Eagerly format a PhasedDiagnostic to a DiagnosticWithText
+type PhasedDiagnostic with
 
-// remove any newlines and tabs
-let OutputPhasedDiagnostic (os: StringBuilder) (diagnostic: PhasedDiagnostic) (flattenErrors: bool) (suggestNames: bool) =
-    let buf = StringBuilder()
+    // remove any newlines and tabs
+    member x.OutputCore(os: StringBuilder, flattenErrors: bool, suggestNames: bool) =
+        let buf = StringBuilder()
 
-    OutputPhasedErrorR buf diagnostic suggestNames
+        x.Exception.Output(buf, suggestNames)
 
-    let text =
-        if flattenErrors then
-            NormalizeErrorString(buf.ToString())
-        else
-            buf.ToString()
+        let text =
+            if flattenErrors then
+                NormalizeErrorString(buf.ToString())
+            else
+                buf.ToString()
 
-    os.AppendString text
+        os.AppendString text
+
+    member x.FormatCore(flattenErrors: bool, suggestNames: bool) =
+        let os = StringBuilder()
+        x.OutputCore(os, flattenErrors, suggestNames)
+        os.ToString()
+
+    member x.EagerlyFormatCore(suggestNames: bool) =
+        match x.Range with
+        | Some m ->
+            let buf = StringBuilder()
+            x.Exception.Output(buf, suggestNames)
+            let message = buf.ToString()
+            let exn = DiagnosticWithText(x.Number, message, m)
+            { Exception = exn; Phase = x.Phase }
+        | None -> x
 
 let SanitizeFileName fileName implicitIncludeDir =
     // The assert below is almost ok, but it fires in two cases:
@@ -1939,87 +1962,79 @@ type FormattedDiagnostic =
     | Short of FSharpDiagnosticSeverity * string
     | Long of FSharpDiagnosticSeverity * FormattedDiagnosticDetailedInfo
 
-/// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
-let CollectFormattedDiagnostics
-    (
-        implicitIncludeDir,
-        showFullPaths,
-        flattenErrors,
-        diagnosticStyle,
-        severity: FSharpDiagnosticSeverity,
-        diagnostic: PhasedDiagnostic,
-        suggestNames: bool
-    ) =
-    let outputWhere (showFullPaths, diagnosticStyle) m : FormattedDiagnosticLocation =
-        if equals m rangeStartup || equals m rangeCmdArgs then
-            {
-                Range = m
-                TextRepresentation = ""
-                IsEmpty = true
-                File = ""
-            }
-        else
-            let file = m.FileName
+let FormatDiagnosticLocation (tcConfig: TcConfig) m : FormattedDiagnosticLocation =
+    if equals m rangeStartup || equals m rangeCmdArgs then
+        {
+            Range = m
+            TextRepresentation = ""
+            IsEmpty = true
+            File = ""
+        }
+    else
+        let file = m.FileName
 
-            let file =
-                if showFullPaths then
-                    FileSystem.GetFullFilePathInDirectoryShim implicitIncludeDir file
-                else
-                    SanitizeFileName file implicitIncludeDir
+        let file =
+            if tcConfig.showFullPaths then
+                FileSystem.GetFullFilePathInDirectoryShim tcConfig.implicitIncludeDir file
+            else
+                SanitizeFileName file tcConfig.implicitIncludeDir
 
-            let text, m, file =
-                match diagnosticStyle with
-                | DiagnosticStyle.Emacs ->
-                    let file = file.Replace("\\", "/")
-                    (sprintf "File \"%s\", line %d, characters %d-%d: " file m.StartLine m.StartColumn m.EndColumn), m, file
+        let text, m, file =
+            match tcConfig.diagnosticStyle with
+            | DiagnosticStyle.Emacs ->
+                let file = file.Replace("\\", "/")
+                (sprintf "File \"%s\", line %d, characters %d-%d: " file m.StartLine m.StartColumn m.EndColumn), m, file
 
-                // We're adjusting the columns here to be 1-based - both for parity with C# and for MSBuild, which assumes 1-based columns for error output
-                | DiagnosticStyle.Default ->
-                    let file = file.Replace('/', Path.DirectorySeparatorChar)
-                    let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) m.End
-                    (sprintf "%s(%d,%d): " file m.StartLine m.StartColumn), m, file
+            // We're adjusting the columns here to be 1-based - both for parity with C# and for MSBuild, which assumes 1-based columns for error output
+            | DiagnosticStyle.Default ->
+                let file = file.Replace('/', Path.DirectorySeparatorChar)
+                let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) m.End
+                (sprintf "%s(%d,%d): " file m.StartLine m.StartColumn), m, file
 
-                // We may also want to change Test to be 1-based
-                | DiagnosticStyle.Test ->
+            // We may also want to change Test to be 1-based
+            | DiagnosticStyle.Test ->
+                let file = file.Replace("/", "\\")
+
+                let m =
+                    mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
+
+                sprintf "%s(%d,%d-%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
+
+            | DiagnosticStyle.Gcc ->
+                let file = file.Replace('/', Path.DirectorySeparatorChar)
+
+                let m =
+                    mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
+
+                sprintf "%s:%d:%d: " file m.StartLine m.StartColumn, m, file
+
+            // Here, we want the complete range information so Project Systems can generate proper squiggles
+            | DiagnosticStyle.VisualStudio ->
+                // Show prefix only for real files. Otherwise, we just want a truncated error like:
+                //      parse error FS0031: blah blah
+                if
+                    not (equals m range0)
+                    && not (equals m rangeStartup)
+                    && not (equals m rangeCmdArgs)
+                then
                     let file = file.Replace("/", "\\")
 
                     let m =
                         mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
 
-                    sprintf "%s(%d,%d-%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
+                    sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
+                else
+                    "", m, file
 
-                | DiagnosticStyle.Gcc ->
-                    let file = file.Replace('/', Path.DirectorySeparatorChar)
+        {
+            Range = m
+            TextRepresentation = text
+            IsEmpty = false
+            File = file
+        }
 
-                    let m =
-                        mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
-
-                    sprintf "%s:%d:%d: " file m.StartLine m.StartColumn, m, file
-
-                // Here, we want the complete range information so Project Systems can generate proper squiggles
-                | DiagnosticStyle.VisualStudio ->
-                    // Show prefix only for real files. Otherwise, we just want a truncated error like:
-                    //      parse error FS0031: blah blah
-                    if
-                        not (equals m range0)
-                        && not (equals m rangeStartup)
-                        && not (equals m rangeCmdArgs)
-                    then
-                        let file = file.Replace("/", "\\")
-
-                        let m =
-                            mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1))
-
-                        sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
-                    else
-                        "", m, file
-
-            {
-                Range = m
-                TextRepresentation = text
-                IsEmpty = false
-                File = file
-            }
+/// returns sequence that contains Diagnostic for the given error + Diagnostic for all related errors
+let CollectFormattedDiagnostics (tcConfig: TcConfig, severity: FSharpDiagnosticSeverity, diagnostic: PhasedDiagnostic, suggestNames: bool) =
 
     match diagnostic.Exception with
     | ReportedError _ ->
@@ -2031,42 +2046,36 @@ let CollectFormattedDiagnostics
     | _ ->
         let errors = ResizeArray()
 
-        let report diagnostic =
-            let OutputWhere diagnostic =
-                match GetRangeOfDiagnostic diagnostic with
-                | Some m -> Some(outputWhere (showFullPaths, diagnosticStyle) m)
+        let report (diagnostic: PhasedDiagnostic) =
+            let where =
+                match diagnostic.Range with
+                | Some m -> FormatDiagnosticLocation tcConfig m |> Some
                 | None -> None
 
-            let OutputCanonicalInformation (subcategory, errorNumber) : FormattedDiagnosticCanonicalInformation =
-                let message =
-                    match severity with
-                    | FSharpDiagnosticSeverity.Error -> "error"
-                    | FSharpDiagnosticSeverity.Warning -> "warning"
-                    | FSharpDiagnosticSeverity.Info
-                    | FSharpDiagnosticSeverity.Hidden -> "info"
+            let subcategory = diagnostic.Subcategory()
+            let errorNumber = diagnostic.Number
 
-                let text =
-                    match diagnosticStyle with
-                    // Show the subcategory for --vserrors so that we can fish it out in Visual Studio and use it to determine error stickiness.
-                    | DiagnosticStyle.VisualStudio -> sprintf "%s %s FS%04d: " subcategory message errorNumber
-                    | _ -> sprintf "%s FS%04d: " message errorNumber
+            let message =
+                match severity with
+                | FSharpDiagnosticSeverity.Error -> "error"
+                | FSharpDiagnosticSeverity.Warning -> "warning"
+                | FSharpDiagnosticSeverity.Info
+                | FSharpDiagnosticSeverity.Hidden -> "info"
 
+            let text =
+                match tcConfig.diagnosticStyle with
+                // Show the subcategory for --vserrors so that we can fish it out in Visual Studio and use it to determine error stickiness.
+                | DiagnosticStyle.VisualStudio -> sprintf "%s %s FS%04d: " subcategory message errorNumber
+                | _ -> sprintf "%s FS%04d: " message errorNumber
+
+            let canonical: FormattedDiagnosticCanonicalInformation =
                 {
                     ErrorNumber = errorNumber
                     Subcategory = subcategory
                     TextRepresentation = text
                 }
 
-            let mainError, relatedErrors = SplitRelatedDiagnostics diagnostic
-            let where = OutputWhere mainError
-
-            let canonical =
-                OutputCanonicalInformation(diagnostic.Subcategory(), GetDiagnosticNumber mainError)
-
-            let message =
-                let os = StringBuilder()
-                OutputPhasedDiagnostic os mainError flattenErrors suggestNames
-                os.ToString()
+            let message = diagnostic.FormatCore(tcConfig.flatErrors, suggestNames)
 
             let entry: FormattedDiagnosticDetailedInfo =
                 {
@@ -2077,127 +2086,56 @@ let CollectFormattedDiagnostics
 
             errors.Add(FormattedDiagnostic.Long(severity, entry))
 
-            let OutputRelatedError (diagnostic: PhasedDiagnostic) =
-                match diagnosticStyle with
-                // Give a canonical string when --vserror.
-                | DiagnosticStyle.VisualStudio ->
-                    let relWhere = OutputWhere mainError // mainError?
-
-                    let relCanonical =
-                        OutputCanonicalInformation(diagnostic.Subcategory(), GetDiagnosticNumber mainError) // Use main error for code
-
-                    let relMessage =
-                        let os = StringBuilder()
-                        OutputPhasedDiagnostic os diagnostic flattenErrors suggestNames
-                        os.ToString()
-
-                    let entry: FormattedDiagnosticDetailedInfo =
-                        {
-                            Location = relWhere
-                            Canonical = relCanonical
-                            Message = relMessage
-                        }
-
-                    errors.Add(FormattedDiagnostic.Long(severity, entry))
-
-                | _ ->
-                    let os = StringBuilder()
-                    OutputPhasedDiagnostic os diagnostic flattenErrors suggestNames
-                    errors.Add(FormattedDiagnostic.Short(severity, os.ToString()))
-
-            relatedErrors |> List.iter OutputRelatedError
-
-        match diagnostic with
+        match diagnostic.Exception with
 #if !NO_TYPEPROVIDERS
-        | {
-              Exception = :? TypeProviderError as tpe
-          } ->
-            tpe.Iter(fun exn ->
-                let newErr = { diagnostic with Exception = exn }
-                report newErr)
+        | :? TypeProviderError as tpe -> tpe.Iter(fun exn -> report { diagnostic with Exception = exn })
 #endif
-        | x -> report x
+        | _ -> report diagnostic
 
         errors.ToArray()
 
-/// used by fsc.exe and fsi.exe, but not by VS
-/// prints error and related errors to the specified StringBuilder
-let rec OutputDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, diagnosticStyle, severity) os (diagnostic: PhasedDiagnostic) =
+type PhasedDiagnostic with
 
-    // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
-    let errors =
-        CollectFormattedDiagnostics(implicitIncludeDir, showFullPaths, flattenErrors, diagnosticStyle, severity, diagnostic, true)
+    /// used by fsc.exe and fsi.exe, but not by VS
+    /// prints error and related errors to the specified StringBuilder
+    member diagnostic.Output(buf, tcConfig: TcConfig, severity) =
 
-    for e in errors do
-        Printf.bprintf os "\n"
+        // 'true' for "canSuggestNames" is passed last here because we want to report suggestions in fsc.exe and fsi.exe, just not in regular IDE usage.
+        let diagnostics = CollectFormattedDiagnostics(tcConfig, severity, diagnostic, true)
 
-        match e with
-        | FormattedDiagnostic.Short (_, txt) -> os.AppendString txt |> ignore
-        | FormattedDiagnostic.Long (_, details) ->
-            match details.Location with
-            | Some l when not l.IsEmpty -> os.AppendString l.TextRepresentation
-            | _ -> ()
+        for e in diagnostics do
+            Printf.bprintf buf "\n"
 
-            os.AppendString details.Canonical.TextRepresentation
-            os.AppendString details.Message
+            match e with
+            | FormattedDiagnostic.Short (_, txt) -> buf.AppendString txt |> ignore
+            | FormattedDiagnostic.Long (_, details) ->
+                match details.Location with
+                | Some l when not l.IsEmpty -> buf.AppendString l.TextRepresentation
+                | _ -> ()
 
-let OutputDiagnosticContext prefix fileLineFunction os diagnostic =
-    match GetRangeOfDiagnostic diagnostic with
-    | None -> ()
-    | Some m ->
-        let fileName = m.FileName
-        let lineA = m.StartLine
-        let lineB = m.EndLine
-        let line = fileLineFunction fileName lineA
+                buf.AppendString details.Canonical.TextRepresentation
+                buf.AppendString details.Message
 
-        if line <> "" then
-            let iA = m.StartColumn
-            let iB = m.EndColumn
-            let iLen = if lineA = lineB then max (iB - iA) 1 else 1
-            Printf.bprintf os "%s%s\n" prefix line
-            Printf.bprintf os "%s%s%s\n" prefix (String.make iA '-') (String.make iLen '^')
+    member diagnostic.OutputContext(buf, prefix, fileLineFunction) =
+        match diagnostic.Range with
+        | None -> ()
+        | Some m ->
+            let fileName = m.FileName
+            let lineA = m.StartLine
+            let lineB = m.EndLine
+            let line = fileLineFunction fileName lineA
 
-let ReportDiagnosticAsInfo options (diagnostic, severity) =
-    match severity with
-    | FSharpDiagnosticSeverity.Error -> false
-    | FSharpDiagnosticSeverity.Warning -> false
-    | FSharpDiagnosticSeverity.Info ->
-        let n = GetDiagnosticNumber diagnostic
+            if line <> "" then
+                let iA = m.StartColumn
+                let iB = m.EndColumn
+                let iLen = if lineA = lineB then max (iB - iA) 1 else 1
+                Printf.bprintf buf "%s%s\n" prefix line
+                Printf.bprintf buf "%s%s%s\n" prefix (String.make iA '-') (String.make iLen '^')
 
-        IsWarningOrInfoEnabled (diagnostic, severity) n options.WarnLevel options.WarnOn
-        && not (List.contains n options.WarnOff)
-    | FSharpDiagnosticSeverity.Hidden -> false
-
-let ReportDiagnosticAsWarning options (diagnostic, severity) =
-    match severity with
-    | FSharpDiagnosticSeverity.Error -> false
-    | FSharpDiagnosticSeverity.Warning ->
-        let n = GetDiagnosticNumber diagnostic
-
-        IsWarningOrInfoEnabled (diagnostic, severity) n options.WarnLevel options.WarnOn
-        && not (List.contains n options.WarnOff)
-    // Informational become warning if explicitly on and not explicitly off
-    | FSharpDiagnosticSeverity.Info ->
-        let n = GetDiagnosticNumber diagnostic
-        List.contains n options.WarnOn && not (List.contains n options.WarnOff)
-    | FSharpDiagnosticSeverity.Hidden -> false
-
-let ReportDiagnosticAsError options (diagnostic, severity) =
-    match severity with
-    | FSharpDiagnosticSeverity.Error -> true
-    // Warnings become errors in some situations
-    | FSharpDiagnosticSeverity.Warning ->
-        let n = GetDiagnosticNumber diagnostic
-
-        IsWarningOrInfoEnabled (diagnostic, severity) n options.WarnLevel options.WarnOn
-        && not (List.contains n options.WarnAsWarn)
-        && ((options.GlobalWarnAsError && not (List.contains n options.WarnOff))
-            || List.contains n options.WarnAsError)
-    // Informational become errors if explicitly WarnAsError
-    | FSharpDiagnosticSeverity.Info ->
-        let n = GetDiagnosticNumber diagnostic
-        List.contains n options.WarnAsError
-    | FSharpDiagnosticSeverity.Hidden -> false
+    member diagnostic.WriteWithContext(os, prefix, fileLineFunction, tcConfig, severity) =
+        writeViaBuffer os (fun buf ->
+            diagnostic.OutputContext(buf, prefix, fileLineFunction)
+            diagnostic.Output(buf, tcConfig, severity))
 
 //----------------------------------------------------------------------------
 // Scoped #nowarn pragmas
@@ -2219,14 +2157,14 @@ type DiagnosticsLoggerFilteringByScopedPragmas
     ) =
     inherit DiagnosticsLogger("DiagnosticsLoggerFilteringByScopedPragmas")
 
-    override _.DiagnosticSink(diagnostic, severity) =
+    override _.DiagnosticSink(diagnostic: PhasedDiagnostic, severity) =
         if severity = FSharpDiagnosticSeverity.Error then
             diagnosticsLogger.DiagnosticSink(diagnostic, severity)
         else
             let report =
-                let warningNum = GetDiagnosticNumber diagnostic
+                let warningNum = diagnostic.Number
 
-                match GetRangeOfDiagnostic diagnostic with
+                match diagnostic.Range with
                 | Some m ->
                     scopedPragmas
                     |> List.exists (fun pragma ->
@@ -2239,11 +2177,11 @@ type DiagnosticsLoggerFilteringByScopedPragmas
                 | None -> true
 
             if report then
-                if ReportDiagnosticAsError diagnosticOptions (diagnostic, severity) then
+                if diagnostic.ReportAsError(diagnosticOptions, severity) then
                     diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Error)
-                elif ReportDiagnosticAsWarning diagnosticOptions (diagnostic, severity) then
+                elif diagnostic.ReportAsWarning(diagnosticOptions, severity) then
                     diagnosticsLogger.DiagnosticSink(diagnostic, FSharpDiagnosticSeverity.Warning)
-                elif ReportDiagnosticAsInfo diagnosticOptions (diagnostic, severity) then
+                elif diagnostic.ReportAsInfo(diagnosticOptions, severity) then
                     diagnosticsLogger.DiagnosticSink(diagnostic, severity)
 
     override _.ErrorCount = diagnosticsLogger.ErrorCount

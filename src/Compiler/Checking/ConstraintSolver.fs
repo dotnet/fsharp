@@ -244,15 +244,15 @@ exception ConstraintSolverMissingConstraint of displayEnv: DisplayEnv * Typar * 
 
 exception ConstraintSolverError of string * range * range
 
-exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * exn * range
+exception ErrorFromApplyingDefault of tcGlobals: TcGlobals * displayEnv: DisplayEnv * Typar * TType * error: exn * range: range
 
-exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * range
+exception ErrorFromAddingTypeEquation of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * error: exn * range: range
 
-exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * exn * ContextInfo * parameterRange: range
+exception ErrorsFromAddingSubsumptionConstraint of tcGlobals: TcGlobals * displayEnv: DisplayEnv * actualTy: TType * expectedTy: TType * error: exn * ctxtInfo: ContextInfo * parameterRange: range
 
-exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * exn * range
+exception ErrorFromAddingConstraint of displayEnv: DisplayEnv * error: exn * range: range
 
-exception UnresolvedOverloading of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * range
+exception UnresolvedOverloading of displayEnv: DisplayEnv * callerArgs: CallerArgs<Expr> * failure: OverloadResolutionFailure * range: range
 
 exception UnresolvedConversionOperator of displayEnv: DisplayEnv * TType * TType * range
 
@@ -1225,9 +1225,9 @@ and SolveTypeEqualsTypeEqns csenv ndeep m2 trace cxsln origl1 origl2 =
        let rec loop l1 l2 = 
            match l1, l2 with 
            | [], [] -> CompleteD 
-           | h1 :: t1, h2 :: t2 -> 
+           | h1 :: t1, h2 :: t2 when t1.Length = t2.Length -> 
                SolveTypeEqualsTypeKeepAbbrevsWithCxsln csenv ndeep m2 trace cxsln h1 h2 ++ (fun () -> loop t1 t2) 
-           | _ -> 
+           | _ ->
                ErrorD(ConstraintSolverTupleDiffLengths(csenv.DisplayEnv, origl1, origl2, csenv.m, m2)) 
        loop origl1 origl2
 
