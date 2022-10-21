@@ -2339,10 +2339,12 @@ FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Int32 Tag
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Int32 get_Tag()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: System.String ToString()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean CheckXmlDocs
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean Equals(FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean Equals(System.Object)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean GlobalWarnAsError
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean get_CheckXmlDocs()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean get_GlobalWarnAsError()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions Default
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions get_Default()

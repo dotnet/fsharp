@@ -64,7 +64,14 @@ val CheckOneImplFile:
         Cancellable<TopAttribs * CheckedImplFile * TcEnv * bool>
 
 val CheckOneSigFile:
-    TcGlobals * ImportMap * CcuThunk * (unit -> bool) * ConditionalDefines option * TcResultsSink * bool * FSharpDiagnosticOptions ->
+    TcGlobals *
+    ImportMap *
+    CcuThunk *
+    (unit -> bool) *
+    ConditionalDefines option *
+    TcResultsSink *
+    bool *
+    FSharpDiagnosticOptions ->
         TcEnv ->
         ParsedSigFileInput ->
             Cancellable<TcEnv * ModuleOrNamespaceType * bool>
