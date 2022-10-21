@@ -608,12 +608,12 @@ module internal LexerStateEncoding =
             let tag1, i1, kind1, rest =
                 match stringNest with
                 | [] -> false, 0, 0, []
-                | (i1, kind1, _) :: rest -> true, i1, encodeStringStyle kind1, rest
+                | (i1, kind1, _, _) :: rest -> true, i1, encodeStringStyle kind1, rest
 
             let tag2, i2, kind2 =
                 match rest with
                 | [] -> false, 0, 0
-                | (i2, kind2, _) :: _ -> true, i2, encodeStringStyle kind2
+                | (i2, kind2, _, _) :: _ -> true, i2, encodeStringStyle kind2
 
             (if tag1 then 0b100000000000 else 0)
             ||| (if tag2 then 0b010000000000 else 0)
@@ -679,9 +679,9 @@ module internal LexerStateEncoding =
 
             [
                 if tag1 then
-                    i1, decodeStringStyle kind1, range0
+                    i1, decodeStringStyle kind1, 0, range0
                 if tag2 then
-                    i2, decodeStringStyle kind2, range0
+                    i2, decodeStringStyle kind2, 0, range0
             ]
 
         (colorState, ncomments, pos, ifDefs, hardwhite, stringKind, stringNest)
@@ -722,7 +722,7 @@ module internal LexerStateEncoding =
                     LexerStringKind.String,
                     stringNest
                 )
-        | LexCont.String (ifdefs, stringNest, style, kind, m) ->
+        | LexCont.String (ifdefs, stringNest, style, kind, _, m) ->
             let state =
                 match style with
                 | LexerStringStyle.SingleQuote -> FSharpTokenizerColorState.String
@@ -778,7 +778,7 @@ module internal LexerStateEncoding =
             | FSharpTokenizerColorState.Token -> LexCont.Token(ifdefs, stringNest)
             | FSharpTokenizerColorState.IfDefSkip -> LexCont.IfDefSkip(ifdefs, stringNest, n1, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.String ->
-                LexCont.String(ifdefs, stringNest, LexerStringStyle.SingleQuote, stringKind, mkRange "file" p1 p1)
+                LexCont.String(ifdefs, stringNest, LexerStringStyle.SingleQuote, stringKind, 0, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.Comment -> LexCont.Comment(ifdefs, stringNest, n1, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.SingleLineComment -> LexCont.SingleLineComment(ifdefs, stringNest, n1, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.StringInComment ->
@@ -789,9 +789,9 @@ module internal LexerStateEncoding =
                 LexCont.StringInComment(ifdefs, stringNest, LexerStringStyle.TripleQuote, n1, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.CamlOnly -> LexCont.MLOnly(ifdefs, stringNest, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.VerbatimString ->
-                LexCont.String(ifdefs, stringNest, LexerStringStyle.Verbatim, stringKind, mkRange "file" p1 p1)
+                LexCont.String(ifdefs, stringNest, LexerStringStyle.Verbatim, stringKind, 0, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.TripleQuoteString ->
-                LexCont.String(ifdefs, stringNest, LexerStringStyle.TripleQuote, stringKind, mkRange "file" p1 p1)
+                LexCont.String(ifdefs, stringNest, LexerStringStyle.TripleQuote, stringKind, 0, mkRange "file" p1 p1)
             | FSharpTokenizerColorState.EndLineThenSkip ->
                 LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Skip(n1, mkRange "file" p1 p1))
             | FSharpTokenizerColorState.EndLineThenToken -> LexCont.EndLine(ifdefs, stringNest, LexerEndlineContinuation.Token)
@@ -923,9 +923,10 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
             lexargs.stringNest <- stringNest
             Lexer.ifdefSkip n m lexargs skip lexbuf
 
-        | LexCont.String (ifdefs, stringNest, style, kind, m) ->
+        | LexCont.String (ifdefs, stringNest, style, kind, numdol, m) ->
             lexargs.ifdefStack <- ifdefs
             lexargs.stringNest <- stringNest
+            lexargs.numDollars <- numdol
             use buf = ByteBuffer.Create Lexer.StringCapacity
             let args = (buf, LexerStringFinisher.Default, m, kind, lexargs)
 

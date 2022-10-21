@@ -600,14 +600,14 @@ rule token args skip = parse
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
-       | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
+       | (_, LexerStringStyle.TripleQuote, _, _) :: _ -> ()
        | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | [] -> ()
 
-       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, LexerStringKind.String, m))
+       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, LexerStringKind.String, args.numDollars, m))
        else singleQuoteString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
 
- | '$' '"' '"' '"'
+ | ('$'+) '"' '"' '"'
      { let buf, fin, m = startString args lexbuf
 
        // Single quote in triple quote ok, others disallowed
@@ -615,7 +615,9 @@ rule token args skip = parse
        | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
        | [] -> ()
 
-       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, LexerStringKind.InterpolatedStringFirst, m))
+       let numDollars = lexeme lexbuf |> Seq.takeWhile (fun c -> c = '$') |> Seq.length
+       args.numDollars <- numDollars
+       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, LexerStringKind.InterpolatedStringFirst, numDollars, m))
        else tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf }
 
  | '$' '"'
@@ -623,22 +625,24 @@ rule token args skip = parse
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
-       | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
+       | (_, LexerStringStyle.TripleQuote, _, _) :: _ -> ()
        | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
-       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, LexerStringKind.InterpolatedStringFirst, m))
+       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, LexerStringKind.InterpolatedStringFirst, args.numDollars, m))
        else singleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf }
 
  | '"' '"' '"'
      { let buf, fin, m = startString args lexbuf
+
+       args.numDollars <- 0
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
        | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
        | _ -> ()
 
-       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, LexerStringKind.String, m))
+       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, LexerStringKind.String, args.numDollars, m))
        else tripleQuoteString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
 
  | '@' '"'
@@ -646,11 +650,11 @@ rule token args skip = parse
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
-       | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
+       | (_, LexerStringStyle.TripleQuote, _, _) :: _ -> ()
        | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
-       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, LexerStringKind.String, m))
+       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, LexerStringKind.String, args.numDollars, m))
        else verbatimString (buf, fin, m, LexerStringKind.String, args) skip lexbuf }
 
  | ("$@" | "@$") '"'
@@ -658,11 +662,11 @@ rule token args skip = parse
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
-       | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
+       | (_, LexerStringStyle.TripleQuote, _, _) :: _ -> ()
        | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
-       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, LexerStringKind.InterpolatedStringFirst, m))
+       if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, LexerStringKind.InterpolatedStringFirst, args.numDollars, m))
        else verbatimString (buf, fin, m, LexerStringKind.InterpolatedStringFirst, args) skip lexbuf }
 
  | truewhite+
@@ -861,10 +865,10 @@ rule token args skip = parse
      {
        match args.stringNest with
        | [] -> ()
-       | (counter, style, m) :: rest ->
+       | (counter, style, d, m) :: rest ->
          // Note, we do not update the 'm', any incomplete-interpolation error
          // will be reported w.r.t. the first '{'
-         args.stringNest <- (counter + 1, style, m) :: rest
+         args.stringNest <- (counter + 1, style, d, m) :: rest
        // To continue token-by-token lexing may involve picking up the new args.stringNes
        let cont = LexCont.Token(args.ifdefStack, args.stringNest)
        LBRACE cont
@@ -877,21 +881,24 @@ rule token args skip = parse
        // We encounter a '}' in the expression token stream.  First check if we're in an interpolated string expression
        // and continue the string if necessary
        match args.stringNest with
-       | (1, style, _) :: rest ->
+       | (1, LexerStringStyle.TripleQuote, x, r) :: rest when x > 1 ->
+           args.stringNest <- (1, LexerStringStyle.TripleQuote, x-1, r) :: rest
+           token args skip lexbuf
+       | (1, style, _, _) :: rest ->
            args.stringNest <- rest
            let buf, fin, m = startString args lexbuf
            if not skip then
-               STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, style, LexerStringKind.InterpolatedStringPart, m))
+               STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, style, LexerStringKind.InterpolatedStringPart, args.numDollars, m))
            else
                match style with
                | LexerStringStyle.Verbatim -> verbatimString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf
                | LexerStringStyle.SingleQuote -> singleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf
                | LexerStringStyle.TripleQuote -> tripleQuoteString (buf, fin, m, LexerStringKind.InterpolatedStringPart, args) skip lexbuf
 
-        | (counter, style, m) :: rest ->
+        | (counter, style, d, m) :: rest ->
            // Note, we do not update the 'm', any incomplete-interpolation error
            // will be reported w.r.t. the first '{'
-           args.stringNest <- (counter - 1, style, m) :: rest
+           args.stringNest <- (counter - 1, style, d, m) :: rest
            let cont = LexCont.Token(args.ifdefStack, args.stringNest)
            RBRACE cont
 
@@ -1142,39 +1149,39 @@ and singleQuoteString sargs skip = parse
       let text = lexeme lexbuf
       let text2 = text |> String.filter (fun c -> c <> ' ' && c <> '\t')
       advanceColumnBy lexbuf (text.Length - text2.Length)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m))
       else singleQuoteString sargs skip lexbuf }
 
  |  escape_char
     { let (buf, _fin, m, kind, args) = sargs
       addByteChar buf (escape (lexeme lexbuf).[1])
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m))
       else singleQuoteString sargs skip lexbuf }
 
  | trigraph
     { let (buf, _fin, m, kind, args) = sargs
       let s = lexeme lexbuf
       addByteChar buf (trigraph s.[1] s.[2] s.[3])
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m))
       else singleQuoteString sargs skip lexbuf }
 
  | hexGraphShort
     { let (buf, _fin, m, kind, args) = sargs
       addUnicodeChar buf (int (hexGraphShort (lexemeTrimLeft lexbuf 2)))
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m))
       else singleQuoteString sargs skip lexbuf  }
 
  | unicodeGraphShort
     { let (buf, _fin, m, kind, args) = sargs
       addUnicodeChar buf (int (unicodeGraphShort (lexemeTrimLeft lexbuf 2)))
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m))
       else singleQuoteString sargs skip lexbuf  }
 
  | unicodeGraphLong
     { let (buf, _fin, m, kind, args) = sargs
       let hexChars = lexemeTrimLeft lexbuf 2
       let result() =
-          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m))
           else singleQuoteString sargs skip lexbuf
       match unicodeGraphLong hexChars with
       | Invalid ->
@@ -1203,7 +1210,7 @@ and singleQuoteString sargs skip = parse
     { let (buf, _fin, m, kind, args) = sargs
       let s = lexeme lexbuf
       addUnicodeString buf (if kind.IsInterpolated then s.[0..0] else s)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m))
       else singleQuoteString sargs skip lexbuf }
 
  | "{"
@@ -1211,19 +1218,19 @@ and singleQuoteString sargs skip = parse
       if kind.IsInterpolated then
           // get a new range for where the fill starts
           let m2 = lexbuf.LexemeRange
-          args.stringNest <- (1, LexerStringStyle.SingleQuote, m2) :: args.stringNest
+          args.stringNest <- (1, LexerStringStyle.SingleQuote, args.numDollars, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
           fin.Finish buf kind LexerStringFinisherContext.InterpolatedPart cont
       else
           addUnicodeString buf (lexeme lexbuf)
-          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m))
           else singleQuoteString sargs skip lexbuf
     }
 
  | "}"
     { let (buf, _fin, m, kind, args) = sargs
       let result() =
-          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m))
           else singleQuoteString sargs skip lexbuf
       if kind.IsInterpolated then
           fail args lexbuf (FSComp.SR.lexRBraceInInterpolatedString()) (result())
@@ -1236,45 +1243,45 @@ and singleQuoteString sargs skip = parse
     { let (buf, _fin, m, kind, args) = sargs
       newline lexbuf
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m))
       else singleQuoteString sargs skip lexbuf }
 
  | ident
     { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m))
       else singleQuoteString sargs skip lexbuf }
 
  | integer
  | xinteger
     { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m))
       else singleQuoteString sargs skip lexbuf }
 
  | anywhite +
     { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m))
       else singleQuoteString sargs skip lexbuf }
 
  | eof
     { let (_buf, _fin, m, kind, args) = sargs
-      EOF (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m)) }
+      EOF (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m)) }
 
  | surrogateChar surrogateChar // surrogate code points always come in pairs
 
  | _
     { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, kind, args.numDollars, m))
       else singleQuoteString sargs skip lexbuf }
 
 and verbatimString sargs skip = parse
  |  '"' '"'
    { let (buf, _fin, m, kind, args) = sargs
      addByteChar buf '\"'
-     if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
+     if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, args.numDollars, m))
      else verbatimString sargs skip lexbuf }
 
  |  '"'
@@ -1293,14 +1300,14 @@ and verbatimString sargs skip = parse
     { let (buf, _fin, m, kind, args) = sargs
       newline lexbuf
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, args.numDollars, m))
       else verbatimString sargs skip lexbuf }
 
  | ("{{" | "}}")
     { let (buf, _fin, m, kind, args) = sargs
       let s = lexeme lexbuf
       addUnicodeString buf (if kind.IsInterpolated then s.[0..0] else s)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, args.numDollars, m))
       else verbatimString sargs skip lexbuf }
 
  | "{"
@@ -1308,19 +1315,19 @@ and verbatimString sargs skip = parse
       if kind.IsInterpolated then
           // get a new range for where the fill starts
           let m2 = lexbuf.LexemeRange
-          args.stringNest <- (1, LexerStringStyle.Verbatim, m2) :: args.stringNest
+          args.stringNest <- (1, LexerStringStyle.Verbatim, args.numDollars, m2) :: args.stringNest
           let cont = LexCont.Token(args.ifdefStack, args.stringNest)
           fin.Finish buf kind (enum<LexerStringFinisherContext>(3)) cont
       else
           addUnicodeString buf (lexeme lexbuf)
-          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
+          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, args.numDollars, m))
           else verbatimString sargs skip lexbuf
     }
 
  | "}"
     { let (buf, _fin, m, kind, args) = sargs
       let result() =
-          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
+          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, args.numDollars, m))
           else verbatimString sargs skip lexbuf
       if kind.IsInterpolated then
           fail args lexbuf (FSComp.SR.lexRBraceInInterpolatedString()) (result())
@@ -1332,31 +1339,31 @@ and verbatimString sargs skip = parse
  | ident
     { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, args.numDollars, m))
       else verbatimString sargs skip lexbuf }
 
  | integer
  | xinteger
     { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, args.numDollars, m))
       else verbatimString sargs skip lexbuf }
 
  | anywhite +
     { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, args.numDollars, m))
       else verbatimString sargs skip lexbuf }
 
  | eof
     { let (_buf, _fin, m, kind, args) = sargs
-      EOF (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m)) }
+      EOF (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, args.numDollars, m)) }
 
  | surrogateChar surrogateChar // surrogate code points always come in pairs
  | _
     { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, kind, args.numDollars, m))
       else verbatimString sargs skip lexbuf }
 
 and tripleQuoteString sargs skip = parse
@@ -1369,71 +1376,118 @@ and tripleQuoteString sargs skip = parse
     { let (buf, _fin, m, kind, args) = sargs
       newline lexbuf
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.numDollars, m))
       else tripleQuoteString sargs skip lexbuf }
 
 // The rest is to break into pieces to allow double-click-on-word and other such things
  | ident
     { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.numDollars, m))
       else tripleQuoteString sargs skip lexbuf }
 
  | integer
  | xinteger
     { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.numDollars, m))
       else tripleQuoteString sargs skip lexbuf }
 
  | anywhite +
     { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.numDollars, m))
       else tripleQuoteString sargs skip lexbuf }
 
- | ("{{" | "}}")
-    { let (buf, _fin, m, kind, args) = sargs
-      let s = lexeme lexbuf
-      addUnicodeString buf (if kind.IsInterpolated then s.[0..0] else s)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
-      else tripleQuoteString sargs skip lexbuf }
+ //| ("{{" | "}}")
+ //   { let (buf, _fin, m, kind, args) = sargs
+ //     let s = lexeme lexbuf
+ //     addUnicodeString buf (if kind.IsInterpolated then s.[0..0] else s)
+ //     if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.numDollars, m))
+ //     else tripleQuoteString sargs skip lexbuf }
 
- | "{"
+ | "{" +
     { let (buf, fin, m, kind, args) = sargs
-      if kind.IsInterpolated then
-          // get a new range for where the fill starts
-          let m2 = lexbuf.LexemeRange
-          args.stringNest <- (1, LexerStringStyle.TripleQuote, m2) :: args.stringNest
-          let cont = LexCont.Token(args.ifdefStack, args.stringNest)
-          fin.Finish buf kind (enum<LexerStringFinisherContext>(5)) cont
+      let numBraces = String.length (lexeme lexbuf)
+      if kind.IsInterpolated && args.numDollars = 1 then
+          for _ in 2..2..numBraces do
+              addUnicodeString buf "{"
+          if numBraces % 2 = 0 then
+              if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.numDollars, m))
+              else tripleQuoteString sargs skip lexbuf
+          else
+              let m2 = lexbuf.LexemeRange
+              args.stringNest <- (1, LexerStringStyle.TripleQuote, args.numDollars, m2) :: args.stringNest
+              let cont = LexCont.Token(args.ifdefStack, args.stringNest)
+              fin.Finish buf kind (enum<LexerStringFinisherContext>(5)) cont
+      elif kind.IsInterpolated then
+          if args.numDollars < 1 then
+              fail args lexbuf (0, FSComp.SR.lexCharNotAllowedInOperatorNames("@")) () // XXX
+          let maxBraces = 2 * args.numDollars - 1
+          if numBraces > maxBraces then
+              fail args lexbuf (0, FSComp.SR.lexCharNotAllowedInOperatorNames("#")) (tripleQuoteString sargs skip lexbuf) // XXX
+          elif numBraces < args.numDollars then
+              addUnicodeString buf (lexeme lexbuf)
+              if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.numDollars, m))
+              else tripleQuoteString sargs skip lexbuf
+          else
+              let s = lexeme lexbuf
+              addUnicodeString buf s[1..(numBraces - args.numDollars)] // XXX is it ok to addUnicode empty string
+              // get a new range for where the fill starts
+              let m2 = lexbuf.LexemeRange
+              args.stringNest <- (1, LexerStringStyle.TripleQuote, args.numDollars, m2) :: args.stringNest
+              let cont = LexCont.Token(args.ifdefStack, args.stringNest)
+              fin.Finish buf kind (enum<LexerStringFinisherContext>(5)) cont
       else
           addUnicodeString buf (lexeme lexbuf)
-          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
+          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.numDollars, m))
           else tripleQuoteString sargs skip lexbuf
     }
 
- | "}"
+ | "}" +
     { let (buf, _fin, m, kind, args) = sargs
+      let numBraces = lexeme lexbuf |> String.length
       let result() =
-          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
+          if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.numDollars, m))
           else tripleQuoteString sargs skip lexbuf
       if kind.IsInterpolated then
-          fail args lexbuf (FSComp.SR.lexRBraceInInterpolatedString()) (result())
+          if args.numDollars = 1 then
+              if numBraces % 2 = 1 then
+                  args.numDollars <- 0 // XXX
+                  fail args lexbuf (FSComp.SR.lexRBraceInInterpolatedString()) (result())
+              else
+                  for _ in 2..2..numBraces do
+                      addUnicodeString buf "}"
+                  (result())
+          elif args.numDollars > numBraces then
+              for _ in 1..numBraces do
+                  addUnicodeString buf "}"
+              (result())
+          else
+              args.numDollars <- 0 // XXX
+              fail args lexbuf (0, FSComp.SR.lexCharNotAllowedInOperatorNames("^")) (result())
       else
           addUnicodeString buf (lexeme lexbuf)
           (result())
+      // let result() =
+      //     if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
+      //     else tripleQuoteString sargs skip lexbuf
+      // if kind.IsInterpolated then
+      //     fail args lexbuf (FSComp.SR.lexRBraceInInterpolatedString()) (result())
+      // else
+      //     addUnicodeString buf (lexeme lexbuf)
+      //     (result())
     }
 
  | eof
     { let (_buf, _fin, m, kind, args) = sargs
-      EOF (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m)) }
+      EOF (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.numDollars, m)) }
 
  | surrogateChar surrogateChar // surrogate code points always come in pairs
  | _
     { let (buf, _fin, m, kind, args) = sargs
       addUnicodeString buf (lexeme lexbuf)
-      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, m))
+      if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.numDollars, m))
       else tripleQuoteString sargs skip lexbuf }
 
 // Parsing single-line comment - we need to split it into words for Visual Studio IDE
