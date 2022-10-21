@@ -1,10 +1,6 @@
-﻿
-
-open System
+﻿open System
 
 [<EntryPoint>]
 let main argv = 
-    FSharp.Compiler.Service.Tests.DepResolving.Test()
+    printfn "Dotnet Core NUnit Tests..."
     0
-    //Environment.CurrentDirectory <- "c:/projekty/fsharp/heuristic/src/Compiler"
-    //FSharp.Compiler.Service.Tests.RunCompiler.runCompiler()

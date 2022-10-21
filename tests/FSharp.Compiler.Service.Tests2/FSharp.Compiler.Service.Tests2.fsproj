@@ -26,16 +26,15 @@
     <Compile Include="..\service\Common.fs">
       <Link>Common.fs</Link>
     </Compile>
-    <Compile Include="TypeTests.fs" />
+    <Compile Include="ASTVisit.fs" />
+    <Compile Include="TestASTVisit.fs" />
     <Compile Include="DepResolving.fs" />
     <Compile Include="RunCompiler.fs" />
-    <Compile Include="..\service\Program.fs">
-      <Link>Program.fs</Link>
-    </Compile>
     <None Include="Big.fs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <Content Include="Docs.md" />
+    <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>

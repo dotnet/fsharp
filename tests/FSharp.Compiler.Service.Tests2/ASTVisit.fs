@@ -1,23 +1,34 @@
-﻿module FSharp.Compiler.Service.Tests2.SyntaxTreeTests.TypeTests
+﻿module FSharp.Compiler.Service.Tests2.ASTVisit
 
-open FSharp.Compiler.CodeAnalysis
-open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
-open NUnit.Framework
 
 let unsupported = "unsupported"
-type Kind =
+type ReferenceKind =
     | Type
     | ModuleOrNamespace
-type Item =
+
+/// Reference to a module or type, found in the AST
+type Reference =
     {
         Ident : LongIdent
-        Kind : Kind
+        Kind : ReferenceKind
     }
-type Stuff = Item seq
+    
+type Abbreviation =
+    {
+        Alias : Ident
+        Target : LongIdent
+    }
+    
+/// Reference to a module or type, found in the AST
+type ReferenceOrAbbreviation =
+    | Reference of Reference
+    | Abbreviation of Abbreviation
+    
+type private References = ReferenceOrAbbreviation seq
 
-let rec visitSynModuleDecl (decl : SynModuleDecl) : Stuff =
+let rec visitSynModuleDecl (decl : SynModuleDecl) : References =
     // TODO
     match decl with
     | SynModuleDecl.Attributes(synAttributeLists, range) ->
@@ -35,14 +46,7 @@ let rec visitSynModuleDecl (decl : SynModuleDecl) : Stuff =
     | SynModuleDecl.Types(synTypeDefns, range) ->
         visitSynTypeDefns synTypeDefns
     | SynModuleDecl.ModuleAbbrev(ident, longId, range) ->
-        // TODO Module abbrevation can break the algorithm.
-        // We need to either give up when seeing this or handle it properly.
-        //
-        // Consider the following:
-        // module A = module A1 = let x = 1
-        // module B = A
-        // let x = B.A1.x
-        failwith "Module abbreviations are not currently supported"
+        [ReferenceOrAbbreviation.Abbreviation({Alias = ident; Target = longId})]
     | SynModuleDecl.NamespaceFragment synModuleOrNamespace ->
         visitSynModuleOrNamespace synModuleOrNamespace
     | SynModuleDecl.NestedModule(synComponentInfo, isRecursive, synModuleDecls, isContinuing, range, synModuleDeclNestedModuleTrivia) ->
@@ -52,16 +56,16 @@ let rec visitSynModuleDecl (decl : SynModuleDecl) : Stuff =
             yield! visitSynModuleDeclNestedModuleTrivia synModuleDeclNestedModuleTrivia
         }
 
-and visitSynModuleDeclNestedModuleTrivia (x : SynModuleDeclNestedModuleTrivia) : Stuff =
+and visitSynModuleDeclNestedModuleTrivia (x : SynModuleDeclNestedModuleTrivia) : References =
     [] // TODO check
 
-and visitHashDirective (x : ParsedHashDirective) : Stuff =
+and visitHashDirective (x : ParsedHashDirective) : References =
     [] // TODO Check
 
-and visitSynIdent (x : SynIdent) : Stuff =
+and visitSynIdent (x : SynIdent) : References =
     [] // TODO Check
 
-and visitSynTupleTypeSegment (x : SynTupleTypeSegment) : Stuff =
+and visitSynTupleTypeSegment (x : SynTupleTypeSegment) : References =
     match x with
     | SynTupleTypeSegment.Slash range ->
         []
@@ -70,10 +74,10 @@ and visitSynTupleTypeSegment (x : SynTupleTypeSegment) : Stuff =
     | SynTupleTypeSegment.Type typeName ->
         visitType typeName
 
-and visitSynTupleTypeSegments (x : SynTupleTypeSegment list) : Stuff =
+and visitSynTupleTypeSegments (x : SynTupleTypeSegment list) : References =
     Seq.collect visitSynTupleTypeSegment x 
 
-and visitTypar (x : SynTypar) : Stuff =
+and visitTypar (x : SynTypar) : References =
     match x with
     | SynTypar.SynTypar(ident, typarStaticReq, isCompGen) ->
         [] // TODO check
@@ -81,16 +85,16 @@ and visitTypar (x : SynTypar) : Stuff =
 and visitSynRationalConst (x : SynRationalConst) =
     [] // TODO check
 
-and visitSynConst (x : SynConst) : Stuff =
+and visitSynConst (x : SynConst) : References =
     [] // TODO Check
 
-and visitSynTypes (x : SynType list) : Stuff =
+and visitSynTypes (x : SynType list) : References =
     Seq.collect visitType x
 
-and visitTypeConstraints (x : SynTypeConstraint list) : Stuff =
+and visitTypeConstraints (x : SynTypeConstraint list) : References =
     Seq.collect visitTypeConstraint x
 
-and visitSynTyparDecl (x : SynTyparDecl) : Stuff =
+and visitSynTyparDecl (x : SynTyparDecl) : References =
     match x with
     | SynTyparDecl(synAttributeLists, synTypar) ->
         seq {
@@ -98,10 +102,10 @@ and visitSynTyparDecl (x : SynTyparDecl) : Stuff =
             yield! visitTypar synTypar
         }
 
-and visitSynTyparDeclList (x : SynTyparDecl list) : Stuff =
+and visitSynTyparDeclList (x : SynTyparDecl list) : References =
     Seq.collect visitSynTyparDecl x
 
-and visitSynTyparDecls (x : SynTyparDecls) : Stuff =
+and visitSynTyparDecls (x : SynTyparDecls) : References =
     match x with
     | SynTyparDecls.PostfixList(synTyparDecls, synTypeConstraints, range) ->
         seq {
@@ -113,14 +117,14 @@ and visitSynTyparDecls (x : SynTyparDecls) : Stuff =
     | SynTyparDecls.SinglePrefix(synTyparDecl, range) ->
         visitSynTyparDecl synTyparDecl
 
-and visitSynValTyparDecls (x : SynValTyparDecls) : Stuff =
+and visitSynValTyparDecls (x : SynValTyparDecls) : References =
     match x with
     | SynValTyparDecls(synTyparDeclsOption, canInfer) ->
         match synTyparDeclsOption with
         | Some decls -> visitSynTyparDecls decls
         | None -> []
 
-and visitValSig (x : SynValSig) : Stuff =
+and visitValSig (x : SynValSig) : References =
     match x with
     | SynValSig(synAttributeLists, synIdent, synValTyparDecls, synType, synValInfo, isInline, isMutable, preXmlDoc, synAccessOption, synExprOption, range, synValSigTrivia) ->
         seq {
@@ -134,7 +138,7 @@ and visitValSig (x : SynValSig) : Stuff =
             match synExprOption with | Some expr -> yield! visitExpr expr | None -> ()
         }
 
-and visitSynTypeDefnSignRepr (x : SynTypeDefnSigRepr) : Stuff =
+and visitSynTypeDefnSignRepr (x : SynTypeDefnSigRepr) : References =
     match x with
     | SynTypeDefnSigRepr.Exception synExceptionDefnRepr ->
         visitSynExceptionDefnRepr synExceptionDefnRepr
@@ -146,7 +150,7 @@ and visitSynTypeDefnSignRepr (x : SynTypeDefnSigRepr) : Stuff =
             yield! (Seq.collect visitMemberSig synMemberSigs)
         }    
 
-and visitSynTypeDefnSign (x : SynTypeDefnSig) : Stuff =
+and visitSynTypeDefnSign (x : SynTypeDefnSig) : References =
     match x with
     | SynTypeDefnSig(synComponentInfo, synTypeDefnSigRepr, synMemberSigs, range, synTypeDefnSigTrivia) ->
         seq {
@@ -154,7 +158,7 @@ and visitSynTypeDefnSign (x : SynTypeDefnSig) : Stuff =
             yield! visitSynTypeDefnSignRepr synTypeDefnSigRepr
         }
 
-and visitMemberSig (x : SynMemberSig) : Stuff =
+and visitMemberSig (x : SynMemberSig) : References =
     match x with
     | SynMemberSig.Inherit(inheritedType, range) ->
         visitType inheritedType
@@ -169,7 +173,7 @@ and visitMemberSig (x : SynMemberSig) : Stuff =
     | SynMemberSig.ValField(synField, range) ->
         visitSynField synField
 
-and visitTypeConstraint (x : SynTypeConstraint) : Stuff =
+and visitTypeConstraint (x : SynTypeConstraint) : References =
     match x with
     | SynTypeConstraint.WhereTyparIsValueType(typar, range) ->
         visitTypar typar
@@ -211,7 +215,7 @@ and visitTypeConstraint (x : SynTypeConstraint) : Stuff =
     | SynTypeConstraint.WhereSelfConstrained(selfConstraint, range) ->
         visitType selfConstraint
 
-and visitType (x : SynType) : Stuff =
+and visitType (x : SynType) : References =
     match x with
     | SynType.Anon range ->
         []
@@ -282,13 +286,13 @@ and visitType (x : SynType) : Stuff =
             yield! visitTypeConstraints synTypeConstraints
         }
 
-and visitPreXmlDoc (doc : FSharp.Compiler.Xml.PreXmlDoc) : Stuff =
+and visitPreXmlDoc (doc : FSharp.Compiler.Xml.PreXmlDoc) : References =
     [] // TODO Check
 
-and visitSynAccess (x : SynAccess) : Stuff =
+and visitSynAccess (x : SynAccess) : References =
     [] // TODO check
 
-and visitSynField (x : SynField) : Stuff =
+and visitSynField (x : SynField) : References =
     match x with
     | SynField.SynField(synAttributeLists, isStatic, identOption, fieldType, isMutable, preXmlDoc, synAccessOption, range, synFieldTrivia) ->
         seq {
@@ -298,10 +302,10 @@ and visitSynField (x : SynField) : Stuff =
             match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
         }
 
-and visitSynFields (x : SynField list) : Stuff =
+and visitSynFields (x : SynField list) : References =
     Seq.collect visitSynField x
 
-and visitSynUnionCaseKind (x : SynUnionCaseKind) : Stuff =
+and visitSynUnionCaseKind (x : SynUnionCaseKind) : References =
     match x with
     | SynUnionCaseKind.Fields synFields ->
         
@@ -309,7 +313,7 @@ and visitSynUnionCaseKind (x : SynUnionCaseKind) : Stuff =
     | SynUnionCaseKind.FullType(fullType, fullTypeInfo) ->
         [] // TODO
 
-and visitSynUnionCase (x : SynUnionCase) : Stuff =
+and visitSynUnionCase (x : SynUnionCase) : References =
     match x with
     | SynUnionCase.SynUnionCase(synAttributeLists, synIdent, synUnionCaseKind, preXmlDoc, synAccessOption, range, synUnionCaseTrivia) ->
         seq {
@@ -318,7 +322,7 @@ and visitSynUnionCase (x : SynUnionCase) : Stuff =
             yield! visitSynUnionCaseKind synUnionCaseKind
         }
 
-and visitSynExceptionDefnRepr (x : SynExceptionDefnRepr) : Stuff =
+and visitSynExceptionDefnRepr (x : SynExceptionDefnRepr) : References =
     match x with
     | SynExceptionDefnRepr.SynExceptionDefnRepr(synAttributeLists, synUnionCase, identsOption, preXmlDoc, synAccessOption, range) ->
         seq {
@@ -329,7 +333,7 @@ and visitSynExceptionDefnRepr (x : SynExceptionDefnRepr) : Stuff =
             match synAccessOption with | Some synAccess -> yield! visitSynAccess synAccess | None -> ()
         }
 
-and visitEnumCase (x : SynEnumCase) : Stuff =
+and visitEnumCase (x : SynEnumCase) : References =
     match x with
     | SynEnumCase(synAttributeLists, synIdent, synConst, valueRange, preXmlDoc, range, synEnumCaseTrivia) ->
         seq {
@@ -339,16 +343,16 @@ and visitEnumCase (x : SynEnumCase) : Stuff =
             yield! visitPreXmlDoc preXmlDoc
         }
 
-and visitMulti (f) (items) : Stuff = Seq.collect f items
+and visitMulti (f) (items) : References = Seq.collect f items
 
 and visitEnumCases = visitMulti visitEnumCase
 
 and visitSynUnionCases = visitMulti visitSynUnionCase
 
-and visitParserDetail (x : ParserDetail) : Stuff =
+and visitParserDetail (x : ParserDetail) : References =
     []
 
-and visitTypeDefnSimpleRepr (x : SynTypeDefnSimpleRepr) : Stuff =
+and visitTypeDefnSimpleRepr (x : SynTypeDefnSimpleRepr) : References =
     match x with
     | SynTypeDefnSimpleRepr.Enum(synEnumCases, range) ->
         visitEnumCases synEnumCases
@@ -380,12 +384,12 @@ and visitTypeDefnSimpleRepr (x : SynTypeDefnSimpleRepr) : Stuff =
     | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly(ilType, range) ->
         []
 
-and visitSynArgInfo (x : SynArgInfo) : Stuff =
+and visitSynArgInfo (x : SynArgInfo) : References =
     match x with
     | SynArgInfo(synAttributeLists, optional, identOption) ->
         visitSynAttributeLists synAttributeLists
 
-and visitSynValInfo (x : SynValInfo) : Stuff =
+and visitSynValInfo (x : SynValInfo) : References =
     match x with
     | SynValInfo(curriedArgInfos, synArgInfo) ->
         seq {
@@ -393,7 +397,7 @@ and visitSynValInfo (x : SynValInfo) : Stuff =
             yield! visitSynArgInfo synArgInfo
         }
 
-and visitSynTypeDefnKind (x : SynTypeDefnKind) : Stuff =
+and visitSynTypeDefnKind (x : SynTypeDefnKind) : References =
     match x with
     | SynTypeDefnKind.Delegate(synType, synValInfo) ->
         seq {
@@ -412,7 +416,7 @@ and visitSynTypeDefnKind (x : SynTypeDefnKind) : Stuff =
     | SynTypeDefnKind.IL ->
         []
 
-and visitSynTypeDefnRepr (x : SynTypeDefnRepr) : Stuff =
+and visitSynTypeDefnRepr (x : SynTypeDefnRepr) : References =
     match x with
     | SynTypeDefnRepr.Exception synExceptionDefnRepr ->
         visitSynExceptionDefnRepr synExceptionDefnRepr
@@ -424,7 +428,7 @@ and visitSynTypeDefnRepr (x : SynTypeDefnRepr) : Stuff =
             yield! visitSynMemberDefns synMemberDefns
         }
 
-and visitSynValSig (x : SynValSig) : Stuff =
+and visitSynValSig (x : SynValSig) : References =
     match x with
     | SynValSig(synAttributeLists, synIdent, synValTyparDecls, synType, synValInfo, isInline, isMutable, preXmlDoc, synAccessOption, synExprOption, range, synValSigTrivia) ->
         seq {
@@ -438,13 +442,13 @@ and visitSynValSig (x : SynValSig) : Stuff =
             match synExprOption with | Some expr -> yield! visitExpr expr | None -> ()
         }
 
-and visitSynMemberKind (x : SynMemberKind) : Stuff =
+and visitSynMemberKind (x : SynMemberKind) : References =
     []
 
-and visitSynMemberFlags (x : SynMemberFlags) : Stuff =
+and visitSynMemberFlags (x : SynMemberFlags) : References =
     []
     
-and visitSynSimplePats (x : SynSimplePats) : Stuff =
+and visitSynSimplePats (x : SynSimplePats) : References =
     match x with
     | SynSimplePats.Typed(synSimplePats, targetType, range) ->
         seq {
@@ -454,10 +458,10 @@ and visitSynSimplePats (x : SynSimplePats) : Stuff =
     | SynSimplePats.SimplePats(synSimplePats, range) ->
         Seq.collect visitSynSimplePat synSimplePats
 
-and visitSynSimplePatAlternativeIdInfoRef (x : SynSimplePatAlternativeIdInfo ref) : Stuff =
+and visitSynSimplePatAlternativeIdInfoRef (x : SynSimplePatAlternativeIdInfo ref) : References =
     [] // TODO Check
 
-and visitSynSimplePat (x : SynSimplePat) : Stuff =
+and visitSynSimplePat (x : SynSimplePat) : References =
     match x with
     | SynSimplePat.Attrib(synSimplePat, synAttributeLists, range) ->
         seq {
@@ -474,7 +478,7 @@ and visitSynSimplePat (x : SynSimplePat) : Stuff =
             yield! visitType targetType
         }
 
-and visitSynMemberDefn (defn : SynMemberDefn) : Stuff =
+and visitSynMemberDefn (defn : SynMemberDefn) : References =
     match defn with
     | SynMemberDefn.Inherit(baseType, identOption, range) ->
         visitType baseType
@@ -529,10 +533,10 @@ and visitSynMemberDefn (defn : SynMemberDefn) : Stuff =
             match memberDefnForSet with | Some binding -> yield! visitSynBinding binding | None -> ()
         }
 
-and visitSynMemberDefns (defns : SynMemberDefn list) : Stuff =
+and visitSynMemberDefns (defns : SynMemberDefn list) : References =
     Seq.collect visitSynMemberDefn defns
 
-and visitSynTypeDefn (defn : SynTypeDefn) : Stuff =
+and visitSynTypeDefn (defn : SynTypeDefn) : References =
     match defn with
     | SynTypeDefn.SynTypeDefn(synComponentInfo, synTypeDefnRepr, synMemberDefns, synMemberDefnOption, range, synTypeDefnTrivia) ->
         seq {
@@ -542,10 +546,10 @@ and visitSynTypeDefn (defn : SynTypeDefn) : Stuff =
             match synMemberDefnOption with Some defn -> yield! visitSynMemberDefn defn | None -> ()
         }
 
-and visitSynTypeDefns (defns : SynTypeDefn list) : Stuff =
+and visitSynTypeDefns (defns : SynTypeDefn list) : References =
     Seq.collect visitSynTypeDefn defns
 
-and visitSynExceptionDefn (x : SynExceptionDefn) : Stuff =
+and visitSynExceptionDefn (x : SynExceptionDefn) : References =
     match x with
     | SynExceptionDefn(synExceptionDefnRepr, withKeyword, synMemberDefns, range) ->
         seq {
@@ -553,7 +557,7 @@ and visitSynExceptionDefn (x : SynExceptionDefn) : Stuff =
             yield! visitSynMemberDefns synMemberDefns
         }
 
-and visitSynValData (x : SynValData) : Stuff =
+and visitSynValData (x : SynValData) : References =
     match x with
     | SynValData(synMemberFlagsOption, synValInfo, thisIdOpt) ->
         seq {
@@ -561,10 +565,10 @@ and visitSynValData (x : SynValData) : Stuff =
             yield! visitSynValInfo synValInfo
         } 
 
-and visitSynPats (x : SynPat list) : Stuff =
+and visitSynPats (x : SynPat list) : References =
     Seq.collect visitPat x
 
-and visitPat (x : SynPat) : Stuff =
+and visitPat (x : SynPat) : References =
     match x with
     | SynPat.Ands(synPats, range) ->
         visitSynPats synPats
@@ -636,7 +640,7 @@ and visitPat (x : SynPat) : Stuff =
     | SynPat.FromParseError(synPat, range) ->
         visitPat synPat
 
-and visitBindingReturnInfo (x : SynBindingReturnInfo) : Stuff =
+and visitBindingReturnInfo (x : SynBindingReturnInfo) : References =
     match x with
     | SynBindingReturnInfo(typeName, range, synAttributeLists) ->
         seq {
@@ -644,7 +648,7 @@ and visitBindingReturnInfo (x : SynBindingReturnInfo) : Stuff =
             yield! visitSynAttributeLists synAttributeLists
         }
 
-and visitSynBinding (x : SynBinding) : Stuff =
+and visitSynBinding (x : SynBinding) : References =
     match x with
     | SynBinding.SynBinding(synAccessOption, synBindingKind, isInline, isMutable, synAttributeLists, preXmlDoc, synValData, headPat, synBindingReturnInfoOption, synExpr, range, debugPointAtBinding, synBindingTrivia) ->
         seq {
@@ -657,18 +661,17 @@ and visitSynBinding (x : SynBinding) : Stuff =
             yield! visitExpr synExpr
         }
 
-and visitBindings (bindings : SynBinding list) : Stuff =
+and visitBindings (bindings : SynBinding list) : References =
     Seq.collect visitSynBinding bindings
 
-and visitSynOpenDeclTarget (target : SynOpenDeclTarget) : Stuff =
+and visitSynOpenDeclTarget (target : SynOpenDeclTarget) : References =
     match target with
     | SynOpenDeclTarget.Type(typeName, range) ->
         visitType typeName
     | SynOpenDeclTarget.ModuleOrNamespace(synLongIdent, range) ->
-        visitSynLongIdent synLongIdent
-        |> Seq.map (fun s -> {s with Kind = Kind.ModuleOrNamespace})
+        [ReferenceOrAbbreviation.Reference {Ident = synLongIdent.LongIdent; Kind = ReferenceKind.ModuleOrNamespace}] 
 
-and visitSynComponentInfo (info : SynComponentInfo) : Stuff =
+and visitSynComponentInfo (info : SynComponentInfo) : References =
     match info with
     | SynComponentInfo(synAttributeLists, synTyparDeclsOption, synTypeConstraints, longId, preXmlDoc, preferPostfix, synAccessOption, range) ->
         seq {
@@ -680,13 +683,13 @@ and visitSynComponentInfo (info : SynComponentInfo) : Stuff =
             match synAccessOption with | Some access -> yield! visitSynAccess access | None -> ()
         }
 
-and visitLongIdent (ident : LongIdent) : Stuff =
-    [{Ident = ident; Kind = Kind.Type}]
+and visitLongIdent (ident : LongIdent) : References =
+    [ReferenceOrAbbreviation.Reference {Ident = ident; Kind = ReferenceKind.Type}]
     
-and visitSynLongIdent (ident : SynLongIdent) : Stuff  =
-    [{Ident = ident.LongIdent; Kind = Kind.Type}]
+and visitSynLongIdent (ident : SynLongIdent) : References  =
+    [ReferenceOrAbbreviation.Reference {Ident = ident.LongIdent; Kind = ReferenceKind.Type}]
    
-and visitSynMatchClause (x : SynMatchClause) : Stuff =
+and visitSynMatchClause (x : SynMatchClause) : References =
     match x with
     | SynMatchClause(synPat, synExprOption, resultExpr, range, debugPointAtTarget, synMatchClauseTrivia) ->
         seq {
@@ -697,20 +700,20 @@ and visitSynMatchClause (x : SynMatchClause) : Stuff =
    
 and visitSynMatchClauses = visitMulti visitSynMatchClause
       
-and visitExprOnly (x : SeqExprOnly) : Stuff =
+and visitExprOnly (x : SeqExprOnly) : References =
     []
       
-and visitSynInterpolatedStringPart (x : SynInterpolatedStringPart) : Stuff =
+and visitSynInterpolatedStringPart (x : SynInterpolatedStringPart) : References =
     match x with
     | SynInterpolatedStringPart.String(value, range) ->
         []
     | SynInterpolatedStringPart.FillExpr(fillExpr, identOption) ->
         visitExpr fillExpr
       
-and visitSynInterpolatedStringParts (x : SynInterpolatedStringPart list) : Stuff =
+and visitSynInterpolatedStringParts (x : SynInterpolatedStringPart list) : References =
     Seq.collect visitSynInterpolatedStringPart x
       
-and visitSynInterfaceImpl (x : SynInterfaceImpl) : Stuff =
+and visitSynInterfaceImpl (x : SynInterfaceImpl) : References =
     match x with
     | SynInterfaceImpl(interfaceTy, withKeyword, synBindings, synMemberDefns, range) ->
         seq {
@@ -719,10 +722,10 @@ and visitSynInterfaceImpl (x : SynInterfaceImpl) : Stuff =
             yield! visitSynMemberDefns synMemberDefns
         }
       
-and visitSynInterfaceImpls (x : SynInterfaceImpl list) : Stuff =
+and visitSynInterfaceImpls (x : SynInterfaceImpl list) : References =
     Seq.collect visitSynInterfaceImpl x
       
-and visitSynArgPats (x : SynArgPats) : Stuff =
+and visitSynArgPats (x : SynArgPats) : References =
     match x with
     | SynArgPats.Pats synPats ->
         visitSynPats synPats
@@ -730,7 +733,7 @@ and visitSynArgPats (x : SynArgPats) : Stuff =
         tuples
         |> Seq.collect (fun (ident, range, pat) -> visitPat pat)
       
-and visitSynMemberSig (x : SynMemberSig) : Stuff =
+and visitSynMemberSig (x : SynMemberSig) : References =
     match x with
     | SynMemberSig.Inherit(inheritedType, range) ->
         visitType inheritedType
@@ -744,8 +747,8 @@ and visitSynMemberSig (x : SynMemberSig) : Stuff =
         visitSynField synField
       
 and visitExpr (expr : SynExpr) =
-    let l = System.Collections.Generic.List<Item>()
-    let go (items : Stuff) =
+    let l = System.Collections.Generic.List<ReferenceOrAbbreviation>()
+    let go (items : References) =
         l.AddRange(items)
         
     match expr with
@@ -981,7 +984,7 @@ and visitExpr (expr : SynExpr) =
     
     l
     
-and visitStaticOptimizationConstraint (x : SynStaticOptimizationConstraint) : Stuff =
+and visitStaticOptimizationConstraint (x : SynStaticOptimizationConstraint) : References =
     match x with
     | SynStaticOptimizationConstraint.WhenTyparIsStruct(synTypar, range) ->
         visitTypar synTypar
@@ -993,7 +996,7 @@ and visitStaticOptimizationConstraint (x : SynStaticOptimizationConstraint) : St
     
 and visitStaticOptimizationConstraints = visitMulti visitStaticOptimizationConstraint
     
-and visitExprAndBang (x : SynExprAndBang) : Stuff =
+and visitExprAndBang (x : SynExprAndBang) : References =
     match x with
     | SynExprAndBang(debugPointAtBinding, isUse, isFromSource, synPat, synExpr, range, synExprAndBangTrivia) ->
         seq {
@@ -1003,20 +1006,20 @@ and visitExprAndBang (x : SynExprAndBang) : Stuff =
     
 and visitExprs = visitMulti visitExpr
     
-and visitSynAttribute (attribute : SynAttribute) : Stuff  =
+and visitSynAttribute (attribute : SynAttribute) : References  =
     seq {
         yield! visitSynLongIdent attribute.TypeName
         yield! visitExpr attribute.ArgExpr
     }
                 
-and visitSynAttributeList (attributeList : SynAttributeList) : Stuff  =
+and visitSynAttributeList (attributeList : SynAttributeList) : References  =
     attributeList.Attributes
     |> Seq.collect visitSynAttribute
 
-and visitSynAttributeLists (attributeLists : SynAttributeList list) : Stuff  =
+and visitSynAttributeLists (attributeLists : SynAttributeList list) : References  =
     Seq.collect visitSynAttributeList attributeLists
 
-and visitSynModuleOrNamespace (x : SynModuleOrNamespace) : Stuff  =
+and visitSynModuleOrNamespace (x : SynModuleOrNamespace) : References  =
     match x with
     | SynModuleOrNamespace.SynModuleOrNamespace(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
         seq {
@@ -1029,7 +1032,7 @@ and visitSynModuleOrNamespace (x : SynModuleOrNamespace) : Stuff  =
 
 and visitSynMemberSigs = visitMulti visitSynMemberSig
 
-and visitSynExceptionSig (x : SynExceptionSig) : Stuff =
+and visitSynExceptionSig (x : SynExceptionSig) : References =
     match x with
     | SynExceptionSig(synExceptionDefnRepr, withKeyword, synMemberSigs, range) ->
         seq {
@@ -1039,7 +1042,7 @@ and visitSynExceptionSig (x : SynExceptionSig) : Stuff =
 
 and visitSynTypeDefnSigs = visitMulti visitSynTypeDefnSign
 
-and visitSynModuleSigDecl (x : SynModuleSigDecl) : Stuff =
+and visitSynModuleSigDecl (x : SynModuleSigDecl) : References =
     match x with
     | SynModuleSigDecl.Exception(synExceptionSig, range) ->
         visitSynExceptionSig synExceptionSig
@@ -1070,7 +1073,7 @@ and visitSynModuleSigDecl (x : SynModuleSigDecl) : Stuff =
 
 and visitSynModuleSigDecls = visitMulti visitSynModuleSigDecl
 
-and visitSynModuleOrNamespaceSig (x : SynModuleOrNamespaceSig) : Stuff  =
+and visitSynModuleOrNamespaceSig (x : SynModuleOrNamespaceSig) : References  =
     match x with
     | SynModuleOrNamespaceSig.SynModuleOrNamespaceSig(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
         seq {
@@ -1100,110 +1103,37 @@ let mightHaveAutoOpen (synAttributeLists : SynAttributeList list) : bool =
     // Some attributes found - we can't know for sure if one of them is the AutoOpenAttribute (possibly hidden with a type alias), so we say 'yes'.
     | _ -> true
 
-let topModuleOrNamespace (input : ParsedInput) =
+/// Extract the top-level module/namespaces from the AST
+let topModuleOrNamespaces (input : ParsedInput) =
     match input with
     | ParsedInput.ImplFile f ->
         match f.Contents with
-        | [] -> failwith "No modules or namespaces"
-        | first :: rest ->
-            match first with
-            | SynModuleOrNamespace(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
-                if mightHaveAutoOpen synAttributeLists then
-                    // Contents of a module that's potentially AutoOpen are available everywhere, so treat it as if it had no name ('root' module).
-                    // This makes the dependency tracking algorithm detect it as a dependency for all further files.
-                    LongIdent.Empty
-                else
-                    longId
+        | [] -> failwith $"No modules or namespaces found in file '{f.FileName}'"
+        | items ->
+            items
+            |> List.map (fun item ->
+                match item with
+                | SynModuleOrNamespace(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
+                    if mightHaveAutoOpen synAttributeLists then
+                        // Contents of a module that's potentially AutoOpen are available everywhere, so treat it as if it had no name ('root' module).
+                        // This makes the dependency tracking algorithm detect it as a dependency for all further files.
+                        LongIdent.Empty
+                    else
+                        longId
+            )
     | ParsedInput.SigFile f ->
         match f.Contents with
-        | [] -> failwith "No modules or namespaces"
-        | first :: rest ->
-            match first with
-            | SynModuleOrNamespaceSig(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
-                if mightHaveAutoOpen synAttributeLists then
-                    // Contents of a module that's potentially AutoOpen are available everywhere, so treat it as if it had no name ('root' module).
-                    // This makes the dependency tracking algorithm detect it as a dependency for all further files.
-                    LongIdent.Empty
-                else
-                    longId
-
-[<Test>]
-let ``Single SynEnumCase contains range of constant`` () =
-    let parseResults = 
-        getParseResults
-            """
-
-module A1 = let a = 3
-module A2 = let a = 3
-module A3 = let a = 3
-module A4 =
-    
-    type AAttribute(name : string) =
-        inherit System.Attribute()
-    
-    let a = 3
-    module A1 =
-        let a = 3
-    type X = int * int
-    type Y = Y of int
-
-module B =
-    open A2
-    let b = [|
-        A1.a
-        A2.a
-        A3.a
-    |]
-    let c : A4.X = 2,2
-    [<A4.A("name")>]
-    let d : A4.Y = A4.Y 2
-    type Z =
-        {
-            X : A4.X
-            Y : A4.Y
-        }
-
-let c = A4.a
-let d = A4.A1.a
-open A4
-let e = A1.a
-open A1
-let f = a
-"""
-
-    let stuff = visit parseResults
-    let top = topModuleOrNamespace parseResults
-    printfn $"%+A{top}"
-    printfn $"%+A{stuff}"
-    ()
-
-[<Test>]
-let ``Test two`` () =
-    
-    let A =
-        """
-module A
-open B
-let x = B.x
-"""
-    let B =
-        """
-module B
-let x = 3
-"""
-    
-    let parsedA = parseSourceCode("A.fs", A)
-    let visitedA = visit parsedA
-    let parsedB = parseSourceCode("B.fs", B)
-    let topB = topModuleOrNamespace parsedB
-    printfn $"Top B: %+A{topB}"
-    printfn $"A refs: %+A{visitedA}"
-    ()
-
-
-[<Test>]
-let ``Test big`` () =
-    let code = System.IO.File.ReadAllText("Big.fs")
-    let parsedA = getParseResults code
-    let visitedA = visit parsedA
-    printfn $"A refs: %+A{visitedA}"
+        | [] -> failwith $"No modules or namespaces found in file '{f.FileName}'"
+        | items ->
+            items
+            |> List.map (fun item ->
+                match item with
+                | SynModuleOrNamespaceSig(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
+                    if mightHaveAutoOpen synAttributeLists then
+                        // Contents of a module that's potentially AutoOpen are available everywhere, so treat it as if it had no name ('root' module).
+                        // This makes the dependency tracking algorithm detect it as a dependency for all further files.
+                        LongIdent.Empty
+                    else
+                        longId
+            )
+    |> List.toArray

@@ -3,7 +3,7 @@
 open System
 open System.Collections.Generic
 open Buildalyzer
-open FSharp.Compiler.Service.Tests2.SyntaxTreeTests.TypeTests
+open FSharp.Compiler.Service.Tests2.ASTVisit
 open FSharp.Compiler.Syntax
 open NUnit.Framework
 open Newtonsoft.Json
@@ -12,37 +12,76 @@ let log (msg : string) =
     let d = DateTime.Now.ToString("HH:mm:ss.fff")
     printfn $"{d} {msg}"
 
-/// File * code * AST
-type FileAST = string * string * ParsedInput
-
-type List<'a> = System.Collections.Generic.List<'a>
-
-type Node =
+/// File information for the algorithm
+type FileAST =
     {
         Name : string
         Code : string
         AST : ParsedInput
-        Top : LongIdent
-        ModuleRefs : LongIdent[]
-        // Order of the file in the project. Files with lower number cannot depend on files with higher number
-        Idx : int
     }
 
-/// Filenames with sizes and dependencies
-type Graph = (string * int64 * string[])[]
+type List<'a> = System.Collections.Generic.List<'a>
 
-let extractModuleSegments (stuff : Stuff) : LongIdent[] =
-    stuff
-    |> Seq.choose (fun x ->
-        match x.Kind with
-        | ModuleOrNamespace -> x.Ident |> Some
-        | Type ->
-            match x.Ident.Length with
-            | 0
-            | 1 -> None
-            | n -> x.Ident.GetSlice(Some 0, n - 2 |> Some) |> Some
-    )
-    |> Seq.toArray
+/// All the information about a single file needed for the algorithm
+type File =
+    {
+        // Order of the file in the project. Files with lower number cannot depend on files with higher number
+        Idx : int
+        Name : string
+        Code : string
+        AST : ParsedInput
+        /// A list of top-level namespaces or a single top-level module
+        Tops : LongIdent[]
+        /// All partial module references found in this file's AST
+        ModuleRefs : LongIdent[]
+        ContainsModuleAbbreviations : bool
+    }
+    with member this.CodeSize = this.Code.Length
+
+type FileResult =
+    {
+        Name : string
+        Size : int64
+        Deps : string[]
+    }
+
+type DepsGraph = IDictionary<int, int[]>
+
+type DepsResult =
+    {
+        Files : File[]
+        Graph : DepsGraph
+    }
+
+type References = Reference seq
+
+/// Extract partial module references from partial module or type references
+let extractModuleSegments (stuff : ReferenceOrAbbreviation seq) : LongIdent[] * bool =
+    
+    let refs =
+        stuff
+        |> Seq.choose (function | ReferenceOrAbbreviation.Reference r -> Some r | ReferenceOrAbbreviation.Abbreviation _ -> None)
+        |> Seq.toArray
+    let abbreviations =
+        stuff
+        |> Seq.choose (function | ReferenceOrAbbreviation.Reference _ -> None | ReferenceOrAbbreviation.Abbreviation a -> Some a)
+        |> Seq.toArray
+    
+    let moduleRefs =
+        refs
+        |> Seq.choose (fun x ->
+            match x.Kind with
+            | ModuleOrNamespace -> x.Ident |> Some
+            | Type ->
+                match x.Ident.Length with
+                | 0
+                | 1 -> None
+                | n -> x.Ident.GetSlice(Some 0, n - 2 |> Some) |> Some
+        )
+        |> Seq.toArray
+    let containsModuleAbbreviations = abbreviations.Length > 0
+    
+    moduleRefs, containsModuleAbbreviations
 
 type ModuleSegment = string
 
@@ -54,7 +93,7 @@ type TrieNode =
         mutable Visited : bool
         /// Files/graph nodes represented by this TrieNode
         /// All files whose top-level module/namespace are same as this TrieNode's 'path'
-        GraphNodes : System.Collections.Generic.List<Node>
+        GraphNodes : System.Collections.Generic.List<File>
     }
 
 let emptyList<'a> () =
@@ -87,13 +126,10 @@ let emptyTrie () : TrieNode =
     }
 
 /// Build initial Trie from files
-let buildTrie (nodes : Node[]) : TrieNode =
+let buildTrie (files : File[]) : TrieNode =
     let root = emptyTrie()
         
-    // Add every file
-    let addItem (node : Node) =
-        let ident = node.Top
-        
+    let addPath (node : File) (ident : LongIdent) =
         let mutable trieNode = root
         // Go through module segments, possibly extending the Trie with new nodes
         for segment in ident do
@@ -108,13 +144,17 @@ let buildTrie (nodes : Node[]) : TrieNode =
                     trieNode.Children[segment.idText] <- child
                     child
             trieNode <- child
-            
         // Add the node to the found leaf's list
         trieNode.GraphNodes.Add(node)
+        
+    // Add every file
+    let addNode (node : File) =
+        node.Tops
+        |> Array.iter (addPath node)
     
     // Add all files to the Trie
-    nodes
-    |> Array.iter addItem
+    files
+    |> Array.iter addNode
         
     root
 
@@ -129,49 +169,52 @@ let rec searchInTrie (trie : TrieNode) (path : LongIdent) : TrieNode option =
         | false, _ ->
             None
 
-let analyseEfficiency (files : Graph) : unit =
+let analyseEfficiency (result : DepsResult) : unit =
     let totalFileSize =
-        files
-        |> Array.sumBy (fun (file, size, deps) -> size)
+        result.Files
+        |> Array.sumBy (fun file -> int64(file.CodeSize))
     
-    let nodes =
-        files
-        |> Seq.map (fun (f, s, d) -> f, (f, s, d))
+    let filesDict =
+        result.Files
+        |> Seq.map (fun file -> file.Idx, file)
         |> dict
     
     let depths =
-        files
-        |> Seq.map (fun (f, s, d) -> KeyValuePair(f, -1L))
+        result.Files
+        |> Seq.map (fun file -> KeyValuePair(file.Idx, -1L))
         |> Dictionary<_,_>
     
-    let rec dfs (file : string) =
-        match depths[file] with
+    // Use depth-first search to calculate 'depth' of each file
+    let rec depthDfs (idx : int) =
+        let file = filesDict[idx]
+        match depths[idx] with
         | -1L ->
             // Visit this node
-            let (f, s, d) = nodes[file]
+            let file = filesDict[idx]
             let deepestChild =
-                match d with
+                match result.Graph[file.Idx] with
                 | [||] -> 0L
-                | d -> d |> Array.map dfs |> Array.max
-            let depth = s + deepestChild
-            depths[file] <- depth
-            printfn $"Depth[{file}] = {depth}"
+                | d -> d |> Array.map depthDfs |> Array.max
+            let depth = int64(file.CodeSize) + deepestChild
+            depths[idx] <- depth
+            printfn $"Depth[{idx}, {file.Name}] = {depth}"
             depth
-        | d ->
-            d
+        | depth ->
+            depth
     
+    // Run DFS for every file node, collect the maximum depth found
     let maxDepth =
-        files
-        |> Array.map (fun (f, s, d) -> dfs f)
+        result.Files
+        |> Array.map (fun f -> depthDfs f.Idx)
         |> Array.max
         
     printfn $"Total file size: {totalFileSize}. Max depth: {maxDepth}. Max Depth/Size = {maxDepth / totalFileSize}"
 
-let detectFileDependencies (nodes : FileAST[]) : Graph =
+let detectFileDependencies (nodes : FileAST[]) : DepsResult =
     // Create ASTs, extract module refs
     let nodes =
         nodes
-        |> Array.Parallel.mapi (fun i (name, code, ast) -> 
+        |> Array.Parallel.mapi (fun i {Name = name; Code = code; AST = ast} -> 
             let typeAndModuleRefs =
                 try
                     visit ast |> Some
@@ -180,21 +223,31 @@ let detectFileDependencies (nodes : FileAST[]) : Graph =
             match typeAndModuleRefs with
             | None -> None
             | Some typeAndModuleRefs ->
-                let top = topModuleOrNamespace ast
-                let moduleRefs = extractModuleSegments typeAndModuleRefs
+                let top = topModuleOrNamespaces ast
+                let moduleRefs, containsModuleAbbreviations = extractModuleSegments typeAndModuleRefs
                 {
+                    Idx = i
                     Name = name
                     Code = code
                     AST = ast
-                    Top = top
+                    Tops = top
                     ModuleRefs = moduleRefs
-                    Idx = i
+                    ContainsModuleAbbreviations = containsModuleAbbreviations
                 }
                 |> Some
         )
         |> Array.choose id
         
     log "ASTs traversed"
+    
+    let filesWithModuleAbbreviations =
+        nodes
+        |> Array.filter (fun n -> n.ContainsModuleAbbreviations)
+        |> Array.map (fun f -> f.Idx)
+        
+    let allIndices =
+        nodes
+        |> Array.map (fun f -> f.Idx)
         
     let trie = buildTrie nodes
     
@@ -202,6 +255,9 @@ let detectFileDependencies (nodes : FileAST[]) : Graph =
     let graph =
         nodes
         |> Array.Parallel.map (fun node ->
+            match node.ContainsModuleAbbreviations with
+            | true -> node.Idx, allIndices
+            | false ->
             let trie = cloneTrie trie
             
             // Keep a list of visited nodes (ie. all reachable nodes and all their ancestors)
@@ -254,9 +310,10 @@ let detectFileDependencies (nodes : FileAST[]) : Graph =
                 newReachables
                 |> Array.iter markReachable
             
-            // Add top-level module/namespace as the first reference (possibly not necessary as maybe already in the list)
+            // Add top-level module/namespaces as the first reference (possibly not necessary as maybe already in the list)
+            // TODO When multiple top-level namespaces exist, we should check that it's OK to add all of them at the start (out of order). 
             let moduleRefs =
-                Array.append [|node.Top|] node.ModuleRefs
+                Array.append node.Tops node.ModuleRefs
             
             // Process all refs
             moduleRefs
@@ -273,17 +330,34 @@ let detectFileDependencies (nodes : FileAST[]) : Graph =
                 reachableItems
                 // We know a file can't depend on a file further down in the project definition (or on itself)
                 |> Seq.filter (fun n -> n.Idx < node.Idx)
-                |> Seq.map (fun n -> n.Name)
+                |> Seq.map (fun n -> n.Idx)
                 |> Seq.toArray
-            node.Name, (int64)node.Code.Length, deps
+                
+            let finalDeps = Array.append deps filesWithModuleAbbreviations
+                
+            node.Idx, finalDeps
         )
+        |> dict
+    
+    let res =
+        {
+            DepsResult.Files = nodes
+            DepsResult.Graph = graph
+        }
     log "Done"
     //analyseEfficiency graph
-    graph
+    res
 
 [<Test>]
 let TestDepsResolver() =
    
+    let WithAbbreviations =
+        """
+module Abbr
+
+module X = A
+"""
+    
     let A_fsi =
         """
 module A
@@ -337,6 +411,7 @@ type B = int
 """
 
     let files = [
+        "Abbr.fs", WithAbbreviations
         "A.fsi", A_fsi
         "A.fs", A
         "B.fs", B
@@ -349,14 +424,14 @@ type B = int
     ]
     let nodes =
         files
-        |> List.map (fun (name, code) -> name, code, parseSourceCode(name, code))
+        |> List.map (fun (name, code) -> {FileAST.Name = name; FileAST.Code = code; FileAST.AST = parseSourceCode(name, code)})
         |> List.toArray
     
     let graph = detectFileDependencies nodes
 
     printfn "Detected file dependencies:"
-    graph
-    |> Array.iter (fun (file, codeSize, deps) -> printfn $"{file} -> %+A{deps}")
+    graph.Graph
+    |> Seq.iter (fun (KeyValue(idx, deps)) -> printfn $"{graph.Files[idx].Name} -> %+A{deps |> Array.map(fun d -> graph.Files[d].Name)}")
 
 [<Test>]
 let Test () =
@@ -384,7 +459,7 @@ let Test () =
         |> Array.Parallel.map (fun f ->
             let code = System.IO.File.ReadAllText(f)
             let ast = getParseResults code
-            f, code, ast
+            {Name = f; Code = code; AST = ast}
         )
     let N = files.Length
     log $"{N} files read and parsed"
@@ -392,12 +467,10 @@ let Test () =
     let graph = detectFileDependencies files
     log "deps detected"
     
-    let totalDeps = graph |> Array.sumBy (fun (f, codeSize, deps) -> deps.Length)
+    let totalDeps = graph.Graph |> Seq.sumBy (fun (KeyValue(idx, deps)) -> deps.Length)
     let maxPossibleDeps = (N * (N-1)) / 2 
-    //graph
-    //|> Array.iter (fun (file, deps) -> printfn $"{file} -> %+A{deps}")
     
-    let graph = graph |> Array.map (fun (f, codeSize, deps) -> f, deps) |> dict
+    let graph = graph.Graph |> Seq.map (fun (KeyValue(idx, deps)) -> graph.Files[idx].Name, deps |> Array.map (fun d -> graph.Files[d].Name)) |> dict
     let json = JsonConvert.SerializeObject(graph, Formatting.Indented)
     System.IO.File.WriteAllText("deps_graph.json", json)
     
