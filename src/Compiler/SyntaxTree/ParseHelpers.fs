@@ -422,13 +422,13 @@ let mkSynMemberDefnGetSet
     (parseState: IParseState)
     (opt_inline: bool)
     (mWith: range)
-    (classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * SynReturnInfo option * range option * SynExpr * range) list)
+    (classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * (range option * SynReturnInfo) option * range option * SynExpr * range) list)
     (mAnd: range option)
     (mWhole: range)
     (propertyNameBindingPat: SynPat)
-    (optPropertyType: SynReturnInfo option)
+    (optPropertyType: (range option * SynReturnInfo) option)
     (visNoLongerUsed: SynAccess option)
-    (memFlagsBuilder: SynMemberKind -> SynMemberFlags)
+    flagsBuilderAndLeadingKeyword
     (attrs: SynAttributeList list)
     (rangeStart: range)
     : SynMemberDefn list =
@@ -436,6 +436,7 @@ let mkSynMemberDefnGetSet
     let mutable hasGet = false
     let mutable hasSet = false
 
+    let memFlagsBuilder, leadingKeyword = flagsBuilderAndLeadingKeyword
     let xmlDoc = grabXmlDocAtRangeStart (parseState, attrs, rangeStart)
 
     let tryMkSynMemberDefnMember
@@ -467,9 +468,8 @@ let mkSynMemberDefnGetSet
 
         let trivia: SynBindingTrivia =
             {
-                LetKeyword = None
+                LeadingKeyword = leadingKeyword
                 EqualsRange = mEquals
-                ExternKeyword = None
             }
 
         let binding =
@@ -540,13 +540,6 @@ let mkSynMemberDefnGetSet
                 | _ -> optReturnType
 
             // REDO with the correct member kind
-            let trivia: SynBindingTrivia =
-                {
-                    LetKeyword = None
-                    EqualsRange = mEquals
-                    ExternKeyword = None
-                }
-
             let binding =
                 mkSynBinding
                     (PreXmlDoc.Empty, bindingPat)
@@ -627,14 +620,6 @@ let mkSynMemberDefnGetSet
             // replacing the get/set identifier. A little gross.
 
             let (bindingPatAdjusted, getOrSetIdentOpt), xmlDocAdjusted =
-
-                let trivia: SynBindingTrivia =
-                    {
-                        LetKeyword = None
-                        EqualsRange = mEquals
-                        ExternKeyword = None
-                    }
-
                 let bindingOuter =
                     mkSynBinding
                         (xmlDoc, propertyNameBindingPat)
@@ -894,7 +879,7 @@ let mkUnderscoreRecdField m =
 let mkRecdField (lidwd: SynLongIdent) = lidwd, true
 
 // Used for 'do expr' in a class.
-let mkSynDoBinding (vis: SynAccess option, expr, m) =
+let mkSynDoBinding (vis: SynAccess option, mDo, expr, m) =
     match vis with
     | Some vis -> errorR (Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations (vis.ToString()), m))
     | None -> ()
@@ -912,7 +897,10 @@ let mkSynDoBinding (vis: SynAccess option, expr, m) =
         expr,
         m,
         DebugPointAtBinding.NoneAtDo,
-        SynBindingTrivia.Zero
+        {
+            LeadingKeyword = SynLeadingKeyword.Do mDo
+            EqualsRange = None
+        }
     )
 
 let mkSynExprDecl (e: SynExpr) = SynModuleDecl.Expr(e, e.Range)
@@ -997,6 +985,30 @@ let mkClassMemberLocalBindings
     if isUse then
         errorR (Error(FSComp.SR.parsUseBindingsIllegalInImplicitClassConstructors (), mWhole))
 
+    let decls =
+        match initialRangeOpt, decls with
+        | _, [] -> []
+        | Some mStatic, SynBinding (a0, k, il, im, a, x, v, h, ri, e, m, dp, trivia) :: rest ->
+            // prepend static keyword to existing leading keyword.
+            let trivia =
+                match trivia.LeadingKeyword with
+                | SynLeadingKeyword.LetRec (mLet, mRec) ->
+                    { trivia with
+                        LeadingKeyword = SynLeadingKeyword.StaticLetRec(mStatic, mLet, mRec)
+                    }
+                | SynLeadingKeyword.Let mLet ->
+                    { trivia with
+                        LeadingKeyword = SynLeadingKeyword.StaticLet(mStatic, mLet)
+                    }
+                | SynLeadingKeyword.Do mDo ->
+                    { trivia with
+                        LeadingKeyword = SynLeadingKeyword.StaticDo(mStatic, mDo)
+                    }
+                | _ -> trivia
+
+            SynBinding(a0, k, il, im, a, x, v, h, ri, e, m, dp, trivia) :: rest
+        | None, decls -> decls
+
     SynMemberDefn.LetBindings(decls, isStatic, isRec, mWhole)
 
 let mkLocalBindings (mWhole, BindingSetPreAttrs (_, isRec, isUse, declsPreAttrs, _), mIn, body: SynExpr) =
@@ -1056,3 +1068,11 @@ let checkForMultipleAugmentations m a1 a2 =
 let rangeOfLongIdent (lid: LongIdent) =
     System.Diagnostics.Debug.Assert(not lid.IsEmpty, "the parser should never produce a long-id that is the empty list")
     (lid.Head.idRange, lid) ||> unionRangeWithListBy (fun id -> id.idRange)
+
+let appendValToLeadingKeyword mVal leadingKeyword =
+    match leadingKeyword with
+    | SynLeadingKeyword.StaticMember (mStatic, mMember) -> SynLeadingKeyword.StaticMemberVal(mStatic, mMember, mVal)
+    | SynLeadingKeyword.Member mMember -> SynLeadingKeyword.MemberVal(mMember, mVal)
+    | SynLeadingKeyword.Override mOverride -> SynLeadingKeyword.OverrideVal(mOverride, mVal)
+    | SynLeadingKeyword.Default (mDefault) -> SynLeadingKeyword.DefaultVal(mDefault, mVal)
+    | _ -> leadingKeyword
