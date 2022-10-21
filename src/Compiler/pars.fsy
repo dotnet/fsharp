@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 %{
 
@@ -45,7 +45,7 @@ let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) ->
 
 %token <string * string> KEYWORD_STRING // Like __SOURCE_DIRECTORY__
 %token <string> IDENT 
-%token <string> HASH_IDENT 
+//%token <string> HASH_IDENT 
 %token <string> INFIX_STAR_STAR_OP 
 %token <string> INFIX_COMPARE_OP 
 %token <string> INFIX_AT_HAT_OP 
@@ -60,7 +60,7 @@ let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) ->
 /* bool indicates if INT8 was 'bad' max_int+1, e.g. '128'  */
 %token <sbyte * bool> INT8 
 %token <int16 * bool> INT16
-%token <int32 * bool> INT32 INT32_DOT_DOT
+%token <int32 * bool> INT32 //INT32_DOT_DOT
 %token <int64 * bool> INT64
 %token <int64 * bool> NATIVEINT
 
@@ -77,19 +77,19 @@ let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) ->
 %token <bool> LET YIELD YIELD_BANG AND_BANG
 %token <bool> LESS GREATER /* here the bool indicates if the tokens are part of a type application or type parameter declaration, e.g. C<int>, detected by the lex filter */
 %token <string> PERCENT_OP BINDER 
-%token <string * bool> LQUOTE RQUOTE  RQUOTE_DOT 
-%token BAR_BAR UPCAST DOWNCAST NULL RESERVED MODULE NAMESPACE DELEGATE CONSTRAINT BASE
-%token AND AS ASSERT OASSERT ASR BEGIN DO DONE DOWNTO ELSE ELIF END DOT_DOT DOT_DOT_HAT
+%token <string * bool> LQUOTE RQUOTE  //RQUOTE_DOT 
+%token BAR_BAR UPCAST DOWNCAST NULL /*RESERVED*/ MODULE NAMESPACE DELEGATE /*CONSTRAINT*/ BASE
+%token AND AS ASSERT OASSERT /*ASR*/ BEGIN DO DONE DOWNTO ELSE ELIF END DOT_DOT /*DOT_DOT_HAT*/
 %token EXCEPTION FALSE FOR FUN FUNCTION IF IN JOIN_IN FINALLY DO_BANG 
 %token LAZY OLAZY  MATCH MATCH_BANG  MUTABLE NEW OF 
-%token OPEN OR REC THEN TO TRUE TRY TYPE VAL INLINE INTERFACE INSTANCE CONST
-%token WHEN WHILE WITH HASH AMP AMP_AMP QUOTE LPAREN RPAREN RPAREN_COMING_SOON RPAREN_IS_HERE STAR COMMA RARROW GREATER_BAR_RBRACK LPAREN_STAR_RPAREN
-%token QMARK QMARK_QMARK DOT COLON COLON_COLON COLON_GREATER  COLON_QMARK_GREATER COLON_QMARK COLON_EQUALS SEMICOLON 
+%token OPEN OR REC THEN TO TRUE TRY TYPE VAL INLINE INTERFACE /*INSTANCE*/ CONST
+%token WHEN WHILE WITH HASH AMP AMP_AMP QUOTE LPAREN RPAREN RPAREN_COMING_SOON RPAREN_IS_HERE STAR COMMA RARROW /*GREATER_BAR_RBRACK*/ LPAREN_STAR_RPAREN
+%token QMARK /*QMARK_QMARK*/ DOT COLON COLON_COLON COLON_GREATER  COLON_QMARK_GREATER COLON_QMARK COLON_EQUALS SEMICOLON 
 %token SEMICOLON_SEMICOLON LARROW EQUALS  LBRACK  LBRACK_BAR  LBRACE_BAR  LBRACK_LESS 
 %token BAR_RBRACK BAR_RBRACE UNDERSCORE
 %token BAR RBRACK RBRACE_COMING_SOON RBRACE_IS_HERE MINUS DOLLAR
 %token GREATER_RBRACK STRUCT SIG 
-%token STATIC MEMBER CLASS ABSTRACT OVERRIDE DEFAULT CONSTRUCTOR INHERIT 
+%token STATIC MEMBER CLASS ABSTRACT OVERRIDE DEFAULT /*CONSTRUCTOR*/ INHERIT 
 %token EXTERN VOID PUBLIC PRIVATE INTERNAL GLOBAL
 
 /* for parser 'escape hatch' out of expression context without consuming the 'recover' token */
@@ -113,7 +113,7 @@ let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) ->
 %token OFUN             /* LexFilter #light converts 'FUN' tokens to 'OFUN' */
 
 
-%token ORESET           /* LexFilter uses internally to force a complete reset on a ';;' */
+/*%token ORESET*/           /* LexFilter uses internally to force a complete reset on a ';;' */
 
 %token OBLOCKBEGIN      /* LexFilter #light inserts for:
                                   - just after first '=' or ':' when in 'CtxtModuleHead', i.e. after 'module' and sequence of dot/identifier/access tokens
@@ -144,12 +144,12 @@ let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) ->
 
 %token OINTERFACE_MEMBER /* inserted for non-paranthetical use of 'INTERFACE', i.e. not INTERFACE/END */
 %token FIXED
-%token <token> ODUMMY
+//%token <token> ODUMMY
 
 /* These are artificial */
-%token <string> LEX_FAILURE
-%token <ParseHelpers.LexerContinuation> COMMENT WHITESPACE HASH_LINE HASH_LIGHT INACTIVECODE LINE_COMMENT STRING_TEXT EOF
-%token <range * string * ParseHelpers.LexerContinuation> HASH_IF HASH_ELSE HASH_ENDIF 
+//%token <string> LEX_FAILURE
+%token <ParseHelpers.LexerContinuation> /*COMMENT WHITESPACE HASH_LINE HASH_LIGHT INACTIVECODE LINE_COMMENT STRING_TEXT*/ EOF
+//%token <range * string * ParseHelpers.LexerContinuation> HASH_IF HASH_ELSE HASH_ENDIF 
 
 %start signatureFile implementationFile interaction typedSequentialExprEOF typEOF
 %type <SynExpr> typedSequentialExprEOF
@@ -256,8 +256,7 @@ let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) ->
 %nonassoc prec_then_if 
 %left  BAR
 
-%right SEMICOLON  prec_semiexpr_sep OBLOCKSEP
-%right prec_defn_sep
+%right SEMICOLON OBLOCKSEP
 
 /* prec_atompat_pathop = precedence of at atomic pattern, e.g "Constructor".
  * Lower than possible pattern extensions, so "pathOp . extension" does shift not reduce.
@@ -270,7 +269,7 @@ let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) ->
  */
 %nonassoc prec_atompat_pathop
 %nonassoc INT8 UINT8 INT16 UINT16 INT32 UINT32 INT64 UINT64 NATIVEINT UNATIVEINT IEEE32 IEEE64 CHAR KEYWORD_STRING STRING BYTEARRAY BIGNUM DECIMAL
-%nonassoc INTERP_STRING_BEGIN INTERP_STRING_PART INTERP_STRING_END
+%nonassoc INTERP_STRING_PART INTERP_STRING_END
 %nonassoc LPAREN LBRACE LBRACK_BAR 
 %nonassoc TRUE FALSE UNDERSCORE NULL
 
@@ -309,8 +308,7 @@ let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) ->
 /* Resolves conflict: expr_try, expr_if */
 %nonassoc expr_let
 %nonassoc decl_let
-%nonassoc expr_function expr_fun expr_match expr_try expr_do
-%nonassoc decl_match decl_do
+%nonassoc expr_function expr_fun expr_match expr_try
 %nonassoc expr_if                     /* lower than ELSE to disambiguate "if _ then if _ then _ else _" */
 %nonassoc ELSE   
 
@@ -345,7 +343,6 @@ let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) ->
 %left AND_BANG
 %left  AMP AMP_AMP 
 %nonassoc pat_conj
-%nonassoc expr_not
 %left COLON_GREATER  COLON_QMARK_GREATER
 %left INFIX_COMPARE_OP DOLLAR LESS GREATER EQUALS  INFIX_BAR_OP INFIX_AMP_OP 
 %right INFIX_AT_HAT_OP
@@ -355,12 +352,9 @@ let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) ->
 %left PLUS_MINUS_OP MINUS expr_prefix_plus_minus ADJACENT_PREFIX_OP
 %left  INFIX_STAR_DIV_MOD_OP STAR PERCENT_OP
 %right INFIX_STAR_STAR_OP
-%left  QMARK_QMARK
-%left head_expr_adjacent_minus
+//%left  QMARK_QMARK
 %left expr_app expr_assert expr_lazy LAZY ASSERT
-%left arg_expr_adjacent_minus
 %left expr_args
-%right matching_bar
 %left pat_app
 %left pat_args
 %left PREFIX_OP
@@ -368,8 +362,6 @@ let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) ->
 %left HIGH_PRECEDENCE_BRACK_APP
 %left HIGH_PRECEDENCE_PAREN_APP
 %left HIGH_PRECEDENCE_TYAPP
-
-%nonassoc prec_interaction_empty
 
 %%
 
