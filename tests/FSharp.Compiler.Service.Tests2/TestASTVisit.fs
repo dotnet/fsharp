@@ -77,9 +77,8 @@ let x = 3
     printfn $"A refs: %+A{visitedA}"
     ()
 
-
 [<Test>]
-let ``Test big`` () =
+let ``Test big.fs`` () =
     let code = System.IO.File.ReadAllText("Big.fs")
     let parsedA = getParseResults code
     let visitedA = extractModuleRefs parsedA

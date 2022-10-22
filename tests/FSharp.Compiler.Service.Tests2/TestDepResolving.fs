@@ -94,6 +94,8 @@ let TestHardcodedFiles() =
     printfn "Detected file dependencies:"
     graph.Graph
     |> Seq.iter (fun (KeyValue(idx, deps)) -> printfn $"{graph.Files[idx].Name} -> %+A{deps |> Array.map(fun d -> graph.Files[d].Name)}")
+    
+    analyseEfficiency graph
 
 let private parseProjectAndGetSourceFiles (projectFile : string) =
     log "building project"
@@ -127,9 +129,10 @@ let TestProject (projectFile : string) =
     let totalDeps = graph.Graph |> Seq.sumBy (fun (KeyValue(idx, deps)) -> deps.Length)
     let maxPossibleDeps = (N * (N-1)) / 2 
     
-    let graph = graph.Graph |> Seq.map (fun (KeyValue(idx, deps)) -> graph.Files[idx].Name, deps |> Array.map (fun d -> graph.Files[d].Name)) |> dict
-    let json = JsonConvert.SerializeObject(graph, Formatting.Indented)
+    let graphJson = graph.Graph |> Seq.map (fun (KeyValue(idx, deps)) -> graph.Files[idx].Name, deps |> Array.map (fun d -> graph.Files[d].Name)) |> dict
+    let json = JsonConvert.SerializeObject(graphJson, Formatting.Indented)
     System.IO.File.WriteAllText("deps_graph.json", json)
     
-    printfn $"Analysed {N} files, detected {totalDeps}/{maxPossibleDeps} file dependencies:"
+    printfn $"Analysed {N} files, detected {totalDeps}/{maxPossibleDeps} file dependencies."
     printfn "Wrote graph as json in deps_graph.json"
+    analyseEfficiency graph
