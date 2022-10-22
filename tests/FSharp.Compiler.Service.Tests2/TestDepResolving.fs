@@ -2,6 +2,7 @@
 
 open Buildalyzer
 open FSharp.Compiler.Service.Tests
+open FSharp.Compiler.Service.Tests2.ASTVisit
 open FSharp.Compiler.Service.Tests2.DepResolving
 open NUnit.Framework
 open Newtonsoft.Json
@@ -119,6 +120,10 @@ let TestProject (projectFile : string) =
             let code = System.IO.File.ReadAllText(f)
             let ast = getParseResults code
             {Name = f; Code = code; AST = ast}
+        )
+        |> Array.filter (fun x ->
+            ASTVisit.extractModuleRefs x.AST
+            |> Array.forall (function | ReferenceOrAbbreviation.Reference _ -> true | ReferenceOrAbbreviation.Abbreviation _ -> false)
         )
     let N = files.Length
     log $"{N} files read and parsed"

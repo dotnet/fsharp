@@ -307,6 +307,30 @@ module internal AutomatedDependencyResolving =
             )
             |> dict
         
+        let transitiveDeps = Dictionary<int, int[]>()
+        
+        let rec calcTransitiveDeps (idx : int) =
+            match transitiveDeps.TryGetValue idx with
+            | true, deps -> deps
+            | false, _ ->
+                let directDeps = graph[idx]
+                let deps =
+                    directDeps
+                    |> Array.collect (
+                        fun dep ->
+                            calcTransitiveDeps dep
+                            |> Array.append [|dep|]
+                    )
+                    |> Array.distinct
+                transitiveDeps[idx] <- deps
+                deps
+        
+        // Calculate transitive closure of the graph
+        let graph =
+            graph.Keys
+            |> Seq.map (fun idx -> idx, calcTransitiveDeps idx)
+            |> dict
+        
         let res =
             {
                 DepsResult.Files = nodes

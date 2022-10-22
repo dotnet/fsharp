@@ -9,5 +9,7 @@ let runCompiler () =
 [<EntryPoint>]
 let main _ = 
     //TestDepResolving.TestProject(@"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj")
-    runCompiler ()
+    //runCompiler ()
+    //TestDepResolving.TestHardcodedFiles()
+    TestDepResolving.TestProject(@"C:\projekty\fsharp\fsharp_main\src\Compiler\FSharp.Compiler.Service.fsproj")
     0

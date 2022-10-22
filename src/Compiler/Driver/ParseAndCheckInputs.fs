@@ -4,6 +4,7 @@
 module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System
+open System.Diagnostics
 open System.IO
 open System.Collections.Generic
 
@@ -1114,11 +1115,17 @@ let GetInitialTcState (m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcI
 let CreateEmptyDummyImplFile qualNameOfFile sigTy =
     CheckedImplFile(qualNameOfFile, [], sigTy, ModuleOrNamespaceContents.TMDefs [], false, false, StampMap [], Map.empty)
 
+let totalSw = Stopwatch()
+let mutable singles = 0
+
 let AddCheckResultsToTcState
     (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcImplEnv, qualNameOfFile, implFileSigType)
     (tcState: TcState)
     =
 
+    let sw = Stopwatch.StartNew()
+    totalSw.Start()
+    
     let rootImpls = Zset.add qualNameOfFile tcState.tcsRootImpls
 
     // Only add it to the environment if it didn't have a signature
@@ -1159,6 +1166,11 @@ let AddCheckResultsToTcState
             tcsImplicitOpenDeclarations = tcState.tcsImplicitOpenDeclarations @ openDecls
         }
 
+    sw.Stop()
+    totalSw.Stop()
+    singles <- singles + 1
+    printfn $"[{singles}] single add took {sw.ElapsedMilliseconds}ms, total so far: {totalSw.ElapsedMilliseconds}ms"
+    
     ccuSigForFile, tcState
 
 let AddDummyCheckResultsToTcState
