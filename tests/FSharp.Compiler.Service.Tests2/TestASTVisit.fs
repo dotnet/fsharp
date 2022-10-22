@@ -48,7 +48,7 @@ open A1
 let f = a
 """
 
-    let stuff = visit parseResults
+    let stuff = extractModuleRefs parseResults
     let top = topModuleOrNamespaces parseResults
     printfn $"%+A{top}"
     printfn $"%+A{stuff}"
@@ -70,7 +70,7 @@ let x = 3
 """
     
     let parsedA = parseSourceCode("A.fs", A)
-    let visitedA = visit parsedA
+    let visitedA = extractModuleRefs parsedA
     let parsedB = parseSourceCode("B.fs", B)
     let topB = topModuleOrNamespaces parsedB
     printfn $"Top B: %+A{topB}"
@@ -82,5 +82,5 @@ let x = 3
 let ``Test big`` () =
     let code = System.IO.File.ReadAllText("Big.fs")
     let parsedA = getParseResults code
-    let visitedA = visit parsedA
+    let visitedA = extractModuleRefs parsedA
     printfn $"A refs: %+A{visitedA}"

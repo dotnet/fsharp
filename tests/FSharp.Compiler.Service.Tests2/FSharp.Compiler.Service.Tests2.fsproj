@@ -29,6 +29,7 @@
     <Compile Include="ASTVisit.fs" />
     <Compile Include="TestASTVisit.fs" />
     <Compile Include="DepResolving.fs" />
+    <Compile Include="TestDepResolving.fs" />
     <Compile Include="RunCompiler.fs" />
     <None Include="Big.fs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

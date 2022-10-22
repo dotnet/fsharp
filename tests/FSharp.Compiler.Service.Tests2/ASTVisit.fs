@@ -1082,7 +1082,7 @@ and visitSynModuleOrNamespaceSig (x : SynModuleOrNamespaceSig) : References  =
             yield! visitSynAttributeLists synAttributeLists 
         }
 
-and visit (input : ParsedInput) =
+and extractModuleRefs (input : ParsedInput) =
     match input with
     | ParsedInput.SigFile(ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, parsedHashDirectives, synModuleOrNamespaceSigs, parsedSigFileInputTrivia)) ->
         synModuleOrNamespaceSigs
