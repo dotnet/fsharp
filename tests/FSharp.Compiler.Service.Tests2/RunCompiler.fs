@@ -1,9 +1,10 @@
-﻿module FSharp.Compiler.Service.Tests.RunCompiler
+﻿module FSharp.Compiler.Service.Tests2.RunCompiler
 
 open System
 open System.Collections.Concurrent
 open System.Threading
 open System.Threading.Tasks
+open FSharp.Compiler.Service.Tests2
 open NUnit.Framework
 
 type Node =
@@ -11,7 +12,7 @@ type Node =
         Idx : int
         Deps : int[]
         Dependants : int[]
-        mutable Result : string option
+        mutable PartialResult : string option
         mutable UnprocessedDepsCount : int
         _lock : Object
     }
@@ -37,6 +38,10 @@ let runGrapher () =
             4, [|3|] // C2 -> C1
             5, [|2; 4|] // D -> B2, C2
         |]
+        |> dict
+        |> DepResolving.calcTransitiveGraph
+        |> Seq.map (fun (KeyValue(k, v)) -> k, v)
+        |> Seq.toArray
     
     let fileDependants =
         fileDeps
@@ -48,18 +53,18 @@ let runGrapher () =
         |> Array.map (fun (dep, edges) -> dep, edges |> Array.map fst)
         |> dict
         // Add nodes that are missing due to having no dependants
-        |> fun g ->
+        |> fun graph ->
             fileDeps
-            |> Array.map fst
-            |> Array.map (fun idx ->
-                match g.TryGetValue idx with
-                | true, dependants -> dependants
-                | false, _ -> [||]
+            |> Array.map (fun (idx, deps) ->
+                match graph.TryGetValue idx with
+                | true, dependants -> idx, dependants
+                | false, _ -> idx, [||]
             )
+        |> dict
     
     let graph =
         fileDeps
-        |> Seq.map (fun (idx, deps) -> idx, {Idx = idx; Deps = deps; Dependants = fileDependants[idx]; Result = None; UnprocessedDepsCount = deps.Length; _lock = Object()})
+        |> Seq.map (fun (idx, deps) -> idx, {Idx = idx; Deps = deps; Dependants = fileDependants[idx]; PartialResult = None; UnprocessedDepsCount = deps.Length; _lock = Object()})
         |> dict
     
     printfn "start"
@@ -83,7 +88,13 @@ let runGrapher () =
         )
     
     let actualWork (idx : int) =
-        idx.ToString()
+        let node = graph[idx]
+        let depsResult =
+            node.Deps
+            |> Array.map (fun dep -> match graph[dep].PartialResult with Some result -> result | None -> failwith $"Unexpected lack of result for a dependency {idx} -> {dep}")
+            |> Array.fold (fun state item -> state + item) ""
+        let thisResult = idx.ToString()
+        $"{thisResult}"
     
     // Processing of a single node/file - gives a result
     let go (idx : int) =
@@ -91,8 +102,8 @@ let runGrapher () =
         printfn $"Start {idx} -> %+A{node.Deps}"
         Thread.Sleep(500)
         let res = actualWork idx
-        node.Result <- Some res
-        printfn $" Stop {idx} work"
+        node.PartialResult <- Some res
+        printfn $" Stop {idx} work - result {res}"
         
         // Increment processed deps count for all dependants and schedule those who are now unblocked
         node.Dependants
@@ -133,5 +144,10 @@ let runGrapher () =
     q.CompleteAdding()
     printfn "waitall"
     Task.WaitAll workers
-    printfn "End"
-    ()
+    
+    let fullResult =
+        graph
+        |> Seq.map (fun (KeyValue(idx, node)) -> node.PartialResult |> Option.get) // TODO Oops
+        |> Seq.fold (fun state item -> state + item) ""
+    
+    printfn $"End result: {fullResult}"

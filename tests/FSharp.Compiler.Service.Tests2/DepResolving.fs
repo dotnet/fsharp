@@ -52,6 +52,30 @@ type DepsResult =
 
 type References = Reference seq
 
+let calcTransitiveGraph (graph : IDictionary<int, int[]>) : IDictionary<int, int[]> =
+    let transitiveDeps = Dictionary<int, int[]>()
+    
+    let rec calcTransitiveDepsInner (idx : int) =
+        match transitiveDeps.TryGetValue idx with
+        | true, deps -> deps
+        | false, _ ->
+            let directDeps = graph[idx]
+            let deps =
+                directDeps
+                |> Array.collect (
+                    fun dep ->
+                        calcTransitiveDepsInner dep
+                        |> Array.append [|dep|]
+                )
+                |> Array.distinct
+            transitiveDeps[idx] <- deps
+            deps
+    
+    graph.Keys
+    |> Seq.map (fun idx -> idx, calcTransitiveDepsInner idx)
+    |> dict
+
+
 /// Extract partial module references from partial module or type references
 let extractModuleSegments (stuff : ReferenceOrAbbreviation seq) : LongIdent[] * bool =
     
@@ -307,29 +331,8 @@ module internal AutomatedDependencyResolving =
             )
             |> dict
         
-        let transitiveDeps = Dictionary<int, int[]>()
-        
-        let rec calcTransitiveDeps (idx : int) =
-            match transitiveDeps.TryGetValue idx with
-            | true, deps -> deps
-            | false, _ ->
-                let directDeps = graph[idx]
-                let deps =
-                    directDeps
-                    |> Array.collect (
-                        fun dep ->
-                            calcTransitiveDeps dep
-                            |> Array.append [|dep|]
-                    )
-                    |> Array.distinct
-                transitiveDeps[idx] <- deps
-                deps
-        
         // Calculate transitive closure of the graph
-        let graph =
-            graph.Keys
-            |> Seq.map (fun idx -> idx, calcTransitiveDeps idx)
-            |> dict
+        let graph = calcTransitiveGraph graph
         
         let res =
             {
