@@ -4,8 +4,38 @@ open NUnit.Framework
 open FSharp.Compiler.Service.Tests
 open FSharp.Compiler.Service.Tests2.ASTVisit
 
+
 [<Test>]
-let ``Single SynEnumCase contains range of constant`` () =
+let ``Top level stuff extraction2`` () =
+    let parseResults = 
+        getParseResults
+            """
+namespace A
+let x = 3
+
+namespace B
+type X = int * int
+
+namespace C
+module A =
+    let x = 3
+
+namespace D
+[<AutoOpen>]
+module D1 =
+    module D2 =
+        let x = 3
+    
+namespace D
+module D1 =
+    module D2 =
+        let x = 3
+"""
+    let top = topModuleOrNamespaces parseResults
+    printfn $"%+A{top}"
+
+[<Test>]
+let ``Top level stuff extraction`` () =
     let parseResults = 
         getParseResults
             """

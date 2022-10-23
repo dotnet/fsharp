@@ -1093,6 +1093,7 @@ and extractModuleRefs (input : ParsedInput) =
         |> Seq.collect visitSynModuleOrNamespace
         |> Seq.toArray
 
+// TODO Improve detection mechanism
 let mightHaveAutoOpen (synAttributeLists : SynAttributeList list) : bool =
     let attributes =
         synAttributeLists
@@ -1103,6 +1104,120 @@ let mightHaveAutoOpen (synAttributeLists : SynAttributeList list) : bool =
     // Some attributes found - we can't know for sure if one of them is the AutoOpenAttribute (possibly hidden with a type alias), so we say 'yes'.
     | _ -> true
 
+type Eit =
+    | Nested of LongIdent[]
+    | SomeTypeLikeStuff
+    
+let combine (parent : LongIdent) (children : Eit) =
+    match children with
+    | Eit.Nested idents ->
+        idents
+        |> Array.map (fun child -> List.append parent child)
+    | Eit.SomeTypeLikeStuff ->
+        [|parent|]
+
+let rec topStuffForSynModuleOrNamespace (x : SynModuleOrNamespace) : LongIdent[] =
+    match x with
+    | SynModuleOrNamespace(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
+        if mightHaveAutoOpen synAttributeLists then
+            // Contents of a module that's potentially AutoOpen are available from its parent without a prefix.
+            // Treat it as a type - as soon as the parent module is reachable, consider the file being used
+            [|LongIdent.Empty|]
+        else
+            synModuleDecls
+            |> moduleDecls
+            |> combine longId
+
+and moduleDecls (x : SynModuleDecl list) : Eit =
+    let emptyState = Eit.Nested [||]
+    x
+    |> List.toArray
+    |> Array.map moduleDecl
+    |> Array.fold (fun state item ->
+        match state, item with
+        | Eit.SomeTypeLikeStuff, _
+        | _, Eit.SomeTypeLikeStuff -> Eit.SomeTypeLikeStuff
+        | Eit.Nested old, Eit.Nested current -> Eit.Nested (Array.append old current)
+    ) emptyState
+
+and moduleDecl (x : SynModuleDecl) : Eit =
+    match x with
+    | SynModuleDecl.Attributes _ 
+    | SynModuleDecl.Exception _
+    | SynModuleDecl.Expr _
+    | SynModuleDecl.Let _
+    | SynModuleDecl.Types _
+    | SynModuleDecl.ModuleAbbrev _ ->
+        Eit.SomeTypeLikeStuff
+    | SynModuleDecl.HashDirective _
+    | SynModuleDecl.Open _ ->
+        Eit.Nested [||] // Elements can be ignored
+    | SynModuleDecl.NamespaceFragment synModuleOrNamespace ->
+        topStuffForSynModuleOrNamespace synModuleOrNamespace
+        |> Eit.Nested
+    | SynModuleDecl.NestedModule(synComponentInfo, isRecursive, synModuleDecls, isContinuing, range, synModuleDeclNestedModuleTrivia) ->
+        match synComponentInfo with
+        | SynComponentInfo(synAttributeLists, synTyparDeclsOption, synTypeConstraints, longId, preXmlDoc, preferPostfix, synAccessOption, range) ->
+            let idents = 
+                if mightHaveAutoOpen synAttributeLists then
+                    // Contents of a module that's potentially AutoOpen are available everywhere, so treat it as if it had no name ('root' module).
+                    [|LongIdent.Empty|]
+                else
+                    synModuleDecls
+                    |> moduleDecls
+                    |> combine longId
+            Eit.Nested idents
+            
+let rec topStuffForSynModuleOrNamespaceSig (x : SynModuleOrNamespaceSig) : LongIdent[] =
+    match x with
+    | SynModuleOrNamespaceSig(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
+        if mightHaveAutoOpen synAttributeLists then
+            // Contents of a module that's potentially AutoOpen are available everywhere, so treat it as if it had no name ('root' module).
+            [|LongIdent.Empty|]
+        else
+            synModuleDecls
+            |> moduleSigDecls
+            |> combine longId
+
+and moduleSigDecls (x : SynModuleSigDecl list) : Eit =
+    let emptyState = Eit.Nested [||]
+    x
+    |> List.toArray
+    |> Array.map moduleSigDecl
+    |> Array.fold (fun state item ->
+        match state, item with
+        | Eit.SomeTypeLikeStuff, _
+        | _, Eit.SomeTypeLikeStuff -> Eit.SomeTypeLikeStuff
+        | Eit.Nested old, Eit.Nested current -> Eit.Nested (Array.append old current)
+    ) emptyState
+    
+and moduleSigDecl (x : SynModuleSigDecl) : Eit =
+    match x with
+    | SynModuleSigDecl.Val _
+    | SynModuleSigDecl.Exception _
+    | SynModuleSigDecl.Types _
+    | SynModuleSigDecl.ModuleAbbrev _ ->
+        Eit.SomeTypeLikeStuff
+    | SynModuleSigDecl.HashDirective _
+    | SynModuleSigDecl.Open _ ->
+        Eit.Nested [||] // Elements can be ignored
+    | SynModuleSigDecl.NamespaceFragment synModuleOrNamespace ->
+        topStuffForSynModuleOrNamespaceSig synModuleOrNamespace
+        |> Eit.Nested
+    | SynModuleSigDecl.NestedModule(synComponentInfo, isRecursive, synModuleSigDecls, range, synModuleSigDeclNestedModuleTrivia) ->
+        match synComponentInfo with
+        | SynComponentInfo(synAttributeLists, synTyparDeclsOption, synTypeConstraints, longId, preXmlDoc, preferPostfix, synAccessOption, range) ->
+            let idents = 
+                if mightHaveAutoOpen synAttributeLists then
+                    // Contents of a module that's potentially AutoOpen are available everywhere, so treat it as if it had no name ('root' module).
+                    [|LongIdent.Empty|]
+                else
+                    synModuleSigDecls
+                    |> moduleSigDecls
+                    |> combine longId
+            Eit.Nested idents
+
+// TODO Handle 'global' namespace correctly
 /// Extract the top-level module/namespaces from the AST
 let topModuleOrNamespaces (input : ParsedInput) =
     match input with
@@ -1111,29 +1226,12 @@ let topModuleOrNamespaces (input : ParsedInput) =
         | [] -> failwith $"No modules or namespaces found in file '{f.FileName}'"
         | items ->
             items
-            |> List.map (fun item ->
-                match item with
-                | SynModuleOrNamespace(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
-                    if mightHaveAutoOpen synAttributeLists then
-                        // Contents of a module that's potentially AutoOpen are available everywhere, so treat it as if it had no name ('root' module).
-                        // This makes the dependency tracking algorithm detect it as a dependency for all further files.
-                        LongIdent.Empty
-                    else
-                        longId
-            )
+            |> List.toArray
+            |> Array.collect topStuffForSynModuleOrNamespace
     | ParsedInput.SigFile f ->
         match f.Contents with
         | [] -> failwith $"No modules or namespaces found in file '{f.FileName}'"
         | items ->
             items
-            |> List.map (fun item ->
-                match item with
-                | SynModuleOrNamespaceSig(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
-                    if mightHaveAutoOpen synAttributeLists then
-                        // Contents of a module that's potentially AutoOpen are available everywhere, so treat it as if it had no name ('root' module).
-                        // This makes the dependency tracking algorithm detect it as a dependency for all further files.
-                        LongIdent.Empty
-                    else
-                        longId
-            )
-    |> List.toArray
+            |> List.toArray
+            |> Array.collect topStuffForSynModuleOrNamespaceSig

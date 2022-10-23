@@ -66,7 +66,14 @@ type A = int
     let H =
         """
 namespace GH
-type B = int
+module GH2 =
+    type B = int
+"""
+    let I =
+        """
+namespace GH
+module GH3 =
+    type B = int
 """
 
     [
@@ -80,6 +87,7 @@ type B = int
         "F.fs", F
         "G.fs", G
         "H.fs", H
+        "I.fs", I
     ]
 
 [<Test>]
