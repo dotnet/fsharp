@@ -107,20 +107,19 @@ let TestHardcodedFiles() =
     analyseEfficiency graph
 
 let private parseProjectAndGetSourceFiles (projectFile : string) =
-    log "building project"
     let m = AnalyzerManager()
     let analyzer = m.GetProject(projectFile)
     let results = analyzer.Build()
     // TODO Generalise for multiple TFMs
     let res = results.Results |> Seq.head
     let files = res.SourceFiles
-    log "built"
+    log "built project using Buildalyzer"
     files
 
 [<TestCase(@"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj")>]
 [<TestCase(@"C:\projekty\fsharp\fsharp_main\src\Compiler\FSharp.Compiler.Service.fsproj")>]
 let TestProject (projectFile : string) =
-    log "start"
+    log $"Start finding file dependency graph for {projectFile}"
     let files = parseProjectAndGetSourceFiles projectFile
     let files =
         files
@@ -130,22 +129,24 @@ let TestProject (projectFile : string) =
             {Name = f; Code = code; AST = ast}
         )
         |> Array.filter (fun x ->
-            ASTVisit.extractModuleRefs x.AST
-            |> Array.forall (function | ReferenceOrAbbreviation.Reference _ -> true | ReferenceOrAbbreviation.Abbreviation _ -> false)
+            true
+            //ASTVisit.extractModuleRefs x.AST
+            //|> Array.forall (function | ReferenceOrAbbreviation.Reference _ -> true | ReferenceOrAbbreviation.Abbreviation _ -> false)
         )
     let N = files.Length
     log $"{N} files read and parsed"
     
     let graph = AutomatedDependencyResolving.detectFileDependencies files
-    log "deps detected"
+    log "Deps detected"
     
     let totalDeps = graph.Graph |> Seq.sumBy (fun (KeyValue(idx, deps)) -> deps.Length)
     let maxPossibleDeps = (N * (N-1)) / 2 
     
     let graphJson = graph.Graph |> Seq.map (fun (KeyValue(idx, deps)) -> graph.Files[idx].Name, deps |> Array.map (fun d -> graph.Files[d].Name)) |> dict
     let json = JsonConvert.SerializeObject(graphJson, Formatting.Indented)
-    System.IO.File.WriteAllText("deps_graph.json", json)
+    let path = $"{System.IO.Path.GetFileName(projectFile)}.deps.json"
+    System.IO.File.WriteAllText(path, json)
     
-    printfn $"Analysed {N} files, detected {totalDeps}/{maxPossibleDeps} file dependencies."
-    printfn "Wrote graph as json in deps_graph.json"
+    log $"Analysed {N} files, detected {totalDeps}/{maxPossibleDeps} file dependencies (%.1f{100.0 * double(totalDeps) / double(maxPossibleDeps)}%%)."
+    log $"Wrote graph in {path}"
     analyseEfficiency graph

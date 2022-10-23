@@ -339,7 +339,6 @@ module internal AutomatedDependencyResolving =
                 DepsResult.Files = nodes
                 DepsResult.Graph = graph
             }
-        log "Done"
         res
 
 /// <summary>
@@ -383,4 +382,4 @@ let analyseEfficiency (result : DepsResult) : unit =
         |> Array.map (fun f -> depthDfs f.Idx)
         |> Array.max
         
-    printfn $"Total file size: {totalFileSize}. Max depth: {maxDepth}. Max Depth/Size = %.2f{double(maxDepth) / double(totalFileSize)}"
+    log $"Total file size: {totalFileSize}. Max depth: {maxDepth}. Max Depth/Size = %.1f{100.0 * double(maxDepth) / double(totalFileSize)}%%"
