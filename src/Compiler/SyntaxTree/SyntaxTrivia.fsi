@@ -207,12 +207,21 @@ type SynPatListConsTrivia =
         ColonColonRange: range
     }
 
+/// Represents the leading keyword in a SynTypeDefn or SynTypeDefnSig
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynTypeDefnLeadingKeyword =
+    | Type of range
+    | And of range
+    // Can happen in SynMemberDefn.NestedType or SynMemberSig.NestedType
+    | StaticType of staticRange: range * typeRange: range
+    | Synthetic
+
 /// Represents additional information for SynTypeDefn
 [<NoEquality; NoComparison>]
 type SynTypeDefnTrivia =
     {
-        /// The syntax range of the `type` keyword.
-        TypeKeyword: range option
+        /// The syntax range of the `type` or `and` keyword.
+        LeadingKeyword: SynTypeDefnLeadingKeyword
 
         /// The syntax range of the `=` token.
         EqualsRange: range option
@@ -227,8 +236,8 @@ type SynTypeDefnTrivia =
 [<NoEquality; NoComparison>]
 type SynTypeDefnSigTrivia =
     {
-        /// The syntax range of the `type` keyword.
-        TypeKeyword: range option
+        /// The syntax range of the `type` or `and` keyword.
+        LeadingKeyword: SynTypeDefnLeadingKeyword
 
         /// The syntax range of the `=` token.
         EqualsRange: range option
@@ -321,26 +330,27 @@ type SynModuleSigDeclNestedModuleTrivia =
 
     static member Zero: SynModuleSigDeclNestedModuleTrivia
 
+/// Represents the leading keyword in a SynModuleOrNamespace or SynModuleOrNamespaceSig
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
+type SynModuleOrNamespaceLeadingKeyword =
+    | Module of moduleRange: range
+    | Namespace of namespaceRange: range
+    | None
+
 /// Represents additional information for SynModuleOrNamespace
 [<NoEquality; NoComparison>]
 type SynModuleOrNamespaceTrivia =
     {
-        /// The syntax range of the `module` keyword
-        ModuleKeyword: range option
-
-        /// The syntax range of the `namespace` keyword
-        NamespaceKeyword: range option
+        /// The syntax range of the `module` or `namespace` keyword
+        LeadingKeyword: SynModuleOrNamespaceLeadingKeyword
     }
 
 /// Represents additional information for SynModuleOrNamespaceSig
 [<NoEquality; NoComparison>]
 type SynModuleOrNamespaceSigTrivia =
     {
-        /// The syntax range of the `module` keyword
-        ModuleKeyword: range option
-
-        /// The syntax range of the `namespace` keyword
-        NamespaceKeyword: range option
+        /// The syntax range of the `module` or `namespace` keyword
+        LeadingKeyword: SynModuleOrNamespaceLeadingKeyword
     }
 
 /// Represents additional information for SynValSig
