@@ -13,7 +13,7 @@ module HintService =
     // Relatively convenient for testing
     type NativeHint = {
         Range: range
-        Parts: seq<TaggedText>
+        Parts: TaggedText list
     }
 
     let private isValidForHint 
@@ -43,36 +43,37 @@ module HintService =
         match symbol.GetReturnTypeLayout symbolUse.DisplayContext with
         | Some typeInfo -> 
             let colon = TaggedText(TextTag.Text, ": ")
-            Seq.append (seq { colon }) typeInfo
+            colon :: (typeInfo |> Array.toList)
         
         // not sure when this can happen but better safe than sorry
         | None -> 
-            Seq.empty
+            []
         
     let private getHintsForSymbol parseResults (symbolUse: FSharpSymbolUse) =
         match symbolUse.Symbol with
         | :? FSharpMemberOrFunctionOrValue as mfvSymbol 
           when isValidForHint parseResults mfvSymbol symbolUse ->
             
-            seq { {
+            [ {
                 Range = symbolUse.Range
                 Parts = getHintParts mfvSymbol symbolUse
-            } }
+            } ]
         
         // we'll be adding other stuff gradually here
         | _ -> 
-            Seq.empty
+            []
 
     let getHintsForDocument (document: Document) userOpName cancellationToken = 
         task {
             if isSignatureFile document.FilePath
             then 
-                return Seq.empty
+                return []
             else
                 let! parseResults, checkResults = 
                     document.GetFSharpParseAndCheckResultsAsync userOpName 
                 
                 return 
                     checkResults.GetAllUsesOfAllSymbolsInFile cancellationToken
-                    |> Seq.collect (getHintsForSymbol parseResults)
+                    |> Seq.toList
+                    |> List.collect (getHintsForSymbol parseResults)
         }
