@@ -53,7 +53,7 @@ module M =
     let ``diagnostic is not reported when disabled`` () =
         Fsx"""
     /// <summary> F </summary>
-    /// <param name="a"> the parameter </param>
+    /// <param name="x"> the parameter </param>
     let f a = a
         """
          |> compile
