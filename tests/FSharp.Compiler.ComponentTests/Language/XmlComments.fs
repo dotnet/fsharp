@@ -50,6 +50,17 @@ module M =
                 ]
 
     [<Fact>]
+    let ``diagnostic is not reported when disabled`` () =
+        Fsx"""
+    /// <summary> F </summary>
+    /// <param name="a"> the parameter </param>
+    let f a = a
+        """
+         |> compile
+         |> shouldSucceed
+         |> withDiagnostics []
+
+    [<Fact>]
     let ``invalid parameter name is reported`` () =
         Fsx"""
     /// <summary> Return <paramref name="b" /> </summary>
