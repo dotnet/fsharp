@@ -477,7 +477,7 @@ match () with
 | _ -> ()
 | _, 
     """
-    let exprs = getSingleModuleMemberDecls parseResults |> List.map getSingleParenInnerExpr
+    let exprs = getSingleExprInModule parseResults
     match exprs with
-    | [ SynExpr.Match(_, _, [_; _], _, _) ] -> ()
+    | SynExpr.Match(_, _, [_; _], _, _) -> ()
     | _ -> failwith "Unexpected tree"
