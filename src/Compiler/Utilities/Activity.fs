@@ -4,7 +4,6 @@ namespace FSharp.Compiler.Diagnostics
 
 open System
 open System.Diagnostics
-open Internal.Utilities.Library
 
 [<RequireQualifiedAccess>]
 module Activity =

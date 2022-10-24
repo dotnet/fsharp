@@ -44,10 +44,10 @@ type NodeCodeBuilder =
 
     member Combine: x1: NodeCode<unit> * x2: NodeCode<'T> -> NodeCode<'T>
 
-    /// A limited form 'use' for establishing the compilation globals.  (Note
-    /// that a proper generic 'use' could be implemented but has not currently been necessary)
+    /// A limited form 'use' for establishing the compilation globals.
     member Using: CompilationGlobalsScope * (CompilationGlobalsScope -> NodeCode<'T>) -> NodeCode<'T>
 
+    /// A generic 'use' that disposes of the IDisposable at the end of the computation.
     member Using: IDisposable * (IDisposable -> NodeCode<'T>) -> NodeCode<'T>
 
 /// Specifies code that can be run as part of the build graph.
