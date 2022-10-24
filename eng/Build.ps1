@@ -44,7 +44,8 @@ param (
     [switch]$procdump,
     [switch]$deployExtensions,
     [switch]$prepareMachine,
-    [switch]$useGlobalNuGetCache = $false,
+    [switch]$useGlobalNuGetCache = $true,
+    [switch]$dontUseGlobalNuGetCache = $false,
     [switch]$warnAsError = $true,
     [switch][Alias('test')]$testDesktop,
     [switch]$testCoreClr,
@@ -113,7 +114,7 @@ function Print-Usage() {
     Write-Host "  -msbuildEngine <value>        Msbuild engine to use to run build ('dotnet', 'vs', or unspecified)."
     Write-Host "  -procdump                     Monitor test runs with procdump"
     Write-Host "  -prepareMachine               Prepare machine for CI run, clean up processes after build"
-    Write-Host "  -useGlobalNuGetCache          Use global NuGet cache."
+    Write-Host "  -dontUseGlobalNuGetCache      Do not use the global NuGet cache"
     Write-Host "  -noVisualStudio               Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
     Write-Host "  -sourceBuild                  Simulate building for source-build."
     Write-Host "  -skipbuild                    Skip building product"
@@ -129,6 +130,10 @@ function Process-Arguments() {
     if ($help -or (($properties -ne $null) -and ($properties.Contains("/help") -or $properties.Contains("/?")))) {
         Print-Usage
         exit 0
+    }
+
+    if ($dontUseGlobalNugetCache -or $ci) {
+        $script:useGlobalNugetCache = $False
     }
 
     $script:nodeReuse = $False;
