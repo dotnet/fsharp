@@ -1065,7 +1065,8 @@ type SynBinding =
     member x.RangeOfHeadPattern = let (SynBinding (headPat = headPat)) = x in headPat.Range
 
 [<NoEquality; NoComparison>]
-type SynBindingReturnInfo = SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes
+type SynBindingReturnInfo =
+    | SynBindingReturnInfo of typeName: SynType * range: range * attributes: SynAttributes * trivia: SynBindingReturnInfoTrivia
 
 [<NoComparison; RequireQualifiedAccess; CustomEquality>]
 type SynMemberFlags =
