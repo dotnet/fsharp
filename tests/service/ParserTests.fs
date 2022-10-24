@@ -468,3 +468,16 @@ let (1,1,1) = ()
             [ p12; p13; p21; p23; p31; p32; p43; p51; p62 ] |> List.iter assertIsEmptyRange
 
     | _ -> failwith "Unexpected tree"
+
+
+[<Test>]
+let ``Match - Clause 01`` () =
+    let parseResults = getParseResults """
+match () with
+| _ -> ()
+| _, 
+    """
+    let exprs = getSingleModuleMemberDecls parseResults |> List.map getSingleParenInnerExpr
+    match exprs with
+    | [ SynExpr.Match(_, _, [_; _], _, _) ] -> ()
+    | _ -> failwith "Unexpected tree"
