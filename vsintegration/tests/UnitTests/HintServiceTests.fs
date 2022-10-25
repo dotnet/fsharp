@@ -26,6 +26,17 @@ let numbers = [|42|]
     Assert.IsEmpty(result)
 
 [<Test>]
+let ``Type hints are not shown for let-bound functions yet`` () =
+    let code = """
+let setConsoleOut = System.Console.SetOut
+"""
+    let document = getFsDocument code
+
+    let result = getHints document
+
+    Assert.IsEmpty(result)
+
+[<Test>]
 let ``Type hint is shown for a let binding`` () =
     let code = """
 type Song = { Artist: string; Title: string }

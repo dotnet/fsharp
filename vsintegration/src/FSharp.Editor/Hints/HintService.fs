@@ -64,7 +64,7 @@ module HintService =
             []
 
     let getHintsForDocument (document: Document) userOpName cancellationToken = 
-        task {
+        async {
             if isSignatureFile document.FilePath
             then 
                 return []
