@@ -324,9 +324,9 @@ let buildString f =
     buf.ToString()
 
 /// Writing to output stream via a string buffer.
-let writeViaBuffer (os: TextWriter) f x =
+let writeViaBuffer (os: TextWriter) f =
     let buf = StringBuilder 100
-    f buf x
+    f buf
     os.Write(buf.ToString())
 
 type StringBuilder with
@@ -611,4 +611,14 @@ module ArrayParallel =
 
     let inline map f (arr: 'T []) =
         arr |> mapi (fun _ item -> f item)
+
+[<RequireQualifiedAccess>]
+module ListParallel =
+
+    let map f (xs: 'T list) =
+        xs
+        |> List.toArray
+        |> ArrayParallel.map f
+        |> Array.toList
+
    

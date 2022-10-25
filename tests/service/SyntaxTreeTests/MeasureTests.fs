@@ -14,7 +14,7 @@ let m = 7.000<cm>
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Measure(constantRange = r1), _)) ])
         SynModuleDecl.Let(bindings = [ SynBinding.SynBinding(expr = SynExpr.Const(SynConst.Measure(constantRange = r2), _)) ])
     ]) ])) ->
@@ -31,7 +31,7 @@ let ``SynMeasure.Paren has correct range`` () =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.Const(SynConst.Measure(SynConst.UInt32 _, _, SynMeasure.Divide(
                         SynMeasure.Seq([ SynMeasure.Named([ hrIdent ], _) ], _),
@@ -62,7 +62,7 @@ let ``SynType.Tuple in measure type with no slashes`` () =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(typeDefns = [
             SynTypeDefn(typeRepr =
                 SynTypeDefnRepr.Simple(simpleRepr =
@@ -85,7 +85,7 @@ let ``SynType.Tuple in measure type with leading slash`` () =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(typeDefns = [
             SynTypeDefn(typeRepr =
                 SynTypeDefnRepr.Simple(simpleRepr =
@@ -107,7 +107,7 @@ let ``SynType.Tuple in measure type with start and slash`` () =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(typeDefns = [
             SynTypeDefn(typeRepr =
                 SynTypeDefnRepr.Simple(simpleRepr =

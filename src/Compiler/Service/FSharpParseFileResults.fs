@@ -937,7 +937,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
             let walkImplFile (modules: SynModuleOrNamespace list) = List.collect walkModule modules
 
             match input with
-            | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) -> walkImplFile modules
+            | ParsedInput.ImplFile file -> walkImplFile file.Contents
             | _ -> []
 
         DiagnosticsScope.Protect

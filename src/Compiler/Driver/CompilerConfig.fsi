@@ -413,6 +413,8 @@ type TcConfigBuilder =
 
         mutable concurrentBuild: bool
 
+        mutable parallelCheckingWithSignatureFiles: bool
+
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
 
         mutable preferredUiLang: string option
@@ -730,6 +732,8 @@ type TcConfig =
     member deterministic: bool
 
     member concurrentBuild: bool
+
+    member parallelCheckingWithSignatureFiles: bool
 
     member emitMetadataAssembly: MetadataAssemblyGeneration
 

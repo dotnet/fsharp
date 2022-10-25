@@ -54,8 +54,6 @@ val ApplyMetaCommandsFromInputToTcConfig: TcConfig * ParsedInput * string * Depe
 /// Process the #nowarn in an input and integrate them into the TcConfig
 val ApplyNoWarnsToTcConfig: TcConfig * ParsedInput * string -> TcConfig
 
-val GetScopedPragmasForInput: input: ParsedInput -> ScopedPragma list
-
 /// Parse one input stream
 val ParseOneInputStream:
     tcConfig: TcConfig *
@@ -104,7 +102,6 @@ val ParseInputFiles:
     lexResourceManager: Lexhelp.LexResourceManager *
     sourceFiles: string list *
     diagnosticsLogger: DiagnosticsLogger *
-    createDiagnosticsLogger: (Exiter -> CapturingDiagnosticsLogger) *
     retryLocked: bool ->
         (ParsedInput * string) list
 
@@ -115,7 +112,6 @@ val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlo
 /// Represents the incremental type checking state for a set of inputs
 [<Sealed>]
 type TcState =
-    member NiceNameGenerator: NiceNameGenerator
 
     /// The CcuThunk for the current assembly being checked
     member Ccu: CcuThunk
@@ -135,19 +131,18 @@ type TcState =
     member CreatesGeneratedProvidedTypes: bool
 
 /// Get the initial type checking state for a set of inputs
-val GetInitialTcState:
-    range * string * TcConfig * TcGlobals * TcImports * NiceNameGenerator * TcEnv * OpenDeclaration list -> TcState
+val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv * OpenDeclaration list -> TcState
 
 /// Check one input, returned as an Eventually computation
 val CheckOneInput:
     checkForErrors: (unit -> bool) *
-    TcConfig *
-    TcImports *
-    TcGlobals *
-    LongIdent option *
-    NameResolution.TcResultsSink *
-    TcState *
-    ParsedInput *
+    tcConfig: TcConfig *
+    tcImports: TcImports *
+    tcGlobals: TcGlobals *
+    prefixPathOpt: LongIdent option *
+    tcSink: NameResolution.TcResultsSink *
+    tcState: TcState *
+    input: ParsedInput *
     skipImplIfSigExists: bool ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
 
@@ -160,24 +155,25 @@ val CheckClosedInputSetFinish: CheckedImplFile list * TcState -> TcState * Check
 
 /// Check a closed set of inputs
 val CheckClosedInputSet:
-    CompilationThreadToken *
+    ctok: CompilationThreadToken *
     checkForErrors: (unit -> bool) *
-    TcConfig *
-    TcImports *
-    TcGlobals *
-    LongIdent option *
-    TcState *
-    ParsedInput list ->
+    tcConfig: TcConfig *
+    tcImports: TcImports *
+    tcGlobals: TcGlobals *
+    prefixPathOpt: LongIdent option *
+    tcState: TcState *
+    eagerFormat: (PhasedDiagnostic -> PhasedDiagnostic) *
+    inputs: ParsedInput list ->
         TcState * TopAttribs * CheckedImplFile list * TcEnv
 
 /// Check a single input and finish the checking
 val CheckOneInputAndFinish:
     checkForErrors: (unit -> bool) *
-    TcConfig *
-    TcImports *
-    TcGlobals *
-    LongIdent option *
-    NameResolution.TcResultsSink *
-    TcState *
-    ParsedInput ->
+    tcConfig: TcConfig *
+    tcImports: TcImports *
+    tcGlobals: TcGlobals *
+    prefixPathOpt: LongIdent option *
+    tcSink: NameResolution.TcResultsSink *
+    tcState: TcState *
+    input: ParsedInput ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile list * ModuleOrNamespaceType list) * TcState>

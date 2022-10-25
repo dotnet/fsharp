@@ -1035,7 +1035,6 @@
       <trans-unit id="tcTraitMayNotUseComplexThings">
         <source>A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</source>
         <target state="new">A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</target>
->>>>>>> 9007c43b9b45b46e093d53db2ce260a1ca909511
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -2316,11 +2315,6 @@
       <trans-unit id="chkLimitationsOfBaseKeyword">
         <source>'base' values may only be used to make direct calls to the base implementations of overridden members</source>
         <target state="translated">'base' 値を使用できるのは、オーバーライドされたメンバーの基本実装に対して直接呼び出しを行う場合のみです。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">オブジェクト コンストラクターでは、オブジェクトの初期化前に try/with および try/finally を直接使用できません。'for x in ...' などのコストラクトを呼び出す可能性があるようなコンストラクトがこれに含まれます。これは Common IL での制限事項です。</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">

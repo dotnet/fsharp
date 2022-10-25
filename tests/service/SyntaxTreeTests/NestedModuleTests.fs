@@ -18,7 +18,7 @@ module Nested =
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.NestedModule _ as nm
     ]) as sigModule ])) ->
         assertRange (4, 0) (6, 15) nm.Range
@@ -37,7 +37,7 @@ module Nested =
     ()"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.NestedModule _ as nm
     ]) ])) ->
         assertRange (4, 0) (6, 6) nm.Range
@@ -53,7 +53,7 @@ module X =
 """
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.NestedModule(trivia = { ModuleKeyword = Some mModule; EqualsRange = Some mEquals })
     ]) ])) ->
         assertRange (2, 0) (2, 6) mModule
@@ -72,7 +72,7 @@ val bar : int
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.NestedModule(trivia = { ModuleKeyword = Some mModule; EqualsRange = Some mEquals })
     ]) ])) ->
         assertRange (4, 0) (4, 6) mModule
@@ -146,7 +146,7 @@ module Operators =
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [ SynModuleOrNamespaceSig(decls = [
           SynModuleSigDecl.Open _
           SynModuleSigDecl.Open _
           SynModuleSigDecl.Open _

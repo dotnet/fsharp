@@ -68,7 +68,7 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
     let mutable errors = 0
 
     /// Called when an error or warning occurs
-    abstract HandleIssue: tcConfigB: TcConfigBuilder * diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
+    abstract HandleIssue: tcConfig: TcConfig * diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
     /// Called when 'too many errors' has occurred
     abstract HandleTooManyErrors: text: string -> unit
@@ -76,12 +76,14 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
     override _.ErrorCount = errors
 
     override x.DiagnosticSink(diagnostic, severity) =
-        if ReportDiagnosticAsError tcConfigB.diagnosticsOptions (diagnostic, severity) then
-            if errors >= tcConfigB.maxErrors then
+        let tcConfig = TcConfig.Create(tcConfigB, validate = false)
+
+        if diagnostic.ReportAsError(tcConfig.diagnosticsOptions, severity) then
+            if errors >= tcConfig.maxErrors then
                 x.HandleTooManyErrors(FSComp.SR.fscTooManyErrors ())
                 exiter.Exit 1
 
-            x.HandleIssue(tcConfigB, diagnostic, FSharpDiagnosticSeverity.Error)
+            x.HandleIssue(tcConfig, diagnostic, FSharpDiagnosticSeverity.Error)
 
             errors <- errors + 1
 
@@ -92,60 +94,47 @@ type DiagnosticsLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, 
                 Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (diagnostic.Exception.ToString()))
             | _ -> ()
 
-        elif ReportDiagnosticAsWarning tcConfigB.diagnosticsOptions (diagnostic, severity) then
-            x.HandleIssue(tcConfigB, diagnostic, FSharpDiagnosticSeverity.Warning)
+        elif diagnostic.ReportAsWarning(tcConfig.diagnosticsOptions, severity) then
+            x.HandleIssue(tcConfig, diagnostic, FSharpDiagnosticSeverity.Warning)
 
-        elif ReportDiagnosticAsInfo tcConfigB.diagnosticsOptions (diagnostic, severity) then
-            x.HandleIssue(tcConfigB, diagnostic, severity)
+        elif diagnostic.ReportAsInfo(tcConfig.diagnosticsOptions, severity) then
+            x.HandleIssue(tcConfig, diagnostic, severity)
 
 /// Create an error logger that counts and prints errors
-let ConsoleDiagnosticsLoggerUpToMaxErrors (tcConfigB: TcConfigBuilder, exiter: Exiter) =
-    { new DiagnosticsLoggerUpToMaxErrors(tcConfigB, exiter, "ConsoleDiagnosticsLoggerUpToMaxErrors") with
+let ConsoleDiagnosticsLogger (tcConfigB: TcConfigBuilder, exiter: Exiter) =
+    { new DiagnosticsLoggerUpToMaxErrors(tcConfigB, exiter, "ConsoleDiagnosticsLogger") with
 
         member _.HandleTooManyErrors(text: string) =
             DoWithDiagnosticColor FSharpDiagnosticSeverity.Warning (fun () -> Printf.eprintfn "%s" text)
 
-        member _.HandleIssue(tcConfigB, err, severity) =
+        member _.HandleIssue(tcConfig, diagnostic, severity) =
             DoWithDiagnosticColor severity (fun () ->
-                let diagnostic =
-                    OutputDiagnostic(
-                        tcConfigB.implicitIncludeDir,
-                        tcConfigB.showFullPaths,
-                        tcConfigB.flatErrors,
-                        tcConfigB.diagnosticStyle,
-                        severity
-                    )
-
-                writeViaBuffer stderr diagnostic err
+                writeViaBuffer stderr (fun buf -> diagnostic.Output(buf, tcConfig, severity))
                 stderr.WriteLine())
     }
     :> DiagnosticsLogger
 
-/// This error logger delays the messages it receives. At the end, call ForwardDelayedDiagnostics
-/// to send the held messages.
-type DelayAndForwardDiagnosticsLogger(exiter: Exiter, diagnosticsLoggerProvider: DiagnosticsLoggerProvider) =
-    inherit CapturingDiagnosticsLogger("DelayAndForwardDiagnosticsLogger")
+/// DiagnosticLoggers can be sensitive to the TcConfig flags. During the checking
+/// of the flags themselves we have to create temporary loggers, until the full configuration is
+/// available.
+type IDiagnosticsLoggerProvider =
 
-    member x.ForwardDelayedDiagnostics(tcConfigB: TcConfigBuilder) =
-        let diagnosticsLogger =
-            diagnosticsLoggerProvider.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigB, exiter)
+    abstract CreateLogger: tcConfigB: TcConfigBuilder * exiter: Exiter -> DiagnosticsLogger
 
+type CapturingDiagnosticsLogger with
+
+    /// Commit the delayed diagnostics via a fresh temporary logger of the right kind.
+    member x.CommitDelayedDiagnostics(diagnosticsLoggerProvider: IDiagnosticsLoggerProvider, tcConfigB, exiter) =
+        let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
         x.CommitDelayedDiagnostics diagnosticsLogger
-
-and [<AbstractClass>] DiagnosticsLoggerProvider() =
-
-    member this.CreateDelayAndForwardLogger exiter =
-        DelayAndForwardDiagnosticsLogger(exiter, this)
-
-    abstract CreateDiagnosticsLoggerUpToMaxErrors: tcConfigBuilder: TcConfigBuilder * exiter: Exiter -> DiagnosticsLogger
 
 /// The default DiagnosticsLogger implementation, reporting messages to the Console up to the maxerrors maximum
 type ConsoleLoggerProvider() =
 
-    inherit DiagnosticsLoggerProvider()
+    interface IDiagnosticsLoggerProvider with
 
-    override _.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter) =
-        ConsoleDiagnosticsLoggerUpToMaxErrors(tcConfigBuilder, exiter)
+        member _.CreateLogger(tcConfigB, exiter) =
+            ConsoleDiagnosticsLogger(tcConfigB, exiter)
 
 /// Notify the exiter if any error has occurred
 let AbortOnError (diagnosticsLogger: DiagnosticsLogger, exiter: Exiter) =
@@ -160,7 +149,6 @@ let TypeCheck
         tcGlobals,
         diagnosticsLogger: DiagnosticsLogger,
         assemblyName,
-        niceNameGen,
         tcEnv0,
         openDecls0,
         inputs,
@@ -173,16 +161,19 @@ let TypeCheck
         let ccuName = assemblyName
 
         let tcInitialState =
-            GetInitialTcState(rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv0, openDecls0)
+            GetInitialTcState(rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, tcEnv0, openDecls0)
+
+        let eagerFormat (diag: PhasedDiagnostic) = diag.EagerlyFormatCore true
 
         CheckClosedInputSet(
             ctok,
-            (fun () -> diagnosticsLogger.ErrorCount > 0),
+            diagnosticsLogger.CheckForErrors,
             tcConfig,
             tcImports,
             tcGlobals,
             None,
             tcInitialState,
+            eagerFormat,
             inputs
         )
     with exn ->
@@ -339,12 +330,12 @@ module InterfaceFileWriter =
             }
 
         let writeToFile os (CheckedImplFile (contents = mexpr)) =
-            writeViaBuffer
-                os
-                (fun os s -> Printf.bprintf os "%s\n\n" s)
-                (NicePrint.layoutImpliedSignatureOfModuleOrNamespace true denv infoReader AccessibleFromSomewhere range0 mexpr
-                 |> Display.squashTo 80
-                 |> LayoutRender.showL)
+            let text =
+                NicePrint.layoutImpliedSignatureOfModuleOrNamespace true denv infoReader AccessibleFromSomewhere range0 mexpr
+                |> Display.squashTo 80
+                |> LayoutRender.showL
+
+            Printf.fprintf os "%s\n\n" text
 
         let writeHeader filePath os =
             if
@@ -471,7 +462,7 @@ let main1
         reduceMemoryUsage: ReduceMemoryFlag,
         defaultCopyFSharpCore: CopyFSharpCoreFlag,
         exiter: Exiter,
-        diagnosticsLoggerProvider: DiagnosticsLoggerProvider,
+        diagnosticsLoggerProvider: IDiagnosticsLoggerProvider,
         disposables: DisposablesTracker
     ) =
 
@@ -518,11 +509,9 @@ let main1
     SetTailcallSwitch tcConfigB OptionSwitch.On
 
     // Now install a delayed logger to hold all errors from flags until after all flags have been parsed (for example, --vserrors)
-    let delayForFlagsLogger =
-        diagnosticsLoggerProvider.CreateDelayAndForwardLogger exiter
+    let delayForFlagsLogger = CapturingDiagnosticsLogger("DelayFlagsLogger")
 
-    let _unwindEL_1 =
-        PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> delayForFlagsLogger)
+    let _holder = UseDiagnosticsLogger delayForFlagsLogger
 
     // Share intern'd strings across all lexing/parsing
     let lexResourceManager = Lexhelp.LexResourceManager()
@@ -539,7 +528,7 @@ let main1
             AdjustForScriptCompile(tcConfigB, files, lexResourceManager, dependencyProvider)
         with e ->
             errorRecovery e rangeStartup
-            delayForFlagsLogger.ForwardDelayedDiagnostics tcConfigB
+            delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
             exiter.Exit 1
 
     tcConfigB.conditionalDefines <- "COMPILED" :: tcConfigB.conditionalDefines
@@ -554,12 +543,12 @@ let main1
             tcConfigB.DecideNames sourceFiles
         with e ->
             errorRecovery e rangeStartup
-            delayForFlagsLogger.ForwardDelayedDiagnostics tcConfigB
+            delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
             exiter.Exit 1
 
     // DecideNames may give "no inputs" error. Abort on error at this point. bug://3911
     if not tcConfigB.continueAfterParseFailure && delayForFlagsLogger.ErrorCount > 0 then
-        delayForFlagsLogger.ForwardDelayedDiagnostics tcConfigB
+        delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
         exiter.Exit 1
 
     // If there's a problem building TcConfig, abort
@@ -568,14 +557,13 @@ let main1
             TcConfig.Create(tcConfigB, validate = false)
         with e ->
             errorRecovery e rangeStartup
-            delayForFlagsLogger.ForwardDelayedDiagnostics tcConfigB
+            delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
             exiter.Exit 1
 
-    let diagnosticsLogger =
-        diagnosticsLoggerProvider.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigB, exiter)
+    let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
 
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
-    let _unwindEL_2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+    let _holder = UseDiagnosticsLogger diagnosticsLogger
 
     // Forward all errors from flags
     delayForFlagsLogger.CommitDelayedDiagnostics diagnosticsLogger
@@ -605,13 +593,10 @@ let main1
 
     // Parse sourceFiles
     ReportTime tcConfig "Parse inputs"
-    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-
-    let createDiagnosticsLogger =
-        (fun exiter -> diagnosticsLoggerProvider.CreateDelayAndForwardLogger(exiter) :> CapturingDiagnosticsLogger)
+    use unwindParsePhase = UseBuildPhase BuildPhase.Parse
 
     let inputs =
-        ParseInputFiles(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, createDiagnosticsLogger, false)
+        ParseInputFiles(tcConfig, lexResourceManager, sourceFiles, diagnosticsLogger, false)
 
     let inputs, _ =
         (Map.empty, inputs)
@@ -659,7 +644,7 @@ let main1
     // Build the initial type checking environment
     ReportTime tcConfig "Typecheck"
 
-    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
+    use unwindParsePhase = UseBuildPhase BuildPhase.TypeCheck
 
     let tcEnv0, openDecls0 =
         GetInitialTcEnv(assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
@@ -668,19 +653,7 @@ let main1
     let inputs = inputs |> List.map fst
 
     let tcState, topAttrs, typedAssembly, _tcEnvAtEnd =
-        TypeCheck(
-            ctok,
-            tcConfig,
-            tcImports,
-            tcGlobals,
-            diagnosticsLogger,
-            assemblyName,
-            NiceNameGenerator(),
-            tcEnv0,
-            openDecls0,
-            inputs,
-            exiter
-        )
+        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, assemblyName, tcEnv0, openDecls0, inputs, exiter)
 
     AbortOnError(diagnosticsLogger, exiter)
     ReportTime tcConfig "Typechecked"
@@ -717,7 +690,7 @@ let main1OfAst
         dllReferences,
         noframework,
         exiter: Exiter,
-        diagnosticsLoggerProvider: DiagnosticsLoggerProvider,
+        diagnosticsLoggerProvider: IDiagnosticsLoggerProvider,
         disposables: DisposablesTracker,
         inputs: ParsedInput list
     ) =
@@ -779,11 +752,9 @@ let main1OfAst
     SetTailcallSwitch tcConfigB OptionSwitch.On
 
     // Now install a delayed logger to hold all errors from flags until after all flags have been parsed (for example, --vserrors)
-    let delayForFlagsLogger =
-        diagnosticsLoggerProvider.CreateDelayAndForwardLogger exiter
+    let delayForFlagsLogger = CapturingDiagnosticsLogger("DelayForFlagsLogger")
 
-    let _unwindEL_1 =
-        PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> delayForFlagsLogger)
+    let _holder = UseDiagnosticsLogger delayForFlagsLogger
 
     tcConfigB.conditionalDefines <- "COMPILED" :: tcConfigB.conditionalDefines
 
@@ -796,16 +767,15 @@ let main1OfAst
         try
             TcConfig.Create(tcConfigB, validate = false)
         with e ->
-            delayForFlagsLogger.ForwardDelayedDiagnostics tcConfigB
+            delayForFlagsLogger.CommitDelayedDiagnostics(diagnosticsLoggerProvider, tcConfigB, exiter)
             exiter.Exit 1
 
     let dependencyProvider = new DependencyProvider()
 
-    let diagnosticsLogger =
-        diagnosticsLoggerProvider.CreateDiagnosticsLoggerUpToMaxErrors(tcConfigB, exiter)
+    let diagnosticsLogger = diagnosticsLoggerProvider.CreateLogger(tcConfigB, exiter)
 
     // Install the global error logger and never remove it. This logger does have all command-line flags considered.
-    let _unwindEL_2 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+    let _holder = UseDiagnosticsLogger diagnosticsLogger
 
     // Forward all errors from flags
     delayForFlagsLogger.CommitDelayedDiagnostics diagnosticsLogger
@@ -825,7 +795,7 @@ let main1OfAst
     // Register framework tcImports to be disposed in future
     disposables.Register frameworkTcImports
 
-    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
+    use unwindParsePhase = UseBuildPhase BuildPhase.Parse
 
     let meta = Directory.GetCurrentDirectory()
 
@@ -847,26 +817,14 @@ let main1OfAst
 
     // Build the initial type checking environment
     ReportTime tcConfig "Typecheck"
-    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
+    use unwindParsePhase = UseBuildPhase BuildPhase.TypeCheck
 
     let tcEnv0, openDecls0 =
         GetInitialTcEnv(assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
     // Type check the inputs
     let tcState, topAttrs, typedAssembly, _tcEnvAtEnd =
-        TypeCheck(
-            ctok,
-            tcConfig,
-            tcImports,
-            tcGlobals,
-            diagnosticsLogger,
-            assemblyName,
-            NiceNameGenerator(),
-            tcEnv0,
-            openDecls0,
-            inputs,
-            exiter
-        )
+        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, assemblyName, tcEnv0, openDecls0, inputs, exiter)
 
     AbortOnError(diagnosticsLogger, exiter)
     ReportTime tcConfig "Typechecked"
@@ -912,7 +870,7 @@ let main2
 
     generatedCcu.Contents.SetAttribs(generatedCcu.Contents.Attribs @ topAttrs.assemblyAttrs)
 
-    use unwindPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.CodeGen
+    use unwindPhase = UseBuildPhase BuildPhase.CodeGen
     let signingInfo = ValidateKeySigningAttributes(tcConfig, tcGlobals, topAttrs)
 
     AbortOnError(diagnosticsLogger, exiter)
@@ -930,7 +888,7 @@ let main2
 
         GetDiagnosticsLoggerFilteringByScopedPragmas(true, scopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
 
-    let _unwindEL_3 = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
+    let _holder = UseDiagnosticsLogger diagnosticsLogger
 
     // Try to find an AssemblyVersion attribute
     let assemVerFromAttrib =
@@ -955,7 +913,7 @@ let main2
 
     // write interface, xmldoc
     ReportTime tcConfig "Write Interface File"
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
+    use _ = UseBuildPhase BuildPhase.Output
 
     if tcConfig.printSignature || tcConfig.printAllSignatureFiles then
         InterfaceFileWriter.WriteInterfaceFile(tcGlobals, tcConfig, InfoReader(tcGlobals, tcImports.GetImportMap()), typedImplFiles)
@@ -1036,7 +994,7 @@ let main3
 
     let optimizedImpls, optDataResources =
         // Perform optimization
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Optimize
+        use _ = UseBuildPhase BuildPhase.Optimize
 
         let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
 
@@ -1124,7 +1082,7 @@ let main4
     let staticLinker = StaticLink(ctok, tcConfig, tcImports, ilGlobals)
 
     ReportTime tcConfig "TAST -> IL"
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.IlxGen
+    use _ = UseBuildPhase BuildPhase.IlxGen
 
     // Create the Abstract IL generator
     let ilxGenerator =
@@ -1214,7 +1172,7 @@ let main5
            ilSourceDocs))
     =
 
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
+    use _ = UseBuildPhase BuildPhase.Output
 
     // Static linking, if any
     let ilxMainModule =
@@ -1248,7 +1206,7 @@ let main6
 
     ReportTime tcConfig "Write .NET Binary"
 
-    use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
+    use _ = UseBuildPhase BuildPhase.Output
     let outfile = tcConfig.MakePathAbsolute outfile
 
     DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent ctok

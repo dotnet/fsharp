@@ -31,6 +31,8 @@ type public ToolTipElementData =
       ParamName: string option
     }
 
+    static member Create: layout: TaggedText[] * xml: FSharpXmlDoc * ?typeMapping: TaggedText[] list * ?paramName: string * ?remarks: TaggedText[]  -> ToolTipElementData
+
 /// A single tool tip display element
 //
 // Note: instances of this type do not hold any references to any compiler resources.

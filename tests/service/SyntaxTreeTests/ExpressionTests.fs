@@ -16,7 +16,7 @@ let ``SynExpr.Do contains the range of the do keyword`` () =
                     |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Let(bindings = [
                         SynBinding(expr = SynExpr.Sequential(expr1 = SynExpr.Do(_, doRange) ; expr2 = SynExpr.DoBang(_, doBangRange)))
@@ -41,7 +41,7 @@ comp {
         |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr = SynExpr.App(argExpr =
                         SynExpr.ComputationExpr(expr =
@@ -67,7 +67,7 @@ let ``SynExpr.Record contains the range of the equals sign in SynExprRecordField
         |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.Record(recordFields = [
@@ -89,7 +89,7 @@ let ``inherit SynExpr.Record contains the range of the equals sign in SynExprRec
         |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.Record(baseInfo = Some _ ; recordFields = [
@@ -112,7 +112,7 @@ let ``copy SynExpr.Record contains the range of the equals sign in SynExprRecord
         |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.Record(copyInfo = Some _ ; recordFields = [
@@ -134,7 +134,7 @@ let ``SynExpr.AnonRecord contains the range of the equals sign in the fields`` (
         |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.AnonRecd(recordFields = [
@@ -159,7 +159,7 @@ printf "%d " i
         |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.For(equalsRange = Some mEquals))
@@ -180,7 +180,7 @@ with
         |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.TryWith(trivia={ TryKeyword = mTry; WithKeyword = mWith }))
@@ -202,7 +202,7 @@ finally
         |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.TryFinally(trivia={ TryKeyword = mTry; FinallyKeyword = mFinally }))
@@ -222,7 +222,7 @@ match x with
         |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.Match(trivia = { MatchKeyword = mMatch; WithKeyword = mWith }))
@@ -242,7 +242,7 @@ match! x with
         |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.MatchBang(trivia = { MatchBangKeyword = mMatch; WithKeyword = mWith }))
@@ -265,7 +265,7 @@ let ``SynExpr.ObjExpr contains the range of with keyword`` () =
         |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.ObjExpr(withKeyword=Some mWithObjExpr; extraImpls=[ SynInterfaceImpl(withKeyword=None); SynInterfaceImpl(withKeyword=Some mWithSynInterfaceImpl) ]))
@@ -281,7 +281,7 @@ let ``SynExpr.LetOrUse contains the range of in keyword`` () =
         getParseResults "let x = 1 in ()"
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.LetOrUse(trivia={ InKeyword = Some mIn }))
@@ -301,7 +301,7 @@ do
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.Do(expr = SynExpr.LetOrUse(bindings=[_;_]; trivia={ InKeyword = Some mIn })))
@@ -321,7 +321,7 @@ let f () =
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Let(bindings = [
                       SynBinding(expr =
@@ -343,7 +343,7 @@ let x = 1
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.Do(expr = SynExpr.LetOrUse(trivia={ InKeyword = None })))
@@ -362,7 +362,7 @@ e1.Key, e1.Value
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.Do(expr = SynExpr.LetOrUse(trivia={ InKeyword = None })))
@@ -379,7 +379,7 @@ global
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.LongIdent(longDotId = SynLongIdent([mangledGlobal], [], [Some (IdentTrivia.OriginalNotation "global")]))
@@ -400,7 +400,7 @@ let ``SynExprRecordFields contain correct amount of trivia`` () =
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.Record(recordFields = [
@@ -420,7 +420,7 @@ let ``SynExpr.Dynamic does contain ident`` () =
         getParseResults "x?k"
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr = SynExpr.Dynamic (_, _, SynExpr.Ident(idK) ,mDynamicExpr))
                 ])
@@ -435,7 +435,7 @@ let ``SynExpr.Dynamic does contain parentheses`` () =
         getParseResults "x?(g)"
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr =
                         SynExpr.Dynamic (_, _, SynExpr.Paren(SynExpr.Ident(idG), lpr, Some rpr, mParen) ,mDynamicExpr))
@@ -454,7 +454,7 @@ let ``SynExpr.Set with SynExpr.Dynamic`` () =
         getParseResults "x?v <- 2"
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Expr(expr = SynExpr.Set(
                         SynExpr.Dynamic (_, _, SynExpr.Ident(idV) ,mDynamicExpr),
@@ -481,7 +481,7 @@ type CFoo() =
 """
 
     match ast with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = [
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Types _
                     SynModuleDecl.Expr(expr = SynExpr.ObjExpr(members = [

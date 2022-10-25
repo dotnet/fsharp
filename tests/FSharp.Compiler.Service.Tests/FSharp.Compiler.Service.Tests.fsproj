@@ -113,6 +113,9 @@
     <Compile Include="..\service\SyntaxTreeTests\OperatorNameTests.fs">
       <Link>SyntaxTree\OperatorNameTests.fs</Link>
     </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\SynIdentTests.fs">
+      <Link>SyntaxTree\SynIdentTests.fs</Link>
+    </Compile>
     <Compile Include="..\service\FileSystemTests.fs">
       <Link>FileSystemTests.fs</Link>
     </Compile>

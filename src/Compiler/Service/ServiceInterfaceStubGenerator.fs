@@ -780,8 +780,8 @@ module InterfaceStubGenerator =
 
     /// Find corresponding interface declaration at a given position
     let TryFindInterfaceDeclaration (pos: pos) (parsedInput: ParsedInput) =
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.tryPick walkSynModuleOrNamespace moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.tryPick walkSynModuleOrNamespace file.Contents
 
         and walkSynModuleOrNamespace (SynModuleOrNamespace (decls = decls; range = range)) =
             if not <| rangeContainsPos range pos then

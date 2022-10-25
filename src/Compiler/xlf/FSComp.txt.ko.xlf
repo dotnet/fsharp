@@ -1035,7 +1035,6 @@
       <trans-unit id="tcTraitMayNotUseComplexThings">
         <source>A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</source>
         <target state="new">A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</target>
->>>>>>> 9007c43b9b45b46e093d53db2ce260a1ca909511
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -2316,11 +2315,6 @@
       <trans-unit id="chkLimitationsOfBaseKeyword">
         <source>'base' values may only be used to make direct calls to the base implementations of overridden members</source>
         <target state="translated">'base' 값은 재정의된 멤버의 기본 구현에 대한 직접 호출을 수행하는 데에만 사용할 수 있습니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">개체 생성자는 개체 초기화 전에 try/with 및 try/finally를 직접 사용할 수 없습니다. 여기에는 이러한 구문의 사용을 자세히 설명할 수 있는 'for x in ...'과 같은 구문이 포함됩니다. 이는 공통 IL의 제한입니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">

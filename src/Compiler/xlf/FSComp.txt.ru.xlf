@@ -1035,7 +1035,6 @@
       <trans-unit id="tcTraitMayNotUseComplexThings">
         <source>A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</source>
         <target state="new">A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</target>
->>>>>>> 9007c43b9b45b46e093d53db2ce260a1ca909511
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -2316,11 +2315,6 @@
       <trans-unit id="chkLimitationsOfBaseKeyword">
         <source>'base' values may only be used to make direct calls to the base implementations of overridden members</source>
         <target state="translated">Значения "base" можно использовать только для выполнения прямых вызовов реализаций класса base для переопределенных элементов</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">В конструкторе объекта нельзя прямо использовать блоки try/with и try/finally до инициализации объекта. К таким вариантам использования также относятся и конструкции вида "for x in ...", применение которых может привести к использованию указанных конструкций. Это ограничение связано с требованиями общего промежуточного языка.</target>
         <note />
       </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">

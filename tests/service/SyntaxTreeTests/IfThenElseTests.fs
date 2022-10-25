@@ -11,7 +11,7 @@ let ``If keyword in IfThenElse`` () =
             "if a then b"
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.IfThenElse(trivia={ IfKeyword = mIfKw; IsElif = false; ThenKeyword = mThenKw; ElseKeyword = None })
         )
@@ -27,7 +27,7 @@ let ``Else keyword in simple IfThenElse`` () =
             "if a then b else c"
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr =SynExpr.IfThenElse(trivia={ IfKeyword = mIfKw; IsElif = false; ThenKeyword = mThenKw; ElseKeyword = Some mElse })
         )
@@ -47,7 +47,7 @@ then b
 else c"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.IfThenElse(trivia={ IfKeyword = mIfKw; IsElif = false; ThenKeyword = mThenKw; ElseKeyword = Some mElse })
         )
@@ -67,7 +67,7 @@ b
 elif c then d"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.IfThenElse(trivia={ IfKeyword = mIfKw; IsElif=false; ThenKeyword = mThenKw; ElseKeyword = None }
                                       elseExpr = Some (SynExpr.IfThenElse(trivia={ IfKeyword = mElif; IsElif = true })))
@@ -89,7 +89,7 @@ else
     if c then d"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.IfThenElse(trivia={ IfKeyword = mIfKw; IsElif = false; ThenKeyword = mThenKw; ElseKeyword = Some mElse }
                                       elseExpr = Some (SynExpr.IfThenElse(trivia={ IfKeyword = mElseIf; IsElif = false })))
@@ -112,7 +112,7 @@ else if c then
 d"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.IfThenElse(trivia={ IfKeyword = mIfKw; IsElif=false; ThenKeyword = mThenKw; ElseKeyword = Some mElse }
                                       elseExpr = Some (SynExpr.IfThenElse(trivia={ IfKeyword = mElseIf; IsElif = false })))
@@ -140,7 +140,7 @@ else
             g"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.IfThenElse(trivia={ IfKeyword = mIf1; IsElif = false; ElseKeyword = None }
                                       elseExpr = Some (SynExpr.IfThenElse(trivia={ IfKeyword = mElif; IsElif = true; ElseKeyword = Some mElse1 }
@@ -165,7 +165,7 @@ else (* some long comment here *) if c then
 d"""
 
     match parseResults with
-    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Expr(
             expr = SynExpr.IfThenElse(trivia={ IfKeyword = mIf1; IsElif = false; ElseKeyword = Some mElse }
                                       elseExpr = Some (SynExpr.IfThenElse(trivia = { IfKeyword = mIf2; IsElif = false }))))

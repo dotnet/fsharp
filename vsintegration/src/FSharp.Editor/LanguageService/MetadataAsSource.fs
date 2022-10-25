@@ -99,11 +99,11 @@ type internal FSharpMetadataAsSourceService() =
     let serviceProvider = ServiceProvider.GlobalProvider
     let projs = System.Collections.Concurrent.ConcurrentDictionary<string, IFSharpWorkspaceProjectContext>()
 
-    let createMetadataProjectContext (projInfo: ProjectInfo) (docInfo: DocumentInfo) =
+    let createMetadataProjectContext (projFilePath: string) (projInfo: ProjectInfo) (docInfo: DocumentInfo) =
         let componentModel = Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
-        let projectContextFactory = componentModel.GetService<IFSharpWorkspaceProjectContextFactory>()
+        let projectContextFactory = componentModel.GetService<FSharpWorkspaceProjectContextFactory>()
 
-        let projectContext = projectContextFactory.CreateProjectContext(projInfo.FilePath, projInfo.Id.ToString())
+        let projectContext = projectContextFactory.CreateProjectContext(projFilePath, projInfo.Id.ToString())
         projectContext.DisplayName <- projInfo.Name
         projectContext.AddSourceFile(docInfo.FilePath, SourceCodeKind.Regular)
 
@@ -142,7 +142,8 @@ type internal FSharpMetadataAsSourceService() =
                 use writer = new StreamWriter(fileStream)
                 text.Write(writer)
 
-            let projectContext = createMetadataProjectContext projInfo document
+            let projectFile = Path.ChangeExtension(filePath, "fsproj")
+            let projectContext = createMetadataProjectContext projectFile projInfo document
 
             projs.[filePath] <- projectContext
 

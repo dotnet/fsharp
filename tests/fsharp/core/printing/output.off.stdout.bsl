@@ -1779,7 +1779,7 @@ val ShortName: string = "hi"
 > val list2: int list
 
 module FSI_0317.
-       D27805741a339047ef3ed7a2ca8faae3c17e6ef2371984011e49a6c9c3286641
+       C6f6ae524efb4d95b2b2eaa363022f9d4a28c777f788498ca81a55b9ec1aad1a
 
 {"ImmutableField0":6}
 type R1 =
