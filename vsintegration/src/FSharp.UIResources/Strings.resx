@@ -237,4 +237,13 @@
   <data name="Diagnostics" xml:space="preserve">
     <value>Diagnostics</value>
   </data>
+  <data name="Parallelization" xml:space="preserve">
+    <value>Parallelization (requires restart)</value>
+  </data>
+  <data name="Enable_Parallel_Checking_With_Signature_Files" xml:space="preserve">
+    <value>Enable parallel type checking with signature files</value>
+  </data>
+  <data name="Enable_Parallel_Reference_Resolution" xml:space="preserve">
+    <value>Enable parallel reference resolution</value>
+  </data>
 </root>

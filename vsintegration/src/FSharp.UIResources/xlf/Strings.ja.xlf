@@ -47,6 +47,16 @@
         <target state="translated">診断</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
+        <source>Enable parallel type checking with signature files</source>
+        <target state="new">Enable parallel type checking with signature files</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Parallel_Reference_Resolution">
+        <source>Enable parallel reference resolution</source>
+        <target state="new">Enable parallel reference resolution</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Language_Service_Performance">
         <source>Performance</source>
         <target state="translated">パフォーマンス</target>
@@ -65,6 +75,11 @@
       <trans-unit id="Navigation_links">
         <source>Navigation links</source>
         <target state="translated">ナビゲーション リンク</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Parallelization">
+        <source>Parallelization (requires restart)</source>
+        <target state="new">Parallelization (requires restart)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">

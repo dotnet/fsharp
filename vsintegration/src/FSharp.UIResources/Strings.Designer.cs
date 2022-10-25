@@ -19,7 +19,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Strings {
@@ -178,6 +178,24 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enable parallel type checking with signature files.
+        /// </summary>
+        public static string Enable_Parallel_Checking_With_Signature_Files {
+            get {
+                return ResourceManager.GetString("Enable_Parallel_Checking_With_Signature_Files", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enable parallel reference resolution.
+        /// </summary>
+        public static string Enable_Parallel_Reference_Resolution {
+            get {
+                return ResourceManager.GetString("Enable_Parallel_Reference_Resolution", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enable stale data for IntelliSense features.
         /// </summary>
         public static string Enable_Stale_IntelliSense_Results {
@@ -223,7 +241,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Re-format indentation on paste.
+        ///   Looks up a localized string similar to Re-format indentation on paste (Experimental).
         /// </summary>
         public static string Format_on_paste {
             get {
@@ -264,6 +282,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Outlining {
             get {
                 return ResourceManager.GetString("Outlining", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Parallelization (requires restart).
+        /// </summary>
+        public static string Parallelization {
+            get {
+                return ResourceManager.GetString("Parallelization", resourceCulture);
             }
         }
         

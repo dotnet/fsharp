@@ -412,6 +412,9 @@ let CheckEntityAttributes g (tcref: TyconRef) m =
         CheckILAttributes g (isByrefLikeTyconRef g m tcref) tcref.ILTyconRawMetadata.CustomAttrs m
     else 
         CheckFSharpAttributes g tcref.Attribs m
+        
+let CheckILEventAttributes g (tcref: TyconRef) cattrs m  =    
+    CheckILAttributes g (isByrefLikeTyconRef g m tcref) cattrs m 
 
 /// Check the attributes associated with a method, returning warnings and errors as data.
 let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) = 
