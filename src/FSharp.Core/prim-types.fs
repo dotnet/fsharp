@@ -4109,6 +4109,7 @@ namespace Microsoft.FSharp.Collections
                 let start = if i < 0 then 0 else i
                 PrivateListHelpers.sliceTake (j - start) (PrivateListHelpers.sliceSkip start l)
 
+        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         member l.GetReverseIndex(_: int, offset: int) =
             l.Length - offset - 1
 
@@ -6978,6 +6979,7 @@ namespace Microsoft.FSharp.Core
         [<AutoOpen>]
         module ArrayExtensions =
             type ``[,,,]``<'T> with
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
@@ -6990,6 +6992,7 @@ namespace Microsoft.FSharp.Core
                     len - offset - 1
 
             type ``[,,]``<'T> with
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
@@ -7001,6 +7004,7 @@ namespace Microsoft.FSharp.Core
                     len - offset - 1
 
             type ``[,]``<'T> with
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
@@ -7011,9 +7015,11 @@ namespace Microsoft.FSharp.Core
                     len - offset - 1
 
             type ``[]``<'T> with
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member arr.GetReverseIndex (_: int, offset: int) = arr.Length - offset - 1
 
             type String with
+                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member str.GetReverseIndex (_: int, offset: int) = str.Length - offset - 1
 
 namespace Microsoft.FSharp.Control
