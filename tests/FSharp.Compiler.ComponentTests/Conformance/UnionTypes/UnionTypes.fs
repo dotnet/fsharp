@@ -543,6 +543,8 @@ module UnionTypes =
             (Error 53, Line 18, Col 12, Line 18, Col 13, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute");
             (Error 53, Line 20, Col 12, Line 20, Col 15, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute");
             (Error 53, Line 22, Col 14, Line 22, Col 17, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute")
+            (Error 883, Line 32, Col 7, Line 32, Col 14, "Invalid namespace, module, type or union case name");
+            (Error 883, Line 37, Col 7, Line 37, Col 14, "Invalid namespace, module, type or union case name")
         ]
 
     //SOURCE=E_LowercaseWhenRequireQualifiedAccess.fsx                                                                 # E_LowercaseWhenRequireQualifiedAccess.fsx
@@ -565,6 +567,13 @@ module UnionTypes =
             (Error 53, Line 18, Col 12, Line 18, Col 13, "Discriminated union cases and exception labels must be uppercase identifiers");
             (Error 53, Line 20, Col 12, Line 20, Col 15, "Discriminated union cases and exception labels must be uppercase identifiers");
             (Error 53, Line 22, Col 14, Line 22, Col 17, "Discriminated union cases and exception labels must be uppercase identifiers")
+            (Error 53, Line 26, Col 7, Line 26, Col 8, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 53, Line 27, Col 7, Line 27, Col 12, "Discriminated union cases and exception labels must be uppercase identifiers")
+            (Error 53, Line 31, Col 7, Line 31, Col 8, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 883, Line 32, Col 7, Line 32, Col 14, "Invalid namespace, module, type or union case name");
+            (Error 53, Line 32, Col 7, Line 32, Col 14, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 53, Line 36, Col 7, Line 36, Col 8, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 883, Line 37, Col 7, Line 37, Col 14, "Invalid namespace, module, type or union case name")
         ]
 
     //SOURCE=W_GenericFunctionValuedStaticProp02.fs SCFLAGS="--test:ErrorRanges --warnaserror-"   # W_GenericFunctionValuedStaticProp02.fs
