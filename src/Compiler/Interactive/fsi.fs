@@ -882,10 +882,10 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig,
     // In the "--help", these options can be printed either before (fsiUsagePrefix) or after (fsiUsageSuffix) the core options.
 
     let displayHelpFsi tcConfigB (blocks:CompilerOptionBlock list) =
-        DisplayBannerText tcConfigB;
+        Console.Write (GetBannerText tcConfigB)
         fprintfn fsiConsoleOutput.Out ""
         fprintfn fsiConsoleOutput.Out "%s" (FSIstrings.SR.fsiUsage(executableFileNameWithoutExtension.Value))
-        PrintCompilerOptionBlocks blocks
+        Console.Write (GetCompilerOptionBlocks blocks)
         exit 0
 
     // option tags
