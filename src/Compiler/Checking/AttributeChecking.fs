@@ -507,7 +507,8 @@ let CheckUnionCaseAttributes g (x:UnionCaseRef) m =
 /// Check the attributes on a record field, returning errors and warnings as data.
 let CheckRecdFieldAttributes g (x:RecdFieldRef) m =
     CheckEntityAttributes g x.TyconRef m ++ (fun () ->
-    CheckFSharpAttributes g x.PropertyAttribs m)
+    CheckFSharpAttributes g x.PropertyAttribs m) ++ (fun () ->
+    CheckFSharpAttributes g x.RecdField.FieldAttribs m)
 
 /// Check the attributes on an F# value, returning errors and warnings as data.
 let CheckValAttributes g (x:ValRef) m =
