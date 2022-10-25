@@ -34,8 +34,6 @@ let main (argv) =
         else
             "fsc.exe"
 
-    // Set the garbage collector to batch mode, which improves overall performance.
-    GCSettings.LatencyMode <- GCLatencyMode.Batch
     Thread.CurrentThread.Name <- "F# Main Thread"
 
     // Set the initial phase to garbage collector to batch mode, which improves overall performance.
