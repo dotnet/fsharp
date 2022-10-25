@@ -98,3 +98,27 @@ match x with
     ]) ])) ->
         Assert.AreEqual("op_ColonColon", opColonColonIdent.idText)
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``Parentheses of SynArgPats.NamePatPairs`` () =
+    let parseResults = 
+        getParseResults
+            """
+match data with
+| OnePartData( // foo
+    part1 = p1
+  (* bar *) ) -> p1
+| _ -> failwith "todo"
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Expr(
+            expr = SynExpr.Match(clauses = [
+                SynMatchClause(pat = SynPat.LongIdent(argPats = SynArgPats.NamePatPairs(trivia = trivia)))
+                _
+            ])
+        )
+    ]) ])) ->
+        assertRange (3, 13) (5, 13) trivia.ParenRange
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

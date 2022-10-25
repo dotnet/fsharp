@@ -28,51 +28,43 @@ type internal CodeLensProvider
         settings: EditorOptions
     ) =
 
-    let lineLensProvider = ResizeArray()
+    let tryGetTextDocument (buffer: ITextBuffer) (factory: ITextDocumentFactoryService) = 
+        match factory.TryGetTextDocument buffer with
+        | true, document -> Some document
+        | _ -> None
+
     let taggers = ResizeArray()
+    let lineLensProviders = ResizeArray()
     let componentModel = Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
     let workspace = componentModel.GetService<VisualStudioWorkspace>()
 
-    /// Returns an provider for the textView if already one has been created. Else create one.
-    let addCodeLensProviderOnce wpfView buffer =
-        let res = taggers |> Seq.tryFind(fun (view, _) -> view = wpfView)
-        match res with
-        | Some (_, (tagger, _)) -> tagger
-        | None ->
-            let documentId = 
-                lazy (
-                    match textDocumentFactory.TryGetTextDocument(buffer) with
-                    | true, textDocument ->
-                         Seq.tryHead (workspace.CurrentSolution.GetDocumentIdsWithFilePath(textDocument.FilePath))
-                    | _ -> None
-                    |> Option.get
-                )
+    let tryGetCodeLensTagger wpfView buffer =
+        taggers 
+        |> Seq.tryFind (fun (view, _) -> view = wpfView) 
+        |> Option.map (fun (_, (tagger, _)) -> tagger)
+        |> Option.orElse
+            (textDocumentFactory 
+            |> tryGetTextDocument buffer
+            |> Option.map (fun document -> workspace.CurrentSolution.GetDocumentIdsWithFilePath document.FilePath)
+            |> Option.bind Seq.tryHead
+            |> Option.map (fun documentId -> 
+                let tagger = CodeLensGeneralTagger(wpfView, buffer)
+                let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, metadataAsSource, componentModel.GetService(), typeMap, tagger, settings)
+                let provider = (wpfView, (tagger, service))
+                wpfView.Closed.Add (fun _ -> taggers.Remove provider |> ignore)
+                taggers.Add provider
+                tagger))
 
-            let tagger = CodeLensGeneralTagger(wpfView, buffer)
-            let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, metadataAsSource, componentModel.GetService(), typeMap, tagger, settings)
-            let provider = (wpfView, (tagger, service))
-            wpfView.Closed.Add (fun _ -> taggers.Remove provider |> ignore)
-            taggers.Add((wpfView, (tagger, service)))
-            tagger
-
-    /// Returns an provider for the textView if already one has been created. Else create one.
-    let addLineLensProviderOnce wpfView buffer =
-        let res = lineLensProvider |> Seq.tryFind(fun (view, _) -> view = wpfView)
-        match res with
-        | None ->
-            let documentId = 
-                lazy (
-                    match textDocumentFactory.TryGetTextDocument(buffer) with
-                    | true, textDocument ->
-                         Seq.tryHead (workspace.CurrentSolution.GetDocumentIdsWithFilePath(textDocument.FilePath))
-                    | _ -> None
-                    |> Option.get
-                )
+    let addLineLensProvider wpfView buffer =
+        textDocumentFactory
+        |> tryGetTextDocument buffer
+        |> Option.map (fun document -> workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath))
+        |> Option.bind Seq.tryHead
+        |> Option.map (fun documentId ->
             let service = FSharpCodeLensService(serviceProvider, workspace, documentId, buffer, metadataAsSource, componentModel.GetService(), typeMap, LineLensDisplayService(wpfView, buffer), settings)
             let provider = (wpfView, service)
-            wpfView.Closed.Add (fun _ -> lineLensProvider.Remove provider |> ignore)
-            lineLensProvider.Add(provider)
-        | _ -> ()
+            wpfView.Closed.Add (fun _ -> lineLensProviders.Remove provider |> ignore)
+            lineLensProviders.Add(provider))
 
     [<Export(typeof<AdornmentLayerDefinition>); Name("CodeLens");
       Order(Before = PredefinedAdornmentLayers.Text);
@@ -92,11 +84,18 @@ type internal CodeLensProvider
                     | :? IWpfTextView as view -> view
                     | _ -> failwith "error"
             
-                box(addCodeLensProviderOnce wpfView buffer) :?> _
+                match tryGetCodeLensTagger wpfView buffer with
+                | Some tagger -> box tagger :?> _
+                | None -> null
             else
                 null
 
     interface IWpfTextViewCreationListener with
         override _.TextViewCreated view =
             if settings.CodeLens.Enabled && settings.CodeLens.ReplaceWithLineLens then
-                addLineLensProviderOnce view (view.TextBuffer) |> ignore
+                let provider = 
+                    lineLensProviders 
+                    |> Seq.tryFind (fun (v, _) -> v = view)
+
+                if provider.IsNone then
+                    addLineLensProvider view (view.TextBuffer) |> ignore

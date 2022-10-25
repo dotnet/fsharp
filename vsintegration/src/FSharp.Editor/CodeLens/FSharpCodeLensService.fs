@@ -42,7 +42,7 @@ type internal FSharpCodeLensService
     (
         serviceProvider: IServiceProvider,
         workspace: Workspace, 
-        documentId: Lazy<DocumentId>,
+        documentId: DocumentId,
         buffer: ITextBuffer, 
         metadataAsSource: FSharpMetadataAsSourceService,
         classificationFormatMapService: IClassificationFormatMapService,
@@ -153,7 +153,7 @@ type internal FSharpCodeLensService
 #if DEBUG
             logInfof "Rechecking code due to buffer edit!"
 #endif
-            let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
+            let! document = workspace.CurrentSolution.GetDocument documentId |> Option.ofObj
             let! parseFileResults, checkFileResults = document.GetFSharpParseAndCheckResultsAsync(nameof(FSharpUseMutationWhenValueIsMutableFixProvider)) |> liftAsync
             let parsedInput = parseFileResults.ParseTree
 #if DEBUG
