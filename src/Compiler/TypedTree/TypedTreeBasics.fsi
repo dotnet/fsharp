@@ -136,9 +136,7 @@ val addNullnessToTy: Nullness -> TType -> TType
 
 val mkTyparTy: tp: Typar -> TType
 
-val copyTypar: tp: Typar -> Typar
-
-val copyTypars: tps: Typar list -> Typar list
+val copyTypars: clearStaticReq: bool -> tps: Typar list -> Typar list
 
 val tryShortcutSolvedUnitPar: canShortcut: bool -> r: Typar -> Measure
 
@@ -151,6 +149,9 @@ val replaceNullnessOfTy: nullness: Nullness -> ty: TType -> TType
 val stripTyparEqns: ty: TType -> TType
 
 val stripUnitEqns: unt: Measure -> Measure
+
+/// Detect a use of a nominal type, including type abbreviations.
+val (|AbbrevOrAppTy|_|): ty: TType -> TyconRef option
 
 val mkLocalValRef: v: Val -> ValRef
 

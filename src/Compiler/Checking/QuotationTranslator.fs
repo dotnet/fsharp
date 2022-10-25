@@ -260,7 +260,7 @@ and GetWitnessArgs cenv (env : QuotationTranslationEnv) m tps tyargs =
 
 and ConvWitnessInfo cenv env m traitInfo =
     let g = cenv.g
-    let witnessInfo = traitInfo.TraitKey
+    let witnessInfo = traitInfo.GetWitnessInfo()
     let env = { env with suppressWitnesses = true }
     // First check if this is a witness in ReflectedDefinition code
     if env.witnessesInScope.ContainsKey witnessInfo then 
@@ -712,7 +712,8 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let inWitnessPassingScope = not env.witnessesInScope.IsEmpty
             let witnessArgInfo = 
                 if g.generateWitnesses && inWitnessPassingScope then 
-                    match env.witnessesInScope.TryGetValue traitInfo.TraitKey with 
+                    let witnessInfo = traitInfo.GetWitnessInfo()
+                    match env.witnessesInScope.TryGetValue witnessInfo with 
                     | true, storage -> Some storage
                     | _ -> None
                 else

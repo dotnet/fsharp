@@ -202,17 +202,20 @@ let mkTyparTy (tp:Typar) =
     | TyparKind.Type -> tp.AsType KnownWithoutNull // TODO NULLNESS: check various callers
     | TyparKind.Measure -> TType_measure (Measure.Var tp)
 
-let copyTypar (tp: Typar) = 
+// For fresh type variables clear the StaticReq when copying because the requirement will be re-established through the
+// process of type inference.
+let copyTypar clearStaticReq (tp: Typar) = 
     let optData = tp.typar_opt_data |> Option.map (fun tg -> { typar_il_name = tg.typar_il_name; typar_xmldoc = tg.typar_xmldoc; typar_constraints = tg.typar_constraints; typar_attribs = tg.typar_attribs })
+    let flags = if clearStaticReq then tp.typar_flags.WithStaticReq(TyparStaticReq.None) else tp.typar_flags
     Typar.New { typar_id = tp.typar_id
-                typar_flags = tp.typar_flags
+                typar_flags = flags
                 typar_stamp = newStamp()
                 typar_solution = tp.typar_solution
                 typar_astype = Unchecked.defaultof<_>
                 // Be careful to clone the mutable optional data too
                 typar_opt_data = optData } 
 
-let copyTypars tps = List.map copyTypar tps
+let copyTypars clearStaticReq tps = List.map (copyTypar clearStaticReq) tps
 
 //--------------------------------------------------------------------------
 // Inference variables
@@ -319,6 +322,12 @@ let replaceNullnessOfTy nullness (ty:TType) =
     //| TType_tuple _ -> None // TODO NULLNESS
     //| TType_anon _ -> None // TODO NULLNESS
     | sty -> sty
+
+/// Detect a use of a nominal type, including type abbreviations.
+let (|AbbrevOrAppTy|_|) (ty: TType) =
+    match stripTyparEqns ty with
+    | TType_app (tcref, _, _) -> Some tcref
+    | _ -> None
 
 //---------------------------------------------------------------------------
 // These make local/non-local references to values according to whether

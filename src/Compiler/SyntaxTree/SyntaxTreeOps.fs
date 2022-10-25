@@ -734,10 +734,10 @@ let OverrideMemberFlags trivia k : SynMemberFlags =
         Trivia = trivia
     }
 
-let AbstractMemberFlags trivia k : SynMemberFlags =
+let AbstractMemberFlags isInstance trivia k : SynMemberFlags =
     {
         MemberKind = k
-        IsInstance = true
+        IsInstance = isInstance
         IsDispatchSlot = true
         IsOverrideOrExplicitImpl = false
         IsFinal = false
@@ -751,6 +751,17 @@ let StaticMemberFlags trivia k : SynMemberFlags =
         IsInstance = false
         IsDispatchSlot = false
         IsOverrideOrExplicitImpl = false
+        IsFinal = false
+        GetterOrSetterIsCompilerGenerated = false
+        Trivia = trivia
+    }
+
+let ImplementStaticMemberFlags trivia k : SynMemberFlags =
+    {
+        MemberKind = k
+        IsInstance = false
+        IsDispatchSlot = false
+        IsOverrideOrExplicitImpl = true
         IsFinal = false
         GetterOrSetterIsCompilerGenerated = false
         Trivia = trivia
@@ -810,6 +821,24 @@ let AbstractMemberSynMemberFlagsTrivia (mAbstract: range) (mMember: range) : Syn
         DefaultRange = None
     }
 
+let StaticAbstractSynMemberFlagsTrivia mStatic mAbstract =
+    {
+        MemberRange = None
+        OverrideRange = None
+        AbstractRange = Some mAbstract
+        StaticRange = Some mStatic
+        DefaultRange = None
+    }
+
+let StaticAbstractMemberSynMemberFlagsTrivia mStatic mAbstract mMember =
+    {
+        MemberRange = Some mMember
+        OverrideRange = None
+        AbstractRange = Some mAbstract
+        StaticRange = Some mStatic
+        DefaultRange = None
+    }
+
 let inferredTyparDecls = SynValTyparDecls(None, true)
 
 let noInferredTypars = SynValTyparDecls(None, false)
@@ -850,6 +879,7 @@ let rec synExprContainsError inpExpr =
         | SynExpr.LibraryOnlyStaticOptimization _
         | SynExpr.Null _
         | SynExpr.Ident _
+        | SynExpr.Typar _
         | SynExpr.ImplicitZero _
         | SynExpr.Const _
         | SynExpr.Dynamic _ -> false

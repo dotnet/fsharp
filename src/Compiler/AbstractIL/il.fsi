@@ -523,7 +523,7 @@ type internal ILInstr =
     // Method call
     | I_call of ILTailcall * ILMethodSpec * ILVarArgs
     | I_callvirt of ILTailcall * ILMethodSpec * ILVarArgs
-    | I_callconstraint of ILTailcall * ILType * ILMethodSpec * ILVarArgs
+    | I_callconstraint of callvirt: bool * ILTailcall * ILType * ILMethodSpec * ILVarArgs
     | I_calli of ILTailcall * ILCallingSignature * ILVarArgs
     | I_ldftn of ILMethodSpec
     | I_newobj of ILMethodSpec * ILVarArgs
@@ -1970,7 +1970,6 @@ type internal ILLocalsAllocator =
 /// Derived functions for making some common patterns of instructions.
 val internal mkNormalCall: ILMethodSpec -> ILInstr
 val internal mkNormalCallvirt: ILMethodSpec -> ILInstr
-val internal mkNormalCallconstraint: ILType * ILMethodSpec -> ILInstr
 val internal mkNormalNewobj: ILMethodSpec -> ILInstr
 val internal mkCallBaseConstructor: ILType * ILType list -> ILInstr list
 val internal mkNormalStfld: ILFieldSpec -> ILInstr
@@ -2025,12 +2024,16 @@ val internal mkILNonGenericStaticMethod:
     string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 val internal mkILGenericVirtualMethod:
-    string * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+    string * ILCallingConv * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody ->
+        ILMethodDef
 
 val internal mkILGenericNonVirtualMethod:
     string * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 val internal mkILNonGenericVirtualMethod:
+    string * ILCallingConv * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+
+val internal mkILNonGenericVirtualInstanceMethod:
     string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 val internal mkILNonGenericInstanceMethod:

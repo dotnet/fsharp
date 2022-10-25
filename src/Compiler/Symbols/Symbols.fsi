@@ -638,6 +638,8 @@ type FSharpStaticParameter =
 [<Class; NoEquality; NoComparison>]
 type FSharpGenericParameterMemberConstraint =
 
+    inherit FSharpSymbol
+
     /// Get the types that may be used to satisfy the constraint
     member MemberSources: IList<FSharpType>
 

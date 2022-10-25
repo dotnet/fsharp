@@ -1,4 +1,4 @@
-﻿namespace VisualFSharp.UnitTests.Roslyn
+﻿namespace VisualFSharp.UnitTests.Editor
 
 open System
 open System.IO

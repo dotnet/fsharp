@@ -53,6 +53,8 @@ type LanguageFeature =
     | RequiredPropertiesSupport
     | InitPropertiesSupport
     | LowercaseDUWhenRequireQualifiedAccess
+    | InterfacesWithAbstractStaticMembers
+    | SelfTypeConstraints
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -119,6 +121,8 @@ type LanguageVersion(versionText) =
                 LanguageFeature.RequiredPropertiesSupport, previewVersion
                 LanguageFeature.InitPropertiesSupport, previewVersion
                 LanguageFeature.LowercaseDUWhenRequireQualifiedAccess, previewVersion
+                LanguageFeature.InterfacesWithAbstractStaticMembers, previewVersion
+                LanguageFeature.SelfTypeConstraints, previewVersion
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -222,6 +226,8 @@ type LanguageVersion(versionText) =
         | LanguageFeature.RequiredPropertiesSupport -> FSComp.SR.featureRequiredProperties ()
         | LanguageFeature.InitPropertiesSupport -> FSComp.SR.featureInitProperties ()
         | LanguageFeature.LowercaseDUWhenRequireQualifiedAccess -> FSComp.SR.featureLowercaseDUWhenRequireQualifiedAccess ()
+        | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureInterfacesWithAbstractStaticMembers ()
+        | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
 
     /// Get a version string associated with the given feature.
     member _.GetFeatureVersionString feature =

@@ -1,5 +1,5 @@
 [<NUnit.Framework.Category "Roslyn Services">]
-module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.SignatureHelpProvider
+module VisualFSharp.UnitTests.Editor.SignatureHelpProvider
 
 open System
 open System.IO
@@ -8,7 +8,7 @@ open NUnit.Framework
 
 open Microsoft.VisualStudio.FSharp.Editor
 
-open VisualFSharp.UnitTests.Roslyn
+open VisualFSharp.UnitTests.Editor
 
 open UnitTests.TestLib.LanguageService
 
@@ -54,7 +54,7 @@ let GetSignatureHelp (project:FSharpProject) (fileName:string) (caretPosition:in
         let caretLinePos = textLines.GetLinePosition(caretPosition)
         let caretLineColumn = caretLinePos.Character
         
-        let document = RoslynTestHelpers.CreateDocument(fileName, sourceText, options = project.Options)
+        let document = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, sourceText, options = project.Options)
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("GetSignatureHelp")
             |> Async.RunSynchronously
@@ -101,7 +101,7 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
     let caretLinePos = textLines.GetLinePosition(caretPosition)
     let caretLineColumn = caretLinePos.Character
                
-    let document = RoslynTestHelpers.CreateDocument(filePath, sourceText, options = projectOptions)
+    let document = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, sourceText, options = projectOptions)
     let parseResults, checkFileResults =
         document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForMethodCalls")
         |> Async.RunSynchronously
@@ -132,7 +132,7 @@ let assertSignatureHelpForMethodCalls (fileContents: string) (marker: string) (e
 
 let assertSignatureHelpForFunctionApplication (fileContents: string) (marker: string) expectedArgumentCount expectedArgumentIndex expectedArgumentName =
     let caretPosition = fileContents.LastIndexOf(marker) + marker.Length
-    let document, sourceText = RoslynTestHelpers.CreateDocument(filePath, fileContents)
+    let document, sourceText = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
     
     let parseResults, checkFileResults =
         document.GetFSharpParseAndCheckResultsAsync("assertSignatureHelpForFunctionApplication")
@@ -416,7 +416,7 @@ M.f
         let marker = "id "
         let caretPosition = fileContents.IndexOf(marker) + marker.Length
 
-        let document, sourceText = RoslynTestHelpers.CreateDocument(filePath, fileContents)
+        let document, sourceText = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, fileContents)
     
         let parseResults, checkFileResults =
             document.GetFSharpParseAndCheckResultsAsync("function application in single pipeline with no additional args")
