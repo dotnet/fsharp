@@ -183,334 +183,334 @@ module WorkspaceTests =
 
         let mutable mainProj = mainProj
 
-        interface IFSharpWorkspaceProjectContext with
+//        interface IFSharpWorkspaceProjectContext with
 
-            member _.get_DisplayName() : string = ""
+//            member _.get_DisplayName() : string = ""
 
-            member _.set_DisplayName(value: string) : unit = ()
+//            member _.set_DisplayName(value: string) : unit = ()
 
-            member _.Dispose(): unit = ()
+//            member _.Dispose(): unit = ()
 
-            member _.FilePath: string = mainProj.FilePath
+//            member _.FilePath: string = mainProj.FilePath
 
-            member _.HasProjectReference(filePath: string): bool = 
-                mainProj.ProjectReferences
-                |> Seq.exists (fun x ->
-                    let projRef = mainProj.Solution.GetProject(x.ProjectId)
-                    if projRef <> null then
-                        String.Equals(filePath, projRef.FilePath, StringComparison.OrdinalIgnoreCase)
-                    else
-                        false
-                )
+//            member _.HasProjectReference(filePath: string): bool = 
+//                mainProj.ProjectReferences
+//                |> Seq.exists (fun x ->
+//                    let projRef = mainProj.Solution.GetProject(x.ProjectId)
+//                    if projRef <> null then
+//                        String.Equals(filePath, projRef.FilePath, StringComparison.OrdinalIgnoreCase)
+//                    else
+//                        false
+//                )
 
-            member _.Id: ProjectId = mainProj.Id
+//            member _.Id: ProjectId = mainProj.Id
 
-            member _.ProjectReferenceCount: int = mainProj.ProjectReferences.Count()
+//            member _.ProjectReferenceCount: int = mainProj.ProjectReferences.Count()
 
-            member _.SetProjectReferences(projRefs: seq<IFSharpWorkspaceProjectContext>): unit = 
-                let currentProj = mainProj
-                let mutable solution = currentProj.Solution
+//            member _.SetProjectReferences(projRefs: seq<IFSharpWorkspaceProjectContext>): unit = 
+//                let currentProj = mainProj
+//                let mutable solution = currentProj.Solution
 
-                currentProj.ProjectReferences
-                |> Seq.iter (fun projRef ->
-                    solution <- solution.RemoveProjectReference(currentProj.Id, projRef)
-                )
+//                currentProj.ProjectReferences
+//                |> Seq.iter (fun projRef ->
+//                    solution <- solution.RemoveProjectReference(currentProj.Id, projRef)
+//                )
 
-                projRefs
-                |> Seq.iter (fun projRef ->
-                    solution <- 
-                        solution.AddProjectReference(
-                            currentProj.Id, 
-                            ProjectReference(projRef.Id)
-                        )
-                )
+//                projRefs
+//                |> Seq.iter (fun projRef ->
+//                    solution <- 
+//                        solution.AddProjectReference(
+//                            currentProj.Id, 
+//                            ProjectReference(projRef.Id)
+//                        )
+//                )
 
-                not (solution.Workspace.TryApplyChanges(solution)) |> ignore
+//                not (solution.Workspace.TryApplyChanges(solution)) |> ignore
 
-                mainProj <- solution.GetProject(currentProj.Id)
+//                mainProj <- solution.GetProject(currentProj.Id)
 
-            member _.MetadataReferenceCount: int = mainProj.MetadataReferences.Count
+//            member _.MetadataReferenceCount: int = mainProj.MetadataReferences.Count
 
-            member _.HasMetadataReference(referencePath: string): bool =
-                mainProj.MetadataReferences
-                |> Seq.exists (fun x -> 
-                    match x with
-                    | :? PortableExecutableReference as r ->
-                        String.Equals(r.FilePath, referencePath, StringComparison.OrdinalIgnoreCase)
-                    | _ ->
-                        false)
+//            member _.HasMetadataReference(referencePath: string): bool =
+//                mainProj.MetadataReferences
+//                |> Seq.exists (fun x -> 
+//                    match x with
+//                    | :? PortableExecutableReference as r ->
+//                        String.Equals(r.FilePath, referencePath, StringComparison.OrdinalIgnoreCase)
+//                    | _ ->
+//                        false)
 
-            member _.SetMetadataReferences(referencePaths: string seq): unit =
-                let currentProj = mainProj
-                let mutable solution = currentProj.Solution
+//            member _.SetMetadataReferences(referencePaths: string seq): unit =
+//                let currentProj = mainProj
+//                let mutable solution = currentProj.Solution
 
-                currentProj.MetadataReferences
-                |> Seq.iter (fun r ->
-                    solution <- solution.RemoveMetadataReference(currentProj.Id, r)
-                )
+//                currentProj.MetadataReferences
+//                |> Seq.iter (fun r ->
+//                    solution <- solution.RemoveMetadataReference(currentProj.Id, r)
+//                )
 
-                referencePaths
-                |> Seq.iter (fun referencePath ->
-                    solution <- 
-                        solution.AddMetadataReference(
-                            currentProj.Id, 
-                            PortableExecutableReference.CreateFromFile(
-                                referencePath,
-                                MetadataReferenceProperties.Assembly
-                            )
-                        )
-                )
+//                referencePaths
+//                |> Seq.iter (fun referencePath ->
+//                    solution <- 
+//                        solution.AddMetadataReference(
+//                            currentProj.Id, 
+//                            PortableExecutableReference.CreateFromFile(
+//                                referencePath,
+//                                MetadataReferenceProperties.Assembly
+//                            )
+//                        )
+//                )
 
-                not (solution.Workspace.TryApplyChanges(solution)) |> ignore
+//                not (solution.Workspace.TryApplyChanges(solution)) |> ignore
 
-                mainProj <- solution.GetProject(currentProj.Id)
+//                mainProj <- solution.GetProject(currentProj.Id)
 
-            member _.AddMetadataReference(_: string): unit = ()
-            member _.AddSourceFile(_: string, _: SourceCodeKind): unit = ()
+//            member _.AddMetadataReference(_: string): unit = ()
+//            member _.AddSourceFile(_: string, _: SourceCodeKind): unit = ()
 
-    type TestFSharpWorkspaceProjectContextFactory(workspace: Workspace, miscFilesWorkspace: Workspace) =
+//    type TestFSharpWorkspaceProjectContextFactory(workspace: Workspace, miscFilesWorkspace: Workspace) =
                 
-        interface IFSharpWorkspaceProjectContextFactory with
-            member _.CreateProjectContext(filePath: string, uniqueName: string): IFSharpWorkspaceProjectContext =
-                match miscFilesWorkspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) |> Seq.tryExactlyOne with
-                | Some docId ->
-                    let doc = miscFilesWorkspace.CurrentSolution.GetDocument(docId)
-                    removeProject miscFilesWorkspace doc.Project.Id
-                | _ ->
-                    ()
+//        interface IFSharpWorkspaceProjectContextFactory with
+//            member _.CreateProjectContext(filePath: string, uniqueName: string): IFSharpWorkspaceProjectContext =
+//                match miscFilesWorkspace.CurrentSolution.GetDocumentIdsWithFilePath(filePath) |> Seq.tryExactlyOne with
+//                | Some docId ->
+//                    let doc = miscFilesWorkspace.CurrentSolution.GetDocument(docId)
+//                    removeProject miscFilesWorkspace doc.Project.Id
+//                | _ ->
+//                    ()
 
-                let projInfo = RoslynTestHelpers.CreateProjectInfoWithSingleDocument(FSharpConstants.FSharpMiscellaneousFilesName, filePath)
-                addProject workspace projInfo
+//                let projInfo = RoslynTestHelpers.CreateProjectInfoWithSingleDocument(FSharpConstants.FSharpMiscellaneousFilesName, filePath)
+//                addProject workspace projInfo
 
-                let proj = workspace.CurrentSolution.GetProject(projInfo.Id)
-                new TestFSharpWorkspaceProjectContext(proj) :> IFSharpWorkspaceProjectContext
+//                let proj = workspace.CurrentSolution.GetProject(projInfo.Id)
+//                new TestFSharpWorkspaceProjectContext(proj) :> IFSharpWorkspaceProjectContext
 
-    [<Test>]
-    let ``Script file opened in misc files workspace will get transferred to normal workspace``() =
-        use workspace = createWorkspace()
-        use miscFilesWorkspace = createMiscFileWorkspace()
-        let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
+//    [<Test>]
+//    let ``Script file opened in misc files workspace will get transferred to normal workspace``() =
+//        use workspace = createWorkspace()
+//        use miscFilesWorkspace = createMiscFileWorkspace()
+//        let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
 
-        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
+//        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
 
-        let filePath = 
-            createOnDiskScript 
-                """
-module Script1
+//        let filePath = 
+//            createOnDiskScript 
+//                """
+//module Script1
 
-let x = 1
-                """
+//let x = 1
+//                """
         
-        try
-            let projInfo = createProjectInfoWithFileOnDisk filePath
-            addProject miscFilesWorkspace projInfo
+//        try
+//            let projInfo = createProjectInfoWithFileOnDisk filePath
+//            addProject miscFilesWorkspace projInfo
 
-            Assert.IsTrue(hasDocument miscFilesWorkspace filePath)
-            Assert.IsFalse(hasDocument workspace filePath)
+//            Assert.IsTrue(hasDocument miscFilesWorkspace filePath)
+//            Assert.IsFalse(hasDocument workspace filePath)
 
-            Assert.IsFalse(isDocumentOpen miscFilesWorkspace filePath)
-            openDocument miscFilesWorkspace filePath
+//            Assert.IsFalse(isDocumentOpen miscFilesWorkspace filePath)
+//            openDocument miscFilesWorkspace filePath
 
-            // Although we opened the document, it has been transferred to the other workspace.
-            Assert.IsFalse(hasDocument miscFilesWorkspace filePath)
-            Assert.IsTrue(hasDocument workspace filePath)
+//            // Although we opened the document, it has been transferred to the other workspace.
+//            Assert.IsFalse(hasDocument miscFilesWorkspace filePath)
+//            Assert.IsTrue(hasDocument workspace filePath)
 
-            // Should not be automatically opened when transferred.
-            Assert.IsFalse(isDocumentOpen workspace filePath)
+//            // Should not be automatically opened when transferred.
+//            Assert.IsFalse(isDocumentOpen workspace filePath)
 
-            assertEmptyDocumentDiagnostics workspace filePath
+//            assertEmptyDocumentDiagnostics workspace filePath
 
-        finally
-            try File.Delete(filePath) with | _ -> ()
+//        finally
+//            try File.Delete(filePath) with | _ -> ()
 
-    [<Test>]
-    let ``Script file referencing another script should have no diagnostics``() =
-        use workspace = createWorkspace()
-        use miscFilesWorkspace = createMiscFileWorkspace()
-        let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
+//    [<Test>]
+//    let ``Script file referencing another script should have no diagnostics``() =
+//        use workspace = createWorkspace()
+//        use miscFilesWorkspace = createMiscFileWorkspace()
+//        let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
 
-        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
+//        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
 
-        let filePath1 = 
-            createOnDiskScript 
-                """
-module Script1
+//        let filePath1 = 
+//            createOnDiskScript 
+//                """
+//module Script1
 
-let x = 1
-                """
+//let x = 1
+//                """
 
-        let filePath2 = 
-            createOnDiskScript 
-                $"""
-module Script2
-#load "{ Path.GetFileName(filePath1) }"
+//        let filePath2 = 
+//            createOnDiskScript 
+//                $"""
+//module Script2
+//#load "{ Path.GetFileName(filePath1) }"
 
-let x = Script1.x
-                """
+//let x = Script1.x
+//                """
         
-        try
-            let projInfo2 = createProjectInfoWithFileOnDisk filePath2
-            addProject miscFilesWorkspace projInfo2
-            openDocument miscFilesWorkspace filePath2       
-            assertEmptyDocumentDiagnostics workspace filePath2
+//        try
+//            let projInfo2 = createProjectInfoWithFileOnDisk filePath2
+//            addProject miscFilesWorkspace projInfo2
+//            openDocument miscFilesWorkspace filePath2       
+//            assertEmptyDocumentDiagnostics workspace filePath2
 
-        finally
-            try File.Delete(filePath1) with | _ -> ()
-            try File.Delete(filePath2) with | _ -> ()
+//        finally
+//            try File.Delete(filePath1) with | _ -> ()
+//            try File.Delete(filePath2) with | _ -> ()
 
-    [<Test>]
-    let ``Script file referencing another script will correctly update when the referenced script file changes``() =
-        use workspace = createWorkspace()
-        use miscFilesWorkspace = createMiscFileWorkspace()
-        let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
+//    [<Test>]
+//    let ``Script file referencing another script will correctly update when the referenced script file changes``() =
+//        use workspace = createWorkspace()
+//        use miscFilesWorkspace = createMiscFileWorkspace()
+//        let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
 
-        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
+//        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
 
-        let filePath1 = 
-            createOnDiskScript 
-                """
-module Script1
-                """
+//        let filePath1 = 
+//            createOnDiskScript 
+//                """
+//module Script1
+//                """
 
-        let filePath2 = 
-            createOnDiskScript 
-                $"""
-module Script2
-#load "{ Path.GetFileName(filePath1) }"
+//        let filePath2 = 
+//            createOnDiskScript 
+//                $"""
+//module Script2
+//#load "{ Path.GetFileName(filePath1) }"
 
-let x = Script1.x
-                """
+//let x = Script1.x
+//                """
         
-        try
-            let projInfo1 = createProjectInfoWithFileOnDisk filePath1
-            let projInfo2 = createProjectInfoWithFileOnDisk filePath2
+//        try
+//            let projInfo1 = createProjectInfoWithFileOnDisk filePath1
+//            let projInfo2 = createProjectInfoWithFileOnDisk filePath2
 
-            addProject miscFilesWorkspace projInfo1
-            addProject miscFilesWorkspace projInfo2
+//            addProject miscFilesWorkspace projInfo1
+//            addProject miscFilesWorkspace projInfo2
 
-            openDocument miscFilesWorkspace filePath1
-            openDocument miscFilesWorkspace filePath2           
+//            openDocument miscFilesWorkspace filePath1
+//            openDocument miscFilesWorkspace filePath2           
             
-            assertEmptyDocumentDiagnostics workspace filePath1
-            assertHasDocumentDiagnostics workspace filePath2
+//            assertEmptyDocumentDiagnostics workspace filePath1
+//            assertHasDocumentDiagnostics workspace filePath2
 
-            updateDocumentOnDisk workspace filePath1
-                """
-module Script1
+//            updateDocumentOnDisk workspace filePath1
+//                """
+//module Script1
 
-let x = 1
-                """
+//let x = 1
+//                """
 
-            assertEmptyDocumentDiagnostics workspace filePath2
+//            assertEmptyDocumentDiagnostics workspace filePath2
 
-        finally
-            try File.Delete(filePath1) with | _ -> ()
-            try File.Delete(filePath2) with | _ -> ()
+//        finally
+//            try File.Delete(filePath1) with | _ -> ()
+//            try File.Delete(filePath2) with | _ -> ()
 
-    [<Test>]
-    let ``Script file referencing another script will correctly update when the referenced script file changes with opening in reverse order``() =
-        use workspace = createWorkspace()
-        use miscFilesWorkspace = createMiscFileWorkspace()
-        let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
+//    [<Test>]
+//    let ``Script file referencing another script will correctly update when the referenced script file changes with opening in reverse order``() =
+//        use workspace = createWorkspace()
+//        use miscFilesWorkspace = createMiscFileWorkspace()
+//        let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
 
-        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
+//        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
 
-        let filePath1 = 
-            createOnDiskScript 
-                """
-module Script1
-                """
+//        let filePath1 = 
+//            createOnDiskScript 
+//                """
+//module Script1
+//                """
 
-        let filePath2 = 
-            createOnDiskScript 
-                $"""
-module Script2
-#load "{ Path.GetFileName(filePath1) }"
+//        let filePath2 = 
+//            createOnDiskScript 
+//                $"""
+//module Script2
+//#load "{ Path.GetFileName(filePath1) }"
 
-let x = Script1.x
-                """
+//let x = Script1.x
+//                """
         
-        try
-            let projInfo1 = createProjectInfoWithFileOnDisk filePath1
-            let projInfo2 = createProjectInfoWithFileOnDisk filePath2
+//        try
+//            let projInfo1 = createProjectInfoWithFileOnDisk filePath1
+//            let projInfo2 = createProjectInfoWithFileOnDisk filePath2
 
-            addProject miscFilesWorkspace projInfo1
-            addProject miscFilesWorkspace projInfo2
+//            addProject miscFilesWorkspace projInfo1
+//            addProject miscFilesWorkspace projInfo2
 
-            openDocument miscFilesWorkspace filePath2
-            openDocument miscFilesWorkspace filePath1         
+//            openDocument miscFilesWorkspace filePath2
+//            openDocument miscFilesWorkspace filePath1         
             
-            assertHasDocumentDiagnostics workspace filePath2 
-            assertEmptyDocumentDiagnostics workspace filePath1
+//            assertHasDocumentDiagnostics workspace filePath2 
+//            assertEmptyDocumentDiagnostics workspace filePath1
 
-            updateDocumentOnDisk workspace filePath1
-                """
-module Script1
+//            updateDocumentOnDisk workspace filePath1
+//                """
+//module Script1
 
-let x = 1
-                """
+//let x = 1
+//                """
 
-            assertEmptyDocumentDiagnostics workspace filePath2
+//            assertEmptyDocumentDiagnostics workspace filePath2
 
-        finally
-            try File.Delete(filePath1) with | _ -> ()
-            try File.Delete(filePath2) with | _ -> ()
+//        finally
+//            try File.Delete(filePath1) with | _ -> ()
+//            try File.Delete(filePath2) with | _ -> ()
 
-    [<Test>]
-    let ``Script file referencing a DLL will correctly update when the referenced DLL file changes``() =
-        use workspace = createWorkspace()
-        use miscFilesWorkspace = createMiscFileWorkspace()
-        let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
+//    [<Test>]
+//    let ``Script file referencing a DLL will correctly update when the referenced DLL file changes``() =
+//        use workspace = createWorkspace()
+//        use miscFilesWorkspace = createMiscFileWorkspace()
+//        let projectContextFactory = TestFSharpWorkspaceProjectContextFactory(workspace, miscFilesWorkspace)
 
-        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
+//        let _miscFileService = FSharpMiscellaneousFileService(workspace, miscFilesWorkspace, projectContextFactory)
 
-        let dllPath1 = 
-            createOnDiskCompiledScriptAsDll workspace
-                """
-module Script1
+//        let dllPath1 = 
+//            createOnDiskCompiledScriptAsDll workspace
+//                """
+//module Script1
 
-let x = 1
-                """
+//let x = 1
+//                """
 
-        let filePath1 = 
-            createOnDiskScript 
-                $"""
-module Script2
-#r "{ Path.GetFileName(dllPath1) }"
+//        let filePath1 = 
+//            createOnDiskScript 
+//                $"""
+//module Script2
+//#r "{ Path.GetFileName(dllPath1) }"
 
-let x = Script1.x
-                """
+//let x = Script1.x
+//                """
         
-        try
-            let projInfo1 = createProjectInfoWithFileOnDisk filePath1
+//        try
+//            let projInfo1 = createProjectInfoWithFileOnDisk filePath1
 
-            addProject miscFilesWorkspace projInfo1
+//            addProject miscFilesWorkspace projInfo1
 
-            openDocument miscFilesWorkspace filePath1         
+//            openDocument miscFilesWorkspace filePath1         
 
-            assertEmptyDocumentDiagnostics workspace filePath1
+//            assertEmptyDocumentDiagnostics workspace filePath1
 
-            updateDocumentOnDisk workspace filePath1
-                $"""
-module Script2
-#r "{ Path.GetFileName(dllPath1) }"
+//            updateDocumentOnDisk workspace filePath1
+//                $"""
+//module Script2
+//#r "{ Path.GetFileName(dllPath1) }"
 
-let x = Script1.x
-let y = Script1.y
-                """
+//let x = Script1.x
+//let y = Script1.y
+//                """
 
-            assertHasDocumentDiagnostics workspace filePath1
+//            assertHasDocumentDiagnostics workspace filePath1
 
-            updateCompiledDllOnDisk workspace dllPath1
-                """
-module Script1
+//            updateCompiledDllOnDisk workspace dllPath1
+//                """
+//module Script1
 
-let x = 1
-let y = 1
-                """
+//let x = 1
+//let y = 1
+//                """
 
-            assertEmptyDocumentDiagnostics workspace filePath1
+//            assertEmptyDocumentDiagnostics workspace filePath1
 
-        finally
-            try File.Delete(dllPath1) with | _ -> ()
-            try File.Delete(filePath1) with | _ -> ()
+//        finally
+//            try File.Delete(dllPath1) with | _ -> ()
+//            try File.Delete(filePath1) with | _ -> ()

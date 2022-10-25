@@ -6283,21 +6283,6 @@
         <target state="translated">Элементы расширения не могут предоставлять перегрузку операторов.  Вместо этого рекомендуется определить оператор как часть определения типа.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
-        <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">Имя MDB-файла должно быть &lt;имя-файла-сборки&gt;.mdb. Параметр --pdb будет проигнорирован.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteMDBMemberMissing">
-        <source>MDB generation failed. Could not find compatible member {0}</source>
-        <target state="translated">Сбой при создании MDB-файла. Не удалось найти совместимый элемент {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteErrorCreatingMdb">
-        <source>Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</source>
-        <target state="translated">Невозможно создать сведения об отладке MDB. Не удалось загрузить тип MonoSymbolWriter из сборки Mono.CompilerServices.SymbolWriter.dll.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnionCaseNameConflictsWithGeneratedType">
         <source>The union case named '{0}' conflicts with the generated type '{1}'</source>
         <target state="translated">Ветвь объединения с именем "{0}" вступает в конфликт с созданным типом "{1}"</target>

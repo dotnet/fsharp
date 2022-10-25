@@ -6283,21 +6283,6 @@
         <target state="translated">扩展成员无法提供运算符重载。    请考虑改为将运算符定义为类型定义的一部分。</target>
         <note />
       </trans-unit>
-      <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
-        <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">MDB 文件的名称必须是 &lt;assembly-file-name&gt;.mdb。将忽略 --pdb 选项。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteMDBMemberMissing">
-        <source>MDB generation failed. Could not find compatible member {0}</source>
-        <target state="translated">MDB 生成失败。找不到兼容成员 {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteErrorCreatingMdb">
-        <source>Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</source>
-        <target state="translated">无法生成 MDB 调试信息。未能从“Mono.CompilerServices.SymbolWriter.dll”程序集加载“MonoSymbolWriter”类型。</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnionCaseNameConflictsWithGeneratedType">
         <source>The union case named '{0}' conflicts with the generated type '{1}'</source>
         <target state="translated">名为“{0}”的联合用例与生成的类型“{1}”冲突</target>

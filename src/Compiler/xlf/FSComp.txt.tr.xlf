@@ -6283,21 +6283,6 @@
         <target state="translated">Uzantı üyeleri işleç aşırı yüklemeleri sağlayamaz. Bunun yerine işleci tür tanımının parçası olarak tanımlamayı düşünün.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
-        <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">MDB dosyasının adı &lt;assembly-file-name&gt;.mdb olmalıdır. --pdb seçeneği yok sayılacak.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteMDBMemberMissing">
-        <source>MDB generation failed. Could not find compatible member {0}</source>
-        <target state="translated">MDB oluşturulamadı. Uyumlu üye {0} bulunamadı</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteErrorCreatingMdb">
-        <source>Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</source>
-        <target state="translated">MDB hata ayıklama bilgileri oluşturulamıyor. 'MonoSymbolWriter' türü 'Mono.CompilerServices.SymbolWriter.dll' bütünleştirilmiş kodundan yüklenemedi.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnionCaseNameConflictsWithGeneratedType">
         <source>The union case named '{0}' conflicts with the generated type '{1}'</source>
         <target state="translated">{0}' adlı birleşim durumu oluşturulan '{1}' türüyle çakışıyor</target>

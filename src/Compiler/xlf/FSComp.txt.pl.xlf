@@ -6283,21 +6283,6 @@
         <target state="translated">Elementy członkowskie rozszerzeń nie mogą udostępniać przeciążeń operatorów. Zamiast tego rozważ zdefiniowanie operatora jako części definicji typu.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
-        <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">Plik MDB musi mieć nazwę &lt;assembly-file-name&gt;.mdb. Opcja --pdb zostanie zignorowana.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteMDBMemberMissing">
-        <source>MDB generation failed. Could not find compatible member {0}</source>
-        <target state="translated">Generowanie pliku MDB nie powiodło się. Nie można znaleźć zgodnego elementu członkowskiego {0}</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteErrorCreatingMdb">
-        <source>Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</source>
-        <target state="translated">Nie można wygenerować informacji o debugowaniu pliku MDB. Nie można załadować typu „MonoSymbolWriter” z zestawu „Mono.CompilerServices.SymbolWriter.dll”.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnionCaseNameConflictsWithGeneratedType">
         <source>The union case named '{0}' conflicts with the generated type '{1}'</source>
         <target state="translated">Przypadek unii o nazwie „{0}” powoduje konflikt z wygenerowanym typem „{1}”</target>

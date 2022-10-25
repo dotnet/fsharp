@@ -6283,21 +6283,6 @@
         <target state="translated">확장 멤버가 연산자 오버로드를 제공할 수 없습니다.  대신 연산자를 형식 정의의 일부분으로 정의하세요.</target>
         <note />
       </trans-unit>
-      <trans-unit id="ilwriteMDBFileNameCannotBeChangedWarning">
-        <source>The name of the MDB file must be &lt;assembly-file-name&gt;.mdb. The --pdb option will be ignored.</source>
-        <target state="translated">MDB 파일의 이름은 &lt;assembly-file-name&gt;.mdb여야 합니다. --pdb 옵션은 무시됩니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteMDBMemberMissing">
-        <source>MDB generation failed. Could not find compatible member {0}</source>
-        <target state="translated">MDB를 생성하지 못했습니다. 호환 멤버 {0}을(를) 찾을 수 없습니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="ilwriteErrorCreatingMdb">
-        <source>Cannot generate MDB debug information. Failed to load the 'MonoSymbolWriter' type from the 'Mono.CompilerServices.SymbolWriter.dll' assembly.</source>
-        <target state="translated">MDB 디버그 정보를 생성할 수 없습니다. 'Mono.CompilerServices.SymbolWriter.dll' 어셈블리에서 'MonoSymbolWriter' 형식을 로드하지 못했습니다.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="tcUnionCaseNameConflictsWithGeneratedType">
         <source>The union case named '{0}' conflicts with the generated type '{1}'</source>
         <target state="translated">이름이 '{0}'인 공용 구조체가 생성된 형식 '{1}'과(와) 충돌합니다.</target>
