@@ -23,7 +23,6 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\optimize
 CompilerOptions01,NoMT				CompilerOptions\fsc\out
 CompilerOptions01,NoMT,pdbs				CompilerOptions\fsc\pdb
 CompilerOptions01,NoMT				CompilerOptions\fsc\platform
-CompilerOptions01,NoMT				CompilerOptions\fsc\reference
 CompilerOptions01,NoMT				CompilerOptions\fsc\Removed
 CompilerOptions01,NoMT				CompilerOptions\fsc\standalone
 CompilerOptions01,NoMT,NoHostedCompiler		CompilerOptions\fsc\staticlink
