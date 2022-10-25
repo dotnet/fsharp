@@ -42,6 +42,7 @@
     <Compile Include="FSharp.Core\OperatorsModule1.fs" />
     <Compile Include="FSharp.Core\OperatorsModule2.fs" />
     <Compile Include="FSharp.Core\OperatorsModuleChecked.fs" />
+    <Compile Include="FSharp.Core\OperatorsModuleDynamic.fs" />
     <Compile Include="FSharp.Core\NativeInterop.fs" />
 
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" />

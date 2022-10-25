@@ -246,10 +246,10 @@ type OperatorsModule1() =
         Assert.AreEqual(1, intbox)
       
         // string value
-        let stringlbox = Operators.box "string"
-        Assert.AreEqual("string", stringlbox)
+        let stringbox = Operators.box "string"
+        Assert.AreEqual("string", stringbox)
       
-        // null  value
+        // null value
         let nullbox = Operators.box null
         CheckThrowsNullRefException(fun () -> nullbox.ToString()  |> ignore)
 
@@ -276,6 +276,14 @@ type OperatorsModule1() =
         Assert.AreEqual(0uy, result)
         
         // Overflow
+        let result = Operators.byte Single.MinValue
+        Assert.AreEqual(0uy, result)
+        
+        // Overflow
+        let result = Operators.byte Single.MaxValue
+        Assert.AreEqual(0uy, result)
+        
+        // Overflow
         let result = Operators.byte Double.MinValue
         Assert.AreEqual(0uy, result)
         
@@ -292,7 +300,7 @@ type OperatorsModule1() =
         Assert.AreEqual(4uy, result)
 
         // OverflowException, from decimal is always checked
-        CheckThrowsOverflowException(fun() -> Operators.byte Decimal.MinValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.byte Decimal.MinValue |> ignore)
         
     [<Fact>]
     member _.ceil() =
@@ -301,18 +309,44 @@ type OperatorsModule1() =
         Assert.AreEqual(1.0, minceil)
         
         // normal value
-        let normalceil = Operators.ceil 100.0
-        Assert.AreEqual(100.0, normalceil)
+        let normalceil = Operators.ceil 100.1
+        Assert.AreEqual(101.0, normalceil)
         
         // max value
         let maxceil = Operators.ceil 1.7E+308
         Assert.AreEqual(1.7E+308, maxceil)
         
+        // float32 value
+        let float32ceil = Operators.ceil 100.1f
+        Assert.AreEqual(101f, float32ceil)
+        
+        // decimal value
+        let decimalceil = Operators.ceil 100.1m
+        Assert.AreEqual(101m, decimalceil)
+        
     [<Fact>]
     member _.char() =
         // int type
-        let intchar = Operators.char 48
-        Assert.AreEqual('0', intchar)
+        Assert.AreEqual('0', Operators.char 48)
+        Assert.AreEqual('0', Operators.char 48u)
+        Assert.AreEqual('0', Operators.char 48s)
+        Assert.AreEqual('0', Operators.char 48us)
+        Assert.AreEqual('0', Operators.char 48y)
+        Assert.AreEqual('0', Operators.char 48uy)
+        Assert.AreEqual('0', Operators.char 48L)
+        Assert.AreEqual('0', Operators.char 48uL)
+        Assert.AreEqual('0', Operators.char 48n)
+        Assert.AreEqual('0', Operators.char 48un)
+        Assert.AreEqual('0', Operators.char 48f)
+        Assert.AreEqual('0', Operators.char 48.)
+        Assert.AreEqual('0', Operators.char 48m)
+
+        // Overflow
+        Assert.AreEqual('\000', Operators.char Single.MinValue)
+        Assert.AreEqual('\000', Operators.char Double.MinValue)
+        Assert.AreEqual('\000', Operators.char Single.MaxValue)
+        Assert.AreEqual('\000', Operators.char Double.MaxValue)
+        CheckThrowsOverflowException(fun () -> Operators.char Decimal.MinValue |> ignore)
         
         // string type
         let stringchar = Operators.char " "
@@ -366,12 +400,24 @@ type OperatorsModule1() =
     member _.decimal () =
         
         // int value
-        let mindecimal = Operators.decimal (1)
-        Assert.AreEqual(1M, mindecimal)
+        let intdecimal = Operators.decimal (1)
+        Assert.AreEqual(1M, intdecimal)
+        
+        // nativeint value
+        let nativeintdecimal = Operators.decimal 1n
+        Assert.AreEqual(1M, nativeintdecimal)
+        
+        // unativeint value
+        let unativeintdecimal = Operators.decimal 1un
+        Assert.AreEqual(1M, unativeintdecimal)
+        
+        // char value
+        let chardecimal = Operators.decimal '\001'
+        Assert.AreEqual(1M, chardecimal)
        
-        // float  value
-        let maxdecimal = Operators.decimal (1.0)
-        Assert.AreEqual(1M, maxdecimal)
+        // float value
+        let floatdecimal = Operators.decimal (1.0)
+        Assert.AreEqual(1M, floatdecimal)
 
     [<Fact>]
     member _.decr() =
@@ -416,6 +462,10 @@ type OperatorsModule1() =
         // char type
         let chardouble = Operators.float '0'
         Assert.AreEqual(48.0, chardouble)
+        
+        // decimal type
+        let decimaldouble = Operators.float 100m
+        Assert.AreEqual(100.0, decimaldouble)
 
     [<Fact>]
     member _.enum() =
@@ -424,7 +474,7 @@ type OperatorsModule1() =
         let intenum = Operators.enum<System.ConsoleColor> intarg
         Assert.AreEqual(System.ConsoleColor.Black, intenum)
         
-        //  big number
+        // big number
         let bigarg : int32 = 15
         let charenum = Operators.enum<System.ConsoleColor> bigarg
         Assert.AreEqual(System.ConsoleColor.White, charenum)
@@ -488,6 +538,10 @@ type OperatorsModule1() =
         let charfloat = Operators.float '0'
         Assert.AreEqual((float)48, charfloat)
 
+        // decimal type
+        let intfloat = Operators.float 100m
+        Assert.AreEqual((float)100, intfloat)
+
     [<Fact>]
     member _.float32() =
         // int type
@@ -497,16 +551,24 @@ type OperatorsModule1() =
         // char type
         let charfloat32 = Operators.float32 '0'
         Assert.AreEqual((float32)48, charfloat32)
+        
+        // decimal type
+        let intfloat32 = Operators.float32 100m
+        Assert.AreEqual((float32)100, intfloat32)
 
     [<Fact>]
     member _.floor() =
         // float type
-        let intfloor = Operators.floor 100.9
-        Assert.AreEqual(100.0, intfloor)
+        let floatfloor = Operators.floor 100.9
+        Assert.AreEqual(100.0, floatfloor)
         
         // float32 type
-        let charfloor = Operators.floor ((float32)100.9)
-        Assert.AreEqual(100.0f, charfloor)
+        let float32floor = Operators.floor 100.9f
+        Assert.AreEqual(100.0f, float32floor)
+        
+        // decimal type
+        let decimalfloor = Operators.floor 100.9m
+        Assert.AreEqual(100m, decimalfloor)
     
     [<Fact>]
     member _.fst() =

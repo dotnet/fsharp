@@ -51,6 +51,14 @@ type OperatorsModule2() =
         let result = Operators.int 0
         Assert.AreEqual(0, result)
         
+        // Overflow.
+        let result = Operators.int Single.MaxValue
+        Assert.AreEqual(Int32.MinValue, result)
+
+        // Overflow
+        let result = Operators.int Single.MinValue
+        Assert.AreEqual(Int32.MinValue, result)
+        
         // Overflow
         let result = Operators.int Double.MaxValue
         Assert.AreEqual(Int32.MinValue, result)
@@ -72,7 +80,7 @@ type OperatorsModule2() =
         Assert.AreEqual(Int32.MinValue, result)
 
         // OverflowException, from decimal is always checked
-        CheckThrowsOverflowException(fun() -> Operators.int Decimal.MinValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.int Decimal.MinValue |> ignore)
         
     [<Fact>]
     member _.int16() =
@@ -96,6 +104,14 @@ type OperatorsModule2() =
         let result = Operators.int16 "10"
         Assert.AreEqual(10s, result)
         
+        // Overflow.
+        let result = Operators.int16 Single.MaxValue
+        Assert.AreEqual(0s, result)
+
+        // Overflow
+        let result = Operators.int16 Single.MinValue
+        Assert.AreEqual(0s, result)
+        
         // Overflow
         let result = Operators.int16 Double.MaxValue
         Assert.AreEqual(0s, result)
@@ -116,7 +132,7 @@ type OperatorsModule2() =
         Assert.AreEqual(Int16.MinValue, result)
 
         // OverflowException, from decimal is always checked
-        CheckThrowsOverflowException(fun() -> Operators.int16 Decimal.MinValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.int16 Decimal.MinValue |> ignore)
 
     [<Fact>]
     member _.int32() =
@@ -140,6 +156,14 @@ type OperatorsModule2() =
         let result = Operators.int32 "10"
         Assert.AreEqual(10, result)
         
+        // Overflow.
+        let result = Operators.int32 Single.MaxValue
+        Assert.AreEqual(Int32.MinValue, result)
+
+        // Overflow
+        let result = Operators.int32 Single.MinValue
+        Assert.AreEqual(Int32.MinValue, result)
+        
         // Overflow
         let result = Operators.int32 Double.MaxValue
         Assert.AreEqual(Int32.MinValue, result)
@@ -161,7 +185,7 @@ type OperatorsModule2() =
         Assert.AreEqual(Int32.MinValue + 4, result)
 
         // OverflowException, from decimal is always checked
-        CheckThrowsOverflowException(fun() -> Operators.int32 Decimal.MinValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.int32 Decimal.MinValue |> ignore)
 
     [<Fact>]
     member _.int64() =
@@ -186,6 +210,14 @@ type OperatorsModule2() =
         Assert.AreEqual(10L, result)
         
         // Overflow.
+        let result = Operators.int64 Single.MaxValue
+        Assert.AreEqual(Int64.MinValue, result)
+
+        // Overflow
+        let result = Operators.int64 Single.MinValue
+        Assert.AreEqual(Int64.MinValue, result)
+        
+        // Overflow.
         let result = Operators.int64 Double.MaxValue
         Assert.AreEqual(Int64.MinValue, result)
 
@@ -202,11 +234,11 @@ type OperatorsModule2() =
         Assert.AreEqual(9223372036854775807L, Int64.MaxValue)
 
         // OverflowException, from decimal is always checked
-        CheckThrowsOverflowException(fun() -> Operators.int64 Decimal.MinValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.int64 Decimal.MinValue |> ignore)
 
     [<Fact>]
     member _.invalidArg() =
-        CheckThrowsArgumentException(fun() -> Operators.invalidArg  "A" "B" |>ignore )
+        CheckThrowsArgumentException(fun () -> Operators.invalidArg  "A" "B" |>ignore )
 
         
     [<Fact>]
@@ -328,6 +360,22 @@ type OperatorsModule2() =
         let result = Operators.nativeint 0
         Assert.AreEqual(0n, result)
         
+        // Overflow Single.MaxValue is equal on 32 bits and 64 bits runtimes
+        let result = Operators.nativeint Single.MaxValue
+        if Info.isX86Runtime then
+            Assert.AreEqual(-2147483648n, result)
+        else
+            // Cannot use -9223372036854775808, compiler doesn't allow it, see https://github.com/dotnet/fsharp/issues/9524
+            Assert.AreEqual(-9223372036854775807n - 1n, result)
+        
+        // Overflow (depends on pointer size)
+        let result = Operators.nativeint Single.MinValue
+        if Info.isX86Runtime then
+            Assert.AreEqual(-2147483648n, result)
+        else
+            // Cannot use -9223372036854775808, compiler doesn't allow it, see https://github.com/dotnet/fsharp/issues/9524
+            Assert.AreEqual(-9223372036854775807n - 1n, result)
+
         // Overflow Double.MaxValue is equal on 32 bits and 64 bits runtimes
         let result = Operators.nativeint Double.MaxValue
         if Info.isX86Runtime then
@@ -396,7 +444,7 @@ type OperatorsModule2() =
         
     [<Fact>]
     member _.nullArg() =
-        CheckThrowsArgumentNullException(fun() -> Operators.nullArg "A" |> ignore)
+        CheckThrowsArgumentNullException(fun () -> Operators.nullArg "A" |> ignore)
 
         
     [<Fact>]
@@ -429,11 +477,11 @@ type OperatorsModule2() =
         let result = Operators.pown System.Double.MaxValue System.Int32.MaxValue
         Assert.AreEqual(Double.PositiveInfinity, result)
         
-        CheckThrowsOverflowException(fun() -> Operators.pown System.Int32.MaxValue System.Int32.MaxValue |>ignore)
+        CheckThrowsOverflowException(fun () -> Operators.pown System.Int32.MaxValue System.Int32.MaxValue |>ignore)
         
     [<Fact>]
     member _.raise() =
-        CheckThrowsArgumentException(fun()-> Operators.raise <| new ArgumentException("Invalid Argument ")  |> ignore)
+        CheckThrowsArgumentException(fun () -> Operators.raise <| new ArgumentException("Invalid Argument ")  |> ignore)
         
     
     [<Fact>]
@@ -559,7 +607,7 @@ type OperatorsModule2() =
         Assert.AreEqual(-128y, result)
 
         // OverflowException, from decimal is always checked
-        CheckThrowsOverflowException(fun() -> Operators.sbyte Decimal.MinValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.sbyte Decimal.MinValue |> ignore)
         
     [<Fact>]
     member _.sign() =
@@ -693,6 +741,10 @@ type OperatorsModule2() =
         // System.Int64
         let result = Operators.sizeof<System.Int64>
         Assert.AreEqual(8, result)
+        
+        // custom struct
+        let result = Operators.sizeof<System.ConsoleKeyInfo>
+        Assert.AreEqual(12, result)
         
         // reference type should have the same size as the IntPtr
         let result = Operators.sizeof<string>
@@ -899,9 +951,25 @@ type OperatorsModule2() =
         // decimal
         let result = Operators.uint16 100M
         Assert.AreEqual(100us, result)
+        
+        // Overflow
+        let result = Operators.uint16 Single.MaxValue
+        Assert.AreEqual(0us, result)
+        
+        // Overflow
+        let result = Operators.uint16 Single.MinValue
+        Assert.AreEqual(0us, result)
+        
+        // Overflow
+        let result = Operators.uint16 Double.MaxValue
+        Assert.AreEqual(0us, result)
+        
+        // Overflow
+        let result = Operators.uint16 Double.MinValue
+        Assert.AreEqual(0us, result)
 
         // OverflowException, from decimal is always checked
-        CheckThrowsOverflowException(fun() -> Operators.uint16 Decimal.MinValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.uint16 Decimal.MinValue |> ignore)
         
     [<Fact>]
     member _.uint32() =
@@ -916,6 +984,14 @@ type OperatorsModule2() =
         // decimal
         let result = Operators.uint32 100M
         Assert.AreEqual(100u, result)
+        
+        // Overflow
+        let result = Operators.uint32 Single.MaxValue
+        Assert.AreEqual(0u, result)
+        
+        // Overflow
+        let result = Operators.uint32 Single.MinValue
+        Assert.AreEqual(0u, result)
         
         // Overflow
         let result = Operators.uint32 Double.MaxValue
@@ -943,7 +1019,7 @@ type OperatorsModule2() =
         Assert.AreEqual(84ul, result)
 
         // OverflowException, from decimal is always checked
-        CheckThrowsOverflowException(fun() -> Operators.uint32 Decimal.MinValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.uint32 Decimal.MinValue |> ignore)
 
     [<Fact>]
     member _.uint64() =
@@ -958,6 +1034,14 @@ type OperatorsModule2() =
         // decimal
         let result = Operators.uint64 100M
         Assert.AreEqual(100UL, result)
+
+        // Overflow
+        let result = Operators.uint64 Single.MaxValue
+        Assert.AreEqual(0UL, result)
+        
+        // Overflow
+        let result = Operators.uint64 Single.MinValue
+        Assert.AreEqual(9223372036854775808UL, result)      // surprising, but true, 2^63 + 1
 
         // Overflow
         let result = Operators.uint64 Double.MaxValue
@@ -980,7 +1064,7 @@ type OperatorsModule2() =
         Assert.AreEqual(4UL, result)
 
         // OverflowException, from decimal is always checked
-        CheckThrowsOverflowException(fun() -> Operators.uint64 Decimal.MinValue |> ignore)
+        CheckThrowsOverflowException(fun () -> Operators.uint64 Decimal.MinValue |> ignore)
         
     [<Fact>]
     member _.unativeint() =
@@ -993,6 +1077,17 @@ type OperatorsModule2() =
         let result = Operators.unativeint 100.0
         Assert.AreEqual(100un, result)
         
+        // Overflow Single.MaxValue is equal on 32 bits and 64 bits runtimes
+        let result = Operators.unativeint Single.MaxValue
+        Assert.AreEqual(0un, result)
+        
+        // Overflow (depends on pointer size)
+        let result = Operators.unativeint Single.MinValue
+        if Info.isX86Runtime then
+            Assert.AreEqual(0un, result)
+        else
+            Assert.AreEqual(9223372036854775808un, result)      // surprising, but true, 2^63 + 1
+            
         // Overflow Double.MaxValue is equal on 32 bits and 64 bits runtimes
         let result = Operators.unativeint Double.MaxValue
         Assert.AreEqual(0un, result)
