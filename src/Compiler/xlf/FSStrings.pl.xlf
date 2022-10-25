@@ -22,6 +22,11 @@
         <target state="new">Nullness warning: The types '{0}' and '{1}' do not have compatible nullability '{2}' and '{3}'.</target>
         <note />
       </trans-unit>
+      <trans-unit id="ErrorFromAddingTypeEquationTuples">
+        <source>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</source>
+        <target state="new">Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</target>
+        <note />
+      </trans-unit>
       <trans-unit id="HashLoadedSourceHasIssues0">
         <source>One or more informational messages in loaded file.\n</source>
         <target state="translated">Jeden lub więcej komunikatów informacyjnych w załadowanym pliku.\n</target>

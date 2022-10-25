@@ -3164,8 +3164,16 @@ module EstablishTypeDefinitionCores =
                     if not ctorArgNames.IsEmpty then errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), m))
                 
             let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
-            let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false 
-
+            let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false
+            
+            let multiCaseUnionStructCheck (unionCases: UnionCase list) =
+                if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
+                    let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield (ft.LogicalName, ft.Range) ]
+                    let distFieldNames = fieldNames |> List.distinctBy fst
+                    if distFieldNames.Length <> fieldNames.Length then
+                        let fieldRanges = distFieldNames |> List.map snd
+                        for m in fieldRanges do
+                            errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(), m))
 
             // Notify the Language Service about field names in record/class declaration
             let ad = envinner.AccessRights
@@ -3257,10 +3265,7 @@ module EstablishTypeDefinitionCores =
 
                     let hasRQAAttribute = HasFSharpAttribute cenv.g cenv.g.attrib_RequireQualifiedAccessAttribute tycon.Attribs
                     let unionCases = TcRecdUnionAndEnumDeclarations.TcUnionCaseDecls cenv envinner innerParent thisTy thisTyInst hasRQAAttribute tpenv unionCases
-                    if tycon.IsStructRecordOrUnionTycon && unionCases.Length > 1 then 
-                      let fieldNames = [ for uc in unionCases do for ft in uc.FieldTable.TrueInstanceFieldsAsList do yield ft.LogicalName ]
-                      if fieldNames |> List.distinct |> List.length <> fieldNames.Length then 
-                          errorR(Error(FSComp.SR.tcStructUnionMultiCaseDistinctFields(), m))
+                    multiCaseUnionStructCheck unionCases
 
                     writeFakeUnionCtorsToSink unionCases
                     let repr = Construct.MakeUnionRepr unionCases
