@@ -366,3 +366,35 @@ let a =
     ]) ])) ->
         assertRange (3, 4) (3, 7) mLet
     | _ -> Assert.Fail "Could not get valid AST"
+
+[<Test>]
+let ``Tuple return type of binding should contain stars`` () =
+    let parseResults = 
+        getParseResults """
+let a : int * string = failwith "todo"
+let b : int * string * bool = 1, "", false
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Let(bindings = [
+            SynBinding(returnInfo =
+                Some (SynBindingReturnInfo(typeName = SynType.Tuple(path = [
+                    SynTupleTypeSegment.Type _
+                    SynTupleTypeSegment.Star _
+                    SynTupleTypeSegment.Type _
+                ]))))
+        ])
+        SynModuleDecl.Let(bindings = [
+            SynBinding(returnInfo =
+                Some (SynBindingReturnInfo(typeName = SynType.Tuple(path = [
+                    SynTupleTypeSegment.Type _
+                    SynTupleTypeSegment.Star _
+                    SynTupleTypeSegment.Type _
+                    SynTupleTypeSegment.Star _
+                    SynTupleTypeSegment.Type _
+                ]))))
+        ])
+    ]) ])) ->
+        Assert.Pass ()
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
