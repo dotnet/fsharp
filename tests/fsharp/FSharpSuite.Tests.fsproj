@@ -95,7 +95,6 @@
     <Compile Include="Compiler\Libraries\Core\Reflection\SprintfTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Reflection\PreComputedTupleConstructorTests.fs" />
     <Compile Include="Compiler\Libraries\Core\Unchecked\DefaultOfTests.fs" />
-    <Compile Include="Compiler\Infrastructure\AstCompiler.fs" />
     <None Include="update.base.line.with.actuals.fsx" />
     <!-- don't include test resources in subdirectories -->
     <EmbeddedResource Remove="**" />
