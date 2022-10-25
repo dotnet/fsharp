@@ -13,8 +13,16 @@
     <Compile Include="TestTP.fs" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+  </ItemGroup>
+
+
+  <ItemGroup>
     <ProjectReference Include="..\CSharp_Analysis\CSharp_Analysis.csproj" />
   </ItemGroup>
 
