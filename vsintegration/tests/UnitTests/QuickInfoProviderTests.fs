@@ -100,7 +100,7 @@ let ShouldShowQuickInfoForGenericParameters() =
             "(extension) System.Collections.Generic.IEnumerable.GroupBy<'TSource,'TKey>(keySelector: System.Func<'TSource,'TKey>) : System.Collections.Generic.IEnumerable<IGrouping<'TKey,'TSource>>
 'TSource is int * string
 'TKey is int");
-         ("Sort", Some "System.Array.Sort<'T>(array: 'T[]) : unit
+         ("Sort", Some "System.Array.Sort<'T>(array: 'T array) : unit
 'T is int");
          ("let test4 x = C().FSharpGenericMethodExplitTypeParams",
           Some
