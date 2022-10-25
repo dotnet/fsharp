@@ -1325,8 +1325,19 @@ module rec Compiler =
 
         let actual =
             text.ToString().Split('\n')
-            |> Array.map (fun s -> s.TrimEnd(' '))
+            |> Array.map (fun s -> s.TrimEnd(' ', '\r'))
             |> Array.filter (fun s -> s.Length > 0)
 
         if not (actual |> Array.contains expected) then
             failwith ($"The following signature:\n%s{expected}\n\nwas not found in:\n" + (actual |> String.concat "\n"))
+
+    let printSignatures cUnit =
+        cUnit
+        |> typecheckResults
+        |> signatureText
+        |> string
+        |> fun s ->
+            s.Replace("\r", "").Split('\n')
+            |> Array.map (fun line -> line.TrimEnd())
+            |> String.concat "\n"
+            |> fun tap -> tap
