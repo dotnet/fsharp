@@ -7,27 +7,22 @@
         <target state="translated">Zawsze umieszczaj otwarte instrukcje na najwyższym poziomie</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens">
-        <source>CodeLens</source>
-        <target state="translated">CodeLens</target>
+      <trans-unit id="Lens">
+        <source>Lens</source>
+        <target state="translated">Lens</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Replace_LineLens">
-        <source>Show annotations to the right instead of above the line</source>
-        <target state="translated">Pokaż adnotacje po prawej, a nie ponad wierszem</target>
+      <trans-unit id="Lens_Switch">
+        <source>Enable Lens (Experimental)</source>
+        <target state="translated">Włącz funkcję Lens (eksperymentalna)</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_Switch">
-        <source>Enable CodeLens (Experimental)</source>
-        <target state="translated">Włącz funkcję CodeLens (eksperymentalna)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="CodeLens_Prefix">
+      <trans-unit id="Lens_Prefix">
         <source>Annotation prefix</source>
         <target state="translated">Prefiks adnotacji</target>
         <note />
       </trans-unit>
-      <trans-unit id="CodeLens_UseColors">
+      <trans-unit id="Lens_UseColors">
         <source>Use colors in annotations</source>
         <target state="translated">Stosuj kolory w adnotacjach</target>
         <note />

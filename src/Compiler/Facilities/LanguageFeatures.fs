@@ -55,6 +55,7 @@ type LanguageFeature =
     | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
+    | MatchNotAllowedForUnionCaseWithNoData
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -125,7 +126,11 @@ type LanguageVersion(versionText) =
 
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
+<<<<<<< HEAD
                 LanguageFeature.NullnessChecking, previewVersion
+=======
+                LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, previewVersion
+>>>>>>> 07b0a6bfcd5cb3ba9cff55bca415e0eb94d37626
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
@@ -233,6 +238,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.LowercaseDUWhenRequireQualifiedAccess -> FSComp.SR.featureLowercaseDUWhenRequireQualifiedAccess ()
         | LanguageFeature.InterfacesWithAbstractStaticMembers -> FSComp.SR.featureInterfacesWithAbstractStaticMembers ()
         | LanguageFeature.SelfTypeConstraints -> FSComp.SR.featureSelfTypeConstraints ()
+        | LanguageFeature.MatchNotAllowedForUnionCaseWithNoData -> FSComp.SR.featureMatchNotAllowedForUnionCaseWithNoData ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =

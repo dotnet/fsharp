@@ -120,19 +120,16 @@
   <data name="Always_place_opens_at_top_level" xml:space="preserve">
     <value>Always place open statements at the top level</value>
   </data>
-  <data name="CodeLens" xml:space="preserve">
-    <value>CodeLens</value>
+  <data name="Lens" xml:space="preserve">
+    <value>Lens</value>
   </data>
-  <data name="CodeLens_Replace_LineLens" xml:space="preserve">
-    <value>Show annotations to the right instead of above the line</value>
+  <data name="Lens_Switch" xml:space="preserve">
+    <value>Enable Lens (Experimental)</value>
   </data>
-  <data name="CodeLens_Switch" xml:space="preserve">
-    <value>Enable CodeLens (Experimental)</value>
-  </data>
-  <data name="CodeLens_Prefix" xml:space="preserve">
+  <data name="Lens_Prefix" xml:space="preserve">
     <value>Annotation prefix</value>
   </data>
-  <data name="CodeLens_UseColors" xml:space="preserve">
+  <data name="Lens_UseColors" xml:space="preserve">
     <value>Use colors in annotations</value>
   </data>
   <data name="Code_Fixes" xml:space="preserve">
