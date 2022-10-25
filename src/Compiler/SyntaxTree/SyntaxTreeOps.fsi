@@ -288,36 +288,19 @@ val mkSynBinding:
         trivia: SynBindingTrivia ->
             SynBinding
 
-val NonVirtualMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+val NonVirtualMemberFlags: k: SynMemberKind -> SynMemberFlags
 
-val CtorMemberFlags: trivia: SynMemberFlagsTrivia -> SynMemberFlags
+val CtorMemberFlags: SynMemberFlags
 
-val ClassCtorMemberFlags: trivia: SynMemberFlagsTrivia -> SynMemberFlags
+val ClassCtorMemberFlags: SynMemberFlags
 
-val OverrideMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+val OverrideMemberFlags: k: SynMemberKind -> SynMemberFlags
 
-val AbstractMemberFlags: isInstance: bool -> trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+val AbstractMemberFlags: isInstance: bool -> k: SynMemberKind -> SynMemberFlags
 
-val StaticMemberFlags: trivia: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
+val StaticMemberFlags: k: SynMemberKind -> SynMemberFlags
 
-val ImplementStaticMemberFlags: SynMemberFlagsTrivia -> k: SynMemberKind -> SynMemberFlags
-
-val MemberSynMemberFlagsTrivia: mMember: range -> SynMemberFlagsTrivia
-
-val OverrideSynMemberFlagsTrivia: mOverride: range -> SynMemberFlagsTrivia
-
-val StaticMemberSynMemberFlagsTrivia: mStatic: range -> mMember: range -> SynMemberFlagsTrivia
-
-val DefaultSynMemberFlagsTrivia: mDefault: range -> SynMemberFlagsTrivia
-
-val AbstractSynMemberFlagsTrivia: mAbstract: range -> SynMemberFlagsTrivia
-
-val AbstractMemberSynMemberFlagsTrivia: mAbstract: range -> mMember: range -> SynMemberFlagsTrivia
-
-val StaticAbstractSynMemberFlagsTrivia: mStatic: range -> mAbstract: range -> SynMemberFlagsTrivia
-
-val StaticAbstractMemberSynMemberFlagsTrivia:
-    mStatic: range -> mAbstract: range -> mMember: range -> SynMemberFlagsTrivia
+val ImplementStaticMemberFlags: k: SynMemberKind -> SynMemberFlags
 
 val inferredTyparDecls: SynValTyparDecls
 

@@ -13,7 +13,7 @@ let ``extern keyword is present in trivia`` () =
     | ParsedInput.ImplFile(ParsedImplFileInput(contents = [
                 SynModuleOrNamespace.SynModuleOrNamespace(decls = [
                     SynModuleDecl.Let(bindings = [
-                        SynBinding(trivia = { ExternKeyword = Some mExtern  })
+                        SynBinding(trivia = { LeadingKeyword = SynLeadingKeyword.Extern mExtern  })
                     ])
                 ])
             ])) ->
