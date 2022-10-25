@@ -176,6 +176,7 @@ type TcGlobals(
     mlCompatibility: bool,
     isInteractive: bool,
     checkNullness: bool,
+    useReflectionFreeCodeGen: bool,
     // The helper to find system types amongst referenced DLLs
     tryFindSysTypeCcu,
     emitDebugInfoInQuotations: bool,
@@ -1015,6 +1016,8 @@ type TcGlobals(
   member _.knownFSharpCoreModules = v_knownFSharpCoreModules
 
   member _.compilingFSharpCore = compilingFSharpCore
+
+  member _.useReflectionFreeCodeGen = useReflectionFreeCodeGen
 
   member _.mlCompatibility = mlCompatibility
 

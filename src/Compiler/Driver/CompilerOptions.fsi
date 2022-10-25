@@ -28,7 +28,7 @@ type OptionSpec =
     | OptionStringList of (string -> unit)
     | OptionStringListSwitch of (string -> OptionSwitch -> unit)
     | OptionUnit of (unit -> unit)
-    | OptionHelp of (CompilerOptionBlock list -> unit) // like OptionUnit, but given the "options"
+    | OptionConsoleOnly of (CompilerOptionBlock list -> unit)
     | OptionGeneral of (string list -> bool) * (string list -> string list) // Applies? * (ApplyReturningResidualArgs)
 
 and CompilerOption =

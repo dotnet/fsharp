@@ -2558,6 +2558,7 @@ and [<Sealed>] TcImports
                     tcConfig.mlCompatibility,
                     tcConfig.isInteractive,
                     tcConfig.checkNullness,
+                    tcConfig.useReflectionFreeCodeGen,
                     tryFindSysTypeCcu,
                     tcConfig.emitDebugInfoInQuotations,
                     tcConfig.noDebugAttributes,

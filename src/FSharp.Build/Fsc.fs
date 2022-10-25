@@ -90,6 +90,7 @@ type public Fsc() as this =
     let mutable vserrors: bool = false
     let mutable vslcid: string MaybeNull = null
     let mutable utf8output: bool = false
+    let mutable useReflectionFreeCodeGen: bool = false
 
     let mutable toolPath: string =
         let locationOfThisDll =
@@ -301,6 +302,9 @@ type public Fsc() as this =
 
         if utf8output then
             builder.AppendSwitch("--utf8output")
+
+        if useReflectionFreeCodeGen then
+            builder.AppendSwitch("--reflectionfree")
 
         // When building using the fsc task, always emit the "fullpaths" flag to make the output easier
         // for the user to parse
@@ -605,6 +609,10 @@ type public Fsc() as this =
     member _.Utf8Output
         with get () = utf8output
         and set (p) = utf8output <- p
+
+    member _.ReflectionFree
+        with get () = useReflectionFreeCodeGen
+        and set (p) = useReflectionFreeCodeGen <- p
 
     member _.SubsystemVersion
         with get () = subsystemVersion

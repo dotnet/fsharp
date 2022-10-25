@@ -254,6 +254,11 @@ module rec CompilerAssertHelpers =
             yield Array.empty<string>
     |]
 
+    let executeAssemblyEntryPoint (asm: Assembly) =
+        let entryPoint = asm.EntryPoint
+        let args = mkDefaultArgs entryPoint
+        captureConsoleOutputs (fun () -> entryPoint.Invoke(Unchecked.defaultof<obj>, args) |> ignore)
+
 #if NETCOREAPP
     let executeBuiltApp assembly deps =
         let ctxt = AssemblyLoadContext("ContextName", true)
@@ -264,10 +269,7 @@ module rec CompilerAssertHelpers =
                 |> Option.map ctxt.LoadFromAssemblyPath
                 |> Option.defaultValue null)
 
-            let asm = ctxt.LoadFromAssemblyPath(assembly)
-            let entryPoint = asm.EntryPoint
-            let args = mkDefaultArgs entryPoint
-            (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
+            ctxt.LoadFromAssemblyPath assembly |> executeAssemblyEntryPoint
         finally
             ctxt.Unload()
 #else
@@ -281,10 +283,8 @@ module rec CompilerAssertHelpers =
                 |> Option.bind (fun x -> if FileSystem.FileExistsShim x then Some x else None)
                 |> Option.map Assembly.LoadFile
                 |> Option.defaultValue null))
-            let asm = Assembly.LoadFrom(assemblyPath)
-            let entryPoint = asm.EntryPoint
-            let args = mkDefaultArgs entryPoint
-            (entryPoint.Invoke(Unchecked.defaultof<obj>, args)) |> ignore
+
+            Assembly.LoadFrom assemblyPath |> executeAssemblyEntryPoint
 
     let adSetup =
         let setup = new System.AppDomainSetup ()
@@ -297,7 +297,7 @@ module rec CompilerAssertHelpers =
         let worker =
             use _ = new AlreadyLoadedAppDomainResolver()
             (ad.CreateInstanceFromAndUnwrap(typeof<Worker>.Assembly.CodeBase, typeof<Worker>.FullName)) :?> Worker
-        worker.ExecuteTestCase assembly (deps |> Array.ofList) |>ignore
+        worker.ExecuteTestCase assembly (deps |> Array.ofList)
 #endif
 
     let defaultProjectOptions =
@@ -515,34 +515,39 @@ module rec CompilerAssertHelpers =
         outputDirectory.Create()
         compileCompilationAux outputDirectory (ResizeArray()) ignoreWarnings cmpl
 
-    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
+    let captureConsoleOutputs (func: unit -> unit) =
         let out = Console.Out
         let err = Console.Error
 
         let stdout = StringBuilder ()
         let stderr = StringBuilder ()
 
-        let outWriter = new StringWriter (stdout)
-        let errWriter = new StringWriter (stderr)
+        use outWriter = new StringWriter (stdout)
+        use errWriter = new StringWriter (stderr)
 
-        let mutable exitCode = 0
-
-        try
+        let succeeded, exn =
             try
-                Console.SetOut(outWriter)
-                Console.SetError(errWriter)
-                (executeBuiltApp outputFilePath deps) |> ignore
-            with e ->
-                let errorMessage = if e.InnerException <> null then (e.InnerException.ToString()) else (e.ToString())
-                stderr.Append (errorMessage) |> ignore
-                exitCode <- -1
-        finally
-            Console.SetOut(out)
-            Console.SetError(err)
-            outWriter.Close()
-            errWriter.Close()
+                try
+                    Console.SetOut outWriter
+                    Console.SetError errWriter
+                    func ()
+                    true, None
+                with e ->
+                    let errorMessage = if e.InnerException <> null then e.InnerException.ToString() else e.ToString()
+                    stderr.Append errorMessage |> ignore
+                    false, Some e
+            finally
+                Console.SetOut out
+                Console.SetError err
+                outWriter.Close()
+                errWriter.Close()
 
-        (exitCode, stdout.ToString(), stderr.ToString())
+        succeeded, stdout.ToString(), stderr.ToString(), exn
+
+    let executeBuiltAppAndReturnResult (outputFilePath: string) (deps: string list) : (int * string * string) =
+        let succeeded, stdout, stderr, _ = executeBuiltApp outputFilePath deps
+        let exitCode = if succeeded then 0 else -1
+        exitCode, stdout, stderr
 
     let executeBuiltAppNewProcessAndReturnResult (outputFilePath: string) : (int * string * string) =
 #if !NETCOREAPP
@@ -582,7 +587,7 @@ type CompilerAssert private () =
             if errors.Length > 0 then
                 Assert.Fail (sprintf "Compile had warnings and/or errors: %A" errors)
 
-            executeBuiltApp outputExe []
+            executeBuiltApp outputExe [] |> ignore
         )
 
     static let compileLibraryAndVerifyILWithOptions options (source: SourceCodeFileKind) (f: ILVerifier -> unit) =
@@ -672,7 +677,8 @@ Updated automatically, please check diffs in your pull request, changes must be 
                     Assert.Fail errors
                 onOutput output
             else
-                executeBuiltApp outputFilePath deps)
+                let _succeeded, _stdout, _stderr, exn = executeBuiltApp outputFilePath deps 
+                exn |> Option.iter raise)
 
     static member ExecutionHasOutput(cmpl: Compilation, expectedOutput: string) =
         CompilerAssert.Execute(cmpl, newProcess = true, onOutput = (fun output -> Assert.AreEqual(expectedOutput, output, sprintf "'%s' = '%s'" expectedOutput output)))
