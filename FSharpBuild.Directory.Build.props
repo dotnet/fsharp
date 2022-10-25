@@ -13,6 +13,10 @@
     <DisableAutoSetFscCompilerPath>true</DisableAutoSetFscCompilerPath>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto'">
+    <FSCoreVersion>$(FSCoreShippedVersion)</FSCoreVersion>
+  </PropertyGroup>
+
   <PropertyGroup>
     <FSharpSourcesRoot>$(RepoRoot)src</FSharpSourcesRoot>
     <FSharpTestsRoot>$(RepoRoot)tests</FSharpTestsRoot>

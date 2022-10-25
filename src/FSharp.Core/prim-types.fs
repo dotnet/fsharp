@@ -4109,7 +4109,6 @@ namespace Microsoft.FSharp.Collections
                 let start = if i < 0 then 0 else i
                 PrivateListHelpers.sliceTake (j - start) (PrivateListHelpers.sliceSkip start l)
 
-        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         member l.GetReverseIndex(_: int, offset: int) =
             l.Length - offset - 1
 
@@ -6977,10 +6976,8 @@ namespace Microsoft.FSharp.Core
                           if n >= 0 then PowDecimal x n else 1.0M /  PowDecimal x n)
 
         [<AutoOpen>]
-        [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
         module ArrayExtensions =
             type ``[,,,]``<'T> with
-                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
@@ -6993,7 +6990,6 @@ namespace Microsoft.FSharp.Core
                     len - offset - 1
 
             type ``[,,]``<'T> with
-                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
@@ -7005,7 +7001,6 @@ namespace Microsoft.FSharp.Core
                     len - offset - 1
 
             type ``[,]``<'T> with
-                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member arr.GetReverseIndex(dim: int, offset: int) = 
                     let len = 
                         match dim with
@@ -7016,11 +7011,9 @@ namespace Microsoft.FSharp.Core
                     len - offset - 1
 
             type ``[]``<'T> with
-                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member arr.GetReverseIndex (_: int, offset: int) = arr.Length - offset - 1
 
             type String with
-                [<Experimental(ExperimentalAttributeMessages.RequiresPreview)>]
                 member str.GetReverseIndex (_: int, offset: int) = str.Length - offset - 1
 
 namespace Microsoft.FSharp.Control

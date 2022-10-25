@@ -3,15 +3,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Condition="'$(BUILD_PROTO)' != 'true'">
-    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
     <Configurations>Debug;Release;Proto</Configurations>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(BUILD_PROTO)' == 'true'">
     <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <PlatformTarget Condition="'$(TargetFramework)' == 'net472'">x86</PlatformTarget>
   </PropertyGroup>
 

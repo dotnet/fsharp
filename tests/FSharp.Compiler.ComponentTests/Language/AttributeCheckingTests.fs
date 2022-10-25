@@ -77,7 +77,7 @@ type C() =
         ignore newChildCopy
     """
         FSharp fsharpSource
-        |> withLangVersionPreview
+        |> withLangVersion70
         |> withReferences [csharpBaseClass]
         |> compile
         |> shouldSucceed

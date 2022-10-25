@@ -694,6 +694,9 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
                              ("RightToLeft", Some (box 64))
                              ("ECMAScript", Some (box 256))
                              ("CultureInvariant", Some (box 512))
+#if NETCOREAPP
+                             ("NonBacktracking", Some 1024)
+#endif
                            ]
         |]
 

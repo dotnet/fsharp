@@ -2559,7 +2559,6 @@ namespace Microsoft.FSharp.Collections
         /// <param name="offset">The offset from the end.</param>
         ///
         /// <returns>The corresponding index from the start.</returns>
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         member GetReverseIndex: rank: int * offset: int -> int
 
         /// <summary>Returns a list with <c>head</c> as its first element and <c>tail</c> as its subsequent elements</summary>
@@ -4720,7 +4719,6 @@ namespace Microsoft.FSharp.Core
         /// <summary>Contains extension methods to allow the use of F# indexer notation with arrays.
         /// This module is automatically opened in all F# code.</summary>
         [<AutoOpen>]
-        [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
         module ArrayExtensions = 
             type ``[,,,]``<'T> with
                 /// <summary>Get the index for the element offset elements away from the end of the collection.</summary>
@@ -4729,7 +4727,6 @@ namespace Microsoft.FSharp.Core
                 /// <param name="offset">The offset from the end.</param>
                 ///
                 /// <returns>The corresponding index from the start.</returns>
-                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type ``[,,]``<'T> with
@@ -4739,7 +4736,6 @@ namespace Microsoft.FSharp.Core
                 /// <param name="offset">The offset from the end.</param>
                 ///
                 /// <returns>The corresponding index from the start.</returns>
-                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type ``[,]``<'T> with
@@ -4749,7 +4745,6 @@ namespace Microsoft.FSharp.Core
                 /// <param name="offset">The offset from the end.</param>
                 ///
                 /// <returns>The corresponding index from the start.</returns>
-                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type ``[]``<'T> with
@@ -4759,7 +4754,6 @@ namespace Microsoft.FSharp.Core
                 /// <param name="offset">The offset from the end.</param>
                 ///
                 /// <returns>The corresponding index from the start.</returns>
-                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
             type System.String with
@@ -4769,7 +4763,6 @@ namespace Microsoft.FSharp.Core
                 /// <param name="offset">The offset from the end.</param>
                 ///
                 /// <returns>The corresponding index from the start.</returns>
-                [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
                 member GetReverseIndex: rank: int * offset: int -> int
 
         /// <summary>A module of compiler intrinsic functions for efficient implementations of F# integer ranges
