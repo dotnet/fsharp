@@ -181,7 +181,7 @@ let StaticLinkILModules
 
             // Save only the interface/optimization attributes of generated data
             let intfDataResources, others =
-                allResources |> List.partition (snd >> IsSignatureDataResource)
+                allResources |> List.partition (fun (_, r) -> IsSignatureDataResource r || IsSignatureDataResourceB r)
 
             let intfDataResources =
                 [
@@ -191,7 +191,7 @@ let StaticLinkILModules
                 ]
 
             let optDataResources, others =
-                others |> List.partition (snd >> IsOptimizationDataResource)
+                others |> List.partition (fun (_, r) -> IsOptimizationDataResource r || IsOptimizationDataResourceB r)
 
             let optDataResources =
                 [

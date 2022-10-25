@@ -9,6 +9,11 @@
     <CheckNulls>true</CheckNulls>
   </PropertyGroup>
 
+  <!--  The FSharp.Compiler.Server.Shared dll does not provide a referencable public interface  -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <CompressMetadata>true</CompressMetadata>
+  </PropertyGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="fsi" />
     <InternalsVisibleTo Include="fsiAnyCpu" />

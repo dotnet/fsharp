@@ -62,7 +62,7 @@ param (
     [switch]$noVisualStudio,
     [switch]$sourceBuild,
     [switch]$skipBuild,
-
+    [switch]$compressAllMetadata,
     [parameter(ValueFromRemainingArguments = $true)][string[]]$properties)
 
 Set-StrictMode -version 2.0
@@ -116,6 +116,7 @@ function Print-Usage() {
     Write-Host "  -noVisualStudio               Only build fsc and fsi as .NET Core applications. No Visual Studio required. '-configuration', '-verbosity', '-norestore', '-rebuild' are supported."
     Write-Host "  -sourceBuild                  Simulate building for source-build."
     Write-Host "  -skipbuild                    Skip building product"
+    Write-Host "  -compressAllMetadata          Build product with compressed metadata"
     Write-Host ""
     Write-Host "Command line arguments starting with '/p:' are passed through to MSBuild."
 }
@@ -168,6 +169,10 @@ function Process-Arguments() {
 
     if ($noBinaryLog) {
         $script:binaryLog = $False;
+    }
+
+    if ($compressAllMetadata) {
+        $script:compressAllMetadata = $True;
     }
 
     foreach ($property in $properties) {
@@ -228,6 +233,7 @@ function BuildSolution([string] $solutionName) {
         /p:QuietRestoreBinaryLog=$binaryLog `
         /p:TestTargetFrameworks=$testTargetFrameworks `
         /p:DotNetBuildFromSource=$sourceBuild `
+        /p:CompressAllMetadata=$CompressAllMetadata `
         /v:$verbosity `
         $suppressExtensionDeployment `
         @properties

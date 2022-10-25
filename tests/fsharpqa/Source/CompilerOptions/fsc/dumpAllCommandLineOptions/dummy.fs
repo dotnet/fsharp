@@ -8,8 +8,9 @@
 //<Expects status="success">section='- OUTPUT FILES -         ' ! option=doc                            kind=OptionString</Expects>
 //<Expects status="success">section='- OUTPUT FILES -         ' ! option=keyfile                        kind=OptionString</Expects>
 //<Expects status="success">section='- OUTPUT FILES -         ' ! option=platform                       kind=OptionString</Expects>
-//<Expects status="success">section='- OUTPUT FILES -         ' ! option=nooptimizationdata             kind=OptionUnit</Expects>
-//<Expects status="success">section='- OUTPUT FILES -         ' ! option=nointerfacedata                kind=OptionUnit</Expects>
+//<Expects status="notin">section='- OUTPUT FILES -           ' ! option=compressmetadata               kind=OptionUnit</Expects>
+//<Expects status="notin">section='- OUTPUT FILES -           ' ! option=nooptimizationdata             kind=OptionUnit</Expects>
+//<Expects status="notin">section='- OUTPUT FILES -           ' ! option=nointerfacedata                kind=OptionUnit</Expects>
 //<Expects status="success">section='- OUTPUT FILES -         ' ! option=sig                            kind=OptionString</Expects>
 //<Expects status="success">section='- INPUT FILES -          ' ! option=reference                      kind=OptionString</Expects>
 //<Expects status="success">section='- RESOURCES -            ' ! option=win32res                       kind=OptionString</Expects>

@@ -7,6 +7,7 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
+open System.IO.Compression
 open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Collections
@@ -29,6 +30,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
@@ -700,21 +702,7 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
 
     let sigData =
         let _sigDataAttributes, sigDataResources = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
-        let sigDataReaders = 
-            [ for iresource in sigDataResources do
-                if IsSignatureDataResource iresource then 
-                    let ccuName = GetSignatureDataResourceName iresource
-                    let readerA = fun () -> iresource.GetBytes()
-                    let readerB = 
-                        sigDataResources |> List.tryPick (fun iresourceB -> 
-                            if IsSignatureDataResourceB iresourceB then 
-                                let ccuNameB = GetSignatureDataResourceName iresourceB
-                                if ccuName = ccuNameB then
-                                    Some (fun () -> iresourceB.GetBytes() )
-                                else None
-                            else None)
-                    yield (ccuName, (readerA, readerB)) ]
-
+        let sigDataReaders = GetResourceNameAndSignatureDataFuncs sigDataResources
         sigDataReaders
 
     let autoOpenAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_AutoOpenAttribute)

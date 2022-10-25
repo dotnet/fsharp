@@ -1097,18 +1097,32 @@ let GetLongNameFromString x = SplitNamesForILPath x
 // Resource format for pickled data
 //--------------------------------------------------------------------------
 
+// Uncompressed OptimizationData/SignatureData name for embedded resource
 let FSharpOptimizationDataResourceName = "FSharpOptimizationData."
 
 let FSharpSignatureDataResourceName = "FSharpSignatureData."
 
 let FSharpOptimizationDataResourceNameB = "FSharpOptimizationDataB."
+
 let FSharpSignatureDataResourceNameB = "FSharpSignatureDataB."
+
+// Compressed OptimizationData/SignatureData name for embedded resource
+let FSharpOptimizationCompressedDataResourceName =
+    "FSharpOptimizationCompressedData."
+
+let FSharpSignatureCompressedDataResourceName = "FSharpSignatureCompressedData."
+
+let FSharpOptimizationCompressedDataResourceNameB = "FSharpOptimizationCompressedDataB."
+
+let FSharpSignatureCompressedDataResourceNameB = "FSharpSignatureCompressedDataB."
+
 
 // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers
 // don't complain when they see the resource. The prefix of these names must not be 'FSharpOptimizationData'
 // or 'FSharpSignatureData'
-let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo."
 
+// Uncompressed OptimizationData/SignatureData name for FSharp.Core embedded resources
+let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo."
 let FSharpSignatureDataResourceName2 = "FSharpSignatureInfo."
 
 [<Literal>]

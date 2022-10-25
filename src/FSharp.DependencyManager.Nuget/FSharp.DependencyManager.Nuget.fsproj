@@ -16,6 +16,9 @@
     <!-- nullness checking isn't possible when using shipped FSHarp.Core package until it's updated -->
     <CheckNulls>false</CheckNulls>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);NO_CHECKNULLS</DefineConstants>
+  <!--  The FSharp.DependencyManager.Nuget dll does not provide a referencable public interface although it's used for testing -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <CompressMetadata>true</CompressMetadata>
   </PropertyGroup>
 
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">

@@ -84,6 +84,16 @@
     <DefineConstants>$(DefineConstants);TESTING_ON_LINUX</DefineConstants>
   </PropertyGroup>
 
+
+  <!-- CompressAllMetadata is a switch set by the CI to do a test pass where we compress the metadata for the assemblies -->
+  <!-- We don't compress the proto-compiler yet, because no shipped compiler, and the arcade compiler don't yet support compression -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Proto' or '$(CompressAllMetadata)' != 'true'">
+      <CompressMetadata>false</CompressMetadata>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto' and '$(CompressAllMetadata)' == 'true'">
+      <CompressMetadata>true</CompressMetadata>
+  </PropertyGroup>
+
   <!-- SDK targets override -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto' AND '$(DisableCompilerRedirection)'!='true' AND Exists('$(ProtoOutputPath)')">
     <FSharpTargetsPath>$(ProtoOutputPath)\fsc\Microsoft.FSharp.Targets</FSharpTargetsPath>
