@@ -43,7 +43,7 @@ and CompilerOptionBlock =
     | PublicOptions of heading: string * options: CompilerOption list
     | PrivateOptions of options: CompilerOption list
 
-val GetCompilerOptionBlocks: CompilerOptionBlock list -> string
+val GetCompilerOptionBlocks: CompilerOptionBlock list -> width: int option -> string
 
 val DumpCompilerOptionBlocks: CompilerOptionBlock list -> unit // for QA
 

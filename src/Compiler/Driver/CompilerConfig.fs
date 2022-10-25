@@ -555,6 +555,8 @@ type TcConfigBuilder =
 
         mutable fxResolver: FxResolver option
 
+        mutable bufferWidth: int option
+
         // Is F# Interactive using multi-assembly emit?
         mutable fsiMultiAssemblyEmit: bool
 
@@ -746,6 +748,7 @@ type TcConfigBuilder =
             shadowCopyReferences = false
             useSdkRefs = true
             fxResolver = None
+            bufferWidth = None
             fsiMultiAssemblyEmit = true
             internalTestSpanStackReferring = false
             noConditionalErasure = false
@@ -1168,6 +1171,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             errorRecovery e range0
             []
 
+    member _.bufferWidth = data.bufferWidth
     member _.fsiMultiAssemblyEmit = data.fsiMultiAssemblyEmit
     member _.FxResolver = data.FxResolver
     member _.primaryAssembly = data.primaryAssembly

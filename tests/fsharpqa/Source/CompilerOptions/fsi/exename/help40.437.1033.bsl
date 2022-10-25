@@ -2,7 +2,7 @@
 Usage: fsharpi <options> [script.fsx [<arguments>]]
 
 
-		- INPUT FILES -
+                - INPUT FILES -
 --use:<file>                             Use the given file on startup as
                                          initial input
 --load:<file>                            #load the given file on startup
@@ -16,7 +16,7 @@ Usage: fsharpi <options> [script.fsx [<arguments>]]
                                          fsi.CommandLineArgs
 
 
-		- CODE GENERATION -
+                - CODE GENERATION -
 --debug[+|-]                             Emit debug information (Short form:
                                          -g)
 --debug:{full|pdbonly|portable|embedded} Specify debugging type: full,
@@ -42,7 +42,7 @@ Usage: fsharpi <options> [script.fsx [<arguments>]]
                                          constructs using reflection
 
 
-		- ERRORS AND WARNINGS -
+                - ERRORS AND WARNINGS -
 --warnaserror[+|-]                       Report all warnings as errors
 --warnaserror[+|-]:<warn;...>            Report specific warnings as errors
 --warn:<n>                               Set a warning level (0-5)
@@ -53,7 +53,7 @@ Usage: fsharpi <options> [script.fsx [<arguments>]]
                                          color
 
 
-		- LANGUAGE -
+                - LANGUAGE -
 --langversion:{?|version|latest|preview} Display the allowed values for
                                          language version, specify language
                                          version such as 'latest' or
@@ -64,7 +64,7 @@ Usage: fsharpi <options> [script.fsx [<arguments>]]
 --mlcompatibility                        Ignore ML compatibility warnings
 
 
-		- MISCELLANEOUS -
+                - MISCELLANEOUS -
 --nologo                                 Suppress compiler copyright message
 --version                                Display compiler version banner and
                                          exit
@@ -72,7 +72,7 @@ Usage: fsharpi <options> [script.fsx [<arguments>]]
                                          form: -?)
 
 
-		- ADVANCED -
+                - ADVANCED -
 --codepage:<n>                           Specify the codepage used to read
                                          source files
 --utf8output                             Output messages in UTF-8 encoding
