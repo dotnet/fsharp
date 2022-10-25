@@ -1145,7 +1145,7 @@ let languageFlags tcConfigB =
             tagNone,
             OptionConsoleOnly(fun _ ->
                 Console.Write(GetLanguageVersions())
-                exit 0),
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsGetLangVersions ())
         )
@@ -2043,7 +2043,7 @@ let miscFlagsBoth tcConfigB =
             tagNone,
             OptionConsoleOnly(fun _ ->
                 Console.Write(GetVersion tcConfigB)
-                exit 0),
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsVersion ())
         )
@@ -2057,7 +2057,7 @@ let miscFlagsFsc tcConfigB =
             tagNone,
             OptionConsoleOnly(fun blocks ->
                 Console.Write(GetHelpFsc tcConfigB blocks)
-                exit 0),
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsHelp ())
         )
@@ -2118,7 +2118,7 @@ let abbreviatedFlagsFsc tcConfigB =
             tagNone,
             OptionConsoleOnly(fun blocks ->
                 Console.Write(GetHelpFsc tcConfigB blocks)
-                exit 0),
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2128,7 +2128,7 @@ let abbreviatedFlagsFsc tcConfigB =
             tagNone,
             OptionConsoleOnly(fun blocks ->
                 Console.Write(GetHelpFsc tcConfigB blocks)
-                exit 0),
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )
@@ -2138,7 +2138,7 @@ let abbreviatedFlagsFsc tcConfigB =
             tagNone,
             OptionConsoleOnly(fun blocks ->
                 Console.Write(GetHelpFsc tcConfigB blocks)
-                exit 0),
+                tcConfigB.exiter.Exit 0),
             None,
             Some(FSComp.SR.optsShortFormOf ("--help"))
         )

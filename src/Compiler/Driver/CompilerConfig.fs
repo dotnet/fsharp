@@ -581,6 +581,8 @@ type TcConfigBuilder =
         mutable langVersion: LanguageVersion
 
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
+
+        mutable exiter: Exiter
     }
 
     // Directories to start probing in
@@ -767,6 +769,7 @@ type TcConfigBuilder =
             rangeForErrors = rangeForErrors
             sdkDirOverride = sdkDirOverride
             xmlDocInfoLoader = None
+            exiter = QuitProcessExiter
         }
 
     member tcConfigB.FxResolver =
@@ -1309,6 +1312,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.noConditionalErasure = data.noConditionalErasure
     member _.applyLineDirectives = data.applyLineDirectives
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
+    member _.exiter = data.exiter
 
     static member Create(builder, validate) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
