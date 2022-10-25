@@ -49,5 +49,5 @@ let LowerImplFile g assembly =
           PreInterceptBinding=None
           PostTransform= (fun _ -> None)
           RewriteQuotations=false
-          StackGuard = StackGuard(LowerCallsRewriteStackGuardDepth) }
+          StackGuard = StackGuard(LowerCallsRewriteStackGuardDepth, "LowerCallsRewriteStackGuardDepth") }
     assembly |> RewriteImplFile rwenv
