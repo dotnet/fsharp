@@ -102,11 +102,6 @@
         <target state="translated">Proj_ektübergreifende Verweise im Arbeitsspeicher aktivieren</target>
         <note />
       </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">Anzahl von Projekten, deren Daten im Arbeitsspeicher zwischengespeichert werden</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Show_navigation_links_as">
         <source>S_how navigation links as</source>
         <target state="translated">Navigationslink_s anzeigen als</target>
@@ -180,11 +175,6 @@
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
         <target state="translated">Bei projektübergreifenden In-Memory-Verweisen werden Daten auf Projektebene im Arbeitsspeicher abgelegt, damit IDE-Features projektübergreifend verwendet werden können.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">Für IDE-Features werden Projektdaten zwischengespeichert. Bei höheren Werten wird mehr Arbeitsspeicher beansprucht, weil mehr Projekte zwischengespeichert werden. Die Optimierung dieses Werts besitzt keine Auswirkungen auf kleine oder mittelgroße Projektmappen.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

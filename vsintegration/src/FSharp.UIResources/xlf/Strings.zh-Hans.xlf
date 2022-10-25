@@ -102,11 +102,6 @@
         <target state="translated">启用内存中跨项目引用(_E)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">内存中缓存了其数据的项目数</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Show_navigation_links_as">
         <source>S_how navigation links as</source>
         <target state="translated">导航链接显示方式(_H)</target>
@@ -180,11 +175,6 @@
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
         <target state="translated">内存中跨项目引用将项目级数据存储在内存中，让 IDE 功能能够跨项目工作。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">针对 IDE 功能缓存项目数据。值越大，缓存的项目越多，因此使用的内存越多。调整此值不应影响小型或中型解决方案。</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

@@ -102,11 +102,6 @@
         <target state="translated">메모리 내 크로스 프로젝트 참조 사용(_E)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">메모리에 데이터가 캐시된 프로젝트 수</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Show_navigation_links_as">
         <source>S_how navigation links as</source>
         <target state="translated">탐색 링크를 다음으로 표시(_H)</target>
@@ -180,11 +175,6 @@
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
         <target state="translated">메모리 내 크로스 프로젝트 참조가 메모리에 프로젝트 수준 데이터를 저장하여 IDE 기능이 프로젝트에서 작동하도록 합니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">프로젝트 데이터가 IDE 기능에 대해 캐시됩니다. 값이 클수록 프로제트가 더 많이 캐시되므로 메모리를 더 많이 사용합니다. 이 값을 조정해도 중소 규모 솔루션에 영향을 미치지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

@@ -102,11 +102,6 @@
         <target state="translated">_Включить перекрестные ссылки между проектами в памяти</target>
         <note />
       </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">Число проектов, данные которых кэшируются в памяти</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Show_navigation_links_as">
         <source>S_how navigation links as</source>
         <target state="translated">П_оказать ссылки навигации как</target>
@@ -180,11 +175,6 @@
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
         <target state="translated">Перекрестные ссылки между проектами в памяти хранят данные уровня проекта в памяти, поэтому функции и компоненты IDE могут работать в разных проектах.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">Для функций и компонентов IDE используются кэшированные данные проекта. Более высокие значения потребляют больший объем памяти, так как кэшируется больше проектов. Настройка этого значения не должна влиять на решения небольших или средних размеров.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

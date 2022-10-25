@@ -159,12 +159,14 @@ type SynTypeDefnSigTrivia =
 type SynBindingTrivia =
     {
         LetKeyword: range option
+        ExternKeyword: range option
         EqualsRange: range option
     }
 
     static member Zero: SynBindingTrivia =
         {
             LetKeyword = None
+            ExternKeyword = None
             EqualsRange = None
         }
 

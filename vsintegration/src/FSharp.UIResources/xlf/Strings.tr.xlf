@@ -102,11 +102,6 @@
         <target state="translated">_Bellek içi çapraz proje başvurularını etkinleştir</target>
         <note />
       </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">Verileri bellekte önbelleğe alınan proje sayısı</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Show_navigation_links_as">
         <source>S_how navigation links as</source>
         <target state="translated">Gezinti bağlantılarını farklı _göster</target>
@@ -180,11 +175,6 @@
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
         <target state="translated">Bellek içi projeler arası başvurular, IDE özelliklerinin farklı projelerde çalışmasına imkan tanımak için bellekte proje düzeyi veriler depolar.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">IDE özellikleri için proje verileri önbelleğe alınır. Değer yüksek olduğunda daha fazla proje önbelleğe alındığından daha fazla bellek kullanılır. Bu değerin ayarlanması küçük veya orta ölçekli çözümleri etkilememelidir.</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

@@ -102,11 +102,6 @@
         <target state="translated">允許記憶體內跨專案參考(_E)</target>
         <note />
       </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">資料會快取到記憶體的專案數</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Show_navigation_links_as">
         <source>S_how navigation links as</source>
         <target state="translated">顯示導覽連結為(_H)</target>
@@ -180,11 +175,6 @@
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
         <target state="translated">記憶體內跨專案參考，會在記憶體中儲存專案等級的資料，以允許 IDE 功能在各專案中皆可運作。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">專案資料會進行快取，供 IDE 功能使用。值較高時會使用較多的記憶體，這是因為會快取較多的專案數。調整此值應該不會影響中小型的解決方案。</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">
