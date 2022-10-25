@@ -428,3 +428,11 @@ type SynTypeOrTrivia =
         /// The syntax range of the `or` keyword
         OrKeyword: range
     }
+
+/// Represents additional information for SynBindingReturnInfo
+[<NoEquality; NoComparison>]
+type SynBindingReturnInfoTrivia =
+    {
+        /// The syntax range of the `:` token
+        ColonRange: range option
+    }

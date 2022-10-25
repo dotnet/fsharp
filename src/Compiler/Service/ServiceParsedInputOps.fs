@@ -648,7 +648,7 @@ module ParsedInput =
             |> Option.orElseWith (fun () -> walkExpr e)
             |> Option.orElseWith (fun () ->
                 match returnInfo with
-                | Some (SynBindingReturnInfo (t, _, _)) -> walkType t
+                | Some (SynBindingReturnInfo (typeName = t)) -> walkType t
                 | None -> None)
 
         and walkInterfaceImpl (SynInterfaceImpl (bindings = bindings)) = List.tryPick walkBinding bindings
@@ -1664,7 +1664,9 @@ module ParsedInput =
             List.iter walkAttribute attrs
             walkPat pat
             walkExpr e
-            returnInfo |> Option.iter (fun (SynBindingReturnInfo (t, _, _)) -> walkType t)
+
+            returnInfo
+            |> Option.iter (fun (SynBindingReturnInfo (typeName = t)) -> walkType t)
 
         and walkInterfaceImpl (SynInterfaceImpl (bindings = bindings)) = List.iter walkBinding bindings
 
