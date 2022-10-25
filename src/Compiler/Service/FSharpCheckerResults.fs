@@ -549,7 +549,7 @@ type internal TypeCheckInfo
                 x
                 |> List.choose (fun (ParamData (_isParamArray, _isInArg, _isOutArg, _optArgInfo, _callerInfo, name, _, ty)) ->
                     match name with
-                    | Some n -> Some(Item.ArgName(n, ty, Some(ArgumentContainer.Method meth)))
+                    | Some id -> Some(Item.ArgName(Some id, ty, Some(ArgumentContainer.Method meth), id.idRange))
                     | None -> None)
             | _ -> [])
 

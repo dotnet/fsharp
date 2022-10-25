@@ -552,6 +552,9 @@ type ILFieldInfo =
     /// Get the name of the field
     member FieldName: string
 
+    /// Get the core of the display name for the field. This is the same as the logical name.
+    member DisplayNameCore: string
+
     /// Get an (uninstantiated) reference to the field as an Abstract IL ILFieldRef
     member ILFieldRef: ILFieldRef
 
@@ -648,14 +651,14 @@ type UnionCaseInfo =
     ///
     /// Backticks and parens are not added for non-identifiers.
     ///
-    /// Note logical names op_Nil and op_ConsCons become [] and :: respectively.
+    /// Note logical names op_Nil and op_ColonColon become [] and :: respectively.
     member DisplayNameCore: string
 
     /// Get the display name of the union case
     ///
     /// Backticks and parens are added implicitly for non-identifiers.
     ///
-    /// Note logical names op_Nil and op_ConsCons become ([]) and (::) respectively.
+    /// Note logical names op_Nil and op_ColonColon become ([]) and (::) respectively.
     member DisplayName: string
 
     /// Get the F# metadata for the declaring union type
@@ -838,6 +841,14 @@ type PropInfo =
     /// Get the logical name of the property.
     member PropertyName: string
 
+    /// Get the display name of the property.
+    ///
+    /// Backticks and parens are added implicitly for non-identifiers.
+    member DisplayName: string
+
+    /// Get the property name in core DisplayName form (no backticks or parens added)
+    member DisplayNameCore: string
+
     /// Get a MethInfo for the 'setter' method associated with the property
     member SetterMethod: MethInfo
 
@@ -941,6 +952,14 @@ type EventInfo =
 
     /// Get the logical name of the event.
     member EventName: string
+
+    /// Get the display name of the event.
+    ///
+    /// Backticks and parens are added implicitly for non-identifiers.
+    member DisplayName: string
+
+    /// Get the event name in core DisplayName form (no backticks or parens added)
+    member DisplayNameCore: string
 
     /// Indicates if this event has an associated XML comment authored in this assembly.
     member HasDirectXmlComment: bool
