@@ -1480,7 +1480,7 @@ type SynModuleDecl =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynOpenDeclTarget =
 
-    | ModuleOrNamespace of longId: LongIdent * range: range
+    | ModuleOrNamespace of longId: SynLongIdent * range: range
 
     | Type of typeName: SynType * range: range
 

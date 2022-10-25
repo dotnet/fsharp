@@ -392,15 +392,18 @@ let CheckILFieldAttributes g (finfo:ILFieldInfo) m =
 #endif
 
 /// Check the attributes on an entity, returning errors and warnings as data.
-let CheckEntityAttributes g (x:TyconRef) m = 
-    if x.IsILTycon then 
-        CheckILAttributes g (isByrefLikeTyconRef g m x) x.ILTyconRawMetadata.CustomAttrs m
+let CheckEntityAttributes g (tcref: TyconRef) m =    
+    if tcref.IsILTycon then 
+        CheckILAttributes g (isByrefLikeTyconRef g m tcref) tcref.ILTyconRawMetadata.CustomAttrs m
     else 
-        CheckFSharpAttributes g x.Attribs m
+        CheckFSharpAttributes g tcref.Attribs m
 
 /// Check the attributes associated with a method, returning warnings and errors as data.
 let CheckMethInfoAttributes g m tyargsOpt (minfo: MethInfo) = 
-    CheckEntityAttributes g minfo.ApparentEnclosingTyconRef m ++ (fun () ->
+    match stripTyEqns g minfo.ApparentEnclosingAppType with
+    | TType_app(tcref, _, _) -> CheckEntityAttributes g tcref m 
+    | _ -> CompleteD
+    ++ (fun () ->
         let search =
             BindMethInfoAttributes m minfo 
                 (fun ilAttribs -> Some(CheckILAttributes g false ilAttribs m)) 
