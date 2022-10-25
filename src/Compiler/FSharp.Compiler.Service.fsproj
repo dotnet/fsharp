@@ -23,6 +23,7 @@
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);NO_CHECKNULLS</DefineConstants>
     <CheckNulls Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">false</CheckNulls>
     <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);USE_SHIPPED_FSCORE</DefineConstants>
+    <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
     <!-- 1182: Unused variables -->
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <!-- 3218: ArgumentsInSigAndImplMismatch -->
