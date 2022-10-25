@@ -17,7 +17,7 @@ let InterceptExpr g cont expr =
     match expr with
     | Expr.Val (vref, flags, m) ->
         match vref.ValReprInfo with
-        | Some arity -> Some (fst (AdjustValForExpectedArity g m vref flags arity))
+        | Some arity -> Some (fst (AdjustValForExpectedValReprInfo g m vref flags arity))
         | None -> None
 
     // App (Val v, tys, args)
@@ -28,7 +28,7 @@ let InterceptExpr g cont expr =
             let argsl = List.map cont argsl
             let f0 =
                 if valReprInfo.AritiesOfArgs.Length > argsl.Length
-                then fst(AdjustValForExpectedArity g m vref flags valReprInfo)
+                then fst(AdjustValForExpectedValReprInfo g m vref flags valReprInfo)
                 else f0
 
             Some (MakeApplicationAndBetaReduce g (f0, f0ty, [tyargsl], argsl, m))

@@ -174,7 +174,7 @@ let (|ModuleValueOrMemberUse|_|) g expr =
             Some(vref, vFlags, f, fty, tyargs, actualArgs @ args)
         | Expr.App (f, _fTy, [], actualArgs, _) ->
             loop f (actualArgs @ args)
-        | Expr.Val (vref, vFlags, _m) as f when (match vref.DeclaringEntity with ParentNone -> false | _ -> true) ->
+        | Expr.Val (vref, vFlags, _m) as f when (match vref.TryDeclaringEntity with ParentNone -> false | _ -> true) ->
             let fty = tyOfExpr g f
             Some(vref, vFlags, f, fty, [], args)
         | _ ->
@@ -323,7 +323,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                 // This is an application of a module value or extension member
                 let arities = arityOfVal vref.Deref
                 let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal vref.Deref
-                let tps, witnessInfos, curriedArgInfos, retTy, _ = GetTopValTypeInCompiledForm g arities numEnclosingTypars vref.Type m
+                let tps, witnessInfos, curriedArgInfos, retTy, _ = GetValReprTypeInCompiledForm g arities numEnclosingTypars vref.Type m
                 false, tps, witnessInfos, curriedArgInfos, retTy
 
         // Compute the object arguments as they appear in a compiled call
@@ -353,7 +353,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                | None -> error(InternalError("no arity information found for F# value " + vref.LogicalName, vref.Range))
                | Some a -> a
 
-            let expr, exprTy = AdjustValForExpectedArity g m vref vFlags valReprInfo
+            let expr, exprTy = AdjustValForExpectedValReprInfo g m vref vFlags valReprInfo
             ConvExpr cenv env (MakeApplicationAndBetaReduce g (expr, exprTy, [tyargs], curriedArgs, m))
         else
             // Too many arguments? Chop
@@ -385,7 +385,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                 let subCall =
                     if isMember then
 
-                        let parentTyconR = ConvTyconRef cenv vref.TopValDeclaringEntity m
+                        let parentTyconR = ConvTyconRef cenv vref.DeclaringEntity m
                         let isNewObj = isNewObj || valUseFlags || isSelfInit
                         // The signature types are w.r.t. to the formal context
                         let envinner = BindFormalTypars env tps
@@ -636,7 +636,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | TOp.LValueOp (LSet, vref), [], [e] ->
             // Sets of module values become property sets
-            match vref.DeclaringEntity with
+            match vref.TryDeclaringEntity with
             | Parent tcref when IsCompiledAsStaticProperty g vref.Deref ->
                 let parentTyconR = ConvTyconRef cenv tcref m
                 let propName = vref.CompiledName g.CompilerGlobalState
@@ -901,7 +901,7 @@ and ConvModuleValueApp cenv env m (vref:ValRef) tyargs witnessArgs (args: Expr l
     EmitDebugInfoIfNecessary cenv env m (ConvModuleValueAppCore cenv env m vref tyargs witnessArgs args)
 
 and ConvModuleValueAppCore cenv env m (vref: ValRef) tyargs witnessArgsR (curriedArgs: Expr list list) =
-    match vref.DeclaringEntity with
+    match vref.TryDeclaringEntity with
     | ParentNone -> failwith "ConvModuleValueAppCore"
     | Parent(tcref) ->
         let isProperty = IsCompiledAsStaticProperty cenv.g vref.Deref
@@ -938,7 +938,7 @@ and private ConvValRefCore holeOk cenv env m (vref: ValRef) tyargs =
         QP.mkThisVar(ConvType cenv env m v.Type)
     else
         let vTy = v.Type
-        match v.DeclaringEntity with
+        match v.TryDeclaringEntity with
         | ParentNone ->
               // References to local values are embedded by value
               if not holeOk then wfail(Error(FSComp.SR.crefNoSetOfHole(), m))
@@ -1264,7 +1264,7 @@ let ConvExprPublic cenv suppressWitnesses e =
 
 let ConvMethodBase cenv env (methName, v: Val) =
     let m = v.Range
-    let parentTyconR = ConvTyconRef cenv v.TopValDeclaringEntity m
+    let parentTyconR = ConvTyconRef cenv v.DeclaringEntity m
 
     match v.MemberInfo with
     | Some vspr when not v.IsExtensionMember ->
@@ -1300,7 +1300,7 @@ let ConvMethodBase cenv env (methName, v: Val) =
     | _ when v.IsExtensionMember ->
 
         let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
-        let tps, witnessInfos, argInfos, retTy, _ = GetTopValTypeInCompiledForm cenv.g v.ValReprInfo.Value numEnclosingTypars v.Type v.Range
+        let tps, witnessInfos, argInfos, retTy, _ = GetValReprTypeInCompiledForm cenv.g v.ValReprInfo.Value numEnclosingTypars v.Type v.Range
         let argTys = argInfos |> List.concat |> List.map fst
         let envinner = BindFormalTypars env tps
         let witnessArgTysR = ConvTypes cenv envinner m (GenWitnessTys cenv.g witnessInfos)
@@ -1317,7 +1317,7 @@ let ConvMethodBase cenv env (methName, v: Val) =
 
     | _ ->
         let numEnclosingTypars = CountEnclosingTyparsOfActualParentOfVal v
-        let tps, witnessInfos, _argInfos, _retTy, _ = GetTopValTypeInCompiledForm cenv.g v.ValReprInfo.Value numEnclosingTypars v.Type v.Range
+        let tps, witnessInfos, _argInfos, _retTy, _ = GetValReprTypeInCompiledForm cenv.g v.ValReprInfo.Value numEnclosingTypars v.Type v.Range
         let envinner = BindFormalTypars env tps
         let witnessArgTysR = ConvTypes cenv envinner m (GenWitnessTys cenv.g witnessInfos)
         let nWitnesses = witnessArgTysR.Length
