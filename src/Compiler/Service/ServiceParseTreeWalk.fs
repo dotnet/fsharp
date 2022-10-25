@@ -823,8 +823,13 @@ module SyntaxTraversal =
                 | SynType.MeasureDivide (ty1, ty2, _) -> [ ty1; ty2 ] |> List.tryPick (traverseSynType path)
                 | SynType.Tuple (path = segments) -> getTypeFromTuplePath segments |> List.tryPick (traverseSynType path)
                 | SynType.StaticConstantExpr (expr, _) -> traverseSynExpr [] expr
-                | SynType.Anon _ -> None
-                | _ -> None
+                | SynType.Paren (innerType = t)
+                | SynType.SignatureParameter (usedType = t) -> traverseSynType path t
+                | SynType.Anon _
+                | SynType.AnonRecd _
+                | SynType.LongIdent _
+                | SynType.Var _
+                | SynType.StaticConstant _ -> None
 
             visitor.VisitType(origPath, defaultTraverse, ty)
 

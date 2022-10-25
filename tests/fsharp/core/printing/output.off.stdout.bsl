@@ -1,6 +1,4 @@
 
-module FSI_0001
-
 > val it: unit = ()
 
 > val repeatId: string
@@ -96,9 +94,7 @@ module D1 =
   val words: System.Collections.Generic.IDictionary<string,int>
   val words2000: System.Collections.Generic.IDictionary<int,string>
 
-> module FSI_0020
-
-> module D2 =
+> > module D2 =
   val words: IDictionary<string,int>
   val words2000: IDictionary<int,string>
 val opt1: 'a option
