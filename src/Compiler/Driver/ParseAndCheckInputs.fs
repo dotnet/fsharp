@@ -484,7 +484,6 @@ let TestInteractionParserAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>,
     while true do
         match (Parser.interaction (fun _ -> tokenizer ()) lexbuf) with
         | ParsedScriptInteraction.Definitions (l, m) -> printfn "Parsed OK, got %d defs @ %a" l.Length outputRange m
-        | ParsedScriptInteraction.HashDirective (_, m) -> printfn "Parsed OK, got hash @ %a" outputRange m
 
     exiter.Exit 0
 
