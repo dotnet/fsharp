@@ -634,7 +634,7 @@ type CalledMeth<'T>
                     let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some nm) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides id.idRange returnedObjTy
                     let pinfos = pinfos |> ExcludeHiddenOfPropInfos g infoReader.amap m 
                     match pinfos with 
-                    | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
+                    | [pinfo] when pinfo.HasSetter && not pinfo.IsStatic && not pinfo.IsIndexer -> 
                         let pminfo = pinfo.SetterMethod
                         let pminst = freshenMethInfo m pminfo
                         let propStaticTyOpt = if isTyparTy g returnedObjTy then Some returnedObjTy else None
@@ -642,10 +642,11 @@ type CalledMeth<'T>
                     | _ ->
                         let epinfos = 
                             match nameEnv with  
-                            | Some ne -> ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader ne (Some nm) ad m returnedObjTy
+                            | Some ne -> ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader ne (Some nm) LookupIsInstance.Ambivalent ad m returnedObjTy
                             | _ -> []
+
                         match epinfos with 
-                        | [pinfo] when pinfo.HasSetter && not pinfo.IsIndexer -> 
+                        | [pinfo] when pinfo.HasSetter && not pinfo.IsStatic && not pinfo.IsIndexer -> 
                             let pminfo = pinfo.SetterMethod
                             let pminst =
                                 match minfo with
@@ -661,11 +662,11 @@ type CalledMeth<'T>
                             Choice1Of2(AssignedItemSetter(id, AssignedPropSetter(propStaticTyOpt, pinfo, pminfo, pminst), e))
                         |  _ ->    
                             match infoReader.GetILFieldInfosOfType(Some(nm), ad, m, returnedObjTy) with
-                            | finfo :: _ -> 
+                            | finfo :: _ when not finfo.IsStatic -> 
                                 Choice1Of2(AssignedItemSetter(id, AssignedILFieldSetter(finfo), e))
                             | _ ->              
                               match infoReader.TryFindRecdOrClassFieldInfoOfType(nm, m, returnedObjTy) with
-                              | ValueSome rfinfo -> 
+                              | ValueSome rfinfo when not rfinfo.IsStatic -> 
                                   Choice1Of2(AssignedItemSetter(id, AssignedRecdFieldSetter(rfinfo), e))
                               | _ -> 
                                   Choice2Of2(arg))

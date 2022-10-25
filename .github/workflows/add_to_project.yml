@@ -6,6 +6,10 @@ on:
       - opened
       - transferred
 
+permissions:
+  issues: write
+  repository-projects: write
+
 jobs:
   cleanup_old_runs:
       runs-on: ubuntu-20.04
@@ -24,6 +28,9 @@ jobs:
   add-to-project:
     name: Add issue to project
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      repository-projects: write
     steps:
       - uses: actions/add-to-project@v0.3.0
         with:
