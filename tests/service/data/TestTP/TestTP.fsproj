@@ -21,7 +21,6 @@
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
   </ItemGroup>
 
-
   <ItemGroup>
     <ProjectReference Include="..\CSharp_Analysis\CSharp_Analysis.csproj" />
   </ItemGroup>
