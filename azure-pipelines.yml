@@ -445,7 +445,6 @@ stages:
 
         # MacOS
         - job: MacOS
-          condition: eq(1,2)
           pool:
             vmImage: macos-11
           variables:
@@ -576,7 +575,6 @@ stages:
 
         # Plain build Mac
         - job: Plain_Build_MacOS
-          condition: eq(1,2)
           pool:
             vmImage: macos-11
           variables:
