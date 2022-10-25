@@ -4199,7 +4199,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="cos-example">
         /// <code lang="fsharp">
-        ///
+        /// cos (0.0 * System.Math.PI) // evaluates to 1.0
+        /// cos (0.5 * System.Math.PI) // evaluates to 6.123233996e-17
+        /// cos (1.0 * System.Math.PI) // evaluates to -1.0
         /// </code>
         /// </example>
         ///  
@@ -4214,7 +4216,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="cosh-example">
         /// <code lang="fsharp">
-        ///
+        /// cosh -1.0 // evaluates to 1.543080635
+        /// cosh 0.0  // evaluates to 1.0
+        /// cosh 1.0  // evaluates to 1.543080635
         /// </code>
         /// </example>
         ///  
@@ -4229,7 +4233,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="sin-example">
         /// <code lang="fsharp">
-        ///
+        /// sin (0.0 * System.Math.PI) // evaluates to 0.0
+        /// sin (0.5 * System.Math.PI) // evaluates to 1.0
+        /// sin (1.0 * System.Math.PI) // evaluates to 1.224646799e-16
         /// </code>
         /// </example>
         ///  
@@ -4244,7 +4250,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="sinh-example">
         /// <code lang="fsharp">
-
+        /// sinh -1.0 // evaluates to -1.175201194
+        /// sinh 0.0  // evaluates to 0.0
+        /// sinh 1.0  // evaluates to 1.175201194
         /// </code>
         /// </example>
         ///  
@@ -4259,7 +4267,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="tan-example">
         /// <code lang="fsharp">
-        ///
+        /// tan (-0.5 * System.Math.PI) // evaluates to -1.633123935e+16
+        /// tan (0.0 * System.Math.PI)  // evaluates to 0.0
+        /// tan (0.5 * System.Math.PI)  // evaluates to 1.633123935e+16
         /// </code>
         /// </example>
         ///  
@@ -4274,7 +4284,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="tanh-example">
         /// <code lang="fsharp">
-        ///
+        /// tanh -1.0 // evaluates to -0.761594156
+        /// tanh 0.0  // evaluates to 0.0
+        /// tanh 1.0  // evaluates to 0.761594156
         /// </code>
         /// </example>
         ///  
@@ -4289,7 +4301,8 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="truncate-example">
         /// <code lang="fsharp">
-        ///
+        /// truncate 23.92 // evaluates to 23.0
+        /// truncate 23.92f // evaluates to 23.0f
         /// </code>
         /// </example>
         ///  
@@ -4305,7 +4318,7 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="powop-example">
         /// <code lang="fsharp">
-        ///
+        /// 2.0 ** 3 // evaluates to 8.0
         /// </code>
         /// </example>
         ///  
@@ -4320,7 +4333,7 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="pown-example">
         /// <code lang="fsharp">
-        ///
+        /// pown 2.0 3 // evaluates to 8.0
         /// </code>
         /// </example>
         ///  
@@ -4342,7 +4355,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="byte-example">
         /// <code lang="fsharp">
-        ///
+        /// byte 'A'  // evaluates to 65uy
+        /// byte 0xff // evaluates to 255uy
+        /// byte -10  // evaluates to 246uy
         /// </code>
         /// </example>
         ///  
@@ -4360,7 +4375,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="sbyte-example">
         /// <code lang="fsharp">
-        ///
+        /// sbyte 'A'  // evaluates to 65y
+        /// sbyte 0xff // evaluates to -1y
+        /// sbyte -10  // evaluates to -10y
         /// </code>
         /// </example>
         ///  
@@ -4378,7 +4395,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="int16-example">
         /// <code lang="fsharp">
-        ///
+        /// int16 'A'  // evaluates to 65s
+        /// int16 0xff // evaluates to 255s
+        /// int16 -10  // evaluates to -10s
         /// </code>
         /// </example>
         ///  
@@ -4396,7 +4415,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="uint16-example">
         /// <code lang="fsharp">
-        ///
+        /// uint16 'A'  // evaluates to 65us
+        /// uint16 0xff // evaluates to 255s
+        /// uint16 -10  // evaluates to 65526us
         /// </code>
         /// </example>
         ///  
@@ -4414,7 +4435,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="int-example">
         /// <code lang="fsharp">
-        ///
+        /// int 'A'  // evaluates to 65
+        /// int 0xff // evaluates to 255
+        /// int -10  // evaluates to -10
         /// </code>
         /// </example>
         ///  
@@ -4432,7 +4455,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="uint-example">
         /// <code lang="fsharp">
-        ///
+        /// uint 'A'  // evaluates to 65u
+        /// uint 0xff // evaluates to 255u
+        /// uint -10  // evaluates to 4294967286u
         /// </code>
         /// </example>
         ///  
@@ -4447,7 +4472,11 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="enum-example">
         /// <code lang="fsharp">
-        ///
+        /// type Color =
+        /// | Red = 1
+        /// | Green = 2
+        /// | Blue = 3
+        /// let c: Color = enum 3 // c evaluates to Blue
         /// </code>
         /// </example>
         ///  
@@ -4465,7 +4494,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="int32-example">
         /// <code lang="fsharp">
-        ///
+        /// int32 'A'  // evaluates to 65
+        /// int32 0xff // evaluates to 255
+        /// int32 -10  // evaluates to -10
         /// </code>
         /// </example>
         ///  
@@ -4483,7 +4514,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="uint32-example">
         /// <code lang="fsharp">
-        ///
+        /// uint32 'A'  // evaluates to 65u
+        /// uint32 0xff // evaluates to 255u
+        /// uint32 -10  // evaluates to 4294967286u
         /// </code>
         /// </example>
         ///  
@@ -4501,7 +4534,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="int64-example">
         /// <code lang="fsharp">
-        ///
+        /// int64 'A'  // evaluates to 65L
+        /// int64 0xff // evaluates to 255L
+        /// int64 -10  // evaluates to -10L
         /// </code>
         /// </example>
         ///  
@@ -4519,7 +4554,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="uint64-example">
         /// <code lang="fsharp">
-        ///
+        /// uint64 'A'  // evaluates to 65UL
+        /// uint64 0xff // evaluates to 255UL
+        /// uint64 -10  // evaluates to 18446744073709551606UL
         /// </code>
         /// </example>
         ///  
@@ -4537,7 +4574,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="float32-example">
         /// <code lang="fsharp">
-        ///
+        /// float32 'A'  // evaluates to 65.0f
+        /// float32 0xff // evaluates to 255.0f
+        /// float32 -10  // evaluates to -10.0f
         /// </code>
         /// </example>
         ///  
@@ -4555,7 +4594,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="float-example">
         /// <code lang="fsharp">
-        ///
+        /// float 'A'  // evaluates to 65.0
+        /// float 0xff // evaluates to 255.0
+        /// float -10  // evaluates to -10.0
         /// </code>
         /// </example>
         ///  
@@ -4572,7 +4613,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="nativeint-example">
         /// <code lang="fsharp">
-        ///
+        /// nativeint 'A'  // evaluates to 65n
+        /// nativeint 0xff // evaluates to 255n
+        /// nativeint -10  // evaluates to -10n
         /// </code>
         /// </example>
         ///  
@@ -4589,7 +4632,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="unativeint-example">
         /// <code lang="fsharp">
-        ///
+        /// unativeint 'A'  // evaluates to 65un
+        /// unativeint 0xff // evaluates to 255un
+        /// unativeint -10  // evaluates to 18446744073709551606un
         /// </code>
         /// </example>
         ///  
@@ -4598,7 +4643,7 @@ namespace Microsoft.FSharp.Core
         
         /// <summary>Converts the argument to a string using <c>ToString</c>.</summary>
         ///
-        /// <remarks>For standard integer and floating point values the and any type that implements <c>IFormattable</c>
+        /// <remarks>For standard integer and floating point values and any type that implements <c>IFormattable</c>
         /// <c>ToString</c> conversion uses <c>CultureInfo.InvariantCulture</c>. </remarks>
         /// <param name="value">The input value.</param>
         ///
@@ -4606,7 +4651,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="string-example">
         /// <code lang="fsharp">
-        ///
+        /// string 'A'  // evaluates to "A"
+        /// string 0xff // evaluates to "255"
+        /// string -10  // evaluates to "-10"
         /// </code>
         /// </example>
         ///  
@@ -4624,7 +4671,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="decimal-example">
         /// <code lang="fsharp">
-        ///
+        /// decimal "42.23" // evaluates to 42.23M
+        /// decimal 0xff    // evaluates to 255M
+        /// decimal -10     // evaluates to -10M
         /// </code>
         /// </example>
         ///  
@@ -4641,7 +4690,9 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="char-example">
         /// <code lang="fsharp">
-        ///
+        /// char "A"  // evaluates to 'A'
+        /// char 0x41 // evaluates to 'A'
+        /// char 65   // evaluates to 'A'
         /// </code>
         /// </example>
         ///  
@@ -4656,7 +4707,10 @@ namespace Microsoft.FSharp.Core
         /// 
         /// <example id="keyvalue-example">
         /// <code lang="fsharp">
-        ///
+        /// let kv = System.Collections.Generic.KeyValuePair(42, "the answer")
+        /// match kv with // evaluates to "found it"
+        /// | KeyValue (42, v) -> "found it"
+        /// | KeyValue (k, v) -> "keep waiting"
         /// </code>
         /// </example>
         ///  
