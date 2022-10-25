@@ -92,15 +92,15 @@
         let pline = line - 1
         if pline >= 1 then 
           let num = lineNum pline nrl
-          result := num+": "+source.[pline-1]+"\n"
+          result.Value <- num+": "+source.[pline-1]+"\n"
 
         //current line
         let text = source.[line-1]
         if column <= text.Length then
           let arrow = "-" |> stringRepeat (nrl + column)
-          result := !result+nr+": "+text+"\n"+arrow+"^\n"
+          result.Value <- result.Value+nr+": "+text+"\n"+arrow+"^\n"
 
-      !result
+      result.Value
 
   let exn msg = Exn(msg, (0, 0)) |> raise
   let exnLine pos msg = 
@@ -124,12 +124,12 @@
     match pwr with Some pwr -> pwr | _ -> 0
 
   let current parser =  
-    match !parser.Input with
+    match parser.Input.Value with
     | token::_ -> token
     | _ -> unexpectedEnd ()
 
   let currentTry parser = 
-    match !parser.Input with
+    match parser.Input.Value with
     | token::_ -> Some token
     | _ -> None
 
@@ -142,14 +142,14 @@
     | _ -> None
 
   let skip parser =
-    match !parser.Input with
-    | _::input -> parser.Input := input
+    match parser.Input.Value with
+    | _::input -> parser.Input.Value <- input
     | _ -> unexpectedEnd ()
 
   let skipIf type' parser =
-    match !parser.Input with
+    match parser.Input.Value with
     | token::xs when parser.Type token = type' -> 
-      parser.Input := xs
+      parser.Input.Value <- xs
 
     | token::_ -> 
       unexpectedToken token parser
@@ -195,7 +195,7 @@
     expr
 
   let rec exprList parser =
-    match !parser.Input with
+    match parser.Input.Value with
     | [] -> []
     | _ -> (parser |> expr) :: (parser |> exprList)
 
@@ -206,7 +206,7 @@
     | None -> parser |> exprSkip term
 
   let rec stmtList term parser =
-    match !parser.Input with
+    match parser.Input.Value with
     | [] -> []
     | _ -> (parser |> stmt term) :: (parser |> stmtList term)
 
