@@ -127,7 +127,6 @@
         <target state="translated">Argument {0} neodpovídá</target>
         <note />
       </trans-unit>
-<<<<<<< HEAD
       <trans-unit id="csStructNullConstraintInconsistent">
         <source>The constraints 'struct' and 'null' are inconsistent</source>
         <target state="new">The constraints 'struct' and 'null' are inconsistent</target>
@@ -141,11 +140,11 @@
       <trans-unit id="csTypeHasNullAsTrueValue">
         <source>The type '{0}' has 'null' as a true representation value but a constraint does not permit this</source>
         <target state="new">The type '{0}' has 'null' as a true representation value but a constraint does not permit this</target>
-=======
+        <note />
+      </trans-unit>
       <trans-unit id="elseBranchHasWrongTypeTuple">
         <source>All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</source>
         <target state="new">All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length {0} of type\n    {1}    \nThis branch returns a tuple of length {2} of type\n    {3}    \n</target>
->>>>>>> 4ad56150efde1882f3b5879ad01840437eb2b334
         <note />
       </trans-unit>
       <trans-unit id="etProviderHasDesignerAssemblyDependency">
@@ -1063,22 +1062,16 @@
         <target state="translated">Tento výraz implicitně převede typ {0} na typ {1}. Přečtěte si téma https://aka.ms/fsharp-implicit-convs.</target>
         <note />
       </trans-unit>
-<<<<<<< HEAD
-<<<<<<< HEAD
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
         <source>The type '{0}' does not support a nullness qualitification.</source>
         <target state="new">The type '{0}' does not support a nullness qualitification.</target>
         <note />
       </trans-unit>
-=======
->>>>>>> f64e783b427d2e88b744fbb350cbb7d7c363e17e
-=======
       <trans-unit id="tcSynTypeOrInvalidInDeclaration">
         <source>SynType.Or is not permitted in this declaration</source>
         <target state="new">SynType.Or is not permitted in this declaration</target>
         <note />
       </trans-unit>
->>>>>>> 80c3d34989a79dbde8fb797ac32a5a465d33ee51
       <trans-unit id="tcTraitHasMultipleSupportTypes">
         <source>The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</source>
         <target state="new">The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</target>

@@ -4310,7 +4310,7 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
         TcLongIdentType kindOpt cenv newOk checkConstraints occ iwsam env tpenv synLongId
 
     | MultiDimensionArrayType (rank, elemTy, m) ->
-        TcElementType cenv newOk checkConstraints occ env tpenv rank elemTy m
+        TcArrayType cenv newOk checkConstraints occ env tpenv rank elemTy m
     
     | SynType.App (StripParenTypes (SynType.LongIdent longId), _, args, _, _, postfix, m) ->
         TcLongIdentAppType kindOpt cenv newOk checkConstraints occ iwsam env tpenv longId postfix args m
@@ -4355,7 +4355,7 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
         NewErrorType (), tpenv
 
     | SynType.WithNull(innerTy, ambivalent, m) -> 
-        let innerTyC, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ env tpenv innerTy
+        let innerTyC, tpenv = TcTypeAndRecover cenv newOk checkConstraints occ WarnOnIWSAM.Yes env tpenv innerTy
         if g.langFeatureNullness then 
             if TypeNullNever g innerTyC then
                 let tyString = NicePrint.minimalStringOfType env.DisplayEnv innerTyC

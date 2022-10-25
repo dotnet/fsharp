@@ -326,10 +326,10 @@ type LensDisplayService (view : IWpfTextView, buffer : ITextBuffer) as self =
                         |> Seq.map (fun trackingSpan ->
                                 let success, res = self.UiElements.TryGetValue trackingSpan
                                 if success then 
-                                    res 
-                                else null
+                                    Some res 
+                                else None
                             )
-                        |> Seq.filter (fun ui -> not(isNull ui) && not(self.AddedAdornments.Contains ui))
+                        |> Seq.choose (function Some ui when not (self.AddedAdornments.Contains ui) -> Some ui | _ ->  None)
                         |> Seq.iter(fun grid ->
                                 layer.AddAdornment(AdornmentPositioningBehavior.OwnerControlled, Nullable(), 
                                     self, grid, AdornmentRemovedCallback(fun _ _ -> self.AddedAdornments.Remove grid |> ignore)) |> ignore

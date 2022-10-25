@@ -71,14 +71,6 @@ let IsOptimizationDataResourceB (r: ILResource) =
     r.Name.StartsWithOrdinal FSharpOptimizationDataResourceNameB
     || r.Name.StartsWithOrdinal FSharpOptimizationCompressedDataResourceNameB
 
-let GetSignatureDataResourceName (r: ILResource) =
-    if r.Name.StartsWithOrdinal FSharpSignatureDataResourceName then
-        String.dropPrefix r.Name FSharpSignatureDataResourceName
-    elif r.Name.StartsWithOrdinal FSharpSignatureDataResourceNameB then
-        String.dropPrefix r.Name FSharpSignatureDataResourceNameB
-    elif r.Name.StartsWithOrdinal FSharpSignatureDataResourceName2 then
-        String.dropPrefix r.Name FSharpSignatureDataResourceName2
-
 let decompressResource (r: ILResource) =
     use raw = r.GetBytes().AsStream()
     use decompressed = new MemoryStream()
@@ -87,61 +79,61 @@ let decompressResource (r: ILResource) =
     deflator.Close()
     ByteStorage.FromByteArray(decompressed.ToArray()).GetByteMemory()
 
+let GetSignatureDataResourceName (r: ILResource) =
+    if r.Name.StartsWithOrdinal FSharpSignatureDataResourceName then
+        (fun () -> r.GetBytes()), String.dropPrefix r.Name FSharpSignatureDataResourceName
+    elif r.Name.StartsWithOrdinal FSharpSignatureCompressedDataResourceName then
+        (fun () -> decompressResource r), String.dropPrefix r.Name FSharpSignatureCompressedDataResourceName
+    elif r.Name.StartsWithOrdinal FSharpSignatureDataResourceNameB then
+        (fun () -> r.GetBytes()), String.dropPrefix r.Name FSharpSignatureDataResourceNameB
+    elif r.Name.StartsWithOrdinal FSharpSignatureCompressedDataResourceNameB then
+        (fun () -> decompressResource r), String.dropPrefix r.Name FSharpSignatureCompressedDataResourceNameB
+    elif r.Name.StartsWithOrdinal FSharpSignatureDataResourceName2 then
+        (fun () -> r.GetBytes()), String.dropPrefix r.Name FSharpSignatureDataResourceName2
+    else
+        failwith "unreachable"
+
 let GetResourceNameAndSignatureDataFuncs (resources: ILResource list) =
     [ for r in resources do
         if IsSignatureDataResource r then
-            let compressed, ccuName =
-                if r.Name.StartsWithOrdinal FSharpSignatureDataResourceName then
-                    FSharpSignatureDataResourceName, String.dropPrefix r.Name FSharpSignatureDataResourceName
-                elif r.Name.StartsWithOrdinal FSharpSignatureCompressedDataResourceName then
-                    true, String.dropPrefix r.Name FSharpSignatureCompressedDataResourceName
-                elif r.Name.StartsWithOrdinal FSharpSignatureDataResourceName2 then
-                    FSharpSignatureDataResourceName2, String.dropPrefix r.Name FSharpSignatureDataResourceName2
-                else
-                    failwith "GetSignatureDataResourceName"
-
-            let readerA = 
-                if compressed then
-                    (fun () -> decompressResource r)
-                else
-                    (fun () -> r.GetBytes())
+            let readerA, ccuName = GetSignatureDataResourceName r
 
             let readerB =
                 resources |> List.tryPick (fun rB -> 
                     if IsSignatureDataResourceB rB then 
-                        let ccuNameB = GetSignatureDataResourceName rB
+                        let readerB, ccuNameB = GetSignatureDataResourceName rB
                         if ccuName = ccuNameB then
-                            Some (fun () -> rB.GetBytes() )
+                            Some readerB
                         else None
                     else None)
 
             ccuName, (readerA, readerB) ]
 
+let GetOptimizationDataResourceName (r: ILResource) =
+    if r.Name.StartsWithOrdinal FSharpOptimizationDataResourceName then
+        (fun () -> r.GetBytes()), String.dropPrefix r.Name FSharpOptimizationDataResourceName
+    elif r.Name.StartsWithOrdinal FSharpOptimizationCompressedDataResourceName then
+        (fun () -> decompressResource r), String.dropPrefix r.Name FSharpOptimizationCompressedDataResourceName
+    elif r.Name.StartsWithOrdinal FSharpOptimizationDataResourceNameB then
+        (fun () -> r.GetBytes()), String.dropPrefix r.Name FSharpOptimizationDataResourceNameB
+    elif r.Name.StartsWithOrdinal FSharpOptimizationCompressedDataResourceNameB then
+        (fun () -> decompressResource r), String.dropPrefix r.Name FSharpOptimizationCompressedDataResourceNameB
+    elif r.Name.StartsWithOrdinal FSharpOptimizationDataResourceName2 then
+        (fun () -> r.GetBytes()), String.dropPrefix r.Name FSharpOptimizationDataResourceName2
+    else
+        failwith $"GetOptimizationDataResourceName - {r.Name}"
+
 let GetResourceNameAndOptimizationDataFuncs (resources: ILResource list) =
     [ for r in resources do
         if IsOptimizationDataResource r then
-            let resourceType, ccuName =
-                if r.Name.StartsWithOrdinal FSharpOptimizationDataResourceName then
-                    false, String.dropPrefix r.Name FSharpOptimizationDataResourceName
-                elif r.Name.StartsWithOrdinal FSharpOptimizationCompressedDataResourceName then
-                    true, String.dropPrefix r.Name FSharpOptimizationCompressedDataResourceName
-                elif r.Name.StartsWithOrdinal FSharpOptimizationDataResourceName2 then
-                    false, String.dropPrefix r.Name FSharpOptimizationDataResourceName2
-                else
-                    failwith "GetOptimizationDataResourceName"
-
-            let readerA = 
-                if compressed then
-                    (fun () -> decompressResource r)
-                else
-                    (fun () -> r.GetBytes())
+            let readerA, ccuName = GetOptimizationDataResourceName r
 
             let readerB =
                 resources |> List.tryPick (fun rB -> 
-                    if IsSignatureDataResourceB rB then 
-                        let ccuNameB = GetOptimizationDataResourceName rB
+                    if IsOptimizationDataResourceB rB then 
+                        let readerB, ccuNameB = GetOptimizationDataResourceName rB
                         if ccuName = ccuNameB then
-                            Some (fun () -> rB.GetBytes() )
+                            Some readerB
                         else None
                     else None)
             ccuName, (readerA, readerB) ]
@@ -224,15 +216,19 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
 
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers
     // don't complain when they see the resource.
-    let rName, compress =
+    let rName =
         if tcConfig.compressMetadata then
-            FSharpSignatureCompressedDataResourceName, true
+            FSharpSignatureCompressedDataResourceName
         elif ccu.AssemblyName = getFSharpCoreLibraryName then
-            FSharpSignatureDataResourceName2, false
+            FSharpSignatureDataResourceName2
         else
-            FSharpSignatureDataResourceName, false
+            FSharpSignatureDataResourceName
 
-    let rNameB = FSharpSignatureDataResourceNameB
+    let rNameB =
+        if tcConfig.compressMetadata then
+            FSharpSignatureCompressedDataResourceNameB
+        else
+            FSharpSignatureDataResourceNameB
 
     let includeDir =
         if String.IsNullOrEmpty tcConfig.implicitIncludeDir then
@@ -246,7 +242,7 @@ let WriteSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, ccu: Ccu
         inMem
         fileName
         tcGlobals
-        compress
+        tcConfig.compressMetadata
         ccu
         (rName + ccu.AssemblyName)
         (rNameB + ccu.AssemblyName)
@@ -270,21 +266,25 @@ let GetOptimizationData (file, ilScopeRef, ilModule, byteReaderA, byteReaderB) =
 let WriteOptimizationData (tcConfig: TcConfig, tcGlobals, fileName, inMem, ccu: CcuThunk, modulInfo) =
     // For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers
     // don't complain when they see the resource.
-    let rName, compress =
+    let rName =
         if tcConfig.compressMetadata then
-            FSharpOptimizationCompressedDataResourceName, true
+            FSharpOptimizationCompressedDataResourceName
         elif ccu.AssemblyName = getFSharpCoreLibraryName then
-            FSharpOptimizationDataResourceName2, false
+            FSharpOptimizationDataResourceName2
         else
-            FSharpOptimizationDataResourceName, false
+            FSharpOptimizationDataResourceName
 
-    let rNameB = FSharpOptimizationDataResourceNameB
+    let rNameB =
+        if tcConfig.compressMetadata then
+            FSharpOptimizationCompressedDataResourceNameB
+        else
+            FSharpOptimizationDataResourceNameB
 
     PickleToResource
         inMem
         fileName
         tcGlobals
-        compress
+        tcConfig.compressMetadata
         ccu
         (rName + ccu.AssemblyName)
         (rNameB + ccu.AssemblyName)
@@ -311,7 +311,7 @@ let EncodeSignatureData (tcConfig: TcConfig, tcGlobals, exportRemapping, generat
     else
         [], []
 
-let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapping, data, isIncrementalBuild) =
+let EncodeOptimizationData (tcConfig: TcConfig, tcGlobals, outfile, exportRemapping, data, isIncrementalBuild) =
     if tcConfig.GenerateOptimizationData then
         let data = map2Of2 (Optimizer.RemapOptimizationInfo tcGlobals exportRemapping) data
 
@@ -322,7 +322,7 @@ let EncodeOptimizationData (tcGlobals, tcConfig: TcConfig, outfile, exportRemapp
                 data
 
         let r1, r2 =
-            WriteOptimizationData(tcGlobals, outfile, isIncrementalBuild, ccu, optData)
+            WriteOptimizationData(tcConfig, tcGlobals, outfile, isIncrementalBuild, ccu, optData)
 
         let resources =
             [
@@ -1045,7 +1045,6 @@ type RawFSharpAssemblyData(ilModule: ILModuleDef, ilAssemblyRefs) =
 
         member _.GetRawFSharpSignatureData(_, _, _) =
             let resources = ilModule.Resources.AsList()
-
             GetResourceNameAndSignatureDataFuncs resources
 
         member _.GetRawFSharpOptimizationData(_, _, _) =

@@ -152,9 +152,9 @@ type internal InlineRenameService
             return InlineRenameInfo(document, triggerSpan, symbol, symbolUse, declLoc, checkFileResults) :> FSharpInlineRenameInfo
         }
     
-    override _.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<FSharpInlineRenameInfo> =
+    override _.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<FSharpInlineRenameInfo MaybeNull> =
         asyncMaybe {
             return! InlineRenameService.GetInlineRenameInfo(document, position)
         }
-        |> Async.map (Option.defaultValue null)
+        |> Async.map Option.toObj
         |> RoslynHelpers.StartAsyncAsTask(cancellationToken)

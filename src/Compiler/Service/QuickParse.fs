@@ -277,7 +277,7 @@ module QuickParse =
 
     /// Get the partial long name of the identifier to the left of index.
     /// For example, for `System.DateTime.Now` it returns PartialLongName ([|"System"; "DateTime"|], "Now", Some 32), where "32" pos of the last dot.
-    let GetPartialLongNameAux (lineStr: string, index: int) : PartialLongName =
+    let GetPartialLongNameExAux (lineStr: string, index: int) : PartialLongName =
         if index < 0 then
             PartialLongName.Empty(index)
         elif index >= lineStr.Length then
@@ -424,7 +424,7 @@ module QuickParse =
     let GetPartialLongNameEx (lineStr: string MaybeNull, index: int) : PartialLongName =
         match lineStr with
         | Null -> PartialLongName.Empty(index)
-        | NonNull lineStr -> GetPartialLongNameAux(lineStr, index)
+        | NonNull lineStr -> GetPartialLongNameExAux(lineStr, index)
 
     let TokenNameEquals (tokenInfo: FSharpTokenInfo) (token2: string) =
         String.Compare(tokenInfo.TokenName, token2, StringComparison.OrdinalIgnoreCase) = 0

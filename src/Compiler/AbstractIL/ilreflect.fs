@@ -265,7 +265,7 @@ type TypeBuilder with
         let t = typB.CreateTypeAndLog()
 
         let m =
-            if t <> null then
+            if box t <> null then
                 t.GetMethod(nm, (args |> Seq.map (fun x -> x.GetType()) |> Seq.toArray))
             else
                 null

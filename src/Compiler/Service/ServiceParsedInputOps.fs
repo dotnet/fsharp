@@ -668,6 +668,7 @@ module ParsedInput =
             | SynType.Array (_, t, _) -> walkType t
             | SynType.Fun (argType = t1; returnType = t2) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
             | SynType.WithGlobalConstraints (t, _, _) -> walkType t
+            | SynType.WithNull (t, _, _)
             | SynType.HashConstraint (t, _) -> walkType t
             | SynType.MeasureDivide (t1, t2, _)
             | SynType.Or (t1, t2, _, _) -> walkType t1 |> Option.orElseWith (fun () -> walkType t2)
@@ -676,6 +677,7 @@ module ParsedInput =
             | SynType.SignatureParameter (usedType = t) -> walkType t
             | SynType.StaticConstantExpr (e, _) -> walkExpr e
             | SynType.StaticConstantNamed (ident, value, _) -> List.tryPick walkType [ ident; value ]
+            | SynType.StaticConstantNull _
             | SynType.Anon _
             | SynType.AnonRecd _
             | SynType.LongIdent _
@@ -1675,6 +1677,7 @@ module ParsedInput =
             | SynType.Array (_, t, _)
             | SynType.HashConstraint (t, _)
             | SynType.MeasurePower (t, _, _)
+            | SynType.WithNull (t, _, _)
             | SynType.Paren (t, _)
             | SynType.SignatureParameter (usedType = t) -> walkType t
             | SynType.Fun (argType = t1; returnType = t2)
@@ -1695,6 +1698,7 @@ module ParsedInput =
             | SynType.StaticConstantNamed (ident, value, _) ->
                 walkType ident
                 walkType value
+            | SynType.StaticConstantNull _
             | SynType.Anon _
             | SynType.AnonRecd _
             | SynType.Var _

@@ -126,11 +126,8 @@ type LanguageVersion(versionText) =
 
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
-<<<<<<< HEAD
                 LanguageFeature.NullnessChecking, previewVersion
-=======
                 LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, previewVersion
->>>>>>> 07b0a6bfcd5cb3ba9cff55bca415e0eb94d37626
             ]
 
     static let defaultLanguageVersion = LanguageVersion("default")
