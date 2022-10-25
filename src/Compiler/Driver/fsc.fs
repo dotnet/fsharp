@@ -1139,7 +1139,6 @@ let main4
         GenerateIlxCode(
             codegenBackend,
             Option.isSome dynamicAssemblyCreator,
-            false,
             tcConfig,
             topAttrs,
             optimizedImpls,
