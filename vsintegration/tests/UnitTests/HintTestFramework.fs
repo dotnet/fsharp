@@ -45,9 +45,8 @@ let getFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
         SourceText.From fsCode)
 
 let getHints document = 
-    task {
+    async {
         let! hints = HintService.getHintsForDocument document "test" CancellationToken.None
         return hints |> Seq.map convert
     }
-    |> Async.AwaitTask
     |> Async.RunSynchronously
