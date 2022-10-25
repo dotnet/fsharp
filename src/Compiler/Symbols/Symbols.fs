@@ -266,7 +266,10 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
 
     static member Create(cenv, item): FSharpSymbol = 
         let dflt() = FSharpSymbol(cenv, (fun () -> item), (fun _ _ _ -> true)) 
-        match item with 
+        match item with
+        | Item.Value v when v.Deref.IsClassConstructor ->
+            FSharpMemberOrFunctionOrValue(cenv, C (FSMeth(cenv.g, generalizeTyconRef cenv.g v.DeclaringEntity |> snd, v, None)), item) :> _
+
         | Item.Value v -> FSharpMemberOrFunctionOrValue(cenv, V v, item) :> _
         | Item.UnionCase (uinfo, _) -> FSharpUnionCase(cenv, uinfo.UnionCaseRef) :> _
         | Item.ExnCase tcref -> FSharpEntity(cenv, tcref) :>_
@@ -632,8 +635,10 @@ type FSharpEntity(cenv: SymbolEnv, entity: EntityRef) =
       protect <| fun () -> 
         ([ let entityTy = generalizedTyconRef cenv.g entity
            let createMember (minfo: MethInfo) =
-               if minfo.IsConstructor then FSharpMemberOrFunctionOrValue(cenv, C minfo, Item.CtorGroup (minfo.DisplayName, [minfo]))
-               else FSharpMemberOrFunctionOrValue(cenv, M minfo, Item.MethodGroup (minfo.DisplayName, [minfo], None))
+               if minfo.IsConstructor || minfo.IsClassConstructor then
+                   FSharpMemberOrFunctionOrValue(cenv, C minfo, Item.CtorGroup (minfo.DisplayName, [minfo]))
+               else
+                   FSharpMemberOrFunctionOrValue(cenv, M minfo, Item.MethodGroup (minfo.DisplayName, [minfo], None))
            if x.IsFSharpAbbreviation then 
                ()
            elif x.IsFSharp then 
