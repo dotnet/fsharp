@@ -69,7 +69,7 @@
       <NgenArchitecture>All</NgenArchitecture>
       <NgenPriority>2</NgenPriority>
       <Private>True</Private>
-      <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
     </ProjectReference>
 
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj">
