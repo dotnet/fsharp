@@ -130,8 +130,8 @@
 - have any of the following characters: / ? : &amp;  \ * " &lt; &gt; | # %</source>
         <target state="translated">Für Dateien und Ordner gilt Folgendes:
 – Sie dürfen keine leeren Zeichenfolgen sein. 
-– Sie dürfen keine für das System reservierten Namen aufweisen, einschließlich "CON", "AUX", PRN", "COM1" oder "LPT2". 
-– Sie dürfen nicht ausschließlich "." enthalten.
+– Sie dürfen keine für das System reservierten Namen aufweisen, einschließlich „CON“, „AUX“, „PRN“, „COM1“ oder „LPT2“. 
+– Sie dürfen nicht ausschließlich „.“ enthalten.
 – Sie dürfen folgende Zeichen nicht aufweisen: / ? : &amp;  \ * " &lt; &gt; | # %</target>
         <note />
       </trans-unit>
@@ -672,7 +672,7 @@
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
         <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
-        <target state="translated">Microsoft Visual F# unterstützt keine Projekte ohne Auswirkungen. Um von dieser Projektvorlage ein F#-Projekt zu erstellen, wählen Sie in Visual Studio "Tools" -&gt; "Optionen" -&gt; "Projekte und Projektmappen" -&gt; "Allgemein" aus, und aktivieren Sie das Kontrollkästchen "Neue Projekte beim Erstellen speichern". Oder legen Sie in der VSTEMPLATE-Datei der Vorlage dieses Projekts im Abschnitt &lt;TemplateData&gt; &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; fest, und wiederholen Sie dann den Vorgang.</target>
+        <target state="translated">Microsoft Visual F# unterstützt keine Projekte ohne Auswirkungen. Um von dieser Projektvorlage ein F#-Projekt zu erstellen, wählen Sie in Visual Studio „Tools“, „Optionen...“, „Projekte und Projektmappen“, „Allgemein“ aus, und aktivieren Sie das Kontrollkästchen „Neue Projekte beim Erstellen speichern“. Oder legen Sie in der VSTEMPLATE-Datei der Vorlage dieses Projekts im &lt;TemplateData&gt; Abschnitt &lt;PromptForSaveOnCreation&gt;TRUE&lt;/PromptForSaveOnCreation&gt; fest, und wiederholen Sie dann den Vorgang.</target>
         <note />
       </trans-unit>
       <trans-unit id="NoWildcardsInProject">

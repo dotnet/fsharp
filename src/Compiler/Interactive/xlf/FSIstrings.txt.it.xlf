@@ -4,7 +4,7 @@
     <body>
       <trans-unit id="fsiEntryPointWontBeInvoked">
         <source>Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</source>
-        <target state="new">Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</target>
+        <target state="translated">Le funzioni con [&lt;EntryPoint&gt;] non vengono richiamate in FSI. '{0}' non è stato richiamato. Eseguire '{1} &lt;args&gt;' per richiamare '{2}' con la matrice di stringhe appropriata degli argomenti della riga di comando.</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInternalAccess">
@@ -15,6 +15,11 @@
       <trans-unit id="fsiIntroPackageSourceUriInfo">
         <source>Include package source uri when searching for packages</source>
         <target state="translated">Includi l'URI di origine pacchetti durante la ricerca di pacchetti</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="fsiIntroTextHashclearInfo">
+        <source>Clear screen</source>
+        <target state="translated">Cancella schermata</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
@@ -44,7 +49,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">Utilizzo: {0} &lt;opzioni&gt; [script.fsx [&lt;argomenti&gt;]]</target>
+        <target state="translated">Utilizzo: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">
@@ -200,11 +205,6 @@
       <trans-unit id="fsiIntroTextHashquitInfo">
         <source>Exit</source>
         <target state="translated">Esci</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="fsiIntroTextHashclearInfo">
-        <source>Clear screen</source>
-        <target state="needs-review-translation">Pulisci terminale</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiIntroTextHeader2commandLine">
