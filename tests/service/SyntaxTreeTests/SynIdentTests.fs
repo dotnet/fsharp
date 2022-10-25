@@ -16,7 +16,7 @@ A.
         |> getParseResults
 
     match ast with
-    | ParsedInput.ImplFile (ParsedImplFileInput(modules = [ SynModuleOrNamespace.SynModuleOrNamespace(decls =
+    | ParsedInput.ImplFile (ParsedImplFileInput(contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls =
         [ SynModuleDecl.Expr(expr = SynExpr.LongIdent (longDotId = lid)) ]) ])) ->
         Assert.AreEqual(1, lid.IdentsWithTrivia.Length)
     | _ -> Assert.Fail $"Could not get valid AST, got {ast}"

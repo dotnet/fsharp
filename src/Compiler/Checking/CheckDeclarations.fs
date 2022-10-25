@@ -531,7 +531,11 @@ module TcRecdUnionAndEnumDeclarations =
                     error(Error(FSComp.SR.tcReturnTypesForUnionMustBeSameAsType(), m))
                 rfields, recordTy
 
-        let names = rfields |> List.map (fun f -> f.DisplayNameCore)
+        let names = rfields
+                    |> Seq.filter (fun f -> not f.rfield_name_generated)
+                    |> Seq.map (fun f -> f.DisplayNameCore)
+                    |> Seq.toList
+
         let xmlDoc = xmldoc.ToXmlDoc(true, Some names)
         Construct.NewUnionCase id rfields recordTy attrs xmlDoc vis
 
