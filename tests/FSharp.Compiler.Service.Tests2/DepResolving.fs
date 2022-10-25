@@ -225,6 +225,11 @@ module internal AutomatedDependencyResolving =
                     ContainsModuleAbbreviations = containsModuleAbbreviations
                 }
             )
+        
+        let nodesByName =
+            nodes
+            |> Seq.map (fun f -> f.Name, f)
+            |> dict
             
         log "ASTs traversed"
         
@@ -325,14 +330,37 @@ module internal AutomatedDependencyResolving =
                         deps
                     // We know a file can't depend on a file further down in the project definition (or on itself)
                     |> Array.filter (fun depIdx -> depIdx < node.Idx)
+                    // Filter out deps onto .fs files that have backing .fsi files
+                    // TODO This isn't fully correct - need to take into account the order of files
+                    |> Array.filter (fun depIdx ->
+                        let dep = nodes[depIdx]
+                        // If it's an impl file
+                        if dep.Name.EndsWith(".fs") then
+                            // See if it has an .fsi file (for now don't consider order)
+                            let depFsiName = dep.Name + "i"
+                            match nodesByName.TryGetValue depFsiName with
+                            | true, _ ->
+                                // There is an .fsi file - remove a dependency onto the .fs file
+                                false
+                            | false, _ ->
+                                // There is no .fsi file - keep the dependency
+                                true
+                        else
+                            // It's a sign file - keep the dependency
+                            true
+                    )
                     
                 // Return the node and its dependencies
                 node.Idx, deps
             )
             |> dict
         
+        let totalSize1 = graph |> Seq.sumBy (fun (KeyValue(k,v)) -> v.Length)
         // Calculate transitive closure of the graph
         let graph = calcTransitiveGraph graph
+        let totalSize2 = graph |> Seq.sumBy (fun (KeyValue(k,v)) -> v.Length)
+        
+        printfn $"Non-transitive size: {totalSize1}, transitive size: {totalSize2}"
         
         let res =
             {

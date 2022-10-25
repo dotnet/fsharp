@@ -105,6 +105,16 @@ let TestHardcodedFiles() =
     |> Seq.iter (fun (KeyValue(idx, deps)) -> printfn $"{graph.Files[idx].Name} -> %+A{deps |> Array.map(fun d -> graph.Files[d].Name)}")
     
     analyseEfficiency graph
+    
+    let totalDeps = graph.Graph |> Seq.sumBy (fun (KeyValue(k, v)) -> v.Length)
+    let topFirstDeps =
+        graph.Graph
+        |> Seq.sumBy (
+            fun (KeyValue(k, v)) ->
+                if v.Length = 0 then 0
+                else v |> Array.map (fun d -> graph.Graph[d].Length) |> Array.max 
+        )
+    printfn $"TotalDeps: {totalDeps}, topFirstDeps: {topFirstDeps}"
 
 let private parseProjectAndGetSourceFiles (projectFile : string) =
     let m = AnalyzerManager()
@@ -129,9 +139,9 @@ let TestProject (projectFile : string) =
             {Name = f; Code = code; AST = ast}
         )
         |> Array.filter (fun x ->
-            true
-            //ASTVisit.extractModuleRefs x.AST
-            //|> Array.forall (function | ReferenceOrAbbreviation.Reference _ -> true | ReferenceOrAbbreviation.Abbreviation _ -> false)
+            // true
+            ASTVisit.extractModuleRefs x.AST
+            |> Array.forall (function | ReferenceOrAbbreviation.Reference _ -> true | ReferenceOrAbbreviation.Abbreviation _ -> false)
         )
     let N = files.Length
     log $"{N} files read and parsed"
@@ -149,4 +159,15 @@ let TestProject (projectFile : string) =
     
     log $"Analysed {N} files, detected {totalDeps}/{maxPossibleDeps} file dependencies (%.1f{100.0 * double(totalDeps) / double(maxPossibleDeps)}%%)."
     log $"Wrote graph in {path}"
+    
     analyseEfficiency graph
+    
+    let totalDeps = graph.Graph |> Seq.sumBy (fun (KeyValue(k, v)) -> v.Length)
+    let topFirstDeps =
+        graph.Graph
+        |> Seq.sumBy (
+            fun (KeyValue(k, v)) ->
+                if v.Length = 0 then 0
+                else v |> Array.map (fun d -> graph.Graph[d].Length) |> Array.max 
+        )
+    printfn $"TotalDeps: {totalDeps}, topFirstDeps: {topFirstDeps}, diff: {totalDeps - topFirstDeps}"
