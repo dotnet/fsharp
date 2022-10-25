@@ -484,3 +484,43 @@ let ``SynType.Fun has range of arrow`` () =
     ])) ->
         assertRange (2, 21) (2, 23) mArrow
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``SynType.Tuple with struct`` () =
+    let parseResults =
+        getParseResults
+            """
+let _: struct (int * int) = ()
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+        SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding(returnInfo = Some (SynBindingReturnInfo(typeName =
+                SynType.Tuple(true, [ SynTupleTypeSegment.Type _ ; SynTupleTypeSegment.Star _ ; SynTupleTypeSegment.Type _ ], mTuple)))) ])
+            ])
+        ])
+     ) ->
+        assertRange (2, 7) (2, 25) mTuple
+        
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``SynType.Tuple with struct, recovery`` () =
+    let parseResults =
+        getParseResults
+            """
+let _: struct (int * int = ()
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+        SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding(returnInfo = Some (SynBindingReturnInfo(typeName =
+                SynType.Tuple(true, [ SynTupleTypeSegment.Type _ ; SynTupleTypeSegment.Star _ ; SynTupleTypeSegment.Type _ ], mTuple)))) ])
+            ])
+        ])
+     ) ->
+        assertRange (2, 7) (2, 24) mTuple
+        
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
