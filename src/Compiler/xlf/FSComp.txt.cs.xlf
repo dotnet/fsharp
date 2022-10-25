@@ -12,6 +12,11 @@
         <target state="translated">Soubor {0} má nerozpoznanou příponu. Zdrojové soubory musí mít příponu .fs, .fsi, .fsx nebo .fsscript.</target>
         <note />
       </trans-unit>
+      <trans-unit id="chkDuplicatedMethodParameter">
+        <source>Duplicate parameter. The parameter '{0}' has been used more that once in this method.</source>
+        <target state="new">Duplicate parameter. The parameter '{0}' has been used more that once in this method.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="chkFeatureNotLanguageSupported">
         <source>Feature '{0}' is not available in F# {1}. Please use language version {2} or greater.</source>
         <target state="translated">Funkce {0} není v jazyce F# {1} dostupná. Použijte prosím jazyk verze {2} nebo vyšší.</target>
@@ -1033,6 +1038,7 @@
         <note />
       </trans-unit>
 <<<<<<< HEAD
+<<<<<<< HEAD
       <trans-unit id="tcTypeDoesNotHaveAnyNull">
         <source>The type '{0}' does not support a nullness qualitification.</source>
         <target state="new">The type '{0}' does not support a nullness qualitification.</target>
@@ -1040,6 +1046,13 @@
       </trans-unit>
 =======
 >>>>>>> f64e783b427d2e88b744fbb350cbb7d7c363e17e
+=======
+      <trans-unit id="tcSynTypeOrInvalidInDeclaration">
+        <source>SynType.Or is not permitted in this declaration</source>
+        <target state="new">SynType.Or is not permitted in this declaration</target>
+        <note />
+      </trans-unit>
+>>>>>>> 80c3d34989a79dbde8fb797ac32a5a465d33ee51
       <trans-unit id="tcTraitHasMultipleSupportTypes">
         <source>The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</source>
         <target state="new">The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</target>

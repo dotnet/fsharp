@@ -76,7 +76,7 @@ module Utils =
     /// General implementation of .Equals(Type) logic for System.Type over symbol types. You can use this with other types too.
     let rec eqTypes (ty1: Type) (ty2: Type) =
         if Object.ReferenceEquals(ty1, ty2) then true
-        elif ty1.IsGenericTypeDefinition then ty2.IsGenericTypeDefinition && ty1.Equals(ty2)
+        elif ty1.IsGenericTypeDefinition then ty2.IsGenericTypeDefinition && Type.op_Equality(ty1, ty2)
         elif ty1.IsGenericType then ty2.IsGenericType && not ty2.IsGenericTypeDefinition && eqTypes (ty1.GetGenericTypeDefinition()) (ty2.GetGenericTypeDefinition()) && lengthsEqAndForall2 (ty1.GetGenericArguments()) (ty2.GetGenericArguments()) eqTypes
         elif ty1.IsArray then ty2.IsArray && ty1.GetArrayRank() = ty2.GetArrayRank() && eqTypes (ty1.GetElementType()) (ty2.GetElementType())
         elif ty1.IsPointer then ty2.IsPointer && eqTypes (ty1.GetElementType()) (ty2.GetElementType())
