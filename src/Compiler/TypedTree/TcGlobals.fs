@@ -1770,6 +1770,8 @@ type TcGlobals(
 
   member _.CompilerGeneratedAttribute = mkCompilerGeneratedAttribute ()
 
+  member _.DebuggerNonUserCodeAttribute = mkDebuggerNonUserCodeAttribute ()
+
   member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
       mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])
 
