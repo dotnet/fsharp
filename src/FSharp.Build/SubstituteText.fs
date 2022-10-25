@@ -5,11 +5,10 @@ namespace FSharp.Build
 open System
 open System.IO
 open Microsoft.Build.Framework
+open Microsoft.Build.Utilities
 
 type SubstituteText() =
-
-    let mutable _buildEngine: IBuildEngine MaybeNull = null
-    let mutable _hostObject: ITaskHost MaybeNull = null
+    inherit Task()
 
     let mutable copiedFiles = new ResizeArray<ITaskItem>()
     let mutable embeddedResources: ITaskItem[] = [||]
@@ -22,18 +21,10 @@ type SubstituteText() =
     [<Output>]
     member _.CopiedFiles = copiedFiles.ToArray()
 
-    interface ITask with
-        member _.BuildEngine
-            with get () = _buildEngine
-            and set (value) = _buildEngine <- value
+    override _.Execute() =
+        copiedFiles.Clear()
 
-        member _.HostObject
-            with get () = _hostObject
-            and set (value) = _hostObject <- value
-
-        member _.Execute() =
-            copiedFiles.Clear()
-
+        if not (isNull embeddedResources) then
             for item in embeddedResources do
                 // Update ITaskItem metadata to point to new location
                 let sourcePath = item.GetMetadata("FullPath")
@@ -91,4 +82,4 @@ type SubstituteText() =
 
                 copiedFiles.Add(item)
 
-            true
+        true
