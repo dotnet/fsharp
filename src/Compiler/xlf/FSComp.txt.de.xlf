@@ -194,12 +194,12 @@
       </trans-unit>
       <trans-unit id="featureInitProperties">
         <source>support for consuming init properties</source>
-        <target state="new">support for consuming init properties</target>
+        <target state="translated">Unterstützung für die Nutzung von Initialisierungseigenschaften</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithAbstractStaticMembers">
         <source>static abstract interface members</source>
-        <target state="new">static abstract interface members</target>
+        <target state="translated">statische abstrakte Schnittstellenmitglieder</target>
         <note />
       </trans-unit>
       <trans-unit id="featureInterfacesWithMultipleGenericInstantiation">
@@ -209,7 +209,7 @@
       </trans-unit>
       <trans-unit id="featureLowercaseDUWhenRequireQualifiedAccess">
         <source>Allow lowercase DU when RequireQualifiedAccess attribute</source>
-        <target state="new">Allow lowercase DU when RequireQualifiedAccess attribute</target>
+        <target state="translated">DU in Kleinbuchstaben zulassen, wenn requireQualifiedAccess-Attribut</target>
         <note />
       </trans-unit>
       <trans-unit id="featureMLCompatRevisions">
@@ -279,7 +279,7 @@
       </trans-unit>
       <trans-unit id="featureRequiredProperties">
         <source>support for required properties</source>
-        <target state="new">support for required properties</target>
+        <target state="translated">Unterstützung für erforderliche Eigenschaften</target>
         <note />
       </trans-unit>
       <trans-unit id="featureResumableStateMachines">
@@ -289,7 +289,7 @@
       </trans-unit>
       <trans-unit id="featureSelfTypeConstraints">
         <source>self type constraints</source>
-        <target state="new">self type constraints</target>
+        <target state="translated">Selbsttypeinschränkungen</target>
         <note />
       </trans-unit>
       <trans-unit id="featureSingleUnderscorePattern">
@@ -339,7 +339,7 @@
       </trans-unit>
       <trans-unit id="forPercentAInReflectionFreeCode">
         <source>The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</source>
-        <target state="new">The '%A' format specifier may not be used in an assembly being compiled with option '--reflectionfree'. This construct implicitly uses reflection.</target>
+        <target state="translated">Der Formatbezeichner „%A“ darf nicht in einer Assembly verwendet werden, die mit der Option „--reflectionfree“ kompiliert wird. Dieses Konstrukt verwendet implizit die Reflektion.</target>
         <note />
       </trans-unit>
       <trans-unit id="formatDashItem">
@@ -379,7 +379,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionAnd">
         <source>Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</source>
-        <target state="new">Used in mutually recursive bindings, in property declarations, and with multiple constraints on generic parameters.</target>
+        <target state="translated">Wird in gegenseitig rekursiven Bindungen, in Eigenschaftendeklarationen und bei mehreren Beschränkungen in Bezug auf generische Parameter verwendet.</target>
         <note />
       </trans-unit>
       <trans-unit id="keywordDescriptionConst">
@@ -389,7 +389,7 @@
       </trans-unit>
       <trans-unit id="keywordDescriptionTypeTest">
         <source>Used to check if an object is of the given type in a pattern or binding.</source>
-        <target state="new">Used to check if an object is of the given type in a pattern or binding.</target>
+        <target state="translated">Wird verwendet, um zu überprüfen, ob ein Objekt in einem Muster oder einer Bindung vom angegebenen Typ ist.</target>
         <note />
       </trans-unit>
       <trans-unit id="lexByteStringMayNotBeInterpolated">
@@ -494,12 +494,12 @@
       </trans-unit>
       <trans-unit id="optsCompressMetadata">
         <source>Compress interface and optimization data files</source>
-        <target state="new">Compress interface and optimization data files</target>
+        <target state="translated">Komprimieren von Schnittstellen- und Optimierungsdatendateien</target>
         <note />
       </trans-unit>
       <trans-unit id="optsGetLangVersions">
         <source>Display the allowed values for language version.</source>
-        <target state="new">Display the allowed values for language version.</target>
+        <target state="translated">Anzeigen der zulässigen Werte für die Sprachversion.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
@@ -514,12 +514,12 @@
       </trans-unit>
       <trans-unit id="optsOptimizationData">
         <source>Specify included optimization information, the default is file. Important for distributed libraries.</source>
-        <target state="new">Specify included optimization information, the default is file. Important for distributed libraries.</target>
+        <target state="translated">Geben Sie die enthaltenen Optimierungsinformationen an, der Standardwert ist „file“. Wichtig für verteilte Bibliotheken.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsPdbMatchesOutputFileName">
         <source>The pdb output file name cannot match the build output filename use --pdb:filename.pdb</source>
-        <target state="new">The pdb output file name cannot match the build output filename use --pdb:filename.pdb</target>
+        <target state="translated">Der Name der PDB-Ausgabedatei kann nicht mit dem Ausgabedateinamen für den Build übereinstimmen, verwenden Sie --pdb:filename.pdb</target>
         <note />
       </trans-unit>
       <trans-unit id="optsRefOnly">
@@ -534,17 +534,17 @@
       </trans-unit>
       <trans-unit id="optsReflectionFree">
         <source>Disable implicit generation of constructs using reflection</source>
-        <target state="new">Disable implicit generation of constructs using reflection</target>
+        <target state="translated">Deaktivieren der impliziten Generierung von Konstrukten mithilfe von Reflektion</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSetLangVersion">
         <source>Specify language version such as 'latest' or 'preview'.</source>
-        <target state="new">Specify language version such as 'latest' or 'preview'.</target>
+        <target state="translated">Geben Sie eine Sprachversion wie „latest“ oder „preview“ an.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSignatureData">
         <source>Include F# interface information, the default is file. Essential for distributing libraries.</source>
-        <target state="new">Include F# interface information, the default is file. Essential for distributing libraries.</target>
+        <target state="translated">Schließen Sie F#-Schnittstelleninformationen ein, der Standardwert ist „file“. Wesentlich für die Verteilung von Bibliotheken.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsSupportedLangVersions">
@@ -554,12 +554,12 @@
       </trans-unit>
       <trans-unit id="optsUnknownOptimizationData">
         <source>Invalid value '{0}' for --optimizationdata, valid value are: none, file, compress.</source>
-        <target state="new">Invalid value '{0}' for --optimizationdata, valid value are: none, file, compress.</target>
+        <target state="translated">Ungültiger Wert „{0}“ für --optimizationdata. Gültige Werte sind: none, file, compress.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnknownSignatureData">
         <source>Invalid value '{0}' for --interfacedata, valid value are: none, file, compress.</source>
-        <target state="new">Invalid value '{0}' for --interfacedata, valid value are: none, file, compress.</target>
+        <target state="translated">Ungültiger Wert „{0}“ für --interfacedata. Gültige Werte sind: none, file, compress.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsUnrecognizedLanguageVersion">
@@ -629,12 +629,12 @@
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr1">
         <source>Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</source>
-        <target state="new">Incomplete character literal (example: 'Q') or qualified type invocation (example: 'T.Name)</target>
+        <target state="translated">Unvollständiges Zeichenliteral (Beispiel: „Q“) oder qualifizierter Typaufruf (Beispiel: „T.Name“)</target>
         <note />
       </trans-unit>
       <trans-unit id="parsIncompleteTyparExpr2">
         <source>Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</source>
-        <target state="new">Incomplete operator expression (example a^b) or qualified type invocation (example: ^T.Name)</target>
+        <target state="translated">Unvollständiger Operatorausdruck (Beispiel: a^b) oder qualifizierter Typaufruf (Beispiel: ^T.Name)</target>
         <note />
       </trans-unit>
       <trans-unit id="parsNewExprMemberAccess">
@@ -814,7 +814,7 @@
       </trans-unit>
       <trans-unit id="tcInitOnlyPropertyCannotBeSet1">
         <source>Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
-        <target state="new">Init-only property '{0}' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <target state="translated">Die Eigenschaft „{0}“ nur für die Initialisierung kann nicht außerhalb des Initialisierungscodes festgelegt werden. Siehe https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInlineIfLambdaUsedOnNonInlineFunctionOrMethod">
@@ -844,7 +844,7 @@
       </trans-unit>
       <trans-unit id="tcInvalidSelfConstraint">
         <source>Invalid constraint. Valid constraint forms include \"'T :&gt; ISomeInterface\" for interface constraints and \"SomeConstrainingType&lt;'T&gt;\" for self-constraints. See https://aka.ms/fsharp-type-constraints.</source>
-        <target state="new">Invalid constraint. Valid constraint forms include \"'T :&gt; ISomeInterface\" for interface constraints and \"SomeConstrainingType&lt;'T&gt;\" for self-constraints. See https://aka.ms/fsharp-type-constraints.</target>
+        <target state="translated">Ungültige Einschränkung. Gültige Einschränkungsformen sind \"'T :&gt; ISomeInterface\" für Schnittstelleneinschränkungen und\"SomeConstrainingType&lt;'T&gt;\" für Selbsteinschränkungen. Siehe https://aka.ms/fsharp-type-constraints.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcInvalidStructReturn">
@@ -889,7 +889,7 @@
       </trans-unit>
       <trans-unit id="tcMissingRequiredMembers">
         <source>The following required properties have to be initalized:{0}</source>
-        <target state="new">The following required properties have to be initalized:{0}</target>
+        <target state="translated">Die folgenden erforderlichen Eigenschaften müssen initialisiert werden:{0}</target>
         <note />
       </trans-unit>
       <trans-unit id="tcNoEagerConstraintApplicationAttribute">
@@ -974,7 +974,7 @@
       </trans-unit>
       <trans-unit id="tcSetterForInitOnlyPropertyCannotBeCalled1">
         <source>Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</source>
-        <target state="new">Cannot call '{0}' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
+        <target state="translated">„{0}“ kann nicht aufgerufen werden – ein Setter für die Eigenschaft nur für die Initialisierung. Bitte verwenden Sie stattdessen die Objektinitialisierung. Siehe https://aka.ms/fsharp-assigning-values-to-properties-at-initialization</target>
         <note />
       </trans-unit>
       <trans-unit id="tcSubsumptionImplicitConversionUsed">
@@ -989,27 +989,27 @@
       </trans-unit>
       <trans-unit id="tcTraitHasMultipleSupportTypes">
         <source>The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</source>
-        <target state="new">The trait '{0}' invoked by this call has multiple support types. This invocation syntax is not permitted for such traits. See https://aka.ms/fsharp-srtp for guidance.</target>
+        <target state="translated">Das Merkmal „{0}“, das von diesem Aufruf aufgerufen wird, weist mehrere Unterstützungstypen auf. Diese Aufrufsyntax ist für solche Merkmale nicht zulässig. Anleitungen finden Sie unter https://aka.ms/fsharp-srtp.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitInvocationShouldUseTick">
         <source>Invocation of a static constraint should use \"'T.Ident\" and not \"^T.Ident\", even for statically resolved type parameters.</source>
-        <target state="new">Invocation of a static constraint should use \"'T.Ident\" and not \"^T.Ident\", even for statically resolved type parameters.</target>
+        <target state="translated">Beim Aufruf einer statischen Einschränkung sollte \"'T.Ident\" verwendet werden und nicht \"^T.Ident\", selbst für statisch aufgelöste Typparameter.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitIsNotStatic">
         <source>Trait '{0}' is not static</source>
-        <target state="new">Trait '{0}' is not static</target>
+        <target state="translated">Das Merkmal „{0}“ ist nicht statisch.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitIsStatic">
         <source>Trait '{0}' is static</source>
-        <target state="new">Trait '{0}' is static</target>
+        <target state="translated">Das Merkmal „{0}“ ist statisch.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcTraitMayNotUseComplexThings">
         <source>A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</source>
-        <target state="new">A trait may not specify optional, in, out, ParamArray, CallerInfo or Quote arguments</target>
+        <target state="translated">Ein Merkmal darf keine Argumente für „optional“, „in“, „out“, „ParamArray“", „CallerInfo“ oder „Quote“ angeben.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUnableToParseInterpolatedString">
@@ -1019,12 +1019,12 @@
       </trans-unit>
       <trans-unit id="tcUsingInterfaceWithStaticAbstractMethodAsType">
         <source>'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</source>
-        <target state="new">'{0}' is normally used as a type constraint in generic code, e.g. \"'T when ISomeInterface&lt;'T&gt;\" or \"let f (x: #ISomeInterface&lt;_&gt;)\". See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3536\"' or '--nowarn:3536'.</target>
+        <target state="translated">„{0}“ wird normalerweise als Typeinschränkung im generischen Code verwendet, z. B. \"'T when ISomeInterface&lt;'T&gt;\" oder \"let f (x: #ISomeInterface&lt;_&gt;)\". Anleitungen finden Sie unter https://aka.ms/fsharp-iwsams. Sie können diese Warnung deaktivieren, indem Sie „#nowarn \"3536\"“ or „--nowarn:3536“ verwenden.</target>
         <note />
       </trans-unit>
       <trans-unit id="tcUsingInterfacesWithStaticAbstractMethods">
         <source>Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</source>
-        <target state="new">Declaring \"interfaces with static abstract methods\" is an advanced feature. See https://aka.ms/fsharp-iwsams for guidance. You can disable this warning by using '#nowarn \"3535\"' or '--nowarn:3535'.</target>
+        <target state="translated">Das Deklarieren von \"Schnittstellen mit statischen abstrakten Methoden\" ist ein erweitertes Feature. Anleitungen finden Sie unter https://aka.ms/fsharp-iwsams. Sie können diese Warnung deaktivieren, indem Sie „#nowarn \"3535\"“ or „--nowarn:3535“ verwenden.</target>
         <note />
       </trans-unit>
       <trans-unit id="typrelInterfaceMemberNoMostSpecificImplementation">
@@ -7514,7 +7514,7 @@
       </trans-unit>
       <trans-unit id="tcStructUnionMultiCaseDistinctFields">
         <source>If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</source>
-        <target state="needs-review-translation">Wenn ein Union-Typ mehrere case-Anweisungen aufweist und eine Struktur ist, müssen für alle Felder im Union-Typ eindeutige Namen angegeben werden.</target>
+        <target state="new">If a multicase union type is a struct, then all union cases must have unique names. For example: 'type A = B of b: int | C of c: int'.</target>
         <note />
       </trans-unit>
       <trans-unit id="CallerMemberNameIsOverriden">
