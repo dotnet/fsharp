@@ -2185,7 +2185,9 @@ module GeneralizationHelpers =
          | Some memberFlags ->
             match memberFlags.MemberKind with
             // can't infer extra polymorphism for properties
-            | SynMemberKind.PropertyGet | SynMemberKind.PropertySet -> false
+            | SynMemberKind.PropertyGet
+            | SynMemberKind.PropertySet
+            | SynMemberKind.PropertyGetSet -> false
             // can't infer extra polymorphism for class constructors
             | SynMemberKind.ClassConstructor -> false
             // can't infer extra polymorphism for constructors
