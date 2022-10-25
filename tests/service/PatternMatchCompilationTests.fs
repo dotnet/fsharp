@@ -781,6 +781,7 @@ let z as =
 """
     dumpDiagnostics checkResults |> shouldEqual [
         "(10,7--10,9): Unexpected keyword 'as' in binding"
+        "(10,5--10,6): Expecting pattern"
         "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token."
         "(12,9--12,11): Unexpected keyword 'as' in binding"
         "(13,8--13,10): Unexpected keyword 'as' in binding"
@@ -801,6 +802,7 @@ let z as =
         "(6,4--6,10): This runtime coercion or type test from type 'a to int involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
         "(8,29--8,30): This expression was expected to have type 'unit' but here has type 'int'"
         "(9,26--9,27): This expression was expected to have type 'unit' but here has type 'int'"
+        "(10,14--10,15): This expression was expected to have type ''a * 'b' but here has type 'int'"
         "(15,4--15,5): The pattern discriminator 'r' is not defined."
         "(15,4--15,12): Incomplete pattern matches on this expression."
     ]
@@ -1182,6 +1184,7 @@ let as :? z =
 """
     dumpDiagnostics checkResults |> shouldEqual [
         "(10,7--10,9): Unexpected keyword 'as' in binding"
+        "(10,5--10,6): Expecting pattern"
         "(11,10--11,12): Unexpected keyword 'as' in binding. Expected '=' or other token."
         "(12,9--12,11): Unexpected keyword 'as' in binding"
         "(13,8--13,10): Unexpected keyword 'as' in binding"
@@ -1209,6 +1212,8 @@ let as :? z =
         "(8,25--8,29): The type 'unit' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
         "(9,25--9,26): The type 'g' is not defined."
         "(9,22--9,26): The type 'unit' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
+        "(10,13--10,14): The type 'i' is not defined."
+        "(10,10--10,14): The type ''a * 'b' does not have any proper subtypes and cannot be used as the source of a type test or runtime coercion."
         "(16,4--16,5): The pattern discriminator 't' is not defined."
         "(16,14--16,15): The type 'u' is not defined."
         "(16,11--16,15): This runtime coercion or type test from type 'a to 'b involves an indeterminate type based on information prior to this program point. Runtime type tests are not allowed on some types. Further type annotations are needed."
