@@ -472,7 +472,6 @@ type TcConfigBuilder =
         mutable embedSourceList: string list
         mutable sourceLink: string
 
-        mutable ignoreSymbolStoreSequencePoints: bool
         mutable internConstantStrings: bool
         mutable extraOptimizationIterations: int
 
@@ -568,6 +567,8 @@ type TcConfigBuilder =
         mutable internalTestSpanStackReferring: bool
 
         mutable noConditionalErasure: bool
+
+        mutable applyLineDirectives: bool
 
         mutable pathMap: PathMap
 
@@ -692,7 +693,6 @@ type TcConfigBuilder =
             embedAllSource = false
             embedSourceList = []
             sourceLink = ""
-            ignoreSymbolStoreSequencePoints = false
             internConstantStrings = true
             extraOptimizationIterations = 0
 
@@ -744,6 +744,7 @@ type TcConfigBuilder =
             internalTestSpanStackReferring = false
             noConditionalErasure = false
             pathMap = PathMap.empty
+            applyLineDirectives = true
             langVersion = LanguageVersion.Default
             implicitIncludeDir = implicitIncludeDir
             defaultFSharpBinariesDir = defaultFSharpBinariesDir
@@ -841,12 +842,6 @@ type TcConfigBuilder =
                 Some(
                     match tcConfigB.debugSymbolFile with
                     | None -> getDebugFileName outfile tcConfigB.portablePDB
-#if ENABLE_MONO_SUPPORT
-                    | Some _ when runningOnMono ->
-                        // On Mono, the name of the debug file has to be "<assemblyname>.mdb" so specifying it explicitly is an error
-                        warning (Error(FSComp.SR.ilwriteMDBFileNameCannotBeChangedWarning (), rangeCmdArgs))
-                        getDebugFileName outfile tcConfigB.portablePDB
-#endif
                     | Some f -> f
                 )
             elif (tcConfigB.debugSymbolFile <> None) && (not tcConfigB.debuginfo) then
@@ -1278,7 +1273,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.embedSourceList = data.embedSourceList
     member _.sourceLink = data.sourceLink
     member _.packageManagerLines = data.packageManagerLines
-    member _.ignoreSymbolStoreSequencePoints = data.ignoreSymbolStoreSequencePoints
     member _.internConstantStrings = data.internConstantStrings
     member _.extraOptimizationIterations = data.extraOptimizationIterations
     member _.win32icon = data.win32icon
@@ -1332,6 +1326,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
     member _.internalTestSpanStackReferring = data.internalTestSpanStackReferring
     member _.noConditionalErasure = data.noConditionalErasure
+    member _.applyLineDirectives = data.applyLineDirectives
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
 
     static member Create(builder, validate) =

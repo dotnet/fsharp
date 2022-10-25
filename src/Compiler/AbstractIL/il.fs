@@ -4207,7 +4207,7 @@ let mkILSimpleModule
             AssemblyLongevity = ILAssemblyLongevity.Unspecified
             DisableJitOptimizations = 0 <> (flags &&& 0x4000)
             JitTracking = (0 <> (flags &&& 0x8000)) // always turn these on
-            IgnoreSymbolStoreSequencePoints = (0 <> (flags &&& 0x2000))
+            IgnoreSymbolStoreSequencePoints = false
             Retargetable = (0 <> (flags &&& 0x100))
             ExportedTypes = exportedTypes
             EntrypointElsewhere = None

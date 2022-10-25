@@ -215,6 +215,22 @@ type SynTypeDefnTrivia =
 
     static member Zero: SynTypeDefnTrivia
 
+/// Represents additional information for SynTypeDefnSig
+[<NoEquality; NoComparison>]
+type SynTypeDefnSigTrivia =
+    {
+        /// The syntax range of the `type` keyword.
+        TypeKeyword: range option
+
+        /// The syntax range of the `=` token.
+        EqualsRange: range option
+
+        /// The syntax range of the `with` keyword
+        WithKeyword: range option
+    }
+
+    static member Zero: SynTypeDefnSigTrivia
+
 /// Represents additional information for SynBinding
 [<NoEquality; NoComparison>]
 type SynBindingTrivia =

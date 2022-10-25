@@ -355,8 +355,6 @@ type TcConfigBuilder =
 
         mutable sourceLink: string
 
-        mutable ignoreSymbolStoreSequencePoints: bool
-
         mutable internConstantStrings: bool
 
         mutable extraOptimizationIterations: int
@@ -471,6 +469,9 @@ type TcConfigBuilder =
 
         /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
         mutable noConditionalErasure: bool
+
+        /// Take '#line' into account? Defaults to true
+        mutable applyLineDirectives: bool
 
         mutable pathMap: PathMap
 
@@ -670,8 +671,6 @@ type TcConfig =
 
     member sourceLink: string
 
-    member ignoreSymbolStoreSequencePoints: bool
-
     member internConstantStrings: bool
 
     member extraOptimizationIterations: int
@@ -807,6 +806,9 @@ type TcConfig =
 
     /// Prevent erasure of conditional attributes and methods so tooling is able analyse them.
     member noConditionalErasure: bool
+
+    /// Take '#line' into account? Defaults to true
+    member applyLineDirectives: bool
 
     /// if true - 'let mutable x = Span.Empty', the value 'x' is a stack referring span. Used for internal testing purposes only until we get true stack spans.
     member internalTestSpanStackReferring: bool

@@ -136,6 +136,7 @@ type CompilerService() =
             DiagnosticOptions = FSharpDiagnosticOptions.Default
             LangVersionText = "default"
             IsInteractive = false
+            ApplyLineDirectives = false
             IndentationAwareSyntax = None
             CompilingFSharpCore = false
             IsExe = false
