@@ -1328,7 +1328,7 @@ let CompilePatternBasic
                  let discrim' =
                      match discrim with
                      | DecisionTreeTest.ActivePatternCase(_pexp, resTys, isStructRetTy, _apatVrefOpt, idx, apinfo) ->
-                         let aparity = apinfo.Names.Length
+                         let aparity = apinfo.ActiveTags.Length
                          let total = apinfo.IsTotal
                          if not total && aparity > 1 then
                              error(Error(FSComp.SR.patcPartialActivePatternsGenerateOneResult(), m))
@@ -1410,7 +1410,7 @@ let CompilePatternBasic
                     // Total active patterns always return choice values
                     let hasParam = (match apatVrefOpt with None -> true | Some (vref, _) -> doesActivePatternHaveFreeTypars g vref)
                     if (hasParam && i = iInvestigated) || (discrimsEq g discrim (Option.get (getDiscrimOfPattern patAtActive))) then
-                        let aparity = apinfo.Names.Length
+                        let aparity = apinfo.ActiveTags.Length
                         let subAccess j tpinst _e' =
                             assert inpExprOpt.IsSome
                             if aparity <= 1 then

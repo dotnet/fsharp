@@ -3,6 +3,7 @@
 // API for declaration lists and method overload lists
 namespace FSharp.Compiler.EditorServices
 
+open System
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.InfoReader
 open FSharp.Compiler.Symbols
@@ -94,10 +95,21 @@ type internal CompletionItem =
 // Note: this type holds a weak reference to compiler resources.
 [<Sealed>]
 type public DeclarationListItem =
+
     /// Get the text to display in the declaration list for the declaration.
+    ///
+    /// This is a display name without backticks.
+    [<Obsolete("Renamed to NameInList - this is the text to appear in the declaration list, while NameInCode is the text inserted on completion.")>]
     member Name: string
 
+    /// Get the text to display in the declaration list for the declaration.
+    ///
+    /// This is a display name without backticks.
+    member NameInList: string
+
     /// Get the text for the declaration as it's to be inserted into source code.
+    ///
+    /// This is a display name with backticks if necessary.
     member NameInCode: string
 
     /// Get the description

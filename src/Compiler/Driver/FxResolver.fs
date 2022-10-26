@@ -386,124 +386,37 @@ type internal FxResolver
     // On coreclr it uses the deps.json file
     //
     // On-demand because (a) some FxResolver are ephemeral (b) we want to avoid recomputation
-    let tryRunningDotNetCoreTfm =
-        lazy
-            let file =
-                try
-                    let asm = Assembly.GetEntryAssembly()
+    let tryGetRunningTfm =
+        let runningTfmOpt =
+            let getTfmNumber (v: string) =
+                let arr = v.Split([| '.' |], 3)
+                arr[0] + "." + arr[1]
 
-                    match asm with
-                    | Null -> ""
-                    | NonNull asm ->
-                        let depsJsonPath = Path.ChangeExtension(asm.Location, "deps.json")
+            // Compute TFM from System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription
+            // System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;;
+            // val it: string = ".NET 6.0.7"
+            // val it: string = ".NET Framework 4.8.4515.0"
+            let name = RuntimeInformation.FrameworkDescription
+            let arr = name.Split([| ' ' |], 3)
 
-                        if FileSystem.FileExistsShim(depsJsonPath) then
-                            use stream = FileSystem.OpenFileForReadShim(depsJsonPath)
-                            stream.ReadAllText()
-                        else
-                            ""
-                with _ ->
-                    // This is defensive coding, we don't expect this exception to happen
-                    // NOTE: consider reporting this exception as a warning
-                    ""
+            match arr[0], arr[1] with
+            | ".NET", "Core" when arr.Length >= 3 -> Some("netcoreapp" + (getTfmNumber arr[2]))
 
-            let tfmPrefix = ".NETCoreApp,Version=v"
-            let pattern = "\"name\": \"" + tfmPrefix
-
-            let startPos =
-                let startPos = file.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
-
-                if startPos >= 0 then
-                    startPos + pattern.Length
+            | ".NET", "Framework" when arr.Length >= 3 ->
+                if arr[ 2 ].StartsWith("4.8") then
+                    Some "net48"
                 else
-                    startPos
+                    Some "net472"
 
-            let length =
-                if startPos >= 0 then
-                    let ep = file.IndexOf("\"", startPos)
-                    if ep >= 0 then ep - startPos else ep
-                else
-                    -1
+            | ".NET", "Native" -> None
 
-            match startPos, length with
-            | -1, _
-            | _, -1 ->
-                if isRunningOnCoreClr then
-                    // Running on coreclr but no deps.json was deployed with the host so default to 6.0
-                    Some "net6.0"
-                else
-                    // Running on desktop
-                    None
-            | pos, length ->
-                // use value from the deps.json file
-                let suffix = file.Substring(pos, length)
+            | ".NET", _ when arr.Length >= 2 -> Some("net" + (getTfmNumber arr[1]))
 
-                let prefix =
-                    match Double.TryParse(suffix) with
-                    | true, value when value < 5.0 -> "netcoreapp"
-                    | _ -> "net"
+            | _ -> None
 
-                Some(prefix + suffix)
-
-    let tryGetRunningDotNetCoreTfm () = tryRunningDotNetCoreTfm.Force()
-
-    // Tries to figure out the tfm for the compiler instance on the Windows desktop
-    // On full clr it uses the mscorlib version number
-    let getRunningDotNetFrameworkTfm () =
-        let defaultMscorlibVersion = 4, 8, 3815, 0
-
-        let desktopProductVersionMonikers =
-            [|
-                // major, minor, build, revision, moniker
-                4, 8, 3815, 0, "net48"
-                4, 8, 3761, 0, "net48"
-                4, 7, 3190, 0, "net472"
-                4, 7, 3062, 0, "net472"
-                4, 7, 2600, 0, "net471"
-                4, 7, 2558, 0, "net471"
-                4, 7, 2053, 0, "net47"
-                4, 7, 2046, 0, "net47"
-                4, 6, 1590, 0, "net462"
-                4, 6, 57, 0, "net462"
-                4, 6, 1055, 0, "net461"
-                4, 6, 81, 0, "net46"
-                4, 0, 30319, 34209, "net452"
-                4, 0, 30319, 17020, "net452"
-                4, 0, 30319, 18408, "net451"
-                4, 0, 30319, 17929, "net45"
-                4, 0, 30319, 1, "net4"
-            |]
-
-        let majorPart, minorPart, buildPart, privatePart =
-            try
-                let attrOpt =
-                    typeof<Object>.Assembly.GetCustomAttributes (typeof<AssemblyFileVersionAttribute>)
-                    |> Seq.tryHead
-
-                match attrOpt with
-                | Some attr ->
-                    let fv =
-                        (downcast attr: AssemblyFileVersionAttribute).Version.Split([| '.' |])
-                        |> Array.map (fun e -> Int32.Parse(e))
-
-                    fv[0], fv[1], fv[2], fv[3]
-                | _ -> defaultMscorlibVersion
-            with _ ->
-                defaultMscorlibVersion
-
-        // Get the ProductVersion of this framework compare with table compatible monikers
-        match
-            desktopProductVersionMonikers
-            |> Array.tryFind (fun (major, minor, build, revision, _) ->
-                (majorPart >= major)
-                && (minorPart >= minor)
-                && (buildPart >= build)
-                && (privatePart >= revision))
-        with
-        | Some (_, _, _, _, moniker) -> moniker
-        | None ->
-            // no TFM could be found, assume latest stable?
-            "net48"
+        match runningTfmOpt with
+        | Some tfm -> tfm
+        | _ -> if isRunningOnCoreClr then "net7.0" else "net472"
 
     let trySdkRefsPackDirectory =
         lazy
@@ -897,58 +810,59 @@ type internal FxResolver
     member _.GetTfmAndRid() =
         fxlock.AcquireLock(fun fxtok ->
             RequireFxResolverLock(fxtok, "assuming all member require lock")
-            // Interactive processes read their own configuration to find the running tfm
 
-            let tfm =
-                if isInteractive then
-                    match tryGetRunningDotNetCoreTfm () with
-                    | Some tfm -> tfm
-                    | _ -> getRunningDotNetFrameworkTfm ()
-                else
-                    let sdkDir = tryGetSdkDir () |> replayWarnings
+            let runningTfm = tryGetRunningTfm
 
-                    match sdkDir with
-                    | Some dir ->
-                        let dotnetConfigFile = Path.Combine(dir, "dotnet.runtimeconfig.json")
-                        use stream = FileSystem.OpenFileForReadShim(dotnetConfigFile)
-                        let dotnetConfig = stream.ReadAllText()
-                        let pattern = "\"tfm\": \""
-
-                        let startPos =
-                            dotnetConfig.IndexOf(pattern, StringComparison.OrdinalIgnoreCase)
-                            + pattern.Length
-
-                        let endPos = dotnetConfig.IndexOf("\"", startPos)
-                        let tfm = dotnetConfig[startPos .. endPos - 1]
-                        //printfn "GetTfmAndRid, tfm = '%s'" tfm
-                        tfm
-                    | None ->
-                        match tryGetRunningDotNetCoreTfm () with
-                        | Some tfm -> tfm
-                        | _ -> getRunningDotNetFrameworkTfm ()
-
+            // Coreclr has mechanism for getting rid
+            //      System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier
+            // On Desktop framework compile it using osplatform+processarch+
             // Computer valid dotnet-rids for this environment:
             //      https://docs.microsoft.com/en-us/dotnet/core/rid-catalog
             //
             // Where rid is: win, win-x64, win-x86, osx-x64, linux-x64 etc ...
             let runningRid =
-                let processArchitecture = RuntimeInformation.ProcessArchitecture
+                let rid =
+                    if isRunningOnCoreClr then
+                        // Use reflection to get the value for rid
+                        let rinfoType: Type option =
+                            Option.ofObj (
+                                Type.GetType(
+                                    "System.Runtime.InteropServices.RuntimeInformation, System.Runtime.InteropServices.RuntimeInformation",
+                                    false
+                                )
+                            )
 
-                let baseRid =
-                    if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
-                        "win"
-                    elif RuntimeInformation.IsOSPlatform(OSPlatform.OSX) then
-                        "osx"
+                        let ridProperty: PropertyInfo option =
+                            match rinfoType with
+                            | None -> None
+                            | Some t -> Option.ofObj (t.GetProperty("RuntimeIdentifier", BindingFlags.Public ||| BindingFlags.Static))
+
+                        match ridProperty with
+                        | None -> None
+                        | Some p -> Some(string (p.GetValue(null)))
                     else
-                        "linux"
+                        None
 
-                match processArchitecture with
-                | Architecture.X64 -> baseRid + "-x64"
-                | Architecture.X86 -> baseRid + "-x86"
-                | Architecture.Arm64 -> baseRid + "-arm64"
-                | _ -> baseRid + "-arm"
+                match rid with
+                | Some rid -> rid
+                | None ->
+                    let processArchitecture = RuntimeInformation.ProcessArchitecture
 
-            tfm, runningRid)
+                    let baseRid =
+                        if RuntimeInformation.IsOSPlatform(OSPlatform.Windows) then
+                            "win"
+                        elif RuntimeInformation.IsOSPlatform(OSPlatform.OSX) then
+                            "osx"
+                        else
+                            "linux"
+
+                    match processArchitecture with
+                    | Architecture.X64 -> baseRid + "-x64"
+                    | Architecture.X86 -> baseRid + "-x86"
+                    | Architecture.Arm64 -> baseRid + "-arm64"
+                    | _ -> baseRid + "-arm"
+
+            runningTfm, runningRid)
 
     static member ClearStaticCaches() =
         desiredDotNetSdkVersionForDirectoryCache.Clear()

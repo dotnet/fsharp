@@ -2596,9 +2596,11 @@ FSharp.Compiler.EditorServices.DeclarationListItem: Microsoft.FSharp.Core.FSharp
 FSharp.Compiler.EditorServices.DeclarationListItem: System.String FullName
 FSharp.Compiler.EditorServices.DeclarationListItem: System.String Name
 FSharp.Compiler.EditorServices.DeclarationListItem: System.String NameInCode
+FSharp.Compiler.EditorServices.DeclarationListItem: System.String NameInList
 FSharp.Compiler.EditorServices.DeclarationListItem: System.String get_FullName()
 FSharp.Compiler.EditorServices.DeclarationListItem: System.String get_Name()
 FSharp.Compiler.EditorServices.DeclarationListItem: System.String get_NameInCode()
+FSharp.Compiler.EditorServices.DeclarationListItem: System.String get_NameInList()
 FSharp.Compiler.EditorServices.EntityCache
 FSharp.Compiler.EditorServices.EntityCache: T Locking[T](Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.EditorServices.IAssemblyContentCache,T])
 FSharp.Compiler.EditorServices.EntityCache: Void .ctor()
@@ -3154,9 +3156,9 @@ FSharp.Compiler.EditorServices.NavigableContainer: Int32 CompareTo(System.Object
 FSharp.Compiler.EditorServices.NavigableContainer: Int32 CompareTo(System.Object, System.Collections.IComparer)
 FSharp.Compiler.EditorServices.NavigableContainer: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.NavigableContainer: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.EditorServices.NavigableContainer: System.String Name
+FSharp.Compiler.EditorServices.NavigableContainer: System.String LogicalName
 FSharp.Compiler.EditorServices.NavigableContainer: System.String ToString()
-FSharp.Compiler.EditorServices.NavigableContainer: System.String get_Name()
+FSharp.Compiler.EditorServices.NavigableContainer: System.String get_LogicalName()
 FSharp.Compiler.EditorServices.NavigableContainer: Void .ctor(FSharp.Compiler.EditorServices.NavigableContainerType, System.String)
 FSharp.Compiler.EditorServices.NavigableContainerType
 FSharp.Compiler.EditorServices.NavigableContainerType+Tags: Int32 Exception
@@ -3210,9 +3212,9 @@ FSharp.Compiler.EditorServices.NavigableItem: FSharp.Compiler.Text.Range Range
 FSharp.Compiler.EditorServices.NavigableItem: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.EditorServices.NavigableItem: Int32 GetHashCode()
 FSharp.Compiler.EditorServices.NavigableItem: Int32 GetHashCode(System.Collections.IEqualityComparer)
-FSharp.Compiler.EditorServices.NavigableItem: System.String Name
+FSharp.Compiler.EditorServices.NavigableItem: System.String LogicalName
 FSharp.Compiler.EditorServices.NavigableItem: System.String ToString()
-FSharp.Compiler.EditorServices.NavigableItem: System.String get_Name()
+FSharp.Compiler.EditorServices.NavigableItem: System.String get_LogicalName()
 FSharp.Compiler.EditorServices.NavigableItem: Void .ctor(System.String, FSharp.Compiler.Text.Range, Boolean, FSharp.Compiler.EditorServices.NavigableItemKind, FSharp.Compiler.EditorServices.NavigableContainer)
 FSharp.Compiler.EditorServices.NavigableItemKind
 FSharp.Compiler.EditorServices.NavigableItemKind+Tags: Int32 Constructor
@@ -3356,9 +3358,9 @@ FSharp.Compiler.EditorServices.NavigationItem: FSharp.Compiler.Text.Range get_Bo
 FSharp.Compiler.EditorServices.NavigationItem: FSharp.Compiler.Text.Range get_Range()
 FSharp.Compiler.EditorServices.NavigationItem: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess] Access
 FSharp.Compiler.EditorServices.NavigationItem: Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Syntax.SynAccess] get_Access()
-FSharp.Compiler.EditorServices.NavigationItem: System.String Name
+FSharp.Compiler.EditorServices.NavigationItem: System.String LogicalName
 FSharp.Compiler.EditorServices.NavigationItem: System.String UniqueName
-FSharp.Compiler.EditorServices.NavigationItem: System.String get_Name()
+FSharp.Compiler.EditorServices.NavigationItem: System.String get_LogicalName()
 FSharp.Compiler.EditorServices.NavigationItem: System.String get_UniqueName()
 FSharp.Compiler.EditorServices.NavigationItemKind
 FSharp.Compiler.EditorServices.NavigationItemKind+Tags: Int32 Exception
@@ -5684,24 +5686,22 @@ FSharp.Compiler.Syntax.ParserDetail: Int32 Tag
 FSharp.Compiler.Syntax.ParserDetail: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParserDetail: System.String ToString()
 FSharp.Compiler.Syntax.PrettyNaming
-FSharp.Compiler.Syntax.PrettyNaming: Boolean DoesIdentifierNeedBackticks(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsActivePatternName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsCompilerGeneratedName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsIdentifierFirstCharacter(Char)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsIdentifierName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsIdentifierPartCharacter(Char)
+FSharp.Compiler.Syntax.PrettyNaming: Boolean IsLogicalInfixOpName(System.String)
+FSharp.Compiler.Syntax.PrettyNaming: Boolean IsLogicalOpName(System.String)
+FSharp.Compiler.Syntax.PrettyNaming: Boolean IsLogicalPrefixOperator(System.String)
+FSharp.Compiler.Syntax.PrettyNaming: Boolean IsLogicalTernaryOperator(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsLongIdentifierPartCharacter(Char)
-FSharp.Compiler.Syntax.PrettyNaming: Boolean IsMangledInfixOperator(System.String)
-FSharp.Compiler.Syntax.PrettyNaming: Boolean IsMangledOpName(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsOperatorDisplayName(System.String)
-FSharp.Compiler.Syntax.PrettyNaming: Boolean IsPrefixOperator(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Boolean IsPunctuation(System.String)
-FSharp.Compiler.Syntax.PrettyNaming: Boolean IsTernaryOperator(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Microsoft.FSharp.Collections.FSharpList`1[System.String] GetLongNameFromString(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: Microsoft.FSharp.Core.FSharpOption`1[System.String] TryChopPropertyName(System.String)
-FSharp.Compiler.Syntax.PrettyNaming: System.String AddBackticksToIdentifierIfNeeded(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: System.String CompileOpName(System.String)
-FSharp.Compiler.Syntax.PrettyNaming: System.String DecompileOpName(System.String)
+FSharp.Compiler.Syntax.PrettyNaming: System.String ConvertValLogicalNameToDisplayNameCore(System.String)
 FSharp.Compiler.Syntax.PrettyNaming: System.String FormatAndOtherOverloadsString(Int32)
 FSharp.Compiler.Syntax.PrettyNaming: System.String FsiDynamicModulePrefix
 FSharp.Compiler.Syntax.PrettyNaming: System.String NormalizeIdentifierBackticks(System.String)
@@ -9829,12 +9829,10 @@ FSharp.Compiler.Text.TextTag: Int32 Tag
 FSharp.Compiler.Text.TextTag: Int32 get_Tag()
 FSharp.Compiler.Text.TextTag: System.String ToString()
 FSharp.Compiler.Tokenization.FSharpKeywords
-FSharp.Compiler.Tokenization.FSharpKeywords: Boolean DoesIdentifierNeedBackticks(System.String)
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.String] KeywordNames
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.String] get_KeywordNames()
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] KeywordsWithDescription
 FSharp.Compiler.Tokenization.FSharpKeywords: Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[System.String,System.String]] get_KeywordsWithDescription()
-FSharp.Compiler.Tokenization.FSharpKeywords: System.String AddBackticksToIdentifierIfNeeded(System.String)
 FSharp.Compiler.Tokenization.FSharpKeywords: System.String NormalizeIdentifierBackticks(System.String)
 FSharp.Compiler.Tokenization.FSharpLexer
 FSharp.Compiler.Tokenization.FSharpLexer: Void Tokenize(FSharp.Compiler.Text.ISourceText, Microsoft.FSharp.Core.FSharpFunc`2[FSharp.Compiler.Tokenization.FSharpToken,Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpList`1[System.String]], Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.Tokenization.FSharpLexerFlags], Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Collections.FSharpMap`2[System.String,System.String]], Microsoft.FSharp.Core.FSharpOption`1[System.Threading.CancellationToken])

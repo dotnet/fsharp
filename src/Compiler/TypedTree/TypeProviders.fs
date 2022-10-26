@@ -1186,7 +1186,7 @@ let ComputeMangledNameForApplyStaticParameters(nm, staticArgs, staticParams: Tai
         staticParams.PApply((fun ps ->  ps |> Array.map (fun sp -> sp.Name, (if sp.IsOptional then Some (string sp.RawDefaultValue) else None ))), range=m)
 
     let defaultArgValues = defaultArgValues.PUntaint(id, m)
-    PrettyNaming.computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
+    PrettyNaming.ComputeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues)
 
 /// Apply the given provided method to the given static arguments (the arguments are assumed to have been sorted into application order)
 let TryApplyProvidedMethod(methBeforeArgs: Tainted<ProvidedMethodBase>, staticArgs: obj[], m: range) =
@@ -1243,7 +1243,7 @@ let TryLinkProvidedType(resolver: Tainted<ITypeProvider>, moduleOrNamespace: str
     // Demangle the static parameters
     let typeName, argNamesAndValues = 
         try 
-            PrettyNaming.demangleProvidedTypeName typeLogicalName 
+            PrettyNaming.DemangleProvidedTypeName typeLogicalName 
         with PrettyNaming.InvalidMangledStaticArg piece -> 
             error(Error(FSComp.SR.etProvidedTypeReferenceInvalidText piece, range0)) 
 

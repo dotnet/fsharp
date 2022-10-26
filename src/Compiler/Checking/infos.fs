@@ -656,13 +656,13 @@ type MethInfo =
     member x.DisplayName =
         match x with
         | FSMeth(_, _, vref, _) -> vref.DisplayName
-        | _ -> x.LogicalName |> PrettyNaming.ConvertValNameToDisplayName false
+        | _ -> x.LogicalName |> PrettyNaming.ConvertValLogicalNameToDisplayName false
 
      /// Get the method name in DisplayName form
     member x.DisplayNameCore =
         match x with
         | FSMeth(_, _, vref, _) -> vref.DisplayNameCore
-        | _ -> x.LogicalName |> PrettyNaming.DecompileOpName
+        | _ -> x.LogicalName |> PrettyNaming.ConvertValLogicalNameToDisplayNameCore
 
      /// Indicates if this is a method defined in this assembly with an internal XML comment
     member x.HasDirectXmlComment =
@@ -1381,6 +1381,8 @@ type ILFieldInfo =
         | ProvidedField(_, fi, m) -> fi.PUntaint((fun fi -> fi.Name), m)
 #endif
 
+    member x.DisplayNameCore = x.FieldName
+
      /// Indicates if the field is readonly (in the .NET/C# sense of readonly)
     member x.IsInitOnly =
         match x with
@@ -1527,14 +1529,14 @@ type UnionCaseInfo =
     ///
     /// Backticks and parens are not added for non-identifiers.
     ///
-    /// Note logical names op_Nil and op_ConsCons become [] and :: respectively.
+    /// Note logical names op_Nil and op_ColonColon become [] and :: respectively.
     member x.DisplayNameCore = x.UnionCase.DisplayNameCore
 
     /// Get the display name of the union case
     ///
     /// Backticks and parens are added implicitly for non-identifiers.
     ///
-    /// Note logical names op_Nil and op_ConsCons become ([]) and (::) respectively.
+    /// Note logical names op_Nil and op_ColonColon become ([]) and (::) respectively.
     member x.DisplayName = x.UnionCase.DisplayName
 
     /// Get the instantiation of the type parameters of the declaring type of the union case
@@ -1699,6 +1701,20 @@ type PropInfo =
         | ProvidedProp(_, pi, m) -> pi.PUntaint((fun pi -> pi.Name), m)
 #endif
         | FSProp _ -> failwith "unreachable"
+
+     /// Get the property name in DisplayName form
+    member x.DisplayName =
+        match x with
+        | FSProp(_, _, Some vref, _)
+        | FSProp(_, _, _, Some vref) -> vref.DisplayName
+        | _ -> x.PropertyName |> PrettyNaming.ConvertValLogicalNameToDisplayName false
+
+     /// Get the property name in DisplayNameCore form
+    member x.DisplayNameCore =
+        match x with
+        | FSProp(_, _, Some vref, _)
+        | FSProp(_, _, _, Some vref) -> vref.DisplayNameCore
+        | _ -> x.PropertyName |> PrettyNaming.ConvertValLogicalNameToDisplayNameCore
 
     /// Indicates if this property has an associated getter method.
     member x.HasGetter =
@@ -2087,6 +2103,7 @@ type EventInfo =
 #if !NO_TYPEPROVIDERS
         | ProvidedEvent (amap, ei, m) -> ImportProvidedType amap m (ei.PApply((fun ei -> ei.DeclaringType), m))
 #endif
+
     /// Get the enclosing type of the method info, using a nominal type for tuple types
     member x.ApparentEnclosingAppType =
         match x with
@@ -2132,6 +2149,18 @@ type EventInfo =
 #if !NO_TYPEPROVIDERS
         | ProvidedEvent (_, ei, m) -> ei.PUntaint((fun ei -> ei.Name), m)
 #endif
+
+     /// Get the event name in DisplayName form
+    member x.DisplayName =
+        match x with
+        | FSEvent (_, p, _, _) -> p.DisplayName
+        | _ -> x.EventName |> PrettyNaming.ConvertValLogicalNameToDisplayName false
+
+     /// Get the event name in DisplayNameCore form
+    member x.DisplayNameCore =
+        match x with
+        | FSEvent (_, p, _, _) -> p.DisplayNameCore
+        | _ -> x.EventName |> PrettyNaming.ConvertValLogicalNameToDisplayNameCore
 
     /// Indicates if this property is static.
     member x.IsStatic =
