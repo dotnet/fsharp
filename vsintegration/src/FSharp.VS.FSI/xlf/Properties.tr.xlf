@@ -8,7 +8,7 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveAnyCpuDescr">
-        <source>If set, F# Interactive is a 64-bit process. Otherwise, F# Interactive is 32-bit on X86/X64 and 64-bit on Arm64.</source>
+        <source>If set to true, F# Interactive is a 64-bit process. Otherwise, F# Interactive is 32-bit on X86/X64 and 64-bit on Arm64.</source>
         <target state="translated">“True” olarak ayarlandığında, 'fsiAnyCpu.exe' platformdan bağımsız bir işlem olarak çalıştırılır. Aksi takdirde, F# Etkileşimli derleyici aracı X86/X64 üzerinde 32 bit bir işlem veya Arm64 tabanlı sistemlerde yerel bir 64 bit işlem olarak çalıştırılır.</target>
         <note />
       </trans-unit>

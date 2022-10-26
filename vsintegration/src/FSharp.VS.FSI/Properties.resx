@@ -121,7 +121,7 @@
     <value>Run as 64-bit</value>
   </data>
   <data name="FSharpInteractiveAnyCpuDescr" xml:space="preserve">
-    <value>If set, F# Interactive is a 64-bit process. Otherwise, F# Interactive is 32-bit on X86/X64 and 64-bit on Arm64.</value>
+    <value>If set to true, F# Interactive is a 64-bit process. Otherwise, F# Interactive is 32-bit on X86/X64 and 64-bit on Arm64.</value>
   </data>
   <data name="FSharpInteractiveOptions" xml:space="preserve">
     <value>F# Interactive options</value>

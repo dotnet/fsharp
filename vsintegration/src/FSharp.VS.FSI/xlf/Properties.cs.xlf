@@ -8,7 +8,7 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveAnyCpuDescr">
-        <source>If set, F# Interactive is a 64-bit process. Otherwise, F# Interactive is 32-bit on X86/X64 and 64-bit on Arm64.</source>
+        <source>If set to true, F# Interactive is a 64-bit process. Otherwise, F# Interactive is 32-bit on X86/X64 and 64-bit on Arm64.</source>
         <target state="translated">Když se nastaví na hodnotu true, 'fsiAnyCpu.exe' se spustí jako proces neutrální vzhledem k platformě. V opačném případě je F# Interactive 32bitový proces na platformě X86/X64 nebo nativní 64bitový proces v systémech založených na arm64.</target>
         <note />
       </trans-unit>
