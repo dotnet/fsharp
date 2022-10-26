@@ -8,7 +8,7 @@
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveAnyCpuDescr">
-        <source>If set to true, 'fsiAnyCpu.exe' is run as a platform neutral process. Otherwise, F# Interactive is a 32-bit process on X86/X64 or a native 64 bit process on Arm64 based systems.</source>
+        <source>If set, F# Interactive is a 64-bit process. Otherwise, F# Interactive is 32-bit on X86/X64 and 64-bit on Arm64.</source>
         <target state="translated">true に設定すると、'fsiAnyCpu.exe' はプラットフォーム ニュートラル プロセスとして実行されます。それ以外の場合、F# インタラクティブ は X86 または X64 の 32 ビット プロセス、または Arm64 ベースのシステムでのネイティブ 64 ビット プロセスです。</target>
         <note />
       </trans-unit>

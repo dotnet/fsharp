@@ -118,10 +118,10 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="FSharpInteractiveAnyCpu" xml:space="preserve">
-    <value>Use fsiAnyCpu.exe</value>
+    <value>Run as 64-bit</value>
   </data>
   <data name="FSharpInteractiveAnyCpuDescr" xml:space="preserve">
-    <value>If set to true, 'fsiAnyCpu.exe' is run as a platform neutral process. Otherwise, F# Interactive is a 32-bit process on X86/X64 or a native 64 bit process on Arm64 based systems.</value>
+    <value>If set, F# Interactive is a 64-bit process. Otherwise, F# Interactive is 32-bit on X86/X64 and 64-bit on Arm64.</value>
   </data>
   <data name="FSharpInteractiveOptions" xml:space="preserve">
     <value>F# Interactive options</value>
