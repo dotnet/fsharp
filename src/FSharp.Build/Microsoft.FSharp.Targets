@@ -252,7 +252,7 @@ this file.
                 @(ManifestNonResxWithNoCultureOnDisk);
                 $(ApplicationIcon);
                 $(AssemblyOriginatorKeyFile);
-                @(ReferencePath);
+                @(ReferencePathWithRefAssemblies);
                 @(CompiledLicenseFile);
                 @(EmbeddedDocumentation); 
                 $(Win32Resource);
@@ -346,8 +346,8 @@ this file.
               PreferredUILang="$(PreferredUILang)"
               ProvideCommandLineArgs="$(ProvideCommandLineArgs)"
               PublicSign="$(PublicSign)"
-              References="@(ReferencePath)"
-              ReferencePath="$(ReferencePath)"
+              References="@(ReferencePathWithRefAssemblies)"
+              ReferencePath="$(ReferencePathWithRefAssemblies)"
               RefOnly="$(ProduceOnlyReferenceAssembly)"
               Resources="@(ActualEmbeddedResources)"
               SkipCompilerExecution="$(SkipCompilerExecution)"
