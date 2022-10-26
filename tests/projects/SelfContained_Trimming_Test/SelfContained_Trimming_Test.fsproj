@@ -10,6 +10,8 @@
 
   <PropertyGroup>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+    <DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
     <PublishTrimmed>true</PublishTrimmed>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
@@ -29,7 +31,8 @@
 
   <PropertyGroup>
       <RestoreSources>
-        $(MSBuildThisFileDirectory)/../../../artifacts/packages/Release/Release
+        $(MSBuildThisFileDirectory)/../../../artifacts/packages/Release/Release;
+        https://api.nuget.org/v3/index.json;
       </RestoreSources>
   </PropertyGroup>
 

@@ -422,11 +422,11 @@ let mkSynMemberDefnGetSet
     (parseState: IParseState)
     (opt_inline: bool)
     (mWith: range)
-    (classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * SynReturnInfo option * range option * SynExpr * range) list)
+    (classDefnMemberGetSetElements: (bool * SynAttributeList list * (SynPat * range) * (range option * SynReturnInfo) option * range option * SynExpr * range) list)
     (mAnd: range option)
     (mWhole: range)
     (propertyNameBindingPat: SynPat)
-    (optPropertyType: SynReturnInfo option)
+    (optPropertyType: (range option * SynReturnInfo) option)
     (visNoLongerUsed: SynAccess option)
     flagsBuilderAndLeadingKeyword
     (attrs: SynAttributeList list)

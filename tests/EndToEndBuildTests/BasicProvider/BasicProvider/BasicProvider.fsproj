@@ -7,6 +7,7 @@
     <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionValue)</FSharpCoreImplicitPackageVersion>
     <PackagePath>typeproviders</PackagePath>
     <NoWarn>$(NoWarn);NU5100;NU5118</NoWarn>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
   </PropertyGroup>
 
   <ItemGroup>
