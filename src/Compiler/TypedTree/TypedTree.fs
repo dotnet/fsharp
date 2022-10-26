@@ -475,6 +475,7 @@ exception UndefinedName of
 
 exception InternalUndefinedItemRef of (string * string * string -> int * string) * string * string * string
 
+[<CustomEquality;NoComparison>]
 type ModuleOrNamespaceKind = 
 
     /// Indicates that a module is compiled to a class with the "Module" suffix added. 
@@ -488,6 +489,22 @@ type ModuleOrNamespaceKind =
         /// Indicates that the sourcecode had a namespace.
         /// If false, this namespace was implicitly constructed during type checking. 
         isExplicit: bool
+        
+    override this.Equals other =
+        match other with
+        | :? ModuleOrNamespaceKind as kind ->
+            match this, kind with
+            | FSharpModuleWithSuffix, FSharpModuleWithSuffix
+            | ModuleOrType, ModuleOrType
+            | Namespace _, Namespace _ -> true
+            | _ -> false
+        | _ -> false
+
+    override this.GetHashCode () =
+        match this with
+        | FSharpModuleWithSuffix -> 0
+        | ModuleOrType -> 1
+        | Namespace _ -> 2
 
 /// A public path records where a construct lives within the global namespace
 /// of a CCU.

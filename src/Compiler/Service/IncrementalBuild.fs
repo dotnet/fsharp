@@ -7,13 +7,14 @@ open System.Collections.Generic
 open System.Collections.Immutable
 open System.Diagnostics
 open System.IO
+open System.IO.Compression
 open System.Threading
 open Internal.Utilities.Library
 open Internal.Utilities.Collections
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
 open FSharp.Compiler.AbstractIL.ILBinaryReader
-open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerDiagnostics
@@ -29,6 +30,7 @@ open FSharp.Compiler.IO
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
+open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.ScriptClosure
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
@@ -701,8 +703,8 @@ type RawFSharpAssemblyDataBackedByLanguageService (tcConfig, tcGlobals, generate
     let sigData =
         let _sigDataAttributes, sigDataResources = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, true)
         [ for r in sigDataResources  do
-            let ccuName = GetSignatureDataResourceName r
-            yield (ccuName, (fun () -> r.GetBytes())) ]
+            GetResourceNameAndSignatureDataFunc r
+        ]
 
     let autoOpenAttrs = topAttrs.assemblyAttrs |> List.choose (List.singleton >> TryFindFSharpStringAttribute tcGlobals tcGlobals.attrib_AutoOpenAttribute)
 

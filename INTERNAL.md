@@ -75,6 +75,7 @@ Update the `insertTargetBranch` value at the bottom of `azure-pipelines.yml` in 
    5. Add the new F# branch to the appropriate `darc` channel.  In this example, run `darc add-default-channel --channel "VS 17.4" --branch release/dev17.4 --repo https://github.com/dotnet/fsharp`
    6. Ensure the subscription was added by repeating step 3 above.
    7. Note, the help in the `darc` tool is really good.  E.g., you can simply run `darc` to see a list of all commands available, and if you run `darc <some-command>` with no arguments, you'll be given a list of arguments you can use.
+   8. Ensure that version numbers are bumped for a new branch.
 
 ## Less interesting links
 

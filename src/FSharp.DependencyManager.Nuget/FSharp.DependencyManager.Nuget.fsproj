@@ -12,6 +12,11 @@
     <Tailcalls>true</Tailcalls> <!-- .tail annotations always emitted for this binary, even in debug mode -->
   </PropertyGroup>
 
+  <!--  The FSharp.DependencyManager.Nuget dll does not provide a referencable public interface although it's used for testing -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <CompressMetadata>true</CompressMetadata>
+  </PropertyGroup>
+
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
     <PropertyGroup>
       <BuildOutputGroupLocation>$(BaseOutputPath)\$(Configuration)\$(TargetFramework)</BuildOutputGroupLocation>

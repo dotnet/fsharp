@@ -3,9 +3,9 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
 
-    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
-    <RuntimeIdentifiers>win-x86;win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
+    <TargetFrameworks Condition="'$(OS)' != 'Unix'">net472;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
+    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
     <AssetTargetFallback>$(AssetTargetFallback);portable-net45+win8+wp8+wpa81</AssetTargetFallback>
     <!-- Workaround to get rid of:
         error NU1505: Duplicate 'PackageDownload' items found.
@@ -16,5 +16,17 @@
     <NoWarn>$(NoWarn);NU1505</NoWarn>
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
+
+
+
+  <Target Name="RemoveAnalyzers"
+          DependsOnTargets="ResolveAssemblyReferences"
+          BeforeTargets="CoreCompile">
+
+    <ItemGroup>
+      <Analyzers Remove="@(Analyzers)" />
+    </ItemGroup>
+  </Target>
+
 
 </Project>

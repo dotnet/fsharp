@@ -22,7 +22,7 @@ open Microsoft.VisualStudio.Shell
 type internal FSharpNavigableSymbol(item: FSharpNavigableItem, span: SnapshotSpan, gtd: GoToDefinition, statusBar: StatusBar) =
     interface INavigableSymbol with
         member _.Navigate(_: INavigableRelationship) =
-            gtd.NavigateToItem(item, statusBar)
+            gtd.NavigateToItem(item, statusBar, CancellationToken.None)
 
         member _.Relationships = seq { yield PredefinedNavigableRelationships.Definition }
 

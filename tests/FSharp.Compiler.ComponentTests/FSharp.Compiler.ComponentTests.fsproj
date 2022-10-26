@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <GenerateProgramFile>false</GenerateProgramFile>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -15,10 +15,18 @@
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <NoWarn>$(NoWarn);FS0988</NoWarn> <!-- "program does nothing" warning -->
-    <EnablePreviewFeatures>true</EnablePreviewFeatures> <!-- allow testing of static methods in interfaces on .NET 6  -->
-  </PropertyGroup>
+    <DefineConstants Condition="'$(Configuration)'=='release'">$(DefineConstants);RELEASE</DefineConstants>
+    <DefineConstants Condition="'$(Configuration)'=='debug'">$(DefineConstants);DEBUG</DefineConstants>
+    <!-- allow testing of static methods in interfaces on .NET 6  -->
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <!-- allow testing of static methods in interfaces on .NET 6  -->
+  
+</PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\service\FsUnit.fs">
+      <Link>FsUnit.fs</Link>
+    </Compile>
     <Compile Include="Conformance\BasicGrammarElements\OperatorNames\OperatorNames.fs" />
     <Compile Include="Conformance\BasicGrammarElements\PrecedenceAndOperators\PrecedenceAndOperators.fs" />
     <Compile Include="Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\ExceptionDefinitions.fs" />
@@ -153,9 +161,11 @@
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\RegressionTests.fs" />
     <Compile Include="Language\AttributeCheckingTests.fs" />
+    <Compile Include="Language\ObsoleteAttributeCheckingTests.fs" />
     <Compile Include="Language\XmlComments.fs" />
     <Compile Include="Language\CompilerDirectiveTests.fs" />
     <Compile Include="Language\CodeQuotationTests.fs" />
+    <Compile Include="Language\InterpolatedStringsTests.fs" />
     <Compile Include="Language\ComputationExpressionTests.fs" />
     <Compile Include="Language\CastingTests.fs" />
     <Compile Include="Language\NameofTests.fs" />
@@ -177,6 +187,7 @@
     <Compile Include="CompilerOptions\fsc\noframework.fs" />
     <Compile Include="CompilerOptions\fsc\platform.fs" />
     <Compile Include="CompilerOptions\fsc\reference.fs" />
+    <Compile Include="CompilerOptions\fsc\reflectionfree.fs" />
     <Compile Include="CompilerOptions\fsc\warn.fs" />
     <Compile Include="CompilerOptions\fsc\warnon.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
@@ -185,6 +196,7 @@
     <Compile Include="Globalization\GlobalizationTestCases.fs" />
     <Compile Include="OCamlCompat\OCamlCompat.fs" />
     <Compile Include="Miscellaneous\ListLiterals.fs" />
+    <Compile Include="Signatures\ModuleOrNamespaceTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />

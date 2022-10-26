@@ -3263,7 +3263,7 @@ let f7() = callXY (C()) (D())
 let f8() = callXY (D()) (C())
     """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:preview"]
+    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
 [<Test>]
 let ``Test ProjectForWitnesses1`` () =
@@ -3387,7 +3387,7 @@ type MyNumberWrapper =
     { MyNumber: MyNumber }
     """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:preview"]
+    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
 [<Test>]
 let ``Test ProjectForWitnesses2`` () =
@@ -3442,11 +3442,11 @@ let s2 = sign p1
 
     """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:preview"]
+    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
 [<Test>]
 let ``Test ProjectForWitnesses3`` () =
-    let cleanup, options = createOptionsAux [ ProjectForWitnesses3.fileSource1 ] ["--langversion:preview"]
+    let cleanup, options = createOptionsAux [ ProjectForWitnesses3.fileSource1 ] ["--langversion:7.0"]
     use _holder = cleanup
     let exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
     let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunImmediate
@@ -3536,7 +3536,7 @@ let isNullQuoted (ts : 't[]) =
 
 """
 
-    let createOptions() = createOptionsAux [fileSource1] ["--langversion:preview"]
+    let createOptions() = createOptionsAux [fileSource1] ["--langversion:7.0"]
 
 [<Test>]
 let ``Test ProjectForWitnesses4 GetWitnessPassingInfo`` () =

@@ -94,3 +94,16 @@ namespace FSharpTest
         |> compile
         |> shouldSucceed
         |> ignore
+
+    [<Fact>]
+    let ``CheckingExceptionDeclarations - SynMemberDefn.GetSetMember`` () =
+        FSharp """
+namespace FSharpTest
+
+exception CustomException of details: string
+    with
+        member self.Details with get (): string = self.details
+"""
+        |> compile
+        |> shouldSucceed
+        |> ignore
