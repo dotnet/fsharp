@@ -4843,7 +4843,7 @@ let openPEMetadataOnly (fileName, peinfo, pectxtEager, pevEager, mdfile: BinaryF
     openMetadataReader (fileName, mdfile, 0, peinfo, pectxtEager, pevEager, None, reduceMemoryUsage)
 
 type ILReaderMetadataSnapshot = obj * nativeint * int
-type ILReaderTryGetMetadataSnapshot = (* path: *) string (* snapshotTimeStamp: *)  * DateTime -> ILReaderMetadataSnapshot option
+type ILReaderTryGetMetadataSnapshot = (* path: *) string (* snapshotTimeStamp: *) * DateTime -> ILReaderMetadataSnapshot option
 
 [<RequireQualifiedAccess>]
 type MetadataOnlyFlag =
