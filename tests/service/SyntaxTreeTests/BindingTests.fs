@@ -2,6 +2,7 @@ module FSharp.Compiler.Service.Tests.SyntaxTreeTests.BindingTestsTests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open NUnit.Framework
 
 [<Test>]
@@ -329,7 +330,7 @@ let ``Range of let keyword should be present in SynModuleDecl.Let binding`` () =
 
     match parseResults with
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-        SynModuleDecl.Let(bindings = [SynBinding(trivia={ LetKeyword = Some mLet })])
+        SynModuleDecl.Let(bindings = [SynBinding(trivia={ LeadingKeyword = SynLeadingKeyword.Let mLet })])
     ]) ])) ->
         assertRange (1, 0) (1, 3) mLet
     | _ -> Assert.Fail "Could not get valid AST"
@@ -346,7 +347,7 @@ let v = 12
 
     match parseResults with
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-        SynModuleDecl.Let(bindings = [SynBinding(trivia={ LetKeyword = Some mLet })])
+        SynModuleDecl.Let(bindings = [SynBinding(trivia={ LeadingKeyword = SynLeadingKeyword.Let mLet })])
     ]) ])) ->
         assertRange (5, 0) (5, 3) mLet
     | _ -> Assert.Fail "Could not get valid AST"
@@ -362,7 +363,7 @@ let a =
 
     match parseResults with
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
-        SynModuleDecl.Let(bindings = [SynBinding(expr=SynExpr.LetOrUse(bindings=[SynBinding(trivia={ LetKeyword = Some mLet })]))])
+        SynModuleDecl.Let(bindings = [SynBinding(expr=SynExpr.LetOrUse(bindings=[SynBinding(trivia={ LeadingKeyword = SynLeadingKeyword.Let mLet })]))])
     ]) ])) ->
         assertRange (3, 4) (3, 7) mLet
     | _ -> Assert.Fail "Could not get valid AST"

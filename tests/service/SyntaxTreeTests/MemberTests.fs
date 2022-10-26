@@ -19,7 +19,7 @@ type Person(name : string, age : int) =
     match parseResults with
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
-            typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_ ; SynMemberDefn.AutoProperty(equalsRange = mEquals)])) ]
+            typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_ ; SynMemberDefn.AutoProperty(trivia = { EqualsRange = Some mEquals })])) ]
         )
     ]) ])) ->
         assertRange (5, 20) (5, 21) mEquals
@@ -39,8 +39,8 @@ type Foo() =
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_
-                                                                                        SynMemberDefn.AutoProperty(withKeyword=Some mWith)
-                                                                                        SynMemberDefn.AutoProperty(withKeyword=None)])) ]
+                                                                                        SynMemberDefn.AutoProperty(trivia = { WithKeyword = Some mWith })
+                                                                                        SynMemberDefn.AutoProperty(trivia = { WithKeyword = None })])) ]
         )
     ]) ])) ->
         assertRange (3, 39) (3, 43) mWith

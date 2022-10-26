@@ -2,6 +2,7 @@ module FSharp.Compiler.Service.Tests.SyntaxTreeTests.SignatureTypeTests
 
 open FSharp.Compiler.Service.Tests.Common
 open FSharp.Compiler.Syntax
+open FSharp.Compiler.SyntaxTrivia
 open NUnit.Framework
 
 [<Test>]
@@ -378,7 +379,7 @@ val a : int
     match parseResults with
     | ParsedInput.SigFile (ParsedSigFileInput (contents=[
         SynModuleOrNamespaceSig(decls=[
-            SynModuleSigDecl.Val(valSig = SynValSig(trivia = { ValKeyword = Some mVal }))
+            SynModuleSigDecl.Val(valSig = SynValSig(trivia = { LeadingKeyword = SynLeadingKeyword.Val mVal }))
         ] ) ])) ->
         assertRange (6, 0) (6, 3) mVal
     | _ -> Assert.Fail "Could not get valid AST"

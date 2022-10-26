@@ -461,7 +461,11 @@ type TypeProviderTypeAttributes =
     | SuppressRelocate = 0x80000000
     | IsErased = 0x40000000
 
-type TypeProviderConfig(systemRuntimeContainsType: string -> bool) =
+type TypeProviderConfig
+    (
+        systemRuntimeContainsType: string -> bool,
+        getReferencedAssembliesOption: (unit -> string array) option
+    ) =
     let mutable resolutionFolder: string = null
     let mutable runtimeAssembly: string = null
     let mutable referencedAssemblies: string[] = null
@@ -469,6 +473,11 @@ type TypeProviderConfig(systemRuntimeContainsType: string -> bool) =
     let mutable isInvalidationSupported: bool = false
     let mutable useResolutionFolderAtRuntime: bool = false
     let mutable systemRuntimeAssemblyVersion: System.Version = null
+
+    new(systemRuntimeContainsType) = TypeProviderConfig(systemRuntimeContainsType, getReferencedAssembliesOption = None)
+
+    new(systemRuntimeContainsType, getReferencedAssemblies) =
+        TypeProviderConfig(systemRuntimeContainsType, getReferencedAssembliesOption = Some getReferencedAssemblies)
 
     member _.ResolutionFolder
         with get () = resolutionFolder
@@ -479,8 +488,15 @@ type TypeProviderConfig(systemRuntimeContainsType: string -> bool) =
         and set v = runtimeAssembly <- v
 
     member _.ReferencedAssemblies
-        with get () = referencedAssemblies
-        and set v = referencedAssemblies <- v
+        with get () =
+            match getReferencedAssembliesOption with
+            | None -> referencedAssemblies
+            | Some f -> f ()
+
+        and set v =
+            match getReferencedAssembliesOption with
+            | None -> referencedAssemblies <- v
+            | Some _ -> raise (InvalidOperationException())
 
     member _.TemporaryFolder
         with get () = temporaryFolder

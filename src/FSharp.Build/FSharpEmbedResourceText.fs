@@ -289,7 +289,7 @@ open Printf
 
     static let isNamedType(ty:System.Type) = not (ty.IsArray ||  ty.IsByRef ||  ty.IsPointer)
     static let isFunctionType (ty1:System.Type)  =
-        isNamedType(ty1) && getTypeInfo(ty1).IsGenericType && (ty1.GetGenericTypeDefinition()).Equals(funTyC)
+        isNamedType(ty1) && getTypeInfo(ty1).IsGenericType && System.Type.op_Equality(ty1.GetGenericTypeDefinition(), funTyC)
 
     static let rec destFunTy (ty:System.Type) =
         if isFunctionType ty then

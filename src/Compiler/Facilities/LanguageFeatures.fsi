@@ -45,6 +45,7 @@ type LanguageFeature =
     | LowercaseDUWhenRequireQualifiedAccess
     | InterfacesWithAbstractStaticMembers
     | SelfTypeConstraints
+    | MatchNotAllowedForUnionCaseWithNoData
 
 /// LanguageVersion management
 type LanguageVersion =

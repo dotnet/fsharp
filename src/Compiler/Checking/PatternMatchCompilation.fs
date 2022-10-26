@@ -648,9 +648,9 @@ let isDiscrimSubsumedBy g amap m discrim taken =
     match taken, discrim with
     | DecisionTreeTest.IsInst (_, tgtTy1), DecisionTreeTest.IsInst (_, tgtTy2) ->
         computeWhatFailingTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 = Implication.Fails
-    | DecisionTreeTest.IsNull _, DecisionTreeTest.IsInst (_, tgtTy2) ->
+    | DecisionTreeTest.IsNull, DecisionTreeTest.IsInst (_, tgtTy2) ->
         computeWhatFailingNullTestImpliesAboutTypeTest g tgtTy2 = Implication.Fails
-    | DecisionTreeTest.IsInst (_, tgtTy1), DecisionTreeTest.IsNull _ ->
+    | DecisionTreeTest.IsInst (_, tgtTy1), DecisionTreeTest.IsNull ->
         computeWhatFailingTypeTestImpliesAboutNullTest g tgtTy1 = Implication.Fails
     | _ ->
         false
@@ -690,7 +690,7 @@ let discrimWithinSimultaneousClass g amap m discrim prev =
         // Check that each previous test in the set, if successful, gives some information about this test
         prev |> List.forall (fun edge -> 
             match edge with
-            | DecisionTreeTest.IsNull _ -> true
+            | DecisionTreeTest.IsNull -> true
             | DecisionTreeTest.IsInst (_, tgtTy1) -> computeWhatSuccessfulTypeTestImpliesAboutNullTest g tgtTy1 <> Implication.Nothing
             | _ -> false)
 
@@ -698,7 +698,7 @@ let discrimWithinSimultaneousClass g amap m discrim prev =
         // Check that each previous test in the set, if successful, gives some information about this test
         prev |> List.forall (fun edge -> 
             match edge with
-            | DecisionTreeTest.IsNull _ -> true
+            | DecisionTreeTest.IsNull -> true
             | DecisionTreeTest.IsInst (_, tgtTy1) -> computeWhatSuccessfulTypeTestImpliesAboutTypeTest g amap m tgtTy1 tgtTy2 <> Implication.Nothing
             | _ -> false)
 
@@ -1501,7 +1501,7 @@ let CompilePatternBasic
                         // F# exception definitions are sealed.
                         []
 
-                | DecisionTreeTest.IsNull _ ->
+                | DecisionTreeTest.IsNull ->
                     match computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy1 with
                     | Implication.Succeeds -> [Frontier (i, newActives, valMap)]
                     | Implication.Fails -> []
@@ -1537,7 +1537,7 @@ let CompilePatternBasic
                     | Implication.Nothing ->
                         [frontier]
 
-                | DecisionTreeTest.IsNull _ ->
+                | DecisionTreeTest.IsNull ->
                     match computeWhatSuccessfulNullTestImpliesAboutTypeTest g tgtTy1 with
                     | Implication.Succeeds -> [Frontier (i, newActives, valMap)]
                     | Implication.Fails -> []

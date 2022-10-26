@@ -83,7 +83,7 @@ module internal Guids =
     
     [<Literal>]
     /// "00BE7FD9-8145-4A2E-A1BF-3BAF0F4F47DD"
-    let codeLensOptionPageIdString = "00BE7FD9-8145-4A2E-A1BF-3BAF0F4F47DD"
+    let lensOptionPageIdString = "00BE7FD9-8145-4A2E-A1BF-3BAF0F4F47DD"
 
     [<Literal>]
     /// "8FDA964A-263D-4B4E-9560-29897535217C"

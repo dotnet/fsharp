@@ -73,15 +73,13 @@ type LanguageServicePerformanceOptions =
         EnableParallelReferenceResolution = false }
 
 [<CLIMutable>]
-type CodeLensOptions =
+type LensOptions =
   { Enabled : bool
-    ReplaceWithLineLens: bool
     UseColors: bool
     Prefix : string }
     static member Default =
       { Enabled = false
         UseColors = false
-        ReplaceWithLineLens = true
         Prefix = "// " }
 
 [<CLIMutable>]
@@ -114,7 +112,7 @@ type EditorOptions
         store.Register LanguageServicePerformanceOptions.Default
         store.Register AdvancedOptions.Default
         store.Register IntelliSenseOptions.Default
-        store.Register CodeLensOptions.Default
+        store.Register LensOptions.Default
         store.Register FormattingOptions.Default
 
     member _.IntelliSense : IntelliSenseOptions = store.Get()
@@ -122,7 +120,7 @@ type EditorOptions
     member _.CodeFixes : CodeFixesOptions = store.Get()
     member _.LanguageServicePerformance : LanguageServicePerformanceOptions = store.Get()
     member _.Advanced: AdvancedOptions = store.Get()
-    member _.CodeLens: CodeLensOptions = store.Get()
+    member _.Lens: LensOptions = store.Get()
     member _.Formatting : FormattingOptions = store.Get()
 
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
@@ -173,11 +171,11 @@ module internal OptionsUI =
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
 
-    [<Guid(Guids.codeLensOptionPageIdString)>]
-    type internal CodeLensOptionPage() =
-        inherit AbstractOptionPage<CodeLensOptions>()
+    [<Guid(Guids.lensOptionPageIdString)>]
+    type internal LensOptionPage() =
+        inherit AbstractOptionPage<LensOptions>()
         override this.CreateView() =
-            upcast CodeLensOptionControl()
+            upcast LensOptionControl()
 
     [<Guid(Guids.advancedSettingsPageIdSring)>]
     type internal AdvancedSettingsOptionPage() =

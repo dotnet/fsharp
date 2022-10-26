@@ -639,7 +639,7 @@ module Structure =
             | SynTypeDefnSimpleRepr.Record (_, fields, rr) ->
                 rcheck Scope.RecordDefn Collapse.Same rr rr
 
-                for SynField (attrs, _, _, _, _, _, _, fr) in fields do
+                for SynField (attributes = attrs; range = fr) in fields do
                     rcheck Scope.RecordField Collapse.Below fr fr
                     parseAttributes attrs
 
@@ -893,7 +893,7 @@ module Structure =
             | SynMemberSig.Member (valSigs, _, r) ->
                 let collapse = Range.endToEnd valSigs.RangeOfId r
                 rcheck Scope.Member Collapse.Below r collapse
-            | SynMemberSig.ValField (SynField (attrs, _, _, _, _, _, _, fr), mFull) ->
+            | SynMemberSig.ValField (SynField (attributes = attrs; range = fr), mFull) ->
                 let collapse = Range.endToEnd fr mFull
                 rcheck Scope.Val Collapse.Below mFull collapse
                 parseAttributes attrs

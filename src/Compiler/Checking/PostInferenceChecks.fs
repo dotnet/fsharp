@@ -685,7 +685,7 @@ let CheckTypeInstNoInnerByrefs cenv env m tyargs =
 /// Applied functions get wrapped in coerce nodes for subsumption coercions
 let (|OptionalCoerce|) expr =  
     match stripDebugPoints expr with
-    | Expr.Op (TOp.Coerce _, _, [DebugPoints(Expr.App (f, _, _, [], _), _)], _) -> f 
+    | Expr.Op (TOp.Coerce, _, [DebugPoints(Expr.App (f, _, _, [], _), _)], _) -> f 
     | _ -> expr
 
 /// Check an expression doesn't contain a 'reraise'
@@ -1539,7 +1539,7 @@ and CheckExprOp cenv env (op, tyargs, args, m) ctxt expr =
         else
             { scope = 1; flags = LimitFlags.None }
 
-    | TOp.LValueOp (LSet _, vref), _, [arg] -> 
+    | TOp.LValueOp (LSet, vref), _, [arg] -> 
         let isVrefLimited = not (HasLimitFlag LimitFlags.StackReferringSpanLike (GetLimitVal cenv env m vref.Deref))
         let isArgLimited = HasLimitFlag LimitFlags.StackReferringSpanLike (CheckExprPermitByRefLike cenv env arg)
         if isVrefLimited && isArgLimited then 
@@ -1901,7 +1901,7 @@ and CheckAttribArgExpr cenv env expr =
         | Const.Double _
         | Const.Single _
         | Const.Char _
-        | Const.Zero _
+        | Const.Zero
         | Const.String _  -> ()
         | _ -> 
             if cenv.reportErrors then 
