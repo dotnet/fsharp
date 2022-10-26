@@ -5023,7 +5023,7 @@ let OpenILModuleReader fileName opts =
                 //
                 let ilModuleReader =
                     // Check if we are doing metadataOnly reading (the most common case in both the compiler and IDE)
-                    if not runningOnMono && metadataOnly then
+                    if metadataOnly then
 
                         // See if tryGetMetadata gives us a BinaryFile for the metadata section alone.
                         let mdfileOpt =
@@ -5079,7 +5079,7 @@ let OpenILModuleReader fileName opts =
                 // multi-proc build. So use memory mapping, but only for stable files. Other files
                 // still use an in-memory ByteFile
                 let pefile =
-                    if not runningOnMono && (alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath) then
+                    if alwaysMemoryMapFSC || stableFileHeuristicApplies fullPath then
                         let _, pefile = getBinaryFile fullPath false
                         pefile
                     else

@@ -580,7 +580,6 @@ module MainModuleBuilder =
                 not (tcConfig.target.IsExe)
                 || not (tcConfig.includewin32manifest)
                 || not (tcConfig.win32res = "")
-                || runningOnMono
             then
                 ""
             // otherwise, include the default manifest
@@ -604,7 +603,7 @@ module MainModuleBuilder =
                     ILNativeResource.Out av
                 if not (tcConfig.win32res = "") then
                     ILNativeResource.Out(FileSystem.OpenFileForReadShim(tcConfig.win32res).ReadAllBytes())
-                if tcConfig.includewin32manifest && not (win32Manifest = "") && not runningOnMono then
+                if tcConfig.includewin32manifest && not (win32Manifest = "") then
                     ILNativeResource.Out
                         [|
                             yield! ResFileFormat.ResFileHeader()

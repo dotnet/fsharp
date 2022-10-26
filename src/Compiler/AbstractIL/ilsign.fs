@@ -519,32 +519,18 @@ let getICLRStrongName () =
     | Some sn -> sn
 
 let legacySignerGetPublicKeyForKeyPair kp =
-    if runningOnMono then
-        let snt = System.Type.GetType("Mono.Security.StrongName")
-        let sn = System.Activator.CreateInstance(snt, [| box kp |])
+    let mutable pSize = 0u
+    let mutable pBuffer: nativeint = (nativeint) 0
+    let iclrSN = getICLRStrongName ()
 
-        snt.InvokeMember(
-            "PublicKey",
-            (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public),
-            null,
-            sn,
-            [||],
-            Globalization.CultureInfo.InvariantCulture
-        )
-        :?> byte[]
-    else
-        let mutable pSize = 0u
-        let mutable pBuffer: nativeint = (nativeint) 0
-        let iclrSN = getICLRStrongName ()
+    iclrSN.StrongNameGetPublicKey(Unchecked.defaultof<string>, kp, (uint32) kp.Length, &pBuffer, &pSize)
+    |> ignore
 
-        iclrSN.StrongNameGetPublicKey(Unchecked.defaultof<string>, kp, (uint32) kp.Length, &pBuffer, &pSize)
-        |> ignore
-
-        let mutable keybuffer: byte[] = Bytes.zeroCreate (int pSize)
-        // Copy the marshalled data over - we'll have to free this ourselves
-        Marshal.Copy(pBuffer, keybuffer, 0, int pSize)
-        iclrSN.StrongNameFreeBuffer pBuffer |> ignore
-        keybuffer
+    let mutable keybuffer: byte[] = Bytes.zeroCreate (int pSize)
+    // Copy the marshalled data over - we'll have to free this ourselves
+    Marshal.Copy(pBuffer, keybuffer, 0, int pSize)
+    iclrSN.StrongNameFreeBuffer pBuffer |> ignore
+    keybuffer
 
 let legacySignerGetPublicKeyForKeyContainer kc =
     let mutable pSize = 0u
@@ -565,51 +551,21 @@ let legacySignerCloseKeyContainer kc =
     iclrSN.StrongNameKeyDelete kc |> ignore
 
 let legacySignerSignatureSize (pk: byte[]) =
-    if runningOnMono then
-        if pk.Length > 32 then pk.Length - 32 else 128
-    else
-        let mutable pSize = 0u
-        let iclrSN = getICLRStrongName ()
-        iclrSN.StrongNameSignatureSize(pk, uint32 pk.Length, &pSize) |> ignore
-        int pSize
+    let mutable pSize = 0u
+    let iclrSN = getICLRStrongName ()
+    iclrSN.StrongNameSignatureSize(pk, uint32 pk.Length, &pSize) |> ignore
+    int pSize
 
 let legacySignerSignFileWithKeyPair fileName kp =
-    if runningOnMono then
-        let snt = System.Type.GetType("Mono.Security.StrongName")
-        let sn = System.Activator.CreateInstance(snt, [| box kp |])
-        let conv (x: obj) = if (unbox x: bool) then 0 else -1
+    let mutable pcb = 0u
+    let mutable ppb = (nativeint) 0
+    let mutable ok = false
+    let iclrSN = getICLRStrongName ()
 
-        snt.InvokeMember(
-            "Sign",
-            (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public),
-            null,
-            sn,
-            [| box fileName |],
-            Globalization.CultureInfo.InvariantCulture
-        )
-        |> conv
-        |> check "Sign"
+    iclrSN.StrongNameSignatureGeneration(fileName, Unchecked.defaultof<string>, kp, uint32 kp.Length, ppb, &pcb)
+    |> ignore
 
-        snt.InvokeMember(
-            "Verify",
-            (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public),
-            null,
-            sn,
-            [| box fileName |],
-            Globalization.CultureInfo.InvariantCulture
-        )
-        |> conv
-        |> check "Verify"
-    else
-        let mutable pcb = 0u
-        let mutable ppb = (nativeint) 0
-        let mutable ok = false
-        let iclrSN = getICLRStrongName ()
-
-        iclrSN.StrongNameSignatureGeneration(fileName, Unchecked.defaultof<string>, kp, uint32 kp.Length, ppb, &pcb)
-        |> ignore
-
-        iclrSN.StrongNameSignatureVerificationEx(fileName, true, &ok) |> ignore
+    iclrSN.StrongNameSignatureVerificationEx(fileName, true, &ok) |> ignore
 
 let legacySignerSignFileWithKeyContainer fileName kcName =
     let mutable pcb = 0u

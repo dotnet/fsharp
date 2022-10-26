@@ -3197,29 +3197,6 @@ module FileSystemUtilities =
     open System.Reflection
     open System.Globalization
     let progress = try Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
-    let setExecutablePermission (fileName: string) =
-
-#if ENABLE_MONO_SUPPORT
-      if runningOnMono then
-        try
-            let monoPosix = Assembly.Load("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
-            if progress then eprintf "loading type Mono.Unix.UnixFileInfo...\n"
-            let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo")
-            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box fileName |], CultureInfo.InvariantCulture)
-            let prevPermissions = monoUnixFileInfo.InvokeMember("get_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| |], CultureInfo.InvariantCulture)
-            let prevPermissionsValue = prevPermissions |> unbox<int>
-            let newPermissionsValue = prevPermissionsValue ||| 0x000001ED
-            let newPermissions = Enum.ToObject(prevPermissions.GetType(), newPermissionsValue)
-            // Add 0x000001ED (UserReadWriteExecute, GroupReadExecute, OtherReadExecute) to the access permissions on Unix
-            monoUnixFileInfo.InvokeMember("set_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| newPermissions |], CultureInfo.InvariantCulture) |> ignore
-        with exn ->
-            if progress then eprintf "failure: %s...\n" (exn.ToString())
-            // Fail silently
-      else
-#else
-        ignore fileName
-#endif
-        ()
 
 /// Arbitrary value
 [<Literal>]
@@ -4545,11 +4522,6 @@ let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
         with _ ->
             try FileSystem.FileDeleteShim options.outfile with | _ -> ()
             reraise()
-
-    try
-        FileSystemUtilities.setExecutablePermission options.outfile
-    with _ ->
-        ()
 
     let reopenOutput () =
         FileSystem.OpenFileForWriteShim(options.outfile, FileMode.Open, FileAccess.Write, FileShare.Read)

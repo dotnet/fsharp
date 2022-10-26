@@ -361,9 +361,6 @@ module MemoryMappedFileExtensions =
 
         if length = 0L then
             None
-        else if runningOnMono then
-            // mono's MemoryMappedFile implementation throws with null `mapName`, so we use byte arrays instead: https://github.com/mono/mono/issues/1024
-            None
         else
             // Try to create a memory mapped file and copy the contents of the given bytes to it.
             // If this fails, then we clean up and return None.
@@ -536,7 +533,7 @@ type DefaultFileSystem() as this =
         //   -  Running on mono, since its MemoryMappedFile implementation throws when "mapName" is not provided (is null).
         //      (See: https://github.com/mono/mono/issues/10245)
 
-        if runningOnMono || (not useMemoryMappedFile) then
+        if not useMemoryMappedFile then
             fileStream :> Stream
         else
             let mmf =

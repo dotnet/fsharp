@@ -223,7 +223,6 @@ let GenerateIlxCode
     (
         ilxBackend,
         isInteractiveItExpr,
-        isInteractiveOnMono,
         tcConfig: TcConfig,
         topAttrs: TopAttribs,
         optimizedImpls,
@@ -243,7 +242,7 @@ let GenerateIlxCode
     let ilxGenOpts: IlxGenOptions =
         {
             generateFilterBlocks = tcConfig.generateFilterBlocks
-            emitConstantArraysUsingStaticDataBlobs = not isInteractiveOnMono
+            emitConstantArraysUsingStaticDataBlobs = true
             workAroundReflectionEmitBugs = tcConfig.isInteractive
             generateDebugSymbols = tcConfig.debuginfo // REVIEW: is this still required?
             fragName = fragName
