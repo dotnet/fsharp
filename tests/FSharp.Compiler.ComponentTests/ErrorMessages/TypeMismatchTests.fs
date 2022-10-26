@@ -104,6 +104,74 @@ let test x =
                  "Type mismatch. Expecting a tuple of length 3 of type\n    int * string * char    \nbut given a tuple of length 2 of type\n    int * char    \n")
             ]
 
+        [<Fact>]
+        let ``Else branch context``() =
+            FSharp """
+let f1(a, b: string, c) =
+    if true then (1, 2) else (a, b, c)
+            """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 3, Col 31, Line 3, Col 38,
+                 "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length 2 of type\n    int * int    \nThis branch returns a tuple of length 3 of type\n    'a * string * 'b    \n")
+            ]
+
+        [<Fact>]
+        let ``Match branch context``() =
+            FSharp """
+let f x =
+    match x with
+    | 0 -> 0, 0, 0
+    | _ -> "a", "a"
+                   """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 5, Col 12, Line 5, Col 20,
+                 "All branches of a pattern match expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length 3 of type\n    int * int * int    \nThis branch returns a tuple of length 2 of type\n    string * string    \n")
+            ]
+
+        [<Fact>]
+        let ``If context`` () =
+            FSharp """
+let y : bool * int * int =
+    if true then "A", "B"
+    else "B", "C"
+                   """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 3, Col 18, Line 3, Col 26,
+                 "The 'if' expression needs to return a tuple of length 3 of type\n    bool * int * int    \nto satisfy context type requirements. It currently returns a tuple of length 2 of type\n    string * string    \n")
+                (Error 1, Line 4, Col 10, Line 4, Col 18,
+                "All branches of an 'if' expression must return values implicitly convertible to the type of the first branch, which here is a tuple of length 3 of type\n    bool * int * int    \nThis branch returns a tuple of length 2 of type\n    string * string    \n")
+            ]
+
+        [<Fact>]
+        let ``Array context`` () =
+            FSharp """
+let f x y = [| 1, 2; x, "a", y |]
+                   """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 2, Col 22, Line 2, Col 31,
+                 "All elements of an array must be implicitly convertible to the type of the first element, which here is a tuple of length 2 of type\n    int * int    \nThis element is a tuple of length 3 of type\n    'a * string * 'b    \n")
+            ]
+
+        [<Fact>]
+        let ``List context`` () =
+            FSharp """
+let f x y = [ 1, 2; x, "a", y ]
+                   """
+            |> typecheck
+            |> shouldFail
+            |> withDiagnostics [
+                (Error 1, Line 2, Col 21, Line 2, Col 30,
+                 "All elements of a list must be implicitly convertible to the type of the first element, which here is a tuple of length 2 of type\n    int * int    \nThis element is a tuple of length 3 of type\n    'a * string * 'b    \n")
+            ]
+
     [<Fact>]
     let ``return Instead Of return!``() =
         FSharp """
