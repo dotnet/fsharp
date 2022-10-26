@@ -542,6 +542,16 @@
         <target state="translated">插補字串無效。單引號或逐字字串常值不能用於單引號或逐字字串的插補運算式中。請考慮為內插補點運算式使用明確的 'let' 繫結，或使用三引號字串作為外部字串常值。</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexTooManyLBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTooManyRBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">插補字串無效。三引號字串常值不可用於插補運算式。請考慮為內插補點運算式使用明確的 'let' 繫結。</target>

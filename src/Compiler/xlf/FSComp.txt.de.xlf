@@ -542,6 +542,16 @@
         <target state="translated">Ungültige interpolierte Zeichenfolge. Literale mit einzelnen Anführungszeichen oder ausführliche Zeichenfolgenliterale dürfen nicht in interpolierten Ausdrücken in Zeichenfolgen mit einfachen Anführungszeichen oder ausführlichen Zeichenfolgen verwendet werden. Erwägen Sie die Verwendung einer expliziten let-Bindung für den Interpolationsausdruck, oder verwenden Sie eine Zeichenfolge mit dreifachen Anführungszeichen als äußeres Zeichenfolgenliteral.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexTooManyLBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTooManyRBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">Ungültige interpolierte Zeichenfolge. Zeichenfolgenliterale mit dreifachen Anführungszeichen dürfen in interpolierten Ausdrücken nicht verwendet werden. Erwägen Sie die Verwendung einer expliziten let-Bindung für den Interpolationsausdruck.</target>

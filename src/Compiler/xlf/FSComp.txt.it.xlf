@@ -542,6 +542,16 @@
         <target state="translated">La stringa interpolata non è valida. Non è possibile usare valori letterali stringa tra virgolette singole o verbatim in espressioni interpolate in stringhe verbatim o tra virgolette singole. Provare a usare un binding 'let' esplicito per l'espressione di interpolazione oppure usare una stringa tra virgolette triple come valore letterale stringa esterno.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexTooManyLBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTooManyRBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">La stringa interpolata non è valida. Non è possibile usare valori letterali stringa tra virgolette triple in espressioni interpolate. Provare a usare un binding 'let' esplicito per l'espressione di interpolazione.</target>

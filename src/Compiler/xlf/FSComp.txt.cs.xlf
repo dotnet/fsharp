@@ -542,6 +542,16 @@
         <target state="translated">Neplatný interpolovaný řetězec. Literály s jednoduchou uvozovkou nebo doslovné řetězcové literály se nedají použít v interpolovaných výrazech v řetězcích s jednoduchou uvozovkou nebo v doslovných řetězcích. Zvažte možnost použít pro výraz interpolace explicitní vazbu let nebo řetězec s trojitými uvozovkami jako vnější řetězcový literál.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexTooManyLBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTooManyRBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">Neplatný interpolovaný řetězec. V interpolovaných výrazech se nedají použít řetězcové literály s trojitými uvozovkami. Zvažte možnost použít pro interpolovaný výraz explicitní vazbu let.</target>

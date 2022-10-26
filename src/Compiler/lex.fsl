@@ -1425,7 +1425,7 @@ and tripleQuoteString sargs skip = parse
               fail args lexbuf (0, FSComp.SR.lexCharNotAllowedInOperatorNames("@")) () // XXX
           let maxBraces = 2 * args.numDollars - 1
           if numBraces > maxBraces then
-              fail args lexbuf (0, FSComp.SR.lexCharNotAllowedInOperatorNames("#")) (tripleQuoteString sargs skip lexbuf) // XXX
+              fail args lexbuf (FSComp.SR.lexTooManyLBracesInTripleQuote()) (tripleQuoteString sargs skip lexbuf) // XXX
           elif numBraces < args.numDollars then
               addUnicodeString buf (lexeme lexbuf)
               if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, kind, args.numDollars, m))
@@ -1465,7 +1465,7 @@ and tripleQuoteString sargs skip = parse
               (result())
           else
               args.numDollars <- 0 // XXX
-              fail args lexbuf (0, FSComp.SR.lexCharNotAllowedInOperatorNames("^")) (result())
+              fail args lexbuf (FSComp.SR.lexTooManyRBracesInTripleQuote()) (result())
       else
           addUnicodeString buf (lexeme lexbuf)
           (result())

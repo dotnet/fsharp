@@ -542,6 +542,16 @@
         <target state="translated">Cadeia de caracteres interpolada inválida. Literais de cadeia de caracteres verbatim ou com aspas simples não podem ser usados em expressões interpoladas em cadeias de caracteres verbatim ou com aspas simples. Considere usar uma associação 'let' explícita para a expressão de interpolação ou use uma cadeia de caracteres de aspas triplas como o literal da cadeia de caracteres externa.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexTooManyLBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTooManyRBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">Cadeia de caracteres interpolada inválida. Literais de cadeia de caracteres de aspas triplas não podem ser usados em expressões interpoladas. Considere usar uma associação 'let' explícita para a expressão de interpolação.</target>

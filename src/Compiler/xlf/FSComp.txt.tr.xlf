@@ -542,6 +542,16 @@
         <target state="translated">Geçersiz düz metin arasına kod eklenmiş dize. Tek tırnaklı veya düz metin dizesi sabitleri, tek tırnaklı veya düz metin dizelerinde düz metin arasına kod eklenmiş ifadelerde kullanılamaz. Düz metin arasına kod ekleme ifadesi için açık bir 'let' bağlaması kullanmayı düşünün veya dış dize sabiti olarak üç tırnaklı bir dize kullanın.</target>
         <note />
       </trans-unit>
+      <trans-unit id="lexTooManyLBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive opening braces as content.</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="lexTooManyRBracesInTripleQuote">
+        <source>The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content.</source>
+        <target state="new">The interpolated triple quoted string literal does not start with enough '$' characters to allow this many consecutive closing braces as content.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="lexTripleQuoteInTripleQuote">
         <source>Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.</source>
         <target state="translated">Geçersiz düz metin arasına kod eklenmiş dize. Üç tırnaklı dize sabitleri, düz metin arasına kod eklenmiş ifadelerde kullanılamaz. Düz metin arasına kod ekleme ifadesi için açık bir 'let' bağlaması kullanmayı düşünün.</target>
