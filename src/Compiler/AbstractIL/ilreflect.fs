@@ -162,6 +162,7 @@ type TypeBuilder with
     member typB.CreateTypeAndLog() =
         if logRefEmitCalls then
             printfn "typeBuilder%d.CreateType()" (abs <| hash typB)
+
         typB.CreateTypeInfo().AsType()
 
     member typB.DefineNestedTypeAndLog(name, attrs) =
@@ -2516,12 +2517,8 @@ let buildModuleFragment cenv emEnv (modB: ModuleBuilder) (m: ILModuleDef) =
 // test hook
 //----------------------------------------------------------------------------
 let defineDynamicAssemblyAndLog (asmName, flags, asmDir: string) =
-#if FX_NO_APP_DOMAINS
     let asmB = AssemblyBuilder.DefineDynamicAssembly(asmName, flags)
-#else
-    let currentDom = System.AppDomain.CurrentDomain
-    let asmB = currentDom.DefineDynamicAssembly(asmName, flags, asmDir)
-#endif
+
     if logRefEmitCalls then
         printfn "open System"
         printfn "open System.Reflection"
@@ -2546,6 +2543,7 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, collectible) =
             AssemblyBuilderAccess.RunAndCollect
         else
             AssemblyBuilderAccess.Run
+
     let asmB = defineDynamicAssemblyAndLog (asmName, asmAccess, asmDir)
 
     if not optimize then

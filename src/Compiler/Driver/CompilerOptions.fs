@@ -767,13 +767,10 @@ let compilerToolFlagAbbrev (tcConfigB: TcConfigBuilder) =
 let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 
 let inputFileFlagsFsiBase (_tcConfigB: TcConfigBuilder) =
-#if NETSTANDARD
     [
-        CompilerOption("usesdkrefs", tagNone, OptionSwitch(SetUseSdkSwitch _tcConfigB), None, Some(FSComp.SR.useSdkRefs ()))
+        if FSharpEnvironment.isRunningOnCoreClr then
+            yield CompilerOption("usesdkrefs", tagNone, OptionSwitch(SetUseSdkSwitch _tcConfigB), None, Some(FSComp.SR.useSdkRefs ()))
     ]
-#else
-    List.empty<CompilerOption>
-#endif
 
 let inputFileFlagsFsi (tcConfigB: TcConfigBuilder) =
     List.append (inputFileFlagsBoth tcConfigB) (inputFileFlagsFsiBase tcConfigB)

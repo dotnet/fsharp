@@ -184,27 +184,15 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
         | AssemblyFolders ->
             lineIfExists resolvedPath
             + lineIfExists fusionName
-#if CROSS_PLATFORM_COMPILER
-            + "Found by AssemblyFolders registry key"
-#else
             + FSComp.SR.assemblyResolutionFoundByAssemblyFoldersKey()
-#endif
         | AssemblyFoldersEx -> 
             lineIfExists resolvedPath
             + lineIfExists fusionName
-#if CROSS_PLATFORM_COMPILER
-            + "Found by AssemblyFoldersEx registry key"
-#else
             + FSComp.SR.assemblyResolutionFoundByAssemblyFoldersExKey()
-#endif
         | TargetFrameworkDirectory -> 
             lineIfExists resolvedPath
             + lineIfExists fusionName
-#if CROSS_PLATFORM_COMPILER
-            + ".NET Framework"
-#else
             + FSComp.SR.assemblyResolutionNetFramework()
-#endif
         | Unknown ->
             // Unknown when resolved by plain directory search without help from MSBuild resolver.
             lineIfExists resolvedPath
@@ -213,11 +201,7 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
             lineIfExists fusionName
         | GlobalAssemblyCache -> 
             lineIfExists fusionName
-#if CROSS_PLATFORM_COMPILER
-            + "Global Assembly Cache"
-#else
             + lineIfExists (FSComp.SR.assemblyResolutionGAC())
-#endif
             + lineIfExists redist
         | Path _ ->
             lineIfExists resolvedPath

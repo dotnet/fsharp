@@ -182,8 +182,10 @@ module DispatchSlotChecking =
         // Dissect the type. The '0' indicates there are no enclosing generic class type parameters relevant here.
         let tps, _, argInfos, retTy, _ = GetMemberTypeInMemberForm g memberFlags arityInfo 0 ty id.idRange
         let argTys = argInfos |> List.mapSquared fst
+
         // Dissect the implementation
-        let _, ctorThisValOpt, baseValOpt, vsl, rhsExpr, _ = destTopLambda g amap arityInfo (rhsExpr, ty)
+        let _, ctorThisValOpt, baseValOpt, vsl, rhsExpr, _ = destLambdaWithValReprInfo g amap arityInfo (rhsExpr, ty)
+
         assert ctorThisValOpt.IsNone
 
         // Drop 'this'
@@ -927,9 +929,9 @@ let GetAbstractMethInfosForSynMethodDecl(infoReader: InfoReader, ad, memberName:
         | ty, None -> 
             GetIntrinsicMethInfosOfType infoReader (Some memberName.idText) ad AllowMultiIntfInstantiations.Yes IgnoreOverrides bindm ty
     let dispatchSlots = minfos |> List.filter (fun minfo -> minfo.IsDispatchSlot)
-    let topValSynArities = SynInfo.AritiesOfArgs valSynData
-    let topValSynArities = if List.isEmpty topValSynArities then topValSynArities else topValSynArities.Tail
-    let dispatchSlotsArityMatch = dispatchSlots |> List.filter (fun minfo -> minfo.NumArgs = topValSynArities) 
+    let valReprSynArities = SynInfo.AritiesOfArgs valSynData
+    let valReprSynArities = if List.isEmpty valReprSynArities then valReprSynArities else valReprSynArities.Tail
+    let dispatchSlotsArityMatch = dispatchSlots |> List.filter (fun minfo -> minfo.NumArgs = valReprSynArities) 
     dispatchSlots, dispatchSlotsArityMatch 
 
 /// Get the properties relevant to determining if a uniquely-identified-override exists based on the syntactic information 
