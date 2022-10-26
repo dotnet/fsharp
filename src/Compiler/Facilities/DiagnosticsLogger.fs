@@ -787,9 +787,9 @@ let NormalizeErrorString (text: string MaybeNull) =
 
 let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then
-        let featureStr = langVersion.GetFeatureString langFeature
+        let featureStr = LanguageVersion.GetFeatureString langFeature
         let currentVersionStr = langVersion.SpecifiedVersionString
-        let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
+        let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
         Some(Error(FSComp.SR.chkFeatureNotLanguageSupported (featureStr, currentVersionStr, suggestedVersionStr), m))
     else
         None
@@ -807,13 +807,13 @@ let internal checkLanguageFeatureAndRecover langVersion langFeature m =
 let internal tryLanguageFeatureErrorOption langVersion langFeature m =
     tryLanguageFeatureErrorAux langVersion langFeature m
 
-let internal languageFeatureNotSupportedInLibraryError (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
-    let featureStr = langVersion.GetFeatureString langFeature
-    let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
+let internal languageFeatureNotSupportedInLibraryError (langFeature: LanguageFeature) (m: range) =
+    let featureStr = LanguageVersion.GetFeatureString langFeature
+    let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
     error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary (featureStr, suggestedVersionStr), m))
 
 /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
-type StackGuard(maxDepth: int) =
+type StackGuard(maxDepth: int, name: string) =
 
     let mutable depth = 1
 
@@ -828,7 +828,7 @@ type StackGuard(maxDepth: int) =
 
                 async {
                     do! Async.SwitchToNewThread()
-                    Thread.CurrentThread.Name <- "F# Extra Compilation Thread"
+                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
                     use _scope = new CompilationGlobalsScope(diagnosticsLogger, buildPhase)
                     return f ()
                 }

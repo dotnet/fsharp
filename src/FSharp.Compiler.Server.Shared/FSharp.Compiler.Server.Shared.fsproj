@@ -8,9 +8,9 @@
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
   </PropertyGroup>
 
-  <!--  The FSharp.Compiler.Server.Shared dll does not provide a referencable public interface  -->
+  <!--  The FSharp.Core dll provides a referencable public interface -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <CompressMetadata>true</CompressMetadata>
+      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
   </PropertyGroup>
 
   <ItemGroup>

@@ -807,7 +807,12 @@ val emptyFreeLocals: FreeLocals
 
 val unionFreeLocals: FreeLocals -> FreeLocals -> FreeLocals
 
-type FreeVarOptions
+/// Represents the options to activate when collecting free variables
+[<Sealed>]
+type FreeVarOptions =
+    /// During backend code generation of state machines, register a template replacement for struct types.
+    /// This may introduce new free variables related to the instantiation of the struct type.
+    member WithTemplateReplacement: (TyconRef -> bool) * Typars -> FreeVarOptions
 
 val CollectLocalsNoCaching: FreeVarOptions
 
@@ -2691,3 +2696,9 @@ type TraitConstraintInfo with
 
     /// Get the key associated with the member constraint.
     member GetWitnessInfo: unit -> TraitWitnessInfo
+
+/// Matches a ModuleOrNamespaceContents that is empty from a signature printing point of view.
+/// Signatures printed via the typed tree in NicePrint don't print TMDefOpens or TMDefDo.
+/// This will match anything that does not have any types or bindings.
+val (|EmptyModuleOrNamespaces|_|):
+    moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) option

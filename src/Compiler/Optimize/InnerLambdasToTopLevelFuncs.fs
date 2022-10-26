@@ -1366,7 +1366,7 @@ let MakeTopLevelRepresentationDecisions ccu g expr =
                 recShortCallS = recShortCallS
                 envPackM = envPackM
                 fHatM = fHatM
-                stackGuard = StackGuard(InnerLambdasToTopLevelFunctionsStackGuardDepth) }
+                stackGuard = StackGuard(InnerLambdasToTopLevelFunctionsStackGuardDepth, "InnerLambdasToTopLevelFunctionsStackGuardDepth") }
           let z = Pass4_RewriteAssembly.rewriteState0
           Pass4_RewriteAssembly.TransImplFile penv z expr
 

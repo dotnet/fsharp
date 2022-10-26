@@ -2,13 +2,9 @@
 
 module FSharp.Compiler.Service.Tests.VisualStudioVersusConsoleContextTests
 
-open FSharp.Compiler.Text
 open NUnit.Framework
-open System.IO
-open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerOptions
-open Internal.Utilities
-open FSharp.Compiler.AbstractIL.ILBinaryReader
+open TestDoubles
 
 // copypasted from the CompilerOptions code,
 // not worth changing that code's accessibility just for this test
@@ -23,17 +19,7 @@ let private getOptionsFromOptionBlocks blocks =
 [<Test>] // controls https://github.com/dotnet/fsharp/issues/13549
 let ``Console-only options are filtered out for fsc in the VS context`` () =
     // just a random thing to make things work
-    let builder = TcConfigBuilder.CreateNew(
-        null,
-        FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value,
-        ReduceMemoryFlag.Yes,
-        Directory.GetCurrentDirectory(),
-        false,
-        false,
-        CopyFSharpCoreFlag.No,
-        (fun _ -> None),
-        None,
-        Range.Zero)
+    let builder = getArbitraryTcConfigBuilder()
 
     let blocks = GetCoreServiceCompilerOptions builder
     let options = getOptionsFromOptionBlocks blocks

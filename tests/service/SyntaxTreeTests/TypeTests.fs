@@ -484,3 +484,113 @@ let ``SynType.Fun has range of arrow`` () =
     ])) ->
         assertRange (2, 21) (2, 23) mArrow
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``SynType.Tuple with struct`` () =
+    let parseResults =
+        getParseResults
+            """
+let _: struct (int * int) = ()
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+        SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding(returnInfo = Some (SynBindingReturnInfo(typeName =
+                SynType.Tuple(true, [ SynTupleTypeSegment.Type _ ; SynTupleTypeSegment.Star _ ; SynTupleTypeSegment.Type _ ], mTuple)))) ])
+            ])
+        ])
+     ) ->
+        assertRange (2, 7) (2, 25) mTuple
+        
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``SynType.Tuple with struct, recovery`` () =
+    let parseResults =
+        getParseResults
+            """
+let _: struct (int * int = ()
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+        SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Let(bindings = [ SynBinding(returnInfo = Some (SynBindingReturnInfo(typeName =
+                SynType.Tuple(true, [ SynTupleTypeSegment.Type _ ; SynTupleTypeSegment.Star _ ; SynTupleTypeSegment.Type _ ], mTuple)))) ])
+            ])
+        ])
+     ) ->
+        assertRange (2, 7) (2, 24) mTuple
+        
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``Named parameters in delegate type`` () =
+    let parseResults =
+        getParseResults
+             """
+type Foo = delegate of a: A * b: B -> c:C -> D
+ """
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+        SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [
+                SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(kind =
+                    SynTypeDefnKind.Delegate(signature = SynType.Fun(
+                        argType =
+                            SynType.Tuple(path = [
+                                SynTupleTypeSegment.Type(SynType.SignatureParameter(id = Some a))
+                                SynTupleTypeSegment.Star _
+                                SynTupleTypeSegment.Type(SynType.SignatureParameter(id = Some b))
+                            ])
+                        returnType =
+                            SynType.Fun(
+                                argType = SynType.SignatureParameter(id = Some c)
+                                returnType = SynType.LongIdent _
+                            )
+                    ))))
+            ])
+        ])
+    ])) ->
+        Assert.AreEqual("a", a.idText)
+        Assert.AreEqual("b", b.idText)
+        Assert.AreEqual("c", c.idText)
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``Attributes in optional named member parameter`` () =
+    let parseResults =
+        getParseResults
+             """
+type X =
+    abstract member Y: [<Foo; Bar>] ?a: A -> B
+ """
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput(modules = [
+        SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [
+                SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(
+                    members = [
+                        SynMemberDefn.AbstractSlot(slotSig = SynValSig(synType =
+                            SynType.Fun(
+                                argType = SynType.SignatureParameter(
+                                    [ { Attributes = [ _ ; _ ] } ],
+                                    true,
+                                    Some a,
+                                    SynType.LongIdent _,
+                                    m
+                                )
+                                returnType = SynType.LongIdent _
+                            )
+                        ))
+                    ]
+                ))
+            ])
+        ])
+    ])) ->
+        Assert.AreEqual("a", a.idText)
+        assertRange (3, 23) (3, 41) m
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

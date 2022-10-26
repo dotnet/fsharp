@@ -8,6 +8,7 @@ open FSharp.Compiler.IO
 open System.Collections.Generic
 open System.Reflection
 
+/// Represents the target primary assembly
 [<RequireQualifiedAccess>]
 type internal PrimaryAssembly =
     | Mscorlib
@@ -15,6 +16,11 @@ type internal PrimaryAssembly =
     | NetStandard
 
     member Name: string
+
+    /// Checks if an assembly resolution may represent a primary assembly that actually contains the
+    /// definition of Sytem.Object.  Note that the chosen target primary assembly may not actually be the one
+    /// that contains the definition of System.Object - it is just the one we are choosing to emit for.
+    static member IsPossiblePrimaryAssembly: fileName: string -> bool
 
 /// Represents guids
 type ILGuid = byte[]
@@ -1407,11 +1413,11 @@ type ILTypeDefs =
     /// Get some information about the type defs, but do not force the read of the type defs themselves.
     member internal AsArrayOfPreTypeDefs: unit -> ILPreTypeDef[]
 
-    /// Calls to <c>FindByName</c> will result in any laziness in the overall
-    /// set of ILTypeDefs being read in in addition
-    /// to the details for the type found, but the remaining individual
-    /// type definitions will not be read.
+    /// Calls to <c>FindByName</c> will result in all the ILPreTypeDefs being read.
     member internal FindByName: string -> ILTypeDef
+
+    /// Calls to <c>ExistsByName</c> will result in all the ILPreTypeDefs being read.
+    member internal ExistsByName: string -> bool
 
 /// Represents IL Type Definitions.
 [<NoComparison; NoEquality>]
@@ -1841,10 +1847,11 @@ type internal ILGlobals =
     member IsPossiblePrimaryAssemblyRef: ILAssemblyRef -> bool
 
 /// Build the table of commonly used references given functions to find types in system assemblies
+///
+///   primaryScopeRef is the primary assembly we are emitting
+///   equivPrimaryAssemblyRefs are ones regarded as equivalent
 val internal mkILGlobals:
-    primaryScopeRef: ILScopeRef *
-    assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list *
-    fsharpCoreAssemblyScopeRef: ILScopeRef ->
+    primaryScopeRef: ILScopeRef * equivPrimaryAssemblyRefs: ILAssemblyRef list * fsharpCoreAssemblyScopeRef: ILScopeRef ->
         ILGlobals
 
 val internal PrimaryAssemblyILGlobals: ILGlobals
