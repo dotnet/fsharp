@@ -4353,9 +4353,6 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     | SynType.MeasurePower(ty, exponent, m) ->
         TcTypeMeasurePower kindOpt cenv newOk checkConstraints occ env tpenv ty exponent m
 
-    | SynType.MeasureDivide(typ1, typ2, m) ->
-        TcTypeMeasureDivide kindOpt cenv newOk checkConstraints occ env tpenv typ1 typ2 m
-
     | SynType.App(arg1, _, args, _, _, postfix, m) ->
         TcTypeMeasureApp kindOpt cenv newOk checkConstraints occ env tpenv arg1 args postfix m 
 
@@ -5815,7 +5812,7 @@ and CheckTupleIsCorrectLength g (env: TcEnv) m tupleTy (args: 'a list) tcArgs =
 
             // We let error recovery handle this exception
             error (ErrorFromAddingTypeEquation(g, env.DisplayEnv, tupleTy, expectedTy,
-                   (ConstraintSolverTupleDiffLengths(env.DisplayEnv, ptys, argTys, m, m)), m))
+                   (ConstraintSolverTupleDiffLengths(env.DisplayEnv, env.eContextInfo, ptys, argTys, m, m)), m))
 
 and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
     let g = cenv.g
@@ -6125,10 +6122,12 @@ and RewriteRangeExpr synExpr =
     match synExpr with
     // a..b..c (parsed as (a..b)..c )
     | SynExpr.IndexRange(Some (SynExpr.IndexRange(Some synExpr1, _, Some synStepExpr, _, _, _)), _, Some synExpr2, _m1, _m2, mWhole) ->
+        let mWhole = mWhole.MakeSynthetic()
         Some (mkSynTrifix mWhole ".. .." synExpr1 synStepExpr synExpr2)
     // a..b
     | SynExpr.IndexRange (Some synExpr1, mOperator, Some synExpr2, _m1, _m2, mWhole) ->
         let otherExpr =
+            let mWhole = mWhole.MakeSynthetic()
             match mkSynInfix mOperator synExpr1 ".." synExpr2 with
             | SynExpr.App (a, b, c, d, _) -> SynExpr.App (a, b, c, d, mWhole)
             | _ -> failwith "impossible"

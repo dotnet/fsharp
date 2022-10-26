@@ -7,6 +7,11 @@
         <target state="translated">Vždy umístit otevřené příkazy na nejvyšší úroveň</target>
         <note />
       </trans-unit>
+      <trans-unit id="Inline_Hints">
+        <source>Inline Hints</source>
+        <target state="new">Inline Hints</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Lens">
         <source>Lens</source>
         <target state="translated">Lens</target>
@@ -75,6 +80,11 @@
       <trans-unit id="Parallelization">
         <source>Parallelization (requires restart)</source>
         <target state="new">Parallelization (requires restart)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Inline_Hints">
+        <source>Display inline type hints (experimental)</source>
+        <target state="new">Display inline type hints (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
