@@ -173,7 +173,7 @@ let IsIdentifierPartCharacter c =
 let keywordsWithDescription: (string * string) list =
     [
         "abstract", FSComp.SR.keywordDescriptionAbstract ()
-        "and", FSComp.SR.keyworkDescriptionAnd ()
+        "and", FSComp.SR.keywordDescriptionAnd ()
         "as", FSComp.SR.keywordDescriptionAs ()
         "assert", FSComp.SR.keywordDescriptionAssert ()
         "base", FSComp.SR.keywordDescriptionBase ()
@@ -244,6 +244,7 @@ let keywordsWithDescription: (string * string) list =
         "->", FSComp.SR.keywordDescriptionRightArrow ()
         "<-", FSComp.SR.keywordDescriptionLeftArrow ()
         ":>", FSComp.SR.keywordDescriptionCast ()
+        ":?", FSComp.SR.keywordDescriptionTypeTest ()
         ":?>", FSComp.SR.keywordDescriptionDynamicCast ()
         "<@", FSComp.SR.keywordDescriptionTypedQuotation ()
         "@>", FSComp.SR.keywordDescriptionTypedQuotation ()
