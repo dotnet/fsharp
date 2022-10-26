@@ -16,6 +16,6 @@
 
   <PropertyGroup>
      <!-- Override the setting for the Arcade UserRuntimeConfig for fsc on .NET Core -->
-    <UserRuntimeConfig Condition="'$(TargetFrameworkIdentifier)' == '.NETCoreApp' AND '$(OutputType)' == 'Exe' AND '$(AssemblyName)' == 'fsc'">$(MSBuildThisFileDirectory)src\fsc\runtimeconfig.template.json</UserRuntimeConfig>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
   </PropertyGroup>
 </Project>
