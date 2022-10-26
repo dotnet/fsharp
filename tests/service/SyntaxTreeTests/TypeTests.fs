@@ -244,12 +244,13 @@ and C = D
     match parseResults with
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
-            typeDefns = [ SynTypeDefn(trivia={ TypeKeyword = Some mType })
-                          SynTypeDefn(trivia={ TypeKeyword = None }) ]
+            typeDefns = [ SynTypeDefn(trivia={ LeadingKeyword = SynTypeDefnLeadingKeyword.Type mType })
+                          SynTypeDefn(trivia={ LeadingKeyword = SynTypeDefnLeadingKeyword.And mAnd }) ]
         )
     ]) ])) ->
         assertRange (4, 0) (4, 4) mType
-    | _ -> Assert.Fail "Could not get valid AST"
+        assertRange (5, 0) (5, 3) mAnd
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
 
 [<Test>]
 let ``SynTypeDefn with attribute contains the range of the type keyword`` () =
@@ -264,7 +265,7 @@ type A = B
     match parseResults with
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
-            typeDefns = [ SynTypeDefn(trivia={ TypeKeyword = Some mType }) ]
+            typeDefns = [ SynTypeDefn(trivia={ LeadingKeyword = SynTypeDefnLeadingKeyword.Type mType }) ]
         )
     ]) ])) ->
         assertRange (4, 0) (4, 4) mType
@@ -400,4 +401,32 @@ type X =
     ])) ->
         Assert.AreEqual("a", a.idText)
         assertRange (3, 23) (3, 41) m
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``Nested type has static type as leading keyword`` () =
+    let parseResults =
+        getParseResults
+             """
+type A =
+    static type B =
+                    class
+                    end
+ """
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput(contents = [
+        SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+            SynModuleDecl.Types(typeDefns = [
+                SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(
+                    members = [
+                        SynMemberDefn.NestedType(typeDefn =
+                            SynTypeDefn(trivia = { LeadingKeyword = SynTypeDefnLeadingKeyword.StaticType(mStatic, mType) }))
+                    ]
+                ))
+            ])
+        ])
+    ])) ->
+        assertRange (3, 4) (3, 10) mStatic
+        assertRange (3, 11) (3, 15) mType
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
