@@ -1655,7 +1655,7 @@ type TraitWitnessInfo =
 type ITraitContext =
     /// Used to select the extension methods in the context relevant to solving the constraint
     /// given the current support types
-    abstract SelectExtensionMethods: TraitConstraintInfo * range * infoReader: obj -> ITraitExtensionMember list
+    abstract SelectExtensionMethods: TraitConstraintInfo * range * infoReader: obj -> (TType * ITraitExtensionMember) list
 
     /// Gives the access rights (e.g. InternalsVisibleTo, Protected) at the point the trait is being solved
     abstract AccessRights: ITraitAccessorDomain

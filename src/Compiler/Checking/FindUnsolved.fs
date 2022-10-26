@@ -296,7 +296,7 @@ let UnsolvedTyparsOfExpr g amap denv expr =
           amap=amap 
           denv=denv 
           unsolved = [] 
-          stackGuard = StackGuard(FindUnsolvedStackGuardDepth) }
+          stackGuard = StackGuard(FindUnsolvedStackGuardDepth, "UnsolvedTyparsOfExpr") }
    accExpr cenv NoEnv expr
    List.rev cenv.unsolved
 

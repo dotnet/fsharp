@@ -2376,7 +2376,7 @@ type TyparConstraint =
 type ITraitContext = 
     /// Used to select the extension methods in the context relevant to solving the constraint
     /// given the current support types
-    abstract SelectExtensionMethods: TraitConstraintInfo * range * infoReader: obj -> ITraitExtensionMember list
+    abstract SelectExtensionMethods: TraitConstraintInfo * range * infoReader: obj -> (TType * ITraitExtensionMember) list
 
     /// Gives the access rights (e.g. InternalsVisibleTo, Protected) at the point the trait is being solved
     abstract AccessRights: ITraitAccessorDomain
@@ -2411,7 +2411,7 @@ type TraitConstraintInfo =
     ///
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of tys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTyOpt: TType option * solution: TraitConstraintSln option ref * traitContext: ITraitContext option
+    | TTrait of supportTys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTyOpt: TType option * solution: TraitConstraintSln option ref * traitContext: ITraitContext option
 
     /// Get the types that may provide solutions for the traits
     member x.SupportTypes = (let (TTrait(tys, _, _, _, _, _, _)) = x in tys)
@@ -2423,14 +2423,14 @@ type TraitConstraintInfo =
     member x.MemberLogicalName = (let (TTrait(_, nm, _, _, _, _, _)) = x in nm)
 
     /// Get the member flags associated with the member constraint.
-    member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _, _, _)) = x in flags)
+    member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _, _)) = x in flags)
 
     member x.CompiledObjectAndArgumentTypes = (let (TTrait(_, _, _, objAndArgTys, _, _, _)) = x in objAndArgTys)
 
     member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f, g)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f, g))
 
     /// Get the optional return type recorded in the member constraint.
-    member x.CompiledReturnType = (let (TTrait(_, _, _, _, retTy, _)) = x in retTy)
+    member x.CompiledReturnType = (let (TTrait(_, _, _, _, retTy, _, _)) = x in retTy)
 
     /// Get or set the solution of the member constraint during inference
     member x.Solution 

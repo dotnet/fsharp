@@ -290,8 +290,8 @@ and remapTraitInfo tyenv (TTrait(tys, nm, flags, argTys, retTy, slnCell, traitCt
                 match sln with 
                 | ILMethSln(ty, extOpt, ilMethRef, minst, staticTyOpt) ->
                      ILMethSln(remapTypeAux tyenv ty, extOpt, ilMethRef, remapTypesAux tyenv minst, Option.map (remapTypeAux tyenv) staticTyOpt)  
-                | FSMethSln(ty, vref, minst, isExt, staticTyOpt) ->
-                     FSMethSln(remapTypeAux tyenv ty, remapValRef tyenv vref, remapTypesAux tyenv minst, isExt, Option.map (remapTypeAux tyenv) staticTyOpt)
+                | FSMethSln(ty, vref, minst, staticTyOpt, isExt) ->
+                     FSMethSln(remapTypeAux tyenv ty, remapValRef tyenv vref, remapTypesAux tyenv minst, Option.map (remapTypeAux tyenv) staticTyOpt, isExt)
                 | FSRecdFieldSln(tinst, rfref, isSet) ->
                      FSRecdFieldSln(remapTypesAux tyenv tinst, remapRecdFieldRef tyenv.tyconRefRemap rfref, isSet)  
                 | FSAnonRecdFieldSln(anonInfo, tinst, n) ->
@@ -2668,7 +2668,7 @@ type TraitConstraintInfo with
 
     /// Get the key associated with the member constraint.
     member traitInfo.GetWitnessInfo() =
-        let (TTrait(tys, nm, memFlags, objAndArgTys, rty, _)) = traitInfo
+        let (TTrait(tys, nm, memFlags, objAndArgTys, rty, _, _)) = traitInfo
         TraitWitnessInfo(tys, nm, memFlags, objAndArgTys, rty)
 
 /// Get information about the trait constraints for a set of typars.
@@ -6346,8 +6346,9 @@ let copyImplFile g compgen e =
 
 let instExpr g tpinst e =
     let traitCtxtsMap = traitCtxtsInTypes (List.map snd tpinst)
-    let ctxt = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth"); traitCtxtsMap = traitCtxtsMap }
-    remapExprImpl ctxt CloneAll (mkInstRemap tpinst) e
+    let ctxt : RemapContext = { g = g; stackGuard = StackGuard(RemapExprStackGuardDepth, "RemapExprStackGuardDepth") }
+    let remap = { mkInstRemap tpinst with traitCtxtsMap = traitCtxtsMap }
+    remapExprImpl ctxt CloneAll remap e
 
 //--------------------------------------------------------------------------
 // Replace Marks - adjust debugging marks when a lambda gets

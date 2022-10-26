@@ -825,7 +825,7 @@ module PrintTypes =
             let tysL = 
                 match tys with 
                 | [ty] -> layoutTypeWithInfo denv env ty 
-                | _ -> bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagKeyword "or")) supportTys)
+                | _ -> bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagKeyword "or")) tys)
 
             let retTyL = layoutReturnType denv env retTy
             let sigL =

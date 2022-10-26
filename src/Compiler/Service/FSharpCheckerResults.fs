@@ -477,7 +477,7 @@ type internal TypeCheckInfo
         // Exact resolution via 'T.$
         | CNR (Item.TypeVar (_, tp), _, denv, nenv, ad, m) :: _, Some _ ->
             let targets =
-                ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
+                ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m traitCtxtNone)
 
             let items = ResolveCompletionsInType ncenv nenv targets m ad true (mkTyparTy tp)
             let items = List.map ItemWithNoInst items

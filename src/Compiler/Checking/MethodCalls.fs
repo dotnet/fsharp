@@ -1324,7 +1324,7 @@ let rec AdjustExprForTypeDirectedConversions tcVal (g: TcGlobals) amap traitCtxt
         isNullableTy g reqdTy && not (isNullableTy g actualTy) then
 
        let underlyingTy = destNullableTy g reqdTy
-       let adjustedExpr = AdjustExprForTypeDirectedConversions tcVal g amap infoReader ad underlyingTy actualTy m expr
+       let adjustedExpr = AdjustExprForTypeDirectedConversions tcVal g amap traitCtxt infoReader ad underlyingTy actualTy m expr
        let adjustedActualTy = tyOfExpr g adjustedExpr
        
        let minfo = GetIntrinsicConstructorInfosOfType infoReader m reqdTy |> List.head

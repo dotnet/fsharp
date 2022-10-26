@@ -1955,7 +1955,7 @@ and AddUnsolvedMemberConstraint csenv ndeep m2 trace permitWeakResolution ignore
         // If there's nothing left to learn then raise the errors.
         // Note: we should likely call MemberConstraintIsReadyForResolution here when permitWeakResolution=false but for stability
         // reasons we use the more restrictive isNil frees.
-        if (permitWeakResolution.Permit && MemberConstraintIsReadyForWeakResolution csenv traitInfo) || isNil frees then
+        if (permitWeakResolution.Permit(g) && MemberConstraintIsReadyForWeakResolution csenv traitInfo) || isNil frees then
             do! errors
         // Otherwise re-record the trait waiting for canonicalization
         else
@@ -2011,8 +2011,8 @@ and MemberConstraintSolutionOfMethInfo css m traitCtxt minfo minst staticTyOpt =
        let iltref = ilMeth.ILExtensionMethodDeclaringTyconRef |> Option.map (fun tcref -> tcref.CompiledRepresentationForNamedType)
        ILMethSln(ilMeth.ApparentEnclosingType, iltref, mref, minst, staticTyOpt)
 
-    | FSMeth(_, ty, vref, _) ->  
-       FSMethSln(ty, vref, minst, extInfo.IsSome, staticTyOpt)
+    | FSMeth(_, ty, vref, extInfo) ->  
+       FSMethSln(ty, vref, minst, staticTyOpt, extInfo.IsSome)
 
     | MethInfo.DefaultStructCtor _ -> 
        error(InternalError("the default struct constructor was the unexpected solution to a trait constraint", m))
@@ -2053,14 +2053,15 @@ and GetRelevantExtensionMethodsForTrait m (infoReader: InfoReader) (traitInfo: T
         match traitInfo.TraitContext with 
         | None -> ()
         | Some traitCtxt -> 
-            for extMethInfo in traitCtxt.SelectExtensionMethods(traitInfo, m, infoReader=infoReader) do
-                (extMethInfo :?> MethInfo)
+            for (supportTy, extMethInfo) in traitCtxt.SelectExtensionMethods(traitInfo, m, infoReader=infoReader) do
+                supportTy, (extMethInfo :?> MethInfo)
     ]
 
 /// Only consider overload resolution if canonicalizing or all the types are now nominal. 
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
 and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolution: PermitWeakResolution) nm traitInfo : (TType * MethInfo) list =
-    let (TTrait(_, _, memFlags, _, _, _, traitCtxt)) = traitInfo
+    let g = csenv.g
+    let (TTrait(_, _, memFlags, _, _, _, _)) = traitInfo
     let results = 
         if permitWeakResolution.Permit g || MemberConstraintSupportIsReadyForDeterminingOverloads csenv traitInfo then
             let m = csenv.m
@@ -2080,7 +2081,7 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
 
             // Merge the sets so we don't get the same minfo from each side 
             // We merge based on whether minfos use identical metadata or not. 
-            let minfos = ListSet.setify (fun (_,minfo1) (_, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2) minfos
+            let minfos = minfos |> ListSet.setify (fun (_,minfo1) (_, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
             
             // Get the extension method that may be relevant to solving the constraint as MethInfo objects.
             // Extension members are not used when canonicalizing prior to generalization (permitWeakResolution=true)
@@ -2089,7 +2090,7 @@ and GetRelevantMethodsForTrait (csenv: ConstraintSolverEnv) (permitWeakResolutio
                     GetRelevantExtensionMethodsForTrait csenv.m csenv.InfoReader traitInfo
                 else []
 
-            let extMethInfos = extMethInfos |> ListSet.setify MethInfo.MethInfosUseIdenticalDefinitions 
+            let extMethInfos = extMethInfos |> ListSet.setify (fun (_,minfo1) (_, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
 
             let minfos = minfos @ extMethInfos
 
@@ -2249,8 +2250,8 @@ and AddMemberConstraint (csenv: ConstraintSolverEnv) ndeep m2 (trace: OptionalTr
     
 and TraitsAreRelated (csenv: ConstraintSolverEnv) retry traitInfo1 traitInfo2 =
     let g = csenv.g
-    let (TTrait(tys1, nm1, memFlags1, argTys1, _, _)) = traitInfo1
-    let (TTrait(tys2, nm2, memFlags2, argTys2, _, _)) = traitInfo2
+    let (TTrait(tys1, nm1, memFlags1, argTys1, _, _, _)) = traitInfo1
+    let (TTrait(tys2, nm2, memFlags2, argTys2, _, _, _)) = traitInfo2
     memFlags1.IsInstance = memFlags2.IsInstance &&
     nm1 = nm2 &&
     // Multiple op_Explicit and op_Implicit constraints can exist for the same type variable.
@@ -3876,7 +3877,7 @@ let ApplyDefaultsAfterWitnessGeneration (g: TcGlobals) amap css denv sln =
 let CodegenWitnessExprForTraitConstraintWillRequireWitnessArgs tcVal g amap m (traitInfo:TraitConstraintInfo) = trackErrors {
     let css = CreateCodegenState tcVal g amap
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.Yes 0 m NoTrace traitInfo
+    let! _res = SolveMemberConstraint csenv true PermitWeakResolution.YesAtCodeGen 0 m NoTrace traitInfo
     let res =
         match traitInfo.Solution with
         | None
@@ -3904,7 +3905,7 @@ let CodegenWitnessesForTyparInst tcVal g amap m typars tyargs = trackErrors {
      // This is invoked every time codegen or quotation calls a witness-accepting
      // method. TBH the witnesses need to be generated during type checking and passed all the way down,
      // or at least be left in the tree as WitnessArg nodes.
-    let ftps, _renaming, tinst = FreshenTypeInst traitCtxtNone m typars
+    let ftps, _renaming, tinst = FreshenTypeInst g traitCtxtNone m typars
     let traitInfos = GetTraitConstraintInfosOfTypars g ftps 
     do! SolveTyparsEqualTypes csenv 0 m NoTrace tinst tyargs
     let witnessArgs = GenWitnessArgs amap g m traitInfos
@@ -3944,7 +3945,7 @@ let IsApplicableMethApprox g amap m traitCtxt (minfo: MethInfo) availObjTy =
               PostInferenceChecksPreDefaults = ResizeArray() 
               PostInferenceChecksFinal = ResizeArray() }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-        let minst = FreshenMethInfo traitCtxt m minfo
+        let minst = FreshenMethInfo g traitCtxt m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with
         | [reqdObjTy] -> 
             let reqdObjTy = if isByrefTy g reqdObjTy then destByrefTy g reqdObjTy else reqdObjTy // This is to support byref extension methods.

@@ -257,7 +257,7 @@ type TcEnv =
         member tenv.SelectExtensionMethods(traitInfo, m, infoReader) =
             let infoReader = unbox<InfoReader>(infoReader)
             SelectExtensionMethInfosForTrait(traitInfo, m, tenv.eNameResEnv, infoReader)
-            |> List.map (fun minfo -> minfo :> ITraitExtensionMember)
+            |> List.map (fun (supportTy, minfo) -> supportTy, (minfo :> ITraitExtensionMember))
 
         member tenv.AccessRights = (tenv.eAccessRights :> ITraitAccessorDomain)
 
@@ -349,7 +349,7 @@ type TcFileState =
 
         let niceNameGen = NiceNameGenerator()
         let infoReader = InfoReader(g, amap)
-        let instantiationGenerator m tpsorig = FreshenTypars g m tpsorig
+        let instantiationGenerator m tpsorig traitCtxt = FreshenTypars g traitCtxt m tpsorig
         let nameResolver = NameResolver(g, amap, infoReader, instantiationGenerator)
         { g = g
           amap = amap

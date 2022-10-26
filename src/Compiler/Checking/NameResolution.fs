@@ -740,11 +740,12 @@ let AllMethInfosOfTypeInScope collectionSettings infoReader nenv optFilter ad fi
 let SelectExtensionMethInfosForTrait(traitInfo: TraitConstraintInfo, m, nenv: NameResolutionEnv, infoReader: InfoReader) =
     let g = infoReader.g
     if g.langVersion.SupportsFeature LanguageFeature.ExtensionConstraintSolutions then
-        [ for traitSupportTy in traitInfo.SupportTypes do
-            if not (isTyparTy g traitSupportTy) then 
-                let extMethInfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv (Some traitInfo.MemberName) m traitSupportTy
+        [ for suportTy in traitInfo.SupportTypes do
+            if not (isTyparTy g suportTy) then 
+                let isInstanceFilter = (if traitInfo.MemberFlags.IsInstance then LookupIsInstance.Yes else LookupIsInstance.No)
+                let extMethInfos = ExtensionMethInfosOfTypeInScope ResultCollectionSettings.AllResults infoReader nenv (Some traitInfo.MemberLogicalName) isInstanceFilter m suportTy
                 for extMethInfo in extMethInfos do
-                    yield extMethInfo ]
+                    yield (suportTy, extMethInfo) ]
     else
         []
 //-------------------------------------------------------------------------
@@ -3746,7 +3747,7 @@ let NeedsWorkAfterResolution namedItem =
     | Item.MethodGroup(_, minfos, _)
     | Item.CtorGroup(_, minfos) -> minfos.Length > 1 || minfos |> List.exists (fun minfo -> not (isNil minfo.FormalMethodInst))
     | Item.Property(_, pinfos) -> pinfos.Length > 1
-    | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(vref=vref)) })
+    | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(valRef=vref)) })
     | Item.Value vref | Item.CustomBuilder (_, vref) -> not (List.isEmpty vref.Typars)
     | Item.CustomOperation (_, _, Some minfo) -> not (isNil minfo.FormalMethodInst)
     | Item.ActivePatternCase apref -> not (List.isEmpty apref.ActivePatternVal.Typars)

@@ -663,7 +663,7 @@ val internal AllMethInfosOfTypeInScope:
         MethInfo list
 
 val internal SelectExtensionMethInfosForTrait:
-    traitInfo: TraitConstraintInfo * m: range * nenv: NameResolutionEnv * infoReader: InfoReader -> MethInfo list
+    traitInfo: TraitConstraintInfo * m: range * nenv: NameResolutionEnv * infoReader: InfoReader -> (TType * MethInfo) list
 
 /// Used to report an error condition where name resolution failed due to an indeterminate type
 exception internal IndeterminateType of range
@@ -858,4 +858,4 @@ val TrySelectExtensionMethInfoOfILExtMem:
 val traitCtxtNone: ITraitContext option
 
 val ExtensionMethInfosOfTypeInScope:
-    ResultCollectionSettings -> InfoReader -> NameResolutionEnv -> string option -> range -> TType -> MethInfo list
+    ResultCollectionSettings -> InfoReader -> NameResolutionEnv -> string option -> isInstanceFilter: LookupIsInstance -> range -> TType -> MethInfo list

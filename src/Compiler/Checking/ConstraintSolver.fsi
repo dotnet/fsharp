@@ -70,7 +70,7 @@ val FreshenTypars: g: TcGlobals -> ITraitContext option -> range -> Typars -> TT
 /// its generic parameters, and ensure that the constraints the new type variables are adjusted.
 ///
 /// Returns the inference type variables as a list of types.
-val FreshenMethInfo: ITraitContext option -> range -> MethInfo -> TType list
+val FreshenMethInfo: g: TcGlobals -> ITraitContext option -> range -> MethInfo -> TType list
 
 /// Information about the context of a type equation, for better error reporting
 [<RequireQualifiedAccess>]
