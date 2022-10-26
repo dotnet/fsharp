@@ -2652,9 +2652,9 @@ type FSharpCheckFileResults
         ToolTipText.ToolTipText
             [
                 for kw in names do
-                    match Tokenization.FSharpKeywords.KeywordsDescriptionLookup.TryGetValue kw with
-                    | false, _ -> ()
-                    | true, kwDescription ->
+                    match Tokenization.FSharpKeywords.KeywordsDescriptionLookup kw with
+                    | None -> ()
+                    | Some kwDescription ->
                         let kwText = kw |> TaggedText.tagKeyword |> wordL |> LayoutRender.toArray
                         let kwTip = ToolTipElementData.Create(kwText, FSharpXmlDoc.None)
 

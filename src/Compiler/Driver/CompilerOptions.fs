@@ -1680,6 +1680,14 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             None
         )
 
+        CompilerOption(
+            "parallelreferenceresolution",
+            tagNone,
+            OptionUnit(fun () -> tcConfigB.parallelReferenceResolution <- ParallelReferenceResolution.On),
+            Some(InternalCommandLineOption("--parallelreferenceresolution", rangeCmdArgs)),
+            None
+        )
+
         testFlag tcConfigB
     ]
     @

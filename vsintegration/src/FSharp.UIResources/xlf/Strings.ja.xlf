@@ -47,6 +47,16 @@
         <target state="translated">診断</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enable_Parallel_Checking_With_Signature_Files">
+        <source>Enable parallel type checking with signature files</source>
+        <target state="new">Enable parallel type checking with signature files</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Enable_Parallel_Reference_Resolution">
+        <source>Enable parallel reference resolution</source>
+        <target state="new">Enable parallel reference resolution</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Language_Service_Performance">
         <source>Performance</source>
         <target state="translated">パフォーマンス</target>
@@ -67,6 +77,11 @@
         <target state="translated">ナビゲーション リンク</target>
         <note />
       </trans-unit>
+      <trans-unit id="Parallelization">
+        <source>Parallelization (requires restart)</source>
+        <target state="new">Parallelization (requires restart)</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Show_all_symbols">
         <source>Show s_ymbols in unopened namespaces</source>
         <target state="translated">開かれていない名前空間の記号を表示する(_Y)</target>
@@ -85,11 +100,6 @@
       <trans-unit id="Enable_in_memory_cross_project_references">
         <source>_Enable in-memory cross project references</source>
         <target state="translated">メモリ内のプロジェクト間参照を有効にする(_E)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Project_check_cache_size">
-        <source>Number of projects whose data is cached in memory</source>
-        <target state="translated">データがメモリ内にキャッシュされているプロジェクトの数</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_navigation_links_as">
@@ -165,11 +175,6 @@
       <trans-unit id="Tooltip_in_memory_cross_project_references">
         <source>In-memory cross-project references store project-level data in memory to allow IDE features to work across projects.</source>
         <target state="translated">メモリ内のプロジェクト間参照に、プロジェクトをまたいで IDE 機能を動作可能にするプロジェクト レベルのデータが格納されます。</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Tooltip_project_check_cache_size">
-        <source>Project data is cached for IDE features. Higher values use more memory because more projects are cached. Tuning this value should not affect small or medium-sized solutions.</source>
-        <target state="translated">IDE 機能のためにプロジェクト データがキャッシュされます。値を高くすると、キャッシュされるプロジェクトが多くなるため、メモリ使用量が増えます。この値の調整は、小規模または中規模のソリューションに影響しません。</target>
         <note />
       </trans-unit>
       <trans-unit id="Enter_key_always">

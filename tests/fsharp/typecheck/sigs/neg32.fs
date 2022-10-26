@@ -34,7 +34,11 @@ type PositiveClass<'A>() =
    abstract M<'T> : 'T -> 'T
    abstract M2<'T> : 'T -> 'A
    abstract M : 'U -> 'U
-
+   abstract M3 : 'A with get, set
+   abstract M4 : 'A with set
+   abstract M5 : 'A with get
+   
+   
 type NegativeInterface =
    abstract v : 'T
    abstract M<'T> : 'U 
@@ -47,6 +51,9 @@ type NegativeClass() =
    abstract M<'T> : 'U 
    abstract M<'T> : 'U -> 'U
    abstract M : ('U -> 'U)
+   abstract M2 : 'T with get, set
+   abstract M3 : 'T with set
+   abstract M4 : 'T with get
 
 type NegativeRecord =
    { v : 'T }

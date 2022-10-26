@@ -886,12 +886,12 @@ type SynSimplePats =
 type SynArgPats =
     | Pats of pats: SynPat list
 
-    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range
+    | NamePatPairs of pats: (Ident * range * SynPat) list * range: range * trivia: SynArgPatsNamePatPairsTrivia
 
     member x.Patterns =
         match x with
         | Pats pats -> pats
-        | NamePatPairs (pats, _) -> pats |> List.map (fun (_, _, pat) -> pat)
+        | NamePatPairs (pats = pats) -> pats |> List.map (fun (_, _, pat) -> pat)
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynPat =
@@ -907,6 +907,8 @@ type SynPat =
     | Attrib of pat: SynPat * attributes: SynAttributes * range: range
 
     | Or of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatOrTrivia
+
+    | ListCons of lhsPat: SynPat * rhsPat: SynPat * range: range * trivia: SynPatListConsTrivia
 
     | Ands of pats: SynPat list * range: range
 
@@ -953,6 +955,7 @@ type SynPat =
         | SynPat.Wild (range = m)
         | SynPat.Named (range = m)
         | SynPat.Or (range = m)
+        | SynPat.ListCons (range = m)
         | SynPat.Ands (range = m)
         | SynPat.As (range = m)
         | SynPat.LongIdent (range = m)

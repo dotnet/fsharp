@@ -53,9 +53,9 @@ module Basic =
         |> shouldFail
         |> withDiagnostics [
             (Error 683, Line 14, Col 6, Line 14, Col 27, "Attributes are not allowed within patterns")
-            (Error 842, Line 14, Col 8, Line 14, Col 23, "This attribute is not valid for use on this language element")
+            (Error 842, Line 14, Col 8, Line 14, Col 25, "This attribute is not valid for use on this language element")
             (Error 683, Line 14, Col 42, Line 14, Col 63, "Attributes are not allowed within patterns")
-            (Error 842, Line 14, Col 44, Line 14, Col 59, "This attribute is not valid for use on this language element")
+            (Error 842, Line 14, Col 44, Line 14, Col 61, "This attribute is not valid for use on this language element")
         ]
 
     // SOURCE=E_ErrorsForInlineValue.fs SCFLAGS="--test:ErrorRanges"           # E_ErrorsForInlineValue.fs

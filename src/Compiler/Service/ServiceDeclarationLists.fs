@@ -39,7 +39,7 @@ type ToolTipElementData =
       Remarks: TaggedText[] option
       ParamName : string option }
 
-    static member Create(layout, xml, ?typeMapping, ?paramName, ?remarks) = 
+    static member internal Create(layout, xml, ?typeMapping, ?paramName, ?remarks) = 
         { MainDescription=layout; XmlDoc=xml; TypeMapping=defaultArg typeMapping []; ParamName=paramName; Remarks=remarks }
 
 /// A single data tip display element
