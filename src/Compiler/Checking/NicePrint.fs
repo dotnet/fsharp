@@ -815,7 +815,7 @@ module PrintTypes =
                 match argTys with
                 | [] -> retTyL
                 | _ -> curriedLayoutsL "->" [argTysL] retTyL
-            (tysL |> addColonL) --- bracketL (stat ++ (nameL |> addColonL) --- sigL)
+            (supportTysL |> addColonL) --- bracketL (stat ++ (nameL |> addColonL) --- sigL)
 
     /// Layout a unit of measure expression 
     and layoutMeasure denv unt =
