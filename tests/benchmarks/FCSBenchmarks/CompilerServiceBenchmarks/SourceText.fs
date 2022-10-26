@@ -1,20 +1,16 @@
-﻿[<AutoOpen>]
-module internal FSharp.Compiler.Benchmarks.Helpers
+﻿namespace FSharp.Compiler.Benchmarks
 
 open System
-open System.IO
-open System.Threading.Tasks
 open Microsoft.CodeAnalysis.Text
 open FSharp.Compiler.Text
-open FSharp.Compiler.CodeAnalysis
 
-module private SourceText =
+module internal SourceText =
 
     open System.Runtime.CompilerServices
 
-    let weakTable = ConditionalWeakTable<SourceText, ISourceText>()
+    let private weakTable = ConditionalWeakTable<SourceText, ISourceText>()
 
-    let create (sourceText: SourceText) =
+    let private create (sourceText: SourceText) =
 
         let sourceText =
             { new ISourceText with
@@ -71,46 +67,9 @@ module private SourceText =
             }
 
         sourceText
+    
+    let toFSharpSourceText (sourceText : SourceText) =
+        weakTable.GetValue(sourceText, ConditionalWeakTable<_,_>.CreateValueCallback(create))
 
-type SourceText with
-
-    member this.ToFSharpSourceText() =
-        SourceText.weakTable.GetValue(this, Runtime.CompilerServices.ConditionalWeakTable<_,_>.CreateValueCallback(SourceText.create))
-
-type FSharpSourceText = SourceText
-type FSharpSourceHashAlgorithm = SourceHashAlgorithm
-
-type Async with
-    static member RunImmediate (computation: Async<'T>, ?cancellationToken ) =
-        let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-        let ts = TaskCompletionSource<'T>()
-        let task = ts.Task
-        Async.StartWithContinuations(
-            computation,
-            (fun k -> ts.SetResult k),
-            (fun exn -> ts.SetException exn),
-            (fun _ -> ts.SetCanceled()),
-            cancellationToken)
-        task.Result
-
-let CreateProject name referencedProjects =
-    let tmpPath = Path.GetTempPath()
-    let file = Path.Combine(tmpPath, Path.ChangeExtension(name, ".fs"))
-    {
-        ProjectFileName = Path.Combine(tmpPath, Path.ChangeExtension(name, ".dll"))
-        ProjectId = None
-        SourceFiles = [|file|]
-        OtherOptions = 
-            Array.append [|"--optimize+"; "--target:library" |] (referencedProjects |> Array.ofList |> Array.map (fun x -> "-r:" + x.ProjectFileName))
-        ReferencedProjects =
-            referencedProjects
-            |> List.map (fun x -> FSharpReferencedProject.CreateFSharp (x.ProjectFileName, x))
-            |> Array.ofList
-        IsIncompleteTypeCheckEnvironment = false
-        UseScriptResolutionRules = false
-        LoadTime = DateTime()
-        UnresolvedReferences = None
-        OriginalLoadReferences = []
-        Stamp = Some 0L (* set the stamp to 0L on each run so we don't evaluate the whole project again *)
-    }
-
+type internal FSharpSourceText = SourceText
+type internal FSharpSourceHashAlgorithm = SourceHashAlgorithm

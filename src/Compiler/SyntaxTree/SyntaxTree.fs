@@ -1218,11 +1218,10 @@ type SynTypeDefnSig =
 
     | SynTypeDefnSig of
         typeInfo: SynComponentInfo *
-        equalsRange: range option *
         typeRepr: SynTypeDefnSigRepr *
-        withKeyword: range option *
         members: SynMemberSig list *
-        range: range
+        range: range *
+        trivia: SynTypeDefnSigTrivia
 
     member this.Range =
         match this with

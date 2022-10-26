@@ -563,7 +563,15 @@ let ParseOneInputLexbuf (tcConfig: TcConfig, lexResourceManager, lexbuf, fileNam
 
         // Set up the initial lexer arguments
         let lexargs =
-            mkLexargs (tcConfig.conditionalDefines, indentationSyntaxStatus, lexResourceManager, [], diagnosticsLogger, tcConfig.pathMap)
+            mkLexargs (
+                tcConfig.conditionalDefines,
+                indentationSyntaxStatus,
+                lexResourceManager,
+                [],
+                diagnosticsLogger,
+                tcConfig.pathMap,
+                tcConfig.applyLineDirectives
+            )
 
         // Set up the initial lexer arguments
         let shortFilename = SanitizeFileName fileName tcConfig.implicitIncludeDir

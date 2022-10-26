@@ -3708,7 +3708,6 @@ let writeBytes (os: BinaryWriter) (chunk: byte[]) = os.Write(chunk, 0, chunk.Len
 let writePdb (
     dumpDebugInfo,
     showTimes,
-    portablePDB,
     embeddedPDB,
     pdbfile,
     outfile,
@@ -3734,10 +3733,6 @@ let writePdb (
     // Now we've done the bulk of the binary, do the PDB file and fixup the binary.
     match pdbfile with
     | None -> ()
-#if ENABLE_MONO_SUPPORT
-    | Some fmdb when runningOnMono && not portablePDB ->
-        writeMdbInfo fmdb outfile pdbData
-#endif
     | Some pdbfile ->
         let idd =
             match pdbInfoOpt with
@@ -3751,16 +3746,17 @@ let writePdb (
                         ms.Close()
                         pdbBytes <- Some (ms.ToArray())
                     else
+                        let outfileInfo = FileInfo(outfile).FullName
+                        let pdbfileInfo = FileInfo(pdbfile).FullName
+
+                        // If pdbfilepath matches output filepath then error
+                        if String.Compare(outfileInfo, pdbfileInfo, StringComparison.InvariantCulture) = 0 then
+                            errorR(Error(FSComp.SR.optsPdbMatchesOutputFileName(), rangeStartup))
                         try FileSystem.FileDeleteShim pdbfile with _ -> ()
                         use fs = FileSystem.OpenFileForWriteShim(pdbfile, fileMode = FileMode.Create, fileAccess = FileAccess.ReadWrite)
                         stream.WriteTo fs
                     getInfoForPortablePdb contentId pdbfile pathMap debugDataChunk debugDeterministicPdbChunk debugChecksumPdbChunk algorithmName checkSum embeddedPDB deterministic
-            | None ->
-#if FX_NO_PDB_WRITER
-                [| |]
-#else
-                writePdbInfo showTimes outfile pdbfile pdbData debugDataChunk
-#endif
+            | None -> [| |]
         reportTime showTimes "Generate PDB Info"
 
         // Now we have the debug data we can go back and fill in the debug directory in the image
@@ -4559,12 +4555,23 @@ let writeBinaryFiles (options: options, modul, normalizeAssemblyRefs) =
         FileSystem.OpenFileForWriteShim(options.outfile, FileMode.Open, FileAccess.Write, FileShare.Read)
 
     writePdb (options.dumpDebugInfo,
-        options.showTimes, options.portablePDB,
-        options.embeddedPDB, options.pdbfile, options.outfile,
-        reopenOutput, false, options.signer, options.deterministic, options.pathMap,
-        pdbData, pdbInfoOpt, debugDirectoryChunk,
-        debugDataChunk, debugChecksumPdbChunk, debugEmbeddedPdbChunk,
-        debugDeterministicPdbChunk, textV2P) |> ignore
+        options.showTimes,
+        options.embeddedPDB,
+        options.pdbfile,
+        options.outfile,
+        reopenOutput,
+        false,
+        options.signer,
+        options.deterministic,
+        options.pathMap,
+        pdbData,
+        pdbInfoOpt,
+        debugDirectoryChunk,
+        debugDataChunk,
+        debugChecksumPdbChunk,
+        debugEmbeddedPdbChunk,
+        debugDeterministicPdbChunk,
+        textV2P) |> ignore
 
     mappings
 
@@ -4580,7 +4587,6 @@ let writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) =
     let pdbBytes =
         writePdb (options.dumpDebugInfo,
             options.showTimes,
-            options.portablePDB,
             options.embeddedPDB,
             options.pdbfile,
             options.outfile,
@@ -4589,9 +4595,13 @@ let writeBinaryInMemory (options: options, modul, normalizeAssemblyRefs) =
             options.signer,
             options.deterministic,
             options.pathMap,
-            pdbData, pdbInfoOpt, debugDirectoryChunk, debugDataChunk,
-            debugChecksumPdbChunk, debugEmbeddedPdbChunk,
-            debugDeterministicPdbChunk, textV2P)
+            pdbData, pdbInfoOpt,
+            debugDirectoryChunk,
+            debugDataChunk,
+            debugChecksumPdbChunk,
+            debugEmbeddedPdbChunk,
+            debugDeterministicPdbChunk,
+            textV2P)
 
     stream.Close()
 

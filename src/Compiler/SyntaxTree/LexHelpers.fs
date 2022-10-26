@@ -74,14 +74,23 @@ type LongUnicodeLexResult =
     | SingleChar of uint16
     | Invalid
 
-let mkLexargs (conditionalDefines, indentationSyntaxStatus, resourceManager, ifdefStack, diagnosticsLogger, pathMap: PathMap) =
+let mkLexargs
+    (
+        conditionalDefines,
+        indentationSyntaxStatus,
+        resourceManager,
+        ifdefStack,
+        diagnosticsLogger,
+        pathMap: PathMap,
+        applyLineDirectives
+    ) =
     {
         conditionalDefines = conditionalDefines
         ifdefStack = ifdefStack
         indentationSyntaxStatus = indentationSyntaxStatus
         resourceManager = resourceManager
         diagnosticsLogger = diagnosticsLogger
-        applyLineDirectives = true
+        applyLineDirectives = applyLineDirectives
         stringNest = []
         pathMap = pathMap
     }

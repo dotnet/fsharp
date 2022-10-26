@@ -783,20 +783,14 @@ type ILDebugImports =
 /// IL method bodies
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal ILMethodBody =
-    {
-        IsZeroInit: bool
-        MaxStack: int32
-        NoInlining: bool
-        AggressiveInlining: bool
-        Locals: ILLocals
-        Code: ILCode
-
-        /// Indicates the entire range of the method. Emitted for full PDB but not currently for portable PDB.
-        /// Additionally, if the range is not set, then no debug points are emitted.
-        DebugRange: ILDebugPoint option
-
-        DebugImports: ILDebugImports option
-    }
+    { IsZeroInit: bool
+      MaxStack: int32
+      NoInlining: bool
+      AggressiveInlining: bool
+      Locals: ILLocals
+      Code: ILCode
+      DebugRange: ILDebugPoint option
+      DebugImports: ILDebugImports option }
 
 /// Member Access
 [<RequireQualifiedAccess>]
@@ -1695,7 +1689,6 @@ type ILAssemblyManifest =
         JitTracking: bool
 
         IgnoreSymbolStoreSequencePoints: bool
-
         Retargetable: bool
 
         /// Records the types implemented by this assembly in auxiliary
