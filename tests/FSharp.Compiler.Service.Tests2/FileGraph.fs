@@ -1,5 +1,7 @@
 ﻿module FSharp.Compiler.Service.Tests.Graph
 
+#nowarn "40"
+
 open System.Collections.Concurrent
 open System.Collections.Generic
 

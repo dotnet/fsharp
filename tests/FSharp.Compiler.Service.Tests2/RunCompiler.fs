@@ -18,9 +18,9 @@ let runCompiler () =
 type GenericNode<'State, 'SingleResult> =
     {
         Idx : FileIdx
-        Deps : FileIdx[]
-        TransitiveDeps : FileIdx[]
-        Dependants : FileIdx[]
+        mutable Deps : GenericNode<'State, 'SingleResult>[]
+        mutable TransitiveDeps : GenericNode<'State, 'SingleResult>[]
+        mutable Dependants : GenericNode<'State, 'SingleResult>[]
         mutable Result : ('SingleResult * 'State) option
         mutable UnprocessedDepsCount : int
         _lock : Object
@@ -30,6 +30,7 @@ type GenericNode<'State, 'SingleResult> =
         | :? GenericNode<'State, 'SingleResult> as other -> (this.Idx = other.Idx)
         | _ -> false
     override this.GetHashCode() = this.Idx.Idx
+    override this.ToString() = this.Idx.ToString()
 
 module Node =
     let idx (node : GenericNode<_,_>) = node.Idx
@@ -44,17 +45,19 @@ type Node = GenericNode<State, SingleResult>
 /// </summary>
 /// <param name="graph"></param>
 /// <param name="deps">Transitive deps</param>
-let combineResults<'State, 'SingleResult> (graph : IDictionary<FileIdx, GenericNode<'State, 'SingleResult>>) (transitiveDeps : FileIdx[]) (folder : 'State -> 'SingleResult -> 'State) : 'State =
+let combineResults<'State, 'SingleResult>
+    (transitiveDeps : GenericNode<'State, 'SingleResult>[])
+    (folder : 'State -> 'SingleResult -> 'State) : 'State
+    =
     // Find the child with most transitive deps
     let biggestChild =
         transitiveDeps
-        |> Array.map (fun d -> graph[d])
         |> Array.maxBy (fun n -> n.TransitiveDeps.Length)
     
     // Start with that child's state
     let state = biggestChild.Result |> Option.defaultWith (fun () -> failwith "Unexpected lack of result") |> snd
     
-    let alreadyIncluded = HashSet<FileIdx>(biggestChild.TransitiveDeps, HashIdentity.Structural)
+    let alreadyIncluded = HashSet<GenericNode<'State, 'SingleResult>>(biggestChild.TransitiveDeps, HashIdentity.Structural)
     
     // Find individual results from all transitive deps that were not in biggestChild
     let toBeAdded =
@@ -64,7 +67,7 @@ let combineResults<'State, 'SingleResult> (graph : IDictionary<FileIdx, GenericN
     // Add those results to the initial one
     let state =
         toBeAdded
-        |> Array.map (fun d -> graph[d].Result |> Option.defaultWith (fun () -> failwith "Unexpected lack of result") |> fst)
+        |> Array.map (fun d -> d.Result |> Option.defaultWith (fun () -> failwith "Unexpected lack of result") |> fst)
         |> Array.fold folder state
         
     state
@@ -76,56 +79,55 @@ let actualActualWork (idx : FileIdx) (state : State) : SingleResult =
     let thisResult = idx.Idx
     thisResult
         
-let processGraph (graph : IDictionary<FileIdx, Node>) (work : FileIdx -> SingleResult * State) =
-    
+let processGraph<'State, 'SingleResult>
+    (graph : GenericNode<'State, 'SingleResult>[])
+    (work : GenericNode<'State, 'SingleResult> -> 'State -> 'SingleResult)
+    (folder : 'State -> 'SingleResult -> 'State)
+    =
     printfn "start"
-    use q = new BlockingCollection<FileIdx>()
+    use q = new BlockingCollection<GenericNode<'State, 'SingleResult>>()
     
     // Add leaves to the queue
     let filesWithoutDeps =
         graph
-        |> Seq.filter (fun x -> x.Value.UnprocessedDepsCount = 0)
-    filesWithoutDeps
-    |> Seq.iter (fun f -> q.Add(f.Key))
+        |> Seq.filter (fun x -> x.UnprocessedDepsCount = 0)
+        |> Seq.iter (fun f -> q.Add(f))
     
     // Keep track of the number of items to be processed
-    let l = Object()
-    let mutable unprocessedCount = graph.Count
+    let _lock = Object()
+    let mutable unprocessedCount = graph.Length
     
     let decrementProcessedCount () =
-        lock l (fun () ->
+        lock _lock (fun () ->
             unprocessedCount <- unprocessedCount - 1
             printfn $"UnprocessedCount = {unprocessedCount}"
         )
     
     // Processing of a single node/file
-    let go (idx : FileIdx) : unit =
-        let node = graph[idx]
-        printfn $"Start {idx} -> %+A{node.Deps}"
+    let go (node : GenericNode<'State, 'SingleResult>) : unit =
+        printfn $"Start {node} -> %+A{node.Deps}"
         Thread.Sleep(500)
-        let node = graph[idx]
-        let state = combineResults graph node.TransitiveDeps fold
-        let singleResult = actualActualWork idx state
+        let state = combineResults node.TransitiveDeps folder
+        let singleResult = work node state
         node.Result <- Some (singleResult, state)
-        printfn $" Stop {idx} work - SingleResult={singleResult} State={state}"
+        printfn $" Stop {node} work - SingleResult={singleResult} State={state}"
         
         // Increment processed deps count for all dependants and schedule those who are now unblocked
         node.Dependants
         |> Array.iter (fun dependant ->
-            let node = graph[dependant]
             let unprocessedDepsCount =
-                lock node._lock (fun () ->
-                    node.UnprocessedDepsCount <- node.UnprocessedDepsCount - 1
-                    node.UnprocessedDepsCount
+                lock dependant._lock (fun () ->
+                    dependant.UnprocessedDepsCount <- dependant.UnprocessedDepsCount - 1
+                    dependant.UnprocessedDepsCount
                 )
-            printfn $"{idx}'s dependant {dependant} now has {unprocessedDepsCount} unprocessed deps left"
+            printfn $"{node}'s dependant {dependant} now has {unprocessedDepsCount} unprocessed deps left"
             // Dependant is unblocked - schedule it
             if unprocessedDepsCount = 0 then
                 printfn $"Scheduling {dependant}"
                 q.Add(dependant)
         )
         
-        printfn $"Quitting {idx}"
+        printfn $"Quitting {node}"
         decrementProcessedCount ()
         ()
         
@@ -135,7 +137,7 @@ let processGraph (graph : IDictionary<FileIdx, Node>) (work : FileIdx -> SingleR
         |> Seq.iter go
         printfn $"end worker {idx}"
         
-    let maxParallel = 4
+    let maxParallel = 4 // TODO Change - base on CPU count?
     printfn "workers"
     let workers =
         [|1..maxParallel|]
@@ -149,10 +151,9 @@ let processGraph (graph : IDictionary<FileIdx, Node>) (work : FileIdx -> SingleR
     printfn "waitall"
     Task.WaitAll workers
     
-    let fullResult = combineResults graph (graph.Values |> Seq.map Node.idx |> Seq.toArray)
+    let fullResult = combineResults graph
     
     printfn $"End result: {fullResult}"
-
 
 [<Test>]
 let runGrapher () =
@@ -177,9 +178,21 @@ let runGrapher () =
     let transitiveDeps = deps |> FileGraph.calcTransitiveGraph
     let transitiveDependants = transitiveDeps |> FileGraph.reverse
     
+    let nodes =
+        deps.Keys
+        |> Seq.map (fun idx -> idx, {Idx = idx; Deps = [||]; Dependants = [||]; TransitiveDeps = [||]; Result = None; UnprocessedDepsCount = 0; _lock = Object()})
+        |> readOnlyDict
+    
+    let processs deps = deps |> Array.map (fun d -> nodes[d])
+    
     let graph =
-        transitiveDeps
-        |> Seq.map (fun (KeyValue(idx, deps)) -> idx, {Idx = idx; Deps = deps; Dependants = dependants[idx]; TransitiveDeps = transitiveDependants[idx]; ThisResult = None; PartialResult = None; UnprocessedDepsCount = deps.Length; _lock = Object()})
-        |> dict
+        nodes
+        |> Seq.iter (fun (KeyValue(idx, node)) ->
+            node.Deps <- processs deps[idx]
+            node.TransitiveDeps <- processs transitiveDeps[idx]
+            node.Dependants <- processs dependants[idx]
+            node.UnprocessedDepsCount <- node.Deps.Length
+        )
+        nodes.Values |> Seq.toArray
     
     processGraph graph
