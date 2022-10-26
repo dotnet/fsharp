@@ -96,7 +96,7 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p =
             id.idText, patEnvR
 
     | SynSimplePat.Typed (p, cty, m) ->
-        let ctyR, tpenv = TcTypeAndRecover cenv NewTyparsOK checkConstraints ItemOccurence.UseInType env tpenv cty
+        let ctyR, tpenv = TcTypeAndRecover cenv NewTyparsOK checkConstraints ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv cty
 
         match p with
         // Optional arguments on members
@@ -166,7 +166,7 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
         ps', patEnvR
 
     | SynSimplePats.Typed (p, cty, m) ->
-        let ctyR, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv cty
+        let ctyR, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv cty
 
         match p with
         // Solitary optional arguments on members
@@ -277,7 +277,7 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
 
     | SynPat.Typed (p, cty, m) ->
         let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
-        let ctyR, tpenvR = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv cty
+        let ctyR, tpenvR = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv cty
         UnifyTypes cenv env m ty ctyR
         let patEnvR = TcPatLinearEnv(tpenvR, names, takenNames)
         TcPat warnOnUpper cenv env valReprInfo vFlags patEnvR ty p
@@ -369,7 +369,7 @@ and TcPatNamed warnOnUpper cenv env vFlags patEnv id ty isMemberThis vis valRepr
 
 and TcPatIsInstance warnOnUpper cenv env valReprInfo vFlags patEnv srcTy synPat synTargetTy m =
     let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
-    let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOKButWarnIfNotRigid CheckCxs ItemOccurence.UseInType env tpenv synTargetTy
+    let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOKButWarnIfNotRigid CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synTargetTy
     TcRuntimeTypeTest false true cenv env.DisplayEnv m tgtTy srcTy
     let patEnv = TcPatLinearEnv(tpenv, names, takenNames)
     match synPat with

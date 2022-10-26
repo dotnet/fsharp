@@ -1909,3 +1909,4 @@ do let x = 1 in ()
     | ToolTipText [ToolTipElement.Group [data]] ->
         data.MainDescription |> Array.map (fun text -> text.Text) |> String.concat "" |> shouldEqual "val x: int"
     | elements -> failwith $"Tooltip elements: {elements}"
+

@@ -44,10 +44,6 @@ type ArgumentContainer =
     /// The named argument is a static parameter to a provided type.
     | Type of TyconRef
 
-/// Detect a use of a nominal type, including type abbreviations.
-/// When reporting symbols, we care about abbreviations, e.g. 'int' and 'int32' count as two separate symbols.
-val (|AbbrevOrAppTy|_|): TType -> TyconRef option
-
 type EnclosingTypeInst = TypeInst
 
 /// Represents an item that results from name resolution
@@ -70,6 +66,9 @@ type Item =
 
     /// Represents the resolution of a name to an F# record or exception field.
     | RecdField of RecdFieldInfo
+
+    /// Represents the resolution of a name to an F# trait
+    | Trait of TraitConstraintInfo
 
     /// Represents the resolution of a name to a union case field.
     | UnionCaseField of UnionCaseInfo * fieldIndex: int

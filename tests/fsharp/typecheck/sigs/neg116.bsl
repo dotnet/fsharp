@@ -1,7 +1,7 @@
 
 neg116.fs(10,44,10,45): typecheck error FS0043: No overloads match for method 'op_Multiply'.
 
-Known return type:  ^a
+Known return type: ^a
 
 Known type parameters: < float , Polynomial >
 

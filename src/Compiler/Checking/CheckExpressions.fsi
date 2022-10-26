@@ -498,6 +498,13 @@ type ImplicitlyBoundTyparsAllowed =
     | NewTyparsOK
     | NoNewTypars
 
+/// Indicates whether the position being checked is precisely the r.h.s. of a "'T :> ***" constraint or a similar
+/// places where IWSAM types do not generate a warning
+[<RequireQualifiedAccess>]
+type WarnOnIWSAM =
+    | Yes
+    | No
+
 /// Indicates if a member binding is an object expression binding
 type IsObjExprBinding =
     | ObjExprBinding
@@ -1075,6 +1082,7 @@ val TcType:
     newOk: ImplicitlyBoundTyparsAllowed ->
     checkConstraints: CheckConstraints ->
     occ: ItemOccurence ->
+    iwsam: WarnOnIWSAM ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
     ty: SynType ->
@@ -1087,6 +1095,7 @@ val TcTypeOrMeasureAndRecover:
     newOk: ImplicitlyBoundTyparsAllowed ->
     checkConstraints: CheckConstraints ->
     occ: ItemOccurence ->
+    iwsam: WarnOnIWSAM ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
     ty: SynType ->
@@ -1098,6 +1107,7 @@ val TcTypeAndRecover:
     newOk: ImplicitlyBoundTyparsAllowed ->
     checkConstraints: CheckConstraints ->
     occ: ItemOccurence ->
+    iwsam: WarnOnIWSAM ->
     env: TcEnv ->
     tpenv: UnscopedTyparEnv ->
     ty: SynType ->

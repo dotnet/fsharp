@@ -3334,7 +3334,7 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
             nm |> shouldEqual "callX$W"
             argTypes.Count |> shouldEqual 1
             let argText = argTypes[0].Type.ToString()
-            argText |> shouldEqual "type  ^T ->  ^U ->  ^V"
+            argText |> shouldEqual "type ^T -> ^U -> ^V"
     end
 
 
@@ -3356,8 +3356,8 @@ let ``Test ProjectForWitnesses1 GetWitnessPassingInfo`` () =
             let argText1 = argTypes[0].Type.ToString()
             let argName2 = argTypes[1].Name
             let argText2 = argTypes[1].Type.ToString()
-            argText1 |> shouldEqual "type  ^T ->  ^U -> Microsoft.FSharp.Core.unit"
-            argText2 |> shouldEqual "type  ^T ->  ^U -> Microsoft.FSharp.Core.unit"
+            argText1 |> shouldEqual "type ^T -> ^U -> Microsoft.FSharp.Core.unit"
+            argText2 |> shouldEqual "type ^T -> ^U -> Microsoft.FSharp.Core.unit"
     end
 
 
@@ -3504,9 +3504,9 @@ let ``Test ProjectForWitnesses3 GetWitnessPassingInfo`` () =
             let argName2 = argTypes[1].Name
             let argText2 = argTypes[1].Type.ToString()
             argName1 |> shouldEqual (Some "get_Zero")
-            argText1 |> shouldEqual "type Microsoft.FSharp.Core.unit ->  ^T"
+            argText1 |> shouldEqual "type Microsoft.FSharp.Core.unit -> ^T"
             argName2 |> shouldEqual (Some "op_Addition")
-            argText2 |> shouldEqual "type  ^T ->  ^T ->  ^T"
+            argText2 |> shouldEqual "type ^T -> ^T -> ^T"
     end
 
 //---------------------------------------------------------------------------------------------------------

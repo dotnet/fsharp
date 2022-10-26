@@ -2385,15 +2385,19 @@ let rec OptimizeExpr cenv (env: IncrementalOptimizationEnv) expr =
     | Expr.LetRec (binds, bodyExpr, m, _) ->  
         OptimizeLetRec cenv env (binds, bodyExpr, m)
 
-    | Expr.StaticOptimization (constraints, expr2, expr3, m) ->
-        let expr2R, e2info = OptimizeExpr cenv env expr2
-        let expr3R, e3info = OptimizeExpr cenv env expr3
-        Expr.StaticOptimization (constraints, expr2R, expr3R, m), 
-        { TotalSize = min e2info.TotalSize e3info.TotalSize
-          FunctionSize = min e2info.FunctionSize e3info.FunctionSize
-          HasEffect = e2info.HasEffect || e3info.HasEffect
-          MightMakeCriticalTailcall=e2info.MightMakeCriticalTailcall || e3info.MightMakeCriticalTailcall // seems conservative
-          Info= UnknownValue }
+    | Expr.StaticOptimization (staticConditions, expr2, expr3, m) ->
+        let d = DecideStaticOptimizations g staticConditions false
+        if d = StaticOptimizationAnswer.Yes then OptimizeExpr cenv env expr2
+        elif d = StaticOptimizationAnswer.No then OptimizeExpr cenv env expr3
+        else
+            let expr2R, e2info = OptimizeExpr cenv env expr2
+            let expr3R, e3info = OptimizeExpr cenv env expr3
+            Expr.StaticOptimization (staticConditions, expr2R, expr3R, m), 
+            { TotalSize = min e2info.TotalSize e3info.TotalSize
+              FunctionSize = min e2info.FunctionSize e3info.FunctionSize
+              HasEffect = e2info.HasEffect || e3info.HasEffect
+              MightMakeCriticalTailcall=e2info.MightMakeCriticalTailcall || e3info.MightMakeCriticalTailcall // seems conservative
+              Info= UnknownValue }
 
     | Expr.Link _eref -> 
         assert ("unexpected reclink" = "")

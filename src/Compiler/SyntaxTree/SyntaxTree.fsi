@@ -413,6 +413,9 @@ type SynTypeConstraint =
     /// F# syntax is 'typar: delegate<'Args, unit>
     | WhereTyparIsDelegate of typar: SynTypar * typeArgs: SynType list * range: range
 
+    /// F# syntax is SomeThing<'T>
+    | WhereSelfConstrained of selfConstraint: SynType * range: range
+
     member Range: range
 
 /// List of type parameter declarations with optional type constraints,
@@ -617,7 +620,7 @@ type SynExpr =
         range2: range *
         range: range
 
-    /// F# syntax: ^expr
+    /// F# syntax: ^expr, used for from-end-of-collection indexing and ^T.Operation
     | IndexFromEnd of expr: SynExpr * range: range
 
     /// F# syntax: { expr }
@@ -731,6 +734,9 @@ type SynExpr =
         range: range *
         trivia: SynExprIfThenElseTrivia
 
+    /// F# syntax: 'T (for 'T.ident).
+    | Typar of typar: SynTypar * range: range
+
     /// F# syntax: ident
     /// Optimized representation for SynExpr.LongIdent (false, [id], id.idRange)
     | Ident of ident: Ident
@@ -802,8 +808,8 @@ type SynExpr =
     /// F# syntax: &expr, &&expr
     | AddressOf of isByref: bool * expr: SynExpr * opRange: range * range: range
 
-    /// F# syntax: ((typar1 or ... or typarN): (member-dig) expr)
-    | TraitCall of supportTys: SynTypar list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
+    /// F# syntax: ((type1 or ... or typeN): (member-dig) expr)
+    | TraitCall of supportTys: SynType list * traitSig: SynMemberSig * argExpr: SynExpr * range: range
 
     /// F# syntax: ... in ...
     /// Computation expressions only, based on JOIN_IN token from lex filter
@@ -1599,7 +1605,8 @@ type SynMemberDefn =
         ident: Ident *
         typeOpt: SynType option *
         propKind: SynMemberKind *
-        memberFlags: (SynMemberKind -> SynMemberFlags) *
+        memberFlags: SynMemberFlags *
+        memberFlagsForSet: SynMemberFlags *
         xmlDoc: PreXmlDoc *
         accessibility: SynAccess option *
         equalsRange: range *

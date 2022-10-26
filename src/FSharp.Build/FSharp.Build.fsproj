@@ -4,7 +4,8 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFramework Condition="'$(Configuration)' != 'Proto'">netstandard2.0</TargetFramework>
+    <TargetFrameworks Condition="'$(Configuration)' == 'Proto'">netstandard2.0</TargetFrameworks>
     <AssemblyName>FSharp.Build</AssemblyName>
     <NoWarn>$(NoWarn);75</NoWarn> <!-- InternalCommandLineOption -->
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -13,6 +14,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <LangVersion>5.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
     <LangVersion>6.0</LangVersion>
+    <LangVersion>6.0</LangVersion>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
     <Configurations>Debug;Release;Proto</Configurations>  <!-- FSharp.Build may run in Visual Studio with older FSharp.Cores so don't use unshipped features -->
   </PropertyGroup>
 
@@ -62,7 +64,6 @@
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)' != 'Proto'">
   <ItemGroup Condition="'$(Configuration)' != 'Proto' or '$(DotNetBuildFromSource)' == 'true'">
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
   </ItemGroup>

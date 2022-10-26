@@ -1514,13 +1514,10 @@ let p_anonInfo x st =
 
 let p_trait_sln sln st =
     match sln with
-    | ILMethSln(a, b, c, d) ->
+    | ILMethSln(a, b, c, d, None) ->
          p_byte 0 st; p_tup4 p_ty (p_option p_ILTypeRef) p_ILMethodRef p_tys (a, b, c, d) st
-    | FSMethSln(a, b, c, isExt) ->
-         if isExt then 
-             p_byte 6 st; p_tup4 p_ty (p_vref "trait") p_tys p_bool (a, b, c, isExt) st
-         else
-             p_byte 1 st; p_tup3 p_ty (p_vref "trait") p_tys (a, b, c) st
+    | FSMethSln(a, b, c, None, false) ->
+            p_byte 1 st; p_tup3 p_ty (p_vref "trait") p_tys (a, b, c) st
     | BuiltInSln ->
          p_byte 2 st
     | ClosedExprSln expr ->
@@ -1529,6 +1526,12 @@ let p_trait_sln sln st =
          p_byte 4 st; p_tup3 p_tys p_rfref p_bool (a, b, c) st
     | FSAnonRecdFieldSln(a, b, c) ->
          p_byte 5 st; p_tup3 p_anonInfo p_tys p_int (a, b, c) st
+    | ILMethSln(a, b, c, d, Some e) ->
+         p_byte 6 st; p_tup5 p_ty (p_option p_ILTypeRef) p_ILMethodRef p_tys p_ty (a, b, c, d, e) st
+    | FSMethSln(a, b, c, Some d, false) ->
+         p_byte 7 st; p_tup4 p_ty (p_vref "trait") p_tys p_ty (a, b, c, d) st
+    | FSMethSln(a, b, c, d, true) ->
+         p_byte 8 st; p_tup4 p_ty (p_vref "trait") p_tys (p_option p_ty) (a, b, c, d) st
 
 
 let p_trait (TTrait(a, b, c, d, e, f, _traitCtxt)) st  =
@@ -1547,10 +1550,10 @@ let u_trait_sln st =
     match tag with
     | 0 ->
         let a, b, c, d = u_tup4 u_ty (u_option u_ILTypeRef) u_ILMethodRef u_tys st
-        ILMethSln(a, b, c, d)
+        ILMethSln(a, b, c, d, None)
     | 1 ->
         let a, b, c = u_tup3 u_ty u_vref u_tys st
-        FSMethSln(a, b, c, false)
+        FSMethSln(a, b, c, None, false)
     | 2 ->
         BuiltInSln
     | 3 ->
@@ -1562,8 +1565,14 @@ let u_trait_sln st =
          let a, b, c = u_tup3 u_anonInfo u_tys u_int st
          FSAnonRecdFieldSln(a, b, c)
     | 6 ->
-        let (a, b, c, d) = u_tup4 u_ty u_vref u_tys u_bool st
-        FSMethSln(a, b, c, d)
+        let a, b, c, d, e = u_tup5 u_ty (u_option u_ILTypeRef) u_ILMethodRef u_tys u_ty st
+        ILMethSln(a, b, c, d, Some e)
+    | 7 ->
+        let a, b, c, d = u_tup4 u_ty u_vref u_tys u_ty st
+        FSMethSln(a, b, c, Some d, false)
+    | 8 ->
+        let a, b, c, d = u_tup4 u_ty u_vref u_tys (u_option u_ty) st
+        FSMethSln(a, b, c, d, true)
     | _ -> ufailwith st "u_trait_sln"
 
 let u_trait st =
