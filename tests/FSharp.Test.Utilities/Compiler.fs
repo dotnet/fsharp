@@ -1128,7 +1128,7 @@ module rec Compiler =
             (sourceErrors, expectedErrors)
             ||> List.iter2 (fun actual expected ->
 
-                Assert.AreEqual(actual, expected, $"Mismatched error message:\nExpecting: {expected}\nActual:    {actual}\n"))
+                Assert.AreEqual(expected, actual, $"Mismatched error message:\nExpecting: {expected}\nActual:    {actual}\n"))
 
         let adjust (adjust: int) (result: CompilationResult) : CompilationResult =
             match result with
@@ -1167,18 +1167,16 @@ module rec Compiler =
             withResults [expectedResult] result
 
         let withDiagnostics (expected: (ErrorType * Line * Col * Line * Col * string) list) (result: CompilationResult) : CompilationResult =
-            let (expectedResults: ErrorInfo list) =
-                expected |>
-                List.map(
-                    fun e ->
-                      let (error, (Line startLine), (Col startCol), (Line endLine), (Col endCol), message) = e
+            let expectedResults: ErrorInfo list =
+                [ for e in expected do
+                      let (error, Line startLine, Col startCol, Line endLine, Col endCol, message) = e
                       { Error = error
                         Range =
                             { StartLine   = startLine
                               StartColumn = startCol
                               EndLine     = endLine
                               EndColumn   = endCol }
-                        Message     = message })
+                        Message     = message } ]
             withResults expectedResults result
 
         let withSingleDiagnostic (expected: (ErrorType * Line * Col * Line * Col * string)) (result: CompilationResult) : CompilationResult =

@@ -407,6 +407,8 @@ type TcConfigBuilder =
 
         mutable concurrentBuild: bool
 
+        mutable parallelCheckingWithSignatureFiles: bool
+
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
 
         mutable preferredUiLang: string option
@@ -478,6 +480,8 @@ type TcConfigBuilder =
         mutable langVersion: LanguageVersion
 
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
+
+        mutable exiter: Exiter
     }
 
     static member CreateNew:
@@ -721,6 +725,8 @@ type TcConfig =
 
     member concurrentBuild: bool
 
+    member parallelCheckingWithSignatureFiles: bool
+
     member emitMetadataAssembly: MetadataAssemblyGeneration
 
     member pathMap: PathMap
@@ -836,6 +842,8 @@ type TcConfig =
 
     /// Check if the primary assembly is mscorlib
     member assumeDotNetFramework: bool
+
+    member exiter: Exiter
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

@@ -662,8 +662,8 @@ module NavigationImpl =
 module Navigation =
     let getNavigation (parsedInput: ParsedInput) =
         match parsedInput with
-        | ParsedInput.SigFile (ParsedSigFileInput (modules = modules)) -> NavigationImpl.getNavigationFromSigFile modules
-        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) -> NavigationImpl.getNavigationFromImplFile modules
+        | ParsedInput.SigFile file -> NavigationImpl.getNavigationFromSigFile file.Contents
+        | ParsedInput.ImplFile file -> NavigationImpl.getNavigationFromImplFile file.Contents
 
     let empty = NavigationItems([||])
 
@@ -819,15 +819,14 @@ module NavigateTo =
             let ctor = mapMemberKind memberFlags.MemberKind
             addValSig ctor valSig isSig container
 
-        let rec walkSigFileInput (inp: ParsedSigFileInput) =
-            let (ParsedSigFileInput (fileName = fileName; modules = moduleOrNamespaceList)) = inp
+        let rec walkSigFileInput (file: ParsedSigFileInput) =
 
-            for item in moduleOrNamespaceList do
+            for item in file.Contents do
                 walkSynModuleOrNamespaceSig
                     item
                     {
                         Type = NavigableContainerType.File
-                        LogicalName = fileName
+                        LogicalName = file.FileName
                     }
 
         and walkSynModuleOrNamespaceSig (inp: SynModuleOrNamespaceSig) container =
@@ -890,15 +889,14 @@ module NavigateTo =
             | SynMemberSig.Interface _ -> ()
 
         and walkImplFileInput (inp: ParsedImplFileInput) =
-            let (ParsedImplFileInput (fileName = fileName; modules = moduleOrNamespaceList)) = inp
 
             let container =
                 {
                     Type = NavigableContainerType.File
-                    LogicalName = fileName
+                    LogicalName = inp.FileName
                 }
 
-            for item in moduleOrNamespaceList do
+            for item in inp.Contents do
                 walkSynModuleOrNamespace item container
 
         and walkSynModuleOrNamespace inp container =

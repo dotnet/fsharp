@@ -570,8 +570,8 @@ module ParsedInput =
         let inline ifPosInRange range f =
             if isPosInRange range then f () else None
 
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.tryPick (walkSynModuleOrNamespace true) moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.tryPick (walkSynModuleOrNamespace true) file.Contents
 
         and walkSynModuleOrNamespace isTopLevel inp =
             let (SynModuleOrNamespace (decls = decls; attribs = Attributes attrs; range = r)) =
@@ -1589,8 +1589,8 @@ module ParsedInput =
         let addIdent (ident: Ident) =
             identsByEndPos[ident.idRange.End] <- [ ident ]
 
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.iter walkSynModuleOrNamespace moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.iter walkSynModuleOrNamespace file.Contents
 
         and walkSynModuleOrNamespace (SynModuleOrNamespace (decls = decls; attribs = Attributes attrs)) =
             List.iter walkAttribute attrs
@@ -2069,8 +2069,8 @@ module ParsedInput =
                 | _ -> None
                 |> Option.map (fun r -> r.StartColumn)
 
-        let rec walkImplFileInput (ParsedImplFileInput (modules = moduleOrNamespaceList)) =
-            List.iter (walkSynModuleOrNamespace []) moduleOrNamespaceList
+        let rec walkImplFileInput (file: ParsedImplFileInput) =
+            List.iter (walkSynModuleOrNamespace []) file.Contents
 
         and walkSynModuleOrNamespace (parent: LongIdent) modul =
             let (SynModuleOrNamespace (longId = ident; kind = kind; decls = decls; range = range)) =

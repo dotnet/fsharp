@@ -113,6 +113,9 @@
     <Compile Include="..\service\SyntaxTreeTests\OperatorNameTests.fs">
       <Link>SyntaxTree\OperatorNameTests.fs</Link>
     </Compile>
+    <Compile Include="..\service\SyntaxTreeTests\SynIdentTests.fs">
+      <Link>SyntaxTree\SynIdentTests.fs</Link>
+    </Compile>
     <Compile Include="..\service\FileSystemTests.fs">
       <Link>FileSystemTests.fs</Link>
     </Compile>
@@ -174,6 +177,8 @@
 
   <ItemGroup>
     <PackageReference Include="Dotnet.ProjInfo" Version="0.37.0" />
+    <!-- Force a newer Newtonsoft.Json version to avoid conflicts. -->
+    <PackageReference Include="Newtonsoft.Json" Version="$(NewtonsoftJsonVersion)" />
     <ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
     <ProjectReference Include="..\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />

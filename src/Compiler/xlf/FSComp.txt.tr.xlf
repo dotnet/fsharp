@@ -2262,11 +2262,6 @@
         <target state="translated">'base' değerleri yalnızca geçersiz kılınmış üyelerin taban uygulamalarına doğrudan çağrı yapmak için kullanılabilir</target>
         <note />
       </trans-unit>
-      <trans-unit id="chkObjCtorsCantUseExceptionHandling">
-        <source>Object constructors cannot directly use try/with and try/finally prior to the initialization of the object. This includes constructs such as 'for x in ...' that may elaborate to uses of these constructs. This is a limitation imposed by Common IL.</source>
-        <target state="translated">Nesne oluşturucular, nesnenin başlatılmasından önce try/with ve try/finally ifadelerini doğrudan kullanamazlar. Buna bu yapıların kullanımını çeşitlendirebilen 'for x in ...' gibi yapılar da dahildir. Bu, Ortak Ara Dilin getirdiği bir kısıtlamadır.</target>
-        <note />
-      </trans-unit>
       <trans-unit id="chkNoAddressOfAtThisPoint">
         <source>The address of the variable '{0}' cannot be used at this point</source>
         <target state="translated">'{0}' değişkeninin adresi bu noktada kullanılamaz</target>

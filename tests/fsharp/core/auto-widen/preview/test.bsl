@@ -269,9 +269,9 @@ test.fsx(248,51,248,52): typecheck error FS3388: This expression implicitly conv
 
 test.fsx(253,36,253,37): typecheck error FS3388: This expression implicitly converts type 'int' to type 'IComparable'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(256,30,256,39): typecheck error FS3388: This expression implicitly converts type 'uint16[]' to type 'Array'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(256,30,256,39): typecheck error FS3388: This expression implicitly converts type 'uint16 array' to type 'Array'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(258,30,258,38): typecheck error FS3388: This expression implicitly converts type ''a[]' to type 'Array'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(258,30,258,38): typecheck error FS3388: This expression implicitly converts type ''a array' to type 'Array'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(260,36,260,38): typecheck error FS3388: This expression implicitly converts type 'Numerics.BigInteger' to type 'IComparable'. See https://aka.ms/fsharp-implicit-convs.
 
@@ -507,69 +507,69 @@ test.fsx(386,40,386,41): typecheck error FS3389: This expression uses a built-in
 
 test.fsx(386,40,386,41): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(390,28,390,41): typecheck error FS3388: This expression implicitly converts type 'int64[]' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(390,28,390,41): typecheck error FS3388: This expression implicitly converts type 'int64 array' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(390,37,390,38): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(390,37,390,38): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(391,30,392,57): typecheck error FS3388: This expression implicitly converts type 'int64[]' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(391,30,392,57): typecheck error FS3388: This expression implicitly converts type 'int64 array' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(391,39,391,40): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(391,39,391,40): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(393,30,394,56): typecheck error FS3388: This expression implicitly converts type 'int64[]' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(393,30,394,56): typecheck error FS3388: This expression implicitly converts type 'int64 array' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(394,52,394,53): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(394,52,394,53): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(395,30,396,58): typecheck error FS3388: This expression implicitly converts type 'int64[]' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(395,30,396,58): typecheck error FS3388: This expression implicitly converts type 'int64 array' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(396,54,396,55): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(396,54,396,55): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(397,30,398,59): typecheck error FS3388: This expression implicitly converts type 'int64[]' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(397,30,398,59): typecheck error FS3388: This expression implicitly converts type 'int64 array' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(397,39,397,40): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(397,39,397,40): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(399,30,399,59): typecheck error FS3388: This expression implicitly converts type 'int64[]' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(399,30,399,59): typecheck error FS3388: This expression implicitly converts type 'int64 array' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(400,30,400,63): typecheck error FS3388: This expression implicitly converts type 'int64[]' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(400,30,400,63): typecheck error FS3388: This expression implicitly converts type 'int64 array' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(400,59,400,60): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(400,59,400,60): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(401,30,402,63): typecheck error FS3388: This expression implicitly converts type 'int64[]' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(401,30,402,63): typecheck error FS3388: This expression implicitly converts type 'int64 array' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(402,59,402,60): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(402,59,402,60): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(403,30,404,64): typecheck error FS3388: This expression implicitly converts type 'int64[]' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(403,30,404,64): typecheck error FS3388: This expression implicitly converts type 'int64 array' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(403,39,403,40): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(403,39,403,40): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(405,31,405,59): typecheck error FS3388: This expression implicitly converts type 'int64[]' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(405,31,405,59): typecheck error FS3388: This expression implicitly converts type 'int64 array' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(405,44,405,45): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(405,44,405,45): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(406,31,407,60): typecheck error FS3388: This expression implicitly converts type 'int64[]' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(406,31,407,60): typecheck error FS3388: This expression implicitly converts type 'int64 array' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(407,44,407,45): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(407,44,407,45): typecheck error FS3388: This expression implicitly converts type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 
-test.fsx(408,31,409,61): typecheck error FS3388: This expression implicitly converts type 'int64[]' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
+test.fsx(408,31,409,61): typecheck error FS3388: This expression implicitly converts type 'int64 array' to type 'seq<int64>'. See https://aka.ms/fsharp-implicit-convs.
 
 test.fsx(408,40,408,41): typecheck error FS3389: This expression uses a built-in implicit conversion to convert type 'int' to type 'int64'. See https://aka.ms/fsharp-implicit-convs.
 

@@ -197,3 +197,25 @@ do ()
 """
     |> printSignatures
     |> should equal "namespace Foobar"
+
+[<Fact>]
+let ``Attribute on nested module`` () =
+    FSharp
+        """
+namespace MyApp.Types
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Area =
+    type Meh =  class end
+"""
+    |> printSignatures
+    |> prependNewline
+    |> should equal """
+namespace MyApp.Types
+
+  [<RequireQualifiedAccess; CompilationRepresentation (enum<CompilationRepresentationFlags> (4))>]
+  module Area =
+
+    type Meh =
+      class end"""
