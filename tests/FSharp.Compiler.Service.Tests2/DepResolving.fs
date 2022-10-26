@@ -52,7 +52,7 @@ type DepsResult =
 
 type References = Reference seq
 
-let calcTransitiveGraph (graph : IDictionary<int, int[]>) : IDictionary<int, int[]> =
+let calcTransitiveGraph (graph : IReadOnlyDictionary<int, int[]>) : IDictionary<int, int[]> =
     let transitiveDeps = Dictionary<int, int[]>()
     
     let rec calcTransitiveDepsInner (idx : int) =

@@ -5,17 +5,16 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
-open FSharp.Compiler.Service.Tests2
-open FSharp.Compiler.Service.Tests2.DepResolving
+open FSharp.Compiler.Service.Tests.Graph
 open NUnit.Framework
 
-type FileIdx =
-    FileIdx of int
-    with
-        member this.Idx = match this with FileIdx idx -> idx
-        override this.ToString() = this.Idx.ToString()
-        static member make (idx : int) = FileIdx idx 
-
+[<Test>]
+let runCompiler () =
+    let args =
+        System.IO.File.ReadAllLines(@"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.Service.Tests2\args.txt") |> Array.skip 1
+    FSharp.Compiler.CommandLineMain.main args |> ignore
+    
+[<CustomEquality; NoComparison>]
 type Node =
     {
         Idx : FileIdx
@@ -23,50 +22,16 @@ type Node =
         TransitiveDeps : FileIdx[]
         Dependants : FileIdx[]
         mutable PartialResult : string option
-        mutable ThisResult : int
+        mutable ThisResult : int option
         mutable UnprocessedDepsCount : int
         _lock : Object
     }
-    with member this.GetHashCode() = this.Idx.Idx
+    override this.Equals(y) =
+        match y with
+        | :? Node as other -> (this.Idx = other.Idx)
+        | _ -> false
+    override this.GetHashCode() = this.Idx.Idx
 
-[<Test>]
-let runCompiler () =
-    let args =
-        System.IO.File.ReadAllLines(@"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.Service.Tests2\args.txt") |> Array.skip 1
-    FSharp.Compiler.CommandLineMain.main args |> ignore
-
-
-
-/// <summary> DAG of files </summary>
-type FileGraph = IReadOnlyDictionary<FileIdx, FileIdx[]>
-
-let memoize<'a, 'b when 'a : equality> f : ('a -> 'b) =
-    let y = HashIdentity.Structural<'a>
-    let d = new ConcurrentDictionary<'a, 'b>(y)
-    fun x -> d.GetOrAdd(x, fun r -> f r)
-
-module FileGraph =
-    
-    let calcTransitiveGraph (graph : FileGraph) : FileGraph =
-        let transitiveGraph = Dictionary<FileIdx, FileIdx[]>()
-        
-        let rec calcTransitiveEdges =
-            fun (idx : FileIdx) ->
-                let edgeTargets = graph[idx]
-                edgeTargets
-                |> Array.collect calcTransitiveEdges
-                |> Array.append edgeTargets
-                |> Array.distinct
-            |> memoize
-        
-        graph.Keys
-        |> Seq.iter (fun idx -> calcTransitiveEdges idx |> ignore)
-        
-        transitiveGraph :> IReadOnlyDictionary<_,_>
-        
-    let collectEdges (graph : FileGraph) =
-        graph
-    
 type State = string // TcState
 type SingleResult = int // partial result for a single file 
     
@@ -75,7 +40,7 @@ type SingleResult = int // partial result for a single file
 /// </summary>
 /// <param name="graph"></param>
 /// <param name="deps">Transitive deps</param>
-let combineResults (graph : IReadOnlyDictionary<FileIdx, Node>) (node : Node) (folder : State -> SingleResult -> State) : State =
+let combineResults (graph : IDictionary<FileIdx, Node>) (node : Node) (folder : State -> SingleResult -> State) : State =
     
     // Find the child with most transitive deps
     let biggestChild =
@@ -93,9 +58,10 @@ let combineResults (graph : IReadOnlyDictionary<FileIdx, Node>) (node : Node) (f
         node.TransitiveDeps
         |> Array.filter alreadyIncluded.Add
     
+    // Add those results to the initial one
     let state =
         toBeAdded
-        |> Array.map (fun d -> graph[d].ThisResult)
+        |> Array.map (fun d -> graph[d].ThisResult |> Option.defaultWith (fun () -> failwith "Unexpected lack of result"))
         |> Array.fold folder state
         
     state
@@ -125,13 +91,15 @@ let processGraph (graph : IDictionary<FileIdx, Node>) =
     let fold (state : string) (singleResult : int) =
         state + singleResult.ToString()
     
+    let actualActualWork (idx : FileIdx) (state : State) : SingleResult * State =
+        let thisResult = idx.Idx
+        let state = fold state thisResult
+        thisResult, state
+    
     let actualWork (idx : FileIdx) =
         let node = graph[idx]
-        let depsResult =
-            node.Deps
-            |> Array.map (fun dep -> match graph[dep].PartialResult with Some result -> result | None -> failwith $"Unexpected lack of result for a dependency {idx} -> {dep}")
-            |> Array.fold fold ""
-        let thisResult = idx.Idx
+        let state = combineResults graph node fold
+        let thisResult = actualActualWork idx state
         thisResult
     
     // Processing of a single node/file - gives a result
@@ -139,9 +107,10 @@ let processGraph (graph : IDictionary<FileIdx, Node>) =
         let node = graph[idx]
         printfn $"Start {idx} -> %+A{node.Deps}"
         Thread.Sleep(500)
-        let res = actualWork idx
-        node.PartialResult <- Some res
-        printfn $" Stop {idx} work - result {res}"
+        let singleResult, state = actualWork idx
+        node.ThisResult <- Some singleResult
+        node.PartialResult <- Some state
+        printfn $" Stop {idx} work - SingleResult={singleResult} State={state}"
         
         // Increment processed deps count for all dependants and schedule those who are now unblocked
         node.Dependants
@@ -197,7 +166,7 @@ let runGrapher () =
     //     System.IO.File.ReadAllLines(@"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.Service.Tests2\args.txt") |> Array.skip 1
     // FSharp.Compiler.CommandLineMain.main args |> ignore
     
-    let graph =
+    let deps : FileGraph =
         [|
             0, [||]  // A
             1, [|0|] // B1 -> A
@@ -206,34 +175,17 @@ let runGrapher () =
             4, [|3|] // C2 -> C1
             5, [|2; 4|] // D -> B2, C2
         |]
-        |> dict
+        |> Array.map (fun (a, deps) -> FileIdx.make a, deps |> Array.map FileIdx.make)
+        |> readOnlyDict
     
-    let fileDeps =
-        graph
-        |> DepResolving.calcTransitiveGraph
+    let dependants = deps |> FileGraph.reverse
     
-    let fileDependants =
-        fileDeps
-        // Collect all edges
-        |> Seq.collect (fun (idx, deps) -> deps |> Array.map (fun dep -> FileIdx.make idx, FileIdx.make dep))
-        // Group dependants of the same dependencies together
-        |> Array.groupBy (fun (idx, dep) -> dep)
-        // Construct reversed graph
-        |> Array.map (fun (dep, edges) -> dep, edges |> Array.map fst)
-        |> dict
-        // Add nodes that are missing due to having no dependants
-        |> fun graph ->
-            fileDeps
-            |> Array.map (fun (idx, deps) ->
-                match graph.TryGetValue idx with
-                | true, dependants -> idx, dependants
-                | false, _ -> idx, [||]
-            )
-        |> dict
+    let transitiveDeps = deps |> FileGraph.calcTransitiveGraph
+    let transitiveDependants = transitiveDeps |> FileGraph.reverse
     
     let graph =
-        fileDeps
-        |> Seq.map (fun (idx, deps) -> idx, {Idx = idx; Deps = deps; Dependants = fileDependants[idx]; PartialResult = None; UnprocessedDepsCount = deps.Length; _lock = Object()})
+        transitiveDeps
+        |> Seq.map (fun (KeyValue(idx, deps)) -> idx, {Idx = idx; Deps = deps; Dependants = dependants[idx]; TransitiveDeps = transitiveDependants[idx]; ThisResult = None; PartialResult = None; UnprocessedDepsCount = deps.Length; _lock = Object()})
         |> dict
     
     processGraph graph
