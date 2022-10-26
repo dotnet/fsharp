@@ -31,32 +31,16 @@ let logRefEmitCalls = false
 
 type AssemblyBuilder with
 
-    member asmB.DefineDynamicModuleAndLog(a, b, c) =
-#if FX_RESHAPED_REFEMIT
-        ignore b
-        ignore c
-        let modB = asmB.DefineDynamicModule a
-#else
-        let modB = asmB.DefineDynamicModule(a, b, c)
-
-        if logRefEmitCalls then
-            printfn "let moduleBuilder%d = assemblyBuilder%d.DefineDynamicModule(%A, %A, %A)" (abs <| hash modB) (abs <| hash asmB) a b c
-#endif
+    member this.DefineDynamicModuleAndLog(assemblyName) =
+        let modB = this.DefineDynamicModule assemblyName
         modB
 
-    member asmB.SetCustomAttributeAndLog(cinfo, bytes) =
+    member this.SetCustomAttributeAndLog(cinfo, bytes) =
         if logRefEmitCalls then
-            printfn "assemblyBuilder%d.SetCustomAttribute(%A, %A)" (abs <| hash asmB) cinfo bytes
+            printfn "assemblyBuilder%d.SetCustomAttribute(%A, %A)" (abs <| hash this) cinfo bytes
 
-        wrapCustomAttr asmB.SetCustomAttribute (cinfo, bytes)
+        wrapCustomAttr this.SetCustomAttribute (cinfo, bytes)
 
-#if !FX_RESHAPED_REFEMIT
-    member asmB.AddResourceFileAndLog(nm1, nm2, attrs) =
-        if logRefEmitCalls then
-            printfn "assemblyBuilder%d.AddResourceFile(%A, %A, enum %d)" (abs <| hash asmB) nm1 nm2 (LanguagePrimitives.EnumToValue attrs)
-
-        asmB.AddResourceFile(nm1, nm2, attrs)
-#endif
     member asmB.SetCustomAttributeAndLog cab =
         if logRefEmitCalls then
             printfn "assemblyBuilder%d.SetCustomAttribute(%A)" (abs <| hash asmB) cab
@@ -71,22 +55,6 @@ type ModuleBuilder with
 
         modB.GetArrayMethod(arrayTy, nm, flags, retTy, argTys)
 
-#if !FX_RESHAPED_REFEMIT
-    member modB.DefineDocumentAndLog(file, lang, vendor, doctype) =
-        let symDoc = modB.DefineDocument(file, lang, vendor, doctype)
-
-        if logRefEmitCalls then
-            printfn
-                "let docWriter%d = moduleBuilder%d.DefineDocument(@%A, System.Guid(\"%A\"), System.Guid(\"%A\"), System.Guid(\"%A\"))"
-                (abs <| hash symDoc)
-                (abs <| hash modB)
-                file
-                lang
-                vendor
-                doctype
-
-        symDoc
-#endif
     member modB.GetTypeAndLog(nameInModule, flag1, flag2) =
         if logRefEmitCalls then
             printfn "moduleBuilder%d.GetType(%A, %A, %A) |> ignore" (abs <| hash modB) nameInModule flag1 flag2
@@ -106,18 +74,6 @@ type ModuleBuilder with
 
         typB
 
-#if !FX_RESHAPED_REFEMIT
-    member modB.DefineManifestResourceAndLog(name, stream, attrs) =
-        if logRefEmitCalls then
-            printfn
-                "moduleBuilder%d.DefineManifestResource(%A, %A, enum %d)"
-                (abs <| hash modB)
-                name
-                stream
-                (LanguagePrimitives.EnumToValue attrs)
-
-        modB.DefineManifestResource(name, stream, attrs)
-#endif
     member modB.SetCustomAttributeAndLog(cinfo, bytes) =
         if logRefEmitCalls then
             printfn "moduleBuilder%d.SetCustomAttribute(%A, %A)" (abs <| hash modB) cinfo bytes
@@ -206,11 +162,8 @@ type TypeBuilder with
     member typB.CreateTypeAndLog() =
         if logRefEmitCalls then
             printfn "typeBuilder%d.CreateType()" (abs <| hash typB)
-#if FX_RESHAPED_REFEMIT
         typB.CreateTypeInfo().AsType()
-#else
-        typB.CreateType()
-#endif
+
     member typB.DefineNestedTypeAndLog(name, attrs) =
         let res = typB.DefineNestedType(name, attrs)
 
@@ -308,7 +261,6 @@ type TypeBuilder with
         typB.AddInterfaceImplementation ty
 
     member typB.InvokeMemberAndLog(nm, _flags, args) =
-#if FX_RESHAPED_REFEMIT
         let t = typB.CreateTypeAndLog()
 
         let m =
@@ -321,17 +273,6 @@ type TypeBuilder with
             m.Invoke(null, args)
         else
             raise (MissingMethodException nm)
-#else
-        if logRefEmitCalls then
-            printfn
-                "typeBuilder%d.InvokeMember(\"%s\", enum %d, null, null, %A, Globalization.CultureInfo.InvariantCulture)"
-                (abs <| hash typB)
-                nm
-                (LanguagePrimitives.EnumToValue _flags)
-                args
-
-        typB.InvokeMember(nm, _flags, null, null, args, Globalization.CultureInfo.InvariantCulture)
-#endif
 
     member typB.SetCustomAttributeAndLog(cinfo, bytes) =
         if logRefEmitCalls then
@@ -360,13 +301,6 @@ type ILGenerator with
 
         ilG.MarkLabel lab
 
-#if !FX_RESHAPED_REFEMIT
-    member ilG.MarkSequencePointAndLog(symDoc, l1, c1, l2, c2) =
-        if logRefEmitCalls then
-            printfn "ilg%d.MarkSequencePoint(docWriter%d, %A, %A, %A, %A)" (abs <| hash ilG) (abs <| hash symDoc) l1 c1 l2 c2
-
-        ilG.MarkSequencePoint(symDoc, l1, c1, l2, c2)
-#endif
     member ilG.BeginExceptionBlockAndLog() =
         if logRefEmitCalls then
             printfn "ilg%d.BeginExceptionBlock()" (abs <| hash ilG)
@@ -1643,27 +1577,7 @@ let rec emitInstr cenv (modB: ModuleBuilder) emEnv (ilG: ILGenerator) instr =
     | I_refanyval ty -> ilG.EmitAndLog(OpCodes.Refanyval, convType cenv emEnv ty)
     | I_rethrow -> ilG.EmitAndLog OpCodes.Rethrow
     | I_break -> ilG.EmitAndLog OpCodes.Break
-    | I_seqpoint src ->
-#if FX_RESHAPED_REFEMIT
-        ignore src
-        ()
-#else
-        if cenv.generatePdb && not (src.Document.File.EndsWithOrdinal("stdin")) then
-            let guid x =
-                match x with
-                | None -> Guid.Empty
-                | Some g -> Guid(g: byte[]) in
-
-            let symDoc =
-                modB.DefineDocumentAndLog(
-                    src.Document.File,
-                    guid src.Document.Language,
-                    guid src.Document.Vendor,
-                    guid src.Document.DocumentType
-                )
-
-            ilG.MarkSequencePointAndLog(symDoc, src.Line, src.Column, src.EndLine, src.EndColumn)
-#endif
+    | I_seqpoint _ -> ()
     | I_arglist -> ilG.EmitAndLog OpCodes.Arglist
     | I_localloc -> ilG.EmitAndLog OpCodes.Localloc
 
@@ -1882,12 +1796,6 @@ let emitParameter cenv emEnv (defineParameter: int * ParameterAttributes * strin
 // buildMethodPass2
 //----------------------------------------------------------------------------
 
-#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_1
-
-let enablePInvoke = true
-
-#else
-
 // Use reflection to invoke the api when we are executing on a platform that doesn't directly have this API.
 let definePInvokeMethod =
     typeof<TypeBuilder>.GetMethod
@@ -1909,7 +1817,6 @@ let definePInvokeMethod =
          |])
 
 let enablePInvoke = definePInvokeMethod <> null
-#endif
 
 let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef) =
     let attrs = mdef.Attributes
@@ -1948,12 +1855,6 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
         // p.CharBestFit
         // p.NoMangle
 
-#if !FX_RESHAPED_REFEMIT || NETCOREAPP3_1
-        // DefinePInvokeMethod was removed in early versions of coreclr, it was added back in NETCOREAPP3.
-        // It has always been available in the desktop framework
-        let methB =
-            typB.DefinePInvokeMethod(mdef.Name, p.Where.Name, p.Name, attrs, cconv, retTy, null, null, argTys, null, null, pcc, pcs)
-#else
         // Use reflection to invoke the api when we are executing on a platform that doesn't directly have this API.
         let methB =
             System.Diagnostics.Debug.Assert(definePInvokeMethod <> null, "Runtime does not have DefinePInvokeMethod") // Absolutely can't happen
@@ -1977,7 +1878,7 @@ let rec buildMethodPass2 cenv tref (typB: TypeBuilder) emEnv (mdef: ILMethodDef)
                 |]
             )
             :?> MethodBuilder
-#endif
+
         methB.SetImplementationFlagsAndLog implflags
         envBindMethodRef emEnv mref methB
 
@@ -2591,7 +2492,7 @@ let buildModuleTypePass4 visited emEnv tdef = buildTypeDefPass4 visited [] emEnv
 // buildModuleFragment - only the types the fragment get written
 //----------------------------------------------------------------------------
 
-let buildModuleFragment cenv emEnv (asmB: AssemblyBuilder) (modB: ModuleBuilder) (m: ILModuleDef) =
+let buildModuleFragment cenv emEnv (modB: ModuleBuilder) (m: ILModuleDef) =
     let tdefs = m.TypeDefs.AsList()
 
     let emEnv = (emEnv, tdefs) ||> List.fold (buildModuleTypePass1 cenv modB)
@@ -2609,23 +2510,6 @@ let buildModuleFragment cenv emEnv (asmB: AssemblyBuilder) (modB: ModuleBuilder)
     tdefs |> List.iter (buildModuleTypePass4 (visited, created) emEnv)
     let emEnv = Seq.fold envUpdateCreatedTypeRef emEnv created.Keys // update typT with the created typT
     emitCustomAttrs cenv emEnv modB.SetCustomAttributeAndLog m.CustomAttrs
-#if FX_RESHAPED_REFEMIT
-    ignore asmB
-#else
-    m.Resources.AsList()
-    |> List.iter (fun r ->
-        let attribs =
-            (match r.Access with
-             | ILResourceAccess.Public -> ResourceAttributes.Public
-             | ILResourceAccess.Private -> ResourceAttributes.Private)
-
-        match r.Location with
-        | ILResourceLocation.Local bytes ->
-            use stream = bytes.GetByteMemory().AsStream()
-            modB.DefineManifestResourceAndLog(r.Name, stream, attribs)
-        | ILResourceLocation.File (mr, _) -> asmB.AddResourceFileAndLog(r.Name, mr.Name, attribs)
-        | ILResourceLocation.Assembly _ -> failwith "references to resources other assemblies may not be emitted using System.Reflection")
-#endif
     emEnv
 
 //----------------------------------------------------------------------------
@@ -2652,8 +2536,7 @@ let defineDynamicAssemblyAndLog (asmName, flags, asmDir: string) =
 
     asmB
 
-let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo: bool, collectible) =
-    let fileName = assemblyName + ".dll"
+let mkDynamicAssemblyAndModule (assemblyName, optimize, collectible) =
     let asmDir = "."
     let asmName = AssemblyName()
     asmName.Name <- assemblyName
@@ -2661,13 +2544,8 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo: bool, collect
     let asmAccess =
         if collectible then
             AssemblyBuilderAccess.RunAndCollect
-#if FX_RESHAPED_REFEMIT
         else
             AssemblyBuilderAccess.Run
-#else
-        else
-            AssemblyBuilderAccess.RunAndSave
-#endif
     let asmB = defineDynamicAssemblyAndLog (asmName, asmAccess, asmDir)
 
     if not optimize then
@@ -2687,7 +2565,7 @@ let mkDynamicAssemblyAndModule (assemblyName, optimize, debugInfo: bool, collect
 
         asmB.SetCustomAttributeAndLog daBuilder
 
-    let modB = asmB.DefineDynamicModuleAndLog(assemblyName, fileName, debugInfo)
+    let modB = asmB.DefineDynamicModuleAndLog(assemblyName)
     asmB, modB
 
 let EmitDynamicAssemblyFragment
@@ -2711,7 +2589,7 @@ let EmitDynamicAssemblyFragment
             tryFindSysILTypeRef = tryFindSysILTypeRef
         }
 
-    let emEnv = buildModuleFragment cenv emEnv asmB modB modul
+    let emEnv = buildModuleFragment cenv emEnv modB modul
 
     match modul.Manifest with
     | None -> ()

@@ -9,10 +9,6 @@ open Microsoft.Build.Utilities
 open Internal.Utilities.Library
 open FSharp.Compiler.IO
 
-#if !FX_NO_WIN_REGISTRY
-open Microsoft.Win32
-#endif
-
 // ATTENTION!: the following code needs to be updated every time we are switching to the new MSBuild version because new .NET framework version was released
 // 1. List of frameworks
 // 2. DeriveTargetFrameworkDirectoriesFor45Plus
@@ -129,42 +125,6 @@ let private SimulatedMSBuildResolver =
                 logWarningOrError
             ) =
 
-#if !FX_NO_WIN_REGISTRY
-            let registrySearchPaths () =
-                [
-                    let registryKey = @"Software\Microsoft\.NetFramework"
-                    use key = Registry.LocalMachine.OpenSubKey registryKey
-
-                    match key with
-                    | null -> ()
-                    | _ ->
-                        for subKeyName in key.GetSubKeyNames() do
-                            use subKey = key.OpenSubKey subKeyName
-                            use subSubKey = subKey.OpenSubKey("AssemblyFoldersEx")
-
-                            match subSubKey with
-                            | null -> ()
-                            | _ ->
-                                for subSubSubKeyName in subSubKey.GetSubKeyNames() do
-                                    use subSubSubKey = subSubKey.OpenSubKey subSubSubKeyName
-
-                                    match subSubSubKey.GetValue null with
-                                    | :? string as s -> yield s
-                                    | _ -> ()
-
-                        use subSubKey = key.OpenSubKey("AssemblyFolders")
-
-                        match subSubKey with
-                        | null -> ()
-                        | _ ->
-                            for subSubSubKeyName in subSubKey.GetSubKeyNames() do
-                                let subSubSubKey = subSubKey.OpenSubKey subSubSubKeyName
-
-                                match subSubSubKey.GetValue null with
-                                | :? string as s -> yield s
-                                | _ -> ()
-                ]
-#endif
 
             let results = ResizeArray()
 
@@ -174,10 +134,6 @@ let private SimulatedMSBuildResolver =
                     yield! explicitIncludeDirs
                     yield fsharpCoreDir
                     yield implicitIncludeDir
-#if !FX_NO_WIN_REGISTRY
-                    if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then
-                        yield! registrySearchPaths ()
-#endif
                     yield! GetPathToDotNetFrameworkReferenceAssemblies targetFrameworkVersion
                     yield! GetPathToDotNetFrameworkImlpementationAssemblies targetFrameworkVersion
                 ]

@@ -88,6 +88,7 @@
     <Compile Include="Conformance\UnitsOfMeasure\Diagnostics.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\Parsing.fs" />
     <Compile Include="Conformance\UnitsOfMeasure\TypeChecker.fs" />
+    <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
@@ -123,7 +124,6 @@
     <Compile Include="EmittedIL\Structure\Structure.fs" />
     <Compile Include="EmittedIL\TestFunctions\TestFunctions.fs" />
     <Compile Include="EmittedIL\Tuples\Tuples.fs" />
-    
     <Compile Include="ErrorMessages\UnsupportedAttributes.fs" />
     <Compile Include="ErrorMessages\TypeEqualsMissingTests.fs" />
     <Compile Include="ErrorMessages\AccessOfTypeAbbreviationTests.fs" />
@@ -159,15 +159,22 @@
     <Compile Include="Language\NameofTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
     <Compile Include="Interop\SimpleInteropTests.fs" />
-    <Compile Include="Interop\StaticsInInterfaces.fs" />
+	<Compile Include="Interop\RequiredAndInitOnlyProperties.fs" />
+	<Compile Include="Interop\StaticsInInterfaces.fs" />
     <Compile Include="Interop\VisibilityTests.fs" />
     <Compile Include="Scripting\Interactive.fs" />
     <Compile Include="TypeChecks\CheckDeclarationsTests.fs" />
     <Compile Include="CompilerOptions\fsc\langversion.fs" />
     <Compile Include="CompilerOptions\fsc\noframework.fs" />
     <Compile Include="CompilerOptions\fsc\platform.fs" />
-    <Compile Include="CompilerOptions\fsc\times.fs" />
+    <Compile Include="CompilerOptions\fsc\reference.fs" />
     <Compile Include="CompilerOptions\fsc\warn.fs" />
     <Compile Include="CompilerOptions\fsc\warnon.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
@@ -183,12 +190,6 @@
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="**\*.bsl">
       <Link>%(RelativeDir)\BaseLine\%(Filename)%(Extension)</Link>
-    </None>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-    </None>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
     </None>
   </ItemGroup>
   <ItemGroup>

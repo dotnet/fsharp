@@ -33,6 +33,8 @@ module ``Struct getters readonly`` =
                     instance int32  get_MyField() cil managed
             {
               .custom instance void [runtime]System.Runtime.CompilerServices.IsReadOnlyAttribute::.ctor() = ( 01 00 00 00 )
+              .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+              .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
 
               .maxstack  8
               IL_0000:  ldarg.0
@@ -65,6 +67,8 @@ module ``Struct getters readonly`` =
             .method public hidebysig specialname
                     instance int32  get_MyField() cil managed
             {
+              .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+              .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
 
               .maxstack  8
               IL_0000:  ldarg.0

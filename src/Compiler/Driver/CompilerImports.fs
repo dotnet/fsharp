@@ -451,30 +451,15 @@ type TcConfig with
                 raise (FileNameNotResolved(nm, searchMessage, m))
             | CcuLoadFailureAction.ReturnNone -> None
 
-    member tcConfig.MsBuildResolve(references, mode, errorAndWarningRange, showMessages) =
+    member tcConfig.MsBuildResolve(references, _, errorAndWarningRange, showMessages) =
         let logMessage showMessages =
             if showMessages && tcConfig.showReferenceResolutions then
                 (fun (message: string) -> printfn "%s" message)
             else
                 ignore
 
-        let logDiagnostic showMessages =
-            (fun isError code message ->
-                if showMessages && mode = ResolveAssemblyReferenceMode.ReportErrors then
-                    if isError then
-                        errorR (MSBuildReferenceResolutionError(code, message, errorAndWarningRange))
-                    else
-                        match code with
-                        // These are warnings that mean 'not resolved' for some assembly.
-                        // Note that we don't get to know the name of the assembly that couldn't be resolved.
-                        // Ignore these and rely on the logic below to emit an error for each unresolved reference.
-                        | "MSB3246" // Resolved file has a bad image, no metadata, or is otherwise inaccessible.
-                        | "MSB3106" -> ()
-                        | _ ->
-                            if code = "MSB3245" then
-                                errorR (MSBuildReferenceResolutionWarning(code, message, errorAndWarningRange))
-                            else
-                                warning (MSBuildReferenceResolutionWarning(code, message, errorAndWarningRange)))
+        let logDiagnostic _ =
+            (fun (_: bool) (_: string) (_: string) -> ())
 
         let targetProcessorArchitecture =
             match tcConfig.platform with

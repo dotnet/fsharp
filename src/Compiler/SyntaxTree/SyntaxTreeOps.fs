@@ -697,6 +697,7 @@ let NonVirtualMemberFlags trivia k : SynMemberFlags =
         IsDispatchSlot = false
         IsOverrideOrExplicitImpl = false
         IsFinal = false
+        GetterOrSetterIsCompilerGenerated = false
         Trivia = trivia
     }
 
@@ -707,6 +708,7 @@ let CtorMemberFlags trivia : SynMemberFlags =
         IsDispatchSlot = false
         IsOverrideOrExplicitImpl = false
         IsFinal = false
+        GetterOrSetterIsCompilerGenerated = false
         Trivia = trivia
     }
 
@@ -717,6 +719,7 @@ let ClassCtorMemberFlags trivia : SynMemberFlags =
         IsDispatchSlot = false
         IsOverrideOrExplicitImpl = false
         IsFinal = false
+        GetterOrSetterIsCompilerGenerated = false
         Trivia = trivia
     }
 
@@ -727,6 +730,7 @@ let OverrideMemberFlags trivia k : SynMemberFlags =
         IsDispatchSlot = false
         IsOverrideOrExplicitImpl = true
         IsFinal = false
+        GetterOrSetterIsCompilerGenerated = false
         Trivia = trivia
     }
 
@@ -737,6 +741,7 @@ let AbstractMemberFlags trivia k : SynMemberFlags =
         IsDispatchSlot = true
         IsOverrideOrExplicitImpl = false
         IsFinal = false
+        GetterOrSetterIsCompilerGenerated = false
         Trivia = trivia
     }
 
@@ -747,6 +752,7 @@ let StaticMemberFlags trivia k : SynMemberFlags =
         IsDispatchSlot = false
         IsOverrideOrExplicitImpl = false
         IsFinal = false
+        GetterOrSetterIsCompilerGenerated = false
         Trivia = trivia
     }
 
@@ -1017,3 +1023,9 @@ let rec desugarGetSetMembers (memberDefns: SynMemberDefns) =
             let members = Option.map desugarGetSetMembers members
             [ SynMemberDefn.Interface(interfaceType, withKeyword, members, m) ]
         | md -> [ md ])
+
+let getTypeFromTuplePath (path: SynTupleTypeSegment list) : SynType list =
+    path
+    |> List.choose (function
+        | SynTupleTypeSegment.Type t -> Some t
+        | _ -> None)

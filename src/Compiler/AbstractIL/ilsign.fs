@@ -352,233 +352,6 @@ let signerSignFileWithKeyPair (fileName: string) (kp: keyPair) : unit = signFile
 let signerSignFileWithKeyContainer (_fileName: string) (_kcName: keyContainerName) : unit =
     raise (NotImplementedException("signerSignFileWithKeyContainer is not yet implemented"))
 
-#if !FX_NO_CORHOST_SIGNER
-open System.Runtime.CompilerServices
-
-// New mscoree functionality
-// This type represents methods that we don't currently need, so I'm leaving unimplemented
-type UnusedCOMMethod = unit -> unit
-
-[<System.Security.SecurityCritical; Interface>]
-[<ComImport; InterfaceType(ComInterfaceType.InterfaceIsIUnknown); Guid("D332DB9E-B9B3-4125-8207-A14884F53216")>]
-type ICLRMetaHost =
-    [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)>]
-    abstract GetRuntime:
-        [<In; MarshalAs(UnmanagedType.LPWStr)>] version: string * [<In; MarshalAs(UnmanagedType.LPStruct)>] interfaceId: System.Guid ->
-            [<MarshalAs(UnmanagedType.Interface)>] System.Object
-
-    // Methods that we don't need are stubbed out for now...
-    abstract GetVersionFromFile: UnusedCOMMethod
-    abstract EnumerateInstalledRuntimes: UnusedCOMMethod
-    abstract EnumerateLoadedRuntimes: UnusedCOMMethod
-    abstract Reserved01: UnusedCOMMethod
-
-// We don't currently support ComConversionLoss
-[<System.Security.SecurityCritical; Interface>]
-[<ComImport; ComConversionLoss; InterfaceType(ComInterfaceType.InterfaceIsIUnknown); Guid("9FD93CCF-3280-4391-B3A9-96E1CDE77C8D")>]
-type ICLRStrongName =
-    // Methods that we don't need are stubbed out for now...
-    abstract GetHashFromAssemblyFile: UnusedCOMMethod
-    abstract GetHashFromAssemblyFileW: UnusedCOMMethod
-    abstract GetHashFromBlob: UnusedCOMMethod
-    abstract GetHashFromFile: UnusedCOMMethod
-    abstract GetHashFromFileW: UnusedCOMMethod
-    abstract GetHashFromHandle: UnusedCOMMethod
-    abstract StrongNameCompareAssemblies: UnusedCOMMethod
-
-    [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)>]
-    abstract StrongNameFreeBuffer: [<In>] pbMemory: nativeint -> unit
-
-    abstract StrongNameGetBlob: UnusedCOMMethod
-    abstract StrongNameGetBlobFromImage: UnusedCOMMethod
-
-    [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)>]
-    abstract StrongNameGetPublicKey:
-        [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzKeyContainer: string *
-        [<In; MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2s)>] pbKeyBlob: byte[] *
-        [<In; MarshalAs(UnmanagedType.U4)>] cbKeyBlob: uint32 *
-        [<Out>] ppbPublicKeyBlob: nativeint byref *
-        [<Out; MarshalAs(UnmanagedType.U4)>] pcbPublicKeyBlob: uint32 byref ->
-            unit
-
-    abstract StrongNameHashSize: UnusedCOMMethod
-
-    [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)>]
-    abstract StrongNameKeyDelete: [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzKeyContainer: string -> unit
-
-    abstract StrongNameKeyGen: UnusedCOMMethod
-    abstract StrongNameKeyGenEx: UnusedCOMMethod
-    abstract StrongNameKeyInstall: UnusedCOMMethod
-
-    [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)>]
-    abstract StrongNameSignatureGeneration:
-        [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzFilePath: string *
-        [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzKeyContainer: string *
-        [<In; MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3s)>] pbKeyBlob: byte[] *
-        [<In; MarshalAs(UnmanagedType.U4)>] cbKeyBlob: uint32 *
-        [<Out>] ppbSignatureBlob: nativeint *
-        [<MarshalAs(UnmanagedType.U4)>] pcbSignatureBlob: uint32 byref ->
-            unit
-
-    abstract StrongNameSignatureGenerationEx: UnusedCOMMethod
-
-    [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)>]
-    abstract StrongNameSignatureSize:
-        [<In; MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 1s)>] pbPublicKeyBlob: byte[] *
-        [<In; MarshalAs(UnmanagedType.U4)>] cbPublicKeyBlob: uint32 *
-        [<Out; MarshalAs(UnmanagedType.U4)>] pcbSize: uint32 byref ->
-            unit
-
-    abstract StrongNameSignatureVerification: UnusedCOMMethod
-
-    [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)>]
-    abstract StrongNameSignatureVerificationEx:
-        [<In; MarshalAs(UnmanagedType.LPWStr)>] pwzFilePath: string *
-        [<In; MarshalAs(UnmanagedType.I1)>] fForceVerification: bool *
-        [<In; MarshalAs(UnmanagedType.I1)>] pfWasVerified: bool byref ->
-            [<MarshalAs(UnmanagedType.I1)>] bool
-
-    abstract StrongNameSignatureVerificationFromImage: UnusedCOMMethod
-    abstract StrongNameTokenFromAssembly: UnusedCOMMethod
-    abstract StrongNameTokenFromAssemblyEx: UnusedCOMMethod
-    abstract StrongNameTokenFromPublicKey: UnusedCOMMethod
-
-[<System.Security.SecurityCritical; Interface>]
-[<ComImport; InterfaceType(ComInterfaceType.InterfaceIsIUnknown); Guid("BD39D1D2-BA2F-486A-89B0-B4B0CB466891")>]
-type ICLRRuntimeInfo =
-    // REVIEW: Methods that we don't need will be stubbed out for now...
-    abstract GetVersionString: unit -> unit
-    abstract GetRuntimeDirectory: unit -> unit
-    abstract IsLoaded: unit -> unit
-    abstract LoadErrorString: unit -> unit
-    abstract LoadLibrary: unit -> unit
-    abstract GetProcAddress: unit -> unit
-
-    [<MethodImpl(MethodImplOptions.InternalCall, MethodCodeType = MethodCodeType.Runtime)>]
-    abstract GetInterface:
-        [<In; MarshalAs(UnmanagedType.LPStruct)>] coClassId: System.Guid *
-        [<In; MarshalAs(UnmanagedType.LPStruct)>] interfaceId: System.Guid ->
-            [<MarshalAs(UnmanagedType.Interface)>] System.Object
-
-[<System.Security.SecurityCritical>]
-[<DllImport("mscoree.dll", SetLastError = true, PreserveSig = false, EntryPoint = "CreateInterface")>]
-let CreateInterface
-    (
-        ([<MarshalAs(UnmanagedType.LPStruct)>] _clsidguid: System.Guid),
-        ([<MarshalAs(UnmanagedType.LPStruct)>] _guid: System.Guid),
-        ([<MarshalAs(UnmanagedType.Interface)>] _metaHost: ICLRMetaHost byref)
-    ) : unit =
-    failwith "CreateInterface"
-
-let legacySignerOpenPublicKeyFile filePath =
-    FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
-
-let legacySignerOpenKeyPairFile filePath =
-    FileSystem.OpenFileForReadShim(filePath).ReadAllBytes()
-
-let mutable iclrsn: ICLRStrongName option = None
-
-let getICLRStrongName () =
-    match iclrsn with
-    | None ->
-        let CLSID_CLRStrongName =
-            System.Guid(0xB79B0ACDu, 0xF5CDus, 0x409bus, 0xB5uy, 0xA5uy, 0xA1uy, 0x62uy, 0x44uy, 0x61uy, 0x0Buy, 0x92uy)
-
-        let IID_ICLRStrongName =
-            System.Guid(0x9FD93CCFu, 0x3280us, 0x4391us, 0xB3uy, 0xA9uy, 0x96uy, 0xE1uy, 0xCDuy, 0xE7uy, 0x7Cuy, 0x8Duy)
-
-        let CLSID_CLRMetaHost =
-            System.Guid(0x9280188Du, 0x0E8Eus, 0x4867us, 0xB3uy, 0x0Cuy, 0x7Fuy, 0xA8uy, 0x38uy, 0x84uy, 0xE8uy, 0xDEuy)
-
-        let IID_ICLRMetaHost =
-            System.Guid(0xD332DB9Eu, 0xB9B3us, 0x4125us, 0x82uy, 0x07uy, 0xA1uy, 0x48uy, 0x84uy, 0xF5uy, 0x32uy, 0x16uy)
-
-        let clrRuntimeInfoGuid =
-            System.Guid(0xBD39D1D2u, 0xBA2Fus, 0x486aus, 0x89uy, 0xB0uy, 0xB4uy, 0xB0uy, 0xCBuy, 0x46uy, 0x68uy, 0x91uy)
-
-        let runtimeVer =
-            System.Runtime.InteropServices.RuntimeEnvironment.GetSystemVersion()
-
-        let mutable metaHost = Unchecked.defaultof<ICLRMetaHost>
-        CreateInterface(CLSID_CLRMetaHost, IID_ICLRMetaHost, &metaHost)
-
-        if Unchecked.defaultof<ICLRMetaHost> = metaHost then
-            failwith "Unable to obtain ICLRMetaHost object - check freshness of mscoree.dll"
-
-        let runtimeInfo =
-            metaHost.GetRuntime(runtimeVer, clrRuntimeInfoGuid) :?> ICLRRuntimeInfo
-
-        let sn =
-            runtimeInfo.GetInterface(CLSID_CLRStrongName, IID_ICLRStrongName) :?> ICLRStrongName
-
-        if Unchecked.defaultof<ICLRStrongName> = sn then
-            failwith "Unable to obtain ICLRStrongName object"
-
-        iclrsn <- Some sn
-        sn
-    | Some sn -> sn
-
-let legacySignerGetPublicKeyForKeyPair kp =
-    let mutable pSize = 0u
-    let mutable pBuffer: nativeint = (nativeint) 0
-    let iclrSN = getICLRStrongName ()
-
-    iclrSN.StrongNameGetPublicKey(Unchecked.defaultof<string>, kp, (uint32) kp.Length, &pBuffer, &pSize)
-    |> ignore
-
-    let mutable keybuffer: byte[] = Bytes.zeroCreate (int pSize)
-    // Copy the marshalled data over - we'll have to free this ourselves
-    Marshal.Copy(pBuffer, keybuffer, 0, int pSize)
-    iclrSN.StrongNameFreeBuffer pBuffer |> ignore
-    keybuffer
-
-let legacySignerGetPublicKeyForKeyContainer kc =
-    let mutable pSize = 0u
-    let mutable pBuffer: nativeint = (nativeint) 0
-    let iclrSN = getICLRStrongName ()
-
-    iclrSN.StrongNameGetPublicKey(kc, Unchecked.defaultof<byte[]>, 0u, &pBuffer, &pSize)
-    |> ignore
-
-    let mutable keybuffer: byte[] = Bytes.zeroCreate (int pSize)
-    // Copy the marshalled data over - we'll have to free this ourselves later
-    Marshal.Copy(pBuffer, keybuffer, 0, int pSize)
-    iclrSN.StrongNameFreeBuffer pBuffer |> ignore
-    keybuffer
-
-let legacySignerCloseKeyContainer kc =
-    let iclrSN = getICLRStrongName ()
-    iclrSN.StrongNameKeyDelete kc |> ignore
-
-let legacySignerSignatureSize (pk: byte[]) =
-    let mutable pSize = 0u
-    let iclrSN = getICLRStrongName ()
-    iclrSN.StrongNameSignatureSize(pk, uint32 pk.Length, &pSize) |> ignore
-    int pSize
-
-let legacySignerSignFileWithKeyPair fileName kp =
-    let mutable pcb = 0u
-    let mutable ppb = (nativeint) 0
-    let mutable ok = false
-    let iclrSN = getICLRStrongName ()
-
-    iclrSN.StrongNameSignatureGeneration(fileName, Unchecked.defaultof<string>, kp, uint32 kp.Length, ppb, &pcb)
-    |> ignore
-
-    iclrSN.StrongNameSignatureVerificationEx(fileName, true, &ok) |> ignore
-
-let legacySignerSignFileWithKeyContainer fileName kcName =
-    let mutable pcb = 0u
-    let mutable ppb = (nativeint) 0
-    let mutable ok = false
-    let iclrSN = getICLRStrongName ()
-
-    iclrSN.StrongNameSignatureGeneration(fileName, kcName, Unchecked.defaultof<byte[]>, 0u, ppb, &pcb)
-    |> ignore
-
-    iclrSN.StrongNameSignatureVerificationEx(fileName, true, &ok) |> ignore
-#endif
-
 let failWithContainerSigningUnsupportedOnThisPlatform () =
     failwith (FSComp.SR.containerSigningUnsupportedOnThisPlatform () |> snd)
 
@@ -603,13 +376,8 @@ type ILStrongNameSigner =
         | PublicKeySigner _
         | PublicKeyOptionsSigner _
         | KeyPair _ -> ()
-        | KeyContainer containerName ->
-#if !FX_NO_CORHOST_SIGNER
-            legacySignerCloseKeyContainer containerName
-#else
-            ignore containerName
-            failWithContainerSigningUnsupportedOnThisPlatform ()
-#endif
+        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
+
     member s.IsFullySigned =
         match s with
         | PublicKeySigner _ -> false
@@ -617,12 +385,7 @@ type ILStrongNameSigner =
             let _, usePublicSign = pko
             usePublicSign
         | KeyPair _ -> true
-        | KeyContainer _ ->
-#if !FX_NO_CORHOST_SIGNER
-            true
-#else
-            failWithContainerSigningUnsupportedOnThisPlatform ()
-#endif
+        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
 
     member s.PublicKey =
         match s with
@@ -631,13 +394,7 @@ type ILStrongNameSigner =
             let pk, _ = pko
             pk
         | KeyPair kp -> signerGetPublicKeyForKeyPair kp
-        | KeyContainer containerName ->
-#if !FX_NO_CORHOST_SIGNER
-            legacySignerGetPublicKeyForKeyContainer containerName
-#else
-            ignore containerName
-            failWithContainerSigningUnsupportedOnThisPlatform ()
-#endif
+        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
 
     member s.SignatureSize =
         let pkSignatureSize pk =
@@ -653,23 +410,11 @@ type ILStrongNameSigner =
             let pk, _ = pko
             pkSignatureSize pk
         | KeyPair kp -> pkSignatureSize (signerGetPublicKeyForKeyPair kp)
-        | KeyContainer containerName ->
-#if !FX_NO_CORHOST_SIGNER
-            pkSignatureSize (legacySignerGetPublicKeyForKeyContainer containerName)
-#else
-            ignore containerName
-            failWithContainerSigningUnsupportedOnThisPlatform ()
-#endif
+        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
 
     member s.SignFile file =
         match s with
         | PublicKeySigner _ -> ()
         | PublicKeyOptionsSigner _ -> ()
         | KeyPair kp -> signerSignFileWithKeyPair file kp
-        | KeyContainer containerName ->
-#if !FX_NO_CORHOST_SIGNER
-            legacySignerSignFileWithKeyContainer file containerName
-#else
-            ignore containerName
-            failWithContainerSigningUnsupportedOnThisPlatform ()
-#endif
+        | KeyContainer _ -> failWithContainerSigningUnsupportedOnThisPlatform ()
