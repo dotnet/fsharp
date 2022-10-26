@@ -15,58 +15,68 @@ let runCompiler () =
     FSharp.Compiler.CommandLineMain.main args |> ignore
     
 [<CustomEquality; NoComparison>]
-type Node =
+type GenericNode<'State, 'SingleResult> =
     {
         Idx : FileIdx
         Deps : FileIdx[]
         TransitiveDeps : FileIdx[]
         Dependants : FileIdx[]
-        mutable PartialResult : string option
-        mutable ThisResult : int option
+        mutable Result : ('SingleResult * 'State) option
         mutable UnprocessedDepsCount : int
         _lock : Object
     }
     override this.Equals(y) =
         match y with
-        | :? Node as other -> (this.Idx = other.Idx)
+        | :? GenericNode<'State, 'SingleResult> as other -> (this.Idx = other.Idx)
         | _ -> false
     override this.GetHashCode() = this.Idx.Idx
 
+module Node =
+    let idx (node : GenericNode<_,_>) = node.Idx
+
 type State = string // TcState
 type SingleResult = int // partial result for a single file 
-    
+
+type Node = GenericNode<State, SingleResult>
+
 /// <summary>
-/// Combine results of all transitive dependencies for a single target node.
+/// Combine results of all transitive dependencies
 /// </summary>
 /// <param name="graph"></param>
 /// <param name="deps">Transitive deps</param>
-let combineResults (graph : IDictionary<FileIdx, Node>) (node : Node) (folder : State -> SingleResult -> State) : State =
-    
+let combineResults<'State, 'SingleResult> (graph : IDictionary<FileIdx, GenericNode<'State, 'SingleResult>>) (transitiveDeps : FileIdx[]) (folder : 'State -> 'SingleResult -> 'State) : 'State =
     // Find the child with most transitive deps
     let biggestChild =
-        node.TransitiveDeps
+        transitiveDeps
         |> Array.map (fun d -> graph[d])
         |> Array.maxBy (fun n -> n.TransitiveDeps.Length)
     
     // Start with that child's state
-    let state = biggestChild.PartialResult |> Option.defaultWith (fun () -> failwith "Unexpected lack of result")
+    let state = biggestChild.Result |> Option.defaultWith (fun () -> failwith "Unexpected lack of result") |> snd
     
     let alreadyIncluded = HashSet<FileIdx>(biggestChild.TransitiveDeps, HashIdentity.Structural)
     
     // Find individual results from all transitive deps that were not in biggestChild
     let toBeAdded =
-        node.TransitiveDeps
+        transitiveDeps
         |> Array.filter alreadyIncluded.Add
     
     // Add those results to the initial one
     let state =
         toBeAdded
-        |> Array.map (fun d -> graph[d].ThisResult |> Option.defaultWith (fun () -> failwith "Unexpected lack of result"))
+        |> Array.map (fun d -> graph[d].Result |> Option.defaultWith (fun () -> failwith "Unexpected lack of result") |> fst)
         |> Array.fold folder state
         
     state
+    
+let fold (state : string) (singleResult : int) =
+    state + singleResult.ToString()
 
-let processGraph (graph : IDictionary<FileIdx, Node>) =
+let actualActualWork (idx : FileIdx) (state : State) : SingleResult =
+    let thisResult = idx.Idx
+    thisResult
+        
+let processGraph (graph : IDictionary<FileIdx, Node>) (work : FileIdx -> SingleResult * State) =
     
     printfn "start"
     use q = new BlockingCollection<FileIdx>()
@@ -88,28 +98,15 @@ let processGraph (graph : IDictionary<FileIdx, Node>) =
             printfn $"UnprocessedCount = {unprocessedCount}"
         )
     
-    let fold (state : string) (singleResult : int) =
-        state + singleResult.ToString()
-    
-    let actualActualWork (idx : FileIdx) (state : State) : SingleResult * State =
-        let thisResult = idx.Idx
-        let state = fold state thisResult
-        thisResult, state
-    
-    let actualWork (idx : FileIdx) =
-        let node = graph[idx]
-        let state = combineResults graph node fold
-        let thisResult = actualActualWork idx state
-        thisResult
-    
-    // Processing of a single node/file - gives a result
-    let go (idx : FileIdx) =
+    // Processing of a single node/file
+    let go (idx : FileIdx) : unit =
         let node = graph[idx]
         printfn $"Start {idx} -> %+A{node.Deps}"
         Thread.Sleep(500)
-        let singleResult, state = actualWork idx
-        node.ThisResult <- Some singleResult
-        node.PartialResult <- Some state
+        let node = graph[idx]
+        let state = combineResults graph node.TransitiveDeps fold
+        let singleResult = actualActualWork idx state
+        node.Result <- Some (singleResult, state)
         printfn $" Stop {idx} work - SingleResult={singleResult} State={state}"
         
         // Increment processed deps count for all dependants and schedule those who are now unblocked
@@ -152,10 +149,7 @@ let processGraph (graph : IDictionary<FileIdx, Node>) =
     printfn "waitall"
     Task.WaitAll workers
     
-    let fullResult =
-        graph
-        |> Seq.map (fun (KeyValue(idx, node)) -> node.PartialResult |> Option.get) // TODO Oops
-        |> Seq.fold (fun state item -> state + item) ""
+    let fullResult = combineResults graph (graph.Values |> Seq.map Node.idx |> Seq.toArray)
     
     printfn $"End result: {fullResult}"
 
