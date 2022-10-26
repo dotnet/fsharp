@@ -2434,7 +2434,7 @@ type TraitConstraintInfo =
 
     /// Get or set the solution of the member constraint during inference
     member x.Solution 
-        with get() = (let (TTrait(_, _, _, _, _, sln, _,)) = x in sln.Value)
+        with get() = (let (TTrait(_, _, _, _, _, sln, _)) = x in sln.Value)
         and set v = (let (TTrait(_, _, _, _, _, sln, _)) = x in sln.Value <- v)
 
     /// Get the context used to help determine possible extension member solutions
