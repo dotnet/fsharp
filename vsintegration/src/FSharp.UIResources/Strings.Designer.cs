@@ -212,7 +212,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
                 return ResourceManager.GetString("Inline_Hints", resourceCulture);
             }
         }
-
+        
         /// <summary>
         ///   Looks up a localized string similar to IntelliSense Performance Options.
         /// </summary>
@@ -340,14 +340,23 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Display inline type hints (experimental).
+        ///   Looks up a localized string similar to Display inline parameter name hints (experimental).
         /// </summary>
-        public static string Show_Inline_Hints {
+        public static string Show_Inline_Parameter_Name_Hints {
             get {
-                return ResourceManager.GetString("Show_Inline_Hints", resourceCulture);
+                return ResourceManager.GetString("Show_Inline_Parameter_Name_Hints", resourceCulture);
             }
         }
-
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Display inline type hints (experimental).
+        /// </summary>
+        public static string Show_Inline_Type_Hints {
+            get {
+                return ResourceManager.GetString("Show_Inline_Type_Hints", resourceCulture);
+            }
+        }
+        
         /// <summary>
         ///   Looks up a localized string similar to S_how navigation links as.
         /// </summary>
