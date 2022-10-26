@@ -27,6 +27,7 @@ type public Fsc() as this =
     let mutable codePage: string MaybeNull = null
     let mutable commandLineArgs: ITaskItem list = []
     let mutable compilerTools: ITaskItem[] = [||]
+    let mutable compressMetadata = false
     let mutable debugSymbols = false
     let mutable debugType: string MaybeNull = null
     let mutable defineConstants: ITaskItem[] = [||]
@@ -42,9 +43,12 @@ type public Fsc() as this =
     let mutable keyFile: string MaybeNull = null
     let mutable langVersion: string MaybeNull = null
     let mutable noFramework = false
+    let mutable noInterfaceData = false
+    let mutable noOptimizationData = false
     let mutable optimize: bool = true
     let mutable otherFlags: string MaybeNull = null
     let mutable outputAssembly: string MaybeNull = null
+    let mutable outputRefAssembly: string MaybeNull = null
     let mutable pathMap: string MaybeNull = null
     let mutable pdbFile: string MaybeNull = null
     let mutable platform: string MaybeNull = null
@@ -54,6 +58,7 @@ type public Fsc() as this =
     let mutable provideCommandLineArgs: bool = false
     let mutable references: ITaskItem[] = [||]
     let mutable referencePath: string MaybeNull = null
+    let mutable refOnly: bool = false
     let mutable resources: ITaskItem[] = [||]
     let mutable skipCompilerExecution: bool = false
     let mutable sources: ITaskItem[] = [||]
@@ -88,6 +93,7 @@ type public Fsc() as this =
     let mutable vserrors: bool = false
     let mutable vslcid: string MaybeNull = null
     let mutable utf8output: bool = false
+    let mutable useReflectionFreeCodeGen: bool = false
 
     /// Trim whitespace ... spaces, tabs, newlines,returns, Double quotes and single quotes
     let wsCharsToTrim = [| ' '; '\t'; '\"'; '\'' |]
@@ -148,8 +154,20 @@ type public Fsc() as this =
         if noFramework then
             builder.AppendSwitch("--noframework")
 
+        // NoInterfaceData
+        if noInterfaceData then
+            builder.AppendSwitch("--nointerfacedata")
+
+        // NoOptimizationData
+        if noOptimizationData then
+            builder.AppendSwitch("--nooptimizationdata")
+
         // BaseAddress
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
+
+        // CompressMetadata
+        if compressMetadata then
+            builder.AppendSwitch("--compressmetadata")
 
         // DefineConstants
         for item in defineConstants do
@@ -292,6 +310,9 @@ type public Fsc() as this =
         if utf8output then
             builder.AppendSwitch("--utf8output")
 
+        if useReflectionFreeCodeGen then
+            builder.AppendSwitch("--reflectionfree")
+
         // When building using the fsc task, always emit the "fullpaths" flag to make the output easier
         // for the user to parse
         builder.AppendSwitch("--fullpaths")
@@ -324,6 +345,12 @@ type public Fsc() as this =
         builder.AppendFileNamesIfNotNull(sources, " ")
         capturedFilenames <- builder.CapturedFilenames()
 
+        // Ref assemblies
+        builder.AppendSwitchIfNotNull("--refout:", outputRefAssembly)
+
+        if refOnly then
+            builder.AppendSwitch("--refonly")
+
         builder
 
     // --baseaddress
@@ -345,6 +372,11 @@ type public Fsc() as this =
     member _.CompilerTools
         with get () = compilerTools
         and set (a) = compilerTools <- a
+
+    // CompressMetadata
+    member _.CompressMetadata
+        with get () = compressMetadata
+        and set (v) = compressMetadata <- v
 
     // -g: Produce debug file. Disables optimizations if a -O flag is not given.
     member _.DebugSymbols
@@ -426,6 +458,16 @@ type public Fsc() as this =
         with get () = noFramework
         and set (b) = noFramework <- b
 
+    // --nointerfacedata
+    member _.NoInterfaceData
+        with get () = noInterfaceData
+        and set (b) = noInterfaceData <- b
+
+    // --nooptimizationdata
+    member _.NoOptimizationData
+        with get () = noOptimizationData
+        and set (b) = noOptimizationData <- b
+
     // --optimize
     member _.Optimize
         with get () = optimize
@@ -445,6 +487,11 @@ type public Fsc() as this =
     member _.OutputAssembly
         with get () = outputAssembly
         and set (s) = outputAssembly <- s
+
+    // --refout <string>: Name the output ref file
+    member _.OutputRefAssembly
+        with get () = outputRefAssembly
+        and set (s) = outputRefAssembly <- s
 
     // --pathmap <string>: Paths to rewrite when producing deterministic builds
     member _.PathMap
@@ -492,6 +539,11 @@ type public Fsc() as this =
     member _.ReferencePath
         with get () = referencePath
         and set (s) = referencePath <- s
+
+    // --refonly
+    member _.RefOnly
+        with get () = refOnly
+        and set (b) = refOnly <- b
 
     // --resource <string>: Embed the specified managed resources (.resource).
     //   Produce .resource files from .resx files using resgen.exe or resxc.exe.
@@ -579,6 +631,10 @@ type public Fsc() as this =
     member _.Utf8Output
         with get () = utf8output
         and set (p) = utf8output <- p
+
+    member _.ReflectionFree
+        with get () = useReflectionFreeCodeGen
+        and set (p) = useReflectionFreeCodeGen <- p
 
     member _.SubsystemVersion
         with get () = subsystemVersion

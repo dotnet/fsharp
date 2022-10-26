@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ja" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiEntryPointWontBeInvoked">
+        <source>Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</source>
+        <target state="translated">[&lt;EntryPoint&gt;] を含む関数は FSI では呼び出されません。'{0}' は呼び出されませんでした。コマンド ライン引数の適切な文字列配列を使用して '{2}' を呼び出すには、'{1} &lt;args&gt;' を実行してください。</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiInternalAccess">
         <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
         <target state="translated">F# インタラクティブの以前の評価から内部型、メソッド、またはフィールド `{0}` にアクセスすることは非推奨であり、その後のアクセス エラーが発生する可能性があります。内部にアクセスできる単一の動的アセンブリのレガシ生成を有効にするには、`--multiemit-` オプションを使用します。</target>
@@ -14,7 +19,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHashclearInfo">
         <source>Clear screen</source>
-        <target state="new">Clear screen</target>
+        <target state="translated">画面をクリアする</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">
@@ -44,7 +49,7 @@
       </trans-unit>
       <trans-unit id="fsiUsage">
         <source>Usage: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</source>
-        <target state="translated">使用状況: {0} &lt;オプション&gt; [script.fsx [&lt;引数&gt;]]</target>
+        <target state="translated">使用状況: {0} &lt;options&gt; [script.fsx [&lt;arguments&gt;]]</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiInputFiles">

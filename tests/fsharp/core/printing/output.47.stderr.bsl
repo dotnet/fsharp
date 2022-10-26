@@ -334,3 +334,111 @@ stdin(838,6): error FS1210: Active pattern '|A|B|' has a result type containing 
 
 stdin(844,6): error FS1209: Active pattern '|A|B|' is not a function
 
+
+  #r "nuget:Newtonsoft.Json, 13.0.1"
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stdin(1117,1): error FS3302: The 'package management' feature requires language version 5.0 or above
+
+
+  JsonConvert.SerializeObject { ImmutableField0 = 7 }
+  ^^^^^^^^^^^
+
+stdin(1122,1): error FS0039: The value, namespace, type or module 'JsonConvert' is not defined.
+
+
+  JsonConvert.SerializeObject { MutableField1 = 8 } |> printfn "%s";;
+  ^^^^^^^^^^^
+
+stdin(1126,1): error FS0039: The value, namespace, type or module 'JsonConvert' is not defined.
+
+
+  JsonConvert.SerializeObject { MutableField1 = 9 }
+  ^^^^^^^^^^^
+
+stdin(1128,1): error FS0039: The value, namespace, type or module 'JsonConvert' is not defined.
+
+
+  JsonConvert.SerializeObject {| AnonRecordField2 = 10 |} |> printfn "%s";;
+  ^^^^^^^^^^^
+
+stdin(1131,1): error FS0039: The value, namespace, type or module 'JsonConvert' is not defined.
+
+
+  JsonConvert.SerializeObject {| AnonRecordField2 = 11 |}
+  ^^^^^^^^^^^
+
+stdin(1133,1): error FS0039: The value, namespace, type or module 'JsonConvert' is not defined.
+
+
+  #r "nuget: System.Text.Json"
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stdin(1136,1): error FS3302: The 'package management' feature requires language version 5.0 or above
+
+
+  let test3b = JsonSerializer.Deserialize<R3> test3a;;
+  -------------^^^^^^^^^^^^^^
+
+stdin(1140,14): error FS0039: The value, namespace, type or module 'JsonSerializer' is not defined.
+
+
+  let test3c = JsonSerializer.Serialize { ImmutableField3 = 13 };;
+  -------------^^^^^^^^^^^^^^
+
+stdin(1141,14): error FS0039: The value, namespace, type or module 'JsonSerializer' is not defined.
+
+
+  let test3d = JsonSerializer.Deserialize<R3> test3c;;
+  -------------^^^^^^^^^^^^^^
+
+stdin(1142,14): error FS0039: The value, namespace, type or module 'JsonSerializer' is not defined.
+
+
+  let test4a = JsonSerializer.Serialize { MutableField4 = 15 };;
+  -------------^^^^^^^^^^^^^^
+
+stdin(1145,14): error FS0039: The value, namespace, type or module 'JsonSerializer' is not defined.
+
+
+  let test4b = JsonSerializer.Deserialize<R4> test4a;;
+  -------------^^^^^^^^^^^^^^
+
+stdin(1146,14): error FS0039: The value, namespace, type or module 'JsonSerializer' is not defined.
+
+
+  let test4c = JsonSerializer.Serialize { MutableField4 = 16 };;
+  -------------^^^^^^^^^^^^^^
+
+stdin(1147,14): error FS0039: The value, namespace, type or module 'JsonSerializer' is not defined.
+
+
+  let test4d = JsonSerializer.Deserialize<R4> test4c;;
+  -------------^^^^^^^^^^^^^^
+
+stdin(1148,14): error FS0039: The value, namespace, type or module 'JsonSerializer' is not defined.
+
+
+  let test5a = JsonSerializer.Serialize {| AnonRecordField5 = 17 |};;
+  -------------^^^^^^^^^^^^^^
+
+stdin(1151,14): error FS0039: The value, namespace, type or module 'JsonSerializer' is not defined.
+
+
+  let test5b = JsonSerializer.Deserialize<R5> test5a;;
+  -------------^^^^^^^^^^^^^^
+
+stdin(1152,14): error FS0039: The value, namespace, type or module 'JsonSerializer' is not defined.
+
+
+  let test5c = JsonSerializer.Serialize {| AnonRecordField5 = 18 |};;
+  -------------^^^^^^^^^^^^^^
+
+stdin(1153,14): error FS0039: The value, namespace, type or module 'JsonSerializer' is not defined.
+
+
+  let test5d = JsonSerializer.Deserialize<R5> test5c;;
+  -------------^^^^^^^^^^^^^^
+
+stdin(1154,14): error FS0039: The value, namespace, type or module 'JsonSerializer' is not defined.
+

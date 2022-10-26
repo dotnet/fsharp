@@ -672,7 +672,7 @@
       </trans-unit>
       <trans-unit id="NoZeroImpactProjects">
         <source>Microsoft Visual F# does not support zero-impact projects. To create an F# project from this project template, either go to the Visual Studio menu 'Tools, Options..., Projects and Solutions, General' and check the box marked 'Save new projects when created', or specify &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; in the &lt;TemplateData&gt; section of this project template's .vstemplate file, and then retry this operation.</source>
-        <target state="translated">Microsoft Visual F# では、影響のないプロジェクトをサポートしていません。F# プロジェクトをこのプロジェクト テンプレートから作成するには、Visual Studio メニューの [ツール] の [オプション] をクリックし、[プロジェクトおよびソリューション] の [全般] の [作成時に新しいプロジェクトを保存] チェック ボックスをオンにするか、またはプロジェクト テンプレートの .vstemplate ファイルの &lt;TemplateData&gt; セクションで &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; を指定し、この操作を再試行してください。</target>
+        <target state="translated">Microsoft Visual F# では、ゼロインパクトのプロジェクトをサポートしていません。F# プロジェクトをこのプロジェクト テンプレートから作成するには、Visual Studio メニューの [ツール] の [オプション] をクリックし、[プロジェクトおよびソリューション] の [全般] の [作成時に新しいプロジェクトを保存] チェック ボックスをオンにするか、またはプロジェクト テンプレートの .vstemplate ファイルの &lt;TemplateData&gt; セクションで &lt;PromptForSaveOnCreation&gt;true&lt;/PromptForSaveOnCreation&gt; を指定し、この操作を再試行してください。</target>
         <note />
       </trans-unit>
       <trans-unit id="NoWildcardsInProject">

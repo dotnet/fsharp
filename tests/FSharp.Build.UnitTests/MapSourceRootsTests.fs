@@ -48,7 +48,7 @@ type SourceRoot =
 
 /// these tests are ported from https://github.com/dotnet/roslyn/blob/093ea477717001c58be6231cf2a793f4245cbf72/src/Compilers/Core/MSBuildTaskTests/MapSourceRootTests.cs
 /// Same scenarios, slightly different setup/teardown
-[<TestFixture>]
+[<TestFixture; SetUICulture("en-US"); SetCulture("en-US")>]
 type MapSourceRootsTests() =
 
     let assertNoErrors (t: MapSourceRoots) =

@@ -191,6 +191,7 @@ type TcGlobals(
     directoryToResolveRelativePaths,
     mlCompatibility: bool,
     isInteractive: bool,
+    useReflectionFreeCodeGen: bool,
     // The helper to find system types amongst referenced DLLs
     tryFindSysTypeCcu,
     emitDebugInfoInQuotations: bool,
@@ -564,8 +565,8 @@ type TcGlobals(
 
   let tryDecodeTupleTy tupInfo l =
       match l with
-      | [t1;t2;t3;t4;t5;t6;t7;marker] ->
-          match marker with
+      | [t1;t2;t3;t4;t5;t6;t7;markerTy] ->
+          match markerTy with
           | TType_app(tcref, [t8], _) when tyconRefEq tcref v_ref_tuple1_tcr -> mkRawRefTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
           | TType_app(tcref, [t8], _) when tyconRefEq tcref v_struct_tuple1_tcr -> mkRawStructTupleTy [t1;t2;t3;t4;t5;t6;t7;t8] |> Some
           | TType_tuple (_structness2, t8plus) -> TType_tuple (tupInfo, [t1;t2;t3;t4;t5;t6;t7] @ t8plus) |> Some
@@ -983,6 +984,9 @@ type TcGlobals(
         tryFindSysAttrib "System.Runtime.CompilerServices.ModuleInitializerAttribute"
         tryFindSysAttrib "System.Runtime.CompilerServices.CallerArgumentExpressionAttribute"
         tryFindSysAttrib "System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
+        tryFindSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
+        tryFindSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
                               ] |> List.choose (Option.map (fun x -> x.TyconRef))
 
   override _.ToString() = "<TcGlobals>"
@@ -1000,6 +1004,8 @@ type TcGlobals(
   member _.knownFSharpCoreModules = v_knownFSharpCoreModules
 
   member _.compilingFSharpCore = compilingFSharpCore
+
+  member _.useReflectionFreeCodeGen = useReflectionFreeCodeGen
 
   member _.mlCompatibility = mlCompatibility
 
@@ -1425,6 +1431,9 @@ type TcGlobals(
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
   member val attrib_ComponentModelEditorBrowsableAttribute = findSysAttrib "System.ComponentModel.EditorBrowsableAttribute"
+  member val attrib_CompilerFeatureRequiredAttribute       = findSysAttrib "System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute"
+  member val attrib_SetsRequiredMembersAttribute           = findSysAttrib "System.Diagnostics.CodeAnalysis.SetsRequiredMembersAttribute"
+  member val attrib_RequiredMemberAttribute                = findSysAttrib "System.Runtime.CompilerServices.RequiredMemberAttribute"
 
   member g.improveType tcref tinst = improveTy tcref tinst
 
@@ -1743,11 +1752,10 @@ type TcGlobals(
   member _.mkDebuggableAttribute jitOptimizerDisabled =
       mkILCustomAttribute (tref_DebuggableAttribute, [ilg.typ_Bool; ilg.typ_Bool], [ILAttribElem.Bool false; ILAttribElem.Bool jitOptimizerDisabled], [])
 
-  member _.mkDebuggableAttributeV2(jitTracking, ignoreSymbolStoreSequencePoints, jitOptimizerDisabled, enableEnC) =
+  member _.mkDebuggableAttributeV2(jitTracking, jitOptimizerDisabled, enableEnC) =
         let debuggingMode =
             (if jitTracking then 1 else 0) |||
             (if jitOptimizerDisabled then 256 else 0) |||
-            (if ignoreSymbolStoreSequencePoints then 2 else 0) |||
             (if enableEnC then 4 else 0)
         let tref_DebuggableAttribute_DebuggingModes = mkILTyRefInTyRef (tref_DebuggableAttribute, tname_DebuggableAttribute_DebuggingModes)
         mkILCustomAttribute
@@ -1759,6 +1767,8 @@ type TcGlobals(
 
   member _.CompilerGeneratedAttribute = mkCompilerGeneratedAttribute ()
 
+  member _.DebuggerNonUserCodeAttribute = mkDebuggerNonUserCodeAttribute ()
+
   member _.MakeInternalsVisibleToAttribute(simpleAssemName) =
       mkILCustomAttribute (tref_InternalsVisibleToAttribute, [ilg.typ_String], [ILAttribElem.String (Some simpleAssemName)], [])
 
@@ -1766,20 +1776,21 @@ type TcGlobals(
   /// AdditionDynamic for op_Addition.  Also work out the type instantiation of the dynamic function.
   member _.MakeBuiltInWitnessInfo (t: TraitConstraintInfo) =
       let memberName =
-          let nm = t.MemberName
+          let nm = t.MemberLogicalName
           let coreName =
               if nm.StartsWith "op_" then nm[3..]
               elif nm = "get_Zero" then "GenericZero"
               elif nm = "get_One" then "GenericOne"
               else nm
           coreName + "Dynamic"
+
       let gtps, argTys, retTy, tinst =
-          match memberName, t.ArgumentTypes, t.ReturnType with
+          match memberName, t.CompiledObjectAndArgumentTypes, t.CompiledReturnType with
           | ("AdditionDynamic" | "MultiplyDynamic" | "SubtractionDynamic"| "DivisionDynamic" | "ModulusDynamic" | "CheckedAdditionDynamic" | "CheckedMultiplyDynamic" | "CheckedSubtractionDynamic" | "LeftShiftDynamic" | "RightShiftDynamic" | "BitwiseAndDynamic" | "BitwiseOrDynamic" | "ExclusiveOrDynamic" | "LessThanDynamic" | "GreaterThanDynamic" | "LessThanOrEqualDynamic" | "GreaterThanOrEqualDynamic" | "EqualityDynamic" | "InequalityDynamic"),
             [ arg0Ty; arg1Ty ],
             Some retTy ->
                [vara; varb; varc], [ varaTy; varbTy ], varcTy, [ arg0Ty; arg1Ty; retTy ]
-          | ("UnaryNegationDynamic" | "CheckedUnaryNegationDynamic" | "LogicalNotDynamic" | "ExplicitDynamic"),
+          | ("UnaryNegationDynamic" | "CheckedUnaryNegationDynamic" | "LogicalNotDynamic" | "ExplicitDynamic" | "CheckedExplicitDynamic"),
             [ arg0Ty ],
             Some retTy ->
                [vara; varb ], [ varaTy ], varbTy, [ arg0Ty; retTy ]
@@ -1788,13 +1799,14 @@ type TcGlobals(
           | ("GenericZeroDynamic" | "GenericOneDynamic"), [], Some retTy ->
                [vara], [ ], varaTy, [ retTy ]
           | _ -> failwithf "unknown builtin witness '%s'" memberName
+
       let vref = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, memberName, None, None, gtps, (List.map List.singleton argTys, retTy))
       vref, tinst
 
   /// Find an FSharp.Core operator that corresponds to a trait witness
   member g.TryMakeOperatorAsBuiltInWitnessInfo isStringTy isArrayTy (t: TraitConstraintInfo) argExprs =
 
-    match t.MemberName, t.ArgumentTypes, t.ReturnType, argExprs with
+    match t.MemberLogicalName, t.CompiledObjectAndArgumentTypes, t.CompiledReturnType, argExprs with
     | "get_Sign", [aty], _, objExpr :: _ ->
         // Call Operators.sign
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "sign", None, Some "Sign", [vara], ([[varaTy]], v_int32_ty))
@@ -1827,16 +1839,16 @@ type TcGlobals(
         Some (info, tyargs, [])
     | ("Abs" | "Sin" | "Cos" | "Tan" | "Sinh" | "Cosh" | "Tanh" | "Atan" | "Acos" | "Asin" | "Exp" | "Ceiling" | "Floor" | "Round" | "Truncate" | "Log10"| "Log"), [aty], _, [_] ->
         // Call corresponding Operators.*
-        let nm = t.MemberName
+        let nm = t.MemberLogicalName
         let lower = if nm = "Ceiling" then "ceil" else nm.ToLowerInvariant()
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, lower, None, Some nm, [vara], ([[varaTy]], varaTy))
         let tyargs = [aty]
         Some (info, tyargs, argExprs)
-    | "get_Item", [arrTy; _], Some rty, [_; _] when isArrayTy g arrTy ->
-        Some (g.array_get_info, [rty], argExprs)
-    | "set_Item", [arrTy; _; ety], _, [_; _; _] when isArrayTy g arrTy ->
-        Some (g.array_set_info, [ety], argExprs)
-    | "get_Item", [sty; _; _], _, [_; _] when isStringTy g sty ->
+    | "get_Item", [arrTy; _], Some retTy, [_; _] when isArrayTy g arrTy ->
+        Some (g.array_get_info, [retTy], argExprs)
+    | "set_Item", [arrTy; _; elemTy], _, [_; _; _] when isArrayTy g arrTy ->
+        Some (g.array_set_info, [elemTy], argExprs)
+    | "get_Item", [stringTy; _; _], _, [_; _] when isStringTy g stringTy ->
         Some (g.getstring_info, [], argExprs)
     | "op_UnaryPlus", [aty], _, [_] ->
         // Call Operators.id

@@ -2,6 +2,11 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="cs" original="../FSIstrings.resx">
     <body>
+      <trans-unit id="fsiEntryPointWontBeInvoked">
+        <source>Functions with [&lt;EntryPoint&gt;] are not invoked in FSI. '{0}' was not invoked. Execute '{1} &lt;args&gt;' in order to invoke '{2}' with the appropriate string array of command line arguments.</source>
+        <target state="translated">Funkce s [&lt;EntryPoint&gt;] nejsou vyvolány v FSI. {0} nebylo vyvoláno. Pokud chcete vyvolat {2} s příslušným polem řetězců argumentů příkazového řádku, spusťte příkaz{1} &lt;args&gt;.</target>
+        <note />
+      </trans-unit>
       <trans-unit id="fsiInternalAccess">
         <source>Accessing the internal type, method or field '{0}' from a previous evaluation in F# Interactive is deprecated and may cause subsequent access errors. To enable the legacy generation of a single dynamic assembly that can access internals, use the '--multiemit-' option.</source>
         <target state="translated">Přístup k internímu typu, metodě nebo poli {0} z předchozího vyhodnocení ve F# Interactive je zastaralý a může způsobit následné chyby přístupu. Pokud chcete povolit starší generaci jednoho dynamického sestavení, které má přístup k interním sestavením, použijte možnost --multiemit-.</target>
@@ -14,7 +19,7 @@
       </trans-unit>
       <trans-unit id="fsiIntroTextHashclearInfo">
         <source>Clear screen</source>
-        <target state="new">Clear screen</target>
+        <target state="translated">Vymazat obrazovku</target>
         <note />
       </trans-unit>
       <trans-unit id="fsiMultiAssemblyEmitOptionOffByDefault">

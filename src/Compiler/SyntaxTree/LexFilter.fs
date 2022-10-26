@@ -1023,7 +1023,11 @@ type LexFilterImpl (
     let peekAdjacentTypars indentation (tokenTup: TokenTup) =
         let lookaheadTokenTup = peekNextTokenTup()
         match lookaheadTokenTup.Token with 
-        | INFIX_COMPARE_OP "</" | LESS _ -> 
+        | INFIX_COMPARE_OP "</"
+        | INFIX_COMPARE_OP "<^"
+        // NOTE: this is "<@"
+        | LQUOTE ("<@ @>", false)
+        | LESS _ -> 
             let tokenEndPos = tokenTup.LexbufState.EndPos 
             if isAdjacent tokenTup lookaheadTokenTup then 
                 let mutable stack = []
@@ -1070,7 +1074,14 @@ type LexFilterImpl (
                                 let dotTokenTup = peekNextTokenTup()
                                 stack <- (pool.UseLocation(dotTokenTup, HIGH_PRECEDENCE_PAREN_APP), false) :: stack
                             true
-                    | LPAREN | LESS _ | LBRACK | LBRACK_LESS | INFIX_COMPARE_OP "</" -> 
+                    | LPAREN
+                    | LESS _
+                    | LBRACK
+                    | LBRACK_LESS
+                    | INFIX_COMPARE_OP "</"
+                    | INFIX_COMPARE_OP "<^" 
+                    // NOTE: this is "<@"
+                    | LQUOTE ("<@ @>", false) -> 
                         scanAhead (nParen+1)
                         
                     // These tokens CAN occur in non-parenthesized positions in the grammar of types or type parameter definitions 
@@ -1119,11 +1130,20 @@ type LexFilterImpl (
  
                 let res = scanAhead 0
                 // Put the tokens back on and smash them up if needed
-                stack |> List.iter (fun (tokenTup, smash) ->
+                for (tokenTup, smash) in stack do
                     if smash then 
                         match tokenTup.Token with 
                         | INFIX_COMPARE_OP "</" ->
                             delayToken (pool.UseShiftedLocation(tokenTup, INFIX_STAR_DIV_MOD_OP "/", 1, 0))
+                            delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
+                            pool.Return tokenTup
+                        | INFIX_COMPARE_OP "<^" ->
+                            delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "^", 1, 0))
+                            delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
+                            pool.Return tokenTup
+                        // NOTE: this is "<@"
+                        | LQUOTE ("<@ @>", false) ->
+                            delayToken (pool.UseShiftedLocation(tokenTup, INFIX_AT_HAT_OP "@", 1, 0))
                             delayToken (pool.UseShiftedLocation(tokenTup, LESS res, 0, -1))
                             pool.Return tokenTup
                         | GREATER_BAR_RBRACK -> 
@@ -1146,7 +1166,7 @@ type LexFilterImpl (
                             pool.Return tokenTup
                         | _ -> delayToken tokenTup
                     else
-                        delayToken tokenTup)
+                        delayToken tokenTup
                 res
             else 
                 false
@@ -1744,7 +1764,7 @@ type LexFilterImpl (
         // ), 2 // This is a 'unit * int', so for backwards compatibility, do not treat ')' as a continuator, don't apply relaxWhitespace2OffsideRule
         // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore9
         | _, CtxtDo offsidePos :: _
-                when isSemiSemi || (if (*relaxWhitespace2OffsideRule ||*) isDoContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+                when isSemiSemi || (if isDoContinuator token then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from DO(offsidePos=%a)! delaying token, returning ODECLEND\n" tokenStartCol outputPos offsidePos
             popCtxt()
             insertToken ODECLEND
@@ -1796,7 +1816,7 @@ type LexFilterImpl (
         //         1 // This is not offside for backcompat, don't apply relaxWhitespace2OffsideRule
         //     ]
         // Test here: Tests/FSharp.Compiler.ComponentTests/Conformance/LexicalFiltering/Basic/OffsideExceptions.fs, RelaxWhitespace2_AllowedBefore9
-        | _, CtxtMemberBody offsidePos :: _ when isSemiSemi || (if (*relaxWhitespace2OffsideRule*)false then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
+        | _, CtxtMemberBody offsidePos :: _ when isSemiSemi || (if false then tokenStartCol + 1 else tokenStartCol) <= offsidePos.Column -> 
             if debug then dprintf "token at column %d is offside from MEMBER/OVERRIDE head with offsidePos %a!\n" tokenStartCol outputPos offsidePos
             popCtxt()
             insertToken ODECLEND

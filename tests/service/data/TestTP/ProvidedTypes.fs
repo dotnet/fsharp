@@ -76,7 +76,7 @@ module Utils =
     /// General implementation of .Equals(Type) logic for System.Type over symbol types. You can use this with other types too.
     let rec eqTypes (ty1: Type) (ty2: Type) =
         if Object.ReferenceEquals(ty1, ty2) then true
-        elif ty1.IsGenericTypeDefinition then ty2.IsGenericTypeDefinition && ty1.Equals(ty2)
+        elif ty1.IsGenericTypeDefinition then ty2.IsGenericTypeDefinition && Type.op_Equality(ty1, ty2)
         elif ty1.IsGenericType then ty2.IsGenericType && not ty2.IsGenericTypeDefinition && eqTypes (ty1.GetGenericTypeDefinition()) (ty2.GetGenericTypeDefinition()) && lengthsEqAndForall2 (ty1.GetGenericArguments()) (ty2.GetGenericArguments()) eqTypes
         elif ty1.IsArray then ty2.IsArray && ty1.GetArrayRank() = ty2.GetArrayRank() && eqTypes (ty1.GetElementType()) (ty2.GetElementType())
         elif ty1.IsPointer then ty2.IsPointer && eqTypes (ty1.GetElementType()) (ty2.GetElementType())
@@ -629,8 +629,8 @@ type ProvidedTypeSymbol(kind: ProvidedTypeSymbolKind, typeArgs: Type list, typeB
     override __.GetArrayRank() = (match kind with ProvidedTypeSymbolKind.Array n -> n | ProvidedTypeSymbolKind.SDArray -> 1 | _ -> failwithf "non-array type '%O'" this)
     override __.IsValueTypeImpl() = (match kind with ProvidedTypeSymbolKind.Generic gtd -> gtd.IsValueType | _ -> false)
     override __.IsArrayImpl() = (match kind with ProvidedTypeSymbolKind.Array _ | ProvidedTypeSymbolKind.SDArray -> true | _ -> false)
-    override __.IsByRefImpl() = (match kind with ProvidedTypeSymbolKind.ByRef _ -> true | _ -> false)
-    override __.IsPointerImpl() = (match kind with ProvidedTypeSymbolKind.Pointer _ -> true | _ -> false)
+    override __.IsByRefImpl() = (match kind with ProvidedTypeSymbolKind.ByRef -> true | _ -> false)
+    override __.IsPointerImpl() = (match kind with ProvidedTypeSymbolKind.Pointer -> true | _ -> false)
     override __.IsPrimitiveImpl() = false
     override __.IsGenericType = (match kind with ProvidedTypeSymbolKind.Generic _ -> true | _ -> false)
     override this.GetGenericArguments() = (match kind with ProvidedTypeSymbolKind.Generic _ -> typeArgs |  _ -> failwithf "non-generic type '%O'" this)
@@ -7335,8 +7335,8 @@ namespace ProviderImplementation.ProvidedTypes
         override __.GetArrayRank() = (match kind with TypeSymbolKind.Array n -> n | TypeSymbolKind.SDArray -> 1 | _ -> failwithf "non-array type")
         override __.IsValueTypeImpl() = this.IsGenericType && this.GetGenericTypeDefinition().IsValueType
         override __.IsArrayImpl() = (match kind with TypeSymbolKind.Array _ | TypeSymbolKind.SDArray -> true | _ -> false)
-        override __.IsByRefImpl() = (match kind with TypeSymbolKind.ByRef _ -> true | _ -> false)
-        override __.IsPointerImpl() = (match kind with TypeSymbolKind.Pointer _ -> true | _ -> false)
+        override __.IsByRefImpl() = (match kind with TypeSymbolKind.ByRef -> true | _ -> false)
+        override __.IsPointerImpl() = (match kind with TypeSymbolKind.Pointer -> true | _ -> false)
         override __.IsPrimitiveImpl() = false
         override __.IsGenericType = (match kind with TypeSymbolKind.TargetGeneric _ | TypeSymbolKind.OtherGeneric _ -> true | _ -> false)
         override __.GetGenericArguments() = (match kind with TypeSymbolKind.TargetGeneric _ |  TypeSymbolKind.OtherGeneric _ -> typeArgs | _ -> [| |])

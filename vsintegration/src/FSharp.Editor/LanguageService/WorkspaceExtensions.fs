@@ -144,7 +144,7 @@ type Document with
     /// This tries to get the FSharpParsingOptions by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the FSharpParsingOptions.
     member this.GetFSharpQuickParsingOptions() =
         let workspaceService = this.Project.Solution.GetFSharpWorkspaceService()
-        workspaceService.FSharpProjectOptionsManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(this)
+        workspaceService.FSharpProjectOptionsManager.TryGetQuickParsingOptionsForEditingDocumentOrProject(this.Id, this.FilePath)
 
     /// A non-async call that quickly gets the defines of the given F# document.
     /// This tries to get the defines by looking at an internal cache; if it doesn't exist in the cache it will create an inaccurate but usable form of the defines.

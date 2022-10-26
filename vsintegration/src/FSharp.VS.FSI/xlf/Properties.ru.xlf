@@ -2,14 +2,14 @@
 <xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
   <file datatype="xml" source-language="en" target-language="ru" original="../Properties.resx">
     <body>
-      <trans-unit id="FSharpInteractive64Bit">
-        <source>64-bit F# Interactive</source>
-        <target state="translated">F# Interactive, 64-разрядная версия</target>
+      <trans-unit id="FSharpInteractiveAnyCpu">
+        <source>Use fsiAnyCpu.exe</source>
+        <target state="translated">Использовать fsiAnyCpu.exe</target>
         <note />
       </trans-unit>
-      <trans-unit id="FSharpInteractive64BitDescr">
-        <source>If set to true, and the current machine is 64-bit, then run F# Interactive as a 64-bit process.  (Otherwise, F# Interactive is a 32-bit process.)</source>
-        <target state="translated">Если задано значение true и текущий компьютер является 64-разрядным, F# Interactive запускается как 64-разрядный процесс.  (В остальных случая F# Interactive является 32-разрядным процессом.)</target>
+      <trans-unit id="FSharpInteractiveAnyCpuDescr">
+        <source>If set to true, 'fsiAnyCpu.exe' is run as a platform neutral process. Otherwise, F# Interactive is a 32-bit process on X86/X64 or a native 64 bit process on Arm64 based systems.</source>
+        <target state="translated">Если задано значение "true", "fsiAnyCpu.exe" выполняется как процесс, не зависящий от платформы. В противном случае F# Interactive — это 32-разрядный процесс на X86/X64 или собственный 64-разрядный процесс в системах на базе Arm64.</target>
         <note />
       </trans-unit>
       <trans-unit id="FSharpInteractiveMisc">

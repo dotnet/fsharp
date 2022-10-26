@@ -12,6 +12,7 @@ open Internal.Utilities.Library.Extras
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.AttributeChecking
 open FSharp.Compiler.CheckExpressions
+open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.ConstraintSolver
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.Features
@@ -96,7 +97,7 @@ and TcSimplePat optionalArgsOK checkConstraints (cenv: cenv) ty env patEnv p =
             id.idText, patEnvR
 
     | SynSimplePat.Typed (p, cty, m) ->
-        let ctyR, tpenv = TcTypeAndRecover cenv NewTyparsOK checkConstraints ItemOccurence.UseInType env tpenv cty
+        let ctyR, tpenv = TcTypeAndRecover cenv NewTyparsOK checkConstraints ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv cty
 
         match p with
         // Optional arguments on members
@@ -166,7 +167,7 @@ and TcSimplePats (cenv: cenv) optionalArgsOK checkConstraints ty env patEnv synS
         ps', patEnvR
 
     | SynSimplePats.Typed (p, cty, m) ->
-        let ctyR, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv cty
+        let ctyR, tpenv = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv cty
 
         match p with
         // Solitary optional arguments on members
@@ -277,7 +278,7 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
 
     | SynPat.Typed (p, cty, m) ->
         let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
-        let ctyR, tpenvR = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv cty
+        let ctyR, tpenvR = TcTypeAndRecover cenv NewTyparsOK CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv cty
         UnifyTypes cenv env m ty ctyR
         let patEnvR = TcPatLinearEnv(tpenvR, names, takenNames)
         TcPat warnOnUpper cenv env valReprInfo vFlags patEnvR ty p
@@ -287,6 +288,11 @@ and TcPat warnOnUpper (cenv: cenv) env valReprInfo vFlags (patEnv: TcPatLinearEn
 
     | SynPat.Or (pat1, pat2, m, _) ->
         TcPatOr warnOnUpper cenv env vFlags patEnv ty pat1 pat2 m
+
+    | SynPat.ListCons(pat1, pat2, m, trivia) ->
+        let longDotId = SynLongIdent((mkSynCaseName trivia.ColonColonRange opNameCons), [], [Some (FSharp.Compiler.SyntaxTrivia.IdentTrivia.OriginalNotation "::")])
+        let args = SynArgPats.Pats [ SynPat.Tuple(false, [ pat1; pat2 ], m) ]
+        TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags patEnv ty (longDotId, None, args, None, m)
 
     | SynPat.Ands (pats, m) ->
         TcPatAnds warnOnUpper cenv env vFlags patEnv ty pats m
@@ -369,7 +375,7 @@ and TcPatNamed warnOnUpper cenv env vFlags patEnv id ty isMemberThis vis valRepr
 
 and TcPatIsInstance warnOnUpper cenv env valReprInfo vFlags patEnv srcTy synPat synTargetTy m =
     let (TcPatLinearEnv(tpenv, names, takenNames)) = patEnv
-    let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOKButWarnIfNotRigid CheckCxs ItemOccurence.UseInType env tpenv synTargetTy
+    let tgtTy, tpenv = TcTypeAndRecover cenv NewTyparsOKButWarnIfNotRigid CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env tpenv synTargetTy
     TcRuntimeTypeTest false true cenv env.DisplayEnv m tgtTy srcTy
     let patEnv = TcPatLinearEnv(tpenv, names, takenNames)
     match synPat with
@@ -417,6 +423,8 @@ and TcPatAnds warnOnUpper cenv env vFlags patEnv ty pats m =
 and TcPatTuple warnOnUpper cenv env vFlags patEnv ty isExplicitStruct args m =
     let g = cenv.g
     try
+        CheckTupleIsCorrectLength g env m ty args (fun argTys -> TcPatterns warnOnUpper cenv env vFlags patEnv argTys args |> ignore)
+
         let tupInfo, argTys = UnifyTupleTypeAndInferCharacteristics env.eContextInfo cenv env.DisplayEnv m ty isExplicitStruct args
         let argsR, acc = TcPatterns warnOnUpper cenv env vFlags patEnv argTys args
         let phase2 values = TPat_tuple(tupInfo, List.map (fun f -> f values) argsR, argTys, m)
@@ -470,13 +478,13 @@ and TcNullPat cenv env patEnv ty m =
 and CheckNoArgsForLiteral args m =
     match args with
     | SynArgPats.Pats []
-    | SynArgPats.NamePatPairs ([], _) -> ()
+    | SynArgPats.NamePatPairs (pats = []) -> ()
     | _ -> errorR (Error (FSComp.SR.tcLiteralDoesNotTakeArguments (), m))
 
 and GetSynArgPatterns args =
     match args with
     | SynArgPats.Pats args -> args
-    | SynArgPats.NamePatPairs (pairs, _) -> List.map (fun (_, _, pat) -> pat) pairs
+    | SynArgPats.NamePatPairs (pats = pairs) -> List.map (fun (_, _, pat) -> pat) pairs
 
 and TcArgPats warnOnUpper (cenv: cenv) env vFlags patEnv args =
     let g = cenv.g
@@ -503,7 +511,7 @@ and TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags (patEnv: TcPatLine
         | SynArgPats.Pats [] -> warnOnUpper
         | _ -> AllIdsOK
 
-    let lidRange = rangeOfLid longId
+    let mLongId = rangeOfLid longId
 
     match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.NameEnv TypeNameResolutionInfo.Default longId with
     | Item.NewDef id ->
@@ -519,19 +527,19 @@ and TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags (patEnv: TcPatLine
 
         let args = GetSynArgPatterns args
 
-        TcPatLongIdentActivePatternCase warnOnUpper cenv env vFlags patEnv ty (lidRange, item, apref, args, m)
+        TcPatLongIdentActivePatternCase warnOnUpper cenv env vFlags patEnv ty (mLongId, item, apref, args, m)
 
     | Item.UnionCase _ | Item.ExnCase _ as item ->
-        TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (lidRange, item, args, m)
+        TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (mLongId, item, args, m)
 
     | Item.ILField finfo ->
-        TcPatLongIdentILField warnOnUpper cenv env vFlags patEnv ty (lidRange, finfo, args, m)
+        TcPatLongIdentILField warnOnUpper cenv env vFlags patEnv ty (mLongId, finfo, args, m)
 
     | Item.RecdField rfinfo ->
-        TcPatLongIdentRecdField warnOnUpper cenv env vFlags patEnv ty (lidRange, rfinfo, args, m)
+        TcPatLongIdentRecdField warnOnUpper cenv env vFlags patEnv ty (mLongId, rfinfo, args, m)
 
     | Item.Value vref ->
-        TcPatLongIdentLiteral warnOnUpper cenv env vFlags patEnv ty (lidRange, vref, args, m)
+        TcPatLongIdentLiteral warnOnUpper cenv env vFlags patEnv ty (mLongId, vref, args, m)
 
     | _ -> error (Error(FSComp.SR.tcRequireVarConstRecogOrLiteral(), m))
 
@@ -564,7 +572,7 @@ and ApplyUnionCaseOrExn m (cenv: cenv) env overallTy item =
         UnifyTypes cenv env m overallTy g.exn_ty
         CheckTyconAccessible cenv.amap m ad ecref |> ignore
         let mkf mArgs args = TPat_exnconstr(ecref, args, unionRanges m mArgs)
-        mkf, recdFieldTysOfExnDefRef ecref, [ for f in (recdFieldsOfExnDefRef ecref) -> f.Id ]
+        mkf, recdFieldTysOfExnDefRef ecref, [ for f in (recdFieldsOfExnDefRef ecref) -> f  ]
 
     | Item.UnionCase(ucinfo, showDeprecated) ->
         if showDeprecated then
@@ -577,29 +585,37 @@ and ApplyUnionCaseOrExn m (cenv: cenv) env overallTy item =
         let ucref = ucinfo.UnionCaseRef
         CheckUnionCaseAttributes g ucref m |> CommitOperationResult
         CheckUnionCaseAccessible cenv.amap m ad ucref |> ignore
-        let gtyp2 = actualResultTyOfUnionCase ucinfo.TypeInst ucref
+        let resTy = actualResultTyOfUnionCase ucinfo.TypeInst ucref
         let inst = mkTyparInst ucref.TyconRef.TyparsNoRange ucinfo.TypeInst
-        UnifyTypes cenv env m overallTy gtyp2
+        UnifyTypes cenv env m overallTy resTy
         let mkf mArgs args = TPat_unioncase(ucref, ucinfo.TypeInst, args, unionRanges m mArgs)
-        mkf, actualTysOfUnionCaseFields inst ucref, [ for f in ucref.AllFieldsAsList -> f.Id ]
+        mkf, actualTysOfUnionCaseFields inst ucref, [ for f in ucref.AllFieldsAsList -> f]
 
     | _ ->
         invalidArg "item" "not a union case or exception reference"
 
 /// Check a long identifier 'Case' or 'Case argsR that has been resolved to a union case or F# exception constructor
-and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (lidRange, item, args, m) =
+and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (mLongId, item, args, m) =
     let g = cenv.g
 
     // Report information about the case occurrence to IDE
-    CallNameResolutionSink cenv.tcSink (lidRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Pattern, env.eAccessRights)
+    CallNameResolutionSink cenv.tcSink (mLongId, env.NameEnv, item, emptyTyparInst, ItemOccurence.Pattern, env.eAccessRights)
 
     let mkf, argTys, argNames = ApplyUnionCaseOrExn m cenv env ty item
     let numArgTys = argTys.Length
 
     let args, extraPatternsFromNames =
         match args with
-        | SynArgPats.Pats args -> args, []
-        | SynArgPats.NamePatPairs (pairs, m) ->
+        | SynArgPats.Pats args ->
+            if g.langVersion.SupportsFeature(LanguageFeature.MatchNotAllowedForUnionCaseWithNoData) then
+                match args with
+                | [ SynPat.Wild _ ] | [ SynPat.Named _ ] when argNames.IsEmpty  ->
+                    warning(Error(FSComp.SR.matchNotAllowedForUnionCaseWithNoData(), m))
+                    args, []
+                | _ -> args, []
+            else
+                args, []
+        | SynArgPats.NamePatPairs (pairs, m, _) ->
             // rewrite patterns from the form (name-N = pat-N; ...) to (..._, pat-N, _...)
             // so type T = Case of name: int * value: int
             // | Case(value = v)
@@ -609,7 +625,7 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (l
             let extraPatterns = List ()
 
             for id, _, pat in pairs do
-                match argNames |> List.tryFindIndex (fun id2 -> id.idText = id2.idText) with
+                match argNames |> List.tryFindIndex (fun id2 -> id.idText = id2.Id.idText) with
                 | None ->
                     extraPatterns.Add pat
                     match item with
@@ -655,10 +671,12 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (l
         // note: we allow both 'C _' and 'C (_)' regardless of number of argument of the pattern
         | [SynPatErrorSkip(SynPat.Wild _ as e) | SynPatErrorSkip(SynPat.Paren(SynPatErrorSkip(SynPat.Wild _ as e), _))] -> List.replicate numArgTys e, []
 
-
         | args when numArgTys = 0 ->
-            errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
-            [], args
+            if g.langVersion.SupportsFeature(LanguageFeature.MatchNotAllowedForUnionCaseWithNoData) then
+                [], args
+            else
+                errorR (Error (FSComp.SR.tcUnionCaseDoesNotTakeArguments (), m))
+                [], args
 
         | arg :: rest when numArgTys = 1 ->
             if numArgTys = 1 && not (List.isEmpty rest) then
@@ -677,7 +695,14 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (l
         elif numArgs < numArgTys then
             if numArgTys > 1 then
                 // Expects tuple without enough args
-                errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments numArgTys, m))
+                let printTy  = NicePrint.minimalStringOfType env.DisplayEnv
+                let missingArgs = 
+                    argNames.[numArgs..numArgTys - 1]
+                    |> List.map (fun id -> (if id.rfield_name_generated then "" else id.DisplayName + ": ") +  printTy  id.FormalType)
+                    |> String.concat (Environment.NewLine + "\t")
+                    |> fun s -> Environment.NewLine + "\t" + s
+
+                errorR (Error (FSComp.SR.tcUnionCaseExpectsTupledArguments(numArgTys, numArgs, missingArgs), m))
             else
                 errorR (UnionCaseWrongArguments (env.DisplayEnv, numArgTys, numArgs, m))
             args @ (List.init (numArgTys - numArgs) (fun _ -> SynPat.Wild (m.MakeSynthetic()))), extraPatterns
@@ -693,38 +718,38 @@ and TcPatLongIdentUnionCaseOrExnCase warnOnUpper cenv env ad vFlags patEnv ty (l
     (fun values -> mkf m (List.map (fun f -> f values) argsR)), acc
 
 /// Check a long identifier that has been resolved to an IL field - valid if a literal
-and TcPatLongIdentILField warnOnUpper (cenv: cenv) env vFlags patEnv ty (lidRange, finfo, args, m) =
+and TcPatLongIdentILField warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId, finfo, args, m) =
     let g = cenv.g
 
-    CheckILFieldInfoAccessible g cenv.amap lidRange env.AccessRights finfo
+    CheckILFieldInfoAccessible g cenv.amap mLongId env.AccessRights finfo
 
     if not finfo.IsStatic then
-        errorR (Error (FSComp.SR.tcFieldIsNotStatic finfo.FieldName, lidRange))
+        errorR (Error (FSComp.SR.tcFieldIsNotStatic finfo.FieldName, mLongId))
 
     CheckILFieldAttributes g finfo m
 
     match finfo.LiteralValue with
     | None ->
-        error (Error (FSComp.SR.tcFieldNotLiteralCannotBeUsedInPattern (), lidRange))
+        error (Error (FSComp.SR.tcFieldNotLiteralCannotBeUsedInPattern (), mLongId))
     | Some lit ->
         CheckNoArgsForLiteral args m
         let _, acc = TcArgPats warnOnUpper cenv env vFlags patEnv args
 
         UnifyTypes cenv env m ty (finfo.FieldType (cenv.amap, m))
-        let c' = TcFieldInit lidRange lit
+        let c' = TcFieldInit mLongId lit
         let item = Item.ILField finfo
-        CallNameResolutionSink cenv.tcSink (lidRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Pattern, env.AccessRights)
+        CallNameResolutionSink cenv.tcSink (mLongId, env.NameEnv, item, emptyTyparInst, ItemOccurence.Pattern, env.AccessRights)
         (fun _ -> TPat_const (c', m)), acc
 
 /// Check a long identifier that has been resolved to a record field
-and TcPatLongIdentRecdField warnOnUpper cenv env vFlags patEnv ty (lidRange, rfinfo, args, m) =
+and TcPatLongIdentRecdField warnOnUpper cenv env vFlags patEnv ty (mLongId, rfinfo, args, m) =
     let g = cenv.g
-    CheckRecdFieldInfoAccessible cenv.amap lidRange env.AccessRights rfinfo
-    if not rfinfo.IsStatic then errorR (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.DisplayName), lidRange))
-    CheckRecdFieldInfoAttributes g rfinfo lidRange |> CommitOperationResult
+    CheckRecdFieldInfoAccessible cenv.amap mLongId env.AccessRights rfinfo
+    if not rfinfo.IsStatic then errorR (Error (FSComp.SR.tcFieldIsNotStatic(rfinfo.DisplayName), mLongId))
+    CheckRecdFieldInfoAttributes g rfinfo mLongId |> CommitOperationResult
 
     match rfinfo.LiteralValue with
-    | None -> error (Error(FSComp.SR.tcFieldNotLiteralCannotBeUsedInPattern(), lidRange))
+    | None -> error (Error(FSComp.SR.tcFieldNotLiteralCannotBeUsedInPattern(), mLongId))
     | Some lit ->
         CheckNoArgsForLiteral args m
         let _, acc = TcArgPats warnOnUpper cenv env vFlags patEnv args
@@ -733,26 +758,26 @@ and TcPatLongIdentRecdField warnOnUpper cenv env vFlags patEnv ty (lidRange, rfi
         let item = Item.RecdField rfinfo
         // FUTURE: can we do better than emptyTyparInst here, in order to display instantiations
         // of type variables in the quick info provided in the IDE.
-        CallNameResolutionSink cenv.tcSink (lidRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Pattern, env.AccessRights)
+        CallNameResolutionSink cenv.tcSink (mLongId, env.NameEnv, item, emptyTyparInst, ItemOccurence.Pattern, env.AccessRights)
         (fun _ -> TPat_const (lit, m)), acc
 
 /// Check a long identifier that has been resolved to an F# value that is a literal
-and TcPatLongIdentLiteral warnOnUpper (cenv: cenv) env vFlags patEnv ty (lidRange, vref, args, m) =
+and TcPatLongIdentLiteral warnOnUpper (cenv: cenv) env vFlags patEnv ty (mLongId, vref, args, m) =
     let g = cenv.g
     let (TcPatLinearEnv(tpenv, _, _)) = patEnv
 
     match vref.LiteralValue with
     | None -> error (Error(FSComp.SR.tcNonLiteralCannotBeUsedInPattern(), m))
     | Some lit ->
-        let _, _, _, vexpty, _, _ = TcVal true cenv env tpenv vref None None lidRange
-        CheckValAccessible lidRange env.AccessRights vref
-        CheckFSharpAttributes g vref.Attribs lidRange |> CommitOperationResult
+        let _, _, _, vexpty, _, _ = TcVal true cenv env tpenv vref None None mLongId
+        CheckValAccessible mLongId env.AccessRights vref
+        CheckFSharpAttributes g vref.Attribs mLongId |> CommitOperationResult
         CheckNoArgsForLiteral args m
         let _, acc = TcArgPats warnOnUpper cenv env vFlags patEnv args
 
         UnifyTypes cenv env m ty vexpty
         let item = Item.Value vref
-        CallNameResolutionSink cenv.tcSink (lidRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Pattern, env.AccessRights)
+        CallNameResolutionSink cenv.tcSink (mLongId, env.NameEnv, item, emptyTyparInst, ItemOccurence.Pattern, env.AccessRights)
         (fun _ -> TPat_const (lit, m)), acc
 
 and TcPatterns warnOnUpper cenv env vFlags s argTys args =

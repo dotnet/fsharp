@@ -29,7 +29,7 @@ In general, the F# compiler allocates a lot of memory. More than it needs to. Ho
 Some allocations are much more than others
 * Large Object Heap (LOH) allocations (> ~80K) are rarely collected and should only be used for long-lived items. 
 * Ephemeral allocations that never escape the Gen0 seem to not matter that much, though of course should be considered.
-* Don't try to remove all allocations, and don't assume copy large structs is better than allocating a reference type. Measure instead.
+* Don't try to remove all allocations, and don't assume copying of large structs is better than allocating a reference type. Measure instead.
 
 To analyze memory usage of F# tooling, you have two primary avenues:
 
@@ -37,6 +37,11 @@ To analyze memory usage of F# tooling, you have two primary avenues:
 2. Use sampling to collect a trace of your system while you perform various tasks in an IDE, ideally for 60 seconds or more.
 
 You can analyze dumps and take samples with [dotMemory](https://www.jetbrains.com/dotmemory/) or [PerfView](https://github.com/Microsoft/perfview).
+
+To analyze memory usage of the F# compiler itself:
+* extract the compilation arguments out of msbuild output (or in the output pane of Visual Studio)
+* put this content in a "response file" (a text file listing compiler arguments, one per line)
+* use the memory profiler tool of choice, invoking the compiler (either fsc.exe, or through `dotnet path/to/fsc.dll`) giving it the argument `@name-of-response-file`, and setting the directory of the project that is compiled as `working directory`
 
 ### Analyzing a process dump file
 

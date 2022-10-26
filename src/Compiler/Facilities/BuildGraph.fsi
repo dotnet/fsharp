@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal FSharp.Compiler.BuildGraph
 
@@ -64,6 +64,8 @@ type NodeCode =
     static member CancellationToken: NodeCode<CancellationToken>
 
     static member Sequential: computations: NodeCode<'T> seq -> NodeCode<'T[]>
+
+    static member Parallel: computations: (NodeCode<'T> seq) -> NodeCode<'T[]>
 
     /// Execute the cancellable computation synchronously using the ambient cancellation token of
     /// the NodeCode.

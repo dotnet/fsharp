@@ -33,7 +33,7 @@
       <NgenArchitecture>All</NgenArchitecture>
       <NgenPriority>2</NgenPriority>
       <Private>True</Private>
-      <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
     </ProjectReference>
 
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj">
@@ -69,7 +69,7 @@
       <NgenArchitecture>All</NgenArchitecture>
       <NgenPriority>2</NgenPriority>
       <Private>True</Private>
-      <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
+      <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
     </ProjectReference>
 
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj">
@@ -84,22 +84,40 @@
       <AdditionalProperties>TargetFramework=netstandard2.0</AdditionalProperties>
     </ProjectReference>
 
-    <ProjectReference Include="..\..\..\src\fsiAnyCpu\fsiAnyCpu.fsproj">
+    <ProjectReference Include="..\..\..\src\fsi\fsiAnyCpuProject\fsiAnyCpu.fsproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>False</Private>
     </ProjectReference>
 
-    <ProjectReference Include="..\..\..\src\fsi\fsi.fsproj">
+    <ProjectReference Include="..\..\..\src\fsi\fsiArm64Project\fsiArm64.fsproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>False</Private>
+      <Ngen>true</Ngen>
+      <NgenArchitecture>Arm64</NgenArchitecture>
+      <NgenPriority>2</NgenPriority>
+      <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
+    </ProjectReference>
+
+    <ProjectReference Include="..\..\..\src\fsi\fsiProject\fsi.fsproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>False</Private>
     </ProjectReference>
 
-    <ProjectReference Include="..\..\..\src\fscAnyCpu\fscAnyCpu.fsproj">
+    <ProjectReference Include="..\..\..\src\fsc\fscAnyCpuProject\fscAnyCpu.fsproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>False</Private>
     </ProjectReference>
 
-    <ProjectReference Include="..\..\..\src\fsc\fsc.fsproj">
+    <ProjectReference Include="..\..\..\src\fsc\fscArm64Project\fscArm64.fsproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>False</Private>
+      <Ngen>true</Ngen>
+      <NgenArchitecture>Arm64</NgenArchitecture>
+      <NgenPriority>2</NgenPriority>
+      <AdditionalProperties>TargetFramework=$(DependencyTargetFramework)</AdditionalProperties>
+    </ProjectReference>
+
+    <ProjectReference Include="..\..\..\src\fsc\fscProject\fsc.fsproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>False</Private>
     </ProjectReference>
@@ -170,7 +188,7 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.ProjectSystem.PropertyPages\FSharp.ProjectSystem.PropertyPages.vbproj">
       <Project>{FCFB214C-462E-42B3-91CA-FC557EFEE74F}</Project>
       <Name>FSharp.PropertiesPages</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bPkgDefProjectOutputGroup%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Ngen>true</Ngen>
       <NgenArchitecture>All</NgenArchitecture>

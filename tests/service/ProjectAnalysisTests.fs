@@ -95,7 +95,7 @@ let mmmm2 : M.CAbbrev = new M.CAbbrev() // note, these don't count as uses of C
     let parsingOptions, _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let cleanFileName a = if a = fileName1 then "file1" else if a = fileName2 then "file2" else "??"
 
-[<Test>]
+[<Test; SetUICulture("en-US"); SetCulture("en-US")>]
 let ``Test project1 whole project errors`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunImmediate
@@ -2221,7 +2221,9 @@ let ``Test Project13 all symbols`` () =
                 "type System.IFormattable"
                 "type System.IConvertible"
 #if NETCOREAPP
+                "type System.IParsable<System.DateTime>";
                 "type System.ISpanFormattable"
+                "type System.ISpanParsable<System.DateTime>"
 #endif
                 "type System.Runtime.Serialization.ISerializable"
                 "type System.IComparable<System.DateTime>"
@@ -4013,7 +4015,7 @@ let ``Test project28 all symbols in signature`` () =
         ("FSharpEntity", "Use", "T:M.Use");
         ("FSharpMemberOrFunctionOrValue", "``.ctor``", "M:M.Use.#ctor");
         ("FSharpMemberOrFunctionOrValue", "Test", "M:M.Use.Test``1(``0)");
-        ("FSharpGenericParameter", "?", "")|]
+        ("FSharpGenericParameter", "``?``", "")|]
     |> Array.iter (fun x ->
         if xmlDocSigs |> Array.exists (fun y -> x = y) |> not then
             failwithf "%A does not exist in the collection." x
@@ -5333,7 +5335,7 @@ let x = (1 = 3.0)
     let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 [<Test>]
-let ``Test line directives in foreground analysis`` () = // see https://github.com/dotnet/fsharp/issues/3317
+let ``Test diagnostics with line directives active`` () =
 
     // In background analysis and normal compiler checking, the errors are reported w.r.t. the line directives
     let wholeProjectResults = checker.ParseAndCheckProject(ProjectLineDirectives.options) |> Async.RunImmediate
@@ -5342,17 +5344,39 @@ let ``Test line directives in foreground analysis`` () = // see https://github.c
 
     [ for e in wholeProjectResults.Diagnostics -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(10, 10, "Test.fsy")]
 
-    // In foreground analysis routines, used by visual editing tools, the errors are reported w.r.t. the source
-    // file, which is assumed to be in the editor, not the other files referred to by line directives.
-    let checkResults1 =
+    let checkResults =
         checker.ParseAndCheckFileInProject(ProjectLineDirectives.fileName1, 0, ProjectLineDirectives.fileSource1, ProjectLineDirectives.options)
         |> Async.RunImmediate
         |> function _,FSharpCheckFileAnswer.Succeeded x ->  x | _ -> failwith "unexpected aborted"
 
-    for e in checkResults1.Diagnostics do
+    for e in checkResults.Diagnostics do
         printfn "ProjectLineDirectives checkResults1 error file: <<<%s>>>" e.Range.FileName
 
-    [ for e in checkResults1.Diagnostics -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
+    // No diagnostics for logical location "Test.fsy" are reported when checking the source since the filenames don't match. You need to pass --ignorelinedirectives to get them
+    [ for e in checkResults.Diagnostics -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [ ]
+
+[<Test>]
+let ``Test diagnostics with line directives ignored`` () =
+
+    // If you pass hidden IDE flag --ignorelinedirectives, the diagnostics are reported w.r.t. the source
+    // file, not the files referred to by line directives.
+    let options = { ProjectLineDirectives.options with OtherOptions = (Array.append ProjectLineDirectives.options.OtherOptions [| "--ignorelinedirectives" |]) }
+
+    let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunImmediate
+    for e in wholeProjectResults.Diagnostics do
+        printfn "ProjectLineDirectives wholeProjectResults error file: <<<%s>>>" e.Range.FileName
+
+    [ for e in wholeProjectResults.Diagnostics -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
+
+    let checkResults =
+        checker.ParseAndCheckFileInProject(ProjectLineDirectives.fileName1, 0, ProjectLineDirectives.fileSource1, options)
+        |> Async.RunImmediate
+        |> function _,FSharpCheckFileAnswer.Succeeded x ->  x | _ -> failwith "unexpected aborted"
+
+    for e in checkResults.Diagnostics do
+        printfn "ProjectLineDirectives checkResults error file: <<<%s>>>" e.Range.FileName
+
+    [ for e in checkResults.Diagnostics -> e.Range.StartLine, e.Range.EndLine, e.Range.FileName ] |> shouldEqual [(5, 5, ProjectLineDirectives.fileName1)]
 
 //------------------------------------------------------
 

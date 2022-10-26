@@ -32,8 +32,8 @@ type FsiPropertyPage() =
     inherit DialogPage()
 
     [<ResourceCategory(SRProperties.FSharpInteractiveMisc)>]
-    [<ResourceDisplayName(SRProperties.FSharpInteractive64Bit)>]
-    [<ResourceDescription(SRProperties.FSharpInteractive64BitDescr)>]
+    [<ResourceDisplayName(SRProperties.FSharpInteractiveAnyCpu)>]
+    [<ResourceDescription(SRProperties.FSharpInteractiveAnyCpuDescr)>]
     member this.FsiPreferAnyCPUVersion with get() = SessionsProperties.useAnyCpuVersion and set (x:bool) = SessionsProperties.useAnyCpuVersion <- x
 
     [<ResourceCategory(SRProperties.FSharpInteractiveMisc)>]
