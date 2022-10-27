@@ -34,6 +34,8 @@ parameters:
 jobs:
 - job: ${{ parameters.jobNamePrefix }}_${{ parameters.platform.name }}
   displayName: Source-Build (${{ parameters.platform.name }})
+  variables:
+    - template: /eng/common/templates/variables/pool-providers.yml
 
   ${{ each property in parameters.platform.jobProperties }}:
     ${{ property.key }}: ${{ property.value }}
@@ -48,10 +50,10 @@ jobs:
     pool:
       # Main environments
       ${{ if and(eq(variables['System.TeamProject'], 'public'), ne(contains(coalesce(variables['System.PullRequest.TargetBranch'], variables['Build.SourceBranch'], 'refs/heads/main'), 'release'), true)) }}:
-        name: NetCore-Public
+        name: $(DncEngPublicBuildPool)
         demands: ImageOverride -equals Build.Ubuntu.1804.Amd64.Open
       ${{ if and(eq(variables['System.TeamProject'], 'internal'), ne(contains(coalesce(variables['System.PullRequest.TargetBranch'], variables['Build.SourceBranch'], 'refs/heads/main'), 'release'), true)) }}:
-        name: NetCore1ESPool-Internal
+        name: $(DncEngInternalBuildPool)
         demands: ImageOverride -equals Build.Ubuntu.1804.Amd64
 
       # Servicing build environments
