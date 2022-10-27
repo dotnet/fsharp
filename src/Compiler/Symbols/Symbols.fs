@@ -2501,7 +2501,7 @@ type FSharpType(cenv, ty:TType) =
         GetSuperTypeOfType cenv.g cenv.amap range0 ty
         |> Option.map (fun ty -> FSharpType(cenv, ty)) 
 
-    member x.StrippedType =
+    member x.ErasedType=
         FSharpType(cenv, stripTyEqnsWrtErasure EraseAll cenv.g ty)
 
     member x.BasicQualifiedName =
