@@ -392,7 +392,7 @@ let singleVersionedNegTest (cfg: TestConfig) version testname =
 
     let cfg = {
         cfg with
-            fsc_flags = sprintf "%s %s --preferreduilang:en-US --define:NEGATIVE" cfg.fsc_flags options
+            fsc_flags = sprintf """%s %s --preferreduilang:en-US --define:NEGATIVE --simpleresolution --noframework /r:"%s" """ cfg.fsc_flags options cfg.FSCOREDLLPATH
             fsi_flags = sprintf "%s --preferreduilang:en-US %s" cfg.fsi_flags options
             }
 
