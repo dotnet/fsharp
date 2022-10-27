@@ -1115,7 +1115,7 @@ type FSharpType =
     member BaseType: FSharpType option
 
     /// Canonical form of the type with abbreviations, measures, and F# tuples and functions erased.
-    member StrippedType: FSharpType
+    member ErasedType: FSharpType
 
     /// The fully qualified name of the type or module without strong assembly name.
     member BasicQualifiedName: string
