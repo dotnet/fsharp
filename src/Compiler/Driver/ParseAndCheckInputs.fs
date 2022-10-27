@@ -1159,26 +1159,6 @@ let AddCheckResultsToTcState
 
     ccuSigForFile, tcState
 
-let AddDummyCheckResultsToTcState
-    (
-        tcGlobals,
-        amap,
-        qualName: QualifiedNameOfFile,
-        prefixPathOpt,
-        tcSink,
-        tcState: TcState,
-        tcStateForImplFile: TcState,
-        rootSig
-    ) =
-    let hadSig = true
-    let emptyImplFile = CreateEmptyDummyImplFile qualName rootSig
-    let tcEnvAtEnd = tcStateForImplFile.TcEnvFromImpls
-
-    let ccuSigForFile, tcState =
-        AddCheckResultsToTcState (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualName, rootSig) tcState
-
-    (tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState
-
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInputAux
     (
@@ -1288,7 +1268,7 @@ let CheckOneInputAux
                             tcState
 
                     let partialResult =
-                        (amap, conditionalDefines, rootSig, priorErrors, file, tcStateForImplFile, ccuSigForFile)
+                        (amap, conditionalDefines, rootSig, priorErrors, file, tcState, tcStateForImplFile, ccuSigForFile)
 
                     return Choice2Of2 partialResult, tcState
 
@@ -1347,18 +1327,10 @@ let CheckOneInput
 
         match partialResult with
         | Choice1Of2 result -> return result, tcState
-        | Choice2Of2 (amap, _conditionalDefines, rootSig, _priorErrors, file, tcStateForImplFile, _ccuSigForFile) ->
-            return
-                AddDummyCheckResultsToTcState(
-                    tcGlobals,
-                    amap,
-                    file.QualifiedName,
-                    prefixPathOpt,
-                    tcSink,
-                    tcState,
-                    tcStateForImplFile,
-                    rootSig
-                )
+        | Choice2Of2 (_amap, _conditionalDefines, rootSig, _priorErrors, file, tcState, tcStateForImplFile, ccuSigForFile) ->
+            let emptyImplFile = CreateEmptyDummyImplFile file.QualifiedName rootSig
+            let tcEnvAtEnd = tcStateForImplFile.TcEnvFromImpls
+            return (tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState
     }
 
 // Within a file, equip loggers to locally filter w.r.t. scope pragmas in each input
@@ -1492,7 +1464,7 @@ let CheckMultipleInputsInParallel
 
                 match partialResult with
                 | Choice1Of2 result -> result, false
-                | Choice2Of2 (amap, conditionalDefines, rootSig, priorErrors, file, tcStateForImplFile, ccuSigForFile) ->
+                | Choice2Of2 (amap, conditionalDefines, rootSig, priorErrors, file, _tsState, tcStateForImplFile, ccuSigForFile) ->
 
                     // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
                     // somewhere in the files processed prior to this one, including from the first phase, or in the processing
