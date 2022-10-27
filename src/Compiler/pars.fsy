@@ -4083,7 +4083,7 @@ patternClauses:
        fun _mBar ->
            (SynMatchClause(pat, guard, arbExpr ("patternClauses1", m.EndRange), m, DebugPointAtTarget.Yes, SynMatchClauseTrivia.Zero) :: clauses), mLast }
 
-  | patternAndGuard patternResult BAR error 
+  | patternAndGuard patternResult BAR recover 
      { let pat, guard = $1
        let mArrow, resultExpr = $2
        let mLast = rhs parseState 3 
@@ -4091,14 +4091,14 @@ patternClauses:
        fun mBar ->
            [SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar })], mLast }
 
-  | patternAndGuard patternResult error
+  | patternAndGuard patternResult recover
      { let pat, guard = $1
        let mArrow, resultExpr = $2
        let m = unionRanges resultExpr.Range pat.Range
        fun mBar ->
            [SynMatchClause(pat, guard, resultExpr, m, DebugPointAtTarget.Yes, { ArrowRange = Some mArrow; BarRange = mBar })], m }
 
-  | patternAndGuard error
+  | patternAndGuard recover
      { let pat, guard = $1
        let patm = pat.Range
        let m = guard |> Option.map (fun e -> unionRanges patm e.Range) |> Option.defaultValue patm
