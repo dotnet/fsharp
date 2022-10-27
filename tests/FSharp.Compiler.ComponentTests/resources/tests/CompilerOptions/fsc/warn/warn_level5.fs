@@ -2,8 +2,12 @@
 // See DevDiv:364238
 open System.Collections.Generic
 
-let x : IEnumerator<KeyValuePair<int, int>> = failwith ""
-printfn "%A" x.Current.Key // defensive copy
+[<Struct>]
+type NonReadOnlyStruct=
+    member val Property = "" with get, set
 
-let y : list<KeyValuePair<int, int>> = failwith ""
-printfn "%A" y.[0].Key // defensive copy
+let x : IEnumerator<NonReadOnlyStruct> = failwith ""
+printfn "%A" x.Current.Property // defensive copy
+
+let y : list<NonReadOnlyStruct> = failwith ""  // KeyValuePair<int, int>
+printfn "%A" y.[0].Property // defensive copy

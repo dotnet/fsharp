@@ -11,12 +11,14 @@
           Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2], Microsoft.NETCore.App.Host.win-x64 [6.0.2].
     -->
     <NoWarn>$(NoWarn);NU1505</NoWarn>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
   </PropertyGroup>
 
   <ItemGroup>
     <Compile Include="SourceText.fs" />
     <Compile Include="DecentlySizedStandAloneFileBenchmark.fs" />
     <Compile Include="CompilerServiceBenchmarks.fs" />
+    <Compile Include="FileCascadeBenchmarks.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

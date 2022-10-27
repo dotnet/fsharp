@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Microsoft.VisualStudio.FSharp.UIResources.CodeLensOptionControl"
+﻿<UserControl x:Class="Microsoft.VisualStudio.FSharp.UIResources.LensOptionControl"
              x:ClassModifier="internal"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -17,30 +17,27 @@
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <GroupBox Header="{x:Static local:Strings.CodeLens}">
+                <GroupBox Header="{x:Static local:Strings.Lens}">
                     <StackPanel>
                         <StackPanel>
-                            <CheckBox x:Name="enableCodeLens" IsChecked="{Binding Enabled}"
-                                  Content="{x:Static local:Strings.CodeLens_Switch}"/>
+                            <CheckBox x:Name="enableLens" IsChecked="{Binding Enabled}"
+                                  Content="{x:Static local:Strings.Lens_Switch}"/>
                         </StackPanel>
                         <StackPanel Margin="15 0 0 0">
                             <CheckBox x:Name="useColors" IsChecked="{Binding UseColors}"
-                                  Content="{x:Static local:Strings.CodeLens_UseColors}"
-                                  IsEnabled="{Binding IsChecked, ElementName=enableCodeLens}"/>
-                            <CheckBox x:Name="replaceWithLineLens" IsChecked="{Binding ReplaceWithLineLens}"
-                                  Content="{x:Static local:Strings.CodeLens_Replace_LineLens}"
-                                  IsEnabled="{Binding IsChecked, ElementName=enableCodeLens}"/>
+                                  Content="{x:Static local:Strings.Lens_UseColors}"
+                                  IsEnabled="{Binding IsChecked, ElementName=enableLens}"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="70" />
                                 </Grid.ColumnDefinitions>
-                                <Label Grid.Column="0" Content="{x:Static local:Strings.CodeLens_Prefix}"/>
+                                <Label Grid.Column="0" Content="{x:Static local:Strings.Lens_Prefix}"/>
                                 <TextBox x:Name="prefix" Grid.Column="1"
                                      Text="{Binding Prefix, UpdateSourceTrigger=PropertyChanged}"
                                      HorizontalContentAlignment="Right"
                                      VerticalContentAlignment="Center" Margin="7,0,-116,0"
-                                     IsEnabled="{Binding IsChecked, ElementName=enableCodeLens}">
+                                     IsEnabled="{Binding IsChecked, ElementName=enableLens}">
                                 </TextBox>
                             </Grid>
                         </StackPanel>

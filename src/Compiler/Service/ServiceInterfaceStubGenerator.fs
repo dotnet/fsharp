@@ -144,7 +144,6 @@ type InterfaceData =
                 | SynType.AnonRecd (_, ts, _) -> Some(ts |> Seq.choose (snd >> (|TypeIdent|_|)) |> String.concat "; ")
                 | SynType.Array (dimension, TypeIdent typeName, _) -> Some(sprintf "%s [%s]" typeName (String(',', dimension - 1)))
                 | SynType.MeasurePower (TypeIdent typeName, RationalConst power, _) -> Some(sprintf "%s^%s" typeName power)
-                | SynType.MeasureDivide (TypeIdent numerator, TypeIdent denominator, _) -> Some(sprintf "%s/%s" numerator denominator)
                 | SynType.Paren (TypeIdent typeName, _) -> Some typeName
                 | _ -> None
 
@@ -841,7 +840,7 @@ module InterfaceStubGenerator =
                     | None, Some binding -> walkBinding binding
                     | Some getBinding, Some setBinding -> walkBinding getBinding |> Option.orElseWith (fun () -> walkBinding setBinding)
                 | SynMemberDefn.NestedType (typeDef, _access, _range) -> walkSynTypeDefn typeDef
-                | SynMemberDefn.ValField (_field, _range) -> None
+                | SynMemberDefn.ValField _ -> None
                 | SynMemberDefn.LetBindings (bindings, _isStatic, _isRec, _range) -> List.tryPick walkBinding bindings
                 | SynMemberDefn.Open _
                 | SynMemberDefn.ImplicitCtor _

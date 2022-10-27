@@ -273,7 +273,59 @@ type RoslynTestHelpers private () =
 
         document
 
+    static member CreateTwoDocumentSolution (filePath1, text1: SourceText, filePath2, text2: SourceText) =
+        let workspace = new AdhocWorkspace(TestHostServices())
+
+        let projId = ProjectId.CreateNewId()
+        let docId1 = DocumentId.CreateNewId(projId)
+        let docId2 = DocumentId.CreateNewId(projId)
+
+        let docInfo1 =
+            DocumentInfo.Create(
+                docId1,
+                filePath1, 
+                loader=TextLoader.From(text1.Container, VersionStamp.Create(DateTime.UtcNow)),
+                filePath=filePath1,
+                sourceCodeKind= SourceCodeKind.Regular)
+
+        let docInfo2 =
+            DocumentInfo.Create(
+                docId2,
+                filePath2, 
+                loader=TextLoader.From(text2.Container, VersionStamp.Create(DateTime.UtcNow)),
+                filePath=filePath2,
+                sourceCodeKind= SourceCodeKind.Regular)
+
+        let projFilePath = "C:\\test.fsproj"
+        let projInfo =
+            ProjectInfo.Create(
+                projId,
+                VersionStamp.Create(DateTime.UtcNow),
+                projFilePath, 
+                "test.dll", 
+                LanguageNames.FSharp,
+                documents = [docInfo1;docInfo2],
+                filePath = projFilePath
+            )
+
+        let solutionInfo = SolutionInfo.Create(SolutionId.CreateNewId(), VersionStamp.Create(DateTime.UtcNow), "test.sln", [projInfo])
+        let solution = workspace.AddSolution(solutionInfo)
+
+        workspace
+            .Services
+            .GetService<IFSharpWorkspaceService>()
+            .FSharpProjectOptionsManager
+            .SetCommandLineOptions(projId, [|filePath1;filePath2|], ImmutableArray.Empty)
+
+        let document1 = solution.GetProject(projId).GetDocument(docId1)
+        let document2 = solution.GetProject(projId).GetDocument(docId2)
+        document1, document2
+
     static member CreateSingleDocumentSolution (filePath, code: string, ?options) =
         let text = SourceText.From(code)
         RoslynTestHelpers.CreateSingleDocumentSolution(filePath, text, ?options = options), text
 
+    static member CreateTwoDocumentSolution (filePath1, code1: string, filePath2, code2: string) =
+        let text1 = SourceText.From code1
+        let text2 = SourceText.From code2
+        RoslynTestHelpers.CreateTwoDocumentSolution(filePath1, text1, filePath2, text2)

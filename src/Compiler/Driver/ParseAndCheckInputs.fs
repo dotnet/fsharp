@@ -148,8 +148,7 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, fileName, impl) 
 
         let trivia: SynModuleOrNamespaceTrivia =
             {
-                ModuleKeyword = None
-                NamespaceKeyword = None
+                LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.None
             }
 
         SynModuleOrNamespace(modname, false, SynModuleOrNamespaceKind.AnonModule, defs, PreXmlDoc.Empty, [], None, m, trivia)
@@ -194,8 +193,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
         let trivia: SynModuleOrNamespaceSigTrivia =
             {
-                ModuleKeyword = None
-                NamespaceKeyword = None
+                LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.None
             }
 
         SynModuleOrNamespaceSig(modname, false, SynModuleOrNamespaceKind.AnonModule, defs, PreXmlDoc.Empty, [], None, m, trivia)
@@ -484,7 +482,6 @@ let TestInteractionParserAndExit (tokenizer: Tokenizer, lexbuf: LexBuffer<char>,
     while true do
         match (Parser.interaction (fun _ -> tokenizer ()) lexbuf) with
         | ParsedScriptInteraction.Definitions (l, m) -> printfn "Parsed OK, got %d defs @ %a" l.Length outputRange m
-        | ParsedScriptInteraction.HashDirective (_, m) -> printfn "Parsed OK, got hash @ %a" outputRange m
 
     exiter.Exit 0
 
@@ -845,10 +842,7 @@ let ProcessMetaCommandsFromInput
             | ParsedHashDirective ("nowarn", ParsedHashDirectiveArguments numbers, m) ->
                 List.fold (fun state d -> nowarnF state (m, d)) state numbers
 
-            | ParsedHashDirective (("reference"
-                                   | "r"),
-                                   ParsedHashDirectiveArguments args,
-                                   m) ->
+            | ParsedHashDirective (("reference" | "r"), ParsedHashDirectiveArguments args, m) ->
                 matchedm <- m
                 ProcessDependencyManagerDirective Directive.Resolution args m state
 
