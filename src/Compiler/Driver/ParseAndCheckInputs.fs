@@ -1274,7 +1274,7 @@ let CheckOneInputAux
                             tcState
 
                     let partialResult =
-                        (amap, conditionalDefines, rootSig, priorErrors, file, tcState, tcStateForImplFile, ccuSigForFile)
+                        (amap, conditionalDefines, rootSig, priorErrors, file, tcStateForImplFile, ccuSigForFile)
 
                     return Choice2Of2 partialResult, tcState
 
@@ -1333,7 +1333,7 @@ let CheckOneInput
 
         match partialResult with
         | Choice1Of2 result -> return result, tcState
-        | Choice2Of2 (_amap, _conditionalDefines, rootSig, _priorErrors, file, tcState, tcStateForImplFile, ccuSigForFile) ->
+        | Choice2Of2 (_amap, _conditionalDefines, rootSig, _priorErrors, file, tcStateForImplFile, ccuSigForFile) ->
             let emptyImplFile = CreateEmptyDummyImplFile file.QualifiedName rootSig
             let tcEnvAtEnd = tcStateForImplFile.TcEnvFromImpls
             return (tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState
@@ -1470,7 +1470,7 @@ let CheckMultipleInputsInParallel
 
                 match partialResult with
                 | Choice1Of2 result -> result, false
-                | Choice2Of2 (amap, conditionalDefines, rootSig, priorErrors, file, _tsState, tcStateForImplFile, ccuSigForFile) ->
+                | Choice2Of2 (amap, conditionalDefines, rootSig, priorErrors, file, tcStateForImplFile, ccuSigForFile) ->
 
                     // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
                     // somewhere in the files processed prior to this one, including from the first phase, or in the processing
