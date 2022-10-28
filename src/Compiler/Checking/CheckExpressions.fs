@@ -1822,19 +1822,19 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
                 rfinfo1.TypeInst, rfinfo1.TyconRef
 
     let fldsmap, rfldsList =
-        ((Map.empty, []), fldResolutions) ||> List.fold (fun (fs, rfldsList) (fld, frefs, fldExpr) ->
+        ((Map.empty, []), fldResolutions) ||> List.fold (fun (fs, rfldsList) ((_, ident), frefs, fldExpr) ->
                 match frefs |> List.filter (fun (FieldResolution(rfinfo2, _)) -> tyconRefEq g tcref rfinfo2.TyconRef) with
                 | [FieldResolution(rfinfo2, showDeprecated)] ->
 
                     // Record the precise resolution of the field for intellisense
                     let item = Item.RecdField(rfinfo2)
-                    CallNameResolutionSink cenv.tcSink ((snd fld).idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ad)
+                    CallNameResolutionSink cenv.tcSink (ident.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ad)
 
                     let fref2 = rfinfo2.RecdFieldRef
 
-                    CheckRecdFieldAccessible cenv.amap m env.eAccessRights fref2 |> ignore
+                    CheckRecdFieldAccessible cenv.amap ident.idRange env.eAccessRights fref2 |> ignore
 
-                    CheckFSharpAttributes g fref2.PropertyAttribs m |> CommitOperationResult
+                    CheckFSharpAttributes g fref2.PropertyAttribs ident.idRange |> CommitOperationResult
 
                     if Map.containsKey fref2.FieldName fs then
                         errorR (Error(FSComp.SR.tcFieldAppearsTwiceInRecord(fref2.FieldName), m))
@@ -6592,11 +6592,22 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) env tpenv withExprInfoO
     // Build record
     let rfrefs = List.map (fst >> mkRecdFieldRef tcref) fldsList
 
-    // Check accessibility: this is also done in BuildFieldMap, but also need to check
-    // for fields in { new R with a=1 and b=2 } constructions and { r with a=1 } copy-and-update expressions
-    rfrefs |> List.iter (fun rfref ->
+    // Check accessibility and FSharpAttributes
+    // this is also done in BuildFieldMap, but also need to check
+    // For fields in nested record
+    // type MyType1 = { Field1 : string }
+    // type MyType2 =
+    //     { Field1 : string
+    //       Field2 : MyType1 }
+    // Nested record construction :
+    // let x = { Field1 = ""; Field2 = { Field1 = "" } }
+    // Nested copy-and-update expressions
+    // let y = { x with Field2 = { Field1 = "X" } }
+    
+    for rfref in rfrefs do
         CheckRecdFieldAccessible cenv.amap m env.eAccessRights rfref |> ignore
-        CheckFSharpAttributes g rfref.PropertyAttribs m |> CommitOperationResult)
+        // FIXME : Find a better way to report nested record creation
+        //CheckFSharpAttributes g rfref.PropertyAttribs m |> CommitOperationResult
 
     let args = List.map snd fldsList
 

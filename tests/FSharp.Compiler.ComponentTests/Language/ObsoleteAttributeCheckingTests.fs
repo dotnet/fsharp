@@ -165,7 +165,7 @@ let c = { X = 0 }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 7, Col 9, Line 7, Col 18, "This construct is deprecated. Use B instead")
+           (Error 101, Line 7, Col 11, Line 7, Col 12, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -373,7 +373,7 @@ type ButtonExtensions =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 13, Col 9, Line 13, Col 34, "This construct is deprecated. Use B instead")
+            (Error 101, Line 13, Col 21, Line 13, Col 25, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -396,8 +396,8 @@ type ButtonExtensions =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 12, Col 37, Line 12, Col 43, "This construct is deprecated. Use B instead");
-            (Error 101, Line 13, Col 9, Line 13, Col 34, "This construct is deprecated. Use B instead")
+            (Error 101, Line 12, Col 37, Line 12, Col 43, "This construct is deprecated. Use B instead")
+            (Error 101, Line 13, Col 21, Line 13, Col 25, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -416,7 +416,7 @@ module Button =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 9, Col 20, Line 9, Col 36, "This construct is deprecated. Use B instead")
+            (Error 101, Line 9, Col 22, Line 9, Col 26, "This construct is deprecated. Use B instead")
         ]
 
 
@@ -437,7 +437,7 @@ module Button =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 10, Col 20, Line 10, Col 36, "This construct is deprecated. Use B instead")
+           (Error 101, Line 10, Col 22, Line 10, Col 26, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -462,7 +462,7 @@ type ButtonExtensions =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 9, Col 20, Line 9, Col 36, "This construct is deprecated. Use B instead")
+           (Error 101, Line 9, Col 22, Line 9, Col 26, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -607,7 +607,7 @@ let a = { DeprecatedField= "23" ; JustField = "" }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 4, Col 9, Line 4, Col 51, "This construct is deprecated. Deprecated Field")
+            (Error 101, Line 4, Col 11, Line 4, Col 26, "This construct is deprecated. Deprecated Field")
         ]
         
     [<Fact>]
@@ -620,7 +620,131 @@ let a = { DeprecatedField= "23" ; JustField = "" }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Warning 44, Line 4, Col 9, Line 4, Col 51, "This construct is deprecated. Deprecated Field")
+            (Warning 44, Line 4, Col 11, Line 4, Col 26, "This construct is deprecated. Deprecated Field")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used in one the record properties with a static member when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead")>]
+      Field2 : string }
+    static member Empty =
+      { Field1 = null
+        Field2 = null }
+
+let x = { MyType.Empty with Field1 = "field1" }
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 9, Col 9, Line 9, Col 15, "This construct is deprecated. Use Field2 instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used in one the record properties when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead")>]
+      Field2 : string }
+
+let field1 = { Field1 = "field1" ; Field2 = "Field2" }
+let field2 = { field1 with Field1 = "Field1" }
+let field3 = { field1 with Field2 = "Field2" }
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 8, Col 36, Line 8, Col 42, "This construct is deprecated. Use Field2 instead")
+            (Warning 44, Line 10, Col 28, Line 10, Col 34, "This construct is deprecated. Use Field2 instead")
+        ]
+    
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in one the record properties with a static member when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead", true)>]
+      Field2 : string }
+    static member Empty =
+      { Field1 = null
+        Field2 = null }
+
+let x = { MyType.Empty with Field1 = "field1" }
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 9, Line 9, Col 15, "This construct is deprecated. Use Field2 instead")
+        ]
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in a nested record properties with a static member when one of them is not used`` () =
+        Fsx """
+open System
+type MyType1 = { [<Obsolete("Use Y instead")>] X : string }
+
+type MyType2 =
+    { Field1 : string
+      Field2 : MyType1 }
+    static member Empty =
+      { Field1 = null
+        Field2 = { X = "X" } }
+
+let x = { MyType2.Empty with Field1 = "" }
+
+let y = { x with Field2 = { X = "X" } }
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            // (Warning 44, Line 10, Col 20, Line 10, Col 21, "This construct is deprecated. Use Y instead")
+            // // FIXME This should not raise 1129. Need to investigate WHY ?
+            // (Error 1129, Line 14, Col 29, Line 14, Col 30, "The record type 'MyType2' does not contain a label 'X'.")
+        ]
+ 
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in one the record with default value and properties with a static member when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead", true); DefaultValue>]
+      Field2 : string }
+    static member Empty =
+      { Field1 = null }
+
+let x = { MyType.Empty with Field1 = "field1" }
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in one the record properties when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead", true)>]
+      Field2 : string }
+
+let field1 = { Field1 = "field1" ; Field2 = "Field2" }
+let field2 = { field1 with Field1 = "Field1" }
+let field3 = { field1 with Field2 = "Field2" }
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 8, Col 36, Line 8, Col 42, "This construct is deprecated. Use Field2 instead")
+            (Error 101, Line 10, Col 28, Line 10, Col 34, "This construct is deprecated. Use Field2 instead")
         ]
     
     [<Fact>]
