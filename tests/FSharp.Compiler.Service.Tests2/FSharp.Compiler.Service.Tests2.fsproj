@@ -39,7 +39,7 @@
     <Content Include="Docs.md" />
     <Compile Include="Program.fs" />
     <Compile Include="Parallel.fs" />
-    <Compile Include="code.fs" />
+    <Compile Include="code2.fs" />
     <Compile Include="GraphProcessing.fs" />
   </ItemGroup>
 
