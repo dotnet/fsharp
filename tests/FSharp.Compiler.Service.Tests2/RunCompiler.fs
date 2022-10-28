@@ -161,7 +161,7 @@ let runGrapher () =
     //     System.IO.File.ReadAllLines(@"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.Service.Tests2\args.txt") |> Array.skip 1
     // FSharp.Compiler.CommandLineMain.main args |> ignore
     
-    let deps : FileGraph =
+    let deps : Graph =
         [|
             0, [||]  // A
             1, [|0|] // B1 -> A
@@ -173,10 +173,10 @@ let runGrapher () =
         |> Array.map (fun (a, deps) -> FileIdx.make a, deps |> Array.map FileIdx.make)
         |> readOnlyDict
     
-    let dependants = deps |> FileGraph.reverse
+    let dependants = deps |> Graph.reverse
     
-    let transitiveDeps = deps |> FileGraph.calcTransitiveGraph
-    let transitiveDependants = transitiveDeps |> FileGraph.reverse
+    let transitiveDeps = deps |> Graph.transitive
+    let transitiveDependants = transitiveDeps |> Graph.reverse
     
     let nodes =
         deps.Keys
@@ -193,6 +193,7 @@ let runGrapher () =
             node.Dependants <- processs dependants[idx]
             node.UnprocessedDepsCount <- node.Deps.Length
         )
-        nodes.Values |> Seq.toArray
+        nodes.Values
+        |> Seq.toArray
     
     processGraph graph

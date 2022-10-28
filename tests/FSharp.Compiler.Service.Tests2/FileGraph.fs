@@ -2,32 +2,20 @@
 
 #nowarn "40"
 
-open System.Collections.Concurrent
 open System.Collections.Generic
-
-type FileIdx =
-    FileIdx of int
-    with
-        member this.Idx = match this with FileIdx idx -> idx
-        override this.ToString() = this.Idx.ToString()
-        static member make (idx : int) = FileIdx idx 
+open FSharp.Compiler.Service.Tests.Utils
 
 /// <summary> DAG of files </summary>
-type FileGraph = IReadOnlyDictionary<FileIdx, FileIdx[]>
+type Graph<'Node> = IReadOnlyDictionary<'Node, 'Node[]>
 
-let memoize<'a, 'b when 'a : equality> f : ('a -> 'b) =
-    let y = HashIdentity.Structural<'a>
-    let d = new ConcurrentDictionary<'a, 'b>(y)
-    fun x -> d.GetOrAdd(x, fun r -> f r)
-
-module FileGraph =
+module Graph =
     
-    let calcTransitiveGraph (graph : FileGraph) : FileGraph =
-        let transitiveGraph = Dictionary<FileIdx, FileIdx[]>()
+    let transitive<'Node when 'Node : equality> (graph : Graph<'Node>) : Graph<'Node> =
+        let transitiveGraph = Dictionary<'Node, 'Node[]>()
         
         let rec calcTransitiveEdges =
-            fun (idx : FileIdx) ->
-                let edgeTargets = graph[idx]
+            fun (node : 'Node) ->
+                let edgeTargets = graph[node]
                 edgeTargets
                 |> Array.collect calcTransitiveEdges
                 |> Array.append edgeTargets
@@ -39,10 +27,7 @@ module FileGraph =
         
         transitiveGraph :> IReadOnlyDictionary<_,_>
         
-    let collectEdges (graph : FileGraph) =
-        graph
-        
-    let reverse (graph : FileGraph) : FileGraph =
+    let reverse (graph : Graph<'Node>) : Graph<'Node> =
         graph
         // Collect all edges
         |> Seq.collect (fun (KeyValue(idx, deps)) -> deps |> Array.map (fun dep -> idx, dep))

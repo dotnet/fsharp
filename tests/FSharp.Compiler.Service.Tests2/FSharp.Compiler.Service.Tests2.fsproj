@@ -26,6 +26,7 @@
     <Compile Include="..\service\Common.fs">
       <Link>Common.fs</Link>
     </Compile>
+    <Compile Include="Utils.fs" />
     <Compile Include="ASTVisit.fs" />
     <Compile Include="TestASTVisit.fs" />
     <Compile Include="DepResolving.fs" />
@@ -37,6 +38,7 @@
     </None>
     <Content Include="Docs.md" />
     <Compile Include="Program.fs" />
+    <Compile Include="code.fs" />
   </ItemGroup>
 
   <ItemGroup>
