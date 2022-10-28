@@ -2,6 +2,8 @@
 
 open System.Collections.Generic
 open FSharp.Compiler.Service.Tests.Graph
+open FSharp.Compiler.Service.Tests.Utils
+open FSharp.Compiler.Service.Tests2
 open FSharp.Compiler.Syntax
 type AST = FSharp.Compiler.Syntax.ParsedInput
 
@@ -15,47 +17,40 @@ type SourceFile =
         Name : string
         AST : AST
     }
-    // custom check - compare against CustomerId only
     override this.Equals other =
         match other with
         | :? SourceFile as p -> p.Name.Equals this.Name
         | _ -> false
-    // custom hash check
     override this.GetHashCode () = this.Name.GetHashCode()
-    
+
 type SourceFiles = SourceFile[]
-type FsiInfo =
-    | FsiBacked
-    | NotBacked
-        with member this.IsFsiBacked =
-                match this with
-                | FsiBacked -> true
-                | NotBacked -> false
- 
+
 type File =
     {
-        File : SourceFile
-        FsiInfo : FsiInfo
+        Name : FileName
+        AST : AST
+        Idx : FileIdx
+        FsiBacked : bool
     }
 type Files = File[]
-type FileGraph = Graph<File>
 
 let gatherBackingInfo (files : SourceFiles) : Files =
     let seenSigFiles = HashSet<string>()
     files
-    |> Array.map (fun f ->
-        let fsiInfo =
+    |> Array.mapi (fun i f ->
+        let fsiBacked =
             match f.AST with
             | ParsedInput.SigFile _ ->
-                NotBacked
+                false
             | ParsedInput.ImplFile _ ->
                 let fsiName = System.IO.Path.ChangeExtension(f.Name, "fsi")
-                match seenSigFiles.Contains fsiName with
-                | true -> FsiBacked
-                | false -> NotBacked
+                let fsiBacked = seenSigFiles.Contains fsiName
+                fsiBacked
         {
-            File = f
-            FsiInfo = fsiInfo
+            Name = f.Name |> FileName
+            AST = f.AST
+            Idx = FileIdx.make i
+            FsiBacked = fsiBacked
         }
     )
     
@@ -63,38 +58,57 @@ type EdgeTrimmer = File -> File -> bool
 
 type FileData =
     {
-        ModuleRefs : ModuleRef[]
-        Structure : FileStructure
+        Idx : FileIdx
+        Name : FileName
+        ModuleRefs : LongIdent[]
+        Tops : LongIdent[]
+        ContainsModuleAbbreviations : bool
+        IsFsiBacked : bool
     }
 
-let gatherFileData (file : File) =
+type FileGraph = Graph<File>
+
+let gatherFileData (file : File) : FileData =
+    let moduleRefs, containsModuleAbbreviations = ASTVisit.findModuleRefs file.AST
+    let tops = ASTVisit.topModuleOrNamespaces file.AST
+    // TODO As a perf optimisation we can skip top-level ids scanning for FsiBacked .fs files
+    // However, it is unlikely to give a noticable speedup (citation needed)
+    {
+        Idx = file.Idx
+        Name = file.Name
+        ModuleRefs = moduleRefs
+        Tops = tops
+        ContainsModuleAbbreviations = containsModuleAbbreviations
+        IsFsiBacked = file.FsiBacked
+    }
 
 let calcFileGraph (files : SourceFiles) : FileGraph =
-    let fsFsiTrimmer =
-        let files =
-            gatherBackingInfo files
-            ... to dict
-        fun file dep -> not files[dep].FsiInfo.IsFsiBacked
-    let 
+    failwith ""
 
 /// Used for processing
 type NodeInfo<'Item> =
-{
-    Item : 'Item
-    Deps : 'Item[]
-    TransitiveDeps : 'Item[]
-    Dependants : 'Item[]
-    ProcessedDepsCount : int
-}
+    {
+        Item : 'Item
+        Deps : 'Item[]
+        TransitiveDeps : 'Item[]
+        Dependants : 'Item[]
+        ProcessedDepsCount : int
+    }
 type Node<'Item, 'State, 'Result> =
-{
-    Info : NodeInfo<'Item>
-    Result : ('State * 'Result) option
-}
+    {
+        Info : NodeInfo<'Item>
+        Result : ('State * 'Result) option
+    }
 
-// Do we need to suppress some error logging if we
-// apply the same partial results multiple times?
-// Maybe we can enable logging only for the final fold
+// TODO Do we need to suppress some error logging if we
+// TODO apply the same partial results multiple times?
+// TODO Maybe we can enable logging only for the final fold
+/// <summary>
+/// Combine results of dependencies needed to type-check a 'higher' node in the graph 
+/// </summary>
+/// <param name="deps">Direct dependencies of a node</param>
+/// <param name="transitiveDeps">Transitive dependencies of a node</param>
+/// <param name="folder">A way to fold a single result into existing state</param>
 let combineResults
     (deps : Node<_,_,_>[])
     (transitiveDeps : Node<_,_,_>[])
@@ -106,14 +120,23 @@ let combineResults
             // Could also use eg. total file size/AST size
             node.Info.TransitiveDeps.Length
         deps
-        |> Array.maxBy sizeMetrix
-    let firstState =    snd biggestDep.Result
-    // Perf: Keep transDeps in a HashSet from the start
+        |> Array.maxBy sizeMetric
+    let extractResultOrFail node =
+        node.Result
+        |> Option.defaultWith (fun () -> failwith "Unexpected lack of result")
+        |> snd
+    let firstState = extractResultOrFail biggestDep
+    
+    // TODO Potential perf optimisation: Keep transDeps in a HashSet from the start,
+    // avoiding reconstructing the HashSet here
+    
+    // Add single-file results of remaining transitive deps one-by-one using folder
+    // Note: Good to preserve order here so that folding happens in file order
     let included = HashSet(firstState.Info.TransitiveDeps)
-    let toAdd =
-        transitiveDeps
-        |> Array.filter (fun dep -> included.Add dep)
-    let state = Array.fold folder firstState toAdd
+    let resultsToAdd =
+        transitiveDeps 
+        |> Array.filter (fun dep -> included.Contains dep = false)
+    let state = Array.fold folder firstState resultsToAdd
     state
     
  let processInParallel
@@ -142,44 +165,44 @@ let combineResults
          parallelism workerWork // use cancellation
      
 let processGraph
- (graph : FileGraph)
- (doWork : 'Item -> 'State -> 'Result * 'State)
- (folder : 'State -> 'Result -> 'State)
- (parallelism : int)
- : 'State
- =
- let transitiveDeps = graph |> calcTransitiveGraph
- let dependants = graph |> reverseGraph
- let nodes = graph.Keys |> Seq.map ...
- let leaves = nodes |> Seq.filter ...
- let work
-     (node : Node<'Item, 'State, 'Result>)
-     : Node<'Item, 'State, 'Result>[]
-     =
-     let inputState = combineResults node.Deps node.TransitiveDeps folder
-     let res = doWork node.Info.Item
-     node.Result <- res
-     let unblocked =
-         node.Info.Dependants
-         |> Array.filter (fun x -> 
-             let pdc =
-                 lock x (fun () ->
-                     x.Info.ProcessedDepsCount++
-                     x.Info.PrcessedDepsCount
-                 )
-             pdc = node.Info.Deps.Length
-         )
+    (graph : FileGraph)
+    (doWork : 'Item -> 'State -> 'Result * 'State)
+    (folder : 'State -> 'Result -> 'State)
+    (parallelism : int)
+    : 'State
+    =
+    let transitiveDeps = graph |> calcTransitiveGraph
+    let dependants = graph |> reverseGraph
+    let nodes = graph.Keys |> Seq.map ...
+    let leaves = nodes |> Seq.filter ...
+    let work
+        (node : Node<'Item, 'State, 'Result>)
+        : Node<'Item, 'State, 'Result>[]
+        =
+        let inputState = combineResults node.Deps node.TransitiveDeps folder
+        let res = doWork node.Info.Item
+        node.Result <- res
+        let unblocked =
+            node.Info.Dependants
+            |> Array.filter (fun x -> 
+                let pdc =
+                    lock x (fun () ->
+                    x.Info.ProcessedDepsCount++
+                    x.Info.PrcessedDepsCount
+                )
+                pdc = node.Info.Deps.Length
+            )
          |> Array.map (fun x -> nodes[x])
      unblocked
      
- processInParallel
-     leaves
-     work
-     parallelism
-     (fun processedCount -> processedCount = nodes.Length)
+    processInParallel
+        leaves
+        work
+        parallelism
+        (fun processedCount -> processedCount = nodes.Length)
 
- let state = combineResults nodes nodes addCheckResultsToTcState 
- state
+    let state = combineResults nodes nodes addCheckResultsToTcState 
+    state
 
 type TcState
 type SingleResult

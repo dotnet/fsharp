@@ -75,36 +75,6 @@ let calcTransitiveGraph (graph : IReadOnlyDictionary<int, int[]>) : IDictionary<
     |> Seq.map (fun idx -> idx, calcTransitiveDepsInner idx)
     |> dict
 
-
-/// Extract partial module references from partial module or type references
-let extractModuleSegments (stuff : ReferenceOrAbbreviation seq) : LongIdent[] * bool =
-    
-    let refs =
-        stuff
-        |> Seq.choose (function | ReferenceOrAbbreviation.Reference r -> Some r | ReferenceOrAbbreviation.Abbreviation _ -> None)
-        |> Seq.toArray
-    let abbreviations =
-        stuff
-        |> Seq.choose (function | ReferenceOrAbbreviation.Reference _ -> None | ReferenceOrAbbreviation.Abbreviation a -> Some a)
-        |> Seq.toArray
-    
-    let moduleRefs =
-        refs
-        |> Seq.choose (fun x ->
-            match x.Kind with
-            | ModuleOrNamespace -> x.Ident |> Some
-            | Type ->
-                // Remove the last segment as it contains the type name
-                match x.Ident.Length with
-                | 0
-                | 1 -> None
-                | n -> x.Ident.GetSlice(Some 0, n - 2 |> Some) |> Some
-        )
-        |> Seq.toArray
-    let containsModuleAbbreviations = abbreviations.Length > 0
-    
-    moduleRefs, containsModuleAbbreviations
-
 /// Algorithm for automatically detecting (lack of) file dependencies based on their AST contents
 [<RequireQualifiedAccess>]
 module internal AutomatedDependencyResolving =
@@ -212,8 +182,7 @@ module internal AutomatedDependencyResolving =
         let nodes =
             nodes
             |> Array.Parallel.mapi (fun i {Name = name; Code = code; AST = ast} -> 
-                let typeAndModuleRefs = extractModuleRefs ast
-                let moduleRefs, containsModuleAbbreviations = extractModuleSegments typeAndModuleRefs
+                let moduleRefs, containsModuleAbbreviations = findModuleRefs ast
                 let top = topModuleOrNamespaces ast
                 {
                     Idx = i

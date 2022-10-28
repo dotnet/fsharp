@@ -140,7 +140,7 @@ let TestProject (projectFile : string) =
         )
         |> Array.filter (fun x ->
             // true
-            ASTVisit.extractModuleRefs x.AST
+            ASTVisit.findModuleAndTypeRefs x.AST
             |> Array.forall (function | ReferenceOrAbbreviation.Reference _ -> true | ReferenceOrAbbreviation.Abbreviation _ -> false)
         )
     let N = files.Length

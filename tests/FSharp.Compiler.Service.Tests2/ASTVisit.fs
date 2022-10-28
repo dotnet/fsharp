@@ -25,7 +25,7 @@ type Abbreviation =
 type ReferenceOrAbbreviation =
     | Reference of Reference
     | Abbreviation of Abbreviation
-    
+
 type private References = ReferenceOrAbbreviation seq
 
 let rec visitSynModuleDecl (decl : SynModuleDecl) : References =
@@ -1082,7 +1082,8 @@ and visitSynModuleOrNamespaceSig (x : SynModuleOrNamespaceSig) : References  =
             yield! visitSynAttributeLists synAttributeLists 
         }
 
-and extractModuleRefs (input : ParsedInput) =
+and findModuleAndTypeRefs (input : ParsedInput) =
+    // TODO It is questionable whether we correctly distinguish between and handle module and type references - needs verification
     match input with
     | ParsedInput.SigFile(ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, parsedHashDirectives, synModuleOrNamespaceSigs, parsedSigFileInputTrivia)) ->
         synModuleOrNamespaceSigs
@@ -1216,6 +1217,39 @@ and moduleSigDecl (x : SynModuleSigDecl) : Eit =
                     |> moduleSigDecls
                     |> combine longId
             Eit.Nested idents
+            
+/// Extract partial module references from partial module or type references
+let extractModuleSegments (stuff : ReferenceOrAbbreviation seq) : LongIdent[] * bool =
+    
+    let refs =
+        stuff
+        |> Seq.choose (function | ReferenceOrAbbreviation.Reference r -> Some r | ReferenceOrAbbreviation.Abbreviation _ -> None)
+        |> Seq.toArray
+    let abbreviations =
+        stuff
+        |> Seq.choose (function | ReferenceOrAbbreviation.Reference _ -> None | ReferenceOrAbbreviation.Abbreviation a -> Some a)
+        |> Seq.toArray
+    
+    let moduleRefs =
+        refs
+        |> Seq.choose (fun x ->
+            match x.Kind with
+            | ModuleOrNamespace -> x.Ident |> Some
+            | Type ->
+                // Remove the last segment as it contains the type name
+                match x.Ident.Length with
+                | 0
+                | 1 -> None
+                | n -> x.Ident.GetSlice(Some 0, n - 2 |> Some) |> Some
+        )
+        |> Seq.toArray
+    let containsModuleAbbreviations = abbreviations.Length > 0
+    
+    moduleRefs, containsModuleAbbreviations
+
+let findModuleRefs (ast : ParsedInput) =
+    let typeAndModuleRefs = findModuleAndTypeRefs ast
+    extractModuleSegments typeAndModuleRefs
 
 // TODO Handle 'global' namespace correctly
 /// Extract the top-level module/namespaces from the AST
