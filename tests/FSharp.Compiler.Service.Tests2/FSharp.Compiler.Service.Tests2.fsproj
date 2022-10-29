@@ -43,6 +43,7 @@
     <Compile Include="Tests\TestDepResolving.fs" />
     <Compile Include="Tests\RunCompiler.fs" />
     <Compile Include="Program.fs" />
+    <Content Include="SimpleArgs.txt" />
   </ItemGroup>
 
   <ItemGroup>

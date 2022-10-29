@@ -1428,8 +1428,9 @@ let CheckClosedInputSetFinish (declaredImpls: CheckedImplFile list, tcState) =
     tcState, declaredImpls, ccuContents
 
 let CheckMultipleInputsSequential (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
+    let args = ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, false
     (tcState, inputs)
-    ||> List.mapFold (CheckOneInputEntry(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, false))
+    ||> List.mapFold (CheckOneInputEntry args)
 
 /// Use parallel checking of implementation files that have signature files
 let CheckMultipleInputsInParallel
@@ -1542,12 +1543,190 @@ let CheckMultipleInputsInParallel
             }
 
         results, tcState)
+    
+type State = TcState * bool
+    
+/// Use parallel checking of implementation files that have signature files
+let CheckMultipleInputsInParallel2
+    (
+        ctok,
+        checkForErrors,
+        tcConfig: TcConfig,
+        tcImports: TcImports,
+        tcGlobals,
+        prefixPathOpt,
+        tcState,
+        eagerFormat,
+        inputs
+    ) =
+
+    let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+
+    // We create one CapturingDiagnosticLogger for each file we are processing and
+    // ensure the diagnostics are presented in deterministic order.
+    //
+    // eagerFormat is used to format diagnostics as they are emitted, just as they would be in the command-line
+    // compiler. This is necessary because some formatting of diagnostics is dependent on the
+    // type inference state at precisely the time the diagnostic is emitted.
+    // TODO Does this mean we can't have more than one TcState with different contents?
+    // How does the formatting code know the state of type-checking/type inference? We don't pass it to the formatter directly
+    UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, Some eagerFormat) (fun inputsWithLoggers ->
+
+        // Equip loggers to locally filter w.r.t. scope pragmas in each input
+        let inputsWithLoggers: (ParsedInput * DiagnosticsLogger)[] =
+            inputsWithLoggers
+            |> Seq.map (fun (input, oldLogger) ->
+                let logger = DiagnosticsLoggerForInput(tcConfig, input, oldLogger)
+                input, logger)
+            |> Seq.toArray
+
+        // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
+        // somewhere in the files processed prior to each one, or in the processing of this particular file.
+        let priorErrors = checkForErrors ()
+
+        // Grand experiment
+        // This code assumes the following file structure
+        // A.fs
+        // B1.fs (uses A)
+        // B2.fs (uses A, B1)
+        // C1.fs (uses A)
+        // C2.fs (uses A, C1)
+        // D.fs (uses A, B2, C2)
+        assert (inputsWithLoggers.Length = 6)
+
+        let fileDependencies =
+            [|
+                Set.empty
+                set [ 0 ]
+                set [ 0; 1 ]
+                set [ 0 ]
+                set [ 0; 3 ]
+                set [ 0; 2; 4 ]
+            |]
+
+        let partialResults, ((tcState, _) : State) =
+            let lastIndex = inputsWithLoggers.Length - 1
+            let amap = tcImports.GetImportMap()
+
+            let conditionalDefines =
+                if tcConfig.noConditionalErasure then
+                    None
+                else
+                    Some tcConfig.conditionalDefines
+
+            // This function will type check all the files where it knows all the dependent file have already been seen.
+            // The `freeFiles` are a set of file indexes that have been type checked in a previous run.
+            //  `processedFiles` stores the result of a typed checked file in a mutable fashion.
+            let rec visit ((currentTcState: TcState, currentPriorErrors: bool) as state : State) (freeFiles: Set<int>) (processedFiles: Choice<_, _> array) =
+                // Find files that still needs processing.
+                let unprocessedFiles = freeFiles |> Set.difference (set [| 0..lastIndex |])
+
+                if Set.isEmpty unprocessedFiles then
+                    // All done
+                    processedFiles, state
+                else
+                    // What files can we type check from the files that are left to type check.
+                    let nextFreeIndexes =
+                        unprocessedFiles
+                        |> Seq.choose (fun fileIndex ->
+                            let isFreeFile =
+                                Seq.forall (fun idx -> Set.contains idx freeFiles) fileDependencies.[fileIndex]
+
+                            if isFreeFile then
+                                Some(fileIndex, inputsWithLoggers.[fileIndex])
+                            else
+                                None)
+                        |> Seq.toArray
+
+                    // The next batch of files we can process in parallel
+                    let next =
+                        nextFreeIndexes
+                        |> ArrayParallel.map (fun (fileIndex, (input, logger)) ->
+                            cancellable {
+                                use _ = UseDiagnosticsLogger logger
+                                // Is it OK that we don't update 'priorErrors' after processing batches?
+                                let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
+
+                                // this is taken mostly from CheckOneInputAux, the case where the impl has no signature file
+                                let file =
+                                    match input with
+                                    | ParsedInput.ImplFile file -> file
+                                    | ParsedInput.SigFile _ -> failwith "not expecting a signature file for now"
+
+                                let tcSink = TcResultsSink.NoSink
+
+                                // Typecheck the implementation file
+                                let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
+                                    CheckOneImplFile(
+                                        tcGlobals,
+                                        amap,
+                                        currentTcState.tcsCcu,
+                                        currentTcState.tcsImplicitOpenDeclarations,
+                                        checkForErrors2,
+                                        conditionalDefines,
+                                        TcResultsSink.NoSink,
+                                        tcConfig.internalTestSpanStackReferring,
+                                        currentTcState.tcsTcImplEnv,
+                                        None,
+                                        file
+                                    )
+
+                                return
+                                    (fun tcState ->
+                                        let tcState =
+                                            { tcState with
+                                                tcsCreatesGeneratedProvidedTypes =
+                                                    tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                                            }
+
+                                        let ccuSigForFile, updateTcState =
+                                            AddCheckResultsToTcState
+                                                (tcGlobals,
+                                                 amap,
+                                                 false,
+                                                 prefixPathOpt,
+                                                 tcSink,
+                                                 tcState.tcsTcImplEnv,
+                                                 input.QualifiedName,
+                                                 implFile.Signature)
+                                                tcState
+
+                                        fileIndex, Choice1Of2(tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), logger, updateTcState)
+                            }
+                            |> Cancellable.runWithoutCancellation)
+                        |> fun results ->
+                            ((currentTcState, currentPriorErrors), results)
+                            ||> Array.fold (fun (tcState, priorErrors) result ->
+                                // the `result` callback ensure that the TcState is synced correctly after a batch of file has been type checked in parallel.
+                                // I believe this bit cannot be done in parallel, yet the order in which we fold the state does not matter.
+                                let fileIndex, partialResult, logger, nextTcState = result tcState
+
+                                // Yikes!
+                                processedFiles.[fileIndex] <- partialResult
+
+                                let priorErrors = priorErrors || (logger.ErrorCount > 0)
+                                (nextTcState, priorErrors))
+
+                    // The next set of free files are the previous ones + the files we just type checked.
+                    let nextFreeIndexes =
+                        seq {
+                            yield! freeFiles
+                            yield! (Seq.map fst nextFreeIndexes)
+                        }
+                        |> Set.ofSeq
+
+                    // Next round!
+                    visit next nextFreeIndexes processedFiles
+
+            visit (tcState, priorErrors) Set.empty (Array.zeroCreate inputsWithLoggers.Length)
+
+        partialResults, tcState)
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
         if tcConfig.parallelCheckingWithSignatureFiles then
-            CheckMultipleInputsInParallel(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs)
+            CheckMultipleInputsInParallel2(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs)
         else
             CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
 
