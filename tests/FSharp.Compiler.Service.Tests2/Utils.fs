@@ -3,7 +3,6 @@
 #nowarn "40"
 
 open System.Collections.Concurrent
-open System.Collections.Generic
 
 let memoize<'a, 'b when 'a : equality> f : ('a -> 'b) =
     let y = HashIdentity.Structural<'a>

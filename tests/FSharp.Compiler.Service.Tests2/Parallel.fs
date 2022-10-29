@@ -1,5 +1,7 @@
 ﻿module FSharp.Compiler.Service.Tests.Parallel
 
+open System
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Threading
 
@@ -45,6 +47,63 @@ let threadingLimitAgent limit (ct : CancellationToken) =
                     )
         }
     MailboxProcessor.Start(act, ct)
+
+// TODO Test this version
+/// Untested version that uses MailboxProcessor.
+/// See http://www.fssnip.net/nX/title/Limit-degree-of-parallelism-using-an-agent for implementation
+let processInParallelUsingMailbox
+    (firstItems : 'Item[])
+    (work : 'Item -> Async<'Item[]>)
+    (parallelism : int)
+    (notify : int -> unit)
+    (ct : CancellationToken)
+    : unit
+    =
+    let processedCountLock = Object()
+    let mutable processedCount = 0
+    let agent = Parallel.threadingLimitAgent 10 ct
+    let rec processItem item =
+        async {
+            let! toSchedule = work item
+            let pc = lock processedCountLock (fun () -> processedCount <- processedCount + 1; processedCount)
+            notify pc
+            toSchedule |> Array.iter (fun x -> agent.Post(Parallel.Start(processItem x)))   
+        }
+    firstItems |> Array.iter (fun x -> agent.Post(Parallel.Start(processItem x)))
+    ()    
+    
+// TODO Could replace with MailboxProcessor+Tasks/Asyncs instead of BlockingCollection + Threads
+// See http://www.fssnip.net/nX/title/Limit-degree-of-parallelism-using-an-agent
+/// Process items in parallel, allow more work to be scheduled as a result of finished work,
+/// limit parallelisation to 'parallelism' threads
+let processInParallel
+    (firstItems : 'Item[])
+    (work : 'Item -> 'Item[])
+    (parallelism : int)
+    (stop : int -> bool)
+    (ct : CancellationToken)
+    : unit
+    =
+    let bc = new BlockingCollection<'Item>()
+    firstItems |> Array.iter bc.Add
+    let processedCountLock = Object()
+    let mutable processedCount = 0
+    let processItem item =
+        let toSchedule = work item
+        let processedCount = lock processedCountLock (fun () -> processedCount <- processedCount + 1; processedCount)
+        toSchedule |> Array.iter bc.Add
+        processedCount
+    
+    // TODO Could avoid workers with some semaphores
+    let workerWork () : unit =
+        for node in bc.GetConsumingEnumerable(ct) do
+            if not ct.IsCancellationRequested then // improve
+                let processedCount = processItem node
+                if stop processedCount then
+                    bc.CompleteAdding()
+
+    Array.Parallel.map workerWork |> ignore // use cancellation
+    ()
 
 let test () =
     // Create an agent that can run at most 2 tasks in parallel

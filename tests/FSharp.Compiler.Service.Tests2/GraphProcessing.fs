@@ -1,9 +1,9 @@
-﻿module FSharp.Compiler.Service.Tests.GraphProcessing
+﻿/// Parallel processing of graph of work items with dependencies
+module FSharp.Compiler.Service.Tests.GraphProcessing
 
-open System
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Threading
+open FSharp.Compiler.Service.Tests.Graph
 
 /// Used for processing
 type NodeInfo<'Item> =
@@ -12,12 +12,12 @@ type NodeInfo<'Item> =
         Deps : 'Item[]
         TransitiveDeps : 'Item[]
         Dependants : 'Item[]
-        ProcessedDepsCount : int
     }
 type Node<'Item, 'State, 'Result> =
     {
         Info : NodeInfo<'Item>
-        Result : ('State * 'Result) option
+        mutable ProcessedDepsCount : int
+        mutable Result : ('State * 'Result) option
     }
 
 // TODO Do we need to suppress some error logging if we
@@ -66,98 +66,74 @@ let combineResults
     let state = Array.fold folder firstState resultsToAdd
     state
     
-   
-// TODO Test this version
-/// Untested version that uses MailboxProcessor.
-/// See http://www.fssnip.net/nX/title/Limit-degree-of-parallelism-using-an-agent for implementation
-let processInParallelUsingMailbox
-    (firstItems : 'Item[])
-    (work : 'Item -> Async<'Item[]>)
-    (parallelism : int)
-    (notify : int -> unit)
-    (ct : CancellationToken)
-    : unit
-    =
-    let processedCountLock = Object()
-    let mutable processedCount = 0
-    let agent = Parallel.threadingLimitAgent 10 ct
-    let rec processItem item =
-        async {
-            let! toSchedule = work item
-            let pc = lock processedCountLock (fun () -> processedCount <- processedCount + 1; processedCount)
-            notify pc
-            toSchedule |> Array.iter (fun x -> agent.Post(Parallel.Start(processItem x)))   
-        }
-    firstItems |> Array.iter (fun x -> agent.Post(Parallel.Start(processItem x)))
-    ()    
-    
-// TODO Could replace with MailboxProcessor+Tasks/Asyncs instead of BlockingCollection + Threads
-// See http://www.fssnip.net/nX/title/Limit-degree-of-parallelism-using-an-agent    
-let processInParallel
-    (firstItems : 'Item[])
-    (work : 'Item -> 'Item[])
-    (parallelism : int)
-    (stop : int -> bool)
-    (ct : CancellationToken)
-    : unit
-    =
-    let bc = new BlockingCollection<'Item>()
-    firstItems |> Array.iter bc.Add
-    let processedCountLock = Object()
-    let mutable processedCount = 0
-    let processItem item =
-        let toSchedule = work item
-        let processedCount = lock processedCountLock (fun () -> processedCount <- processedCount + 1; processedCount)
-        toSchedule |> Array.iter bc.Add
-        processedCount
-    
-    // TODO Could avoid workers with some semaphores
-    let workerWork () : unit =
-        for node in bc.GetConsumingEnumerable(ct) do
-            if not ct.IsCancellationRequested then // improve
-                let processedCount = processItem node
-                if stop processedCount then
-                    bc.CompleteAdding()
-
-    Array.Parallel.map workerWork |> ignore // use cancellation
-    ()
-     
-let processGraph
-    (graph : FileGraph)
-    (doWork : 'Item -> 'State -> 'Result * 'State)
+// TODO Could be replaced with a simpler recursive approach with memoised per-item results
+let processGraph<'Item, 'State, 'Result when 'Item : equality>
+    (graph : Graph<'Item>)
+    (doWork : 'Item -> 'State -> 'State * 'Result)
     (folder : 'State -> 'Result -> 'State)
     (parallelism : int)
     : 'State
     =
-    let transitiveDeps = graph |> calcTransitiveGraph
-    let dependants = graph |> reverseGraph
-    let nodes = graph.Keys |> Seq.map ...
-    let leaves = nodes |> Seq.filter ...
+    let transitiveDeps = graph |> Graph.transitive
+    let dependants = graph |> Graph.reverse
+    let makeNode (item : 'Item) : Node<'Item,'State,'Result> =
+        let info =
+            {
+                Item = item
+                Deps = graph[item]
+                TransitiveDeps = transitiveDeps[item]
+                Dependants = dependants[item]
+            }
+        {
+            Info = info
+            Result = None
+            ProcessedDepsCount = 0
+        }
+        
+    let nodes =
+        graph.Keys
+        |> Seq.map (fun item -> item, makeNode item)
+        |> readOnlyDict
+    let lookup item = nodes[item]
+    let lookupMany items = items |> Array.map lookup
+        
+    let leaves =
+        nodes.Values
+        |> Seq.filter (fun n -> n.Info.Deps.Length = 0)
+        |> Seq.toArray
+    
     let work
         (node : Node<'Item, 'State, 'Result>)
         : Node<'Item, 'State, 'Result>[]
         =
-        let inputState = combineResults node.Deps node.TransitiveDeps folder
-        let res = doWork node.Info.Item
-        node.Result <- res
+        let deps = lookupMany node.Info.Deps
+        let transitiveDeps = lookupMany node.Info.TransitiveDeps
+        let inputState = combineResults deps transitiveDeps folder
+        let res = doWork node.Info.Item inputState
+        node.Result <- Some res
+        // Need to double-check that only one dependency schedules this dependant
         let unblocked =
             node.Info.Dependants
+            |> lookupMany
             |> Array.filter (fun x -> 
                 let pdc =
                     lock x (fun () ->
-                    x.Info.ProcessedDepsCount++
-                    x.Info.PrcessedDepsCount
-                )
+                        x.ProcessedDepsCount <- x.ProcessedDepsCount + 1
+                        x.ProcessedDepsCount
+                    )
                 pdc = node.Info.Deps.Length
             )
-         |> Array.map (fun x -> nodes[x])
-     unblocked
+        unblocked
      
-    processInParallel
+    use cts = new CancellationTokenSource()
+     
+    Parallel.processInParallel
         leaves
         work
         parallelism
-        (fun processedCount -> processedCount = nodes.Length)
+        (fun processedCount -> processedCount = nodes.Count)
+        cts.Token
 
-    let state = combineResults nodes nodes addCheckResultsToTcState 
+    let nodesArray = nodes.Values |> Seq.toArray
+    let state = combineResults nodesArray nodesArray folder 
     state

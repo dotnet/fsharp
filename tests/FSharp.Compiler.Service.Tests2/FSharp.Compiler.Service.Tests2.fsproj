@@ -31,16 +31,18 @@
     <Compile Include="TestASTVisit.fs" />
     <Compile Include="DepResolving.fs" />
     <Compile Include="TestDepResolving.fs" />
-    <Compile Include="FileGraph.fs" />
+    <Compile Include="Graph.fs" />
     <Compile Include="RunCompiler.fs" />
     <None Include="Big.fs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <Content Include="Docs.md" />
+    <Compile Include="Types.fs" />
     <Compile Include="Program.fs" />
     <Compile Include="Parallel.fs" />
-    <Compile Include="code2.fs" />
     <Compile Include="GraphProcessing.fs" />
+    <Compile Include="FileInfoGathering.fs" />
+    <Compile Include="code2.fs" />
+    <Content Include="Docs.md" />
   </ItemGroup>
 
   <ItemGroup>
