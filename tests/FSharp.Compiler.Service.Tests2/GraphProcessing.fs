@@ -120,6 +120,7 @@ let processGraph<'Item, 'State, 'Result when 'Item : equality>
         let inputState = combineResults emptyState deps transitiveDeps folder
         let singleRes = doWork node.Info.Item inputState
         let state = folder inputState singleRes
+        //let state,  = folder inputState singleRes
         node.Result <- Some (state, singleRes)
         
         // Need to double-check that only one dependency schedules this dependant
@@ -136,7 +137,7 @@ let processGraph<'Item, 'State, 'Result when 'Item : equality>
                 pdc = x.Info.Deps.Length
             )
         unblocked
-     
+    
     
     use cts = new CancellationTokenSource()
     

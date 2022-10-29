@@ -1432,10 +1432,12 @@ let CheckMultipleInputsSequential (ctok, checkForErrors, tcConfig, tcImports, tc
     (tcState, inputs)
     ||> List.mapFold (CheckOneInputEntry args)
 
+
+type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
+
 /// Use parallel checking of implementation files that have signature files
 let CheckMultipleInputsInParallel
-    (
-        ctok,
+    ((ctok,
         checkForErrors,
         tcConfig: TcConfig,
         tcImports,
@@ -1443,8 +1445,9 @@ let CheckMultipleInputsInParallel
         prefixPathOpt,
         tcState,
         eagerFormat,
-        inputs
-    ) =
+        inputs)
+        : CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list)
+    : PartialResult list * TcState =
 
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
 
@@ -1558,8 +1561,9 @@ let CheckMultipleInputsInParallel2
         tcState,
         eagerFormat,
         inputs
-    ) =
+    ) : PartialResult list * TcState =
 
+    let _ = ctok // TODO Use
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
 
     // We create one CapturingDiagnosticLogger for each file we are processing and
@@ -1617,7 +1621,7 @@ let CheckMultipleInputsInParallel2
             // This function will type check all the files where it knows all the dependent file have already been seen.
             // The `freeFiles` are a set of file indexes that have been type checked in a previous run.
             //  `processedFiles` stores the result of a typed checked file in a mutable fashion.
-            let rec visit ((currentTcState: TcState, currentPriorErrors: bool) as state : State) (freeFiles: Set<int>) (processedFiles: Choice<_, _> array) =
+            let rec visit ((currentTcState: TcState, currentPriorErrors: bool) as state : State) (freeFiles: Set<int>) (processedFiles: _ array) =
                 // Find files that still needs processing.
                 let unprocessedFiles = freeFiles |> Set.difference (set [| 0..lastIndex |])
 
@@ -1672,40 +1676,46 @@ let CheckMultipleInputsInParallel2
                                     )
 
                                 return
-                                    (fun tcState ->
+                                    (fun (tcState, _priorErrors : bool) ->
                                         let tcState =
                                             { tcState with
                                                 tcsCreatesGeneratedProvidedTypes =
                                                     tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
                                             }
 
-                                        let ccuSigForFile, updateTcState =
-                                            AddCheckResultsToTcState
-                                                (tcGlobals,
-                                                 amap,
-                                                 false,
-                                                 prefixPathOpt,
-                                                 tcSink,
-                                                 tcState.tcsTcImplEnv,
-                                                 input.QualifiedName,
-                                                 implFile.Signature)
-                                                tcState
+                                        let ccuSigForFile, updatedTcState =
+                                            let results =
+                                                tcGlobals,
+                                                amap,
+                                                false,
+                                                prefixPathOpt,
+                                                tcSink,
+                                                tcState.tcsTcImplEnv,
+                                                input.QualifiedName,
+                                                implFile.Signature
+                                                
+                                            AddCheckResultsToTcState results tcState
 
-                                        fileIndex, Choice1Of2(tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile), logger, updateTcState)
+                                        let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
+                                        let hasErrors = logger.ErrorCount > 0
+                                        let priorOrCurrentErrors = priorErrors || hasErrors
+                                        let state = updatedTcState, priorOrCurrentErrors
+                                        
+                                        fileIndex, partialResult, state
+                                    )
                             }
                             |> Cancellable.runWithoutCancellation)
                         |> fun results ->
                             ((currentTcState, currentPriorErrors), results)
-                            ||> Array.fold (fun (tcState, priorErrors) result ->
+                            ||> Array.fold (fun state result ->
                                 // the `result` callback ensure that the TcState is synced correctly after a batch of file has been type checked in parallel.
                                 // I believe this bit cannot be done in parallel, yet the order in which we fold the state does not matter.
-                                let fileIndex, partialResult, logger, nextTcState = result tcState
-
+                                let fileIndex, partialResult, state = result state
                                 // Yikes!
+                                // Nah, it's okay.
                                 processedFiles.[fileIndex] <- partialResult
-
-                                let priorErrors = priorErrors || (logger.ErrorCount > 0)
-                                (nextTcState, priorErrors))
+                                state
+                            )
 
                     // The next set of free files are the previous ones + the files we just type checked.
                     let nextFreeIndexes =
@@ -1720,7 +1730,9 @@ let CheckMultipleInputsInParallel2
 
             visit (tcState, priorErrors) Set.empty (Array.zeroCreate inputsWithLoggers.Length)
 
-        partialResults, tcState)
+        let partialResults = partialResults |> Array.toList
+        partialResults, tcState
+    )
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
