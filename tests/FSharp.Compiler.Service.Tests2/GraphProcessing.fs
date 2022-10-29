@@ -30,11 +30,16 @@ type Node<'Item, 'State, 'Result> =
 /// <param name="transitiveDeps">Transitive dependencies of a node</param>
 /// <param name="folder">A way to fold a single result into existing state</param>
 let combineResults
+    (emptyState : 'State)
     (deps : Node<'Item, 'State, 'Result>[])
     (transitiveDeps : Node<'Item, 'State, 'Result>[])
     (folder : 'State -> 'Result -> 'State)
     : 'State
     =
+    match deps with
+    | [||] -> emptyState
+    | _ ->
+    
     let biggestDep =
         let sizeMetric node =
             // Could also use eg. total file size/AST size
@@ -54,7 +59,10 @@ let combineResults
     
     // Add single-file results of remaining transitive deps one-by-one using folder
     // Note: Good to preserve order here so that folding happens in file order
-    let included = HashSet(biggestDep.Info.TransitiveDeps)
+    let included =
+        let set = HashSet(biggestDep.Info.TransitiveDeps)
+        set.Add biggestDep.Info.Item |> ignore
+        set
     let resultsToAdd =
         transitiveDeps 
         |> Array.filter (fun dep -> included.Contains dep.Info.Item = false)
@@ -71,6 +79,7 @@ let processGraph<'Item, 'State, 'Result when 'Item : equality>
     (graph : Graph<'Item>)
     (doWork : 'Item -> 'State -> 'Result)
     (folder : 'State -> 'Result -> 'State)
+    (emptyState : 'State)
     (parallelism : int)
     : 'State
     =
@@ -108,7 +117,7 @@ let processGraph<'Item, 'State, 'Result when 'Item : equality>
         =
         let deps = lookupMany node.Info.Deps
         let transitiveDeps = lookupMany node.Info.TransitiveDeps
-        let inputState = combineResults deps transitiveDeps folder
+        let inputState = combineResults emptyState deps transitiveDeps folder
         let singleRes = doWork node.Info.Item inputState
         let state = folder inputState singleRes
         node.Result <- Some (state, singleRes)
@@ -123,7 +132,7 @@ let processGraph<'Item, 'State, 'Result when 'Item : equality>
                         x.ProcessedDepsCount <- x.ProcessedDepsCount + 1
                         x.ProcessedDepsCount
                     )
-                pdc = node.Info.Deps.Length
+                pdc = x.Info.Deps.Length
             )
         unblocked
      
@@ -137,5 +146,5 @@ let processGraph<'Item, 'State, 'Result when 'Item : equality>
         cts.Token
 
     let nodesArray = nodes.Values |> Seq.toArray
-    let state = combineResults nodesArray nodesArray folder 
+    let state = combineResults emptyState nodesArray nodesArray folder 
     state

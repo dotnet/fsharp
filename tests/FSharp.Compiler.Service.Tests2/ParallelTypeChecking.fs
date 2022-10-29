@@ -29,6 +29,7 @@ let typeCheckGraph (graph : FileGraph) : State =
             graph
             typeCheckFile
             folder
+            ""
             parallelism
     state
     

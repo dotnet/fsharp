@@ -17,6 +17,7 @@ type SourceFile =
         | :? SourceFile as p -> p.Name.Equals this.Name
         | _ -> false
     override this.GetHashCode () = this.Name.GetHashCode()
+    override this.ToString() = this.Name
 
 type SourceFiles = SourceFile[]
 
@@ -37,5 +38,6 @@ type File =
             | :? File as f -> f.Name.Equals this.Name
             | _ -> false
         override this.GetHashCode () = this.Name.GetHashCode()
+        override this.ToString() = this.Name
     
 type Files = File[]

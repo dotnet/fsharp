@@ -25,8 +25,8 @@ module Graph =
         |> Seq.map (fun node -> node, calcTransitiveEdges node)
         |> readOnlyDict
         
-    let reverse (graph : Graph<'Node>) : Graph<'Node> =
-        graph
+    let reverse (originalGraph : Graph<'Node>) : Graph<'Node> =
+        originalGraph
         // Collect all edges
         |> Seq.collect (fun (KeyValue(idx, deps)) -> deps |> Array.map (fun dep -> idx, dep))
         // Group dependants of the same dependencies together
@@ -36,7 +36,7 @@ module Graph =
         |> dict
         // Add nodes that are missing due to having no dependants
         |> fun graph ->
-            graph
+            originalGraph
             |> Seq.map (fun (KeyValue(idx, deps)) ->
                 match graph.TryGetValue idx with
                 | true, dependants -> idx, dependants

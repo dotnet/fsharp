@@ -12,10 +12,6 @@ let runCompiler () =
     
 [<Test>]
 let runGrapher () =
-    // let args =
-    //     System.IO.File.ReadAllLines(@"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.Service.Tests2\args.txt") |> Array.skip 1
-    // FSharp.Compiler.CommandLineMain.main args |> ignore
-    
     let deps : Graph<int> =
         [|
             0, [||]  // A
@@ -27,4 +23,12 @@ let runGrapher () =
         |]
         |> readOnlyDict
     
-    GraphProcessing.processGraph deps
+    let state =
+        GraphProcessing.processGraph
+            deps
+            (fun i state -> i)
+            (fun state res -> $"{state}+{res}")
+            ""
+            8
+    
+    printfn $"End state: {state}"

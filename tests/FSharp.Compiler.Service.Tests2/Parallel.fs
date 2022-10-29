@@ -89,9 +89,13 @@ let processInParallel
     let processedCountLock = Object()
     let mutable processedCount = 0
     let processItem item =
+        // printfn $"Processing {item}"
         let toSchedule = work item
         let processedCount = lock processedCountLock (fun () -> processedCount <- processedCount + 1; processedCount)
-        toSchedule |> Array.iter bc.Add
+        toSchedule
+        |> Array.iter (
+            fun next -> bc.Add(next)
+        )
         processedCount
     
     // TODO Could avoid workers with some semaphores
@@ -102,7 +106,7 @@ let processInParallel
                 if stop processedCount then
                     bc.CompleteAdding()
 
-    Array.Parallel.map workerWork |> ignore // use cancellation
+    Array.Parallel.map workerWork (Array.init parallelism (fun _ -> ())) |> ignore // use cancellation
     ()
 
 let test () =
