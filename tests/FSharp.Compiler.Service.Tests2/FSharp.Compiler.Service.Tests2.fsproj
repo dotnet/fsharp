@@ -27,22 +27,22 @@
       <Link>Common.fs</Link>
     </Compile>
     <Compile Include="Utils.fs" />
+    <Compile Include="Types.fs" />
     <Compile Include="ASTVisit.fs" />
-    <Compile Include="TestASTVisit.fs" />
-    <Compile Include="DepResolving.fs" />
-    <Compile Include="TestDepResolving.fs" />
+    <Compile Include="FileInfoGathering.fs" />
     <Compile Include="Graph.fs" />
-    <Compile Include="RunCompiler.fs" />
+    <Compile Include="DepResolving.fs" />
     <None Include="Big.fs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <Compile Include="Types.fs" />
-    <Compile Include="Program.fs" />
     <Compile Include="Parallel.fs" />
     <Compile Include="GraphProcessing.fs" />
-    <Compile Include="FileInfoGathering.fs" />
-    <Compile Include="code2.fs" />
+    <Compile Include="ParallelTypeChecking.fs" />
     <Content Include="Docs.md" />
+    <Compile Include="Tests\TestASTVisit.fs" />
+    <Compile Include="Tests\TestDepResolving.fs" />
+    <Compile Include="Tests\RunCompiler.fs" />
+    <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -69,7 +69,7 @@ let combineResults
 // TODO Could be replaced with a simpler recursive approach with memoised per-item results
 let processGraph<'Item, 'State, 'Result when 'Item : equality>
     (graph : Graph<'Item>)
-    (doWork : 'Item -> 'State -> 'State * 'Result)
+    (doWork : 'Item -> 'State -> 'Result)
     (folder : 'State -> 'Result -> 'State)
     (parallelism : int)
     : 'State
@@ -109,8 +109,10 @@ let processGraph<'Item, 'State, 'Result when 'Item : equality>
         let deps = lookupMany node.Info.Deps
         let transitiveDeps = lookupMany node.Info.TransitiveDeps
         let inputState = combineResults deps transitiveDeps folder
-        let res = doWork node.Info.Item inputState
-        node.Result <- Some res
+        let singleRes = doWork node.Info.Item inputState
+        let state = folder inputState singleRes
+        node.Result <- Some (state, singleRes)
+        
         // Need to double-check that only one dependency schedules this dependant
         let unblocked =
             node.Info.Dependants

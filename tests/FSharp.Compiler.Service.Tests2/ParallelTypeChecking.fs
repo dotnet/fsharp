@@ -1,6 +1,5 @@
-﻿module FSharp.Compiler.Service.Tests.code
+﻿module FSharp.Compiler.Service.Tests.ParallelTypeChecking
 
-open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Service.Tests.Graph
 open FSharp.Compiler.Service.Tests.Types
 
@@ -9,17 +8,21 @@ type FileGraph = Graph<File>
 let calcFileGraph (files : SourceFiles) : FileGraph =
     failwith ""
 
+// TODO Use real things
 type State = string
 type SingleResult = int
 
+// TODO Use the real thing
 let typeCheckFile (file : File) (state : State) : SingleResult
     =
     file.Idx.Idx
 
+// TODO Use the real thing
 let folder (state : string) (result : int) =
-    $"{state}+{result}" 
+    $"{state}+{result}"
 
-let typeCheckGraph (graph : FileGraph) : TcState =
+// TODO We probably need to return partial results as well
+let typeCheckGraph (graph : FileGraph) : State =
     let parallelism = 4 // cpu count?
     let state =
         GraphProcessing.processGraph
@@ -27,9 +30,9 @@ let typeCheckGraph (graph : FileGraph) : TcState =
             typeCheckFile
             folder
             parallelism
-     state
+    state
     
-let typeCheck (files : SourceFiles) : TcState =
+let typeCheck (files : SourceFiles) : State =
     let graph = calcFileGraph files
     let state = typeCheckGraph graph
     state

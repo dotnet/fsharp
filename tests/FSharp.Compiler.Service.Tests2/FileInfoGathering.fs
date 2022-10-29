@@ -30,16 +30,20 @@ let private gatherBackingInfo (files : SourceFiles) : Files =
     
 type ExtractedData =
     {
-        ModuleRefs : LongIdent[]
+        /// Order of the file in the project. Files with lower number cannot depend on files with higher number
         Tops : LongIdent[]
         ContainsModuleAbbreviations : bool
+        /// All partial module references found in this file's AST
+        ModuleRefs : LongIdent[]
     }
     
+/// All the data about a single file needed for the dependency resolution algorithm
 type FileData =
     {
         File : File
         Data : ExtractedData
     }
+    with member this.CodeSize = this.File.CodeSize
 
 let private gatherFileData (file : File) : ExtractedData =
     let moduleRefs, containsModuleAbbreviations = ASTVisit.findModuleRefs file.AST

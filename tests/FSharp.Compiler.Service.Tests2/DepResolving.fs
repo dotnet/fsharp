@@ -1,7 +1,13 @@
 ﻿module FSharp.Compiler.Service.Tests2.DepResolving
 
+#nowarn "40"
+
 open System
 open System.Collections.Generic
+open FSharp.Compiler.Service.Tests
+open FSharp.Compiler.Service.Tests.FileInfoGathering
+open FSharp.Compiler.Service.Tests.Graph
+open FSharp.Compiler.Service.Tests.Types
 open FSharp.Compiler.Service.Tests2.ASTVisit
 open FSharp.Compiler.Syntax
 
@@ -9,31 +15,7 @@ let log (msg : string) =
     let d = DateTime.Now.ToString("HH:mm:ss.fff")
     printfn $"{d} {msg}"
 
-/// File information for the algorithm
-type FileAST =
-    {
-        Name : string
-        Code : string
-        AST : ParsedInput
-    }
-
 type List<'a> = System.Collections.Generic.List<'a>
-
-/// All the information about a single file needed for the algorithm
-type File =
-    {
-        // Order of the file in the project. Files with lower number cannot depend on files with higher number
-        Idx : int
-        Name : string
-        Code : string
-        AST : ParsedInput
-        /// A list of top-level namespaces or a single top-level module
-        Tops : LongIdent[]
-        /// All partial module references found in this file's AST
-        ModuleRefs : LongIdent[]
-        ContainsModuleAbbreviations : bool
-    }
-    with member this.CodeSize = this.Code.Length
 
 type FileResult =
     {
@@ -42,38 +24,15 @@ type FileResult =
         Deps : string[]
     }
 
-type DepsGraph = IDictionary<int, int[]>
+type DepsGraph = Graph<File>
 
 type DepsResult =
     {
-        Files : File[]
+        Files : FileData[]
         Graph : DepsGraph
     }
 
 type References = Reference seq
-
-let calcTransitiveGraph (graph : IReadOnlyDictionary<int, int[]>) : IDictionary<int, int[]> =
-    let transitiveDeps = Dictionary<int, int[]>()
-    
-    let rec calcTransitiveDepsInner (idx : int) =
-        match transitiveDeps.TryGetValue idx with
-        | true, deps -> deps
-        | false, _ ->
-            let directDeps = graph[idx]
-            let deps =
-                directDeps
-                |> Array.collect (
-                    fun dep ->
-                        calcTransitiveDepsInner dep
-                        |> Array.append [|dep|]
-                )
-                |> Array.distinct
-            transitiveDeps[idx] <- deps
-            deps
-    
-    graph.Keys
-    |> Seq.map (fun idx -> idx, calcTransitiveDepsInner idx)
-    |> dict
 
 /// Algorithm for automatically detecting (lack of) file dependencies based on their AST contents
 [<RequireQualifiedAccess>]
@@ -92,9 +51,9 @@ module internal AutomatedDependencyResolving =
             /// <summary>Is this node reachable?</summary>
             /// <example>The following: "let x = A.B.x" has three reachable nodes: empty, 'A', 'A.B'.</example>
             mutable Reachable : bool
-            /// <summary>Files/graph nodes represented by this TrieNode.
+            /// <summary>Files represented by this TrieNode.
             /// All files whose any top-level module/namespace are the same as this TrieNode's 'path'.</summary>
-            GraphNodes : System.Collections.Generic.List<File>
+            Files : System.Collections.Generic.List<FileData>
         }
     
     let emptyList<'a> () =
@@ -111,7 +70,7 @@ module internal AutomatedDependencyResolving =
             Dictionary<_,_>(children)
         {
             // TODO Can avoid copying here by using an immutable structure or just using the same reference
-            GraphNodes = List<_>(trie.GraphNodes)
+            Files = List<_>(trie.Files)
             Children = children
             PotentialPrefix = trie.PotentialPrefix
             Reachable = trie.Reachable
@@ -122,14 +81,14 @@ module internal AutomatedDependencyResolving =
             TrieNode.Children = Dictionary([])
             PotentialPrefix = false
             Reachable = false
-            GraphNodes = emptyList()
+            Files = emptyList()
         }
 
     /// <summary>Build initial Trie from files and their top items</summary>
-    let buildTrie (files : File[]) : TrieNode =
+    let buildTrie (files : FileData[]) : TrieNode =
         let root = emptyTrie()
             
-        let addFileIdent (file : File) (ident : LongIdent) =
+        let addFileIdent (file : FileData) (ident : LongIdent) =
             // Go down from root using segments of the identifier, possibly extending the Trie with new nodes.
             let mutable node = root
             for segment in ident do
@@ -145,10 +104,10 @@ module internal AutomatedDependencyResolving =
                         child
                 node <- child
             // Add the file to the found leaf's list
-            node.GraphNodes.Add(file)
+            node.Files.Add(file)
             
-        let addFile (file : File) =
-            file.Tops
+        let addFile (file : FileData) =
+            file.Data.Tops
             |> Array.iter (addFileIdent file)
         
         // For every file add all its top-level modules/namespaces to the Trie
@@ -177,156 +136,121 @@ module internal AutomatedDependencyResolving =
     /// Uses the <a href="https://en.wikipedia.org/wiki/Trie">Trie</a> data structure.
     /// </remarks>
     /// <param name="nodes">A list of already parsed source files</param>
-    let detectFileDependencies (nodes : FileAST[]) : DepsResult =
-        // Extract necessary information from all files in parallel - top-level items and all (partial) module references
-        let nodes =
-            nodes
-            |> Array.Parallel.mapi (fun i {Name = name; Code = code; AST = ast} -> 
-                let moduleRefs, containsModuleAbbreviations = findModuleRefs ast
-                let top = topModuleOrNamespaces ast
-                {
-                    Idx = i
-                    Name = name
-                    Code = code
-                    AST = ast
-                    Tops = top
-                    ModuleRefs = moduleRefs
-                    ContainsModuleAbbreviations = containsModuleAbbreviations
-                }
-            )
-        
+    let detectFileDependencies (files : SourceFiles) : DepsResult =
+        let nodes = gatherForAllFiles files
         let nodesByName =
             nodes
-            |> Seq.map (fun f -> f.Name, f)
+            |> Seq.map (fun f -> f.File, f)
             |> dict
             
         log "ASTs traversed"
         
         let filesWithModuleAbbreviations =
             nodes
-            |> Array.filter (fun n -> n.ContainsModuleAbbreviations)
-            |> Array.map (fun f -> f.Idx)
-            
-        let allIndices =
-            nodes
-            |> Array.map (fun f -> f.Idx)
+            |> Array.filter (fun n -> n.Data.ContainsModuleAbbreviations)
             
         let trie = buildTrie nodes
+        
+        let processFile (node : FileData) =
+            let deps =
+                // Assume that a file with module abbreviations can depend on anything
+                match node.Data.ContainsModuleAbbreviations with
+                | true -> nodes
+                | false ->
+                    // Clone the original Trie as we're going to mutate the copy
+                    let trie = cloneTrie trie
+                    
+                    // Keep a list of reachable nodes (ie. potential prefixes and their ancestors)
+                    let reachable = emptyList<TrieNode>()
+                    let markReachable (node : TrieNode) =
+                        if not node.Reachable then
+                            node.Reachable <- true
+                            reachable.Add(node)
+                    
+                    // Keep a list of potential prefixes
+                    let potentialPrefixes = emptyList<TrieNode>()
+                    let markPotentialPrefix (node : TrieNode) =
+                        if not node.PotentialPrefix then
+                            node.PotentialPrefix <- true
+                            potentialPrefixes.Add(node)
+                        // Every potential prefix is reachable
+                        markReachable node
+                    
+                    // Mark root (empty prefix) as a potential prefix
+                    markPotentialPrefix trie
+                    
+                    /// <summary>
+                    /// Walk down from 'node' using 'id' as the path.
+                    /// Mark all visited nodes as reachable, and the final node as a potential prefix.
+                    /// Short-circuit when a leaf is reached.
+                    /// </summary>
+                    /// <remarks>
+                    /// When the path leads outside the Trie, the Trie is not extended and no node is marked as a potential prefix.
+                    /// This is just a performance optimisation - all the files are linked to already existing nodes, so there is no need to create and visit deeper nodes. 
+                    /// </remarks>
+                    let rec walkDownAndMark (id : LongIdent) (node : TrieNode) =
+                        match id with
+                        // Reached end of the identifier - new reachable node 
+                        | [] ->
+                            markPotentialPrefix node
+                        // More segments exist
+                        | segment :: rest ->
+                            // Visit (not 'reach') the TrieNode
+                            markReachable node
+                            match node.Children.TryGetValue(segment.idText) with
+                            // A child for the segment exists - continue there
+                            | true, child ->
+                                walkDownAndMark rest child
+                            // A child for the segment doesn't exist - stop, since we don't care about the non-existent part of the Trie
+                            | false, _ ->
+                                ()
+                    
+                    let processRef (id : LongIdent) =
+                        // Start at every potential prefix,
+                        List<_>(potentialPrefixes) // Copy the list for iteration as the original is going to be extended.
+                        // Extend potential prefixes with this 'id'
+                        |> Seq.iter (walkDownAndMark id)
+                    
+                    // Add top-level module/namespaces as the first reference (possibly not necessary as maybe already in the list)
+                    // TODO When multiple top-level namespaces exist, we should check that it's OK to add all of them at the start (out of order).
+                    // Later on we might want to preserve the order by returning the top-level namespaces interleaved with module refs 
+                    let moduleRefs =
+                        Array.append node.Data.Tops node.Data.ModuleRefs
+                    
+                    // Process module refs in order, marking more and more TrieNodes as reachable and potential prefixes
+                    moduleRefs
+                    |> Array.iter processRef
+                    
+                    // Collect files from all reachable TrieNodes
+                    let deps =
+                        reachable
+                        |> Seq.collect (fun node -> node.Files)
+                        // Assume that this file depends on all files that have any module abbreviations
+                        // TODO Handle module abbreviations in a better way
+                        // For starters: can module abbreviations affect other files?
+                        // If not, then the below is not necessary.
+                        |> Seq.append filesWithModuleAbbreviations
+                        |> Seq.toArray
+                    
+                    deps
+                // We know a file can't depend on a file further down in the project definition (or on itself)
+                |> Array.filter (fun dep -> dep.File.Idx < node.File.Idx)
+                // Filter out deps onto .fs files that have backing .fsi files
+                |> Array.filter (fun dep -> not dep.File.FsiBacked)
+                
+            // Return the node and its dependencies
+            node.File, deps |> Array.map (fun d -> d.File)
         
         // Find dependencies for all files
         let graph =
             nodes
-            |> Array.Parallel.map (fun node ->
-                let deps =
-                    // Assume that a file with module abbreviations can depend on anything
-                    match node.ContainsModuleAbbreviations with
-                    | true -> allIndices
-                    | false ->
-                        // Clone the original Trie as we're going to mutate the copy
-                        let trie = cloneTrie trie
-                        
-                        // Keep a list of reachable nodes (ie. potential prefixes and their ancestors)
-                        let reachable = emptyList<TrieNode>()
-                        let markReachable (node : TrieNode) =
-                            if not node.Reachable then
-                                node.Reachable <- true
-                                reachable.Add(node)
-                        
-                        // Keep a list of potential prefixes
-                        let potentialPrefixes = emptyList<TrieNode>()
-                        let markPotentialPrefix (node : TrieNode) =
-                            if not node.PotentialPrefix then
-                                node.PotentialPrefix <- true
-                                potentialPrefixes.Add(node)
-                            // Every potential prefix is reachable
-                            markReachable node
-                        
-                        // Mark root (empty prefix) as a potential prefix
-                        markPotentialPrefix trie
-                        
-                        /// <summary>
-                        /// Walk down from 'node' using 'id' as the path.
-                        /// Mark all visited nodes as reachable, and the final node as a potential prefix.
-                        /// Short-circuit when a leaf is reached.
-                        /// </summary>
-                        /// <remarks>
-                        /// When the path leads outside the Trie, the Trie is not extended and no node is marked as a potential prefix.
-                        /// This is just a performance optimisation - all the files are linked to already existing nodes, so there is no need to create and visit deeper nodes. 
-                        /// </remarks>
-                        let rec walkDownAndMark (id : LongIdent) (node : TrieNode) =
-                            match id with
-                            // Reached end of the identifier - new reachable node 
-                            | [] ->
-                                markPotentialPrefix node
-                            // More segments exist
-                            | segment :: rest ->
-                                // Visit (not 'reach') the TrieNode
-                                markReachable node
-                                match node.Children.TryGetValue(segment.idText) with
-                                // A child for the segment exists - continue there
-                                | true, child ->
-                                    walkDownAndMark rest child
-                                // A child for the segment doesn't exist - stop, since we don't care about the non-existent part of the Trie
-                                | false, _ ->
-                                    ()
-                        
-                        let processRef (id : LongIdent) =
-                            // Start at every potential prefix,
-                            List<_>(potentialPrefixes) // Copy the list for iteration as the original is going to be extended.
-                            // Extend potential prefixes with this 'id'
-                            |> Seq.iter (walkDownAndMark id)
-                        
-                        // Add top-level module/namespaces as the first reference (possibly not necessary as maybe already in the list)
-                        // TODO When multiple top-level namespaces exist, we should check that it's OK to add all of them at the start (out of order).
-                        // Later on we might want to preserve the order by returning the top-level namespaces interleaved with module refs 
-                        let moduleRefs =
-                            Array.append node.Tops node.ModuleRefs
-                        
-                        // Process module refs in order, marking more and more TrieNodes as reachable and potential prefixes
-                        moduleRefs
-                        |> Array.iter processRef
-                        
-                        // Collect files from all reachable TrieNodes
-                        let deps =
-                            reachable
-                            |> Seq.collect (fun node -> node.GraphNodes)
-                            |> Seq.map (fun n -> n.Idx)
-                            // Assume that this file depends on all files that have any module abbreviations
-                            // TODO Handle module abbreviations in a better way  
-                            |> Seq.append filesWithModuleAbbreviations
-                            |> Seq.toArray
-                        
-                        deps
-                    // We know a file can't depend on a file further down in the project definition (or on itself)
-                    |> Array.filter (fun depIdx -> depIdx < node.Idx)
-                    // Filter out deps onto .fs files that have backing .fsi files
-                    // TODO This isn't fully correct - need to take into account the order of files
-                    |> Array.filter (fun depIdx ->
-                        let dep = nodes[depIdx]
-                        // If it's an impl file
-                        if dep.Name.EndsWith(".fs") then
-                            // See if it has an .fsi file (for now don't consider order)
-                            let depFsiName = dep.Name + "i"
-                            match nodesByName.TryGetValue depFsiName with
-                            | true, _ ->
-                                // There is an .fsi file - remove a dependency onto the .fs file
-                                false
-                            | false, _ ->
-                                // There is no .fsi file - keep the dependency
-                                true
-                        else
-                            // It's a sign file - keep the dependency
-                            true
-                    )
-                    
-                // Return the node and its dependencies
-                node.Idx, deps
-            )
-            |> dict
+            // TODO Async + cancellations
+            |> Array.Parallel.map processFile
+            |> readOnlyDict
         
         let totalSize1 = graph |> Seq.sumBy (fun (KeyValue(k,v)) -> v.Length)
         // Calculate transitive closure of the graph
-        let graph = calcTransitiveGraph graph
+        let graph = Graph.transitive graph
         let totalSize2 = graph |> Seq.sumBy (fun (KeyValue(k,v)) -> v.Length)
         
         printfn $"Non-transitive size: {totalSize1}, transitive size: {totalSize2}"
@@ -346,37 +270,22 @@ let analyseEfficiency (result : DepsResult) : unit =
         result.Files
         |> Array.sumBy (fun file -> int64(file.CodeSize))
     
-    let filesDict =
-        result.Files
-        |> Seq.map (fun file -> file.Idx, file)
-        |> dict
-    
-    let depths =
-        result.Files
-        |> Seq.map (fun file -> KeyValuePair(file.Idx, -1L))
-        |> Dictionary<_,_>
-    
     // Use depth-first search to calculate 'depth' of each file
-    let rec depthDfs (idx : int) =
-        match depths[idx] with
-        | -1L ->
-            // Visit this node
-            let file = filesDict[idx]
-            let deepestChild =
-                match result.Graph[file.Idx] with
-                | [||] -> 0L
-                | d -> d |> Array.map depthDfs |> Array.max
-            let depth = int64(file.CodeSize) + deepestChild
-            depths[idx] <- depth
-            depth
-        | depth ->
-            // Already visited
-            depth
+    let rec depthDfs =
+        Utils.memoize (
+            fun (file : File) ->
+                let deepestChild =
+                    match result.Graph[file] with
+                    | [||] -> 0L
+                    | d -> d |> Array.map depthDfs |> Array.max
+                let depth = int64(file.CodeSize) + deepestChild
+                depth
+        )
     
     // Run DFS for every file node, collect the maximum depth found
     let maxDepth =
         result.Files
-        |> Array.map (fun f -> depthDfs f.Idx)
+        |> Array.map (fun f -> depthDfs f.File)
         |> Array.max
         
     log $"Total file size: {totalFileSize}. Max depth: {maxDepth}. Max Depth/Size = %.1f{100.0 * double(maxDepth) / double(totalFileSize)}%%"
