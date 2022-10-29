@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace Microsoft.VisualStudio.FSharp.UIResources
 {
     /// <summary>
-    /// Interaction logic for CodeLensOptionPage.xaml
+    /// Interaction logic for LensOptionPage.xaml
     /// </summary>
-    internal partial class CodeLensOptionControl : UserControl
+    internal partial class LensOptionControl : UserControl
     {
-        public CodeLensOptionControl()
+        public LensOptionControl()
         {
             InitializeComponent();
         }

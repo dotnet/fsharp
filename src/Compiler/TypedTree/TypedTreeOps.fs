@@ -6049,7 +6049,7 @@ and remapTyconRepr ctxt tmenv repr =
                          let ctxt = st.Context.RemapTyconRefs(unbox >> remapTyconRef tmenv.tyconRefRemap >> box) 
                          ProvidedType.ApplyContext (st, ctxt)) }
 #endif
-    | TNoRepr _ -> repr
+    | TNoRepr -> repr
     | TAsmRepr _ -> repr
     | TMeasureableRepr x -> TMeasureableRepr (remapType tmenv x)
 
@@ -9684,10 +9684,10 @@ let rec EvalAttribArgExpr g x =
         | Const.Double _
         | Const.Single _
         | Const.Char _
-        | Const.Zero _
+        | Const.Zero
         | Const.String _ -> 
             x
-        | Const.Decimal _ | Const.IntPtr _ | Const.UIntPtr _ | Const.Unit _ ->
+        | Const.Decimal _ | Const.IntPtr _ | Const.UIntPtr _ | Const.Unit ->
             errorR (Error ( FSComp.SR.tastNotAConstantExpression(), m))
             x
 
