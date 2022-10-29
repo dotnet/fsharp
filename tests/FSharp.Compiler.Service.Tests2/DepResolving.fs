@@ -138,13 +138,9 @@ module internal AutomatedDependencyResolving =
     /// <param name="nodes">A list of already parsed source files</param>
     let detectFileDependencies (files : SourceFiles) : DepsResult =
         let nodes = gatherForAllFiles files
-        let nodesByName =
-            nodes
-            |> Seq.map (fun f -> f.File, f)
-            |> dict
-            
         log "ASTs traversed"
-        
+        let backed = nodes |> Array.filter (fun n -> n.File.FsiBacked)
+        printfn $"{backed.Length} backed files found"
         let filesWithModuleAbbreviations =
             nodes
             |> Array.filter (fun n -> n.Data.ContainsModuleAbbreviations)
@@ -245,13 +241,17 @@ module internal AutomatedDependencyResolving =
         let graph =
             nodes
             // TODO Async + cancellations
-            |> Array.Parallel.map processFile
+            |> Array.map processFile
+            // |> Array.Parallel.map processFile
             |> readOnlyDict
         
-        let totalSize1 = graph |> Seq.sumBy (fun (KeyValue(k,v)) -> v.Length)
-        // Calculate transitive closure of the graph
-        let graph = Graph.transitive graph
-        let totalSize2 = graph |> Seq.sumBy (fun (KeyValue(k,v)) -> v.Length)
+        let totalSize1 =
+            graph
+            |> Seq.sumBy (fun (KeyValue(k,v)) -> v.Length)
+        let totalSize2 =
+            graph
+            |> Graph.transitive 
+            |> Seq.sumBy (fun (KeyValue(k,v)) -> v.Length)
         
         printfn $"Non-transitive size: {totalSize1}, transitive size: {totalSize2}"
         

@@ -2,7 +2,8 @@
 
 open Buildalyzer
 open FSharp.Compiler.Service.Tests
-open FSharp.Compiler.Service.Tests2.ASTVisit
+open FSharp.Compiler.Service.Tests.Types
+open FSharp.Compiler.Service.Tests.Utils
 open FSharp.Compiler.Service.Tests2.DepResolving
 open NUnit.Framework
 open Newtonsoft.Json
@@ -77,7 +78,7 @@ module GH3 =
 """
 
     [
-        "Abbr.fs", WithAbbreviations
+        // "Abbr.fs", WithAbbreviations
         "A.fsi", A_fsi
         "A.fs", A
         "B.fs", B
@@ -95,14 +96,20 @@ let TestHardcodedFiles() =
    
     let nodes =
         sampleFiles
-        |> List.map (fun (name, code) -> {FileAST.Name = name; FileAST.Code = code; FileAST.AST = parseSourceCode(name, code)})
+        |> List.mapi (fun i (name, code) ->
+            {
+                Name = name
+                Idx = FileIdx.make i
+                Code = code
+                AST = parseSourceCode(name, code)
+            } : SourceFile)
         |> List.toArray
     
     let graph = AutomatedDependencyResolving.detectFileDependencies nodes
 
     printfn "Detected file dependencies:"
     graph.Graph
-    |> Seq.iter (fun (KeyValue(idx, deps)) -> printfn $"{graph.Files[idx].Name} -> %+A{deps |> Array.map(fun d -> graph.Files[d].Name)}")
+    |> Seq.iter (fun (KeyValue(file, deps)) -> printfn $"{file.Name} -> %+A{deps |> Array.map(fun d -> d.Name)}")
     
     analyseEfficiency graph
     
@@ -133,15 +140,15 @@ let TestProject (projectFile : string) =
     let files = parseProjectAndGetSourceFiles projectFile
     let files =
         files
-        |> Array.Parallel.map (fun f ->
+        |> Array.Parallel.mapi (fun i f ->
             let code = System.IO.File.ReadAllText(f)
             let ast = getParseResults code
-            {Name = f; Code = code; AST = ast}
-        )
-        |> Array.filter (fun x ->
-            // true
-            ASTVisit.findModuleAndTypeRefs x.AST
-            |> Array.forall (function | ReferenceOrAbbreviation.Reference _ -> true | ReferenceOrAbbreviation.Abbreviation _ -> false)
+            {
+                Name = f
+                Idx = FileIdx.make i
+                Code = code
+                AST = ast
+            } : SourceFile
         )
     let N = files.Length
     log $"{N} files read and parsed"
@@ -149,10 +156,10 @@ let TestProject (projectFile : string) =
     let graph = AutomatedDependencyResolving.detectFileDependencies files
     log "Deps detected"
     
-    let totalDeps = graph.Graph |> Seq.sumBy (fun (KeyValue(idx, deps)) -> deps.Length)
+    let totalDeps = graph.Graph |> Seq.sumBy (fun (KeyValue(file, deps)) -> deps.Length)
     let maxPossibleDeps = (N * (N-1)) / 2 
     
-    let graphJson = graph.Graph |> Seq.map (fun (KeyValue(idx, deps)) -> graph.Files[idx].Name, deps |> Array.map (fun d -> graph.Files[d].Name)) |> dict
+    let graphJson = graph.Graph |> Seq.map (fun (KeyValue(file, deps)) -> file.Name, deps |> Array.map (fun d -> file.Name)) |> dict
     let json = JsonConvert.SerializeObject(graphJson, Formatting.Indented)
     let path = $"{System.IO.Path.GetFileName(projectFile)}.deps.json"
     System.IO.File.WriteAllText(path, json)

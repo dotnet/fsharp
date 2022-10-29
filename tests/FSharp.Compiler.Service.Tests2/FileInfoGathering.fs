@@ -7,13 +7,14 @@ open FSharp.Compiler.Service.Tests.Utils
 open FSharp.Compiler.Service.Tests2
 open FSharp.Compiler.Syntax
 
-let private gatherBackingInfo (files : SourceFiles) : Files =
+let internal gatherBackingInfo (files : SourceFiles) : Files =
     let seenSigFiles = HashSet<string>()
     files
     |> Array.mapi (fun i f ->
         let fsiBacked =
             match f.AST with
             | ParsedInput.SigFile _ ->
+                seenSigFiles.Add f.Name |> ignore
                 false
             | ParsedInput.ImplFile _ ->
                 let fsiName = System.IO.Path.ChangeExtension(f.Name, "fsi")

@@ -11,8 +11,6 @@ type Graph<'Node> = IReadOnlyDictionary<'Node, 'Node[]>
 module Graph =
     
     let transitive<'Node when 'Node : equality> (graph : Graph<'Node>) : Graph<'Node> =
-        let transitiveGraph = Dictionary<'Node, 'Node[]>()
-        
         let rec calcTransitiveEdges =
             fun (node : 'Node) ->
                 let edgeTargets = graph[node]
@@ -20,12 +18,12 @@ module Graph =
                 |> Array.collect calcTransitiveEdges
                 |> Array.append edgeTargets
                 |> Array.distinct
+            // Dispose of memoisation context
             |> memoize
         
         graph.Keys
-        |> Seq.iter (fun idx -> calcTransitiveEdges idx |> ignore)
-        
-        transitiveGraph :> IReadOnlyDictionary<_,_>
+        |> Seq.map (fun node -> node, calcTransitiveEdges node)
+        |> readOnlyDict
         
     let reverse (graph : Graph<'Node>) : Graph<'Node> =
         graph

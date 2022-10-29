@@ -61,15 +61,15 @@ let processInParallelUsingMailbox
     =
     let processedCountLock = Object()
     let mutable processedCount = 0
-    let agent = Parallel.threadingLimitAgent 10 ct
+    let agent = threadingLimitAgent 10 ct
     let rec processItem item =
         async {
             let! toSchedule = work item
             let pc = lock processedCountLock (fun () -> processedCount <- processedCount + 1; processedCount)
             notify pc
-            toSchedule |> Array.iter (fun x -> agent.Post(Parallel.Start(processItem x)))   
+            toSchedule |> Array.iter (fun x -> agent.Post(Start(processItem x)))   
         }
-    firstItems |> Array.iter (fun x -> agent.Post(Parallel.Start(processItem x)))
+    firstItems |> Array.iter (fun x -> agent.Post(Start(processItem x)))
     ()    
     
 // TODO Could replace with MailboxProcessor+Tasks/Asyncs instead of BlockingCollection + Threads
