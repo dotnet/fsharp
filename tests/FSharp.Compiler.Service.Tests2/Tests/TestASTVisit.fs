@@ -39,7 +39,6 @@ let ``Top level stuff extraction`` () =
     let parseResults = 
         getParseResults
             """
-
 module A1 = let a = 3
 module A2 = let a = 3
 module A3 = let a = 3
@@ -70,12 +69,13 @@ module B =
             Y : A4.Y
         }
 
-let c = A4.a
-let d = A4.A1.a
-open A4
-let e = A1.a
-open A1
-let f = a
+module LetBindings =
+    let c = A4.a
+    let d = A4.A1.a
+    open A4
+    let e = A1.a
+    open A1
+    let f = a
 """
 
     let stuff = findModuleAndTypeRefs parseResults

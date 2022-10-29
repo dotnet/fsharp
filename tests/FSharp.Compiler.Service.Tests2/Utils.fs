@@ -14,4 +14,4 @@ type FileIdx =
     with
         member this.Idx = match this with FileIdx idx -> idx
         override this.ToString() = this.Idx.ToString()
-        static member make (idx : int) = FileIdx idx 
+        static member make (idx : int) = FileIdx idx

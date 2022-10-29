@@ -128,6 +128,7 @@ let processGraph<'Item, 'State, 'Result when 'Item : equality>
             |> lookupMany
             |> Array.filter (fun x -> 
                 let pdc =
+                    // TODO Not ideal, better ways most likely exist
                     lock x (fun () ->
                         x.ProcessedDepsCount <- x.ProcessedDepsCount + 1
                         x.ProcessedDepsCount
@@ -136,8 +137,9 @@ let processGraph<'Item, 'State, 'Result when 'Item : equality>
             )
         unblocked
      
+    
     use cts = new CancellationTokenSource()
-     
+    
     Parallel.processInParallel
         leaves
         work

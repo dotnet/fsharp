@@ -6,6 +6,7 @@ open FSharp.Compiler.Service.Tests.Types
 type FileGraph = Graph<File>
 
 let calcFileGraph (files : SourceFiles) : FileGraph =
+    // TODO Use DepResolving.fs
     failwith ""
 
 // TODO Use real things
@@ -18,7 +19,7 @@ let typeCheckFile (file : File) (state : State) : SingleResult
     file.Idx.Idx
 
 // TODO Use the real thing
-let folder (state : string) (result : int) =
+let folder (state : State) (result : SingleResult) =
     $"{state}+{result}"
 
 // TODO We probably need to return partial results as well
