@@ -8,6 +8,7 @@ open System.Diagnostics
 open System.IO
 open System.Collections.Generic
 
+open System.Threading
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -1558,21 +1559,96 @@ type WorkInput =
     
 /// Use parallel checking of implementation files that have signature files
 let CheckMultipleInputsInParallel2
-    (
-        ctok,
-        checkForErrors,
+    ((ctok : CancellationToken,
+        checkForErrors: unit -> bool,
         tcConfig: TcConfig,
         tcImports: TcImports,
-        tcGlobals,
+        tcGlobals: TcGlobals,
         prefixPathOpt,
         tcState,
         eagerFormat,
-        inputs
-    ) : PartialResult list * TcState =
+        inputs): CancellationToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list)
+    : PartialResult list * TcState =
 
     let _ = ctok // TODO Use
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
 
+    // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
+    // somewhere in the files processed prior to each one, or in the processing of this particular file.
+    let priorErrors = checkForErrors ()
+    let amap = tcImports.GetImportMap()
+    let conditionalDefines =
+        if tcConfig.noConditionalErasure then
+            None
+        else
+            Some tcConfig.conditionalDefines
+    
+    let processFile
+        (currentTcState : TcState)
+        ((input, logger) : ParsedInput * DiagnosticsLogger)
+        : State -> PartialResult * State =
+        cancellable {
+            use _ = UseDiagnosticsLogger logger
+            // Is it OK that we don't update 'priorErrors' after processing batches?
+            let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
+
+            // this is taken mostly from CheckOneInputAux, the case where the impl has no signature file
+            let file =
+                match input with
+                | ParsedInput.ImplFile file -> file
+                | ParsedInput.SigFile _ -> failwith "not expecting a signature file for now"
+
+            let tcSink = TcResultsSink.NoSink
+
+            // Typecheck the implementation file
+            let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
+                CheckOneImplFile(
+                    tcGlobals,
+                    amap,
+                    currentTcState.tcsCcu,
+                    currentTcState.tcsImplicitOpenDeclarations,
+                    checkForErrors2,
+                    conditionalDefines,
+                    TcResultsSink.NoSink,
+                    tcConfig.internalTestSpanStackReferring,
+                    currentTcState.tcsTcImplEnv,
+                    None,
+                    file
+                )
+
+            return
+                (fun (state : State) ->
+                    let tcState, _priorErrors = state
+                    let tcState =
+                        { tcState with
+                            tcsCreatesGeneratedProvidedTypes =
+                                tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                        }
+
+                    let ccuSigForFile, updatedTcState =
+                        let results =
+                            tcGlobals,
+                            amap,
+                            false,
+                            prefixPathOpt,
+                            tcSink,
+                            tcState.tcsTcImplEnv,
+                            input.QualifiedName,
+                            implFile.Signature
+                            
+                        AddCheckResultsToTcState results tcState
+
+                    let partialResult : PartialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
+                    let hasErrors = logger.ErrorCount > 0
+                    let priorOrCurrentErrors = priorErrors || hasErrors
+                    let state : State = updatedTcState, priorOrCurrentErrors
+                    
+                    partialResult, state
+                )
+        }
+        |> Cancellable.runWithoutCancellation
+    
+    
     // We create one CapturingDiagnosticLogger for each file we are processing and
     // ensure the diagnostics are presented in deterministic order.
     //
@@ -1617,13 +1693,6 @@ let CheckMultipleInputsInParallel2
 
         let partialResults, (state : State) =
             let lastIndex = inputsWithLoggers.Length - 1
-            let amap = tcImports.GetImportMap()
-
-            let conditionalDefines =
-                if tcConfig.noConditionalErasure then
-                    None
-                else
-                    Some tcConfig.conditionalDefines
 
             // This function will type check all the files where it knows all the dependent file have already been seen.
             // The `freeFiles` are a set of file indexes that have been type checked in a previous run.
@@ -1649,72 +1718,9 @@ let CheckMultipleInputsInParallel2
                             else
                                 None)
                         |> Seq.toArray
-
-                    let processFile ((input, logger) : ParsedInput * _)
-                        : State -> PartialResult * State =
-                        cancellable {
-                            use _ = UseDiagnosticsLogger logger
-                            // Is it OK that we don't update 'priorErrors' after processing batches?
-                            let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
-
-                            // this is taken mostly from CheckOneInputAux, the case where the impl has no signature file
-                            let file =
-                                match input with
-                                | ParsedInput.ImplFile file -> file
-                                | ParsedInput.SigFile _ -> failwith "not expecting a signature file for now"
-
-                            let tcSink = TcResultsSink.NoSink
-
-                            // Typecheck the implementation file
-                            let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
-                                CheckOneImplFile(
-                                    tcGlobals,
-                                    amap,
-                                    currentTcState.tcsCcu,
-                                    currentTcState.tcsImplicitOpenDeclarations,
-                                    checkForErrors2,
-                                    conditionalDefines,
-                                    TcResultsSink.NoSink,
-                                    tcConfig.internalTestSpanStackReferring,
-                                    currentTcState.tcsTcImplEnv,
-                                    None,
-                                    file
-                                )
-
-                            return
-                                (fun (state : State) ->
-                                    let tcState, _priorErrors = state
-                                    let tcState =
-                                        { tcState with
-                                            tcsCreatesGeneratedProvidedTypes =
-                                                tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
-                                        }
-
-                                    let ccuSigForFile, updatedTcState =
-                                        let results =
-                                            tcGlobals,
-                                            amap,
-                                            false,
-                                            prefixPathOpt,
-                                            tcSink,
-                                            tcState.tcsTcImplEnv,
-                                            input.QualifiedName,
-                                            implFile.Signature
-                                            
-                                        AddCheckResultsToTcState results tcState
-
-                                    let partialResult : PartialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
-                                    let hasErrors = logger.ErrorCount > 0
-                                    let priorOrCurrentErrors = priorErrors || hasErrors
-                                    let state : State = updatedTcState, priorOrCurrentErrors
-                                    
-                                    partialResult, state
-                                )
-                        }
-                        |> Cancellable.runWithoutCancellation
                     
                     let go (fileIndex : int, (input, logger)) : State -> int * (PartialResult * State) =
-                        let r = processFile (input, logger)
+                        let r = processFile currentTcState (input, logger)
                         fun state ->
                             fileIndex, r state
                     

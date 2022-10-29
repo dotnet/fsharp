@@ -98,9 +98,8 @@ let TestHardcodedFiles() =
         sampleFiles
         |> List.mapi (fun i (name, code) ->
             {
-                Name = name
                 Idx = FileIdx.make i
-                Code = code
+                //Code = code
                 AST = parseSourceCode(name, code)
             } : SourceFile)
         |> List.toArray
@@ -144,9 +143,8 @@ let TestProject (projectFile : string) =
             let code = System.IO.File.ReadAllText(f)
             let ast = getParseResults code
             {
-                Name = f
                 Idx = FileIdx.make i
-                Code = code
+                //Code = code
                 AST = ast
             } : SourceFile
         )

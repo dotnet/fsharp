@@ -75,13 +75,13 @@ let combineResults
     state
     
 // TODO Could be replaced with a simpler recursive approach with memoised per-item results
-let processGraph<'Item, 'State, 'Result when 'Item : equality>
+let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality>
     (graph : Graph<'Item>)
     (doWork : 'Item -> 'State -> 'Result)
-    (folder : 'State -> 'Result -> 'State)
+    (folder : 'State -> 'Result -> 'FinalFileResult * 'State)
     (emptyState : 'State)
     (parallelism : int)
-    : 'State
+    : 'FinalFileResult[] * 'State
     =
     let transitiveDeps = graph |> Graph.transitive
     let dependants = graph |> Graph.reverse
@@ -117,6 +117,9 @@ let processGraph<'Item, 'State, 'Result when 'Item : equality>
         =
         let deps = lookupMany node.Info.Deps
         let transitiveDeps = lookupMany node.Info.TransitiveDeps
+        let folder state result =
+            folder state result
+            |> snd
         let inputState = combineResults emptyState deps transitiveDeps folder
         let singleRes = doWork node.Info.Item inputState
         let state = folder inputState singleRes
@@ -138,7 +141,6 @@ let processGraph<'Item, 'State, 'Result when 'Item : equality>
             )
         unblocked
     
-    
     use cts = new CancellationTokenSource()
     
     Parallel.processInParallel
@@ -149,5 +151,10 @@ let processGraph<'Item, 'State, 'Result when 'Item : equality>
         cts.Token
 
     let nodesArray = nodes.Values |> Seq.toArray
-    let state = combineResults emptyState nodesArray nodesArray folder 
-    state
+    let x: 'FinalFileResult[] * 'State =
+        nodesArray
+        |> Array.fold (fun (fileResults, state) item ->
+            let fileResult, state = folder state (item.Result.Value |> snd)
+            Array.append fileResults [|fileResult|], state
+        ) ([||], emptyState)
+    x
