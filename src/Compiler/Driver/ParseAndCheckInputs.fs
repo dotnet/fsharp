@@ -1650,7 +1650,7 @@ let CheckMultipleInputsInParallel2
                                 None)
                         |> Seq.toArray
 
-                    let processFile ((input, logger) : ParsedInput * 'c)
+                    let processFile ((input, logger) : ParsedInput * _)
                         : State -> PartialResult * State =
                         cancellable {
                             use _ = UseDiagnosticsLogger logger
@@ -1703,17 +1703,17 @@ let CheckMultipleInputsInParallel2
                                             
                                         AddCheckResultsToTcState results tcState
 
-                                    let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
+                                    let partialResult : PartialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
                                     let hasErrors = logger.ErrorCount > 0
                                     let priorOrCurrentErrors = priorErrors || hasErrors
-                                    let state = updatedTcState, priorOrCurrentErrors
+                                    let state : State = updatedTcState, priorOrCurrentErrors
                                     
                                     partialResult, state
                                 )
                         }
                         |> Cancellable.runWithoutCancellation
                     
-                    let go ((fileIndex : int), (input, logger)) : State -> int * (PartialResult * State) =
+                    let go (fileIndex : int, (input, logger)) : State -> int * (PartialResult * State) =
                         let r = processFile (input, logger)
                         fun state ->
                             fileIndex, r state
