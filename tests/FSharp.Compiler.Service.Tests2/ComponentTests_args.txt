@@ -1,0 +1,385 @@
+-o:C:\projekty\fsharp\heuristic\artifacts\obj\FSharp.Compiler.ComponentTests\Debug\net472\FSharp.Compiler.ComponentTests.dll
+-g
+--debug:portable
+--embed:C:\projekty\fsharp\heuristic\artifacts\obj\FSharp.Compiler.ComponentTests\Debug\net472\buildproperties.fs
+--embed:C:\projekty\fsharp\heuristic\artifacts\obj\FSharp.Compiler.ComponentTests\Debug\net472\FSharp.Compiler.ComponentTests.AssemblyInfo.fs
+--sourcelink:C:\projekty\fsharp\heuristic\artifacts\obj\FSharp.Compiler.ComponentTests\Debug\net472\FSharp.Compiler.ComponentTests.sourcelink.json
+--noframework
+--define:TRACE
+--define:DEBUG
+--define:DEBUG
+--define:Debug
+--define:NETFRAMEWORK
+--define:NET472
+--define:NET20_OR_GREATER
+--define:NET30_OR_GREATER
+--define:NET35_OR_GREATER
+--define:NET40_OR_GREATER
+--define:NET45_OR_GREATER
+--define:NET451_OR_GREATER
+--define:NET452_OR_GREATER
+--define:NET46_OR_GREATER
+--define:NET461_OR_GREATER
+--define:NET462_OR_GREATER
+--define:NET47_OR_GREATER
+--define:NET471_OR_GREATER
+--define:NET472_OR_GREATER
+--doc:C:\projekty\fsharp\heuristic\artifacts\obj\FSharp.Compiler.ComponentTests\Debug\net472\FSharp.Compiler.ComponentTests.xml
+--keyfile:C:\Users\janus\.nuget\packages\microsoft.dotnet.arcade.sdk\8.0.0-beta.22512.1\tools\snk/MSFT.snk
+--publicsign+
+--optimize-
+--tailcalls-
+-r:C:\Users\janus\.nuget\packages\fluentassertions\5.10.3\lib\net47\FluentAssertions.dll
+-r:C:\projekty\fsharp\heuristic\artifacts\bin\FSharp.Build\Debug\netstandard2.0\FSharp.Build.dll
+-r:C:\projekty\fsharp\heuristic\artifacts\bin\FSharp.Compiler.Interactive.Settings\Debug\netstandard2.0\FSharp.Compiler.Interactive.Settings.dll
+-r:C:\projekty\fsharp\heuristic\artifacts\bin\FSharp.Compiler.Service\Debug\netstandard2.0\FSharp.Compiler.Service.dll
+-r:C:\projekty\fsharp\heuristic\artifacts\bin\FSharp.Core\Debug\netstandard2.0\FSharp.Core.dll
+-r:C:\projekty\fsharp\heuristic\artifacts\bin\FSharp.DependencyManager.Nuget\Debug\netstandard2.0\FSharp.DependencyManager.Nuget.dll
+-r:C:\projekty\fsharp\heuristic\artifacts\bin\FSharp.Test.Utilities\Debug\net472\FSharp.Test.Utilities.dll
+-r:C:\Users\janus\.nuget\packages\microsoft.build.framework\17.4.0-preview-22469-04\ref\net472\Microsoft.Build.Framework.dll
+-r:C:\Users\janus\.nuget\packages\microsoft.build.tasks.core\17.4.0-preview-22469-04\ref\net472\Microsoft.Build.Tasks.Core.dll
+-r:C:\Users\janus\.nuget\packages\microsoft.build.utilities.core\17.4.0-preview-22469-04\ref\net472\Microsoft.Build.Utilities.Core.dll
+-r:C:\Users\janus\.nuget\packages\microsoft.codeanalysis.csharp\4.4.0-3.22470.1\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.dll
+-r:C:\Users\janus\.nuget\packages\microsoft.codeanalysis.common\4.4.0-3.22470.1\lib\netstandard2.0\Microsoft.CodeAnalysis.dll
+-r:C:\Users\janus\.nuget\packages\microsoft.codeanalysis.test.resources.proprietary\2.0.28\lib\netstandard1.3\Microsoft.CodeAnalysis.Test.Resources.Proprietary.dll
+-r:C:\Users\janus\.nuget\packages\microsoft.io.redist\6.0.0\lib\net472\Microsoft.IO.Redist.dll
+-r:C:\Users\janus\.nuget\packages\microsoft.net.stringtools\17.4.0-preview-22469-04\ref\net472\Microsoft.NET.StringTools.dll
+-r:C:\Users\janus\.nuget\packages\microsoft.codecoverage\16.11.0\lib\net45\Microsoft.VisualStudio.CodeCoverage.Shim.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\Microsoft.Win32.Primitives.dll
+-r:C:\Users\janus\.nuget\packages\microsoft.win32.registry\5.0.0\ref\net461\Microsoft.Win32.Registry.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\mscorlib.dll
+-r:C:\Users\janus\.nuget\packages\nunit\3.13.2\lib\net45\nunit.framework.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.AppContext.dll
+-r:C:\Users\janus\.nuget\packages\system.buffers\4.5.1\ref\net45\System.Buffers.dll
+-r:C:\Users\janus\.nuget\packages\system.collections.immutable\6.0.0\lib\net461\System.Collections.Immutable.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.ComponentModel.Composition.dll
+-r:C:\Users\janus\.nuget\packages\system.configuration.configurationmanager\6.0.0\lib\net461\System.Configuration.ConfigurationManager.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Configuration.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Console.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Core.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Data.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Data.OracleClient.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Diagnostics.Tracing.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Drawing.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Globalization.Calendars.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.IO.Compression.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.IO.Compression.FileSystem.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.IO.Compression.ZipFile.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.IO.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.IO.FileSystem.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.IO.FileSystem.Primitives.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Linq.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Linq.Expressions.dll
+-r:C:\Users\janus\.nuget\packages\system.memory\4.5.5\lib\net461\System.Memory.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Net.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Net.Http.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Net.Sockets.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Numerics.dll
+-r:C:\Users\janus\.nuget\packages\system.numerics.vectors\4.5.0\ref\net46\System.Numerics.Vectors.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Reflection.dll
+-r:C:\Users\janus\.nuget\packages\system.reflection.metadata\6.0.0\lib\net461\System.Reflection.Metadata.dll
+-r:C:\Users\janus\.nuget\packages\system.resources.extensions\6.0.0\lib\net461\System.Resources.Extensions.dll
+-r:C:\Users\janus\.nuget\packages\system.runtime.compilerservices.unsafe\6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.Extensions.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.InteropServices.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.InteropServices.RuntimeInformation.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Runtime.Serialization.dll
+-r:C:\Users\janus\.nuget\packages\system.security.accesscontrol\6.0.0\lib\net461\System.Security.AccessControl.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Security.Cryptography.Algorithms.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Security.Cryptography.Encoding.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Security.Cryptography.Primitives.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Security.Cryptography.X509Certificates.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Security.dll
+-r:C:\Users\janus\.nuget\packages\system.security.permissions\6.0.0\lib\net461\System.Security.Permissions.dll
+-r:C:\Users\janus\.nuget\packages\system.security.principal.windows\5.0.0\ref\net461\System.Security.Principal.Windows.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.ServiceProcess.dll
+-r:C:\Users\janus\.nuget\packages\system.text.encoding.codepages\6.0.0\lib\net461\System.Text.Encoding.CodePages.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Text.RegularExpressions.dll
+-r:C:\Users\janus\.nuget\packages\system.threading.tasks.dataflow\6.0.0\lib\net461\System.Threading.Tasks.Dataflow.dll
+-r:C:\Users\janus\.nuget\packages\system.threading.tasks.extensions\4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Transactions.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Windows.Forms.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Xaml.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Xml.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\System.Xml.Linq.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Xml.ReaderWriter.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\WindowsBase.dll
+-r:C:\Users\janus\.nuget\packages\xunit.abstractions\2.0.3\lib\net35\xunit.abstractions.dll
+-r:C:\Users\janus\.nuget\packages\xunit.assert\2.4.1\lib\netstandard1.1\xunit.assert.dll
+-r:C:\Users\janus\.nuget\packages\xunit.extensibility.core\2.4.1\lib\net452\xunit.core.dll
+-r:C:\Users\janus\.nuget\packages\xunit.extensibility.execution\2.4.1\lib\net452\xunit.execution.desktop.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\netstandard.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Collections.Concurrent.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Collections.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Collections.NonGeneric.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Collections.Specialized.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.ComponentModel.Annotations.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.ComponentModel.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.ComponentModel.EventBasedAsync.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.ComponentModel.Primitives.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.ComponentModel.TypeConverter.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Data.Common.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Diagnostics.Contracts.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Diagnostics.Debug.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Diagnostics.FileVersionInfo.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Diagnostics.Process.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Diagnostics.StackTrace.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Diagnostics.TextWriterTraceListener.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Diagnostics.Tools.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Diagnostics.TraceSource.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Drawing.Primitives.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Dynamic.Runtime.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Globalization.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Globalization.Extensions.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.IO.FileSystem.DriveInfo.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.IO.FileSystem.Watcher.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.IO.IsolatedStorage.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.IO.MemoryMappedFiles.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.IO.Pipes.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.IO.UnmanagedMemoryStream.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Linq.Parallel.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Linq.Queryable.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Net.Http.Rtc.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Net.NameResolution.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Net.NetworkInformation.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Net.Ping.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Net.Primitives.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Net.Requests.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Net.Security.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Net.WebHeaderCollection.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Net.WebSockets.Client.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Net.WebSockets.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.ObjectModel.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Reflection.Emit.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Reflection.Emit.ILGeneration.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Reflection.Emit.Lightweight.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Reflection.Extensions.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Reflection.Primitives.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Resources.Reader.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Resources.ResourceManager.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Resources.Writer.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.CompilerServices.VisualC.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.Handles.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.InteropServices.WindowsRuntime.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.Numerics.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.Serialization.Formatters.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.Serialization.Json.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.Serialization.Primitives.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Runtime.Serialization.Xml.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Security.Claims.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Security.Cryptography.Csp.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Security.Principal.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Security.SecureString.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.ServiceModel.Duplex.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.ServiceModel.Http.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.ServiceModel.NetTcp.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.ServiceModel.Primitives.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.ServiceModel.Security.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Text.Encoding.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Text.Encoding.Extensions.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Threading.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Threading.Overlapped.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Threading.Tasks.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Threading.Tasks.Parallel.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Threading.Thread.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Threading.ThreadPool.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Threading.Timer.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.ValueTuple.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Xml.XDocument.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Xml.XmlDocument.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Xml.XmlSerializer.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Xml.XPath.dll
+-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.2\Facades\System.Xml.XPath.XDocument.dll
+--target:library
+--nowarn:FS2003,FS0988,NU5105,IL2121
+--warn:3
+--warnaserror:3239,1182,0025
+--fullpaths
+--flaterrors
+--subsystemversion:6.00
+--highentropyva+
+--targetprofile:mscorlib
+--nocopyfsharpcore
+--deterministic+
+--simpleresolution
+--nowarn:3384
+--times
+--nowarn:75
+--warnon:1182
+C:\projekty\fsharp\heuristic\artifacts\obj\FSharp.Compiler.ComponentTests\Debug\net472\buildproperties.fs
+C:\projekty\fsharp\heuristic\artifacts\obj\FSharp.Compiler.ComponentTests\Debug\net472\.NETFramework,Version=v4.7.2.AssemblyAttributes.fs
+C:\projekty\fsharp\heuristic\artifacts\obj\FSharp.Compiler.ComponentTests\Debug\net472\FSharp.Compiler.ComponentTests.AssemblyInfo.fs
+..\service\FsUnit.fs
+Conformance\BasicGrammarElements\OperatorNames\OperatorNames.fs
+Conformance\BasicGrammarElements\PrecedenceAndOperators\PrecedenceAndOperators.fs
+Conformance\BasicTypeAndModuleDefinitions\ExceptionDefinitions\ExceptionDefinitions.fs
+Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Diags\Diags.fs
+Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Attributes\Legacy\Legacy.fs
+Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\Basic\Basic.fs
+Conformance\BasicTypeAndModuleDefinitions\GeneratedEqualityHashingComparison\IComparison\IComparison.fs
+Conformance\BasicTypeAndModuleDefinitions\ModuleDefinitions\ModuleDefinitions.fs
+Conformance\BasicTypeAndModuleDefinitions\NamespaceDeclGroups\NamespaceDeclGroups.fs
+Conformance\BasicTypeAndModuleDefinitions\NullRepresentations\NullRepresentations.fs
+Conformance\BasicTypeAndModuleDefinitions\TypeAbbreviations\TypeAbbreviations.fs
+Conformance\ClassTypes\ExplicitObjectConstructors\ExplicitObjectConstructors.fs
+Conformance\ClassTypes\ImplicitObjectConstructors\ImplicitObjectConstructors.fs
+Conformance\ClassTypes\ValueRestriction\ValueRestriction.fs
+Conformance\DelegateTypes\DelegateDefinition.fs
+Conformance\DeclarationElements\AccessibilityAnnotations\Basic\Basic.fs
+Conformance\DeclarationElements\AccessibilityAnnotations\OnOverridesAndIFaceImpl\OnOverridesAndIFaceImpl.fs
+Conformance\DeclarationElements\AccessibilityAnnotations\OnTypeMembers\OnTypeMembers.fs
+Conformance\DeclarationElements\AccessibilityAnnotations\PermittedLocations\PermittedLocations.fs
+Conformance\DeclarationElements\CustomAttributes\AttributeInheritance\AttributeInheritance.fs
+Conformance\DeclarationElements\CustomAttributes\AttributeUsage\AttributeUsage.fs
+Conformance\DeclarationElements\CustomAttributes\Basic\Basic.fs
+Conformance\DeclarationElements\CustomAttributes\ImportedAttributes\ImportedAttributes.fs
+Conformance\DeclarationElements\CustomAttributes\ArgumentsOfAllTypes\ArgumentsOfAllTypes.fs
+Conformance\DeclarationElements\Events\Basic\Basic.fs
+Conformance\DeclarationElements\FieldMembers\FieldMembers.fs
+Conformance\DeclarationElements\ImportDeclarations\ImportDeclarations.fs
+Conformance\DeclarationElements\InterfaceSpecificationsAndImplementations\InterfaceSpecificationsAndImplementations.fs
+Conformance\DeclarationElements\LetBindings\Basic\Basic.fs
+Conformance\DeclarationElements\LetBindings\TypeFunctions\TypeFunctions.fs
+Conformance\DeclarationElements\LetBindings\ActivePatternBindings\ActivePatternBindings.fs
+Conformance\DeclarationElements\LetBindings\ExplicitTypeParameters\ExplicitTypeParameters.fs
+Conformance\DeclarationElements\MemberDefinitions\MemberDefinitions.fs
+Conformance\DeclarationElements\MemberDefinitions\ImplementingDispatchSlots\ImplementingDispatchSlots.fs
+Conformance\DeclarationElements\MemberDefinitions\MethodsAndProperties\MethodsAndProperties.fs
+Conformance\DeclarationElements\MemberDefinitions\NamedArguments\NamedArguments.fs
+Conformance\DeclarationElements\MemberDefinitions\OptionalArguments\OptionalArguments.fs
+Conformance\DeclarationElements\MemberDefinitions\OptionalDefaultParamArgs\OptionalDefaultParamArgs.fs
+Conformance\DeclarationElements\MemberDefinitions\OverloadingMembers\OverloadingMembers.fs
+Conformance\DeclarationElements\ModuleAbbreviations\ModuleAbbreviations.fs
+Conformance\DeclarationElements\UseBindings\UseBindings.fs
+Conformance\Expressions\ApplicationExpressions\BasicApplication\BasicApplication.fs
+Conformance\Expressions\BindingExpressions\BindingExpressions.fs
+Conformance\Expressions\ControlFlowExpressions\PatternMatching\PatternMatching.fs
+Conformance\Expressions\ControlFlowExpressions\SequenceIteration\SequenceIteration.fs
+Conformance\Expressions\ControlFlowExpressions\Type-relatedExpressions\Type-relatedExpressions.fs
+Conformance\InferenceProcedures\ByrefSafetyAnalysis\ByrefSafetyAnalysis.fs
+Conformance\InferenceProcedures\RecursiveSafetyAnalysis\RecursiveSafetyAnalysis.fs
+Conformance\LexicalAnalysis\Comments.fs
+Conformance\LexicalAnalysis\NumericLiterals.fs
+Conformance\LexicalAnalysis\Shift\Generics.fs
+Conformance\LexicalAnalysis\SymbolicKeywords.fs
+Conformance\LexicalAnalysis\SymbolicOperators.fs
+Conformance\LexicalFiltering\HashLight\HashLight.fs
+Conformance\LexicalFiltering\HighPrecedenceApplication\HighPrecedenceApplication.fs
+Conformance\LexicalFiltering\OffsideExceptions\OffsideExceptions.fs
+Conformance\MethodResolution\ParametersResolution.fs
+Conformance\PatternMatching\Simple.fs
+Conformance\Printing\Printing.fs
+Conformance\PseudoCustomAttributes\PseudoCustomAttributes.fs
+Conformance\RecordTypes\AnonymousRecords.fs
+Conformance\RecordTypes\RecordTypes.fs
+Conformance\StructTypes\StructTypes.fs
+Conformance\TypesAndTypeConstraints\CheckingSyntacticTypes\CheckingSyntacticTypes.fs
+Conformance\TypesAndTypeConstraints\LogicalPropertiesOfTypes\LogicalPropertiesOfTypes.fs
+Conformance\TypesAndTypeConstraints\IWSAMsAndSRTPs\IWSAMsAndSRTPsTests.fs
+Conformance\UnionTypes\UnionTypes.fs
+Conformance\UnitsOfMeasure\Basic.fs
+Conformance\UnitsOfMeasure\Diagnostics.fs
+Conformance\UnitsOfMeasure\Parsing.fs
+Conformance\UnitsOfMeasure\TypeChecker.fs
+EmittedIL\CompilerGeneratedAttributeOnAccessors.fs
+EmittedIL\EmptyArray.fs
+EmittedIL\Literals.fs
+EmittedIL\SkipLocalsInit.fs
+EmittedIL\StringFormatAndInterpolation.fs
+EmittedIL\StructGettersReadOnly.fs
+EmittedIL\TailCalls.fs
+EmittedIL\TupleElimination.fs
+EmittedIL\TypeTestsInPatternMatching.fs
+EmittedIL\WhileLoops.fs
+EmittedIL\AssemblyBoundary\AssemblyBoundary.fs
+EmittedIL\AsyncExpressionStepping\AsyncExpressionStepping.fs
+EmittedIL\AttributeTargets\AttributeTargets.fs
+EmittedIL\CCtorDUWithMember\CCtorDUWithMember.fs
+EmittedIL\CompiledNameAttribute\CompiledNameAttribute.fs
+EmittedIL\ComputationExpressions\ComputationExpressions.fs
+EmittedIL\DoNotBoxStruct\DoNotBoxStruct.fs
+EmittedIL\ForLoop\ForLoop.fs
+EmittedIL\GeneratedIterators\GeneratedIterators.fs
+EmittedIL\GenericComparison\GenericComparison.fs
+EmittedIL\InequalityComparison\InequalityComparison.fs
+EmittedIL\Inlining\Inlining.fs
+EmittedIL\ListExpressionStepping\ListExpressionStepping.fs
+EmittedIL\MethodImplAttribute\MethodImplAttribute.fs
+EmittedIL\Misc\Misc.fs
+EmittedIL\operators\Operators.fs
+EmittedIL\Platform\Platform.fs
+EmittedIL\QueryExpressionStepping\QueryExpressionStepping.fs
+EmittedIL\SerializableAttribute\SerializableAttribute.fs
+EmittedIL\SeqExpressionStepping\SeqExpressionStepping.fs
+EmittedIL\SeqExpressionTailCalls\SeqExpressionTailCalls.fs
+EmittedIL\StaticInit\StaticInit.fs
+EmittedIL\SteppingMatch\SteppingMatch.fs
+EmittedIL\Structure\Structure.fs
+EmittedIL\TestFunctions\TestFunctions.fs
+EmittedIL\Tuples\Tuples.fs
+EmittedIL\StructDefensiveCopy\StructDefensiveCopy.fs
+ErrorMessages\UnsupportedAttributes.fs
+ErrorMessages\TypeEqualsMissingTests.fs
+ErrorMessages\AccessOfTypeAbbreviationTests.fs
+ErrorMessages\AssignmentErrorTests.fs
+ErrorMessages\ClassesTests.fs
+ErrorMessages\ConstructorTests.fs
+ErrorMessages\DontSuggestTests.fs
+ErrorMessages\ElseBranchHasWrongTypeTests.fs
+ErrorMessages\InvalidLiteralTests.fs
+ErrorMessages\InvalidNumericLiteralTests.fs
+ErrorMessages\MissingElseBranch.fs
+ErrorMessages\MissingExpressionTests.fs
+ErrorMessages\ModuleTests.fs
+ErrorMessages\NameResolutionTests.fs
+ErrorMessages\SuggestionsTests.fs
+ErrorMessages\TypeMismatchTests.fs
+ErrorMessages\UnitGenericAbstactType.fs
+ErrorMessages\UpcastDowncastTests.fs
+ErrorMessages\WarnExpressionTests.fs
+ErrorMessages\WrongSyntaxInForLoop.fs
+ErrorMessages\ConfusingTypeName.fs
+ErrorMessages\FS0988AtEndOfFile.fs
+ErrorMessages\Repro1548.fs
+ErrorMessages\WarnIfDiscardedInList.fs
+ErrorMessages\UnionCasePatternMatchingErrors.fs
+Language\IndexerSetterParamArray.fs
+Language\MultiDimensionalArrayTests.fs
+Language\RegressionTests.fs
+Language\AttributeCheckingTests.fs
+Language\ObsoleteAttributeCheckingTests.fs
+Language\XmlComments.fs
+Language\CompilerDirectiveTests.fs
+Language\CodeQuotationTests.fs
+Language\InterpolatedStringsTests.fs
+Language\ComputationExpressionTests.fs
+Language\CastingTests.fs
+Language\NameofTests.fs
+ConstraintSolver\PrimitiveConstraints.fs
+ConstraintSolver\MemberConstraints.fs
+Interop\SimpleInteropTests.fs
+Interop\RequiredAndInitOnlyProperties.fs
+Interop\StaticsInInterfaces.fs
+Interop\VisibilityTests.fs
+Scripting\Interactive.fs
+TypeChecks\CheckDeclarationsTests.fs
+TypeChecks\ParallelCheckingWithSignatureFilesTests.fs
+CompilerOptions\fsc\langversion.fs
+CompilerOptions\fsc\noframework.fs
+CompilerOptions\fsc\platform.fs
+CompilerOptions\fsc\reference.fs
+CompilerOptions\fsc\reflectionfree.fs
+CompilerOptions\fsc\warn.fs
+CompilerOptions\fsc\warnon.fs
+Debugger\PortablePdbs.fs
+Diagnostics\async.fs
+Diagnostics\General.fs
+Globalization\GlobalizationTestCases.fs
+OCamlCompat\OCamlCompat.fs
+Miscellaneous\ListLiterals.fs
+Signatures\TestHelpers.fs
+Signatures\ModuleOrNamespaceTests.fs
+Signatures\RecordTests.fs
+Signatures\ArrayTests.fs

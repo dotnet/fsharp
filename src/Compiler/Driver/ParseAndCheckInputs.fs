@@ -1125,7 +1125,7 @@ let GetInitialTcState (m, ccuName, tcConfig: TcConfig, tcGlobals, tcImports: TcI
 let CreateEmptyDummyImplFile qualNameOfFile sigTy =
     CheckedImplFile(qualNameOfFile, [], sigTy, ModuleOrNamespaceContents.TMDefs [], false, false, StampMap [], Map.empty)
 
-let totalSw = Stopwatch()
+let mutable total = TimeSpan.Zero
 let mutable singles = 0
 
 let AddCheckResultsToTcState
@@ -1134,7 +1134,6 @@ let AddCheckResultsToTcState
     =
 
     let sw = Stopwatch.StartNew()
-    totalSw.Start()
     
     let rootImpls = Zset.add qualNameOfFile tcState.tcsRootImpls
 
@@ -1177,9 +1176,10 @@ let AddCheckResultsToTcState
         }
 
     sw.Stop()
-    totalSw.Stop()
     singles <- singles + 1
-    printfn $"[{Threading.Thread.CurrentThread.ManagedThreadId}] [{singles}] single add took {sw.ElapsedMilliseconds}ms, total so far: {totalSw.ElapsedMilliseconds}ms"
+    // TODO Thread-safety
+    total <- total + sw.Elapsed
+    printfn $"[{Threading.Thread.CurrentThread.ManagedThreadId}] [{singles}] single add took {sw.ElapsedMilliseconds}ms, total so far: {total.TotalMilliseconds}ms"
     
     ccuSigForFile, tcState
 
