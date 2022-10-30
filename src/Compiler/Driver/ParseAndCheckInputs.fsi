@@ -166,6 +166,20 @@ val CheckOneInput:
     skipImplIfSigExists: bool ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
 
+/// Check one input, returned as an Eventually computation
+val CheckOneInput':
+    checkForErrors: (unit -> bool) *
+    tcConfig: TcConfig *
+    tcImports: TcImports *
+    tcGlobals: TcGlobals *
+    prefixPathOpt: LongIdent option *
+    tcSink: NameResolution.TcResultsSink *
+    tcState: TcState *
+    input: ParsedInput *
+    skipImplIfSigExists: bool ->
+        Cancellable<TcState -> PartialResult * TcState>
+
+
 /// Finish the checking of multiple inputs
 val CheckMultipleInputsFinish:
     (TcEnv * TopAttribs * 'T option * 'U) list * TcState -> (TcEnv * TopAttribs * 'T list * 'U list) * TcState

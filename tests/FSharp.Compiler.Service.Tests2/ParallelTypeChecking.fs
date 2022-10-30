@@ -88,31 +88,19 @@ module internal Real =
         // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
         // somewhere in the files processed prior to each one, or in the processing of this particular file.
         let priorErrors = checkForErrors ()
-        let amap = tcImports.GetImportMap()
-        let conditionalDefines =
-            if tcConfig.noConditionalErasure then
-                None
-            else
-                Some tcConfig.conditionalDefines
         
         let processFile
             ((input, logger) : ParsedInput * DiagnosticsLogger)
-            ((currentTcState, _) : State)
+            ((currentTcState, currentPriorErrors) : State)
             : State -> PartialResult * State =
             cancellable {
                 use _ = UseDiagnosticsLogger logger
                 // Is it OK that we don't update 'priorErrors' after processing batches?
                 let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
         
-                // this is taken mostly from CheckOneInputAux, the case where the impl has no signature file
-                let file =
-                    match input with
-                    | ParsedInput.ImplFile file -> file
-                    | ParsedInput.SigFile _ -> failwith "not expecting a signature file for now"
-        
                 let tcSink = TcResultsSink.NoSink
         
-                let! tuple, tcState = CheckOneInput(
+                let! f = CheckOneInput'(
                     checkForErrors2,
                     tcConfig,
                     tcImports,
@@ -121,50 +109,18 @@ module internal Real =
                     tcSink,
                     currentTcState,
                     input,
-                    false // skipImpFiles...
+                    false  // skipImpFiles...
                 )
-                
-                // Typecheck the implementation file
-                let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
-                    CheckOneImplFile(
-                        tcGlobals,
-                        amap,
-                        currentTcState.Ccu,
-                        currentTcState.TcsImplicitOpenDeclarations,
-                        checkForErrors2,
-                        conditionalDefines,
-                        TcResultsSink.NoSink,
-                        tcConfig.internalTestSpanStackReferring,
-                        currentTcState.TcEnvFromImpls,
-                        None,
-                        file
-                    )
         
                 return
                     (fun (state : State) ->
-                        let tcState, _priorErrors = state
-                        let tcState =
-                            tcState.WithCreatesGeneratedProvidedTypes
-                                (tcState.CreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes)
+                        let tcState, priorErrors = state
+                        let (partialResult : PartialResult, tcState) = f tcState
         
-                        let ccuSigForFile, updatedTcState =
-                            let results =
-                                tcGlobals,
-                                amap,
-                                false,
-                                prefixPathOpt,
-                                tcSink,
-                                tcState.TcEnvFromImpls,
-                                input.QualifiedName,
-                                implFile.Signature
-                                
-                            AddCheckResultsToTcState results tcState
-        
-                        let partialResult : PartialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
                         let hasErrors = logger.ErrorCount > 0
+                        // TODO Should we use local _priorErrors or global priorErrors? 
                         let priorOrCurrentErrors = priorErrors || hasErrors
-                        let state : State = updatedTcState, priorOrCurrentErrors
-                        
+                        let state : State = tcState, priorOrCurrentErrors
                         partialResult, state
                     )
             }
@@ -198,8 +154,6 @@ module internal Real =
             
             partialResults |> Array.toList, tcState
         )
-            
-    CheckMultipleInputsInParallel2 <- CheckMultipleInputsInParallelMy
             
 
 let typeCheckGraph (graph : FileGraph) : FinalFileResult[] * State =
