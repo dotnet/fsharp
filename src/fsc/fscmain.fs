@@ -34,6 +34,8 @@ type Timer(name : string) =
 [<EntryPoint>]
 let main (argv) =
 
+    use _ = FSharp.Compiler.Diagnostics.Activity.startNoTags "fscmain"
+
     use _ = new Timer("main")
     
     let compilerName =

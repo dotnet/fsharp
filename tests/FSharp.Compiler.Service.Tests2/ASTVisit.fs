@@ -642,7 +642,7 @@ and visitPat (x : SynPat) : References =
 
 and visitBindingReturnInfo (x : SynBindingReturnInfo) : References =
     match x with
-    | SynBindingReturnInfo(typeName, range, synAttributeLists) ->
+    | SynBindingReturnInfo(typeName, range, synAttributeLists, trivia) ->
         seq {
             yield! visitType typeName
             yield! visitSynAttributeLists synAttributeLists

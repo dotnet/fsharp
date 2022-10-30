@@ -3,6 +3,9 @@
 open System
 open FSharp.Compiler
 open FSharp.Compiler.Service.Tests
+open OpenTelemetry
+open OpenTelemetry.Resources
+open OpenTelemetry.Trace
 
 let runCompiler () =
     Environment.CurrentDirectory <- "c:/projekty/fsharp/heuristic/src/Compiler"
@@ -12,6 +15,23 @@ type Method =
     | Sequential
     | ParallelFs
     | Graph
+
+let setupOtel () =
+    Sdk
+        .CreateTracerProviderBuilder()
+        .AddSource("fsc")
+        .SetResourceBuilder(
+            ResourceBuilder
+                .CreateDefault()
+                .AddService (serviceName = "program", serviceVersion = "42.42.42.44")
+        )
+        .AddJaegerExporter(fun c ->
+            c.BatchExportProcessorOptions.MaxQueueSize <- 10000000
+            c.BatchExportProcessorOptions.MaxExportBatchSize <- 10000000
+            c.ExportProcessorType <- ExportProcessorType.Simple
+            c.MaxPayloadSizeInBytes <- Nullable (1000000000)
+        )
+        .Build ()
 
 [<EntryPoint>]
 let main argv =
@@ -52,5 +72,10 @@ let main argv =
     
     workingDir |> Option.iter (fun dir -> Environment.CurrentDirectory <- dir)
     
+    let tracerProvider = setupOtel()
+    
     let exit = CommandLineMain.main args
+    
+    tracerProvider.ForceFlush () |> ignore
+    tracerProvider.Dispose()
     exit

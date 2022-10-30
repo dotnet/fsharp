@@ -56,6 +56,11 @@
     <ProjectReference Include="..\..\src\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="..\..\src\fsc\fscProject\fsc.fsproj" />
     <ProjectReference Include="..\..\tests\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
+
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="1.3.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.3.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.1.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.Zipkin" Version="1.1.0" />
   </ItemGroup>
 
 </Project>
