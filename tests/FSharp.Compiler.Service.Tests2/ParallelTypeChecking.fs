@@ -18,6 +18,7 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
 open Internal.Utilities.Library
+open Newtonsoft.Json
 
 type FileGraph = Graph<File>
 
@@ -81,6 +82,11 @@ module internal Real =
                 }
             )
         let graph = DepResolving.AutomatedDependencyResolving.detectFileDependencies sourceFiles
+        
+        let graphJson = graph.Graph |> Seq.map (fun (KeyValue(file, deps)) -> file.Name, deps |> Array.map (fun d -> d.Name)) |> dict
+        let json = JsonConvert.SerializeObject(graphJson, Formatting.Indented)
+        let path = $"c:/projekty/fsharp/heuristic/FCS.deps.json"
+        System.IO.File.WriteAllText(path, json)
         
         let _ = ctok // TODO Use
         let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger

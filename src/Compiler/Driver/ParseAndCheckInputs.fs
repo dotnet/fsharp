@@ -1179,7 +1179,7 @@ let AddCheckResultsToTcState
     sw.Stop()
     totalSw.Stop()
     singles <- singles + 1
-    printfn $"[{singles}] single add took {sw.ElapsedMilliseconds}ms, total so far: {totalSw.ElapsedMilliseconds}ms"
+    printfn $"[{Threading.Thread.CurrentThread.ManagedThreadId}] [{singles}] single add took {sw.ElapsedMilliseconds}ms, total so far: {totalSw.ElapsedMilliseconds}ms"
     
     ccuSigForFile, tcState
 
@@ -1206,10 +1206,6 @@ let AddDummyCheckResultsToTcState
 type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
 type CheckArgs = CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list
-/// Use parallel checking of implementation files that have signature files
-let mutable CheckMultipleInputsInParallel2 : CheckArgs -> (PartialResult list * TcState)
-    =
-    fun _ -> failwith "Dummy implementation"
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInputAux
@@ -1707,7 +1703,12 @@ let CheckMultipleInputsInParallel
             }
 
         results, tcState)
-        
+
+/// Use parallel checking of implementation files that have signature files
+let mutable CheckMultipleInputsInParallel2 : CheckArgs -> (PartialResult list * TcState)
+    =
+    CheckMultipleInputsInParallel        
+
 type WorkInput =
     {
         FileIndex : int
