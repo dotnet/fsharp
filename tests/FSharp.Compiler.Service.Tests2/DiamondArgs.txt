@@ -1,4 +1,6 @@
-﻿--debug:portable
+﻿-o:C:\projekty\fsharp\heuristic\artifacts\obj\DiamondTest\Debug\net7.0\DiamondTest.dll
+-g
+--debug:portable
 --embed:C:\projekty\fsharp\heuristic\artifacts\obj\DiamondTest\Debug\net7.0\buildproperties.fs
 --embed:C:\projekty\fsharp\heuristic\artifacts\obj\DiamondTest\Debug\net7.0\DiamondTest.AssemblyInfo.fs
 --sourcelink:C:\projekty\fsharp\heuristic\artifacts\obj\DiamondTest\Debug\net7.0\DiamondTest.sourcelink.json
@@ -190,7 +192,7 @@
 -r:C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\7.0.0-rc.2.22472.3\ref\net7.0\System.Xml.XPath.dll
 -r:C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\7.0.0-rc.2.22472.3\ref\net7.0\System.Xml.XPath.XDocument.dll
 -r:C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\7.0.0-rc.2.22472.3\ref\net7.0\WindowsBase.dll
---target:library
+--target:exe
 --nowarn:FS2003,NU5105,IL2121
 --warn:3
 --warnaserror:3239,1182,0025
@@ -206,10 +208,13 @@
 --nowarn:75
 --simpleresolution
 --refout:C:\projekty\fsharp\heuristic\artifacts\obj\DiamondTest\Debug\net7.0\refint\DiamondTest.dll
---test:ParallelCheckingWithSignatureFilesOn
+C:\projekty\fsharp\heuristic\artifacts\obj\DiamondTest\Debug\net7.0\buildproperties.fs
+C:\projekty\fsharp\heuristic\artifacts\obj\DiamondTest\Debug\net7.0\.NETCoreApp,Version=v7.0.AssemblyAttributes.fs
+C:\projekty\fsharp\heuristic\artifacts\obj\DiamondTest\Debug\net7.0\DiamondTest.AssemblyInfo.fs
 C:\projekty\fsharp\heuristic\tests\DiamondTest\A.fs
 C:\projekty\fsharp\heuristic\tests\DiamondTest\B1.fs
 C:\projekty\fsharp\heuristic\tests\DiamondTest\B2.fs
 C:\projekty\fsharp\heuristic\tests\DiamondTest\C1.fs
 C:\projekty\fsharp\heuristic\tests\DiamondTest\C2.fs
 C:\projekty\fsharp\heuristic\tests\DiamondTest\D.fs
+C:\projekty\fsharp\heuristic\tests\DiamondTest\Program.fs

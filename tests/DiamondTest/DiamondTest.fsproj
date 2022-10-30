@@ -3,6 +3,7 @@
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <OutputType>exe</OutputType>
     </PropertyGroup>
 
     <ItemGroup>
@@ -12,6 +13,7 @@
         <Compile Include="C1.fs" />
         <Compile Include="C2.fs" />
         <Compile Include="D.fs" />
+        <Compile Include="Program.fs" />
     </ItemGroup>
 
 </Project>
