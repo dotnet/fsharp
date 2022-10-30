@@ -211,6 +211,7 @@
 C:\projekty\fsharp\heuristic\artifacts\obj\DiamondTest\Debug\net7.0\buildproperties.fs
 C:\projekty\fsharp\heuristic\artifacts\obj\DiamondTest\Debug\net7.0\.NETCoreApp,Version=v7.0.AssemblyAttributes.fs
 C:\projekty\fsharp\heuristic\artifacts\obj\DiamondTest\Debug\net7.0\DiamondTest.AssemblyInfo.fs
+C:\projekty\fsharp\heuristic\tests\DiamondTest\A.fsi
 C:\projekty\fsharp\heuristic\tests\DiamondTest\A.fs
 C:\projekty\fsharp\heuristic\tests\DiamondTest\B1.fs
 C:\projekty\fsharp\heuristic\tests\DiamondTest\B2.fs
