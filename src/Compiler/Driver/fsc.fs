@@ -540,7 +540,6 @@ let main1
 
     // Process command line, flags and collect filenames
     let sourceFiles =
-
         // The ParseCompilerOptions function calls imperative function to process "real" args
         // Rather than start processing, just collect names, then process them.
         try

@@ -673,8 +673,8 @@ let mkSynBindingRhs staticOptimizations rhsExpr mRhs retInfo =
 
     let rhsExpr, retTyOpt =
         match retInfo with
-        | Some (SynReturnInfo ((ty, SynArgInfo (rAttribs, _, _)), tym)) ->
-            SynExpr.Typed(rhsExpr, ty, rhsExpr.Range), Some(SynBindingReturnInfo(ty, tym, rAttribs))
+        | Some (mColon, SynReturnInfo ((ty, SynArgInfo (rAttribs, _, _)), tym)) ->
+            SynExpr.Typed(rhsExpr, ty, rhsExpr.Range), Some(SynBindingReturnInfo(ty, tym, rAttribs, { ColonRange = mColon }))
         | None -> rhsExpr, None
 
     rhsExpr, retTyOpt
@@ -684,7 +684,7 @@ let mkSynBinding
     (vis, isInline, isMutable, mBind, spBind, retInfo, origRhsExpr, mRhs, staticOptimizations, attrs, memberFlagsOpt, trivia)
     =
     let info =
-        SynInfo.InferSynValData(memberFlagsOpt, Some headPat, retInfo, origRhsExpr)
+        SynInfo.InferSynValData(memberFlagsOpt, Some headPat, Option.map snd retInfo, origRhsExpr)
 
     let rhsExpr, retTyOpt = mkSynBindingRhs staticOptimizations origRhsExpr mRhs retInfo
     let mBind = unionRangeWithXmlDoc xmlDoc mBind

@@ -2313,13 +2313,14 @@ let PrintWholeAssemblyImplementation (tcConfig: TcConfig) outfile header expr =
 //----------------------------------------------------------------------------
 
 let mutable tPrev: (DateTime * DateTime * float * int[]) option = None
-let mutable nPrev: string option = None
+let mutable nPrev: (string * IDisposable) option = None
 
 let ReportTime (tcConfig: TcConfig) descr =
-
     match nPrev with
     | None -> ()
-    | Some prevDescr ->
+    | Some (prevDescr, prevActivity) ->
+        use _ = prevActivity // Finish the previous diagnostics activity by .Dispose() at the end of this block
+
         if tcConfig.pause then
             dprintf "[done '%s', entering '%s'] press <enter> to continue... " prevDescr descr
             Console.ReadLine() |> ignore
@@ -2358,7 +2359,7 @@ let ReportTime (tcConfig: TcConfig) descr =
 
         let tStart =
             match tPrev, nPrev with
-            | Some (tStart, tPrev, utPrev, gcPrev), Some prevDescr ->
+            | Some (tStart, tPrev, utPrev, gcPrev), Some (prevDescr, _) ->
                 let spanGC = [| for i in 0..maxGen -> GC.CollectionCount i - gcPrev[i] |]
                 let t = tNow - tStart
                 let tDelta = tNow - tPrev
@@ -2385,7 +2386,7 @@ let ReportTime (tcConfig: TcConfig) descr =
 
         tPrev <- Some(tStart, tNow, utNow, gcNow)
 
-    nPrev <- Some descr
+    nPrev <- Some(descr, Activity.startNoTags descr)
 
 let ignoreFailureOnMono1_1_16 f =
     try

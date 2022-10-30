@@ -399,3 +399,43 @@ let b : int * string * bool = 1, "", false
     ]) ])) ->
         Assert.Pass ()
     | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``Colon before return type is part of trivia`` () =
+    let parseResults = 
+        getParseResults """
+let x y : int = failwith "todo"
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Let(bindings = [
+            SynBinding(returnInfo =
+                Some (SynBindingReturnInfo(trivia = { ColonRange = Some mColon })))
+        ])
+    ]) ])) ->
+        assertRange (2,8) (2,9) mColon
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"
+
+[<Test>]
+let ``Colon before return type is part of trivia in properties`` () =
+    let parseResults = 
+        getParseResults """
+type X =
+    member this.Y with get():int = 1 and set (_:int):unit = ()
+"""
+
+    match parseResults with
+    | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
+        SynModuleDecl.Types(typeDefns = [
+            SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [
+                SynMemberDefn.GetSetMember(
+                    memberDefnForGet = Some(SynBinding(returnInfo = Some (SynBindingReturnInfo(trivia = { ColonRange = Some mColon1 }))))
+                    memberDefnForSet = Some(SynBinding(returnInfo = Some (SynBindingReturnInfo(trivia = { ColonRange = Some mColon2 }))))
+                )
+            ]))
+        ])
+    ]) ])) ->
+        assertRange (3,28) (3,29) mColon1
+        assertRange (3,52) (3,53) mColon2
+    | _ -> Assert.Fail $"Could not get valid AST, got {parseResults}"

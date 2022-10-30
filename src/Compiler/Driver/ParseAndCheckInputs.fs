@@ -150,8 +150,7 @@ let PostParseModuleImpl (_i, defaultNamespace, isLastCompiland, fileName, impl) 
 
         let trivia: SynModuleOrNamespaceTrivia =
             {
-                ModuleKeyword = None
-                NamespaceKeyword = None
+                LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.None
             }
 
         SynModuleOrNamespace(modname, false, SynModuleOrNamespaceKind.AnonModule, defs, PreXmlDoc.Empty, [], None, m, trivia)
@@ -196,8 +195,7 @@ let PostParseModuleSpec (_i, defaultNamespace, isLastCompiland, fileName, intf) 
 
         let trivia: SynModuleOrNamespaceSigTrivia =
             {
-                ModuleKeyword = None
-                NamespaceKeyword = None
+                LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.None
             }
 
         SynModuleOrNamespaceSig(modname, false, SynModuleOrNamespaceKind.AnonModule, defs, PreXmlDoc.Empty, [], None, m, trivia)
@@ -1223,6 +1221,9 @@ let CheckOneInputAux
 
     cancellable {
         try
+            use _ =
+                Activity.start "ParseAndCheckInputs.CheckOneInput" [| "fileName", inp.FileName |]
+
             CheckSimulateException tcConfig
 
             let m = inp.Range
@@ -1567,10 +1568,8 @@ let CheckMultipleInputsFinish (results, tcState: TcState) =
 
 let CheckOneInputAndFinish (checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
     cancellable {
-        Logger.LogBlockStart LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
         let! result, tcState = CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input, false)
         let finishedResult = CheckMultipleInputsFinish([ result ], tcState)
-        Logger.LogBlockStop LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
         return finishedResult
     }
 
