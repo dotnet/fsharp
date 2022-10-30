@@ -31,6 +31,11 @@ type ModuleNamesDict = Map<string, Map<string, QualifiedNameOfFile>>
 /// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
 val DeduplicateParsedInputModuleName: ModuleNamesDict -> ParsedInput -> ParsedInput * ModuleNamesDict
 
+val UseMultipleDiagnosticLoggers<'a, 'b> :
+    ('a list * DiagnosticsLogger * (PhasedDiagnostic -> PhasedDiagnostic) option) ->
+    (('a * CapturingDiagnosticsLogger) list -> 'b) ->
+    'b
+    
 /// Parse a single input (A signature file or implementation file)
 val ParseInput:
     lexer: (Lexbuf -> Parser.token) *
@@ -112,7 +117,6 @@ val GetInitialTcEnv: assemblyName: string * range * TcConfig * TcImports * TcGlo
 /// Represents the incremental type checking state for a set of inputs
 [<Sealed>]
 type TcState =
-
     /// The CcuThunk for the current assembly being checked
     member Ccu: CcuThunk
 
@@ -129,6 +133,22 @@ type TcState =
     member NextStateAfterIncrementalFragment: TcEnv -> TcState
 
     member CreatesGeneratedProvidedTypes: bool
+    
+    member TcsImplicitOpenDeclarations: OpenDeclaration list
+    
+    member WithCreatesGeneratedProvidedTypes : bool -> TcState
+
+val AddCheckResultsToTcState :
+    (TcGlobals * Import.ImportMap * bool * LongIdent option * NameResolution.TcResultsSink * TcEnv * QualifiedNameOfFile * ModuleOrNamespaceType)
+    -> TcState
+    -> (ModuleOrNamespaceType * TcState)
+
+type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
+
+type CheckArgs = CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list
+
+/// Use parallel checking of implementation files that have signature files
+val mutable CheckMultipleInputsInParallel2 : (CheckArgs -> PartialResult list * TcState)
 
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv * OpenDeclaration list -> TcState

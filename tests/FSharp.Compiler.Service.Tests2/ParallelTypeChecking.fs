@@ -1,5 +1,6 @@
 ﻿module FSharp.Compiler.Service.Tests.ParallelTypeChecking
 
+open System.Collections.Generic
 open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.CheckBasics
@@ -7,12 +8,16 @@ open FSharp.Compiler.CheckDeclarations
 open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DiagnosticsLogger
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open FSharp.Compiler.Service.Tests.Graph
 open FSharp.Compiler.Service.Tests.Types
+open FSharp.Compiler.Service.Tests.Utils
+open FSharp.Compiler.Service.Tests2
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
+open Internal.Utilities.Library
 
 type FileGraph = Graph<File>
 
@@ -37,21 +42,23 @@ let folder (state : State) (result : SingleResult): FinalFileResult * State =
     result state
     
 module internal Real =
-        
-    type State = TcState * bool
-    type SingleResult = State -> FinalFileResult * State
     
-    // TODO Use the real thing
-    let typeCheckFile (file : File) (state : State) : SingleResult
-        =
-        fun (state : State) ->
-            let res = file.Idx.Idx
-            res.ToString(), $"{state}+{res}"
+    // Within a file, equip loggers to locally filter w.r.t. scope pragmas in each input
+    let DiagnosticsLoggerForInput (tcConfig: TcConfig, input: ParsedInput, oldLogger) =
+        CompilerDiagnostics.GetDiagnosticsLoggerFilteringByScopedPragmas(false, input.ScopedPragmas, tcConfig.diagnosticsOptions, oldLogger)
+    
+    type State = TcState * bool
+    type FinalFileResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
+    type SingleResult = State -> FinalFileResult * State
+    type Item = File
     
     type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
+    let folder (state : State) (result : SingleResult): FinalFileResult * State =
+        result state
+        
     /// Use parallel checking of implementation files that have signature files
-    let CheckMultipleInputsInParallel2
+    let CheckMultipleInputsInParallelMy
         ((ctok,
             checkForErrors,
             tcConfig: TcConfig,
@@ -60,14 +67,139 @@ module internal Real =
             prefixPathOpt,
             tcState,
             eagerFormat,
-            inputs): CancellationToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list) : PartialResult list * TcState =
-        failwith ""
+            inputs): 'a * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * AST list)
+        : FinalFileResult list * TcState
+        =
         
+        let sourceFiles =
+            inputs
+            |> List.toArray
+            |> Array.mapi (fun i inp ->
+                {
+                    Idx = FileIdx.make i
+                    AST = inp
+                }
+            )
+        let graph = DepResolving.AutomatedDependencyResolving.detectFileDependencies sourceFiles
         
+        let _ = ctok // TODO Use
+        let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
 
-    
-    let folder (state : State) (result : SingleResult): FinalFileResult * State =
-        result state
+        // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
+        // somewhere in the files processed prior to each one, or in the processing of this particular file.
+        let priorErrors = checkForErrors ()
+        let amap = tcImports.GetImportMap()
+        let conditionalDefines =
+            if tcConfig.noConditionalErasure then
+                None
+            else
+                Some tcConfig.conditionalDefines
+        
+        let processFile
+            ((input, logger) : ParsedInput * DiagnosticsLogger)
+            ((currentTcState, _) : State)
+            : State -> PartialResult * State =
+            cancellable {
+                use _ = UseDiagnosticsLogger logger
+                // Is it OK that we don't update 'priorErrors' after processing batches?
+                let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
+        
+                // this is taken mostly from CheckOneInputAux, the case where the impl has no signature file
+                let file =
+                    match input with
+                    | ParsedInput.ImplFile file -> file
+                    | ParsedInput.SigFile _ -> failwith "not expecting a signature file for now"
+        
+                let tcSink = TcResultsSink.NoSink
+        
+                let! tuple, tcState = CheckOneInput(
+                    checkForErrors2,
+                    tcConfig,
+                    tcImports,
+                    tcGlobals,
+                    prefixPathOpt,
+                    tcSink,
+                    currentTcState,
+                    input,
+                    false // skipImpFiles...
+                )
+                
+                // Typecheck the implementation file
+                let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
+                    CheckOneImplFile(
+                        tcGlobals,
+                        amap,
+                        currentTcState.Ccu,
+                        currentTcState.TcsImplicitOpenDeclarations,
+                        checkForErrors2,
+                        conditionalDefines,
+                        TcResultsSink.NoSink,
+                        tcConfig.internalTestSpanStackReferring,
+                        currentTcState.TcEnvFromImpls,
+                        None,
+                        file
+                    )
+        
+                return
+                    (fun (state : State) ->
+                        let tcState, _priorErrors = state
+                        let tcState =
+                            tcState.WithCreatesGeneratedProvidedTypes
+                                (tcState.CreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes)
+        
+                        let ccuSigForFile, updatedTcState =
+                            let results =
+                                tcGlobals,
+                                amap,
+                                false,
+                                prefixPathOpt,
+                                tcSink,
+                                tcState.TcEnvFromImpls,
+                                input.QualifiedName,
+                                implFile.Signature
+                                
+                            AddCheckResultsToTcState results tcState
+        
+                        let partialResult : PartialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
+                        let hasErrors = logger.ErrorCount > 0
+                        let priorOrCurrentErrors = priorErrors || hasErrors
+                        let state : State = updatedTcState, priorOrCurrentErrors
+                        
+                        partialResult, state
+                    )
+            }
+            |> Cancellable.runWithoutCancellation
+            
+        UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, Some eagerFormat) (fun inputsWithLoggers ->
+            // Equip loggers to locally filter w.r.t. scope pragmas in each input
+            let inputsWithLoggers: IReadOnlyDictionary<FileIdx,(ParsedInput * DiagnosticsLogger)> =
+                inputsWithLoggers
+                |> Seq.mapi (fun i (input, oldLogger) ->
+                    let logger = DiagnosticsLoggerForInput(tcConfig, input, oldLogger)
+                    FileIdx.make i, (input, logger))
+                |> readOnlyDict
+            
+
+            let graph: Graph<File> = graph.Graph
+            let processFile (file : File) (state : State) : State -> PartialResult * State =
+                let parsedInput, logger = inputsWithLoggers[file.Idx]
+                processFile (parsedInput, logger) state
+                
+            let folder: State -> SingleResult -> FinalFileResult * State = folder
+            let state: State = tcState, priorErrors
+            
+            let partialResults, (tcState, _) =
+                GraphProcessing.processGraph<File, State, SingleResult, FinalFileResult>
+                    graph
+                    processFile
+                    folder
+                    state
+                    12
+            
+            partialResults |> Array.toList, tcState
+        )
+            
+    CheckMultipleInputsInParallel2 <- CheckMultipleInputsInParallelMy
             
 
 let typeCheckGraph (graph : FileGraph) : FinalFileResult[] * State =

@@ -740,7 +740,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
 /// NOTE: this needs to be improved to commit diagnotics as soon as possible
 ///
 /// NOTE: If StopProcessing is raised by any piece of work then the overall function raises StopProcessing.
-let UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, eagerFormat) f =
+let UseMultipleDiagnosticLoggers ((inputs, diagnosticsLogger, eagerFormat): 'a list * DiagnosticsLogger * (PhasedDiagnostic -> PhasedDiagnostic) option) (f: ('a * CapturingDiagnosticsLogger) list -> 'b): 'b =
 
     // Check input files and create delayed error loggers before we try to parallel parse.
     let delayLoggers =
@@ -1060,10 +1060,17 @@ type TcState =
     // a.fsi + b.fsi + c.fsi (after checking implementation file for c.fs)
     member x.CcuSig = x.tcsCcuSig
 
+    member x.TcsImplicitOpenDeclarations = x.tcsImplicitOpenDeclarations
+    
     member x.NextStateAfterIncrementalFragment tcEnvAtEndOfLastInput =
         { x with
             tcsTcSigEnv = tcEnvAtEndOfLastInput
             tcsTcImplEnv = tcEnvAtEndOfLastInput
+        }
+        
+    member x.WithCreatesGeneratedProvidedTypes (y : bool) : TcState =
+        { x with
+            tcsCreatesGeneratedProvidedTypes = y
         }
 
 /// Create the initial type checking state for compiling an assembly
@@ -1193,6 +1200,14 @@ let AddDummyCheckResultsToTcState
         AddCheckResultsToTcState (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualName, rootSig) tcState
 
     (tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState
+
+type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
+
+type CheckArgs = CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list
+/// Use parallel checking of implementation files that have signature files
+let mutable CheckMultipleInputsInParallel2 : CheckArgs -> (PartialResult list * TcState)
+    =
+    fun _ -> failwith "Dummy implementation"
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInputAux
@@ -1433,9 +1448,6 @@ let CheckMultipleInputsSequential (ctok, checkForErrors, tcConfig, tcImports, tc
     (tcState, inputs)
     ||> List.mapFold (CheckOneInputEntry args)
 
-
-type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
-
 /// Use parallel checking of implementation files that have signature files
 let CheckMultipleInputsInParallel
     ((ctok,
@@ -1558,8 +1570,8 @@ type WorkInput =
     }
     
 /// Use parallel checking of implementation files that have signature files
-let CheckMultipleInputsInParallel2
-    ((ctok : CancellationToken,
+let CheckMultipleInputsInParallel3
+    ((ctok : CompilationThreadToken,
         checkForErrors: unit -> bool,
         tcConfig: TcConfig,
         tcImports: TcImports,
@@ -1567,7 +1579,7 @@ let CheckMultipleInputsInParallel2
         prefixPathOpt,
         tcState,
         eagerFormat,
-        inputs): CancellationToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list)
+        inputs): CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list)
     : PartialResult list * TcState =
 
     let _ = ctok // TODO Use
@@ -1757,6 +1769,7 @@ let CheckMultipleInputsInParallel2
         let partialResults = partialResults |> Array.toList
         partialResults, tcState
     )
+
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
