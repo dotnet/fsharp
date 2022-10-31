@@ -81,6 +81,11 @@ module internal Real =
                     AST = inp
                 }
             )
+        ParseAndCheckInputs.asts <-
+            inputs
+            |> List.map (fun ast -> ast.FileName, ast)
+            |> readOnlyDict
+            |> Dictionary<_,_>
         let graph = DepResolving.AutomatedDependencyResolving.detectFileDependencies sourceFiles
         
         let graphJson = graph.Graph |> Seq.map (fun (KeyValue(file, deps)) -> file.Name, deps |> Array.map (fun d -> d.Name)) |> dict

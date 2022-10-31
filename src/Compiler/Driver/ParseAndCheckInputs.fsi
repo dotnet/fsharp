@@ -166,6 +166,8 @@ val CheckOneInput:
     skipImplIfSigExists: bool ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
 
+val mutable asts : System.Collections.Generic.Dictionary<string, ParsedInput>
+
 /// Check one input, returned as an Eventually computation
 val CheckOneInput':
     checkForErrors: (unit -> bool) *

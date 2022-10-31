@@ -8,6 +8,7 @@
 
     <ItemGroup>
         <Compile Include="A.fsi" />
+        <Compile Include="AB.fs" />
         <Compile Include="A.fs" />
         <Compile Include="B1.fs" />
         <Compile Include="B2.fs" />

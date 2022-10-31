@@ -22,4 +22,6 @@ module Activity =
 
         activity
 
-    let startNoTags (name: string) : IDisposable = activitySource.StartActivity(name)
+    let startNoTags (name: string) : IDisposable =
+        printfn $"StartNoTags {name}"
+        activitySource.StartActivity(name)
