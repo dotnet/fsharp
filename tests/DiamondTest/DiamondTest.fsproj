@@ -21,6 +21,12 @@
         <Compile Include="D.fsi" />
         <Compile Include="D.fs" />
         <Compile Include="Program.fs" />
+        <Compile Include="Broken1\A.fs" />
+        <Compile Include="Broken1\B.fsi" />
+        <Compile Include="Broken1\B.fs" />
+        <Compile Include="Broken1\C.fs" />
+        <Compile Include="Broken1\D.fs" />
+        <Compile Include="Broken1\E.fs" />
     </ItemGroup>
 
 </Project>
