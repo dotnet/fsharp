@@ -485,7 +485,7 @@ type A with
 """
 
     match parseResults with
-    | ParsedInput.SigFile (ParsedSigFileInput (modules = [ SynModuleOrNamespaceSig(decls = [
+    | ParsedInput.SigFile (ParsedSigFileInput (contents = [ SynModuleOrNamespaceSig(decls = [
         SynModuleSigDecl.Types(
             types = [ SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.ObjectModel(kind = SynTypeDefnKind.Augmentation _)) ]
         )
