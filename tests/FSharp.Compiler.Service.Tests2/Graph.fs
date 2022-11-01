@@ -10,10 +10,28 @@ type Graph<'Node> = IReadOnlyDictionary<'Node, 'Node[]>
 
 module Graph =
     
+    let fillEmptyNodes<'Node when 'Node : equality> (graph : Graph<'Node>) : Graph<'Node> =
+        let missingNodes =
+            graph.Values
+            |> Seq.toArray
+            |> Array.concat
+            |> Array.except graph.Keys
+        
+        let toAdd =
+            missingNodes
+            |> Array.map (fun n -> KeyValuePair(n, [||]))
+        
+        let x = Array.append (graph |> Seq.toArray) toAdd
+        x
+        |> Dictionary<_,_> |> fun x -> x :> IReadOnlyDictionary<_,_>
+    
     let transitive<'Node when 'Node : equality> (graph : Graph<'Node>) : Graph<'Node> =
         let rec calcTransitiveEdges =
             fun (node : 'Node) ->
-                let edgeTargets = graph[node]
+                let edgeTargets =
+                    match graph.TryGetValue node with
+                    | true, x -> x
+                    | false, _ -> failwith "FOO"
                 edgeTargets
                 |> Array.collect calcTransitiveEdges
                 |> Array.append edgeTargets

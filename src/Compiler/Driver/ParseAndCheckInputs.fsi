@@ -145,6 +145,12 @@ val AddCheckResultsToTcState :
 
 type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
+type FsiBackedInfo =
+    Import.ImportMap * string list option * ModuleOrNamespaceType *
+    bool * ParsedImplFileInput * TcState * ModuleOrNamespaceType
+
+val mutable fsiBackedInfos : System.Collections.Generic.Dictionary<string, FsiBackedInfo>
+
 type CheckArgs = CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list
 
 /// Use parallel checking of implementation files that have signature files

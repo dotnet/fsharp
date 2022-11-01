@@ -48,7 +48,7 @@ let foo () =
             {
                 Idx = FileIdx.make 1
                 Code = "module X = let a = 3"
-                AST = parseSourceCode ("A.fs", "module X = let a = 3")
+                AST = ASTOrX.AST <| parseSourceCode ("A.fs", "module X = let a = 3")
                 FsiBacked = false
             }
             
@@ -56,7 +56,7 @@ let foo () =
             {
                 Idx = FileIdx.make 2
                 Code = "module Y = let b = 3"
-                AST = parseSourceCode ("B.fs", "module Y = let b = 3")
+                AST = ASTOrX.AST <| parseSourceCode ("B.fs", "module Y = let b = 3")
                 FsiBacked = false
             }
         [|

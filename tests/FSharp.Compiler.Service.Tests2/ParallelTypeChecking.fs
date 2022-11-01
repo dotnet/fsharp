@@ -10,12 +10,15 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
+open FSharp.Compiler.Service.Tests.FileInfoGathering
 open FSharp.Compiler.Service.Tests.Graph
 open FSharp.Compiler.Service.Tests.Types
 open FSharp.Compiler.Service.Tests.Utils
 open FSharp.Compiler.Service.Tests2
+open FSharp.Compiler.Service.Tests2.DepResolving
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
+open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open Internal.Utilities.Library
 open Newtonsoft.Json
@@ -88,6 +91,50 @@ module internal Real =
             |> Dictionary<_,_>
         let graph = DepResolving.AutomatedDependencyResolving.detectFileDependencies sourceFiles
         
+        let mutable nextIdx = (graph.Files |> Array.map (fun f -> f.File.Idx.Idx) |> Array.max) + 1
+        let fakeX (idx : FileIdx) (fsi : string) : FileData =
+            {
+                File = File.FakeFs idx fsi
+                Data =
+                    {
+                        Tops = [||]
+                        ContainsModuleAbbreviations = false
+                        ModuleRefs = [||]
+                    }
+            }
+        let fsiXMap =
+            graph.Files
+            // fsi files
+            |> Array.filter (fun f -> f.File.Name.EndsWith(".fsi"))
+            // create fakes
+            |> Array.map (fun fsi ->
+                let idx = FileIdx.make nextIdx
+                nextIdx <- nextIdx + 1
+                fsi.File, fakeX idx fsi.File.Name
+            )
+            |> readOnlyDict
+        let xFiles = fsiXMap.Values |> Seq.toArray
+        let stuff =
+            graph.Graph
+            |> Seq.map (fun (KeyValue(node, deps)) ->
+                let deps =
+                    deps
+                    |> Array.map (fun d ->
+                        match fsiXMap.TryGetValue d with
+                        | true, xNode -> xNode.File
+                        | false, _ -> d
+                    )
+                node, deps
+            )
+            |> Seq.append (fsiXMap |> Seq.map (fun (KeyValue(fsi, x)) -> x.File, [|fsi|]))
+            |> readOnlyDict
+        let graph =
+            {
+                Files = Array.append graph.Files xFiles
+                Graph = stuff |> Graph.fillEmptyNodes
+            } : DepsResult
+        
+        
         let graphJson = graph.Graph |> Seq.map (fun (KeyValue(file, deps)) -> file.Name, deps |> Array.map (fun d -> d.Name)) |> dict
         let json = JsonConvert.SerializeObject(graphJson, Formatting.Indented)
         let path = $"c:/projekty/fsharp/heuristic/FCS.deps.json"
@@ -101,6 +148,7 @@ module internal Real =
         let priorErrors = checkForErrors ()
         
         let processFile
+            (file : File)
             ((input, logger) : ParsedInput * DiagnosticsLogger)
             ((currentTcState, currentPriorErrors) : State)
             : State -> PartialResult * State =
@@ -108,32 +156,68 @@ module internal Real =
                 use _ = UseDiagnosticsLogger logger
                 // Is it OK that we don't update 'priorErrors' after processing batches?
                 let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
-        
+                
                 let tcSink = TcResultsSink.NoSink
-        
-                let! f = CheckOneInput'(
-                    checkForErrors2,
-                    tcConfig,
-                    tcImports,
-                    tcGlobals,
-                    prefixPathOpt,
-                    tcSink,
-                    currentTcState,
-                    input,
-                    false  // skipImpFiles...
-                )
-        
-                return
-                    (fun (state : State) ->
-                        let tcState, priorErrors = state
-                        let (partialResult : PartialResult, tcState) = f tcState
-        
-                        let hasErrors = logger.ErrorCount > 0
-                        // TODO Should we use local _priorErrors or global priorErrors? 
-                        let priorOrCurrentErrors = priorErrors || hasErrors
-                        let state : State = tcState, priorOrCurrentErrors
-                        partialResult, state
+                
+                match file.AST with
+                | ASTOrX.AST _ ->
+                    let! f = CheckOneInput'(
+                        checkForErrors2,
+                        tcConfig,
+                        tcImports,
+                        tcGlobals,
+                        prefixPathOpt,
+                        tcSink,
+                        currentTcState,
+                        input,
+                        false  // skipImpFiles...
                     )
+            
+                    return
+                        (fun (state : State) ->
+                            let tcState, priorErrors = state
+                            let (partialResult : PartialResult, tcState) = f tcState
+            
+                            let hasErrors = logger.ErrorCount > 0
+                            // TODO Should we use local _priorErrors or global priorErrors? 
+                            let priorOrCurrentErrors = priorErrors || hasErrors
+                            let state : State = tcState, priorOrCurrentErrors
+                            partialResult, state
+                        )
+                | ASTOrX.X fsi ->
+                    let hadSig = true
+                    // Add dummy .fs results
+                    // Adjust the TcState as if it has been checked, which makes the signature for the file available later
+                    // in the compilation order.
+                    let tcStateForImplFile = tcState
+                    let fsName = fsi.TrimEnd('i')
+                    let fsQualifiedName = asts[fsName].QualifiedName
+                    let qualNameOfFile = fsQualifiedName
+                    let priorErrors = checkForErrors ()
+                    
+                    // Add dummy TcState so that others can use this file through the .fsi stuff, without type-checking .fs
+                    // Don't use it for this file's type-checking - it will cause duplicates
+                    
+                    let info = fsiBackedInfos[file.Name]
+                    match info with
+                    // TODO Change
+                    | amap, conditionalDefines, rootSig, priorErrors, file, tcStateForImplFile, ccuSigForFile ->
+                        return
+                            (fun (state : State) ->
+                                let tcState, priorErrors = state
+                                
+                                let ccuSigForFile, tcState =
+                                    AddCheckResultsToTcState
+                                        (tcGlobals, tcImports.GetImportMap(), hadSig, prefixPathOpt, tcSink, tcState.TcEnvFromImpls, qualNameOfFile, ccuSigForFile)
+                                        tcState
+                                let partialResult = tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile
+                
+                                let hasErrors = logger.ErrorCount > 0
+                                // TODO Should we use local _priorErrors or global priorErrors? 
+                                let priorOrCurrentErrors = priorErrors || hasErrors
+                                let state : State = tcState, priorOrCurrentErrors
+                                partialResult, state
+                            )
             }
             |> Cancellable.runWithoutCancellation
             
@@ -149,10 +233,15 @@ module internal Real =
 
             let graph: Graph<File> = graph.Graph
             let processFile (file : File) (state : State) : State -> PartialResult * State =
-                let parsedInput, logger = inputsWithLoggers[file.Idx]
-                processFile (parsedInput, logger) state
+                match file.AST with
+                | ASTOrX.AST ast ->
+                    let parsedInput, logger = inputsWithLoggers[file.Idx]
+                    processFile file (parsedInput, logger) state
+                | ASTOrX.X fsi ->
+                    fun state -> (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.CcuSig), state
                 
             let folder: State -> SingleResult -> FinalFileResult * State = folder
+            let qnof = QualifiedNameOfFile.QualifiedNameOfFile (Ident("", Range.Zero))
             let state: State = tcState, priorErrors
             
             let partialResults, (tcState, _) =
@@ -161,7 +250,7 @@ module internal Real =
                     processFile
                     folder
                     state
-                    12
+                    1
             
             partialResults |> Array.toList, tcState
         )

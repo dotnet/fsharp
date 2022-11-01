@@ -241,8 +241,8 @@ module internal AutomatedDependencyResolving =
         let graph =
             nodes
             // TODO Async + cancellations
-            |> Array.map processFile
-            // |> Array.Parallel.map processFile
+            // |> Array.map processFile
+            |> Array.Parallel.map processFile
             |> readOnlyDict
         
         let totalSize1 =
