@@ -40,7 +40,6 @@ type SyntheticSourceFile =
         HasSignatureFile: bool
         HasErrors: bool
         EntryPoint: bool
-        ExtraCodeToCompile: bool
     }
 
     member this.FileName = $"File{this.Id}.fs"
@@ -54,8 +53,7 @@ let sourceFile fileId deps =
       FunctionName = defaultFunctionName
       HasSignatureFile = false
       HasErrors = false
-      EntryPoint = false
-      ExtraCodeToCompile = false }
+      EntryPoint = false }
 
 type SyntheticProject =
     { Name: string
@@ -114,9 +112,6 @@ module Internal =
 
             if f.HasErrors then
                 "let wrong = 1 + 'a'"
-
-            if f.ExtraCodeToCompile then
-                extraCodeToCompile
 
             if f.EntryPoint then
                 "[<EntryPoint>]"
