@@ -1832,7 +1832,7 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
 
                     let fref2 = rfinfo2.RecdFieldRef
 
-                    CheckRecdFieldAccessible cenv.amap ident.idRange env.eAccessRights fref2 |> ignore
+                    CheckRecdFieldAccessible cenv.amap m env.eAccessRights fref2 |> ignore
 
                     CheckFSharpAttributes g fref2.PropertyAttribs ident.idRange |> CommitOperationResult
 
