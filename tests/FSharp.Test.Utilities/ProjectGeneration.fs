@@ -186,6 +186,9 @@ module ProjectOperations =
 
     let setPublicVersion n f = { f with PublicVersion = n }
 
+    let addDependency fileId f =
+        { f with DependsOn = fileId :: f.DependsOn }
+
     let checkFile fileId (project: SyntheticProject) (checker: FSharpChecker) =
         let file = project.Find fileId
         let contents = renderSourceFile project.Name file
@@ -297,6 +300,35 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
         async {
             let! ctx = x
             let project = ctx.Project |> updateFile fileId processFile
+            return { ctx with Project = project }
+        }
+
+    /// Add a file above given file in the project
+    [<CustomOperation "addFileAbove">]
+    member this.AddFileAbove(x: Async<WorkflowContext>, addAboveId: string, newFile) : Async<WorkflowContext> =
+        async {
+            let! ctx = x
+
+            let index =
+                ctx.Project.SourceFiles
+                |> List.tryFindIndex (fun f -> f.Id = addAboveId)
+                |> Option.defaultWith (fun () -> failwith $"File {addAboveId} not found")
+
+            let project =
+                { ctx.Project with SourceFiles = ctx.Project.SourceFiles |> List.insertAt index newFile }
+
+            return { ctx with Project = project }
+        }
+
+    /// Remove a file from the project. The file is not deleted from disk.
+    [<CustomOperation "removeFile">]
+    member this.RemoveFile(x: Async<WorkflowContext>, fileId: string) : Async<WorkflowContext> =
+        async {
+            let! ctx = x
+
+            let project =
+                { ctx.Project with SourceFiles = ctx.Project.SourceFiles |> List.filter (fun f -> f.Id <> fileId) }
+
             return { ctx with Project = project }
         }
 
