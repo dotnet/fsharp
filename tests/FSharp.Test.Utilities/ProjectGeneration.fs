@@ -261,6 +261,12 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
     let checker = defaultArg checker (FSharpChecker.Create())
 
+    let mapProject f workflow =
+        async {
+            let! ctx = workflow
+            return { ctx with Project = f ctx.Project }
+        }
+
     member this.Checker = checker
 
     member this.Yield _ =
@@ -296,47 +302,33 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
     /// Change contents of given file using `processFile` function.
     /// Does not save the file to disk.
     [<CustomOperation "updateFile">]
-    member this.UpdateFile(x: Async<WorkflowContext>, fileId: string, processFile) : Async<WorkflowContext> =
-        async {
-            let! ctx = x
-            let project = ctx.Project |> updateFile fileId processFile
-            return { ctx with Project = project }
-        }
+    member this.UpdateFile(workflow: Async<WorkflowContext>, fileId: string, processFile) =
+        workflow |> mapProject (updateFile fileId processFile)
 
-    /// Add a file above given file in the project
+    /// Add a file above given file in the project.
     [<CustomOperation "addFileAbove">]
-    member this.AddFileAbove(x: Async<WorkflowContext>, addAboveId: string, newFile) : Async<WorkflowContext> =
-        async {
-            let! ctx = x
-
+    member this.AddFileAbove(workflow: Async<WorkflowContext>, addAboveId: string, newFile) =
+        workflow
+        |> mapProject (fun project ->
             let index =
-                ctx.Project.SourceFiles
+                project.SourceFiles
                 |> List.tryFindIndex (fun f -> f.Id = addAboveId)
                 |> Option.defaultWith (fun () -> failwith $"File {addAboveId} not found")
 
-            let project =
-                { ctx.Project with SourceFiles = ctx.Project.SourceFiles |> List.insertAt index newFile }
-
-            return { ctx with Project = project }
-        }
+            { project with SourceFiles = project.SourceFiles |> List.insertAt index newFile })
 
     /// Remove a file from the project. The file is not deleted from disk.
     [<CustomOperation "removeFile">]
-    member this.RemoveFile(x: Async<WorkflowContext>, fileId: string) : Async<WorkflowContext> =
-        async {
-            let! ctx = x
-
-            let project =
-                { ctx.Project with SourceFiles = ctx.Project.SourceFiles |> List.filter (fun f -> f.Id <> fileId) }
-
-            return { ctx with Project = project }
-        }
+    member this.RemoveFile(workflow: Async<WorkflowContext>, fileId: string) =
+        workflow
+        |> mapProject (fun project ->
+            { project with SourceFiles = project.SourceFiles |> List.filter (fun f -> f.Id <> fileId) })
 
     /// Parse and type check given file and process the results using `processResults` function.
     [<CustomOperation "checkFile">]
-    member this.CheckFile(x: Async<WorkflowContext>, fileId: string, processResults) =
+    member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
         async {
-            let! ctx = x
+            let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker
 
             let oldSignature = ctx.Signatures.[fileId]
@@ -349,23 +341,23 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
     /// Save given file to disk.
     [<CustomOperation "saveFile">]
-    member this.SaveFile(x: Async<WorkflowContext>, fileId: string) =
+    member this.SaveFile(workflow: Async<WorkflowContext>, fileId: string) =
         async {
-            let! ctx = x
-            let f = ctx.Project.Find fileId
-            writeFile ctx.Project f
+            let! ctx = workflow
+            let file = ctx.Project.Find fileId
+            writeFile ctx.Project file
             return ctx
         }
 
-    /// Save all files to disk
+    /// Save all files to disk.
     [<CustomOperation "saveAll">]
-    member this.SaveAll(x: Async<WorkflowContext>) =
+    member this.SaveAll(workflow: Async<WorkflowContext>) =
         async {
-            let! ctx = x
+            let! ctx = workflow
             do! saveProject ctx.Project false checker
             return ctx
         }
 
 /// Execute a set of operations on a given synthetic project.
 /// The project is saved to disk and type checked at the start.
-let projectWorkflow x = ProjectWorkflowBuilder x
+let projectWorkflow project = ProjectWorkflowBuilder project
