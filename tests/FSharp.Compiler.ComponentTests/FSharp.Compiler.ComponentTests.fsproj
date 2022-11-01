@@ -160,8 +160,8 @@
     <Compile Include="ErrorMessages\FS0988AtEndOfFile.fs" />
     <Compile Include="ErrorMessages\Repro1548.fs" />
     <Compile Include="ErrorMessages\WarnIfDiscardedInList.fs" />
-    <Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs"/>
-    <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs"/>	
+    <Compile Include="ErrorMessages\UnionCasePatternMatchingErrors.fs" />
+    <Compile Include="ErrorMessages\InterfaceImplInAugmentationsTests.fs" />	
     <Compile Include="Language\IndexerSetterParamArray.fs" />
     <Compile Include="Language\MultiDimensionalArrayTests.fs" />
     <Compile Include="Language\RegressionTests.fs" />
@@ -207,6 +207,7 @@
     <Compile Include="Signatures\RecordTests.fs" />
     <Compile Include="Signatures\ArrayTests.fs" />
     <Compile Include="Signatures\TypeTests.fs" />
+    <Compile Include="FSharpChecker\CommonWorkflows.fs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
