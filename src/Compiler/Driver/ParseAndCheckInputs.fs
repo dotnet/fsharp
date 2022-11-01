@@ -1420,6 +1420,7 @@ let CheckOneInputAux'
             
             match inp with
             | ParsedInput.SigFile file ->
+                printfn $"Processing Sig {file.FileName}"
                 let qualNameOfFile = file.QualifiedName
 
                 // Check if we've seen this top module signature before.
@@ -1451,7 +1452,9 @@ let CheckOneInputAux'
                         let m = qualNameOfFile.Range
                         TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m tcEnv (prefixPath, m)
                 
+                printfn $"Finished Processing Sig {file.FileName}"
                 return fun tcState ->
+                    printfn $"Applying Sig {file.FileName}"
                     let fsiPartialResult, tcState =
                         let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
 
@@ -1489,9 +1492,15 @@ let CheckOneInputAux'
                         //         tcState
 
                         // TODO Do we 
-                        let _, _, _, ccuSigForFile = fsiPartialResult
+                        let _, _, _, _ = fsiPartialResult
+                        
+                        let ccuSigForFile, _ =
+                            AddCheckResultsToTcState
+                                (tcGlobals, amap, true, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, sigFileType)
+                                tcState
                         
                         // Save info needed for type-checking .fs file later on
+                        // TODO Remove most of this
                         let fsiBackedInfo: FsiBackedInfo =
                             let ast = asts[fsName]
                             let file =
@@ -1500,8 +1509,9 @@ let CheckOneInputAux'
                                 | ParsedInput.SigFile _ -> failwith "Unexpected SigFile"
                             amap, conditionalDefines, sigFileType, priorErrors, file, tcStateForImplFile, ccuSigForFile
 
-                        fsiBackedInfos[fsName] <- fsiBackedInfo
+                        fsiBackedInfos[file.FileName] <- fsiBackedInfo
                         
+                        printfn $"Finished Applying Sig {file.FileName}"
                         tcState
                     //
                     // let _, finalTcState =
@@ -1521,6 +1531,7 @@ let CheckOneInputAux'
                     fsiPartialResult, fsTcState
 
             | ParsedInput.ImplFile file ->
+                printfn $"Processing Impl {file.FileName}"
                 let qualNameOfFile = file.QualifiedName
 
                 // Check if we've got an interface for this fragment
@@ -1590,7 +1601,9 @@ let CheckOneInputAux'
                             file
                         )
 
+                    printfn $"Finished Processing Impl {file.FileName}"
                     return fun tcState ->
+                        printfn $"Applying Impl {file.FileName}"
                         let ccuSigForFile, fsTcState =
                             AddCheckResultsToTcState
                                 (tcGlobals, amap, false, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, implFile.Signature)
@@ -1603,6 +1616,7 @@ let CheckOneInputAux'
                                 tcsCreatesGeneratedProvidedTypes = fsTcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
                             }
 
+                        printfn $"Finished applying Impl {file.FileName}"
                         partialResult, tcState
 
         with e ->

@@ -120,9 +120,10 @@ module internal Real =
                 let deps =
                     deps
                     |> Array.map (fun d ->
-                        match fsiXMap.TryGetValue d with
-                        | true, xNode -> xNode.File
-                        | false, _ -> d
+                        match (fsiXMap.TryGetValue d, (node.Name + "i" = d.Name)) with
+                        | (true, xNode), false -> xNode.File
+                        | (false, _), _
+                        | _, true -> d
                     )
                 node, deps
             )
@@ -161,6 +162,7 @@ module internal Real =
                 
                 match file.AST with
                 | ASTOrX.AST _ ->
+                    printfn $"Processing AST {file.Name}"
                     let! f = CheckOneInput'(
                         checkForErrors2,
                         tcConfig,
@@ -173,6 +175,7 @@ module internal Real =
                         false  // skipImpFiles...
                     )
             
+                    printfn $"Finished Processing AST {file.Name}"
                     return
                         (fun (state : State) ->
                             let tcState, priorErrors = state
@@ -185,6 +188,8 @@ module internal Real =
                             partialResult, state
                         )
                 | ASTOrX.X fsi ->
+                    printfn $"Processing X {file.Name}"
+
                     let hadSig = true
                     // Add dummy .fs results
                     // Adjust the TcState as if it has been checked, which makes the signature for the file available later
@@ -198,13 +203,16 @@ module internal Real =
                     // Add dummy TcState so that others can use this file through the .fsi stuff, without type-checking .fs
                     // Don't use it for this file's type-checking - it will cause duplicates
                     
-                    let info = fsiBackedInfos[file.Name]
+                    let info = fsiBackedInfos[fsi]
                     match info with
                     // TODO Change
-                    | amap, conditionalDefines, rootSig, priorErrors, file, tcStateForImplFile, ccuSigForFile ->
+                    | amap, conditionalDefines, rootSig, priorErrors, filee, tcStateForImplFile, ccuSigForFile ->
+                        printfn $"Finished Processing X {file.Name}"
                         return
                             (fun (state : State) ->
+                                printfn $"Applying X state {file.Name}"                        
                                 let tcState, priorErrors = state
+                                // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state 
                                 
                                 let ccuSigForFile, tcState =
                                     AddCheckResultsToTcState
@@ -216,6 +224,7 @@ module internal Real =
                                 // TODO Should we use local _priorErrors or global priorErrors? 
                                 let priorOrCurrentErrors = priorErrors || hasErrors
                                 let state : State = tcState, priorOrCurrentErrors
+                                printfn $"Finished applying X state {file.Name}"
                                 partialResult, state
                             )
             }
@@ -233,12 +242,13 @@ module internal Real =
 
             let graph: Graph<File> = graph.Graph
             let processFile (file : File) (state : State) : State -> PartialResult * State =
-                match file.AST with
-                | ASTOrX.AST ast ->
-                    let parsedInput, logger = inputsWithLoggers[file.Idx]
-                    processFile file (parsedInput, logger) state
-                | ASTOrX.X fsi ->
-                    fun state -> (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.CcuSig), state
+                let parsedInput, logger =
+                    match file.AST with
+                    | ASTOrX.AST ast ->
+                        ast, inputsWithLoggers[file.Idx] |> snd
+                    | ASTOrX.X _ ->
+                        inputs |> List.item 0, diagnosticsLogger
+                processFile file (parsedInput, logger) state
                 
             let folder: State -> SingleResult -> FinalFileResult * State = folder
             let qnof = QualifiedNameOfFile.QualifiedNameOfFile (Ident("", Range.Zero))
