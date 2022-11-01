@@ -1603,11 +1603,18 @@ let CheckOneInputAux'
 
                     printfn $"Finished Processing Impl {file.FileName}"
                     return fun tcState ->
-                        printfn $"Applying Impl {file.FileName}"
+                        let backed = rootSigOpt.IsSome
+                        printfn $"Applying Impl Backed={backed} {file.FileName}"
+                        
+                        
+                        
                         let ccuSigForFile, fsTcState =
                             AddCheckResultsToTcState
                                 (tcGlobals, amap, false, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, implFile.Signature)
                                 tcState
+                        
+                        // backed impl files must not add results as there are already results from .fsi files 
+                        let fsTcState = if backed then tcState else fsTcState
 
                         let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
                         

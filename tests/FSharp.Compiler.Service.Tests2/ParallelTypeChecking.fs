@@ -210,6 +210,7 @@ module internal Real =
                         printfn $"Finished Processing X {file.Name}"
                         return
                             (fun (state : State) ->
+                                // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state
                                 printfn $"Applying X state {file.Name}"                        
                                 let tcState, priorErrors = state
                                 // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state 

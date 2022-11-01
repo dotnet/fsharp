@@ -210,3 +210,9 @@
 --refout:C:\projekty\fsharp\heuristic\artifacts\obj\DiamondTest\Debug\net7.0\refint\DiamondTest.dll
 C:\projekty\fsharp\heuristic\tests\DiamondTest\A.fsi
 C:\projekty\fsharp\heuristic\tests\DiamondTest\A.fs
+C:\projekty\fsharp\heuristic\tests\DiamondTest\B1.fs
+C:\projekty\fsharp\heuristic\tests\DiamondTest\B2.fs
+C:\projekty\fsharp\heuristic\tests\DiamondTest\C1.fs
+C:\projekty\fsharp\heuristic\tests\DiamondTest\C2.fs
+C:\projekty\fsharp\heuristic\tests\DiamondTest\D.fs
+C:\projekty\fsharp\heuristic\tests\DiamondTest\Program.fs

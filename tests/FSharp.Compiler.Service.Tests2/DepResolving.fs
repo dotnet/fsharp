@@ -151,7 +151,7 @@ module internal AutomatedDependencyResolving =
             let deps =
                 // Assume that a file with module abbreviations can depend on anything
                 match node.Data.ContainsModuleAbbreviations with
-                | true -> nodes
+                | true -> nodes |> Array.map (fun n -> n.File)
                 | false ->
                     // Clone the original Trie as we're going to mutate the copy
                     let trie = cloneTrie trie
@@ -226,16 +226,18 @@ module internal AutomatedDependencyResolving =
                         // For starters: can module abbreviations affect other files?
                         // If not, then the below is not necessary.
                         |> Seq.append filesWithModuleAbbreviations
+                        |> Seq.map (fun f -> f.File)
                         |> Seq.toArray
                     
                     deps
                 // We know a file can't depend on a file further down in the project definition (or on itself)
-                |> Array.filter (fun dep -> dep.File.Idx < node.File.Idx)
+                |> Array.filter (fun dep -> dep.Idx < node.File.Idx)
                 // Filter out deps onto .fs files that have backing .fsi files
-                |> Array.filter (fun dep -> not dep.File.FsiBacked)
+                |> Array.filter (fun dep -> not dep.FsiBacked)
+                |> Array.distinct
                 
             // Return the node and its dependencies
-            node.File, deps |> Array.map (fun d -> d.File)
+            node.File, deps
         
         // Find dependencies for all files
         let graph =
@@ -248,9 +250,11 @@ module internal AutomatedDependencyResolving =
         let totalSize1 =
             graph
             |> Seq.sumBy (fun (KeyValue(k,v)) -> v.Length)
-        let totalSize2 =
+        let t =
             graph
             |> Graph.transitive 
+        let totalSize2 =
+            t
             |> Seq.sumBy (fun (KeyValue(k,v)) -> v.Length)
         
         printfn $"Non-transitive size: {totalSize1}, transitive size: {totalSize2}"
