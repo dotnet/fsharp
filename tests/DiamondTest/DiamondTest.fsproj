@@ -10,10 +10,15 @@
         <Compile Include="A.fsi" />
         <Compile Include="AB.fs" />
         <Compile Include="A.fs" />
+        <Compile Include="B1.fsi" />
         <Compile Include="B1.fs" />
+        <Compile Include="B2.fsi" />
         <Compile Include="B2.fs" />
+        <Compile Include="C1.fsi" />
         <Compile Include="C1.fs" />
+        <Compile Include="C2.fsi" />
         <Compile Include="C2.fs" />
+        <Compile Include="D.fsi" />
         <Compile Include="D.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
