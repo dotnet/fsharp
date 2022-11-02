@@ -41,7 +41,7 @@ neg32.fs(57,4,57,38): typecheck error FS0671: A property cannot have explicit ty
 
 neg32.fs(58,4,58,33): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead.
 
-neg32.fs(59,4,59,33): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead..
+neg32.fs(59,4,59,33): typecheck error FS0671: A property cannot have explicit type parameters. Consider using a method instead.
 
 neg32.fs(62,10,62,12): typecheck error FS0039: The type parameter 'T is not defined.
 
