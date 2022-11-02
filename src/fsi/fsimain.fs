@@ -152,7 +152,7 @@ let internal TrySetUnhandledExceptionMode () =
 let StartServer (fsiSession: FsiEvaluationSession) (fsiServerName) =
     let server =
 
-        { new CtrlBreakService (fsiServerName) with
+        { new CtrlBreakService(fsiServerName) with
             member _.Interrupt() =
                 //printf "FSI-SERVER: received CTRL-C request...\n"
                 try

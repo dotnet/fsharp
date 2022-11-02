@@ -11,7 +11,10 @@ open System.Threading
 module CtrlBreakHandlers =
 
     let interuptCommand = "Interactive-CtrlCNotificationCommand-Interupt"
-    let lineInteruptCommand = Encoding.UTF8.GetBytes(interuptCommand + Environment.NewLine)
+
+    let lineInteruptCommand =
+        Encoding.UTF8.GetBytes(interuptCommand + Environment.NewLine)
+
     let connectionTimeout = 1000
 
     [<AbstractClass>]
@@ -20,19 +23,22 @@ module CtrlBreakHandlers =
         abstract Interrupt: unit -> unit
 
         // Exceptions percolate to callsite, IO exceptions must be handled by caller
-        // Should be run on a new thread 
-        member this.Run(): unit =
-            let service = Some (new NamedPipeServerStream(channelName, PipeDirection.In))
+        // Should be run on a new thread
+        member this.Run() : unit =
+            let service = Some(new NamedPipeServerStream(channelName, PipeDirection.In))
 
             match service with
             | Some service ->
                 // Wait for a client to connect
                 service.WaitForConnection()
                 use stream = new StreamReader(service)
+
                 try
                     while not (stream.EndOfStream) do
                         let line = stream.ReadLine()
-                        if line = interuptCommand then this.Interrupt()
+
+                        if line = interuptCommand then
+                            this.Interrupt()
                 finally
                     stream.Close()
                     service.Close()
@@ -49,10 +55,11 @@ module CtrlBreakHandlers =
                 try
                     if not (service.IsConnected) then
                         service.Connect(connectionTimeout)
-                with _ -> ()
+                with _ ->
+                    ()
 
                 service.Write(lineInteruptCommand, 0, lineInteruptCommand.Length)
                 service.Flush()
 
         member _.Start() =
-            service <- Some (new NamedPipeClientStream(".", channelName, PipeDirection.Out))
+            service <- Some(new NamedPipeClientStream(".", channelName, PipeDirection.Out))
