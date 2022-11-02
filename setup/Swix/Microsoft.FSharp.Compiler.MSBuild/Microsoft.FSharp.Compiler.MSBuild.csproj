@@ -13,7 +13,6 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsi\fsiArm64Project\fsiArm64.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Build\FSharp.Build.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
-    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.DependencyManager.Nuget\FSharp.DependencyManager.Nuget.fsproj" />
@@ -108,7 +107,6 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools"
   file source="$(BinariesFolder)fsc\$(Configuration)\$(TargetFramework)\Microsoft.Build.Framework.dll"
   file source="$(BinariesFolder)fsc\$(Configuration)\$(TargetFramework)\Microsoft.Build.Tasks.Core.dll"
   file source="$(BinariesFolder)fsc\$(Configuration)\$(TargetFramework)\Microsoft.Build.Utilities.Core.dll"
-  file source="$(BinariesFolder)FSharp.Compiler.Server.Shared\$(Configuration)\$(TargetFramework)\FSharp.Compiler.Server.Shared.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.dll" vs.file.ngen=yes vs.file.ngenArchitecture=All vs.file.ngenPriority=2
   file source="$(BinariesFolder)FSharp.Core\$(Configuration)\netstandard2.0\FSharp.Core.xml"
   file source="$(BinariesFolder)FSharp.Build\$(Configuration)\netstandard2.0\FSharp.Build.dll" vs.file.ngen=no vs.file.ngenArchitecture=All vs.file.ngenPriority=2
