@@ -38,7 +38,7 @@ let greeting2 = greet "Liam"
     Assert.AreEqual(expected, actual)
 
 [<Test>]
-let ``Hint are shown for multiple parameters`` () =
+let ``Hints are shown for multiple parameters`` () =
     let code = """
 let greet friend1 friend2 = $"hello {friend1} and {friend2}"
 let greeting = greet "Liam" "Noel"
@@ -54,7 +54,7 @@ let greeting = greet "Liam" "Noel"
     Assert.AreEqual(expected, actual)
 
 [<Test>] // here we don't want an empty hint before "x"
-let ``Hint are not shown for nameless parameters`` () =
+let ``Hints are not shown for nameless parameters`` () =
     let code = """
 let exists predicate option =
     match option with
@@ -68,7 +68,7 @@ let exists predicate option =
     Assert.IsEmpty(result)
 
 [<Test>] // here we don't want a useless (?) hint "value = "
-let ``Hint are not shown for operator parameters`` () =
+let ``Hints are not shown for operator parameters`` () =
     let code = """
 let postTrue = not true
 """
