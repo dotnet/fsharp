@@ -4151,6 +4151,15 @@ FSharp.Compiler.IO.StreamExtensions: System.String[] Stream.ReadAllLines(System.
 FSharp.Compiler.IO.StreamExtensions: Void Stream.WriteAllLines(System.IO.Stream, System.Collections.Generic.IEnumerable`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Text.Encoding])
 FSharp.Compiler.IO.StreamExtensions: Void Stream.WriteAllText(System.IO.Stream, System.String)
 FSharp.Compiler.IO.StreamExtensions: Void Stream.Write[a](System.IO.Stream, a)
+FSharp.Compiler.Interactive.CtrlBreakHandlers
+FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakClient: Void .ctor(System.String)
+FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakClient: Void Interrupt()
+FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakClient: Void Start()
+FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakService: Void .ctor(System.String)
+FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakService: Void Interrupt()
+FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakService: Void Run()
+FSharp.Compiler.Interactive.CtrlBreakHandlers: FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakClient
+FSharp.Compiler.Interactive.CtrlBreakHandlers: FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakService
 FSharp.Compiler.Interactive.Shell
 FSharp.Compiler.Interactive.Shell+CompilerInputStream: Boolean CanRead
 FSharp.Compiler.Interactive.Shell+CompilerInputStream: Boolean CanSeek
