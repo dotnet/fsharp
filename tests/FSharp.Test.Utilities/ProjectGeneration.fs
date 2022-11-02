@@ -90,13 +90,12 @@ type SyntheticProject =
 
                    this.ProjectDir ++ f.FileName |]
           OtherOptions =
-            [|
-                "--optimize+"
-                for p in this.DependsOn do
-                    $"-r:{p.OutputFilename}" |]
+            [| "--optimize+"
+               for p in this.DependsOn do
+                   $"-r:{p.OutputFilename}" |]
           ReferencedProjects =
             [| for p in this.DependsOn do
-                 FSharpReferencedProject.CreateFSharp(p.OutputFilename, p.ProjectOptions) |]
+                   FSharpReferencedProject.CreateFSharp(p.OutputFilename, p.ProjectOptions) |]
           IsIncompleteTypeCheckEnvironment = false
           UseScriptResolutionRules = false
           LoadTime = DateTime()
@@ -104,11 +103,11 @@ type SyntheticProject =
           OriginalLoadReferences = []
           Stamp = None }
 
-    member this.GetAllFiles() = [
-        for f in this.SourceFiles do
-            this, f
-        for p in this.DependsOn do
-            yield! p.GetAllFiles() ]
+    member this.GetAllFiles() =
+        [ for f in this.SourceFiles do
+              this, f
+          for p in this.DependsOn do
+              yield! p.GetAllFiles() ]
 
 
 module Internal =
@@ -179,10 +178,12 @@ module Internal =
         writeFileIfChanged fileName content
 
     let validateFileIdsAreUnique (project: SyntheticProject) =
-        let ids = [for _, f in project.GetAllFiles() -> f.Id]
+        let ids = [ for _, f in project.GetAllFiles() -> f.Id ]
         let duplicates = ids |> List.groupBy id |> List.filter (fun (_, g) -> g.Length > 1)
+
         if duplicates.Length > 0 then
-            failwith $"""Source file IDs have to be unique across the project and all referenced projects. Found duplicates: {String.Join(", ", duplicates |> List.map fst)}"""
+            failwith
+                $"""Source file IDs have to be unique across the project and all referenced projects. Found duplicates: {String.Join(", ", duplicates |> List.map fst)}"""
 
 
 open Internal
@@ -209,6 +210,7 @@ module ProjectOperations =
             updateFile fileId updateFunction project
         else
             let index = rootProject.DependsOn |> List.findIndex ((=) project)
+
             { rootProject with
                 DependsOn =
                     rootProject.DependsOn
@@ -228,7 +230,7 @@ module ProjectOperations =
 
     let setPublicVersion n f = { f with PublicVersion = n }
 
-    let addDependency fileId f: SyntheticSourceFile =
+    let addDependency fileId f : SyntheticSourceFile =
         { f with DependsOn = fileId :: f.DependsOn }
 
     let checkFile fileId (project: SyntheticProject) (checker: FSharpChecker) =
