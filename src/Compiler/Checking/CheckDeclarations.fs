@@ -406,7 +406,7 @@ let private CheckDuplicatesAbstractMethodParmsSig (typeSpecs:  SynTypeDefnSig li
         | SynTypeDefnSigRepr.ObjectModel(_, synMemberSigs, _) ->
          for sms in synMemberSigs do
              match sms with
-             | SynMemberSig.Member(synValSig, _, m) ->
+             | SynMemberSig.Member(memberSig = synValSig; range = m) ->
                 CheckDuplicatesArgNames synValSig m
              | _ -> ()
         | _ -> ()
@@ -601,7 +601,7 @@ let TcAndPublishMemberSpec cenv env containerInfo declKind tpenv memb =
     | SynMemberSig.ValField(_, m) -> error(Error(FSComp.SR.tcFieldValIllegalHere(), m))
     | SynMemberSig.Inherit(_, m) -> error(Error(FSComp.SR.tcInheritIllegalHere(), m))
     | SynMemberSig.NestedType(_, m) -> error(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
-    | SynMemberSig.Member(synValSig, memberFlags, _) -> 
+    | SynMemberSig.Member(memberSig = synValSig; flags = memberFlags) -> 
         TcAndPublishValSpec (cenv, env, containerInfo, declKind, Some memberFlags, tpenv, synValSig)
     | SynMemberSig.Interface _ -> 
         // These are done in TcMutRecDefns_Phase1
@@ -3972,7 +3972,7 @@ module TcDeclarations =
             for slot in ds do
                 if isAbstractSlot slot then
                     match slot with
-                    | SynMemberDefn.AbstractSlot (synVal, _, m) ->
+                    | SynMemberDefn.AbstractSlot (slotSig = synVal; range = m) ->
                         CheckDuplicatesArgNames synVal m
                     | _ -> ()
                     
@@ -4013,7 +4013,7 @@ module TcDeclarations =
                     | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m) -> Some(ty, m, idOpt)
                     | _ -> None)
             //let nestedTycons = cspec |> List.choose (function SynMemberDefn.NestedType (x, _, _) -> Some x | _ -> None)
-            let slotsigs = cspec |> List.choose (function SynMemberDefn.AbstractSlot (x, y, _) -> Some(x, y) | _ -> None)
+            let slotsigs = cspec |> List.choose (function SynMemberDefn.AbstractSlot (slotSig = x; flags = y) -> Some(x, y) | _ -> None)
            
             let members = 
                 let membersIncludingAutoProps = 
@@ -4261,22 +4261,22 @@ module TcDeclarations =
             let implements2 = cspec |> List.choose (function SynMemberSig.Interface (ty, m) -> Some(ty, m) | _ -> None)
             let inherits = cspec |> List.choose (function SynMemberSig.Inherit (ty, _) -> Some(ty, m, None) | _ -> None)
             //let nestedTycons = cspec |> List.choose (function SynMemberSig.NestedType (x, _) -> Some x | _ -> None)
-            let slotsigs = cspec |> List.choose (function SynMemberSig.Member (v, fl, _) when fl.IsDispatchSlot -> Some(v, fl) | _ -> None)
+            let slotsigs = cspec |> List.choose (function SynMemberSig.Member (memberSig = v; flags = fl) when fl.IsDispatchSlot -> Some(v, fl) | _ -> None)
             let members = cspec |> List.filter (function   
                                                           | SynMemberSig.Interface _ -> true
-                                                          | SynMemberSig.Member (_, memberFlags, _) when not memberFlags.IsDispatchSlot -> true
+                                                          | SynMemberSig.Member (flags = memberFlags) when not memberFlags.IsDispatchSlot -> true
                                                           | SynMemberSig.NestedType (_, m) -> error(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m)); false
                                                           | _ -> false)
             let isConcrete = 
                 members |> List.exists (function 
-                    | SynMemberSig.Member (_, memberFlags, _) -> memberFlags.MemberKind=SynMemberKind.Constructor 
+                    | SynMemberSig.Member (flags = memberFlags) -> memberFlags.MemberKind=SynMemberKind.Constructor 
                     | _ -> false)
 
             // An ugly bit of code to pre-determine if a type has a nullary constructor, prior to establishing the 
             // members of the type
             let preEstablishedHasDefaultCtor = 
                 members |> List.exists (function 
-                    | SynMemberSig.Member (synValSig, memberFlags, _) -> 
+                    | SynMemberSig.Member (memberSig = synValSig; flags = memberFlags) -> 
                         memberFlags.MemberKind=SynMemberKind.Constructor && 
                         // REVIEW: This is a syntactic approximation
                         (match synValSig.SynType, synValSig.SynInfo.CurriedArgInfos with 

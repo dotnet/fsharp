@@ -840,7 +840,7 @@ tyconSpfnRhs:
        let ty, arity = $3
        let flags = AbstractMemberFlags true SynMemberKind.Member
        let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero)
-       let invoke = SynMemberSig.Member(valSig, flags, m) 
+       let invoke = SynMemberSig.Member(valSig, flags, m, SynMemberSigMemberTrivia.Zero) 
        (fun leadingKeyword nameRange nameInfo mEquals augmentation -> 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            let mWhole = unionRanges nameRange m
@@ -932,7 +932,8 @@ classMemberSpfn:
        let flags = flags (getSetAdjuster arity)
        let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = mEquals }
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, mWhole, trivia)
-       SynMemberSig.Member(valSpfn, flags, mWhole) }
+       let trivia: SynMemberSigMemberTrivia = { GetSetKeyword = getSetRangeOpt }
+       SynMemberSig.Member(valSpfn, flags, mWhole, trivia) }
 
   | opt_attributes opt_access interfaceMember appType  
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
@@ -971,7 +972,7 @@ classMemberSpfn:
        let isInline = false
        let trivia: SynValSigTrivia = { LeadingKeyword = SynLeadingKeyword.New mNew; WithKeyword = None; EqualsRange = None }
        let valSpfn = SynValSig ($1, (SynIdent(mkSynId (rhs parseState 3) "new", None)), noInferredTypars, ty, valSynInfo, isInline, false, doc, vis, None, m, trivia)
-       SynMemberSig.Member(valSpfn, CtorMemberFlags, m) }
+       SynMemberSig.Member(valSpfn, CtorMemberFlags, m, SynMemberSigMemberTrivia.Zero) }
 
 
 /* The optional "with get, set" on a member in a signature */
@@ -981,16 +982,16 @@ classMemberSpfnGetSet:
 
   | WITH classMemberSpfnGetSetElements 
     { let mWith = rhs parseState 1
-      Some mWith, Some (rhs2 parseState 1 2), $2 }
+      Some mWith, Some (rhs parseState 2), $2 }
 
   | OWITH classMemberSpfnGetSetElements OEND
     { let mWith = rhs parseState 1
-      Some mWith, Some (rhs2 parseState 1 2), $2 }
+      Some mWith, Some (rhs parseState 2), $2 }
 
   | OWITH classMemberSpfnGetSetElements error
     {  let mWith = rhs parseState 1
        reportParseErrorAt mWith (FSComp.SR.parsUnmatchedWith())
-       Some mWith, Some (rhs2 parseState 1 2), $2 }
+       Some mWith, Some (rhs parseState 2), $2 }
 
 
 /* The "get, set" on a property member in a signature */
@@ -1610,7 +1611,7 @@ tyconDefnRhs:
        (fun nameRange augmentation -> 
            let valSig = SynValSig([], (SynIdent(mkSynId m "Invoke", None)), inferredTyparDecls, ty, arity, false, false, PreXmlDoc.Empty, None, None, m, SynValSigTrivia.Zero) 
            let flags = AbstractMemberFlags true SynMemberKind.Member
-           let invoke = SynMemberDefn.AbstractSlot(valSig, flags, m) 
+           let invoke = SynMemberDefn.AbstractSlot(valSig, flags, m, SynMemberDefnAbstractSlotTrivia.Zero) 
            if not (isNil augmentation) then raiseParseErrorAt m (FSComp.SR.parsAugmentationsIllegalOnDelegateType())
            SynTypeDefnRepr.ObjectModel (SynTypeDefnKind.Delegate (ty, arity), [invoke], m), []) }
 
@@ -1824,8 +1825,8 @@ classDefnMember:
        let mkFlags, leadingKeyword = $3
        let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = None }
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWhole, trivia)
-       
-       [ SynMemberDefn.AbstractSlot(valSpfn, mkFlags (getSetAdjuster arity), mWhole) ] }
+       let trivia: SynMemberDefnAbstractSlotTrivia = { GetSetKeyword = getSetRangeOpt } 
+       [ SynMemberDefn.AbstractSlot(valSpfn, mkFlags (getSetAdjuster arity), mWhole, trivia) ] }
        
   | opt_attributes opt_access inheritsDefn
      {  if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalOnInherit(), rhs parseState 1))

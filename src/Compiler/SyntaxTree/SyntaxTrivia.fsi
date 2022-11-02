@@ -421,6 +421,16 @@ type SynMemberDefnAutoPropertyTrivia =
         GetSetKeyword: range option
     }
 
+///  Represents additional information for SynMemberDefn.AbstractSlot
+[<NoEquality; NoComparison>]
+type SynMemberDefnAbstractSlotTrivia =
+    {
+        /// The syntax range of 'get, set'
+        GetSetKeyword: range option
+    }
+
+    static member Zero: SynMemberDefnAbstractSlotTrivia
+
 /// Represents additional information for SynField
 [<NoEquality; NoComparison>]
 type SynFieldTrivia =
@@ -446,3 +456,13 @@ type SynBindingReturnInfoTrivia =
         /// The syntax range of the `:` token
         ColonRange: range option
     }
+
+/// Represents additional information for SynMemberSig.Member
+[<NoEquality; NoComparison>]
+type SynMemberSigMemberTrivia =
+    {
+        /// The syntax range of 'get, set'
+        GetSetKeyword: range option
+    }
+
+    static member Zero: SynMemberSigMemberTrivia

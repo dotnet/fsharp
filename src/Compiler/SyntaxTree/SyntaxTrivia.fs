@@ -324,6 +324,14 @@ type SynMemberDefnAutoPropertyTrivia =
     }
 
 [<NoEquality; NoComparison>]
+type SynMemberDefnAbstractSlotTrivia =
+    {
+        GetSetKeyword: range option
+    }
+
+    static member Zero = { GetSetKeyword = None }
+
+[<NoEquality; NoComparison>]
 type SynFieldTrivia =
     {
         LeadingKeyword: SynLeadingKeyword option
@@ -336,3 +344,11 @@ type SynTypeOrTrivia = { OrKeyword: range }
 
 [<NoEquality; NoComparison>]
 type SynBindingReturnInfoTrivia = { ColonRange: range option }
+
+[<NoEquality; NoComparison>]
+type SynMemberSigMemberTrivia =
+    {
+        GetSetKeyword: range option
+    }
+
+    static member Zero: SynMemberSigMemberTrivia = { GetSetKeyword = None }

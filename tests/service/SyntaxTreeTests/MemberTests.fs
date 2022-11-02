@@ -39,11 +39,13 @@ type Foo() =
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_
-                                                                                        SynMemberDefn.AutoProperty(trivia = { WithKeyword = Some mWith })
+                                                                                        SynMemberDefn.AutoProperty(trivia = { WithKeyword = Some mWith
+                                                                                                                              GetSetKeyword = Some mGS })
                                                                                         SynMemberDefn.AutoProperty(trivia = { WithKeyword = None })])) ]
         )
     ]) ])) ->
         assertRange (3, 39) (3, 43) mWith
+        assertRange (3, 44) (3, 52) mGS
     | _ -> Assert.Fail "Could not get valid AST"
 
 [<Test>]
@@ -59,10 +61,12 @@ type Foo() =
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_
-                                                                                        SynMemberDefn.AbstractSlot(slotSig=SynValSig(trivia = { WithKeyword = Some mWith }))])) ]
+                                                                                        SynMemberDefn.AbstractSlot(slotSig=SynValSig(trivia = { WithKeyword = Some mWith })
+                                                                                                                   trivia = { GetSetKeyword = Some mGS })])) ]
         )
     ]) ])) ->
         assertRange (3, 30) (3, 34) mWith
+        assertRange (3, 35) (3, 42) mGS
     | _ -> Assert.Fail "Could not get valid AST"
 
 [<Test>]
@@ -222,4 +226,32 @@ type A =
         Assert.False preXmlDoc.IsEmpty
         let comment = preXmlDoc.ToXmlDoc(false, None).GetXmlText()
         Assert.False (System.String.IsNullOrWhiteSpace(comment))
+    | _ -> Assert.Fail "Could not get valid AST"
+
+[<Test>]
+let ``Signature member with get,set`` () =
+    let parseResults = 
+        getParseResultsOfSignatureFile
+            """
+module Meh
+
+type X =
+    // MemberSig.Member
+    member Y : int
+                    with
+                            get  ,  set
+"""
+
+    match parseResults with
+    | ParsedInput.SigFile (ParsedSigFileInput (contents=[
+        SynModuleOrNamespaceSig(decls=[
+            SynModuleSigDecl.Types(types = [
+                SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.ObjectModel(memberSigs = [
+                    SynMemberSig.Member(memberSig = SynValSig(trivia = { WithKeyword = Some mWith })
+                                        trivia = { GetSetKeyword = Some mGS })
+                ]))
+            ])
+        ] ) ])) ->
+        assertRange (7, 20) (7, 24) mWith
+        assertRange (8, 28) (8, 39) mGS
     | _ -> Assert.Fail "Could not get valid AST"
