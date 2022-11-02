@@ -35,7 +35,7 @@ module ParameterNameHints =
         (symbolUse: FSharpSymbolUse) =
 
         let parameters = symbol.CurriedParameterGroups |> Seq.concat
-        let ranges = parseResults.GetAllArgumentsForFunctionApplicationAtPostion symbolUse.Range.Start
+        let ranges = parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
 
         match ranges with
         | Some ranges -> 
