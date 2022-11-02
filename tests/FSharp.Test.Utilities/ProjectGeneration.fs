@@ -4,7 +4,7 @@
 /// The function calls functions from all the files the given file depends on and returns their
 /// results + it's own type in a tuple.
 ///
-/// To model changes, we change the type name in a file which resutls in signatures of all the
+/// To model changes, we change the type name in a file which results in signatures of all the
 /// dependent files also changing.
 ///
 /// To model breaking changes we change the name of the function which will make dependent files
@@ -80,28 +80,34 @@ type SyntheticProject =
 
     member this.OutputFilename = this.ProjectDir ++ $"{this.Name}.dll"
 
-    member this.ProjectOptions =
-        { ProjectFileName = this.ProjectFileName
-          ProjectId = None
-          SourceFiles =
-            [| for f in this.SourceFiles do
-                   if f.HasSignatureFile then
-                       this.ProjectDir ++ f.SignatureFileName
+    member this.GetProjectOptions(checker: FSharpChecker) =
+        let baseOptions, _ =
+            checker.GetProjectOptionsFromScript("file.fs", SourceText.ofString "", assumeDotNetFramework = false)
+            |> Async.RunSynchronously
 
-                   this.ProjectDir ++ f.FileName |]
-          OtherOptions =
-            [| "--optimize+"
-               for p in this.DependsOn do
-                   $"-r:{p.OutputFilename}" |]
-          ReferencedProjects =
-            [| for p in this.DependsOn do
-                   FSharpReferencedProject.CreateFSharp(p.OutputFilename, p.ProjectOptions) |]
-          IsIncompleteTypeCheckEnvironment = false
-          UseScriptResolutionRules = false
-          LoadTime = DateTime()
-          UnresolvedReferences = None
-          OriginalLoadReferences = []
-          Stamp = None }
+        { baseOptions with
+            ProjectFileName = this.ProjectFileName
+            ProjectId = None
+            SourceFiles =
+                [| for f in this.SourceFiles do
+                       if f.HasSignatureFile then
+                           this.ProjectDir ++ f.SignatureFileName
+
+                       this.ProjectDir ++ f.FileName |]
+            OtherOptions =
+                [| yield! baseOptions.OtherOptions
+                   "--optimize+"
+                   for p in this.DependsOn do
+                       $"-r:{p.OutputFilename}" |]
+            ReferencedProjects =
+                [| for p in this.DependsOn do
+                       FSharpReferencedProject.CreateFSharp(p.OutputFilename, p.GetProjectOptions checker) |]
+            IsIncompleteTypeCheckEnvironment = false
+            UseScriptResolutionRules = false
+            LoadTime = DateTime()
+            UnresolvedReferences = None
+            OriginalLoadReferences = []
+            Stamp = None }
 
     member this.GetAllFiles() =
         [ for f in this.SourceFiles do
@@ -237,7 +243,13 @@ module ProjectOperations =
         let file = project.Find fileId
         let contents = renderSourceFile project file
         let absFileName = project.ProjectDir ++ file.FileName
-        checker.ParseAndCheckFileInProject(absFileName, 0, SourceText.ofString contents, project.ProjectOptions)
+
+        checker.ParseAndCheckFileInProject(
+            absFileName,
+            0,
+            SourceText.ofString contents,
+            project.GetProjectOptions checker
+        )
 
     let getTypeCheckResult (parseResults: FSharpParseFileResults, checkResults: FSharpCheckFileAnswer) =
         Assert.True(not parseResults.ParseHadErrors)
@@ -287,11 +299,11 @@ module ProjectOperations =
                 do! saveProject ref generateSignatureFiles checker
 
             for i in 0 .. p.SourceFiles.Length - 1 do
-                let file = p.SourceFiles.[i]
+                let file = p.SourceFiles[i]
                 writeFile p file
 
                 if file.HasSignatureFile && generateSignatureFiles then
-                    let project = { p with SourceFiles = p.SourceFiles.[0..i] }
+                    let project = { p with SourceFiles = p.SourceFiles[0..i] }
                     let! results = checkFile file.Id project checker
                     let signature = getSignature results
                     let signatureFileName = p.ProjectDir ++ file.SignatureFileName
@@ -322,7 +334,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
             do! saveProject initialProject true checker
 
-            let! results = checker.ParseAndCheckProject(initialProject.ProjectOptions)
+            let! results = checker.ParseAndCheckProject(initialProject.GetProjectOptions checker)
 
             if not (Array.isEmpty results.Diagnostics) then
                 failwith $"Project {initialProject.Name} failed initial check: \n%A{results.Diagnostics}"
@@ -380,7 +392,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
             let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker
 
-            let oldSignature = ctx.Signatures.[fileId]
+            let oldSignature = ctx.Signatures[fileId]
             let newSignature = getSignature results
 
             processResults results (oldSignature, newSignature)
