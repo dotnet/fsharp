@@ -1,2 +1,2 @@
-﻿namespace N.M.K
-module Y = let y = 4
+﻿module B
+let b = 1 + A.a

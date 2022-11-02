@@ -1491,14 +1491,6 @@ let CheckOneInputAux'
                         //         (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, sigFileType)
                         //         tcState
 
-                        // TODO Do we 
-                        let _, _, _, _ = fsiPartialResult
-                        
-                        let ccuSigForFile, _ =
-                            AddCheckResultsToTcState
-                                (tcGlobals, amap, true, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, sigFileType)
-                                tcState
-                        
                         // Save info needed for type-checking .fs file later on
                         // TODO Remove most of this
                         let fsiBackedInfo: FsiBackedInfo =
@@ -1507,7 +1499,7 @@ let CheckOneInputAux'
                                 match ast with
                                 | ParsedInput.ImplFile parsedImplFileInput -> parsedImplFileInput
                                 | ParsedInput.SigFile _ -> failwith "Unexpected SigFile"
-                            amap, conditionalDefines, sigFileType, priorErrors, file, tcStateForImplFile, ccuSigForFile
+                            amap, conditionalDefines, sigFileType, priorErrors, file, tcStateForImplFile, sigFileType
 
                         fsiBackedInfos[file.FileName] <- fsiBackedInfo
                         

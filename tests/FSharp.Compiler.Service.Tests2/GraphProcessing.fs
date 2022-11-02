@@ -43,9 +43,13 @@ let combineResults
     let biggestDep =
         let sizeMetric node =
             // Could also use eg. total file size/AST size
-            node.Info.TransitiveDeps.Length
+            node.Info.Item 
+            // node.Info.TransitiveDeps.Length
         deps
-        |> Array.maxBy sizeMetric
+        // TODO To workaround a problem with merging state in the wrong order,
+        // we temporarily effectively pick the child with the lowest index.
+        // This means children are folded fully in sequence
+        |> Array.minBy sizeMetric
     let orFail value =
         value
         |> Option.defaultWith (fun () -> failwith "Unexpected lack of result")
@@ -75,11 +79,12 @@ let combineResults
     state
     
 // TODO Could be replaced with a simpler recursive approach with memoised per-item results
-let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality>
+let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality and 'Item : comparison>
     (graph : Graph<'Item>)
     (doWork : 'Item -> 'State -> 'Result)
     (folder : 'State -> 'Result -> 'FinalFileResult * 'State)
     (emptyState : 'State)
+    (includeInFinalState : 'Item -> bool)
     (parallelism : int)
     : 'FinalFileResult[] * 'State
     =
@@ -153,8 +158,13 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality>
     let nodesArray = nodes.Values |> Seq.toArray
     let x: 'FinalFileResult[] * 'State =
         nodesArray
-        |> Array.fold (fun (fileResults, state) item ->
-            let fileResult, state = folder state (item.Result.Value |> snd)
+        |> Array.sortBy (fun node -> node.Info.Item)
+        |> fun nodes ->
+            printfn $"%+A{nodes |> Array.map (fun n -> n.Info.Item.ToString())}"
+            nodes
+        |> Array.fold (fun (fileResults, state) node ->
+            let fileResult, newState = folder state (node.Result.Value |> snd)
+            let state = if includeInFinalState node.Info.Item then newState else state
             Array.append fileResults [|fileResult|], state
         ) ([||], emptyState)
     x

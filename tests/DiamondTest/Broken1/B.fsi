@@ -1,2 +1,3 @@
-﻿namespace N.M.K
-module Y = val y : int
+﻿module B
+open A
+val b : int

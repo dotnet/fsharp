@@ -36,6 +36,7 @@ let runGrapher () =
             (fun i state -> i)
             (fun state res -> res, $"{state}+{res}")
             ""
+            (fun _ -> true)
             8
     
     printfn $"End state: {state}"
@@ -93,6 +94,7 @@ let runGrapher2 () =
                 partial, state
             )
             ""
+            (fun _ -> true)
             8
     
     printfn $"End state: {state}"

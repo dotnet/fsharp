@@ -261,6 +261,7 @@ module internal Real =
                     processFile
                     folder
                     state
+                    (fun it -> (not it.FsiBacked) && it = it)
                     1
             
             partialResults |> Array.toList, tcState
@@ -274,6 +275,7 @@ let typeCheckGraph (graph : FileGraph) : FinalFileResult[] * State =
         typeCheckFile
         folder
         ""
+        (fun _ -> true)
         parallelism
         
 let typeCheckGraph2 (graph : FileGraph) : FinalFileResult[] * State =
@@ -283,6 +285,7 @@ let typeCheckGraph2 (graph : FileGraph) : FinalFileResult[] * State =
         typeCheckFile
         folder
         ""
+        (fun _ -> true)
         parallelism
     
 let typeCheck (files : SourceFiles) : FinalFileResult[] * State =

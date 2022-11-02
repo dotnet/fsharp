@@ -211,6 +211,3 @@
 C:\projekty\fsharp\heuristic\tests\DiamondTest\Broken1\A.fs
 C:\projekty\fsharp\heuristic\tests\DiamondTest\Broken1\B.fsi
 C:\projekty\fsharp\heuristic\tests\DiamondTest\Broken1\B.fs
-C:\projekty\fsharp\heuristic\tests\DiamondTest\Broken1\C.fs
-C:\projekty\fsharp\heuristic\tests\DiamondTest\Broken1\D.fs
-C:\projekty\fsharp\heuristic\tests\DiamondTest\Broken1\E.fs

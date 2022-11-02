@@ -1,4 +1,2 @@
-﻿namespace N.M
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module internal A =
-    let x = 3
+﻿module A
+let a = 1

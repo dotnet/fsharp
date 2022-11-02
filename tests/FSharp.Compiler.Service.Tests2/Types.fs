@@ -40,7 +40,7 @@ type ASTOrX =
             | AST ast -> ast.FileName
             | X fsi -> fsi + "x"
 
-[<CustomEquality; NoComparison>]
+[<CustomEquality; CustomComparison>]
 type File =
     {
         /// Order of the file in the project. Files with lower number cannot depend on files with higher number
@@ -58,6 +58,11 @@ type File =
             | _ -> false
         override this.GetHashCode () = this.Name.GetHashCode()
         override this.ToString() = this.Name
+        interface System.IComparable with 
+            member x.CompareTo y =
+                match y with
+                | :? File as f -> x.Idx.Idx.CompareTo f.Idx.Idx
+                | _ -> 0
         
         // TODO Please make this sane
         member this.IsFake = this.Code = ""
