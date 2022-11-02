@@ -8,7 +8,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Hints
 
-module TypeHints =
+module InlineTypeHints =
     
     let private getHintParts
         (symbol: FSharpMemberOrFunctionOrValue) 

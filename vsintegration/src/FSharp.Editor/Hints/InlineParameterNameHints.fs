@@ -8,7 +8,7 @@ open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Hints
 
-module ParameterNameHints =
+module InlineParameterNameHints =
 
     let private getHint (range: range, parameter: FSharpParameter) =
         {

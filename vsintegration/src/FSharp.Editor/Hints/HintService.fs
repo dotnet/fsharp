@@ -13,15 +13,15 @@ module HintService =
         match symbolUse.Symbol with
         | :? FSharpMemberOrFunctionOrValue as symbol 
           when hintKinds |> Set.contains HintKind.TypeHint 
-            && TypeHints.isValidForHint parseResults symbol symbolUse ->
+            && InlineTypeHints.isValidForHint parseResults symbol symbolUse ->
             
-            TypeHints.getHints symbol symbolUse
+            InlineTypeHints.getHints symbol symbolUse
         
         | :? FSharpMemberOrFunctionOrValue as symbol
           when hintKinds |> Set.contains HintKind.ParameterNameHint 
-            && ParameterNameHints.isValidForHint symbol ->
+            && InlineParameterNameHints.isValidForHint symbol ->
 
-            ParameterNameHints.getHints parseResults symbol symbolUse
+            InlineParameterNameHints.getHints parseResults symbol symbolUse
 
         // we'll be adding other stuff gradually here
         | _ -> 
