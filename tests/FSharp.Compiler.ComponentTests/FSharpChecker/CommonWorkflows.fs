@@ -21,6 +21,7 @@ let makeTestProject () =
             sourceFile "Third" ["First"]
             { sourceFile "Last" ["Second"; "Third"] with EntryPoint = true }
         ]
+        DependsOn = []
     }
 
 [<Fact>]
@@ -83,4 +84,25 @@ let ``Removing a file`` () =
         removeFile "Second"
         saveAll
         checkFile "Last" expectErrors
+    }
+
+[<Fact>]
+let ``Changes in a referenced project`` () =
+    let name = $"library{Guid.NewGuid().ToString()[..7]}"
+    let dir = Path.GetFullPath projectDir
+    let library = {
+        Name = name
+        ProjectDir = dir ++ name
+        SourceFiles = [ sourceFile "Library" [] ]
+        DependsOn = []
+    }
+
+    let project =
+        { makeTestProject() with DependsOn = [library] }
+        |> updateFile "First" (addDependency "Library")
+
+    projectWorkflow project {
+        updateFile "Library" updatePublicSurface
+        saveFile "Library"
+        checkFile "Last" expectSignatureChanged
     }

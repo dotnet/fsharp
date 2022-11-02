@@ -58,19 +58,27 @@ let sourceFile fileId deps =
 type SyntheticProject =
     { Name: string
       ProjectDir: string
-      SourceFiles: SyntheticSourceFile list }
+      SourceFiles: SyntheticSourceFile list
+      DependsOn: SyntheticProject list }
 
     member this.Find fileId =
         this.SourceFiles
         |> List.tryFind (fun f -> f.Id = fileId)
-        |> Option.defaultWith (fun () -> failwith $"File with ID '{fileId}' not found in project {this.Name}")
+        |> Option.defaultWith (fun () -> failwith $"File with ID '{fileId}' not found in project {this.Name}.")
+
+    member this.FindInAllProjects fileId =
+        this.GetAllFiles()
+        |> List.tryFind (fun (_, f) -> f.Id = fileId)
+        |> Option.defaultWith (fun () -> failwith $"File with ID '{fileId}' not found in any project.")
 
     member this.FindByPath path =
         this.SourceFiles
         |> List.tryFind (fun f -> this.ProjectDir ++ f.FileName = path)
-        |> Option.defaultWith (fun () -> failwith $"File {path} not found in project {this.Name}")
+        |> Option.defaultWith (fun () -> failwith $"File {path} not found in project {this.Name}.")
 
     member this.ProjectFileName = this.ProjectDir ++ $"{this.Name}.fsproj"
+
+    member this.OutputFilename = this.ProjectDir ++ $"{this.Name}.dll"
 
     member this.ProjectOptions =
         { ProjectFileName = this.ProjectFileName
@@ -81,8 +89,14 @@ type SyntheticProject =
                        this.ProjectDir ++ f.SignatureFileName
 
                    this.ProjectDir ++ f.FileName |]
-          OtherOptions = [| "--optimize+" |]
-          ReferencedProjects = [||]
+          OtherOptions =
+            [|
+                "--optimize+"
+                for p in this.DependsOn do
+                    $"-r:{p.OutputFilename}" |]
+          ReferencedProjects =
+            [| for p in this.DependsOn do
+                 FSharpReferencedProject.CreateFSharp(p.OutputFilename, p.ProjectOptions) |]
           IsIncompleteTypeCheckEnvironment = false
           UseScriptResolutionRules = false
           LoadTime = DateTime()
@@ -90,14 +104,21 @@ type SyntheticProject =
           OriginalLoadReferences = []
           Stamp = None }
 
+    member this.GetAllFiles() = [
+        for f in this.SourceFiles do
+            this, f
+        for p in this.DependsOn do
+            yield! p.GetAllFiles() ]
+
 
 module Internal =
 
-    let extraCodeToCompile = File.ReadAllText(projectRoot ++ "SomethingToCompile.fs")
-
-    let renderSourceFile projectName (f: SyntheticSourceFile) =
+    let renderSourceFile (project: SyntheticProject) (f: SyntheticSourceFile) =
         seq {
-            $"module %s{projectName}.Module{f.Id}"
+            $"module %s{project.Name}.Module{f.Id}"
+
+            for p in project.DependsOn do
+                $"open {p.Name}"
 
             $"type T{f.Id}V_{f.PublicVersion}<'a> = T{f.Id} of 'a"
 
@@ -154,8 +175,14 @@ module Internal =
 
     let writeFile (p: SyntheticProject) (f: SyntheticSourceFile) =
         let fileName = p.ProjectDir ++ f.FileName
-        let content = renderSourceFile p.Name f
+        let content = renderSourceFile p f
         writeFileIfChanged fileName content
+
+    let validateFileIdsAreUnique (project: SyntheticProject) =
+        let ids = [for _, f in project.GetAllFiles() -> f.Id]
+        let duplicates = ids |> List.groupBy id |> List.filter (fun (_, g) -> g.Length > 1)
+        if duplicates.Length > 0 then
+            failwith $"""Source file IDs have to be unique across the project and all referenced projects. Found duplicates: {String.Join(", ", duplicates |> List.map fst)}"""
 
 
 open Internal
@@ -172,6 +199,21 @@ module ProjectOperations =
                 project.SourceFiles
                 |> List.updateAt index (updateFunction project.SourceFiles[index]) }
 
+    let updateFileInAnyProject fileId updateFunction (rootProject: SyntheticProject) =
+        let project, _ =
+            rootProject.GetAllFiles()
+            |> List.tryFind (fun (_, f) -> f.Id = fileId)
+            |> Option.defaultWith (fun () -> failwith $"File with ID '{fileId}' not found in any project")
+
+        if project = rootProject then
+            updateFile fileId updateFunction project
+        else
+            let index = rootProject.DependsOn |> List.findIndex ((=) project)
+            { rootProject with
+                DependsOn =
+                    rootProject.DependsOn
+                    |> List.updateAt index (updateFile fileId updateFunction project) }
+
     let private counter = (Seq.initInfinite id).GetEnumerator()
 
     let updatePublicSurface f =
@@ -186,12 +228,12 @@ module ProjectOperations =
 
     let setPublicVersion n f = { f with PublicVersion = n }
 
-    let addDependency fileId f =
+    let addDependency fileId f: SyntheticSourceFile =
         { f with DependsOn = fileId :: f.DependsOn }
 
     let checkFile fileId (project: SyntheticProject) (checker: FSharpChecker) =
         let file = project.Find fileId
-        let contents = renderSourceFile project.Name file
+        let contents = renderSourceFile project file
         let absFileName = project.ProjectDir ++ file.FileName
         checker.ParseAndCheckFileInProject(absFileName, 0, SourceText.ofString contents, project.ProjectOptions)
 
@@ -235,9 +277,12 @@ module ProjectOperations =
         expectOk result ()
         Assert.Equal<string>(oldSignature, newSignature)
 
-    let saveProject (p: SyntheticProject) generateSignatureFiles checker =
+    let rec saveProject (p: SyntheticProject) generateSignatureFiles checker =
         async {
             Directory.CreateDirectory(p.ProjectDir) |> ignore
+
+            for ref in p.DependsOn do
+                do! saveProject ref generateSignatureFiles checker
 
             for i in 0 .. p.SourceFiles.Length - 1 do
                 let file = p.SourceFiles.[i]
@@ -271,6 +316,8 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
     member this.Yield _ =
         async {
+            validateFileIdsAreUnique initialProject
+
             do! saveProject initialProject true checker
 
             let! results = checker.ParseAndCheckProject(initialProject.ProjectOptions)
@@ -303,7 +350,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
     /// Does not save the file to disk.
     [<CustomOperation "updateFile">]
     member this.UpdateFile(workflow: Async<WorkflowContext>, fileId: string, processFile) =
-        workflow |> mapProject (updateFile fileId processFile)
+        workflow |> mapProject (updateFileInAnyProject fileId processFile)
 
     /// Add a file above given file in the project.
     [<CustomOperation "addFileAbove">]
@@ -344,8 +391,8 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
     member this.SaveFile(workflow: Async<WorkflowContext>, fileId: string) =
         async {
             let! ctx = workflow
-            let file = ctx.Project.Find fileId
-            writeFile ctx.Project file
+            let project, file = ctx.Project.FindInAllProjects fileId
+            writeFile project file
             return ctx
         }
 
