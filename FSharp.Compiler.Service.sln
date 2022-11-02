@@ -40,7 +40,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		src\Compiler\FSComp.txt = src\Compiler\FSComp.txt
 	EndProjectSection
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Service.Tests2", "tests\FSharp.Compiler.Service.Tests2\FSharp.Compiler.Service.Tests2.fsproj", "{60EDC1C4-5B8B-4211-94CD-4CF5F9E0FC8B}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ParallelTypeCheckingTests", "tests\ParallelTypeCheckingTests\ParallelTypeCheckingTests.fsproj", "{60EDC1C4-5B8B-4211-94CD-4CF5F9E0FC8B}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DiamondTest", "tests\DiamondTest\DiamondTest.fsproj", "{62288B06-B682-4774-A8A5-A21D677A7C70}"
 EndProject

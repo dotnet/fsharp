@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="FSharp.Compiler.Service.Tests2" />
+    <InternalsVisibleTo Include="ParallelTypeCheckingTests" />
   </ItemGroup>
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('fsc.targets', '$(MSBuildThisFileDirectory)../'))" />

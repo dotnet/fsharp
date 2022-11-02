@@ -1,5 +1,6 @@
 [<AutoOpen>]
 module internal FSharp.Compiler.Service.Tests.Common
+#nowarn "1182"
 
 open System
 open System.Diagnostics

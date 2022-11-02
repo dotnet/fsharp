@@ -1,5 +1,5 @@
 ﻿module FSharp.Compiler.Service.Tests2.ASTVisit
-
+#nowarn "1182"
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 

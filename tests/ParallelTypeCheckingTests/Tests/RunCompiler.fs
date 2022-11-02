@@ -1,5 +1,5 @@
 ﻿module FSharp.Compiler.Service.Tests2.RunCompiler
-
+#nowarn "1182"
 open FSharp.Compiler.Service.Tests
 open FSharp.Compiler.Service.Tests.Graph
 open FSharp.Compiler.Service.Tests.Types
@@ -12,8 +12,7 @@ let runCompiler () =
     let args =
         // System.IO.File.ReadAllLines(@"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.Service.Tests2\args.txt") |> Array.skip 1
         System.IO.File.ReadAllLines(@"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.Service.Tests2\SimpleArgs.txt")
-    let exit = FSharp.Compiler.CommandLineMain.main args
-    ()
+    Assert.Equals(0, FSharp.Compiler.CommandLineMain.main args)
     
 let deps : Graph<int> =
     [|
@@ -33,7 +32,7 @@ let runGrapher () =
     let state =
         GraphProcessing.processGraph
             deps
-            (fun i state -> i)
+            (fun i _state -> i)
             (fun state res -> res, $"{state}+{res}")
             ""
             (fun _ -> true)
@@ -66,7 +65,7 @@ let foo () =
         |]
         |> readOnlyDict
         
-    let res = typeCheckGraph graph
+    let _res = typeCheckGraph graph
     ()
     
 [<Test>]
@@ -88,7 +87,7 @@ let runGrapher2 () =
     let state =
         GraphProcessing.processGraph
             deps
-            (fun i state -> fun (state : string) -> i, addResult state i)
+            (fun i _state -> fun (state : string) -> i, addResult state i)
             (fun state f ->
                 let (partial, state) : int * string = f state
                 partial, state

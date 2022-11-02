@@ -1,5 +1,5 @@
 ﻿module FSharp.Compiler.Service.Tests.Parallel
-
+#nowarn "1182"
 open System
 open System.Collections.Concurrent
 open System.Collections.Generic

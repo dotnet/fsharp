@@ -1,5 +1,5 @@
 ﻿module FSharp.Compiler.Service.Tests2.TestDepResolving
-
+#nowarn "1182"
 open Buildalyzer
 open FSharp.Compiler.Service.Tests
 open FSharp.Compiler.Service.Tests.Types
@@ -11,7 +11,7 @@ open Newtonsoft.Json
 let sampleFiles =
     
     // This file should be marked as depending on everything above and being depended upon by everything below
-    let WithAbbreviations =
+    let _WithAbbreviations =
         """
 module Abbr
 

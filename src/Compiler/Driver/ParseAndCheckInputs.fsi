@@ -120,6 +120,10 @@ type TcState =
     /// The CcuThunk for the current assembly being checked
     member Ccu: CcuThunk
 
+    member TcsRootSigs : Internal.Utilities.Collections.Zmap<QualifiedNameOfFile, ModuleOrNamespaceType>
+    
+    member TcsRootImpls : Internal.Utilities.Collections.Zset<QualifiedNameOfFile>
+    
     /// Get the typing environment implied by the set of signature files and/or inferred signatures of implementation files checked so far
     member TcEnvFromSignatures: TcEnv
 
@@ -135,6 +139,8 @@ type TcState =
     member CreatesGeneratedProvidedTypes: bool
     
     member TcsImplicitOpenDeclarations: OpenDeclaration list
+    
+    member WithStuff : TcEnv -> Internal.Utilities.Collections.Zmap<QualifiedNameOfFile, ModuleOrNamespaceType> -> bool -> TcState
     
     member WithCreatesGeneratedProvidedTypes : bool -> TcState
 

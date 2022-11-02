@@ -1,5 +1,5 @@
 ﻿module FSharp.Compiler.Service.Tests2.DepResolving
-
+#nowarn "1182"
 #nowarn "40"
 
 open System

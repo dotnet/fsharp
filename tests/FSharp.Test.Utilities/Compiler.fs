@@ -193,7 +193,7 @@ module rec Compiler =
     // Load the source file from the path
     let loadSourceFromFile path = getSource(TestType.Path path)
 
-    let private fsFromString (source: SourceCodeFileKind): FSharpCompilationSource =
+    let fsFromString (source: SourceCodeFileKind): FSharpCompilationSource =
         {
             Source            = source
             AdditionalSources = []

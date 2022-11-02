@@ -1,10 +1,11 @@
-﻿module FSharp.Compiler.ComponentTests.TypeChecks.ParallelCheckingWithSignatureFilesTests
+﻿module FSharp.Compiler.ComponentTests.TypeChecks.Diamonds
 
+open NUnit.Framework
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler
 
-[<Fact>]
+[<Test>]
 let ``Parallel type checking when signature files are available`` () =
     // File structure:
     //   Encode.fsi
@@ -20,41 +21,35 @@ module Encode
 
 val encode: obj -> string
 """
-
-    let encodeFs =
-        SourceCodeFileKind.Create(
+    let files =
+        [
             "Encode.fs",
             """
 module Encode
 
 let encode (v: obj) : string = failwith "todo"
 """
-        )
 
-    let decodeFsi =
-        SourceCodeFileKind.Create(
             "Decode.fsi",
             """
 module Decode
 
 val decode: string -> obj
 """
-        )
 
-    let decodeFs =
-        SourceCodeFileKind.Create(
             "Decode.fs",
             """
 module Decode
 let x : int = ""
 let decode (v: string) : obj = failwith "todo"
 """
-        )
 
-    let programFs = SourceCodeFileKind.Create("Program.fs", "printfn \"Hello from F#\"")
+            "Program.fs", "printfn \"Hello from F#\""
+        ]
+        |> List.map (fun (name, code) -> SourceCodeFileKind.Create(name, code))
 
     encodeFsi
-    |> withAdditionalSourceFiles [ encodeFs; decodeFsi; decodeFs; programFs ]
+    |> withAdditionalSourceFiles files
     |> withOptions [ "--test:ParallelCheckingWithSignatureFilesOn" ]
     |> asExe
     |> compile

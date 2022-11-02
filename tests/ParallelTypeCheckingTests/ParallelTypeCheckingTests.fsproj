@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net7.0</TargetFrameworks>
+    <OutputType>Library</OutputType>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <UnitTestType>xunit</UnitTestType>
+    <IsTestProject>true</IsTestProject>
+    <ExcludeFromSourceBuild>true</ExcludeFromSourceBuild>
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <NoWarn>$(NoWarn);FS0988;FS1182</NoWarn> <!-- "program does nothing" warning -->
+    <DefineConstants Condition="'$(Configuration)'=='release'">$(DefineConstants);RELEASE</DefineConstants>
+    <DefineConstants Condition="'$(Configuration)'=='debug'">$(DefineConstants);DEBUG</DefineConstants>
+    <!-- allow testing of static methods in interfaces on .NET 6  -->
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <!-- allow testing of static methods in interfaces on .NET 6  -->
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\service\FsUnit.fs">
+      <Link>FsUnit.fs</Link>
+    </Compile>
+    <Compile Include="..\service\Common.fs">
+      <Link>Common.fs</Link>
+    </Compile>
+    <Compile Include="Code/Utils.fs" />
+    <Compile Include="Code/Types.fs" />
+    <Compile Include="Code/ASTVisit.fs" />
+    <Compile Include="Code/FileInfoGathering.fs" />
+    <Compile Include="Code/Graph.fs" />
+    <Compile Include="Code/DepResolving.fs" />
+    <Compile Include="Code/Parallel.fs" />
+    <Compile Include="Code/GraphProcessing.fs" />
+    <Compile Include="Code/ParallelTypeChecking.fs" />
+    <Compile Include="Tests\TestASTVisit.fs" />
+    <Compile Include="Tests\TestDepResolving.fs" />
+    <Compile Include="Tests\RunCompiler.fs" />
+    <Compile Include="Tests\Utils.fs" />
+    <Compile Include="Tests\ParallelCheckingWithSignatureFilesTests.fs" />
+    <Compile Include="Tests\Diamonds.fs" />
+    <Content Include="Tests\DiamondArgs.txt" />
+    <Content Include="Tests\FCSArgs.txt" />
+    <Compile Include="Program.fs" />
+    <None Include="Big.fs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  <Content Include="Docs.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
+    <ProjectReference Include="$(FSharpTestsRoot)\FSharp.Test.Utilities\FSharp.Test.Utilities.fsproj" />
+    <ProjectReference Include="..\..\src\fsc\fscProject\fsc.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="1.3.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.Jaeger" Version="1.3.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.1.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' != 'true'">
+    <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Buildalyzer" Version="4.1.2" />
+  </ItemGroup>
+
+</Project>
