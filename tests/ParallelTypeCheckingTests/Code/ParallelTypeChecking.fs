@@ -264,7 +264,7 @@ module internal Real =
                     folder
                     state
                     (fun it -> (not it.FsiBacked) && it = it)
-                    1
+                    10
             
             partialResults |> Array.toList, tcState
         )
