@@ -165,7 +165,7 @@ let c = { X = 0 }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 7, Col 9, Line 7, Col 18, "This construct is deprecated. Use B instead")
+            (Error 101, Line 7, Col 11, Line 7, Col 12, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -373,7 +373,7 @@ type ButtonExtensions =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 13, Col 9, Line 13, Col 34, "This construct is deprecated. Use B instead")
+            (Error 101, Line 13, Col 21, Line 13, Col 25, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -397,7 +397,7 @@ type ButtonExtensions =
         |> shouldFail
         |> withDiagnostics [
             (Error 101, Line 12, Col 37, Line 12, Col 43, "This construct is deprecated. Use B instead");
-            (Error 101, Line 13, Col 9, Line 13, Col 34, "This construct is deprecated. Use B instead")
+            (Error 101, Line 13, Col 21, Line 13, Col 25, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -416,7 +416,7 @@ module Button =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 9, Col 20, Line 9, Col 36, "This construct is deprecated. Use B instead")
+            (Error 101, Line 9, Col 22, Line 9, Col 26, "This construct is deprecated. Use B instead")
         ]
 
 
@@ -437,7 +437,7 @@ module Button =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 10, Col 20, Line 10, Col 36, "This construct is deprecated. Use B instead")
+            (Error 101, Line 10, Col 22, Line 10, Col 26, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -462,7 +462,7 @@ type ButtonExtensions =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 9, Col 20, Line 9, Col 36, "This construct is deprecated. Use B instead")
+            (Error 101, Line 9, Col 22, Line 9, Col 26, "This construct is deprecated. Use B instead")
         ]
 
     [<Fact>]
@@ -607,9 +607,10 @@ let a = { DeprecatedField= "23" ; JustField = "" }
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 101, Line 4, Col 9, Line 4, Col 51, "This construct is deprecated. Deprecated Field")
+            (Error 101, Line 4, Col 11, Line 4, Col 26, "This construct is deprecated. Deprecated Field")
         ]
         
+    // This should only report one warning but instead show two. Related issue https://github.com/dotnet/fsharp/issues/14203
     [<Fact>]
     let ``Obsolete attribute warning is taken into account when used in one the record properties`` () =
         Fsx """
@@ -620,6 +621,7 @@ let a = { DeprecatedField= "23" ; JustField = "" }
         |> compile
         |> shouldFail
         |> withDiagnostics [
+            (Warning 44, Line 4, Col 11, Line 4, Col 26, "This construct is deprecated. Deprecated Field")
             (Warning 44, Line 4, Col 9, Line 4, Col 51, "This construct is deprecated. Deprecated Field")
         ]
     
