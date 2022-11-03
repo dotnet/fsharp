@@ -29,4 +29,12 @@ let _parse (argv: string[]): Args =
 
 [<EntryPoint>]
 let main _argv =
+    let workDir, path = CompilationFromArgsTests.codebases[0]
+    let stuff =
+        {
+            Path = path
+            WorkingDir = Some workDir
+            Mode = Method.ParallelFs
+        }
+    CompilationFromArgsTests.TestCompilerFromArgs stuff
     0

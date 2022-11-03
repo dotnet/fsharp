@@ -1,5 +1,6 @@
 ﻿module ParallelTypeCheckingTests.TestDepResolving
 #nowarn "1182"
+open System.IO
 open Buildalyzer
 open FSharp.Compiler.Service.Tests
 open FSharp.Compiler.Service.Tests.Types
@@ -123,6 +124,8 @@ let ``Analyse hardcoded files``() =
     printfn $"TotalDeps: {totalDeps}, topFirstDeps: {topFirstDeps}"
 
 let private parseProjectAndGetSourceFiles (projectFile : string) =
+    //let cacheDir = "."
+    //let getName projectFile = Path.Combine(Path.GetFileName(projectFile), ".fsharp"
     let m = AnalyzerManager()
     let analyzer = m.GetProject(projectFile)
     let results = analyzer.Build()

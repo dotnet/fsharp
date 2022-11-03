@@ -10,6 +10,20 @@ open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
 
+let CodeRoot =
+    System.IO.Path.Combine(
+        __SOURCE_DIRECTORY__,
+        "../../../"
+    )
+let replaceCodeRoot (s : string) = s.Replace("$CODE_ROOT$", CodeRoot)
+let packages =
+    let pathWithEnv = @"%USERPROFILE%\.nuget\packages"
+    Environment.ExpandEnvironmentVariables(pathWithEnv);
+let replacePaths (s : string) =
+    s
+    |> replaceCodeRoot
+    |> fun s -> s.Replace("$PACKAGES$", packages)
+
 [<Struct>]
 type Method =
     | Sequential
