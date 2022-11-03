@@ -194,6 +194,10 @@ val CheckOneInput':
         Cancellable<TcState -> PartialResult * TcState>
 
 
+val CheckMultipleInputsInParallel :
+    (CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list)
+    -> PartialResult list * TcState
+
 /// Finish the checking of multiple inputs
 val CheckMultipleInputsFinish:
     (TcEnv * TopAttribs * 'T option * 'U) list * TcState -> (TcEnv * TopAttribs * 'T list * 'U list) * TcState

@@ -1,9 +1,8 @@
-﻿module FSharp.Compiler.Service.Tests2.TestASTVisit
+﻿module ParallelTypeCheckingTests.TestASTVisit
 
 open NUnit.Framework
 open FSharp.Compiler.Service.Tests
 open FSharp.Compiler.Service.Tests2.ASTVisit
-
 
 [<Test>]
 let ``Top level stuff extraction2`` () =
@@ -106,10 +105,3 @@ let x = 3
     printfn $"Top B: %+A{topB}"
     printfn $"A refs: %+A{visitedA}"
     ()
-
-[<Test>]
-let ``Test big.fs`` () =
-    let code = System.IO.File.ReadAllText("Big.fs")
-    let parsedA = getParseResults code
-    let visitedA = findModuleAndTypeRefs parsedA
-    printfn $"A refs: %+A{visitedA}"

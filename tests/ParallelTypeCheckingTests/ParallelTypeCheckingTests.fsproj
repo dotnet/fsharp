@@ -39,16 +39,14 @@
     <Compile Include="Code/ParallelTypeChecking.fs" />
     <Compile Include="Tests\TestASTVisit.fs" />
     <Compile Include="Tests\TestDepResolving.fs" />
-    <Compile Include="Tests\RunCompiler.fs" />
     <Compile Include="Tests\Utils.fs" />
-    <Compile Include="Tests\ParallelCheckingWithSignatureFilesTests.fs" />
-    <Compile Include="Tests\Diamonds.fs" />
+    <Compile Include="Tests\GraphResolvingAndProcessing.fs" />
+    <Compile Include="Tests\CompilationTests.fs" />
     <Content Include="Tests\DiamondArgs.txt" />
     <Content Include="Tests\FCSArgs.txt" />
+    <Compile Include="Tests\CompilationFromArgsTests.fs" />
+    <Compile Include="Tests\Setup.fs" />
     <Compile Include="Program.fs" />
-    <None Include="Big.fs">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   <Content Include="Docs.md" />
   </ItemGroup>
   <ItemGroup>

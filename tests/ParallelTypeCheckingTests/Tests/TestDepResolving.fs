@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.Service.Tests2.TestDepResolving
+﻿module ParallelTypeCheckingTests.TestDepResolving
 #nowarn "1182"
 open Buildalyzer
 open FSharp.Compiler.Service.Tests
@@ -78,7 +78,7 @@ module GH3 =
 """
 
     [
-        // "Abbr.fs", WithAbbreviations
+        "Abbr.fs", _WithAbbreviations
         "A.fsi", A_fsi
         "A.fs", A
         "B.fs", B
@@ -92,7 +92,7 @@ module GH3 =
     ]
 
 [<Test>]
-let TestHardcodedFiles() =
+let ``Analyse hardcoded files``() =
    
     let nodes =
         sampleFiles
@@ -134,7 +134,8 @@ let private parseProjectAndGetSourceFiles (projectFile : string) =
 
 [<TestCase(@"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj")>]
 [<TestCase(@"C:\projekty\fsharp\fsharp_main\src\Compiler\FSharp.Compiler.Service.fsproj")>]
-let TestProject (projectFile : string) =
+[<Explicit("Slow as it uses Buildalyzer to analyse (build) projects first")>]
+let ``Test fsproj files`` (projectFile : string) =
     log $"Start finding file dependency graph for {projectFile}"
     let files = parseProjectAndGetSourceFiles projectFile
     let files =

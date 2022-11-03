@@ -1,11 +1,8 @@
-﻿module FSharp.Compiler.Service.Tests2.Program
+﻿module ParallelTypeCheckingTests.Program
 #nowarn "1182"
-open System
-open FSharp.Compiler
-open FSharp.Compiler.Service.Tests
-open ParallelTypeCheckingTests.Tests.Utils
+open ParallelTypeCheckingTests.Utils
 
-let parse (argv: string[]): Args =
+let _parse (argv: string[]): Args =
     let parseMode (mode : string) =
         match mode.ToLower() with
         | "sequential" -> Method.Sequential
@@ -30,32 +27,6 @@ let parse (argv: string[]): Args =
         WorkingDir = workingDir
     }
 
-let setupArgsMethod (method: Method) (args: string[]): string[] =
-    printfn $"Method: {method}"
-    match method with
-        | Method.Sequential ->
-            args
-        | Method.ParallelFs ->
-            Array.append args [|"--test:ParallelCheckingWithSignatureFilesOn"|]
-        | Method.Graph ->
-            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParallelTypeChecking.Real.CheckMultipleInputsInParallel
-            Array.append args [|"--test:ParallelCheckingWithSignatureFilesOn"|]
-        | Method.Nojaf ->
-            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParallelTypeChecking.Nojaf.CheckMultipleInputsInParallel
-            Array.append args [|"--test:ParallelCheckingWithSignatureFilesOn"|]
-
-let setupParsed config =
-    let {Path = path; Mode = mode; WorkingDir = workingDir} = config
-    let args = System.IO.File.ReadAllLines(path)
-    printfn $"WorkingDir = {workingDir}"
-    let args = setupArgsMethod mode args
-    workingDir |> Option.iter (fun dir -> Environment.CurrentDirectory <- dir)
-    args
-
 [<EntryPoint>]
-let main argv =
-    //let args = System.IO.File.ReadAllLines(@"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.Service.Tests2\DiamondArgs.txt")
-    let config = parse argv
-    let args = setupParsed config
-    use tracerProvider = setupOtel()
-    CommandLineMain.main args
+let main _argv =
+    0

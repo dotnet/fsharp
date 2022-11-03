@@ -1,4 +1,4 @@
-﻿module ParallelTypeCheckingTests.Tests.Utils
+﻿module ParallelTypeCheckingTests.Utils
 
 open System
 open FSharp.Compiler
@@ -16,6 +16,14 @@ type Method =
     | ParallelFs
     | Graph
     | Nojaf
+
+let methods =
+    [
+        Method.Sequential
+        Method.ParallelFs
+        Method.Nojaf
+        Method.Graph
+    ]
 
 let setupOtel () =
     Sdk
