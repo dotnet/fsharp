@@ -1822,19 +1822,19 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
                 rfinfo1.TypeInst, rfinfo1.TyconRef
 
     let fldsmap, rfldsList =
-        ((Map.empty, []), fldResolutions) ||> List.fold (fun (fs, rfldsList) (fld, frefs, fldExpr) ->
+        ((Map.empty, []), fldResolutions) ||> List.fold (fun (fs, rfldsList) ((_, ident), frefs, fldExpr) ->
                 match frefs |> List.filter (fun (FieldResolution(rfinfo2, _)) -> tyconRefEq g tcref rfinfo2.TyconRef) with
                 | [FieldResolution(rfinfo2, showDeprecated)] ->
 
                     // Record the precise resolution of the field for intellisense
                     let item = Item.RecdField(rfinfo2)
-                    CallNameResolutionSink cenv.tcSink ((snd fld).idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ad)
+                    CallNameResolutionSink cenv.tcSink (ident.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ad)
 
                     let fref2 = rfinfo2.RecdFieldRef
 
                     CheckRecdFieldAccessible cenv.amap m env.eAccessRights fref2 |> ignore
 
-                    CheckFSharpAttributes g fref2.PropertyAttribs m |> CommitOperationResult
+                    CheckFSharpAttributes g fref2.PropertyAttribs ident.idRange |> CommitOperationResult
 
                     if Map.containsKey fref2.FieldName fs then
                         errorR (Error(FSComp.SR.tcFieldAppearsTwiceInRecord(fref2.FieldName), m))
@@ -2169,7 +2169,8 @@ module GeneralizationHelpers =
             match memberFlags.MemberKind with
             // can't infer extra polymorphism for properties
             | SynMemberKind.PropertyGet
-            | SynMemberKind.PropertySet ->
+            | SynMemberKind.PropertySet
+            | SynMemberKind.PropertyGetSet ->
                  if not (isNil declaredTypars) then
                      errorR(Error(FSComp.SR.tcPropertyRequiresExplicitTypeParameters(), m))
             | SynMemberKind.Constructor ->
@@ -4353,9 +4354,6 @@ and TcTypeOrMeasure kindOpt (cenv: cenv) newOk checkConstraints occ (iwsam: Warn
     | SynType.MeasurePower(ty, exponent, m) ->
         TcTypeMeasurePower kindOpt cenv newOk checkConstraints occ env tpenv ty exponent m
 
-    | SynType.MeasureDivide(typ1, typ2, m) ->
-        TcTypeMeasureDivide kindOpt cenv newOk checkConstraints occ env tpenv typ1 typ2 m
-
     | SynType.App(arg1, _, args, _, _, postfix, m) ->
         TcTypeMeasureApp kindOpt cenv newOk checkConstraints occ env tpenv arg1 args postfix m 
 
@@ -5815,7 +5813,7 @@ and CheckTupleIsCorrectLength g (env: TcEnv) m tupleTy (args: 'a list) tcArgs =
 
             // We let error recovery handle this exception
             error (ErrorFromAddingTypeEquation(g, env.DisplayEnv, tupleTy, expectedTy,
-                   (ConstraintSolverTupleDiffLengths(env.DisplayEnv, ptys, argTys, m, m)), m))
+                   (ConstraintSolverTupleDiffLengths(env.DisplayEnv, env.eContextInfo, ptys, argTys, m, m)), m))
 
 and TcExprTuple (cenv: cenv) overallTy env tpenv (isExplicitStruct, args, m) =
     let g = cenv.g
@@ -6125,10 +6123,12 @@ and RewriteRangeExpr synExpr =
     match synExpr with
     // a..b..c (parsed as (a..b)..c )
     | SynExpr.IndexRange(Some (SynExpr.IndexRange(Some synExpr1, _, Some synStepExpr, _, _, _)), _, Some synExpr2, _m1, _m2, mWhole) ->
+        let mWhole = mWhole.MakeSynthetic()
         Some (mkSynTrifix mWhole ".. .." synExpr1 synStepExpr synExpr2)
     // a..b
     | SynExpr.IndexRange (Some synExpr1, mOperator, Some synExpr2, _m1, _m2, mWhole) ->
         let otherExpr =
+            let mWhole = mWhole.MakeSynthetic()
             match mkSynInfix mOperator synExpr1 ".." synExpr2 with
             | SynExpr.App (a, b, c, d, _) -> SynExpr.App (a, b, c, d, mWhole)
             | _ -> failwith "impossible"
