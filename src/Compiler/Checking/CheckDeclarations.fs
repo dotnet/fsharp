@@ -3161,7 +3161,10 @@ module EstablishTypeDefinitionCores =
                 | None -> ()
                 | Some spats ->
                     let ctorArgNames, _ = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv spats
-                    if not ctorArgNames.IsEmpty then errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), m))
+                    if not ctorArgNames.IsEmpty then
+                        match spats with
+                        | SynSimplePats.SimplePats(_, m) -> errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), m))
+                        | SynSimplePats.Typed(_, _, m) -> errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), m))
                 
             let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
             let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false
