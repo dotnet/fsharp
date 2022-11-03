@@ -969,6 +969,20 @@ module MutRecBindingChecking =
                     | rest -> rest
 
                 let prelimRecValues = [ for x in defnAs do match x with Phase2AMember bind -> yield bind.RecBindingInfo.Val | _ -> () ]
+                
+                let tyconOpt =
+                    if cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
+                        tyconOpt
+                        |> Option.map (fun tycon ->
+                            tryAddExtensionAttributeIfNotAlreadyPresent
+                                (fun tryFindExtensionAttribute ->
+                                    tycon.MembersOfFSharpTyconSorted
+                                    |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
+                                )
+                                tycon
+                        )
+                    else
+                        tyconOpt
                 let defnAs = MutRecShape.Tycon(TyconBindingsPhase2A(tyconOpt, declKind, prelimRecValues, tcref, copyOfTyconTypars, thisTy, defnAs))
                 defnAs, (tpenv, recBindIdx, uncheckedBindsRev))
 
@@ -4228,6 +4242,50 @@ module TcDeclarations =
         // Check the members and decide on representations for types with implicit constructors.
         let withBindings, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem mutRecNSInfo envMutRecPrelimWithReprs withEnvs isMutRec
 
+        let withBindings =
+            if cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
+                // If any of the types has a member with the System.Runtime.CompilerServices.ExtensionAttribute,
+                // or a recursive module has a binding with the System.Runtime.CompilerServices.ExtensionAttribute,
+                // that type/recursive module should also received the ExtensionAttribute if it is not yet present.
+                // Example:
+                // open System.Runtime.CompilerServices
+                //
+                // type Int32Extensions =
+                //      [<Extension>]
+                //      static member PlusOne (a:int) : int = a + 1
+                //
+                // or
+                //
+                // module rec Foo
+                //
+                // [<System.Runtime.CompilerServices.Extension>]
+                // let PlusOne (a:int) = a + 1
+                withBindings
+                |> List.map (function
+                    | MutRecShape.Tycon (Some tycon, bindings) ->
+                        let tycon =
+                            tryAddExtensionAttributeIfNotAlreadyPresent
+                                (fun tryFindExtensionAttribute ->
+                                    tycon.MembersOfFSharpTyconSorted
+                                    |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
+                                )
+                                tycon
+                        MutRecShape.Tycon (Some tycon, bindings)
+                    | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(moduleOrNamespaceType, entity), env), shapes) ->
+                        let entity =
+                            tryAddExtensionAttributeIfNotAlreadyPresent
+                                (fun tryFindExtensionAttribute ->
+                                    moduleOrNamespaceType.Value.AllValsAndMembers
+                                    |> Seq.filter(fun v -> v.IsModuleBinding)
+                                    |> Seq.tryPick (fun v -> tryFindExtensionAttribute v.Attribs)
+                                )
+                                entity
+
+                        MutRecShape.Module ((MutRecDefnsPhase2DataForModule(moduleOrNamespaceType, entity), env), shapes)
+                    | shape -> shape)
+                else
+                    withBindings
+
         // Generate the hash/compare/equality bindings for all tycons.
         //
         // Note: generating these bindings must come after generating the members, since some in the case of structs some fields
@@ -4766,6 +4824,31 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
               // Get the inferred type of the decls and record it in the modul. 
               moduleEntity.entity_modul_type <- MaybeLazy.Strict moduleTyAcc.Value
+
+              let moduleEntity =
+                if cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
+                    // If any of the let bindings inside the module has the System.Runtime.CompilerServices.ExtensionAttribute,
+                    // that module should also received the ExtensionAttribute if it is not yet present.
+                    // Example:
+                    // module Foo
+                    //
+                    //[<System.Runtime.CompilerServices.Extension>]
+                    //let PlusOne (a:int) = a + 1
+                    tryAddExtensionAttributeIfNotAlreadyPresent
+                        (fun tryFindExtensionAttribute ->
+                            match moduleContents with
+                            | ModuleOrNamespaceContents.TMDefs(defs) ->
+                                defs
+                                |> Seq.tryPick (function
+                                    | ModuleOrNamespaceContents.TMDefLet (Binding.TBind(var = v),_) ->
+                                        tryFindExtensionAttribute v.Attribs
+                                    | _ -> None)
+                            | _ -> None
+                        )
+                        moduleEntity
+                else
+                    moduleEntity
+                    
               let moduleDef = TMDefRec(false, [], [], [ModuleOrNamespaceBinding.Module(moduleEntity, moduleContents)], m)
 
               PublishModuleDefn cenv env moduleEntity 
