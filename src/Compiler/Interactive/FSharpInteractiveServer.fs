@@ -25,41 +25,44 @@ module CtrlBreakHandlers =
         // Exceptions percolate to callsite, IO exceptions must be handled by caller
         // Should be run on a new thread
         member this.Run() : unit =
-            let service = Some(new NamedPipeServerStream(channelName, PipeDirection.In))
+            let service = new NamedPipeServerStream(channelName, PipeDirection.In)
 
-            match service with
-            | Some service ->
-                // Wait for a client to connect
-                service.WaitForConnection()
-                use stream = new StreamReader(service)
+            // Wait for a client to connect
+            service.WaitForConnection()
+            use stream = new StreamReader(service)
 
-                try
-                    while not (stream.EndOfStream) do
-                        let line = stream.ReadLine()
+            try
+                while not (stream.EndOfStream) do
+                    let line = stream.ReadLine()
 
-                        if line = interuptCommand then
-                            this.Interrupt()
-                finally
-                    stream.Close()
-                    service.Close()
-            | None -> ()
+                    if line = interuptCommand then
+                        this.Interrupt()
+            finally
+                stream.Close()
+                service.Close()
 
     type public CtrlBreakClient(channelName: string) =
 
-        let mutable service: NamedPipeClientStream option = None
+        let mutable service: NamedPipeClientStream option = Some(new NamedPipeClientStream(".", channelName, PipeDirection.Out))
 
         member this.Interrupt() =
             match service with
             | None -> ()
-            | Some service ->
+            | Some client ->
                 try
-                    if not (service.IsConnected) then
-                        service.Connect(connectionTimeout)
+                    if not (client.IsConnected) then
+                        client.Connect(connectionTimeout)
                 with _ ->
                     ()
 
-                service.Write(lineInteruptCommand, 0, lineInteruptCommand.Length)
-                service.Flush()
+                client.Write(lineInteruptCommand, 0, lineInteruptCommand.Length)
+                client.Flush()
 
-        member _.Start() =
-            service <- Some(new NamedPipeClientStream(".", channelName, PipeDirection.Out))
+        interface IDisposable with
+            member _.Dispose() =
+                match service with
+                | None -> ()
+                | Some client ->
+                    client.Dispose()
+                    service <- None
+

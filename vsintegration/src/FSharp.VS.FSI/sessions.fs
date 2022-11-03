@@ -352,11 +352,9 @@ type FsiSession(sourceFile: string) =
 
     do cmdProcess.EnableRaisingEvents <- true
 
-    let clientConnection =
+    let client =
         try
-            let server = CtrlBreakClient(channelName)
-            server.Start()
-            Some server
+            new CtrlBreakClient(channelName)
         with e -> raise (SessionError (VFSIstrings.SR.exceptionRaisedWhenCreatingRemotingClient(e.ToString())))
 
     /// interrupt timeout in miliseconds
@@ -364,12 +362,9 @@ type FsiSession(sourceFile: string) =
 
     // Create session object 
     member _.Interrupt() = 
-       match clientConnection with
-       | None -> false
-       | Some client ->
-           match timeoutApp "VFSI interrupt" interruptTimeoutMS (fun () -> client.Interrupt()) () with
-           | Some () -> true
-           | None    -> false
+        match timeoutApp "VFSI interrupt" interruptTimeoutMS (fun () -> client.Interrupt()) () with
+        | Some () -> true
+        | None    -> false
 
     member _.SendInput (str: string) = inputQueue.Post(str)
 
@@ -381,7 +376,7 @@ type FsiSession(sourceFile: string) =
 
     member _.Alive       = not cmdProcess.HasExited
 
-    member _.SupportsInterrupt = not cmdProcess.HasExited && clientConnection.IsSome
+    member _.SupportsInterrupt = not cmdProcess.HasExited
 
     member _.ProcessID   =
         // When using .NET Core, allow up to 2 seconds to allow detection of process ID
