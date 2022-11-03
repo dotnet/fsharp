@@ -2687,3 +2687,7 @@ type TraitConstraintInfo with
 /// This will match anything that does not have any types or bindings.
 val (|EmptyModuleOrNamespaces|_|):
     moduleOrNamespaceContents: ModuleOrNamespaceContents -> (ModuleOrNamespace list) option
+
+/// Add an System.Runtime.CompilerServices.ExtensionAttribute to the Entity if found via predicate and not already present.
+val tryAddExtensionAttributeIfNotAlreadyPresent:
+    tryFindExtensionAttributeIn: ((Attrib list -> Attrib option) -> Attrib option) -> entity: Entity -> Entity
