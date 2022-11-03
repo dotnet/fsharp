@@ -555,8 +555,8 @@ and TcPatLongIdentNewDef warnOnUpperForId warnOnUpper (cenv: cenv) env ad valRep
     | [arg]
         when g.langVersion.SupportsFeature LanguageFeature.NameOf && IsNameOf cenv env ad m id ->
         match TcNameOfExpr cenv env tpenv (ConvSynPatToSynExpr arg) with
-        | Expr.Const(c, m, _) -> TcConstPat warnOnUpper cenv env vFlags patEnv ty (SynConst.String(c.ToString(), SynStringKind.Regular, m)) m
-        | _ -> failwith "Impossible: TcNameOfExpr must return an Expr.Const"
+        | Expr.Const(Const.String s, m, _) -> TcConstPat warnOnUpper cenv env vFlags patEnv ty (SynConst.String(s, SynStringKind.Regular, m)) m
+        | _ -> failwith "Impossible: TcNameOfExpr must return an Expr.Const of type string"
 
     | _ ->
         let _, acc = TcArgPats warnOnUpper cenv env vFlags patEnv args

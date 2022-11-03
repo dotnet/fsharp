@@ -83,3 +83,49 @@ if actual <> expected then failwith $"Expected type to be '{{expected}}', but go
         |> ignoreWarnings
         |> compileAndRun
         |> shouldSucceed
+
+
+    [<Fact>]
+    let ``nameof works for pattern matching of DU case names`` () =  
+        let source = """
+/// Simplified version of EventStore's API
+type RecordedEvent = { EventType: string; Data: string }
+
+/// My concrete type:
+type MyEvent =
+    | A of string
+    | B of string
+
+let deserialize (e: RecordedEvent) : MyEvent =
+    printfn "EventType is '%s'" e.EventType
+    printfn "Nameof A is '%s'" (nameof A)
+    printfn "Nameof B is '%s'" (nameof B)
+    match e.EventType with
+    | nameof A -> A e.Data
+    | nameof B -> B e.Data
+    | t -> failwithf "Invalid EventType: '%s'" t
+
+let getData event =
+    match event with
+    | A amsg -> amsg
+    | B bmsg -> bmsg
+
+let re1 = { EventType = nameof A; Data = "hello" }
+let re2 = { EventType = nameof B; Data = "world" }
+
+let a = deserialize re1
+let b = deserialize re2
+
+if not((getData a) = re1.Data) then
+    failwith $"Record1 mismatch;; {getData a} <> {re1.Data}"
+
+if not((getData b) = re2.Data) then
+    failwith $"Record1 mismatch;; {getData b} <> {re2.Data}"
+        """
+        Fsx source
+        |> asExe
+        |> withLangVersionPreview
+        |> ignoreWarnings
+        |> compileAndRun
+        |> shouldSucceed
+
