@@ -29,13 +29,6 @@
 
   <Import Project="$(MSBuildThisFileDirectory)../../../eng/Versions.props" />
 
-  <PropertyGroup>
-      <RestoreSources>
-        $(MSBuildThisFileDirectory)/../../../artifacts/packages/Release/Release;
-        https://api.nuget.org/v3/index.json;
-      </RestoreSources>
-  </PropertyGroup>
-
   <ItemGroup>
       <PackageReference Include="FSharp.Core" Version="$(FSCoreProductVersion).*"/>
   </ItemGroup>
