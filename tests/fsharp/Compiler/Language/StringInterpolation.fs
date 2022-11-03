@@ -803,9 +803,9 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
                "Incomplete structured construct at or before this point in binding. Expected interpolated string (final part), interpolated string (part) or other token.");
               (FSharpDiagnosticSeverity.Error, 3379, (1, 38, 1, 39),
                "Incomplete interpolated string begun at or before here")|]
-  
+
     [<Test>]
-    let ``String interpolation negative incomplete string fill`` () =
+    let ``String interpolation negative incomplete string with incomplete fill`` () =
         let code =    """let x1 = $"one %d{System.String.Empty"""
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
             code
@@ -813,7 +813,36 @@ let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}3
                "Incomplete structured construct at or before this point in binding. Expected interpolated string (final part), interpolated string (part) or other token.");
               (FSharpDiagnosticSeverity.Error, 3378, (1, 18, 1, 19),
                "Incomplete interpolated string expression fill begun at or before here")|]
-  
+
+    [<Test>]
+    let ``String interpolation negative incomplete fill`` () =
+        let code =    "let x1 = $\"one %d{System.String.Empty\""
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
+            code
+            [|(FSharpDiagnosticSeverity.Error, 3373, (1, 38, 1, 39),
+               "Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. \
+               Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.");
+              (FSharpDiagnosticSeverity.Error, 10, (1, 1, 1, 39),
+               "Incomplete structured construct at or before this point in binding. Expected interpolated string (final part), interpolated string (part) or other token.");
+              (FSharpDiagnosticSeverity.Error, 514, (1, 38, 1, 39),
+               "End of file in string begun at or before here")|]
+
+    [<Test>]
+    let ``String interpolation negative incomplete fill with another valid string`` () =
+        let code = """
+let x1 = $"one %d{System.String.Empty"
+let x2 = "any old string"
+"""
+        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
+            code
+            [|(FSharpDiagnosticSeverity.Error, 3373, (2, 38, 2, 39),
+               "Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. \
+               Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.");
+              (FSharpDiagnosticSeverity.Error, 10, (4, 1, 4, 1),
+               "Incomplete structured construct at or before this point in binding. Expected interpolated string (final part), interpolated string (part) or other token.");
+              (FSharpDiagnosticSeverity.Error, 514, (3, 25, 3, 26),
+               "End of file in string begun at or before here")|]
+
     [<Test>]
     let ``String interpolation negative incomplete verbatim string`` () =
         let code =    """let x1 = @$"one %d{System.String.Empty} """
