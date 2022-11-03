@@ -914,13 +914,13 @@ classMemberSpfn:
   | opt_attributes opt_access memberSpecFlags opt_inline opt_access nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet optLiteralValueSpfn
      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(), rhs parseState 2))
        let isInline, doc, vis2, id, explicitValTyparDecls, (ty, arity), (mEquals, optLiteralValue) = $4, grabXmlDoc(parseState, $1, 1), $5, $6, $7, $9, $11
-       let mWith, getSetRangeOpt, getSet = $10 
+       let mWith, (getSet, getSetRangeOpt) = $10 
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let mWhole = 
            let m = rhs parseState 3 
            match getSetRangeOpt with 
            | None -> unionRanges m ty.Range
-           | Some m2 -> unionRanges m m2
+           | Some gs -> unionRanges m (gs : GetSetKeywords).Range
            |> fun m -> (m, $1) ||> unionRangeWithListBy (fun (a: SynAttributeList) -> a.Range)
            |> unionRangeWithXmlDoc doc
            |> fun m -> 
@@ -932,7 +932,7 @@ classMemberSpfn:
        let flags = flags (getSetAdjuster arity)
        let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = mEquals }
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, vis2, optLiteralValue, mWhole, trivia)
-       let trivia: SynMemberSigMemberTrivia = { GetSetKeyword = getSetRangeOpt }
+       let trivia: SynMemberSigMemberTrivia = { GetSetKeywords = getSetRangeOpt }
        SynMemberSig.Member(valSpfn, flags, mWhole, trivia) }
 
   | opt_attributes opt_access interfaceMember appType  
@@ -978,29 +978,32 @@ classMemberSpfn:
 /* The optional "with get, set" on a member in a signature */
 classMemberSpfnGetSet:
   | /* EMPTY */ 
-    { None, None, SynMemberKind.Member }
+    { None, (SynMemberKind.Member, None) }
 
   | WITH classMemberSpfnGetSetElements 
     { let mWith = rhs parseState 1
-      Some mWith, Some (rhs parseState 2), $2 }
+      Some mWith, $2 }
 
   | OWITH classMemberSpfnGetSetElements OEND
     { let mWith = rhs parseState 1
-      Some mWith, Some (rhs parseState 2), $2 }
+      Some mWith, $2 }
 
   | OWITH classMemberSpfnGetSetElements error
     {  let mWith = rhs parseState 1
        reportParseErrorAt mWith (FSComp.SR.parsUnmatchedWith())
-       Some mWith, Some (rhs parseState 2), $2 }
+       Some mWith, $2 }
 
 
 /* The "get, set" on a property member in a signature */
 classMemberSpfnGetSetElements:
   | nameop 
     { (let (SynIdent(id:Ident, _)) = $1 
-       if id.idText = "get" then SynMemberKind.PropertyGet 
-       else if id.idText = "set" then SynMemberKind.PropertySet 
-       else raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
+       if id.idText = "get" then 
+           SynMemberKind.PropertyGet, Some (GetSetKeywords.Get id.idRange)
+       else if id.idText = "set" then 
+           SynMemberKind.PropertySet, Some (GetSetKeywords.Set id.idRange)
+       else 
+           raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsGetOrSetRequired())) }
 
   | nameop COMMA nameop
     { let (SynIdent(id, _)) = $1 
@@ -1008,7 +1011,11 @@ classMemberSpfnGetSetElements:
       if not ((id.idText = "get" && id2.idText = "set") ||
               (id.idText = "set" && id2.idText = "get")) then 
          raiseParseErrorAt (rhs2 parseState 1 3) (FSComp.SR.parsGetOrSetRequired())
-      SynMemberKind.PropertyGetSet }
+      
+      if id.idText = "get" then
+          SynMemberKind.PropertyGetSet, Some (GetSetKeywords.GetSet(id.idRange, id2.idRange))
+      else
+          SynMemberKind.PropertyGetSet, Some (GetSetKeywords.GetSet(id2.idRange, id.idRange)) }
 
 memberSpecFlags: 
   | memberFlags { $1 }  
@@ -1813,19 +1820,19 @@ classDefnMember:
   | opt_attributes opt_access abstractMemberFlags opt_inline nameop opt_explicitValTyparDecls COLON topTypeWithTypeConstraints classMemberSpfnGetSet  opt_ODECLEND
      { let ty, arity = $8
        let isInline, doc, id, explicitValTyparDecls = $4, grabXmlDoc(parseState, $1, 1), $5, $6
-       let mWith, getSetRangeOpt, getSet = $9
+       let mWith, (getSet, getSetRangeOpt) = $9
        let getSetAdjuster arity = match arity, getSet with SynValInfo([], _), SynMemberKind.Member -> SynMemberKind.PropertyGet | _ -> getSet
        let mWhole = 
            let m = rhs parseState 1
            match getSetRangeOpt with 
            | None -> unionRanges m ty.Range
-           | Some m2 -> unionRanges m m2
+           | Some gs -> unionRanges m gs.Range
            |> unionRangeWithXmlDoc doc
        if Option.isSome $2 then errorR(Error(FSComp.SR.parsAccessibilityModsIllegalForAbstract(), mWhole))
        let mkFlags, leadingKeyword = $3
        let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = None }
        let valSpfn = SynValSig($1, id, explicitValTyparDecls, ty, arity, isInline, false, doc, None, None, mWhole, trivia)
-       let trivia: SynMemberDefnAbstractSlotTrivia = { GetSetKeyword = getSetRangeOpt } 
+       let trivia: SynMemberDefnAbstractSlotTrivia = { GetSetKeywords = getSetRangeOpt } 
        [ SynMemberDefn.AbstractSlot(valSpfn, mkFlags (getSetAdjuster arity), mWhole, trivia) ] }
        
   | opt_attributes opt_access inheritsDefn
@@ -1894,7 +1901,7 @@ valDefnDecl:
 autoPropsDefnDecl:
   | VAL opt_mutable opt_access ident opt_typ EQUALS typedSequentialExprBlock classMemberSpfnGetSet
      { let mVal = rhs parseState 1
-       let mWith, mGetSetOpt, getSet = $8
+       let mWith, (getSet, getSetOpt) = $8
        let mEquals = rhs parseState 6
        if $2 then
            errorR (Error (FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSet (), rhs parseState 3))
@@ -1906,7 +1913,7 @@ autoPropsDefnDecl:
            let memberFlags = flags SynMemberKind.Member
            let memberFlagsForSet = flags SynMemberKind.PropertySet
            let isStatic = not memberFlags.IsInstance
-           let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = Some mEquals; GetSetKeyword = mGetSetOpt }
+           let trivia = { LeadingKeyword = leadingKeyword; WithKeyword = mWith; EqualsRange = Some mEquals; GetSetKeywords = getSetOpt }
            [ SynMemberDefn.AutoProperty(attribs, isStatic, $4, $5, getSet, memberFlags, memberFlagsForSet, xmlDoc, $3, $7, memberRange, trivia) ]) }
 
 /* An optional type on an auto-property definition */
