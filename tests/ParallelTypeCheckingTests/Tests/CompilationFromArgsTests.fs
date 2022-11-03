@@ -46,6 +46,10 @@ let setupParsed config =
 
 [<TestCaseSource(nameof(configs))>]
 let TestCompilerFromArgs (config : Args) : unit =
-    let args = setupParsed config
-    let exit = CommandLineMain.main args
-    Assert.That(exit, Is.Zero)
+    let oldWorkDir = Environment.CurrentDirectory
+    try
+        let args = setupParsed config
+        let exit = CommandLineMain.main args
+        Assert.That(exit, Is.Zero)
+    finally
+        Environment.CurrentDirectory <- oldWorkDir
