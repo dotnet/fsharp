@@ -8,10 +8,15 @@ open NUnit.Framework
 open Utils
 
 let configs =
-    let workDir = @"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.ComponentTests"
-    let path = $@"C:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\ComponentTests_args.txt"
+    let codebases =
+        [
+            @"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.ComponentTests", @"C:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\ComponentTests_args.txt"
+            @"C:\projekty\fsharp\fsharp_main\src\compiler", @"C:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCSArgs.txt"
+        ]
+        
     methods
-    |> List.map (fun method -> 
+    |> List.allPairs codebases
+    |> List.map (fun ((workDir, path), method) -> 
         {
             Path = path
             WorkingDir = Some workDir
