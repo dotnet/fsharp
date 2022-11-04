@@ -39,11 +39,14 @@ type Foo() =
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_
-                                                                                        SynMemberDefn.AutoProperty(trivia = { WithKeyword = Some mWith })
+                                                                                        SynMemberDefn.AutoProperty(trivia = { WithKeyword = Some mWith
+                                                                                                                              GetSetKeywords = Some (GetSetKeywords.GetSet(mGet, mSet)) })
                                                                                         SynMemberDefn.AutoProperty(trivia = { WithKeyword = None })])) ]
         )
     ]) ])) ->
         assertRange (3, 39) (3, 43) mWith
+        assertRange (3, 44) (3, 47) mGet
+        assertRange (3, 49) (3, 52) mSet
     | _ -> Assert.Fail "Could not get valid AST"
 
 [<Test>]
@@ -59,10 +62,13 @@ type Foo() =
     | ParsedInput.ImplFile (ParsedImplFileInput (contents = [ SynModuleOrNamespace.SynModuleOrNamespace(decls = [
         SynModuleDecl.Types(
             typeDefns = [ SynTypeDefn(typeRepr = SynTypeDefnRepr.ObjectModel(members = [_
-                                                                                        SynMemberDefn.AbstractSlot(slotSig=SynValSig(trivia = { WithKeyword = Some mWith }))])) ]
+                                                                                        SynMemberDefn.AbstractSlot(slotSig=SynValSig(trivia = { WithKeyword = Some mWith })
+                                                                                                                   trivia = { GetSetKeywords = Some (GetSetKeywords.GetSet(mGet, mSet)) })])) ]
         )
     ]) ])) ->
         assertRange (3, 30) (3, 34) mWith
+        assertRange (3, 35) (3, 38) mGet
+        assertRange (3, 39) (3, 42) mSet
     | _ -> Assert.Fail "Could not get valid AST"
 
 [<Test>]
@@ -222,4 +228,90 @@ type A =
         Assert.False preXmlDoc.IsEmpty
         let comment = preXmlDoc.ToXmlDoc(false, None).GetXmlText()
         Assert.False (System.String.IsNullOrWhiteSpace(comment))
+    | _ -> Assert.Fail "Could not get valid AST"
+
+[<Test>]
+let ``Signature member with set,get`` () =
+    let parseResults = 
+        getParseResultsOfSignatureFile
+            """
+module Meh
+
+type X =
+    // MemberSig.Member
+    member Y : int
+                    with
+                            set  ,  get
+"""
+
+    match parseResults with
+    | ParsedInput.SigFile (ParsedSigFileInput (contents=[
+        SynModuleOrNamespaceSig(decls=[
+            SynModuleSigDecl.Types(types = [
+                SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.ObjectModel(memberSigs = [
+                    SynMemberSig.Member(memberSig = SynValSig(trivia = { WithKeyword = Some mWith })
+                                        trivia = { GetSetKeywords = Some (GetSetKeywords.GetSet(mGet, mSet)) })
+                ]))
+            ])
+        ] ) ])) ->
+        assertRange (7, 20) (7, 24) mWith
+        assertRange (8, 28) (8, 31) mSet
+        assertRange (8, 36) (8, 39) mGet
+    | _ -> Assert.Fail "Could not get valid AST"
+
+[<Test>]
+let ``Signature member with set`` () =
+    let parseResults = 
+        getParseResultsOfSignatureFile
+            """
+module Meh
+
+type X =
+    // MemberSig.Member
+    member Y : int
+                    with
+                            set
+"""
+
+    match parseResults with
+    | ParsedInput.SigFile (ParsedSigFileInput (contents=[
+        SynModuleOrNamespaceSig(decls=[
+            SynModuleSigDecl.Types(types = [
+                SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.ObjectModel(memberSigs = [
+                    SynMemberSig.Member(memberSig = SynValSig(trivia = { WithKeyword = Some mWith })
+                                        trivia = { GetSetKeywords = Some (GetSetKeywords.Set(mSet)) })
+                ]))
+            ])
+        ] ) ])) ->
+        assertRange (7, 20) (7, 24) mWith
+        assertRange (8, 28) (8, 31) mSet
+    | _ -> Assert.Fail "Could not get valid AST"
+
+
+[<Test>]
+let ``Signature member with get`` () =
+    let parseResults = 
+        getParseResultsOfSignatureFile
+            """
+module Meh
+
+type X =
+    // MemberSig.Member
+    member Y : int
+                    with
+                                get
+"""
+
+    match parseResults with
+    | ParsedInput.SigFile (ParsedSigFileInput (contents=[
+        SynModuleOrNamespaceSig(decls=[
+            SynModuleSigDecl.Types(types = [
+                SynTypeDefnSig(typeRepr = SynTypeDefnSigRepr.ObjectModel(memberSigs = [
+                    SynMemberSig.Member(memberSig = SynValSig(trivia = { WithKeyword = Some mWith })
+                                        trivia = { GetSetKeywords = Some (GetSetKeywords.Get(mGet)) })
+                ]))
+            ])
+        ] ) ])) ->
+        assertRange (7, 20) (7, 24) mWith
+        assertRange (8, 32) (8, 35) mGet
     | _ -> Assert.Fail "Could not get valid AST"
