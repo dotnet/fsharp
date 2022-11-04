@@ -66,8 +66,6 @@ let x () = valueInlined + valueNotInlined
          |> compile
          |> shouldSucceed
          |> verifyIL ["""
-  .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .method public specialname static int32 
           get_valueInlined() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
@@ -79,7 +77,6 @@ let x () = valueInlined + valueNotInlined
   }"""
 
                       """
-  .method public specialname static int32 
           get_valueNotInlined() cil managed
   {
     .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
