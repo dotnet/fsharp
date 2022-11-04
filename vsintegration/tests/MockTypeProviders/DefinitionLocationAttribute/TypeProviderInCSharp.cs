@@ -33,8 +33,6 @@ namespace TypeProviderInCSharp
         // Type myType = new myType(typeof(N.S), "Bad.Name", typeof(Action), true);
         Type myType = new ArtificialType(_Namespace, _Name, false, basetype: typeof(object), isValueType: false, isByRef: false, isEnum: false, IsPointer: false);
 
-        string IProvidedNamespace.NamespaceName => throw new NotImplementedException();
-
         public IProvidedNamespace[] GetNestedNamespaces()
         {
 
@@ -55,6 +53,11 @@ namespace TypeProviderInCSharp
                 return myType;
             }
             return null;
+        }
+
+        string IProvidedNamespace.get_NamespaceName()
+        {
+            throw new NotImplementedException();
         }
     }
 
