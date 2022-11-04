@@ -1822,19 +1822,19 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
                 rfinfo1.TypeInst, rfinfo1.TyconRef
 
     let fldsmap, rfldsList =
-        ((Map.empty, []), fldResolutions) ||> List.fold (fun (fs, rfldsList) (fld, frefs, fldExpr) ->
+        ((Map.empty, []), fldResolutions) ||> List.fold (fun (fs, rfldsList) ((_, ident), frefs, fldExpr) ->
                 match frefs |> List.filter (fun (FieldResolution(rfinfo2, _)) -> tyconRefEq g tcref rfinfo2.TyconRef) with
                 | [FieldResolution(rfinfo2, showDeprecated)] ->
 
                     // Record the precise resolution of the field for intellisense
                     let item = Item.RecdField(rfinfo2)
-                    CallNameResolutionSink cenv.tcSink ((snd fld).idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ad)
+                    CallNameResolutionSink cenv.tcSink (ident.idRange, env.NameEnv, item, emptyTyparInst, ItemOccurence.Use, ad)
 
                     let fref2 = rfinfo2.RecdFieldRef
 
                     CheckRecdFieldAccessible cenv.amap m env.eAccessRights fref2 |> ignore
 
-                    CheckFSharpAttributes g fref2.PropertyAttribs m |> CommitOperationResult
+                    CheckFSharpAttributes g fref2.PropertyAttribs ident.idRange |> CommitOperationResult
 
                     if Map.containsKey fref2.FieldName fs then
                         errorR (Error(FSComp.SR.tcFieldAppearsTwiceInRecord(fref2.FieldName), m))
@@ -2169,7 +2169,8 @@ module GeneralizationHelpers =
             match memberFlags.MemberKind with
             // can't infer extra polymorphism for properties
             | SynMemberKind.PropertyGet
-            | SynMemberKind.PropertySet ->
+            | SynMemberKind.PropertySet
+            | SynMemberKind.PropertyGetSet ->
                  if not (isNil declaredTypars) then
                      errorR(Error(FSComp.SR.tcPropertyRequiresExplicitTypeParameters(), m))
             | SynMemberKind.Constructor ->
