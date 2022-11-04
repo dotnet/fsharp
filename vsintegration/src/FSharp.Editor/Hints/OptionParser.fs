@@ -2,7 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Hints
 
-open System.Collections.Generic
 open Microsoft.VisualStudio.FSharp.Editor
 open Hints
 
