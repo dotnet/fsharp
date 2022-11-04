@@ -43,7 +43,8 @@ module CtrlBreakHandlers =
 
     type public CtrlBreakClient(channelName: string) =
 
-        let mutable service: NamedPipeClientStream option = Some(new NamedPipeClientStream(".", channelName, PipeDirection.Out))
+        let mutable service: NamedPipeClientStream option =
+            Some(new NamedPipeClientStream(".", channelName, PipeDirection.Out))
 
         member this.Interrupt() =
             match service with
@@ -65,4 +66,3 @@ module CtrlBreakHandlers =
                 | Some client ->
                     client.Dispose()
                     service <- None
-
