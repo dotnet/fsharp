@@ -610,7 +610,6 @@ let a = { DeprecatedField= "23" ; JustField = "" }
             (Error 101, Line 4, Col 11, Line 4, Col 26, "This construct is deprecated. Deprecated Field")
         ]
         
-    // This should only report one warning but instead show two. Related issue https://github.com/dotnet/fsharp/issues/14203
     [<Fact>]
     let ``Obsolete attribute warning is taken into account when used in one the record properties`` () =
         Fsx """
@@ -622,7 +621,6 @@ let a = { DeprecatedField= "23" ; JustField = "" }
         |> shouldFail
         |> withDiagnostics [
             (Warning 44, Line 4, Col 11, Line 4, Col 26, "This construct is deprecated. Deprecated Field")
-            (Warning 44, Line 4, Col 9, Line 4, Col 51, "This construct is deprecated. Deprecated Field")
         ]
     
     [<Fact>]
@@ -1029,4 +1027,120 @@ Class.ObsoleteEvent |> ignore
             (Error 101, Line 4, Col 1, Line 4, Col 21, "This construct is deprecated. Method is obsolete");
             (Error 101, Line 5, Col 1, Line 5, Col 23, "This construct is deprecated. Property is obsolete")
             (Error 101, Line 6, Col 1, Line 6, Col 20, "This construct is deprecated. Event is obsolete")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used in one the record properties with a static member when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead")>]
+      Field2 : string }
+    static member Empty =
+      { Field1 = null
+        Field2 = null }
+let x = { MyType.Empty with Field1 = "field1" }
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 9, Col 9, Line 9, Col 15, "This construct is deprecated. Use Field2 instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute warning is taken into account when used in one the record properties when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead")>]
+      Field2 : string }
+let field1 = { Field1 = "field1" ; Field2 = "Field2" }
+let field2 = { field1 with Field1 = "Field1" }
+let field3 = { field1 with Field2 = "Field2" }
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 7, Col 36, Line 7, Col 42, "This construct is deprecated. Use Field2 instead")
+            (Warning 44, Line 9, Col 28, Line 9, Col 34, "This construct is deprecated. Use Field2 instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in one the record properties with a static member when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead", true)>]
+      Field2 : string }
+    static member Empty =
+      { Field1 = null
+        Field2 = null }
+let x = { MyType.Empty with Field1 = "field1" }
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 9, Col 9, Line 9, Col 15, "This construct is deprecated. Use Field2 instead")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in a nested record properties with a static member when one of them is not used`` () =
+        Fsx """
+open System
+type MyType1 = { [<Obsolete("Use Y instead")>] X : string }
+type MyType2 =
+    { Field1 : string
+      Field2 : MyType1 }
+    static member Empty =
+      { Field1 = null
+        Field2 = { X = "X" } }
+let x = { MyType2.Empty with Field1 = "" }
+let y = { x with Field2 = { X = "X" } }
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Warning 44, Line 9, Col 20, Line 9, Col 21, "This construct is deprecated. Use Y instead")
+            (Error 1129, Line 11, Col 29, Line 11, Col 30, "The record type 'MyType2' does not contain a label 'X'.")
+        ]
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in one the record with default value and properties with a static member when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead", true); DefaultValue>]
+      Field2 : string }
+    static member Empty =
+      { Field1 = null }
+let x = { MyType.Empty with Field1 = "field1" }
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Obsolete attribute error is taken into account when used in one the record properties when one of them is not used`` () =
+        Fsx """
+open System
+type MyType =
+    { Field1 : string
+      [<Obsolete("Use Field2 instead", true)>]
+      Field2 : string }
+let field1 = { Field1 = "field1" ; Field2 = "Field2" }
+let field2 = { field1 with Field1 = "Field1" }
+let field3 = { field1 with Field2 = "Field2" }
+        """
+        |> ignoreWarnings
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 101, Line 7, Col 36, Line 7, Col 42, "This construct is deprecated. Use Field2 instead")
+            (Error 101, Line 9, Col 28, Line 9, Col 34, "This construct is deprecated. Use Field2 instead")
         ]

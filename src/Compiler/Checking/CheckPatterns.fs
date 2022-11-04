@@ -448,7 +448,7 @@ and TcPatArrayOrList warnOnUpper cenv env vFlags patEnv ty isArray args m =
 
 and TcRecordPat warnOnUpper cenv env vFlags patEnv ty fieldPats m =
     let fieldPats = fieldPats |> List.map (fun (fieldId, _, fieldPat) -> fieldId, fieldPat)
-    let tinst, tcref, fldsmap, _fldsList = BuildFieldMap cenv env true ty fieldPats m
+    let tinst, tcref, fldsmap, _ = BuildFieldMap cenv env true ty fieldPats m
     let gtyp = mkAppTy tcref tinst
     let inst = List.zip (tcref.Typars m) tinst
 

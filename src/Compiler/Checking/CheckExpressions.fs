@@ -1792,7 +1792,7 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
         let allFields = flds |> List.map (fun ((_, ident), _) -> ident)
         flds
         |> List.map (fun (fld, fldExpr) ->
-            let (fldPath, fldId) = fld
+            let fldPath, fldId = fld
             let frefSet = ResolveField cenv.tcSink cenv.nameResolver env.eNameResEnv ad ty fldPath fldId allFields
             fld, frefSet, fldExpr)
 
@@ -1832,7 +1832,7 @@ let BuildFieldMap (cenv: cenv) env isPartial ty (flds: ((Ident list * Ident) * '
 
                     let fref2 = rfinfo2.RecdFieldRef
 
-                    CheckRecdFieldAccessible cenv.amap ident.idRange env.eAccessRights fref2 |> ignore
+                    CheckRecdFieldAccessible cenv.amap m env.eAccessRights fref2 |> ignore
 
                     CheckFSharpAttributes g fref2.PropertyAttribs ident.idRange |> CommitOperationResult
 
@@ -4635,7 +4635,7 @@ and TcMeasuresAsTuple (cenv: cenv) newOk checkConstraints occ env (tpenv: Unscop
         | SynTupleTypeSegment.Slash _ :: SynTupleTypeSegment.Type ty :: args ->
             let ms1, tpenv = TcMeasure cenv newOk checkConstraints occ env tpenv ty m
             gather args tpenv (Measure.Prod(acc, Measure.Inv ms1))
-        | _ -> failwith "inpossible"
+        | _ -> failwith "imposible"
     gather args tpenv Measure.One
 
 and TcTypesOrMeasures optKinds (cenv: cenv) newOk checkConstraints occ env tpenv args m =
@@ -6592,18 +6592,6 @@ and TcRecordConstruction (cenv: cenv) (overallTy: TType) env tpenv withExprInfoO
 
     // Build record
     let rfrefs = List.map (fst >> mkRecdFieldRef tcref) fldsList
-
-    // Check accessibility and FSharpAttributes
-    // this is also done in BuildFieldMap, but also need to check
-    // For fields in nested record
-    // type MyType1 = { Field1 : string }
-    // type MyType2 =
-    //     { Field1 : string
-    //       Field2 : MyType1 }
-    // Nested record construction :
-    // let x = { Field1 = ""; Field2 = { Field1 = "" } }
-    // Nested copy-and-update expressions
-    // let y = { x with Field2 = { Field1 = "X" } }
     
     for rfref in rfrefs do
         CheckRecdFieldAccessible cenv.amap m env.eAccessRights rfref |> ignore
@@ -7293,6 +7281,18 @@ and TcAssertExpr cenv overallTy env (m: range) tpenv x =
                                            SynExpr.Paren (x, range0, None, synm), synm)
 
     TcExpr cenv overallTy env tpenv callDiagnosticsExpr
+    
+and RecFldsList synRecdFields =
+    [
+        // if we met at least one field that is not syntactically correct - raise ReportedError to transfer control to the recovery routine
+        for SynExprRecordField(fieldName=(synLongId, isOk); expr=v) in synRecdFields do
+            if not isOk then
+                // raising ReportedError None transfers control to the closest errorRecovery point but do not make any records into log
+                // we assume that parse errors were already reported
+                raise (ReportedError None)
+
+            yield (List.frontAndBack synLongId.LongIdent, v)
+    ]
 
 and TcRecdExpr cenv (overallTy: TType) env tpenv (inherits, withExprOpt, synRecdFields, mWholeExpr) =
 
@@ -7314,29 +7314,40 @@ and TcRecdExpr cenv (overallTy: TType) env tpenv (inherits, withExprOpt, synRecd
     let hasOrigExpr = withExprOpt.IsSome
 
     let fldsList =
-        let flds =
-            [
-                // if we met at least one field that is not syntactically correct - raise ReportedError to transfer control to the recovery routine
-                for SynExprRecordField(fieldName=(synLongId, isOk); expr=v) in synRecdFields do
-                    if not isOk then
-                        // raising ReportedError None transfers control to the closest errorRecovery point but do not make any records into log
-                        // we assume that parse errors were already reported
-                        raise (ReportedError None)
-
-                    yield (List.frontAndBack synLongId.LongIdent, v)
-            ]
-
+        let flds = RecFldsList synRecdFields
         match flds with
         | [] -> []
-        | _ ->
-            let tinst, tcref, _, fldsList = BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr
-            let gtyp = mkAppTy tcref tinst
-            UnifyTypes cenv env mWholeExpr overallTy gtyp
+        | fields ->
+            let synExprInfo =
+                fields
+                |> List.tryPick(fun (_, synExpr) ->
+                    match synExpr with
+                    | Some(SynExpr.Record(_, _, recordFields, m)) -> Some(RecFldsList recordFields, m)
+                    | Some _ -> Some(flds, mWholeExpr)
+                    | _ -> None)
+                
+            // Check accessibility and FSharpAttributes
+            // this is also done in BuildFieldMap, but also need to check
+            // For fields in nested record
+            // type MyType1 = { Field1 : string }
+            // type MyType2 =
+            //     { Field1 : string
+            //       Field2 : MyType1 }
+            // Nested record construction :
+            // let x = { Field1 = ""; Field2 = { Field1 = "" } }
+            // Nested copy-and-update expressions
+            // let y = { x with Field2 = { Field1 = "X" } }
+            match synExprInfo with
+            | Some(flds, mWholeExpr) ->
+                let tinst, tcref, _, fldsList = BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr
+                let gtyp = mkAppTy tcref tinst
+                UnifyTypes cenv env mWholeExpr overallTy gtyp
 
-            [ for n, v in fldsList do
-                match v with
-                | Some v -> yield n, v
-                | None -> () ]
+                [ for n, v in fldsList do
+                    match v with
+                    | Some v -> yield n, v
+                    | None -> () ]
+            | None -> []
 
     let withExprInfoOpt =
         match withExprOpt with
