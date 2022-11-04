@@ -61,4 +61,11 @@ module Graph =
                 | false, _ -> idx, [||]
             )
         |> readOnlyDict
+        
+    let print (graph : Graph<'Node>) : unit =
+        printfn "Graph:"
+        let join (xs : string[]) =
+            System.String.Join(", ", xs)
+        graph
+        |> Seq.iter (fun (KeyValue(file, deps)) -> printfn $"{file} -> {deps |> Array.map (fun d -> d.ToString()) |> join}")
     

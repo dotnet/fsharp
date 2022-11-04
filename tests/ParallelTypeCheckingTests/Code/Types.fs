@@ -57,7 +57,7 @@ type File =
             | :? File as f -> f.Name.Equals this.Name
             | _ -> false
         override this.GetHashCode () = this.Name.GetHashCode()
-        override this.ToString() = this.Name
+        override this.ToString() = System.IO.Path.GetFileName this.Name
         interface System.IComparable with 
             member x.CompareTo y =
                 match y with

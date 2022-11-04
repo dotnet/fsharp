@@ -149,6 +149,13 @@ module internal AutomatedDependencyResolving =
         
         let processFile (node : FileData) =
             let deps =
+                let fsiDep =
+                    if node.File.FsiBacked then
+                        nodes
+                        |> Array.find (fun x -> x.File.Name = node.File.Name + "i")
+                        |> fun x -> [|x|]
+                    else
+                        [||]
                 // Assume that a file with module abbreviations can depend on anything
                 match node.Data.ContainsModuleAbbreviations with
                 | true -> nodes |> Array.map (fun n -> n.File)
@@ -226,6 +233,7 @@ module internal AutomatedDependencyResolving =
                         // For starters: can module abbreviations affect other files?
                         // If not, then the below is not necessary.
                         |> Seq.append filesWithModuleAbbreviations
+                        |> Seq.append fsiDep
                         |> Seq.map (fun f -> f.File)
                         |> Seq.toArray
                     

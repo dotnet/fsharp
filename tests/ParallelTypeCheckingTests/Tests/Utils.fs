@@ -11,10 +11,11 @@ open OpenTelemetry.Resources
 open OpenTelemetry.Trace
 
 let CodeRoot =
-    System.IO.Path.Combine(
-        __SOURCE_DIRECTORY__,
-        "../../../"
-    )
+    "c:/projekty/fsharp/fsharp_main"
+    // System.IO.Path.Combine(
+    //     __SOURCE_DIRECTORY__,
+    //     "../../../"
+    // )
 let replaceCodeRoot (s : string) = s.Replace("$CODE_ROOT$", CodeRoot)
 let packages =
     let pathWithEnv = @"%USERPROFILE%\.nuget\packages"
@@ -59,6 +60,7 @@ let setupOtel () =
 type Args =
     {
         Path : string
+        LineLimit : int option
         Mode : Method
         WorkingDir : string option
     }
@@ -79,6 +81,7 @@ let setupCompilationMethod (method: Method) (x: CompilationUnit): CompilationUni
         | Method.Sequential ->
             x
         | Method.ParallelFs ->
+            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParseAndCheckInputs.CheckMultipleInputsInParallel
             x
             |> withOptions [ "--test:ParallelCheckingWithSignatureFilesOn" ]
         | Method.Graph ->

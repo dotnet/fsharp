@@ -31,7 +31,7 @@
 --define:NETSTANDARD1_6_OR_GREATER
 --define:NETSTANDARD2_0_OR_GREATER
 --doc:$CODE_ROOT$\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\FSharp.Compiler.Service.xml
---keyfile:$PACKAGES$\microsoft.dotnet.arcade.sdk\8.0.0-beta.22520.1\tools\snk/MSFT.snk
+--keyfile:$PACKAGES$\microsoft.dotnet.arcade.sdk\8.0.0-beta.22513.2\tools\snk/MSFT.snk
 --publicsign+
 --optimize-
 --resource:$CODE_ROOT$\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\FSComp.resources
@@ -68,7 +68,6 @@
 -r:$PACKAGES$\netstandard.library\2.0.3\build\netstandard2.0\ref\System.Data.dll
 -r:$PACKAGES$\netstandard.library\2.0.3\build\netstandard2.0\ref\System.Diagnostics.Contracts.dll
 -r:$PACKAGES$\netstandard.library\2.0.3\build\netstandard2.0\ref\System.Diagnostics.Debug.dll
--r:$PACKAGES$\system.diagnostics.diagnosticsource\6.0.0\lib\netstandard2.0\System.Diagnostics.DiagnosticSource.dll
 -r:$PACKAGES$\netstandard.library\2.0.3\build\netstandard2.0\ref\System.Diagnostics.FileVersionInfo.dll
 -r:$PACKAGES$\netstandard.library\2.0.3\build\netstandard2.0\ref\System.Diagnostics.Process.dll
 -r:$PACKAGES$\netstandard.library\2.0.3\build\netstandard2.0\ref\System.Diagnostics.StackTrace.dll
@@ -206,8 +205,6 @@ $CODE_ROOT$\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\buildprop
 $CODE_ROOT$\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\FSharp.Compiler.Service.InternalsVisibleTo.fs
 $CODE_ROOT$\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\.NETStandard,Version=v2.0.AssemblyAttributes.fs
 $CODE_ROOT$\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\FSharp.Compiler.Service.AssemblyInfo.fs
-Utilities\Activity.fsi
-Utilities\Activity.fs
 Utilities\sformat.fsi
 Utilities\sformat.fs
 Utilities\sr.fsi
@@ -247,6 +244,8 @@ Utilities\PathMap.fs
 Utilities\RidHelpers.fs
 Utilities\range.fsi
 Utilities\range.fs
+Facilities\Logger.fsi
+Facilities\Logger.fs
 Facilities\LanguageFeatures.fsi
 Facilities\LanguageFeatures.fs
 Facilities\DiagnosticOptions.fsi

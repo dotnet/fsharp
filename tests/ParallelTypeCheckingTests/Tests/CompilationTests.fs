@@ -72,18 +72,31 @@ module Y4 =
     let y = 6
 """
         ]
+        
+    
+    let emptyNamespace =
+        [
+            "A.fs", """
+namespace A
+"""
+            "B.fs", """
+module B
+open A
+"""
+        ]
     
     let all =
         [
             encodeDecodeSimple, CompileOutput.Exe
             diamondBroken1, CompileOutput.Library
+            emptyNamespace, CompileOutput.Library
         ]
 
 type Case =
     {
+        Method : Method
         Files : (string * string) list
         OutputType : CompileOutput
-        Method : Method
     }
 
 let cases : Case list =

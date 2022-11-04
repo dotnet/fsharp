@@ -1,5 +1,6 @@
 ﻿module ParallelTypeCheckingTests.CompilationFromArgsTests
 
+open FSharp.Compiler.DiagnosticsLogger
 open NUnit.Framework
 open System
 open FSharp.Compiler
@@ -9,18 +10,26 @@ open Utils
 
 let codebases =
     [
-        @"$CODE_ROOT$\tests\FSharp.Compiler.ComponentTests", @"$CODE_ROOT$\tests\ParallelTypeCheckingTests\ComponentTests_args.txt"
-        @"$CODE_ROOT$\src\compiler", @"$CODE_ROOT$\tests\ParallelTypeCheckingTests\Tests\FCSArgs.txt"
+        //@"$CODE_ROOT$\tests\FSharp.Compiler.ComponentTests", @"$CODE_ROOT$\tests\ParallelTypeCheckingTests\ComponentTests_args.txt"
+        //@"$CODE_ROOT$\src\compiler", @"$CODE_ROOT$\tests\ParallelTypeCheckingTests\Tests\FCSArgs.txt"
+        @"$CODE_ROOT$\src\compiler", @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS.txt", Some 227
+        @"$CODE_ROOT$\src\compiler", @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS.txt", Some 239
+        @"$CODE_ROOT$\src\compiler", @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS.txt", Some 256
+        @"$CODE_ROOT$\src\compiler", @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS.txt", Some 308
+        @"$CODE_ROOT$\src\compiler", @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS.txt", Some 407
+        @"$CODE_ROOT$\src\compiler", @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS.txt", Some 502
+        // @"$CODE_ROOT$\src\compiler", @"$CODE_ROOT$\tests\ParallelTypeCheckingTests\Tests\FCS_323.txt"
+        // @"$CODE_ROOT$\src\compiler", @"$CODE_ROOT$\tests\ParallelTypeCheckingTests\Tests\FCS_434.txt"
+        @"$CODE_ROOT$\src\compiler", @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS.txt", None
     ]
 
 let configs =
-    
-        
-    methods
+    [Method.Sequential; Method.ParallelFs; Method.Graph; Method.Nojaf]
     |> List.allPairs codebases
-    |> List.map (fun ((workDir, path), method) -> 
+    |> List.map (fun ((workDir, path, lineLimit : int option), method) -> 
         {
             Path = path
+            LineLimit = lineLimit
             WorkingDir = Some workDir
             Mode = method 
         }
@@ -44,13 +53,13 @@ let setupArgsMethod (method: Method) (args: string[]): string[] =
             Array.append args [|"--test:ParallelCheckingWithSignatureFilesOn"|]
 
 let setupParsed config =
-    let {Path = path; Mode = mode; WorkingDir = workingDir} = config
+    let {Path = path; LineLimit = lineLimit; Mode = mode; WorkingDir = workingDir} = config
     let args =
         System.IO.File.ReadAllLines(path |> replacePaths)
+        |> fun lines -> match lineLimit with Some limit -> Array.take (Math.Min(limit, lines.Length)) lines | None -> lines 
         |> Array.map replacePaths
         
     printfn $"WorkingDir = {workingDir}"
-    printfn $"%+A{args}"
     let args = setupArgsMethod mode args
     workingDir |> Option.iter (fun dir -> Environment.CurrentDirectory <- replaceCodeRoot dir)
     args
@@ -58,9 +67,18 @@ let setupParsed config =
 [<TestCaseSource(nameof(configs))>]
 let TestCompilerFromArgs (config : Args) : unit =
     let oldWorkDir = Environment.CurrentDirectory
+    
+    let exiter =
+        { new Exiter with
+                        member _.Exit n =
+                            Assert.Fail($"Fail - {n} errors found")
+                            failwith (FSComp.SR.elSysEnvExitDidntExit ())
+                    }
+        
     try
-        let args = setupParsed config        
-        let exit = CommandLineMain.main args
+        let args = setupParsed config
+        let args = args |> Array.filter (fun x -> not <| x.Contains("Activity.fs"))
+        let exit : int = CommandLineMain.mainAux2(args, true, Some exiter)
         Assert.That(exit, Is.Zero)
     finally
         Environment.CurrentDirectory <- oldWorkDir

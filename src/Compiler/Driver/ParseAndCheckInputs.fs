@@ -4,6 +4,7 @@
 module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System
+open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.Collections.Generic
@@ -1394,13 +1395,11 @@ let CheckOneInput
                 )
     }
 
-type FsiBackedInfo =
-    Import.ImportMap * string list option * ModuleOrNamespaceType *
-    bool * ParsedImplFileInput * TcState * ModuleOrNamespaceType
+type FsiBackedInfo = ModuleOrNamespaceType
 
-let mutable asts = Dictionary<string, ParsedInput>()
+let mutable asts = ConcurrentDictionary<string, ParsedInput>()
 
-let mutable fsiBackedInfos = Dictionary<string, FsiBackedInfo>()
+let mutable fsiBackedInfos = ConcurrentDictionary<string, ModuleOrNamespaceType>()
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInputAux'
@@ -1463,6 +1462,11 @@ let CheckOneInputAux'
                         let m = qualNameOfFile.Range
                         TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m tcEnv (prefixPath, m)
                 
+        
+                // Save info needed for type-checking .fs file later on
+                printfn $"[{Thread.CurrentThread.ManagedThreadId}] Saving fsiBackedInfos for {file.FileName}"
+                fsiBackedInfos[file.FileName] <- sigFileType
+                
                 printfn $"Finished Processing Sig {file.FileName}"
                 return fun tcState ->
                     printfn $"Applying Sig {file.FileName}"
@@ -1482,56 +1486,8 @@ let CheckOneInputAux'
                                 tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
                             }
                         partialResult, tcState
-                    
-                    // Create dedicated state & some data for the .fs file type-checking later on - save it in a dict
-                    let fsTcState =
-                        // let hadSig = true
-                        // Add dummy .fs results
-                        // Adjust the TcState as if it has been checked, which makes the signature for the file available later
-                        // in the compilation order.
-                        let tcStateForImplFile = tcState
-                        let fsName = file.FileName.TrimEnd('i')
-                        // let fsQualifiedName = asts[fsName].QualifiedName
-                        // let qualNameOfFile = fsQualifiedName
-                        let priorErrors = checkForErrors ()
-                        //
-                        // // Add dummy TcState so that others can use this file through the .fsi stuff, without type-checking .fs
-                        // // Don't use it for this file's type-checking - it will cause duplicates 
-                        // let ccuSigForFile, tcState =
-                        //     AddCheckResultsToTcState
-                        //         (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, sigFileType)
-                        //         tcState
 
-                        // Save info needed for type-checking .fs file later on
-                        // TODO Remove most of this
-                        let fsiBackedInfo: FsiBackedInfo =
-                            let ast = asts[fsName]
-                            let file =
-                                match ast with
-                                | ParsedInput.ImplFile parsedImplFileInput -> parsedImplFileInput
-                                | ParsedInput.SigFile _ -> failwith "Unexpected SigFile"
-                            amap, conditionalDefines, sigFileType, priorErrors, file, tcStateForImplFile, sigFileType
-
-                        fsiBackedInfos[file.FileName] <- fsiBackedInfo
-                        
-                        printfn $"Finished Applying Sig {file.FileName}"
-                        tcState
-                    //
-                    // let _, finalTcState =
-                    //     match dummyFsPartialResult with
-                    //     | amap, _conditionalDefines, rootSig, _priorErrors, file, tcStateForImplFile, _ccuSigForFile ->
-                    //         AddDummyCheckResultsToTcState(
-                    //             tcGlobals,
-                    //             amap,
-                    //             file.QualifiedName,
-                    //             prefixPathOpt,
-                    //             tcSink,
-                    //             fsTcState,
-                    //             tcStateForImplFile,
-                    //             rootSig
-                    //         )
-
-                    fsiPartialResult, fsTcState
+                    fsiPartialResult, tcState
 
             | ParsedInput.ImplFile file ->
                 printfn $"Processing Impl {file.FileName}"

@@ -15,11 +15,7 @@ type Reference =
         Kind : ReferenceKind
     }
     
-type Abbreviation =
-    {
-        Alias : Ident
-        Target : LongIdent
-    }
+type Abbreviation = Abbreviation of unit
     
 /// Reference to a module or type, found in the AST
 type ReferenceOrAbbreviation =
@@ -46,7 +42,7 @@ let rec visitSynModuleDecl (decl : SynModuleDecl) : References =
     | SynModuleDecl.Types(synTypeDefns, range) ->
         visitSynTypeDefns synTypeDefns
     | SynModuleDecl.ModuleAbbrev(ident, longId, range) ->
-        [ReferenceOrAbbreviation.Abbreviation({Alias = ident; Target = longId})]
+        [ReferenceOrAbbreviation.Abbreviation (Abbreviation.Abbreviation())]
     | SynModuleDecl.NamespaceFragment synModuleOrNamespace ->
         visitSynModuleOrNamespace synModuleOrNamespace
     | SynModuleDecl.NestedModule(synComponentInfo, isRecursive, synModuleDecls, isContinuing, range, synModuleDeclNestedModuleTrivia) ->
@@ -380,6 +376,8 @@ and visitTypeDefnSimpleRepr (x : SynTypeDefnSimpleRepr) : References =
         seq {
             yield! visitParserDetail parserDetail
             yield! visitType rhsType
+            // TODO This shouldn't be needed, but for some reason it fixes the 'graph' mode in lib.fs etc.
+            yield (ReferenceOrAbbreviation.Abbreviation (Abbreviation.Abbreviation()))
         }
     | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly(ilType, range) ->
         []
@@ -1125,9 +1123,11 @@ let rec topStuffForSynModuleOrNamespace (x : SynModuleOrNamespace) : LongIdent[]
             // Treat it as a type - as soon as the parent module is reachable, consider the file being used
             [|LongIdent.Empty|]
         else
-            synModuleDecls
-            |> moduleDecls
-            |> combine longId
+            [|longId|]
+            // TODO Temporarily disabled digging into the file's structure to avoid edge cases where another file depends on this file's namespace existing (but nothing else)
+            // synModuleDecls
+            // |> moduleDecls
+            // |> combine longId
 
 and moduleDecls (x : SynModuleDecl list) : Eit =
     let emptyState = Eit.Nested [||]

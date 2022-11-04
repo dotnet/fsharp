@@ -139,7 +139,7 @@ type ConsoleLoggerProvider() =
 /// Notify the exiter if any error has occurred
 let AbortOnError (diagnosticsLogger: DiagnosticsLogger, exiter: Exiter) =
     if diagnosticsLogger.ErrorCount > 0 then
-        exiter.Exit 1
+        exiter.Exit diagnosticsLogger.ErrorCount
 
 let TypeCheck
     (
@@ -690,28 +690,30 @@ let main1
 
     let tcState, topAttrs, typedAssembly, _tcEnvAtEnd =
         TypeCheck(ctok, tcConfig, tcImports, tcGlobals, diagnosticsLogger, assemblyName, tcEnv0, openDecls0, inputs, exiter)
-
-    AbortOnError(diagnosticsLogger, exiter)
+    
+    let args =
+        Args(
+            ctok,
+            tcGlobals,
+            tcImports,
+            frameworkTcImports,
+            tcState.Ccu,
+            typedAssembly,
+            topAttrs,
+            tcConfig,
+            outfile,
+            pdbfile,
+            assemblyName,
+            diagnosticsLogger,
+            exiter,
+            ilSourceDocs
+        )
     ReportTime tcConfig "Typechecked"
-
     typeCheck.Dispose()
     
-    Args(
-        ctok,
-        tcGlobals,
-        tcImports,
-        frameworkTcImports,
-        tcState.Ccu,
-        typedAssembly,
-        topAttrs,
-        tcConfig,
-        outfile,
-        pdbfile,
-        assemblyName,
-        diagnosticsLogger,
-        exiter,
-        ilSourceDocs
-    )
+    AbortOnError(diagnosticsLogger, exiter)
+    args
+
 
 /// Second phase of compilation.
 ///   - Write the signature file, check some attributes
@@ -1192,7 +1194,8 @@ let CompileFromCommandLineArguments
         exiter: Exiter,
         loggerProvider,
         tcImportsCapture,
-        dynamicAssemblyCreator
+        dynamicAssemblyCreator,
+        abortOnError: bool
     ) =
 
     use disposables = new DisposablesTracker()
@@ -1207,19 +1210,24 @@ let CompileFromCommandLineArguments
                     ()
         }
 
-    main1 (
-        ctok,
-        argv,
-        legacyReferenceResolver,
-        bannerAlreadyPrinted,
-        reduceMemoryUsage,
-        defaultCopyFSharpCore,
-        exiter,
-        loggerProvider,
-        disposables
-    )
-    |> main2
-    |> main3
-    |> main4 (tcImportsCapture, dynamicAssemblyCreator)
-    |> main5
-    |> main6 dynamicAssemblyCreator
+    let x =
+        main1 (
+            ctok,
+            argv,
+            legacyReferenceResolver,
+            bannerAlreadyPrinted,
+            reduceMemoryUsage,
+            defaultCopyFSharpCore,
+            exiter,
+            loggerProvider,
+            disposables
+        )
+    if abortOnError then
+        x
+        |> main2
+        |> main3
+        |> main4 (tcImportsCapture, dynamicAssemblyCreator)
+        |> main5
+        |> main6 dynamicAssemblyCreator
+    else
+        ()

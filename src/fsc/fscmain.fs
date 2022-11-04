@@ -31,9 +31,7 @@ type Timer(name : string) =
         member this.Dispose() = this.Dispose()
 
 
-[<EntryPoint>]
-let main (argv) =
-
+let internal mainAux2 (argv : string[], onlyTypeCheck : bool, exiter : Exiter option) : int =
     use _ = FSharp.Compiler.Diagnostics.Activity.startNoTags "fscmain"
 
     use _ = new Timer("main")
@@ -89,6 +87,8 @@ let main (argv) =
         // Get the handler for legacy resolution of references via MSBuild.
         let legacyReferenceResolver = LegacyMSBuildReferenceResolver.getResolver ()
 
+        let exiter = exiter |> Option.defaultValue QuitProcessExiter
+        
         // Perform the main compilation.
         //
         // This is the only place where ReduceMemoryFlag.No is set. This is because fsc.exe is not a long-running process and
@@ -102,10 +102,11 @@ let main (argv) =
             false,
             ReduceMemoryFlag.No,
             CopyFSharpCoreFlag.Yes,
-            QuitProcessExiter,
+            exiter,
             ConsoleLoggerProvider(),
             None,
-            None
+            None,
+            not onlyTypeCheck
         )
 
         0
@@ -114,3 +115,8 @@ let main (argv) =
         // Last-chance error recovery (note, with a poor error range)
         errorRecovery e Range.range0
         1
+
+
+[<EntryPoint>]
+let main (argv : string[]) : int =
+    mainAux2 (argv, false, None)

@@ -99,7 +99,7 @@ type internal InProcCompiler(legacyReferenceResolver) =
                 ctok, argv, legacyReferenceResolver,
                 false, ReduceMemoryFlag.Yes,
                 CopyFSharpCoreFlag.Yes, exiter,
-                loggerProvider.Provider, None, None
+                loggerProvider.Provider, None, None, true
             )
         with 
             | StopProcessing -> ()

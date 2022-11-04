@@ -23,18 +23,20 @@ let _parse (argv: string[]): Args =
     
     {
         Path = path
+        LineLimit = None
         Mode = mode
         WorkingDir = workingDir
     }
 
 [<EntryPoint>]
 let main _argv =
-    let workDir, path = CompilationFromArgsTests.codebases[0]
+    let workDir, path, lineLimit = CompilationFromArgsTests.codebases[2]
     let stuff =
         {
             Path = path
+            LineLimit = lineLimit
             WorkingDir = Some workDir
-            Mode = Method.ParallelFs
+            Mode = Method.Nojaf
         }
     CompilationFromArgsTests.TestCompilerFromArgs stuff
     0

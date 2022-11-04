@@ -1,5 +1,6 @@
 ﻿module FSharp.Compiler.Service.Tests.ParallelTypeChecking
 #nowarn "1182"
+open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Threading
 open FSharp.Compiler
@@ -27,7 +28,7 @@ open Newtonsoft.Json
 
 type FileGraph = Graph<File>
 
-let calcFileGraph (files : SourceFiles) : FileGraph =
+let calcFileGraph (_files : SourceFiles) : FileGraph =
     // TODO Use DepResolving.fs
     failwith ""
 
@@ -37,7 +38,7 @@ type FinalFileResult = string
 type SingleResult = State -> FinalFileResult * State
 
 // TODO Use the real thing
-let typeCheckFile (file : File) (state : State) : SingleResult
+let typeCheckFile (file : File) (_state : State) : SingleResult
     =
     fun (state : State) ->
         let res = file.Idx.Idx
@@ -90,7 +91,7 @@ module internal Real =
             inputs
             |> List.map (fun ast -> ast.FileName, ast)
             |> readOnlyDict
-            |> Dictionary<_,_>
+            |> ConcurrentDictionary<_,_>
         let graph = DepResolving.AutomatedDependencyResolving.detectFileDependencies sourceFiles
         
         let mutable nextIdx = (graph.Files |> Array.map (fun f -> f.File.Idx.Idx) |> Array.max) + 1
@@ -136,7 +137,7 @@ module internal Real =
                 Files = Array.append graph.Files xFiles
                 Graph = stuff |> Graph.fillEmptyNodes
             } : DepsResult
-        
+        graph.Graph |> Graph.print
         
         let graphJson = graph.Graph |> Seq.map (fun (KeyValue(file, deps)) -> file.Name, deps |> Array.map (fun d -> d.Name)) |> dict
         let json = JsonConvert.SerializeObject(graphJson, Formatting.Indented)
@@ -153,7 +154,7 @@ module internal Real =
         let processFile
             (file : File)
             ((input, logger) : ParsedInput * DiagnosticsLogger)
-            ((currentTcState, currentPriorErrors) : State)
+            ((currentTcState, _currentPriorErrors) : State)
             : State -> PartialResult * State =
             cancellable {
                 use _ = UseDiagnosticsLogger logger
@@ -196,40 +197,35 @@ module internal Real =
                     // Add dummy .fs results
                     // Adjust the TcState as if it has been checked, which makes the signature for the file available later
                     // in the compilation order.
-                    let tcStateForImplFile = tcState
                     let fsName = fsi.TrimEnd('i')
                     let fsQualifiedName = asts[fsName].QualifiedName
                     let qualNameOfFile = fsQualifiedName
-                    let priorErrors = checkForErrors ()
                     
                     // Add dummy TcState so that others can use this file through the .fsi stuff, without type-checking .fs
                     // Don't use it for this file's type-checking - it will cause duplicates
                     
-                    let info = fsiBackedInfos[fsi]
-                    match info with
-                    // TODO Change
-                    | amap, conditionalDefines, rootSig, priorErrors, filee, tcStateForImplFile, ccuSigForFile ->
-                        printfn $"Finished Processing X {file.Name}"
-                        return
-                            (fun (state : State) ->
-                                // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state
-                                printfn $"Applying X state {file.Name}"                        
-                                let tcState, priorErrors = state
-                                // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state 
-                                
-                                let ccuSigForFile, tcState =
-                                    AddCheckResultsToTcState
-                                        (tcGlobals, tcImports.GetImportMap(), hadSig, prefixPathOpt, tcSink, tcState.TcEnvFromImpls, qualNameOfFile, ccuSigForFile)
-                                        tcState
-                                let partialResult = tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile
-                
-                                let hasErrors = logger.ErrorCount > 0
-                                // TODO Should we use local _priorErrors or global priorErrors? 
-                                let priorOrCurrentErrors = priorErrors || hasErrors
-                                let state : State = tcState, priorOrCurrentErrors
-                                printfn $"Finished applying X state {file.Name}"
-                                partialResult, state
-                            )
+                    let ccuSigForFile = fsiBackedInfos[fsi]
+                    printfn $"Finished Processing X {file.Name}"
+                    return
+                        (fun (state : State) ->
+                            // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state
+                            printfn $"Applying X state {file.Name}"                        
+                            let tcState, priorErrors = state
+                            // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state 
+                            
+                            let ccuSigForFile, tcState =
+                                AddCheckResultsToTcState
+                                    (tcGlobals, tcImports.GetImportMap(), hadSig, prefixPathOpt, tcSink, tcState.TcEnvFromImpls, qualNameOfFile, ccuSigForFile)
+                                    tcState
+                            let partialResult = tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile
+            
+                            let hasErrors = logger.ErrorCount > 0
+                            // TODO Should we use local _priorErrors or global priorErrors? 
+                            let priorOrCurrentErrors = priorErrors || hasErrors
+                            let state : State = tcState, priorOrCurrentErrors
+                            printfn $"Finished applying X state {file.Name}"
+                            partialResult, state
+                        )
             }
             |> Cancellable.runWithoutCancellation
             
@@ -254,7 +250,7 @@ module internal Real =
                 processFile file (parsedInput, logger) state
                 
             let folder: State -> SingleResult -> FinalFileResult * State = folder
-            let qnof = QualifiedNameOfFile.QualifiedNameOfFile (Ident("", Range.Zero))
+            let _qnof = QualifiedNameOfFile.QualifiedNameOfFile (Ident("", Range.Zero))
             let state: State = tcState, priorErrors
             
             let partialResults, (tcState, _) =
