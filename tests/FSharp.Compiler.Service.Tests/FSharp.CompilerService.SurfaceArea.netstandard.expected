@@ -4154,7 +4154,6 @@ FSharp.Compiler.IO.StreamExtensions: Void Stream.Write[a](System.IO.Stream, a)
 FSharp.Compiler.Interactive.CtrlBreakHandlers
 FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakClient: Void .ctor(System.String)
 FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakClient: Void Interrupt()
-FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakClient: Void Start()
 FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakService: Void .ctor(System.String)
 FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakService: Void Interrupt()
 FSharp.Compiler.Interactive.CtrlBreakHandlers+CtrlBreakService: Void Run()
