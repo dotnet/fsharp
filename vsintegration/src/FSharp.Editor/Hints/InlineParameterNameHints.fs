@@ -22,12 +22,12 @@ module InlineParameterNameHints =
 
     let isValidForHint (symbol: FSharpMemberOrFunctionOrValue) =
         // is there a better way?
-        let isNotAnOperator = 
+        let isNotBuiltInOperator = 
             symbol.DeclaringEntity 
             |> Option.exists (fun entity -> entity.CompiledName <> "Operators")
 
         symbol.IsFunction
-        && isNotAnOperator // arguably, hints for those would be rather useless
+        && isNotBuiltInOperator // arguably, hints for those would be rather useless
 
     let getHints 
         (parseResults: FSharpParseFileResults) 

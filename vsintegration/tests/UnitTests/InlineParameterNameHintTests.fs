@@ -69,6 +69,32 @@ let greeting = greet ("Liam", "Noel")
 
     Assert.AreEqual(expected, actual)
 
+[<Test>]
+let ``Hints are shown for active patterns`` () =
+    let code = """
+let (|Even|Odd|) n =
+    if n % 2 = 0 then Even
+    else Odd
+    
+let evenOrOdd number =
+    match number with
+    | Even -> "even"
+    | Odd -> "odd"
+
+let even = evenOrOdd 42
+let odd = evenOrOdd 41
+"""
+    let document = getFsDocument code
+    let expected = [
+        { Content = "friend1 = "; Location = (10, 22) }
+        { Content = "friend2 = "; Location = (11, 21) }
+    ]
+
+    let actual = getParameterNameHints document
+
+    Assert.AreEqual(expected, actual)
+
+
 [<Test>] // here we don't want an empty hint before "x"
 let ``Hints are not shown for nameless parameters`` () =
     let code = """
@@ -84,9 +110,22 @@ let exists predicate option =
     Assert.IsEmpty(result)
 
 [<Test>] // here we don't want a useless (?) hint "value = "
-let ``Hints are not shown for operator parameters`` () =
+let ``Hints are not shown for parameters of built-in operators`` () =
     let code = """
 let postTrue = not true
+"""
+    let document = getFsDocument code
+
+    let result = getParameterNameHints document
+
+    Assert.IsEmpty(result)
+
+[<Test>]
+let ``Hints are not shown for parameters of custom operators`` () =
+    let code = """
+let (===) value1 value2 = value1 = value2
+
+let c = "javascript" === "javascript"
 """
     let document = getFsDocument code
 
