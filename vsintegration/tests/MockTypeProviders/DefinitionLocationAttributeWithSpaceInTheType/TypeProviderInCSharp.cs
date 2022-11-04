@@ -45,6 +45,11 @@ namespace TypeProviderInCSharp
             return new Type[] { myType };
         }
 
+        public string NamespaceName
+        {
+            get { return _Namespace; }
+        }
+
         public Type ResolveTypeName(string typeName)
         {
             
@@ -53,11 +58,6 @@ namespace TypeProviderInCSharp
                 return myType;
             }
             return null;
-        }
-
-        string IProvidedNamespace.get_NamespaceName()
-        {
-            throw new NotImplementedException();
         }
     }
 
