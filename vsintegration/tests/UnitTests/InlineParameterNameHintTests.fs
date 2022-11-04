@@ -86,8 +86,8 @@ let odd = evenOrOdd 41
 """
     let document = getFsDocument code
     let expected = [
-        { Content = "friend1 = "; Location = (10, 22) }
-        { Content = "friend2 = "; Location = (11, 21) }
+        { Content = "number = "; Location = (10, 22) }
+        { Content = "number = "; Location = (11, 21) }
     ]
 
     let actual = getParameterNameHints document
