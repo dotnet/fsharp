@@ -730,70 +730,50 @@ let x3 : FormattableString = $"one %10s{String.Empty}" // no %10s in Formattable
               (FSharpDiagnosticSeverity.Error, 3376, (6, 30, 6, 55),
                "Invalid interpolated string. Interpolated strings used as type IFormattable or type FormattableString may not use '%' specifiers, only .NET-style interpolands such as '{expr}', '{expr,3}' or '{expr:N5}' may be used.")|]
 
+    [<TestCase("""let s1 = $"123{456}789{""",    "\"012\"", "}345\"")>]
+    [<TestCase("""let s2 = $"123{456}789{""",   "@\"012\"", "}345\"")>]
+    [<TestCase("""let s3 = $"123{456}789{""",   "$\"012\"", "}345\"")>]
+    [<TestCase("""let s4 = $@"123{456}789{""",   "\"012\"", "}345\"")>]
+    [<TestCase("""let s5 = @$"123{456}789{""",   "\"012\"", "}345\"")>]
+    [<TestCase("""let s6 = $@"123{456}789{""",  "@\"012\"", "}345\"")>]
+    [<TestCase("""let s7 = @$"123{456}789{""",  "$\"012\"", "}345\"")>]
+    [<TestCase("""let s8 = $@"123{456}789{""", "@$\"012\"", "}345\"")>]
+    [<TestCase("""let s9 = @$"123{456}789{""", "$@\"012\"", "}345\"")>]
+    let ``String interpolation negative nested in single`` ((part1: string, expr: string, part2: string)) =
+        let code = part1 + expr + part2
+        let exprPosBegin = 1 + part1.Length
+        let quotePosInExpr = exprPosBegin + (expr |> Seq.findIndex (fun c -> c = '"'))
+        let closingBracePos = exprPosBegin + expr.Length
+        CompilerAssert.TypeCheckWithErrorsAndOptions [| "--langversion:5.0" |]
+            code
+            [|(FSharpDiagnosticSeverity.Error, 3373, (1, exprPosBegin, 1, quotePosInExpr + 1),
+               "Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. \
+               Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.");
+              (FSharpDiagnosticSeverity.Error, 10, (1, closingBracePos, 1, closingBracePos + 1),
+               "Unexpected symbol '}' in binding. Expected interpolated string (final part), interpolated string (part) or other token.");
+              (FSharpDiagnosticSeverity.Error, 514, (1, code.Length, 1, code.Length + 1), "End of file in string begun at or before here")|]
 
-    [<Test>]
-    let ``String interpolation negative nested in single`` () =
-        let code =    """
-
-open System 
-let s1 = $"123{456}789{"012"}345" 
-let s2 = $"123{456}789{@"012"}345" 
-let s3 = $"123{456}789{$"012"}345" 
-let s4 = $@"123{456}789{"012"}345" 
-let s5 = @$"123{456}789{"012"}345" 
-let s6 = $@"123{456}789{@"012"}345" 
-let s7 = @$"123{456}789{$"012"}345" 
-let s8 = $@"123{456}789{@$"012"}345" 
-let s9 = @$"123{456}789{$@"012"}345" 
-"""
+    [<TestCase("let TripleInTripleInterpolated = $\"\"\"123{456}789{",              "\"\"\"012\"\"\"", "}345\"\"\"")>]
+    [<TestCase("let TripleInSingleInterpolated = $\"123{456}789{",                  "\"\"\"012\"\"\"", "}345\"\"\"")>]
+    [<TestCase("let TripleInVerbatimInterpolated = @$\"123{456}789{",               "\"\"\"012\"\"\"", "}345\"\"\"")>]
+    [<TestCase("let TripleInterpolatedInTripleInterpolated = $\"\"\"123{456}789{", "$\"\"\"012\"\"\"", "}345\"\"\"")>]
+    [<TestCase("let TripleInterpolatedInSingleInterpolated = $\"123{456}789{",     "$\"\"\"012\"\"\"", "}345\"\"\"")>]
+    [<TestCase("let TripleInterpolatedInVerbatimInterpolated = @$\"123{456}789{",  "$\"\"\"012\"\"\"", "}345\"\"\"")>]
+    let ``String interpolation negative nested in triple`` ((part1: string, expr: string, part2: string)) =
+        let code = part1 + expr + part2
+        let exprPosBegin = 1 + part1.Length
+        let exprOpenQuoteEnd = exprPosBegin + 3 + (expr |> Seq.takeWhile (fun c -> c <> '"') |> Seq.length)
+        let closingBracePos = exprPosBegin + expr.Length
+        let closingQuotePos = code.Length + 1 - 3
         CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
             code
-            [|(FSharpDiagnosticSeverity.Error, 3373, (4, 24, 4, 25),
-               "Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.");
-              (FSharpDiagnosticSeverity.Error, 3373, (5, 24, 5, 26),
-               "Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.");
-              (FSharpDiagnosticSeverity.Error, 3373, (6, 24, 6, 26),
-               "Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.");
-              (FSharpDiagnosticSeverity.Error, 3373, (7, 25, 7, 26),
-               "Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.");
-              (FSharpDiagnosticSeverity.Error, 3373, (8, 25, 8, 26),
-               "Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.");
-              (FSharpDiagnosticSeverity.Error, 3373, (9, 25, 9, 27),
-               "Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.");
-              (FSharpDiagnosticSeverity.Error, 3373, (10, 25, 10, 27),
-               "Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.");
-              (FSharpDiagnosticSeverity.Error, 3373, (11, 25, 11, 28),
-               "Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.");
-              (FSharpDiagnosticSeverity.Error, 3373, (12, 25, 12, 28),
-               "Invalid interpolated string. Single quote or verbatim string literals may not be used in interpolated expressions in single quote or verbatim strings. Consider using an explicit 'let' binding for the interpolation expression or use a triple quote string as the outer string literal.")|]
+            [|(FSharpDiagnosticSeverity.Error, 3374, (1, exprPosBegin, 1, exprOpenQuoteEnd),
+               "Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.");
+              (FSharpDiagnosticSeverity.Error, 10, (1, closingBracePos, 1, closingBracePos + 1),
+               "Unexpected symbol '}' in binding. Expected interpolated string (final part), interpolated string (part) or other token.");
+              (FSharpDiagnosticSeverity.Error, 1232, (1, closingQuotePos, 1, closingQuotePos + 3),
+               "End of file in triple-quote string begun at or before here")|]
 
-    [<Test>]
-    let ``String interpolation negative nested in triple`` () =
-        let code =    "
-
-open System 
-let TripleInTripleInterpolated   = $\"\"\"123{456}789{\"\"\"012\"\"\"}345\"\"\" 
-let TripleInSingleInterpolated   = $\"123{456}789{\"\"\"012\"\"\"}345\" 
-let TripleInVerbatimInterpolated = $\"123{456}789{\"\"\"012\"\"\"}345\" 
-let TripleInterpolatedInTripleInterpolated   = $\"\"\"123{456}789{$\"\"\"012\"\"\"}345\"\"\" 
-let TripleInterpolatedInSingleInterpolated   = $\"123{456}789{$\"\"\"012\"\"\"}345\" 
-let TripleInterpolatedInVerbatimInterpolated = $\"123{456}789{$\"\"\"012\"\"\"}345\" 
-"
-        CompilerAssert.TypeCheckWithErrorsAndOptions  [| "--langversion:5.0" |]
-            code
-            [|(FSharpDiagnosticSeverity.Error, 3374, (4, 52, 4, 55),
-               "Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.");
-              (FSharpDiagnosticSeverity.Error, 3374, (5, 50, 5, 53),
-               "Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.");
-              (FSharpDiagnosticSeverity.Error, 3374, (6, 50, 6, 53),
-               "Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.");
-              (FSharpDiagnosticSeverity.Error, 3374, (7, 64, 7, 68),
-               "Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.");
-              (FSharpDiagnosticSeverity.Error, 3374, (8, 62, 8, 66),
-               "Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.");
-              (FSharpDiagnosticSeverity.Error, 3374, (9, 62, 9, 66),
-               "Invalid interpolated string. Triple quote string literals may not be used in interpolated expressions. Consider using an explicit 'let' binding for the interpolation expression.")|]
-  
     [<Test>]
     let ``String interpolation negative incomplete string`` () =
         let code =    """let x1 = $"one %d{System.String.Empty}"""
