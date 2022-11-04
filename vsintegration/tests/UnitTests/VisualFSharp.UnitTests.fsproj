@@ -148,18 +148,6 @@
   <!-- assemblies used during tests -->
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" Private="true" />
-    <ProjectReference Include="..\MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj" Private="true" />
-    <ProjectReference Include="..\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist\DefinitionLocationAttributeFileDoesnotExist.csproj" Private="true" />
-    <ProjectReference Include="..\MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist\DefinitionLocationAttributeLineDoesnotExist.csproj" Private="true" />
-    <ProjectReference Include="..\MockTypeProviders\DefinitionLocationAttributeWithSpaceInTheType\DefinitionLocationAttributeWithSpaceInTheType.csproj" Private="true" />
-    <ProjectReference Include="..\MockTypeProviders\DummyProviderForLanguageServiceTesting\DummyProviderForLanguageServiceTesting.fsproj" Private="true" />
-    <ProjectReference Include="..\MockTypeProviders\EditorHideMethodsAttribute\EditorHideMethodsAttribute.csproj" Private="true" />
-    <ProjectReference Include="..\MockTypeProviders\EmptyAssembly\EmptyAssembly.fsproj" Private="true" />
-    <ProjectReference Include="..\MockTypeProviders\XmlDocAttributeWithAdequateComment\XmlDocAttributeWithAdequateComment.csproj" Private="true" />
-    <ProjectReference Include="..\MockTypeProviders\XmlDocAttributeWithEmptyComment\XmlDocAttributeWithEmptyComment.csproj" Private="true" />
-    <ProjectReference Include="..\MockTypeProviders\XmlDocAttributeWithLocalizedComment\XmlDocAttributeWithLocalizedComment.csproj" Private="true" />
-    <ProjectReference Include="..\MockTypeProviders\XmlDocAttributeWithLongComment\XmlDocAttributeWithLongComment.csproj" Private="true" />
-    <ProjectReference Include="..\MockTypeProviders\XmlDocAttributeWithNullComment\XmlDocAttributeWithNullComment.csproj" Private="true" />
   </ItemGroup>
 
   <ItemGroup>
