@@ -147,6 +147,10 @@ module internal AutomatedDependencyResolving =
             
         let trie = buildTrie nodes
         
+        let fsiFiles =
+            nodes
+            |> Array.filter (fun f -> f.File.Name.EndsWith ".fsi")
+        
         let processFile (node : FileData) =
             let deps =
                 let fsiDep =
@@ -224,6 +228,13 @@ module internal AutomatedDependencyResolving =
                     moduleRefs
                     |> Array.iter processRef
                     
+                    // Force .fsi files to depend on all other (previous) .fsi files - avoids the issue of TcEnv being overriden  
+                    let additionalFsiDeps =
+                        if node.File.Name.EndsWith ".fsi" then
+                            fsiFiles
+                        else
+                            [||]
+                    
                     // Collect files from all reachable TrieNodes
                     let deps =
                         reachable
@@ -233,6 +244,7 @@ module internal AutomatedDependencyResolving =
                         // For starters: can module abbreviations affect other files?
                         // If not, then the below is not necessary.
                         |> Seq.append filesWithModuleAbbreviations
+                        |> Seq.append additionalFsiDeps
                         |> Seq.append fsiDep
                         |> Seq.map (fun f -> f.File)
                         |> Seq.toArray
