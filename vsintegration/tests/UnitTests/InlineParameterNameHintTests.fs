@@ -53,6 +53,22 @@ let greeting = greet "Liam" "Noel"
 
     Assert.AreEqual(expected, actual)
 
+[<Test>]
+let ``Hints are shown for tuple items`` () =
+    let code = """
+let greet (friend1, friend2) = $"hello {friend1} and {friend2}"
+let greeting = greet ("Liam", "Noel")
+"""
+    let document = getFsDocument code
+    let expected = [
+        { Content = "friend1 = "; Location = (2, 23) }
+        { Content = "friend2 = "; Location = (2, 31) }
+    ]
+
+    let actual = getParameterNameHints document
+
+    Assert.AreEqual(expected, actual)
+
 [<Test>] // here we don't want an empty hint before "x"
 let ``Hints are not shown for nameless parameters`` () =
     let code = """
