@@ -7,14 +7,11 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Hints
 
 module OptionParser =
-
+    
     let getHintKinds options =
-        let hintKinds = new HashSet<HintKind>()
+        Set 
+            [ if options.IsInlineTypeHintsEnabled then
+                 HintKind.TypeHint
 
-        if options.IsInlineTypeHintsEnabled
-        then hintKinds.Add HintKind.TypeHint |> ignore
-
-        if options.IsInlineParameterNameHintsEnabled
-        then hintKinds.Add HintKind.ParameterNameHint |> ignore
-
-        Set hintKinds
+              if options.IsInlineParameterNameHintsEnabled then
+                 HintKind.ParameterNameHint ]
