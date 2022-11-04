@@ -1463,6 +1463,7 @@ keywordDescriptionVal,"Used in a signature to indicate a value, or in a type to 
 keywordDescriptionVoid,"Indicates the .NET void type. Used when interoperating with other .NET languages."
 keywordDescriptionWhen,"Used for Boolean conditions (when guards) on pattern matches and to introduce a constraint clause for a generic type parameter."
 keywordDescriptionWhile,"Introduces a looping construct."
+keywordDescriptionWhileBang,"Used in computation expressions to introduce a looping construct where the condition is the result of another computation expression."
 keywordDescriptionWith,"Used together with the match keyword in pattern matching expressions. Also used in object expressions, record copying expressions, and type extensions to introduce member definitions, and to introduce exception handlers."
 keywordDescriptionYield,"Used in a sequence expression to produce a value for a sequence."
 keywordDescriptionYieldBang,"Used in a computation expression to append the result of a given computation expression to a collection of results for the containing computation expression."

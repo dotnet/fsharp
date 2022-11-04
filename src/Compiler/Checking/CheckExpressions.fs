@@ -5700,6 +5700,9 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
     | SynExpr.MatchBang (range=m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
+    | SynExpr.WhileBang (range=m) ->
+        error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
+
     // Part of 'T.Ident
     | SynExpr.Typar (typar, m) ->
         TcTyparExprThen cenv overallTy env tpenv typar m []
@@ -8678,6 +8681,7 @@ and TcImplicitOpItemThen (cenv: cenv) overallTy env id sln tpenv mItem delayed =
         | SynExpr.MatchBang _
         | SynExpr.LetOrUseBang _
         | SynExpr.DoBang _
+        | SynExpr.WhileBang _
         | SynExpr.TraitCall _
         | SynExpr.IndexFromEnd _
         | SynExpr.IndexRange _

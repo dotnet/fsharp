@@ -766,6 +766,13 @@ module SyntaxTraversal =
 
                 | SynExpr.DoBang (synExpr, _range) -> traverseSynExpr synExpr
 
+                | SynExpr.WhileBang (_spWhile, synExpr, synExpr2, _range) ->
+                    [
+                        dive synExpr synExpr.Range traverseSynExpr
+                        dive synExpr2 synExpr2.Range traverseSynExpr
+                    ]
+                    |> pick expr
+
                 | SynExpr.LibraryOnlyILAssembly _ -> None
 
                 | SynExpr.LibraryOnlyStaticOptimization _ -> None

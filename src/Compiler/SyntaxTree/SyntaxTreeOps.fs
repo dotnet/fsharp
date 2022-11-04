@@ -915,6 +915,8 @@ let rec synExprContainsError inpExpr =
                 ]
             || walkExpr e2
 
+        | SynExpr.WhileBang (_, e1, e2, _) -> walkExpr e1 || walkExpr e2
+
         | SynExpr.InterpolatedString (parts, _, _m) ->
             parts
             |> List.choose (function

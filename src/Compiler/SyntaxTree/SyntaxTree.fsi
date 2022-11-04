@@ -871,6 +871,9 @@ type SynExpr =
     /// Computation expressions only
     | DoBang of expr: SynExpr * range: range
 
+    /// F# syntax: 'while! ... do ...'
+    | WhileBang of whileDebugPoint: DebugPointAtWhile * whileExpr: SynExpr * doExpr: SynExpr * range: range
+
     /// Only used in FSharp.Core
     | LibraryOnlyILAssembly of
         ilCode: obj *  // this type is ILInstr[]  but is hidden to avoid the representation of AbstractIL being public

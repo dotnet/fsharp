@@ -679,6 +679,8 @@ type SynExpr =
 
     | DoBang of expr: SynExpr * range: range
 
+    | WhileBang of whileDebugPoint: DebugPointAtWhile * whileExpr: SynExpr * doExpr: SynExpr * range: range
+
     | LibraryOnlyILAssembly of
         ilCode: obj *  // this type is ILInstr[]  but is hidden to avoid the representation of AbstractIL being public
         typeArgs: SynType list *
@@ -777,6 +779,7 @@ type SynExpr =
         | SynExpr.LetOrUseBang (range = m)
         | SynExpr.MatchBang (range = m)
         | SynExpr.DoBang (range = m)
+        | SynExpr.WhileBang (range = m)
         | SynExpr.Fixed (range = m)
         | SynExpr.InterpolatedString (range = m)
         | SynExpr.Dynamic (range = m) -> m

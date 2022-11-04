@@ -83,7 +83,7 @@ let parse_error_rich = Some (fun (ctxt: ParseErrorContext<_>) ->
 %token EXCEPTION FALSE FOR FUN FUNCTION IF IN JOIN_IN FINALLY DO_BANG 
 %token LAZY OLAZY  MATCH MATCH_BANG  MUTABLE NEW OF 
 %token OPEN OR REC THEN TO TRUE TRY TYPE VAL INLINE INTERFACE INSTANCE CONST
-%token WHEN WHILE WITH HASH AMP AMP_AMP QUOTE LPAREN RPAREN RPAREN_COMING_SOON RPAREN_IS_HERE STAR COMMA RARROW GREATER_BAR_RBRACK LPAREN_STAR_RPAREN
+%token WHEN WHILE WHILE_BANG WITH HASH AMP AMP_AMP QUOTE LPAREN RPAREN RPAREN_COMING_SOON RPAREN_IS_HERE STAR COMMA RARROW GREATER_BAR_RBRACK LPAREN_STAR_RPAREN
 %token QMARK QMARK_QMARK DOT COLON COLON_COLON COLON_GREATER  COLON_QMARK_GREATER COLON_QMARK COLON_EQUALS SEMICOLON 
 %token SEMICOLON_SEMICOLON LARROW EQUALS  LBRACK  LBRACK_BAR  LBRACE_BAR  LBRACK_LESS 
 %token BAR_RBRACK BAR_RBRACE UNDERSCORE
@@ -3640,6 +3640,47 @@ declExpr:
         let mWhileBodyArb = rhs parseState 3
         let mWhileAll = unionRanges (rhs parseState 1) (rhs parseState 3)
         exprFromParseError (SynExpr.While (spWhile, arbExpr("whileGuard1", mWhileHeader), arbExpr("whileBody3", mWhileBodyArb), mWhileAll))  }
+
+  | WHILE_BANG declExpr doToken typedSequentialExprBlock doneDeclEnd 
+      { let mWhileHeader = unionRanges (rhs parseState 1) $2.Range
+        let spWhile = DebugPointAtWhile.Yes mWhileHeader 
+        let mWhileAll = unionRanges (rhs parseState 1) $4.Range
+        SynExpr.WhileBang (spWhile, $2, $4, mWhileAll) }
+      
+  | WHILE_BANG declExpr doToken typedSequentialExprBlock recover 
+      { if not $5 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileWhile())
+        let mWhileHeader = unionRanges (rhs parseState 1) $2.Range
+        let spWhile = DebugPointAtWhile.Yes mWhileHeader 
+        let mWhileAll = unionRanges (rhs parseState 1) $4.Range
+        exprFromParseError (SynExpr.WhileBang (spWhile, $2, $4, mWhileAll)) }
+
+  | WHILE_BANG declExpr doToken error doneDeclEnd 
+      { // silent recovery 
+        let mWhileHeader = unionRanges (rhs parseState 1) $2.Range
+        let spWhile = DebugPointAtWhile.Yes mWhileHeader 
+        let mWhileBodyArb = unionRanges (rhs parseState 4) (rhs parseState 5)
+        let mWhileAll = unionRanges (rhs parseState 1) (rhs parseState 5)
+        SynExpr.WhileBang (spWhile, $2, arbExpr("whileBody1", mWhileBodyArb), mWhileAll) }
+
+  | WHILE_BANG declExpr recover 
+      { reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsWhileDoExpected())
+        let mWhileHeader = unionRanges (rhs parseState 1) $2.Range
+        let spWhile = DebugPointAtWhile.Yes mWhileHeader 
+        let mWhileBodyArb = rhs parseState 3
+        let mWhileAll = unionRanges (rhs parseState 1) (rhs parseState 3)
+        exprFromParseError (SynExpr.WhileBang (spWhile, $2, arbExpr("whileBody2", mWhileBodyArb), mWhileAll))  }
+
+  | WHILE_BANG recover 
+      { if not $2 then reportParseErrorAt (rhs parseState 1) (FSComp.SR.parsUnexpectedEndOfFileWhile())
+        arbExpr("whileLoop1", rhs parseState 1)  }
+
+  | WHILE_BANG error doneDeclEnd 
+      { //silent recovery
+        let mWhileHeader = rhs parseState 1
+        let spWhile = DebugPointAtWhile.Yes mWhileHeader 
+        let mWhileBodyArb = rhs parseState 3
+        let mWhileAll = unionRanges (rhs parseState 1) (rhs parseState 3)
+        exprFromParseError (SynExpr.WhileBang (spWhile, arbExpr("whileGuard1", mWhileHeader), arbExpr("whileBody3", mWhileBodyArb), mWhileAll))  }
 
   | FOR forLoopBinder doToken typedSequentialExprBlock doneDeclEnd 
       { let mFor = rhs parseState 1

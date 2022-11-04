@@ -1180,6 +1180,7 @@ type Exception with
                 | Parser.TOKEN_INLINE -> SR.GetString("Parser.TOKEN.INLINE")
                 | Parser.TOKEN_WHEN -> SR.GetString("Parser.TOKEN.WHEN")
                 | Parser.TOKEN_WHILE -> SR.GetString("Parser.TOKEN.WHILE")
+                | Parser.TOKEN_WHILE_BANG -> SR.GetString("Parser.TOKEN.WHILE.BANG")
                 | Parser.TOKEN_WITH -> SR.GetString("Parser.TOKEN.WITH")
                 | Parser.TOKEN_IF -> SR.GetString("Parser.TOKEN.IF")
                 | Parser.TOKEN_DO -> SR.GetString("Parser.TOKEN.DO")

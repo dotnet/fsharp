@@ -111,6 +111,7 @@ let YieldFree (cenv: cenv) expr =
             | SynExpr.TryFinally (tryExpr=body)
             | SynExpr.LetOrUse (body=body)
             | SynExpr.While (doExpr=body)
+            | SynExpr.WhileBang (doExpr=body)
             | SynExpr.ForEach (bodyExpr=body) ->
                 YieldFree body
 
@@ -142,6 +143,7 @@ let YieldFree (cenv: cenv) expr =
             | SynExpr.TryFinally (tryExpr=body)
             | SynExpr.LetOrUse (body=body)
             | SynExpr.While (doExpr=body)
+            | SynExpr.WhileBang (doExpr=body)
             | SynExpr.ForEach (bodyExpr=body) ->
                 YieldFree body
 
@@ -177,7 +179,8 @@ let (|SimpleSemicolonSequence|_|) cenv acceptDeprecated cexpr =
         | SynExpr.Do _ 
         | SynExpr.MatchBang _ 
         | SynExpr.LetOrUseBang _ 
-        | SynExpr.While _ -> false
+        | SynExpr.While _
+        | SynExpr.WhileBang _ -> false
         | _ -> true
 
     let rec TryGetSimpleSemicolonSequenceOfComprehension expr acc = 
@@ -1399,6 +1402,47 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
             
             Some(translatedCtxt callExpr)
 
+        | SynExpr.WhileBang (spWhile, guardExpr, innerComp, _) -> 
+            let mGuard = guardExpr.Range
+            let mWhile = match spWhile with DebugPointAtWhile.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.While) | _ -> mGuard
+
+            if isQuery then error(Error(FSComp.SR.tcNoWhileInQuery(), mWhile))
+
+            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mWhile ad "While" builderTy) then
+                error(Error(FSComp.SR.tcRequireBuilderMethod("While"), mWhile))
+
+            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mWhile ad "Delay" builderTy) then
+                error(Error(FSComp.SR.tcRequireBuilderMethod("Delay"), mWhile))
+
+            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mWhile ad "Bind" builderTy) then
+                error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), mWhile))
+
+            // 'while' is hit just before each time the guard is called
+            let guardExpr = 
+                match spWhile with
+                | DebugPointAtWhile.Yes _ ->
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mWhile, false, guardExpr)
+                | DebugPointAtWhile.No -> guardExpr
+
+            // todo desugar directly instead of rewriting first
+            let body =
+                let id = mkSynId range.Zero "$cond"
+                let pat = mkSynPatVar None id
+
+                let body =
+                    let id2 = mkSynId range.Zero "$condM"
+                    let pat2 = mkSynPatVar None id2
+                    let b = mkSynBinding (Xml.PreXmlDoc.Empty, pat2) (None, false, true, range.Zero, DebugPointAtBinding.NoneAtInvisible, None, SynExpr.Ident id, range.Zero, [], [], None, SynBindingTrivia.Zero)  
+                    let set = SynExpr.LongIdentSet (SynLongIdent.SynLongIdent ([ id2 ], [], []), SynExpr.Ident id, range.Zero)
+                    let bang = SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtInvisible, false, false, pat, guardExpr, [], set, range.Zero, SynExprLetOrUseBangTrivia.Zero)
+
+                    let body = SynExpr.While (spWhile, SynExpr.Ident id2, SynExpr.Sequential (DebugPointAtSequential.SuppressBoth, true, innerComp, bang, range.Zero), range.Zero)
+                    SynExpr.LetOrUse (false, false, [ b ], body, range.Zero, { InKeyword = None })
+
+                SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtInvisible, false, false, pat, guardExpr, [], body, range.Zero, SynExprLetOrUseBangTrivia.Zero)
+
+            tryTrans CompExprTranslationPass.Initial q varSpace body translatedCtxt
+
         | SynExpr.TryWith (innerComp, clauses, mTryToLast, spTry, spWith, trivia) ->
             let mTry = match spTry with DebugPointAtTry.Yes _ -> trivia.TryKeyword.NoteSourceConstruct(NotedSourceConstruct.Try) | _ -> trivia.TryKeyword
             let spWith2 = match spWith with DebugPointAtWith.Yes _ -> DebugPointAtBinding.Yes trivia.WithKeyword | _ -> DebugPointAtBinding.NoneAtInvisible
@@ -1733,7 +1777,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
         | _ -> None
 
-    /// Check is an expression has no computation expression constructs
+    /// Check if an expression has no computation expression constructs
     and isSimpleExpr comp =
 
         match comp with 
@@ -1741,6 +1785,7 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
         | SynExpr.ForEach _ -> false
         | SynExpr.For _ -> false
         | SynExpr.While _ -> false
+        | SynExpr.WhileBang _ -> false
         | SynExpr.TryFinally _ -> false
         | SynExpr.ImplicitZero _ -> false
         | OptionalSequential (JoinOrGroupJoinOrZipClause _, _) -> false

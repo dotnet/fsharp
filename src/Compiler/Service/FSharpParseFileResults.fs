@@ -856,6 +856,11 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             for SynMatchClause (whenExpr = whenExpr; resultExpr = resExpr) in clauses do
                                 yield! walkExprOpt true whenExpr
                                 yield! walkExpr true resExpr
+
+                        | SynExpr.WhileBang (spWhile, e1, e2, _) ->
+                            yield! walkWhileSeqPt spWhile
+                            yield! walkExpr false e1
+                            yield! walkExpr true e2
                 ]
 
             // Process a class declaration or F# type declaration

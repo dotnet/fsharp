@@ -360,6 +360,9 @@ rule token args skip = parse
 
  | "and!"
      { AND_BANG(false) }
+     
+ | "while!"
+     { WHILE_BANG }
 
  | ident '!'
      { let tok = Keywords.KeywordOrIdentifierToken args lexbuf (lexemeTrimRight lexbuf 1)

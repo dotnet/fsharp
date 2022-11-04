@@ -438,6 +438,7 @@ type public FSharpTokenKind =
     | ColonEquals
     | When
     | While
+    | WhileBang
     | With
     | Hash
     | Ampersand

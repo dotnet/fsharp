@@ -442,7 +442,8 @@ module Structure =
                         parseExpr elseExpr
                 | None -> ()
 
-            | SynExpr.While (_, _, e, r) ->
+            | SynExpr.While (_, _, e, r)
+            | SynExpr.WhileBang (_, _, e, r) ->
                 rcheck Scope.While Collapse.Below r r
                 parseExpr e
 
