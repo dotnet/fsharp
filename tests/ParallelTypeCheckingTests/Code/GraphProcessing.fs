@@ -13,11 +13,30 @@ type NodeInfo<'Item> =
         TransitiveDeps : 'Item[]
         Dependants : 'Item[]
     }
+    
+type StateMeta<'Item> =
+    {
+        Contributors : 'Item[]
+    }
+    with static member Empty () = {Contributors = [||]}
+
+type StateWrapper<'Item, 'State> =
+    {
+        Meta : StateMeta<'Item>
+        State : 'State
+    }
+type ResultWrapper<'Item, 'Result> =
+    {
+        Item : 'Item
+        Result : 'Result
+    }
+
 type Node<'Item, 'State, 'Result> =
     {
         Info : NodeInfo<'Item>
         mutable ProcessedDepsCount : int
         mutable Result : ('State * 'Result) option
+        mutable InputState : 'State option
     }
 
 // TODO Do we need to suppress some error logging if we
@@ -77,7 +96,7 @@ let combineResults
         )
     let state = Array.fold folder firstState resultsToAdd
     state
-    
+
 // TODO Could be replaced with a simpler recursive approach with memoised per-item results
 let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality and 'Item : comparison>
     (graph : Graph<'Item>)
@@ -90,7 +109,7 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality 
     =
     let transitiveDeps = graph |> Graph.transitive
     let dependants = graph |> Graph.reverse
-    let makeNode (item : 'Item) : Node<'Item,'State,'Result> =
+    let makeNode (item : 'Item) : Node<'Item, StateWrapper<'Item, 'State>, ResultWrapper<'Item, 'Result>> =
         let info =
             {
                 Item = item
@@ -102,6 +121,7 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality 
             Info = info
             Result = None
             ProcessedDepsCount = 0
+            InputState = None
         }
         
     let nodes =
@@ -116,21 +136,35 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality 
         |> Seq.filter (fun n -> n.Info.Deps.Length = 0)
         |> Seq.toArray
     
+    let emptyState =
+        {
+            Meta = StateMeta.Empty()
+            State = emptyState
+        }
+    
+    let folder {Meta = meta; State = state} {Item = item; Result = result} =
+        let finalFileResult, state = folder state result
+        let state =
+            {
+                Meta = {Contributors = Array.append meta.Contributors [|item|]}
+                State = state
+            }
+        finalFileResult, state
+    
     let work
-        (node : Node<'Item, 'State, 'Result>)
-        : Node<'Item, 'State, 'Result>[]
+        (node : Node<'Item, StateWrapper<'Item, 'State>, ResultWrapper<'Item, 'Result>>)
+        : Node<'Item, StateWrapper<'Item, 'State>, ResultWrapper<'Item, 'Result>>[]
         =
+        let folder x y = folder x y |> snd
         let deps = lookupMany node.Info.Deps
         let transitiveDeps = lookupMany node.Info.TransitiveDeps
-        let folder state result =
-            folder state result
-            |> snd
         let inputState = combineResults emptyState deps transitiveDeps folder
-        let singleRes = doWork node.Info.Item inputState
+        node.InputState <- Some inputState
+        let singleRes = doWork node.Info.Item inputState.State
+        let singleRes = {Item = node.Info.Item; Result = singleRes}
         let state = folder inputState singleRes
         //let state,  = folder inputState singleRes
         node.Result <- Some (state, singleRes)
-        
         // Need to double-check that only one dependency schedules this dependant
         let unblocked =
             node.Info.Dependants
@@ -156,7 +190,7 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality 
         cts.Token
 
     let nodesArray = nodes.Values |> Seq.toArray
-    let x: 'FinalFileResult[] * 'State =
+    let finals, {State = state}: 'FinalFileResult[] * StateWrapper<'Item, 'State> =
         nodesArray
         |> Array.sortBy (fun node -> node.Info.Item)
         |> fun nodes ->
@@ -167,4 +201,10 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality 
             let state = if includeInFinalState node.Info.Item then newState else state
             Array.append fileResults [|fileResult|], state
         ) ([||], emptyState)
-    x
+    
+    let x = nodesArray[22]
+    let _y = x.Info
+    let _z = x.Result |> Option.get
+    let _a = x.InputState |> Option.get
+    let _b = x.ProcessedDepsCount
+    finals, state

@@ -239,10 +239,13 @@ module internal AutomatedDependencyResolving =
                     let deps =
                         reachable
                         |> Seq.collect (fun node -> node.Files)
+                        // TODO Temporary - Add all nodes except for the fake .fsix stuff 
+                        |> Seq.append nodes
+                        |> Seq.filter (fun dep -> dep.File.Name <> node.File.Name + "ix")
+                        // If not, then the below is not necessary.
                         // Assume that this file depends on all files that have any module abbreviations
                         // TODO Handle module abbreviations in a better way
                         // For starters: can module abbreviations affect other files?
-                        // If not, then the below is not necessary.
                         |> Seq.append filesWithModuleAbbreviations
                         |> Seq.append additionalFsiDeps
                         |> Seq.append fsiDep
@@ -252,8 +255,9 @@ module internal AutomatedDependencyResolving =
                     deps
                 // We know a file can't depend on a file further down in the project definition (or on itself)
                 |> Array.filter (fun dep -> dep.Idx < node.File.Idx)
+                // TODO Temporary - bring this back
                 // Filter out deps onto .fs files that have backing .fsi files
-                |> Array.filter (fun dep -> not dep.FsiBacked)
+                // |> Array.filter (fun dep -> not dep.FsiBacked)
                 |> Array.distinct
                 
             // Return the node and its dependencies

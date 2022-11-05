@@ -1573,7 +1573,7 @@ let CheckOneInputAux'
                                 tcState
                         
                         // backed impl files must not add results as there are already results from .fsi files 
-                        let fsTcState = if backed then tcState else fsTcState
+                        //let fsTcState = if backed then tcState else fsTcState
 
                         let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
                         

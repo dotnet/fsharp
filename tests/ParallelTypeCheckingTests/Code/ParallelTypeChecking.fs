@@ -132,11 +132,11 @@ module internal Real =
             )
             |> Seq.append (fsiXMap |> Seq.map (fun (KeyValue(fsi, x)) -> x.File, [|fsi|]))
             |> readOnlyDict
-        let graph =
-            {
-                Files = Array.append graph.Files xFiles
-                Graph = stuff |> Graph.fillEmptyNodes
-            } : DepsResult
+        // let graph =
+        //     {
+        //         Files =  Array.append graph.Files xFiles
+        //         Graph = stuff |> Graph.fillEmptyNodes
+        //     } : DepsResult
         graph.Graph |> Graph.print
         
         let graphJson = graph.Graph |> Seq.map (fun (KeyValue(file, deps)) -> file.Name, deps |> Array.map (fun d -> d.Name)) |> dict
@@ -165,7 +165,7 @@ module internal Real =
                 
                 match file.AST with
                 | ASTOrX.AST _ ->
-                    printfn $"Processing AST {file.Name}"
+                    printfn $"Processing AST {file.ToString()}"
                     let! f = CheckOneInput'(
                         checkForErrors2,
                         tcConfig,
@@ -178,9 +178,10 @@ module internal Real =
                         false  // skipImpFiles...
                     )
             
-                    printfn $"Finished Processing AST {file.Name}"
+                    printfn $"Finished Processing AST {file.ToString()}"
                     return
                         (fun (state : State) ->
+                            printfn $"Applying {file.ToString()}"
                             let tcState, priorErrors = state
                             let (partialResult : PartialResult, tcState) = f tcState
             
@@ -188,10 +189,11 @@ module internal Real =
                             // TODO Should we use local _priorErrors or global priorErrors? 
                             let priorOrCurrentErrors = priorErrors || hasErrors
                             let state : State = tcState, priorOrCurrentErrors
+                            printfn $"Finished applying {file.ToString()}"
                             partialResult, state
                         )
                 | ASTOrX.X fsi ->
-                    printfn $"Processing X {file.Name}"
+                    printfn $"Processing X {file.ToString()}"
 
                     let hadSig = true
                     // Add dummy .fs results
@@ -205,11 +207,11 @@ module internal Real =
                     // Don't use it for this file's type-checking - it will cause duplicates
                     
                     let ccuSigForFile = fsiBackedInfos[fsi]
-                    printfn $"Finished Processing X {file.Name}"
+                    printfn $"Finished Processing X {file}"
                     return
                         (fun (state : State) ->
                             // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state
-                            printfn $"Applying X state {file.Name}"                        
+                            printfn $"Applying X state {file}"                        
                             let tcState, priorErrors = state
                             // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state 
                             
@@ -223,7 +225,7 @@ module internal Real =
                             // TODO Should we use local _priorErrors or global priorErrors? 
                             let priorOrCurrentErrors = priorErrors || hasErrors
                             let state : State = tcState, priorOrCurrentErrors
-                            printfn $"Finished applying X state {file.Name}"
+                            printfn $"Finished applying X state {file}"
                             partialResult, state
                         )
             }
@@ -259,7 +261,7 @@ module internal Real =
                     processFile
                     folder
                     state
-                    (fun it -> (not it.FsiBacked) && it = it)
+                    (fun it -> not <| it.Name.EndsWith(".fsix"))
                     10
             
             partialResults |> Array.toList, tcState

@@ -72,7 +72,19 @@ module Y4 =
     let y = 6
 """
         ]
-        
+    
+    let fsFsi =
+        [
+            "B.fsi", """
+module B
+val b : int
+"""
+            "B.fs", """
+module B
+let b = 1
+"""
+        ]
+    
     
     let emptyNamespace =
         [
@@ -89,6 +101,7 @@ open A
         [
             encodeDecodeSimple, CompileOutput.Exe
             diamondBroken1, CompileOutput.Library
+            fsFsi, CompileOutput.Library
             emptyNamespace, CompileOutput.Library
         ]
 
