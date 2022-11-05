@@ -5,15 +5,15 @@ namespace FSharp.Compiler.ComponentTests.EmittedIL
 open Xunit
 open FSharp.Test.Compiler
 
-module ``NoFscInlining`` =
+module ``NoCompilerInlining`` =
     [<Fact>]
-    let ``Function marked with NoFscInlining is not inlined by the compiler``() =
+    let ``Function marked with NoCompilerInlining is not inlined by the compiler``() =
         FSharp """
-module NoFscInlining
+module NoCompilerInlining
 
 let functionInlined () = 3
 
-[<NoFscInliningAttribute>]
+[<NoCompilerInliningAttribute>]
 let functionNotInlined () = 3
 
 let x () = functionInlined () + functionNotInlined ()
@@ -33,7 +33,7 @@ let x () = functionInlined () + functionNotInlined ()
                       """
   .method public static int32  functionNotInlined() cil managed
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoFscInliningAttribute::.ctor() = ( 01 00 00 00 ) 
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
     
     .maxstack  8
     IL_0000:  ldc.i4.3
@@ -46,19 +46,19 @@ let x () = functionInlined () + functionNotInlined ()
     
     .maxstack  8
     IL_0000:  ldc.i4.3
-    IL_0001:  call       int32 NoFscInlining::functionNotInlined()
+    IL_0001:  call       int32 NoCompilerInlining::functionNotInlined()
     IL_0006:  add
     IL_0007:  ret
   }"""]
 
     [<Fact>]
-    let ``Value marked with NoFscInlining is not inlined by the compiler``() =
+    let ``Value marked with NoCompilerInlining is not inlined by the compiler``() =
         FSharp """
-module NoFscInlining
+module NoCompilerInlining
 
 let valueInlined = 3
 
-[<NoFscInliningAttribute>]
+[<NoCompilerInliningAttribute>]
 let valueNotInlined = 3
 
 let x () = valueInlined + valueNotInlined
@@ -93,7 +93,7 @@ let x () = valueInlined + valueNotInlined
     
     .maxstack  8
     IL_0000:  ldc.i4.3
-    IL_0001:  call       int32 NoFscInlining::get_valueNotInlined()
+    IL_0001:  call       int32 NoCompilerInlining::get_valueNotInlined()
     IL_0006:  add
     IL_0007:  ret
   }"""
@@ -101,13 +101,13 @@ let x () = valueInlined + valueNotInlined
                       """
   .property int32 valueInlined()
   {
-    .get int32 NoFscInlining::get_valueInlined()
+    .get int32 NoCompilerInlining::get_valueInlined()
   }"""
 
                       """
   .property int32 valueNotInlined()
   {
-    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoFscInliningAttribute::.ctor() = ( 01 00 00 00 ) 
-    .get int32 NoFscInlining::get_valueNotInlined()
+    .custom instance void [FSharp.Core]Microsoft.FSharp.Core.NoCompilerInliningAttribute::.ctor() = ( 01 00 00 00 ) 
+    .get int32 NoCompilerInlining::get_valueNotInlined()
   } 
 """]

@@ -943,12 +943,12 @@ namespace Microsoft.FSharp.Core
     /// <category>Attributes</category>
     [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
     [<Sealed>]
-    type NoFscInliningAttribute =
+    type NoCompilerInliningAttribute =
         inherit Attribute
 
         /// <summary>Creates an instance of the attribute</summary>
-        /// <returns>NoFscInliningAttribute</returns>
-        new: unit -> NoFscInliningAttribute
+        /// <returns>NoCompilerInliningAttribute</returns>
+        new: unit -> NoCompilerInliningAttribute
 
     /// <summary>The type of double-precision floating point numbers, annotated with a unit of measure.
     /// The unit of measure is erased in compiled code and when values of this type

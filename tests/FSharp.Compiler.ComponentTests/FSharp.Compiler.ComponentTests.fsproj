@@ -102,7 +102,7 @@
     <Compile Include="EmittedIL\CompilerGeneratedAttributeOnAccessors.fs" />
     <Compile Include="EmittedIL\EmptyArray.fs" />
     <Compile Include="EmittedIL\Literals.fs" />
-    <Compile Include="EmittedIL\NoFscInlining.fs" />
+    <Compile Include="EmittedIL\NoCompilerInlining.fs" />
     <Compile Include="EmittedIL\SkipLocalsInit.fs" />
     <Compile Include="EmittedIL\StringFormatAndInterpolation.fs" />
     <Compile Include="EmittedIL\StructGettersReadOnly.fs" />
