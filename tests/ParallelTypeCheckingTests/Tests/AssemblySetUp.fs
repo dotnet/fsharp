@@ -1,14 +1,15 @@
 ﻿namespace global
 open NUnit.Framework
-open ParallelTypeCheckingTests.Utils
+open ParallelTypeCheckingTests
 
+/// One-time Otel setup for NUnit tests
 [<SetUpFixture>]
-type SetUp() =
+type AssemblySetUp() =
     let mutable tracerProvider = None
 
     [<OneTimeSetUp>]
     member this.SetUp() =
-        tracerProvider <- setupOtel() |> Some
+        tracerProvider <- TestUtils.setupOtel() |> Some
         
     [<OneTimeTearDown>]
     member this.TearDown() =

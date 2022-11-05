@@ -1,10 +1,10 @@
 ﻿/// Allows extracting necessary data from a sequence of project source files 
-module FSharp.Compiler.Service.Tests.FileInfoGathering
+module ParallelTypeCheckingTests.FileInfoGathering
 
 open System.Collections.Generic
-open FSharp.Compiler.Service.Tests.Types
-open FSharp.Compiler.Service.Tests.Utils
-open FSharp.Compiler.Service.Tests2
+open ParallelTypeCheckingTests.Types
+open ParallelTypeCheckingTests.Utils
+open ParallelTypeCheckingTests
 open FSharp.Compiler.Syntax
 
 let internal gatherBackingInfo (files : SourceFiles) : Files =
@@ -48,7 +48,7 @@ type FileData =
 
 let private gatherFileData (ast : ParsedInput) : ExtractedData =
     let moduleRefs, containsModuleAbbreviations = ASTVisit.findModuleRefs ast
-    let tops = ASTVisit.topModuleOrNamespaces ast
+    let tops = TopModulesExtraction.topModuleOrNamespaces ast
     // TODO As a perf optimisation we can skip top-level ids scanning for FsiBacked .fs files
     // However, it is unlikely to give a noticable speedup due to parallelism (citation needed)
     {

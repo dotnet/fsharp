@@ -1,8 +1,8 @@
-﻿module ParallelTypeCheckingTests.Utils
+﻿module ParallelTypeCheckingTests.TestUtils
 
 open System
 open FSharp.Compiler
-open FSharp.Compiler.Service.Tests
+open ParallelTypeCheckingTests
 open Xunit
 open FSharp.Test
 open FSharp.Test.Compiler

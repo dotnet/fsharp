@@ -2,10 +2,10 @@
 #nowarn "1182"
 open System.IO
 open Buildalyzer
-open FSharp.Compiler.Service.Tests
-open FSharp.Compiler.Service.Tests.Types
-open FSharp.Compiler.Service.Tests.Utils
-open FSharp.Compiler.Service.Tests2.DepResolving
+open ParallelTypeCheckingTests
+open ParallelTypeCheckingTests.Types
+open ParallelTypeCheckingTests.Utils
+open ParallelTypeCheckingTests.DepResolving
 open NUnit.Framework
 open Newtonsoft.Json
 

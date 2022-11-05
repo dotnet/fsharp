@@ -1,5 +1,6 @@
 ﻿module ParallelTypeCheckingTests.Program
 #nowarn "1182"
+open ParallelTypeCheckingTests.TestUtils
 open ParallelTypeCheckingTests.Utils
 
 let _parse (argv: string[]): Args =
@@ -30,7 +31,7 @@ let _parse (argv: string[]): Args =
 
 [<EntryPoint>]
 let main _argv =
-    let workDir, path, lineLimit = CompilationFromArgsTests.codebases[2]
+    let workDir, path, lineLimit = TestCompilationFromCmdlineArgs.codebases[2]
     let stuff =
         {
             Path = path
@@ -38,5 +39,5 @@ let main _argv =
             WorkingDir = Some workDir
             Mode = Method.Nojaf
         }
-    CompilationFromArgsTests.TestCompilerFromArgs stuff
+    TestCompilationFromCmdlineArgs.TestCompilerFromArgs stuff
     0

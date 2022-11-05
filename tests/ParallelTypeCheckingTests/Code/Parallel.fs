@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.Service.Tests.Parallel
+﻿module ParallelTypeCheckingTests.Parallel
 #nowarn "1182"
 open System
 open System.Collections.Concurrent
@@ -61,7 +61,7 @@ let processInParallelUsingMailbox
     =
     let processedCountLock = Object()
     let mutable processedCount = 0
-    let agent = threadingLimitAgent 10 ct
+    let agent = threadingLimitAgent parallelism ct
     let rec processItem item =
         async {
             let! toSchedule = work item
@@ -70,7 +70,6 @@ let processInParallelUsingMailbox
             toSchedule |> Array.iter (fun x -> agent.Post(Start(processItem x)))   
         }
     firstItems |> Array.iter (fun x -> agent.Post(Start(processItem x)))
-    ()    
     
 // TODO Could replace with MailboxProcessor+Tasks/Asyncs instead of BlockingCollection + Threads
 // See http://www.fssnip.net/nX/title/Limit-degree-of-parallelism-using-an-agent

@@ -1,14 +1,14 @@
-﻿module FSharp.Compiler.Service.Tests2.DepResolving
+﻿module ParallelTypeCheckingTests.DepResolving
 #nowarn "1182"
 #nowarn "40"
 
 open System
 open System.Collections.Generic
-open FSharp.Compiler.Service.Tests
-open FSharp.Compiler.Service.Tests.FileInfoGathering
-open FSharp.Compiler.Service.Tests.Graph
-open FSharp.Compiler.Service.Tests.Types
-open FSharp.Compiler.Service.Tests2.ASTVisit
+open ParallelTypeCheckingTests
+open ParallelTypeCheckingTests.FileInfoGathering
+open ParallelTypeCheckingTests.Graph
+open ParallelTypeCheckingTests.Types
+open ParallelTypeCheckingTests.ASTVisit
 open FSharp.Compiler.Syntax
 
 let log (msg : string) =

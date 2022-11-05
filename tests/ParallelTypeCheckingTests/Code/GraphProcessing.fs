@@ -1,9 +1,9 @@
 ﻿/// Parallel processing of graph of work items with dependencies
-module FSharp.Compiler.Service.Tests.GraphProcessing
+module ParallelTypeCheckingTests.GraphProcessing
 
 open System.Collections.Generic
 open System.Threading
-open FSharp.Compiler.Service.Tests.Graph
+open ParallelTypeCheckingTests.Graph
 
 /// Used for processing
 type NodeInfo<'Item> =
@@ -253,9 +253,4 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality 
             Array.append fileResults [|fileResult|], state
         ) ([||], emptyState)
     
-    let x = nodesArray[22]
-    let _y = x.Info
-    let _z = x.Result |> Option.get
-    let _a = x.InputState |> Option.get
-    let _b = x.ProcessedDepsCount
     finals, state

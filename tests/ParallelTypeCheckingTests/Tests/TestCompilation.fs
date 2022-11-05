@@ -1,8 +1,9 @@
-﻿module ParallelTypeCheckingTests.CompilationTests
+﻿module ParallelTypeCheckingTests.TestCompilation
 
 open FSharp.Test
 open NUnit.Framework
 open FSharp.Test.Compiler
+open ParallelTypeCheckingTests.TestUtils
 open ParallelTypeCheckingTests.Utils
 
 type OutputType =

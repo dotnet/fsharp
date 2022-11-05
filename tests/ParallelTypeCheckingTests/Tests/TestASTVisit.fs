@@ -1,8 +1,8 @@
 ﻿module ParallelTypeCheckingTests.TestASTVisit
 
 open NUnit.Framework
-open FSharp.Compiler.Service.Tests
-open FSharp.Compiler.Service.Tests2.ASTVisit
+open ParallelTypeCheckingTests.ASTVisit
+open ParallelTypeCheckingTests.TopModulesExtraction
 
 [<Test>]
 let ``Top level stuff extraction2`` () =

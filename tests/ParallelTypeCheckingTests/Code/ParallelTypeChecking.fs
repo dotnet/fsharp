@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.Service.Tests.ParallelTypeChecking
+﻿module ParallelTypeCheckingTests.ParallelTypeChecking
 #nowarn "1182"
 open System.Collections.Concurrent
 open System.Collections.Generic
@@ -11,12 +11,12 @@ open FSharp.Compiler.CompilerImports
 open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
-open FSharp.Compiler.Service.Tests.FileInfoGathering
-open FSharp.Compiler.Service.Tests.Graph
-open FSharp.Compiler.Service.Tests.Types
-open FSharp.Compiler.Service.Tests.Utils
-open FSharp.Compiler.Service.Tests2
-open FSharp.Compiler.Service.Tests2.DepResolving
+open ParallelTypeCheckingTests.FileInfoGathering
+open ParallelTypeCheckingTests.Graph
+open ParallelTypeCheckingTests.Types
+open ParallelTypeCheckingTests.Utils
+open ParallelTypeCheckingTests
+open ParallelTypeCheckingTests.DepResolving
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
@@ -28,26 +28,6 @@ open Newtonsoft.Json
 
 type FileGraph = Graph<File>
 
-let calcFileGraph (_files : SourceFiles) : FileGraph =
-    // TODO Use DepResolving.fs
-    failwith ""
-
-// TODO Use real things
-type State = string
-type FinalFileResult = string
-type SingleResult = State -> FinalFileResult * State
-
-// TODO Use the real thing
-let typeCheckFile (file : File) (_state : State) : SingleResult
-    =
-    fun (state : State) ->
-        let res = file.Idx.Idx
-        res.ToString(), $"{state}+{res}"
-
-// TODO Use the real thing
-let folder (state : State) (result : SingleResult): FinalFileResult * State =
-    result state
-    
 module internal Real =
     
     // Within a file, equip loggers to locally filter w.r.t. scope pragmas in each input
@@ -266,10 +246,6 @@ module internal Real =
             
             partialResults |> Array.toList, tcState
         )
-
-
-
-
 
 module internal Nojaf =
     type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
@@ -664,32 +640,3 @@ module internal Nojaf =
             let tcState = tcState.WithCreatesGeneratedProvidedTypes x
             results, tcState)
         
-
-
-
-            
-
-let typeCheckGraph (graph : FileGraph) : FinalFileResult[] * State =
-    let parallelism = 4 // cpu count?
-    GraphProcessing.processGraph
-        graph
-        typeCheckFile
-        folder
-        ""
-        (fun _ -> true)
-        parallelism
-        
-let typeCheckGraph2 (graph : FileGraph) : FinalFileResult[] * State =
-    let parallelism = 4 // cpu count?
-    GraphProcessing.processGraph
-        graph
-        typeCheckFile
-        folder
-        ""
-        (fun _ -> true)
-        parallelism
-    
-let typeCheck (files : SourceFiles) : FinalFileResult[] * State =
-    let graph = calcFileGraph files
-    let state = typeCheckGraph graph
-    state

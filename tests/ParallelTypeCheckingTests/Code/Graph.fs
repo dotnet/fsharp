@@ -1,15 +1,17 @@
-﻿module FSharp.Compiler.Service.Tests.Graph
+﻿module ParallelTypeCheckingTests.Graph
 #nowarn "1182"
 #nowarn "40"
 
 open System.Collections.Generic
-open FSharp.Compiler.Service.Tests.Utils
+open System.Drawing.Drawing2D
+open ParallelTypeCheckingTests.Utils
 
 /// <summary> DAG of files </summary>
 type Graph<'Node> = IReadOnlyDictionary<'Node, 'Node[]>
 
 module Graph =
     
+    /// Create entries for nodes that don't have any dependencies but are mentioned as dependencies themselves
     let fillEmptyNodes<'Node when 'Node : equality> (graph : Graph<'Node>) : Graph<'Node> =
         let missingNodes =
             graph.Values
@@ -25,6 +27,7 @@ module Graph =
         x
         |> Dictionary<_,_> |> fun x -> x :> IReadOnlyDictionary<_,_>
     
+    /// Create a transitive closure of the graph
     let transitive<'Node when 'Node : equality> (graph : Graph<'Node>) : Graph<'Node> =
         let rec calcTransitiveEdges =
             fun (node : 'Node) ->
@@ -43,29 +46,24 @@ module Graph =
         |> Seq.map (fun node -> node, calcTransitiveEdges node)
         |> readOnlyDict
         
+    /// Create a reverse of the graph
     let reverse (originalGraph : Graph<'Node>) : Graph<'Node> =
         originalGraph
         // Collect all edges
         |> Seq.collect (fun (KeyValue(idx, deps)) -> deps |> Array.map (fun dep -> idx, dep))
         // Group dependants of the same dependencies together
-        |> Seq.groupBy (fun (idx, dep) -> dep)
+        |> Seq.groupBy (fun (_idx, dep) -> dep)
         // Construct reversed graph
         |> Seq.map (fun (dep, edges) -> dep, edges |> Seq.map fst |> Seq.toArray)
-        |> dict
-        // Add nodes that are missing due to having no dependants
-        |> fun graph ->
-            originalGraph
-            |> Seq.map (fun (KeyValue(idx, deps)) ->
-                match graph.TryGetValue idx with
-                | true, dependants -> idx, dependants
-                | false, _ -> idx, [||]
-            )
         |> readOnlyDict
-        
-    let print (graph : Graph<'Node>) : unit =
+        |> fillEmptyNodes
+    
+    let printCustom (graph : Graph<'Node>) (printer : 'Node -> string) : unit =
         printfn "Graph:"
         let join (xs : string[]) =
             System.String.Join(", ", xs)
         graph
-        |> Seq.iter (fun (KeyValue(file, deps)) -> printfn $"{file} -> {deps |> Array.map (fun d -> d.ToString()) |> join}")
+        |> Seq.iter (fun (KeyValue(file, deps)) -> printfn $"{file} -> {deps |> Array.map printer |> join}")
+    
+    let print (graph : Graph<'Node>) : unit = printCustom graph (fun node -> node.ToString())
     

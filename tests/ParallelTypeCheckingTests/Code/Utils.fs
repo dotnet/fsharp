@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.Service.Tests.Utils
+﻿module ParallelTypeCheckingTests.Utils
 
 #nowarn "40"
 

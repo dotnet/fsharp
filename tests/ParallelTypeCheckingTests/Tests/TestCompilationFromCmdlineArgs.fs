@@ -1,11 +1,12 @@
-﻿module ParallelTypeCheckingTests.CompilationFromArgsTests
+﻿module ParallelTypeCheckingTests.TestCompilationFromCmdlineArgs
 
 open FSharp.Compiler.DiagnosticsLogger
 open NUnit.Framework
 open System
 open FSharp.Compiler
-open FSharp.Compiler.Service.Tests
+open ParallelTypeCheckingTests
 open NUnit.Framework
+open ParallelTypeCheckingTests.TestUtils
 open Utils
 
 let codebases =

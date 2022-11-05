@@ -1,8 +1,8 @@
-﻿module FSharp.Compiler.Service.Tests.Types
+﻿module ParallelTypeCheckingTests.Types
 
-open FSharp.Compiler.Service.Tests.Utils
+open ParallelTypeCheckingTests.Utils
 open FSharp.Compiler.Syntax
-type AST = FSharp.Compiler.Syntax.ParsedInput
+type AST = ParsedInput
 
 type FileType =
     | Sig
@@ -40,6 +40,7 @@ type ASTOrX =
             | AST ast -> ast.FileName
             | X fsi -> fsi + "x"
 
+/// Basic data about a parsed source file with extra information needed for graph processing
 [<CustomEquality; CustomComparison>]
 type File =
     {
@@ -64,8 +65,6 @@ type File =
                 | :? File as f -> x.Idx.Idx.CompareTo f.Idx.Idx
                 | _ -> 0
         
-        // TODO Please make this sane
-        member this.IsFake = this.Code = ""
         static member FakeFs (idx : FileIdx) (fsi : string) : File =
             {
                 Idx = idx
