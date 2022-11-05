@@ -175,7 +175,7 @@ module XmlDocParsing =
                         |> Option.toList
                         |> List.collect getXmlDocablesSynMemberDefn
 
-                | SynMemberDefn.AbstractSlot (valSig, _, range) ->
+                | SynMemberDefn.AbstractSlot (slotSig = valSig; range = range) ->
                     let (SynValSig (attributes = synAttributes; arity = synValInfo; xmlDoc = preXmlDoc)) =
                         valSig
 
