@@ -132,11 +132,11 @@ module internal Real =
             )
             |> Seq.append (fsiXMap |> Seq.map (fun (KeyValue(fsi, x)) -> x.File, [|fsi|]))
             |> readOnlyDict
-        // let graph =
-        //     {
-        //         Files =  Array.append graph.Files xFiles
-        //         Graph = stuff |> Graph.fillEmptyNodes
-        //     } : DepsResult
+        let graph =
+            {
+                Files =  Array.append graph.Files xFiles
+                Graph = stuff |> Graph.fillEmptyNodes
+            } : DepsResult
         graph.Graph |> Graph.print
         
         let graphJson = graph.Graph |> Seq.map (fun (KeyValue(file, deps)) -> file.Name, deps |> Array.map (fun d -> d.Name)) |> dict
@@ -262,7 +262,7 @@ module internal Real =
                     folder
                     state
                     (fun it -> not <| it.Name.EndsWith(".fsix"))
-                    10
+                    1
             
             partialResults |> Array.toList, tcState
         )

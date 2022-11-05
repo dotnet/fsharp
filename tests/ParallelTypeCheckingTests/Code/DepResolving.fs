@@ -257,7 +257,7 @@ module internal AutomatedDependencyResolving =
                 |> Array.filter (fun dep -> dep.Idx < node.File.Idx)
                 // TODO Temporary - bring this back
                 // Filter out deps onto .fs files that have backing .fsi files
-                // |> Array.filter (fun dep -> not dep.FsiBacked)
+                |> Array.filter (fun dep -> not dep.FsiBacked)
                 |> Array.distinct
                 
             // Return the node and its dependencies
