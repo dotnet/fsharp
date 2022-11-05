@@ -916,7 +916,7 @@ module SyntaxTraversal =
                     |> List.map (fun x -> dive x x.RangeOfBindingWithRhs (traverseSynBinding path))
                     |> pick m
                 | x -> x
-            | SynMemberDefn.AbstractSlot (SynValSig (synType = synType), _memberFlags, _range) -> traverseSynType path synType
+            | SynMemberDefn.AbstractSlot(slotSig = SynValSig (synType = synType)) -> traverseSynType path synType
             | SynMemberDefn.Interface (interfaceType = synType; members = synMemberDefnsOption) ->
                 match visitor.VisitInterfaceSynMemberDefnType(path, synType) with
                 | None ->

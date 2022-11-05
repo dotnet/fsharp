@@ -612,7 +612,7 @@ module Structure =
 
             | SynMemberDefn.NestedType (td, _, _) -> parseTypeDefn td
 
-            | SynMemberDefn.AbstractSlot (SynValSig (synType = synt), _, r) ->
+            | SynMemberDefn.AbstractSlot (slotSig = SynValSig (synType = synt); range = r) ->
                 rcheck Scope.Member Collapse.Below d.Range (Range.startToEnd synt.Range r)
 
             | SynMemberDefn.AutoProperty (synExpr = e; range = r) ->
@@ -891,7 +891,7 @@ module Structure =
 
         let rec parseSynMemberDefnSig inp =
             match inp with
-            | SynMemberSig.Member (valSigs, _, r) ->
+            | SynMemberSig.Member (memberSig = valSigs; range = r) ->
                 let collapse = Range.endToEnd valSigs.RangeOfId r
                 rcheck Scope.Member Collapse.Below r collapse
             | SynMemberSig.ValField (SynField (attributes = attrs; range = fr), mFull) ->

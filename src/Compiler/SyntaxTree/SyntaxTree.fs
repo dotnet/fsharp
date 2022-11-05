@@ -1122,7 +1122,7 @@ type SynMemberKind =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynMemberSig =
 
-    | Member of memberSig: SynValSig * flags: SynMemberFlags * range: range
+    | Member of memberSig: SynValSig * flags: SynMemberFlags * range: range * trivia: SynMemberSigMemberTrivia
 
     | Interface of interfaceType: SynType * range: range
 
@@ -1420,7 +1420,7 @@ type SynMemberDefn =
 
     | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
 
-    | AbstractSlot of slotSig: SynValSig * flags: SynMemberFlags * range: range
+    | AbstractSlot of slotSig: SynValSig * flags: SynMemberFlags * range: range * trivia: SynMemberDefnAbstractSlotTrivia
 
     | Interface of interfaceType: SynType * withKeyword: range option * members: SynMemberDefns option * range: range
 
