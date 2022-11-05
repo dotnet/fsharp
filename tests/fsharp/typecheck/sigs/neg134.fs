@@ -17,8 +17,3 @@ let c () = async {
     while! async { return true } do
         ()
 }
-
-let d () = async {
-    while! async { return true }
-        ()
-}
