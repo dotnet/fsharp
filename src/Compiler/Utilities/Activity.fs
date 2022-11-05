@@ -12,6 +12,7 @@ module Activity =
     let private activitySource = new ActivitySource(activitySourceName)
 
     let start (name: string) (tags: (string * string) seq) : IDisposable =
+        printfn $"Activity.start {name} %+A{tags}"
         let activity = activitySource.StartActivity(name)
 
         match activity with
@@ -23,5 +24,4 @@ module Activity =
         activity
 
     let startNoTags (name: string) : IDisposable =
-        printfn $"StartNoTags {name}"
         activitySource.StartActivity(name)

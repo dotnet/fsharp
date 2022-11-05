@@ -54,7 +54,7 @@ val CompileFromCommandLineArguments:
     loggerProvider: IDiagnosticsLoggerProvider *
     tcImportsCapture: (TcImports -> unit) option *
     dynamicAssemblyCreator: (TcConfig * TcGlobals * string * ILModuleDef -> unit) option *
-    abortOnError: bool ->
+    notJustTypeCheck: bool ->
         unit
 
 /// Read the parallelReferenceResolution flag from environment variables

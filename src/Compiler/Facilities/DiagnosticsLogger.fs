@@ -343,7 +343,7 @@ type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
             | Some f -> f diagnostic
 
         if severity = FSharpDiagnosticSeverity.Error then
-            printfn $"\r\nERROR {diagnostic.Exception.Message}\r\n"
+            printfn $"\r\nERROR MESSAGE {diagnostic.Exception.Message}\r\n"
             errorCount <- errorCount + 1
 
         diagnostics.Add(diagnostic, severity)

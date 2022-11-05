@@ -189,7 +189,7 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality 
     
     let emptyState =
         {
-            Meta = StateMeta.Empty()
+            Meta = StateMeta.Empty<'Item>()
             State = emptyState
         }
     

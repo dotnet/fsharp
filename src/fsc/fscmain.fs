@@ -3,7 +3,6 @@
 module FSharp.Compiler.CommandLineMain
 
 open System
-
 open System.Reflection
 open System.Runtime
 open System.Runtime.CompilerServices

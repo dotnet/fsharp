@@ -262,7 +262,7 @@ module internal Real =
                     folder
                     state
                     (fun it -> not <| it.Name.EndsWith(".fsix"))
-                    1
+                    8
             
             partialResults |> Array.toList, tcState
         )

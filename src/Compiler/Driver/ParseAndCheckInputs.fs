@@ -739,7 +739,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
 /// NOTE: this needs to be improved to commit diagnotics as soon as possible
 ///
 /// NOTE: If StopProcessing is raised by any piece of work then the overall function raises StopProcessing.
-let UseMultipleDiagnosticLoggers ((inputs, diagnosticsLogger, eagerFormat): 'a list * DiagnosticsLogger * (PhasedDiagnostic -> PhasedDiagnostic) option) (f: ('a * CapturingDiagnosticsLogger) list -> 'b): 'b =
+let UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, eagerFormat) f =
 
     // Check input files and create delayed error loggers before we try to parallel parse.
     let delayLoggers =
@@ -1078,9 +1078,9 @@ type TcState =
     
     member x.WithStuff tcEnv rootSigs creates : TcState =
         { x with
-          tcsTcSigEnv = tcEnv
-          tcsRootSigs = rootSigs
-          tcsCreatesGeneratedProvidedTypes = creates
+              tcsTcSigEnv = tcEnv
+              tcsRootSigs = rootSigs
+              tcsCreatesGeneratedProvidedTypes = creates
         }
 
 type State = TcState * bool
@@ -1395,8 +1395,6 @@ let CheckOneInput
                 )
     }
 
-type FsiBackedInfo = ModuleOrNamespaceType
-
 let mutable asts = ConcurrentDictionary<string, ParsedInput>()
 
 let mutable fsiBackedInfos = ConcurrentDictionary<string, ModuleOrNamespaceType>()
@@ -1495,95 +1493,50 @@ let CheckOneInputAux'
 
                 // Check if we've got an interface for this fragment
                 let rootSigOpt = tcState.tcsRootSigs.TryFind qualNameOfFile
+            
+                // Typecheck the implementation file not backed by a signature file
                 
-                match rootSigOpt with
-                | Some _
-                    // ->
-                    // // Type-check an implementation file backed by a signature file
-                    // // TODO DO NOT
-                    // let info = fsiBackedInfos[file.FileName]
-                    // match info with
-                    // | amap, conditionalDefines, rootSig, priorErrors, file, tcStateForImplFile, ccuSigForFile ->
-                    //     
-                    //     // Check if we've already seen an implementation for this fragment
-                    //     if Zset.contains qualNameOfFile tcStateForImplFile.tcsRootImpls then
-                    //         errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
-                    //     
-                    //     // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
-                    //     // somewhere in the files processed prior to this one, including from the first phase, or in the processing
-                    //     // of this particular file.
-                    //     // TODO: Are we handling the commented out code somewhere else?
-                    //     let checkForErrors2 () = priorErrors // || (logger.ErrorCount > 0)
-                    //
-                    //     let topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
-                    //         CheckOneImplFile(
-                    //             tcGlobals,
-                    //             amap,
-                    //             tcStateForImplFile.tcsCcu,
-                    //             tcStateForImplFile.tcsImplicitOpenDeclarations,
-                    //             checkForErrors2,
-                    //             conditionalDefines,
-                    //             TcResultsSink.NoSink,
-                    //             tcConfig.internalTestSpanStackReferring,
-                    //             tcStateForImplFile.tcsTcImplEnv,
-                    //             Some rootSig,
-                    //             file
-                    //         )
-                    //         |> Cancellable.runWithoutCancellation
-                    //
-                    //     let result = (tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile)
-                    //     
-                    //     // Type-check .fs file using dedicated stuff, not the main tcState as that will cause duplicates.
-                    //     // Do not return resuling tcState - it shouldn't be used for anything.
-                    //     // Return old tcState, with the exception of one flag.
-                    //     return fun tcState ->
-                    //         result, { tcState with tcsCreatesGeneratedProvidedTypes = tcState.CreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes }
-                | None ->
-                    // Typecheck the implementation file not backed by a signature file
+                // Check if we've already seen an implementation for this fragment
+                if Zset.contains qualNameOfFile tcState.tcsRootImpls then
+                    errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
+                
+                let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
+                    CheckOneImplFile(
+                        tcGlobals,
+                        amap,
+                        tcState.tcsCcu,
+                        tcState.tcsImplicitOpenDeclarations,
+                        checkForErrors,
+                        conditionalDefines,
+                        tcSink,
+                        tcConfig.internalTestSpanStackReferring,
+                        tcState.tcsTcImplEnv,
+                        rootSigOpt,
+                        file
+                    )
+
+                printfn $"Finished Processing Impl {file.FileName}"
+                return fun tcState ->
+                    let backed = rootSigOpt.IsSome
+                    printfn $"Applying Impl Backed={backed} {file.FileName}"
                     
-                    // Check if we've already seen an implementation for this fragment
-                    if Zset.contains qualNameOfFile tcState.tcsRootImpls then
-                        errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
+                    let ccuSigForFile, fsTcState =
+                        AddCheckResultsToTcState
+                            (tcGlobals, amap, false, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, implFile.Signature)
+                            tcState
                     
-                    let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
-                        CheckOneImplFile(
-                            tcGlobals,
-                            amap,
-                            tcState.tcsCcu,
-                            tcState.tcsImplicitOpenDeclarations,
-                            checkForErrors,
-                            conditionalDefines,
-                            tcSink,
-                            tcConfig.internalTestSpanStackReferring,
-                            tcState.tcsTcImplEnv,
-                            rootSigOpt,
-                            file
-                        )
+                    // backed impl files must not add results as there are already results from .fsi files 
+                    //let fsTcState = if backed then tcState else fsTcState
 
-                    printfn $"Finished Processing Impl {file.FileName}"
-                    return fun tcState ->
-                        let backed = rootSigOpt.IsSome
-                        printfn $"Applying Impl Backed={backed} {file.FileName}"
-                        
-                        
-                        
-                        let ccuSigForFile, fsTcState =
-                            AddCheckResultsToTcState
-                                (tcGlobals, amap, false, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, implFile.Signature)
-                                tcState
-                        
-                        // backed impl files must not add results as there are already results from .fsi files 
-                        //let fsTcState = if backed then tcState else fsTcState
+                    let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
+                    
+                    let tcState =
+                        { fsTcState with
+                            tcsCreatesGeneratedProvidedTypes = fsTcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                        }
 
-                        let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
-                        
-                        let tcState =
-                            { fsTcState with
-                                tcsCreatesGeneratedProvidedTypes = fsTcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
-                            }
-
-                        printfn $"Finished applying Impl {file.FileName}"
-                        partialResult, tcState
+                    printfn $"Finished applying Impl {file.FileName}"
+                    partialResult, tcState
 
         with e ->
             errorRecovery e range0
@@ -1660,9 +1613,8 @@ let CheckClosedInputSetFinish (declaredImpls: CheckedImplFile list, tcState) =
     tcState, declaredImpls, ccuContents
 
 let CheckMultipleInputsSequential (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
-    let args = ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, false
     (tcState, inputs)
-    ||> List.mapFold (CheckOneInputEntry args)
+    ||> List.mapFold (CheckOneInputEntry(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, false))
 
 /// Use parallel checking of implementation files that have signature files
 let CheckMultipleInputsInParallel
