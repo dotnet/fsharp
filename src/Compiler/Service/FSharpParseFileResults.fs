@@ -734,7 +734,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                             for SynInterfaceImpl (bindings = bs) in is do
                                 yield! walkBinds bs
 
-                        | SynExpr.While (spWhile, e1, e2, _) ->
+                        | SynExpr.While (spWhile, e1, e2, _)
+                        | SynExpr.WhileBang (spWhile, e1, e2, _) ->
                             yield! walkWhileSeqPt spWhile
                             yield! walkExpr false e1
                             yield! walkExpr true e2
@@ -766,7 +767,8 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
                         | SynExpr.Lambda (body = bodyExpr) -> yield! walkExpr true bodyExpr
 
-                        | SynExpr.Match (matchDebugPoint = spBind; expr = inpExpr; clauses = cl) ->
+                        | SynExpr.Match (matchDebugPoint = spBind; expr = inpExpr; clauses = cl)
+                        | SynExpr.MatchBang (matchDebugPoint = spBind; expr = inpExpr; clauses = cl) ->
                             yield! walkBindSeqPt spBind
                             yield! walkExpr false inpExpr
 
@@ -848,19 +850,6 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                 yield! walkExpr true eAndBang
 
                             yield! walkExpr true bodyExpr
-
-                        | SynExpr.MatchBang (matchDebugPoint = spBind; expr = inpExpr; clauses = clauses) ->
-                            yield! walkBindSeqPt spBind
-                            yield! walkExpr false inpExpr
-
-                            for SynMatchClause (whenExpr = whenExpr; resultExpr = resExpr) in clauses do
-                                yield! walkExprOpt true whenExpr
-                                yield! walkExpr true resExpr
-
-                        | SynExpr.WhileBang (spWhile, e1, e2, _) ->
-                            yield! walkWhileSeqPt spWhile
-                            yield! walkExpr false e1
-                            yield! walkExpr true e2
                 ]
 
             // Process a class declaration or F# type declaration

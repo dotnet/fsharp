@@ -1426,20 +1426,20 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
             // todo desugar directly instead of rewriting first
             let body =
-                let id = mkSynId range.Zero "$cond"
+                let id = mkSynId mGuard "$cond"
                 let pat = mkSynPatVar None id
 
                 let body =
-                    let id2 = mkSynId range.Zero "$condM"
+                    let id2 = mkSynId mGuard "$condM"
                     let pat2 = mkSynPatVar None id2
-                    let b = mkSynBinding (Xml.PreXmlDoc.Empty, pat2) (None, false, true, range.Zero, DebugPointAtBinding.NoneAtInvisible, None, SynExpr.Ident id, range.Zero, [], [], None, SynBindingTrivia.Zero)  
-                    let set = SynExpr.LongIdentSet (SynLongIdent.SynLongIdent ([ id2 ], [], []), SynExpr.Ident id, range.Zero)
-                    let bang = SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtInvisible, false, false, pat, guardExpr, [], set, range.Zero, SynExprLetOrUseBangTrivia.Zero)
+                    let b = mkSynBinding (Xml.PreXmlDoc.Empty, pat2) (None, false, true, mGuard, DebugPointAtBinding.NoneAtInvisible, None, SynExpr.Ident id, mGuard, [], [], None, SynBindingTrivia.Zero)  
+                    let set = SynExpr.LongIdentSet (SynLongIdent.SynLongIdent ([ id2 ], [], []), SynExpr.Ident id, mGuard)
+                    let bang = SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtInvisible, false, false, pat, guardExpr, [], set, mGuard, SynExprLetOrUseBangTrivia.Zero)
 
-                    let body = SynExpr.While (spWhile, SynExpr.Ident id2, SynExpr.Sequential (DebugPointAtSequential.SuppressBoth, true, innerComp, bang, range.Zero), range.Zero)
-                    SynExpr.LetOrUse (false, false, [ b ], body, range.Zero, { InKeyword = None })
+                    let body = SynExpr.While (spWhile, SynExpr.Ident id2, SynExpr.Sequential (DebugPointAtSequential.SuppressBoth, true, innerComp, bang, mWhile), mWhile)
+                    SynExpr.LetOrUse (false, false, [ b ], body, mGuard, { InKeyword = None })
 
-                SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtInvisible, false, false, pat, guardExpr, [], body, range.Zero, SynExprLetOrUseBangTrivia.Zero)
+                SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtInvisible, false, false, pat, guardExpr, [], body, mGuard, SynExprLetOrUseBangTrivia.Zero)
 
             tryTrans CompExprTranslationPass.Initial q varSpace body translatedCtxt
 

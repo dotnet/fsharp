@@ -6740,6 +6740,7 @@ FSharp.Compiler.Syntax.SynExpr+Tags: Int32 TypeTest
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Typed
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 Upcast
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 While
+FSharp.Compiler.Syntax.SynExpr+Tags: Int32 WhileBang
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 YieldOrReturn
 FSharp.Compiler.Syntax.SynExpr+Tags: Int32 YieldOrReturnFrom
 FSharp.Compiler.Syntax.SynExpr+TraitCall: FSharp.Compiler.Syntax.SynExpr argExpr
@@ -6826,6 +6827,14 @@ FSharp.Compiler.Syntax.SynExpr+While: FSharp.Compiler.Syntax.SynExpr get_whileEx
 FSharp.Compiler.Syntax.SynExpr+While: FSharp.Compiler.Syntax.SynExpr whileExpr
 FSharp.Compiler.Syntax.SynExpr+While: FSharp.Compiler.Text.Range get_range()
 FSharp.Compiler.Syntax.SynExpr+While: FSharp.Compiler.Text.Range range
+FSharp.Compiler.Syntax.SynExpr+WhileBang: FSharp.Compiler.Syntax.DebugPointAtWhile get_whileDebugPoint()
+FSharp.Compiler.Syntax.SynExpr+WhileBang: FSharp.Compiler.Syntax.DebugPointAtWhile whileDebugPoint
+FSharp.Compiler.Syntax.SynExpr+WhileBang: FSharp.Compiler.Syntax.SynExpr doExpr
+FSharp.Compiler.Syntax.SynExpr+WhileBang: FSharp.Compiler.Syntax.SynExpr get_doExpr()
+FSharp.Compiler.Syntax.SynExpr+WhileBang: FSharp.Compiler.Syntax.SynExpr get_whileExpr()
+FSharp.Compiler.Syntax.SynExpr+WhileBang: FSharp.Compiler.Syntax.SynExpr whileExpr
+FSharp.Compiler.Syntax.SynExpr+WhileBang: FSharp.Compiler.Text.Range get_range()
+FSharp.Compiler.Syntax.SynExpr+WhileBang: FSharp.Compiler.Text.Range range
 FSharp.Compiler.Syntax.SynExpr+YieldOrReturn: FSharp.Compiler.Syntax.SynExpr expr
 FSharp.Compiler.Syntax.SynExpr+YieldOrReturn: FSharp.Compiler.Syntax.SynExpr get_expr()
 FSharp.Compiler.Syntax.SynExpr+YieldOrReturn: FSharp.Compiler.Text.Range get_range()
@@ -6905,6 +6914,7 @@ FSharp.Compiler.Syntax.SynExpr: Boolean IsTypeTest
 FSharp.Compiler.Syntax.SynExpr: Boolean IsTyped
 FSharp.Compiler.Syntax.SynExpr: Boolean IsUpcast
 FSharp.Compiler.Syntax.SynExpr: Boolean IsWhile
+FSharp.Compiler.Syntax.SynExpr: Boolean IsWhileBang
 FSharp.Compiler.Syntax.SynExpr: Boolean IsYieldOrReturn
 FSharp.Compiler.Syntax.SynExpr: Boolean IsYieldOrReturnFrom
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsAddressOf()
@@ -6974,6 +6984,7 @@ FSharp.Compiler.Syntax.SynExpr: Boolean get_IsTypeTest()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsTyped()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsUpcast()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsWhile()
+FSharp.Compiler.Syntax.SynExpr: Boolean get_IsWhileBang()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsYieldOrReturn()
 FSharp.Compiler.Syntax.SynExpr: Boolean get_IsYieldOrReturnFrom()
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewAddressOf(Boolean, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range, FSharp.Compiler.Text.Range)
@@ -7042,6 +7053,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTypeTest(FShar
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewTyped(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewUpcast(FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynType, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewWhile(FSharp.Compiler.Syntax.DebugPointAtWhile, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewWhileBang(FSharp.Compiler.Syntax.DebugPointAtWhile, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewYieldOrReturn(System.Tuple`2[System.Boolean,System.Boolean], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr NewYieldOrReturnFrom(System.Tuple`2[System.Boolean,System.Boolean], FSharp.Compiler.Syntax.SynExpr, FSharp.Compiler.Text.Range)
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+AddressOf
@@ -7111,6 +7123,7 @@ FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+TypeTest
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Typed
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+Upcast
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+While
+FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+WhileBang
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+YieldOrReturn
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Syntax.SynExpr+YieldOrReturnFrom
 FSharp.Compiler.Syntax.SynExpr: FSharp.Compiler.Text.Range Range
@@ -10473,6 +10486,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Val
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Void
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 When
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 While
+FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 WhileBang
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 WhitespaceTrivia
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 With
 FSharp.Compiler.Tokenization.FSharpTokenKind+Tags: Int32 Yield
@@ -10666,6 +10680,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsVal
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsVoid
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsWhen
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsWhile
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsWhileBang
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsWhitespaceTrivia
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsWith
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean IsYield
@@ -10856,6 +10871,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsVal()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsVoid()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsWhen()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsWhile()
+FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsWhileBang()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsWhitespaceTrivia()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsWith()
 FSharp.Compiler.Tokenization.FSharpTokenKind: Boolean get_IsYield()
@@ -11046,6 +11062,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Void
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind When
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind While
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind WhileBang
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind WhitespaceTrivia
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind With
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind Yield
@@ -11236,6 +11253,7 @@ FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FShar
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Void()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_When()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_While()
+FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_WhileBang()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_WhitespaceTrivia()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_With()
 FSharp.Compiler.Tokenization.FSharpTokenKind: FSharp.Compiler.Tokenization.FSharpTokenKind get_Yield()
