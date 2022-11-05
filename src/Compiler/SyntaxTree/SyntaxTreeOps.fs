@@ -867,8 +867,7 @@ let rec synExprContainsError inpExpr =
 
         | SynExpr.ForEach (_, _, _, _, _, e1, e2, _)
         | SynExpr.While (_, e1, e2, _)
-        | SynExpr.WhileBang (_, e1, e2, _) ->
-            walkExpr e1 || walkExpr e2
+        | SynExpr.WhileBang (_, e1, e2, _) -> walkExpr e1 || walkExpr e2
 
         | SynExpr.For (identBody = e1; toBody = e2; doBody = e3) -> walkExpr e1 || walkExpr e2 || walkExpr e3
 
@@ -877,8 +876,7 @@ let rec synExprContainsError inpExpr =
         | SynExpr.Lambda (body = e) -> walkExpr e
 
         | SynExpr.Match (expr = e; clauses = cl)
-        | SynExpr.MatchBang (expr = e; clauses = cl) ->
-            walkExpr e || walkMatchClauses cl
+        | SynExpr.MatchBang (expr = e; clauses = cl) -> walkExpr e || walkMatchClauses cl
 
         | SynExpr.LetOrUse (bindings = bs; body = e) -> walkBinds bs || walkExpr e
 

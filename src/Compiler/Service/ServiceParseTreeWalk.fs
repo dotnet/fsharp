@@ -573,8 +573,7 @@ module SyntaxTraversal =
                     |> pick expr
 
                 | SynExpr.Do (synExpr, _)
-                | SynExpr.DoBang (synExpr, _) ->
-                    traverseSynExpr synExpr
+                | SynExpr.DoBang (synExpr, _) -> traverseSynExpr synExpr
 
                 | SynExpr.Assert (synExpr, _range) -> traverseSynExpr synExpr
 

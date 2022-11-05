@@ -1030,6 +1030,36 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                         [ mkSynDelay2 guardExpr; 
                           mkSynCall "Delay" mWhile [mkSynDelay innerComp.Range holeFill]])) )
 
+        | SynExpr.WhileBang (spWhile, guardExpr, innerComp, _) -> 
+            let mGuard = guardExpr.Range
+            let mWhile = match spWhile with DebugPointAtWhile.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.While) | _ -> mGuard
+
+            // 'while!' is hit just before each time the guard is called
+            let guardExpr = 
+                match spWhile with
+                | DebugPointAtWhile.Yes _ ->
+                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mWhile, false, guardExpr)
+                | DebugPointAtWhile.No -> guardExpr
+
+            // todo desugar directly instead of rewriting first
+            let body =
+                let id = mkSynId mGuard "$cond"
+                let pat = mkSynPatVar None id
+
+                let body =
+                    let id2 = mkSynId mGuard "$condM"
+                    let pat2 = mkSynPatVar None id2
+                    let b = mkSynBinding (Xml.PreXmlDoc.Empty, pat2) (None, false, true, mGuard, DebugPointAtBinding.NoneAtSticky, None, SynExpr.Ident id, mGuard, [], [], None, SynBindingTrivia.Zero)  
+                    let set = SynExpr.LongIdentSet (SynLongIdent ([ id2 ], [], []), SynExpr.Ident id, mGuard)
+                    let bang = SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtSticky, false, false, pat, guardExpr, [], set, mGuard, SynExprLetOrUseBangTrivia.Zero)
+
+                    let body = SynExpr.While (DebugPointAtWhile.No, SynExpr.Ident id2, SynExpr.Sequential (DebugPointAtSequential.SuppressBoth, true, innerComp, bang, mWhile), mWhile)
+                    SynExpr.LetOrUse (false, false, [ b ], body, mGuard, SynExprLetOrUseTrivia.Zero)
+
+                SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtSticky, false, false, pat, guardExpr, [], body, mGuard, SynExprLetOrUseBangTrivia.Zero)
+
+            tryTrans CompExprTranslationPass.Initial q varSpace body translatedCtxt
+
         | SynExpr.TryFinally (innerComp, unwindExpr, _mTryToLast, spTry, spFinally, trivia) ->
 
             let mTry = match spTry with DebugPointAtTry.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.Try) | _ -> trivia.TryKeyword
@@ -1401,47 +1431,6 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                 |> addBindDebugPoint spMatch
             
             Some(translatedCtxt callExpr)
-
-        | SynExpr.WhileBang (spWhile, guardExpr, innerComp, _) -> 
-            let mGuard = guardExpr.Range
-            let mWhile = match spWhile with DebugPointAtWhile.Yes m -> m.NoteSourceConstruct(NotedSourceConstruct.While) | _ -> mGuard
-
-            if isQuery then error(Error(FSComp.SR.tcNoWhileInQuery(), mWhile))
-
-            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mWhile ad "While" builderTy) then
-                error(Error(FSComp.SR.tcRequireBuilderMethod("While"), mWhile))
-
-            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mWhile ad "Delay" builderTy) then
-                error(Error(FSComp.SR.tcRequireBuilderMethod("Delay"), mWhile))
-
-            if isNil (TryFindIntrinsicOrExtensionMethInfo ResultCollectionSettings.AtMostOneResult cenv env mWhile ad "Bind" builderTy) then
-                error(Error(FSComp.SR.tcRequireBuilderMethod("Bind"), mWhile))
-
-            // 'while' is hit just before each time the guard is called
-            let guardExpr = 
-                match spWhile with
-                | DebugPointAtWhile.Yes _ ->
-                    SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mWhile, false, guardExpr)
-                | DebugPointAtWhile.No -> guardExpr
-
-            // todo desugar directly instead of rewriting first
-            let body =
-                let id = mkSynId mGuard "$cond"
-                let pat = mkSynPatVar None id
-
-                let body =
-                    let id2 = mkSynId mGuard "$condM"
-                    let pat2 = mkSynPatVar None id2
-                    let b = mkSynBinding (Xml.PreXmlDoc.Empty, pat2) (None, false, true, mGuard, DebugPointAtBinding.NoneAtInvisible, None, SynExpr.Ident id, mGuard, [], [], None, SynBindingTrivia.Zero)  
-                    let set = SynExpr.LongIdentSet (SynLongIdent.SynLongIdent ([ id2 ], [], []), SynExpr.Ident id, mGuard)
-                    let bang = SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtInvisible, false, false, pat, guardExpr, [], set, mGuard, SynExprLetOrUseBangTrivia.Zero)
-
-                    let body = SynExpr.While (spWhile, SynExpr.Ident id2, SynExpr.Sequential (DebugPointAtSequential.SuppressBoth, true, innerComp, bang, mWhile), mWhile)
-                    SynExpr.LetOrUse (false, false, [ b ], body, mGuard, { InKeyword = None })
-
-                SynExpr.LetOrUseBang (DebugPointAtBinding.NoneAtInvisible, false, false, pat, guardExpr, [], body, mGuard, SynExprLetOrUseBangTrivia.Zero)
-
-            tryTrans CompExprTranslationPass.Initial q varSpace body translatedCtxt
 
         | SynExpr.TryWith (innerComp, clauses, mTryToLast, spTry, spWith, trivia) ->
             let mTry = match spTry with DebugPointAtTry.Yes _ -> trivia.TryKeyword.NoteSourceConstruct(NotedSourceConstruct.Try) | _ -> trivia.TryKeyword

@@ -127,6 +127,8 @@ type SynExprLetOrUseTrivia =
         InKeyword: range option
     }
 
+    static member Zero: SynExprLetOrUseTrivia
+
 /// Represents additional information for SynExpr.LetOrUseBang
 [<NoEquality; NoComparison>]
 type SynExprLetOrUseBangTrivia =
