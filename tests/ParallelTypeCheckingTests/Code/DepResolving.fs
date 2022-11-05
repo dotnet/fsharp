@@ -239,9 +239,8 @@ module internal AutomatedDependencyResolving =
                     let deps =
                         reachable
                         |> Seq.collect (fun node -> node.Files)
-                        // TODO Temporary - Add all nodes except for the fake .fsix stuff 
+                        // TODO Temporary - Add all nodes 
                         |> Seq.append nodes
-                        |> Seq.filter (fun dep -> dep.File.Name <> node.File.Name + "ix")
                         // If not, then the below is not necessary.
                         // Assume that this file depends on all files that have any module abbreviations
                         // TODO Handle module abbreviations in a better way
