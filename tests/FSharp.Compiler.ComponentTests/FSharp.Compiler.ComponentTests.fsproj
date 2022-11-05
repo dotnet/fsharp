@@ -177,12 +177,6 @@
     <Compile Include="Language\ExtensionMethodTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-    </None>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi;" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-    </None>
     <Compile Include="Interop\SimpleInteropTests.fs" />
     <Compile Include="Interop\RequiredAndInitOnlyProperties.fs" />
     <Compile Include="Interop\StaticsInInterfaces.fs" />
@@ -210,13 +204,20 @@
     <Compile Include="Signatures\TypeTests.fs" />
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
+    <None Include="**\*.bsl">
+      <Link>%(RelativeDir)\BaseLine\%(Filename)%(Extension)</Link>
+    </None>
+  </ItemGroup>
+
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Remove="Properties\**" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="**\*.bsl">
-      <Link>%(RelativeDir)\BaseLine\%(Filename)%(Extension)</Link>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\Compiler\FSharp.Compiler.Service.fsproj" />
