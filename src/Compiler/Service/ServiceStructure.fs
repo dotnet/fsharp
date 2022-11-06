@@ -493,9 +493,21 @@ module Structure =
                 | x -> x
 
             let synPat = getLastPat synPat
-            // Collapse the scope starting with `->`
-            let collapse = Range.endToEnd synPat.Range clause.Range
-            rcheck Scope.MatchClause Collapse.Same e.Range collapse
+            let synPatRange = synPat.Range
+            let resultExprRange = e.Range
+
+            // Avoid rcheck because we want to be able to collapse resultExpr even if it spans a single line
+            // but is not on the same one as the pattern
+            if synPatRange.EndLine <> resultExprRange.EndLine then
+                acc.Add
+                    {
+                        Scope = Scope.MatchClause
+                        Collapse = Collapse.Same
+                        Range = resultExprRange
+                        // Collapse the scope starting with `->`
+                        CollapseRange = Range.endToEnd synPatRange clause.Range
+                    }
+
             parseExpr e
 
         and parseAttributes (Attributes attrs) =
