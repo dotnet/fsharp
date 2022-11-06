@@ -36,7 +36,6 @@ let methods =
     [
         Method.Sequential
         Method.ParallelFs
-        Method.Nojaf
         Method.Graph
     ]
 
