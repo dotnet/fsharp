@@ -19,7 +19,9 @@ type Codebase =
 
 let codebases =
     [|
-        {WorkDir = @"$CODE_ROOT$\src\compiler"; Path = @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS.txt"; Limit = None}
+        {WorkDir = @"$CODE_ROOT$\src\compiler"; Path = $@"{__SOURCE_DIRECTORY__}\FCS.txt"; Limit = None}
+        // TODO Update args and uncomment
+        // {WorkDir = @"$CODE_ROOT$\tests\FSharp.Compiler.ComponentTests"; Path = $@"{__SOURCE_DIRECTORY__}\ComponentTests_args.txt"; Limit = None}
     |]
 
 /// A very hacky way to setup the given type-checking method - mutates static state and returns new args
