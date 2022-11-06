@@ -68,7 +68,7 @@ type File =
         static member FakeFs (idx : FileIdx) (fsi : string) : File =
             {
                 Idx = idx
-                Code = ""
+                Code = "Fake '.fsix' node for dummy .fs state"
                 AST = ASTOrX.X fsi
                 FsiBacked = false
             }

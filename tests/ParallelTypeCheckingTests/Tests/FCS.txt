@@ -204,7 +204,6 @@ $CODE_ROOT$\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\buildprop
 $CODE_ROOT$\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\FSharp.Compiler.Service.InternalsVisibleTo.fs
 $CODE_ROOT$\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\.NETStandard,Version=v2.0.AssemblyAttributes.fs
 $CODE_ROOT$\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\FSharp.Compiler.Service.AssemblyInfo.fs
-Utilities\Test.fs
 Utilities\sformat.fsi
 Utilities\sformat.fs
 Utilities\sr.fsi

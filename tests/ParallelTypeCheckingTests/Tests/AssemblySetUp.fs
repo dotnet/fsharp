@@ -15,4 +15,3 @@ type AssemblySetUp() =
     member this.TearDown() =
         tracerProvider |> Option.iter (fun x -> x.Dispose())
         tracerProvider <- None
-

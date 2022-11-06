@@ -2,9 +2,7 @@
 
 open FSharp.Test
 open NUnit.Framework
-open FSharp.Test.Compiler
 open ParallelTypeCheckingTests.TestUtils
-open ParallelTypeCheckingTests.Utils
 
 type OutputType =
     | Exe
@@ -120,9 +118,10 @@ let cases : Case list =
 
 [<TestCaseSource(nameof(cases))>]
 let ``Compile all codebase examples with all methods`` (x : Case) =
+    use _ = FSharp.Compiler.Diagnostics.Activity.start "Compile codebase" ["method", x.Method.ToString()]
     makeCompilationUnit x.Files
-    |> withOutputType x.OutputType
+    |> Compiler.withOutputType x.OutputType
     |> setupCompilationMethod x.Method
-    |> compile
-    |> shouldSucceed
+    |> Compiler.compile
+    |> Compiler.Assertions.shouldSucceed
     |> ignore

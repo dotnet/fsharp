@@ -17,7 +17,9 @@ type Reference =
         Kind : ReferenceKind
     }
     
-type Abbreviation = Abbreviation of unit
+type Abbreviation =
+    | ModuleAbbreviation
+    | TypeAbbreviation
     
 /// Reference to a module or type, found in the AST
 type ReferenceOrAbbreviation =
@@ -25,6 +27,12 @@ type ReferenceOrAbbreviation =
     | Abbreviation of Abbreviation
 
 type private References = ReferenceOrAbbreviation seq
+
+module Array =
+    let split<'a, 'b, 'c> (splitter : 'a -> Choice<'b, 'c>) (items : 'a[]) =
+        let items = items |> Array.map splitter
+        items |> Array.choose (function Choice1Of2 x -> Some x | _ -> None),
+        items |> Array.choose (function Choice2Of2 x -> Some x | _ -> None)
 
 module ASTVisit =
     let rec visitSynModuleDecl (decl : SynModuleDecl) : References =
@@ -45,7 +53,7 @@ module ASTVisit =
         | SynModuleDecl.Types(synTypeDefns, range) ->
             visitSynTypeDefns synTypeDefns
         | SynModuleDecl.ModuleAbbrev(ident, longId, range) ->
-            [ReferenceOrAbbreviation.Abbreviation (Abbreviation.Abbreviation())]
+            [ReferenceOrAbbreviation.Abbreviation Abbreviation.ModuleAbbreviation]
         | SynModuleDecl.NamespaceFragment synModuleOrNamespace ->
             visitSynModuleOrNamespace synModuleOrNamespace
         | SynModuleDecl.NestedModule(synComponentInfo, isRecursive, synModuleDecls, isContinuing, range, synModuleDeclNestedModuleTrivia) ->
@@ -380,7 +388,7 @@ module ASTVisit =
                 yield! visitParserDetail parserDetail
                 yield! visitType rhsType
                 // TODO This shouldn't be needed, but for some reason it fixes the 'graph' mode in lib.fs etc.
-                yield (ReferenceOrAbbreviation.Abbreviation (Abbreviation.Abbreviation()))
+                yield (ReferenceOrAbbreviation.Abbreviation Abbreviation.TypeAbbreviation)
             }
         | SynTypeDefnSimpleRepr.LibraryOnlyILAssembly(ilType, range) ->
             []
@@ -1094,18 +1102,13 @@ module ASTVisit =
             synModuleOrNamespaces
             |> Seq.collect visitSynModuleOrNamespace
             |> Seq.toArray
-            
+    
     /// Extract partial module references from partial module or type references
-    let extractModuleSegments (stuff : ReferenceOrAbbreviation seq) : LongIdent[] * bool =
-        
-        let refs =
+    let extractModuleSegments (stuff : ReferenceOrAbbreviation seq): LongIdent[] * Abbreviation[] =
+        let refs, abbreviations =
             stuff
-            |> Seq.choose (function | ReferenceOrAbbreviation.Reference r -> Some r | ReferenceOrAbbreviation.Abbreviation _ -> None)
             |> Seq.toArray
-        let abbreviations =
-            stuff
-            |> Seq.choose (function | ReferenceOrAbbreviation.Reference _ -> None | ReferenceOrAbbreviation.Abbreviation a -> Some a)
-            |> Seq.toArray
+            |> Array.split (function | ReferenceOrAbbreviation.Reference r -> Choice1Of2 r | ReferenceOrAbbreviation.Abbreviation a -> Choice2Of2 a)
         
         let moduleRefs =
             refs
@@ -1120,9 +1123,8 @@ module ASTVisit =
                     | n -> x.Ident.GetSlice(Some 0, n - 2 |> Some) |> Some
             )
             |> Seq.toArray
-        let containsModuleAbbreviations = abbreviations.Length > 0
         
-        moduleRefs, containsModuleAbbreviations
+        moduleRefs, abbreviations
 
     let findModuleRefs (ast : ParsedInput) =
         let typeAndModuleRefs = findModuleAndTypeRefs ast
@@ -1158,7 +1160,7 @@ module TopModulesExtraction =
         | SynModuleOrNamespace(longId, isRecursive, synModuleOrNamespaceKind, synModuleDecls, preXmlDoc, synAttributeLists, synAccessOption, range, synModuleOrNamespaceTrivia) ->
             if mightHaveAutoOpen synAttributeLists then
                 // Contents of a module that's potentially AutoOpen are available from its parent without a prefix.
-                // Treat it as a type - as soon as the parent module is reachable, consider the file being used
+                // Stay safe and as soon as the parent module is reachable, consider this module reachable as well
                 [|LongIdent.Empty|]
             else
                 [|longId|]

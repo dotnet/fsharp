@@ -1,5 +1,6 @@
 ﻿module ParallelTypeCheckingTests.Program
 #nowarn "1182"
+open FSharp.Test
 open ParallelTypeCheckingTests.TestUtils
 open ParallelTypeCheckingTests.Utils
 
@@ -31,13 +32,23 @@ let _parse (argv: string[]): Args =
 
 [<EntryPoint>]
 let main _argv =
-    let workDir, path, lineLimit = TestCompilationFromCmdlineArgs.codebases[2]
-    let stuff =
+    let c = TestCompilation.Codebases.fsFsi
+    let m = Method.Graph
+    let c =
         {
-            Path = path
-            LineLimit = lineLimit
-            WorkingDir = Some workDir
-            Mode = Method.Nojaf
-        }
-    TestCompilationFromCmdlineArgs.TestCompilerFromArgs stuff
+            Method = m
+            Files = c
+            OutputType = CompileOutput.Library
+        } : TestCompilation.Case
+    
+    TestCompilation.``Compile all codebase examples with all methods`` c
+    // let workDir, path, lineLimit = TestCompilationFromCmdlineArgs.codebases[2]
+    // let stuff =
+    //     {
+    //         Path = path
+    //         LineLimit = lineLimit
+    //         WorkingDir = Some workDir
+    //         Mode = Method.Nojaf
+    //     }
+    // TestCompilationFromCmdlineArgs.TestCompilerFromArgs stuff
     0

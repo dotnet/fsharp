@@ -37,6 +37,7 @@
     <Compile Include="Code/Parallel.fs" />
     <Compile Include="Code/GraphProcessing.fs" />
     <Compile Include="Code/ParallelTypeChecking.fs" />
+    <Compile Include="Code\SingleTcStateTypeChecking.fs" />
     <Compile Include="Tests\TestASTVisit.fs" />
     <Compile Include="Tests\TestDepResolving.fs" />
     <Compile Include="Tests\Utils.fs" />

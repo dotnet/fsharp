@@ -33,7 +33,7 @@ type ExtractedData =
     {
         /// Order of the file in the project. Files with lower number cannot depend on files with higher number
         Tops : LongIdent[]
-        ContainsModuleAbbreviations : bool
+        Abbreviations : Abbreviation[]
         /// All partial module references found in this file's AST
         ModuleRefs : LongIdent[]
     }
@@ -47,14 +47,14 @@ type FileData =
     with member this.CodeSize = this.File.CodeSize
 
 let private gatherFileData (ast : ParsedInput) : ExtractedData =
-    let moduleRefs, containsModuleAbbreviations = ASTVisit.findModuleRefs ast
+    let moduleRefs, abbreviations = ASTVisit.findModuleRefs ast
     let tops = TopModulesExtraction.topModuleOrNamespaces ast
     // TODO As a perf optimisation we can skip top-level ids scanning for FsiBacked .fs files
     // However, it is unlikely to give a noticable speedup due to parallelism (citation needed)
     {
         ModuleRefs = moduleRefs
         Tops = tops
-        ContainsModuleAbbreviations = containsModuleAbbreviations
+        Abbreviations = abbreviations
     }
 
 /// Extract necessary information from all files in parallel - top-level items and all (partial) module references

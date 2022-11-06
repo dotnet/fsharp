@@ -85,10 +85,10 @@ let setupCompilationMethod (method: Method) (x: CompilationUnit): CompilationUni
             x
             |> withOptions [ "--test:ParallelCheckingWithSignatureFilesOn" ]
         | Method.Graph ->
-            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParallelTypeChecking.Real.CheckMultipleInputsInParallel
+            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParallelTypeChecking.CheckMultipleInputsInParallel
             x
             |> withOptions [ "--test:ParallelCheckingWithSignatureFilesOn" ]
         | Method.Nojaf ->
-            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParallelTypeChecking.Nojaf.CheckMultipleInputsInParallel
+            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParallelTypeChecking.CheckMultipleInputsInParallel
             x
             |> withOptions [ "--test:ParallelCheckingWithSignatureFilesOn" ]

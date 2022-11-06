@@ -13,7 +13,8 @@ let codebases =
     [
         //@"$CODE_ROOT$\tests\FSharp.Compiler.ComponentTests", @"$CODE_ROOT$\tests\ParallelTypeCheckingTests\ComponentTests_args.txt"
         //@"$CODE_ROOT$\src\compiler", @"$CODE_ROOT$\tests\ParallelTypeCheckingTests\Tests\FCSArgs.txt"
-        @"$CODE_ROOT$\src\compiler", @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS_no_fsi.txt", Some 360
+        @"$CODE_ROOT$\src\compiler", @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS.txt", Some 360
+        @"$CODE_ROOT$\src\compiler", @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS.txt", None
         //@"$CODE_ROOT$\src\compiler", @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS_no_fsi.txt", Some 227
         // @"$CODE_ROOT$\src\compiler", @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS.txt", Some 227
         // @"$CODE_ROOT$\src\compiler", @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS.txt", Some 239
@@ -49,10 +50,10 @@ let setupArgsMethod (method: Method) (args: string[]): string[] =
             ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParseAndCheckInputs.CheckMultipleInputsInParallel
             Array.append args [|"--test:ParallelCheckingWithSignatureFilesOn"|]
         | Method.Graph ->
-            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParallelTypeChecking.Real.CheckMultipleInputsInParallel
+            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParallelTypeChecking.CheckMultipleInputsInParallel
             Array.append args [|"--test:ParallelCheckingWithSignatureFilesOn"|]
         | Method.Nojaf ->
-            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParallelTypeChecking.Nojaf.CheckMultipleInputsInParallel
+            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- SingleTcStateTypeChecking.CheckMultipleInputsInParallel
             Array.append args [|"--test:ParallelCheckingWithSignatureFilesOn"|]
 
 let setupParsed config =

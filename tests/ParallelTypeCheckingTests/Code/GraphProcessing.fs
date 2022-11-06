@@ -147,7 +147,6 @@ let combineResults
     let state = Array.fold folder firstState resultsToAdd
     state
 
-
 // TODO Could be replaced with a simpler recursive approach with memoised per-item results
 let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality and 'Item : comparison>
     (graph : Graph<'Item>)
@@ -243,13 +242,13 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality 
     let nodesArray = nodes.Values |> Seq.toArray
     let finals, {State = state}: 'FinalFileResult[] * StateWrapper<'Item, 'State> =
         nodesArray
+        |> Array.filter (fun node -> includeInFinalState node.Info.Item)
         |> Array.sortBy (fun node -> node.Info.Item)
         |> fun nodes ->
             printfn $"%+A{nodes |> Array.map (fun n -> n.Info.Item.ToString())}"
             nodes
         |> Array.fold (fun (fileResults, state) node ->
-            let fileResult, newState = folder state (node.Result.Value |> snd)
-            let state = if includeInFinalState node.Info.Item then newState else state
+            let fileResult, state = folder state (node.Result.Value |> snd)
             Array.append fileResults [|fileResult|], state
         ) ([||], emptyState)
     

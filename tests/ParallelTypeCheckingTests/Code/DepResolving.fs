@@ -143,7 +143,7 @@ module internal AutomatedDependencyResolving =
         printfn $"{backed.Length} backed files found"
         let filesWithModuleAbbreviations =
             nodes
-            |> Array.filter (fun n -> n.Data.ContainsModuleAbbreviations)
+            |> Array.filter (fun n -> n.Data.Abbreviations |> Array.exists (function Abbreviation.ModuleAbbreviation _ -> true | _ -> false))
             
         let trie = buildTrie nodes
         
@@ -161,7 +161,7 @@ module internal AutomatedDependencyResolving =
                     else
                         [||]
                 // Assume that a file with module abbreviations can depend on anything
-                match node.Data.ContainsModuleAbbreviations with
+                match node.Data.Abbreviations |> Array.isEmpty |> not with
                 | true -> nodes |> Array.map (fun n -> n.File)
                 | false ->
                     // Clone the original Trie as we're going to mutate the copy
@@ -272,13 +272,13 @@ module internal AutomatedDependencyResolving =
         
         let totalSize1 =
             graph
-            |> Seq.sumBy (fun (KeyValue(k,v)) -> v.Length)
+            |> Seq.sumBy (fun (KeyValue(_k,v)) -> v.Length)
         let t =
             graph
             |> Graph.transitive 
         let totalSize2 =
             t
-            |> Seq.sumBy (fun (KeyValue(k,v)) -> v.Length)
+            |> Seq.sumBy (fun (KeyValue(_k,v)) -> v.Length)
         
         printfn $"Non-transitive size: {totalSize1}, transitive size: {totalSize2}"
         
