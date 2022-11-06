@@ -187,11 +187,11 @@
     <Compile Include="CompilerOptions\fsc\langversion.fs" />
     <Compile Include="CompilerOptions\fsc\noframework\noframework.fs" />
     <Compile Include="CompilerOptions\fsc\platform\platform.fs" />
-    <Compile Include="CompilerOptions\fsc\reference.fs" />
-    <Compile Include="CompilerOptions\fsc\reflectionfree.fs" />
     <Compile Include="CompilerOptions\fsc\times\times.fs" />
     <Compile Include="CompilerOptions\fsc\warn\warn.fs" />
     <Compile Include="CompilerOptions\fsc\warnon\warnon.fs" />
+    <Compile Include="CompilerOptions\fsc\reference.fs" />
+    <Compile Include="CompilerOptions\fsc\reflectionfree.fs" />
     <Compile Include="Debugger\PortablePdbs.fs" />
     <Compile Include="Diagnostics\async.fs" />
     <Compile Include="Diagnostics\General.fs" />
