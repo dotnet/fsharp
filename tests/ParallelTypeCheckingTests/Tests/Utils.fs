@@ -61,7 +61,7 @@ type Args =
     {
         Path : string
         LineLimit : int option
-        Mode : Method
+        Method : Method
         WorkingDir : string option
     }
 

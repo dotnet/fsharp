@@ -26,7 +26,7 @@ let _parse (argv: string[]): Args =
     {
         Path = path
         LineLimit = None
-        Mode = mode
+        Method = mode
         WorkingDir = workingDir
     }
 

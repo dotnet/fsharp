@@ -1,6 +1,7 @@
 ﻿namespace global
 open NUnit.Framework
 open ParallelTypeCheckingTests
+open OpenTelemetry.Trace
 
 /// One-time Otel setup for NUnit tests
 [<SetUpFixture>]
@@ -13,5 +14,9 @@ type AssemblySetUp() =
         
     [<OneTimeTearDown>]
     member this.TearDown() =
-        tracerProvider |> Option.iter (fun x -> x.Dispose())
+        tracerProvider
+        |> Option.iter (fun x ->
+            x.ForceFlush() |> ignore
+            x.Dispose()
+        )
         tracerProvider <- None
