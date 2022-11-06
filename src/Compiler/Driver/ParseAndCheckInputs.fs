@@ -1728,18 +1728,21 @@ let CheckMultipleInputsInParallel
 
         results, tcState)
 
-/// Use parallel checking of implementation files that have signature files
-let mutable CheckMultipleInputsInParallel2 : CheckArgs -> (PartialResult list * TcState)
+/// A mutable to allow injection the implementation from another project
+let mutable CheckMultipleInputsUsingGraphMode : CheckArgs -> (PartialResult list * TcState)
     =
-    CheckMultipleInputsInParallel        
+    fun _ -> failwith $"Graph-based type-checking function not set - set CheckMultipleInputsUsingGraphMode before using this mode"
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
-        if tcConfig.parallelCheckingWithSignatureFiles then
-            CheckMultipleInputsInParallel2(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs)
-        else
+        match tcConfig.typeCheckingConfig.Mode with
+        | TypeCheckingMode.Sequential ->
             CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
+        | TypeCheckingMode.ParallelCheckingOfBackedImplFiles ->
+            CheckMultipleInputsInParallel(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs)
+        | TypeCheckingMode.Graph ->
+            CheckMultipleInputsUsingGraphMode(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs)
 
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState =
         CheckMultipleInputsFinish(results, tcState)

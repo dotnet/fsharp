@@ -8,7 +8,6 @@ open ParallelTypeCheckingTests
 open ParallelTypeCheckingTests.FileInfoGathering
 open ParallelTypeCheckingTests.Graph
 open ParallelTypeCheckingTests.Types
-open ParallelTypeCheckingTests.ASTVisit
 open FSharp.Compiler.Syntax
 
 let log (msg : string) =
@@ -88,19 +87,19 @@ module internal AutomatedDependencyResolving =
     let buildTrie (files : FileData[]) : TrieNode =
         let root = emptyTrie()
             
-        let addFileIdent (file : FileData) (ident : LongIdent) =
+        let addFileIdent (file : FileData) (ident : SimpleId) =
             // Go down from root using segments of the identifier, possibly extending the Trie with new nodes.
             let mutable node = root
             for segment in ident do
                 let child =
-                    match node.Children.TryGetValue segment.idText with
+                    match node.Children.TryGetValue segment with
                     // Child exists
                     | true, child ->
                         child
                     // Child doesn't exist
                     | false, _ ->
                         let child = emptyTrie()
-                        node.Children[segment.idText] <- child
+                        node.Children[segment] <- child
                         child
                 node <- child
             // Add the file to the found leaf's list
@@ -195,24 +194,24 @@ module internal AutomatedDependencyResolving =
                     /// When the path leads outside the Trie, the Trie is not extended and no node is marked as a potential prefix.
                     /// This is just a performance optimisation - all the files are linked to already existing nodes, so there is no need to create and visit deeper nodes. 
                     /// </remarks>
-                    let rec walkDownAndMark (id : LongIdent) (node : TrieNode) =
+                    let rec walkDownAndMark (id : SimpleId) (node : TrieNode) =
                         match id with
                         // Reached end of the identifier - new reachable node 
-                        | [] ->
+                        | [||] ->
                             markPotentialPrefix node
                         // More segments exist
-                        | segment :: rest ->
+                        | id ->
                             // Visit (not 'reach') the TrieNode
                             markReachable node
-                            match node.Children.TryGetValue(segment.idText) with
+                            match node.Children.TryGetValue id[0] with
                             // A child for the segment exists - continue there
                             | true, child ->
-                                walkDownAndMark rest child
+                                walkDownAndMark id[1..] child
                             // A child for the segment doesn't exist - stop, since we don't care about the non-existent part of the Trie
                             | false, _ ->
                                 ()
                     
-                    let processRef (id : LongIdent) =
+                    let processRef (id : SimpleId) =
                         // Start at every potential prefix,
                         List<_>(potentialPrefixes) // Copy the list for iteration as the original is going to be extended.
                         // Extend potential prefixes with this 'id'

@@ -2,6 +2,7 @@
 
 open System
 open FSharp.Compiler
+open FSharp.Compiler.CompilerConfig
 open ParallelTypeCheckingTests
 open Xunit
 open FSharp.Test
@@ -30,12 +31,10 @@ type Method =
     | Sequential
     | ParallelFs
     | Graph
-    | Nojaf
 
 let methods =
     [
         Method.Sequential
-        Method.ParallelFs
         Method.Graph
     ]
 
@@ -56,11 +55,11 @@ let setupOtel () =
         )
         .Build ()
 
-type Args =
+type internal Args =
     {
         Path : string
         LineLimit : int option
-        Method : Method
+        Method : TypeCheckingMode
         WorkingDir : string option
     }
 
@@ -80,14 +79,10 @@ let setupCompilationMethod (method: Method) (x: CompilationUnit): CompilationUni
         | Method.Sequential ->
             x
         | Method.ParallelFs ->
-            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParseAndCheckInputs.CheckMultipleInputsInParallel
+            ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <- ParseAndCheckInputs.CheckMultipleInputsInParallel
             x
             |> withOptions [ "--test:ParallelCheckingWithSignatureFilesOn" ]
         | Method.Graph ->
-            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParallelTypeChecking.CheckMultipleInputsInParallel
-            x
-            |> withOptions [ "--test:ParallelCheckingWithSignatureFilesOn" ]
-        | Method.Nojaf ->
-            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParallelTypeChecking.CheckMultipleInputsInParallel
+            ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <- ParallelTypeChecking.CheckMultipleInputsInParallel
             x
             |> withOptions [ "--test:ParallelCheckingWithSignatureFilesOn" ]

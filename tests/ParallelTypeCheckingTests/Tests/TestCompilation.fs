@@ -8,6 +8,25 @@ type OutputType =
     | Exe
     | Library
 
+type FProject =
+    {
+        Files : (string * string) list
+        OutputType : CompileOutput
+    }
+    with
+        override this.ToString() =
+            let names =
+                this.Files
+                |> List.map (fun (name, _) -> name)
+                |> fun names -> System.String.Join(", ", names)
+            $"{this.OutputType} - {names}"
+            
+        static member Make outputType files =
+            {
+                Files = files
+                OutputType = outputType
+            }
+
 module Codebases =
     let encodeDecodeSimple =
         [
@@ -40,7 +59,7 @@ let decode (v: string) : obj = failwith "todo"
 """
 
             "Program.fs", "printfn \"Hello from F#\""
-        ]
+        ] |> FProject.Make CompileOutput.Exe 
     
     let diamondBroken1 =
         [
@@ -70,7 +89,7 @@ namespace N.M.K
 module Y4 =
     let y = 6
 """
-        ]
+        ] |> FProject.Make CompileOutput.Library
     
     let fsFsi =
         [
@@ -82,7 +101,7 @@ val b : int
 module B
 let b = 1
 """
-        ]
+        ] |> FProject.Make CompileOutput.Library
     
     
     let emptyNamespace =
@@ -94,34 +113,41 @@ namespace A
 module B
 open A
 """
-        ]
+        ] |> FProject.Make  CompileOutput.Library
     
     let all =
         [
-            encodeDecodeSimple, CompileOutput.Exe
-            diamondBroken1, CompileOutput.Library
-            fsFsi, CompileOutput.Library
-            emptyNamespace, CompileOutput.Library
+            encodeDecodeSimple
+            diamondBroken1
+            fsFsi
+            emptyNamespace
         ]
 
 type Case =
     {
         Method : Method
-        Files : (string * string) list
-        OutputType : CompileOutput
+        Project : FProject
     }
+        with override this.ToString() =
+            $"{this.Method} - {this.Project}"
 
-let cases : Case list =
-    methods
-    |> List.allPairs Codebases.all
-    |> List.map (fun ((a, t), b) -> {Files = a; OutputType = t; Method = b})
-
-[<TestCaseSource(nameof(cases))>]
-let ``Compile all codebase examples with all methods`` (x : Case) =
+let compile (x : Case) =
     use _ = FSharp.Compiler.Diagnostics.Activity.start "Compile codebase" ["method", x.Method.ToString()]
-    makeCompilationUnit x.Files
-    |> Compiler.withOutputType x.OutputType
+    makeCompilationUnit x.Project.Files
+    |> Compiler.withOutputType x.Project.OutputType
     |> setupCompilationMethod x.Method
     |> Compiler.compile
     |> Compiler.Assertions.shouldSucceed
     |> ignore
+
+let codebases = Codebases.all
+
+[<TestCaseSource(nameof(codebases))>]
+let ``Compile graph-based`` (project : FProject) =
+    compile {Method = Method.Graph; Project = project}
+
+/// <summary> Compile a project using the original fully sequential type-checking. <br/>
+/// Useful as a sanity check </summary>
+[<TestCaseSource(nameof(codebases))>]
+let ``Compile sequential`` (project : FProject) =
+    compile {Method = Method.Graph; Project = project}

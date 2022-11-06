@@ -156,7 +156,7 @@ val mutable fsiBackedInfos : System.Collections.Concurrent.ConcurrentDictionary<
 type CheckArgs = CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list
 
 /// Use parallel checking of implementation files that have signature files
-val mutable CheckMultipleInputsInParallel2 : (CheckArgs -> PartialResult list * TcState)
+val mutable CheckMultipleInputsUsingGraphMode : (CheckArgs -> PartialResult list * TcState)
 
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv * OpenDeclaration list -> TcState

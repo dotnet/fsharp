@@ -3,6 +3,8 @@
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.SyntaxTrivia
 
+type SimpleId = string[]
+
 [<AutoOpen>]
 module X =
     let unsupported = "unsupported"
@@ -13,7 +15,7 @@ type ReferenceKind =
 /// Reference to a module or type, found in the AST
 type Reference =
     {
-        Ident : LongIdent
+        Ident : SimpleId
         Kind : ReferenceKind
     }
     
@@ -28,6 +30,17 @@ type ReferenceOrAbbreviation =
 
 type private References = ReferenceOrAbbreviation seq
 
+type ReferenceSimple =
+    {
+        Ident : string[]
+        Kind : ReferenceKind
+    }
+
+/// Reference to a module or type, found in the AST
+type ReferenceOrAbbreviationSimple =
+    | Reference of ReferenceSimple
+    | Abbreviation of Abbreviation
+
 module Array =
     let split<'a, 'b, 'c> (splitter : 'a -> Choice<'b, 'c>) (items : 'a[]) =
         let items = items |> Array.map splitter
@@ -35,6 +48,10 @@ module Array =
         items |> Array.choose (function Choice2Of2 x -> Some x | _ -> None)
 
 module ASTVisit =
+    
+    let extractSimpleId (longIdent : LongIdent) : SimpleId =
+        longIdent |> Seq.map (fun id -> id.idText) |> Seq.toArray
+    
     let rec visitSynModuleDecl (decl : SynModuleDecl) : References =
         // TODO
         match decl with
@@ -678,7 +695,7 @@ module ASTVisit =
         | SynOpenDeclTarget.Type(typeName, range) ->
             visitType typeName
         | SynOpenDeclTarget.ModuleOrNamespace(synLongIdent, range) ->
-            [ReferenceOrAbbreviation.Reference {Ident = synLongIdent.LongIdent; Kind = ReferenceKind.ModuleOrNamespace}] 
+            [ReferenceOrAbbreviation.Reference {Ident = synLongIdent.LongIdent |> extractSimpleId; Kind = ReferenceKind.ModuleOrNamespace}] 
 
     and visitSynComponentInfo (info : SynComponentInfo) : References =
         match info with
@@ -693,10 +710,10 @@ module ASTVisit =
             }
 
     and visitLongIdent (ident : LongIdent) : References =
-        [ReferenceOrAbbreviation.Reference {Ident = ident; Kind = ReferenceKind.Type}]
+        [ReferenceOrAbbreviation.Reference {Ident = ident |> extractSimpleId; Kind = ReferenceKind.Type}]
         
     and visitSynLongIdent (ident : SynLongIdent) : References  =
-        [ReferenceOrAbbreviation.Reference {Ident = ident.LongIdent; Kind = ReferenceKind.Type}]
+        [ReferenceOrAbbreviation.Reference {Ident = ident.LongIdent |> extractSimpleId; Kind = ReferenceKind.Type}]
        
     and visitSynMatchClause (x : SynMatchClause) : References =
         match x with
@@ -1097,14 +1114,16 @@ module ASTVisit =
         | ParsedInput.SigFile(ParsedSigFileInput(fileName, qualifiedNameOfFile, scopedPragmas, parsedHashDirectives, synModuleOrNamespaceSigs, parsedSigFileInputTrivia)) ->
             synModuleOrNamespaceSigs
             |> Seq.collect visitSynModuleOrNamespaceSig
-            |> Seq.toArray
         | ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualifiedNameOfFile, scopedPragmas, parsedHashDirectives, synModuleOrNamespaces, flags, parsedImplFileInputTrivia)) ->
             synModuleOrNamespaces
             |> Seq.collect visitSynModuleOrNamespace
-            |> Seq.toArray
+        |> Seq.distinct
+        |> Seq.toArray
+    
+    
     
     /// Extract partial module references from partial module or type references
-    let extractModuleSegments (stuff : ReferenceOrAbbreviation seq): LongIdent[] * Abbreviation[] =
+    let extractModuleSegments (stuff : ReferenceOrAbbreviation seq): SimpleId[] * Abbreviation[] =
         let refs, abbreviations =
             stuff
             |> Seq.toArray
@@ -1120,7 +1139,7 @@ module ASTVisit =
                     match x.Ident.Length with
                     | 0
                     | 1 -> None
-                    | n -> x.Ident.GetSlice(Some 0, n - 2 |> Some) |> Some
+                    | n -> x.Ident[0..n-2]  |> Some
             )
             |> Seq.toArray
         
@@ -1276,3 +1295,5 @@ module TopModulesExtraction =
                 items
                 |> List.toArray
                 |> Array.collect topStuffForSynModuleOrNamespaceSig
+        |> Array.map ASTVisit.extractSimpleId
+        |> Array.distinct

@@ -30,7 +30,7 @@ type Timer(name : string) =
         member this.Dispose() = this.Dispose()
 
 
-let internal mainAux2 (argv : string[], onlyTypeCheck : bool, exiter : Exiter option) : int =
+let internal mainAux (argv : string[], onlyTypeCheck : bool, exiter : Exiter option) : int =
     use _ = FSharp.Compiler.Diagnostics.Activity.startNoTags "fscmain"
 
     use _ = new Timer("main")
@@ -118,4 +118,4 @@ let internal mainAux2 (argv : string[], onlyTypeCheck : bool, exiter : Exiter op
 
 [<EntryPoint>]
 let main (argv : string[]) : int =
-    mainAux2 (argv, false, None)
+    mainAux (argv, false, None)

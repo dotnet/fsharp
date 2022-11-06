@@ -1,22 +1,20 @@
-﻿module ParallelTypeCheckingTests.Program
+﻿module internal ParallelTypeCheckingTests.Program
 #nowarn "1182"
-open FSharp.Test
+open FSharp.Compiler.CompilerConfig
 open ParallelTypeCheckingTests.TestUtils
-open ParallelTypeCheckingTests.Utils
 
 let _parse (argv: string[]): Args =
     let parseMode (mode : string) =
         match mode.ToLower() with
-        | "sequential" -> Method.Sequential
-        | "parallelfs" -> Method.ParallelFs
-        | "nojaf" -> Method.Nojaf
-        | "graph" -> Method.Graph
+        | "sequential" -> TypeCheckingMode.Sequential
+        | "parallelfs" -> TypeCheckingMode.ParallelCheckingOfBackedImplFiles
+        | "graph" -> TypeCheckingMode.Graph
         | _ -> failwith $"Unrecognised method: {mode}"
     
     let path, mode, workingDir =
         match argv with
         | [|path|] ->
-            path, Method.Sequential, None
+            path, TypeCheckingMode.Sequential, None
         | [|path; mode|] ->
             path, parseMode mode, None
         | [|path; mode; workingDir|] ->
@@ -32,16 +30,13 @@ let _parse (argv: string[]): Args =
 
 [<EntryPoint>]
 let main _argv =
-    let c = TestCompilation.Codebases.fsFsi
-    let m = Method.Graph
     let c =
         {
-            Method = m
-            Files = c
-            OutputType = CompileOutput.Library
+            Method = Method.Graph
+            Project = TestCompilation.Codebases.fsFsi
         } : TestCompilation.Case
     
-    TestCompilation.``Compile all codebase examples with all methods`` c
+    TestCompilation.compile c
     // let workDir, path, lineLimit = TestCompilationFromCmdlineArgs.codebases[2]
     // let stuff =
     //     {

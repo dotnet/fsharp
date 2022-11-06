@@ -1,5 +1,6 @@
 ﻿module ParallelTypeCheckingTests.TestCompilationFromCmdlineArgs
 
+open FSharp.Compiler.CompilerConfig
 open FSharp.Compiler.DiagnosticsLogger
 open NUnit.Framework
 open System
@@ -9,41 +10,35 @@ open NUnit.Framework
 open ParallelTypeCheckingTests.TestUtils
 open Utils
 
+type Codebase =
+    {
+        WorkDir : string
+        Path : string
+        Limit : int option
+    }
+
 let codebases =
-    [
-        @"$CODE_ROOT$\src\compiler", @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS.txt", None
-    ]
+    [|
+        {WorkDir = @"$CODE_ROOT$\src\compiler"; Path = @"c:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\FCS.txt"; Limit = None}
+    |]
 
-let configs =
-    [Method.Graph]
-    |> List.allPairs codebases
-    |> List.map (fun ((workDir, path, lineLimit : int option), method) -> 
-        {
-            Path = path
-            LineLimit = lineLimit
-            WorkingDir = Some workDir
-            Method = method 
-        }
-    )
-
-let setupArgsMethod (method: Method) (args: string[]): string[] =
+/// A very hacky way to setup the given type-checking method - mutates static state and returns new args
+/// TODO Make the method configurable via proper config passed top-down
+let internal setupArgsMethod (method: TypeCheckingMode) (args: string[]): string[] =
     printfn $"Method: {method}"
     match method with
-        | Method.Sequential ->
+        | TypeCheckingMode.Sequential ->
             // Restore default
-            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParseAndCheckInputs.CheckMultipleInputsInParallel
+            ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <- ParseAndCheckInputs.CheckMultipleInputsInParallel
             args
-        | Method.ParallelFs ->
-            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParseAndCheckInputs.CheckMultipleInputsInParallel
+        | TypeCheckingMode.ParallelCheckingOfBackedImplFiles ->
+            ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <- ParseAndCheckInputs.CheckMultipleInputsInParallel
             Array.append args [|"--test:ParallelCheckingWithSignatureFilesOn"|]
-        | Method.Graph ->
-            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- ParallelTypeChecking.CheckMultipleInputsInParallel
-            Array.append args [|"--test:ParallelCheckingWithSignatureFilesOn"|]
-        | Method.Nojaf ->
-            ParseAndCheckInputs.CheckMultipleInputsInParallel2 <- SingleTcStateTypeChecking.CheckMultipleInputsInParallel
+        | TypeCheckingMode.Graph ->
+            ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <- ParallelTypeChecking.CheckMultipleInputsInParallel
             Array.append args [|"--test:ParallelCheckingWithSignatureFilesOn"|]
 
-let setupParsed config =
+let internal setupParsed config =
     let {Path = path; LineLimit = lineLimit; Method = method; WorkingDir = workingDir} = config
     let args =
         System.IO.File.ReadAllLines(path |> replacePaths)
@@ -55,8 +50,7 @@ let setupParsed config =
     workingDir |> Option.iter (fun dir -> Environment.CurrentDirectory <- replaceCodeRoot dir)
     args
 
-[<TestCaseSource(nameof(configs))>]
-let TestCompilerFromArgs (config : Args) : unit =
+let internal TestCompilerFromArgs (config : Args) : unit =
     use _ = FSharp.Compiler.Diagnostics.Activity.start "Compile codebase" ["method", config.Method.ToString()]
     let oldWorkDir = Environment.CurrentDirectory
     
@@ -64,13 +58,23 @@ let TestCompilerFromArgs (config : Args) : unit =
         { new Exiter with
                         member _.Exit n =
                             Assert.Fail($"Fail - {n} errors found")
-                            failwith (FSComp.SR.elSysEnvExitDidntExit ())
+                            failwith ""
                     }
         
     try
         let args = setupParsed config
-        let args = args |> Array.filter (fun x -> not <| x.Contains("Activity.fs"))
-        let exit : int = CommandLineMain.mainAux2(args, true, Some exiter)
+        let exit : int = CommandLineMain.mainAux(args, true, Some exiter)
         Assert.That(exit, Is.Zero)
     finally
         Environment.CurrentDirectory <- oldWorkDir
+
+[<TestCaseSource(nameof(codebases))>]
+let ``Test graph-based type-checking`` (code : Codebase) =
+    let config =
+        {
+            Path = code.Path
+            LineLimit = code.Limit
+            Method = TypeCheckingMode.Graph
+            WorkingDir = Some code.WorkDir
+        }
+    TestCompilerFromArgs config

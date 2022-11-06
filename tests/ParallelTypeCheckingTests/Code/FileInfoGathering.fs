@@ -32,10 +32,10 @@ let internal gatherBackingInfo (files : SourceFiles) : Files =
 type ExtractedData =
     {
         /// Order of the file in the project. Files with lower number cannot depend on files with higher number
-        Tops : LongIdent[]
+        Tops : SimpleId[]
         Abbreviations : Abbreviation[]
         /// All partial module references found in this file's AST
-        ModuleRefs : LongIdent[]
+        ModuleRefs : SimpleId[]
     }
     
 /// All the data about a single file needed for the dependency resolution algorithm
