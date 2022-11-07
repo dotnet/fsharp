@@ -88,6 +88,33 @@ let x = 1
         ]
     assertGraphEqual deps expectedEdges
 
+[<Test>]
+let ``Files with module or type abbreviations depend on all files above``() =
+    let files =
+        [|
+            "A.fs", """
+module A
+"""
+            "B.fs", """
+module B
+module X = Y
+"""
+            "C.fs", """
+module C
+type X = Y
+"""
+        |]
+        |> buildFiles
+        
+    let deps = DependencyResolution.detectFileDependencies files
+    
+    let expectedEdges =
+        [
+            "B.fs", ["A.fs"]
+            "C.fs", ["A.fs"; "B.fs"]
+        ]
+    assertGraphEqual deps expectedEdges
+
 
 let sampleFiles =
     [
@@ -177,10 +204,10 @@ let private parseProjectAndGetSourceFiles (projectFile : string) =
     log "built project using Buildalyzer"
     files
 
-[<TestCase(@"C:\projekty\fsharp\heuristic\tests\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj")>]
-[<TestCase(@"C:\projekty\fsharp\fsharp_main\src\Compiler\FSharp.Compiler.Service.fsproj")>]
+[<TestCase(__SOURCE_DIRECTORY__ + @"\..\..\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj")>]
+[<TestCase(__SOURCE_DIRECTORY__ + @"\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj")>]
 [<Explicit("Slow as it uses Buildalyzer to analyse (build) projects first")>]
-let ``Test fsproj files`` (projectFile : string) =
+let ``Analyse whole projects and print statistics`` (projectFile : string) =
     log $"Start finding file dependency graph for {projectFile}"
     let files = parseProjectAndGetSourceFiles projectFile
     let files =
@@ -213,11 +240,11 @@ let ``Test fsproj files`` (projectFile : string) =
     
     analyseEfficiency graph
     
-    let totalDeps = graph.Graph |> Seq.sumBy (fun (KeyValue(k, v)) -> v.Length)
+    let totalDeps = graph.Graph |> Seq.sumBy (fun (KeyValue(_k, v)) -> v.Length)
     let topFirstDeps =
         graph.Graph
         |> Seq.sumBy (
-            fun (KeyValue(k, v)) ->
+            fun (KeyValue(_k, v)) ->
                 if v.Length = 0 then 0
                 else v |> Array.map (fun d -> graph.Graph[d].Length) |> Array.max 
         )

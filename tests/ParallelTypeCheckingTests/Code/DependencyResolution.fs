@@ -271,29 +271,29 @@ module internal DependencyResolution =
             |> Array.Parallel.map processFile
             |> readOnlyDict
         
-        let totalSize1 =
-            graph
-            |> Seq.sumBy (fun (KeyValue(_k,v)) -> v.Length)
-        let t =
-            graph
-            |> Graph.transitive 
-        let totalSize2 =
-            t
-            |> Seq.sumBy (fun (KeyValue(_k,v)) -> v.Length)
-        
-        printfn $"Non-transitive size: {totalSize1}, transitive size: {totalSize2}"
-        
-        let res =
-            {
-                DepsResult.Files = nodes
-                DepsResult.Graph = graph
-            }
-        res
+        {
+            DepsResult.Files = nodes
+            DepsResult.Graph = graph
+        }
 
 /// <summary>
 /// Calculate and print some stats about the expected parallelism factor of a dependency graph 
 /// </summary>
 let analyseEfficiency (result : DepsResult) : unit =
+    let graph = result.Graph
+    let totalSize1 =
+        graph
+        |> Seq.sumBy (fun (KeyValue(_k,v)) -> v.Length)
+    let t =
+        graph
+        |> Graph.transitive 
+    let totalSize2 =
+        t
+        |> Seq.sumBy (fun (KeyValue(_k,v)) -> v.Length)
+    
+    printfn $"Non-transitive size: {totalSize1}, transitive size: {totalSize2}"
+    
+    
     let totalFileSize =
         result.Files
         |> Array.sumBy (fun file -> int64(file.CodeSize))
