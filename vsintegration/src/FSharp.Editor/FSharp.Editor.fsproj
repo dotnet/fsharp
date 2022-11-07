@@ -133,9 +133,6 @@
     <Compile Include="Hints\NativeToRoslynHintConverter.fs" />
     <Compile Include="Hints\OptionParser.fs" />
     <Compile Include="Hints\RoslynAdapter.fs" />
-    <Compile Include="Lens\LensDisplayService.fs" />
-    <Compile Include="Lens\LensService.fs" />
-    <Compile Include="Lens\LensProvider.fs" />
   </ItemGroup>
 
   <ItemGroup>
