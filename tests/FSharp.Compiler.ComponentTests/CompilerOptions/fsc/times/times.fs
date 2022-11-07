@@ -10,7 +10,7 @@ module times =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
     //<Expects id="FS0243" status="error">Unrecognized option: '--Times'</Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/times", Includes=[|"error_01.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_01.fs"|])>]
     let ``times - error_01.fs - --Times`` compilation =
         compilation
         |> asFsx
@@ -23,7 +23,7 @@ module times =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
     //<Expects id="FS0243" status="error">Unrecognized option: '--times-'</Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/times", Includes=[|"error_02.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_02.fs"|])>]
     let ``times - error_02.fs - --times-`` compilation =
         compilation
         |> asFsx
@@ -36,7 +36,7 @@ module times =
 
     // This test was automatically generated (moved from FSharpQA suite - CompilerOptions/fsc/times)
     //<Expects id="FS0243" status="error">Unrecognized option: '--times\+'</Expects>
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/times", Includes=[|"error_03.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"error_03.fs"|])>]
     let ``times - error_03.fs - --times+`` compilation =
         compilation
         |> asFsx
