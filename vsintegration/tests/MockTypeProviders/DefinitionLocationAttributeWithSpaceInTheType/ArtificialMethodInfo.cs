@@ -159,7 +159,7 @@ namespace TypeProviderInCSharp
         {
             var attrs = new List<CustomAttributeData>();
             attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderXmlDocAttribute("This is a synthetic *method* created by me!!")));
-            attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderDefinitionLocationAttribute() { Column = 21, FilePath = "File.fs", Line = 3 }));
+            
             attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderEditorHideMethodsAttribute()));
             return attrs;
         }

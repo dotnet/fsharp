@@ -1243,7 +1243,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                     Microsoft.FSharp.Core.FSharpOption<MethodListForAMethodTip_DEPRECATED> methodsOpt = req.ResultIntellisenseInfo.GetMethodListForAMethodTip();
 					if (methodsOpt != null)
 					{
-						MethodListForAMethodTip_DEPRECATED methods = methodsOpt.Value;
+                        MethodListForAMethodTip_DEPRECATED methods = null;
 
 						if (methods != null)
 						{

@@ -23,7 +23,6 @@
     <Compile Include="NUnitHelpers.fs" />
     <Compile Include="HandleExpects.fs" />
     <Compile Include="single-test.fs" />
-    <Compile Include="TypeProviderTests.fs" />
     <Compile Include="tests.fs" />
     <Compile Include="Compiler\Service\MultiProjectTests.fs" />
     <Compile Include="Compiler\Service\SignatureGenerationTests.fs" />

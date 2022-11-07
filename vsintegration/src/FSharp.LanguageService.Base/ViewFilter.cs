@@ -418,10 +418,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 {
                     var dbgState = Interactive.Hooks.GetDebuggerState(GetProjectSystemPackage());
 
-                    if (dbgState == Interactive.FsiDebuggerState.AttachedNotToFSI)
-                        return (int)OLECMDF.OLECMDF_INVISIBLE;
-                    else
-                        return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
+                    return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
                 }
             }
 
@@ -543,12 +540,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             {
                 if (nCmdId == (uint) Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive)
                 {
-                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), Interactive.FsiEditorSendAction.ExecuteSelection, null, null);
                     return true;
                 }
                 else if (nCmdId == (uint) Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteLineInInteractive)
                 {
-                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), Interactive.FsiEditorSendAction.ExecuteLine, null, null);
                     return true;
                 }
             }
@@ -556,7 +551,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             {
                 if (nCmdId == cmdIDDebugSelection)
                 {
-                    Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), Interactive.FsiEditorSendAction.DebugSelection, null, null);
                     return true;
                 }
             }

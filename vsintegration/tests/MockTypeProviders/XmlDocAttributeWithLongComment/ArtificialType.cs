@@ -759,7 +759,7 @@ namespace TypeProviderInCSharp
         {
             var attrs = new List<CustomAttributeData>();
             attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderXmlDocAttribute("This is a synthetic type created by me!. Which is used to test the tool tip of the typeprovider type to check if it shows the right message or not.")));
-            attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderDefinitionLocationAttribute() { Column = 21, FilePath = "File.fs", Line = 3 }));
+            
             attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderEditorHideMethodsAttribute()));
             return attrs;
         }
