@@ -12,11 +12,7 @@ open OpenTelemetry.Resources
 open OpenTelemetry.Trace
 
 let CodeRoot =
-    "c:/projekty/fsharp/fsharp_main"
-    // System.IO.Path.Combine(
-    //     __SOURCE_DIRECTORY__,
-    //     "../../../"
-    // )
+    @$"{__SOURCE_DIRECTORY__}\.checkouts\fcs"
 let replaceCodeRoot (s : string) = s.Replace("$CODE_ROOT$", CodeRoot)
 let packages =
     let pathWithEnv = @"%USERPROFILE%\.nuget\packages"

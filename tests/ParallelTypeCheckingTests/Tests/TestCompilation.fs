@@ -128,8 +128,9 @@ type Case =
         Method : Method
         Project : FProject
     }
-        with override this.ToString() =
-            $"{this.Method} - {this.Project}"
+        with
+            override this.ToString() =
+                $"{this.Method} - {this.Project}"
 
 let compile (x : Case) =
     use _ = FSharp.Compiler.Diagnostics.Activity.start "Compile codebase" ["method", x.Method.ToString()]

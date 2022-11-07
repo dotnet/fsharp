@@ -6,9 +6,7 @@ open NUnit.Framework
 open System
 open FSharp.Compiler
 open ParallelTypeCheckingTests
-open NUnit.Framework
 open ParallelTypeCheckingTests.TestUtils
-open Utils
 
 type Codebase =
     {
@@ -19,9 +17,8 @@ type Codebase =
 
 let codebases =
     [|
-        {WorkDir = @"$CODE_ROOT$\src\compiler"; Path = $@"{__SOURCE_DIRECTORY__}\FCS.txt"; Limit = None}
-        // TODO Update args and uncomment
-        // {WorkDir = @"$CODE_ROOT$\tests\FSharp.Compiler.ComponentTests"; Path = $@"{__SOURCE_DIRECTORY__}\ComponentTests_args.txt"; Limit = None}
+        { WorkDir = $@"{__SOURCE_DIRECTORY__}\.checkouts\fcs\src\compiler"; Path = $@"{__SOURCE_DIRECTORY__}\FCS.args.txt"; Limit = None }
+        { WorkDir = $@"{__SOURCE_DIRECTORY__}\.checkouts\fcs\tests\FSharp.Compiler.ComponentTests"; Path = $@"{__SOURCE_DIRECTORY__}\ComponentTests.args.txt"; Limit = None }
     |]
 
 /// A very hacky way to setup the given type-checking method - mutates static state and returns new args
@@ -71,6 +68,7 @@ let internal TestCompilerFromArgs (config : Args) : unit =
         Environment.CurrentDirectory <- oldWorkDir
 
 [<TestCaseSource(nameof(codebases))>]
+[<Explicit("Before running these tests, you must prepare the codebase by running FCS.prepare.ps1")>]
 let ``Test graph-based type-checking`` (code : Codebase) =
     let config =
         {

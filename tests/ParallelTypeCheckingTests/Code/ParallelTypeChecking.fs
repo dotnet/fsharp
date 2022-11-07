@@ -2,7 +2,6 @@
 #nowarn "1182"
 open System.Collections.Concurrent
 open System.Collections.Generic
-open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
@@ -12,7 +11,6 @@ open FSharp.Compiler.DiagnosticsLogger
 open FSharp.Compiler.NameResolution
 open FSharp.Compiler.ParseAndCheckInputs
 open ParallelTypeCheckingTests.FileInfoGathering
-open ParallelTypeCheckingTests.Graph
 open ParallelTypeCheckingTests.Types
 open ParallelTypeCheckingTests.Utils
 open ParallelTypeCheckingTests
@@ -21,7 +19,6 @@ open FSharp.Compiler.Syntax
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
-open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
 open Newtonsoft.Json
@@ -70,12 +67,12 @@ let CheckMultipleInputsInParallel
         |> List.map (fun ast -> ast.FileName, ast)
         |> readOnlyDict
         |> ConcurrentDictionary<_,_>
-    let graph = DepResolving.AutomatedDependencyResolving.detectFileDependencies sourceFiles
+    let graph = DepResolving.DependencyResolution.detectFileDependencies sourceFiles
     
     let mutable nextIdx = (graph.Files |> Array.map (fun f -> f.File.Idx.Idx) |> Array.max) + 1
-    let fakeX (idx : FileIdx) (fsi : string) : FileData =
+    let fakeX (idx : FileIdx) (fsi : File) : FileData =
         {
-            File = File.FakeFs idx fsi
+            File = File.FakeFs idx fsi.QualifiedName
             Data =
                 {
                     Tops = [||]
@@ -91,7 +88,7 @@ let CheckMultipleInputsInParallel
         |> Array.map (fun fsi ->
             let idx = FileIdx.make nextIdx
             nextIdx <- nextIdx + 1
-            fsi.File, fakeX idx fsi.File.Name
+            fsi.File, fakeX idx fsi.File
         )
         |> readOnlyDict
     

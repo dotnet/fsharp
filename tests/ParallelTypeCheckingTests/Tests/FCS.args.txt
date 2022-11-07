@@ -31,7 +31,7 @@
 --define:NETSTANDARD1_6_OR_GREATER
 --define:NETSTANDARD2_0_OR_GREATER
 --doc:$CODE_ROOT$\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\FSharp.Compiler.Service.xml
---keyfile:$PACKAGES$\microsoft.dotnet.arcade.sdk\8.0.0-beta.22513.2\tools\snk/MSFT.snk
+--keyfile:$PACKAGES$\microsoft.dotnet.arcade.sdk\8.0.0-beta.22552.1\tools\snk/MSFT.snk
 --publicsign+
 --optimize-
 --resource:$CODE_ROOT$\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\FSComp.resources
@@ -191,6 +191,7 @@
 --deterministic+
 --simpleresolution
 --nowarn:3384
+--times
 --nowarn:75
 --extraoptimizationloops:1
 --warnon:1182

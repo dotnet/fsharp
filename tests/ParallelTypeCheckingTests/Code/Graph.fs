@@ -1,15 +1,20 @@
-﻿module ParallelTypeCheckingTests.Graph
+﻿namespace ParallelTypeCheckingTests
 #nowarn "1182"
 #nowarn "40"
 
 open System.Collections.Generic
-open System.Drawing.Drawing2D
 open ParallelTypeCheckingTests.Utils
 
 /// <summary> DAG of files </summary>
 type Graph<'Node> = IReadOnlyDictionary<'Node, 'Node[]>
 
 module Graph =
+    
+    let collectEdges<'Node when 'Node : equality> (graph : Graph<'Node>) : ('Node * 'Node)[] =
+        let graph : IReadOnlyDictionary<'Node, 'Node[]> = graph
+        graph
+        |> Seq.collect (fun (KeyValue(node, deps)) -> deps |> Array.map (fun dep -> node, dep))
+        |> Seq.toArray
     
     /// Create entries for nodes that don't have any dependencies but are mentioned as dependencies themselves
     let fillEmptyNodes<'Node when 'Node : equality> (graph : Graph<'Node>) : Graph<'Node> =

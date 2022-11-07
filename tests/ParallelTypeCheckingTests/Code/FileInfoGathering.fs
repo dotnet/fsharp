@@ -14,12 +14,10 @@ let internal gatherBackingInfo (files : SourceFiles) : Files =
         let fsiBacked =
             match f.AST with
             | ParsedInput.SigFile _ ->
-                // TODO Use QualifiedNameOfFile
-                seenSigFiles.Add f.AST.FileName |> ignore
+                seenSigFiles.Add f.QualifiedName |> ignore
                 false
             | ParsedInput.ImplFile _ ->
-                let fsiName = System.IO.Path.ChangeExtension(f.QualifiedName, "fsi")
-                let fsiBacked = seenSigFiles.Contains fsiName
+                let fsiBacked = seenSigFiles.Contains f.QualifiedName
                 fsiBacked
         {
             Idx = FileIdx.make i

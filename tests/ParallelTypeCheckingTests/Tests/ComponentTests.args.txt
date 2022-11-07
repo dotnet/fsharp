@@ -26,7 +26,7 @@
 --define:NETCOREAPP3_0_OR_GREATER
 --define:NETCOREAPP3_1_OR_GREATER
 --doc:$CODE_ROOT$\artifacts\obj\FSharp.Compiler.ComponentTests\Debug\net7.0\FSharp.Compiler.ComponentTests.xml
---keyfile:$PACKAGES$\microsoft.dotnet.arcade.sdk\8.0.0-beta.22520.1\tools\snk/MSFT.snk
+--keyfile:$PACKAGES$\microsoft.dotnet.arcade.sdk\8.0.0-beta.22552.1\tools\snk/MSFT.snk
 --publicsign+
 --optimize-
 --tailcalls-
@@ -401,6 +401,7 @@ Language\InterpolatedStringsTests.fs
 Language\ComputationExpressionTests.fs
 Language\CastingTests.fs
 Language\NameofTests.fs
+Language\ExtensionMethodTests.fs
 ConstraintSolver\PrimitiveConstraints.fs
 ConstraintSolver\MemberConstraints.fs
 Interop\SimpleInteropTests.fs
@@ -428,3 +429,4 @@ Signatures\ModuleOrNamespaceTests.fs
 Signatures\RecordTests.fs
 Signatures\ArrayTests.fs
 Signatures\TypeTests.fs
+FSharpChecker\CommonWorkflows.fs

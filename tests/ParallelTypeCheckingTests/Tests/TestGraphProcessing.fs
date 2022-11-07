@@ -1,7 +1,6 @@
 ﻿module ParallelTypeCheckingTests.TestGraphProcessing
 #nowarn "1182"
 open ParallelTypeCheckingTests
-open ParallelTypeCheckingTests.Graph
 open ParallelTypeCheckingTests.ParallelTypeChecking
 open ParallelTypeCheckingTests.Types
 open ParallelTypeCheckingTests.Utils

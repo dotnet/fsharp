@@ -89,7 +89,7 @@ let CheckMultipleInputsInParallel
                 |> List.toArray
                 |> Array.mapi (fun i inp -> { Idx = FileIdx.make i; AST = inp }: SourceFile)
 
-            AutomatedDependencyResolving.detectFileDependencies sourceFiles
+            DependencyResolution.detectFileDependencies sourceFiles
 
         do ()
 

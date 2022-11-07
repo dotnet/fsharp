@@ -3,7 +3,6 @@ module ParallelTypeCheckingTests.GraphProcessing
 
 open System.Collections.Generic
 open System.Threading
-open ParallelTypeCheckingTests.Graph
 
 /// Used for processing
 type NodeInfo<'Item> =

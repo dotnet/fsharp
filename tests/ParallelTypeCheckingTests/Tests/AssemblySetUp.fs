@@ -1,6 +1,5 @@
 ﻿namespace global
 open NUnit.Framework
-open ParallelTypeCheckingTests
 open OpenTelemetry.Trace
 
 /// One-time Otel setup for NUnit tests
@@ -10,7 +9,7 @@ type AssemblySetUp() =
 
     [<OneTimeSetUp>]
     member this.SetUp() =
-        tracerProvider <- TestUtils.setupOtel() |> Some
+        tracerProvider <- ParallelTypeCheckingTests.TestUtils.setupOtel() |> Some
         
     [<OneTimeTearDown>]
     member this.TearDown() =

@@ -27,7 +27,7 @@ type SourceFile =
         | _ -> false
     override this.GetHashCode () = this.Idx.GetHashCode()
     override this.ToString() = this.Idx.ToString()
-    member this.QualifiedName = this.AST.FileName
+    member this.QualifiedName = this.AST.QualifiedName.Text
 
 type SourceFiles = SourceFile[]
 
@@ -38,7 +38,11 @@ type ASTOrX =
         member x.Name =
             match x with
             | AST ast -> ast.FileName
-            | X fsi -> fsi + "x"
+            | X qualifiedName -> qualifiedName + "x"
+        member x.QualifiedName =
+            match x with
+            | AST ast -> ast.QualifiedName.Text
+            | X qualifiedName -> qualifiedName + ".fsix"
 
 /// Basic data about a parsed source file with extra information needed for graph processing
 [<CustomEquality; CustomComparison>]
@@ -53,6 +57,7 @@ type File =
     with
         member this.Name = this.AST.Name // TODO Use qualified name 
         member this.CodeSize = this.Code.Length
+        member this.QualifiedName = this.AST.QualifiedName
         override this.Equals other =
             match other with
             | :? File as f -> f.Name.Equals this.Name

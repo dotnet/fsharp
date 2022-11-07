@@ -6,7 +6,6 @@ open System
 open System.Collections.Generic
 open ParallelTypeCheckingTests
 open ParallelTypeCheckingTests.FileInfoGathering
-open ParallelTypeCheckingTests.Graph
 open ParallelTypeCheckingTests.Types
 open FSharp.Compiler.Syntax
 
@@ -30,12 +29,13 @@ type DepsResult =
         Files : FileData[]
         Graph : DepsGraph
     }
+    with member this.Edges() = this.Graph |> Graph.collectEdges
 
 type References = Reference seq
 
 /// Algorithm for automatically detecting (lack of) file dependencies based on their AST contents
 [<RequireQualifiedAccess>]
-module internal AutomatedDependencyResolving =
+module internal DependencyResolution =
 
     /// Eg. 'A' and 'B' in "module A.B"
     type ModuleSegment = string
@@ -142,20 +142,22 @@ module internal AutomatedDependencyResolving =
         printfn $"{backed.Length} backed files found"
         let filesWithModuleAbbreviations =
             nodes
-            |> Array.filter (fun n -> n.Data.Abbreviations |> Array.exists (function Abbreviation.ModuleAbbreviation _ -> true | _ -> false))
+            |> Array.filter (fun n ->
+                n.Data.Abbreviations
+                |> Array.exists (function Abbreviation.ModuleAbbreviation -> true | _ -> false))
             
         let trie = buildTrie nodes
         
         let fsiFiles =
             nodes
-            |> Array.filter (fun f -> f.File.Name.EndsWith ".fsi")
+            |> Array.filter (fun f -> match f.File.AST with | ASTOrX.AST (ParsedInput.SigFile _) -> true | _ -> false)
         
         let processFile (node : FileData) =
             let deps =
                 let fsiDep =
                     if node.File.FsiBacked then
                         nodes
-                        |> Array.find (fun x -> x.File.Name = node.File.Name + "i")
+                        |> Array.find (fun x -> x.File.QualifiedName = node.File.QualifiedName)
                         |> fun x -> [|x|]
                     else
                         [||]
@@ -239,7 +241,7 @@ module internal AutomatedDependencyResolving =
                         reachable
                         |> Seq.collect (fun node -> node.Files)
                         // TODO Temporary - Add all nodes 
-                        |> Seq.append nodes
+                        // |> Seq.append nodes
                         // If not, then the below is not necessary.
                         // Assume that this file depends on all files that have any module abbreviations
                         // TODO Handle module abbreviations in a better way

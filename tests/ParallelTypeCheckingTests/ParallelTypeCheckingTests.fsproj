@@ -28,26 +28,27 @@
     <Compile Include="..\service\Common.fs">
       <Link>Common.fs</Link>
     </Compile>
-    <Compile Include="Code/Utils.fs" />
-    <Compile Include="Code/Types.fs" />
-    <Compile Include="Code/ASTVisit.fs" />
-    <Compile Include="Code/FileInfoGathering.fs" />
-    <Compile Include="Code/Graph.fs" />
-    <Compile Include="Code/DepResolving.fs" />
-    <Compile Include="Code/Parallel.fs" />
-    <Compile Include="Code/GraphProcessing.fs" />
-    <Compile Include="Code/ParallelTypeChecking.fs" />
+    <Compile Include="Code\Utils.fs" />
+    <Compile Include="Code\Types.fs" />
+    <Compile Include="Code\ASTVisit.fs" />
+    <Compile Include="Code\FileInfoGathering.fs" />
+    <Compile Include="Code\Graph.fs" />
+    <Compile Include="Code\DependencyResolution.fs" />
+    <Compile Include="Code\Parallel.fs" />
+    <Compile Include="Code\GraphProcessing.fs" />
+    <Compile Include="Code\ParallelTypeChecking.fs" />
     <Compile Include="Code\SingleTcStateTypeChecking.fs" />
-    <Compile Include="Tests\TestASTVisit.fs" />
-    <Compile Include="Tests\TestDepResolving.fs" />
     <Compile Include="Tests\Utils.fs" />
     <Compile Include="Tests\AssemblySetUp.fs" />
+    <Compile Include="Tests\TestASTVisit.fs" />
+    <Compile Include="Tests\TestDependencyResolution.fs" />
     <Compile Include="Tests\TestGraphProcessing.fs" />
     <Compile Include="Tests\TestCompilation.fs" />
-    <Content Include="Tests\DiamondArgs.txt" />
-    <Content Include="Tests\FCS.txt" />
     <Compile Include="Tests\TestCompilationFromCmdlineArgs.fs" />
     <Compile Include="Tests\TestGraph.fs" />
+    <Content Include="Tests\FCS.args.txt" />
+    <Content Include="Tests\FCS.prepare.ps1" />
+    <Content Include="Tests\ComponentTests.args.txt" />
     <Compile Include="Program.fs" />
   <Content Include="Docs.md" />
   </ItemGroup>
