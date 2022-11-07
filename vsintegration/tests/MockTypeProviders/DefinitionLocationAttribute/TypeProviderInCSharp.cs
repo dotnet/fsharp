@@ -25,7 +25,7 @@ namespace TypeProviderInCSharp
     //    }
     //}
 
-    class Namespace1
+    class Namespace1 : IProvidedNamespace
     {
         const string _Namespace = "N";
         const string _Name = "T";
@@ -43,6 +43,11 @@ namespace TypeProviderInCSharp
         {
 
             return new Type[] { myType };
+        }
+
+        public string NamespaceName
+        {
+            get { return _Namespace; }
         }
 
         public Type ResolveTypeName(string typeName)
@@ -129,7 +134,7 @@ namespace TypeProviderInCSharp
         public IProvidedNamespace[] GetNamespaces()
         {
 
-            return new IProvidedNamespace[] { };
+            return new IProvidedNamespace[] { new Namespace1() };
         }
 
         public System.Reflection.ParameterInfo[] GetStaticParameters(Type typeWithoutArguments)

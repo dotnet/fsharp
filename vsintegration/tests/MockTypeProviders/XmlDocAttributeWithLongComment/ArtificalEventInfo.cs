@@ -121,7 +121,7 @@ namespace TypeProviderInCSharp
         {
             var attrs = new List<CustomAttributeData>();
             attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderXmlDocAttribute(string.Format("This is a synthetic *event* created by me for {0}.{1}. Which is used to test the tool tip of the typeprovider Event to check if it shows the right message or not.!", this._DeclaringType.Namespace, this._DeclaringType.Name))));
-            
+            attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderDefinitionLocationAttribute() { Column = 21, FilePath = "File.fs", Line = 3 }));
             attrs.Add(new Helpers.TypeProviderCustomAttributeData(new TypeProviderEditorHideMethodsAttribute()));
             return attrs;
         }

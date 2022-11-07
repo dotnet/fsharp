@@ -30,7 +30,10 @@ namespace TypeProviderInCSharp
             {
                 get
                 {
-                    return new List<CustomAttributeTypedArgument>();
+                    if (_a is TypeProviderXmlDocAttribute)
+                        return new List<CustomAttributeTypedArgument>() { new CustomAttributeTypedArgument(typeof(string), ((TypeProviderXmlDocAttribute)_a).CommentText) };
+                    else // if (_a is TypeProviderDefinitionLocationAttribute || _a is TypeProviderEditorHideMethodsAttribute)
+                        return new List<CustomAttributeTypedArgument>();
                 }
             }
 
@@ -38,7 +41,15 @@ namespace TypeProviderInCSharp
             {
                 get
                 {
-                    return new List<CustomAttributeNamedArgument>();
+                    if (_a is TypeProviderDefinitionLocationAttribute)
+                    {
+                        var t = _a.GetType();
+                        return new List<CustomAttributeNamedArgument>() { new CustomAttributeNamedArgument(t.GetProperty("Column"), ((TypeProviderDefinitionLocationAttribute)_a).Column),
+                                                                      new CustomAttributeNamedArgument(t.GetProperty("FilePath"), ((TypeProviderDefinitionLocationAttribute)_a).FilePath),
+                                                                      new CustomAttributeNamedArgument(t.GetProperty("Line"), ((TypeProviderDefinitionLocationAttribute)_a).Line) };
+                    }
+                    else // if (_a is TypeProviderXmlDocAttribute || _a is TypeProviderEditorHideMethodsAttribute)
+                        return new List<CustomAttributeNamedArgument>();
                 }
             }
         }
