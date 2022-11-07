@@ -5699,13 +5699,9 @@ and TcExprUndelayed (cenv: cenv) (overallTy: OverallTy) env tpenv (synExpr: SynE
         error(Error(FSComp.SR.tcConstructRequiresSequenceOrComputations(), m))
 
     | SynExpr.DoBang (_, m)
-    | SynExpr.LetOrUseBang  (range=m) ->
-        error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
-
-    | SynExpr.MatchBang (range=m) ->
-        error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
-
-    | SynExpr.WhileBang (range=m) ->
+    | SynExpr.MatchBang (range = m)
+    | SynExpr.WhileBang (range = m)
+    | SynExpr.LetOrUseBang (range = m) ->
         error(Error(FSComp.SR.tcConstructRequiresComputationExpression(), m))
 
     // Part of 'T.Ident

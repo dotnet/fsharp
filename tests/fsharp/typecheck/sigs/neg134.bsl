@@ -18,4 +18,3 @@ neg134.fs(15,9,15,10): typecheck error FS0001: This expression was expected to h
     'Async<'a>'    
 but here has type
     'int'    
-    
