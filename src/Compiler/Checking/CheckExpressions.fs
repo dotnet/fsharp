@@ -2204,18 +2204,23 @@ module GeneralizationHelpers =
 // ComputeInlineFlag
 //-------------------------------------------------------------------------
 
-let ComputeInlineFlag (memFlagsOption: SynMemberFlags option) isInline isMutable m =
+let ComputeInlineFlag (memFlagsOption: SynMemberFlags option) isInline isMutable hasNoCompilerInliningAttribute m =
     let inlineFlag =
+        let isCtorOrAbstractSlot =
+            match memFlagsOption with
+            | None -> false
+            | Some x -> (x.MemberKind = SynMemberKind.Constructor) || x.IsDispatchSlot || x.IsOverrideOrExplicitImpl
+
         // Mutable values may never be inlined
         // Constructors may never be inlined
         // Calls to virtual/abstract slots may never be inlined
-        if isMutable ||
-           (match memFlagsOption with
-            | None -> false
-            | Some x -> (x.MemberKind = SynMemberKind.Constructor) || x.IsDispatchSlot || x.IsOverrideOrExplicitImpl) 
-        then ValInline.Never 
-        elif isInline then ValInline.Always 
-        else ValInline.Optional
+        // Values marked with NoCompilerInliningAttribute may never be inlined
+        if isMutable || isCtorOrAbstractSlot || hasNoCompilerInliningAttribute then
+            ValInline.Never 
+        elif isInline then
+            ValInline.Always 
+        else
+            ValInline.Optional
 
     if isInline && (inlineFlag <> ValInline.Always) then 
         errorR(Error(FSComp.SR.tcThisValueMayNotBeInlined(), m))
@@ -10285,8 +10290,9 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             retAttribs, valAttribs, valSynData
 
         let isVolatile = HasFSharpAttribute g g.attrib_VolatileFieldAttribute valAttribs
+        let hasNoCompilerInliningAttribute = HasFSharpAttribute g g.attrib_NoCompilerInliningAttribute valAttribs
 
-        let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable mBinding
+        let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable hasNoCompilerInliningAttribute mBinding
 
         let argAttribs = 
             spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter false))
@@ -11407,8 +11413,9 @@ and AnalyzeAndMakeAndPublishRecursiveValue
 
     // Allocate the type inference variable for the inferred type
     let ty = NewInferenceType g
+    let hasNoCompilerInliningAttribute = HasFSharpAttribute g g.attrib_NoCompilerInliningAttribute bindingAttribs
 
-    let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable mBinding
+    let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable hasNoCompilerInliningAttribute mBinding
 
     if isMutable then errorR(Error(FSComp.SR.tcOnlyRecordFieldsAndSimpleLetCanBeMutable(), mBinding))
 
@@ -12024,6 +12031,7 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
     let attrs = TcAttributes cenv env attrTgt synAttrs
     let newOk = if canInferTypars then NewTyparsOK else NoNewTypars
+    let hasNoCompilerInliningAttribute = HasFSharpAttribute g g.attrib_NoCompilerInliningAttribute attrs
 
     let valinfos, tpenv = TcValSpec cenv env declKind newOk containerInfo memFlagsOpt None tpenv synValSig attrs
     let denv = env.DisplayEnv
@@ -12032,7 +12040,7 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
         let (ValSpecResult (altActualParent, memberInfoOpt, id, enclosingDeclaredTypars, declaredTypars, ty, prelimValReprInfo, declKind)) = valSpecResult
 
-        let inlineFlag = ComputeInlineFlag (memberInfoOpt |> Option.map (fun (PrelimMemberInfo(memberInfo, _, _)) -> memberInfo.MemberFlags)) isInline mutableFlag m
+        let inlineFlag = ComputeInlineFlag (memberInfoOpt |> Option.map (fun (PrelimMemberInfo(memberInfo, _, _)) -> memberInfo.MemberFlags)) isInline mutableFlag hasNoCompilerInliningAttribute m
 
         let freeInType = freeInTypeLeftToRight g false ty
 

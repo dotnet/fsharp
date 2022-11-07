@@ -604,7 +604,9 @@ rule token args skip = parse
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
        | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+       | _ :: rest ->
+           args.stringNest <- rest
+           errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | [] -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, LexerStringKind.String, m))
@@ -615,7 +617,9 @@ rule token args skip = parse
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
-       | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
+       | _ :: rest ->
+           args.stringNest <- rest
+           errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
        | [] -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, LexerStringKind.InterpolatedStringFirst, m))
@@ -627,7 +631,9 @@ rule token args skip = parse
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
        | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+       | _ :: rest ->
+           args.stringNest <- rest
+           errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.SingleQuote, LexerStringKind.InterpolatedStringFirst, m))
@@ -638,7 +644,9 @@ rule token args skip = parse
 
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
-       | _ :: _ -> errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
+       | _ :: rest ->
+           args.stringNest <- rest
+           errorR(Error(FSComp.SR.lexTripleQuoteInTripleQuote(), m))
        | _ -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.TripleQuote, LexerStringKind.String, m))
@@ -650,7 +658,9 @@ rule token args skip = parse
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
        | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+       | _ :: rest ->
+           args.stringNest <- rest
+           errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, LexerStringKind.String, m))
@@ -662,7 +672,9 @@ rule token args skip = parse
        // Single quote in triple quote ok, others disallowed
        match args.stringNest with
        | (_, LexerStringStyle.TripleQuote, _) :: _ -> ()
-       | _ :: _ -> errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
+       | _ :: rest ->
+           args.stringNest <- rest
+           errorR(Error(FSComp.SR.lexSingleQuoteInSingleQuote(), m))
        | _ -> ()
 
        if not skip then STRING_TEXT (LexCont.String(args.ifdefStack, args.stringNest, LexerStringStyle.Verbatim, LexerStringKind.InterpolatedStringFirst, m))
