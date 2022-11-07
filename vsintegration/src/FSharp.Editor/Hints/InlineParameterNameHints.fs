@@ -45,5 +45,5 @@ module InlineParameterNameHints =
             |> Seq.map getHint
             |> Seq.toList
         
-        // not sure when this can happen
+        // this is the case at least for custom operators
         | None -> []
