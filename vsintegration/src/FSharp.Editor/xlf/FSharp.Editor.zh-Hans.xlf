@@ -242,11 +242,6 @@
         <target state="translated">高级</target>
         <note />
       </trans-unit>
-      <trans-unit id="6013">
-        <source>Lens</source>
-        <target state="translated">Lens</target>
-        <note />
-      </trans-unit>
       <trans-unit id="6014">
         <source>Formatting</source>
         <target state="translated">正在格式化</target>
