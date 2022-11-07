@@ -7,7 +7,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.InlineHints
 open Microsoft.VisualStudio.FSharp.Editor
 open FSharp.Compiler.Text
-open HintService
+open Hints
 
 module NativeToRoslynHintConverter =
 

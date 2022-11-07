@@ -86,11 +86,13 @@ type LensOptions =
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool
       IsOutliningEnabled: bool
-      IsInlineHintsEnabled: bool }
+      IsInlineTypeHintsEnabled: bool
+      IsInlineParameterNameHintsEnabled: bool }
     static member Default =
       { IsBlockStructureEnabled = true
         IsOutliningEnabled = true
-        IsInlineHintsEnabled = false }
+        IsInlineTypeHintsEnabled = false 
+        IsInlineParameterNameHintsEnabled = false }
 
 [<CLIMutable>]
 type FormattingOptions =
