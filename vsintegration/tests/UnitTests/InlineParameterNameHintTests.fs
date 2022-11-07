@@ -132,3 +132,44 @@ let c = "javascript" === "javascript"
     let result = getParameterNameHints document
 
     Assert.IsEmpty(result)
+
+[<Test>]
+let ``Hints are not (yet) shown for method parameters`` () =
+    let code = """
+let theAnswer = System.Console.WriteLine 42
+"""
+    let document = getFsDocument code
+
+    let result = getParameterNameHints document
+
+    Assert.IsEmpty(result)
+
+[<Test>]
+let ``Hints are not (yet) shown for constructor parameters`` () =
+    let code = """
+type WrappedThing(x) =
+    let unwrapped = x
+
+let wrapped = WrappedThing 42
+"""
+    let document = getFsDocument code
+
+    let result = getParameterNameHints document
+
+    Assert.IsEmpty(result)
+
+[<Test>]
+let ``Hints are not (yet) shown for dicrimanted unions`` () =
+    let code = """
+type Shape =
+    | Square of side : float
+    | Circle of radius : float
+
+let circle = Circle 42
+"""
+    let document = getFsDocument code
+
+    let result = getParameterNameHints document
+
+    Assert.IsEmpty(result)
+
