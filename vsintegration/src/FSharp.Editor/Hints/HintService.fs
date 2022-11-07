@@ -23,6 +23,12 @@ module HintService =
 
             InlineParameterNameHints.getHints parseResults symbol symbolUse
 
+        | :? FSharpUnionCase as symbol
+          when hintKinds |> Set.contains HintKind.ParameterNameHint
+            && symbolUse.IsFromUse ->
+
+          InlineParameterNameHints.getHintsForUnionCase parseResults symbol symbolUse
+
         // we'll be adding other stuff gradually here
         | _ -> 
             []

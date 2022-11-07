@@ -17,8 +17,18 @@ module InlineParameterNameHints =
             Parts = [ TaggedText(TextTag.Text, $"{parameter.DisplayName} = ") ]
         }
 
+    let private getHint' (range: range, parameter: string) =
+        {
+            Kind = HintKind.ParameterNameHint
+            Range = range.StartRange
+            Parts = [ TaggedText(TextTag.Text, $"{parameter} = ") ]
+        }
+
     let private doesParameterNameExist (parameter: FSharpParameter) = 
         parameter.DisplayName <> ""
+
+    let private doesParameterNameExist' (parameter: string) = 
+        parameter <> ""
 
     let isValidForHint (symbol: FSharpMemberOrFunctionOrValue) =
         // is there a better way?
@@ -47,3 +57,26 @@ module InlineParameterNameHints =
         
         // this is the case at least for custom operators
         | None -> []
+
+    let getHintsForUnionCase
+        (parseResults: FSharpParseFileResults) 
+        (symbol: FSharpUnionCase) 
+        (symbolUse: FSharpSymbolUse) =
+
+        let fieldNames = symbol.Fields |> Seq.map (fun x -> x.Name) |> Seq.toList
+
+        // If a case does not use field names, don't even bother getting applied argument ranges
+        if fieldNames |> List.exists doesParameterNameExist' |> not then
+            []
+        else
+            let ranges = parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
+            
+            // When not all field values are provided (as the user is typing), don't show anything yet
+            match ranges with
+            | Some ranges when ranges.Length = fieldNames.Length -> 
+                fieldNames
+                |> List.zip ranges
+                |> List.where (snd >> doesParameterNameExist')
+                |> List.map getHint'
+            
+            | _ -> []
