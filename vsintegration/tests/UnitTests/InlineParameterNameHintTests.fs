@@ -159,7 +159,7 @@ let wrapped = WrappedThing 42
     Assert.IsEmpty(result)
 
 [<Test>]
-let ``Hints are shown for discrimanted unions`` () =
+let ``Hints are shown for discriminated unions`` () =
     let code = """
 type Shape =
     | Square of side: int
