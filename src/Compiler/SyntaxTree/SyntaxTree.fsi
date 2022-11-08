@@ -474,8 +474,15 @@ type SynType =
     /// F# syntax: struct {| id: type; ...; id: type |}
     | AnonRecd of isStruct: bool * fields: (Ident * SynType) list * range: range
 
+    /// Erased union type definition, type X = (A | B)
+    | ErasedUnion of erasedUnionCases: SynErasedUnionCase list * range: range
+    ///
     /// F# syntax: type[]
-    | Array of rank: int * elementType: SynType * range: range
+    | Array of
+
+        rank: int *
+        elementType: SynType *
+        range: range
 
     /// F# syntax: type -> type
     | Fun of argType: SynType * returnType: SynType * range: range * trivia: SynTypeFunTrivia
@@ -1372,6 +1379,14 @@ type SynUnionCase =
         trivia: SynUnionCaseTrivia
 
     /// Gets the syntax range of this construct
+    member Range: range
+
+[<NoEquality; NoComparison>]
+type SynErasedUnionCase =
+
+    /// The untyped, unchecked syntax tree for one case in a union definition.
+    | SynErasedUnionCase of typ: SynType * xmlDoc: PreXmlDoc * range: range
+
     member Range: range
 
 /// Represents the syntax tree for the right-hand-side of union definition, excluding members,

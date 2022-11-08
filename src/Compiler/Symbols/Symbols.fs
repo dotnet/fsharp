@@ -2546,6 +2546,7 @@ type FSharpType(cenv, ty:TType) =
             | TType_fun (domainTy, rangeTy, _) -> 10500 + hashType domainTy + hashType rangeTy
             | TType_measure _ -> 10600 
             | TType_anon (_,l1) -> 10800 + List.sumBy hashType l1
+            | TType_erased_union (_,l1) -> 10900 + List.sumBy hashType l1
         hashType ty
 
     member _.Format(context: FSharpDisplayContext) = 
