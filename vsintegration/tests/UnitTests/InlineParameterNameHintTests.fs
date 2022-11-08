@@ -159,17 +159,72 @@ let wrapped = WrappedThing 42
     Assert.IsEmpty(result)
 
 [<Test>]
-let ``Hints are not (yet) shown for dicrimanted unions`` () =
+let ``Hints are shown for discriminated union case fields with explicit names`` () =
     let code = """
 type Shape =
-    | Square of side : float
-    | Circle of radius : float
-
-let circle = Circle 42
+    | Square of side: int
+    | Rectangle of width: int * height: int
+ 
+let a = Square 1
+let b = Rectangle (1, 2)
 """
     let document = getFsDocument code
 
-    let result = getParameterNameHints document
+    let expected = [
+        { Content = "side = "; Location = (5, 16) }
+        { Content = "width = "; Location = (6, 20) }
+        { Content = "height = "; Location = (6, 23) }
+    ]
 
-    Assert.IsEmpty(result)
+    let actual = getParameterNameHints document
+
+    Assert.AreEqual(expected, actual)
+
+[<Test>]
+let ``Hints for discriminated union case fields are not shown when names are generated`` () =
+    let code = """
+type Shape =
+    | Triangle of side1: int * int * side3: int
+    | Circle of int
+ 
+let c = Triangle (1, 2, 3)
+let d = Circle 1
+"""
+    let document = getFsDocument code
+
+    let expected = [
+        { Content = "side1 = "; Location = (5, 19) }
+        { Content = "side3 = "; Location = (5, 25) }
+    ]
+
+    let actual = getParameterNameHints document
+
+    Assert.AreEqual(expected, actual)
+
+[<Test>]
+let ``Hints for discriminated union case fields are not shown when provided arguments don't match the expected count`` () =
+    let code = """
+type Shape =
+    | Triangle of side1: int * side2: int * side3: int
+    | Circle of int
+ 
+let c = Triangle (1, 2)
+"""
+    let document = getFsDocument code
+
+    let actual = getParameterNameHints document
+
+    Assert.IsEmpty(actual)
+
+[<Test>]
+let ``Hints for discriminated union case fields are not shown for Cons`` () =
+    let code = """
+type X =
+    member _.Test() = 42 :: [42; 42]
+"""
+    let document = getFsDocument code
+
+    let actual = getParameterNameHints document
+
+    Assert.IsEmpty(actual)
 
