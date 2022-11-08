@@ -70,7 +70,7 @@ let processInParallelUsingMailbox
             toSchedule |> Array.iter (fun x -> agent.Post(Start(processItem x)))   
         }
     firstItems |> Array.iter (fun x -> agent.Post(Start(processItem x)))
-    
+
 // TODO Could replace with MailboxProcessor+Tasks/Asyncs instead of BlockingCollection + Threads
 // See http://www.fssnip.net/nX/title/Limit-degree-of-parallelism-using-an-agent
 /// Process items in parallel, allow more work to be scheduled as a result of finished work,
@@ -81,6 +81,7 @@ let processInParallel
     (parallelism : int)
     (stop : int -> bool)
     (ct : CancellationToken)
+    (itemToString)
     : unit
     =
     let bc = new BlockingCollection<'Item>()
@@ -88,9 +89,10 @@ let processInParallel
     let processedCountLock = Object()
     let mutable processedCount = 0
     let processItem item =
-        // printfn $"Processing {item}"
+        printfn $"Processing {itemToString item}"
         let toSchedule = work item
         let processedCount = lock processedCountLock (fun () -> processedCount <- processedCount + 1; processedCount)
+        printfn $"ToSchedule {toSchedule.Length}"
         toSchedule
         |> Array.iter (
             fun next -> bc.Add(next)

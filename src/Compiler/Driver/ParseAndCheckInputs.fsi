@@ -200,6 +200,8 @@ val CheckMultipleInputsFinish:
 /// Finish the checking of a closed set of inputs
 val CheckClosedInputSetFinish: CheckedImplFile list * TcState -> TcState * CheckedImplFile list * ModuleOrNamespace
 
+val mutable typeCheckingMode : TypeCheckingMode
+
 /// Check a closed set of inputs
 val CheckClosedInputSet:
     ctok: CompilationThreadToken *

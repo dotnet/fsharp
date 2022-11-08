@@ -25,7 +25,7 @@ let replacePaths (s : string) =
 [<Struct>]
 type Method =
     | Sequential
-    | ParallelFs
+    | ParallelCheckingOfBackedImplFiles
     | Graph
 
 let methods =
@@ -55,7 +55,7 @@ type internal Args =
     {
         Path : string
         LineLimit : int option
-        Method : TypeCheckingMode
+        Method : Method
         WorkingDir : string option
     }
 
@@ -68,17 +68,17 @@ let makeCompilationUnit (files : (string * string) list) : CompilationUnit =
         f
         |> withAdditionalSourceFiles rest
 
-/// Includes mutation of static config
-let setupCompilationMethod (method: Method) (x: CompilationUnit): CompilationUnit =
-    printfn $"Method: {method}"
+let internal mapMethod (method : Method) =
     match method with
-        | Method.Sequential ->
-            x
-        | Method.ParallelFs ->
-            ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <- ParseAndCheckInputs.CheckMultipleInputsInParallel
-            x
-            |> withOptions [ "--test:ParallelCheckingWithSignatureFilesOn" ]
-        | Method.Graph ->
-            ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <- ParallelTypeChecking.CheckMultipleInputsInParallel
-            x
-            |> withOptions [ "--test:ParallelCheckingWithSignatureFilesOn" ]
+    | Method.Sequential -> TypeCheckingMode.Sequential
+    | Method.ParallelCheckingOfBackedImplFiles -> TypeCheckingMode.ParallelCheckingOfBackedImplFiles
+    | Method.Graph -> TypeCheckingMode.Graph
+
+/// Includes mutation of static config
+/// A very hacky way to setup the given type-checking method - mutates static state and returns new args
+/// TODO Make the method configurable via proper config passed top-down
+let setupCompilationMethod (method: Method) =
+    printfn $"Method: {method}"
+    let mode = mapMethod method
+    ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <- ParallelTypeChecking.CheckMultipleInputsInParallel
+    ParseAndCheckInputs.typeCheckingMode <- mode

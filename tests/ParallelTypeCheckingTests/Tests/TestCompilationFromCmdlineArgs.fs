@@ -17,25 +17,9 @@ type Codebase =
 
 let codebases =
     [|
-        { WorkDir = $@"{__SOURCE_DIRECTORY__}\.checkouts\fcs\src\compiler"; Path = $@"{__SOURCE_DIRECTORY__}\FCS.args.txt"; Limit = None }
+        { WorkDir = $@"{__SOURCE_DIRECTORY__}\.checkouts\fcs\src\compiler"; Path = $@"{__SOURCE_DIRECTORY__}\FCS.args.txt"; Limit = Some 237 }
         { WorkDir = $@"{__SOURCE_DIRECTORY__}\.checkouts\fcs\tests\FSharp.Compiler.ComponentTests"; Path = $@"{__SOURCE_DIRECTORY__}\ComponentTests.args.txt"; Limit = None }
     |]
-
-/// A very hacky way to setup the given type-checking method - mutates static state and returns new args
-/// TODO Make the method configurable via proper config passed top-down
-let internal setupArgsMethod (method: TypeCheckingMode) (args: string[]): string[] =
-    printfn $"Method: {method}"
-    match method with
-        | TypeCheckingMode.Sequential ->
-            // Restore default
-            ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <- ParseAndCheckInputs.CheckMultipleInputsInParallel
-            args
-        | TypeCheckingMode.ParallelCheckingOfBackedImplFiles ->
-            ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <- ParseAndCheckInputs.CheckMultipleInputsInParallel
-            Array.append args [|"--test:ParallelCheckingWithSignatureFilesOn"|]
-        | TypeCheckingMode.Graph ->
-            ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <- ParallelTypeChecking.CheckMultipleInputsInParallel
-            Array.append args [|"--test:ParallelCheckingWithSignatureFilesOn"|]
 
 let internal setupParsed config =
     let {Path = path; LineLimit = lineLimit; Method = method; WorkingDir = workingDir} = config
@@ -44,8 +28,9 @@ let internal setupParsed config =
         |> fun lines -> match lineLimit with Some limit -> Array.take (Math.Min(limit, lines.Length)) lines | None -> lines 
         |> Array.map replacePaths
         
+    setupCompilationMethod method
+        
     printfn $"WorkingDir = {workingDir}"
-    let args = setupArgsMethod method args
     workingDir |> Option.iter (fun dir -> Environment.CurrentDirectory <- replaceCodeRoot dir)
     args
 
@@ -67,26 +52,22 @@ let internal TestCompilerFromArgs (config : Args) : unit =
     finally
         Environment.CurrentDirectory <- oldWorkDir
 
+let internal codebaseToConfig code method =
+    {
+        Path = code.Path
+        LineLimit = code.Limit
+        Method = method
+        WorkingDir = Some code.WorkDir
+    }
+
 [<TestCaseSource(nameof(codebases))>]
 [<Explicit("Before running these tests, you must prepare the codebase by running FCS.prepare.ps1")>]
 let ``Test graph-based type-checking`` (code : Codebase) =
-    let config =
-        {
-            Path = code.Path
-            LineLimit = code.Limit
-            Method = TypeCheckingMode.Graph
-            WorkingDir = Some code.WorkDir
-        }
+    let config = codebaseToConfig code Method.Graph
     TestCompilerFromArgs config
 
 [<TestCaseSource(nameof(codebases))>]
 [<Explicit("Before running these tests, you must prepare the codebase by running FCS.prepare.ps1")>]
 let ``Test sequential type-checking`` (code : Codebase) =
-    let config =
-        {
-            Path = code.Path
-            LineLimit = code.Limit
-            Method = TypeCheckingMode.Graph
-            WorkingDir = Some code.WorkDir
-        }
+    let config = codebaseToConfig code Method.Sequential
     TestCompilerFromArgs config

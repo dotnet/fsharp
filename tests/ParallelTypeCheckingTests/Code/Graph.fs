@@ -16,6 +16,19 @@ module Graph =
         |> Seq.collect (fun (KeyValue(node, deps)) -> deps |> Array.map (fun dep -> node, dep))
         |> Seq.toArray
     
+    let addIfMissing<'Node when 'Node : equality> (nodes : 'Node seq) (graph : Graph<'Node>) : Graph<'Node> =
+        nodes
+        |> Seq.except (graph.Keys |> Seq.toArray)
+        |> fun missing ->
+            let toAdd =
+                missing
+                |> Seq.map (fun n -> KeyValuePair(n, [||]))
+                |> Seq.toArray
+        
+            let x = Array.append (graph |> Seq.toArray) toAdd
+            x
+            |> Dictionary<_,_> |> fun x -> x :> IReadOnlyDictionary<_,_>
+    
     /// Create entries for nodes that don't have any dependencies but are mentioned as dependencies themselves
     let fillEmptyNodes<'Node when 'Node : equality> (graph : Graph<'Node>) : Graph<'Node> =
         let missingNodes =
@@ -23,14 +36,8 @@ module Graph =
             |> Seq.toArray
             |> Array.concat
             |> Array.except graph.Keys
-        
-        let toAdd =
-            missingNodes
-            |> Array.map (fun n -> KeyValuePair(n, [||]))
-        
-        let x = Array.append (graph |> Seq.toArray) toAdd
-        x
-        |> Dictionary<_,_> |> fun x -> x :> IReadOnlyDictionary<_,_>
+            
+        addIfMissing missingNodes graph 
     
     /// Create a transitive closure of the graph
     let transitive<'Node when 'Node : equality> (graph : Graph<'Node>) : Graph<'Node> =
@@ -61,7 +68,7 @@ module Graph =
         // Construct reversed graph
         |> Seq.map (fun (dep, edges) -> dep, edges |> Seq.map fst |> Seq.toArray)
         |> readOnlyDict
-        |> fillEmptyNodes
+        |> addIfMissing originalGraph.Keys
     
     let printCustom (graph : Graph<'Node>) (printer : 'Node -> string) : unit =
         printfn "Graph:"

@@ -1189,7 +1189,7 @@ let AddCheckResultsToTcState
     singles <- singles + 1
     // TODO Thread-safety
     total <- total + sw.Elapsed
-    printfn $"[{Threading.Thread.CurrentThread.ManagedThreadId}] [{singles}] single add took {sw.ElapsedMilliseconds}ms, total so far: {total.TotalMilliseconds}ms"
+    // printfn $"[{Threading.Thread.CurrentThread.ManagedThreadId}] [{singles}] single add took {sw.ElapsedMilliseconds}ms, total so far: {total.TotalMilliseconds}ms"
     
     ccuSigForFile, tcState
 
@@ -1465,9 +1465,9 @@ let CheckOneInputAux'
                 printfn $"[{Thread.CurrentThread.ManagedThreadId}] Saving fsiBackedInfos for {file.FileName}"
                 fsiBackedInfos[file.FileName] <- sigFileType
                 
-                printfn $"Finished Processing Sig {file.FileName}"
+                // printfn $"Finished Processing Sig {file.FileName}"
                 return fun tcState ->
-                    printfn $"Applying Sig {file.FileName}"
+                    // printfn $"Applying Sig {file.FileName}"
                     let fsiPartialResult, tcState =
                         let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
 
@@ -1488,7 +1488,7 @@ let CheckOneInputAux'
                     fsiPartialResult, tcState
 
             | ParsedInput.ImplFile file ->
-                printfn $"Processing Impl {file.FileName}"
+                // printfn $"Processing Impl {file.FileName}"
                 let qualNameOfFile = file.QualifiedName
 
                 // Check if we've got an interface for this fragment
@@ -1515,10 +1515,10 @@ let CheckOneInputAux'
                         file
                     )
 
-                printfn $"Finished Processing Impl {file.FileName}"
+                // printfn $"Finished Processing Impl {file.FileName}"
                 return fun tcState ->
-                    let backed = rootSigOpt.IsSome
-                    printfn $"Applying Impl Backed={backed} {file.FileName}"
+                    // let backed = rootSigOpt.IsSome
+                    // printfn $"Applying Impl Backed={backed} {file.FileName}"
                     
                     let ccuSigForFile, fsTcState =
                         AddCheckResultsToTcState
@@ -1535,7 +1535,7 @@ let CheckOneInputAux'
                             tcsCreatesGeneratedProvidedTypes = fsTcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
                         }
 
-                    printfn $"Finished applying Impl {file.FileName}"
+                    // printfn $"Finished applying Impl {file.FileName}"
                     partialResult, tcState
 
         with e ->
@@ -1733,10 +1733,12 @@ let mutable CheckMultipleInputsUsingGraphMode : CheckArgs -> (PartialResult list
     =
     fun _ -> failwith $"Graph-based type-checking function not set - set CheckMultipleInputsUsingGraphMode before using this mode"
 
+let mutable typeCheckingMode : TypeCheckingMode = TypeCheckingMode.Sequential
+
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
-        match tcConfig.typeCheckingConfig.Mode with
+        match typeCheckingMode with
         | TypeCheckingMode.Sequential ->
             CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
         | TypeCheckingMode.ParallelCheckingOfBackedImplFiles ->

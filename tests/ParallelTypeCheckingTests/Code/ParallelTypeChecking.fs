@@ -138,6 +138,7 @@ let CheckMultipleInputsInParallel
         : State -> PartialResult * State =
         cancellable {
             use _ = UseDiagnosticsLogger logger
+            // printfn $"Processing AST {file.ToString()}"
             // Is it OK that we don't update 'priorErrors' after processing batches?
             let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
             
@@ -145,7 +146,7 @@ let CheckMultipleInputsInParallel
             
             match file.AST with
             | ASTOrX.AST _ ->
-                printfn $"Processing AST {file.ToString()}"
+                // printfn $"Processing AST {file.ToString()}"
                 let! f = CheckOneInput'(
                     checkForErrors2,
                     tcConfig,
@@ -161,7 +162,7 @@ let CheckMultipleInputsInParallel
                 printfn $"Finished Processing AST {file.ToString()}"
                 return
                     (fun (state : State) ->
-                        printfn $"Applying {file.ToString()}"
+                        // printfn $"Applying {file.ToString()}"
                         let tcState, priorErrors = state
                         let (partialResult : PartialResult, tcState) = f tcState
         
@@ -169,11 +170,11 @@ let CheckMultipleInputsInParallel
                         // TODO Should we use local _priorErrors or global priorErrors? 
                         let priorOrCurrentErrors = priorErrors || hasErrors
                         let state : State = tcState, priorOrCurrentErrors
-                        printfn $"Finished applying {file.ToString()}"
+                        // printfn $"Finished applying {file.ToString()}"
                         partialResult, state
                     )
             | ASTOrX.X fsi ->
-                printfn $"Processing X {file.ToString()}"
+                // printfn $"Processing X {file.ToString()}"
 
                 let hadSig = true
                 // Add dummy .fs results
@@ -191,7 +192,7 @@ let CheckMultipleInputsInParallel
                 return
                     (fun (state : State) ->
                         // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state
-                        printfn $"Applying X state {file}"                        
+                        // printfn $"Applying X state {file}"                        
                         let tcState, priorErrors = state
                         // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state 
                         
@@ -205,7 +206,7 @@ let CheckMultipleInputsInParallel
                         // TODO Should we use local _priorErrors or global priorErrors? 
                         let priorOrCurrentErrors = priorErrors || hasErrors
                         let state : State = tcState, priorOrCurrentErrors
-                        printfn $"Finished applying X state {file}"
+                        // printfn $"Finished applying X state {file}"
                         partialResult, state
                     )
         }

@@ -6,15 +6,15 @@ open ParallelTypeCheckingTests.TestUtils
 let _parse (argv: string[]): Args =
     let parseMode (mode : string) =
         match mode.ToLower() with
-        | "sequential" -> TypeCheckingMode.Sequential
-        | "parallelfs" -> TypeCheckingMode.ParallelCheckingOfBackedImplFiles
-        | "graph" -> TypeCheckingMode.Graph
+        | "sequential" -> Method.Sequential
+        | "parallelfs" -> Method.ParallelCheckingOfBackedImplFiles
+        | "graph" -> Method.Graph
         | _ -> failwith $"Unrecognised method: {mode}"
     
     let path, mode, workingDir =
         match argv with
         | [|path|] ->
-            path, TypeCheckingMode.Sequential, None
+            path, Method.Sequential, None
         | [|path; mode|] ->
             path, parseMode mode, None
         | [|path; mode; workingDir|] ->
@@ -30,20 +30,7 @@ let _parse (argv: string[]): Args =
 
 [<EntryPoint>]
 let main _argv =
-    let c =
-        {
-            Method = Method.Graph
-            Project = TestCompilation.Codebases.fsFsi
-        } : TestCompilation.Case
-    
-    TestCompilation.compile c
-    // let workDir, path, lineLimit = TestCompilationFromCmdlineArgs.codebases[2]
-    // let stuff =
-    //     {
-    //         Path = path
-    //         LineLimit = lineLimit
-    //         WorkingDir = Some workDir
-    //         Mode = Method.Nojaf
-    //     }
-    // TestCompilationFromCmdlineArgs.TestCompilerFromArgs stuff
+    let args = _parse _argv
+    let args = {args with LineLimit = Some 219}
+    TestCompilationFromCmdlineArgs.TestCompilerFromArgs args
     0

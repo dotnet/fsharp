@@ -134,9 +134,9 @@ type Case =
 
 let compile (x : Case) =
     use _ = FSharp.Compiler.Diagnostics.Activity.start "Compile codebase" ["method", x.Method.ToString()]
+    setupCompilationMethod x.Method
     makeCompilationUnit x.Project.Files
     |> Compiler.withOutputType x.Project.OutputType
-    |> setupCompilationMethod x.Method
     |> Compiler.compile
     |> Compiler.Assertions.shouldSucceed
     |> ignore

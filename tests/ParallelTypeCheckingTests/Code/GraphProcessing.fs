@@ -160,6 +160,9 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality 
     let dependants = graph |> Graph.reverse
     let makeNode (item : 'Item) : Node<'Item, StateWrapper<'Item, 'State>, ResultWrapper<'Item, 'Result>> =
         let info =
+            let exists = graph.ContainsKey item
+            if not exists || not (transitiveDeps.ContainsKey item) || not (dependants.ContainsKey item) then
+                printfn $"WHAT {item}"
             {
                 Item = item
                 Deps = graph[item]
@@ -237,6 +240,7 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality 
         parallelism
         (fun processedCount -> processedCount = nodes.Count)
         cts.Token
+        (fun x -> x.Info.Item.ToString())
 
     let nodesArray = nodes.Values |> Seq.toArray
     let finals, {State = state}: 'FinalFileResult[] * StateWrapper<'Item, 'State> =
@@ -244,7 +248,7 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality 
         |> Array.filter (fun node -> includeInFinalState node.Info.Item)
         |> Array.sortBy (fun node -> node.Info.Item)
         |> fun nodes ->
-            printfn $"%+A{nodes |> Array.map (fun n -> n.Info.Item.ToString())}"
+            // printfn $"%+A{nodes |> Array.map (fun n -> n.Info.Item.ToString())}"
             nodes
         |> Array.fold (fun (fileResults, state) node ->
             let fileResult, state = folder state (node.Result.Value |> snd)
