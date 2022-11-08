@@ -8,7 +8,7 @@ open FSharp.Test.Compiler
 
 module TestCompilerWarningLevel =
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"warn_level0.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn_level0.fs"|])>]
     let ``warn_level0_fs --warn:0`` compilation =
         compilation
         |> asExe
@@ -16,7 +16,7 @@ module TestCompilerWarningLevel =
         |> compileAndRun
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"warn_level1.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn_level1.fs"|])>]
     let ``warn_level1_fs --warn:1 --warnaserror:52`` compilation =
         compilation
         |> asExe
@@ -24,7 +24,7 @@ module TestCompilerWarningLevel =
         |> compile
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"warn_level2.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn_level2.fs"|])>]
     let ``warn_level2_fs --warn:2 --warnaserror:52`` compilation =
         compilation
         |> asExe
@@ -32,7 +32,7 @@ module TestCompilerWarningLevel =
         |> compile
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"warn_level3.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn_level3.fs"|])>]
     let ``warn_level3_fs --warn:3 --warnaserror:52`` compilation =
         compilation
         |> asExe
@@ -40,7 +40,7 @@ module TestCompilerWarningLevel =
         |> compile
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"warn_level4.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn_level4.fs"|])>]
     let ``warn_level4_fs --warn:4 --warnaserror:52`` compilation =
         compilation
         |> asExe
@@ -48,7 +48,7 @@ module TestCompilerWarningLevel =
         |> compile
         |> shouldSucceed
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"warn_level5.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn_level5.fs"|])>]
     let ``warn_level5_fs --warn:5 --warnaserror:52`` compilation =
         compilation
         |> asExe
@@ -59,7 +59,7 @@ module TestCompilerWarningLevel =
         |> withDiagnosticMessageMatches "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed$"
         |> ignore
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"warn_level5.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn_level5.fs"|])>]
     let ``warn_level5_fs --warn:5`` compilation =
         compilation
         |> asExe
@@ -72,7 +72,7 @@ module TestCompilerWarningLevel =
 
 #if NETSTANDARD 
 // This test works with KeyValuePair, which is not  a 'readonly struct' in net472
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"nowarn_readonlystruct.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"nowarn_readonlystruct.fs"|])>]
     let ``no error 52 with readonly struct`` compilation =
         compilation
         |> asExe
@@ -82,7 +82,7 @@ module TestCompilerWarningLevel =
         |> ignore
 #endif
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"warn_level6.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn_level6.fs"|])>]
     let ``warn_level6_fs --warn:6`` compilation =
         compilation
         |> asExe
@@ -93,7 +93,7 @@ module TestCompilerWarningLevel =
         |> withDiagnosticMessageMatches "Invalid warning level '6'"
         |> ignore
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"nowarn.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"nowarn.fs"|])>]
     let ``nowarn_fs --warnaserror`` compilation =
         compilation
         |> asExe
@@ -102,7 +102,7 @@ module TestCompilerWarningLevel =
         |> shouldSucceed
         |> ignore
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"warn40.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn40.fs"|])>]
     let ``warn40_fs`` compilation =
         compilation
         |> asExe
@@ -115,7 +115,7 @@ module TestCompilerWarningLevel =
             ]
         |> ignore
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"warn40.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn40.fs"|])>]
     let ``warn40_fs --warnaserror`` compilation =
         compilation
         |> asExe
@@ -129,7 +129,7 @@ module TestCompilerWarningLevel =
             ]
         |> ignore
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"warn40.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn40.fs"|])>]
     let ``warn40_fs --nowarn:40;21`` compilation =
         compilation
         |> asExe
@@ -138,7 +138,7 @@ module TestCompilerWarningLevel =
         |> shouldSucceed
         |> ignore
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"warn40.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn40.fs"|])>]
     let ``warn40_fs --nowarn:NU0000;FS40;NU0001`` compilation =
         compilation
         |> asExe
@@ -147,7 +147,7 @@ module TestCompilerWarningLevel =
         |> shouldSucceed
         |> ignore
 
-    [<Theory; Directory(__SOURCE_DIRECTORY__ + "/../../resources/tests/CompilerOptions/fsc/warn", Includes=[|"warn40.fs"|])>]
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"warn40.fs"|])>]
     let ``warn40_fs --nowarn:FS0040`` compilation =
         compilation
         |> asExe
