@@ -151,4 +151,4 @@ let ``Compile graph-based`` (project : FProject) =
 /// Useful as a sanity check </summary>
 [<TestCaseSource(nameof(codebases))>]
 let ``Compile sequential`` (project : FProject) =
-    compile {Method = Method.Graph; Project = project}
+    compile {Method = Method.Sequential; Project = project}

@@ -78,3 +78,15 @@ let ``Test graph-based type-checking`` (code : Codebase) =
             WorkingDir = Some code.WorkDir
         }
     TestCompilerFromArgs config
+
+[<TestCaseSource(nameof(codebases))>]
+[<Explicit("Before running these tests, you must prepare the codebase by running FCS.prepare.ps1")>]
+let ``Test sequential type-checking`` (code : Codebase) =
+    let config =
+        {
+            Path = code.Path
+            LineLimit = code.Limit
+            Method = TypeCheckingMode.Graph
+            WorkingDir = Some code.WorkDir
+        }
+    TestCompilerFromArgs config
