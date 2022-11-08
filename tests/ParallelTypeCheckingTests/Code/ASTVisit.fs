@@ -1183,7 +1183,7 @@ module TopModulesExtraction =
                 [|LongIdent.Empty|]
             else
                 // 'module A.B' is equivalent to 'namespace A; module B', meaning that 'A' is opened implicitly 
-                if synModuleOrNamespaceKind.IsModule then
+                if synModuleOrNamespaceKind.IsModule && longId.Length > 1 then
                     [|longId.GetSlice(None, Some <| longId.Length-2); longId|]
                 else
                     [|longId|]

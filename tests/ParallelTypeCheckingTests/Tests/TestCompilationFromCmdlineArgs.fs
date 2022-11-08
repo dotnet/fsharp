@@ -17,7 +17,7 @@ type Codebase =
 
 let codebases =
     [|
-        { WorkDir = $@"{__SOURCE_DIRECTORY__}\.checkouts\fcs\src\compiler"; Path = $@"{__SOURCE_DIRECTORY__}\FCS.args.txt"; Limit = Some 211 }
+        { WorkDir = $@"{__SOURCE_DIRECTORY__}\.checkouts\fcs\src\compiler"; Path = $@"{__SOURCE_DIRECTORY__}\FCS.args.txt"; Limit = None }
         { WorkDir = $@"{__SOURCE_DIRECTORY__}\.checkouts\fcs\tests\FSharp.Compiler.ComponentTests"; Path = $@"{__SOURCE_DIRECTORY__}\ComponentTests.args.txt"; Limit = None }
     |]
 

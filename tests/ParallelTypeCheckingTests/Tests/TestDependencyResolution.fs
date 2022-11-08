@@ -121,8 +121,14 @@ type X = Y
 let ``Test error``() =
     let files =
         [|
-            "pppars.fs", File.ReadAllText @"C:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\.checkouts\fcs\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\pppars.fs"
-            "pplex.fs", File.ReadAllText @"C:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\.checkouts\fcs\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\pplex.fs"
+            "A.fs", """
+module A.B1
+let x = 3
+"""
+            "C.fs", """
+module A.B2
+let x = 4
+"""
         |]
         |> buildFiles
         
@@ -130,7 +136,31 @@ let ``Test error``() =
     
     let expectedEdges =
         [
-            "pplex.fs", ["pppars.fs"]
+            "C.fs", ["A.fs"]
+        ]
+    assertGraphEqual deps expectedEdges
+
+
+[<Test>]
+let ``Test error 2``() =
+    let files =
+        [|
+            "A.fs", """
+module A.B1
+let x = 3
+"""
+            "C.fs", """
+module A.B2
+let x = 4
+"""
+        |]
+        |> buildFiles
+        
+    let deps = DependencyResolution.detectFileDependencies files
+    
+    let expectedEdges =
+        [
+            "C.fs", ["A.fs"]
         ]
     assertGraphEqual deps expectedEdges
 
