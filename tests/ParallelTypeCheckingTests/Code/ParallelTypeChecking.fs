@@ -2,6 +2,7 @@
 #nowarn "1182"
 open System.Collections.Concurrent
 open System.Collections.Generic
+open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
@@ -72,7 +73,7 @@ let CheckMultipleInputsInParallel
     let mutable nextIdx = (graph.Files |> Array.map (fun f -> f.File.Idx.Idx) |> Array.max) + 1
     let fakeX (idx : FileIdx) (fsi : File) : FileData =
         {
-            File = File.FakeFs idx fsi.QualifiedName
+            File = File.FakeFs idx fsi.Name
             Data =
                 {
                     Tops = [||]
@@ -131,6 +132,8 @@ let CheckMultipleInputsInParallel
     // somewhere in the files processed prior to each one, or in the processing of this particular file.
     let priorErrors = checkForErrors ()
     
+    let mutable cnt = 1
+    
     let processFile
         (file : File)
         ((input, logger) : ParsedInput * DiagnosticsLogger)
@@ -143,10 +146,11 @@ let CheckMultipleInputsInParallel
             let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
             
             let tcSink = TcResultsSink.NoSink
-            
+            let c = cnt
+            cnt <- cnt + 1
             match file.AST with
             | ASTOrX.AST _ ->
-                // printfn $"Processing AST {file.ToString()}"
+                printfn $"#{c} [thread {Thread.CurrentThread.ManagedThreadId}] Type-checking {file.ToString()}"
                 let! f = CheckOneInput'(
                     checkForErrors2,
                     tcConfig,
@@ -159,7 +163,7 @@ let CheckMultipleInputsInParallel
                     false  // skipImpFiles...
                 )
         
-                printfn $"Finished Processing AST {file.ToString()}"
+                // printfn $"Finished Processing AST {file.ToString()}"
                 return
                     (fun (state : State) ->
                         // printfn $"Applying {file.ToString()}"
@@ -174,7 +178,7 @@ let CheckMultipleInputsInParallel
                         partialResult, state
                     )
             | ASTOrX.X fsi ->
-                // printfn $"Processing X {file.ToString()}"
+                // printfn $"[{c}] Processing X {file.ToString()}"
 
                 let hadSig = true
                 // Add dummy .fs results
@@ -188,7 +192,6 @@ let CheckMultipleInputsInParallel
                 // Don't use it for this file's type-checking - it will cause duplicates
                 
                 let ccuSigForFile = fsiBackedInfos[fsi]
-                printfn $"Finished Processing X {file}"
                 return
                     (fun (state : State) ->
                         // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state
@@ -236,6 +239,7 @@ let CheckMultipleInputsInParallel
         let _qnof = QualifiedNameOfFile.QualifiedNameOfFile (Ident("", Range.Zero))
         let state: State = tcState, priorErrors
         
+        
         let partialResults, (tcState, _) =
             GraphProcessing.processGraph<File, State, SingleResult, FinalFileResult>
                 graph
@@ -243,7 +247,7 @@ let CheckMultipleInputsInParallel
                 folder
                 state
                 (fun it -> not <| it.Name.EndsWith(".fsix"))
-                8
+                10
         
         partialResults |> Array.toList, tcState
     )

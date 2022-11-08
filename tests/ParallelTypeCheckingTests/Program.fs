@@ -31,6 +31,6 @@ let _parse (argv: string[]): Args =
 [<EntryPoint>]
 let main _argv =
     let args = _parse _argv
-    let args = {args with LineLimit = Some 219}
+    let args = {args with LineLimit = None}
     TestCompilationFromCmdlineArgs.TestCompilerFromArgs args
     0

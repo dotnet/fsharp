@@ -1,5 +1,6 @@
 ﻿module ParallelTypeCheckingTests.TestDependencyResolution
 #nowarn "1182"
+open System.IO
 open Buildalyzer
 open ParallelTypeCheckingTests
 open ParallelTypeCheckingTests.Types
@@ -112,6 +113,24 @@ type X = Y
         [
             "B.fs", ["A.fs"]
             "C.fs", ["A.fs"; "B.fs"]
+        ]
+    assertGraphEqual deps expectedEdges
+
+
+[<Test>]
+let ``Test error``() =
+    let files =
+        [|
+            "pppars.fs", File.ReadAllText @"C:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\.checkouts\fcs\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\pppars.fs"
+            "pplex.fs", File.ReadAllText @"C:\projekty\fsharp\heuristic\tests\ParallelTypeCheckingTests\Tests\.checkouts\fcs\artifacts\obj\FSharp.Compiler.Service\Debug\netstandard2.0\pplex.fs"
+        |]
+        |> buildFiles
+        
+    let deps = DependencyResolution.detectFileDependencies files
+    
+    let expectedEdges =
+        [
+            "pplex.fs", ["pppars.fs"]
         ]
     assertGraphEqual deps expectedEdges
 

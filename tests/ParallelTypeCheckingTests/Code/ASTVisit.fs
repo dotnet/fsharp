@@ -1182,7 +1182,11 @@ module TopModulesExtraction =
                 // Stay safe and as soon as the parent module is reachable, consider this module reachable as well
                 [|LongIdent.Empty|]
             else
-                [|longId|]
+                // 'module A.B' is equivalent to 'namespace A; module B', meaning that 'A' is opened implicitly 
+                if synModuleOrNamespaceKind.IsModule then
+                    [|longId.GetSlice(None, Some <| longId.Length-2); longId|]
+                else
+                    [|longId|]
                 // TODO Temporarily disabled digging into the file's structure to avoid edge cases where another file depends on this file's namespace existing (but nothing else)
                 // synModuleDecls
                 // |> moduleDecls

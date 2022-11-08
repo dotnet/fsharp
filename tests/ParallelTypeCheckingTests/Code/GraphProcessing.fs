@@ -203,6 +203,9 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality 
             }
         finalFileResult, state
     
+    printfn $"Node count: {nodes.Count}"
+    // let mutable cnt = 1
+    
     let work
         (node : Node<'Item, StateWrapper<'Item, 'State>, ResultWrapper<'Item, 'Result>>)
         : Node<'Item, StateWrapper<'Item, 'State>, ResultWrapper<'Item, 'Result>>[]
@@ -230,6 +233,16 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item : equality 
                     )
                 pdc = x.Info.Deps.Length
             )
+        // printfn $"State after {node.Info.Item}"
+        // nodes
+        // |> Seq.map (fun (KeyValue(_, v)) ->
+        //     let x = v.Info.Deps.Length - v.ProcessedDepsCount
+        //     $"{v.Info.Item} - {x} deps left"
+        // )
+        // |> Seq.iter (fun x -> printfn $"{x}")
+        // let c = cnt
+        // cnt <- cnt+1
+        // printfn $"Finished processing node. {unblocked.Length} nodes unblocked"
         unblocked
     
     use cts = new CancellationTokenSource()

@@ -1428,7 +1428,7 @@ let CheckOneInputAux'
             
             match inp with
             | ParsedInput.SigFile file ->
-                printfn $"Processing Sig {file.FileName}"
+                // printfn $"Processing Sig {file.FileName}"
                 let qualNameOfFile = file.QualifiedName
 
                 // Check if we've seen this top module signature before.
@@ -1462,7 +1462,7 @@ let CheckOneInputAux'
                 
         
                 // Save info needed for type-checking .fs file later on
-                printfn $"[{Thread.CurrentThread.ManagedThreadId}] Saving fsiBackedInfos for {file.FileName}"
+                // printfn $"[{Thread.CurrentThread.ManagedThreadId}] Saving fsiBackedInfos for {file.FileName}"
                 fsiBackedInfos[file.FileName] <- sigFileType
                 
                 // printfn $"Finished Processing Sig {file.FileName}"

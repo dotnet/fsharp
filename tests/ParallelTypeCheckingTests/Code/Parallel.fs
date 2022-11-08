@@ -81,7 +81,7 @@ let processInParallel
     (parallelism : int)
     (stop : int -> bool)
     (ct : CancellationToken)
-    (itemToString)
+    (_itemToString)
     : unit
     =
     let bc = new BlockingCollection<'Item>()
@@ -89,10 +89,10 @@ let processInParallel
     let processedCountLock = Object()
     let mutable processedCount = 0
     let processItem item =
-        printfn $"Processing {itemToString item}"
+        // printfn $"Processing {itemToString item}"
         let toSchedule = work item
         let processedCount = lock processedCountLock (fun () -> processedCount <- processedCount + 1; processedCount)
-        printfn $"ToSchedule {toSchedule.Length}"
+        // printfn $"ToSchedule {toSchedule.Length}"
         toSchedule
         |> Array.iter (
             fun next -> bc.Add(next)
