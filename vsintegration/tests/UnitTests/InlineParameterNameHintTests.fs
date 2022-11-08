@@ -134,29 +134,68 @@ let c = "javascript" === "javascript"
     Assert.IsEmpty(result)
 
 [<Test>]
-let ``Hints are not (yet) shown for method parameters`` () =
+let ``Hints are shown for method parameters`` () =
     let code = """
 let theAnswer = System.Console.WriteLine 42
 """
     let document = getFsDocument code
 
-    let result = getParameterNameHints document
+    let expected = [
+        { Content = "value = "; Location = (1, 42) }
+    ]
 
-    Assert.IsEmpty(result)
+    let actual = getParameterNameHints document
+
+    Assert.AreEqual(expected, actual)
 
 [<Test>]
-let ``Hints are not (yet) shown for constructor parameters`` () =
+let ``Hints are shown for parameters of overloaded and curried methods`` () =
     let code = """
-type WrappedThing(x) =
-    let unwrapped = x
+type C () =
+    member _.Normal (alone: string) = 1 
+    member _.Normal (what: string, what2: int) = 1 
+    member _.Curried (curr1: string, curr2: int) (x: int) = 1
 
-let wrapped = WrappedThing 42
+let c = C ()
+
+let a = c.Curried ("hmm", 2) 1
+let a = c.Normal ("hmm", 2)
+let a = c.Normal "hmm"
 """
     let document = getFsDocument code
 
-    let result = getParameterNameHints document
+    let expected = [
+        { Content = "curr1 = "; Location = (8, 20) }
+        { Content = "curr2 = "; Location = (8, 27) }
+        { Content = "x = "; Location = (8, 30) }
+        { Content = "what = "; Location = (9, 19) }
+        { Content = "what2 = "; Location = (9, 26) }
+        { Content = "alone = "; Location = (10, 18) }
+    ]
 
-    Assert.IsEmpty(result)
+    let actual = getParameterNameHints document
+
+    Assert.AreEqual(expected, actual)
+
+[<Test>]
+let ``Hints are shown for constructor parameters`` () =
+    let code = """
+type C (blahFirst: int) =
+    new (blah: int, blah2: string) = C blah
+
+let a = C (1, "")
+"""
+    let document = getFsDocument code
+
+    let expected = [
+        { Content = "blahFirst = "; Location = (2, 40) }
+        { Content = "blah = "; Location = (4, 12) }
+        { Content = "blah2 = "; Location = (4, 15) }
+    ]
+
+    let actual = getParameterNameHints document
+
+    Assert.AreEqual(expected, actual)
 
 [<Test>]
 let ``Hints are shown for discriminated union case fields with explicit names`` () =
