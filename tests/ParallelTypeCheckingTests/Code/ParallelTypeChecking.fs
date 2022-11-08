@@ -2,6 +2,7 @@
 #nowarn "1182"
 open System.Collections.Concurrent
 open System.Collections.Generic
+open System.IO
 open System.Threading
 open FSharp.Compiler
 open FSharp.Compiler.CheckBasics
@@ -22,7 +23,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.TypedTree
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
-open Newtonsoft.Json
 
 type FileGraph = Graph<File>
 
@@ -118,12 +118,14 @@ let CheckMultipleInputsInParallel
             } : DepsResult
         else
             graph
+    
     graph.Graph |> Graph.print
     
-    let graphJson = graph.Graph |> Seq.map (fun (KeyValue(file, deps)) -> file.Name, deps |> Array.map (fun d -> d.Name)) |> dict
-    let json = JsonConvert.SerializeObject(graphJson, Formatting.Indented)
-    let path = $"c:/projekty/fsharp/heuristic/FCS.deps.json"
-    System.IO.File.WriteAllText(path, json)
+    let graphDumpPath =
+        let graphDumpName = tcConfig.outputFile |> Option.map Path.GetFileName |> Option.defaultValue "project"
+        $"{graphDumpName}.deps.json"
+    graph.Graph
+    |> Graph.serialiseToJson graphDumpPath
     
     let _ = ctok // TODO Use
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger

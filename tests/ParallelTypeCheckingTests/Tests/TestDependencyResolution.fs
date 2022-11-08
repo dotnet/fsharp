@@ -274,19 +274,16 @@ let ``Analyse whole projects and print statistics`` (projectFile : string) =
     log $"{N} files read and parsed"
     
     let graph = DependencyResolution.detectFileDependencies files
-    log "Deps detected"
+    log "Dependency graph calculated"
     
     let totalDeps = graph.Graph |> Seq.sumBy (fun (KeyValue(_file, deps)) -> deps.Length)
     let maxPossibleDeps = (N * (N-1)) / 2 
     
-    let graphJson = graph.Graph |> Seq.map (fun (KeyValue(file, deps)) -> file.Name, deps |> Array.map (fun _d -> file.Name)) |> dict
-    let json = JsonConvert.SerializeObject(graphJson, Formatting.Indented)
-    let path = $"{System.IO.Path.GetFileName(projectFile)}.deps.json"
-    System.IO.File.WriteAllText(path, json)
+    let path = $"{Path.GetFileName(projectFile)}.deps.json"
+    graph.Graph
+    |> Graph.serialiseToJson path
     
     log $"Analysed {N} files, detected {totalDeps}/{maxPossibleDeps} file dependencies (%.1f{100.0 * double(totalDeps) / double(maxPossibleDeps)}%%)."
-    log $"Wrote graph in {path}"
-    
     analyseEfficiency graph
     
     let totalDeps = graph.Graph |> Seq.sumBy (fun (KeyValue(_k, v)) -> v.Length)

@@ -29,7 +29,6 @@ let internal gatherBackingInfo (files : SourceFiles) : Files =
     
 type ExtractedData =
     {
-        /// Order of the file in the project. Files with lower number cannot depend on files with higher number
         Tops : SimpleId[]
         Abbreviations : Abbreviation[]
         /// All partial module references found in this file's AST
