@@ -202,7 +202,7 @@ let d = Circle 1
     Assert.AreEqual(expected, actual)
 
 [<Test>]
-let ``Hints for discriminated union case fields are not shown provided arguments don't match the expected count`` () =
+let ``Hints for discriminated union case fields are not shown when provided arguments don't match the expected count`` () =
     let code = """
 type Shape =
     | Triangle of side1: int * side2: int * side3: int
