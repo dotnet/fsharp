@@ -214,5 +214,5 @@ let c = Triangle (1, 2)
 
     let actual = getParameterNameHints document
 
-    Assert.IsEmpty(result)
+    Assert.IsEmpty(actual)
 
