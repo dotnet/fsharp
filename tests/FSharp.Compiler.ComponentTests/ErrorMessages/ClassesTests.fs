@@ -121,3 +121,178 @@ type X() =
             (Error 531, Line 4, Col 5,  Line 4, Col 12, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
             (Error 512, Line 4, Col 13, Line 4, Col 18, "Accessibility modifiers are not permitted on 'do' bindings, but 'Private' was given.")
             (Error 222, Line 2, Col 1,  Line 3, Col 1,  "Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration.")]
+
+    [<Fact>]
+    let ``Virtual member was found that corresponds to this override`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public virtual void M1() { }
+    public virtual void M2() { }
+    public virtual void M3() { }
+    public virtual void M4() { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+type B() =
+    inherit A()
+    override this.M1() = ()
+    override this.M2() = ()
+    override this.M3() = ()
+    override this.M4() = ()
+    member this.M5() = ()
+        """ |> withReferences [CSLib]
+        app
+        |> compile
+        |> shouldSucceed
+
+    [<Fact>]
+    let ``Virtual member was not found that corresponds to this override simple base class`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public virtual void M1() { }
+    public void M2() { }
+    public virtual void M3() { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+type B() =
+    inherit A()
+    
+    override this.M1() = ()
+    override this.M2() = () // error expected
+    override this.M3() = ()
+    member this.M4() = ()
+        """ |> withReferences [CSLib]
+        app
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 855, Line 7, Col 19, Line 7, Col 21, "No abstract or interface member was found that corresponds to this override")
+        ]
+        
+    [<Fact>]
+    let ``Virtual member was not found that corresponds to this override nested base class`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public virtual void M1() { }
+    public virtual void M2() { }
+    public virtual void M3() { }
+    public virtual void M4() { }
+}
+
+public class B : A
+{
+    public override void M1() { }
+    public void M2() { }
+    public new void M3() { }
+    public new virtual void M4() { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+type C() =
+    inherit B()
+    
+    override this.M1() = ()
+    override this.M2() = () // error expected
+    override this.M3() = () // error expected
+    override this.M4() = ()
+    member this.M5() = ()
+        """ |> withReferences [CSLib]
+        app
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 855, Line 7, Col 19, Line 7, Col 21, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 8, Col 19, Line 8, Col 21, "No abstract or interface member was found that corresponds to this override")
+        ]
+
+    [<Fact>]
+    let ``Virtual member was not found that corresponds to this override nested base class 2`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public virtual void M1() { }
+    public virtual void M2() { }
+    public virtual void M3() { }
+    public virtual void M4() { }
+}
+
+public class B : A
+{
+    public void M2() { }
+    public new void M3() { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+type C() =
+    inherit B()
+    
+    override this.M1() = ()
+    override this.M2() = () // error is expected
+    override this.M3() = () // error is expected
+    override this.M4() = ()
+    member this.M5() = ()
+        """ |> withReferences [CSLib]
+        app
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 855, Line 7, Col 19, Line 7, Col 21, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 8, Col 19, Line 8, Col 21, "No abstract or interface member was found that corresponds to this override")
+        ]
+        
+    [<Fact>]
+    let ``Virtual member was not found that corresponds to this override nested base class 3`` () =
+        let CSLib =
+            CSharp """
+public class A
+{
+    public virtual void M1() { }
+    public void M2() { }
+}
+
+public class B : A
+{
+    public virtual void M3() { }
+    public new void M4() { }
+}
+        """ |> withName "CSLib"
+
+        let app =
+            FSharp """
+module ClassTests
+type C() =
+    inherit B()
+    
+    override this.M1() = ()
+    override this.M2() = () // error is expected
+    override this.M3() = ()
+    override this.M4() = () // error is expected
+    member this.M5() = ()
+        """ |> withReferences [CSLib]
+        app
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 855, Line 7, Col 19, Line 7, Col 21, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 9, Col 19, Line 9, Col 21, "No abstract or interface member was found that corresponds to this override")
+        ]
