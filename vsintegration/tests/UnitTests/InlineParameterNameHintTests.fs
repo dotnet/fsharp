@@ -159,17 +159,31 @@ let wrapped = WrappedThing 42
     Assert.IsEmpty(result)
 
 [<Test>]
-let ``Hints are not (yet) shown for dicrimanted unions`` () =
+let ``Hints are shown for discrimanted unions`` () =
     let code = """
 type Shape =
-    | Square of side : float
-    | Circle of radius : float
-
-let circle = Circle 42
+    | Square of side: int
+    | Rectangle of width: int * height: int
+    | Triangle of side1: int * int * side3: int
+    | Circle of int
+ 
+let a = Square 1
+let b = Rectangle (1, 2)
+let c = Triangle (1, 2, 3)
+let d = Circle 1
+let invalidTriangle = Triangle (1, 2)
 """
     let document = getFsDocument code
 
-    let result = getParameterNameHints document
+    let expected = [
+        { Content = "side = "; Location = (7, 16) }
+        { Content = "width = "; Location = (8, 20) }
+        { Content = "height = "; Location = (8, 23) }
+        { Content = "side1 = "; Location = (9, 19) }
+        { Content = "side3 = "; Location = (9, 25) }
+    ]
 
-    Assert.IsEmpty(result)
+    let actual = getParameterNameHints document
+
+    Assert.AreEqual(expected, actual)
 

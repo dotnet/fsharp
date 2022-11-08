@@ -19,13 +19,13 @@ module HintService =
         
         | :? FSharpMemberOrFunctionOrValue as symbol
           when hintKinds |> Set.contains HintKind.ParameterNameHint 
-            && InlineParameterNameHints.isValidForHint symbol ->
+            && InlineParameterNameHints.isMemberOrFunctionOrValueValidForHint symbol ->
 
-            InlineParameterNameHints.getHints parseResults symbol symbolUse
+            InlineParameterNameHints.getHintsForMemberOrFunctionOrValue parseResults symbol symbolUse
 
         | :? FSharpUnionCase as symbol
           when hintKinds |> Set.contains HintKind.ParameterNameHint
-            && symbolUse.IsFromUse ->
+            && InlineParameterNameHints.isUnionCaseValidForHint symbolUse ->
 
           InlineParameterNameHints.getHintsForUnionCase parseResults symbol symbolUse
 

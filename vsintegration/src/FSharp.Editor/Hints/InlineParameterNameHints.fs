@@ -10,27 +10,27 @@ open Hints
 
 module InlineParameterNameHints =
 
-    let private getHint (range: range, parameter: FSharpParameter) =
+    let private getParameterHint (range: range, parameter: FSharpParameter) =
         {
             Kind = HintKind.ParameterNameHint
             Range = range.StartRange
             Parts = [ TaggedText(TextTag.Text, $"{parameter.DisplayName} = ") ]
         }
 
-    let private getHint' (range: range, parameter: string) =
+    let private getFieldHint (range: range, field: FSharpField) =
         {
             Kind = HintKind.ParameterNameHint
             Range = range.StartRange
-            Parts = [ TaggedText(TextTag.Text, $"{parameter} = ") ]
+            Parts = [ TaggedText(TextTag.Text, $"{field.Name} = ") ]
         }
 
     let private doesParameterNameExist (parameter: FSharpParameter) = 
         parameter.DisplayName <> ""
 
-    let private doesParameterNameExist' (parameter: string) = 
-        parameter <> ""
+    let private doesFieldNameExist (field: FSharpField) = 
+        not field.IsNameGenerated
 
-    let isValidForHint (symbol: FSharpMemberOrFunctionOrValue) =
+    let isMemberOrFunctionOrValueValidForHint (symbol: FSharpMemberOrFunctionOrValue) =
         // is there a better way?
         let isNotBuiltInOperator = 
             symbol.DeclaringEntity 
@@ -39,7 +39,11 @@ module InlineParameterNameHints =
         symbol.IsFunction
         && isNotBuiltInOperator // arguably, hints for those would be rather useless
 
-    let getHints 
+    let isUnionCaseValidForHint (symbolUse: FSharpSymbolUse) =
+        // is the union case being used as a constructor
+        symbolUse.IsFromUse
+
+    let getHintsForMemberOrFunctionOrValue
         (parseResults: FSharpParseFileResults) 
         (symbol: FSharpMemberOrFunctionOrValue) 
         (symbolUse: FSharpSymbolUse) =
@@ -52,7 +56,7 @@ module InlineParameterNameHints =
             parameters
             |> Seq.zip ranges
             |> Seq.where (snd >> doesParameterNameExist)
-            |> Seq.map getHint
+            |> Seq.map getParameterHint
             |> Seq.toList
         
         // this is the case at least for custom operators
@@ -63,20 +67,20 @@ module InlineParameterNameHints =
         (symbol: FSharpUnionCase) 
         (symbolUse: FSharpSymbolUse) =
 
-        let fieldNames = symbol.Fields |> Seq.map (fun x -> x.Name) |> Seq.toList
+        let fields = Seq.toList symbol.Fields
 
         // If a case does not use field names, don't even bother getting applied argument ranges
-        if fieldNames |> List.exists doesParameterNameExist' |> not then
+        if fields |> List.exists doesFieldNameExist |> not then
             []
         else
             let ranges = parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
             
             // When not all field values are provided (as the user is typing), don't show anything yet
             match ranges with
-            | Some ranges when ranges.Length = fieldNames.Length -> 
-                fieldNames
+            | Some ranges when ranges.Length = fields.Length -> 
+                fields
                 |> List.zip ranges
-                |> List.where (snd >> doesParameterNameExist')
-                |> List.map getHint'
+                |> List.where (snd >> doesFieldNameExist)
+                |> List.map getFieldHint
             
             | _ -> []
