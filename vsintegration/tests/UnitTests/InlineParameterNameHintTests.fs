@@ -159,31 +159,60 @@ let wrapped = WrappedThing 42
     Assert.IsEmpty(result)
 
 [<Test>]
-let ``Hints are shown for discriminated unions`` () =
+let ``Hints are shown for discriminated union case fields with explicit names`` () =
     let code = """
 type Shape =
     | Square of side: int
     | Rectangle of width: int * height: int
-    | Triangle of side1: int * int * side3: int
-    | Circle of int
  
 let a = Square 1
 let b = Rectangle (1, 2)
-let c = Triangle (1, 2, 3)
-let d = Circle 1
-let invalidTriangle = Triangle (1, 2)
 """
     let document = getFsDocument code
 
     let expected = [
-        { Content = "side = "; Location = (7, 16) }
-        { Content = "width = "; Location = (8, 20) }
-        { Content = "height = "; Location = (8, 23) }
-        { Content = "side1 = "; Location = (9, 19) }
-        { Content = "side3 = "; Location = (9, 25) }
+        { Content = "side = "; Location = (5, 16) }
+        { Content = "width = "; Location = (6, 20) }
+        { Content = "height = "; Location = (6, 23) }
     ]
 
     let actual = getParameterNameHints document
 
     Assert.AreEqual(expected, actual)
+
+[<Test>]
+let ``Hints for discriminated union case fields are not shown when names are generated`` () =
+    let code = """
+type Shape =
+    | Triangle of side1: int * int * side3: int
+    | Circle of int
+ 
+let c = Triangle (1, 2, 3)
+let d = Circle 1
+"""
+    let document = getFsDocument code
+
+    let expected = [
+        { Content = "side1 = "; Location = (5, 19) }
+        { Content = "side3 = "; Location = (5, 25) }
+    ]
+
+    let actual = getParameterNameHints document
+
+    Assert.AreEqual(expected, actual)
+
+[<Test>]
+let ``Hints for discriminated union case fields are not shown provided arguments don't match the expected count`` () =
+    let code = """
+type Shape =
+    | Triangle of side1: int * side2: int * side3: int
+    | Circle of int
+ 
+let c = Triangle (1, 2)
+"""
+    let document = getFsDocument code
+
+    let actual = getParameterNameHints document
+
+    Assert.IsEmpty(result)
 

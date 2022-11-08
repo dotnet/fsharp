@@ -15,12 +15,22 @@ type Song = { Artist: string; Title: string }
 let whoSings song = song.Artist
 
 let artist = whoSings { Artist = "Květy"; Title = "Je podzim" }
+
+type Shape =
+    | Square of side: int
+    | Rectangle of width: int * height: int
+
+let a = Square 1
+let b = Rectangle (1, 2)
 """
     let document = getFsDocument code
     let expected = [
         { Content = ": Song"; Location = (2, 18) }
         { Content = ": string"; Location = (4, 11) }
         { Content = "song = "; Location = (4, 23) }
+        { Content = "side = "; Location = (10, 16) }
+        { Content = "width = "; Location = (11, 20) }
+        { Content = "height = "; Location = (11, 23) }
     ]
 
     let actual = getAllHints document
