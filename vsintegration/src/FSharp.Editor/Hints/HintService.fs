@@ -25,7 +25,7 @@ module HintService =
 
         | :? FSharpUnionCase as symbol
           when hintKinds |> Set.contains HintKind.ParameterNameHint
-            && InlineParameterNameHints.isUnionCaseValidForHint symbolUse ->
+            && InlineParameterNameHints.isUnionCaseValidForHint symbol symbolUse ->
 
           InlineParameterNameHints.getHintsForUnionCase parseResults symbol symbolUse
 

@@ -39,9 +39,10 @@ module InlineParameterNameHints =
         symbol.IsFunction
         && isNotBuiltInOperator // arguably, hints for those would be rather useless
 
-    let isUnionCaseValidForHint (symbolUse: FSharpSymbolUse) =
-        // is the union case being used as a constructor
+    let isUnionCaseValidForHint (symbol: FSharpUnionCase) (symbolUse: FSharpSymbolUse) =
+        // is the union case being used as a constructor and is it not Cons
         symbolUse.IsFromUse
+        && symbol.DisplayName <> "(::)"
 
     let getHintsForMemberOrFunctionOrValue
         (parseResults: FSharpParseFileResults) 

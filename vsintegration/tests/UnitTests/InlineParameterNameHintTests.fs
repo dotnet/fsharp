@@ -216,3 +216,15 @@ let c = Triangle (1, 2)
 
     Assert.IsEmpty(actual)
 
+[<Test>]
+let ``Hints for discriminated union case fields are not shown for Cons`` () =
+    let code = """
+type X =
+    member _.Test() = 42 :: [42; 42]
+"""
+    let document = getFsDocument code
+
+    let actual = getParameterNameHints document
+
+    Assert.IsEmpty(actual)
+
