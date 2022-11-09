@@ -232,42 +232,6 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Lens.
-        /// </summary>
-        public static string Lens {
-            get {
-                return ResourceManager.GetString("Lens", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Annotation prefix.
-        /// </summary>
-        public static string Lens_Prefix {
-            get {
-                return ResourceManager.GetString("Lens_Prefix", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Enable Lens (Experimental).
-        /// </summary>
-        public static string Lens_Switch {
-            get {
-                return ResourceManager.GetString("Lens_Switch", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Use colors in annotations.
-        /// </summary>
-        public static string Lens_UseColors {
-            get {
-                return ResourceManager.GetString("Lens_UseColors", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Navigation links.
         /// </summary>
         public static string Navigation_links {

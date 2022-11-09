@@ -22,19 +22,22 @@ type internal RoslynAdapter
     interface IFSharpInlineHintsService with
         member _.GetInlineHintsAsync(document, _, cancellationToken) =
             async {
-                let! sourceText = document.GetTextAsync cancellationToken |> Async.AwaitTask
                 let hintKinds = OptionParser.getHintKinds settings.Advanced
 
-                let! nativeHints =
-                    HintService.getHintsForDocument 
-                        document 
-                        hintKinds
-                        userOpName 
-                        cancellationToken
-                
-                let roslynHints = 
-                    nativeHints 
-                    |> Seq.map (NativeToRoslynHintConverter.convert sourceText)
-                
-                return roslynHints.ToImmutableArray()
+                if hintKinds.IsEmpty then
+                    return ImmutableArray.Empty
+                else
+                    let! sourceText = document.GetTextAsync cancellationToken |> Async.AwaitTask
+                    let! nativeHints =
+                        HintService.getHintsForDocument 
+                            document 
+                            hintKinds
+                            userOpName 
+                            cancellationToken
+                    
+                    let roslynHints = 
+                        nativeHints 
+                        |> Seq.map (NativeToRoslynHintConverter.convert sourceText)
+                    
+                    return roslynHints.ToImmutableArray()
             } |> RoslynHelpers.StartAsyncAsTask cancellationToken

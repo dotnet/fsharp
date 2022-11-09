@@ -242,6 +242,8 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
 
     member _.IsFromDispatchSlotImplementation = itemOcc = ItemOccurence.Implemented
 
+    member _.IsFromUse = itemOcc = ItemOccurence.Use
+
     member _.IsFromComputationExpression =
         match symbol.Item, itemOcc with
         // 'seq' in 'seq { ... }' gets colored as keywords
