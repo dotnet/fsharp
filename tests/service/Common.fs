@@ -1,5 +1,5 @@
 [<AutoOpen>]
-module internal ParallelTypeCheckingTests.Common
+module internal FSharp.Compiler.Service.Tests.Common
 #nowarn "1182"
 
 open System

@@ -1,5 +1,6 @@
 ﻿module ParallelTypeCheckingTests.TestDependencyResolution
 #nowarn "1182"
+open FSharp.Compiler.Service.Tests.Common
 open System.IO
 open Buildalyzer
 open ParallelTypeCheckingTests

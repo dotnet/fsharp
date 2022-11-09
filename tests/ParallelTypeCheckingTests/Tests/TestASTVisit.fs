@@ -1,5 +1,5 @@
 ﻿namespace ParallelTypeCheckingTests
-
+open FSharp.Compiler.Service.Tests.Common
 open NUnit.Framework
 open ParallelTypeCheckingTests.ASTVisit
 open ParallelTypeCheckingTests.TopModulesExtraction

@@ -1,5 +1,6 @@
 ﻿module ParallelTypeCheckingTests.TestGraphProcessing
 #nowarn "1182"
+open FSharp.Compiler.Service.Tests.Common
 open ParallelTypeCheckingTests
 open ParallelTypeCheckingTests.ParallelTypeChecking
 open ParallelTypeCheckingTests.Types
