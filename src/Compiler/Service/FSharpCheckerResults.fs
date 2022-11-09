@@ -260,8 +260,12 @@ type FSharpSymbolUse(denv: DisplayEnv, symbol: FSharpSymbol, inst: TyparInstanti
         let isPrivate =
             match this.Symbol with
             | :? FSharpMemberOrFunctionOrValue as m ->
-                let fileSignatureLocation = m.DeclaringEntity |> Option.bind (fun e -> e.SignatureLocation) 
-                let fileDeclarationLocation = m.DeclaringEntity |> Option.map (fun e -> e.DeclarationLocation)
+                let fileSignatureLocation =
+                    m.DeclaringEntity |> Option.bind (fun e -> e.SignatureLocation)
+
+                let fileDeclarationLocation =
+                    m.DeclaringEntity |> Option.map (fun e -> e.DeclarationLocation)
+
                 let fileHasSignatureFile = fileSignatureLocation <> fileDeclarationLocation
 
                 let symbolIsNotInSignatureFile = m.SignatureLocation = Some m.DeclarationLocation
