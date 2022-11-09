@@ -30,14 +30,19 @@ module InlineParameterNameHints =
     let private doesFieldNameExist (field: FSharpField) = 
         not field.IsNameGenerated
 
-    let isMemberOrFunctionOrValueValidForHint (symbol: FSharpMemberOrFunctionOrValue) =
-        // is there a better way?
-        let isNotBuiltInOperator = 
-            symbol.DeclaringEntity 
-            |> Option.exists (fun entity -> entity.CompiledName <> "Operators")
+    let isMemberOrFunctionOrValueValidForHint (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
+        // make sure we're looking at a call site and not the definition
+        if symbolUse.IsFromUse then
+            // is there a better way?
+            let isNotBuiltInOperator = 
+                symbol.DeclaringEntity 
+                |> Option.exists (fun entity -> entity.CompiledName <> "Operators")
 
-        symbol.IsFunction
-        && isNotBuiltInOperator // arguably, hints for those would be rather useless
+            (symbol.IsFunction && isNotBuiltInOperator) // arguably, hints for those would be rather useless
+            || symbol.IsConstructor
+            || symbol.IsMethod
+        else
+            false
 
     let isUnionCaseValidForHint (symbol: FSharpUnionCase) (symbolUse: FSharpSymbolUse) =
         // is the union case being used as a constructor and is it not Cons
