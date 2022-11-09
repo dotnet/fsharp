@@ -242,11 +242,6 @@
         <target state="translated">Avanzate</target>
         <note />
       </trans-unit>
-      <trans-unit id="6013">
-        <source>Lens</source>
-        <target state="new">Lens</target>
-        <note />
-      </trans-unit>
       <trans-unit id="6014">
         <source>Formatting</source>
         <target state="translated">Formattazione</target>

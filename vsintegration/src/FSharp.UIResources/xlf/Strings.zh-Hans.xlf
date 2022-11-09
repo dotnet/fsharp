@@ -12,26 +12,6 @@
         <target state="new">Inline Hints</target>
         <note />
       </trans-unit>
-      <trans-unit id="Lens">
-        <source>Lens</source>
-        <target state="new">Lens</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Lens_Switch">
-        <source>Enable Lens (Experimental)</source>
-        <target state="new">Enable Lens (Experimental)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Lens_Prefix">
-        <source>Annotation prefix</source>
-        <target state="new">Annotation prefix</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Lens_UseColors">
-        <source>Use colors in annotations</source>
-        <target state="new">Use colors in annotations</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">代码修补程序</target>
