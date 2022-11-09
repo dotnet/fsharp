@@ -1719,6 +1719,9 @@ type TcGlobals(
   /// Indicates if we can use System.Array.Empty when emitting IL for empty array literals
   member val isArrayEmptyAvailable = v_Array_tcref.ILTyconRawMetadata.Methods.FindByName "Empty" |> List.isEmpty |> not
 
+  /// Indicates if we can emit the System.Runtime.CompilerServices.IsReadOnlyAttribute
+  member val isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable = tryFindSysTypeCcu sysCompilerServices "IsReadOnlyAttribute" |> Option.isSome
+
   member _.FindSysTyconRef path nm = findSysTyconRef path nm
 
   member _.TryFindSysTyconRef path nm = tryFindSysTyconRef path nm
