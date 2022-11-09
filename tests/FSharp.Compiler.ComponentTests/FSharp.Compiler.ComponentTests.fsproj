@@ -204,13 +204,14 @@
     <Compile Include="Signatures\RecordTests.fs" />
     <Compile Include="Signatures\ArrayTests.fs" />
     <Compile Include="Signatures\TypeTests.fs" />
-    <Compile Include="FSharpChecker\CommonWorkflows.fs" />
+	<Compile Include="FSharpChecker\CommonWorkflows.fs" />
+	<Compile Include="FSharpChecker\SymbolUse.fs" />
+	<None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
+		<Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+	</None>
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-    </None>
     <None Include="**\*.bsl">
       <Link>%(RelativeDir)\BaseLine\%(Filename)%(Extension)</Link>
     </None>
