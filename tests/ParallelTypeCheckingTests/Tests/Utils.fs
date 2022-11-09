@@ -15,7 +15,10 @@ let CodeRoot =
     @$"{__SOURCE_DIRECTORY__}\.checkouts\fcs"
 let replaceCodeRoot (s : string) = s.Replace("$CODE_ROOT$", CodeRoot)
 let packages =
-    let pathWithEnv = @"%USERPROFILE%\.nuget\packages"
+    // Here we assume that the NuGet packages are located in a certain user folder,
+    // and that the projects being compiled use that global package cache
+    let userprofile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+    let pathWithEnv = $@"{userprofile}\.nuget\packages"
     Environment.ExpandEnvironmentVariables(pathWithEnv);
 let replacePaths (s : string) =
     s
