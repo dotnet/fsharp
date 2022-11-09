@@ -232,7 +232,7 @@ module internal DependencyResolution =
                     // Force .fsi files to depend on all other (previous) .fsi files - avoids the issue of TcEnv being overriden  
                     let additionalFsiDeps =
                         if node.File.Name.EndsWith ".fsi" then
-                            fsiFiles
+                            nodes
                         else
                             [||]
                     
@@ -240,12 +240,8 @@ module internal DependencyResolution =
                     let deps =
                         reachable
                         |> Seq.collect (fun node -> node.Files)
-                        // TODO Temporary - Add all nodes 
-                        // |> Seq.append nodes
-                        // If not, then the below is not necessary.
-                        // Assume that this file depends on all files that have any module abbreviations
+                        // Assume that this file depends on all files that have any module abbreviations - this is probably unnecessary.
                         // TODO Handle module abbreviations in a better way
-                        // For starters: can module abbreviations affect other files?
                         |> Seq.append filesWithModuleAbbreviations
                         |> Seq.append additionalFsiDeps
                         |> Seq.append fsiDep

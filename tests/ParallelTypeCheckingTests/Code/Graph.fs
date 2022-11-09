@@ -3,12 +3,23 @@
 #nowarn "40"
 
 open System.Collections.Generic
+open System.IO
+open Newtonsoft.Json
 open ParallelTypeCheckingTests.Utils
 
 /// <summary> DAG of files </summary>
 type Graph<'Node> = IReadOnlyDictionary<'Node, 'Node[]>
 
 module Graph =
+    
+    let make (nodeDeps : ('Node * 'Node[]) seq) =
+        nodeDeps
+        |> readOnlyDict
+    
+    let map (f : 'a -> 'b) (graph : Graph<'a>) : Graph<'b> =
+        graph
+        |> Seq.map (fun (KeyValue(node, deps)) -> f node, deps |> Array.map f)
+        |> make
     
     let collectEdges<'Node when 'Node : equality> (graph : Graph<'Node>) : ('Node * 'Node)[] =
         let graph : IReadOnlyDictionary<'Node, 'Node[]> = graph
@@ -79,3 +90,7 @@ module Graph =
     
     let print (graph : Graph<'Node>) : unit = printCustom graph (fun node -> node.ToString())
     
+    let serialiseToJson (path : string) (graph : Graph<'Node>) : unit =
+        let json = JsonConvert.SerializeObject(graph, Formatting.Indented)
+        printfn $"Serialising graph as JSON in {path}"
+        File.WriteAllText(path, json)
