@@ -125,6 +125,7 @@ let CheckMultipleInputsInParallel
         let graphDumpName = tcConfig.outputFile |> Option.map Path.GetFileName |> Option.defaultValue "project"
         $"{graphDumpName}.deps.json"
     graph.Graph
+    |> Graph.map (fun n -> n.Name)
     |> Graph.serialiseToJson graphDumpPath
     
     let _ = ctok // TODO Use
@@ -151,7 +152,7 @@ let CheckMultipleInputsInParallel
             let c = cnt
             cnt <- cnt + 1
             match file.AST with
-            | ASTOrX.AST _ ->
+            | ASTOrFsix.AST _ ->
                 printfn $"#{c} [thread {Thread.CurrentThread.ManagedThreadId}] Type-checking {file.ToString()}"
                 let! f = CheckOneInput'(
                     checkForErrors2,
@@ -179,7 +180,7 @@ let CheckMultipleInputsInParallel
                         // printfn $"Finished applying {file.ToString()}"
                         partialResult, state
                     )
-            | ASTOrX.X fsi ->
+            | ASTOrFsix.Fsix fsi ->
                 // printfn $"[{c}] Processing X {file.ToString()}"
 
                 let hadSig = true
@@ -231,9 +232,9 @@ let CheckMultipleInputsInParallel
         let processFile (file : File) (state : State) : State -> PartialResult * State =
             let parsedInput, logger =
                 match file.AST with
-                | ASTOrX.AST ast ->
+                | ASTOrFsix.AST ast ->
                     ast, inputsWithLoggers[file.Idx] |> snd
-                | ASTOrX.X _ ->
+                | ASTOrFsix.Fsix _ ->
                     inputs |> List.item 0, diagnosticsLogger
             processFile file (parsedInput, logger) state
             

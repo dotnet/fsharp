@@ -31,18 +31,20 @@ type SourceFile =
 
 type SourceFiles = SourceFile[]
 
-type ASTOrX =
+type ASTOrFsix =
+    // Actual AST of a real file
     | AST of AST
-    | X of string
+    // A dummy file/node we create for performing TcState updates for fsi-backed impl files
+    | Fsix of string
     with
         member x.Name =
             match x with
             | AST ast -> ast.FileName
-            | X qualifiedName -> qualifiedName + "x"
+            | Fsix qualifiedName -> qualifiedName + "x"
         member x.QualifiedName =
             match x with
             | AST ast -> ast.QualifiedName.Text
-            | X qualifiedName -> qualifiedName + ".fsix"
+            | Fsix qualifiedName -> qualifiedName + ".fsix"
 
 /// Basic data about a parsed source file with extra information needed for graph processing
 [<CustomEquality; CustomComparison>]
@@ -51,7 +53,7 @@ type File =
         /// Order of the file in the project. Files with lower number cannot depend on files with higher number
         Idx : FileIdx
         Code : string
-        AST : ASTOrX
+        AST : ASTOrFsix
         FsiBacked : bool
     }
     with
@@ -74,7 +76,7 @@ type File =
             {
                 Idx = idx
                 Code = "Fake '.fsix' node for dummy .fs state"
-                AST = ASTOrX.X fsi
+                AST = ASTOrFsix.Fsix fsi
                 FsiBacked = false
             }
     

@@ -60,7 +60,7 @@ let a = 3
             {
                 Idx = FileIdx.make 1
                 Code = code 
-                AST = ASTOrX.AST <| parseSourceCode ("A.fs", code)
+                AST = ASTOrFsix.AST <| parseSourceCode ("A.fs", code)
                 FsiBacked = false
             }
             
@@ -72,7 +72,7 @@ let b = 3
             {
                 Idx = FileIdx.make 2
                 Code = code
-                AST = ASTOrX.AST <| parseSourceCode ("B.fs", code)
+                AST = ASTOrFsix.AST <| parseSourceCode ("B.fs", code)
                 FsiBacked = false
             }
         [|

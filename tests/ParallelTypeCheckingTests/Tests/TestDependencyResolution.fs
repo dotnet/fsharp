@@ -282,6 +282,7 @@ let ``Analyse whole projects and print statistics`` (projectFile : string) =
     
     let path = $"{Path.GetFileName(projectFile)}.deps.json"
     graph.Graph
+    |> Graph.map (fun n -> n.Name)
     |> Graph.serialiseToJson path
     
     log $"Analysed {N} files, detected {totalDeps}/{maxPossibleDeps} file dependencies (%.1f{100.0 * double(totalDeps) / double(maxPossibleDeps)}%%)."

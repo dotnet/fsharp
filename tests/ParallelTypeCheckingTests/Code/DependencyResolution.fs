@@ -150,7 +150,7 @@ module internal DependencyResolution =
         
         let fsiFiles =
             nodes
-            |> Array.filter (fun f -> match f.File.AST with | ASTOrX.AST (ParsedInput.SigFile _) -> true | _ -> false)
+            |> Array.filter (fun f -> match f.File.AST with | ASTOrFsix.AST (ParsedInput.SigFile _) -> true | _ -> false)
         
         let processFile (node : FileData) =
             let deps =

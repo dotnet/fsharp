@@ -17,8 +17,8 @@ type Codebase =
 
 let codebases =
     [|
-        { WorkDir = $@"{__SOURCE_DIRECTORY__}\.checkouts\fcs\src\compiler"; Path = $@"{__SOURCE_DIRECTORY__}\FCS.args.txt"; Limit = None }
-        { WorkDir = $@"{__SOURCE_DIRECTORY__}\.checkouts\fcs\tests\FSharp.Compiler.ComponentTests"; Path = $@"{__SOURCE_DIRECTORY__}\ComponentTests.args.txt"; Limit = None }
+        { WorkDir = $@"{__SOURCE_DIRECTORY__}\.fcs_test\src\compiler"; Path = $@"{__SOURCE_DIRECTORY__}\FCS.args.txt"; Limit = None }
+        { WorkDir = $@"{__SOURCE_DIRECTORY__}\.fcs_test\tests\FSharp.Compiler.ComponentTests"; Path = $@"{__SOURCE_DIRECTORY__}\ComponentTests.args.txt"; Limit = None }
     |]
 
 let internal setupParsed config =

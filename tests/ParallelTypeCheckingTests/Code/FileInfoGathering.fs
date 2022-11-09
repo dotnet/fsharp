@@ -22,7 +22,7 @@ let internal gatherBackingInfo (files : SourceFiles) : Files =
         {
             Idx = FileIdx.make i
             Code = "no code here" // TODO
-            AST = ASTOrX.AST f.AST
+            AST = ASTOrFsix.AST f.AST
             FsiBacked = fsiBacked
         }
     )
@@ -61,7 +61,7 @@ let gatherForAllFiles (files : SourceFiles) =
         files
         // TODO Proper async with cancellation
         |> Array.Parallel.map (fun f ->
-            let ast = match f.AST with ASTOrX.AST ast -> ast | X _ -> failwith "Unexpected X item"
+            let ast = match f.AST with ASTOrFsix.AST ast -> ast | Fsix _ -> failwith "Unexpected X item"
             let data = gatherFileData ast
             {
                 File = f
