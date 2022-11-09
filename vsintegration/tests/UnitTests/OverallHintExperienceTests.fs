@@ -22,6 +22,12 @@ type Shape =
 
 let a = Square 1
 let b = Rectangle (1, 2)
+
+type C (blahFirst: int) =
+    member _.Normal (what: string) = 1 
+
+let a = C 1
+let cc = a.Normal "hmm"
 """
     let document = getFsDocument code
     let expected = [
@@ -33,6 +39,10 @@ let b = Rectangle (1, 2)
         { Content = "width = "; Location = (11, 20) }
         { Content = "height = "; Location = (11, 23) }
         { Content = ": Shape"; Location = (11, 6) }
+        { Content = "blahFirst = "; Location = (16, 11) }
+        { Content = ": C"; Location = (16, 6) }
+        { Content = "what = "; Location = (17, 19) }
+        { Content = ": int"; Location = (17, 7) }
     ]
 
     let actual = getAllHints document

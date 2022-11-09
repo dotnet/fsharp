@@ -19,7 +19,7 @@ module HintService =
         
         | :? FSharpMemberOrFunctionOrValue as symbol
           when hintKinds |> Set.contains HintKind.ParameterNameHint 
-            && InlineParameterNameHints.isMemberOrFunctionOrValueValidForHint symbol ->
+            && InlineParameterNameHints.isMemberOrFunctionOrValueValidForHint symbol symbolUse ->
 
             InlineParameterNameHints.getHintsForMemberOrFunctionOrValue parseResults symbol symbolUse
 
