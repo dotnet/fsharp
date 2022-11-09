@@ -11,9 +11,6 @@ open OpenTelemetry
 open OpenTelemetry.Resources
 open OpenTelemetry.Trace
 
-let CodeRoot =
-    @$"{__SOURCE_DIRECTORY__}\.checkouts\fcs"
-let replaceCodeRoot (s : string) = s.Replace("$CODE_ROOT$", CodeRoot)
 let packages =
     // Here we assume that the NuGet packages are located in a certain user folder,
     // and that the projects being compiled use that global package cache
@@ -22,7 +19,6 @@ let packages =
     Environment.ExpandEnvironmentVariables(pathWithEnv);
 let replacePaths (s : string) =
     s
-    |> replaceCodeRoot
     |> fun s -> s.Replace("$PACKAGES$", packages)
 
 [<Struct>]

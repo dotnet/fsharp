@@ -31,7 +31,7 @@ let internal setupParsed config =
     setupCompilationMethod method
         
     printfn $"WorkingDir = {workingDir}"
-    workingDir |> Option.iter (fun dir -> Environment.CurrentDirectory <- replaceCodeRoot dir)
+    workingDir |> Option.iter (fun dir -> Environment.CurrentDirectory <- dir)
     args
 
 let internal TestCompilerFromArgs (config : Args) : unit =
