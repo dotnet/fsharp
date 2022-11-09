@@ -199,7 +199,7 @@ module SyntaxTraversal =
 
     let dive node range project = range, (fun () -> project node)
 
-    let pick pos (outerRange: range) (debugObj: obj) (diveResults: (range * _) list) =
+    let pick pos (outerRange: range) (diveResults: (range * _) list) =
         match diveResults with
         | [] -> None
         | _ ->
@@ -259,13 +259,7 @@ module SyntaxTraversal =
                 snd (e) ()
             | [ x ] -> x ()
             | _ ->
-#if DEBUG
-                assert false
-                failwithf "multiple disjoint AST node ranges claimed to contain (%A) from %+A" pos debugObj
-#else
-                ignore debugObj
                 None
-#endif
 
     /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
     ///
@@ -283,19 +277,19 @@ module SyntaxTraversal =
                 | SynModuleDecl.NestedModule (decls = synModuleDecls) ->
                     synModuleDecls
                     |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path))
-                    |> pick decl
+                    |> pick
                 | SynModuleDecl.Let (isRecursive, synBindingList, range) ->
                     match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                     | Some x -> Some x
                     | None ->
                         synBindingList
                         |> List.map (fun x -> dive x x.RangeOfBindingWithRhs (traverseSynBinding path))
-                        |> pick decl
+                        |> pick
                 | SynModuleDecl.Expr (synExpr, _range) -> traverseSynExpr path synExpr
                 | SynModuleDecl.Types (synTypeDefnList, _range) ->
                     synTypeDefnList
                     |> List.map (fun x -> dive x x.Range (traverseSynTypeDefn path))
-                    |> pick decl
+                    |> pick
                 | SynModuleDecl.Exception (_synExceptionDefn, _range) -> None
                 | SynModuleDecl.Open (_target, _range) -> None
                 | SynModuleDecl.Attributes (_synAttributes, _range) -> None
@@ -312,7 +306,7 @@ module SyntaxTraversal =
 
                 synModuleDecls
                 |> List.map (fun x -> dive x x.Range (traverseSynModuleDecl path))
-                |> pick range mors
+                |> pick range
 
         and traverseSynExpr origPath (expr: SynExpr) =
             let pick = pick expr.Range
@@ -331,7 +325,7 @@ module SyntaxTraversal =
                     [ //dive synExpr synExpr.Range traverseSynExpr // TODO, what is this?
                         dive synExpr2 synExpr2.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.Const (_synConst, _range) -> None
 
@@ -342,7 +336,7 @@ module SyntaxTraversal =
                             | SynInterpolatedStringPart.String _ -> ()
                             | SynInterpolatedStringPart.FillExpr (fillExpr, _) -> yield dive fillExpr fillExpr.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.Typed (synExpr, synType, _range) ->
                     match traverseSynExpr synExpr with
@@ -351,7 +345,7 @@ module SyntaxTraversal =
 
                 | SynExpr.Tuple (_, synExprList, _, _range)
                 | SynExpr.ArrayOrList (_, synExprList, _range) ->
-                    synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick expr
+                    synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick
 
                 | SynExpr.AnonRecd (_isStruct, copyOpt, synExprList, _range) ->
                     [
@@ -371,7 +365,7 @@ module SyntaxTraversal =
                         for _, _, x in synExprList do
                             yield dive x x.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.Record (inheritOpt, copyOpt, fields, _range) ->
                     [
@@ -476,7 +470,7 @@ module SyntaxTraversal =
                             | _ -> ()
 
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.New (_, _synType, synExpr, _range) -> traverseSynExpr synExpr
                 | SynExpr.ObjExpr (objType = ty; argOptions = baseCallOpt; bindings = binds; members = ms; extraImpls = ifaces) ->
@@ -503,14 +497,14 @@ module SyntaxTraversal =
                                 for b in binds do
                                     yield dive b b.RangeOfBindingWithRhs (traverseSynBinding path)
                         ]
-                        |> pick expr
+                        |> pick
 
                 | SynExpr.While (_spWhile, synExpr, synExpr2, _range) ->
                     [
                         dive synExpr synExpr.Range traverseSynExpr
                         dive synExpr2 synExpr2.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.For (identBody = synExpr; toBody = synExpr2; doBody = synExpr3) ->
                     [
@@ -518,7 +512,7 @@ module SyntaxTraversal =
                         dive synExpr2 synExpr2.Range traverseSynExpr
                         dive synExpr3 synExpr3.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.ForEach (_spFor, _spIn, _seqExprOnly, _isFromSource, synPat, synExpr, synExpr2, _range) ->
                     [
@@ -526,7 +520,7 @@ module SyntaxTraversal =
                         dive synExpr synExpr.Range traverseSynExpr
                         dive synExpr2 synExpr2.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.ArrayOrListComputed (_, synExpr, _range) -> traverseSynExpr synExpr
 
@@ -559,7 +553,7 @@ module SyntaxTraversal =
                 | SynExpr.MatchLambda (_isExnMatch, _argm, synMatchClauseList, _spBind, _wholem) ->
                     synMatchClauseList
                     |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.Match (expr = synExpr; clauses = synMatchClauseList) ->
                     [
@@ -568,7 +562,7 @@ module SyntaxTraversal =
                             synMatchClauseList
                             |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.Do (synExpr, _range) -> traverseSynExpr synExpr
 
@@ -586,13 +580,13 @@ module SyntaxTraversal =
                             dive synExpr2 synExpr2.Range traverseSynExpr
                             dive synExpr synExpr.Range traverseSynExpr
                         ] // reverse the args
-                        |> pick expr
+                        |> pick
                     else
                         [
                             dive synExpr synExpr.Range traverseSynExpr
                             dive synExpr2 synExpr2.Range traverseSynExpr
                         ]
-                        |> pick expr
+                        |> pick
 
                 | SynExpr.TypeApp (synExpr, _, _synTypeList, _commas, _, _, _range) -> traverseSynExpr synExpr
 
@@ -605,7 +599,7 @@ module SyntaxTraversal =
                                 |> List.map (fun x -> dive x x.RangeOfBindingWithRhs (traverseSynBinding path))
                             yield dive synExpr synExpr.Range traverseSynExpr
                         ]
-                        |> pick expr
+                        |> pick
                     | x -> x
 
                 | SynExpr.TryWith (tryExpr = synExpr; withCases = synMatchClauseList) ->
@@ -615,14 +609,14 @@ module SyntaxTraversal =
                             synMatchClauseList
                             |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.TryFinally (tryExpr = synExpr; finallyExpr = synExpr2) ->
                     [
                         dive synExpr synExpr.Range traverseSynExpr
                         dive synExpr2 synExpr2.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.Lazy (synExpr, _range) -> traverseSynExpr synExpr
 
@@ -633,7 +627,7 @@ module SyntaxTraversal =
                         dive synExpr synExpr.Range traverseSynExpr
                         dive synExpr2 synExpr2.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.IfThenElse (ifExpr = synExpr; thenExpr = synExpr2; elseExpr = synExprOpt) ->
                     [
@@ -643,7 +637,7 @@ module SyntaxTraversal =
                         | None -> ()
                         | Some x -> yield dive x x.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.Ident _ident -> None
 
@@ -662,7 +656,7 @@ module SyntaxTraversal =
                         dive synExpr synExpr.Range traverseSynExpr
                         dive synExpr2 synExpr2.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.IndexRange (expr1, _, expr2, _, _, _) ->
                     [
@@ -673,7 +667,7 @@ module SyntaxTraversal =
                         | Some e -> dive e e.Range traverseSynExpr
                         | None -> ()
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.IndexFromEnd (e, _) -> traverseSynExpr e
 
@@ -682,7 +676,7 @@ module SyntaxTraversal =
                         yield dive synExpr synExpr.Range traverseSynExpr
                         yield dive indexArgs indexArgs.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.DotIndexedSet (synExpr, indexArgs, synExpr2, _, _range, _range2) ->
                     [
@@ -690,21 +684,21 @@ module SyntaxTraversal =
                         yield dive indexArgs indexArgs.Range traverseSynExpr
                         yield dive synExpr2 synExpr2.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.JoinIn (synExpr1, _range, synExpr2, _range2) ->
                     [
                         dive synExpr1 synExpr1.Range traverseSynExpr
                         dive synExpr2 synExpr2.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.NamedIndexedPropertySet (_longIdent, synExpr, synExpr2, _range) ->
                     [
                         dive synExpr synExpr.Range traverseSynExpr
                         dive synExpr2 synExpr2.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.DotNamedIndexedPropertySet (synExpr, _longIdent, synExpr2, synExpr3, _range) ->
                     [
@@ -712,7 +706,7 @@ module SyntaxTraversal =
                         dive synExpr2 synExpr2.Range traverseSynExpr
                         dive synExpr3 synExpr3.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.TypeTest (synExpr, synType, _range)
 
@@ -723,7 +717,7 @@ module SyntaxTraversal =
                         dive synExpr synExpr.Range traverseSynExpr
                         dive synType synType.Range traverseSynType
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.InferredUpcast (synExpr, _range) -> traverseSynExpr synExpr
 
@@ -753,7 +747,7 @@ module SyntaxTraversal =
                             ]
                         yield dive synExpr2 synExpr2.Range traverseSynExpr
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.MatchBang (expr = synExpr; clauses = synMatchClauseList) ->
                     [
@@ -762,7 +756,7 @@ module SyntaxTraversal =
                             synMatchClauseList
                             |> List.map (fun x -> dive x x.Range (traverseSynMatchClause path))
                     ]
-                    |> pick expr
+                    |> pick
 
                 | SynExpr.DoBang (synExpr, _range) -> traverseSynExpr synExpr
 
@@ -885,10 +879,10 @@ module SyntaxTraversal =
                         synMemberDefns
                         |> normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path (fun _ -> None)
                 ]
-                |> pick tRange tydef
+                |> pick tRange
 
         and traverseSynMemberDefn path traverseInherit (m: SynMemberDefn) =
-            let pick (debugObj: obj) = pick m.Range debugObj
+            let pick = pick m.Range
             let path = SyntaxNode.SynMemberDefn m :: path
 
             match m with
@@ -915,14 +909,14 @@ module SyntaxTraversal =
                         | x -> x)
                     dive () synExpr.Range (fun () -> visitor.VisitImplicitInherit(path, traverseSynExpr path, synType, synExpr, range))
                 ]
-                |> pick m
+                |> pick
             | SynMemberDefn.AutoProperty (synExpr = synExpr) -> traverseSynExpr path synExpr
             | SynMemberDefn.LetBindings (synBindingList, isRecursive, _, range) ->
                 match visitor.VisitLetOrUse(path, isRecursive, traverseSynBinding path, synBindingList, range) with
                 | None ->
                     synBindingList
                     |> List.map (fun x -> dive x x.RangeOfBindingWithRhs (traverseSynBinding path))
-                    |> pick m
+                    |> pick
                 | x -> x
             | SynMemberDefn.AbstractSlot(slotSig = SynValSig (synType = synType)) -> traverseSynType path synType
             | SynMemberDefn.Interface (interfaceType = synType; members = synMemberDefnsOption) ->
@@ -936,7 +930,7 @@ module SyntaxTraversal =
                                 x
                                 |> normalizeMembersToDealWithPeculiaritiesOfGettersAndSetters path (fun _ -> None)
                         ]
-                        |> pick x
+                        |> pick
                 | ok -> ok
             | SynMemberDefn.Inherit (synType, _identOption, range) -> traverseInherit (synType, range)
             | SynMemberDefn.ValField _ -> None
@@ -956,7 +950,7 @@ module SyntaxTraversal =
                         yield synExpr
                        ]
                        |> List.map (fun x -> dive x x.Range (traverseSynExpr path)))
-                    |> pick all.Range all
+                    |> pick all.Range
 
             visitor.VisitMatchClause(origPath, defaultTraverse, mc)
 
@@ -986,5 +980,5 @@ module SyntaxTraversal =
 #endif
             l
             |> List.map (fun x -> dive x x.Range (traverseSynModuleOrNamespace []))
-            |> pick fileRange l
+            |> pick fileRange
         | ParsedInput.SigFile _sigFile -> None

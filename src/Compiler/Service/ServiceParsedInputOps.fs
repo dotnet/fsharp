@@ -474,7 +474,7 @@ module ParsedInput =
                                 dive lidwd lidwd.Range (traverseLidOrElse pos None)
                                 dive exprRhs exprRhs.Range traverseSynExpr
                             ]
-                            |> pick expr
+                            |> pick
 
                         | SynExpr.DotGet (exprLeft, mDot, lidwd, _m) ->
                             let afterDotBeforeLid = mkRange mDot.FileName mDot.End lidwd.Range.Start
@@ -484,7 +484,7 @@ module ParsedInput =
                                 dive exprLeft afterDotBeforeLid (fun e -> Some(e.Range.End, true))
                                 dive lidwd lidwd.Range (traverseLidOrElse pos (Some exprLeft))
                             ]
-                            |> pick expr
+                            |> pick
 
                         | SynExpr.DotSet (exprLeft, lidwd, exprRhs, _m) ->
                             [
@@ -492,14 +492,14 @@ module ParsedInput =
                                 dive lidwd lidwd.Range (traverseLidOrElse pos (Some exprLeft))
                                 dive exprRhs exprRhs.Range traverseSynExpr
                             ]
-                            |> pick expr
+                            |> pick
 
                         | SynExpr.Set (exprLeft, exprRhs, _m) ->
                             [
                                 dive exprLeft exprLeft.Range traverseSynExpr
                                 dive exprRhs exprRhs.Range traverseSynExpr
                             ]
-                            |> pick expr
+                            |> pick
 
                         | SynExpr.NamedIndexedPropertySet (lidwd, exprIndexer, exprRhs, _m) ->
                             [
@@ -507,7 +507,7 @@ module ParsedInput =
                                 dive exprIndexer exprIndexer.Range traverseSynExpr
                                 dive exprRhs exprRhs.Range traverseSynExpr
                             ]
-                            |> pick expr
+                            |> pick
 
                         | SynExpr.DotNamedIndexedPropertySet (exprLeft, lidwd, exprIndexer, exprRhs, _m) ->
                             [
@@ -516,7 +516,7 @@ module ParsedInput =
                                 dive exprIndexer exprIndexer.Range traverseSynExpr
                                 dive exprRhs exprRhs.Range traverseSynExpr
                             ]
-                            |> pick expr
+                            |> pick
 
                         | SynExpr.Const (SynConst.Double _, m) ->
                             if posEq m.End pos then
