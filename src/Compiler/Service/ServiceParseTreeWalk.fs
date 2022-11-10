@@ -258,8 +258,7 @@ module SyntaxTraversal =
 
                 snd (e) ()
             | [ x ] -> x ()
-            | _ ->
-                None
+            | _ -> None
 
     /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
     ///
@@ -344,8 +343,7 @@ module SyntaxTraversal =
                     | x -> x
 
                 | SynExpr.Tuple (_, synExprList, _, _range)
-                | SynExpr.ArrayOrList (_, synExprList, _range) ->
-                    synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick
+                | SynExpr.ArrayOrList (_, synExprList, _range) -> synExprList |> List.map (fun x -> dive x x.Range traverseSynExpr) |> pick
 
                 | SynExpr.AnonRecd (_isStruct, copyOpt, synExprList, _range) ->
                     [

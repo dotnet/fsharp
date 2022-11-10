@@ -158,7 +158,6 @@ module public SyntaxTraversal =
 
     val internal dive: node: 'a -> range: 'b -> project: ('a -> 'c) -> 'b * (unit -> 'c)
 
-    val internal pick:
-        pos: pos -> outerRange: range -> diveResults: (range * (unit -> 'a option)) list -> 'a option
+    val internal pick: pos: pos -> outerRange: range -> diveResults: (range * (unit -> 'a option)) list -> 'a option
 
     val Traverse: pos: pos * parseTree: ParsedInput * visitor: SyntaxVisitorBase<'T> -> 'T option
