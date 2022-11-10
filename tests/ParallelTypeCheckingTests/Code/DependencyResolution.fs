@@ -147,11 +147,7 @@ module internal DependencyResolution =
                 |> Array.exists (function Abbreviation.ModuleAbbreviation -> true | _ -> false))
             
         let trie = buildTrie nodes
-        
-        let fsiFiles =
-            nodes
-            |> Array.filter (fun f -> match f.File.AST with | ASTOrFsix.AST (ParsedInput.SigFile _) -> true | _ -> false)
-        
+
         let processFile (node : FileData) =
             let deps =
                 let fsiDep =
@@ -229,13 +225,6 @@ module internal DependencyResolution =
                     moduleRefs
                     |> Array.iter processRef
                     
-                    // Force .fsi files to depend on all other (previous) .fsi files - avoids the issue of TcEnv being overriden  
-                    let additionalFsiDeps =
-                        if node.File.Name.EndsWith ".fsi" then
-                            nodes
-                        else
-                            [||]
-                    
                     // Collect files from all reachable TrieNodes
                     let deps =
                         reachable
@@ -243,7 +232,6 @@ module internal DependencyResolution =
                         // Assume that this file depends on all files that have any module abbreviations - this is probably unnecessary.
                         // TODO Handle module abbreviations in a better way
                         |> Seq.append filesWithModuleAbbreviations
-                        |> Seq.append additionalFsiDeps
                         |> Seq.append fsiDep
                         |> Seq.map (fun f -> f.File)
                         |> Seq.toArray
