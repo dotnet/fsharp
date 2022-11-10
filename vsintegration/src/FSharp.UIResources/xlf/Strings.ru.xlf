@@ -12,26 +12,6 @@
         <target state="new">Inline Hints</target>
         <note />
       </trans-unit>
-      <trans-unit id="Lens">
-        <source>Lens</source>
-        <target state="translated">Lens</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Lens_Switch">
-        <source>Enable Lens (Experimental)</source>
-        <target state="translated">Включить Lens (экспериментальная функция)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Lens_Prefix">
-        <source>Annotation prefix</source>
-        <target state="translated">Префикс примечания</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Lens_UseColors">
-        <source>Use colors in annotations</source>
-        <target state="translated">Использовать цветные примечания</target>
-        <note />
-      </trans-unit>
       <trans-unit id="Code_Fixes">
         <source>Code Fixes</source>
         <target state="translated">Исправления кода</target>
