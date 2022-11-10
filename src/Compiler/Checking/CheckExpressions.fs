@@ -10997,20 +10997,21 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (baseValOpt: Val o
                      | _ -> [] // check that method to override is sealed is located at CheckOverridesAreAllUsedOnce (typrelns.fs)
                       // We hit this case when it is ambiguous which abstract method is being implemented.
 
-             // Checks if the declaring type inherits from a base class andisFSharpObjModelTy
-             // Raises an error if we try to override an non virtual member with the same name in both
-             match baseValOpt with
-             | Some ttype when not(isFSharpObjModelTy g ttype.Type) ->
-                match ttype.Type with
-                | TType_app(tyconRef, _, _) ->
-                    let ilMethods = tyconRef.ILTyconRawMetadata.Methods.AsList()
-                    let nameOpt = ilMethods |> List.tryFind(fun id -> id.Name = memberId.idText)
-                    match nameOpt with
-                    | Some name when not name.IsVirtual ->
-                        errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
+             if g.langVersion.SupportsFeature(LanguageFeature.ErrorForNonVirtualMembersOverrides) then
+                 // Checks if the declaring type inherits from a base class and is not FSharpObjModelTy
+                 // Raises an error if we try to override an non virtual member with the same name in both
+                 match baseValOpt with
+                 | Some ttype when not(isFSharpObjModelTy g ttype.Type) ->
+                    match ttype.Type with
+                    | TType_app(tyconRef, _, _) ->
+                        let ilMethods = tyconRef.ILTyconRawMetadata.Methods.AsList()
+                        let nameOpt = ilMethods |> List.tryFind(fun id -> id.Name = memberId.idText)
+                        match nameOpt with
+                        | Some name when not name.IsVirtual ->
+                            errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
+                        | _ -> ()
                     | _ -> ()
-                | _ -> ()
-             | _ -> ()
+                 | _ -> ()
 
              // If we determined a unique member then utilize the type information from the slotsig
              let declaredTypars =
