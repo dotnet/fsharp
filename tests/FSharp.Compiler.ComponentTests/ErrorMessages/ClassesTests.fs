@@ -120,8 +120,42 @@ type X() =
         |> withDiagnostics [
             (Error 531, Line 4, Col 5,  Line 4, Col 12, "Accessibility modifiers should come immediately prior to the identifier naming a construct")
             (Error 512, Line 4, Col 13, Line 4, Col 18, "Accessibility modifiers are not permitted on 'do' bindings, but 'Private' was given.")
-            (Error 222, Line 2, Col 1,  Line 3, Col 1,  "Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration.")]
-
+            (Error 222, Line 2, Col 1,  Line 3, Col 1,  "Files in libraries or multiple-file applications must begin with a namespace or module declaration, e.g. 'namespace SomeNamespace.SubNamespace' or 'module SomeNamespace.SomeModule'. Only the last source file of an application may omit such a declaration.")
+        ]
+        
+    [<Fact>]
+    let ``Do Cannot Have Visibility Declarations 1``() =
+        Fsx """
+type A =
+    abstract member M1: unit -> unit
+    abstract member M2: unit -> unit 
+    abstract member M3: unit -> unit 
+    abstract member M4: unit -> unit
+    
+type B() =
+    interface A with
+        override this.M1() = ()
+        override this.M2() = () // error is expected
+        override this.M3() = () // error is expected
+        override this.M4() = ()
+    
+type C() =
+    inherit B()
+    override this.M1() = ()
+    override this.M2() = ()
+    override this.M3() = ()
+    override this.M4() = ()
+    member this.M5() = ()
+        """
+        |> compile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 855, Line 17, Col 19, Line 17, Col 21, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 18, Col 19, Line 18, Col 21, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 19, Col 19, Line 19, Col 21, "No abstract or interface member was found that corresponds to this override")
+            (Error 855, Line 20, Col 19, Line 20, Col 21, "No abstract or interface member was found that corresponds to this override")
+        ]
+    
     [<Fact>]
     let ``Virtual member was found that corresponds to this override`` () =
         let CSLib =
