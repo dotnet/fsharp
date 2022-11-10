@@ -34,8 +34,8 @@ val DeduplicateParsedInputModuleName: ModuleNamesDict -> ParsedInput -> ParsedIn
 val UseMultipleDiagnosticLoggers<'a, 'b> :
     ('a list * DiagnosticsLogger * (PhasedDiagnostic -> PhasedDiagnostic) option) ->
     (('a * CapturingDiagnosticsLogger) list -> 'b) ->
-    'b
-    
+        'b
+
 /// Parse a single input (A signature file or implementation file)
 val ParseInput:
     lexer: (Lexbuf -> Parser.token) *
@@ -120,10 +120,10 @@ type TcState =
     /// The CcuThunk for the current assembly being checked
     member Ccu: CcuThunk
 
-    member TcsRootSigs : Internal.Utilities.Collections.Zmap<QualifiedNameOfFile, ModuleOrNamespaceType>
-    
-    member TcsRootImpls : Internal.Utilities.Collections.Zset<QualifiedNameOfFile>
-    
+    member TcsRootSigs: Internal.Utilities.Collections.Zmap<QualifiedNameOfFile, ModuleOrNamespaceType>
+
+    member TcsRootImpls: Internal.Utilities.Collections.Zset<QualifiedNameOfFile>
+
     /// Get the typing environment implied by the set of signature files and/or inferred signatures of implementation files checked so far
     member TcEnvFromSignatures: TcEnv
 
@@ -137,26 +137,28 @@ type TcState =
     member NextStateAfterIncrementalFragment: TcEnv -> TcState
 
     member CreatesGeneratedProvidedTypes: bool
-    
-    member TcsImplicitOpenDeclarations: OpenDeclaration list
-    
-    member WithStuff : TcEnv -> Internal.Utilities.Collections.Zmap<QualifiedNameOfFile, ModuleOrNamespaceType> -> bool -> TcState
-    
-    member WithCreatesGeneratedProvidedTypes : bool -> TcState
 
-val AddCheckResultsToTcState :
-    (TcGlobals * Import.ImportMap * bool * LongIdent option * NameResolution.TcResultsSink * TcEnv * QualifiedNameOfFile * ModuleOrNamespaceType)
-    -> TcState
-    -> (ModuleOrNamespaceType * TcState)
+    member TcsImplicitOpenDeclarations: OpenDeclaration list
+
+    member WithStuff:
+        TcEnv -> Internal.Utilities.Collections.Zmap<QualifiedNameOfFile, ModuleOrNamespaceType> -> bool -> TcState
+
+    member WithCreatesGeneratedProvidedTypes: bool -> TcState
+
+val AddCheckResultsToTcState:
+    (TcGlobals * Import.ImportMap * bool * LongIdent option * NameResolution.TcResultsSink * TcEnv * QualifiedNameOfFile * ModuleOrNamespaceType) ->
+    TcState ->
+        (ModuleOrNamespaceType * TcState)
 
 type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
-val mutable fsiBackedInfos : System.Collections.Concurrent.ConcurrentDictionary<string, ModuleOrNamespaceType>
+val mutable fsiBackedInfos: System.Collections.Concurrent.ConcurrentDictionary<string, ModuleOrNamespaceType>
 
-type CheckArgs = CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list
+type CheckArgs =
+    CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list
 
 /// Use parallel checking of implementation files that have signature files
-val mutable CheckMultipleInputsUsingGraphMode : (CheckArgs -> PartialResult list * TcState)
+val mutable CheckMultipleInputsUsingGraphMode: (CheckArgs -> PartialResult list * TcState)
 
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv * OpenDeclaration list -> TcState
@@ -174,7 +176,7 @@ val CheckOneInput:
     skipImplIfSigExists: bool ->
         Cancellable<(TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType) * TcState>
 
-val mutable asts : System.Collections.Concurrent.ConcurrentDictionary<string, ParsedInput>
+val mutable asts: System.Collections.Concurrent.ConcurrentDictionary<string, ParsedInput>
 
 /// Check one input, returned as an Eventually computation
 val CheckOneInput':
@@ -189,9 +191,9 @@ val CheckOneInput':
     skipImplIfSigExists: bool ->
         Cancellable<TcState -> PartialResult * TcState>
 
-val CheckMultipleInputsInParallel :
-    (CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list)
-    -> PartialResult list * TcState
+val CheckMultipleInputsInParallel:
+    (CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list) ->
+        PartialResult list * TcState
 
 /// Finish the checking of multiple inputs
 val CheckMultipleInputsFinish:
@@ -200,7 +202,7 @@ val CheckMultipleInputsFinish:
 /// Finish the checking of a closed set of inputs
 val CheckClosedInputSetFinish: CheckedImplFile list * TcState -> TcState * CheckedImplFile list * ModuleOrNamespace
 
-val mutable typeCheckingMode : TypeCheckingMode
+val mutable typeCheckingMode: TypeCheckingMode
 
 /// Check a closed set of inputs
 val CheckClosedInputSet:
