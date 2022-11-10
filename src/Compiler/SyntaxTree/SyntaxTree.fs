@@ -1760,5 +1760,5 @@ type ParsedInput =
 
     member inp.Identifiers =
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput(identifiers = identifiers))
-        | ParsedInput.SigFile (ParsedSigFileInput(identifiers = identifiers)) -> identifiers
+        | ParsedInput.ImplFile (ParsedImplFileInput (identifiers = identifiers))
+        | ParsedInput.SigFile (ParsedSigFileInput (identifiers = identifiers)) -> identifiers

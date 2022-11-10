@@ -58,7 +58,11 @@ type SemanticClassificationKeyStoreBuilder() =
     member _.WriteAll(semanticClassification: SemanticClassificationItem[]) =
         if semanticClassification.Length > 0 then
             use ptr = fixed semanticClassification
-            b.WriteBytes(NativePtr.ofNativeInt (NativePtr.toNativeInt ptr), semanticClassification.Length * sizeof<SemanticClassificationItem>)
+
+            b.WriteBytes(
+                NativePtr.ofNativeInt (NativePtr.toNativeInt ptr),
+                semanticClassification.Length * sizeof<SemanticClassificationItem>
+            )
 
     member _.TryBuildAndReset() =
         if b.Count > 0 then

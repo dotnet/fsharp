@@ -284,7 +284,9 @@ let PostParseModuleImpls
             CodeComments = codeComments
         }
 
-    ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland, trivia, identifiers))
+    ParsedInput.ImplFile(
+        ParsedImplFileInput(fileName, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland, trivia, identifiers)
+    )
 
 let PostParseModuleSpecs
     (
@@ -432,9 +434,11 @@ let ParseInput
 
             let identCaptureLexer x =
                 let token = lexer x
+
                 match token with
                 | Parser.token.IDENT ident -> identStore.Add ident |> ignore
                 | _ -> ()
+
                 token
 
             if FSharpMLCompatFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
