@@ -538,23 +538,3 @@ type AsyncType() =
         with Failure "finish" -> 
             hasThrown <- true
         Assert.True hasThrown
-
-    [<Fact>]
-    member _.WhileBang () =
-        let mutable count = 0
-
-        let asyncCondition = async {
-            return count < 10
-        }
-
-        async {
-            count <- 1
-            
-            while! asyncCondition do
-                count <- count + 2
-
-            count <- count + 1
-        }
-        |> Async.RunSynchronously
-
-        Assert.Equal (12, count)
