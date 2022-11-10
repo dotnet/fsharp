@@ -269,7 +269,8 @@ let ``Analyse whole projects and print statistics`` (projectFile: string) =
         files
         |> Array.Parallel.mapi (fun i f ->
             let code = System.IO.File.ReadAllText(f)
-            let ast = parseSourceCode(f, code)
+            let ast = parseSourceCode (f, code)
+
             {
                 Idx = FileIdx.make i
                 //Code = code

@@ -126,45 +126,53 @@ namespace A
 module B
 open A
 """
-        ] |> FProject.Make  CompileOutput.Library
-    
+        ]
+        |> FProject.Make CompileOutput.Library
+
     let dependentSignatures =
         [
-            "A.fsi", """
+            "A.fsi",
+            """
 module A
 
 type AType = class end
 """
-            "A.fs", """
+            "A.fs",
+            """
 module A
 
 type AType = class end
 """
-            "B.fsi", """
+            "B.fsi",
+            """
 module B
 
 open A
 
 val b: AType -> unit
 """
-            "B.fs", """
+            "B.fs",
+            """
 module B
 
 open A
 
 let b (a:AType) = ()
 """
-            "C.fsi", """
+            "C.fsi",
+            """
 module C
 
 type CType = class end
 """
-            "C.fs", """
+            "C.fs",
+            """
 module C
 
 type CType = class end
 """
-            "D.fsi", """
+            "D.fsi",
+            """
 module D
 
 open A
@@ -172,7 +180,8 @@ open C
 
 val d: CType -> unit 
 """
-            "D.fs", """
+            "D.fs",
+            """
 module D
 
 open A
@@ -184,8 +193,8 @@ let d (c: CType) =
     b a
 """
         ]
-        |> FProject.Make  CompileOutput.Library
-    
+        |> FProject.Make CompileOutput.Library
+
     let all =
         [
             encodeDecodeSimple

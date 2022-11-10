@@ -149,7 +149,7 @@ module internal DependencyResolution =
 
         let trie = buildTrie nodes
 
-        let processFile (node : FileData) =
+        let processFile (node: FileData) =
             let deps =
                 let fsiDep =
                     if node.File.FsiBacked then
@@ -222,9 +222,8 @@ module internal DependencyResolution =
                     let moduleRefs = Array.append node.Data.Tops node.Data.ModuleRefs
 
                     // Process module refs in order, marking more and more TrieNodes as reachable and potential prefixes
-                    moduleRefs
-                    |> Array.iter processRef
-                    
+                    moduleRefs |> Array.iter processRef
+
                     // Collect files from all reachable TrieNodes
                     let deps =
                         reachable

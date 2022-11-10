@@ -1464,27 +1464,31 @@ let CheckOneInputAux'
                 fsiBackedInfos[file.FileName] <- sigFileType
 
                 // printfn $"Finished Processing Sig {file.FileName}"
-                return fun tcState ->
-                    // printfn $"Applying Sig {file.FileName}"
-                    let fsiPartialResult, tcState =
-                        let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
-                        let tcSigEnv =
-                            AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv sigFileType
+                return
+                    fun tcState ->
+                        // printfn $"Applying Sig {file.FileName}"
+                        let fsiPartialResult, tcState =
+                            let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
 
-                        // Add the signature to the signature env (unless it had an explicit signature)
-                        let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
+                            let tcSigEnv =
+                                AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv sigFileType
 
-                        let partialResult = tcEnv, EmptyTopAttrs, None, ccuSigForFile
-                        
-                        let tcState =
-                            { tcState with
-                                tcsTcSigEnv = tcSigEnv
-                                tcsRootSigs = rootSigs
-                                tcsCreatesGeneratedProvidedTypes = tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
-                            }
-                        partialResult, tcState
+                            // Add the signature to the signature env (unless it had an explicit signature)
+                            let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
 
-                    fsiPartialResult, tcState
+                            let partialResult = tcEnv, EmptyTopAttrs, None, ccuSigForFile
+
+                            let tcState =
+                                { tcState with
+                                    tcsTcSigEnv = tcSigEnv
+                                    tcsRootSigs = rootSigs
+                                    tcsCreatesGeneratedProvidedTypes =
+                                        tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                                }
+
+                            partialResult, tcState
+
+                        fsiPartialResult, tcState
 
             | ParsedInput.ImplFile file ->
                 // printfn $"Processing Impl {file.FileName}"
