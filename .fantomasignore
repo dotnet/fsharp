@@ -10,6 +10,10 @@ tests/
 vsintegration/
 artifacts/
 
+# Explicitly formatted Tests/ subdirectories (with exceptions)
+!tests/ParallelTypeCheckingTests/
+*/.checkouts/
+
 # Explicitly unformatted implementation files
 
 src/Compiler/Checking/AccessibilityLogic.fs

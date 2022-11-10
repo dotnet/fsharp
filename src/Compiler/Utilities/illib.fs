@@ -929,7 +929,7 @@ type CancellableBuilder() =
             let (Cancellable g) = f ()
             g ct)
 
-    member _.Bind(comp,  k) =
+    member _.Bind(comp, k) =
         Cancellable(fun ct ->
 #if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
@@ -939,7 +939,7 @@ type CancellableBuilder() =
             | ValueOrCancelled.Value v1 -> Cancellable.run ct (k v1)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.BindReturn(comp,  k) =
+    member _.BindReturn(comp, k) =
         Cancellable(fun ct ->
 #if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
@@ -959,7 +959,7 @@ type CancellableBuilder() =
             | ValueOrCancelled.Value () -> Cancellable.run ct comp2
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.TryWith(comp,  handler) =
+    member _.TryWith(comp, handler) =
         Cancellable(fun ct ->
 #if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
@@ -980,7 +980,7 @@ type CancellableBuilder() =
                 | Choice2Of2 err -> Cancellable.run ct (handler err)
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.Using(resource,  comp) =
+    member _.Using(resource, comp) =
         Cancellable(fun ct ->
 #if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
@@ -1004,7 +1004,7 @@ type CancellableBuilder() =
                 | Choice2Of2 err -> raise err
             | ValueOrCancelled.Cancelled err1 -> ValueOrCancelled.Cancelled err1)
 
-    member _.TryFinally(comp,  compensation) =
+    member _.TryFinally(comp, compensation) =
         Cancellable(fun ct ->
 #if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""

@@ -1049,9 +1049,9 @@ type TcState =
     }
 
     member x.TcsRootSigs = x.tcsRootSigs
-    
+
     member x.TcsRootImpls = x.tcsRootImpls
-    
+
     member x.TcEnvFromSignatures = x.tcsTcSigEnv
 
     member x.TcEnvFromImpls = x.tcsTcImplEnv
@@ -1064,23 +1064,23 @@ type TcState =
     member x.CcuSig = x.tcsCcuSig
 
     member x.TcsImplicitOpenDeclarations = x.tcsImplicitOpenDeclarations
-    
+
     member x.NextStateAfterIncrementalFragment tcEnvAtEndOfLastInput =
         { x with
             tcsTcSigEnv = tcEnvAtEndOfLastInput
             tcsTcImplEnv = tcEnvAtEndOfLastInput
         }
-        
-    member x.WithCreatesGeneratedProvidedTypes (y : bool) : TcState =
+
+    member x.WithCreatesGeneratedProvidedTypes(y: bool) : TcState =
         { x with
             tcsCreatesGeneratedProvidedTypes = y
         }
-    
+
     member x.WithStuff tcEnv rootSigs creates : TcState =
         { x with
-              tcsTcSigEnv = tcEnv
-              tcsRootSigs = rootSigs
-              tcsCreatesGeneratedProvidedTypes = creates
+            tcsTcSigEnv = tcEnv
+            tcsRootSigs = rootSigs
+            tcsCreatesGeneratedProvidedTypes = creates
         }
 
 type State = TcState * bool
@@ -1144,7 +1144,7 @@ let AddCheckResultsToTcState
     =
 
     let sw = Stopwatch.StartNew()
-    
+
     let rootImpls = Zset.add qualNameOfFile tcState.tcsRootImpls
 
     // Only add it to the environment if it didn't have a signature
@@ -1190,7 +1190,7 @@ let AddCheckResultsToTcState
     // TODO Thread-safety
     total <- total + sw.Elapsed
     // printfn $"[{Threading.Thread.CurrentThread.ManagedThreadId}] [{singles}] single add took {sw.ElapsedMilliseconds}ms, total so far: {total.TotalMilliseconds}ms"
-    
+
     ccuSigForFile, tcState
 
 let AddDummyCheckResultsToTcState
@@ -1215,7 +1215,8 @@ let AddDummyCheckResultsToTcState
 
 type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
-type CheckArgs = CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list
+type CheckArgs =
+    CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list
 
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInputAux
@@ -1246,7 +1247,7 @@ let CheckOneInputAux
                     None
                 else
                     Some tcConfig.conditionalDefines
-            
+
             match inp with
             | ParsedInput.SigFile file ->
                 let qualNameOfFile = file.QualifiedName
@@ -1365,16 +1366,15 @@ let CheckOneInputAux
 /// then implementations with signature files give empty results.
 let CheckOneInput
     ((checkForErrors,
-        tcConfig: TcConfig,
-        tcImports: TcImports,
-        tcGlobals,
-        prefixPathOpt,
-        tcSink,
-        tcState: TcState,
-        input: ParsedInput,
-        skipImplIfSigExists: bool): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
-    : Cancellable<PartialResult * TcState>
-    =
+      tcConfig: TcConfig,
+      tcImports: TcImports,
+      tcGlobals,
+      prefixPathOpt,
+      tcSink,
+      tcState: TcState,
+      input: ParsedInput,
+      skipImplIfSigExists: bool): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
+    : Cancellable<PartialResult * TcState> =
     cancellable {
         let! partialResult, tcState =
             CheckOneInputAux(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input, skipImplIfSigExists)
@@ -1402,16 +1402,15 @@ let mutable fsiBackedInfos = ConcurrentDictionary<string, ModuleOrNamespaceType>
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInputAux'
     ((checkForErrors,
-        tcConfig: TcConfig,
-        tcImports: TcImports,
-        tcGlobals,
-        prefixPathOpt,
-        tcSink,
-        tcState: TcState,
-        inp: ParsedInput,
-        _skipImplIfSigExists: bool): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
-    : Cancellable<TcState -> PartialResult * TcState>
-    =
+      tcConfig: TcConfig,
+      tcImports: TcImports,
+      tcGlobals,
+      prefixPathOpt,
+      tcSink,
+      tcState: TcState,
+      inp: ParsedInput,
+      _skipImplIfSigExists: bool): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
+    : Cancellable<TcState -> PartialResult * TcState> =
 
     cancellable {
         try
@@ -1425,7 +1424,7 @@ let CheckOneInputAux'
                     None
                 else
                     Some tcConfig.conditionalDefines
-            
+
             match inp with
             | ParsedInput.SigFile file ->
                 // printfn $"Processing Sig {file.FileName}"
@@ -1459,12 +1458,11 @@ let CheckOneInputAux'
                     | Some prefixPath ->
                         let m = qualNameOfFile.Range
                         TcOpenModuleOrNamespaceDecl tcSink tcGlobals amap m tcEnv (prefixPath, m)
-                
-        
+
                 // Save info needed for type-checking .fs file later on
                 // printfn $"[{Thread.CurrentThread.ManagedThreadId}] Saving fsiBackedInfos for {file.FileName}"
                 fsiBackedInfos[file.FileName] <- sigFileType
-                
+
                 // printfn $"Finished Processing Sig {file.FileName}"
                 return fun tcState ->
                     // printfn $"Applying Sig {file.FileName}"
@@ -1473,8 +1471,8 @@ let CheckOneInputAux'
                         let tcSigEnv =
                             AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv sigFileType
 
-                        // Add the signature to the signature env (unless it had an explicit signature)
-                        let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
+                            // Add the signature to the signature env (unless it had an explicit signature)
+                            let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
 
                         let partialResult = tcEnv, EmptyTopAttrs, None, ccuSigForFile
                         
@@ -1486,7 +1484,7 @@ let CheckOneInputAux'
                             }
                         partialResult, tcState
 
-                    fsiPartialResult, tcState
+                        fsiPartialResult, tcState
 
             | ParsedInput.ImplFile file ->
                 // printfn $"Processing Impl {file.FileName}"
@@ -1494,13 +1492,13 @@ let CheckOneInputAux'
 
                 // Check if we've got an interface for this fragment
                 let rootSigOpt = tcState.tcsRootSigs.TryFind qualNameOfFile
-            
+
                 // Typecheck the implementation file not backed by a signature file
-                
+
                 // Check if we've already seen an implementation for this fragment
                 if Zset.contains qualNameOfFile tcState.tcsRootImpls then
                     errorR (Error(FSComp.SR.buildImplementationAlreadyGiven (qualNameOfFile.Text), m))
-                
+
                 let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes =
                     CheckOneImplFile(
                         tcGlobals,
@@ -1517,51 +1515,49 @@ let CheckOneInputAux'
                     )
 
                 // printfn $"Finished Processing Impl {file.FileName}"
-                return fun tcState ->
-                    // let backed = rootSigOpt.IsSome
-                    // printfn $"Applying Impl Backed={backed} {file.FileName}"
-                    
-                    let ccuSigForFile, fsTcState =
-                        AddCheckResultsToTcState
-                            (tcGlobals, amap, false, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, implFile.Signature)
-                            tcState
-                    
-                    // backed impl files must not add results as there are already results from .fsi files 
-                    //let fsTcState = if backed then tcState else fsTcState
+                return
+                    fun tcState ->
+                        // let backed = rootSigOpt.IsSome
+                        // printfn $"Applying Impl Backed={backed} {file.FileName}"
 
-                    let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
-                    
-                    let tcState =
-                        { fsTcState with
-                            tcsCreatesGeneratedProvidedTypes = fsTcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
-                        }
+                        let ccuSigForFile, fsTcState =
+                            AddCheckResultsToTcState
+                                (tcGlobals, amap, false, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualNameOfFile, implFile.Signature)
+                                tcState
 
-                    // printfn $"Finished applying Impl {file.FileName}"
-                    partialResult, tcState
+                        // backed impl files must not add results as there are already results from .fsi files
+                        //let fsTcState = if backed then tcState else fsTcState
+
+                        let partialResult = tcEnvAtEnd, topAttrs, Some implFile, ccuSigForFile
+
+                        let tcState =
+                            { fsTcState with
+                                tcsCreatesGeneratedProvidedTypes =
+                                    fsTcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                            }
+
+                        // printfn $"Finished applying Impl {file.FileName}"
+                        partialResult, tcState
 
         with e ->
             errorRecovery e range0
             return fun tcState -> (tcState.TcEnvFromSignatures, EmptyTopAttrs, None, tcState.tcsCcuSig), tcState
     }
 
-
 /// Typecheck a single file (or interactive entry into F# Interactive). If skipImplIfSigExists is set to true
 /// then implementations with signature files give empty results.
 let CheckOneInput'
     ((checkForErrors,
-        tcConfig: TcConfig,
-        tcImports: TcImports,
-        tcGlobals,
-        prefixPathOpt,
-        tcSink,
-        tcState: TcState,
-        input: ParsedInput,
-        skipImplIfSigExists: bool): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
-    : Cancellable<TcState -> PartialResult * TcState>
-    =
+      tcConfig: TcConfig,
+      tcImports: TcImports,
+      tcGlobals,
+      prefixPathOpt,
+      tcSink,
+      tcState: TcState,
+      input: ParsedInput,
+      skipImplIfSigExists: bool): (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcResultsSink * TcState * ParsedInput * bool)
+    : Cancellable<TcState -> PartialResult * TcState> =
     CheckOneInputAux'(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input, skipImplIfSigExists)
-
-
 
 // Within a file, equip loggers to locally filter w.r.t. scope pragmas in each input
 let DiagnosticsLoggerForInput (tcConfig: TcConfig, input: ParsedInput, oldLogger) =
@@ -1619,16 +1615,7 @@ let CheckMultipleInputsSequential (ctok, checkForErrors, tcConfig, tcImports, tc
 
 /// Use parallel checking of implementation files that have signature files
 let CheckMultipleInputsInParallel
-    ((ctok,
-        checkForErrors,
-        tcConfig: TcConfig,
-        tcImports,
-        tcGlobals,
-        prefixPathOpt,
-        tcState,
-        eagerFormat,
-        inputs)
-        : CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list)
+    ((ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs): CompilationThreadToken * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * ParsedInput list)
     : PartialResult list * TcState =
 
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
@@ -1730,11 +1717,10 @@ let CheckMultipleInputsInParallel
         results, tcState)
 
 /// A mutable to allow injection the implementation from another project
-let mutable CheckMultipleInputsUsingGraphMode : CheckArgs -> (PartialResult list * TcState)
-    =
+let mutable CheckMultipleInputsUsingGraphMode: CheckArgs -> (PartialResult list * TcState) =
     fun _ -> failwith $"Graph-based type-checking function not set - set CheckMultipleInputsUsingGraphMode before using this mode"
 
-let mutable typeCheckingMode : TypeCheckingMode = TypeCheckingMode.Sequential
+let mutable typeCheckingMode: TypeCheckingMode = TypeCheckingMode.Sequential
 
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
@@ -1745,7 +1731,17 @@ let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tc
         | TypeCheckingMode.ParallelCheckingOfBackedImplFiles ->
             CheckMultipleInputsInParallel(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs)
         | TypeCheckingMode.Graph ->
-            CheckMultipleInputsUsingGraphMode(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs)
+            CheckMultipleInputsUsingGraphMode(
+                ctok,
+                checkForErrors,
+                tcConfig,
+                tcImports,
+                tcGlobals,
+                prefixPathOpt,
+                tcState,
+                eagerFormat,
+                inputs
+            )
 
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles, _), tcState =
         CheckMultipleInputsFinish(results, tcState)

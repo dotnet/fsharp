@@ -400,10 +400,7 @@ type TypeCheckingMode =
     | Graph
 
 [<RequireQualifiedAccess>]
-type TypeCheckingConfig =
-    {
-        Mode : TypeCheckingMode
-    }
+type TypeCheckingConfig = { Mode: TypeCheckingMode }
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
@@ -598,8 +595,8 @@ type TcConfigBuilder =
         mutable exiter: Exiter
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
-        
-        mutable typeCheckingConfig : TypeCheckingConfig
+
+        mutable typeCheckingConfig: TypeCheckingConfig
     }
 
     // Directories to start probing in

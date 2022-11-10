@@ -1,5 +1,7 @@
 ﻿module internal ParallelTypeCheckingTests.SingleTcStateTypeChecking
+
 #nowarn "1182"
+
 open FSharp.Compiler
 open FSharp.Compiler.CheckBasics
 open FSharp.Compiler.CheckDeclarations
@@ -75,7 +77,9 @@ let CheckMultipleInputsInParallel
         let inputsWithLoggers: (ParsedInput * DiagnosticsLogger)[] =
             inputsWithLoggers
             |> Seq.map (fun (input, oldLogger) ->
-                let logger = ParallelTypeChecking.DiagnosticsLoggerForInput(tcConfig, input, oldLogger)
+                let logger =
+                    ParallelTypeChecking.DiagnosticsLoggerForInput(tcConfig, input, oldLogger)
+
                 input, logger)
             |> Seq.toArray
 
@@ -119,7 +123,10 @@ let CheckMultipleInputsInParallel
                                                                                 implFile,
                                                                                 tcEnvAtEnd,
                                                                                 createsGeneratedProvidedTypes) ->
-                                            let x = state.CurrentTcState.CreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                                            let x =
+                                                state.CurrentTcState.CreatesGeneratedProvidedTypes
+                                                || createsGeneratedProvidedTypes
+
                                             let tcState = state.CurrentTcState.WithCreatesGeneratedProvidedTypes x
 
                                             let ccuSigForFile, updateTcState =
@@ -145,7 +152,10 @@ let CheckMultipleInputsInParallel
                                                 TypedTreeOps.CombineCcuContentFragments [ sigFileType; state.CurrentTcState.CcuSig ]
 
                                             let tcStateAfterSig =
-                                                let creates = state.CurrentTcState.CreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
+                                                let creates =
+                                                    state.CurrentTcState.CreatesGeneratedProvidedTypes
+                                                    || createsGeneratedProvidedTypes
+
                                                 state.CurrentTcState.WithStuff tcEnv rootSigs creates
 
                                             state.Results.[index] <- Choice1Of2(tcEnv, EmptyTopAttrs, None, ccuSigForFile)
@@ -406,7 +416,9 @@ let CheckMultipleInputsInParallel
             |> Array.toList
             |> List.unzip
 
-        let x = tcState.CreatesGeneratedProvidedTypes || (createsGeneratedProvidedTypesFlags |> List.exists id)
+        let x =
+            tcState.CreatesGeneratedProvidedTypes
+            || (createsGeneratedProvidedTypesFlags |> List.exists id)
+
         let tcState = tcState.WithCreatesGeneratedProvidedTypes x
         results, tcState)
-    

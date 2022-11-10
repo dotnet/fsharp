@@ -1,5 +1,7 @@
 ﻿module ParallelTypeCheckingTests.TestDependencyResolution
+
 #nowarn "1182"
+
 open FSharp.Compiler.Service.Tests.Common
 open System.IO
 open Buildalyzer
@@ -10,7 +12,7 @@ open ParallelTypeCheckingTests.DepResolving
 open NUnit.Framework
 open Newtonsoft.Json
 
-let buildFiles (files : (string * string) seq) =
+let buildFiles (files: (string * string) seq) =
     files
     |> Seq.mapi (fun i (name, code) ->
         {
@@ -19,203 +21,202 @@ let buildFiles (files : (string * string) seq) =
         })
     |> Seq.toArray
 
-let private assertGraphEqual (graph : DepsResult) (expected : (string * string list) seq) =
+let private assertGraphEqual (graph: DepsResult) (expected: (string * string list) seq) =
     let edges =
         graph.Edges()
         // Here we disregard directory path, but that's ok for current test cases.
         |> Array.map (fun (node, dep) -> node.ToString(), dep.ToString())
-    
-    let expectedEdges = expected |> Seq.collect (fun (node, deps) -> deps |> List.map (fun d -> node, d))
-    
+
+    let expectedEdges =
+        expected
+        |> Seq.collect (fun (node, deps) -> deps |> List.map (fun d -> node, d))
+
     Assert.That(edges, Is.EquivalentTo expectedEdges)
 
 [<Test>]
-let ``Simple 'open' reference is detected``() =
+let ``Simple 'open' reference is detected`` () =
     let files =
         [|
             "A.fs", """module A"""
-            "B.fs", """module B
+            "B.fs",
+            """module B
 open A
 """
         |]
         |> buildFiles
-        
+
     let deps = DependencyResolution.detectFileDependencies files
-    
-    let expectedEdges =
-        [
-            "B.fs", ["A.fs"]
-        ]
-    assertGraphEqual deps expectedEdges
-    
-[<Test>]
-let ``With no references there is no dependency``() =
-    let files =
-        [|
-            "A.fs", """module A"""
-            "B.fs", """module B; let x = 1"""
-        |]
-        |> buildFiles
-        
-    let deps = DependencyResolution.detectFileDependencies files
-    
-    let expectedEdges =
-        [
-        ]
-    assertGraphEqual deps expectedEdges
-    
-[<Test>]
-let ``Impl files always depend on their backing signature files, but not always on other signature files``() =
-    let files =
-        [|
-            "A.fsi", """
-module A
-"""
-            "A.fs", """
-module A
-let x = 1
-"""
-            "B.fs", """
-module B
-let x = 1
-"""
-        |]
-        |> buildFiles
-        
-    let deps = DependencyResolution.detectFileDependencies files
-    
-    let expectedEdges =
-        [
-            "A.fs", ["A.fsi"]
-        ]
+
+    let expectedEdges = [ "B.fs", [ "A.fs" ] ]
     assertGraphEqual deps expectedEdges
 
 [<Test>]
-let ``Files with module or type abbreviations depend on all files above``() =
+let ``With no references there is no dependency`` () =
+    let files =
+        [| "A.fs", """module A"""; "B.fs", """module B; let x = 1""" |] |> buildFiles
+
+    let deps = DependencyResolution.detectFileDependencies files
+
+    let expectedEdges = []
+    assertGraphEqual deps expectedEdges
+
+[<Test>]
+let ``Impl files always depend on their backing signature files, but not always on other signature files`` () =
     let files =
         [|
-            "A.fs", """
+            "A.fsi",
+            """
 module A
 """
-            "B.fs", """
+            "A.fs",
+            """
+module A
+let x = 1
+"""
+            "B.fs",
+            """
+module B
+let x = 1
+"""
+        |]
+        |> buildFiles
+
+    let deps = DependencyResolution.detectFileDependencies files
+
+    let expectedEdges = [ "A.fs", [ "A.fsi" ] ]
+    assertGraphEqual deps expectedEdges
+
+[<Test>]
+let ``Files with module or type abbreviations depend on all files above`` () =
+    let files =
+        [|
+            "A.fs",
+            """
+module A
+"""
+            "B.fs",
+            """
 module B
 module X = Y
 """
-            "C.fs", """
+            "C.fs",
+            """
 module C
 type X = Y
 """
         |]
         |> buildFiles
-        
+
     let deps = DependencyResolution.detectFileDependencies files
-    
-    let expectedEdges =
-        [
-            "B.fs", ["A.fs"]
-            "C.fs", ["A.fs"; "B.fs"]
-        ]
+
+    let expectedEdges = [ "B.fs", [ "A.fs" ]; "C.fs", [ "A.fs"; "B.fs" ] ]
     assertGraphEqual deps expectedEdges
 
-
 [<Test>]
-let ``Test error``() =
+let ``Test error`` () =
     let files =
         [|
-            "A.fs", """
+            "A.fs",
+            """
 module A.B1
 let x = 3
 """
-            "C.fs", """
+            "C.fs",
+            """
 module A.B2
 let x = 4
 """
         |]
         |> buildFiles
-        
+
     let deps = DependencyResolution.detectFileDependencies files
-    
-    let expectedEdges =
-        [
-            "C.fs", ["A.fs"]
-        ]
+
+    let expectedEdges = [ "C.fs", [ "A.fs" ] ]
     assertGraphEqual deps expectedEdges
 
-
 [<Test>]
-let ``Test error 2``() =
+let ``Test error 2`` () =
     let files =
         [|
-            "A.fs", """
+            "A.fs",
+            """
 module A.B1
 let x = 3
 """
-            "C.fs", """
+            "C.fs",
+            """
 module A.B2
 let x = 4
 """
         |]
         |> buildFiles
-        
-    let deps = DependencyResolution.detectFileDependencies files
-    
-    let expectedEdges =
-        [
-            "C.fs", ["A.fs"]
-        ]
-    assertGraphEqual deps expectedEdges
 
+    let deps = DependencyResolution.detectFileDependencies files
+
+    let expectedEdges = [ "C.fs", [ "A.fs" ] ]
+    assertGraphEqual deps expectedEdges
 
 let sampleFiles =
     [
-        "Abbr.fs", """
+        "Abbr.fs",
+        """
 module Abbr
 
 module X = A
 """
-        "A.fsi", """
+        "A.fsi",
+        """
 module A
 val a : int
 type X = int
 """
-        "A.fs", """
+        "A.fs",
+        """
 module A
 let a = 3
 type X = int
 """
-        "B.fs", """
+        "B.fs",
+        """
 namespace B
 let b = 3
 """
-        "C.fs", """
+        "C.fs",
+        """
 module C.X
 let c = 3
 """
-        "D.fs", """
+        "D.fs",
+        """
 module D
 let d : A.X = 3
 """
-        "E.fs", """
+        "E.fs",
+        """
 module E
 let e = C.X.x
 open A
 let x = a
 """
-        "F.fs", """
+        "F.fs",
+        """
 module F
 open C
 let x = X.c
 """
-        "G.fs", """
+        "G.fs",
+        """
 namespace GH
 type A = int
 """
-        "H.fs", """
+        "H.fs",
+        """
 namespace GH
 module GH2 =
     type B = int
 """
-        "I.fs", """
+        "I.fs",
+        """
 namespace GH
 module GH3 =
     type B = int
@@ -223,26 +224,28 @@ module GH3 =
     ]
     |> buildFiles
 
-let analyseResult (result : DepsResult) =
+let analyseResult (result: DepsResult) =
     analyseEfficiency result
-    
-    let totalDeps = result.Graph |> Seq.sumBy (fun (KeyValue(_k, v)) -> v.Length)
+
+    let totalDeps = result.Graph |> Seq.sumBy (fun (KeyValue (_k, v)) -> v.Length)
+
     let topFirstDeps =
         result.Graph
-        |> Seq.sumBy (
-            fun (KeyValue(_k, v)) ->
-                if v.Length = 0 then 0
-                else v |> Array.map (fun d -> result.Graph[d].Length) |> Array.max 
-        )
+        |> Seq.sumBy (fun (KeyValue (_k, v)) ->
+            if v.Length = 0 then
+                0
+            else
+                v |> Array.map (fun d -> result.Graph[d].Length) |> Array.max)
+
     printfn $"TotalDeps: {totalDeps}, topFirstDeps: {topFirstDeps}"
 
 [<Test>]
-let ``Analyse hardcoded files``() =
+let ``Analyse hardcoded files`` () =
     let deps = DependencyResolution.detectFileDependencies sampleFiles
     printfn "Detected file dependencies:"
     deps.Graph |> Graph.print
 
-let private parseProjectAndGetSourceFiles (projectFile : string) =
+let private parseProjectAndGetSourceFiles (projectFile: string) =
     //let cacheDir = "."
     //let getName projectFile = Path.Combine(Path.GetFileName(projectFile), ".fsharp"
     let m = AnalyzerManager()
@@ -254,12 +257,14 @@ let private parseProjectAndGetSourceFiles (projectFile : string) =
     log "built project using Buildalyzer"
     files
 
-[<TestCase(__SOURCE_DIRECTORY__ + @"\..\..\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj")>]
+[<TestCase(__SOURCE_DIRECTORY__
+           + @"\..\..\FSharp.Compiler.ComponentTests\FSharp.Compiler.ComponentTests.fsproj")>]
 [<TestCase(__SOURCE_DIRECTORY__ + @"\..\..\..\src\Compiler\FSharp.Compiler.Service.fsproj")>]
 [<Explicit("Slow as it uses Buildalyzer to analyse (build) projects first")>]
-let ``Analyse whole projects and print statistics`` (projectFile : string) =
+let ``Analyse whole projects and print statistics`` (projectFile: string) =
     log $"Start finding file dependency graph for {projectFile}"
     let files = parseProjectAndGetSourceFiles projectFile
+
     let files =
         files
         |> Array.Parallel.mapi (fun i f ->
@@ -269,31 +274,35 @@ let ``Analyse whole projects and print statistics`` (projectFile : string) =
                 Idx = FileIdx.make i
                 //Code = code
                 AST = ast
-            } : SourceFile
-        )
+            }: SourceFile)
+
     let N = files.Length
     log $"{N} files read and parsed"
-    
+
     let graph = DependencyResolution.detectFileDependencies files
     log "Dependency graph calculated"
-    
-    let totalDeps = graph.Graph |> Seq.sumBy (fun (KeyValue(_file, deps)) -> deps.Length)
-    let maxPossibleDeps = (N * (N-1)) / 2 
-    
+
+    let totalDeps =
+        graph.Graph |> Seq.sumBy (fun (KeyValue (_file, deps)) -> deps.Length)
+
+    let maxPossibleDeps = (N * (N - 1)) / 2
+
     let path = $"{Path.GetFileName(projectFile)}.deps.json"
-    graph.Graph
-    |> Graph.map (fun n -> n.Name)
-    |> Graph.serialiseToJson path
-    
-    log $"Analysed {N} files, detected {totalDeps}/{maxPossibleDeps} file dependencies (%.1f{100.0 * double(totalDeps) / double(maxPossibleDeps)}%%)."
+    graph.Graph |> Graph.map (fun n -> n.Name) |> Graph.serialiseToJson path
+
+    log
+        $"Analysed {N} files, detected {totalDeps}/{maxPossibleDeps} file dependencies (%.1f{100.0 * double (totalDeps) / double (maxPossibleDeps)}%%)."
+
     analyseEfficiency graph
-    
-    let totalDeps = graph.Graph |> Seq.sumBy (fun (KeyValue(_k, v)) -> v.Length)
+
+    let totalDeps = graph.Graph |> Seq.sumBy (fun (KeyValue (_k, v)) -> v.Length)
+
     let topFirstDeps =
         graph.Graph
-        |> Seq.sumBy (
-            fun (KeyValue(_k, v)) ->
-                if v.Length = 0 then 0
-                else v |> Array.map (fun d -> graph.Graph[d].Length) |> Array.max 
-        )
+        |> Seq.sumBy (fun (KeyValue (_k, v)) ->
+            if v.Length = 0 then
+                0
+            else
+                v |> Array.map (fun d -> graph.Graph[d].Length) |> Array.max)
+
     printfn $"TotalDeps: {totalDeps}, topFirstDeps: {topFirstDeps}, diff: {totalDeps - topFirstDeps}"
