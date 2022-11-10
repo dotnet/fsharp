@@ -10,26 +10,46 @@ open Hints
 
 module InlineParameterNameHints =
 
-    let private getHint (range: range, parameter: FSharpParameter) =
+    let private getParameterHint (range: range, parameter: FSharpParameter) =
         {
             Kind = HintKind.ParameterNameHint
             Range = range.StartRange
             Parts = [ TaggedText(TextTag.Text, $"{parameter.DisplayName} = ") ]
         }
 
+    let private getFieldHint (range: range, field: FSharpField) =
+        {
+            Kind = HintKind.ParameterNameHint
+            Range = range.StartRange
+            Parts = [ TaggedText(TextTag.Text, $"{field.Name} = ") ]
+        }
+
     let private doesParameterNameExist (parameter: FSharpParameter) = 
         parameter.DisplayName <> ""
 
-    let isValidForHint (symbol: FSharpMemberOrFunctionOrValue) =
-        // is there a better way?
-        let isNotBuiltInOperator = 
-            symbol.DeclaringEntity 
-            |> Option.exists (fun entity -> entity.CompiledName <> "Operators")
+    let private doesFieldNameExist (field: FSharpField) = 
+        not field.IsNameGenerated
 
-        symbol.IsFunction
-        && isNotBuiltInOperator // arguably, hints for those would be rather useless
+    let isMemberOrFunctionOrValueValidForHint (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
+        // make sure we're looking at a call site and not the definition
+        if symbolUse.IsFromUse then
+            // is there a better way?
+            let isNotBuiltInOperator = 
+                symbol.DeclaringEntity 
+                |> Option.exists (fun entity -> entity.CompiledName <> "Operators")
 
-    let getHints 
+            (symbol.IsFunction && isNotBuiltInOperator) // arguably, hints for those would be rather useless
+            || symbol.IsConstructor
+            || symbol.IsMethod
+        else
+            false
+
+    let isUnionCaseValidForHint (symbol: FSharpUnionCase) (symbolUse: FSharpSymbolUse) =
+        // is the union case being used as a constructor and is it not Cons
+        symbolUse.IsFromUse
+        && symbol.DisplayName <> "(::)"
+
+    let getHintsForMemberOrFunctionOrValue
         (parseResults: FSharpParseFileResults) 
         (symbol: FSharpMemberOrFunctionOrValue) 
         (symbolUse: FSharpSymbolUse) =
@@ -42,8 +62,31 @@ module InlineParameterNameHints =
             parameters
             |> Seq.zip ranges
             |> Seq.where (snd >> doesParameterNameExist)
-            |> Seq.map getHint
+            |> Seq.map getParameterHint
             |> Seq.toList
         
         // this is the case at least for custom operators
         | None -> []
+
+    let getHintsForUnionCase
+        (parseResults: FSharpParseFileResults) 
+        (symbol: FSharpUnionCase) 
+        (symbolUse: FSharpSymbolUse) =
+
+        let fields = Seq.toList symbol.Fields
+
+        // If a case does not use field names, don't even bother getting applied argument ranges
+        if fields |> List.exists doesFieldNameExist |> not then
+            []
+        else
+            let ranges = parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
+            
+            // When not all field values are provided (as the user is typing), don't show anything yet
+            match ranges with
+            | Some ranges when ranges.Length = fields.Length -> 
+                fields
+                |> List.zip ranges
+                |> List.where (snd >> doesFieldNameExist)
+                |> List.map getFieldHint
+            
+            | _ -> []
