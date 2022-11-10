@@ -29,7 +29,7 @@ neg10.fs(25,16,25,53): typecheck error FS0001: This type parameter cannot be ins
 
 neg10.fs(54,17,54,20): typecheck error FS0060: Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.
 
-neg10.fs(66,19,66,21): typecheck error FS0069: Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.
+neg10.fs(66,19,66,21): typecheck error FS0069: Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.
 
 neg10.fs(77,13,77,34): typecheck error FS0896: Enumerations cannot have members
 
