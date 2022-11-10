@@ -134,7 +134,8 @@ module IncrementalBuildSyntaxTree =
                                 [],
                                 [],
                                 isLastCompiland,
-                                { ConditionalDirectives = []; CodeComments = [] }
+                                { ConditionalDirectives = []; CodeComments = [] },
+                                Set.empty
                             )
                         )
                     else
@@ -284,7 +285,8 @@ type BoundModel private (tcConfig: TcConfig,
                 GraphNode(node {
                     match! this.TypeCheck(false) with
                     | FullState(tcInfo, tcInfoExtras) -> return tcInfo, tcInfoExtras
-                    | PartialState(tcInfo) -> return tcInfo, emptyTcInfoExtras
+                    | PartialState(tcInfo) -> 
+                        return tcInfo, emptyTcInfoExtras
                 })
 
             let partialGraphNode =              

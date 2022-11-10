@@ -1362,8 +1362,13 @@ type FSharpChecker
         let canInvalidateProject = defaultArg canInvalidateProject true
         let userOpName = defaultArg userOpName "Unknown"
 
-        backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
-        |> Async.AwaitNodeCode
+        node {
+            let! parseResults = backgroundCompiler.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName)
+            if parseResults.ParseTree.Identifiers |> Set.contains symbol.DisplayName then
+                return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
+            else
+                return Seq.empty
+        } |> Async.AwaitNodeCode
 
     member _.GetBackgroundSemanticClassificationForFile(fileName: string, options: FSharpProjectOptions, ?userOpName) =
         let userOpName = defaultArg userOpName "Unknown"

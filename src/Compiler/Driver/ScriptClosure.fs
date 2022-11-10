@@ -515,13 +515,13 @@ module ScriptPreprocessClosure =
         match lastParsedInput with
         | Some (ParsedInput.ImplFile lastParsedImplFile) ->
 
-            let (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _, trivia)) =
+            let (ParsedImplFileInput (name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, _, trivia, identifiers)) =
                 lastParsedImplFile
 
             let isLastCompiland = (true, tcConfig.target.IsExe)
 
             let lastParsedImplFileR =
-                ParsedImplFileInput(name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, isLastCompiland, trivia)
+                ParsedImplFileInput(name, isScript, qualNameOfFile, scopedPragmas, hashDirectives, implFileFlags, isLastCompiland, trivia, identifiers)
 
             let lastClosureFileR =
                 ClosureFile(fileName, m, Some(ParsedInput.ImplFile lastParsedImplFileR), parseDiagnostics, metaDiagnostics, nowarns)

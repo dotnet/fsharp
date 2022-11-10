@@ -48,6 +48,8 @@ type SyntheticSourceFile =
 
     member this.FileName = $"File{this.Id}.fs"
     member this.SignatureFileName = $"{this.FileName}i"
+    member this.TypeName = $"T{this.Id}V_{this.PublicVersion}"
+    member this.ModuleName = $"Module{this.Id}"
 
     member this.HasSignatureFile =
         match this.SignatureFile with
@@ -151,14 +153,14 @@ module Internal =
         seq {
             if project.RecursiveNamespace then
                 $"namespace rec {project.Name}"
-                $"module Module{f.Id}"
+                $"module {f.ModuleName}"
             else
-                $"module %s{project.Name}.Module{f.Id}"
+                $"module %s{project.Name}.{f.ModuleName}"
 
             for p in project.DependsOn do
                 $"open {p.Name}"
 
-            $"type T{f.Id}V_{f.PublicVersion}<'a> = T{f.Id} of 'a"
+            $"type {f.TypeName}<'a> = T{f.Id} of 'a"
 
             $"let {f.FunctionName} x ="
 
@@ -328,6 +330,9 @@ module ProjectOperations =
         expectOk result ()
         Assert.Equal<string>(oldSignature, newSignature)
 
+    let expectNumberOfResults expected (results: 'a list) =
+        if results.Length <> expected then failwith $"Found {results.Length} references but expected to find {expected}"
+
     let rec saveProject (p: SyntheticProject) generateSignatureFiles checker =
         async {
             Directory.CreateDirectory(p.ProjectDir) |> ignore
@@ -354,9 +359,37 @@ module ProjectOperations =
             writeFileIfChanged (p.ProjectDir ++ $"{p.Name}.fsproj") (renderFsProj p)
         }
 
+
 type WorkflowContext =
     { Project: SyntheticProject
       Signatures: Map<string, string> }
+
+
+let SaveAndCheckProject project checker = 
+    async {
+        validateFileIdsAreUnique project
+
+        do! saveProject project true checker
+
+        let! results = checker.ParseAndCheckProject(project.GetProjectOptions checker)
+
+        if not (Array.isEmpty results.Diagnostics) then
+            failwith $"Project {project.Name} failed initial check: \n%A{results.Diagnostics}"
+
+        let! signatures =
+            Async.Sequential
+                [ for file in project.SourceFiles do
+                      async {
+                          let! result = checkFile file.Id project checker
+                          let signature = getSignature result
+                          return file.Id, signature
+                      } ]
+
+        return
+            { Project = project
+              Signatures = Map signatures }
+    }
+
 
 type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpChecker) =
 
@@ -370,37 +403,17 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
     member this.Checker = checker
 
-    member this.Yield _ =
-        async {
-            validateFileIdsAreUnique initialProject
+    member this.Yield _ = SaveAndCheckProject initialProject checker
 
-            do! saveProject initialProject true checker
-
-            let! results = checker.ParseAndCheckProject(initialProject.GetProjectOptions checker)
-
-            if not (Array.isEmpty results.Diagnostics) then
-                failwith $"Project {initialProject.Name} failed initial check: \n%A{results.Diagnostics}"
-
-            let! signatures =
-                Async.Sequential
-                    [ for file in initialProject.SourceFiles do
-                          async {
-                              let! result = checkFile file.Id initialProject checker
-                              let signature = getSignature result
-                              return file.Id, signature
-                          } ]
-
-            return
-                { Project = initialProject
-                  Signatures = Map signatures }
-        }
+    member this.DeleteProjectDir() =
+        if Directory.Exists initialProject.ProjectDir then
+            Directory.Delete(initialProject.ProjectDir, true)
 
     member this.Run(workflow: Async<WorkflowContext>) =
         try
             Async.RunSynchronously workflow
         finally
-            if Directory.Exists initialProject.ProjectDir then
-                Directory.Delete(initialProject.ProjectDir, true)
+            this.DeleteProjectDir()
 
     /// Change contents of given file using `processFile` function.
     /// Does not save the file to disk.
@@ -475,12 +488,55 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
             return ctx
         }
 
+    /// Find all references to a module defined in a given file.
+    /// These should only be found in files that depend on this file.
+    ///
+    /// Requires `enableBackgroundItemKeyStoreAndSemanticClassification` to be true in the checker.
+    [<CustomOperation "findAllReferencesToModuleFromFile">]
+    member this.FindAllReferencesToModuleFromFile(workflow, fileId, processResults) =
+        async {
+            let! ctx = workflow
+            let! results = checkFile fileId ctx.Project checker
+            let typeCheckResult = getTypeCheckResult results
+            let moduleName = (ctx.Project.Find fileId).ModuleName
+            let symbolUse = typeCheckResult.GetSymbolUseAtLocation(1, moduleName.Length + ctx.Project.Name.Length + 8, $"module {ctx.Project.Name}.{moduleName}", [moduleName]) 
+                            |> Option.defaultWith (fun () -> failwith "no symbol use found")
+            let options = ctx.Project.GetProjectOptions checker
+            let! results =
+                [for f in options.SourceFiles do
+                    checker.FindBackgroundReferencesInFile(f, options, symbolUse.Symbol)]
+                    |> Async.Parallel
+
+            results |> Seq.collect id |> Seq.toList |> processResults
+            return ctx
+        }
+
 /// Execute a set of operations on a given synthetic project.
 /// The project is saved to disk and type checked at the start.
 let projectWorkflow project = ProjectWorkflowBuilder project
+
+
+/// Just like ProjectWorkflowBuilder but expects a saved and checked project
+/// so time is not spent on it during the benchmark.
+/// Also does not delete the project at the end of a run - so it keeps working for the next iteration
+type ProjectBenchmarkBuilder(initialContext: WorkflowContext, checker) =
+    inherit ProjectWorkflowBuilder(initialContext.Project, checker)
+
+    static member Create(initialProject, ?checker) =
+        async {
+            let checker = defaultArg checker (FSharpChecker.Create())
+            let! initialContext = SaveAndCheckProject initialProject checker
+            return ProjectBenchmarkBuilder(initialContext, checker)
+        }
+
+    member this.Yield _ = async.Return initialContext
+
+    member this.Run(workflow: Async<WorkflowContext>) = Async.RunSynchronously workflow
 
 
 type SyntheticProject with
     /// Execute a set of operations on this project.
     /// The project is saved to disk and type checked at the start.
     member this.Workflow = projectWorkflow this
+
+    member this.WorkflowWith checker = ProjectWorkflowBuilder(this, checker)

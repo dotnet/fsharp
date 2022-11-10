@@ -5290,7 +5290,7 @@ let CheckOneImplFile
         rootSigOpt: ModuleOrNamespaceType option,
         synImplFile) =
 
-    let (ParsedImplFileInput (_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland, _)) = synImplFile
+    let (ParsedImplFileInput (_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland, _, _)) = synImplFile
     let infoReader = InfoReader(g, amap)
 
     cancellable {

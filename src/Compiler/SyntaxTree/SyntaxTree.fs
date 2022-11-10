@@ -1680,7 +1680,8 @@ type ParsedImplFileInput =
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespace list *
         flags: (bool * bool) *
-        trivia: ParsedImplFileInputTrivia
+        trivia: ParsedImplFileInputTrivia *
+        identifiers: Set<string>
 
     member x.QualifiedName =
         (let (ParsedImplFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
@@ -1712,7 +1713,8 @@ type ParsedSigFileInput =
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespaceSig list *
-        trivia: ParsedSigFileInputTrivia
+        trivia: ParsedSigFileInputTrivia *
+        identifiers: Set<string>
 
     member x.QualifiedName =
         (let (ParsedSigFileInput (qualifiedNameOfFile = qualNameOfFile)) = x in qualNameOfFile)
@@ -1755,3 +1757,8 @@ type ParsedInput =
         | ParsedInput.ImplFile (ParsedImplFileInput(contents = SynModuleOrNamespace (range = m) :: _))
         | ParsedInput.SigFile (ParsedSigFileInput(contents = SynModuleOrNamespaceSig (range = m) :: _)) -> m
         | _ -> rangeN inp.FileName 0
+
+    member inp.Identifiers =
+        match inp with
+        | ParsedInput.ImplFile (ParsedImplFileInput(identifiers = identifiers))
+        | ParsedInput.SigFile (ParsedSigFileInput(identifiers = identifiers)) -> identifiers

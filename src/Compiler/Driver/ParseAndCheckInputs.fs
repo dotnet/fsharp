@@ -92,13 +92,13 @@ let PrependPathToSpec x (SynModuleOrNamespaceSig (longId, isRecursive, kind, dec
 
 let PrependPathToInput x inp =
     match inp with
-    | ParsedInput.ImplFile (ParsedImplFileInput (b, c, q, d, hd, impls, e, trivia)) ->
+    | ParsedInput.ImplFile (ParsedImplFileInput (b, c, q, d, hd, impls, e, trivia, i)) ->
         ParsedInput.ImplFile(
-            ParsedImplFileInput(b, c, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToImpl x) impls, e, trivia)
+            ParsedImplFileInput(b, c, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToImpl x) impls, e, trivia, i)
         )
 
-    | ParsedInput.SigFile (ParsedSigFileInput (b, q, d, hd, specs, trivia)) ->
-        ParsedInput.SigFile(ParsedSigFileInput(b, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToSpec x) specs, trivia))
+    | ParsedInput.SigFile (ParsedSigFileInput (b, q, d, hd, specs, trivia, i)) ->
+        ParsedInput.SigFile(ParsedSigFileInput(b, PrependPathToQualFileName x q, d, hd, List.map (PrependPathToSpec x) specs, trivia, i))
 
 let IsValidAnonModuleName (modname: string) =
     modname |> String.forall (fun c -> Char.IsLetterOrDigit c || c = '_')
@@ -243,7 +243,8 @@ let PostParseModuleImpls
         isLastCompiland,
         ParsedImplFile (hashDirectives, impls),
         lexbuf: UnicodeLexing.Lexbuf,
-        tripleSlashComments: range list
+        tripleSlashComments: range list,
+        identifiers: Set<string>
     ) =
     let othersWithSameName =
         impls
@@ -283,7 +284,7 @@ let PostParseModuleImpls
             CodeComments = codeComments
         }
 
-    ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland, trivia))
+    ParsedInput.ImplFile(ParsedImplFileInput(fileName, isScript, qualName, scopedPragmas, hashDirectives, impls, isLastCompiland, trivia, identifiers))
 
 let PostParseModuleSpecs
     (
@@ -292,7 +293,8 @@ let PostParseModuleSpecs
         isLastCompiland,
         ParsedSigFile (hashDirectives, specs),
         lexbuf: UnicodeLexing.Lexbuf,
-        tripleSlashComments: range list
+        tripleSlashComments: range list,
+        identifiers: Set<string>
     ) =
     let othersWithSameName =
         specs
@@ -331,7 +333,7 @@ let PostParseModuleSpecs
             CodeComments = codeComments
         }
 
-    ParsedInput.SigFile(ParsedSigFileInput(fileName, qualName, scopedPragmas, hashDirectives, specs, trivia))
+    ParsedInput.SigFile(ParsedSigFileInput(fileName, qualName, scopedPragmas, hashDirectives, specs, trivia, identifiers))
 
 type ModuleNamesDict = Map<string, Map<string, QualifiedNameOfFile>>
 
@@ -376,26 +378,26 @@ let DeduplicateModuleName (moduleNamesDict: ModuleNamesDict) fileName (qualNameO
 let DeduplicateParsedInputModuleName (moduleNamesDict: ModuleNamesDict) input =
     match input with
     | ParsedInput.ImplFile implFile ->
-        let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, hashDirectives, modules, flags, trivia)) =
+        let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, hashDirectives, modules, flags, trivia, identifiers)) =
             implFile
 
         let qualNameOfFileR, moduleNamesDictR =
             DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
 
         let implFileR =
-            ParsedImplFileInput(fileName, isScript, qualNameOfFileR, scopedPragmas, hashDirectives, modules, flags, trivia)
+            ParsedImplFileInput(fileName, isScript, qualNameOfFileR, scopedPragmas, hashDirectives, modules, flags, trivia, identifiers)
 
         let inputR = ParsedInput.ImplFile implFileR
         inputR, moduleNamesDictR
     | ParsedInput.SigFile sigFile ->
-        let (ParsedSigFileInput (fileName, qualNameOfFile, scopedPragmas, hashDirectives, modules, trivia)) =
+        let (ParsedSigFileInput (fileName, qualNameOfFile, scopedPragmas, hashDirectives, modules, trivia, identifiers)) =
             sigFile
 
         let qualNameOfFileR, moduleNamesDictR =
             DeduplicateModuleName moduleNamesDict fileName qualNameOfFile
 
         let sigFileR =
-            ParsedSigFileInput(fileName, qualNameOfFileR, scopedPragmas, hashDirectives, modules, trivia)
+            ParsedSigFileInput(fileName, qualNameOfFileR, scopedPragmas, hashDirectives, modules, trivia, identifiers)
 
         let inputT = ParsedInput.SigFile sigFileR
         inputT, moduleNamesDictR
@@ -426,6 +428,15 @@ let ParseInput
 
     try
         let input =
+            let identStore = HashSet<string>()
+
+            let identCaptureLexer x =
+                let token = lexer x
+                match token with
+                | Parser.token.IDENT ident -> identStore.Add ident |> ignore
+                | _ -> ()
+                token
+
             if FSharpMLCompatFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
                 if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
                     errorR (Error(FSComp.SR.buildInvalidSourceFileExtensionML fileName, rangeStartup))
@@ -434,19 +445,19 @@ let ParseInput
 
             // Call the appropriate parser - for signature files or implementation files
             if FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-                let impl = Parser.implementationFile lexer lexbuf
+                let impl = Parser.implementationFile identCaptureLexer lexbuf
 
                 let tripleSlashComments =
                     LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
 
-                PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, tripleSlashComments)
+                PostParseModuleImpls(defaultNamespace, fileName, isLastCompiland, impl, lexbuf, tripleSlashComments, Set identStore)
             elif FSharpSigFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName) then
-                let intfs = Parser.signatureFile lexer lexbuf
+                let intfs = Parser.signatureFile identCaptureLexer lexbuf
 
                 let tripleSlashComments =
                     LexbufLocalXmlDocStore.ReportInvalidXmlDocPositions(lexbuf)
 
-                PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, tripleSlashComments)
+                PostParseModuleSpecs(defaultNamespace, fileName, isLastCompiland, intfs, lexbuf, tripleSlashComments, Set identStore)
             else if lexbuf.SupportsFeature LanguageFeature.MLCompatRevisions then
                 error (Error(FSComp.SR.buildInvalidSourceFileExtensionUpdated fileName, rangeStartup))
             else
@@ -518,7 +529,8 @@ let EmptyParsedInput (fileName, isLastCompiland) =
                 {
                     ConditionalDirectives = []
                     CodeComments = []
-                }
+                },
+                Set.empty
             )
         )
     else
@@ -534,7 +546,8 @@ let EmptyParsedInput (fileName, isLastCompiland) =
                 {
                     ConditionalDirectives = []
                     CodeComments = []
-                }
+                },
+                Set.empty
             )
         )
 
