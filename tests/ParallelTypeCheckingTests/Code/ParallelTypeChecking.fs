@@ -1,5 +1,7 @@
 ﻿module internal ParallelTypeCheckingTests.ParallelTypeChecking
+
 #nowarn "1182"
+
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO
@@ -37,41 +39,30 @@ type Item = File
 
 type PartialResult = TcEnv * TopAttribs * CheckedImplFile option * ModuleOrNamespaceType
 
-let folder (state : State) (result : SingleResult): FinalFileResult * State =
-    result state
-    
+let folder (state: State) (result: SingleResult) : FinalFileResult * State = result state
+
 /// Use parallel checking of implementation files that have signature files
 let CheckMultipleInputsInParallel
-    ((ctok,
-        checkForErrors,
-        tcConfig: TcConfig,
-        tcImports: TcImports,
-        tcGlobals,
-        prefixPathOpt,
-        tcState,
-        eagerFormat,
-        inputs): 'a * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * AST list)
-    : FinalFileResult list * TcState
-    =
-    
+    ((ctok, checkForErrors, tcConfig: TcConfig, tcImports: TcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs): 'a * (unit -> bool) * TcConfig * TcImports * TcGlobals * LongIdent option * TcState * (PhasedDiagnostic -> PhasedDiagnostic) * AST list)
+    : FinalFileResult list * TcState =
+
     let sourceFiles =
         inputs
         |> List.toArray
-        |> Array.mapi (fun i inp ->
-            {
-                Idx = FileIdx.make i
-                AST = inp
-            }
-        )
+        |> Array.mapi (fun i inp -> { Idx = FileIdx.make i; AST = inp })
+
     ParseAndCheckInputs.asts <-
         inputs
         |> List.map (fun ast -> ast.FileName, ast)
         |> readOnlyDict
-        |> ConcurrentDictionary<_,_>
+        |> ConcurrentDictionary<_, _>
+
     let graph = DepResolving.DependencyResolution.detectFileDependencies sourceFiles
-    
-    let mutable nextIdx = (graph.Files |> Array.map (fun f -> f.File.Idx.Idx) |> Array.max) + 1
-    let fakeX (idx : FileIdx) (fsi : File) : FileData =
+
+    let mutable nextIdx =
+        (graph.Files |> Array.map (fun f -> f.File.Idx.Idx) |> Array.max) + 1
+
+    let fakeX (idx: FileIdx) (fsi: File) : FileData =
         {
             File = File.FakeFs idx fsi.Name
             Data =
@@ -81,6 +72,7 @@ let CheckMultipleInputsInParallel
                     ModuleRefs = [||]
                 }
         }
+
     let fsiXMap =
         graph.Files
         // fsi files
@@ -89,97 +81,105 @@ let CheckMultipleInputsInParallel
         |> Array.map (fun fsi ->
             let idx = FileIdx.make nextIdx
             nextIdx <- nextIdx + 1
-            fsi.File, fakeX idx fsi.File
-        )
+            fsi.File, fakeX idx fsi.File)
         |> readOnlyDict
-    
+
     let useXFiles = true
+
     let graph =
         if useXFiles then
             let xFiles = fsiXMap.Values |> Seq.toArray
+
             let stuff =
                 graph.Graph
-                |> Seq.map (fun (KeyValue(node, deps)) ->
+                |> Seq.map (fun (KeyValue (node, deps)) ->
                     let deps =
                         deps
                         |> Array.map (fun d ->
                             match (fsiXMap.TryGetValue d, (node.Name + "i" = d.Name)) with
                             | (true, xNode), false -> xNode.File
                             | (false, _), _
-                            | _, true -> d
-                        )
-                    node, deps
-                )
-                |> Seq.append (fsiXMap |> Seq.map (fun (KeyValue(fsi, x)) -> x.File, [|fsi|]))
+                            | _, true -> d)
+
+                    node, deps)
+                |> Seq.append (fsiXMap |> Seq.map (fun (KeyValue (fsi, x)) -> x.File, [| fsi |]))
                 |> readOnlyDict
+
             {
-                Files =  Array.append graph.Files xFiles
+                Files = Array.append graph.Files xFiles
                 Graph = stuff |> Graph.fillEmptyNodes
-            } : DepsResult
+            }: DepsResult
         else
             graph
-    
+
     graph.Graph |> Graph.print
-    
+
     let graphDumpPath =
-        let graphDumpName = tcConfig.outputFile |> Option.map Path.GetFileName |> Option.defaultValue "project"
+        let graphDumpName =
+            tcConfig.outputFile
+            |> Option.map Path.GetFileName
+            |> Option.defaultValue "project"
+
         $"{graphDumpName}.deps.json"
+
     graph.Graph
     |> Graph.map (fun n -> n.Name)
     |> Graph.serialiseToJson graphDumpPath
-    
+
     let _ = ctok // TODO Use
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
 
     // In the first linear part of parallel checking, we use a 'checkForErrors' that checks either for errors
     // somewhere in the files processed prior to each one, or in the processing of this particular file.
     let priorErrors = checkForErrors ()
-    
+
     let mutable cnt = 1
-    
+
     let processFile
-        (file : File)
-        ((input, logger) : ParsedInput * DiagnosticsLogger)
-        ((currentTcState, _currentPriorErrors) : State)
+        (file: File)
+        ((input, logger): ParsedInput * DiagnosticsLogger)
+        ((currentTcState, _currentPriorErrors): State)
         : State -> PartialResult * State =
         cancellable {
             use _ = UseDiagnosticsLogger logger
             // printfn $"Processing AST {file.ToString()}"
             // Is it OK that we don't update 'priorErrors' after processing batches?
             let checkForErrors2 () = priorErrors || (logger.ErrorCount > 0)
-            
+
             let tcSink = TcResultsSink.NoSink
             let c = cnt
             cnt <- cnt + 1
+
             match file.AST with
             | ASTOrFsix.AST _ ->
                 printfn $"#{c} [thread {Thread.CurrentThread.ManagedThreadId}] Type-checking {file.ToString()}"
-                let! f = CheckOneInput'(
-                    checkForErrors2,
-                    tcConfig,
-                    tcImports,
-                    tcGlobals,
-                    prefixPathOpt,
-                    tcSink,
-                    currentTcState,
-                    input,
-                    false  // skipImpFiles...
-                )
-        
+
+                let! f =
+                    CheckOneInput'(
+                        checkForErrors2,
+                        tcConfig,
+                        tcImports,
+                        tcGlobals,
+                        prefixPathOpt,
+                        tcSink,
+                        currentTcState,
+                        input,
+                        false // skipImpFiles...
+                    )
+
                 // printfn $"Finished Processing AST {file.ToString()}"
                 return
-                    (fun (state : State) ->
+                    (fun (state: State) ->
                         // printfn $"Applying {file.ToString()}"
                         let tcState, priorErrors = state
-                        let (partialResult : PartialResult, tcState) = f tcState
-        
+                        let (partialResult: PartialResult, tcState) = f tcState
+
                         let hasErrors = logger.ErrorCount > 0
-                        // TODO Should we use local _priorErrors or global priorErrors? 
+                        // TODO Should we use local _priorErrors or global priorErrors?
                         let priorOrCurrentErrors = priorErrors || hasErrors
-                        let state : State = tcState, priorOrCurrentErrors
+                        let state: State = tcState, priorOrCurrentErrors
                         // printfn $"Finished applying {file.ToString()}"
-                        partialResult, state
-                    )
+                        partialResult, state)
             | ASTOrFsix.Fsix fsi ->
                 // printfn $"[{c}] Processing X {file.ToString()}"
 
@@ -190,59 +190,65 @@ let CheckMultipleInputsInParallel
                 let fsName = fsi.TrimEnd('i')
                 let fsQualifiedName = asts[fsName].QualifiedName
                 let qualNameOfFile = fsQualifiedName
-                
+
                 // Add dummy TcState so that others can use this file through the .fsi stuff, without type-checking .fs
                 // Don't use it for this file's type-checking - it will cause duplicates
-                
+
                 let ccuSigForFile = fsiBackedInfos[fsi]
+
                 return
-                    (fun (state : State) ->
+                    (fun (state: State) ->
                         // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state
-                        // printfn $"Applying X state {file}"                        
+                        // printfn $"Applying X state {file}"
                         let tcState, priorErrors = state
-                        // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state 
-                        
+                        // (tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile), state
+
                         let ccuSigForFile, tcState =
                             AddCheckResultsToTcState
-                                (tcGlobals, tcImports.GetImportMap(), hadSig, prefixPathOpt, tcSink, tcState.TcEnvFromImpls, qualNameOfFile, ccuSigForFile)
+                                (tcGlobals,
+                                 tcImports.GetImportMap(),
+                                 hadSig,
+                                 prefixPathOpt,
+                                 tcSink,
+                                 tcState.TcEnvFromImpls,
+                                 qualNameOfFile,
+                                 ccuSigForFile)
                                 tcState
+
                         let partialResult = tcState.TcEnvFromImpls, EmptyTopAttrs, None, ccuSigForFile
-        
+
                         let hasErrors = logger.ErrorCount > 0
-                        // TODO Should we use local _priorErrors or global priorErrors? 
+                        // TODO Should we use local _priorErrors or global priorErrors?
                         let priorOrCurrentErrors = priorErrors || hasErrors
-                        let state : State = tcState, priorOrCurrentErrors
+                        let state: State = tcState, priorOrCurrentErrors
                         // printfn $"Finished applying X state {file}"
-                        partialResult, state
-                    )
+                        partialResult, state)
         }
         |> Cancellable.runWithoutCancellation
-        
+
     UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, Some eagerFormat) (fun inputsWithLoggers ->
         // Equip loggers to locally filter w.r.t. scope pragmas in each input
-        let inputsWithLoggers: IReadOnlyDictionary<FileIdx,(ParsedInput * DiagnosticsLogger)> =
+        let inputsWithLoggers: IReadOnlyDictionary<FileIdx, (ParsedInput * DiagnosticsLogger)> =
             inputsWithLoggers
             |> Seq.mapi (fun i (input, oldLogger) ->
                 let logger = DiagnosticsLoggerForInput(tcConfig, input, oldLogger)
                 FileIdx.make i, (input, logger))
             |> readOnlyDict
-        
 
         let graph: Graph<File> = graph.Graph
-        let processFile (file : File) (state : State) : State -> PartialResult * State =
+
+        let processFile (file: File) (state: State) : State -> PartialResult * State =
             let parsedInput, logger =
                 match file.AST with
-                | ASTOrFsix.AST ast ->
-                    ast, inputsWithLoggers[file.Idx] |> snd
-                | ASTOrFsix.Fsix _ ->
-                    inputs |> List.item 0, diagnosticsLogger
+                | ASTOrFsix.AST ast -> ast, inputsWithLoggers[file.Idx] |> snd
+                | ASTOrFsix.Fsix _ -> inputs |> List.item 0, diagnosticsLogger
+
             processFile file (parsedInput, logger) state
-            
+
         let folder: State -> SingleResult -> FinalFileResult * State = folder
-        let _qnof = QualifiedNameOfFile.QualifiedNameOfFile (Ident("", Range.Zero))
+        let _qnof = QualifiedNameOfFile.QualifiedNameOfFile(Ident("", Range.Zero))
         let state: State = tcState, priorErrors
-        
-        
+
         let partialResults, (tcState, _) =
             GraphProcessing.processGraph<File, State, SingleResult, FinalFileResult>
                 graph
@@ -251,6 +257,5 @@ let CheckMultipleInputsInParallel
                 state
                 (fun it -> not <| it.Name.EndsWith(".fsix"))
                 10
-        
-        partialResults |> Array.toList, tcState
-    )
+
+        partialResults |> Array.toList, tcState)

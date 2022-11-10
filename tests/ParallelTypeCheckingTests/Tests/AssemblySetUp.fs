@@ -1,4 +1,5 @@
 ﻿namespace global
+
 open NUnit.Framework
 open OpenTelemetry.Trace
 
@@ -9,13 +10,13 @@ type AssemblySetUp() =
 
     [<OneTimeSetUp>]
     member this.SetUp() =
-        tracerProvider <- ParallelTypeCheckingTests.TestUtils.setupOtel() |> Some
-        
+        tracerProvider <- ParallelTypeCheckingTests.TestUtils.setupOtel () |> Some
+
     [<OneTimeTearDown>]
     member this.TearDown() =
         tracerProvider
         |> Option.iter (fun x ->
             x.ForceFlush() |> ignore
-            x.Dispose()
-        )
+            x.Dispose())
+
         tracerProvider <- None

@@ -1199,6 +1199,7 @@ let CompileFromCommandLineArguments
             loggerProvider,
             disposables
         )
+
     if notJustTypeCheck then
         main1Result
         |> main2

@@ -210,10 +210,7 @@ type TypeCheckingMode =
     | Graph
 
 [<RequireQualifiedAccess>]
-type TypeCheckingConfig =
-    {
-        Mode : TypeCheckingMode
-    }
+type TypeCheckingConfig = { Mode: TypeCheckingMode }
 
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
@@ -499,8 +496,8 @@ type TcConfigBuilder =
         mutable exiter: Exiter
 
         mutable parallelReferenceResolution: ParallelReferenceResolution
-        
-        mutable typeCheckingConfig : TypeCheckingConfig
+
+        mutable typeCheckingConfig: TypeCheckingConfig
     }
 
     static member CreateNew:
@@ -863,8 +860,8 @@ type TcConfig =
     member exiter: Exiter
 
     member parallelReferenceResolution: ParallelReferenceResolution
-    
-    member typeCheckingConfig : TypeCheckingConfig
+
+    member typeCheckingConfig: TypeCheckingConfig
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

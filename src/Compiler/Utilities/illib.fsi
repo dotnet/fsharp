@@ -408,12 +408,10 @@ type internal CancellableBuilder =
 
     member TryFinally: comp: Cancellable<'T> * compensation: (unit -> unit) -> Cancellable<'T>
 
-    member TryWith:
-        comp: Cancellable<'T> * handler: (exn -> Cancellable<'T>) -> Cancellable<'T>
+    member TryWith: comp: Cancellable<'T> * handler: (exn -> Cancellable<'T>) -> Cancellable<'T>
 
     member Using:
-        resource: 'Resource * comp: ('Resource -> Cancellable<'T>) -> Cancellable<'T>
-            when 'Resource :> IDisposable
+        resource: 'Resource * comp: ('Resource -> Cancellable<'T>) -> Cancellable<'T> when 'Resource :> IDisposable
 
     member Zero: unit -> Cancellable<unit>
 

@@ -1,4 +1,4 @@
-﻿/// Allows extracting necessary data from a sequence of project source files 
+﻿/// Allows extracting necessary data from a sequence of project source files
 module ParallelTypeCheckingTests.FileInfoGathering
 
 open System.Collections.Generic
@@ -7,8 +7,9 @@ open ParallelTypeCheckingTests.Utils
 open ParallelTypeCheckingTests
 open FSharp.Compiler.Syntax
 
-let internal gatherBackingInfo (files : SourceFiles) : Files =
+let internal gatherBackingInfo (files: SourceFiles) : Files =
     let seenSigFiles = HashSet<string>()
+
     files
     |> Array.mapi (fun i f ->
         let fsiBacked =
@@ -19,31 +20,32 @@ let internal gatherBackingInfo (files : SourceFiles) : Files =
             | ParsedInput.ImplFile _ ->
                 let fsiBacked = seenSigFiles.Contains f.QualifiedName
                 fsiBacked
+
         {
             Idx = FileIdx.make i
             Code = "no code here" // TODO
             AST = ASTOrFsix.AST f.AST
             FsiBacked = fsiBacked
-        }
-    )
-    
+        })
+
 type ExtractedData =
     {
-        Tops : SimpleId[]
-        Abbreviations : Abbreviation[]
+        Tops: SimpleId[]
+        Abbreviations: Abbreviation[]
         /// All partial module references found in this file's AST
-        ModuleRefs : SimpleId[]
+        ModuleRefs: SimpleId[]
     }
-    
+
 /// All the data about a single file needed for the dependency resolution algorithm
 type FileData =
     {
-        File : File
-        Data : ExtractedData
+        File: File
+        Data: ExtractedData
     }
-    with member this.CodeSize = this.File.CodeSize
 
-let private gatherFileData (ast : ParsedInput) : ExtractedData =
+    member this.CodeSize = this.File.CodeSize
+
+let private gatherFileData (ast: ParsedInput) : ExtractedData =
     let moduleRefs, abbreviations = ASTVisit.findModuleRefs ast
     let tops = TopModulesExtraction.topModuleOrNamespaces ast
     // TODO As a perf optimisation we can skip top-level ids scanning for FsiBacked .fs files
@@ -55,17 +57,19 @@ let private gatherFileData (ast : ParsedInput) : ExtractedData =
     }
 
 /// Extract necessary information from all files in parallel - top-level items and all (partial) module references
-let gatherForAllFiles (files : SourceFiles) =
+let gatherForAllFiles (files: SourceFiles) =
     let files = gatherBackingInfo files
+
     let nodes =
         files
         // TODO Proper async with cancellation
         |> Array.Parallel.map (fun f ->
-            let ast = match f.AST with ASTOrFsix.AST ast -> ast | Fsix _ -> failwith "Unexpected X item"
+            let ast =
+                match f.AST with
+                | ASTOrFsix.AST ast -> ast
+                | Fsix _ -> failwith "Unexpected X item"
+
             let data = gatherFileData ast
-            {
-                File = f
-                Data = data
-            }
-        )
+            { File = f; Data = data })
+
     nodes
