@@ -33,7 +33,7 @@
     <!-- FSharp.Compiler.Service version -->
     <FCSMajorVersion>42</FCSMajorVersion>
     <FCSMinorVersion>7</FCSMinorVersion>
-    <FCSBuildVersion>100</FCSBuildVersion>
+    <FCSBuildVersion>101</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
     <FSharpCompilerServicePackageVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion)</FSharpCompilerServicePackageVersion>
     <FSharpCompilerServiceVersion>$(FCSMajorVersion).$(FCSMinorVersion).$(FCSBuildVersion).$(FCSRevisionVersion)</FSharpCompilerServiceVersion>
@@ -100,7 +100,7 @@
     <MicrosoftVisualStudioShellPackagesVersion>17.4.0-preview-3-32916-145</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>17.4.342-pre</VisualStudioProjectSystemPackagesVersion>
     <MicrosoftVisualStudioThreadingPackagesVersion>17.4.23-alpha</MicrosoftVisualStudioThreadingPackagesVersion>
-    <MicrosoftBuildOverallPackagesVersion>17.4.0-preview-22469-04</MicrosoftBuildOverallPackagesVersion>
+    <MicrosoftBuildOverallPackagesVersion>17.3.2</MicrosoftBuildOverallPackagesVersion>
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
