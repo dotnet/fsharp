@@ -129,7 +129,80 @@ open A
         ]
         |> FProject.Make CompileOutput.Library
 
-    let all = [ encodeDecodeSimple; diamondBroken1; fsFsi; emptyNamespace ]
+    let dependentSignatures =
+        [
+            "A.fsi",
+            """
+module A
+
+type AType = class end
+"""
+            "A.fs",
+            """
+module A
+
+type AType = class end
+"""
+            "B.fsi",
+            """
+module B
+
+open A
+
+val b: AType -> unit
+"""
+            "B.fs",
+            """
+module B
+
+open A
+
+let b (a:AType) = ()
+"""
+            "C.fsi",
+            """
+module C
+
+type CType = class end
+"""
+            "C.fs",
+            """
+module C
+
+type CType = class end
+"""
+            "D.fsi",
+            """
+module D
+
+open A
+open C
+
+val d: CType -> unit 
+"""
+            "D.fs",
+            """
+module D
+
+open A
+open B
+open C
+
+let d (c: CType) =
+    let a : AType = failwith "todo"
+    b a
+"""
+        ]
+        |> FProject.Make CompileOutput.Library
+
+    let all =
+        [
+            encodeDecodeSimple
+            diamondBroken1
+            fsFsi
+            emptyNamespace
+            dependentSignatures
+        ]
 
 type Case =
     {

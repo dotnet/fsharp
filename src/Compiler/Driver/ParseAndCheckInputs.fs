@@ -1470,6 +1470,9 @@ let CheckOneInputAux'
                         let fsiPartialResult, tcState =
                             let rootSigs = Zmap.add qualNameOfFile sigFileType tcState.tcsRootSigs
 
+                            let tcSigEnv =
+                                AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv sigFileType
+
                             // Add the signature to the signature env (unless it had an explicit signature)
                             let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
 
@@ -1477,8 +1480,7 @@ let CheckOneInputAux'
 
                             let tcState =
                                 { tcState with
-                                    tcsTcSigEnv = tcEnv
-                                    tcsTcImplEnv = tcState.tcsTcImplEnv
+                                    tcsTcSigEnv = tcSigEnv
                                     tcsRootSigs = rootSigs
                                     tcsCreatesGeneratedProvidedTypes =
                                         tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
