@@ -194,9 +194,6 @@ let d (c: CType) =
             emptyNamespace
             dependentSignatures
         ]
-        |> FProject.Make CompileOutput.Library
-
-    let all = [ encodeDecodeSimple; diamondBroken1; fsFsi; emptyNamespace ]
 
 type Case =
     {

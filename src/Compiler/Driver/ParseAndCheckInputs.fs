@@ -1471,8 +1471,8 @@ let CheckOneInputAux'
                         let tcSigEnv =
                             AddLocalRootModuleOrNamespace TcResultsSink.NoSink tcGlobals amap m tcState.tcsTcSigEnv sigFileType
 
-                            // Add the signature to the signature env (unless it had an explicit signature)
-                            let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
+                        // Add the signature to the signature env (unless it had an explicit signature)
+                        let ccuSigForFile = CombineCcuContentFragments [ sigFileType; tcState.tcsCcuSig ]
 
                         let partialResult = tcEnv, EmptyTopAttrs, None, ccuSigForFile
                         
@@ -1484,7 +1484,7 @@ let CheckOneInputAux'
                             }
                         partialResult, tcState
 
-                        fsiPartialResult, tcState
+                    fsiPartialResult, tcState
 
             | ParsedInput.ImplFile file ->
                 // printfn $"Processing Impl {file.FileName}"
