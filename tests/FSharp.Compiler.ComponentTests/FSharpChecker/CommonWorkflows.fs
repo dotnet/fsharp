@@ -7,26 +7,16 @@ open Xunit
 
 open FSharp.Test.ProjectGeneration
 
-let projectDir = "test-projects"
-
 let makeTestProject () =
-    let name = $"testProject{Guid.NewGuid().ToString()[..7]}"
-    let dir = Path.GetFullPath projectDir
-    {
-        Name = name
-        ProjectDir = dir ++ name
-        SourceFiles = [
-            sourceFile "First" []
-            sourceFile "Second" ["First"]
-            sourceFile "Third" ["First"]
-            { sourceFile "Last" ["Second"; "Third"] with EntryPoint = true }
-        ]
-        DependsOn = []
-    }
+    SyntheticProject.Create(
+        sourceFile "First" [],
+        sourceFile "Second" ["First"],
+        sourceFile "Third" ["First"],
+        { sourceFile "Last" ["Second"; "Third"] with EntryPoint = true })
 
 [<Fact>]
 let ``Edit file, check it, then check dependent file`` () =
-    projectWorkflow (makeTestProject()) {
+    makeTestProject().Workflow {
         updateFile "First" breakDependentFiles
         checkFile "First" expectSignatureChanged
         saveFile "First"
@@ -35,7 +25,7 @@ let ``Edit file, check it, then check dependent file`` () =
 
 [<Fact>]
 let ``Edit file, don't check it, check dependent file`` () =
-    projectWorkflow (makeTestProject()) {
+    makeTestProject().Workflow {
         updateFile "First" breakDependentFiles
         saveFile "First"
         checkFile "Second" expectErrors
@@ -43,7 +33,7 @@ let ``Edit file, don't check it, check dependent file`` () =
 
 [<Fact>]
 let ``Check transitive dependency`` () =
-    projectWorkflow (makeTestProject()) {
+    makeTestProject().Workflow {
         updateFile "First" breakDependentFiles
         saveFile "First"
         checkFile "Last" expectSignatureChanged
@@ -51,7 +41,7 @@ let ``Check transitive dependency`` () =
 
 [<Fact>]
 let ``Change multiple files at once`` () =
-    projectWorkflow (makeTestProject()) {
+    makeTestProject().Workflow {
         updateFile "First" (setPublicVersion 2)
         updateFile "Second" (setPublicVersion 2)
         updateFile "Third" (setPublicVersion 2)
@@ -62,7 +52,7 @@ let ``Change multiple files at once`` () =
 [<Fact>]
 let ``Files depend on signature file if present`` () =
     (makeTestProject()
-    |> updateFile "First" (fun f -> { f with HasSignatureFile = true })
+    |> updateFile "First" addSignatureFile
     |> projectWorkflow) {
         updateFile "First" breakDependentFiles
         saveFile "First"
@@ -71,7 +61,7 @@ let ``Files depend on signature file if present`` () =
 
 [<Fact>]
 let ``Adding a file`` () =
-    projectWorkflow (makeTestProject()) {
+    makeTestProject().Workflow {
         addFileAbove "Second" (sourceFile "New" [])
         updateFile "Second" (addDependency "New")
         saveAll
@@ -80,7 +70,7 @@ let ``Adding a file`` () =
 
 [<Fact>]
 let ``Removing a file`` () =
-    projectWorkflow (makeTestProject()) {
+    makeTestProject().Workflow {
         removeFile "Second"
         saveAll
         checkFile "Last" expectErrors
@@ -88,20 +78,13 @@ let ``Removing a file`` () =
 
 [<Fact>]
 let ``Changes in a referenced project`` () =
-    let name = $"library{Guid.NewGuid().ToString()[..7]}"
-    let dir = Path.GetFullPath projectDir
-    let library = {
-        Name = name
-        ProjectDir = dir ++ name
-        SourceFiles = [ sourceFile "Library" [] ]
-        DependsOn = []
-    }
+    let library = SyntheticProject.Create("library", sourceFile "Library" [])
 
     let project =
         { makeTestProject() with DependsOn = [library] }
         |> updateFile "First" (addDependency "Library")
 
-    projectWorkflow project {
+    project.Workflow {
         updateFile "Library" updatePublicSurface
         saveFile "Library"
         checkFile "Last" expectSignatureChanged
