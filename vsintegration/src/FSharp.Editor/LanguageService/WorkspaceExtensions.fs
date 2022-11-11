@@ -216,7 +216,7 @@ type Project with
 
     /// Find F# references in the given project.
     member this.FindFSharpReferencesAsync(symbol, onFound, userOpName) =
-        async {
-            for doc in this.Documents do
-                do! doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName)
-        }
+        this.Documents
+        |> Seq.map (fun doc -> doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName))
+        |> Async.Parallel
+        |> Async.Ignore
