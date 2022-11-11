@@ -19,14 +19,20 @@ type BackgroundCompilerBenchmarks () =
 
     let somethingToCompile = File.ReadAllText (__SOURCE_DIRECTORY__ ++ "SomethingToCompile.fs")
 
-    member val Benchmark = Unchecked.defaultof<ProjectBenchmarkBuilder> with get, set
-
-
     [<ParamsAllValues>]
     member val FastFindReferences = true with get,set
 
     [<ParamsAllValues>]
     member val EmptyCache = true with get,set
+
+    member val Benchmark = Unchecked.defaultof<ProjectBenchmarkBuilder> with get, set
+
+    member this.setup(project) =
+        let checker = FSharpChecker.Create(
+            enableBackgroundItemKeyStoreAndSemanticClassification = true,
+            fastFindReferences = this.FastFindReferences
+        )
+        this.Benchmark <- ProjectBenchmarkBuilder.Create(project, checker) |> Async.RunSynchronously
 
     [<IterationSetup>]
     member this.EditFirstFile_OnlyInternalChange() =
@@ -37,7 +43,7 @@ type BackgroundCompilerBenchmarks () =
     /// Only file at the top of the list has the reference
     [<GlobalSetup(Target="FindAllReferences_BestCase")>]
     member this.FindAllReferences_BestCase_Setup() =
-        let project =
+        this.setup
             { SyntheticProject.Create() with
                 SourceFiles = [
                     sourceFile $"File%03d{0}" [] |> addSignatureFile
@@ -45,12 +51,6 @@ type BackgroundCompilerBenchmarks () =
                         { sourceFile $"File%03d{i}" [$"File%03d{i-1}"] with ExtraSource = somethingToCompile }
                 ]
             }
-
-        let checker = FSharpChecker.Create(
-            enableBackgroundItemKeyStoreAndSemanticClassification = true,
-            fastFindReferences = this.FastFindReferences
-        )
-        this.Benchmark <- ProjectBenchmarkBuilder.Create(project, checker) |> Async.RunSynchronously
 
     [<Benchmark>]
     member this.FindAllReferences_BestCase() =
@@ -61,7 +61,7 @@ type BackgroundCompilerBenchmarks () =
     /// Few files in the middle have the reference
     [<GlobalSetup(Target="FindAllReferences_MediumCase")>]
     member this.FindAllReferences_MediumCase_Setup() =
-        let project =
+        this.setup(
             { SyntheticProject.Create() with
                 SourceFiles = [
                     sourceFile $"File%03d{0}" [] |> addSignatureFile
@@ -71,13 +71,7 @@ type BackgroundCompilerBenchmarks () =
             }
             |> updateFile $"File%03d{size / 2 - 1}" (addDependency "File000")
             |> updateFile $"File%03d{size / 2    }" (addDependency "File000")
-            |> updateFile $"File%03d{size / 2 + 1}" (addDependency "File000")
-
-        let checker = FSharpChecker.Create(
-            enableBackgroundItemKeyStoreAndSemanticClassification = true,
-            fastFindReferences = this.FastFindReferences
-        )
-        this.Benchmark <- ProjectBenchmarkBuilder.Create(project, checker) |> Async.RunSynchronously
+            |> updateFile $"File%03d{size / 2 + 1}" (addDependency "File000"))
 
     [<Benchmark>]
     member this.FindAllReferences_MediumCase() =
@@ -88,7 +82,7 @@ type BackgroundCompilerBenchmarks () =
     /// All files have the reference, have to check everything
     [<GlobalSetup(Target="FindAllReferences_WorstCase")>]
     member this.FindAllReferences_WorstCase_Setup() =
-        let project =
+        this.setup
             { SyntheticProject.Create() with
                 SourceFiles = [
                     sourceFile $"File%03d{0}" [] |> addSignatureFile
@@ -97,16 +91,10 @@ type BackgroundCompilerBenchmarks () =
                 ]
             }
 
-        let checker = FSharpChecker.Create(
-            enableBackgroundItemKeyStoreAndSemanticClassification = true,
-            fastFindReferences = this.FastFindReferences
-        )
-        this.Benchmark <- ProjectBenchmarkBuilder.Create(project, checker) |> Async.RunSynchronously
-
     [<Benchmark>]
     member this.FindAllReferences_WorstCase() =
         this.Benchmark {
-            findAllReferencesToModuleFromFile "File000" (expectNumberOfResults (size+2))
+            findAllReferencesToModuleFromFile "File000" (expectNumberOfResults (size + 2))
         }
 
     [<GlobalCleanup>]

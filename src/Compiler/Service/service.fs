@@ -1366,7 +1366,7 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
 
         node {
-            if not (fastFindReferences |> Option.defaultValue true) then
+            if fastFindReferences <> Some true then
                 return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
             else
                 let! parseResults = backgroundCompiler.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName)
