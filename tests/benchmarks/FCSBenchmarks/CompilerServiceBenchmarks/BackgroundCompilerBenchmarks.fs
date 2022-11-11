@@ -1,11 +1,8 @@
 ﻿module FSharp.Benchmarks.BackgroundCompilerBenchmarks
 
 
-open System
 open System.IO
 open BenchmarkDotNet.Attributes
-open FSharp.Compiler.Text
-open FSharp.Test
 open FSharp.Test.ProjectGeneration
 open FSharp.Compiler.CodeAnalysis
 
@@ -18,36 +15,100 @@ let FSharpCategory = "fsharp"
 [<BenchmarkCategory(FSharpCategory)>]
 type BackgroundCompilerBenchmarks () =
 
-    let size = 100
+    let size = 50
 
     let somethingToCompile = File.ReadAllText (__SOURCE_DIRECTORY__ ++ "SomethingToCompile.fs")
 
-    let project =
-        { SyntheticProject.Create() with
-            SourceFiles = [
-                sourceFile $"File%03d{0}" [] |> addSignatureFile
-                for i in 1..size do
-                    { sourceFile $"File%03d{i}" [$"File%03d{i-1}"] with ExtraSource = somethingToCompile }
-            ]
-        }
-        |> updateFile "File050" (addDependency "File000")
-        //|> updateFile "File075" (addDependency "File000")
-        //|> updateFile "File090" (addDependency "File000")
+    member val Benchmark = Unchecked.defaultof<ProjectBenchmarkBuilder> with get, set
 
-    let checker = FSharpChecker.Create(enableBackgroundItemKeyStoreAndSemanticClassification = true)
-    let benchmark = ProjectBenchmarkBuilder.Create(project, checker) |> Async.RunSynchronously
 
-    //[<IterationSetup(Targets = [| "FindAllReferences" |])>]
-    //member _.EditFirstFile_OnlyInternalChange() =
-    //    checker.InvalidateAll()
-    //    checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+    [<ParamsAllValues>]
+    member val FastFindReferences = true with get,set
 
-    [<GlobalCleanup>]
-    member _.Cleanup() =
-        benchmark.DeleteProjectDir()
+    [<ParamsAllValues>]
+    member val EmptyCache = true with get,set
+
+    [<IterationSetup>]
+    member this.EditFirstFile_OnlyInternalChange() =
+        if this.EmptyCache then
+            this.Benchmark.Checker.InvalidateAll()
+            this.Benchmark.Checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+
+    /// Only file at the top of the list has the reference
+    [<GlobalSetup(Target="FindAllReferences_BestCase")>]
+    member this.FindAllReferences_BestCase_Setup() =
+        let project =
+            { SyntheticProject.Create() with
+                SourceFiles = [
+                    sourceFile $"File%03d{0}" [] |> addSignatureFile
+                    for i in 1..size do
+                        { sourceFile $"File%03d{i}" [$"File%03d{i-1}"] with ExtraSource = somethingToCompile }
+                ]
+            }
+
+        let checker = FSharpChecker.Create(
+            enableBackgroundItemKeyStoreAndSemanticClassification = true,
+            fastFindReferences = this.FastFindReferences
+        )
+        this.Benchmark <- ProjectBenchmarkBuilder.Create(project, checker) |> Async.RunSynchronously
 
     [<Benchmark>]
-    member _.FindAllReferences() =
-        benchmark {
-            findAllReferencesToModuleFromFile "File000" (expectNumberOfResults 4)
+    member this.FindAllReferences_BestCase() =
+        this.Benchmark {
+            findAllReferencesToModuleFromFile "File000" (expectNumberOfResults 3)
         }
+
+    /// Few files in the middle have the reference
+    [<GlobalSetup(Target="FindAllReferences_MediumCase")>]
+    member this.FindAllReferences_MediumCase_Setup() =
+        let project =
+            { SyntheticProject.Create() with
+                SourceFiles = [
+                    sourceFile $"File%03d{0}" [] |> addSignatureFile
+                    for i in 1..size do
+                        { sourceFile $"File%03d{i}" [$"File%03d{i-1}"] with ExtraSource = somethingToCompile }
+                ]
+            }
+            |> updateFile $"File%03d{size / 2 - 1}" (addDependency "File000")
+            |> updateFile $"File%03d{size / 2    }" (addDependency "File000")
+            |> updateFile $"File%03d{size / 2 + 1}" (addDependency "File000")
+
+        let checker = FSharpChecker.Create(
+            enableBackgroundItemKeyStoreAndSemanticClassification = true,
+            fastFindReferences = this.FastFindReferences
+        )
+        this.Benchmark <- ProjectBenchmarkBuilder.Create(project, checker) |> Async.RunSynchronously
+
+    [<Benchmark>]
+    member this.FindAllReferences_MediumCase() =
+        this.Benchmark {
+            findAllReferencesToModuleFromFile "File000" (expectNumberOfResults 6)
+        }
+
+    /// All files have the reference, have to check everything
+    [<GlobalSetup(Target="FindAllReferences_WorstCase")>]
+    member this.FindAllReferences_WorstCase_Setup() =
+        let project =
+            { SyntheticProject.Create() with
+                SourceFiles = [
+                    sourceFile $"File%03d{0}" [] |> addSignatureFile
+                    for i in 1..size do
+                        { sourceFile $"File%03d{i}" [$"File000"] with ExtraSource = somethingToCompile }
+                ]
+            }
+
+        let checker = FSharpChecker.Create(
+            enableBackgroundItemKeyStoreAndSemanticClassification = true,
+            fastFindReferences = this.FastFindReferences
+        )
+        this.Benchmark <- ProjectBenchmarkBuilder.Create(project, checker) |> Async.RunSynchronously
+
+    [<Benchmark>]
+    member this.FindAllReferences_WorstCase() =
+        this.Benchmark {
+            findAllReferencesToModuleFromFile "File000" (expectNumberOfResults (size+2))
+        }
+
+    [<GlobalCleanup>]
+    member this.Cleanup() =
+        this.Benchmark.DeleteProjectDir()

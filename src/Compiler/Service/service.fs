@@ -1099,7 +1099,8 @@ type FSharpChecker
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
         enableParallelCheckingWithSignatureFiles,
-        parallelReferenceResolution
+        parallelReferenceResolution,
+        fastFindReferences
     ) =
 
     let backgroundCompiler =
@@ -1157,7 +1158,8 @@ type FSharpChecker
             ?enableBackgroundItemKeyStoreAndSemanticClassification,
             ?enablePartialTypeChecking,
             ?enableParallelCheckingWithSignatureFiles,
-            ?parallelReferenceResolution
+            ?parallelReferenceResolution,
+            ?fastFindReferences
         ) =
 
         let legacyReferenceResolver =
@@ -1194,7 +1196,8 @@ type FSharpChecker
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
             enableParallelCheckingWithSignatureFiles,
-            parallelReferenceResolution
+            parallelReferenceResolution,
+            fastFindReferences
         )
 
     member _.ReferenceResolver = legacyReferenceResolver
@@ -1363,12 +1366,15 @@ type FSharpChecker
         let userOpName = defaultArg userOpName "Unknown"
 
         node {
-            let! parseResults = backgroundCompiler.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName)
-
-            if parseResults.ParseTree.Identifiers |> Set.contains symbol.DisplayName then
+            if not (fastFindReferences |> Option.defaultValue true) then
                 return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
             else
-                return Seq.empty
+                let! parseResults = backgroundCompiler.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName)
+
+                if parseResults.ParseTree.Identifiers |> Set.contains symbol.DisplayName then
+                    return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
+                else
+                    return Seq.empty
         }
         |> Async.AwaitNodeCode
 
