@@ -1,12 +1,9 @@
 ﻿module ParallelTypeCheckingTests.TestCompilation
 
 open FSharp.Test
+open FSharp.Test.Compiler
 open NUnit.Framework
 open ParallelTypeCheckingTests.TestUtils
-
-type OutputType =
-    | Exe
-    | Library
 
 type FProject =
     {
@@ -14,6 +11,7 @@ type FProject =
         OutputType: CompileOutput
     }
 
+    /// Used for naming test cases in the test explorer
     override this.ToString() =
         let names =
             this.Files
@@ -212,23 +210,36 @@ type Case =
 
     override this.ToString() = $"{this.Method} - {this.Project}"
 
-let compile (x: Case) =
-    use _ =
-        FSharp.Compiler.Diagnostics.Activity.start "Compile codebase" [ "method", x.Method.ToString() ]
+let methodOptions (method: Method) =
+    match method with
+    | Method.Sequential -> []
+    | Method.ParallelCheckingOfBackedImplFiles -> ["--test:ParallelCheckingWithSignatureFilesOn"]
+    | Method.Graph -> ["--test:GraphBasedChecking"] 
 
-    setupCompilationMethod x.Method
+let withMethod (method: Method) (cu : CompilationUnit) : CompilationUnit =
+    match cu with
+    | CompilationUnit.FS cs ->
+        FS {cs with Options = cs.Options @ (methodOptions method)}
+    | cu -> cu
+
+let compileAValidProject (x: Case) =
+    use _ =
+        global.FSharp.Compiler.Diagnostics.Activity.start "Compile codebase" [ "method", x.Method.ToString() ]
+
+    printfn $"Method: {x.Method}"
 
     makeCompilationUnit x.Project.Files
     |> Compiler.withOutputType x.Project.OutputType
+    |> withMethod x.Method
     |> Compiler.compile
     |> Compiler.Assertions.shouldSucceed
     |> ignore
 
 let codebases = Codebases.all
 
-[<TestCaseSource(nameof (codebases))>]
-let ``Compile graph-based`` (project: FProject) =
-    compile
+[<TestCaseSource(nameof codebases)>]
+let ``Compile a valid project using graph-based type-checking`` (project: FProject) =
+    compileAValidProject
         {
             Method = Method.Graph
             Project = project
@@ -236,9 +247,9 @@ let ``Compile graph-based`` (project: FProject) =
 
 /// <summary> Compile a project using the original fully sequential type-checking. <br/>
 /// Useful as a sanity check </summary>
-[<TestCaseSource(nameof (codebases))>]
-let ``Compile sequential`` (project: FProject) =
-    compile
+[<TestCaseSource(nameof codebases)>]
+let ``Compile a valid project using sequential type-checking`` (project: FProject) =
+    compileAValidProject
         {
             Method = Method.Sequential
             Project = project

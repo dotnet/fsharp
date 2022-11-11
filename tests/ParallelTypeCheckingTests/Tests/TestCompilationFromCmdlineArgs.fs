@@ -48,6 +48,15 @@ let internal setupParsed config =
 
     setupCompilationMethod method
 
+    printfn $"Method: {method}"
+    let args =
+        match method with
+        | Method.Sequential -> args
+        | Method.ParallelCheckingOfBackedImplFiles ->
+            Array.append args [|"--test:ParallelCheckingWithSignatureFilesOn"|]
+        | Method.Graph ->
+            Array.append args [|"--test:GraphBasedChecking"|] 
+    
     printfn $"WorkingDir = {workingDir}"
     workingDir |> Option.iter (fun dir -> Environment.CurrentDirectory <- dir)
     args

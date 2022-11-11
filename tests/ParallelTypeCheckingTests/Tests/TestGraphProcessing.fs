@@ -55,7 +55,6 @@ let a = 3
         let a =
             {
                 Idx = FileIdx.make 1
-                Code = code
                 AST = ASTOrFsix.AST <| parseSourceCode ("A.fs", code)
                 FsiBacked = false
             }
@@ -69,7 +68,6 @@ let b = 3
         let b =
             {
                 Idx = FileIdx.make 2
-                Code = code
                 AST = ASTOrFsix.AST <| parseSourceCode ("B.fs", code)
                 FsiBacked = false
             }

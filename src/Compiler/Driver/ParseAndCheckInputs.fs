@@ -1729,7 +1729,7 @@ let mutable typeCheckingMode: TypeCheckingMode = TypeCheckingMode.Sequential
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
-        match typeCheckingMode with
+        match tcConfig.typeCheckingConfig.Mode with
         | TypeCheckingMode.Sequential ->
             CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
         | TypeCheckingMode.ParallelCheckingOfBackedImplFiles ->

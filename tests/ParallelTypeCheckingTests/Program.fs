@@ -11,14 +11,14 @@ let _parse (argv: string[]) : Args =
         | "sequential" -> Method.Sequential
         | "parallelfs" -> Method.ParallelCheckingOfBackedImplFiles
         | "graph" -> Method.Graph
-        | _ -> failwith $"Unrecognised method: {mode}"
+        | _ -> failwith $"Unrecognised mode: {mode}"
 
     let path, mode, workingDir =
         match argv with
         | [| path |] -> path, Method.Sequential, None
-        | [| path; mode |] -> path, parseMode mode, None
-        | [| path; mode; workingDir |] -> path, parseMode mode, Some workingDir
-        | _ -> failwith "Invalid args - use 'args_path [fs-parallel]"
+        | [| path; method |] -> path, parseMode method, None
+        | [| path; method; workingDir |] -> path, parseMode method, Some workingDir
+        | _ -> failwith "Invalid args - use 'args_path [method [fs-parallel]]'"
 
     {
         Path = path

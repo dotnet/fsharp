@@ -1392,6 +1392,11 @@ let testFlag tcConfigB =
                     { tcConfigB.typeCheckingConfig with
                         Mode = TypeCheckingMode.ParallelCheckingOfBackedImplFiles
                     }
+            | "GraphBasedChecking" ->
+                tcConfigB.typeCheckingConfig <-
+                    { tcConfigB.typeCheckingConfig with
+                        Mode = TypeCheckingMode.Graph
+                    }
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true
 #endif
