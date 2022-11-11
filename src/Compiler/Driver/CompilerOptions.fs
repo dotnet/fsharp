@@ -1770,13 +1770,13 @@ let compilingFsLibFlag (tcConfigB: TcConfigBuilder) =
     )
 
 let compilingFsLib20Flag =
-    CompilerOption("compiling-fslib-20", tagNone, OptionString(fun _ -> ()), None, None)
+    CompilerOption("compiling-fslib-20", tagNone, OptionString(fun _ -> ()), Some (DeprecatedCommandLineOptionNoDescription("--compiling-fslib-20", rangeCmdArgs)), None)
 
 let compilingFsLib40Flag =
-    CompilerOption("compiling-fslib-40", tagNone, OptionUnit(fun () -> ()), None, None)
+    CompilerOption("compiling-fslib-40", tagNone, OptionUnit(fun () -> ()), Some (DeprecatedCommandLineOptionNoDescription("--compiling-fslib-40", rangeCmdArgs)), None)
 
 let compilingFsLibNoBigIntFlag =
-    CompilerOption("compiling-fslib-nobigint", tagNone, OptionUnit(fun () -> ()), None, None)
+    CompilerOption("compiling-fslib-nobigint", tagNone, OptionUnit(fun () -> ()), Some (DeprecatedCommandLineOptionNoDescription("compiling-fslib-nobigint", rangeCmdArgs)), None)
 
 let mlKeywordsFlag =
     CompilerOption(
