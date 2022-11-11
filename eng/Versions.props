@@ -100,7 +100,7 @@
     <MicrosoftVisualStudioShellPackagesVersion>17.4.0-preview-3-32916-145</MicrosoftVisualStudioShellPackagesVersion>
     <VisualStudioProjectSystemPackagesVersion>17.4.342-pre</VisualStudioProjectSystemPackagesVersion>
     <MicrosoftVisualStudioThreadingPackagesVersion>17.4.23-alpha</MicrosoftVisualStudioThreadingPackagesVersion>
-    <MicrosoftBuildOverallPackagesVersion>17.3.2</MicrosoftBuildOverallPackagesVersion>
+    <MicrosoftBuildOverallPackagesVersion>17.4.0</MicrosoftBuildOverallPackagesVersion>
     <!-- Roslyn packages -->
     <MicrosoftCodeAnalysisEditorFeaturesVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesVersion>
     <MicrosoftCodeAnalysisEditorFeaturesTextVersion>$(RoslynVersion)</MicrosoftCodeAnalysisEditorFeaturesTextVersion>
