@@ -5,15 +5,13 @@
 # ReqNOCov	-- skip this test/suite if we are doing a code coverage run
 # ReqENU	-- skip this test/suite if we are running on non-ENU (useful to exclude hard-to-localize tests)
 
-CompilerOptions01,NoMT				CompilerOptions\fsc\checked
-CompilerOptions01,NoMT				CompilerOptions\fsc\cliversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\codepage
 CompilerOptions01,NoMT				CompilerOptions\fsc\crossoptimize
-CompilerOptions01,NoMT				CompilerOptions\fsc\debug
+CompilerOptions01,NoMT,Determinism  CompilerOptions\fsc\determinism
 CompilerOptions01,NoMT				CompilerOptions\fsc\dumpAllCommandLineOptions
 CompilerOptions01,NoMT				CompilerOptions\fsc\flaterrors
 CompilerOptions02,NoMT				CompilerOptions\fsc\gccerrors
-CompilerOptions01,NoMT,help				CompilerOptions\fsc\help
+CompilerOptions01,NoMT,help			CompilerOptions\fsc\help
 CompilerOptions01,NoMT				CompilerOptions\fsc\highentropyva
 CompilerOptions01,NoMT				CompilerOptions\fsc\langversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\lib
@@ -21,23 +19,22 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\noframework
 CompilerOptions01,NoMT				CompilerOptions\fsc\nologo
 CompilerOptions01,NoMT				CompilerOptions\fsc\optimize
 CompilerOptions01,NoMT				CompilerOptions\fsc\out
-CompilerOptions01,NoMT,pdbs				CompilerOptions\fsc\pdb
 CompilerOptions01,NoMT				CompilerOptions\fsc\platform
+CompilerOptions01,NoMT,pdbs			CompilerOptions\fsc\pdb
 CompilerOptions01,NoMT				CompilerOptions\fsc\Removed
+CompilerOptions01,NoMT				CompilerOptions\fsc\responsefile
 CompilerOptions01,NoMT				CompilerOptions\fsc\standalone
-CompilerOptions01,NoMT,NoHostedCompiler		CompilerOptions\fsc\staticlink
+CompilerOptions01,NoMT,NoHostedCompiler CompilerOptions\fsc\staticlink
 CompilerOptions01,NoMT				CompilerOptions\fsc\subsystemversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\tailcalls
 CompilerOptions01,NoMT				CompilerOptions\fsc\target
-CompilerOptions01,NoMT,NoHostedCompiler				CompilerOptions\fsc\tokenize
-CompilerOptions01,NoMT				CompilerOptions\fsc\responsefile
-CompilerOptions01,NoMT,help				CompilerOptions\fsi\help
+CompilerOptions01,NoMT,NoHostedCompiler CompilerOptions\fsc\tokenize
+
+CompilerOptions01,NoMT,help			CompilerOptions\fsi\help
 CompilerOptions01,NoMT				CompilerOptions\fsi\highentropyva
 CompilerOptions01,NoMT				CompilerOptions\fsi\langversion
 CompilerOptions01,NoMT				CompilerOptions\fsi\nologo
 CompilerOptions01,NoMT				CompilerOptions\fsi\subsystemversion
-CompilerOptions02,NoMT				CompilerOptions\fsi\exename
-CompilerOptions01,NoMT,Determinism				CompilerOptions\fsc\determinism
 
 Conformance01			Conformance\BasicGrammarElements\Constants
 Conformance01			Conformance\BasicGrammarElements\OperatorNames
