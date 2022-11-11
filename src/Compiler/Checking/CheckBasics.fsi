@@ -134,6 +134,10 @@ type TcEnv =
 
     member AccessRights: AccessorDomain
 
+    member TraitContext: ITraitContext option
+
+    interface ITraitContext
+
 /// Represents the current environment of type variables that have implicit scope
 /// (i.e. are without explicit declaration).
 type UnscopedTyparEnv = UnscopedTyparEnv of NameMap<Typar>

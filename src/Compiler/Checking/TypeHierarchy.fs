@@ -370,6 +370,14 @@ let ImportReturnTypeFromMetadata amap m ilTy getCattrs scoref tinst minst =
     | retTy -> Some(ImportILTypeFromMetadataWithAttributes amap m scoref tinst minst retTy getCattrs)
 
 
+/// If you use a generic thing, then the extension members in scope at the point of _use_
+/// are the ones available to solve the constraint
+let FreshenTrait (traitCtxt: ITraitContext option) traitInfo =
+    let (TTrait(typs, nm, mf, argtys, rty, slnCell, traitCtxtOld)) = traitInfo
+    let traitCtxtNew = match traitCtxt with None -> traitCtxtOld | Some _ -> traitCtxt
+
+    TTrait(typs, nm, mf, argtys, rty, slnCell, traitCtxtNew)
+
 /// Copy constraints.  If the constraint comes from a type parameter associated
 /// with a type constructor then we are simply renaming type variables.  If it comes
 /// from a generic method in a generic class (e.g. ty.M<_>) then we may be both substituting the
@@ -378,7 +386,7 @@ let ImportReturnTypeFromMetadata amap m ilTy getCattrs scoref tinst minst =
 ///
 /// Note: this now looks identical to constraint instantiation.
 
-let CopyTyparConstraints m tprefInst (tporig: Typar) =
+let CopyTyparConstraints traitCtxt m tprefInst (tporig: Typar) =
     tporig.Constraints
     |>  List.map (fun tpc ->
            match tpc with
@@ -407,11 +415,12 @@ let CopyTyparConstraints m tprefInst (tporig: Typar) =
            | TyparConstraint.RequiresDefaultConstructor _ ->
                TyparConstraint.RequiresDefaultConstructor m
            | TyparConstraint.MayResolveMember(traitInfo, _) ->
-               TyparConstraint.MayResolveMember (instTrait tprefInst traitInfo, m))
+               let traitInfo2 = FreshenTrait traitCtxt traitInfo 
+               TyparConstraint.MayResolveMember (instTrait tprefInst traitInfo2, m))
 
 /// The constraints for each typar copied from another typar can only be fixed up once
 /// we have generated all the new constraints, e.g. f<A :> List<B>, B :> List<A>> ...
-let FixupNewTypars m (formalEnclosingTypars: Typars) (tinst: TType list) (tpsorig: Typars) (tps: Typars) =
+let FixupNewTypars traitCtxt m (formalEnclosingTypars: Typars) (tinst: TType list) (tpsorig: Typars) (tps: Typars) =
     // Checks.. These are defensive programming against early reported errors.
     let n0 = formalEnclosingTypars.Length
     let n1 = tinst.Length
@@ -423,6 +432,6 @@ let FixupNewTypars m (formalEnclosingTypars: Typars) (tinst: TType list) (tpsori
     // The real code..
     let renaming, tptys = mkTyparToTyparRenaming tpsorig tps
     let tprefInst = mkTyparInst formalEnclosingTypars tinst @ renaming
-    (tpsorig, tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints  m tprefInst tporig))
+    (tpsorig, tps) ||> List.iter2 (fun tporig tp -> tp.SetConstraints (CopyTyparConstraints traitCtxt m tprefInst tporig))
     renaming, tptys
 

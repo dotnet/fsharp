@@ -83,6 +83,11 @@ namespace Microsoft.FSharp.Core
         member _.Value = value
         new () = new AllowNullLiteralAttribute(true)
       
+    [<AttributeUsage(AttributeTargets.Method, AllowMultiple=false)>]
+    [<Sealed>]
+    type AllowOverloadByReturnTypeAttribute() =
+        inherit System.Attribute()
+      
     [<AttributeUsage(AttributeTargets.Field, AllowMultiple=false)>]
     [<Sealed>]
     type VolatileFieldAttribute() =

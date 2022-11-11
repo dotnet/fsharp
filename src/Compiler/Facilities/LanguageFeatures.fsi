@@ -27,6 +27,7 @@ type LanguageFeature =
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
+    | ExtensionConstraintSolutions
     | StructActivePattern
     | PrintfBinaryFormat
     | IndexerNotationWithoutDot

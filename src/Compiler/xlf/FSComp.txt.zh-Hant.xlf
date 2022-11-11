@@ -177,6 +177,11 @@
         <target state="translated">無點號的 float32 常值</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>extension constraint solutions</source>
+        <target state="new">extension constraint solutions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">對具有 RequireQualifiedAccess 屬性的建構的已取代存取發出錯誤</target>
@@ -2583,8 +2588,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperator">
-        <source>None of the types '{0}' support the operator '{1}'</source>
-        <target state="translated">類型 '{0}' 都不支援運算子 '{1}'</target>
+        <source>The types '{0}' do not support the operator '{1}'</source>
+        <target state="needs-review-translation">類型 '{0}' 都不支援運算子 '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperator">
@@ -2593,8 +2598,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperatorNullable">
-        <source>None of the types '{0}' support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
-        <target state="translated">類型 '{0}' 都不支援運算子 '{1}'。請考慮開啟模組 'Microsoft.FSharp.Linq.NullableOperators'。</target>
+        <source>The types '{0}' do not support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
+        <target state="needs-review-translation">類型 '{0}' 都不支援運算子 '{1}'。請考慮開啟模組 'Microsoft.FSharp.Linq.NullableOperators'。</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperatorNullable">

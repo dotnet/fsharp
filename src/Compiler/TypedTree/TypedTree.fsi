@@ -1649,6 +1649,26 @@ type TraitWitnessInfo =
     /// Get the return type recorded in the member constraint.
     member ReturnType: TType option
 
+/// Represents the ability to solve traits via extension methods in a particular scope.
+///
+/// Only satisfied by types defined elsewhere (e.g. NameResolutionEnv), and not stored in TypedTreePickle.
+type ITraitContext =
+    /// Used to select the extension methods in the context relevant to solving the constraint
+    /// given the current support types
+    abstract SelectExtensionMethods: TraitConstraintInfo * range * infoReader: obj -> (TType * ITraitExtensionMember) list
+
+    /// Gives the access rights (e.g. InternalsVisibleTo, Protected) at the point the trait is being solved
+    abstract AccessRights: ITraitAccessorDomain
+
+/// Only satisfied by elsewhere. Not stored in TastPickle.
+type ITraitExtensionMember =
+    interface
+    end
+
+type ITraitAccessorDomain =
+    interface
+    end
+
 /// The specification of a member constraint that must be solved
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitConstraintInfo =
@@ -1656,12 +1676,13 @@ type TraitConstraintInfo =
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
     | TTrait of
-        tys: TTypes *
+        supportTys: TTypes *
         memberName: string *
         memberFlags: Syntax.SynMemberFlags *
         objAndArgTys: TTypes *
         returnTyOpt: TType option *
-        solution: TraitConstraintSln option ref
+        solution: TraitConstraintSln option ref *
+        traitContext: ITraitContext option
 
     override ToString: unit -> string
 
@@ -1691,6 +1712,12 @@ type TraitConstraintInfo =
     /// Get or set the solution of the member constraint during inference
     member Solution: TraitConstraintSln option with get, set
 
+    /// Get the context used to help determine possible extension member solutions
+    member TraitContext: ITraitContext option
+
+    /// Get the key associated with the member constraint.
+    member TraitKey: TraitWitnessInfo
+
     /// The member kind is irrelevant to the logical properties of a trait. However it adjusts
     /// the extension property MemberDisplayNameCore
     member WithMemberKind: SynMemberKind -> TraitConstraintInfo
@@ -1702,11 +1729,12 @@ type TraitConstraintSln =
     /// FSMethSln(ty, vref, minst)
     ///
     /// Indicates a trait is solved by an F# method.
-    ///    ty -- the type type its instantiation
-    ///    vref -- the method that solves the trait constraint
+    ///    apparentType -- the apparent type and its instantiation
+    ///    valRef -- the method that solves the trait constraint
+    ///    methodInst -- the generic method instantiation
     ///    staticTyOpt -- the static type governing a static virtual call, if any
-    ///    minst -- the generic method instantiation
-    | FSMethSln of ty: TType * vref: ValRef * minst: TypeInst * staticTyOpt: TType option
+    ///    isExt -- is this a use of an extension method
+    | FSMethSln of apparentType: TType * valRef: ValRef * methodInst: TypeInst * staticTyOpt: TType option * isExt: bool
 
     /// FSRecdFieldSln(tinst, rfref, isSetProp)
     ///

@@ -124,7 +124,13 @@ exception InvalidInternalsVisibleToAssemblyName of badName: string * fileName: s
 val TcFieldInit: range -> ILFieldInit -> Const
 
 val LightweightTcValForUsingInBuildMethodCall:
-    g: TcGlobals -> vref: ValRef -> vrefFlags: ValUseFlag -> vrefTypeInst: TTypes -> m: range -> Expr * TType
+    g: TcGlobals ->
+    traitCtxt: ITraitContext option ->
+    vref: ValRef ->
+    vrefFlags: ValUseFlag ->
+    vrefTypeInst: TTypes ->
+    m: range ->
+        Expr * TType
 
 /// Indicates whether a syntactic type is allowed to include new type variables
 /// not declared anywhere, e.g. `let f (x: 'T option) = x.Value`
@@ -475,6 +481,7 @@ val FixupLetrecBind:
 /// inference variables with the given rigidity.
 val FreshenObjectArgType:
     cenv: TcFileState ->
+    traitFreshner: ITraitContext option ->
     m: range ->
     rigid: TyparRigidity ->
     tcref: TyconRef ->

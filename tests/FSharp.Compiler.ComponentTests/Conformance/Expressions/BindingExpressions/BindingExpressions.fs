@@ -105,8 +105,8 @@ module BindingExpressions =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 12, Col 13, Line 12, Col 14, "The type 'int' does not match the type 'unit'")
-            (Error 1, Line 12, Col 18, Line 12, Col 24, "Type mismatch. Expecting a\n    ''a -> 'b'    \nbut given a\n    ''a -> unit'    \nThe type 'int' does not match the type 'unit'")
+            (Error 1, Line 12, Col 13, Line 12, Col 14, "The types 'unit, int' do not support the operator '+'")
+            (Error 1, Line 12, Col 18, Line 12, Col 24, "The types 'unit, int' do not support the operator '+'")
             (Warning 20, Line 13, Col 5, Line 13, Col 10, "The result of this expression has type 'bool' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.")
         ]
 
@@ -118,8 +118,8 @@ module BindingExpressions =
         |> compile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 10, Col 9, Line 10, Col 10, "The type 'int' does not match the type 'unit'")
-            (Error 1, Line 10, Col 14, Line 10, Col 20, "Type mismatch. Expecting a\n    ''a -> 'b'    \nbut given a\n    ''a -> unit'    \nThe type 'int' does not match the type 'unit'")
+            (Error 1, Line 10, Col 9, Line 10, Col 10, "The types 'unit, int' do not support the operator '+'")
+            (Error 1, Line 10, Col 14, Line 10, Col 20, "The types 'unit, int' do not support the operator '+'")
         ]
 
     // SOURCE=MutableLocals01.fs SCFLAGS="--warnon:3180 --optimize+ --test:ErrorRanges"

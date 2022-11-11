@@ -156,7 +156,7 @@ and accOp cenv env (op, tyargs, args, _m) =
         accTypeInst cenv env retTys
     | _ ->    ()
 
-and accTraitInfo cenv env (TTrait(tys, _nm, _, argTys, retTy, _sln)) =
+and accTraitInfo cenv env (TTrait(tys, _nm, _, argTys, retTy, _sln, _traitCtxt)) =
     argTys |> accTypeInst cenv env 
     retTy |> Option.iter (accTy cenv env)
     tys |> List.iter (accTy cenv env)
@@ -289,5 +289,15 @@ let UnsolvedTyparsOfModuleDef g amap denv mdef extraAttribs =
     accModuleOrNamespaceDef cenv NoEnv mdef
     accAttribs cenv NoEnv extraAttribs
     List.rev cenv.unsolved
+
+let UnsolvedTyparsOfExpr g amap denv expr =
+   let cenv = 
+        { g =g  
+          amap=amap 
+          denv=denv 
+          unsolved = [] 
+          stackGuard = StackGuard(FindUnsolvedStackGuardDepth, "UnsolvedTyparsOfExpr") }
+   accExpr cenv NoEnv expr
+   List.rev cenv.unsolved
 
 

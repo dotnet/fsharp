@@ -320,6 +320,8 @@ type MethInfo =
         m: range
 #endif
 
+    interface ITraitExtensionMember
+
     /// Get the enclosing type of the method info, using a nominal type for tuple types
     member ApparentEnclosingAppType: TType
 
@@ -521,7 +523,7 @@ type MethInfo =
     member GetParamTypes: amap: ImportMap * m: range * minst: TType list -> TType list list
 
     /// Get the signature of an abstract method slot.
-    member GetSlotSig: amap: ImportMap * m: range -> SlotSig
+    member GetSlotSig: amap: ImportMap * m: range * traitCtxt: ITraitContext option -> SlotSig
 
     /// Get the ParamData objects for the parameters of a MethInfo
     member HasParamArrayArg: amap: ImportMap * m: range * minst: TType list -> bool

@@ -25,6 +25,7 @@ open FSharp.Compiler.Features
 open FSharp.Compiler.Infos
 open FSharp.Compiler.Import
 open FSharp.Compiler.LowerStateMachines
+open FSharp.Compiler.NameResolution
 open FSharp.Compiler.Syntax
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.SyntaxTreeOps
@@ -541,7 +542,7 @@ type TypeReprEnv(reprs: Map<Stamp, uint16>, count: int, templateReplacement: (Ty
     member _.WithoutTemplateReplacement() = TypeReprEnv(reprs, count, None)
 
     /// Lookup a type parameter
-    member _.Item(tp: Typar, m: range) =
+    member _.LookupTyparRepr(tp: Typar, m: range) =
         try
             reprs[tp.Stamp]
         with :? KeyNotFoundException ->
@@ -716,7 +717,7 @@ and GenTypeAux cenv m (tyenv: TypeReprEnv) voidOK ptrsOK ty =
         else
             EraseClosures.mkILTyFuncTy cenv.ilxPubCloEnv
 
-    | TType_var (tp, _) -> mkILTyvarTy tyenv[tp, m]
+    | TType_var (tp, _) -> mkILTyvarTy (tyenv.LookupTyparRepr(tp, m))
 
     | TType_measure _ -> g.ilg.typ_Int32
 
@@ -6063,7 +6064,7 @@ and GenStructStateMachine cenv cgbuf eenvouter (res: LoweredStateMachine) sequel
                     | [ meth ] when meth.IsInstance -> meth
                     | _ -> error (InternalError(sprintf "expected method %s not found" imethName, m))
 
-                let slotsig = implementedMeth.GetSlotSig(amap, m)
+                let slotsig = implementedMeth.GetSlotSig(amap, m, traitCtxtNone)
 
                 let ilOverridesSpec =
                     GenOverridesSpec cenv eenvinner slotsig m mdef.CallingConv.IsInstance
@@ -6608,7 +6609,9 @@ and GenGenericParams cenv eenv tps =
     tps |> DropErasedTypars |> List.map (GenGenericParam cenv eenv)
 
 and GenGenericArgs m (tyenv: TypeReprEnv) tps =
-    tps |> DropErasedTypars |> List.map (fun c -> (mkILTyvarTy tyenv[c, m]))
+    tps
+    |> DropErasedTypars
+    |> List.map (fun c -> mkILTyvarTy (tyenv.LookupTyparRepr(c, m)))
 
 /// Generate a local type function contract class and implementation
 and GenClosureAsLocalTypeFunction cenv (cgbuf: CodeGenBuffer) eenv thisVars expr m =

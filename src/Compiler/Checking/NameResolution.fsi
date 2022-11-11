@@ -18,7 +18,10 @@ open FSharp.Compiler.TcGlobals
 type NameResolver =
 
     new:
-        g: TcGlobals * amap: ImportMap * infoReader: InfoReader * instantiationGenerator: (range -> Typars -> TypeInst) ->
+        g: TcGlobals *
+        amap: ImportMap *
+        infoReader: InfoReader *
+        instantiationGenerator: (range -> Typars -> ITraitContext option -> TypeInst) ->
             NameResolver
 
     member InfoReader: InfoReader
@@ -172,11 +175,16 @@ type ExtensionMember =
     /// IL-style extension member, backed by some kind of method with an [<Extension>] attribute
     | ILExtMem of TyconRef * MethInfo * ExtensionMethodPriority
 
+    /// The logical name, e.g. for constraint solving
+    member LogicalName: string
+
     /// Describes the sequence order of the introduction of an extension method. Extension methods that are introduced
     /// later through 'open' get priority in overload resolution.
     member Priority: ExtensionMethodPriority
 
+/// Freshen a trait for use at a particular location
 /// The environment of information used to resolve names
+
 [<NoEquality; NoComparison>]
 type NameResolutionEnv =
     {
@@ -224,6 +232,9 @@ type NameResolutionEnv =
 
         /// Extension members by type and name
         eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
+
+        /// Extension members by name
+        eExtensionMembersByName: NameMultiMap<ExtensionMember>
 
         /// Other extension members unindexed by type
         eUnindexedExtensionMembers: ExtensionMember list
@@ -651,6 +662,9 @@ val internal AllMethInfosOfTypeInScope:
     ty: TType ->
         MethInfo list
 
+val internal SelectExtensionMethInfosForTrait:
+    traitInfo: TraitConstraintInfo * m: range * nenv: NameResolutionEnv * infoReader: InfoReader -> (TType * MethInfo) list
+
 /// Used to report an error condition where name resolution failed due to an indeterminate type
 exception internal IndeterminateType of range
 
@@ -658,7 +672,7 @@ exception internal IndeterminateType of range
 exception internal UpperCaseIdentifierInPattern of range
 
 /// Generate a new reference to a record field with a fresh type instantiation
-val FreshenRecdFieldRef: NameResolver -> range -> RecdFieldRef -> RecdFieldInfo
+val FreshenRecdFieldRef: NameResolver -> ITraitContext option -> range -> RecdFieldRef -> RecdFieldInfo
 
 /// Resolve a long identifier to a namespace, module.
 val internal ResolveLongIdentAsModuleOrNamespace:
@@ -687,6 +701,7 @@ val internal ResolveLongIdentInType:
     lookupKind: LookupKind ->
     m: range ->
     ad: AccessorDomain ->
+    traitCtxt: ITraitContext option ->
     id: Ident ->
     findFlag: FindMemberFlag ->
     typeNameResInfo: TypeNameResolutionInfo ->
@@ -701,6 +716,7 @@ val internal ResolvePatternLongIdent:
     newDef: bool ->
     m: range ->
     ad: AccessorDomain ->
+    traitCtxt: ITraitContext option ->
     nenv: NameResolutionEnv ->
     numTyArgsOpt: TypeNameResolutionInfo ->
     lid: Ident list ->
@@ -713,6 +729,7 @@ val internal ResolveTypeLongIdentInTyconRef:
     nenv: NameResolutionEnv ->
     typeNameResInfo: TypeNameResolutionInfo ->
     ad: AccessorDomain ->
+    traitCtxt: ITraitContext option ->
     m: range ->
     tcref: TyconRef ->
     lid: Ident list ->
@@ -726,6 +743,7 @@ val internal ResolveTypeLongIdent:
     fullyQualified: FullyQualifiedFlag ->
     nenv: NameResolutionEnv ->
     ad: AccessorDomain ->
+    traitCtxt: ITraitContext option ->
     lid: Ident list ->
     staticResInfo: TypeNameResolutionStaticArgsInfo ->
     genOk: PermitDirectReferenceToGeneratedType ->
@@ -737,6 +755,7 @@ val internal ResolveField:
     ncenv: NameResolver ->
     nenv: NameResolutionEnv ->
     ad: AccessorDomain ->
+    traitCtxt: ITraitContext option ->
     ty: TType ->
     mp: Ident list ->
     id: Ident ->
@@ -749,6 +768,7 @@ val internal ResolveExprLongIdent:
     ncenv: NameResolver ->
     m: range ->
     ad: AccessorDomain ->
+    traitCtxt: ITraitContext option ->
     nenv: NameResolutionEnv ->
     typeNameResInfo: TypeNameResolutionInfo ->
     lid: Ident list ->
@@ -769,6 +789,7 @@ val internal ResolveLongIdentAsExprAndComputeRange:
     ncenv: NameResolver ->
     wholem: range ->
     ad: AccessorDomain ->
+    traitCtxt: ITraitContext option ->
     nenv: NameResolutionEnv ->
     typeNameResInfo: TypeNameResolutionInfo ->
     lid: Ident list ->
@@ -780,6 +801,7 @@ val internal ResolveExprDotLongIdentAndComputeRange:
     ncenv: NameResolver ->
     wholem: range ->
     ad: AccessorDomain ->
+    traitCtxt: ITraitContext option ->
     nenv: NameResolutionEnv ->
     ty: TType ->
     lid: Ident list ->
@@ -789,10 +811,14 @@ val internal ResolveExprDotLongIdentAndComputeRange:
         Item * range * Ident list * AfterResolution
 
 /// A generator of type instantiations used when no more specific type instantiation is known.
-val FakeInstantiationGenerator: range -> Typar list -> TType list
+val FakeInstantiationGenerator: (range -> Typars -> ITraitContext option -> TypeInst)
 
 /// Try to resolve a long identifier as type.
 val TryToResolveLongIdentAsType: NameResolver -> NameResolutionEnv -> range -> string list -> TType option
+
+/// Resolve a (possibly incomplete) long identifier to a loist of possible class or record fields
+val ResolvePartialLongIdentToClassOrRecdFields:
+    NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> bool -> bool -> Item list
 
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions.
 val ResolvePartialLongIdent:
@@ -828,3 +854,8 @@ val IsItemResolvable: NameResolver -> NameResolutionEnv -> range -> AccessorDoma
 
 val TrySelectExtensionMethInfoOfILExtMem:
     range -> ImportMap -> TType -> TyconRef * MethInfo * ExtensionMethodPriority -> MethInfo option
+
+val traitCtxtNone: ITraitContext option
+
+val ExtensionMethInfosOfTypeInScope:
+    ResultCollectionSettings -> InfoReader -> NameResolutionEnv -> string option -> isInstanceFilter: LookupIsInstance -> range -> TType -> MethInfo list

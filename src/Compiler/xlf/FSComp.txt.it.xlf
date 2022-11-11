@@ -177,6 +177,11 @@
         <target state="translated">valore letterale float32 senza punti</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>extension constraint solutions</source>
+        <target state="new">extension constraint solutions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">errore durante l'accesso deprecato del costrutto con l'attributo RequireQualifiedAccess</target>
@@ -2583,8 +2588,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperator">
-        <source>None of the types '{0}' support the operator '{1}'</source>
-        <target state="translated">Nessuno dei tipi '{0}' supporta l'operatore '{1}'</target>
+        <source>The types '{0}' do not support the operator '{1}'</source>
+        <target state="needs-review-translation">Nessuno dei tipi '{0}' supporta l'operatore '{1}'</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperator">
@@ -2593,8 +2598,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperatorNullable">
-        <source>None of the types '{0}' support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
-        <target state="translated">Nessun tipo '{0}' supporta l'operatore '{1}'. Provare ad aprire il modulo 'Microsoft.FSharp.Linq.NullableOperators'.</target>
+        <source>The types '{0}' do not support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
+        <target state="needs-review-translation">Nessun tipo '{0}' supporta l'operatore '{1}'. Provare ad aprire il modulo 'Microsoft.FSharp.Linq.NullableOperators'.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperatorNullable">

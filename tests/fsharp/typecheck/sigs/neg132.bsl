@@ -7,4 +7,4 @@ Known types of arguments: 'a * ('b -> int)
 
 Candidates:
  - static member OverloadsWithSrtp.SomeMethod: x: 'T list * f: ('T list -> int) -> int
- - static member OverloadsWithSrtp.SomeMethod: x: ^T * f: (^T -> int) -> int when ^T: (member Length: int)
+ - static member OverloadsWithSrtp.SomeMethod: x:  ^T * f: ( ^T -> int) -> int when  ^T: (member Length: int)

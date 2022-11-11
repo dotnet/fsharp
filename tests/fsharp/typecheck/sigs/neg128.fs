@@ -32,5 +32,5 @@ module Negative_SelectOverloadedWitnessBasedOnReturnTypeByPassingDummyArgumentGe
     let v1 : int32 = convert 777I
     let v2 : int64 = convert 777I
 
-    // This gives an error, because solving kicks in once all selector types are known
+    // Pre-FS1043 this gives an error, because solving kicks in once all selector types are known. Post-FS1043 it should compile
     let inline inst (num: bigint) : 'output = convert num

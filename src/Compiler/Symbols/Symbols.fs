@@ -58,7 +58,8 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
 type SymbolEnv(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports, amap: Import.ImportMap, infoReader: InfoReader) = 
 
-    let tcVal = CheckExpressions.LightweightTcValForUsingInBuildMethodCall g
+    // TODO: the use of traitCtxtNone is suspect.
+    let tcVal = CheckExpressions.LightweightTcValForUsingInBuildMethodCall g traitCtxtNone
 
     new(g: TcGlobals, thisCcu: CcuThunk, thisCcuTyp: ModuleOrNamespaceType option, tcImports: TcImports) =
         let amap = tcImports.GetImportMap()
@@ -325,7 +326,7 @@ type FSharpSymbol(cenv: SymbolEnv, item: unit -> Item, access: FSharpSymbol -> C
         | Item.ArgName(id, ty, argOwner, m) ->
             FSharpParameter(cenv, id, ty, argOwner, m) :> _
 
-        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(vref=vref)) }) ->
+        | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(valRef=vref)) }) ->
             FSharpMemberOrFunctionOrValue(cenv, V vref, item) :> _
 
         // TODO: the following don't currently return any interesting subtype
@@ -1442,7 +1443,7 @@ type FSharpGenericParameterMemberConstraint(cenv, info: TraitConstraintInfo) =
                           (fun () -> Item.Trait(info)), 
                           (fun _ _ _ad -> true))
 
-    let (TTrait(tys, nm, flags, atys, retTy, _)) = info 
+    let (TTrait(tys, nm, flags, atys, retTy, _, _)) = info 
     member _.MemberSources = 
         tys   |> List.map (fun ty -> FSharpType(cenv, ty)) |> makeReadOnlyCollection
 

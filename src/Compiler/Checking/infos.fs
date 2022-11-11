@@ -638,6 +638,9 @@ type MethInfo =
     | ProvidedMeth of amap: ImportMap * methodBase: Tainted<ProvidedMethodBase> * extensionMethodPriority: ExtensionMethodPriority option * m: range
 #endif
 
+    // Marker interface
+    interface ITraitExtensionMember
+
     /// Get the enclosing type of the method info.
     ///
     /// If this is an extension member, then this is the apparent parent, i.e. the type the method appears to extend.
@@ -948,7 +951,8 @@ type MethInfo =
         | ILMeth (_, _, Some _) -> true
         | _ -> false
 
-    /// Indicates if this is an extension member (e.g. on a struct) that takes a byref arg
+    /// Indicates if this is an instance member on a struct, or
+    /// an extension instance member on a struct that takes a byref arg.
     member x.ObjArgNeedsAddress (amap: ImportMap, m) =
         (x.IsStruct && not x.IsExtensionMember) ||
         match x.GetObjArgTypes (amap, m, x.FormalMethodInst) with
@@ -1210,7 +1214,7 @@ type MethInfo =
     //
     // This code has grown organically over time. We've managed to unify the ILMeth+ProvidedMeth paths.
     // The FSMeth, ILMeth+ProvidedMeth paths can probably be unified too.
-    member x.GetSlotSig(amap, m) =
+    member x.GetSlotSig(amap, m, traitCtxt) =
         match x with
         | FSMeth(g, _, vref, _) ->
             match vref.RecursiveValInfo with
@@ -1241,9 +1245,9 @@ type MethInfo =
             let tcref =  tcrefOfAppTy g x.ApparentEnclosingAppType
             let formalEnclosingTyparsOrig = tcref.Typars m
             let formalEnclosingTypars = copyTypars false formalEnclosingTyparsOrig
-            let _, formalEnclosingTyparTys = FixupNewTypars m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
+            let _, formalEnclosingTyparTys = FixupNewTypars traitCtxt m [] [] formalEnclosingTyparsOrig formalEnclosingTypars
             let formalMethTypars = copyTypars false x.FormalMethodTypars
-            let _, formalMethTyparTys = FixupNewTypars m formalEnclosingTypars formalEnclosingTyparTys x.FormalMethodTypars formalMethTypars
+            let _, formalMethTyparTys = FixupNewTypars traitCtxt m formalEnclosingTypars formalEnclosingTyparTys x.FormalMethodTypars formalMethTypars
 
             let formalRetTy, formalParams =
                 match x with

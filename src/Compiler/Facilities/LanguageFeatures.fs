@@ -37,6 +37,7 @@ type LanguageFeature =
     | StringInterpolation
     | OverloadsForCustomOperations
     | ExpandedMeasurables
+    | ExtensionConstraintSolutions
     | StructActivePattern
     | PrintfBinaryFormat
     | IndexerNotationWithoutDot
@@ -126,6 +127,7 @@ type LanguageVersion(versionText) =
 
                 // F# preview
                 LanguageFeature.FromEndSlicing, previewVersion
+                LanguageFeature.ExtensionConstraintSolutions, previewVersion
                 LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, previewVersion
                 LanguageFeature.CSharpExtensionAttributeNotRequired, previewVersion
 
@@ -228,6 +230,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.MLCompatRevisions -> FSComp.SR.featureMLCompatRevisions ()
         | LanguageFeature.BetterExceptionPrinting -> FSComp.SR.featureBetterExceptionPrinting ()
         | LanguageFeature.DelegateTypeNameResolutionFix -> FSComp.SR.featureDelegateTypeNameResolutionFix ()
+        | LanguageFeature.ExtensionConstraintSolutions -> FSComp.SR.featureExtensionConstraintSolutions()
         | LanguageFeature.ReallyLongLists -> FSComp.SR.featureReallyLongList ()
         | LanguageFeature.ErrorOnDeprecatedRequireQualifiedAccess -> FSComp.SR.featureErrorOnDeprecatedRequireQualifiedAccess ()
         | LanguageFeature.RequiredPropertiesSupport -> FSComp.SR.featureRequiredProperties ()

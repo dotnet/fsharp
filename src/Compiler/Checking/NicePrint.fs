@@ -803,7 +803,7 @@ module PrintTypes =
 
     and layoutTraitWithInfo denv env traitInfo =
         let g = denv.g
-        let (TTrait(tys, _, memFlags, _, _, _)) = traitInfo
+        let (TTrait(tys, _, memFlags, _, _, _, _)) = traitInfo
         let nm = traitInfo.MemberDisplayNameCore
         let nameL = ConvertValLogicalNameToDisplayLayout false (tagMember >> wordL) nm
         if denv.shortConstraints then 
@@ -825,7 +825,7 @@ module PrintTypes =
             let tysL = 
                 match tys with 
                 | [ty] -> layoutTypeWithInfo denv env ty 
-                | tys -> bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagKeyword "or")) tys)
+                | _ -> bracketL (layoutTypesWithInfoAndPrec denv env 2 (wordL (tagKeyword "or")) tys)
 
             let retTyL = layoutReturnType denv env retTy
             let sigL =

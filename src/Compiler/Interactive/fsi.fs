@@ -1635,7 +1635,7 @@ type internal FsiDynamicCompiler(
         let importMap = tcImports.GetImportMap()
 
         // optimize: note we collect the incremental optimization environment
-        let optimizedImpls, _optData, optEnv = ApplyAllOptimizations (tcConfig, tcGlobals, LightweightTcValForUsingInBuildMethodCall tcGlobals, outfile, importMap, isIncrementalFragment, optEnv, tcState.Ccu, declaredImpls)
+        let optimizedImpls, _optData, optEnv = ApplyAllOptimizations (tcConfig, tcGlobals, LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone, outfile, importMap, isIncrementalFragment, optEnv, tcState.Ccu, declaredImpls)
         diagnosticsLogger.AbortOnError(fsiConsoleOutput)
 
         let fragName = textOfLid prefixPath
@@ -2248,7 +2248,7 @@ type internal FsiDynamicCompiler(
 
         let tcState = GetInitialTcState (rangeStdin0, ccuName, tcConfig, tcGlobals, tcImports, tcEnv, openDecls0)
 
-        let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), tcState.Ccu)
+        let ilxGenerator = CreateIlxAssemblyGenerator (tcConfig, tcImports, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone), tcState.Ccu)
 
         { optEnv = optEnv0
           emEnv = emEnv0
@@ -3251,7 +3251,7 @@ type FsiInteractionProcessor
         let ad = tcState.TcEnvFromImpls.AccessRights
         let nenv = tcState.TcEnvFromImpls.NameEnv
 
-        let nItems = ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox istate.tcGlobals amap rangeStdin0) rangeStdin0 ad lid false
+        let nItems = ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox istate.tcGlobals amap rangeStdin0 traitCtxtNone) rangeStdin0 ad lid false
         let names = nItems |> List.map (fun d -> d.DisplayName)
         let names = names |> List.filter (fun name -> name.StartsWithOrdinal(stem))
         names

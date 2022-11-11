@@ -2369,6 +2369,24 @@ type TyparConstraint =
     //member x.DebugText = x.ToString()
     
     override x.ToString() = sprintf "%+A" x 
+
+/// Represents the ability to solve traits via extension methods in a particular scope.
+///
+/// Only satisfied by types defined elsewhere (e.g. NameResolutionEnv), and not stored in TypedTreePickle.
+type ITraitContext = 
+    /// Used to select the extension methods in the context relevant to solving the constraint
+    /// given the current support types
+    abstract SelectExtensionMethods: TraitConstraintInfo * range * infoReader: obj -> (TType * ITraitExtensionMember) list
+
+    /// Gives the access rights (e.g. InternalsVisibleTo, Protected) at the point the trait is being solved
+    abstract AccessRights: ITraitAccessorDomain
+
+/// Only satisfied by elsewhere. Not stored in TastPickle.
+type ITraitExtensionMember = interface end
+
+type ITraitAccessorDomain = interface end
+
+/// Represents the specification of a member constraint that must be solved 
     
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitWitnessInfo = 
@@ -2389,30 +2407,38 @@ type TraitWitnessInfo =
 [<NoEquality; NoComparison; StructuredFormatDisplay("{DebugText}")>]
 type TraitConstraintInfo = 
 
+    /// TTrait(tys, nm, memFlags, argtys, rty, solutionCell, extSlns, ad)
+    ///
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of tys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTyOpt: TType option * solution: TraitConstraintSln option ref 
+    | TTrait of supportTys: TTypes * memberName: string * memberFlags: SynMemberFlags * objAndArgTys: TTypes * returnTyOpt: TType option * solution: TraitConstraintSln option ref * traitContext: ITraitContext option
 
     /// Get the types that may provide solutions for the traits
-    member x.SupportTypes = (let (TTrait(tys, _, _, _, _, _)) = x in tys)
+    member x.SupportTypes = (let (TTrait(tys, _, _, _, _, _, _)) = x in tys)
+
+    /// Get the key associated with the member constraint.
+    member x.TraitKey = (let (TTrait(a, b, c, d, e, _, _)) = x in TraitWitnessInfo(a, b, c, d, e))
 
     /// Get the logical member name associated with the member constraint.
-    member x.MemberLogicalName = (let (TTrait(_, nm, _, _, _, _)) = x in nm)
+    member x.MemberLogicalName = (let (TTrait(_, nm, _, _, _, _, _)) = x in nm)
 
     /// Get the member flags associated with the member constraint.
-    member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _)) = x in flags)
+    member x.MemberFlags = (let (TTrait(_, _, flags, _, _, _, _)) = x in flags)
 
-    member x.CompiledObjectAndArgumentTypes = (let (TTrait(_, _, _, objAndArgTys, _, _)) = x in objAndArgTys)
+    member x.CompiledObjectAndArgumentTypes = (let (TTrait(_, _, _, objAndArgTys, _, _, _)) = x in objAndArgTys)
 
-    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f))
+    member x.WithMemberKind(kind) = (let (TTrait(a, b, c, d, e, f, g)) = x in TTrait(a, b, { c with MemberKind=kind }, d, e, f, g))
 
     /// Get the optional return type recorded in the member constraint.
-    member x.CompiledReturnType = (let (TTrait(_, _, _, _, retTy, _)) = x in retTy)
+    member x.CompiledReturnType = (let (TTrait(_, _, _, _, retTy, _, _)) = x in retTy)
 
     /// Get or set the solution of the member constraint during inference
     member x.Solution 
-        with get() = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value)
-        and set v = (let (TTrait(_, _, _, _, _, sln)) = x in sln.Value <- v)
+        with get() = (let (TTrait(_, _, _, _, _, sln, _)) = x in sln.Value)
+        and set v = (let (TTrait(_, _, _, _, _, sln, _)) = x in sln.Value <- v)
+
+    /// Get the context used to help determine possible extension member solutions
+    member x.TraitContext = (let (TTrait(_, _, _, _, _, _, traitCtxt)) = x in traitCtxt)
 
     [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
     member x.DebugText = x.ToString()
@@ -2426,11 +2452,12 @@ type TraitConstraintSln =
     /// FSMethSln(ty, vref, minst)
     ///
     /// Indicates a trait is solved by an F# method.
-    ///    ty -- the type and its instantiation
-    ///    vref -- the method that solves the trait constraint
-    ///    minst -- the generic method instantiation 
+    ///    apparentType -- the apparent type and its instantiation
+    ///    valRef -- the method that solves the trait constraint
+    ///    methodInst -- the generic method instantiation 
     ///    staticTyOpt -- the static type governing a static virtual call, if any
-    | FSMethSln of ty: TType * vref: ValRef * minst: TypeInst * staticTyOpt: TType option
+    ///    isExt -- is this a use of an extension method
+    | FSMethSln of apparentType: TType * valRef: ValRef * methodInst: TypeInst * staticTyOpt: TType option * isExt: bool
 
     /// FSRecdFieldSln(tinst, rfref, isSetProp)
     ///

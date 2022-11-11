@@ -177,6 +177,11 @@
         <target state="translated">점이 없는 float32 리터럴</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureExtensionConstraintSolutions">
+        <source>extension constraint solutions</source>
+        <target state="new">extension constraint solutions</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">RequireQualifiedAccess 특성을 사용하여 사용되지 않는 구문 액세스에 대한 오류 제공</target>
@@ -2583,8 +2588,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperator">
-        <source>None of the types '{0}' support the operator '{1}'</source>
-        <target state="translated">{0}' 형식에서 '{1}' 연산자를 지원하지 않습니다.</target>
+        <source>The types '{0}' do not support the operator '{1}'</source>
+        <target state="needs-review-translation">{0}' 형식에서 '{1}' 연산자를 지원하지 않습니다.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperator">
@@ -2593,8 +2598,8 @@
         <note />
       </trans-unit>
       <trans-unit id="csTypesDoNotSupportOperatorNullable">
-        <source>None of the types '{0}' support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
-        <target state="translated">{0}' 형식에서 '{1}' 연산자를 지원하지 않습니다. 'Microsoft.FSharp.Linq.NullableOperators' 모듈을 열어 보세요.</target>
+        <source>The types '{0}' do not support the operator '{1}'. Consider opening the module 'Microsoft.FSharp.Linq.NullableOperators'.</source>
+        <target state="needs-review-translation">{0}' 형식에서 '{1}' 연산자를 지원하지 않습니다. 'Microsoft.FSharp.Linq.NullableOperators' 모듈을 열어 보세요.</target>
         <note />
       </trans-unit>
       <trans-unit id="csTypeDoesNotSupportOperatorNullable">

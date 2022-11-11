@@ -382,6 +382,7 @@ val BuildNewDelegateExpr:
     eventInfoOpt: EventInfo option *
     g: TcGlobals *
     amap: ImportMap *
+    traitCtxt: ITraitContext option *
     delegateTy: TType *
     delInvokeMeth: MethInfo *
     delArgTys: TType list *
@@ -393,6 +394,7 @@ val BuildNewDelegateExpr:
 val CoerceFromFSharpFuncToDelegate:
     g: TcGlobals ->
     amap: ImportMap ->
+    traitCtxt: ITraitContext option ->
     infoReader: InfoReader ->
     ad: AccessorDomain ->
     callerArgTy: TType ->
@@ -405,6 +407,7 @@ val AdjustExprForTypeDirectedConversions:
     tcVal: (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType) ->
     g: TcGlobals ->
     amap: ImportMap ->
+    traitCtxt: ITraitContext option ->
     infoReader: InfoReader ->
     ad: AccessorDomain ->
     reqdTy: TType ->
@@ -417,6 +420,7 @@ val AdjustCallerArgExpr:
     tcVal: (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType) ->
     g: TcGlobals ->
     amap: ImportMap ->
+    traitCtxt: ITraitContext option ->
     infoReader: InfoReader ->
     ad: AccessorDomain ->
     isOutArg: bool ->
@@ -436,6 +440,7 @@ val AdjustCallerArgs:
     eCallerMemberName: string option ->
     infoReader: InfoReader ->
     ad: AccessorDomain ->
+    traitCtxt: ITraitContext option ->
     calledMeth: CalledMeth<Expr> ->
     objArgs: Expr list ->
     lambdaVars: 'a option ->
@@ -515,6 +520,7 @@ module ProvidedMethodCalls =
         tcVal: (ValRef -> ValUseFlag -> TType list -> range -> Expr * TType) ->
         g: TcGlobals *
         amap: ImportMap *
+        traitCtxt: ITraitContext option *
         mi: Tainted<ProvidedMethodBase> *
         objArgs: Expr list *
         mut: TypedTreeOps.Mutates *

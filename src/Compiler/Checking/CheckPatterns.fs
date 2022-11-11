@@ -60,7 +60,7 @@ let UnifyRefTupleType contextInfo (cenv: cenv) denv m ty ps =
 let rec TryAdjustHiddenVarNameToCompGenName cenv env (id: Ident) altNameRefCellOpt =
     match altNameRefCellOpt with
     | Some ({contents = SynSimplePatAlternativeIdInfo.Undecided altId } as altNameRefCell) ->
-        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false id.idRange env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default [id] with
+        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false id.idRange env.eAccessRights env.TraitContext env.eNameResEnv TypeNameResolutionInfo.Default [id] with
         | Item.NewDef _ ->
             // The name is not in scope as a pattern identifier (e.g. union case), so do not use the alternate ID
             None
@@ -495,7 +495,7 @@ and IsNameOf (cenv: cenv) (env: TcEnv) ad m (id: Ident) =
     let g = cenv.g
     id.idText = "nameof" &&
     try
-        match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.NameEnv TypeNameResolutionInfo.Default [id] with
+        match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.TraitContext env.NameEnv TypeNameResolutionInfo.Default [id] with
         | Result (_, Item.Value vref, _) -> valRefEq g vref g.nameof_vref
         | _ -> false
     with _ -> false
@@ -513,7 +513,7 @@ and TcPatLongIdent warnOnUpper cenv env ad valReprInfo vFlags (patEnv: TcPatLine
 
     let mLongId = rangeOfLid longId
 
-    match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.NameEnv TypeNameResolutionInfo.Default longId with
+    match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver warnOnUpperForId false m ad env.TraitContext env.NameEnv TypeNameResolutionInfo.Default longId with
     | Item.NewDef id ->
         TcPatLongIdentNewDef warnOnUpperForId warnOnUpper cenv env ad valReprInfo vFlags patEnv ty (vis, id, args, m)
 

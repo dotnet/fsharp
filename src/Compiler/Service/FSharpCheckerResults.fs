@@ -484,7 +484,7 @@ type internal TypeCheckInfo
         // a single item (pick the first one) and we need the residue (which may be "")
         | CNR (Item.Types (_, ty :: _), _, denv, nenv, ad, m) :: _, Some _ ->
             let targets =
-                ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
+                ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m traitCtxtNone)
 
             let items = ResolveCompletionsInType ncenv nenv targets m ad true ty
             let items = List.map ItemWithNoInst items
@@ -493,7 +493,7 @@ type internal TypeCheckInfo
         // Exact resolution via 'T.$
         | CNR (Item.TypeVar (_, tp), _, denv, nenv, ad, m) :: _, Some _ ->
             let targets =
-                ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
+                ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m traitCtxtNone)
 
             let items = ResolveCompletionsInType ncenv nenv targets m ad true (mkTyparTy tp)
             let items = List.map ItemWithNoInst items
@@ -529,7 +529,7 @@ type internal TypeCheckInfo
                     | _ -> ad
 
                 let targets =
-                    ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
+                    ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m traitCtxtNone)
 
                 let items = ResolveCompletionsInType ncenv nenv targets m ad false ty
                 let items = List.map ItemWithNoInst items
@@ -705,7 +705,7 @@ type internal TypeCheckInfo
                 let ty, nenv, ad, m = bestQual
 
                 let targets =
-                    ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)
+                    ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m traitCtxtNone)
 
                 let items = ResolveCompletionsInType ncenv nenv targets m ad false ty
                 let items = items |> List.map ItemWithNoInst
@@ -722,7 +722,7 @@ type internal TypeCheckInfo
     /// Find items in the best naming environment.
     let GetEnvironmentLookupResolutions (nenv, ad, m, plid, filterCtors, showObsolete) =
         let items =
-            ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid showObsolete
+            ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m traitCtxtNone) m ad plid showObsolete
 
         let items = items |> List.map ItemWithNoInst
         let items = items |> RemoveDuplicateItems g
@@ -3065,7 +3065,7 @@ type FSharpCheckProjectResults
         let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
         let tcConfig = getTcConfig ()
         let isIncrementalFragment = false
-        let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals
+        let tcVal = LightweightTcValForUsingInBuildMethodCall tcGlobals traitCtxtNone
 
         let optimizedImpls, _optimizationData, _ =
             ApplyAllOptimizations(tcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv0, thisCcu, mimpls)
