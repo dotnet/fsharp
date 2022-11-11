@@ -104,6 +104,7 @@ let combineResults
     (deps: Node<'Item, 'State, 'Result>[])
     (transitiveDeps: Node<'Item, 'State, 'Result>[])
     (folder: 'State -> 'Result -> 'State)
+    (_foldingOrderer: 'Item -> int)
     : 'State =
     match deps with
     | [||] -> emptyState
@@ -127,7 +128,7 @@ let combineResults
             // Sort it by effectively file index.
             // For some reason this is needed, otherwise gives 'missing namespace' and other errors when using the resulting state.
             // Does this make sense? Should the results be foldable in any order?
-            |> Array.sortBy (fun d -> d.Info.Item)
+            |> Array.sortBy (fun node -> node.Info.Item)
             |> Array.filter (fun dep -> included.Contains dep.Info.Item = false)
             |> Array.distinctBy (fun dep -> dep.Info.Item)
             |> Array.map (fun dep -> dep.Result |> orFail |> snd)
@@ -140,6 +141,7 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item: equality a
     (graph: Graph<'Item>)
     (doWork: 'Item -> 'State -> 'Result)
     (folder: 'State -> 'Result -> 'FinalFileResult * 'State)
+    (foldingOrderer: 'Item -> int)
     (emptyState: 'State)
     (includeInFinalState: 'Item -> bool)
     (parallelism: int)
@@ -208,7 +210,7 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item: equality a
         let folder x y = folder x y |> snd
         let deps = lookupMany node.Info.Deps
         let transitiveDeps = lookupMany node.Info.TransitiveDeps
-        let inputState = combineResults emptyState deps transitiveDeps folder
+        let inputState = combineResults emptyState deps transitiveDeps folder foldingOrderer
         node.InputState <- Some inputState
         let singleRes = doWork node.Info.Item inputState.State
 

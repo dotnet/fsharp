@@ -254,6 +254,8 @@ let CheckMultipleInputsInParallel
                 graph
                 processFile
                 folder
+                // When combining results, order them by index
+                (fun file -> file.Idx.Idx)
                 state
                 (fun it -> not <| it.Name.EndsWith(".fsix"))
                 10

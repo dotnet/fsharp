@@ -24,7 +24,7 @@ module FakeGraphProcessing =
 
     let processFileGraph<'Item when 'Item: comparison> (graph: Graph<'Item>) : FinalFileResult[] * State =
         let parallelism = 4 // cpu count?
-        GraphProcessing.processGraph graph typeCheckFile folder "" (fun _ -> true) parallelism
+        GraphProcessing.processGraph graph typeCheckFile folder (fun _item -> _item.ToString().GetHashCode()) "" (fun _ -> true) parallelism
 
 let deps: Graph<int> =
     [|
