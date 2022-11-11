@@ -11002,7 +11002,7 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (baseValOpt: Val o
                  // Raises an error if we try to override an non virtual member with the same name in both
                  match baseValOpt with
                  | Some ttype when not(isFSharpObjModelTy g ttype.Type) ->
-                    match ttype.Type with
+                    match stripTyEqns g ttype.Type with
                     | TType_app(tyconRef, _, _) ->
                         let ilMethods = tyconRef.ILTyconRawMetadata.Methods.AsList()
                         let nameOpt = ilMethods |> List.tryFind(fun id -> id.Name = memberId.idText)
