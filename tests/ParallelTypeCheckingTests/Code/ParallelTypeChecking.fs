@@ -2,6 +2,7 @@
 
 #nowarn "1182"
 
+open System
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.IO

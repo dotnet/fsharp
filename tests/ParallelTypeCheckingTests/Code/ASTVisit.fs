@@ -1327,10 +1327,17 @@ module TopModulesExtraction =
                                    range,
                                    synModuleOrNamespaceTrivia) ->
             if mightHaveAutoOpen synAttributeLists then
-                // Contents of a module that's potentially AutoOpen are available everywhere, so treat it as if it had no name ('root' module).
+                // Contents of a module that's potentially AutoOpen are available from its parent without a prefix.
+                // Stay safe and as soon as the parent module is reachable, consider this module reachable as well
                 [| LongIdent.Empty |]
             else
-                synModuleDecls |> moduleSigDecls |> combine longId
+            // 'module A.B' is equivalent to 'namespace A; module B', meaning that 'A' is opened implicitly
+            if
+                synModuleOrNamespaceKind.IsModule && longId.Length > 1
+            then
+                [| longId.GetSlice(None, Some <| longId.Length - 2); longId |]
+            else
+                [| longId |]
 
     and moduleSigDecls (x: SynModuleSigDecl list) : Eit =
         let emptyState = Eit.Nested [||]

@@ -10,7 +10,6 @@ open ParallelTypeCheckingTests.Types
 open ParallelTypeCheckingTests.Utils
 open ParallelTypeCheckingTests.DepResolving
 open NUnit.Framework
-open Newtonsoft.Json
 
 let buildFiles (files: (string * string) seq) =
     files
@@ -48,6 +47,84 @@ open A
     let deps = DependencyResolution.detectFileDependencies files
 
     let expectedEdges = [ "B.fs", [ "A.fs" ] ]
+    assertGraphEqual deps expectedEdges
+
+[<Test>]
+let ``When defining a top-level module, the implicit parent namespace is taken into account when considering references to the file - .fsi pair`` () =
+    let files =
+        [|
+            "A.fsi", """
+module A.B.C1
+type X = X of int
+"""
+            "B.fsi", """
+module A.B.C2
+val x : C1.X -> unit
+"""
+        |] |> buildFiles
+
+    let deps = DependencyResolution.detectFileDependencies files
+
+    let expectedEdges = ["B.fsi", ["A.fsi"]]
+    assertGraphEqual deps expectedEdges
+
+
+[<Test>]
+let ``When defining a top-level module, the implicit parent namespace is taken into account when considering references to the file - .fs, .fsi pair`` () =
+    let files =
+        [|
+            "A.fs", """
+module A.B.C1
+type X = X of int
+"""
+            "B.fsi", """
+module A.B.C2
+val x : C1.X -> unit
+"""
+        |] |> buildFiles
+
+    let deps = DependencyResolution.detectFileDependencies files
+
+    let expectedEdges = ["B.fsi", ["A.fs"]]
+    assertGraphEqual deps expectedEdges
+
+
+[<Test>]
+let ``When defining a top-level module, the implicit parent namespace is taken into account when considering references to the file - .fsi, .fs pair`` () =
+    let files =
+        [|
+            "A.fsi", """
+module A.B.C1
+type X = X of int
+"""
+            "B.fs", """
+module A.B.C2
+let x : C1.X -> unit = failwith ""
+"""
+        |] |> buildFiles
+
+    let deps = DependencyResolution.detectFileDependencies files
+
+    let expectedEdges = ["B.fs", ["A.fsi"]]
+    assertGraphEqual deps expectedEdges
+
+[<Test>]
+let ``When defining a top-level module, the implicit parent namespace is taken into account when considering references to the file - .fs, .fs pair`` () =
+    let files =
+        [|
+            "A.fs", """
+module A.B.C1
+type X = X of int
+"""
+            "B.fs", """
+module A.B.C2
+let x : C1.X -> unit = failwith ""
+"""
+        |] |> buildFiles
+
+    let deps = DependencyResolution.detectFileDependencies files
+
+    let expectedEdges = ["B.fs", ["A.fs"]]
     assertGraphEqual deps expectedEdges
 
 [<Test>]

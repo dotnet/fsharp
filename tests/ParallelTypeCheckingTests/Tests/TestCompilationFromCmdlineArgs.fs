@@ -89,14 +89,14 @@ let internal codebaseToConfig code method =
         WorkingDir = Some code.WorkDir
     }
 
+/// Before running these tests, you must prepare the codebase by running the script 'FCS.prepare.ps1'
 [<TestCaseSource(nameof (codebases))>]
-[<Explicit("Before running these tests, you must prepare the codebase by running FCS.prepare.ps1")>]
 let ``Test graph-based type-checking`` (code: Codebase) =
     let config = codebaseToConfig code Method.Graph
     TestCompilerFromArgs config
 
 [<TestCaseSource(nameof (codebases))>]
-[<Explicit("Before running these tests, you must prepare the codebase by running FCS.prepare.ps1")>]
+[<Explicit("Slow, only useful as a sanity check that the test codebase is sound and type-checks using the old method")>]
 let ``Test sequential type-checking`` (code: Codebase) =
     let config = codebaseToConfig code Method.Sequential
     TestCompilerFromArgs config
