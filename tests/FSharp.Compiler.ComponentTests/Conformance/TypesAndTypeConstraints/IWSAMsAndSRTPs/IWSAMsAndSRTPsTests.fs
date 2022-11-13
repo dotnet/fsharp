@@ -775,7 +775,7 @@ module ``Active patterns`` =
 
 module ``Suppression of System Numerics interfaces on unitized types`` =
 
-    [<Fact(Skip = "Solution needs to be updated to .NET 7")>]
+    [<Fact>]
     let Baseline () =
         Fsx """
             open System.Numerics
@@ -785,7 +785,7 @@ module ``Suppression of System Numerics interfaces on unitized types`` =
         |> compile
         |> shouldSucceed
 
-    [<Theory(Skip = "Solution needs to be updated to .NET 7")>]
+    [<Theory>]
     [<InlineData("IAdditionOperators", 3)>]
     [<InlineData("IAdditiveIdentity", 2)>]
     [<InlineData("IBinaryFloatingPointIeee754", 1)>]
