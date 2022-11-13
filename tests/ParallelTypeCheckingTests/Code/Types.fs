@@ -56,13 +56,13 @@ type File =
     {
         /// Order of the file in the project. Files with lower number cannot depend on files with higher number
         Idx: FileIdx
-        Code: string
         AST: ASTOrFsix
         FsiBacked: bool
     }
 
     member this.Name = this.AST.Name // TODO Use qualified name
-    member this.CodeSize = this.Code.Length
+    // TODO Remove
+    member this.CodeSize = 0
     member this.QualifiedName = this.AST.QualifiedName
 
     override this.Equals other =
@@ -82,7 +82,6 @@ type File =
     static member FakeFs (idx: FileIdx) (fsi: string) : File =
         {
             Idx = idx
-            Code = "Fake '.fsix' node for dummy .fs state"
             AST = ASTOrFsix.Fsix fsi
             FsiBacked = false
         }

@@ -24,7 +24,7 @@ module FakeGraphProcessing =
 
     let processFileGraph<'Item when 'Item: comparison> (graph: Graph<'Item>) : FinalFileResult[] * State =
         let parallelism = 4 // cpu count?
-        GraphProcessing.processGraph graph typeCheckFile folder "" (fun _ -> true) parallelism
+        GraphProcessing.processGraph graph typeCheckFile folder (fun _item -> _item.ToString().GetHashCode()) "" (fun _ -> true) parallelism
 
 let deps: Graph<int> =
     [|
@@ -55,7 +55,6 @@ let a = 3
         let a =
             {
                 Idx = FileIdx.make 1
-                Code = code
                 AST = ASTOrFsix.AST <| parseSourceCode ("A.fs", code)
                 FsiBacked = false
             }
@@ -69,7 +68,6 @@ let b = 3
         let b =
             {
                 Idx = FileIdx.make 2
-                Code = code
                 AST = ASTOrFsix.AST <| parseSourceCode ("B.fs", code)
                 FsiBacked = false
             }

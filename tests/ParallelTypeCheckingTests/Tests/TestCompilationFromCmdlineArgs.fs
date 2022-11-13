@@ -48,6 +48,15 @@ let internal setupParsed config =
 
     setupCompilationMethod method
 
+    printfn $"Method: {method}"
+    let args =
+        match method with
+        | Method.Sequential -> args
+        | Method.ParallelCheckingOfBackedImplFiles ->
+            Array.append args [|"--test:ParallelCheckingWithSignatureFilesOn"|]
+        | Method.Graph ->
+            Array.append args [|"--test:GraphBasedChecking"|] 
+    
     printfn $"WorkingDir = {workingDir}"
     workingDir |> Option.iter (fun dir -> Environment.CurrentDirectory <- dir)
     args
@@ -81,13 +90,21 @@ let internal codebaseToConfig code method =
     }
 
 [<TestCaseSource(nameof (codebases))>]
-[<Explicit("Before running these tests, you must prepare the codebase by running FCS.prepare.ps1")>]
-let ``Test graph-based type-checking`` (code: Codebase) =
+[<Explicit("Slow, only useful as a sanity check that the test codebase is sound and type-checks using the old method")>]
+let ``1. Test sequential type-checking`` (code: Codebase) =
+    let config = codebaseToConfig code Method.Sequential
+    TestCompilerFromArgs config
+
+/// Before running this test, you must prepare the codebase by running the script 'FCS.prepare.ps1'
+[<TestCaseSource(nameof (codebases))>]
+[<Explicit("Slow, only useful as a sanity check that the test codebase is sound and type-checks using the parallel-fs method")>]
+let ``2. Test parallelfs type-checking`` (code: Codebase) =
+    let config = codebaseToConfig code Method.ParallelCheckingOfBackedImplFiles
+    TestCompilerFromArgs config
+    
+/// Before running this test, you must prepare the codebase by running the script 'FCS.prepare.ps1'
+[<TestCaseSource(nameof (codebases))>]
+let ``3. Test graph-based type-checking`` (code: Codebase) =
     let config = codebaseToConfig code Method.Graph
     TestCompilerFromArgs config
 
-[<TestCaseSource(nameof (codebases))>]
-[<Explicit("Before running these tests, you must prepare the codebase by running FCS.prepare.ps1")>]
-let ``Test sequential type-checking`` (code: Codebase) =
-    let config = codebaseToConfig code Method.Sequential
-    TestCompilerFromArgs config

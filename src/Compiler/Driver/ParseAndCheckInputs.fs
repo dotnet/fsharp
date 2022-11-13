@@ -759,17 +759,31 @@ let ParseInputFilesInParallel (tcConfig: TcConfig, lexResourceManager, sourceFil
     for fileName in sourceFiles do
         checkInputFile tcConfig fileName
 
+
+    // Order files to be parsed by size (descending). The idea is to process big files first,
+    // so that near the end when only some nodes are still processing items, it's the smallest items,
+    // which should reduce the period of time where only some nodes are busy.
+    // This requires some empirical evidence.        
+    let sourceFiles =
+        sourceFiles
+        |> List.mapi (fun i f -> i, f)
+        |> List.sortBy (fun (_i, f) -> -FileInfo(f).Length)
+        
     let sourceFiles = List.zip sourceFiles isLastCompiland
 
     UseMultipleDiagnosticLoggers (sourceFiles, delayLogger, None) (fun sourceFilesWithDelayLoggers ->
         sourceFilesWithDelayLoggers
-        |> ListParallel.map (fun ((fileName, isLastCompiland), delayLogger) ->
+        |> ListParallel.map (fun (((idx, fileName), isLastCompiland), delayLogger) ->
             let directoryName = Path.GetDirectoryName fileName
 
             let input =
                 parseInputFileAux (tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), delayLogger, retryLocked)
 
-            (input, directoryName)))
+            idx, (input, directoryName))
+        // Bring back index-based order
+        |> List.sortBy fst
+        |> List.map snd
+    )
 
 let ParseInputFilesSequential (tcConfig: TcConfig, lexResourceManager, sourceFiles, diagnosticsLogger: DiagnosticsLogger, retryLocked) =
     let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
@@ -1729,7 +1743,7 @@ let mutable typeCheckingMode: TypeCheckingMode = TypeCheckingMode.Sequential
 let CheckClosedInputSet (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, eagerFormat, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions
     let results, tcState =
-        match typeCheckingMode with
+        match tcConfig.typeCheckingConfig.Mode with
         | TypeCheckingMode.Sequential ->
             CheckMultipleInputsSequential(ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
         | TypeCheckingMode.ParallelCheckingOfBackedImplFiles ->

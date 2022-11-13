@@ -3,13 +3,14 @@
 open NUnit.Framework
 open OpenTelemetry.Trace
 
-/// One-time Otel setup for NUnit tests
+/// One-time setup for NUnit tests
 [<SetUpFixture>]
 type AssemblySetUp() =
     let mutable tracerProvider = None
 
     [<OneTimeSetUp>]
     member this.SetUp() =
+        FSharp.Compiler.ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <- ParallelTypeCheckingTests.ParallelTypeChecking.CheckMultipleInputsInParallel
         tracerProvider <- ParallelTypeCheckingTests.TestUtils.setupOtel () |> Some
 
     [<OneTimeTearDown>]

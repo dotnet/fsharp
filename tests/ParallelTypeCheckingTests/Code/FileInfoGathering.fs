@@ -23,7 +23,6 @@ let internal gatherBackingInfo (files: SourceFiles) : Files =
 
         {
             Idx = FileIdx.make i
-            Code = "no code here" // TODO
             AST = ASTOrFsix.AST f.AST
             FsiBacked = fsiBacked
         })

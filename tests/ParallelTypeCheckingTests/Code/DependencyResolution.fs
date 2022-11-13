@@ -260,31 +260,31 @@ module internal DependencyResolution =
         }
 
 /// <summary>
-/// Calculate and print some stats about the expected parallelism factor of a dependency graph
+/// Calculate and print some statistics about the expected parallelism factor of a dependency graph
 /// </summary>
 let analyseEfficiency (result: DepsResult) : unit =
     let graph = result.Graph
-    let totalSize1 = graph |> Seq.sumBy (fun (KeyValue (_k, v)) -> v.Length)
-    let t = graph |> Graph.transitive
-    let totalSize2 = t |> Seq.sumBy (fun (KeyValue (_k, v)) -> v.Length)
+    let edgeCount = graph |> Seq.sumBy (fun (KeyValue (_k, v)) -> v.Length)
+    let t = graph |> Graph.transitiveOpt
+    let edgeCountTransitive = t |> Seq.sumBy (fun (KeyValue (_k, v)) -> v.Length)
 
-    printfn $"Non-transitive size: {totalSize1}, transitive size: {totalSize2}"
+    log $"Non-transitive edge count: {edgeCount}, transitive edge count: {edgeCountTransitive}"
 
-    let totalFileSize = result.Files |> Array.sumBy (fun file -> int64 (file.CodeSize))
+    let fileCount = result.Files.Length
 
-    // Use depth-first search to calculate 'depth' of each file
+    // Use depth-first search to calculate 'depth' of a file
     let rec depthDfs =
         Utils.memoize (fun (file: File) ->
             let deepestChild =
                 match result.Graph[file] with
-                | [||] -> 0L
+                | [||] -> 0
                 | d -> d |> Array.map depthDfs |> Array.max
 
-            let depth = int64 (file.CodeSize) + deepestChild
+            let depth = 1 + deepestChild
             depth)
 
     // Run DFS for every file node, collect the maximum depth found
     let maxDepth = result.Files |> Array.map (fun f -> depthDfs f.File) |> Array.max
 
     log
-        $"Total file size: {totalFileSize}. Max depth: {maxDepth}. Max Depth/Size = %.1f{100.0 * double (maxDepth) / double (totalFileSize)}%%"
+        $"File count: {fileCount}. Longest path: {maxDepth}. Longest path/File count (a weak proxy for level of parallelism) = %.1f{100.0 * double maxDepth / double fileCount}%%"

@@ -69,11 +69,9 @@ let internal mapMethod (method: Method) =
     | Method.ParallelCheckingOfBackedImplFiles -> TypeCheckingMode.ParallelCheckingOfBackedImplFiles
     | Method.Graph -> TypeCheckingMode.Graph
 
-/// Includes mutation of static config
+/// Includes mutation of static config.
 /// A very hacky way to setup the given type-checking method - mutates static state and returns new args
 /// TODO Make the method configurable via proper config passed top-down
 let setupCompilationMethod (method: Method) =
-    printfn $"Method: {method}"
     let mode = mapMethod method
-    ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <- ParallelTypeChecking.CheckMultipleInputsInParallel
     ParseAndCheckInputs.typeCheckingMode <- mode

@@ -12,7 +12,7 @@ artifacts/
 
 # Explicitly formatted Tests/ subdirectories (with exceptions)
 !tests/ParallelTypeCheckingTests/
-*/.checkouts/
+*/.fcs_test/
 
 # Explicitly unformatted implementation files
 

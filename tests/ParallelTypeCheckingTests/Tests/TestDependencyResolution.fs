@@ -10,7 +10,6 @@ open ParallelTypeCheckingTests.Types
 open ParallelTypeCheckingTests.Utils
 open ParallelTypeCheckingTests.DepResolving
 open NUnit.Framework
-open Newtonsoft.Json
 
 let buildFiles (files: (string * string) seq) =
     files
@@ -48,6 +47,106 @@ open A
     let deps = DependencyResolution.detectFileDependencies files
 
     let expectedEdges = [ "B.fs", [ "A.fs" ] ]
+    assertGraphEqual deps expectedEdges
+
+
+[<Test>]
+let ``A top-level module with an attribute, belonging to a namespace, depends on another file that uses the same namespace`` () =
+    let files =
+        [|
+            "A.fsi", """
+namespace A.B.C
+type X = X of int  
+"""
+            "B.fsi", """
+[<System.Obsolete("This is enough for the algorithm to consider this module AutoOpen")>]  
+module public A.B.C.D
+val x: X
+"""
+        |] |> buildFiles
+
+    let deps = DependencyResolution.detectFileDependencies files
+
+    let expectedEdges = ["B.fsi", ["A.fsi"]]
+    assertGraphEqual deps expectedEdges
+
+
+[<Test>]
+let ``When defining a top-level module, the implicit parent namespace is taken into account when considering references to the file - .fsi pair`` () =
+    let files =
+        [|
+            "A.fsi", """
+module A.B.C1
+type X = X of int
+"""
+            "B.fsi", """
+module A.B.C2
+val x : C1.X -> unit
+"""
+        |] |> buildFiles
+
+    let deps = DependencyResolution.detectFileDependencies files
+
+    let expectedEdges = ["B.fsi", ["A.fsi"]]
+    assertGraphEqual deps expectedEdges
+
+
+[<Test>]
+let ``When defining a top-level module, the implicit parent namespace is taken into account when considering references to the file - .fs, .fsi pair`` () =
+    let files =
+        [|
+            "A.fs", """
+module A.B.C1
+type X = X of int
+"""
+            "B.fsi", """
+module A.B.C2
+val x : C1.X -> unit
+"""
+        |] |> buildFiles
+
+    let deps = DependencyResolution.detectFileDependencies files
+
+    let expectedEdges = ["B.fsi", ["A.fs"]]
+    assertGraphEqual deps expectedEdges
+
+
+[<Test>]
+let ``When defining a top-level module, the implicit parent namespace is taken into account when considering references to the file - .fsi, .fs pair`` () =
+    let files =
+        [|
+            "A.fsi", """
+module A.B.C1
+type X = X of int
+"""
+            "B.fs", """
+module A.B.C2
+let x : C1.X -> unit = failwith ""
+"""
+        |] |> buildFiles
+
+    let deps = DependencyResolution.detectFileDependencies files
+
+    let expectedEdges = ["B.fs", ["A.fsi"]]
+    assertGraphEqual deps expectedEdges
+
+[<Test>]
+let ``When defining a top-level module, the implicit parent namespace is taken into account when considering references to the file - .fs, .fs pair`` () =
+    let files =
+        [|
+            "A.fs", """
+module A.B.C1
+type X = X of int
+"""
+            "B.fs", """
+module A.B.C2
+let x : C1.X -> unit = failwith ""
+"""
+        |] |> buildFiles
+
+    let deps = DependencyResolution.detectFileDependencies files
+
+    let expectedEdges = ["B.fs", ["A.fs"]]
     assertGraphEqual deps expectedEdges
 
 [<Test>]
@@ -238,12 +337,26 @@ let analyseResult (result: DepsResult) =
                 v |> Array.map (fun d -> result.Graph[d].Length) |> Array.max)
 
     printfn $"TotalDeps: {totalDeps}, topFirstDeps: {topFirstDeps}"
+//
+// open GiGraph.Dot.Extensions
+// open GiGraph.Dot.Output.Options
+// let makeDotFile (path : string) (graph : Graph<File>) : unit =
+//     let g = DotGraph(directed=true)
+//     g.Layout.Direction <- DotLayoutDirection.LeftToRight
+//     let name (f : File) = $"{f.QualifiedName}.{Path.GetExtension(f.Name)}" 
+//     graph
+//     |> Graph.collectEdges
+//     |> Array.iter (fun (a, b) -> g.Edges.Add(name a, name b) |> ignore)
+//     let _options = DotFormattingOptions()
+//     printfn $"{g.Build()}"
+//     g.SaveToFile(path)
 
 [<Test>]
 let ``Analyse hardcoded files`` () =
     let deps = DependencyResolution.detectFileDependencies sampleFiles
     printfn "Detected file dependencies:"
     deps.Graph |> Graph.print
+    // makeDotFile "graph.dot" deps.Graph
 
 let private parseProjectAndGetSourceFiles (projectFile: string) =
     //let cacheDir = "."
@@ -307,3 +420,5 @@ let ``Analyse whole projects and print statistics`` (projectFile: string) =
                 v |> Array.map (fun d -> graph.Graph[d].Length) |> Array.max)
 
     printfn $"TotalDeps: {totalDeps}, topFirstDeps: {topFirstDeps}, diff: {totalDeps - topFirstDeps}"
+    
+    // makeDotFile "FCS.deps.dot" graph.Graph
