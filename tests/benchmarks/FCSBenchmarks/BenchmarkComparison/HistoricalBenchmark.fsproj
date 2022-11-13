@@ -66,9 +66,6 @@
       <HintPath>$(FSharpCoreDllPath)</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="runner.ipynb" />
-  </ItemGroup>
 
   <Target Name="FakeBuild" BeforeTargets="Build">
     <Message Text="Type=$(FcsReferenceType) FcsDllPath=$(FcsDllPath)" />

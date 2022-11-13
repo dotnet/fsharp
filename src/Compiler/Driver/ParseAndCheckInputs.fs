@@ -758,7 +758,12 @@ let ParseInputFilesInParallel (tcConfig: TcConfig, lexResourceManager, sourceFil
 
     for fileName in sourceFiles do
         checkInputFile tcConfig fileName
-        
+
+
+    // Order files to be parsed by size (descending). The idea is to process big files first,
+    // so that near the end when only some nodes are still processing items, it's the smallest items,
+    // which should reduce the period of time where only some nodes are busy.
+    // This requires some empirical evidence.        
     let sourceFiles =
         sourceFiles
         |> List.mapi (fun i f -> i, f)
@@ -775,6 +780,7 @@ let ParseInputFilesInParallel (tcConfig: TcConfig, lexResourceManager, sourceFil
                 parseInputFileAux (tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), delayLogger, retryLocked)
 
             idx, (input, directoryName))
+        // Bring back index-based order
         |> List.sortBy fst
         |> List.map snd
     )

@@ -61,6 +61,7 @@ type File =
     }
 
     member this.Name = this.AST.Name // TODO Use qualified name
+    // TODO Remove
     member this.CodeSize = 0
     member this.QualifiedName = this.AST.QualifiedName
 

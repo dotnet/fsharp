@@ -95,14 +95,14 @@ let ``1. Test sequential type-checking`` (code: Codebase) =
     let config = codebaseToConfig code Method.Sequential
     TestCompilerFromArgs config
 
-/// Before running these tests, you must prepare the codebase by running the script 'FCS.prepare.ps1'
+/// Before running this test, you must prepare the codebase by running the script 'FCS.prepare.ps1'
 [<TestCaseSource(nameof (codebases))>]
-// [<Explicit("Slow, only useful as a sanity check that the test codebase is sound and type-checks using the parallel-fs method")>]
+[<Explicit("Slow, only useful as a sanity check that the test codebase is sound and type-checks using the parallel-fs method")>]
 let ``2. Test parallelfs type-checking`` (code: Codebase) =
     let config = codebaseToConfig code Method.ParallelCheckingOfBackedImplFiles
     TestCompilerFromArgs config
     
-/// Before running these tests, you must prepare the codebase by running the script 'FCS.prepare.ps1'
+/// Before running this test, you must prepare the codebase by running the script 'FCS.prepare.ps1'
 [<TestCaseSource(nameof (codebases))>]
 let ``3. Test graph-based type-checking`` (code: Codebase) =
     let config = codebaseToConfig code Method.Graph

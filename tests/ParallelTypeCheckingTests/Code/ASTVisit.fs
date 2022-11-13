@@ -1310,6 +1310,7 @@ module TopModulesExtraction =
                                 range) ->
                 let idents =
                     // TODO Fix this by making it similar to what happens in other places where we detect AutoOpen modules
+                    // Currently it doesn't matter, since we don't look within modules.
                     if mightHaveAutoOpen synAttributeLists then
                         // Contents of a module that's potentially AutoOpen are available everywhere, so treat it as if it had no name ('root' module).
                         [| LongIdent.Empty |]

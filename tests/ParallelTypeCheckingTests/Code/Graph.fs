@@ -42,7 +42,6 @@ module Graph =
             graph.Values |> Seq.toArray |> Array.concat |> Array.except graph.Keys
 
         addIfMissing missingNodes graph
-
     
     /// Create a transitive closure of the graph
     let transitiveOpt<'Node when 'Node: equality> (graph: Graph<'Node>) : Graph<'Node> =
@@ -107,8 +106,3 @@ module Graph =
         let json = JsonConvert.SerializeObject(graph, Formatting.Indented)
         printfn $"Serialising graph as JSON in {path}"
         File.WriteAllText(path, json)
-
-module FileGraph =
-    // open GiGraph.Dot
-    let makeDotFile (_path : string) (_graph : Graph<File>) : unit =
-        ()

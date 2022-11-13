@@ -128,6 +128,7 @@ let combineResults
             // Sort it by effectively file index.
             // For some reason this is needed, otherwise gives 'missing namespace' and other errors when using the resulting state.
             // Does this make sense? Should the results be foldable in any order?
+            // TODO Use _foldingOrderer
             |> Array.sortBy (fun node -> node.Info.Item)
             |> Array.filter (fun dep -> included.Contains dep.Info.Item = false)
             |> Array.distinctBy (fun dep -> dep.Info.Item)

@@ -113,35 +113,19 @@ let CheckMultipleInputsInParallel
         else
             graph
 
-    let find (s : string) =
-        let matches (f : File) = f.Name.Contains(s, StringComparison.InvariantCultureIgnoreCase)
-        let files = graph.Files |> Array.filter (fun f -> matches f.File)
-        let d =
-            graph.Graph
-            |> Seq.filter (fun (KeyValue(f, _deps)) -> matches f)
-            |> Seq.map (fun (KeyValue(f, deps)) -> f, deps)
-            |> dict
-        
-        files
-        |> Array.map (fun f -> f, d[f.File])
-    
-    let _a = find "PostInferenceChecks.fsi"
-    let _b = find "ConstraintSolver"
-    
-    // graph.Graph |> Graph.print
+    graph.Graph |> Graph.print
 
-    let _graphDumpPath =
+    let graphDumpPath =
         let graphDumpName =
             tcConfig.outputFile
             |> Option.map Path.GetFileName
             |> Option.defaultValue "project"
 
         $"{graphDumpName}.deps.json"
-    
 
-    // graph.Graph
-    // |> Graph.map (fun n -> n.Name)
-    // |> Graph.serialiseToJson graphDumpPath
+    graph.Graph
+    |> Graph.map (fun n -> n.Name)
+    |> Graph.serialiseToJson graphDumpPath
 
     let _ = ctok // TODO Use
     let diagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger

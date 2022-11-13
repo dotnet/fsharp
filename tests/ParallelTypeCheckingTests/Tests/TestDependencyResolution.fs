@@ -51,7 +51,7 @@ open A
 
 
 [<Test>]
-let ``Another failing FCS test`` () =
+let ``A top-level module with an attribute, belonging to a namespace, depends on another file that uses the same namespace`` () =
     let files =
         [|
             "A.fsi", """
