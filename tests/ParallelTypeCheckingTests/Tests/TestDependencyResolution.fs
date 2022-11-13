@@ -49,6 +49,29 @@ open A
     let expectedEdges = [ "B.fs", [ "A.fs" ] ]
     assertGraphEqual deps expectedEdges
 
+
+[<Test>]
+let ``Another failing FCS test`` () =
+    let files =
+        [|
+            "A.fsi", """
+namespace FSharp.Compiler.CodeAnalysis
+type LegacyReferenceResolver = X of int  
+"""
+            "B.fsi", """
+[<System.Obsolete("This module is not for external use and may be removed in a future release of FSharp.Compiler.Service")>]  
+module public FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver  
+  
+val getResolver: unit -> LegacyReferenceResolver
+"""
+        |] |> buildFiles
+
+    let deps = DependencyResolution.detectFileDependencies files
+
+    let expectedEdges = ["B.fsi", ["A.fsi"]]
+    assertGraphEqual deps expectedEdges
+
+
 [<Test>]
 let ``When defining a top-level module, the implicit parent namespace is taken into account when considering references to the file - .fsi pair`` () =
     let files =
