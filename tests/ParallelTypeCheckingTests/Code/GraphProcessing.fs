@@ -146,7 +146,7 @@ let processGraph<'Item, 'State, 'Result, 'FinalFileResult when 'Item: equality a
     (includeInFinalState: 'Item -> bool)
     (parallelism: int)
     : 'FinalFileResult[] * 'State =
-    let transitiveDeps = graph |> Graph.transitive
+    let transitiveDeps = graph |> Graph.transitiveOpt
     let dependants = graph |> Graph.reverse
 
     let makeNode (item: 'Item) : Node<'Item, StateWrapper<'Item, 'State>, ResultWrapper<'Item, 'Result>> =

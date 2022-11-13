@@ -55,14 +55,13 @@ let ``Another failing FCS test`` () =
     let files =
         [|
             "A.fsi", """
-namespace FSharp.Compiler.CodeAnalysis
-type LegacyReferenceResolver = X of int  
+namespace A.B.C
+type X = X of int  
 """
             "B.fsi", """
-[<System.Obsolete("This module is not for external use and may be removed in a future release of FSharp.Compiler.Service")>]  
-module public FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver  
-  
-val getResolver: unit -> LegacyReferenceResolver
+[<System.Obsolete("This is enough for the algorithm to consider this module AutoOpen")>]  
+module public A.B.C.D
+val x: X
 """
         |] |> buildFiles
 
@@ -338,12 +337,26 @@ let analyseResult (result: DepsResult) =
                 v |> Array.map (fun d -> result.Graph[d].Length) |> Array.max)
 
     printfn $"TotalDeps: {totalDeps}, topFirstDeps: {topFirstDeps}"
+//
+// open GiGraph.Dot.Extensions
+// open GiGraph.Dot.Output.Options
+// let makeDotFile (path : string) (graph : Graph<File>) : unit =
+//     let g = DotGraph(directed=true)
+//     g.Layout.Direction <- DotLayoutDirection.LeftToRight
+//     let name (f : File) = $"{f.QualifiedName}.{Path.GetExtension(f.Name)}" 
+//     graph
+//     |> Graph.collectEdges
+//     |> Array.iter (fun (a, b) -> g.Edges.Add(name a, name b) |> ignore)
+//     let _options = DotFormattingOptions()
+//     printfn $"{g.Build()}"
+//     g.SaveToFile(path)
 
 [<Test>]
 let ``Analyse hardcoded files`` () =
     let deps = DependencyResolution.detectFileDependencies sampleFiles
     printfn "Detected file dependencies:"
     deps.Graph |> Graph.print
+    // makeDotFile "graph.dot" deps.Graph
 
 let private parseProjectAndGetSourceFiles (projectFile: string) =
     //let cacheDir = "."
@@ -407,3 +420,5 @@ let ``Analyse whole projects and print statistics`` (projectFile: string) =
                 v |> Array.map (fun d -> graph.Graph[d].Length) |> Array.max)
 
     printfn $"TotalDeps: {totalDeps}, topFirstDeps: {topFirstDeps}, diff: {totalDeps - topFirstDeps}"
+    
+    // makeDotFile "FCS.deps.dot" graph.Graph

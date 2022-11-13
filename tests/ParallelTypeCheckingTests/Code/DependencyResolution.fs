@@ -265,7 +265,7 @@ module internal DependencyResolution =
 let analyseEfficiency (result: DepsResult) : unit =
     let graph = result.Graph
     let edgeCount = graph |> Seq.sumBy (fun (KeyValue (_k, v)) -> v.Length)
-    let t = graph |> Graph.transitive
+    let t = graph |> Graph.transitiveOpt
     let edgeCountTransitive = t |> Seq.sumBy (fun (KeyValue (_k, v)) -> v.Length)
 
     log $"Non-transitive edge count: {edgeCount}, transitive edge count: {edgeCountTransitive}"

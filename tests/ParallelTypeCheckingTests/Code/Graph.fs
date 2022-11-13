@@ -43,6 +43,24 @@ module Graph =
 
         addIfMissing missingNodes graph
 
+    
+    /// Create a transitive closure of the graph
+    let transitiveOpt<'Node when 'Node: equality> (graph: Graph<'Node>) : Graph<'Node> =
+        let go (node: 'Node) =
+            let visited = HashSet<'Node>()
+            let rec dfs (node: 'Node) =
+                graph[node]
+                |> Array.filter visited.Add
+                |> Array.iter dfs
+            dfs node
+            visited
+            |> Seq.toArray
+        
+        graph.Keys
+        |> Seq.toArray
+        |> Array.Parallel.map (fun node -> node, go node)
+        |> readOnlyDict
+
     /// Create a transitive closure of the graph
     let transitive<'Node when 'Node: equality> (graph: Graph<'Node>) : Graph<'Node> =
         let rec calcTransitiveEdges =
@@ -89,3 +107,8 @@ module Graph =
         let json = JsonConvert.SerializeObject(graph, Formatting.Indented)
         printfn $"Serialising graph as JSON in {path}"
         File.WriteAllText(path, json)
+
+module FileGraph =
+    // open GiGraph.Dot
+    let makeDotFile (_path : string) (_graph : Graph<File>) : unit =
+        ()

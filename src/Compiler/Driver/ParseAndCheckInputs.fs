@@ -758,18 +758,26 @@ let ParseInputFilesInParallel (tcConfig: TcConfig, lexResourceManager, sourceFil
 
     for fileName in sourceFiles do
         checkInputFile tcConfig fileName
-
+        
+    let sourceFiles =
+        sourceFiles
+        |> List.mapi (fun i f -> i, f)
+        |> List.sortBy (fun (_i, f) -> -FileInfo(f).Length)
+        
     let sourceFiles = List.zip sourceFiles isLastCompiland
 
     UseMultipleDiagnosticLoggers (sourceFiles, delayLogger, None) (fun sourceFilesWithDelayLoggers ->
         sourceFilesWithDelayLoggers
-        |> ListParallel.map (fun ((fileName, isLastCompiland), delayLogger) ->
+        |> ListParallel.map (fun (((idx, fileName), isLastCompiland), delayLogger) ->
             let directoryName = Path.GetDirectoryName fileName
 
             let input =
                 parseInputFileAux (tcConfig, lexResourceManager, fileName, (isLastCompiland, isExe), delayLogger, retryLocked)
 
-            (input, directoryName)))
+            idx, (input, directoryName))
+        |> List.sortBy fst
+        |> List.map snd
+    )
 
 let ParseInputFilesSequential (tcConfig: TcConfig, lexResourceManager, sourceFiles, diagnosticsLogger: DiagnosticsLogger, retryLocked) =
     let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint
