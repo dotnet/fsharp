@@ -820,8 +820,9 @@ module ``Suppression of System Numerics interfaces on unitized types`` =
         |> withLangVersion70
         |> compile
         |> shouldSucceed
+
 #if !NETCOREAPP
-[<Theory(Skip = "IWSAMs are not supported by NET472.")>]
+    [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
 #else
     [<Theory>]
     [<InlineData("IAdditionOperators", 3)>]
