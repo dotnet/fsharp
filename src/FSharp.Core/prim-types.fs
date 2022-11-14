@@ -369,6 +369,11 @@ namespace Microsoft.FSharp.Core
     type ValueAsStaticPropertyAttribute() =
         inherit Attribute()
 
+    [<AttributeUsage(AttributeTargets.Method ||| AttributeTargets.Property, AllowMultiple=false)>]
+    [<Sealed>]
+    type NoCompilerInliningAttribute() =
+        inherit Attribute()
+
     [<MeasureAnnotatedAbbreviation>] type float<[<Measure>] 'Measure> = float 
     [<MeasureAnnotatedAbbreviation>] type float32<[<Measure>] 'Measure> = float32
     [<MeasureAnnotatedAbbreviation>] type decimal<[<Measure>] 'Measure> = decimal

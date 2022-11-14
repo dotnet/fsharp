@@ -1427,6 +1427,7 @@ type TcGlobals(
   member val attrib_MeasureAttribute                       = mk_MFCore_attrib "MeasureAttribute"
   member val attrib_MeasureableAttribute                   = mk_MFCore_attrib "MeasureAnnotatedAbbreviationAttribute"
   member val attrib_NoDynamicInvocationAttribute           = mk_MFCore_attrib "NoDynamicInvocationAttribute"
+  member val attrib_NoCompilerInliningAttribute            = mk_MFCore_attrib "NoCompilerInliningAttribute"
   member val attrib_SecurityAttribute                      = tryFindSysAttrib "System.Security.Permissions.SecurityAttribute"
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
@@ -1717,6 +1718,9 @@ type TcGlobals(
 
   /// Indicates if we can use System.Array.Empty when emitting IL for empty array literals
   member val isArrayEmptyAvailable = v_Array_tcref.ILTyconRawMetadata.Methods.FindByName "Empty" |> List.isEmpty |> not
+
+  /// Indicates if we can emit the System.Runtime.CompilerServices.IsReadOnlyAttribute
+  member val isSystem_Runtime_CompilerServices_IsReadOnlyAttributeAvailable = tryFindSysTypeCcu sysCompilerServices "IsReadOnlyAttribute" |> Option.isSome
 
   member _.FindSysTyconRef path nm = findSysTyconRef path nm
 

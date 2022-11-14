@@ -867,7 +867,7 @@ module ParsedInput =
             match membSig with
             | SynMemberSig.Inherit (t, _) -> walkType t
 
-            | SynMemberSig.Member (vs, _, _) -> walkValSig vs
+            | SynMemberSig.Member (memberSig = vs) -> walkValSig vs
 
             | SynMemberSig.Interface (t, _) -> walkType t
 
@@ -880,7 +880,7 @@ module ParsedInput =
 
         and walkMember memb =
             match memb with
-            | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
+            | SynMemberDefn.AbstractSlot (slotSig = valSig) -> walkValSig valSig
 
             | SynMemberDefn.Member (binding, _) -> walkBinding binding
 
@@ -1869,7 +1869,7 @@ module ParsedInput =
             match membSig with
             | SynMemberSig.Inherit (t, _)
             | SynMemberSig.Interface (t, _) -> walkType t
-            | SynMemberSig.Member (vs, _, _) -> walkValSig vs
+            | SynMemberSig.Member (memberSig = vs) -> walkValSig vs
             | SynMemberSig.ValField (f, _) -> walkField f
             | SynMemberSig.NestedType (nestedType = typeDefn) ->
                 let (SynTypeDefnSig (typeInfo = info; typeRepr = repr; members = memberSigs)) =
@@ -1888,7 +1888,7 @@ module ParsedInput =
 
         and walkMember memb =
             match memb with
-            | SynMemberDefn.AbstractSlot (valSig, _, _) -> walkValSig valSig
+            | SynMemberDefn.AbstractSlot (slotSig = valSig) -> walkValSig valSig
             | SynMemberDefn.Member (binding, _) -> walkBinding binding
             | SynMemberDefn.GetSetMember (getBinding, setBinding, _, _) ->
                 Option.iter walkBinding getBinding

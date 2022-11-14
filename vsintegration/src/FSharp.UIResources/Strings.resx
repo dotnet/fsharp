@@ -120,18 +120,6 @@
   <data name="Always_place_opens_at_top_level" xml:space="preserve">
     <value>Always place open statements at the top level</value>
   </data>
-  <data name="Lens" xml:space="preserve">
-    <value>Lens</value>
-  </data>
-  <data name="Lens_Switch" xml:space="preserve">
-    <value>Enable Lens (Experimental)</value>
-  </data>
-  <data name="Lens_Prefix" xml:space="preserve">
-    <value>Annotation prefix</value>
-  </data>
-  <data name="Lens_UseColors" xml:space="preserve">
-    <value>Use colors in annotations</value>
-  </data>
   <data name="Code_Fixes" xml:space="preserve">
     <value>Code Fixes</value>
   </data>
@@ -192,7 +180,7 @@
   <data name="Inline_Hints" xml:space="preserve">
     <value>Inline Hints</value>
   </data>
-  <data name="Show_Inline_Hints" xml:space="preserve">
+  <data name="Show_Inline_Type_Hints" xml:space="preserve">
     <value>Display inline type hints (experimental)</value>
   </data>
   <data name="Time_until_stale_completion" xml:space="preserve">
@@ -242,5 +230,8 @@
   </data>
   <data name="Enable_Parallel_Reference_Resolution" xml:space="preserve">
     <value>Enable parallel reference resolution</value>
+  </data>
+  <data name="Show_Inline_Parameter_Name_Hints" xml:space="preserve">
+    <value>Display inline parameter name hints (experimental)</value>
   </data>
 </root>

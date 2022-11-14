@@ -2204,18 +2204,23 @@ module GeneralizationHelpers =
 // ComputeInlineFlag
 //-------------------------------------------------------------------------
 
-let ComputeInlineFlag (memFlagsOption: SynMemberFlags option) isInline isMutable m =
+let ComputeInlineFlag (memFlagsOption: SynMemberFlags option) isInline isMutable hasNoCompilerInliningAttribute m =
     let inlineFlag =
+        let isCtorOrAbstractSlot =
+            match memFlagsOption with
+            | None -> false
+            | Some x -> (x.MemberKind = SynMemberKind.Constructor) || x.IsDispatchSlot || x.IsOverrideOrExplicitImpl
+
         // Mutable values may never be inlined
         // Constructors may never be inlined
         // Calls to virtual/abstract slots may never be inlined
-        if isMutable ||
-           (match memFlagsOption with
-            | None -> false
-            | Some x -> (x.MemberKind = SynMemberKind.Constructor) || x.IsDispatchSlot || x.IsOverrideOrExplicitImpl) 
-        then ValInline.Never 
-        elif isInline then ValInline.Always 
-        else ValInline.Optional
+        // Values marked with NoCompilerInliningAttribute may never be inlined
+        if isMutable || isCtorOrAbstractSlot || hasNoCompilerInliningAttribute then
+            ValInline.Never 
+        elif isInline then
+            ValInline.Always 
+        else
+            ValInline.Optional
 
     if isInline && (inlineFlag <> ValInline.Always) then 
         errorR(Error(FSComp.SR.tcThisValueMayNotBeInlined(), m))
@@ -4030,7 +4035,7 @@ and TcPseudoMemberSpec cenv newOk env synTypes tpenv synMemberSig m =
     let tys, tpenv = List.mapFold (TcTypeAndRecover cenv newOk CheckCxs ItemOccurence.UseInType WarnOnIWSAM.Yes env) tpenv synTypes
 
     match synMemberSig with
-    | SynMemberSig.Member (synValSig, memberFlags, m) ->
+    | SynMemberSig.Member (synValSig, memberFlags, m, _) ->
         // REVIEW: Test pseudo constraints cannot refer to polymorphic methods.
         // REVIEW: Test pseudo constraints cannot be curried.
         let members, tpenv = TcValSpec cenv env ModuleOrMemberBinding newOk ExprContainerInfo (Some memberFlags) (Some (List.head tys)) tpenv synValSig []
@@ -10303,8 +10308,9 @@ and TcNormalizedBinding declKind (cenv: cenv) env tpenv overallTy safeThisValOpt
             retAttribs, valAttribs, valSynData
 
         let isVolatile = HasFSharpAttribute g g.attrib_VolatileFieldAttribute valAttribs
+        let hasNoCompilerInliningAttribute = HasFSharpAttribute g g.attrib_NoCompilerInliningAttribute valAttribs
 
-        let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable mBinding
+        let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable hasNoCompilerInliningAttribute mBinding
 
         let argAttribs = 
             spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter false))
@@ -10966,7 +10972,7 @@ and ComputeIsComplete enclosingDeclaredTypars declaredTypars ty =
 /// Determine if a uniquely-identified-abstract-slot exists for an override member (or interface member implementation) based on the information available
 /// at the syntactic definition of the member (i.e. prior to type inference). If so, we know the expected signature of the override, and the full slotsig
 /// it implements. Apply the inferred slotsig.
-and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (argsAndRetTy, m, synTyparDecls, declaredTypars, memberId, tcrefObjTy, renaming, _objTy, intfSlotTyOpt, valSynData, memberFlags: SynMemberFlags, attribs) =
+and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (baseValOpt: Val option) (argsAndRetTy, m, synTyparDecls, declaredTypars, memberId, tcrefObjTy, renaming, intfSlotTyOpt, valSynData, memberFlags: SynMemberFlags, attribs) =
 
     let g = cenv.g
     let ad = envinner.eAccessRights
@@ -11013,7 +11019,21 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (argsAndRetTy, m, 
                      | _ -> [] // check that method to override is sealed is located at CheckOverridesAreAllUsedOnce (typrelns.fs)
                       // We hit this case when it is ambiguous which abstract method is being implemented.
 
-
+             if g.langVersion.SupportsFeature(LanguageFeature.ErrorForNonVirtualMembersOverrides) then
+                 // Checks if the declaring type inherits from a base class and is not FSharpObjModelTy
+                 // Raises an error if we try to override an non virtual member with the same name in both
+                 match baseValOpt with
+                 | Some ttype when not(isFSharpObjModelTy g ttype.Type) ->
+                    match stripTyEqns g ttype.Type with
+                    | TType_app(tyconRef, _, _) ->
+                        let ilMethods = tyconRef.ILTyconRawMetadata.Methods.AsList()
+                        let nameOpt = ilMethods |> List.tryFind(fun id -> id.Name = memberId.idText)
+                        match nameOpt with
+                        | Some name when not name.IsVirtual ->
+                            errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
+                        | _ -> ()
+                    | _ -> ()
+                 | _ -> ()
 
              // If we determined a unique member then utilize the type information from the slotsig
              let declaredTypars =
@@ -11175,14 +11195,14 @@ and AnalyzeRecursiveStaticMemberOrValDecl
            CheckForNonAbstractInterface declKind tcref memberFlags id.idRange
 
            let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
-           let tcrefObjTy, enclosingDeclaredTypars, renaming, objTy, _ = FreshenObjectArgType cenv mBinding TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
+           let tcrefObjTy, enclosingDeclaredTypars, renaming, _, _ = FreshenObjectArgType cenv mBinding TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
            let envinner = AddDeclaredTypars CheckForDuplicateTypars enclosingDeclaredTypars envinner
            let envinner = MakeInnerEnvForTyconRef envinner tcref isExtrinsic
 
            let (ExplicitTyparInfo(_, declaredTypars, infer)) = explicitTyparInfo
 
            let optInferredImplSlotTys, declaredTypars =
-               ApplyAbstractSlotInference cenv envinner (ty, mBinding, synTyparDecls, declaredTypars, id, tcrefObjTy, renaming, objTy, intfSlotTyOpt, valSynInfo, memberFlags, bindingAttribs)
+               ApplyAbstractSlotInference cenv envinner None (ty, mBinding, synTyparDecls, declaredTypars, id, tcrefObjTy, renaming, intfSlotTyOpt, valSynInfo, memberFlags, bindingAttribs)
 
            let explicitTyparInfo = ExplicitTyparInfo(declaredTypars, declaredTypars, infer)
 
@@ -11247,7 +11267,6 @@ and AnalyzeRecursiveStaticMemberOrValDecl
     | _ ->
         envinner, tpenv, id, None, None, vis, vis2, None, [], None, explicitTyparInfo, bindingRhs, declaredTypars
 
-
 and AnalyzeRecursiveInstanceMemberDecl
        (cenv: cenv,
         envinner: TcEnv,
@@ -11306,7 +11325,7 @@ and AnalyzeRecursiveInstanceMemberDecl
          // at the member signature. If so, we know the type of this member, and the full slotsig
          // it implements. Apply the inferred slotsig.
          let optInferredImplSlotTys, declaredTypars =
-             ApplyAbstractSlotInference cenv envinner (argsAndRetTy, mBinding, synTyparDecls, declaredTypars, memberId, tcrefObjTy, renaming, objTy, intfSlotTyOpt, valSynInfo, memberFlags, bindingAttribs)
+             ApplyAbstractSlotInference cenv envinner baseValOpt (argsAndRetTy, mBinding, synTyparDecls, declaredTypars, memberId, tcrefObjTy, renaming, intfSlotTyOpt, valSynInfo, memberFlags, bindingAttribs)
 
          // Update the ExplicitTyparInfo to reflect the declaredTypars inferred from the abstract slot
          let explicitTyparInfo = ExplicitTyparInfo(declaredTypars, declaredTypars, infer)
@@ -11425,8 +11444,9 @@ and AnalyzeAndMakeAndPublishRecursiveValue
 
     // Allocate the type inference variable for the inferred type
     let ty = NewInferenceType g
+    let hasNoCompilerInliningAttribute = HasFSharpAttribute g g.attrib_NoCompilerInliningAttribute bindingAttribs
 
-    let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable mBinding
+    let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable hasNoCompilerInliningAttribute mBinding
 
     if isMutable then errorR(Error(FSComp.SR.tcOnlyRecordFieldsAndSimpleLetCanBeMutable(), mBinding))
 
@@ -12042,6 +12062,7 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
     let attrs = TcAttributes cenv env attrTgt synAttrs
     let newOk = if canInferTypars then NewTyparsOK else NoNewTypars
+    let hasNoCompilerInliningAttribute = HasFSharpAttribute g g.attrib_NoCompilerInliningAttribute attrs
 
     let valinfos, tpenv = TcValSpec cenv env declKind newOk containerInfo memFlagsOpt None tpenv synValSig attrs
     let denv = env.DisplayEnv
@@ -12050,7 +12071,7 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
 
         let (ValSpecResult (altActualParent, memberInfoOpt, id, enclosingDeclaredTypars, declaredTypars, ty, prelimValReprInfo, declKind)) = valSpecResult
 
-        let inlineFlag = ComputeInlineFlag (memberInfoOpt |> Option.map (fun (PrelimMemberInfo(memberInfo, _, _)) -> memberInfo.MemberFlags)) isInline mutableFlag m
+        let inlineFlag = ComputeInlineFlag (memberInfoOpt |> Option.map (fun (PrelimMemberInfo(memberInfo, _, _)) -> memberInfo.MemberFlags)) isInline mutableFlag hasNoCompilerInliningAttribute m
 
         let freeInType = freeInTypeLeftToRight g false ty
 
