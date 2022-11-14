@@ -303,7 +303,7 @@ let test(x: 'T) =
          (11, 5, 11, 11)
          """This construct causes code to be less generic than indicated by the type annotations. The type variable 'T has been constrained to be type 'int'."""
 
-    [<Test>]
+    [<Test(Description="https://github.com/dotnet/fsharp/issues/13731")>]
     let ``Picking overload for typar fails when incompatible types are part of the candidate set``() =
         CompilerAssert.TypeCheckWithErrors
             """
@@ -440,3 +440,66 @@ let test() =
     
 if not (test().OtherArgs.Value.Name = "test") then failwith "Unexpected value was returned after setting Name"
         """ []
+
+    [<Test>]
+    let ``Prefer nullable conversion only candidate when multiple candidates require conversions``() =
+        CompilerAssert.RunScript
+            """
+type M() =
+    static member A(size: int64 array, dtype: System.Nullable<int>) = 1
+    static member A(size: System.ReadOnlySpan<int64>, dtype: System.Nullable<int>) = 2
+
+let test() = M.A([|10L|], 1)
+
+if test() <> 1 then failwith "Incorrect overload picked" 
+        """ []
+
+    [<Test>]
+    let ``Prefer nullable conversion over numeric conversion``() =
+        CompilerAssert.RunScript
+            """
+type M() =
+    static member A(n: int64) = 1
+    static member A(n: System.Nullable<int>) = 2
+
+let test() = M.A(0)
+
+if test() <> 2 then failwith "Incorrect overload picked"
+        """ []
+
+    [<Test>]
+    let ``Prefer nullable conversion over op_Implicit conversion``() =
+        
+        CompilerAssert.RunScript
+            """
+type M() =
+    static member A(n: System.DateTimeOffset) = 1
+    static member A(n: System.Nullable<System.DateTime>) = 2
+
+let test() = M.A(System.DateTime.UtcNow)
+
+if test() <> 2 then failwith "Incorrect overload picked"
+        """ []
+
+
+    [<Test(Description="https://github.com/dotnet/fsharp/issues/14318")>]
+    let ``Picking overload for TDC candidate set fails as ambiguous while one candidate requires more conversions``() =
+        CompilerAssert.TypeCheckSingleError
+            """
+type M() =
+    static member A(m: int64 array, n: int64) = 1
+    static member A(m: System.ReadOnlySpan<int64>, n: int64) = 2
+
+let test() = M.A([|10L|], 1)
+        """
+             FSharpDiagnosticSeverity.Error
+             41
+             (6, 14, 6, 29)
+             """A unique overload for method 'A' could not be determined based on type information prior to this program point. A type annotation may be needed.
+
+Known types of arguments: int64[] * int
+
+Candidates:
+ - static member M.A: m: System.ReadOnlySpan<int64> * n: int64 -> int
+ - static member M.A: m: System.ReadOnlySpan<int64> * n: int64 -> int
+ - static member M.A: m: int64 array * n: int64 -> int"""
