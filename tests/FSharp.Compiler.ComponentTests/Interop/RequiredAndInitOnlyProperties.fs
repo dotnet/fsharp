@@ -268,7 +268,7 @@ let main _ =
         ]
 
     [<Fact>]
-    let ``F# cannot change init-only property via SRTP`` () =
+    let ``F# can change init-only property via SRTP`` () =
 
         let csharpLib = csharpBaseClass
 
@@ -290,7 +290,7 @@ let main _ =
         |> withLangVersion70
         |> withReferences [csharpLib]
         |> compile
-        |> shouldFail
+        |> shouldSucceed
 
     [<Fact>]
     let ``F# can call special-named methods via SRTP`` () =
@@ -307,7 +307,7 @@ let inline clone<'T when 'T : (member ``<Clone>$``: unit -> 'T)> (a: 'T) = a.``<
 [<EntryPoint>]
 let main _ =
     let recd = Recd()
-    clone recd
+    let _ = clone recd
     0
 """
         FSharp fsharpSource
