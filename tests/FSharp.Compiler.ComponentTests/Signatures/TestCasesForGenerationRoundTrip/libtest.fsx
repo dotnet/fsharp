@@ -3,13 +3,17 @@
 module Core_libtest
 #endif
 
+let (!) (r: 'T ref)  = r.Value
+let (:=) (r: 'T ref) (v: 'T)  = r.Value <- v
+let incr (r: int ref)  = r.Value <- r.Value + 1
+let decr (r: int ref)  = r.Value <- r.Value - 1
 
 #nowarn "62"
 #nowarn "44"
 
 let failures = ref []
 let reportFailure s = 
-  stdout.WriteLine "\n................TEST FAILED...............\n"; failures := !failures @ [s]
+  stdout.WriteLine "\n................TEST FAILED...............\n"; failures.Value <- failures.Value @ [s]
 
 let check s e r = 
   if r = e then  stdout.WriteLine (s^": YES") 
@@ -2132,7 +2136,7 @@ do  for i = 1 to 1000 do testOrder() done
 let test2398985() = 
   let l = ReadonlyArray.ofList [1;2;3] in
   let res = ref 2 in 
-  for i in ReadonlyArray.toSeq l do res := !res + i done;
+  for i in ReadonlyArray.toSeq l do res.Value <- res.Value + i done;
   check "test2398985: ReadonlyArray.toSeq" 8 !res
 
 do test2398985()
@@ -2149,7 +2153,7 @@ do test2398986()
 let test2398987() = 
   let l = Set.ofList [1;2;3] in
   let res = ref 2 in 
-  for i in Set.toSeq l do res := !res + i done;
+  for i in Set.toSeq l do res.Value <- res.Value + i done;
   check "test2398987: Idioms.foreach, Set.toSeq" 8 !res
 
 do test2398987()
@@ -2157,7 +2161,7 @@ do test2398987()
 let test2398987b() = 
   let l = Set.ofList [1;2;3] in
   let res = ref 2 in 
-  for i in l do res := !res + i done;
+  for i in l do res.Value <- res.Value + i done;
   check "test2398987: Idioms.foreach, Set.toSeq" 8 !res
 
 do test2398987b()
@@ -2173,7 +2177,7 @@ let foreach e f = Seq.iter f e
 let test2398993() = 
   let l = [1;2;3] in
   let res = ref 2 in 
-  foreach (List.toSeq l) (fun i -> res := !res + i);
+  foreach (List.toSeq l) (fun i -> res.Value <- res.Value + i);
   check "test2398993: foreach, List.toSeq" 8 !res
 
 do test2398993()
@@ -2182,7 +2186,7 @@ do test2398993()
 let test2398995() = 
   let l = ReadonlyArray.ofList [1;2;3] in
   let res = ref 2 in 
-  foreach (ReadonlyArray.toSeq l) (fun i -> res := !res + i);
+  foreach (ReadonlyArray.toSeq l) (fun i -> res.Value <- res.Value + i);
   check "test2398995: foreach, ReadonlyArray.toSeq" 8 !res
 
 do test2398995()
@@ -2191,7 +2195,7 @@ do test2398995()
 let test2398996() = 
   let l = Array.ofList [1;2;3] in
   let res = ref 2 in 
-  foreach (Array.toSeq l) (fun i -> res := !res + i);
+  foreach (Array.toSeq l) (fun i -> res.Value <- res.Value + i);
   check "test2398996: foreach, Array.toSeq" 8 !res
 
 do test2398996()
@@ -2199,7 +2203,7 @@ do test2398996()
 let test2398997() = 
   let l = Set.ofList [1;2;3] in
   let res = ref 2 in 
-  foreach (Set.toSeq l) (fun i -> res := !res + i);
+  foreach (Set.toSeq l) (fun i -> res.Value <- res.Value + i);
   check "test2398997: foreach, Set.toSeq" 8 !res
 
 do test2398997()
@@ -2369,8 +2373,8 @@ module IEnumerableTests = begin
   do check "Seq.collect" (Seq.collect (fun i -> [i*10 .. i*10+9]) [0..9] |> Seq.toList) [0..99]
 
   let c = ref -1
-  do Seq.iter2 (fun x y -> incr c; test "Seq.iter2" (!c = x && !c = y)) [0..10] [0..10]
-  do check "Seq.iter2" !c 10
+  do Seq.iter2 (fun x y -> incr c; test "Seq.iter2" (c.Value = x && c.Value = y)) [0..10] [0..10]
+  do check "Seq.iter2" c.Value 10
 
   do check "Seq.zip"
        (Seq.zip [1..10] [2..11] |> Seq.toList) [for i in 1..10 -> i, i+1]
@@ -2379,9 +2383,9 @@ module IEnumerableTests = begin
   do check "Seq.zip3"
        (Seq.zip3 [1..10] [2..11] [3..12] |> Seq.toList) [for i in 1..10 -> i, i+1, i+2]
 
-  do c := -1
-  do Seq.iteri (fun n x -> incr c; test "Seq.iter2" (!c = n && !c+1 = x)) [1..11]
-  do check "Seq.iter2" !c 10
+  do c.Value <- -1
+  do Seq.iteri (fun n x -> incr c; test "Seq.iter2" (c.Value = n && c.Value+1 = x)) [1..11]
+  do check "Seq.iter2" c.Value 10
 
   do check "Seq.pairwise" (Seq.pairwise [1..20] |> Seq.toList) [for i in 1 .. 19 -> i, i+1]
 
@@ -2449,13 +2453,13 @@ module SeqTestsOnEnumerableEnforcingDisposalAtEnd = begin
                           test "rvlrve2" !endReached;
                           test "rvlrve4" (not !disposed);
                           numActiveEnumerators <- numActiveEnumerators - 1;
-                          disposed := true;
+                          disposed.Value <- true;
                           ie.Dispose() 
                    interface System.Collections.IEnumerator with 
                       member x.MoveNext() = 
                           test "rvlrve0" (not !endReached);
                           test "rvlrve3" (not !disposed);
-                          endReached := not (ie.MoveNext());
+                          endReached.Value <- not (ie.MoveNext());
                           not !endReached
                       member x.Current = 
                           test "qrvlrve0" (not !endReached);
@@ -2484,13 +2488,13 @@ module SeqTestsOnEnumerableEnforcingDisposalAtEnd = begin
                       member x.Dispose() = 
                           test "qrvlrve4" (not !disposed);
                           numActiveEnumerators <- numActiveEnumerators - 1;
-                          disposed := true;
+                          disposed.Value <- true;
                           ie.Dispose() 
                    interface System.Collections.IEnumerator with 
                       member x.MoveNext() = 
                           test "qrvlrve0" (not !endReached);
                           test "qrvlrve3" (not !disposed);
-                          endReached := not (ie.MoveNext());
+                          endReached.Value <- not (ie.MoveNext());
                           not !endReached
                       member x.Current = 
                           test "qrvlrve0" (not !endReached);
@@ -2660,8 +2664,8 @@ module SeqTestsOnEnumerableEnforcingDisposalAtEnd = begin
    do check "<dispoal>" numActiveEnumerators 0
 
    let c = ref -1
-   do Seq.iter2 (fun x y -> incr c; test "Seq.iter2" (!c = x && !c = y)) (countEnumeratorsAndCheckedDisposedAtMostOnce [0..10]) (countEnumeratorsAndCheckedDisposedAtMostOnce [0..10])
-   do check "Seq.iter2" !c 10
+   do Seq.iter2 (fun x y -> incr c; test "Seq.iter2" (c.Value = x && c.Value = y)) (countEnumeratorsAndCheckedDisposedAtMostOnce [0..10]) (countEnumeratorsAndCheckedDisposedAtMostOnce [0..10])
+   do check "Seq.iter2" c.Value 10
    do check "<dispoal>" numActiveEnumerators 0
 
    do check "Seq.zip"
@@ -2673,10 +2677,10 @@ module SeqTestsOnEnumerableEnforcingDisposalAtEnd = begin
          (Seq.zip3 (countEnumeratorsAndCheckedDisposedAtMostOnce [1..10]) (countEnumeratorsAndCheckedDisposedAtMostOnce [2..11]) (countEnumeratorsAndCheckedDisposedAtMostOnce [3..12]) |> Seq.toList) [for i in 1..10 -> i, i+1, i+2]
    do check "<dispoal>" numActiveEnumerators 0
 
-   do c := -1
-   do Seq.iteri (fun n x -> incr c; test "Seq.iter2" (!c = n && !c+1 = x)) (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [1..11])
+   do c.Value <- -1
+   do Seq.iteri (fun n x -> incr c; test "Seq.iter2" (c.Value = n && c.Value+1 = x)) (countEnumeratorsAndCheckedDisposedAtMostOnceAtEnd [1..11])
    do check "<dispoal>" numActiveEnumerators 0
-   do check "Seq.iter2" !c 10
+   do check "Seq.iter2" c.Value 10
 
    do check "Seq.pairwise" (Seq.pairwise (countEnumeratorsAndCheckedDisposedAtMostOnce [1..20]) |> Seq.toList) [for i in 1 .. 19 -> i, i+1]
    do check "<dispoal>" numActiveEnumerators 0
@@ -3749,7 +3753,7 @@ module MiscIEnumerableTests = begin
     /// generate an infinite sequence using an imperative cursor
     let dataSeq2 = Seq.generate 
                       (fun () -> ref 0) 
-                      (fun r -> r := !r + 1; Some(!r)) 
+                      (fun r -> r.Value <- r.Value + 1; Some(!r)) 
                       (fun r -> ())
 end
 
@@ -3828,7 +3832,7 @@ do printf "Test c2grgeh2\n"; stdout.Flush();  verify(List.item 3 xxs = Seq.item 
  *--------------------------------------------------------------------------- *)
 
 let last = ref (-1)
-let increasing n = if !last < n then ( last := n; n ) else (printf "increasing failed for %d\n" n; reportFailure "unlabelled test"; n)
+let increasing n = if !last < n then ( last.Value <- n; n ) else (printf "increasing failed for %d\n" n; reportFailure "unlabelled test"; n)
 
 do increasing 0 |> ignore
 do increasing 1 |> ignore
@@ -4857,7 +4861,7 @@ module SeqCacheTests = begin
                      (fun r  -> incr countStop)
     let manyUseSeq = Seq.cache oneUseSequence
 
-    do check "Bug1080" (!countStart,!countIter,!countStop) (0,0,0)
+    do check "Bug1080" (countStart.Value,countIter.Value,countStop.Value) (0,0,0)
     let () =
       let xs = manyUseSeq |> Seq.truncate 0  |> Seq.toArray in
       let xs = manyUseSeq |> Seq.truncate 2  |> Seq.toArray in
@@ -4868,12 +4872,12 @@ module SeqCacheTests = begin
       let xs = manyUseSeq |> Seq.truncate 6   |> Seq.toArray in
       let xs = manyUseSeq |> Seq.truncate 100 |> Seq.toArray in
       ()
-    do check "Bug1080" (!countStart,!countIter,!countStop) (1,10,1)
+    do check "Bug1080" (countStart.Value,countIter.Value,countStop.Value) (1,10,1)
     
     do (box manyUseSeq :?> System.IDisposable) .Dispose() 
-    do countStart := 0; countIter  := 0; countStop  := 0
+    do countStart.Value <- 0; countIter.Value <- 0; countStop.Value <- 0
 
-    do check "Bug1080" (!countStart,!countIter,!countStop) (0,0,0)
+    do check "Bug1080" (countStart.Value,countIter.Value,countStop.Value) (0,0,0)
     let () =
       let xs = manyUseSeq |> Seq.truncate 0  |> Seq.toArray in
       let xs = manyUseSeq |> Seq.truncate 2  |> Seq.toArray in
@@ -4884,10 +4888,10 @@ module SeqCacheTests = begin
       let xs = manyUseSeq |> Seq.truncate 6   |> Seq.toArray in
       let xs = manyUseSeq |> Seq.truncate 100 |> Seq.toArray in
       ()
-    do check "Bug1080" (!countStart,!countIter,!countStop) (1,10,1)
+    do check "Bug1080" (countStart.Value,countIter.Value,countStop.Value) (1,10,1)
     do (box manyUseSeq :?> System.IDisposable) .Dispose() 
-    do countStart := 0; countIter  := 0; countStop  := 0
-    do check "Bug1080" (!countStart,!countIter,!countStop) (0,0,0)
+    do countStart.Value <- 0; countIter.Value <- 0; countStop.Value <- 0
+    do check "Bug1080" (countStart.Value,countIter.Value,countStop.Value) (0,0,0)
 
     let () =
       let xs = manyUseSeq |> Seq.truncate 0  |> Seq.toArray in
@@ -4900,7 +4904,7 @@ module SeqCacheTests = begin
       let xs = manyUseSeq |> Seq.truncate 100 |> Seq.toArray in
       ()
 
-    do check "Bug1080" (!countStart,!countIter,!countStop) (1,10,1)
+    do check "Bug1080" (countStart.Value,countIter.Value,countStop.Value) (1,10,1)
 
 end
 
@@ -4987,22 +4991,22 @@ module Check1178 = begin
   do printf "\n\nTest 1178: check finite/infinite sequences have lazy (f i) for each i\n\n"  
   (* Test cases for Seq.item. *)
   let counter = ref 0
-  let reset r = r := 0
+  let reset (r:int ref) = r.Value <- 0
   let fails f = try f() |> ignore;false with _ -> true
   let claim x = check "Bugs 1178/1482" x true
   
   (* Bug 1178: Check Seq.init only computes f on the items requested *)
   let initial_100 = Seq.init 100 (fun i -> incr counter; i)
-  do reset counter; claim(Seq.item 0  initial_100=0);  claim(!counter = 1)
-  do reset counter; claim(Seq.item 50 initial_100=50); claim(!counter = 1)
-  do reset counter; claim(fails (fun () -> Seq.item 100 initial_100));   claim(!counter = 0)
-  do reset counter; claim(fails (fun () -> Seq.item (-10) initial_100)); claim(!counter = 0)
+  do reset counter; claim(Seq.item 0  initial_100=0);  claim(counter.Value = 1)
+  do reset counter; claim(Seq.item 50 initial_100=50); claim(counter.Value = 1)
+  do reset counter; claim(fails (fun () -> Seq.item 100 initial_100));   claim(counter.Value = 0)
+  do reset counter; claim(fails (fun () -> Seq.item (-10) initial_100)); claim(counter.Value = 0)
 
   let initial_w = Seq.initInfinite (fun i -> incr counter; i)
-  do reset counter; claim(Seq.item 0  initial_w=0);  claim(!counter = 1)
-  do reset counter; claim(Seq.item 50 initial_w=50); claim(!counter = 1)
-  do reset counter; claim(fails (fun () -> Seq.item (-10) initial_w)); claim(!counter = 0)
-  do reset counter; claim(fails (fun () -> Seq.item (-1) initial_w)); claim(!counter = 0)
+  do reset counter; claim(Seq.item 0  initial_w=0);  claim(counter.Value = 1)
+  do reset counter; claim(Seq.item 50 initial_w=50); claim(counter.Value = 1)
+  do reset counter; claim(fails (fun () -> Seq.item (-10) initial_w)); claim(counter.Value = 0)
+  do reset counter; claim(fails (fun () -> Seq.item (-1) initial_w)); claim(counter.Value = 0)
 
   (* Check *)
   let on p f x y = f (p x) (p y)
@@ -5538,7 +5542,7 @@ module Bug920236 =
   let a = Arr([|1|])
   let result = ref []
   for i in a do
-      result := i::(!result)  
+      result.Value <- i::(result.Value)  
   do test "hfduweyr" (!result = [box 1])
 
 module TripleQuoteStrings = 
@@ -5590,7 +5594,7 @@ module bug122495 =
     [<NoComparison;NoEquality>]
     type C =
         [<DefaultValue>]
-        val mutable private goo : byte []
+        val mutable internal goo : byte []
         // Note: you need some kind of side effect or use of 'x' here
         member this.P with set(x) = this.goo <- x
     
