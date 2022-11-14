@@ -1,5 +1,9 @@
-// #Conformance #SignatureFiles #Classes #ObjectConstructors #ObjectOrientedTypes #Fields #MemberDefinitions #MethodsAndProperties #Unions #InterfacesAndImplementations #Events #Overloading #Recursion #Regression 
 module Global
+
+let (!) (r: 'T ref)  = r.Value
+let (:=) (r: 'T ref) (v: 'T)  = r.Value <- v
+let incr (r: int ref)  = r.Value <- r.Value + 1
+let decr (r: int ref)  = r.Value <- r.Value - 1
 
 #nowarn "62"
 
@@ -1440,6 +1444,7 @@ module MultiInterfaceTest = begin
   type PrivateInterfaceA1 = interface abstract M1 : unit -> unit end
   type PrivateInterfaceA2 = interface abstract M2 : unit -> unit end
 
+  [<Sealed>]
   type C1 = 
     class 
       interface PrivateInterfaceA1 with 
@@ -1454,7 +1459,7 @@ end
 module MultiInterfaceTestNameConflict = begin
   type PrivateInterfaceA1 = interface abstract M : unit -> unit end
   type PrivateInterfaceA2 = interface abstract M : unit -> unit end
-
+  [<Sealed>]
   type C1 = 
     class 
       interface PrivateInterfaceA1 with 
@@ -1470,7 +1475,7 @@ end
 module GenericMultiInterfaceTestNameConflict = begin
   type PrivateInterfaceA1<'a> = interface abstract M : 'a -> 'a end
   type PrivateInterfaceA2<'a> = interface abstract M : 'a -> 'a end
-
+  [<Sealed>]
   type C1 = 
     class 
       interface PrivateInterfaceA1<string> with 
@@ -2011,7 +2016,7 @@ module PropertyOverrideTests = begin
     end
      
 
-
+    [<Sealed;Class>]
     type CTest = 
       class
         inherit A
@@ -2120,7 +2125,7 @@ end
 
 module TupledTests = begin
 
-
+    [<Sealed>]
     type C1<'a> = class static member Foo(x:'a) = x end
 
     let _ = C1.Foo((1,2))
@@ -2329,10 +2334,10 @@ end
 
 
 module TestGettingMethodsViaMultipleInheritance = begin
-    type H = interface abstract P : int abstract M : int -> int end
-    type I = interface inherit H end
-    type J = interface inherit H end
-    type K = interface inherit I inherit J end
+    [<Class>] type H = interface abstract P : int abstract M : int -> int end
+    [<Class>] type I = interface inherit H end
+    [<Class>] type J = interface inherit H end
+    [<Sealed;Class>] type K = interface inherit I inherit J end
 
     let f1 (x : K) = x.GetType()
     let f2 (x : K) = x.M(3)
@@ -2769,6 +2774,7 @@ module Bug960Test1 = begin
 
     end
 
+    [<Sealed;Class>] 
     type C = class
       inherit B<int, int>
 
@@ -3470,21 +3476,8 @@ end
 
 module MoreKindInferenceTests = 
 
-
+    [<Sealed;Class>]
     type C1<'a> = class member _.Foo(x:'a) = x end
 
- 
-#if TESTS_AS_APP
-let RUN() = !failures
-#else
-let aa =
-  match !failures with 
-  | [] -> 
-      stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
-      exit 0
-  | _ -> 
-      stdout.WriteLine "Test Failed"
-      exit 1
-#endif
+
 
