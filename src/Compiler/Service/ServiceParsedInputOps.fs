@@ -615,12 +615,12 @@ module ParsedInput =
 
         and walkPatWithKind (kind: EntityKind option) pat =
             match pat with
-            | SynPat.Ands (pats, _) -> List.tryPick walkPat pats
-            | SynPat.As (pat1, pat2, _) -> List.tryPick walkPat [ pat1; pat2 ]
+            | SynPat.Ands (pats, _) -> walkPats pats
+            | SynPat.As (pat1, pat2, _) -> walkPats [ pat1; pat2 ]
             | SynPat.Typed (pat, t, _) -> walkPat pat |> Option.orElseWith (fun () -> walkType t)
             | SynPat.Attrib (pat, Attributes attrs, _) -> walkPat pat |> Option.orElseWith (fun () -> List.tryPick walkAttribute attrs)
             | SynPat.Or (pat1, pat2, _, _)
-            | SynPat.ListCons (pat1, pat2, _, _) -> List.tryPick walkPat [ pat1; pat2 ]
+            | SynPat.ListCons (pat1, pat2, _, _) -> walkPats [ pat1; pat2 ]
             | SynPat.LongIdent (typarDecls = typars; argPats = ConstructorPats pats; range = r) ->
                 ifPosInRange r (fun _ -> kind)
                 |> Option.orElseWith (fun () ->
@@ -628,15 +628,17 @@ module ParsedInput =
                     |> Option.bind (fun (ValTyparDecls (typars, constraints, _)) ->
                         List.tryPick walkTyparDecl typars
                         |> Option.orElseWith (fun () -> List.tryPick walkTypeConstraint constraints)))
-                |> Option.orElseWith (fun () -> List.tryPick walkPat pats)
-            | SynPat.Tuple (_, pats, _) -> List.tryPick walkPat pats
+                |> Option.orElseWith (fun () -> walkPats pats)
+            | SynPat.Tuple (_, pats, _) -> walkPats pats
             | SynPat.Paren (pat, _) -> walkPat pat
-            | SynPat.ArrayOrList (_, pats, _) -> List.tryPick walkPat pats
+            | SynPat.ArrayOrList (_, pats, _) -> walkPats pats
             | SynPat.IsInst (t, _) -> walkType t
             | SynPat.QuoteExpr (e, _) -> walkExpr e
             | _ -> None
 
-        and walkPat = walkPatWithKind None
+        and walkPat pat = walkPatWithKind None pat
+
+        and walkPats pats = List.tryPick walkPat pats
 
         and walkBinding bind =
             let (SynBinding (attributes = Attributes attrs; headPat = pat; returnInfo = returnInfo; expr = e)) =
@@ -741,6 +743,8 @@ module ParsedInput =
             | SynExpr.ArrayOrListComputed (_, e, _) -> walkExprWithKind parentKind e
 
             | SynExpr.ComputationExpr (_, e, _) -> walkExprWithKind parentKind e
+
+            | SynExpr.Lambda (parsedData = Some (_, e)) -> walkExprWithKind parentKind e
 
             | SynExpr.Lambda (body = e) -> walkExprWithKind parentKind e
 
@@ -1626,11 +1630,15 @@ module ParsedInput =
                 walkMemberSig sign
             | SynTypeConstraint.WhereSelfConstrained (ty, _) -> walkType ty
 
+        and walkPats pats =
+            for pat in pats do
+                walkPat pat
+
         and walkPat pat =
             match pat with
             | SynPat.Tuple (_, pats, _)
             | SynPat.ArrayOrList (_, pats, _)
-            | SynPat.Ands (pats, _) -> List.iter walkPat pats
+            | SynPat.Ands (pats, _) -> walkPats pats
             | SynPat.Named (SynIdent (ident, _), _, _, _) -> addIdent ident
             | SynPat.Typed (pat, t, _) ->
                 walkPat pat
@@ -1640,7 +1648,7 @@ module ParsedInput =
                 List.iter walkAttribute attrs
             | SynPat.As (pat1, pat2, _)
             | SynPat.Or (pat1, pat2, _, _)
-            | SynPat.ListCons (pat1, pat2, _, _) -> List.iter walkPat [ pat1; pat2 ]
+            | SynPat.ListCons (pat1, pat2, _, _) -> walkPats [ pat1; pat2 ]
             | SynPat.LongIdent (longDotId = ident; typarDecls = typars; argPats = ConstructorPats pats) ->
                 addLongIdentWithDots ident
 
@@ -1649,7 +1657,7 @@ module ParsedInput =
                     List.iter walkTyparDecl typars
                     List.iter walkTypeConstraint constraints)
 
-                List.iter walkPat pats
+                walkPats pats
             | SynPat.Paren (pat, _) -> walkPat pat
             | SynPat.IsInst (t, _) -> walkType t
             | SynPat.QuoteExpr (e, _) -> walkExpr e
@@ -1724,9 +1732,15 @@ module ParsedInput =
             | SynExpr.Assert (e, _)
             | SynExpr.Lazy (e, _)
             | SynExpr.YieldOrReturnFrom (_, e, _) -> walkExpr e
+
+            | SynExpr.Lambda (parsedData = Some(argPats, e)) -> 
+                walkPats argPats
+                walkExpr e
+
             | SynExpr.Lambda (args = pats; body = e) ->
                 walkSimplePats pats
                 walkExpr e
+
             | SynExpr.New (_, t, e, _)
             | SynExpr.TypeTest (e, t, _)
             | SynExpr.Upcast (e, t, _)
