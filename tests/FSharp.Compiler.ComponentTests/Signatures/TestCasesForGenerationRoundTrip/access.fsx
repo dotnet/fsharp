@@ -1,7 +1,4 @@
-// #Regression #Conformance #Accessibility #SignatureFiles #Regression #Records #Unions 
-#if TESTS_AS_APP
 module Core_access
-#endif
 
 #light
 let failures = ref []
@@ -9,7 +6,7 @@ let failures = ref []
 let report_failure (s : string) = 
     stderr.Write" NO: "
     stderr.WriteLine s
-    failures := !failures @ [s]
+    failures.Value <- failures.Value @ [s]
 
 let test (s : string) b = 
     stderr.Write(s)
@@ -32,16 +29,19 @@ let  private   ValPrivate  = 1212
 let  public    ValPublic   = 1212
 let            ValDefault  = 1212
 
+[<Sealed>]
 type MyClassFields = 
     val internal fieldInternal : int
     val private  fieldPrivate  : int
     val public   fieldPublic   : int    
     
+[<Sealed>]
 type MyClassMutableFields = 
     val mutable internal mfieldInternal : int
     val mutable private  mfieldPrivate  : int
     val mutable public   mfieldPublic   : int
     
+[<Sealed>]
 type MyClassStaticMembers = 
     static member internal SInternal = 12
     static member private  SPrivate  = 12
@@ -52,6 +52,7 @@ type MyClassStaticMembers =
     static member public   SMPublic()   = 12
     static member          SMDefault()  = 12
     
+[<Sealed>]
 type MyClassPropertiyGetters =     
     member internal x.InstInternal = 12
     member private  x.InstPrivate  = 12
@@ -70,6 +71,7 @@ type MyClassExplicitCtors2 =
     private  new(x,y)   = let v : int = x + y in {}
     public   new(x,y,z) = let v : int = x + y + z in {}
     
+[<Sealed>]
 type MyClassPropertyGetSetterMatrix =      
     //--
     member obj.PropGetSetInternalInternal
@@ -102,9 +104,11 @@ type MyClassPropertyGetSetterMatrix =
         with public   get() = 1 
         and  public   set(x:int) = ()    
 
+[<Sealed>]
 type MyClassImplicitCtorInternal internal() =
     member obj.Res = 12    
     
+[<Sealed>]
 type MyClassImplicitCtorPrivate private() =
     member obj.Res = 12    
     
@@ -268,10 +272,10 @@ module RestrictedRecordsAndUnionsUsingPrivateAndInternalTypes =
     (*--------------------*)  
 
 #if TESTS_AS_APP
-let RUN() = !failures
+let RUN() = failures.Value
 #else
 let aa =
-  match !failures with 
+  match failures.Value with 
   | [] -> 
       stdout.WriteLine "Test Passed"
       System.IO.File.WriteAllText("test.ok","ok")

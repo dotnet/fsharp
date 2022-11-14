@@ -19,12 +19,14 @@ let ``Generate and compile`` implFileName =
 
     let generatedSignature = 
         Fs implContents     
-        |> withDefines ["TESTS_AS_APP"]
+        |> withLangVersionPreview
+        |> withDefines ["TESTS_AS_APP";"COMPILED"]
         |> printSignatures   
 
     Fsi generatedSignature    
     |> withAdditionalSourceFile (FsSource implContents)
-    |> withDefines ["TESTS_AS_APP"]
+    |> withLangVersionPreview
+    |> withDefines ["TESTS_AS_APP";"COMPILED"]
     |> ignoreWarnings
     |> asExe
     |> compile
