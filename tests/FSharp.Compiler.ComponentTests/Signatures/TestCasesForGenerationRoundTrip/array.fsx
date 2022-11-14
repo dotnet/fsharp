@@ -101,13 +101,13 @@ let test_scan () =
 
 let test_iter2 () =
     let c = ref -1
-    Array.iter2 (fun x y -> incr c; test "iter2" (!c = x && !c = y)) [|0..100|] [|0..100|]
-    test "iter2" (!c = 100)
+    Array.iter2 (fun x y -> c.Value <- c.Value + 1; test "iter2" (c.Value = x && c.Value = y)) [|0..100|] [|0..100|]
+    test "iter2" (c.Value = 100)
 
 let test_iteri2 () =
     let c = ref 0
-    Array.iteri2 (fun i j k -> c := !c+i+j+k) [|1;2;3|] [|10;20;30|]
-    test "iteri2" (!c = 6+60+3)
+    Array.iteri2 (fun i j k -> c.Value <- c.Value+i+j+k) [|1;2;3|] [|10;20;30|]
+    test "iteri2" (c.Value = 6+60+3)
 
 let test_map2 () =
     test "map2"
@@ -711,33 +711,33 @@ let _ = test_map_perf()
 module SeqCacheAllTest = 
     let s2 = 
        let count = ref 0 
-       let s = Seq.cache (seq { for i in 0 .. 10 -> (incr count; i) }) :> seq<_>
-       let test0 = (!count = 0)
+       let s = Seq.cache (seq { for i in 0 .. 10 -> (count.Value <- count.Value + 1; i) }) :> seq<_>
+       let test0 = (count.Value = 0)
        let e1 = s.GetEnumerator()
-       let test1 = (!count = 0)
+       let test1 = (count.Value = 0)
        printf "test1 = %b\n" test1;
        for i = 1 to 1 do (e1.MoveNext() |> ignore; e1.Current |> ignore)
-       let test2 = (!count = 1)
+       let test2 = (count.Value = 1)
        printf "test2 = %b\n" test2;
        let e2 = s.GetEnumerator()
        for i = 1 to 5 do (e2.MoveNext() |> ignore; e2.Current |> ignore)
-       let test3 = (!count = 5)
+       let test3 = (count.Value = 5)
        printf "test3 = %b\n" test3;
        let e3 = s.GetEnumerator()
        for i = 1 to 5 do (e3.MoveNext() |> ignore; e3.Current |> ignore)
-       let test4 = (!count = 5)
+       let test4 = (count.Value = 5)
        printf "test4 = %b\n" test4;
        let e4 = s.GetEnumerator()
        for i = 1 to 3 do (e4.MoveNext() |> ignore; e4.Current |> ignore)
-       let test5 = (!count = 5)
+       let test5 = (count.Value = 5)
        printf "test5 = %b\n" test5;
 
        let test6 = [ for x in s -> x ] = [ 0 .. 10 ]
        printf "test6 = %b\n" test6;
        for x in s do ()
-       let test7 = (!count = 11)
+       let test7 = (count.Value = 11)
        let test8 = [ for x in s -> x ] = [ 0 .. 10 ]
-       let test9 = !count = 11
+       let test9 = count.Value = 11
        test "test0" test0
        test "test1" test1
        test "test2" test2
