@@ -49,6 +49,7 @@
     <Content Include="Tests\FCS.prepare.ps1" />
     <Content Include="Tests\ComponentTests.args.txt" />
     <Content Include="Tests\.gitignore" />
+    <Compile Include="Tests\TypedTreeGraph.fs" />
     <Compile Include="Program.fs" />
   <Content Include="Docs.md" />
   </ItemGroup>
