@@ -267,7 +267,11 @@ let main _ =
             Error 810, Line 9, Col 38, Line 9, Col 40, "Init-only property 'GetInit' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
         ]
 
+#if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+#else
     [<Fact>]
+#endif
     let ``F# can change init-only property via SRTP`` () =
 
         let csharpLib = csharpBaseClass
@@ -292,7 +296,11 @@ let main _ =
         |> compile
         |> shouldSucceed
 
+ #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+#else
     [<Fact>]
+#endif
     let ``F# can call special-named methods via SRTP`` () =
 
         let csharpLib = csharpRecord

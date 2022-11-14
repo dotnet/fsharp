@@ -807,7 +807,11 @@ module ``Active patterns`` =
 
 module ``Suppression of System Numerics interfaces on unitized types`` =
 
+#if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+#else
     [<Fact>]
+#endif
     let Baseline () =
         Fsx """
             open System.Numerics
