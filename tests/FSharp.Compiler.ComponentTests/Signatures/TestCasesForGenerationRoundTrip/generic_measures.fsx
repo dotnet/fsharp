@@ -1,7 +1,8 @@
 module Core_genericMeasures
 
-[<Sealed;AllowNullLiteral>]
-type C<'T> () = 
+[<Sealed>]
+[<AllowNullLiteral>]
+ type C<'T> () = 
     member val P = 1  with get,set
     
 [<Measure>] type t
@@ -53,7 +54,8 @@ let foo() =
     f7 (j : List<float<t2>>)
     f7 (k : List<float<t>>)
     f7 (k : List<float<t2>>)
-    
+   
+[<Sealed>]
 type T = 
     static member Foo(_ : int<t>) = ()
     static member Foo1(_ : int<_>) = ()

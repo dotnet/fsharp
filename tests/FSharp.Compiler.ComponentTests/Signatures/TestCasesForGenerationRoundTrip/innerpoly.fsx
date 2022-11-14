@@ -8,7 +8,7 @@ let failures = ref []
 let report_failure (s : string) = 
     stderr.Write" NO: "
     stderr.WriteLine s
-    failures := !failures @ [s]
+    failures.Value <- failures.Value @ [s]
 
 let test (s : string) b = 
     stderr.Write(s)
@@ -392,7 +392,7 @@ end
 module LocalTypeFunctionRequiredForWitnessPassingOfGenericInnerFunctionsConstrainedByMemberConstraints = 
     let inline clamp16 v = uint16 (max 0. (min 65535. v))
     let inline clamp8  v = uint8  (max 0. (min   255. v))
-
+    [<Sealed>]
     type Clampage =
         static member inline FromFloat (_ : byte,   _ : Clampage) = fun (x : float) -> clamp8  x
         static member inline FromFloat (_ : uint16, _ : Clampage) = fun (x : float) -> clamp16 x
@@ -414,7 +414,7 @@ module LocalTypeFunctionRequiredForWitnessPassingOfGenericInnerFunctionsConstrai
 module LocalTypeFunctionRequiredForWitnessPassingOfGenericInnerFunctionsConstrainedByMemberConstraints2 = 
     let inline clamp16 v = uint16 (max 0. (min 65535. v))
     let inline clamp8  v = uint8  (max 0. (min   255. v))
-
+    [<Sealed>]
     type Clampage =
         static member inline FromFloat (_ : byte,   _ : Clampage) = fun (x : float) -> clamp8  x
         static member inline FromFloat (_ : uint16, _ : Clampage) = fun (x : float) -> clamp16 x
@@ -446,19 +446,3 @@ module Bug11620A =
     let getCreateServiceCallback<'T> (thing: 'T) =
         let getService () : 'Data = createService thing
         (fun () -> getService)
-
-
-#if TESTS_AS_APP
-let RUN() = !failures
-#else
-let aa =
-  match !failures with 
-  | [] -> 
-      stdout.WriteLine "Test Passed"
-      System.IO.File.WriteAllText("test.ok","ok")
-      exit 0
-  | _ -> 
-      stdout.WriteLine "Test Failed"
-      exit 1
-#endif
-
