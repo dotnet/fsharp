@@ -1254,20 +1254,18 @@ module TopModulesExtraction =
                                 synAccessOption,
                                 range,
                                 synModuleOrNamespaceTrivia) ->
-            if
-                mightHaveAutoOpen synAttributeLists && synModuleOrNamespaceKind.IsModule
-            then
+            if mightHaveAutoOpen synAttributeLists && synModuleOrNamespaceKind.IsModule then
                 // Contents of a module that's potentially AutoOpen are available from its parent without a prefix.
                 // Stay safe and as soon as the parent module is reachable, consider this module reachable as well
                 [| longId.GetSlice(None, Some <| longId.Length - 2); longId |]
             else
-                // 'module A.B' is equivalent to 'namespace A; module B', meaning that 'A' is opened implicitly
-                if
-                    synModuleOrNamespaceKind.IsModule && longId.Length > 1
-                then
-                    [| longId.GetSlice(None, Some <| longId.Length - 2); longId |]
-                else
-                    [| longId |]
+            // 'module A.B' is equivalent to 'namespace A; module B', meaning that 'A' is opened implicitly
+            if
+                synModuleOrNamespaceKind.IsModule && longId.Length > 1
+            then
+                [| longId.GetSlice(None, Some <| longId.Length - 2); longId |]
+            else
+                [| longId |]
     // TODO Temporarily disabled digging into the file's structure to avoid edge cases where another file depends on this file's namespace existing (but nothing else)
     // synModuleDecls
     // |> moduleDecls
@@ -1330,20 +1328,18 @@ module TopModulesExtraction =
                                    synAccessOption,
                                    range,
                                    synModuleOrNamespaceTrivia) ->
-            if
-                mightHaveAutoOpen synAttributeLists && synModuleOrNamespaceKind.IsModule
-            then
+            if mightHaveAutoOpen synAttributeLists && synModuleOrNamespaceKind.IsModule then
                 // Contents of a module that's potentially AutoOpen are available from its parent without a prefix.
                 // Stay safe and as soon as the parent module is reachable, consider this module reachable as well
                 [| longId.GetSlice(None, Some <| longId.Length - 2); longId |]
             else
-                // 'module A.B' is equivalent to 'namespace A; module B', meaning that 'A' is opened implicitly
-                if
-                    synModuleOrNamespaceKind.IsModule && longId.Length > 1
-                then
-                    [| longId.GetSlice(None, Some <| longId.Length - 2); longId |]
-                else
-                    [| longId |]
+            // 'module A.B' is equivalent to 'namespace A; module B', meaning that 'A' is opened implicitly
+            if
+                synModuleOrNamespaceKind.IsModule && longId.Length > 1
+            then
+                [| longId.GetSlice(None, Some <| longId.Length - 2); longId |]
+            else
+                [| longId |]
 
     and moduleSigDecls (x: SynModuleSigDecl list) : Eit =
         let emptyState = Eit.Nested [||]

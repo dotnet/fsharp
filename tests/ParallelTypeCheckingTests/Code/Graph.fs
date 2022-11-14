@@ -42,19 +42,18 @@ module Graph =
             graph.Values |> Seq.toArray |> Array.concat |> Array.except graph.Keys
 
         addIfMissing missingNodes graph
-    
+
     /// Create a transitive closure of the graph
     let transitiveOpt<'Node when 'Node: equality> (graph: Graph<'Node>) : Graph<'Node> =
         let go (node: 'Node) =
             let visited = HashSet<'Node>()
+
             let rec dfs (node: 'Node) =
-                graph[node]
-                |> Array.filter visited.Add
-                |> Array.iter dfs
+                graph[node] |> Array.filter visited.Add |> Array.iter dfs
+
             dfs node
-            visited
-            |> Seq.toArray
-        
+            visited |> Seq.toArray
+
         graph.Keys
         |> Seq.toArray
         |> Array.Parallel.map (fun node -> node, go node)

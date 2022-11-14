@@ -209,7 +209,7 @@ type TypeCheckingMode =
     | Sequential
     /// Signature files and implementation files without backing files are processed sequentially, then backed implementation files are processed in parallel.
     | ParallelCheckingOfBackedImplFiles
-    /// Parallel type-checking that uses automated file-to-file dependency detection to construct a highly-parallelisable file graph.  
+    /// Parallel type-checking that uses automated file-to-file dependency detection to construct a highly-parallelisable file graph.
     | Graph
 
 [<RequireQualifiedAccess>]

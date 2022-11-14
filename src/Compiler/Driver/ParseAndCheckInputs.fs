@@ -759,16 +759,15 @@ let ParseInputFilesInParallel (tcConfig: TcConfig, lexResourceManager, sourceFil
     for fileName in sourceFiles do
         checkInputFile tcConfig fileName
 
-
     // Order files to be parsed by size (descending). The idea is to process big files first,
     // so that near the end when only some nodes are still processing items, it's the smallest items,
     // which should reduce the period of time where only some nodes are busy.
-    // This requires some empirical evidence.        
+    // This requires some empirical evidence.
     let sourceFiles =
         sourceFiles
         |> List.mapi (fun i f -> i, f)
         |> List.sortBy (fun (_i, f) -> -FileInfo(f).Length)
-        
+
     let sourceFiles = List.zip sourceFiles isLastCompiland
 
     UseMultipleDiagnosticLoggers (sourceFiles, delayLogger, None) (fun sourceFilesWithDelayLoggers ->
@@ -782,8 +781,7 @@ let ParseInputFilesInParallel (tcConfig: TcConfig, lexResourceManager, sourceFil
             idx, (input, directoryName))
         // Bring back index-based order
         |> List.sortBy fst
-        |> List.map snd
-    )
+        |> List.map snd)
 
 let ParseInputFilesSequential (tcConfig: TcConfig, lexResourceManager, sourceFiles, diagnosticsLogger: DiagnosticsLogger, retryLocked) =
     let isLastCompiland, isExe = sourceFiles |> tcConfig.ComputeCanContainEntryPoint

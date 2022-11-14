@@ -93,7 +93,7 @@ let graphFromTypedTree
                             || Array.exists (fun (file: string) -> file.Contains($"{fileName}i")) projectOptions.SourceFiles)
 
                     match checkResult with
-                    | FSharpCheckFileAnswer.Aborted _ -> return failwith "aborted"
+                    | FSharpCheckFileAnswer.Aborted -> return failwith "aborted"
                     | FSharpCheckFileAnswer.Succeeded fileResult ->
                         let allSymbols = fileResult.GetAllUsesOfAllSymbolsInFile() |> Seq.toArray
                         let collector = DepCollector(projectDir, fileName)

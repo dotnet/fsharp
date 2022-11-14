@@ -10,7 +10,9 @@ type AssemblySetUp() =
 
     [<OneTimeSetUp>]
     member this.SetUp() =
-        FSharp.Compiler.ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <- ParallelTypeCheckingTests.ParallelTypeChecking.CheckMultipleInputsInParallel
+        FSharp.Compiler.ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <-
+            ParallelTypeCheckingTests.ParallelTypeChecking.CheckMultipleInputsInParallel
+
         tracerProvider <- ParallelTypeCheckingTests.TestUtils.setupOtel () |> Some
 
     [<OneTimeTearDown>]

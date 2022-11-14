@@ -16,7 +16,7 @@ let processInParallel
     (parallelism: int)
     (shouldStop: int -> bool)
     (ct: CancellationToken)
-    (_itemToString : 'Item -> string)
+    (_itemToString: 'Item -> string)
     : unit =
     let bc = new BlockingCollection<'Item>()
     firstItems |> Array.iter bc.Add
@@ -31,10 +31,10 @@ let processInParallel
             lock processedCountLock (fun () ->
                 processedCount <- processedCount + 1
                 processedCount)
+
         let toScheduleString =
-            toSchedule
-            |> Array.map _itemToString
-            |> fun names -> String.Join(", ", names)
+            toSchedule |> Array.map _itemToString |> (fun names -> String.Join(", ", names))
+
         printfn $"Scheduling {toSchedule.Length} items: {toScheduleString}"
         toSchedule |> Array.iter bc.Add
         processedCount
@@ -44,6 +44,7 @@ let processInParallel
         for node in bc.GetConsumingEnumerable(ct) do
             if not ct.IsCancellationRequested then // improve
                 let processedCount = processItem node
+
                 if shouldStop processedCount then
                     bc.CompleteAdding()
 

@@ -213,13 +213,16 @@ type Case =
 let methodOptions (method: Method) =
     match method with
     | Method.Sequential -> []
-    | Method.ParallelCheckingOfBackedImplFiles -> ["--test:ParallelCheckingWithSignatureFilesOn"]
-    | Method.Graph -> ["--test:GraphBasedChecking"] 
+    | Method.ParallelCheckingOfBackedImplFiles -> [ "--test:ParallelCheckingWithSignatureFilesOn" ]
+    | Method.Graph -> [ "--test:GraphBasedChecking" ]
 
-let withMethod (method: Method) (cu : CompilationUnit) : CompilationUnit =
+let withMethod (method: Method) (cu: CompilationUnit) : CompilationUnit =
     match cu with
     | CompilationUnit.FS cs ->
-        FS {cs with Options = cs.Options @ (methodOptions method)}
+        FS
+            { cs with
+                Options = cs.Options @ (methodOptions method)
+            }
     | cu -> cu
 
 let compileAValidProject (x: Case) =
