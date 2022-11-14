@@ -6,6 +6,11 @@ let incr (r: int ref)  = r.Value <- r.Value + 1
 let decr (r: int ref)  = r.Value <- r.Value - 1
 
 #nowarn "62"
+#nowarn "25"
+#nowarn "49"
+#nowarn "52"
+#nowarn "60"
+#nowarn "69"
 
 let failures = ref []
 
@@ -53,13 +58,13 @@ do test "fweoew093" ((f(1)).b = 2)
 
 open System
 open System.Collections
-open System.Windows.Forms
+//open System.Windows.Forms
 
 //-----------------------------------------
 // Some simple object-expression tests
 
 let x0 = { new System.Object() with member __.GetHashCode() = 3 }
-let x1 = { new System.Windows.Forms.Form() with member __.GetHashCode() = 3 }
+//let x1 = { new System.Windows.Forms.Form() with member __.GetHashCode() = 3 }
 
 //-----------------------------------------
 // Test defining an F# class
@@ -1285,17 +1290,17 @@ let  [<DontPressThisButton("Please don't press this again")>] button () = 1
 //---------------------------------------------------------------------
 // Test we can use base calls
 
-open System.Windows.Forms
+//open System.Windows.Forms
 
-type MyCanvas2 = 
-  class 
-    inherit Form 
-    override x.OnPaint(args) =  Printf.printf "OnPaint\n"; base.OnPaint(args)
+//type MyCanvas2 = 
+//  class 
+//    inherit Form 
+//    override x.OnPaint(args) =  Printf.printf "OnPaint\n"; base.OnPaint(args)
 
-    new() = { inherit Form(); }
-  end
+//    new() = { inherit Form(); }
+//  end
 
-let form2 = new MyCanvas2()
+//let form2 = new MyCanvas2()
 // do form.Paint.Add(...)
 // do form.add_Paint(...)
 //do form.Activate()
@@ -2016,7 +2021,7 @@ module PropertyOverrideTests = begin
     end
      
 
-    [<Sealed;Class>]
+    [<AbstractClass>]
     type CTest = 
       class
         inherit A
@@ -2071,56 +2076,56 @@ module LucianRecords1 = begin
 
 end
 
-module DefaultConstructorConstraints = begin
+//module DefaultConstructorConstraints = begin
 
-  let f1 () : 'a when 'a : (new : unit -> 'a) = new 'a()
-  let x1 = (f1() : obj)
-  let x2 = (f1() : int)
-  let x3 = (f1() : DateTime)
-  let x4 = (f1() : System.Windows.Forms.Form)
-  let f2 () = f1()
-  let y1 = (f2() : obj)
-  let y2 = (f2() : int)
-  let y3 = (f2() : DateTime)
-  let y4 = (f2() : System.Windows.Forms.Form)
+//  let f1 () : 'a when 'a : (new : unit -> 'a) = new 'a()
+//  let x1 = (f1() : obj)
+//  let x2 = (f1() : int)
+//  let x3 = (f1() : DateTime)
+//  let x4 = (f1() : System.Windows.Forms.Form)
+//  let f2 () = f1()
+//  let y1 = (f2() : obj)
+//  let y2 = (f2() : int)
+//  let y3 = (f2() : DateTime)
+//  let y4 = (f2() : System.Windows.Forms.Form)
   
-end
+//end
 
-module AccessBugOnFSharpList = begin
+//module AccessBugOnFSharpList = begin
 
-    open System.Web
-    open System.Web.Hosting
-    open System.Data.SqlClient
+//    open System.Web
+//    open System.Web.Hosting
+//    open System.Data.SqlClient
 
-    type TopicPathProvider = 
-                     class
-                                     inherit VirtualPathProvider 
+//    type TopicPathProvider = 
+//                     class
+//                                     inherit VirtualPathProvider 
                                      
-                                     new() = { inherit VirtualPathProvider(); }                          
+//                                     new() = { inherit VirtualPathProvider(); }                          
                                                       
-                                     member x.TopicExists topic =
-                                                      let cmd = new SqlCommand() in
-                                                      cmd.CommandText <- "SELECT COUNT(*) FROM Topic WHERE Topic.Name = @name";
-                                                      (cmd.Parameters.Add("@name", System.Data.SqlDbType.NVarChar, 255)).Value <- topic;
-                                                      unbox(cmd.ExecuteScalar()) > 0
+//                                     member x.TopicExists topic =
+//                                                      let cmd = new SqlCommand() in
+//                                                      cmd.CommandText <- "SELECT COUNT(*) FROM Topic WHERE Topic.Name = @name";
+//                                                      (cmd.Parameters.Add("@name", System.Data.SqlDbType.NVarChar, 255)).Value <- topic;
+//                                                      unbox(cmd.ExecuteScalar()) > 0
                                      
-                                     override x.FileExists((virtualPath: string)) =
-                                                      let relPath = VirtualPathUtility.ToAppRelative(virtualPath) in
-                                                      if relPath.StartsWith("~/topic") then
-                                                                       x.TopicExists (relPath.Substring(7))
-                                                      else
-                                                                       x.Previous.FileExists(virtualPath)
+//                                     override x.FileExists((virtualPath: string)) =
+//                                                      let relPath = VirtualPathUtility.ToAppRelative(virtualPath) in
+//                                                      if relPath.StartsWith("~/topic") then
+//                                                                       x.TopicExists (relPath.Substring(7))
+//                                                      else
+//                                                                       x.Previous.FileExists(virtualPath)
                                                                        
-                                     override x.DirectoryExists((virtualDir: string)) =
-                                                      let relPath = VirtualPathUtility.ToAppRelative(virtualDir) in
-                                                      relPath.StartsWith("~/topic") || x.DirectoryExists(virtualDir)
-                     end
+//                                     override x.DirectoryExists((virtualDir: string)) =
+//                                                      let relPath = VirtualPathUtility.ToAppRelative(virtualDir) in
+//                                                      relPath.StartsWith("~/topic") || x.DirectoryExists(virtualDir)
+//                     end
 
-    let AppInitialize()  = 
-                     let provider = new TopicPathProvider() in
-                     HostingEnvironment.RegisterVirtualPathProvider(provider)
+//    let AppInitialize()  = 
+//                     let provider = new TopicPathProvider() in
+//                     HostingEnvironment.RegisterVirtualPathProvider(provider)
 
-end
+//end
 
 
 module TupledTests = begin
@@ -2333,18 +2338,6 @@ module TestConstrainedItemProperty = begin
 end
 
 
-module TestGettingMethodsViaMultipleInheritance = begin
-    [<Class>] type H = interface abstract P : int abstract M : int -> int end
-    [<Class>] type I = interface inherit H end
-    [<Class>] type J = interface inherit H end
-    [<Sealed;Class>] type K = interface inherit I inherit J end
-
-    let f1 (x : K) = x.GetType()
-    let f2 (x : K) = x.M(3)
-    let f3 (x : K) = x.P
-end
-
-
 module DefaultStructCtor = begin
 
     let i1 = new System.Nullable<int>()
@@ -2514,17 +2507,17 @@ end
 
 
 open System
-open System.Windows.Forms
-type Bug856 = 
-  class 
-    inherit CheckBox
-    new() = { inherit CheckBox(); }
-    member x.PerformClick() = x.OnClick(new EventArgs())  // peverify failed
-  end 
-do let form = new Form() in
-   let checkBox = new Bug856(Text="Test") in
-   form.Controls.Add(checkBox);
-   checkBox.PerformClick()  (* got inlined - peverify failed *)
+//open System.Windows.Forms
+//type Bug856 = 
+//  class 
+//    inherit CheckBox
+//    new() = { inherit CheckBox(); }
+//    member x.PerformClick() = x.OnClick(new EventArgs())  // peverify failed
+//  end 
+//do let form = new Form() in
+//   let checkBox = new Bug856(Text="Test") in
+//   form.Controls.Add(checkBox);
+   //checkBox.PerformClick()  (* got inlined - peverify failed *)
 
 
 module SelfInitCalls = begin
@@ -2554,54 +2547,54 @@ module SelfInitCalls2 = begin
 
 end
 
-module SettingPropertiesInConstruction = begin
-    open System.Windows.Forms
-    let f = { new Form(Text="hello") with member __.OnPaint(args) = () }
-    do test "ce32wygu" (f.Text = "hello")
-    type C = class
-      val mutable p : int
-      member x.P with set v = x.p <- v
-      val mutable q : int
-      member x.Q with set v = x.q <- v
-      abstract Foo : int -> int
-      default o.Foo(x) = x
-      new() = { p = 0; q = 1 }
-    end
+//module SettingPropertiesInConstruction = begin
+//    open System.Windows.Forms
+//    let f = { new Form(Text="hello") with member __.OnPaint(args) = () }
+//    do test "ce32wygu" (f.Text = "hello")
+//    type C = class
+//      val mutable p : int
+//      member x.P with set v = x.p <- v
+//      val mutable q : int
+//      member x.Q with set v = x.q <- v
+//      abstract Foo : int -> int
+//      default o.Foo(x) = x
+//      new() = { p = 0; q = 1 }
+//    end
 
-    let check s p = printf "Test %s: %s\n" s (if p then "pass" else "fail")
+//    let check s p = printf "Test %s: %s\n" s (if p then "pass" else "fail")
 
-    let c0 = new C()
-    do test "ce32wygu" (c0.p = 0)
-    do test "ce32wygu" (c0.q = 1)
+//    let c0 = new C()
+//    do test "ce32wygu" (c0.p = 0)
+//    do test "ce32wygu" (c0.q = 1)
 
-    let c1 = new C(P = 3)
-    do test "ce32wygu" (c1.p = 3)
+//    let c1 = new C(P = 3)
+//    do test "ce32wygu" (c1.p = 3)
 
-    let c2 = { new C(P = 4) with member __.Foo(x) = x + x }
-    do test "ce32wygu" (c2.p = 4)
+//    let c2 = { new C(P = 4) with member __.Foo(x) = x + x }
+//    do test "ce32wygu" (c2.p = 4)
 
-    let c3 = { new C(Q = 5) with member __.Foo(x) = x + x }
-    do test "ce32wygu" (c3.q = 5)
+//    let c3 = { new C(Q = 5) with member __.Foo(x) = x + x }
+//    do test "ce32wygu" (c3.q = 5)
 
-    let c4 = { new C(P = 3, Q = 5) with member __.Foo(x) = x + x }
-    do test "ce32wygu" (c4.p = 3)
-    do test "ce32wygu" (c4.q = 5)
+//    let c4 = { new C(P = 3, Q = 5) with member __.Foo(x) = x + x }
+//    do test "ce32wygu" (c4.p = 3)
+//    do test "ce32wygu" (c4.q = 5)
 
-    let c5 = { new C(Q = 5, P = 3) with member __.Foo(x) = x + x }
-    do test "ce32wygu" (c5.p = 3)
-    do test "ce32wygu" (c5.q = 5)
-end
+//    let c5 = { new C(Q = 5, P = 3) with member __.Foo(x) = x + x }
+//    do test "ce32wygu" (c5.p = 3)
+//    do test "ce32wygu" (c5.q = 5)
+//end
 
 // Finish up
 
 
-type SmoothForm = class 
-  inherit Form
-  new() as x = 
-    { inherit Form(); } 
-    then 
-       x.SetStyle(ControlStyles.AllPaintingInWmPaint ||| ControlStyles.Opaque, true);
-end
+//type SmoothForm = class 
+//  inherit Form
+//  new() as x = 
+//    { inherit Form(); } 
+//    then 
+//       x.SetStyle(ControlStyles.AllPaintingInWmPaint ||| ControlStyles.Opaque, true);
+//end
 
 module ENumTests = begin
     type Int64Enum =
@@ -2654,26 +2647,26 @@ module ENumTests = begin
 *)
 end
 
-module AccessingProtectedMembersFromOtherObjects = begin
-    type DS() = class
-      inherit System.Data.DataSet()
-      member t.Foo () =
-        let a = new DS() in
-        a.GetSchemaSerializable() |> ignore;
-        t.GetSchemaSerializable() |> ignore;
-        ()
+//module AccessingProtectedMembersFromOtherObjects = begin
+//    type DS() = class
+//      inherit System.Data.DataSet()
+//      member t.Foo () =
+//        let a = new DS() in
+//        a.GetSchemaSerializable() |> ignore;
+//        t.GetSchemaSerializable() |> ignore;
+//        ()
         
 
-    end
-end
+//    end
+//end
 
-module TestPropertySetWithSyntaxThatLooksLikeANamedArgument = begin
-    open System.Windows.Forms
+//module TestPropertySetWithSyntaxThatLooksLikeANamedArgument = begin
+//    open System.Windows.Forms
 
-    let el = new CheckBox()
-    let el2 = el
-    do el.Checked <- (el = el2) // this is not a named argument!!!
-end
+//    let el = new CheckBox()
+//    let el2 = el
+//    do el.Checked <- (el = el2) // this is not a named argument!!!
+//end
 
 module SomeMoreCtorCases = begin
     type C =
@@ -2763,29 +2756,6 @@ module Bug1281Test = begin
     let _ = nd.[0]
 end
 
-module Bug960Test1 = begin
-
-    [<AbstractClass>]
-    type B<'a, 'b> = class
-      new () = { }
-      
-      abstract A : 'a with get,set
-      abstract M : unit -> 'a 
-
-    end
-
-    [<Sealed;Class>] 
-    type C = class
-      inherit B<int, int>
-
-      override x.A
-        with get() = 3
-        and set(v : int) = (invalidArg "arg" "C.A.set" : unit) 
-
-      override x.M() = 3
-    end
-end
-
 
 module Bug960Test2 = begin
 
@@ -2805,6 +2775,7 @@ module Bug960Test2 = begin
         and set(v) = x.b <- v
     end
 
+    [<Sealed>]
     type C = class
       inherit B<int, int>
 
