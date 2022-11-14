@@ -236,7 +236,7 @@ let main _ =
             Error 810, Line 9, Col 5, Line 9, Col 21, "Cannot call 'set_GetInit' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
         ]
 
- #if !NETCOREAPP
+#if !NETCOREAPP
     [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
 #else
     [<Fact>]
