@@ -238,4 +238,8 @@
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreShippedPackageVersionValue)" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Signatures\Generated\" />
+  </ItemGroup>
+
 </Project>
