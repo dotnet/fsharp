@@ -554,7 +554,7 @@ module SyntaxTraversal =
 
                     if ok.IsSome then ok else traverseSynExpr synExpr
 
-                | SynExpr.Lambda (parsedData = Some(argPats, synExpr)) ->
+                | SynExpr.Lambda(parsedData = Some (argPats, synExpr)) ->
                     match traversePats argPats with
                     | None -> traverseSynExpr synExpr
                     | res -> res

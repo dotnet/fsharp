@@ -276,12 +276,11 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
 
             // Capture the body of a lambda, often nested in a call to a collection function
             // Prefer the original parse rather than the one after de-sugaring complex patterns in the lambda arguments.
-            | SynExpr.Lambda (parsedData = Some (_, body)) when rangeContainsPos body.Range pos ->
-                 getIdentRangeForFuncExprInApp traverseSynExpr body pos
+            | SynExpr.Lambda(parsedData = Some (_, body)) when rangeContainsPos body.Range pos ->
+                getIdentRangeForFuncExprInApp traverseSynExpr body pos
 
             // Capture the body of a lambda, often nested in a call to a collection function
-            | SynExpr.Lambda (body = body) when rangeContainsPos body.Range pos ->
-                getIdentRangeForFuncExprInApp traverseSynExpr body pos
+            | SynExpr.Lambda (body = body) when rangeContainsPos body.Range pos -> getIdentRangeForFuncExprInApp traverseSynExpr body pos
 
             | SynExpr.Do (expr, range) when rangeContainsPos range pos -> getIdentRangeForFuncExprInApp traverseSynExpr expr pos
 
@@ -770,7 +769,7 @@ type FSharpParseFileResults(diagnostics: FSharpDiagnostic[], input: ParsedInput,
                                 yield! walkExprOpt true whenExpr
                                 yield! walkExpr true resultExpr
 
-                        | SynExpr.Lambda (parsedData = Some (_, bodyExpr)) -> yield! walkExpr true bodyExpr
+                        | SynExpr.Lambda(parsedData = Some (_, bodyExpr)) -> yield! walkExpr true bodyExpr
 
                         | SynExpr.Lambda (body = bodyExpr) -> yield! walkExpr true bodyExpr
 

@@ -744,7 +744,7 @@ module ParsedInput =
 
             | SynExpr.ComputationExpr (_, e, _) -> walkExprWithKind parentKind e
 
-            | SynExpr.Lambda (parsedData = Some (_, e)) -> walkExprWithKind parentKind e
+            | SynExpr.Lambda(parsedData = Some (_, e)) -> walkExprWithKind parentKind e
 
             | SynExpr.Lambda (body = e) -> walkExprWithKind parentKind e
 
@@ -1733,7 +1733,7 @@ module ParsedInput =
             | SynExpr.Lazy (e, _)
             | SynExpr.YieldOrReturnFrom (_, e, _) -> walkExpr e
 
-            | SynExpr.Lambda (parsedData = Some(argPats, e)) -> 
+            | SynExpr.Lambda(parsedData = Some (argPats, e)) ->
                 walkPats argPats
                 walkExpr e
 
