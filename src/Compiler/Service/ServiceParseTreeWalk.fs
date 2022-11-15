@@ -269,7 +269,7 @@ module SyntaxTraversal =
                 //
                 // For nearly all purposes except type checking we want to traverse the original parsing.
 
-                printf "should happen rarely and disappear with time"
+                printf "A construct desugared during parsing. Should happen rarely and disappear with time."
 #endif
                 None
 

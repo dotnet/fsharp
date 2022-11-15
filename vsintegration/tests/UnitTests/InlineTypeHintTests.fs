@@ -36,38 +36,6 @@ let whoSings s = s.Artist
     Assert.AreEqual(expected, actual)
 
 [<Test>]
-let ``Hints are shown for lambdas`` () =
-    let code = """
-let iamboring() =
-    fun x -> x
-"""
-    let document = getFsDocument code
-    let expected = [{ Content = ": 'a"; Location = (2, 10) }]
-    
-    let actual = getTypeHints document
-
-    Assert.AreEqual(expected, actual)
-
-[<Test>]
-let ``Hints are shown for lambdas with tuples`` () =
-    let code = """
-let zip4 (l1: 'a list) (l2: 'b list) (l3: 'c list) (l4: 'd list) =
-    List.zip l1 (List.zip3 l2 l3 l4)
-    |> List.map (fun (x1, (x2, x3, x4)) -> (x1, x2, x3, x4))
-"""
-    let document = getFsDocument code
-    let expected = [
-        { Content = ": 'a"; Location = (3, 25) }
-        { Content = ": 'b"; Location = (3, 30) }
-        { Content = ": 'c"; Location = (3, 34) }
-        { Content = ": 'd"; Location = (3, 38) }
-    ]
-    
-    let actual = getTypeHints document
-
-    CollectionAssert.AreEquivalent(expected, actual)
-
-[<Test>]
 let ``Hints are not shown in signature files`` () =
     let fsiCode = """
 module Test
