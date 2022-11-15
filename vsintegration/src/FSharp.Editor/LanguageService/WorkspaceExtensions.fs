@@ -218,6 +218,8 @@ type Project with
     /// Find F# references in the given project.
     member this.FindFSharpReferencesAsync(symbol, onFound, userOpName, ct) =
         this.Documents
-        |> Seq.map (fun doc -> doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName) |> RoslynHelpers.StartAsyncUnitAsTask ct  )
-        |> Seq.toArray
+        |> Seq.map (fun doc ->
+            Task.Run(fun () ->
+                doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName) 
+                |> RoslynHelpers.StartAsyncUnitAsTask ct))
         |> Task.WhenAll

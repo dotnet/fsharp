@@ -10,7 +10,6 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 
-open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
@@ -38,8 +37,8 @@ module internal SymbolHelpers =
 
     let getSymbolUsesInProjects (symbol: FSharpSymbol, projects: Project list, onFound: Document -> TextSpan -> range -> Async<unit>, ct: CancellationToken) =
         projects
-        |> Seq.map (fun project -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects", ct))
-        |> Seq.toArray
+        |> Seq.map (fun project ->
+            Task.Run(fun () -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects", ct)))
         |> Task.WhenAll
 
     let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults, solution: Solution, ct: CancellationToken) =
