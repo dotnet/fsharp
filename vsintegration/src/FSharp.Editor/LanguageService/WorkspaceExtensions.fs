@@ -4,6 +4,7 @@ module internal Microsoft.VisualStudio.FSharp.Editor.WorkspaceExtensions
 open System
 open System.Runtime.CompilerServices
 open System.Threading
+open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
@@ -215,8 +216,8 @@ type Document with
 type Project with
 
     /// Find F# references in the given project.
-    member this.FindFSharpReferencesAsync(symbol, onFound, userOpName) =
+    member this.FindFSharpReferencesAsync(symbol, onFound, userOpName, ct) =
         this.Documents
-        |> Seq.map (fun doc -> doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName))
-        |> Async.Parallel
-        |> Async.Ignore
+        |> Seq.map (fun doc -> doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName) |> RoslynHelpers.StartAsyncUnitAsTask ct  )
+        |> Seq.toArray
+        |> Task.WhenAll

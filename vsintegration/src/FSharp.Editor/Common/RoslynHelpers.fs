@@ -16,6 +16,7 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
+open System.Diagnostics
 
 type RoslynTaggedText = Microsoft.CodeAnalysis.TaggedText
 
@@ -115,7 +116,7 @@ module internal RoslynHelpers =
     let StartAsyncAsTask (cancellationToken: CancellationToken) computation =
         // Protect against blocking the UI thread by switching to thread pool
         let computation =
-            match SynchronizationContext.Current with 
+            match SynchronizationContext.Current with
             | null -> computation
             | _ ->
                 async {
