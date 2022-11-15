@@ -259,6 +259,24 @@ module SyntaxTraversal =
                 snd (e) ()
             | [ x ] -> x ()
             | _ -> None
+            | _ ->
+                assert false
+                // printing?
+                // logging?
+                // assert?
+
+                // This condition probably arises when using a construct that is de-sugared during parsing.
+                // We are gradually eliminating these and instead doing the de-sugaring during type checking, or
+                // else recording the non-de-sugared parsing in the parse tree alongside the de-sugared parsing.
+                //
+                // For example, SynExpr.Lambda contains both the parsing after de-sugaring complex patterns, and the
+                // original parsing.
+                //
+                // For nearly all purposes except type checking we want to traverse the original parsing.
+
+                // "multiple disjoint AST node ranges claimed to contain (%A) from %+A" pos debugObj
+
+                None
 
     /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
     ///
@@ -315,6 +333,7 @@ module SyntaxTraversal =
                 let traverseSynExpr = traverseSynExpr path
                 let traverseSynType = traverseSynType path
                 let traversePat = traversePat path
+                let traversePats = traversePats path
 
                 match e with
 
@@ -539,6 +558,11 @@ module SyntaxTraversal =
                         | _ -> None
 
                     if ok.IsSome then ok else traverseSynExpr synExpr
+
+                | SynExpr.Lambda (parsedData = Some(argPats, synExpr)) ->
+                    match traversePats argPats with
+                    | None -> traverseSynExpr synExpr
+                    | res -> res
 
                 | SynExpr.Lambda (args = synSimplePats; body = synExpr) ->
                     match synSimplePats with
@@ -774,6 +798,9 @@ module SyntaxTraversal =
 
             visitor.VisitExpr(origPath, traverseSynExpr origPath, defaultTraverse, expr)
 
+        and traversePats origPath (pats: SynPat list) =
+            pats |> List.tryPick (traversePat origPath)
+
         and traversePat origPath (pat: SynPat) =
             let defaultTraverse p =
                 let path = SyntaxNode.SynPat p :: origPath
@@ -782,15 +809,15 @@ module SyntaxTraversal =
                 | SynPat.Paren (p, _) -> traversePat path p
                 | SynPat.As (p1, p2, _)
                 | SynPat.Or (p1, p2, _, _)
-                | SynPat.ListCons (p1, p2, _, _) -> [ p1; p2 ] |> List.tryPick (traversePat path)
+                | SynPat.ListCons (p1, p2, _, _) -> [ p1; p2 ] |> traversePats path
                 | SynPat.Ands (ps, _)
                 | SynPat.Tuple (_, ps, _)
-                | SynPat.ArrayOrList (_, ps, _) -> ps |> List.tryPick (traversePat path)
+                | SynPat.ArrayOrList (_, ps, _) -> ps |> traversePats path
                 | SynPat.Attrib (p, _, _) -> traversePat path p
                 | SynPat.LongIdent (argPats = args) ->
                     match args with
-                    | SynArgPats.Pats ps -> ps |> List.tryPick (traversePat path)
-                    | SynArgPats.NamePatPairs (pats = ps) -> ps |> List.map (fun (_, _, pat) -> pat) |> List.tryPick (traversePat path)
+                    | SynArgPats.Pats ps -> ps |> traversePats path
+                    | SynArgPats.NamePatPairs (pats = ps) -> ps |> List.map (fun (_, _, pat) -> pat) |> traversePats path
                 | SynPat.Typed (p, ty, _) ->
                     match traversePat path p with
                     | None -> traverseSynType path ty

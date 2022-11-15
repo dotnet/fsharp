@@ -446,7 +446,16 @@ module Structure =
                 rcheck Scope.While Collapse.Below r r
                 parseExpr e
 
+            | SynExpr.Lambda (parsedData = Some(argPats, e); range = r) ->
+                match List.tryLast argPats with
+                | Some argPat ->
+                    rcheck Scope.Lambda Collapse.Below r (Range.endToEnd argPat.Range r)
+                | None ->
+                    ()
+                parseExpr e
+
             | SynExpr.Lambda (args = pats; body = e; range = r) ->
+
                 match pats with
                 | SynSimplePats.SimplePats (_, pr)
                 | SynSimplePats.Typed (_, _, pr) -> rcheck Scope.Lambda Collapse.Below r (Range.endToEnd pr r)
