@@ -1072,6 +1072,30 @@ module rec Compiler =
 
         result
 
+    let verifyHasPdb (result: CompilationResult): unit =
+        let verifyPdbExists r =
+            match r.OutputPath with
+            | Some assemblyPath ->
+                let pdbPath = Path.ChangeExtension(assemblyPath, ".pdb")
+                if not (FileSystem.FileExistsShim pdbPath) then
+                    failwith $"PDB file does not exists: {pdbPath}"
+            | _ -> failwith "Output path is not set, please make sure compilation was successfull."
+        match result with
+        | CompilationResult.Success r -> verifyPdbExists r 
+        | _ -> failwith "Result should be \"Success\" in order to verify PDB."
+
+    let verifyNoPdb (result: CompilationResult): unit =
+        let verifyPdbNotExists r =
+            match r.OutputPath with
+            | Some assemblyPath ->
+                let pdbPath = Path.ChangeExtension(assemblyPath, ".pdb")
+                if FileSystem.FileExistsShim pdbPath then
+                    failwith $"PDB file exists: {pdbPath}"
+            | _ -> failwith "Output path is not set, please make sure compilation was successfull."
+        match result with
+        | CompilationResult.Success r -> verifyPdbNotExists r 
+        | _ -> failwith "Result should be \"Success\" in order to verify PDB."
+
     [<AutoOpen>]
     module Assertions =
         let private getErrorNumber (error: ErrorType) : int =
