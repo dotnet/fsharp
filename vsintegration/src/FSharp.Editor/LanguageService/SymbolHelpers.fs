@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Collections.Concurrent
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
@@ -59,7 +60,7 @@ module internal SymbolHelpers =
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbol, ct)
                 return toDict (symbolUses |> Seq.map (fun symbolUse -> symbolUse.Range))
             | SymbolDeclarationLocation.Projects (projects, isInternalToProject) -> 
-                let symbolUseRanges = ImmutableArray.CreateBuilder()
+                let symbolUseRanges = ConcurrentBag()
                     
                 let projects =
                     if isInternalToProject then projects
