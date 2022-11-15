@@ -327,6 +327,9 @@ type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option
         else
             tryGetXmlDocument ()
             |> Option.bind (fun doc ->
+
+                failwith "Is this tested?"
+
                 let name =
                     if xmlDocSig.Contains "'" then
                         $"\"{xmlDocSig}\""
