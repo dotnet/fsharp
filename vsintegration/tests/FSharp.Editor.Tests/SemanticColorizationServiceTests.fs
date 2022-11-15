@@ -1,61 +1,68 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
-namespace VisualFSharp.UnitTests.Editor
 
-open System
+namespace FSharp.Editor.Tests
+
 open NUnit.Framework
 open Microsoft.VisualStudio.FSharp.Editor
-open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
+open FSharp.Editor.Tests.Helpers
 
-[<TestFixture; Category "Roslyn Services">]
+[<TestFixture>]
 type SemanticClassificationServiceTests() =
     let filePath = "C:\\test.fs"
-
-    let projectOptions = { 
-        ProjectFileName = "C:\\test.fsproj"
-        ProjectId = None
-        SourceFiles =  [| filePath |]
-        ReferencedProjects = [| |]
-        OtherOptions = [| |]
-        IsIncompleteTypeCheckEnvironment = true
-        UseScriptResolutionRules = false
-        LoadTime = DateTime.MaxValue
-        UnresolvedReferences = None
-        OriginalLoadReferences = []
-        Stamp = None
-    }
-
-    let checker = FSharpChecker.Create()
-    let perfOptions = { LanguageServicePerformanceOptions.Default with AllowStaleCompletionResults = false }
 
     let getRanges (source: string) : SemanticClassificationItem list =
         asyncMaybe {
             let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, source)
-            let! _, checkFileResults = document.GetFSharpParseAndCheckResultsAsync("SemanticClassificationServiceTests") |> liftAsync
+
+            let! _, checkFileResults =
+                document.GetFSharpParseAndCheckResultsAsync("SemanticClassificationServiceTests")
+                |> liftAsync
+
             return checkFileResults.GetSemanticClassification(None)
-        } 
+        }
         |> Async.RunSynchronously
         |> Option.toList
         |> List.collect Array.toList
 
-    let verifyClassificationAtEndOfMarker(fileContents: string, marker: string, classificationType: string) =
+    let verifyClassificationAtEndOfMarker (fileContents: string, marker: string, classificationType: string) =
         let text = SourceText.From(fileContents)
         let ranges = getRanges fileContents
-        let line = text.Lines.GetLinePosition (fileContents.IndexOf(marker) + marker.Length - 1)
-        let markerPos = Position.mkPos (Line.fromZ line.Line) (line.Character + marker.Length - 1)
+
+        let line =
+            text.Lines.GetLinePosition(fileContents.IndexOf(marker) + marker.Length - 1)
+
+        let markerPos =
+            Position.mkPos (Line.fromZ line.Line) (line.Character + marker.Length - 1)
+
         match ranges |> List.tryFind (fun item -> Range.rangeContainsPos item.Range markerPos) with
         | None -> Assert.Fail("Cannot find colorization data for end of marker")
-        | Some item -> Assert.AreEqual(classificationType, FSharpClassificationTypes.getClassificationTypeName item.Type, "Classification data doesn't match for end of marker")
+        | Some item ->
+            Assert.AreEqual(
+                classificationType,
+                FSharpClassificationTypes.getClassificationTypeName item.Type,
+                "Classification data doesn't match for end of marker"
+            )
 
-    let verifyNoClassificationDataAtEndOfMarker(fileContents: string, marker: string, classificationType: string) =
+    let verifyNoClassificationDataAtEndOfMarker (fileContents: string, marker: string, classificationType: string) =
         let text = SourceText.From(fileContents)
         let ranges = getRanges fileContents
-        let line = text.Lines.GetLinePosition (fileContents.IndexOf(marker) + marker.Length - 1)
-        let markerPos = Position.mkPos (Line.fromZ line.Line) (line.Character + marker.Length - 1)
-        let anyData = ranges |> List.exists (fun item -> Range.rangeContainsPos item.Range markerPos && ((FSharpClassificationTypes.getClassificationTypeName item.Type) = classificationType))
+
+        let line =
+            text.Lines.GetLinePosition(fileContents.IndexOf(marker) + marker.Length - 1)
+
+        let markerPos =
+            Position.mkPos (Line.fromZ line.Line) (line.Character + marker.Length - 1)
+
+        let anyData =
+            ranges
+            |> List.exists (fun item ->
+                Range.rangeContainsPos item.Range markerPos
+                && ((FSharpClassificationTypes.getClassificationTypeName item.Type) = classificationType))
+
         Assert.False(anyData, "Classification data was found when it wasn't expected.")
 
     [<TestCase("(*1*)", ClassificationTypeNames.StructName)>]
@@ -66,8 +73,8 @@ type SemanticClassificationServiceTests() =
     [<TestCase("(*6*)", ClassificationTypeNames.StructName)>]
     [<TestCase("(*7*)", ClassificationTypeNames.ClassName)>]
     member _.Measured_Types(marker: string, classificationType: string) =
-        verifyClassificationAtEndOfMarker(
-                """#light (*Light*)
+        verifyClassificationAtEndOfMarker (
+            """#light (*Light*)
                 open System
                 
                 [<MeasureAnnotatedAbbreviation>] type (*1*)Guid<[<Measure>] 'm> = Guid
@@ -84,8 +91,9 @@ type SemanticClassificationServiceTests() =
                 let i: (*5*)int<Ms> = 1<Ms>
                 let g: (*6*)Guid<Ms> = Uom.tag Guid.Empty
                 let s: (*7*)string<Ms> = Uom.tag "foo" """,
-            marker, 
-            classificationType)
+            marker,
+            classificationType
+        )
 
     [<TestCase("(*1*)", FSharpClassificationTypes.MutableVar)>]
     [<TestCase("(*2*)", FSharpClassificationTypes.MutableVar)>]
@@ -100,7 +108,8 @@ type SemanticClassificationServiceTests() =
     [<TestCase("(*11*)", FSharpClassificationTypes.MutableVar)>]
     [<TestCase("(*12*)", FSharpClassificationTypes.MutableVar)>]
     member _.MutableValues(marker: string, classificationType: string) =
-        let sourceText ="""
+        let sourceText =
+            """
 type R1 = { mutable (*1*)Doop: int}
 let r1 = { (*2*)Doop = 12 }
 r1.Doop
@@ -121,7 +130,8 @@ let r = { (*12*)MutableField = ref 12 }
 r.MutableField
 r.MutableField := 3
 """
-        verifyClassificationAtEndOfMarker(sourceText, marker, classificationType)
+
+        verifyClassificationAtEndOfMarker (sourceText, marker, classificationType)
 
     [<TestCase("(*1*)", FSharpClassificationTypes.DisposableType)>]
     [<TestCase("(*2*)", FSharpClassificationTypes.DisposableTopLevelValue)>]
@@ -131,7 +141,8 @@ r.MutableField := 3
     [<TestCase("(*6*)", FSharpClassificationTypes.DisposableType)>]
     [<TestCase("(*7*)", FSharpClassificationTypes.DisposableLocalValue)>]
     member _.Disposables(marker: string, classificationType: string) =
-        let sourceText = """
+        let sourceText =
+            """
 open System
 
 type (*1*)Disposable() =
@@ -146,7 +157,8 @@ let f() =
   let (*7*)local2 = { new IDisposable with member _.Dispose() = () }
   ()
 """
-        verifyClassificationAtEndOfMarker(sourceText, marker, classificationType)
+
+        verifyClassificationAtEndOfMarker (sourceText, marker, classificationType)
 
     [<TestCase("(*1*)", FSharpClassificationTypes.MutableVar)>]
     [<TestCase("(*2*)", FSharpClassificationTypes.MutableVar)>]
@@ -155,7 +167,8 @@ let f() =
     [<TestCase("(*5*)", FSharpClassificationTypes.MutableVar)>]
     [<TestCase("(*6*)", FSharpClassificationTypes.MutableVar)>]
     member _.NoInrefsExpected(marker: string, classificationType: string) =
-        let sourceText = """
+        let sourceText =
+            """
 let f (item: (*1*)inref<int>) = printfn "%d" (*2*)item
 let g() =
     let x = 1
@@ -165,4 +178,5 @@ let g() =
     f (*5*)&xRef
     f (*6*)&yRef
 """
-        verifyNoClassificationDataAtEndOfMarker(sourceText, marker, classificationType)
+
+        verifyNoClassificationDataAtEndOfMarker (sourceText, marker, classificationType)
