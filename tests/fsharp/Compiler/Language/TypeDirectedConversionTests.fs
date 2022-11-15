@@ -446,10 +446,10 @@ if not (test().OtherArgs.Value.Name = "test") then failwith "Unexpected value wa
         CompilerAssert.RunScript
             """
 type M() =
-    static member A(size: int64 array, dtype: System.Nullable<int>) = 1
-    static member A(size: System.ReadOnlySpan<int64>, dtype: System.Nullable<int>) = 2
+    static member A(size: System.DateTime, dtype: System.Nullable<int>) = 1
+    static member A(size: System.DateTimeOffset, dtype: System.Nullable<int>) = 2
 
-let test() = M.A([|10L|], 1)
+let test() = M.A(System.DateTime.UtcNow, 1)
 
 if test() <> 1 then failwith "Incorrect overload picked" 
         """ []
@@ -487,19 +487,19 @@ if test() <> 2 then failwith "Incorrect overload picked"
         CompilerAssert.TypeCheckSingleError
             """
 type M() =
-    static member A(m: int64 array, n: int64) = 1
-    static member A(m: System.ReadOnlySpan<int64>, n: int64) = 2
+    static member A(m: System.DateTime, n: int64) = 1
+    static member A(m: System.DateTimeOffset, n: int64) = 2
 
-let test() = M.A([|10L|], 1)
+let test() = M.A(System.DateTime.UtcNow, 1)
         """
              FSharpDiagnosticSeverity.Error
              41
-             (6, 14, 6, 29)
+             (6, 14, 6, 44)
              """A unique overload for method 'A' could not be determined based on type information prior to this program point. A type annotation may be needed.
 
-Known types of arguments: int64[] * int
+Known types of arguments: System.DateTime * int
 
 Candidates:
- - static member M.A: m: System.ReadOnlySpan<int64> * n: int64 -> int
- - static member M.A: m: System.ReadOnlySpan<int64> * n: int64 -> int
- - static member M.A: m: int64 array * n: int64 -> int"""
+ - static member M.A: m: System.DateTime * n: int64 -> int
+ - static member M.A: m: System.DateTimeOffset * n: int64 -> int
+ - static member M.A: m: System.DateTimeOffset * n: int64 -> int"""
