@@ -258,13 +258,8 @@ module SyntaxTraversal =
 
                 snd (e) ()
             | [ x ] -> x ()
-            | _ -> None
             | _ ->
-                assert false
-                // printing?
-                // logging?
-                // assert?
-
+#if DEBUG
                 // This condition probably arises when using a construct that is de-sugared during parsing.
                 // We are gradually eliminating these and instead doing the de-sugaring during type checking, or
                 // else recording the non-de-sugared parsing in the parse tree alongside the de-sugared parsing.
@@ -274,8 +269,8 @@ module SyntaxTraversal =
                 //
                 // For nearly all purposes except type checking we want to traverse the original parsing.
 
-                // "multiple disjoint AST node ranges claimed to contain (%A) from %+A" pos debugObj
-
+                printf "should happen rarely and disappear with time"
+#endif
                 None
 
     /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
