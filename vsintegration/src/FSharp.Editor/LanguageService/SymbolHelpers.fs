@@ -78,7 +78,7 @@ module internal SymbolHelpers =
                     
                 // Distinct these down because each TFM will produce a new 'project'.
                 // Unless guarded by a #if define, symbols with the same range will be added N times
-                let symbolUseRanges = symbolUseRanges.ToArray() |> Array.distinct
+                let symbolUseRanges = symbolUseRanges |> Seq.distinct
                 return toDict symbolUseRanges
         }
  
