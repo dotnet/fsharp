@@ -72,7 +72,7 @@ module CoreTests =
     [<Test>]
     let ``array-no-dot-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSC_OPTIMIZED "preview"
 
-    [<Test; Ignore("Some tests fail on .NET6 preview6, and fixed in preview7, disabling until preview7 gets released.")>]
+    [<Test>]
     let ``array-no-dot-FSI`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSI "preview"
 
     [<Test>]
