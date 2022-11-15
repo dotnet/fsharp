@@ -207,7 +207,7 @@
     <Compile Include="Signatures\RecordTests.fs" />
     <Compile Include="Signatures\ArrayTests.fs" />
     <Compile Include="Signatures\TypeTests.fs" />
-	<Compile Include="Signatures\SigGenerationRoundTripTests.fs" />
+    <Compile Include="Signatures\SigGenerationRoundTripTests.fs" />
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
