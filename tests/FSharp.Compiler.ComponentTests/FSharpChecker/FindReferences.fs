@@ -52,8 +52,7 @@ let ``Finding usage of type via GetUsesOfSymbolInFile should also find it's cons
 let ``Finding usage of type via FindReference should also find it's constructors`` () =
     project.Workflow
         {        
-            placeCursor "First" 7 11 "type MyType() =" ["MyType"] 
-            saveFile "First"
+            placeCursor "First" 7 11 "type MyType() =" ["MyType"]     
             findAllReferences "First" (fun (ranges:list<FSharp.Compiler.Text.range>) ->
                 let ranges = 
                     ranges 
