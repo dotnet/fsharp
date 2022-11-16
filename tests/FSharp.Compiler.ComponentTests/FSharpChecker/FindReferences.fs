@@ -21,15 +21,68 @@ type MyType() =
     member x.DoNothing(d:MyType) = ()
 
 let a = MyType()
-let b = new MyType() // alternative syntax
+let b = new MyType()
 a.DoNothing(b)
 """
 let impFile = { sourceFile "First" [] with ExtraSource = reproSourceCode }
-let project = SyntheticProject.Create(impFile)
+let createProject() = SyntheticProject.Create(impFile)
+
+let plainCreation = sourceFile "First" []
+let creationWithWith = { sourceFile "First" [] with ExtraSource = reproSourceCode }
+let plainCreationChangedLater = { plainCreation with ExtraSource = reproSourceCode }
+let creationviaFunc() = { sourceFile "First" [] with ExtraSource = reproSourceCode }
+
+let sourceFileLocal   =
+    { Id = "xx"
+      PublicVersion = 1
+      InternalVersion = 1
+      DependsOn = []
+      FunctionName = "f"
+      SignatureFile = No
+      HasErrors = false
+      ExtraSource = ""
+      EntryPoint = false }
+
+let plainLocalCreation = sourceFileLocal  
+let localCreationWithWith = { sourceFileLocal   with ExtraSource = reproSourceCode }
+let localCreationChangedLater = { plainCreation with ExtraSource = reproSourceCode }
+
+
+[<Fact>]
+let ``What is happening with static init - plainCreation`` () =  
+    Assert.NotNull(plainCreation)
+
+[<Fact>]
+let ``What is happening with static init - creationWithWith`` () =  
+    Assert.NotNull(creationWithWith)
+
+[<Fact>]
+let ``What is happening with static init - plainCreationChangedLater`` () =  
+    Assert.NotNull(plainCreationChangedLater)
+
+[<Fact>]
+let ``What is happening with static init - impFile`` () = 
+    Assert.NotNull(impFile)
+
+[<Fact>]
+let ``What is happening with static init - creationviaFunc`` () = 
+    Assert.NotNull(creationviaFunc())
+
+[<Fact>]
+let ``What is happening with static init - plainLocalCreation`` () =  
+    Assert.NotNull(plainLocalCreation)
+
+[<Fact>]
+let ``What is happening with static init - localCreationWithWith`` () =  
+    Assert.NotNull(localCreationWithWith)
+
+[<Fact>]
+let ``What is happening with static init - localCreationChangedLater`` () =  
+    Assert.NotNull(localCreationChangedLater)
 
 [<Fact>]
 let ``Finding usage of type via GetUsesOfSymbolInFile should also find it's constructors`` () =
-    project.Workflow
+    createProject().Workflow
         {        
             checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
              
@@ -50,7 +103,7 @@ let ``Finding usage of type via GetUsesOfSymbolInFile should also find it's cons
 
 [<Fact>]
 let ``Finding usage of type via FindReference should also find it's constructors`` () =
-    project.Workflow
+    createProject().Workflow
         {        
             placeCursor "First" 7 11 "type MyType() =" ["MyType"]     
             findAllReferences "First" (fun (ranges:list<FSharp.Compiler.Text.range>) ->
@@ -63,8 +116,35 @@ let ``Finding usage of type via FindReference should also find it's constructors
                 Assert.Equal<(int*int*int)>(
                     [| 7,5,11 // Typedef itself
                        8,25,31 // Usage within type
-                       10,8,14 // "a" constructor ===> This is the bug, 'let a = MyType()' should be reported as a reference/renaming target but it is not
-                       11,12,18 // "b" constructor
+                       10,8,14 // "a= ..." constructor 
+                       11,12,18 // "b= ..." constructor
+                    |],ranges)  )    
+
+        }
+
+[<Fact>]
+let ``Finding usage of type via FindReference works across files`` () =
+    let secondFile = { sourceFile "Second" ["First"] with ExtraSource = """
+open ModuleFirst
+let secondA = MyType()
+let secondB = new MyType()
+secondA.DoNothing(secondB)
+ """}
+    let original = createProject()
+    let project = {original with SourceFiles = original.SourceFiles @ [secondFile]}
+    project.Workflow
+        {        
+            placeCursor "First" 7 11 "type MyType() =" ["MyType"]     
+            findAllReferences "Second" (fun (ranges:list<FSharp.Compiler.Text.range>) ->
+                let ranges = 
+                    ranges 
+                    |> List.sortBy (fun r -> r.StartLine)
+                    |> List.map (fun r -> r.StartLine, r.StartColumn, r.EndColumn)
+                    |> Array.ofSeq
+
+                Assert.Equal<(int*int*int)>(
+                    [| 9,14,20 // "secondA = ..." constructor 
+                       10,18,24 // "secondB = ..." constructor
                     |],ranges)  )    
 
         }
