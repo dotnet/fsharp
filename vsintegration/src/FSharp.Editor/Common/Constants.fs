@@ -82,10 +82,6 @@ module internal Guids =
     let codeFixesOptionPageIdString = "9A66EB6A-DE52-4169-BC26-36FBD4312FD7"
     
     [<Literal>]
-    /// "00BE7FD9-8145-4A2E-A1BF-3BAF0F4F47DD"
-    let codeLensOptionPageIdString = "00BE7FD9-8145-4A2E-A1BF-3BAF0F4F47DD"
-
-    [<Literal>]
     /// "8FDA964A-263D-4B4E-9560-29897535217C"
     let languageServicePerformanceOptionPageIdString = "8FDA964A-263D-4B4E-9560-29897535217C"
 
