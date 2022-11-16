@@ -209,6 +209,7 @@
     <Compile Include="Signatures\TypeTests.fs" />
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
+    <Compile Include="FSharpChecker\FindReferences.fs" />
     <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
        <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
     </None>

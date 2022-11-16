@@ -356,7 +356,8 @@ module ProjectOperations =
 
 type WorkflowContext =
     { Project: SyntheticProject
-      Signatures: Map<string, string> }
+      Signatures: Map<string, string>
+      Cursor : FSharp.Compiler.CodeAnalysis.FSharpSymbolUse option   }
 
 type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpChecker) =
 
@@ -392,7 +393,8 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
             return
                 { Project = initialProject
-                  Signatures = Map signatures }
+                  Signatures = Map signatures
+                  Cursor = None }
         }
 
     member this.Run(workflow: Async<WorkflowContext>) =
@@ -440,6 +442,35 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
             processResults results (oldSignature, newSignature)
 
             return { ctx with Signatures = ctx.Signatures.Add(fileId, newSignature) }
+        }
+
+    /// Find a symbol using the provided range, mimicing placing a cursor on it in IDE scenarios
+    [<CustomOperation "placeCursor">]
+    member this.PlaceCursor(workflow: Async<WorkflowContext>, fileId, line, colAtEndOfNames, fullLine, symbolNames) = 
+        async {
+            let! ctx = workflow
+            let! results = checkFile fileId ctx.Project checker
+            let typeCheckResults = getTypeCheckResult results
+
+            let su = typeCheckResults.GetSymbolUseAtLocation(line,colAtEndOfNames,fullLine,symbolNames)
+
+            return {ctx with Cursor = su}
+        }
+
+
+
+    /// Find all references within a single file, results are provided to the 'processResults' function
+    [<CustomOperation "findAllReferences">]
+    member this.FindAllReferences(workflow: Async<WorkflowContext>, fileId: string,  processResults) =
+        async{
+            let! ctx = workflow
+            let po = ctx.Project.GetProjectOptions checker          
+            let s = ctx.Cursor |> Option.defaultWith (fun () -> failwith "Please place cursor at a valid location via placeCursor first")
+            let! results = checker.FindBackgroundReferencesInFile(fileId,po, s.Symbol)
+
+            processResults (results |> Seq.toList)
+
+            return ctx
         }
 
     /// Parse and type check given file and process the results using `processResults` function.
