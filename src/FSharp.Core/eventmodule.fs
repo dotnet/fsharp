@@ -22,7 +22,11 @@ module Event =
     [<CompiledName("Filter")>]
     let filter predicate (sourceEvent: IEvent<'Delegate, 'T>) =
         let ev = new Event<_>()
-        sourceEvent.Add(fun x -> if predicate x then ev.Trigger x)
+
+        sourceEvent.Add(fun x ->
+            if predicate x then
+                ev.Trigger x)
+
         ev.Publish
 
     [<CompiledName("Partition")>]

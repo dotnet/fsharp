@@ -855,6 +855,7 @@ let slotImplMethod (final, c, slotsig) : ValMemberInfo =
           IsDispatchSlot=false
           IsFinal=final
           IsOverrideOrExplicitImpl=true
+          GetterOrSetterIsCompilerGenerated=false
           MemberKind=SynMemberKind.Member
           Trivia=SynMemberFlagsTrivia.Zero}
     IsImplemented=false
@@ -866,6 +867,7 @@ let nonVirtualMethod c : ValMemberInfo =
                   IsDispatchSlot=false
                   IsFinal=false
                   IsOverrideOrExplicitImpl=false
+                  GetterOrSetterIsCompilerGenerated=false
                   MemberKind=SynMemberKind.Member
                   Trivia=SynMemberFlagsTrivia.Zero}
     IsImplemented=false
@@ -888,8 +890,8 @@ let mkValSpec g (tcref: TyconRef) ty vis slotsig methn valTy argData =
             slotImplMethod(final, tcref, slotsig)
     let inl = ValInline.Optional
     let args = ValReprInfo.unnamedTopArg :: argData
-    let topValInfo = Some (ValReprInfo (ValReprInfo.InferTyparInfo tps, args, ValReprInfo.unnamedRetVal)) 
-    Construct.NewVal (methn, m, None, valTy, Immutable, true, topValInfo, vis, ValNotInRecScope, Some membInfo, NormalVal, [], inl, XmlDoc.Empty, true, false, false, false, false, false, None, Parent tcref) 
+    let valReprInfo = Some (ValReprInfo (ValReprInfo.InferTyparInfo tps, args, ValReprInfo.unnamedRetVal)) 
+    Construct.NewVal (methn, m, None, valTy, Immutable, true, valReprInfo, vis, ValNotInRecScope, Some membInfo, NormalVal, [], inl, XmlDoc.Empty, true, false, false, false, false, false, None, Parent tcref) 
 
 let MakeValsForCompareAugmentation g (tcref: TyconRef) = 
     let m = tcref.Range

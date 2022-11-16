@@ -94,3 +94,27 @@ namespace FSharpTest
         |> compile
         |> shouldSucceed
         |> ignore
+
+    [<Fact>]
+    let ``CheckingExceptionDeclarations - SynMemberDefn.GetSetMember`` () =
+        FSharp """
+namespace FSharpTest
+
+exception CustomException of details: string
+    with
+        member self.Details with get (): string = self.details
+"""
+        |> compile
+        |> shouldSucceed
+        |> ignore
+
+    [<Fact>]
+    let ``Array2 in return type`` () =
+        FSharp """
+module Foo
+
+let y : int array2d = Array2D.init 0 0 (fun _ _ -> 0)
+"""
+        |> compile
+        |> shouldSucceed
+        |> ignore

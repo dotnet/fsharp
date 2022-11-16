@@ -17,6 +17,11 @@ When making changes to the FCS source code, consider running some of these to as
 
 All the above benchmarks use BenchmarkDotNet.
 
+## Quickly validating that the benchmarks work
+`SmokeTestAllBenchmarks.ps1` allows to run all BDN benchmarks in this directory with a minimum number of iterations, as a way to verify that the benchmarks still work.
+
+This doesn't validate the notebook-based meta-benchmarks.
+
 ## Other
 
 You can find this document under 'tests/benchmarks/FCSBenchmarks/README.md'.

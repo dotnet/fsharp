@@ -54,14 +54,14 @@ val layoutQualifiedValOrMember:
     denv: DisplayEnv ->
     infoReader: InfoReader ->
     typarInst: TyparInstantiation ->
-    v: ValRef ->
+    vref: ValRef ->
         TyparInstantiation * Layout
 
-val outputQualifiedValOrMember: denv: DisplayEnv -> infoReader: InfoReader -> os: StringBuilder -> v: ValRef -> unit
+val outputQualifiedValOrMember: denv: DisplayEnv -> infoReader: InfoReader -> os: StringBuilder -> vref: ValRef -> unit
 
-val outputQualifiedValSpec: denv: DisplayEnv -> infoReader: InfoReader -> os: StringBuilder -> v: ValRef -> unit
+val outputQualifiedValSpec: denv: DisplayEnv -> infoReader: InfoReader -> os: StringBuilder -> vref: ValRef -> unit
 
-val stringOfQualifiedValOrMember: denv: DisplayEnv -> infoReader: InfoReader -> v: ValRef -> string
+val stringOfQualifiedValOrMember: denv: DisplayEnv -> infoReader: InfoReader -> vref: ValRef -> string
 
 val formatMethInfoToBufferFreeStyle:
     infoReader: InfoReader -> m: range -> denv: DisplayEnv -> buf: StringBuilder -> d: MethInfo -> unit
@@ -81,6 +81,11 @@ val stringOfMethInfo: infoReader: InfoReader -> m: range -> denv: DisplayEnv -> 
 
 val multiLineStringOfMethInfos:
     infoReader: InfoReader -> m: range -> denv: DisplayEnv -> minfos: MethInfo list -> string
+
+val stringOfPropInfo: g: TcGlobals -> amap: ImportMap -> m: range -> denv: DisplayEnv -> pinfo: PropInfo -> string
+
+val multiLineStringOfPropInfos:
+    g: TcGlobals -> amap: ImportMap -> m: range -> denv: DisplayEnv -> pinfos: PropInfo list -> string
 
 val stringOfParamData: denv: DisplayEnv -> paramData: ParamData -> string
 
@@ -107,6 +112,8 @@ val stringOfTyparConstraint: denv: DisplayEnv -> Typar * TyparConstraint -> stri
 val stringOfTy: denv: DisplayEnv -> x: TType -> string
 
 val prettyLayoutOfType: denv: DisplayEnv -> x: TType -> Layout
+
+val prettyLayoutOfTrait: denv: DisplayEnv -> x: TraitConstraintInfo -> Layout
 
 val prettyLayoutOfTypeNoCx: denv: DisplayEnv -> x: TType -> Layout
 
@@ -139,22 +146,23 @@ val prettyLayoutOfValOrMember:
     denv: DisplayEnv ->
     infoReader: InfoReader ->
     typarInst: TyparInstantiation ->
-    v: ValRef ->
+    vref: ValRef ->
         TyparInstantiation * Layout
 
-val prettyLayoutOfValOrMemberNoInst: denv: DisplayEnv -> infoReader: InfoReader -> v: ValRef -> Layout
+val prettyLayoutOfValOrMemberNoInst: denv: DisplayEnv -> infoReader: InfoReader -> vref: ValRef -> Layout
 
 val prettyLayoutOfMemberNoInstShort: denv: DisplayEnv -> v: Val -> Layout
 
-val layoutOfValReturnType: denv: DisplayEnv -> v: ValRef -> Layout
+val layoutOfValReturnType: denv: DisplayEnv -> vref: ValRef -> Layout
 
 val prettyLayoutOfInstAndSig:
     denv: DisplayEnv ->
     TyparInstantiation * TTypes * TType ->
         TyparInstantiation * (TTypes * TType) * (Layout list * Layout) * Layout
 
-val minimalStringsOfTwoTypes: denv: DisplayEnv -> t1: TType -> t2: TType -> string * string * string
+val minimalStringsOfTwoTypes: denv: DisplayEnv -> ty1: TType -> ty2: TType -> string * string * string
 
-val minimalStringsOfTwoValues: denv: DisplayEnv -> infoReader: InfoReader -> v1: ValRef -> v2: ValRef -> string * string
+val minimalStringsOfTwoValues:
+    denv: DisplayEnv -> infoReader: InfoReader -> vref1: ValRef -> vref2: ValRef -> string * string
 
 val minimalStringOfType: denv: DisplayEnv -> ty: TType -> string

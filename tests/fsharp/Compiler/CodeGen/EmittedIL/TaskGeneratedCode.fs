@@ -1100,7 +1100,8 @@ type Generic1InGeneric1<'T>() =
     .method assembly hidebysig instance class [runtime]System.Threading.Tasks.Task`1<!!A> 
             run<A>(class [runtime]System.Threading.Tasks.Task`1<!!A> computation) cil managed
     {
-      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [runtime]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+      .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
       
       .maxstack  4
       .locals init (valuetype Test/clo@7<!!A> V_0,
@@ -1375,4 +1376,3 @@ module ``SRTP ReturnFrom on a ValueTask is still generic in the bind type`` =
     
     let t1 : Task<int voption> = TryFindAsync() // test TryFindAsync is generic
     let t2 : Task<string voption> = TryFindAsync() // test TryFindAsync is generic
-

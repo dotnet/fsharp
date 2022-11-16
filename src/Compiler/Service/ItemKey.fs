@@ -81,6 +81,9 @@ module ItemKeyTags =
     let itemProperty = "p$"
 
     [<Literal>]
+    let itemTrait = "T$"
+
+    [<Literal>]
     let itemTypeVar = "y$"
 
     [<Literal>]
@@ -150,7 +153,9 @@ type ItemKeyStore(mmf: MemoryMappedFile, length) =
             while reader.Offset < reader.Length do
                 let m = this.ReadRange &reader
                 let keyString2 = this.ReadKeyString &reader
-                if keyString1.SequenceEqual keyString2 then results.Add m
+
+                if keyString1.SequenceEqual keyString2 then
+                    results.Add m
 
             results :> range seq
 
@@ -239,10 +244,10 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString anonInfo.ILTypeRef.BasicQualifiedName
             tinst |> List.iter (writeType false)
 
-        | TType_fun (d, r, _) ->
+        | TType_fun (domainTy, rangeTy, _) ->
             writeString ItemKeyTags.typeFunction
-            writeType false d
-            writeType false r
+            writeType false domainTy
+            writeType false rangeTy
 
         | TType_measure ms ->
             if isStandalone then
@@ -263,7 +268,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Measure.Var typar ->
             writeString ItemKeyTags.typeMeasureVar
             writeTypar isStandalone typar
-        | Measure.Con tcref ->
+        | Measure.Const tcref ->
             writeString ItemKeyTags.typeMeasureCon
             writeEntityRef tcref
         | _ -> ()
@@ -271,7 +276,9 @@ and [<Sealed>] ItemKeyStoreBuilder() =
     and writeTypar (isStandalone: bool) (typar: Typar) =
         match typar.Solution with
         | Some ty -> writeType isStandalone ty
-        | _ -> if isStandalone then writeInt64 typar.Stamp
+        | _ ->
+            if isStandalone then
+                writeInt64 typar.Stamp
 
     let writeValRef (vref: ValRef) =
         match vref.MemberInfo with
@@ -287,7 +294,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString ItemKeyTags.parameters
             writeType false vref.Type
 
-            match vref.DeclaringEntity with
+            match vref.TryDeclaringEntity with
             | ParentNone -> writeChar '%'
             | Parent eref -> writeEntityRef eref
 
@@ -304,7 +311,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
                 writeString ItemKeyTags.itemProperty
                 writeString vref.PropertyName
 
-                match vref.DeclaringEntity with
+                match vref.TryDeclaringEntity with
                 | ParentRef.Parent parent -> writeEntityRef parent
                 | _ -> ()
             else
@@ -367,6 +374,13 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             | Some info -> writeEntityRef info.DeclaringTyconRef
             | _ -> ()
 
+        | Item.Trait (info) ->
+            writeString ItemKeyTags.itemTrait
+            writeString info.MemberLogicalName
+            info.SupportTypes |> List.iter (writeType false)
+            info.CompiledObjectAndArgumentTypes |> List.iter (writeType false)
+            info.CompiledReturnType |> Option.iter (writeType false)
+
         | Item.TypeVar (_, typar) -> writeTypar true typar
 
         | Item.Types (_, [ ty ]) -> writeType true ty
@@ -401,17 +415,27 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             writeString ItemKeyTags.itemDelegateCtor
             writeType false ty
 
-        | Item.MethodGroup _ -> ()
-        | Item.CtorGroup _ -> ()
+        // We should consider writing ItemKey for each of these
+        | Item.ArgName _ -> ()
         | Item.FakeInterfaceCtor _ -> ()
-        | Item.Types _ -> ()
         | Item.CustomOperation _ -> ()
         | Item.CustomBuilder _ -> ()
-        | Item.ModuleOrNamespaces _ -> ()
         | Item.ImplicitOp _ -> ()
-        | Item.ArgName _ -> ()
         | Item.SetterArg _ -> ()
-        | Item.UnqualifiedType _ -> ()
+
+        // Empty lists do not occur
+        | Item.Types (_, []) -> ()
+        | Item.UnqualifiedType [] -> ()
+        | Item.MethodGroup (_, [], _) -> ()
+        | Item.CtorGroup (_, []) -> ()
+        | Item.ModuleOrNamespaces [] -> ()
+
+        // Items are flattened so multiples are not expected
+        | Item.Types (_, _ :: _ :: _) -> ()
+        | Item.UnqualifiedType (_ :: _ :: _) -> ()
+        | Item.MethodGroup (_, (_ :: _ :: _), _) -> ()
+        | Item.CtorGroup (_, (_ :: _ :: _)) -> ()
+        | Item.ModuleOrNamespaces (_ :: _ :: _) -> ()
 
         let postCount = b.Count
 

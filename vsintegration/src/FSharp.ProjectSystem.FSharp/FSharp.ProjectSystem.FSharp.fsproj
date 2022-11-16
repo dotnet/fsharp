@@ -67,16 +67,6 @@
     </AssemblyAttribute>
 
     <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
-      <AssemblyName>FSharp.Core</AssemblyName>
-      <Version>$(FSCoreVersion)</Version>
-      <CodeBase>$PackageFolder$\FSharp.Core.dll</CodeBase>
-    </AssemblyAttribute>
-    <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
-      <AssemblyName>FSharp.ProjectSystem.FSharp</AssemblyName>
-      <Version>$(VSAssemblyVersion)</Version>
-      <CodeBase>$PackageFolder$\FSharp.ProjectSystem.FSharp.dll</CodeBase>
-    </AssemblyAttribute>
-    <AssemblyAttribute Include="Microsoft.VisualStudio.Shell.ProvideCodeBaseAttribute">
       <AssemblyName>FSharp.Compiler.Service</AssemblyName>
       <Version>$(FSharpCompilerServiceVersion)</Version>
       <CodeBase>$PackageFolder$\FSharp.Compiler.Service.dll</CodeBase>

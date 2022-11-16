@@ -1,0 +1,249 @@
+[
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "cb3692bf5d5af46b075c50d4f802f09152fb6b67"
+      ]
+    },
+    "VersionTime": "2021-05-10T19:41:31Z",
+    "Results": {
+      "MeanS": 434877200.53763443,
+      "AllocatedMB": 284894480.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "a5c5f93752107ef0198fc1c9fde9dd28695b2812"
+      ]
+    },
+    "VersionTime": "2021-05-10T18:34:42Z",
+    "Results": {
+      "MeanS": 331581307.6923077,
+      "AllocatedMB": 176122152.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "a2f429c5968ae986d4a64086c48255a9a9679edf"
+      ]
+    },
+    "VersionTime": "2021-05-10T17:36:53Z",
+    "Results": {
+      "MeanS": 333340964.28571427,
+      "AllocatedMB": 176173728.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "6b0e62cc5fc5dc59db8654c26d45746d8d1575a5"
+      ]
+    },
+    "VersionTime": "2021-05-10T17:36:39Z",
+    "Results": {
+      "MeanS": 333900386.1111111,
+      "AllocatedMB": 176090792.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "306e3c52b5d55f780ff9045ecf5c5721a0e723e0"
+      ]
+    },
+    "VersionTime": "2021-05-10T17:32:23Z",
+    "Results": {
+      "MeanS": 415544085.71428573,
+      "AllocatedMB": 284852312.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "b940196465155b644d27f20cbf8f0b9d7720ce35"
+      ]
+    },
+    "VersionTime": "2021-05-08T17:41:29Z",
+    "Results": {
+      "MeanS": 327533800.0,
+      "AllocatedMB": 176167216.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "02114036157a4b8ae8d026bd0d7104ab5de61ff3"
+      ]
+    },
+    "VersionTime": "2021-05-03T19:50:26Z",
+    "Results": {
+      "MeanS": 331101469.4444444,
+      "AllocatedMB": 176126728.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "cbfd0f6900cd2dad02404dfc5e9efb49cb80fe82"
+      ]
+    },
+    "VersionTime": "2021-05-03T17:39:41Z",
+    "Results": {
+      "MeanS": 329015046.6666667,
+      "AllocatedMB": 176163664.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "ae277903f7c6e1757efc94a3e1e9433933f17a57"
+      ]
+    },
+    "VersionTime": "2021-04-30T18:33:07Z",
+    "Results": {
+      "MeanS": 329314058.3333333,
+      "AllocatedMB": 176177848.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "2b64f212290cb26d97f08a9fb445402b4a871506"
+      ]
+    },
+    "VersionTime": "2021-04-30T17:41:39Z",
+    "Results": {
+      "MeanS": 335215900.0,
+      "AllocatedMB": 176139128.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "67e853f732761567a28b3cc1848ac403195a2b95"
+      ]
+    },
+    "VersionTime": "2021-04-30T17:40:41Z",
+    "Results": {
+      "MeanS": 332180889.28571427,
+      "AllocatedMB": 176070128.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "63b14da8ab73c50d5336503b7b46edff79dd5e9a"
+      ]
+    },
+    "VersionTime": "2021-04-30T16:39:11Z",
+    "Results": {
+      "MeanS": 336142668.42105263,
+      "AllocatedMB": 176123616.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "fc42e0b5bbf5da03fbf04f0edd8195f7ebb26504"
+      ]
+    },
+    "VersionTime": "2021-04-30T00:19:08Z",
+    "Results": {
+      "MeanS": 330602951.7241379,
+      "AllocatedMB": 176084392.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "b1fa25841d9f815b8cf918c32deba173eae77842"
+      ]
+    },
+    "VersionTime": "2021-04-29T16:55:47Z",
+    "Results": {
+      "MeanS": 331167713.6363636,
+      "AllocatedMB": 176168336.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "16fe0b8c05d6ada6b906f8532009d31922b56665"
+      ]
+    },
+    "VersionTime": "2021-04-29T06:56:03Z",
+    "Results": {
+      "MeanS": 326324297.72727275,
+      "AllocatedMB": 176141536.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "fbb0f3f2d8a6745eaecd83f4bf4a8814f0f8615d"
+      ]
+    },
+    "VersionTime": "2021-04-28T18:39:31Z",
+    "Results": {
+      "MeanS": 327365134.375,
+      "AllocatedMB": 176032480.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "812b5a9b2e591062875e3021e50a7c34e097c6ff"
+      ]
+    },
+    "VersionTime": "2021-04-27T22:22:15Z",
+    "Results": {
+      "MeanS": 328415031.4285714,
+      "AllocatedMB": 176102472.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "4edcbb45365f96d4858f438a556b93d4a32ae219"
+      ]
+    },
+    "VersionTime": "2021-04-27T20:46:24Z",
+    "Results": {
+      "MeanS": 323065237.5,
+      "AllocatedMB": 176081512.0
+    }
+  },
+  {
+    "Version": {
+      "Case": "Git",
+      "Fields": [
+        "4d330f37ae740adccd2586d568b6d45d2c408fad"
+      ]
+    },
+    "VersionTime": "2021-04-29T04:41:39Z",
+    "Results": {
+      "MeanS": 331001475.8064516,
+      "AllocatedMB": 176118592.0
+    }
+  }
+]

@@ -76,7 +76,8 @@ type UnionReprDecisions<'Union, 'Alt, 'Type>
             if alts.Length = 1 then
                 SingleCase
             elif
-                not (isStruct cu) && alts.Length < TaggingThresholdFixedConstant
+                not (isStruct cu)
+                && alts.Length < TaggingThresholdFixedConstant
                 && not (repr.RepresentAllAlternativesAsConstantFieldsInRootClass cu)
             then
                 RuntimeTypes
@@ -1280,12 +1281,14 @@ let mkClassUnionDef
         ]
 
     let ctorMeths =
-        if (List.isEmpty selfFields
-            && List.isEmpty tagFieldsInObject
-            && not (List.isEmpty selfMeths))
-           || isStruct
-           || cud.UnionCases
-              |> Array.forall (fun alt -> repr.RepresentAlternativeAsFreshInstancesOfRootClass(info, alt)) then
+        if
+            (List.isEmpty selfFields
+             && List.isEmpty tagFieldsInObject
+             && not (List.isEmpty selfMeths))
+            || isStruct
+            || cud.UnionCases
+               |> Array.forall (fun alt -> repr.RepresentAlternativeAsFreshInstancesOfRootClass(info, alt))
+        then
 
             [] (* no need for a second ctor in these cases *)
 

@@ -13,18 +13,20 @@ module ``OCamlCompat test cases`` =
     let ``E_IndentOff01_fs  --warnaserror --test:ErrorRanges`` compilation =
         compilation
         |> asFsx
-        |> withOptions ["--warnaserror"; "--test:ErrorRanges"]
+        |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldFail
-        |> withErrorCode 0062
-        |> withDiagnosticMessageMatches "This construct is for ML compatibility\. Consider using a file with extension '\.ml' or '\.mli' instead\. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'\."
+        |> withDiagnostics [
+            (Error 62, Line 4, Col 1, Line 4, Col 14, """This construct is deprecated. The use of '#light "off"' or '#indent "off"' was deprecated in F# 2.0 and is no longer supported. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.""")
+        ]
 
 
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"IndentOff02.fs"|])>]
     let ``IndentOff02_fs  --warnaserror"; "--mlcompatibility`` compilation =
         compilation
         |> asFsx
-        |> withOptions ["--warnaserror"; "--mlcompatibility"]
+        |> withOcamlCompat
+        |> withLangVersion50
         |> typecheck
         |> shouldSucceed
 
@@ -37,8 +39,9 @@ module ``OCamlCompat test cases`` =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldFail
-        |> withWarningCode 0062
-        |> withDiagnosticMessageMatches "This construct is for ML compatibility\. Consider using a file with extension '\.ml' or '\.mli' instead\. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'\."
+        |> withDiagnostics [
+            (Error 62, Line 4, Col 1, Line 4, Col 14, """This construct is deprecated. The use of '#light "off"' or '#indent "off"' was deprecated in F# 2.0 and is no longer supported. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.""")
+        ]
 
 
     //NoMT	SOURCE=IndentOff04.fsx   COMPILE_ONLY=1 SCFLAGS="--warnaserror --mlcompatibility" FSIMODE=PIPE					# IndentOff04.fsx
@@ -46,11 +49,13 @@ module ``OCamlCompat test cases`` =
     let ``IndentOff04_fsx  --warnaserror --mlcompatibility`` compilation =
         compilation
         |> asFsx
-        |> withOptions ["--warnaserror"; " --mlcompatibility"]
+        |> withOptions ["--test:ErrorRanges"]
+        |> withOcamlCompat
         |> compile
         |> shouldFail
-        |> withErrorCode 62
-        |> withDiagnosticMessageMatches "This construct is for ML compatibility\. Consider using a file with extension '\.ml' or '\.mli' instead\. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'\."
+        |> withDiagnostics [
+            (Error 62, Line 3, Col 1, Line 3, Col 14, """This construct is deprecated. The use of '#light "off"' or '#indent "off"' was deprecated in F# 2.0 and is no longer supported. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.""")
+        ]
 
 
     //NoMT	SOURCE=W_IndentOff05.fsx COMPILE_ONLY=1 SCFLAGS="--test:ErrorRanges"              FSIMODE=PIPE					# W_IndentOff05.fsx
@@ -61,8 +66,9 @@ module ``OCamlCompat test cases`` =
         |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldFail
-        |> withWarningCode 0062
-        |> withDiagnosticMessageMatches "This construct is for ML compatibility\. Consider using a file with extension '\.ml' or '\.mli' instead\. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'\."
+        |> withDiagnostics [
+            (Error 62, Line 3, Col 1, Line 3, Col 14, """This construct is deprecated. The use of '#light "off"' or '#indent "off"' was deprecated in F# 2.0 and is no longer supported. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.""")
+        ]
 
 
     //NoMT	SOURCE=E_IndentOff06.fsx COMPILE_ONLY=1 SCFLAGS="--warnaserror"                   FSIMODE=PIPE					# E_IndentOff06.fsx
@@ -70,11 +76,12 @@ module ``OCamlCompat test cases`` =
     let ``E_IndentOff06_fsx  --test:ErrorRanges`` compilation =
         compilation
         |> asFsx
-        |> withOptions ["--warnaserror"; "--test:ErrorRanges"]
+        |> withOptions ["--test:ErrorRanges"]
         |> compile
         |> shouldFail
-        |> withErrorCode 0062
-        |> withDiagnosticMessageMatches "This construct is for ML compatibility\. Consider using a file with extension '\.ml' or '\.mli' instead\. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'\."
+        |> withDiagnostics [
+            (Error 62, Line 3, Col 1, Line 3, Col 14, """This construct is deprecated. The use of '#light "off"' or '#indent "off"' was deprecated in F# 2.0 and is no longer supported. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.""")
+        ]
 
 
     //	SOURCE=E_mlExtension01.ml  COMPILE_ONLY=1 SCFLAGS="--warnaserror --test:ErrorRanges"				# E_mlExtension01.ml
@@ -92,6 +99,7 @@ module ``OCamlCompat test cases`` =
         compilation
         |> asFsx
         |> withOptions ["--warnaserror"; "--mlcompatibility"]
+        |> withLangVersion50
         |> compile
         |> shouldSucceed
 
@@ -112,6 +120,7 @@ module ``OCamlCompat test cases`` =
         compilation
         |> asFsx
         |> withOptions ["--warnaserror"; "--mlcompatibility"]
+        |> withLangVersion50
         |> typecheck
         |> shouldSucceed
 
@@ -122,6 +131,7 @@ module ``OCamlCompat test cases`` =
         compilation
         |> asExe
         |> withOptions ["--test:ErrorRanges"; "--mlcompatibility"]
+        |> withLangVersion50
         |> compile
         |> shouldSucceed
 
@@ -142,9 +152,10 @@ module ``OCamlCompat test cases`` =
         |> asExe
         |> ignoreWarnings
         |> compile
-        |> shouldSucceed
-        |> withWarningCode 62
-        |> withDiagnosticMessageMatches "This construct is for ML compatibility\. The syntax '\(typ,\.\.\.,typ\) ident' is not used in F# code. Consider using 'ident<typ,\.\.\.,typ>' instead. You can disable this warning by using '--mlcompatibility' or '--nowarn:62'\."
+       |> shouldFail
+        |> withDiagnostics [
+            (Error 62, Line 10, Col 19, Line 10, Col 48, """This construct is deprecated. The use of multiple parenthesized type parameters before a generic type name such as '(int, int) Map' was deprecated in F# 2.0 and is no longer supported. You can enable this feature by using '--langversion:5.0' and '--mlcompatibility'.""")
+        ]
 
 
     //	SOURCE=OCamlStyleArrayIndexing.fs SCFLAGS="--mlcompatibility"		# OCamlStyleArrayIndexing.fs
@@ -152,6 +163,7 @@ module ``OCamlCompat test cases`` =
     let ``OCamlStyleArrayIndexing_fs  --mlcompatibility`` compilation =
         compilation
         |> asExe
-        |> withOptions ["--mlcompatibility"]
+        |> withOcamlCompat
+        |> withLangVersion50
         |> compile
         |> shouldSucceed

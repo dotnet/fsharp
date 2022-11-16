@@ -8,6 +8,11 @@
     <UseFSharpProductVersion>true</UseFSharpProductVersion>
   </PropertyGroup>
 
+  <!--  The FSharp.Core dll provides a referencable public interface -->
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+  </PropertyGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="fsi" />
     <InternalsVisibleTo Include="fsiAnyCpu" />

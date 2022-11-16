@@ -159,7 +159,7 @@ let rec AttachRange m (exn: exn) =
         | UnresolvedPathReferenceNoRange (a, p) -> UnresolvedPathReference(a, p, m)
         | Failure msg -> InternalError(msg + " (Failure)", m)
         | :? ArgumentException as exn -> InternalError(exn.Message + " (ArgumentException)", m)
-        | notARangeDual -> notARangeDual
+        | _ -> exn
 
 type Exiter =
     abstract Exit: int -> 'T
@@ -172,8 +172,17 @@ let QuitProcessExiter =
             with _ ->
                 ()
 
-            FSComp.SR.elSysEnvExitDidntExit () |> failwith
+            failwith (FSComp.SR.elSysEnvExitDidntExit ())
     }
+
+type StopProcessingExiter() =
+
+    member val ExitCode = 0 with get, set
+
+    interface Exiter with
+        member exiter.Exit n = 
+            exiter.ExitCode <- n
+            raise StopProcessing
 
 /// Closed enumeration of build phases.
 [<RequireQualifiedAccess>]
@@ -304,6 +313,8 @@ type DiagnosticsLogger(nameForDebugging: string) =
     // code just below and get a breakpoint for all error logger implementations.
     abstract DiagnosticSink: diagnostic: PhasedDiagnostic * severity: FSharpDiagnosticSeverity -> unit
 
+    member x.CheckForErrors() = (x.ErrorCount > 0)
+
     member _.DebugDisplay() =
         sprintf "DiagnosticsLogger(%s)" nameForDebugging
 
@@ -320,12 +331,17 @@ let AssertFalseDiagnosticsLogger =
         member _.ErrorCount = (* assert false; *) 0
     }
 
-type CapturingDiagnosticsLogger(nm) =
+type CapturingDiagnosticsLogger(nm, ?eagerFormat) =
     inherit DiagnosticsLogger(nm)
     let mutable errorCount = 0
     let diagnostics = ResizeArray()
 
     override _.DiagnosticSink(diagnostic, severity) =
+        let diagnostic =
+            match eagerFormat with
+            | None -> diagnostic
+            | Some f -> f diagnostic
+
         if severity = FSharpDiagnosticSeverity.Error then
             errorCount <- errorCount + 1
 
@@ -476,7 +492,7 @@ module DiagnosticsLoggerExtensions =
         member x.ErrorRecoveryNoRange(exn: exn) = x.ErrorRecovery exn range0
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-let PushThreadBuildPhaseUntilUnwind (phase: BuildPhase) =
+let UseBuildPhase (phase: BuildPhase) =
     let oldBuildPhase = DiagnosticsThreadStatics.BuildPhaseUnchecked
     DiagnosticsThreadStatics.BuildPhase <- phase
 
@@ -486,14 +502,17 @@ let PushThreadBuildPhaseUntilUnwind (phase: BuildPhase) =
     }
 
 /// NOTE: The change will be undone when the returned "unwind" object disposes
-let PushDiagnosticsLoggerPhaseUntilUnwind (diagnosticsLoggerTransformer: DiagnosticsLogger -> #DiagnosticsLogger) =
-    let oldDiagnosticsLogger = DiagnosticsThreadStatics.DiagnosticsLogger
-    DiagnosticsThreadStatics.DiagnosticsLogger <- diagnosticsLoggerTransformer oldDiagnosticsLogger
+let UseTransformedDiagnosticsLogger (transformer: DiagnosticsLogger -> #DiagnosticsLogger) =
+    let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+    DiagnosticsThreadStatics.DiagnosticsLogger <- transformer oldLogger
 
     { new IDisposable with
         member _.Dispose() =
-            DiagnosticsThreadStatics.DiagnosticsLogger <- oldDiagnosticsLogger
+            DiagnosticsThreadStatics.DiagnosticsLogger <- oldLogger
     }
+
+let UseDiagnosticsLogger newLogger =
+    UseTransformedDiagnosticsLogger (fun _ -> newLogger)
 
 let SetThreadBuildPhaseNoUnwind (phase: BuildPhase) =
     DiagnosticsThreadStatics.BuildPhase <- phase
@@ -505,8 +524,8 @@ let SetThreadDiagnosticsLoggerNoUnwind diagnosticsLogger =
 ///
 /// Use to reset error and warning handlers.
 type CompilationGlobalsScope(diagnosticsLogger: DiagnosticsLogger, buildPhase: BuildPhase) =
-    let unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> diagnosticsLogger)
-    let unwindBP = PushThreadBuildPhaseUntilUnwind buildPhase
+    let unwindEL = UseDiagnosticsLogger diagnosticsLogger
+    let unwindBP = UseBuildPhase buildPhase
 
     member _.DiagnosticsLogger = diagnosticsLogger
     member _.BuildPhase = buildPhase
@@ -787,9 +806,9 @@ let NormalizeErrorString (text: string MaybeNull) =
 
 let private tryLanguageFeatureErrorAux (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
     if not (langVersion.SupportsFeature langFeature) then
-        let featureStr = langVersion.GetFeatureString langFeature
+        let featureStr = LanguageVersion.GetFeatureString langFeature
         let currentVersionStr = langVersion.SpecifiedVersionString
-        let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
+        let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
         Some(Error(FSComp.SR.chkFeatureNotLanguageSupported (featureStr, currentVersionStr, suggestedVersionStr), m))
     else
         None
@@ -807,13 +826,13 @@ let internal checkLanguageFeatureAndRecover langVersion langFeature m =
 let internal tryLanguageFeatureErrorOption langVersion langFeature m =
     tryLanguageFeatureErrorAux langVersion langFeature m
 
-let internal languageFeatureNotSupportedInLibraryError (langVersion: LanguageVersion) (langFeature: LanguageFeature) (m: range) =
-    let featureStr = langVersion.GetFeatureString langFeature
-    let suggestedVersionStr = langVersion.GetFeatureVersionString langFeature
+let internal languageFeatureNotSupportedInLibraryError (langFeature: LanguageFeature) (m: range) =
+    let featureStr = LanguageVersion.GetFeatureString langFeature
+    let suggestedVersionStr = LanguageVersion.GetFeatureVersionString langFeature
     error (Error(FSComp.SR.chkFeatureNotSupportedInLibrary (featureStr, suggestedVersionStr), m))
 
 /// Guard against depth of expression nesting, by moving to new stack when a maximum depth is reached
-type StackGuard(maxDepth: int) =
+type StackGuard(maxDepth: int, name: string) =
 
     let mutable depth = 1
 
@@ -828,7 +847,7 @@ type StackGuard(maxDepth: int) =
 
                 async {
                     do! Async.SwitchToNewThread()
-                    Thread.CurrentThread.Name <- "F# Extra Compilation Thread"
+                    Thread.CurrentThread.Name <- $"F# Extra Compilation Thread for {name} (depth {depth})"
                     use _scope = new CompilationGlobalsScope(diagnosticsLogger, buildPhase)
                     return f ()
                 }

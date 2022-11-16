@@ -8,6 +8,7 @@ open FSharp.Compiler.IO
 open System.Collections.Generic
 open System.Reflection
 
+/// Represents the target primary assembly
 [<RequireQualifiedAccess>]
 type internal PrimaryAssembly =
     | Mscorlib
@@ -15,6 +16,11 @@ type internal PrimaryAssembly =
     | NetStandard
 
     member Name: string
+
+    /// Checks if an assembly resolution may represent a primary assembly that actually contains the
+    /// definition of Sytem.Object.  Note that the chosen target primary assembly may not actually be the one
+    /// that contains the definition of System.Object - it is just the one we are choosing to emit for.
+    static member IsPossiblePrimaryAssembly: fileName: string -> bool
 
 /// Represents guids
 type ILGuid = byte[]
@@ -523,7 +529,7 @@ type internal ILInstr =
     // Method call
     | I_call of ILTailcall * ILMethodSpec * ILVarArgs
     | I_callvirt of ILTailcall * ILMethodSpec * ILVarArgs
-    | I_callconstraint of ILTailcall * ILType * ILMethodSpec * ILVarArgs
+    | I_callconstraint of callvirt: bool * ILTailcall * ILType * ILMethodSpec * ILVarArgs
     | I_calli of ILTailcall * ILCallingSignature * ILVarArgs
     | I_ldftn of ILMethodSpec
     | I_newobj of ILMethodSpec * ILVarArgs
@@ -783,20 +789,14 @@ type ILDebugImports =
 /// IL method bodies
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
 type internal ILMethodBody =
-    {
-        IsZeroInit: bool
-        MaxStack: int32
-        NoInlining: bool
-        AggressiveInlining: bool
-        Locals: ILLocals
-        Code: ILCode
-
-        /// Indicates the entire range of the method. Emitted for full PDB but not currently for portable PDB.
-        /// Additionally, if the range is not set, then no debug points are emitted.
-        DebugRange: ILDebugPoint option
-
-        DebugImports: ILDebugImports option
-    }
+    { IsZeroInit: bool
+      MaxStack: int32
+      NoInlining: bool
+      AggressiveInlining: bool
+      Locals: ILLocals
+      Code: ILCode
+      DebugRange: ILDebugPoint option
+      DebugImports: ILDebugImports option }
 
 /// Member Access
 [<RequireQualifiedAccess>]
@@ -860,6 +860,8 @@ type ILAttributes =
     member AsArray: unit -> ILAttribute[]
 
     member AsList: unit -> ILAttribute list
+
+    static member internal Empty: ILAttributes
 
 /// Represents the efficiency-oriented storage of ILAttributes in another item.
 [<NoEquality; NoComparison>]
@@ -1411,11 +1413,11 @@ type ILTypeDefs =
     /// Get some information about the type defs, but do not force the read of the type defs themselves.
     member internal AsArrayOfPreTypeDefs: unit -> ILPreTypeDef[]
 
-    /// Calls to <c>FindByName</c> will result in any laziness in the overall
-    /// set of ILTypeDefs being read in in addition
-    /// to the details for the type found, but the remaining individual
-    /// type definitions will not be read.
+    /// Calls to <c>FindByName</c> will result in all the ILPreTypeDefs being read.
     member internal FindByName: string -> ILTypeDef
+
+    /// Calls to <c>ExistsByName</c> will result in all the ILPreTypeDefs being read.
+    member internal ExistsByName: string -> bool
 
 /// Represents IL Type Definitions.
 [<NoComparison; NoEquality>]
@@ -1695,7 +1697,6 @@ type ILAssemblyManifest =
         JitTracking: bool
 
         IgnoreSymbolStoreSequencePoints: bool
-
         Retargetable: bool
 
         /// Records the types implemented by this assembly in auxiliary
@@ -1846,10 +1847,11 @@ type internal ILGlobals =
     member IsPossiblePrimaryAssemblyRef: ILAssemblyRef -> bool
 
 /// Build the table of commonly used references given functions to find types in system assemblies
+///
+///   primaryScopeRef is the primary assembly we are emitting
+///   equivPrimaryAssemblyRefs are ones regarded as equivalent
 val internal mkILGlobals:
-    primaryScopeRef: ILScopeRef *
-    assembliesThatForwardToPrimaryAssembly: ILAssemblyRef list *
-    fsharpCoreAssemblyScopeRef: ILScopeRef ->
+    primaryScopeRef: ILScopeRef * equivPrimaryAssemblyRefs: ILAssemblyRef list * fsharpCoreAssemblyScopeRef: ILScopeRef ->
         ILGlobals
 
 val internal PrimaryAssemblyILGlobals: ILGlobals
@@ -1975,7 +1977,6 @@ type internal ILLocalsAllocator =
 /// Derived functions for making some common patterns of instructions.
 val internal mkNormalCall: ILMethodSpec -> ILInstr
 val internal mkNormalCallvirt: ILMethodSpec -> ILInstr
-val internal mkNormalCallconstraint: ILType * ILMethodSpec -> ILInstr
 val internal mkNormalNewobj: ILMethodSpec -> ILInstr
 val internal mkCallBaseConstructor: ILType * ILType list -> ILInstr list
 val internal mkNormalStfld: ILFieldSpec -> ILInstr
@@ -2030,12 +2031,16 @@ val internal mkILNonGenericStaticMethod:
     string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 val internal mkILGenericVirtualMethod:
-    string * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+    string * ILCallingConv * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody ->
+        ILMethodDef
 
 val internal mkILGenericNonVirtualMethod:
     string * ILMemberAccess * ILGenericParameterDefs * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 val internal mkILNonGenericVirtualMethod:
+    string * ILCallingConv * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
+
+val internal mkILNonGenericVirtualInstanceMethod:
     string * ILMemberAccess * ILParameter list * ILReturn * MethodBody -> ILMethodDef
 
 val internal mkILNonGenericInstanceMethod:

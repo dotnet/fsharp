@@ -182,7 +182,7 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
                 let! scriptProjectOptions, _ =
                     checker.GetProjectOptionsFromScript(document.FilePath,
                         sourceText.ToFSharpSourceText(),
-                        SessionsProperties.fsiPreview,
+                        previewEnabled=SessionsProperties.fsiPreview,
                         assumeDotNetFramework=not SessionsProperties.fsiUseNetCore,
                         userOpName=userOpName)
 
@@ -289,6 +289,11 @@ type private FSharpProjectOptionsReactor (checker: FSharpChecker) =
                         for x in project.ProjectReferences do
                             "-r:" + project.Solution.GetProject(x.ProjectId).OutputFilePath
 
+                        // In the IDE we always ignore all #line directives for all purposes.  This means
+                        // IDE features work correctly within generated source files, but diagnostics are
+                        // reported in the IDE with respect to the generated source, and will not unify with
+                        // diagnostics from the build.
+                        "--ignorelinedirectives"
                     |]
 
                 let! ver = project.GetDependentVersionAsync(ct) |> Async.AwaitTask
@@ -509,6 +514,7 @@ type internal FSharpProjectOptionsManager
             | Some (_, parsingOptions, _) -> parsingOptions
             | _ ->
                 { FSharpParsingOptions.Default with
+                    ApplyLineDirectives = false
                     IsInteractive = CompilerEnvironment.IsScriptFile document.Name
                 }
         CompilerEnvironment.GetConditionalDefinesForEditing parsingOptions     

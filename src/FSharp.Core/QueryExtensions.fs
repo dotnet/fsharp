@@ -212,7 +212,7 @@ module internal Adapters =
     type ConversionDescription =
         | TupleConv of ConversionDescription list
         | RecordConv of Type * ConversionDescription list
-        | GroupingConv (* origKeyType: *)  of Type (* origElemType: *)  * Type * ConversionDescription
+        | GroupingConv (* origKeyType: *) of Type (* origElemType: *) * Type * ConversionDescription
         | SeqConv of ConversionDescription
         | NoConv
 

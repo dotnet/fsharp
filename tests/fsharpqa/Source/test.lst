@@ -23,14 +23,12 @@ CompilerOptions01,NoMT				CompilerOptions\fsc\optimize
 CompilerOptions01,NoMT				CompilerOptions\fsc\out
 CompilerOptions01,NoMT,pdbs				CompilerOptions\fsc\pdb
 CompilerOptions01,NoMT				CompilerOptions\fsc\platform
-CompilerOptions01,NoMT				CompilerOptions\fsc\reference
 CompilerOptions01,NoMT				CompilerOptions\fsc\Removed
 CompilerOptions01,NoMT				CompilerOptions\fsc\standalone
 CompilerOptions01,NoMT,NoHostedCompiler		CompilerOptions\fsc\staticlink
 CompilerOptions01,NoMT				CompilerOptions\fsc\subsystemversion
 CompilerOptions01,NoMT				CompilerOptions\fsc\tailcalls
 CompilerOptions01,NoMT				CompilerOptions\fsc\target
-CompilerOptions01,NoMT,NoHostedCompiler				CompilerOptions\fsc\times
 CompilerOptions01,NoMT,NoHostedCompiler				CompilerOptions\fsc\tokenize
 CompilerOptions01,NoMT				CompilerOptions\fsc\responsefile
 CompilerOptions01,NoMT,help				CompilerOptions\fsi\help
@@ -38,7 +36,6 @@ CompilerOptions01,NoMT				CompilerOptions\fsi\highentropyva
 CompilerOptions01,NoMT				CompilerOptions\fsi\langversion
 CompilerOptions01,NoMT				CompilerOptions\fsi\nologo
 CompilerOptions01,NoMT				CompilerOptions\fsi\subsystemversion
-CompilerOptions01,NoMT				CompilerOptions\fsi\times
 CompilerOptions02,NoMT				CompilerOptions\fsi\exename
 CompilerOptions01,NoMT,Determinism				CompilerOptions\fsc\determinism
 

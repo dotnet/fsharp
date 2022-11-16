@@ -102,8 +102,10 @@ type ResultTests() =
 
     [<Fact>]
     member this.DefaultWith() =
-        Assert.AreEqual(Result.defaultWith (fun () -> 3) (Error 42), 3)
-        Assert.AreEqual(Result.defaultWith (fun () -> "1") (Error "42"), "1")
+        Assert.AreEqual(Result.defaultWith (fun _ -> 3) (Error 42), 3)
+        Assert.AreEqual(Result.defaultWith (fun err -> 3 + err) (Error 42), 45)
+        Assert.AreEqual(Result.defaultWith (fun _ -> "1") (Error "42"), "1")
+        Assert.AreEqual(Result.defaultWith (fun err -> "1" + err) (Error "42"), "142")
 
         Assert.AreEqual(Result.defaultWith assertWasNotCalledThunk (Ok 42), 42)
         Assert.AreEqual(Result.defaultWith assertWasNotCalledThunk (Ok "1"), "1")

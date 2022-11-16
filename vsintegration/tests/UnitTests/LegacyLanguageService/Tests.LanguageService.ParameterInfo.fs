@@ -1944,7 +1944,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
             
             let a1 = System.Reflection.Assembly.Load("mscorlib")
             let m = a1.GetType("System.Decimal").GetConstructor((*Mark*)null)"""
-        this.VerifyParameterInfoOverloadMethodIndex(fileContents,"(*Mark*)",0,["System.Type[]"])
+        this.VerifyParameterInfoOverloadMethodIndex(fileContents,"(*Mark*)",0,["System.Type array"])
 
     [<Test>]   
     member public this.``Regression.MehtodSortedByArgumentCount.Bug4495.Case2``() = 
@@ -1955,8 +1955,8 @@ We really need to rewrite some code paths here to use the real parse tree rather
             let m = a1.GetType("System.Decimal").GetConstructor((*Mark*)null)"""
         this.VerifyParameterInfoOverloadMethodIndex(fileContents,"(*Mark*)",1,["System.Reflection.BindingFlags";
                                                                                 "System.Reflection.Binder";
-                                                                                "System.Type[]";
-                                                                                "System.Reflection.ParameterModifier[]"])
+                                                                                "System.Type array";
+                                                                                "System.Reflection.ParameterModifier array"])
 
     [<Test>]   
     [<Ignore("Bug 95862")>]
@@ -1983,7 +1983,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
     [<Test>]   
     member public this.``BasicBehavior.DotNet.Static``() = 
         let fileContents = """System.String.Format((*Mark*)"""
-        this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string";"obj[]"])
+        this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Mark*)",["string";"obj array"])
 
 (*------------------------------------------IDE Query automation start -------------------------------------------------*)
     [<Test>]   
@@ -2004,7 +2004,7 @@ We really need to rewrite some code paths here to use the real parse tree rather
                                  select r })
                 }"""
         this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Marker1*)",["obj"],queryAssemblyRefs)
-        this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Marker2*)",["string";"obj[]"],queryAssemblyRefs)
+        this.VerifyParameterInfoContainedAtStartOfMarker(fileContents,"(*Marker2*)",["string";"obj array"],queryAssemblyRefs)
 
     [<Test>]   
     [<Category("Query")>]

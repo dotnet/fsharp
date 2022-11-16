@@ -4,139 +4,12 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Collections.Concurrent
-open System.Collections.Immutable
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
-open Microsoft.VisualStudio.LanguageServices.ProjectSystem
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.LanguageServices
 open FSharp.Compiler.CodeAnalysis
-
-type internal IFSharpWorkspaceProjectContext =
-    inherit IDisposable
-
-    abstract Id : ProjectId
-
-    abstract FilePath : string
-
-    abstract ProjectReferenceCount : int
-
-    abstract HasProjectReference : filePath: string -> bool
-
-    abstract SetProjectReferences : IFSharpWorkspaceProjectContext seq -> unit
-
-    abstract MetadataReferenceCount : int
-
-    abstract HasMetadataReference : referencePath: string -> bool
-
-    abstract SetMetadataReferences : referencePaths: string seq -> unit
-
-type internal IFSharpWorkspaceProjectContextFactory =
-
-    abstract CreateProjectContext : filePath: string -> IFSharpWorkspaceProjectContext
-
-type private ProjectContextState =
-    {
-        refs: ImmutableDictionary<string, IFSharpWorkspaceProjectContext>
-        metadataRefs: ImmutableHashSet<string>
-    }
-
-type internal FSharpWorkspaceProjectContext(vsProjectContext: IWorkspaceProjectContext) =
-
-    let mutable state =
-        {
-            refs = ImmutableDictionary.Create(StringComparer.OrdinalIgnoreCase)
-            metadataRefs = ImmutableHashSet.Create(equalityComparer = StringComparer.OrdinalIgnoreCase)
-        }
-
-    member private _.VisualStudioProjectContext = vsProjectContext
-
-    member private _.AddProjectReference(builder: ImmutableDictionary<_, _>.Builder, projectContext: IFSharpWorkspaceProjectContext) =
-        match projectContext with
-        | :? FSharpWorkspaceProjectContext as fsProjectContext ->
-            vsProjectContext.AddProjectReference(fsProjectContext.VisualStudioProjectContext, MetadataReferenceProperties.Assembly)
-            builder.Add(projectContext.FilePath, projectContext)
-        | _ ->
-            ()
-
-    member private _.RemoveProjectReference(projectContext: IFSharpWorkspaceProjectContext) =
-        match projectContext with
-        | :? FSharpWorkspaceProjectContext as fsProjectContext ->
-            vsProjectContext.RemoveProjectReference(fsProjectContext.VisualStudioProjectContext)
-        | _ ->
-            ()
-
-    member private _.AddMetadataReference(builder: ImmutableHashSet<_>.Builder, referencePath: string) =
-        vsProjectContext.AddMetadataReference(referencePath, MetadataReferenceProperties.Assembly)
-        builder.Add(referencePath) |> ignore
-
-    member private _.RemoveMetadataReference(referencePath: string) =
-        vsProjectContext.RemoveMetadataReference(referencePath)
-
-    interface IFSharpWorkspaceProjectContext with
-
-        member _.Id = vsProjectContext.Id
-
-        member _.FilePath = vsProjectContext.ProjectFilePath
-
-        member _.ProjectReferenceCount = state.refs.Count
-
-        member _.HasProjectReference(filePath) = state.refs.ContainsKey(filePath)
-
-        member this.SetProjectReferences(projRefs) =
-            let builder = ImmutableDictionary.CreateBuilder()
-
-            state.refs.Values
-            |> Seq.iter (fun x ->
-                this.RemoveProjectReference(x)
-            )
-
-            projRefs
-            |> Seq.iter (fun x ->
-                this.AddProjectReference(builder, x)
-            )
-
-            state <- { state with refs = builder.ToImmutable() }
-
-        member _.MetadataReferenceCount = state.metadataRefs.Count
-
-        member _.HasMetadataReference(referencePath) = state.metadataRefs.Contains(referencePath)
-
-        member this.SetMetadataReferences(referencePaths) =
-            let builder = ImmutableHashSet.CreateBuilder()
-
-            state.metadataRefs
-            |> Seq.iter (fun x ->
-                this.RemoveMetadataReference(x)
-            )
-
-            referencePaths
-            |> Seq.iter (fun x ->
-                this.AddMetadataReference(builder, x)
-            )
-
-            state <- { state with metadataRefs = builder.ToImmutable() }
-
-        member _.Dispose() =
-            vsProjectContext.Dispose()
-
-type internal FSharpWorkspaceProjectContextFactory(projectContextFactory: IWorkspaceProjectContextFactory) =
-
-    static let createSourceCodeKind (filePath: string) =
-        if isScriptFile filePath then
-            SourceCodeKind.Script
-        else
-            SourceCodeKind.Regular
-
-    interface IFSharpWorkspaceProjectContextFactory with
-
-        member _.CreateProjectContext filePath =
-            let projectContext = projectContextFactory.CreateProjectContext(FSharpConstants.FSharpLanguageName, filePath, filePath, Guid.NewGuid(), null, null)
-            projectContext.DisplayName <- FSharpConstants.FSharpMiscellaneousFilesName
-            projectContext.AddSourceFile(filePath, sourceCodeKind = createSourceCodeKind filePath)
-            new FSharpWorkspaceProjectContext(projectContext) :> IFSharpWorkspaceProjectContext
 
 type internal FSharpMiscellaneousFileService(workspace: Workspace, 
                                              miscFilesWorkspace: Workspace, 
@@ -144,6 +17,12 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
 
     let files = ConcurrentDictionary<string, Lazy<IFSharpWorkspaceProjectContext>>(StringComparer.OrdinalIgnoreCase)
     let optionsManager = workspace.Services.GetRequiredService<IFSharpWorkspaceService>().FSharpProjectOptionsManager
+
+    static let createSourceCodeKind (filePath: string) =
+        if isScriptFile filePath then
+            SourceCodeKind.Script
+        else
+            SourceCodeKind.Regular
 
     static let mustUpdateProjectReferences (refSourceFiles: string []) (projectContext: IFSharpWorkspaceProjectContext) =
         refSourceFiles.Length <> projectContext.ProjectReferenceCount ||
@@ -160,6 +39,12 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
              |> Seq.forall projectContext.HasMetadataReference
              |> not
         )
+
+    let createProjectContextForDocument (filePath: string) =
+        let context = projectContextFactory.CreateProjectContext(filePath, filePath)
+        context.DisplayName <- FSharpConstants.FSharpMiscellaneousFilesName
+        context.AddSourceFile(filePath, createSourceCodeKind filePath)
+        context
 
     let tryRemove (document: Document) =
         let projIds = document.Project.Solution.GetDependentProjectIds(document.Project.Id)
@@ -195,7 +80,8 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
                         let newProjRefs =
                             refSourceFiles
                             |> Array.map (fun filePath ->
-                                let createProjectContext = lazy projectContextFactory.CreateProjectContext(filePath)
+                                let createProjectContext = lazy createProjectContextForDocument(filePath)
+
                                 if files.TryAdd(filePath, createProjectContext) then
                                     createProjectContext.Value
                                 else
@@ -225,7 +111,9 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
             // a F# miscellaneous project, which could be a script or not.
             if document.Project.IsFSharp && workspace.CurrentSolution.GetDocumentIdsWithFilePath(document.FilePath).Length = 0 then
                 let filePath = document.FilePath
-                let createProjectContext = lazy projectContextFactory.CreateProjectContext(filePath)
+
+                let createProjectContext = lazy createProjectContextForDocument(filePath)
+
                 if files.TryAdd(filePath, createProjectContext) then
                     createProjectContext.Force() |> ignore
         )
@@ -293,7 +181,9 @@ type internal FSharpMiscellaneousFileService(workspace: Workspace,
                 | Some(document) ->                           
                     optionsManager.ClearSingleFileOptionsCache(document.Id)
                     projectContext.Value.Dispose()
-                    let newProjectContext = lazy projectContextFactory.CreateProjectContext(newFilePath)
+
+                    let newProjectContext = lazy createProjectContextForDocument(newFilePath)
+
                     if files.TryAdd(newFilePath, newProjectContext) then
                         newProjectContext.Force() |> ignore
             else
