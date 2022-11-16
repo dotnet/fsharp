@@ -63,7 +63,7 @@ let ``Finding usage of type via FindReference should also find it's constructors
                 Assert.Equal<(int*int*int)>(
                     [| 7,5,11 // Typedef itself
                        8,25,31 // Usage within type
-                       //10,8,14 // "a" constructor This is the bug, A should be reported but it is not
+                       10,8,14 // "a" constructor ===> This is the bug, 'let a = MyType()' should be reported as a reference/renaming target but it is not
                        11,12,18 // "b" constructor
                     |],ranges)  )    
 

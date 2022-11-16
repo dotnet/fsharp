@@ -299,6 +299,8 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             | Parent eref -> writeEntityRef eref
 
     member _.Write(m: range, item: Item) =
+        if item.DisplayNameCore.Contains("MyType") then
+            printfn $"item {item.DisplayNameCore} hit"
         writeRange m
 
         let fixup = b.ReserveBytes 4 |> BlobWriter
@@ -390,7 +392,8 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.MethodGroup (_, [ info ], _)
         | Item.CtorGroup (_, [ info ]) ->
             match info with
-            | FSMeth (_, _, vref, _) -> writeValRef vref
+            | FSMeth (_, ty, vref, _) when vref.IsConstructor ->  writeType true ty
+            | FSMeth (_, _, vref, _) ->  writeValRef vref
             | ILMeth (_, info, _) ->
                 info.ILMethodRef.ArgTypes |> List.iter writeILType
                 writeILType info.ILMethodRef.ReturnType
