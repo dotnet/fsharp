@@ -13,7 +13,7 @@
     <Compile Include="Helpers\ProjectOptionsBuilder.fs" />
     <Compile Include="Helpers\AssemblyResolver.fs" />
     <Compile Include="BraceMatchingServiceTests.fs" />
-    <Compile Include="BreakpointResolutionService.fs" />
+    <Compile Include="BreakpointResolutionServiceTests.fs" />
     <Compile Include="QuickInfoProviderTests.fs" />
     <Compile Include="FsxCompletionProviderTests.fs" />
     <Compile Include="SignatureHelpProviderTests.fs" />
