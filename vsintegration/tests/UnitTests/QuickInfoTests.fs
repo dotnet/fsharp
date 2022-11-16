@@ -1,11 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+namespace VisualFSharp.UnitTests.Editor
 
 open System.IO
 open Microsoft.VisualStudio.FSharp.Editor
 open NUnit.Framework
-open VisualFSharp.UnitTests.Roslyn
+open VisualFSharp.UnitTests.Editor
 
 [<Category "Roslyn Services">]
 module QuickInfo =
@@ -13,7 +13,7 @@ module QuickInfo =
 let internal GetQuickInfo (project:FSharpProject) (fileName:string) (caretPosition:int) =
     async {
         let code = File.ReadAllText(fileName)
-        let document, _ = RoslynTestHelpers.CreateDocument(fileName, code)
+        let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code)
         return! FSharpAsyncQuickInfoSource.ProvideQuickInfo(document, caretPosition)
     } |> Async.RunSynchronously
 
@@ -429,7 +429,7 @@ module Test =
     ()
 
 [<Test>]
-let ``Automation.LetBindings.InsideModule``() =
+let ``Automation.LetBindings.Module``() =
     let code = """
 namespace FsTest
 
@@ -444,7 +444,7 @@ module Test =
     ()
 
 [<Test>]
-let ``Automation.LetBindings.InsideType``() =
+let ``Automation.LetBindings.InsideType.Instance``() =
     let code = """
 namespace FsTest
 
@@ -452,10 +452,130 @@ module Test =
     type T() =
         let fu$$nc x = ()
 """
-
     let expectedSignature = "val func: x: 'a -> unit"
 
     let tooltip = GetQuickInfoTextFromCode code
 
     StringAssert.StartsWith(expectedSignature, tooltip)
+
+[<Test >]
+let ``Automation.LetBindings.InsideType.Static``() =
+    let code = """
+namespace FsTest
+
+module Test =
+    type T() =
+        static let fu$$nc x = ()
+"""
+    let expectedSignature = "val func: x: 'a -> unit"
+
+    let tooltip = GetQuickInfoTextFromCode code
+
+    StringAssert.StartsWith(expectedSignature, tooltip)
+    ()
+
+[<Test>]
+let ``Automation.LetBindings``() =
+    let code = """
+namespace FsTest
+
+module Test =
+    do
+        let fu$$nc x = ()
+        ()
+"""
+    let expectedSignature = "val func: x: 'a -> unit"
+    let tooltip = GetQuickInfoTextFromCode code
+    StringAssert.StartsWith(expectedSignature, tooltip)
+
+[<Test>]
+let ``quick info for IWSAM property get``() =
+    let code = """
+type IStaticProperty<'T when 'T :> IStaticProperty<'T>> =
+    static abstract StaticProperty: 'T
+
+let f_IWSAM_flex_StaticProperty(x: #IStaticProperty<'T>) =
+    'T.StaticPr$$operty
+"""
+
+    let expectedSignature = "property IStaticProperty.StaticProperty: 'T with get"
+    let tooltip = GetQuickInfoTextFromCode code
+    StringAssert.StartsWith(expectedSignature, tooltip)
+
+[<Test>]
+let ``quick info for IWSAM method call``() =
+    let code = """
+type IStaticMethod<'T when 'T :> IStaticMethod<'T>> =
+    static abstract StaticMethod: unit -> 'T
+
+let f (x: #IStaticMethod<'T>) =
+    'T.StaticMe$$thod()
+"""
+
+    let expectedSignature = "static abstract IStaticMethod.StaticMethod: unit -> 'T"
+    let tooltip = GetQuickInfoTextFromCode code
+    StringAssert.StartsWith(expectedSignature, tooltip)
+
+[<Test>]
+let ``quick info for SRTP property get``() =
+    let code = """
+
+let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticProperty: 'T) >() =
+    'T.StaticPr$$operty
+"""
+
+    let expectedSignature = "'T: (static member StaticProperty: 'T)"
+    let tooltip = GetQuickInfoTextFromCode code
+    StringAssert.StartsWith(expectedSignature, tooltip)
+
+[<Test>]
+let ``quick info for SRTP method call``() =
+    let code = """
+
+let inline f_StaticProperty_SRTP<'T when 'T : (static member StaticMethod: unit -> 'T) >() =
+    'T.StaticMe$$thod()
+"""
+
+    let expectedSignature = "'T: (static member StaticMethod: unit -> 'T)"
+    let tooltip = GetQuickInfoTextFromCode code
+    StringAssert.StartsWith(expectedSignature, tooltip)
+
+
+[<Test>]
+let ``Display names for exceptions with backticks preserve backticks``() =
+    let code = """
+exception SomeError of ``thing wi$$th space``: string
+"""
+    let expected = "``thing with space``"
+
+    let actual = GetQuickInfoTextFromCode code
+    StringAssert.Contains(expected, actual)
+    ()
+
+[<Test>]
+let ``Display names for anonymous record fields with backticks preserve backticks``() =
+    let code = """
+type R = {| ``thing wi$$th space``: string |}
+"""
+    let expected = "``thing with space``"
+
+    let actual = GetQuickInfoTextFromCode code
+
+    StringAssert.Contains(expected, actual)
+    ()
+
+[<Test>]
+let ``Display names identifiers for active patterns with backticks preserve backticks``() =
+    let code = """
+let (|``Thing with space``|_|) x = if x % 2 = 0 then Some (x/2) else None
+
+match 4 with
+| ``Thing wi$$th space`` _ -> "yes"
+| _ -> "no"
+"""
+    let expected = "``Thing with space``"
+
+    let actual = GetQuickInfoTextFromCode code
+
+    StringAssert.Contains(expected, actual)
     ()

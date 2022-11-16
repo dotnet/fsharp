@@ -7,7 +7,7 @@
 .assembly extern System.Runtime
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly extern FSharp.Core
 {
@@ -21,7 +21,7 @@
 .assembly extern System.Linq
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 6:0:0:0
+  .ver 7:0:0:0
 }
 .assembly Linq101Quantifiers01
 {
@@ -30,29 +30,29 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 01 00 00 00 00 ) 
+  //  .custom instance void [System.Runtime]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [System.Runtime]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Linq101Quantifiers01
 {
-  // Offset: 0x00000000 Length: 0x000003D4
+  // Offset: 0x00000000 Length: 0x000003C6
   // WARNING: managed resource file FSharpSignatureData.Linq101Quantifiers01 created
 }
 .mresource public FSharpOptimizationData.Linq101Quantifiers01
 {
-  // Offset: 0x000003D8 Length: 0x000000FF
+  // Offset: 0x000003D0 Length: 0x000000FF
   // WARNING: managed resource file FSharpOptimizationData.Linq101Quantifiers01 created
 }
 .module Linq101Quantifiers01.exe
-// MVID: {62501638-A151-2366-A745-038338165062}
+// MVID: {63000ADE-997D-5A3D-A745-0383DE0A0063}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000019211ED0000
+// Image base: 0x0000013E12CE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -1477,4 +1477,4 @@
 // =============================================================
 
 // *********** DISASSEMBLY COMPLETE ***********************
-// WARNING: Created Win32 resource file c:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net6.0\tests\EmittedIL\QueryExpressionStepping\Linq101Quantifiers01_fs\Linq101Quantifiers01.res
+// WARNING: Created Win32 resource file C:\kevinransom\fsharp\artifacts\bin\FSharp.Compiler.ComponentTests\Debug\net7.0\tests\EmittedIL\QueryExpressionStepping\Linq101Quantifiers01_fs\Linq101Quantifiers01.res

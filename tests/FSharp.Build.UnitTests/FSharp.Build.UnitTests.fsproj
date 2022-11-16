@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472;net6.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks>net472;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <OutputType>Library</OutputType>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UnitTestType>nunit</UnitTestType>

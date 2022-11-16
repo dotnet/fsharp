@@ -561,8 +561,8 @@ namespace CSharpTest
 open System
 open CSharpTest
 
-let inline callStatic< ^T when ^T : (static member StaticMethod : int * int -> int)> x y =
-    ( ^T : (static member StaticMethod : int * int -> int) (x, y))
+let inline callStatic<^T when ^T : (static member StaticMethod : int * int -> int)> x y =
+    (^T : (static member StaticMethod : int * int -> int) (x, y))
 
 let f1 () =
     callStatic<I1> 1 2
@@ -4726,8 +4726,8 @@ open CSharpTest
 type I3 =
     inherit I2
 
-let inline callStatic< ^T when ^T : (static member StaticMethod : int * int -> int)> x y =
-    let value = ( ^T : (static member StaticMethod : int * int -> int) (x, y))
+let inline callStatic<^T when ^T : (static member StaticMethod : int * int -> int)> x y =
+    let value = (^T : (static member StaticMethod : int * int -> int) (x, y))
     Console.Write value
 
 let f1 () =
@@ -4882,8 +4882,8 @@ namespace CSharpTest
 open System
 open CSharpTest
 
-let inline callStatic< ^T when ^T : (static member StaticMethod : int * int -> int)> x y =
-    ( ^T : (static member StaticMethod : int * int -> int) (x, y))
+let inline callStatic<^T when ^T : (static member StaticMethod : int * int -> int)> x y =
+    (^T : (static member StaticMethod : int * int -> int) (x, y))
 
 let f () =
     callStatic<CSharpClass> 1 2
@@ -4935,8 +4935,8 @@ type FSharpClass() =
     interface I1
     interface I2
 
-let inline callStatic< ^T when ^T : (static member StaticMethod : int * int -> int)> x y =
-    ( ^T : (static member StaticMethod : int * int -> int) (x, y))
+let inline callStatic<^T when ^T : (static member StaticMethod : int * int -> int)> x y =
+    (^T : (static member StaticMethod : int * int -> int) (x, y))
 
 let f () =
     callStatic<FSharpClass> 1 2

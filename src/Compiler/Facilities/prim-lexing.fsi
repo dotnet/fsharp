@@ -134,7 +134,7 @@ type internal LexBuffer<'Char> =
     member SupportsFeature: LanguageFeature -> bool
 
     /// Logs a recoverable error if a language feature is unsupported, at the specified range.
-    member CheckLanguageFeatureErrorRecover: LanguageFeature -> range -> unit
+    member CheckLanguageFeatureAndRecover: LanguageFeature -> range -> unit
 
     /// Create a lex buffer suitable for Unicode lexing that reads characters from the given array.
     /// Important: does take ownership of the array.

@@ -132,7 +132,7 @@ module FSharpDependencyManager =
                 | Some "timeout", None -> raise (ArgumentException(SR.missingTimeoutValue ()))
                 | Some "timeout", value ->
                     match value with
-                    | Some v when v.GetType() = typeof<string> ->
+                    | Some v when Type.op_Equality (v.GetType(), typeof<string>) ->
                         let parsed, value = Int32.TryParse(v)
 
                         if parsed && value >= 0 then

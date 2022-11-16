@@ -52,7 +52,8 @@ val mkLexargs:
     resourceManager: LexResourceManager *
     ifdefStack: LexerIfdefStack *
     diagnosticsLogger: DiagnosticsLogger *
-    pathMap: PathMap ->
+    pathMap: PathMap *
+    applyLineDirectives: bool ->
         LexArgs
 
 val reusingLexbufForParsing: Lexbuf -> (unit -> 'a) -> 'a

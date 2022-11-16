@@ -11,19 +11,19 @@
     ],
     "configurations": [
         {
-            "name": "Launch FSI (Debug, .NET 6.0)",
+            "name": "Launch FSI (Debug, .NET 7.0)",
             "type": "coreclr",
             "request": "launch",
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
             // "preLaunchTask": "Build (Debug)",
             // If you have changed target frameworks, make sure to update the program p
-            "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net6.0/fsi.dll",
+            "program": "${workspaceFolder}/artifacts/bin/fsi/Debug/net7.0/fsi.dll",
             "cwd": "${workspaceFolder}/src",
             "console": "integratedTerminal", // This is the default to be able to run in Codespaces.
             "internalConsoleOptions": "neverOpen",
             "suppressJITOptimizations": true,
             "stopAtEntry": false,
-            "justMyCode": false,
+            "justMyCode": true,
             "enableStepFiltering": true,
             "symbolOptions": {
                 "searchMicrosoftSymbolServer": true,
@@ -36,13 +36,13 @@
             },
         },
         {
-            "name": "Launch FSC (Debug, .NET 6.0)",
+            "name": "Launch FSC (Debug, .NET 7.0)",
             "type": "coreclr",
             "request": "launch",
             // TODO: Shall we assume that it's already been built, or build it every time we debug?
             // "preLaunchTask": "Build (Debug)",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/artifacts/bin/fsc/Debug/net6.0/fsc.dll",
+            "program": "${workspaceFolder}/artifacts/bin/fsc/Debug/net7.0/fsc.dll",
             "args": [
                 "${input:argsPrompt}"
             ],
@@ -73,7 +73,7 @@
                     "enabled": true
                 }
             },
-            "justMyCode": false,
+            "justMyCode": true,
             "enableStepFiltering": false,
         }
     ]

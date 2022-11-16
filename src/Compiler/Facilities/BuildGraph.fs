@@ -182,6 +182,12 @@ type NodeCode private () =
 
             return results.ToArray()
         }
+    
+    static member Parallel (computations: NodeCode<'T> seq) =
+        computations
+        |> Seq.map (fun (Node x) -> x)
+        |> Async.Parallel
+        |> Node
 
 type private AgentMessage<'T> = GetValue of AsyncReplyChannel<Result<'T, Exception>> * callerCancellationToken: CancellationToken
 
@@ -331,7 +337,7 @@ type GraphNode<'T>(retryCompute: bool, computation: NodeCode<'T>) =
                             // occur, making sure we are under the protection of the 'try'.
                             // For example, NodeCode's 'try/finally' (TryFinally) uses async.TryFinally which does
                             // implicit cancellation checks even before the try is entered, as do the
-                            // de-sugaring of 'do!' and other CodeCode constructs.
+                            // de-sugaring of 'do!' and other NodeCode constructs.
                             let mutable taken = false
 
                             try

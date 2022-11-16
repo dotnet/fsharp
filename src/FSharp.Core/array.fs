@@ -17,7 +17,8 @@ open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 module Array =
 
     let inline checkNonNull argName arg =
-        if isNull arg then nullArg argName
+        if isNull arg then
+            nullArg argName
 
     let inline indexNotFound () =
         raise (KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
@@ -1601,7 +1602,9 @@ module Array =
 
         for i = 1 to array.Length - 1 do
             let curr = array.[i]
-            if curr < acc then acc <- curr
+
+            if curr < acc then
+                acc <- curr
 
         acc
 
@@ -1636,7 +1639,9 @@ module Array =
 
         for i = 1 to array.Length - 1 do
             let curr = array.[i]
-            if curr > acc then acc <- curr
+
+            if curr > acc then
+                acc <- curr
 
         acc
 

@@ -1,7 +1,7 @@
 
 E_LessThanDotOpenParen001.fsx(23,12,23,15): typecheck error FS0043: No overloads match for method 'op_PlusPlusPlus'.
 
-Known return type:  ^a
+Known return type: 'a
 
 Known type parameters: < (string -> int) , TestType<int,string> >
 

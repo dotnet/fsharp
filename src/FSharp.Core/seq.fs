@@ -214,7 +214,9 @@ module Internal =
                   member _.Current = box (get ())
 
                   member _.MoveNext() =
-                      if not started then started <- true
+                      if not started then
+                          started <- true
+
                       curr <- None
 
                       while (curr.IsNone && e.MoveNext()) do
@@ -244,7 +246,9 @@ module Internal =
 
                       member _.MoveNext() =
                           let rec next () =
-                              if not started then started <- true
+                              if not started then
+                                  started <- true
+
                               e.MoveNext() && (f e.Current || next ())
 
                           next ()
@@ -304,7 +308,8 @@ module Internal =
                     current <- (Unchecked.defaultof<_>) // cache node unprimed, initialised on demand.
 
                 let getCurrent () =
-                    if index = unstarted then notStarted ()
+                    if index = unstarted then
+                        notStarted ()
 
                     if index = completed then
                         alreadyFinished ()
@@ -507,7 +512,8 @@ module Internal =
 
             interface System.IDisposable with
                 member _.Dispose() =
-                    if not finished then disposeG g
+                    if not finished then
+                        disposeG g
 
         // Internal type, used to optimize Enumerator/Generator chains
         type LazyGeneratorWrappingEnumerator<'T>(e: IEnumerator<'T>) =
@@ -791,7 +797,9 @@ module Seq =
 
         while (Option.isNone res && e.MoveNext()) do
             let c = e.Current
-            if predicate c then res <- Some c
+
+            if predicate c then
+                res <- Some c
 
         res
 
@@ -1316,7 +1324,8 @@ module Seq =
             let hashSet = HashSet<'T>(HashIdentity.Structural<'T>)
 
             for v in source do
-                if hashSet.Add v then yield v
+                if hashSet.Add v then
+                    yield v
         }
 
     [<CompiledName("DistinctBy")>]
@@ -1484,7 +1493,9 @@ module Seq =
 
         while e.MoveNext() do
             let curr = e.Current
-            if curr < acc then acc <- curr
+
+            if curr < acc then
+                acc <- curr
 
         acc
 
@@ -1522,7 +1533,9 @@ module Seq =
 
         while e.MoveNext() do
             let curr = e.Current
-            if curr > acc then acc <- curr
+
+            if curr > acc then
+                acc <- curr
 
         acc
 
@@ -1593,8 +1606,10 @@ module Seq =
             let mutable ok = false
 
             while e.MoveNext() do
-                if (latest <- e.Current
-                    (ok || not (predicate latest))) then
+                if
+                    (latest <- e.Current
+                     (ok || not (predicate latest)))
+                then
                     ok <- true
                     yield latest
         }
@@ -1741,11 +1756,15 @@ module Seq =
             if e.MoveNext() then
                 let cached = HashSet(itemsToExclude, HashIdentity.Structural)
                 let next = e.Current
-                if cached.Add next then yield next
+
+                if cached.Add next then
+                    yield next
 
                 while e.MoveNext() do
                     let next = e.Current
-                    if cached.Add next then yield next
+
+                    if cached.Add next then
+                        yield next
         }
 
     [<CompiledName("ChunkBySize")>]
@@ -1794,7 +1813,9 @@ module Seq =
             let mutable i = 0
 
             for item in source do
-                if i <> index then yield item
+                if i <> index then
+                    yield item
+
                 i <- i + 1
 
             if i <= index then
@@ -1848,11 +1869,14 @@ module Seq =
             let mutable i = 0
 
             for item in source do
-                if i = index then yield value
+                if i = index then
+                    yield value
+
                 yield item
                 i <- i + 1
 
-            if i = index then yield value
+            if i = index then
+                yield value
 
             if i < index then
                 invalidArg "index" "index must be within bounds of the array"
@@ -1867,11 +1891,14 @@ module Seq =
             let mutable i = 0
 
             for item in source do
-                if i = index then yield! values
+                if i = index then
+                    yield! values
+
                 yield item
                 i <- i + 1
 
-            if i = index then yield! values // support inserting at the end
+            if i = index then
+                yield! values // support inserting at the end
 
             if i < index then
                 invalidArg "index" "index must be within bounds of the array"

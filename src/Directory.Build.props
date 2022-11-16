@@ -2,15 +2,6 @@
 
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
-  <!-- 
-    When developers load the FSharp.Compiler.Service solution we set FSHARPCORE_USE_PACKAGE to true if it hasn't already been set to a value.
-    This option ensures that building and testing uses the specified FSharp.Core nuget package instead of the local
-    FSharp.Core project.
-  -->
-  <PropertyGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">
-    <FSHARPCORE_USE_PACKAGE Condition="'$(SolutionName)' == 'FSharp.Compiler.Service'">true</FSHARPCORE_USE_PACKAGE>
-  </PropertyGroup>
-
   <PropertyGroup>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <UseStandardResourceNames>false</UseStandardResourceNames>

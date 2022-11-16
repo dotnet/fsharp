@@ -42,7 +42,7 @@ let internal identsAndRanges (input: ParsedInput) =
         | SynModuleDecl.Let _ -> failwith "Not implemented yet"
         | SynModuleDecl.Expr _ -> failwith "Not implemented yet"
         | SynModuleDecl.Exception _ -> failwith "Not implemented yet"
-        | SynModuleDecl.Open(SynOpenDeclTarget.ModuleOrNamespace (lid, range), _) -> [ identAndRange (longIdentToString lid) range ]
+        | SynModuleDecl.Open(SynOpenDeclTarget.ModuleOrNamespace (lid, range), _) -> [ identAndRange (longIdentToString lid.LongIdent) range ]
         | SynModuleDecl.Open(SynOpenDeclTarget.Type _, _) -> failwith "Not implemented yet"
         | SynModuleDecl.Attributes _ -> failwith "Not implemented yet"
         | SynModuleDecl.HashDirective _ -> failwith "Not implemented yet"
@@ -54,7 +54,7 @@ let internal identsAndRanges (input: ParsedInput) =
             (identAndRange (longIdentToString longIdent) (longIdent |> List.map (fun id -> id.idRange) |> List.reduce unionRanges)) :: xs
 
     match input with
-    | ParsedInput.ImplFile(ParsedImplFileInput(modules = modulesOrNamespaces)) ->
+    | ParsedInput.ImplFile(ParsedImplFileInput(contents = modulesOrNamespaces)) ->
          modulesOrNamespaces |> List.collect extractFromModuleOrNamespace
     | ParsedInput.SigFile _ -> []
 

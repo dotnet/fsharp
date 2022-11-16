@@ -10,7 +10,7 @@ open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
 open FSharp.Core.CompilerServices.StateMachineHelpers
 #endif
 
@@ -67,24 +67,6 @@ module internal PervasiveAutoOpens =
     /// We set the limit to be 80k to account for larger pointer sizes for when F# is running 64-bit.
     let LOH_SIZE_THRESHOLD_BYTES = 80_000
 
-    let runningOnMono =
-#if ENABLE_MONO_SUPPORT
-        // Officially supported way to detect if we are running on Mono.
-        // See http://www.mono-project.com/FAQ:_Technical
-        // "How can I detect if am running in Mono?" section
-        try
-            Type.GetType "Mono.Runtime" <> null
-        with _ ->
-            // Must be robust in the case that someone else has installed a handler into System.AppDomain.OnTypeResolveEvent
-            // that is not reliable.
-            // This is related to bug 5506--the issue is actually a bug in VSTypeResolutionService.EnsurePopulated which is
-            // called by OnTypeResolveEvent. The function throws a NullReferenceException. I'm working with that team to get
-            // their issue fixed but we need to be robust here anyway.
-            false
-#else
-        false
-#endif
-
     type String with
 
         member inline x.StartsWithOrdinal value =
@@ -122,7 +104,7 @@ module internal PervasiveAutoOpens =
                          t)
                     | Some t -> t
 
-                printf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
+                printf "  ilwrite: Cpu %4.1f (total)   %4.1f (delta) - %s\n" (t - first) (t - prev) descr
                 tPrev <- Some t
 
     let foldOn p f z x = f z (p x)
@@ -199,7 +181,8 @@ module Array =
             let mutable i = 0
 
             while eq && i < len do
-                if not (inp[i] === res[i]) then eq <- false
+                if not (inp[i] === res[i]) then
+                    eq <- false
 
                 i <- i + 1
 
@@ -627,7 +610,7 @@ module ResizeArray =
                     // * doing a block copy using `List.CopyTo(index, array, index, count)` (requires more copies to do the mapping)
                     // none are significantly better.
                     for i in 0 .. takeCount - 1 do
-                        holder[i] <- f items[i]
+                        holder[i] <- f items[startIndex + i]
 
                     yield holder
             |]
@@ -948,7 +931,7 @@ type CancellableBuilder() =
 
     member inline _.Bind(comp, [<InlineIfLambda>] k) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -958,7 +941,7 @@ type CancellableBuilder() =
 
     member inline _.BindReturn(comp, [<InlineIfLambda>] k) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -968,7 +951,7 @@ type CancellableBuilder() =
 
     member inline _.Combine(comp1, comp2) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -978,7 +961,7 @@ type CancellableBuilder() =
 
     member inline _.TryWith(comp, [<InlineIfLambda>] handler) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -999,7 +982,7 @@ type CancellableBuilder() =
 
     member inline _.Using(resource, [<InlineIfLambda>] comp) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
             let body = comp resource
@@ -1023,7 +1006,7 @@ type CancellableBuilder() =
 
     member inline _.TryFinally(comp, [<InlineIfLambda>] compensation) =
         Cancellable(fun ct ->
-#if !USE_SHIPPED_FSCORE
+#if !FSHARPCORE_USE_PACKAGE
             __debugPoint ""
 #endif
 
@@ -1082,9 +1065,11 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
     let table = new ConcurrentDictionary<'T, 'U>(keyComparer)
 
     member t.Apply x =
-        if (match canMemoize with
-            | None -> true
-            | Some f -> f x) then
+        if
+            (match canMemoize with
+             | None -> true
+             | Some f -> f x)
+        then
             match table.TryGetValue x with
             | true, res -> res
             | _ ->
@@ -1411,7 +1396,7 @@ module MapAutoOpens =
 
         static member Empty: Map<'Key, 'Value> = Map.empty
 
-#if USE_SHIPPED_FSCORE
+#if FSHARPCORE_USE_PACKAGE
         member x.Values = [ for KeyValue (_, v) in x -> v ]
 #endif
 
