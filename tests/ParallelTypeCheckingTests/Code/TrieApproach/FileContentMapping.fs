@@ -351,7 +351,7 @@ let visitSynExpr (e: SynExpr) : FileContentEntry list =
             | Some (t, e, _, _, _), None ->
                 visit e (fun nodes -> [ yield! visitSynType t; yield! nodes; yield! fieldNodes ] |> continuation)
             | None, Some (e, _) -> visit e (fun nodes -> nodes @ fieldNodes |> continuation)
-            | _ -> fieldNodes
+            | _ -> continuation fieldNodes
         | SynExpr.New (targetType = targetType; expr = expr) -> visit expr (fun nodes -> visitSynType targetType @ nodes |> continuation)
         | SynExpr.ObjExpr (objType, argOptions, _, bindings, members, extraImpls, _, _) ->
             [
@@ -684,7 +684,7 @@ module Tests =
     [<Test>]
     let ``Test a single file`` () =
         let fileName =
-            @"C:\Users\nojaf\Projects\main-fantomas\src\Fantomas.Core\CodeFormatter.fsi"
+            @"C:\Users\nojaf\Projects\main-fantomas\src\Fantomas.Core\Selection.fs"
 
         let ast = parseSourceCode (fileName, System.IO.File.ReadAllText(fileName))
         let contents = mkFileContent { Idx = 0; File = fileName; AST = ast }
