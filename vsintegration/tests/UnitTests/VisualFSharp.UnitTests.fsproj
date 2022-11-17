@@ -102,6 +102,21 @@
     <Compile Include="QuickInfoTests.fs">
       <Link>Editor\QuickInfoTests.fs</Link>
     </Compile>
+    <Compile Include="HintTestFramework.fs">
+      <Link>Editor\Hints\HintTestFramework.fs</Link>
+    </Compile>
+    <Compile Include="InlineParameterNameHintTests.fs">
+      <Link>Editor\Hints\InlineParameterNameHintTests.fs</Link>
+    </Compile>
+    <Compile Include="InlineTypeHintTests.fs">
+      <Link>Editor\Hints\InlineTypeHintTests.fs</Link>
+    </Compile>
+    <Compile Include="OptionParserTests.fs">
+      <Link>Editor\Hints\OptionParserTests.fs</Link>
+    </Compile>
+    <Compile Include="OverallHintExperienceTests.fs">
+      <Link>Editor\Hints\OverallHintExperienceTests.fs</Link>
+    </Compile>
     <Compile Include="GoToDefinitionServiceTests.fs">
       <Link>Editor\GoToDefinitionServiceTests.fs</Link>
     </Compile>

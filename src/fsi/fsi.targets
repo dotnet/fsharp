@@ -44,9 +44,6 @@
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\Compiler\FSharp.Compiler.Service.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
-
-    <!-- only used when '$(TargetFramework)' == 'net472' -->
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj" Condition="'$(TargetFramework)' == 'net472'" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">

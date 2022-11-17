@@ -5,11 +5,10 @@ namespace FSharp.Build
 open System
 open System.IO
 open Microsoft.Build.Framework
+open Microsoft.Build.Utilities
 
 type SubstituteText() =
-
-    let mutable _buildEngine: IBuildEngine MaybeNull = null
-    let mutable _hostObject: ITaskHost MaybeNull = null
+    inherit Task()
 
     let mutable copiedFiles = new ResizeArray<ITaskItem>()
     let mutable embeddedResources: ITaskItem[] = [||]
@@ -22,74 +21,65 @@ type SubstituteText() =
     [<Output>]
     member _.CopiedFiles = copiedFiles.ToArray()
 
-    interface ITask with
-        member _.BuildEngine
-            with get () = _buildEngine
-            and set (value) = _buildEngine <- value
+    override _.Execute() =
+        copiedFiles.Clear()
 
-        member _.HostObject
-            with get () = _hostObject
-            and set (value) = _hostObject <- value
+        if not (isNull embeddedResources) then
+            for item in embeddedResources do
+                // Update ITaskItem metadata to point to new location
+                let sourcePath = item.GetMetadata("FullPath")
 
-        member _.Execute() =
-            copiedFiles.Clear()
+                let pattern1 = item.GetMetadata("Pattern1")
+                let pattern2 = item.GetMetadata("Pattern2")
 
-            if not (isNull embeddedResources) then
-                for item in embeddedResources do
-                    // Update ITaskItem metadata to point to new location
-                    let sourcePath = item.GetMetadata("FullPath")
+                // Is there any replacement to do?
+                if not (String.IsNullOrWhiteSpace(pattern1) && String.IsNullOrWhiteSpace(pattern2)) then
+                    if not (String.IsNullOrWhiteSpace(sourcePath)) then
+                        try
+                            let getTargetPathFrom key =
+                                let md = item.GetMetadata(key)
+                                let path = Path.GetDirectoryName(md)
+                                let fileName = Path.GetFileName(md)
+                                let target = Path.Combine(path, @"..\resources", fileName)
+                                target
 
-                    let pattern1 = item.GetMetadata("Pattern1")
-                    let pattern2 = item.GetMetadata("Pattern2")
+                            // Copy from the location specified in Identity
+                            let sourcePath = item.GetMetadata("Identity")
 
-                    // Is there any replacement to do?
-                    if not (String.IsNullOrWhiteSpace(pattern1) && String.IsNullOrWhiteSpace(pattern2)) then
-                        if not (String.IsNullOrWhiteSpace(sourcePath)) then
-                            try
-                                let getTargetPathFrom key =
-                                    let md = item.GetMetadata(key)
-                                    let path = Path.GetDirectoryName(md)
-                                    let fileName = Path.GetFileName(md)
-                                    let target = Path.Combine(path, @"..\resources", fileName)
+                            // Copy to the location specified in TargetPath unless no TargetPath is provided, then use Identity
+                            let targetPath =
+                                let identityPath = getTargetPathFrom "Identity"
+                                let intermediateTargetPath = item.GetMetadata("IntermediateTargetPath")
+
+                                if not (String.IsNullOrWhiteSpace(intermediateTargetPath)) then
+                                    let fileName = Path.GetFileName(identityPath)
+                                    let target = Path.Combine(intermediateTargetPath, fileName)
                                     target
+                                else
+                                    identityPath
 
-                                // Copy from the location specified in Identity
-                                let sourcePath = item.GetMetadata("Identity")
+                            item.ItemSpec <- targetPath
 
-                                // Copy to the location specified in TargetPath unless no TargetPath is provided, then use Identity
-                                let targetPath =
-                                    let identityPath = getTargetPathFrom "Identity"
-                                    let intermediateTargetPath = item.GetMetadata("IntermediateTargetPath")
+                            // Transform file
+                            let mutable contents = File.ReadAllText(sourcePath)
 
-                                    if not (String.IsNullOrWhiteSpace(intermediateTargetPath)) then
-                                        let fileName = Path.GetFileName(identityPath)
-                                        let target = Path.Combine(intermediateTargetPath, fileName)
-                                        target
-                                    else
-                                        identityPath
+                            if not (String.IsNullOrWhiteSpace(pattern1)) then
+                                let replacement = item.GetMetadata("Replacement1")
+                                contents <- contents.Replace(pattern1, replacement)
 
-                                item.ItemSpec <- targetPath
+                            if not (String.IsNullOrWhiteSpace(pattern2)) then
+                                let replacement = item.GetMetadata("Replacement2")
+                                contents <- contents.Replace(pattern2, replacement)
 
-                                // Transform file
-                                let mutable contents = File.ReadAllText(sourcePath)
+                            let directory = Path.GetDirectoryName(targetPath)
 
-                                if not (String.IsNullOrWhiteSpace(pattern1)) then
-                                    let replacement = item.GetMetadata("Replacement1")
-                                    contents <- contents.Replace(pattern1, replacement)
+                            if not (Directory.Exists(directory)) then
+                                Directory.CreateDirectory(directory) |> ignore
 
-                                if not (String.IsNullOrWhiteSpace(pattern2)) then
-                                    let replacement = item.GetMetadata("Replacement2")
-                                    contents <- contents.Replace(pattern2, replacement)
+                            File.WriteAllText(targetPath, contents)
+                        with _ ->
+                            ()
 
-                                let directory = Path.GetDirectoryName(targetPath)
+                copiedFiles.Add(item)
 
-                                if not (Directory.Exists(directory)) then
-                                    Directory.CreateDirectory(directory) |> ignore
-
-                                File.WriteAllText(targetPath, contents)
-                            with _ ->
-                                ()
-
-                    copiedFiles.Add(item)
-
-            true
+        true

@@ -11,6 +11,7 @@
 module internal Sample.FSharp.Compiler.Interactive.Main
 
 open System
+open System.Diagnostics
 open System.Globalization
 open System.IO
 open System.Reflection
@@ -22,6 +23,8 @@ open System.Windows.Forms
 
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL
+open FSharp.Compiler.Interactive
+open FSharp.Compiler.Interactive.CtrlBreakHandlers
 open FSharp.Compiler.Interactive.Shell
 open FSharp.Compiler.Interactive.Shell.Settings
 open FSharp.Compiler.CodeAnalysis
@@ -147,9 +150,9 @@ let internal TrySetUnhandledExceptionMode () =
 
 /// Starts the remoting server to handle interrupt reuests from a host tool.
 let StartServer (fsiSession: FsiEvaluationSession) (fsiServerName) =
-#if FSI_SERVER
     let server =
-        { new Server.Shared.FSharpInteractiveServer() with
+
+        { new CtrlBreakService(fsiServerName) with
             member _.Interrupt() =
                 //printf "FSI-SERVER: received CTRL-C request...\n"
                 try
@@ -160,10 +163,7 @@ let StartServer (fsiSession: FsiEvaluationSession) (fsiServerName) =
                     ()
         }
 
-    Server.Shared.FSharpInteractiveServer.StartServer(fsiServerName, server)
-#else
-    ignore (fsiSession, fsiServerName)
-#endif
+    server.Run()
 
 //----------------------------------------------------------------------------
 // GUI runCodeOnMainThread

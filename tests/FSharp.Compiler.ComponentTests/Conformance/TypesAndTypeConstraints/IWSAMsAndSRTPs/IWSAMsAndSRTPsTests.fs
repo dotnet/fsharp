@@ -19,6 +19,38 @@ let setupCompilation compilation =
     |> withReferences [typesModule]
 
 
+[<Fact>]
+let ``Srtp call Zero property returns valid result`` () =
+    Fsx """
+let inline zero<'T when 'T: (static member Zero: 'T)> = 'T.Zero
+let result = zero<int>
+if result <> 0 then failwith $"Something's wrong: {result}"
+    """
+    |> runFsi
+    |> shouldSucceed
+
+[<Fact>]
+let ``Srtp call to custom property returns valid result`` () =
+    FSharp """
+module Foo
+type Foo = 
+    static member Bar = 1
+
+type HasBar<'T when 'T: (static member Bar: int)> = 'T
+
+let inline bar<'T when HasBar<'T>> =
+    'T.Bar
+
+[<EntryPoint>]
+let main _ =
+    let result = bar<Foo>
+    if result <> 0 then
+        failwith $"Unexpected result: {result}"
+    0
+    """
+    |> asExe
+    |> compileAndRun
+
 #if !NETCOREAPP
 [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
 #else
@@ -775,7 +807,11 @@ module ``Active patterns`` =
 
 module ``Suppression of System Numerics interfaces on unitized types`` =
 
-    [<Fact(Skip = "Solution needs to be updated to .NET 7")>]
+#if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+#else
+    [<Fact>]
+#endif
     let Baseline () =
         Fsx """
             open System.Numerics
@@ -785,16 +821,19 @@ module ``Suppression of System Numerics interfaces on unitized types`` =
         |> compile
         |> shouldSucceed
 
-    [<Theory(Skip = "Solution needs to be updated to .NET 7")>]
+#if !NETCOREAPP
+    [<Theory(Skip = "IWSAMs are not supported by NET472.")>]
+#else
+    [<Theory>]
     [<InlineData("IAdditionOperators", 3)>]
     [<InlineData("IAdditiveIdentity", 2)>]
     [<InlineData("IBinaryFloatingPointIeee754", 1)>]
     [<InlineData("IBinaryNumber", 1)>]
     [<InlineData("IBitwiseOperators", 3)>]
-    [<InlineData("IComparisonOperators", 2)>]
+    [<InlineData("IComparisonOperators", 3)>]
     [<InlineData("IDecrementOperators", 1)>]
     [<InlineData("IDivisionOperators", 3)>]
-    [<InlineData("IEqualityOperators", 2)>]
+    [<InlineData("IEqualityOperators", 3)>]
     [<InlineData("IExponentialFunctions", 1)>]
     [<InlineData("IFloatingPoint", 1)>]
     [<InlineData("IFloatingPointIeee754", 1)>]
@@ -814,6 +853,7 @@ module ``Suppression of System Numerics interfaces on unitized types`` =
     [<InlineData("ITrigonometricFunctions", 1)>]
     [<InlineData("IUnaryNegationOperators", 2)>]
     [<InlineData("IUnaryPlusOperators", 2)>]
+#endif
     let ``Unitized type shouldn't be compatible with System.Numerics.I*`` name paramCount =
         let typeParams = Seq.replicate paramCount "'T" |> String.concat ","
         let genericType = $"{name}<{typeParams}>"

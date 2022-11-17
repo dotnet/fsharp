@@ -13,7 +13,7 @@
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
-    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);USE_SHIPPED_FSCORE</DefineConstants>
+    <DefineConstants Condition="'$(FSHARPCORE_USE_PACKAGE)' == 'true'">$(DefineConstants);FSHARPCORE_USE_PACKAGE</DefineConstants>
     <OtherFlags>$(OtherFlags) --extraoptimizationloops:1</OtherFlags>
     <!-- 1182: Unused variables -->
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
@@ -69,7 +69,6 @@
     <InternalsVisibleTo Include="fsi" />
     <InternalsVisibleTo Include="fsiAnyCpu" />
     <InternalsVisibleTo Include="fsiArm64" />
-    <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
     <InternalsVisibleTo Include="FSharp.Compiler.UnitTests" />
@@ -456,6 +455,8 @@
     <Compile Include="Service\ServiceStructure.fs" />
     <Compile Include="Service\ServiceAnalysis.fsi" />
     <Compile Include="Service\ServiceAnalysis.fs" />
+    <Compile Include="Interactive\FSharpInteractiveServer.fsi" />
+    <Compile Include="Interactive\FSharpInteractiveServer.fs" />
     <Compile Include="Interactive\ControlledExecution.fs" />
     <Compile Include="Interactive\fsi.fsi" />
     <Compile Include="Interactive\fsi.fs" />

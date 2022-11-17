@@ -361,3 +361,15 @@ let tester2: int Group = []
                         |> should equal expectedTypeFormat
                 | _ -> Assert.Fail (sprintf "Couldn't get member: %s" entityName)
             )
+
+    [<Test>]
+    let ``FsharpType.Format default to arrayNd shorthands for multidimensional arrays`` ([<Values(2,6,32)>]rank) = 
+            let commas = System.String(',', rank - 1)
+            let _, checkResults = getParseAndCheckResults $""" let myArr : int[{commas}] = Unchecked.defaultOf<_>"""  
+            let symbolUse = findSymbolUseByName "myArr" checkResults
+            match symbolUse.Symbol  with
+            | :? FSharpMemberOrFunctionOrValue as v ->
+                v.FullType.Format symbolUse.DisplayContext
+                |> shouldEqual $"int array{rank}d"
+
+            | other -> Assert.Fail(sprintf "myArr was supposed to be a value, but is %A"  other)
