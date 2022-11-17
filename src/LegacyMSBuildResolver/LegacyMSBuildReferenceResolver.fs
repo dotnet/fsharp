@@ -16,6 +16,12 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
         member this.GetPropertyValue(propName) =
             this.GetType().GetProperty(propName, BindingFlags.Public).GetValue(this, null)
 
+    /// Match on the nullness of an argument.
+    let inline (|Null|NonNull|) (x: 'T) : Choice<unit, 'T> =
+        match x with
+        | null -> Null
+        | v -> NonNull v
+
     /// Get the Reference Assemblies directory for the .NET Framework on Window.
     let DotNetFrameworkReferenceAssembliesRootDirectory = 
         // ProgramFilesX86 is correct for both x86 and x64 architectures 
@@ -184,15 +190,15 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
         | AssemblyFolders ->
             lineIfExists resolvedPath
             + lineIfExists fusionName
-            + FSComp.SR.assemblyResolutionFoundByAssemblyFoldersKey()
+            + LegacyResolver.SR.assemblyResolutionFoundByAssemblyFoldersKey()
         | AssemblyFoldersEx -> 
             lineIfExists resolvedPath
             + lineIfExists fusionName
-            + FSComp.SR.assemblyResolutionFoundByAssemblyFoldersExKey()
+            + LegacyResolver.SR.assemblyResolutionFoundByAssemblyFoldersExKey()
         | TargetFrameworkDirectory -> 
             lineIfExists resolvedPath
             + lineIfExists fusionName
-            + FSComp.SR.assemblyResolutionNetFramework()
+            + LegacyResolver.SR.assemblyResolutionNetFramework()
         | Unknown ->
             // Unknown when resolved by plain directory search without help from MSBuild resolver.
             lineIfExists resolvedPath
@@ -201,7 +207,7 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
             lineIfExists fusionName
         | GlobalAssemblyCache -> 
             lineIfExists fusionName
-            + lineIfExists (FSComp.SR.assemblyResolutionGAC())
+            + lineIfExists (LegacyResolver.SR.assemblyResolutionGAC())
             + lineIfExists redist
         | Path _ ->
             lineIfExists resolvedPath
@@ -315,6 +321,8 @@ module FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
                   prepareToolTip = TooltipForResolvedFrom(resolvedFrom, fusionName, redist)
                   baggage = p.GetMetadata("Baggage") } |]
 
+        resolvedFiles 
+        |> Array.iter(fun f -> printf $"XXXX:  {f.itemSpec}")
         resolvedFiles
 
     let getResolver () =

@@ -5,7 +5,6 @@ module internal FSharp.Compiler.CodeAnalysis.SimulatedMSBuildReferenceResolver
     open System
     open System.IO
     open System.Reflection
-    open Microsoft.Build.Utilities
     open Internal.Utilities.Library
     open FSharp.Compiler.IO
 
@@ -51,29 +50,14 @@ module internal FSharp.Compiler.CodeAnalysis.SimulatedMSBuildReferenceResolver
 
         /// Get the path to the .NET Framework implementation assemblies by using ToolLocationHelper.GetPathToDotNetFramework
         /// This is only used to specify the "last resort" path for assembly resolution.
-        let GetPathToDotNetFrameworkImlpementationAssemblies v =
-            let v =
-                match v with
-                | Net45 -> Some TargetDotNetFrameworkVersion.Version45
-                | Net451 -> Some TargetDotNetFrameworkVersion.Version451
-                | Net452 -> Some TargetDotNetFrameworkVersion.Version452
-                | Net46 -> Some TargetDotNetFrameworkVersion.Version46
-                | Net461 -> Some TargetDotNetFrameworkVersion.Version461
-                | Net462 -> Some TargetDotNetFrameworkVersion.Version462
-                | Net47 -> Some TargetDotNetFrameworkVersion.Version47
-                | Net471 -> Some TargetDotNetFrameworkVersion.Version471
-                | Net472 -> Some TargetDotNetFrameworkVersion.Version472
-                | Net48 -> Some TargetDotNetFrameworkVersion.Version48
-                | _ ->
-                    assert false
-                    None
-
-            match v with
-            | Some v ->
-                match ToolLocationHelper.GetPathToDotNetFramework v with
+        let GetPathToDotNetFrameworkImlpementationAssemblies _ =
+            let isDesktop = typeof<int>.Assembly.GetName().Name = "mscorlib"
+            if isDesktop then
+                match System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory() with
                 | null -> []
                 | x -> [ x ]
-            | _ -> []
+            else
+                []
 
         let GetPathToDotNetFrameworkReferenceAssemblies version =
             ignore version
@@ -91,7 +75,8 @@ module internal FSharp.Compiler.CodeAnalysis.SimulatedMSBuildReferenceResolver
 
                 match fwOpt with
                 | Some fw -> fw
-                | None -> "v4.5"
+                | None -> Net45
+
 
             member _.DotNetFrameworkReferenceAssembliesRootDirectory =
                 if Environment.OSVersion.Platform = PlatformID.Win32NT then
