@@ -85,12 +85,21 @@ let rec processStateEntry (queryTrie: QueryTrie) (state: FileContentQueryState) 
         ||> Seq.fold (fun acc openNS -> processOpenPath queryTrie [ yield! openNS; yield! path ] acc)
 
     | FileContentEntry.PrefixedIdentifier path ->
-        // process the name was if it were a FQN
-        let stateAfterFullIdentifier = processIdentifier queryTrie path state
+        match path with
+        | [] ->
+            // should not be possible though
+            state
+        | _ ->
+            // path could consist out of multiple segments
+            (state, [| 1 .. path.Length |])
+            ||> Seq.fold (fun state takeParts ->
+                let path = List.take takeParts path
+                // process the name was if it were a FQN
+                let stateAfterFullIdentifier = processIdentifier queryTrie path state
 
-        // Process the name in combination with the existing open namespaces
-        (stateAfterFullIdentifier, state.OpenNamespaces)
-        ||> Seq.fold (fun acc openNS -> processIdentifier queryTrie [ yield! openNS; yield! path ] acc)
+                // Process the name in combination with the existing open namespaces
+                (stateAfterFullIdentifier, state.OpenNamespaces)
+                ||> Seq.fold (fun acc openNS -> processIdentifier queryTrie [ yield! openNS; yield! path ] acc))
 
     | FileContentEntry.NestedModule (nestedContent = nestedContent) ->
         // We don't want our current state to be affect by any open statements in the nested module
@@ -139,7 +148,7 @@ let mkGraph (files: FileWithAST array) =
             let result =
                 Seq.fold (processStateEntry queryTrie) (FileContentQueryState.Create file.File knownFiles) fileContent
 
-            file.File, Set.toArray result.FoundDependencies)
+            file, Set.toArray result.FoundDependencies)
         files
 
 // =============================================================================================================
@@ -164,9 +173,9 @@ let mkGraphAndReport files =
         let depString = String.concat "\n    " deps
 
         if deps.Length = 0 then
-            printfn $"%s{fileName}: []"
+            printfn $"%s{fileName.File}: []"
         else
-            printfn $"%s{fileName}:\n    {depString}"
+            printfn $"%s{fileName.File}:\n    {depString}"
 
 [<Test>]
 let ``Fantomas.Core for realzies`` () =
@@ -525,9 +534,6 @@ let ``FCS for debugging`` () =
             })
 
     let contents =
-        Array.map
-            (fun (file: FileWithAST) ->
-                FileContentMapping.mkFileContent file)
-            filesWithAST
+        Array.map (fun (file: FileWithAST) -> FileContentMapping.mkFileContent file) filesWithAST
 
     ignore contents
