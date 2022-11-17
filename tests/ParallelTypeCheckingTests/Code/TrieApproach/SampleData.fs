@@ -1,150 +1,27 @@
-﻿module ParallelTypeCheckingTests.Code.TrieApproach
+﻿module ParallelTypeCheckingTests.Code.TrieApproach.SampleData
 
 open System.Collections.Generic
 open NUnit.Framework
+open ParallelTypeCheckingTests.Code.TrieApproach.DependencyResolution
 
-// This is pseudo code of how we could restructure the trie code
-// My main benefit is that you can easily visually inspect if an identifier will match something in the trie
+let dictionary<'key, 'value when 'key: equality> (entries: ('key * 'value) seq) =
+    entries |> Seq.map (fun (k, v) -> KeyValuePair(k, v)) |> Dictionary
 
-type File = string
-type Files = Set<File>
-type ModuleSegment = string
-
-/// There is a subtle difference a module and namespace.
-/// A namespace does not necessarily expose a set of dependent files.
-/// Only when the namespace exposes types that could later be inferred.
-/// Children of a namespace don't automatically depend on each other for that reason
-type TrieNodeInfo =
-    | Root
-    | Module of segment: string * file: File
-    | Namespace of segment: string * filesThatExposeTypes: Files
-
-    member x.Segment =
-        match x with
-        | Root -> failwith "Root has no segment"
-        | Module (segment = segment)
-        | Namespace (segment = segment) -> segment
-
-    member x.Files: Files =
-        match x with
-        | Root -> failwith "Root has no files"
-        | Module (file = file) -> Set.singleton file
-        | Namespace (filesThatExposeTypes = files) -> set files
-
-type TrieNode =
-    {
-        Current: TrieNodeInfo
-        Children: IDictionary<ModuleSegment, TrieNode>
-    }
-
-    member x.Files = x.Current.Files
-
-type FileContentEntry =
-    /// Any toplevel namespace a file might have.
-    /// In case a file has `module X.Y.Z`, then `X.Y` is considered to be the toplevel namespace
-    | TopLevelNamespace of path: ModuleSegment list * content: FileContentEntry list
-    /// The `open X.Y.Z` syntax.
-    | OpenStatement of path: ModuleSegment list
-    /// Any identifier that has more than one piece (LongIdent or SynLongIdent) in it.
-    /// The last part of the identifier should not be included.
-    | PrefixedIdentifier of path: ModuleSegment list
-    /// Being explicit about nested modules allows for easier reasoning what namespaces (paths) are open.
-    /// We can scope an `OpenStatement` to the everything that is happening inside the nested module.
-    | NestedModule of name: string * nestedContent: FileContentEntry list
-
-type FileContent =
-    {
-        Name: File
-        Idx: int
-        Content: FileContentEntry array
-    }
-
-type FileContentQueryState =
-    {
-        OpenNamespaces: Set<ModuleSegment list>
-        FoundDependencies: Set<File>
-        CurrentFile: File
-        KnownFiles: Files
-    }
-
-    static member Create (file: File) (knownFiles: Files) =
-        {
-            OpenNamespaces = Set.empty
-            FoundDependencies = Set.empty
-            CurrentFile = file
-            KnownFiles = knownFiles
-        }
-
-    member x.AddDependencies(files: Files) : FileContentQueryState =
-        let files = Set.filter x.KnownFiles.Contains files |> Set.union x.FoundDependencies
-        { x with FoundDependencies = files }
-
-    member x.AddOpenNamespace(path: ModuleSegment list) =
-        { x with
-            OpenNamespaces = Set.add path x.OpenNamespaces
-        }
-
-    member x.AddDependenciesAndOpenNamespace(files: Files, path: ModuleSegment list) =
-        let foundDependencies =
-            Set.filter x.KnownFiles.Contains files |> Set.union x.FoundDependencies
-
-        { x with
-            FoundDependencies = foundDependencies
-            OpenNamespaces = Set.add path x.OpenNamespaces
-        }
-
-[<RequireQualifiedAccess>]
-type QueryTrieNodeResult =
-    /// No node was found for the path in the trie
-    | NodeDoesNotExist
-    /// A node was found but it yielded no file links
-    | NodeDoesNotExposeData
-    /// A node was found with one or more file links
-    | NodeExposesData of Files
-
-// This code just looks for a path in the trie
-// It could be cached and is easy to reason about.
-let queryTrie (trie: TrieNode) (path: ModuleSegment list) : QueryTrieNodeResult =
-    let rec visit (currentNode: TrieNode) (path: ModuleSegment list) =
-        match path with
-        | [] -> failwith "path should not be empty"
-        | [ lastNodeFromPath ] ->
-            let childResults =
-                currentNode.Children
-                |> Seq.tryFind (fun (KeyValue (segment, _childNode)) -> segment = lastNodeFromPath)
-
-            match childResults with
-            | None -> QueryTrieNodeResult.NodeDoesNotExist
-            | Some (KeyValue (_, childNode)) ->
-                if Set.isEmpty childNode.Files then
-                    QueryTrieNodeResult.NodeDoesNotExposeData
-                else
-                    QueryTrieNodeResult.NodeExposesData(childNode.Files)
-        | currentPath :: restPath ->
-            let childResults =
-                currentNode.Children
-                |> Seq.tryFind (fun (KeyValue (segment, _childNode)) -> segment = currentPath)
-
-            match childResults with
-            | None -> QueryTrieNodeResult.NodeDoesNotExist
-            | Some (KeyValue (_, childNode)) -> visit childNode restPath
-
-    visit trie path
-
-let noChildren = dict [||]
+let noChildren = Dictionary(0)
+let emptyHS () = HashSet(0)
 
 // This should be constructed from the AST
 let fantomasCoreTrie: TrieNode =
     {
         Current = TrieNodeInfo.Root
         Children =
-            dict
+            dictionary
                 [|
                     "System",
                     {
-                        Current = TrieNodeInfo.Namespace("System", Set.empty)
+                        Current = TrieNodeInfo.Namespace("System", emptyHS ())
                         Children =
-                            dict
+                            dictionary
                                 [|
                                     "AssemblyVersionInformation",
                                     {
@@ -155,15 +32,15 @@ let fantomasCoreTrie: TrieNode =
                     }
                     "Fantomas",
                     {
-                        Current = TrieNodeInfo.Namespace("Fantomas", Set.empty)
+                        Current = TrieNodeInfo.Namespace("Fantomas", emptyHS ())
                         Children =
-                            dict
+                            dictionary
                                 [|
                                     "Core",
                                     {
-                                        Current = TrieNodeInfo.Namespace("Core", Set.empty)
+                                        Current = TrieNodeInfo.Namespace("Core", emptyHS ())
                                         Children =
-                                            dict
+                                            dictionary
                                                 [|
                                                     "ISourceTextExtensions",
                                                     {
@@ -182,7 +59,7 @@ let fantomasCoreTrie: TrieNode =
                                                     }
                                                     "AstExtensions",
                                                     {
-                                                        Current = TrieNodeInfo.Module("AstExtensions", "AstExtensions.fs")
+                                                        Current = TrieNodeInfo.Module("AstExtensions", "AstExtensions.fsi")
                                                         Children = noChildren
                                                     }
                                                     "TriviaTypes",
@@ -844,121 +721,22 @@ let files =
         }
     |]
 
-// Now how to detect the deps between files?
-// Process the content of each file using some state
-
-// Helper function to process a open statement
-// The statement could link to files and/or should be tracked as an open namespace
-let processOpenPath (path: ModuleSegment list) (state: FileContentQueryState) : FileContentQueryState =
-    let queryResult = queryTrie fantomasCoreTrie path
-
-    match queryResult with
-    | QueryTrieNodeResult.NodeDoesNotExist -> state
-    | QueryTrieNodeResult.NodeDoesNotExposeData -> state.AddOpenNamespace path
-    | QueryTrieNodeResult.NodeExposesData files -> state.AddDependenciesAndOpenNamespace(files, path)
-
-// Helper function to process an identifier
-let processIdentifier (path: ModuleSegment list) (state: FileContentQueryState) : FileContentQueryState =
-    let queryResult = queryTrie fantomasCoreTrie path
-
-    match queryResult with
-    | QueryTrieNodeResult.NodeDoesNotExist -> state
-    | QueryTrieNodeResult.NodeDoesNotExposeData -> failwith "This identifier cannot be part of a node that doesn't expose data!"
-    | QueryTrieNodeResult.NodeExposesData files -> state.AddDependencies files
-
-// Typically used to folder FileContentEntry items over a FileContentQueryState
-let rec processStateEntry (state: FileContentQueryState) (entry: FileContentEntry) : FileContentQueryState =
-    match entry with
-    | FileContentEntry.TopLevelNamespace (topLevelPath, content) ->
-        let state =
-            match topLevelPath with
-            | [] -> state
-            | _ -> state.AddOpenNamespace topLevelPath
-
-        List.fold processStateEntry state content
-
-    | FileContentEntry.OpenStatement path ->
-        // An open statement can directly reference file or be a partial open statement
-        // Both cases need to be processed.
-        let stateAfterFullOpenPath = processOpenPath path state
-
-        // Any existing open statement could be extended with the current path (if that node where to exists in the trie)
-        // The extended path could add a new link (in case of a module or namespace with types)
-        // It might also not add anything at all (in case it the extended path is still a partial one)
-        (stateAfterFullOpenPath, state.OpenNamespaces)
-        ||> Seq.fold (fun acc openNS -> processOpenPath [ yield! openNS; yield! path ] acc)
-
-    | FileContentEntry.PrefixedIdentifier path ->
-        // process the name was if it were a FQN
-        let stateAfterFullIdentifier = processIdentifier path state
-
-        // Process the name in combination with the existing open namespaces
-        (stateAfterFullIdentifier, state.OpenNamespaces)
-        ||> Seq.fold (fun acc openNS -> processIdentifier [ yield! openNS; yield! path ] acc)
-
-    | FileContentEntry.NestedModule (nestedContent = nestedContent) ->
-        // We don't want our current state to be affect by any open statements in the nested module
-        let nestedState = List.fold processStateEntry state nestedContent
-        // Afterward we are only interested in the found dependencies in the nested module
-        let foundDependencies =
-            Set.union state.FoundDependencies nestedState.FoundDependencies
-
-        { state with
-            FoundDependencies = foundDependencies
-        }
-
-let getFileNameBefore idx =
-    files.[0 .. (idx - 1)] |> Array.map (fun f -> f.Name) |> Set.ofArray
-
-let mkGraph files =
-    files
-    |> Array.map (fun (file: FileContent) ->
-        let knownFiles = getFileNameBefore file.Idx
-
-        let result =
-            Array.fold processStateEntry (FileContentQueryState.Create file.Name knownFiles) file.Content
-
-        file.Name, Set.toArray result.FoundDependencies)
-
 [<Test>]
 let ``Full project simulation`` () =
-    let graph = mkGraph files
+    let graph =
+        files
+        |> Array.map (fun fileContent ->
+            let knownFiles =
+                files.[0 .. (fileContent.Idx - 1)] |> Array.map (fun f -> f.Name) |> set
+
+            let result =
+                Seq.fold (processStateEntry fantomasCoreTrie) (FileContentQueryState.Create fileContent.Name knownFiles) fileContent.Content
+
+            fileContent.Name, Set.toArray result.FoundDependencies)
 
     for fileName, deps in graph do
         let depString = String.concat ", " deps
         printfn $"%s{fileName}: [{depString}]"
-
-    ()
-
-[<Test>]
-let ``SourceParser.fs simulation`` () =
-    let fileName = "SourceParser.fs"
-    let file = Array.find (fun (fc: FileContent) -> fc.Name = fileName) files
-    let knownFiles = getFileNameBefore file.Idx
-
-    let result =
-        Array.fold processStateEntry (FileContentQueryState.Create file.Name knownFiles) file.Content
-
-    let deps = Seq.sort result.FoundDependencies |> Seq.toList
-
-    match deps with
-    | [ "AstExtensions.fs"; "RangeHelpers.fs"; "TriviaTypes.fs"; "Utils.fs" ] -> Assert.Pass()
-    | deps -> Assert.Fail $"Unexpected deps for {fileName}, got %A{deps}"
-
-[<Test>]
-let ``AstExtensions.fs simulation`` () =
-    let fileName = "AstExtensions.fs"
-    let file = Array.find (fun (fc: FileContent) -> fc.Name = fileName) files
-    let knownFiles = getFileNameBefore file.Idx
-
-    let result =
-        Array.fold processStateEntry (FileContentQueryState.Create file.Name knownFiles) file.Content
-
-    let deps = Seq.sort result.FoundDependencies |> Seq.toList
-
-    match deps with
-    | [ "RangeHelpers.fs" ] -> Assert.Pass()
-    | deps -> Assert.Fail $"Unexpected deps for {fileName}, got %A{deps}"
 
 [<Test>]
 let ``Query non existing node in trie`` () =
@@ -994,11 +772,23 @@ let ``ProcessOpenStatement full path match`` () =
         Array.find (fun (f: FileContent) -> f.Name = "SourceParser.fs") files
 
     let state =
-        FileContentQueryState.Create sourceParser.Name (getFileNameBefore sourceParser.Idx)
+        FileContentQueryState.Create
+            sourceParser.Name
+            (set
+                [|
+                    "AssemblyInfo.fs"
+                    "ISourceTextExtensions.fs"
+                    "RangeHelpers.fs"
+                    "AstExtensions.fsi"
+                    "TriviaTypes.fs"
+                    "Utils.fs"
+                |])
 
-    let result = processOpenPath [ "Fantomas"; "Core"; "AstExtensions" ] state
+    let result =
+        processOpenPath fantomasCoreTrie [ "Fantomas"; "Core"; "AstExtensions" ] state
+
     let dep = Seq.exactlyOne result.FoundDependencies
-    Assert.AreEqual("AstExtensions.fs", dep)
+    Assert.AreEqual("AstExtensions.fsi", dep)
 
 #if INTERACTIVE
 open System.Text.RegularExpressions
