@@ -1,6 +1,6 @@
 # The F# compiler, F# core library, and F# editor tools
 [![Build Status](https://dev.azure.com/dnceng-public/public/_apis/build/status/dotnet/fsharp/fsharp-ci?branchName=main)](https://dev.azure.com/dnceng-public/public/_build/latest?definitionId=90&branchName=main)
-[![Help Wanted](https://img.shields.io/github/issues/dotnet/fsharp/help%20wanted?style=flat-square&color=%232EA043&label=help%20wanted)](https://github.com/dotnet/runtime/labels/help%20wanted)
+[![Help Wanted](https://img.shields.io/github/issues/dotnet/fsharp/help%20wanted?style=flat-square&color=%232EA043&label=help%20wanted)](https://github.com/dotnet/fsharp/labels/help%20wanted)
 
 
 You're invited to contribute to future releases of the F# compiler, core library, and tools. Development of this repository can be done on any OS supported by [.NET](https://dotnet.microsoft.com/).
