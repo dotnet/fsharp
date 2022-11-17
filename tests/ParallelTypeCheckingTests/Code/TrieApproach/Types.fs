@@ -105,3 +105,5 @@ type QueryTrieNodeResult =
     | NodeDoesNotExposeData
     /// A node was found with one or more file links
     | NodeExposesData of Files
+
+type QueryTrie = ModuleSegment list -> QueryTrieNodeResult

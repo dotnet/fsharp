@@ -34,13 +34,16 @@ let queryTrie (trie: TrieNode) (path: ModuleSegment list) : QueryTrieNodeResult 
 
     visit trie path
 
+let queryTrieMemoized (trie: TrieNode) : QueryTrie =
+    Internal.Utilities.Library.Tables.memoize (queryTrie trie)
+
 // Now how to detect the deps between files?
 // Process the content of each file using some state
 
 // Helper function to process a open statement
 // The statement could link to files and/or should be tracked as an open namespace
-let processOpenPath (trie: TrieNode) (path: ModuleSegment list) (state: FileContentQueryState) : FileContentQueryState =
-    let queryResult = queryTrie trie path
+let processOpenPath (queryTrie: QueryTrie) (path: ModuleSegment list) (state: FileContentQueryState) : FileContentQueryState =
+    let queryResult = queryTrie path
 
     match queryResult with
     | QueryTrieNodeResult.NodeDoesNotExist -> state
@@ -48,8 +51,8 @@ let processOpenPath (trie: TrieNode) (path: ModuleSegment list) (state: FileCont
     | QueryTrieNodeResult.NodeExposesData files -> state.AddDependenciesAndOpenNamespace(files, path)
 
 // Helper function to process an identifier
-let processIdentifier (trie: TrieNode) (path: ModuleSegment list) (state: FileContentQueryState) : FileContentQueryState =
-    let queryResult = queryTrie trie path
+let processIdentifier (queryTrie: QueryTrie) (path: ModuleSegment list) (state: FileContentQueryState) : FileContentQueryState =
+    let queryResult = queryTrie path
 
     match queryResult with
     | QueryTrieNodeResult.NodeDoesNotExist -> state
@@ -60,38 +63,38 @@ let processIdentifier (trie: TrieNode) (path: ModuleSegment list) (state: FileCo
     | QueryTrieNodeResult.NodeExposesData files -> state.AddDependencies files
 
 // Typically used to folder FileContentEntry items over a FileContentQueryState
-let rec processStateEntry (trie: TrieNode) (state: FileContentQueryState) (entry: FileContentEntry) : FileContentQueryState =
+let rec processStateEntry (queryTrie: QueryTrie) (state: FileContentQueryState) (entry: FileContentEntry) : FileContentQueryState =
     match entry with
     | FileContentEntry.TopLevelNamespace (topLevelPath, content) ->
         let state =
             match topLevelPath with
             | [] -> state
-            | _ -> processOpenPath trie topLevelPath state
+            | _ -> processOpenPath queryTrie topLevelPath state
 
-        List.fold (processStateEntry trie) state content
+        List.fold (processStateEntry queryTrie) state content
 
     | FileContentEntry.OpenStatement path ->
         // An open statement can directly reference file or be a partial open statement
         // Both cases need to be processed.
-        let stateAfterFullOpenPath = processOpenPath trie path state
+        let stateAfterFullOpenPath = processOpenPath queryTrie path state
 
         // Any existing open statement could be extended with the current path (if that node where to exists in the trie)
         // The extended path could add a new link (in case of a module or namespace with types)
         // It might also not add anything at all (in case it the extended path is still a partial one)
         (stateAfterFullOpenPath, state.OpenNamespaces)
-        ||> Seq.fold (fun acc openNS -> processOpenPath trie [ yield! openNS; yield! path ] acc)
+        ||> Seq.fold (fun acc openNS -> processOpenPath queryTrie [ yield! openNS; yield! path ] acc)
 
     | FileContentEntry.PrefixedIdentifier path ->
         // process the name was if it were a FQN
-        let stateAfterFullIdentifier = processIdentifier trie path state
+        let stateAfterFullIdentifier = processIdentifier queryTrie path state
 
         // Process the name in combination with the existing open namespaces
         (stateAfterFullIdentifier, state.OpenNamespaces)
-        ||> Seq.fold (fun acc openNS -> processIdentifier trie [ yield! openNS; yield! path ] acc)
+        ||> Seq.fold (fun acc openNS -> processIdentifier queryTrie [ yield! openNS; yield! path ] acc)
 
     | FileContentEntry.NestedModule (nestedContent = nestedContent) ->
         // We don't want our current state to be affect by any open statements in the nested module
-        let nestedState = List.fold (processStateEntry trie) state nestedContent
+        let nestedState = List.fold (processStateEntry queryTrie) state nestedContent
         // Afterward we are only interested in the found dependencies in the nested module
         let foundDependencies =
             Set.union state.FoundDependencies nestedState.FoundDependencies
@@ -121,7 +124,10 @@ let mkGraph (files: FileWithAST array) =
 
         time "TrieMapping.mkTrie" TrieMapping.mkTrie input
 
-    let fileContents = Array.Parallel.map FileContentMapping.mkFileContent files
+    let queryTrie: QueryTrie = queryTrieMemoized trie
+
+    let fileContents =
+        time "FileContentMapping.mkFileContent" Array.Parallel.map FileContentMapping.mkFileContent files
 
     time
         "mkGraph"
@@ -131,7 +137,7 @@ let mkGraph (files: FileWithAST array) =
             let knownFiles = getFileNameBefore files file.Idx
 
             let result =
-                Seq.fold (processStateEntry trie) (FileContentQueryState.Create file.File knownFiles) fileContent
+                Seq.fold (processStateEntry queryTrie) (FileContentQueryState.Create file.File knownFiles) fileContent
 
             file.File, Set.toArray result.FoundDependencies)
         files
@@ -521,7 +527,6 @@ let ``FCS for debugging`` () =
     let contents =
         Array.map
             (fun (file: FileWithAST) ->
-                printfn "Start %s" file.File
                 FileContentMapping.mkFileContent file)
             filesWithAST
 

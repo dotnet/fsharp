@@ -729,8 +729,10 @@ let ``Full project simulation`` () =
             let knownFiles =
                 files.[0 .. (fileContent.Idx - 1)] |> Array.map (fun f -> f.Name) |> set
 
+            let queryTrie: QueryTrie = queryTrieMemoized fantomasCoreTrie
+            
             let result =
-                Seq.fold (processStateEntry fantomasCoreTrie) (FileContentQueryState.Create fileContent.Name knownFiles) fileContent.Content
+                Seq.fold (processStateEntry queryTrie) (FileContentQueryState.Create fileContent.Name knownFiles) fileContent.Content
 
             fileContent.Name, Set.toArray result.FoundDependencies)
 
@@ -785,7 +787,7 @@ let ``ProcessOpenStatement full path match`` () =
                 |])
 
     let result =
-        processOpenPath fantomasCoreTrie [ "Fantomas"; "Core"; "AstExtensions" ] state
+        processOpenPath (queryTrie fantomasCoreTrie) [ "Fantomas"; "Core"; "AstExtensions" ] state
 
     let dep = Seq.exactlyOne result.FoundDependencies
     Assert.AreEqual("AstExtensions.fsi", dep)
