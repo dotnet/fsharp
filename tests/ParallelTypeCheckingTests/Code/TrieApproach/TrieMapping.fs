@@ -1,16 +1,8 @@
 ﻿module ParallelTypeCheckingTests.Code.TrieApproach.TrieMapping
 
 open System.Collections.Generic
-open System.Diagnostics
 open FSharp.Compiler.Syntax
 open Microsoft.FSharp.Collections
-
-let time msg f a =
-    let sw = Stopwatch.StartNew()
-    let result = f a
-    sw.Stop()
-    printfn $"{msg} took %A{sw.Elapsed}"
-    result
 
 let mergeTrieNodes (defaultChildSize: int) (tries: TrieNode seq) =
     let rec mergeTrieNodesAux (root: TrieNode) (KeyValue (k, v)) =
@@ -152,7 +144,7 @@ let rec mkTrieNodeFor (file: FileWithAST) : TrieNode =
                                 else
                                     TrieNodeInfo.Module(name, file.File)
 
-                            let children = List.choose (mkTrieForNestedModule file.File) decls
+                            let children = List.choose (mkTrieForSynModuleDecl file.File) decls
 
                             continuation (
                                 Dictionary<_, _>(
@@ -183,11 +175,11 @@ let rec mkTrieNodeFor (file: FileWithAST) : TrieNode =
                 Some { Current = Root; Children = rootNode })
         |> mergeTrieNodes contents.Length
 
-and mkTrieForNestedModule file (decl: SynModuleDecl) : KeyValuePair<string, TrieNode> option =
+and mkTrieForSynModuleDecl file (decl: SynModuleDecl) : KeyValuePair<string, TrieNode> option =
     match decl with
     | SynModuleDecl.NestedModule (moduleInfo = SynComponentInfo(longId = [ nestedModuleIdent ]); decls = decls) ->
         let name = nestedModuleIdent.idText
-        let children = List.choose (mkTrieForNestedModule file) decls
+        let children = List.choose (mkTrieForSynModuleDecl file) decls
 
         Some(
             KeyValuePair(
@@ -198,6 +190,8 @@ and mkTrieForNestedModule file (decl: SynModuleDecl) : KeyValuePair<string, Trie
                 }
             )
         )
+
+    // | SynModuleDecl.ModuleAbbrev(ident = ident) ->
 
     | _ -> None
 
@@ -220,8 +214,7 @@ and mkTrieForNestedSigModule file (decl: SynModuleSigDecl) : KeyValuePair<string
     | _ -> None
 
 let mkTrie (files: FileWithAST array) : TrieNode =
-    let tries = Array.Parallel.map mkTrieNodeFor files
-    time "mergeTrieNodes" (mergeTrieNodes 0) tries
+    mergeTrieNodes 0 (Array.Parallel.map mkTrieNodeFor files)
 
 // ==================================================================================================================================================
 // ==================================================================================================================================================

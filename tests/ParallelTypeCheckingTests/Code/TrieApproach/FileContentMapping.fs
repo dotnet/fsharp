@@ -59,7 +59,10 @@ let visitSynModuleDecl (decl: SynModuleDecl) : FileContentEntry list =
     | SynModuleDecl.Let (bindings = bindings) -> lc visitBinding bindings
     | SynModuleDecl.Types (typeDefns = typeDefns) -> lc visitSynTypeDefn typeDefns
     | SynModuleDecl.HashDirective _ -> []
-    | SynModuleDecl.ModuleAbbrev _ -> failwith "no support for module abbreviations"
+    | SynModuleDecl.ModuleAbbrev (longId = longId) ->
+        // I believe this is enough
+        // A module abbreviation doesn't appear to be exposed as part of the current module/namespace
+        visitLongIdent longId
     | SynModuleDecl.NamespaceFragment _ -> []
     | SynModuleDecl.Exception(exnDefn = SynExceptionDefn (exnRepr = SynExceptionDefnRepr (attributes = attributes
                                                                                           caseName = caseName
