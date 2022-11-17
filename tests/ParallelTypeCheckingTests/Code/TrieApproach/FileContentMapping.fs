@@ -12,17 +12,17 @@ module Continuation =
 
 type Continuations = ((FileContentEntry list -> FileContentEntry list) -> FileContentEntry list) list
 
+/// Option.toList >> (List.collect f)
 let cfo f a = lc f (Option.toList a)
+/// List.collect
 let lc = List.collect
-
-let identToPath (ident: Ident) = ident.idText
 
 let longIdentToPath (skipLast: bool) (longId: LongIdent) : ModuleSegment list =
     if skipLast then
         List.take (longId.Length - 1) longId
     else
         longId
-    |> List.map identToPath
+    |> List.map (fun ident -> ident.idText)
 
 let synLongIdentToPath (skipLast: bool) (synLongIdent: SynLongIdent) =
     longIdentToPath skipLast synLongIdent.LongIdent
