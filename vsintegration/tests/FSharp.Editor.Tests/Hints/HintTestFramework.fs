@@ -6,7 +6,6 @@ open System.Threading
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Hints
 open Microsoft.CodeAnalysis.Text
-open FSharp.Editor.Tests
 open Hints
 open FSharp.Editor.Tests.Helpers
 
