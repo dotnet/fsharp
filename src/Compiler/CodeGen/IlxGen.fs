@@ -11429,7 +11429,10 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                     let ilFieldName = ComputeFieldName exnc fld
 
                     let ilMethodDef =
-                        mkLdfldMethodDef (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType, [])
+                        let def = mkLdfldMethodDef (ilMethName, reprAccess, false, ilThisTy, ilFieldName, ilPropType, [])
+                        if ilPropName = "Message" then
+                            def.WithVirtual(true)
+                        else def
 
                     let ilFieldDef =
                         mkILInstanceField (ilFieldName, ilPropType, None, ILMemberAccess.Assembly)
@@ -11516,6 +11519,7 @@ and GenExnDef cenv mgbuf eenv m (exnc: Tycon) =
                     cenv.g.langVersion.SupportsFeature(LanguageFeature.BetterExceptionPrinting)
                     && not (exnc.HasMember g "get_Message" [])
                     && not (exnc.HasMember g "Message" [])
+                    && not (fspecs |> List.exists (fun rf -> rf.DisplayNameCore = "Message"))
                 then
                     yield! GenPrintingMethod cenv eenv "get_Message" ilThisTy m
             ]

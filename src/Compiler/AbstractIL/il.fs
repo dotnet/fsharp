@@ -2073,6 +2073,9 @@ type ILMethodDef
     member x.WithAbstract(condition) =
         x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.Abstract))
 
+    member x.WithVirtual(condition) =
+        x.With(attributes = (x.Attributes |> conditionalAdd condition MethodAttributes.Virtual))
+
     member x.WithAccess(access) =
         x.With(
             attributes =
