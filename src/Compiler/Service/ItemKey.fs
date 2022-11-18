@@ -299,8 +299,6 @@ and [<Sealed>] ItemKeyStoreBuilder() =
             | Parent eref -> writeEntityRef eref
 
     member _.Write(m: range, item: Item) =
-        if item.DisplayNameCore.Contains("MyType") then
-            printfn $"item {item.DisplayNameCore} hit"
         writeRange m
 
         let fixup = b.ReserveBytes 4 |> BlobWriter
