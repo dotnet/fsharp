@@ -259,7 +259,12 @@ module internal Utilities =
         let resolutionsFile, resolutions, references, loads, includes =
             if success && File.Exists(outputFile) then
                 let resolutions = getResolutionsFromFile outputFile
-                let references = (findReferencesFromResolutions resolutions) |> Array.filter(File.Exists) |> Array.toList
+
+                let references =
+                    (findReferencesFromResolutions resolutions)
+                    |> Array.filter (File.Exists)
+                    |> Array.toList
+
                 let loads = (findLoadsFromResolutions resolutions) |> Array.toList
                 let includes = (findIncludesFromResolutions resolutions) |> Array.toList
                 (Some outputFile), resolutions, references, loads, includes
