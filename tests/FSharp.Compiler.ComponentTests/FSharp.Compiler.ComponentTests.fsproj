@@ -207,6 +207,7 @@
     <Compile Include="Signatures\RecordTests.fs" />
     <Compile Include="Signatures\ArrayTests.fs" />
     <Compile Include="Signatures\TypeTests.fs" />
+    <Compile Include="Signatures\SigGenerationRoundTripTests.fs" />
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
@@ -224,6 +225,7 @@
   <ItemGroup>
     <Content Include="resources\**" CopyToOutputDirectory="Never" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Remove="Properties\**" />
+    <None Remove="Signatures\SigGenerationRoundTripTests.fs" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
