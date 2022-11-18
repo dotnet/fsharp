@@ -1,5 +1,6 @@
 ﻿module ParallelTypeCheckingTests.Code.TrieApproach.DependencyResolution
 
+open System.Linq
 open FSharp.Compiler.Syntax
 
 // This is pseudo code of how we could restructure the trie code
@@ -113,7 +114,7 @@ let rec processStateEntry (queryTrie: QueryTrie) (state: FileContentQueryState) 
         }
 
 let getFileNameBefore (files: FileWithAST array) idx =
-    files.[0 .. (idx - 1)] |> Array.map (fun f -> f.File) |> Set.ofArray
+    files.[0 .. (idx - 1)] |> Array.map (fun f -> f.Idx) |> Set.ofArray
 
 let time msg f a =
     let sw = System.Diagnostics.Stopwatch.StartNew()
@@ -123,20 +124,24 @@ let time msg f a =
     result
 
 let mkGraph (files: FileWithAST array) =
-    let trie =
-        let input =
-            files
-            |> Array.filter (fun f ->
-                match f.AST with
-                | ParsedInput.SigFile _ -> true
-                | ParsedInput.ImplFile _ -> Array.forall (fun (sigFile: FileWithAST) -> sigFile.File <> $"{f.File}i") files)
+    let trieInput =
+        files
+        |> Array.filter (fun f ->
+            match f.AST with
+            | ParsedInput.SigFile _ -> true
+            | ParsedInput.ImplFile _ -> Array.forall (fun (sigFile: FileWithAST) -> sigFile.File <> $"{f.File}i") files)
 
-        time "TrieMapping.mkTrie" TrieMapping.mkTrie input
+    let trie = time "TrieMapping.mkTrie" TrieMapping.mkTrie trieInput
 
     let queryTrie: QueryTrie = queryTrieMemoized trie
 
     let fileContents =
         time "FileContentMapping.mkFileContent" Array.Parallel.map FileContentMapping.mkFileContent files
+
+    let filesWithAutoOpen =
+        trieInput
+        |> Array.filter (fun f -> AutoOpenDetection.hasAutoOpenAttributeInFile f.AST)
+        |> Array.map (fun f -> f.Idx)
 
     time
         "mkGraph"
@@ -146,9 +151,18 @@ let mkGraph (files: FileWithAST array) =
             let knownFiles = getFileNameBefore files file.Idx
 
             let result =
-                Seq.fold (processStateEntry queryTrie) (FileContentQueryState.Create file.File knownFiles) fileContent
+                Seq.fold (processStateEntry queryTrie) (FileContentQueryState.Create file.Idx knownFiles) fileContent
 
-            file, Set.toArray result.FoundDependencies)
+            let allDependencies =
+                if filesWithAutoOpen.Length > 0 then
+                    let autoOpenDependencies =
+                        set ([| 0 .. (file.Idx - 1) |].Intersect(filesWithAutoOpen))
+
+                    Set.union result.FoundDependencies autoOpenDependencies
+                else
+                    result.FoundDependencies
+
+            file, Set.toArray allDependencies)
         files
 
 // =============================================================================================================
@@ -170,7 +184,10 @@ let mkGraphAndReport files =
     let graph = mkGraph filesWithAST
 
     for fileName, deps in graph do
-        let depString = String.concat "\n    " deps
+        let depString =
+            deps
+            |> Array.map (fun depIdx -> filesWithAST.[depIdx].File)
+            |> String.concat "\n    "
 
         if deps.Length = 0 then
             printfn $"%s{fileName.File}: []"

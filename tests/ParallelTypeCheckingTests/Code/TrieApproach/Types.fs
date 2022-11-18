@@ -20,8 +20,8 @@ type FileWithAST =
 /// Children of a namespace don't automatically depend on each other for that reason
 type TrieNodeInfo =
     | Root
-    | Module of segment: string * file: File
-    | Namespace of segment: string * filesThatExposeTypes: HashSet<File>
+    | Module of segment: string * file: int
+    | Namespace of segment: string * filesThatExposeTypes: HashSet<int>
 
     member x.Segment =
         match x with
@@ -29,7 +29,7 @@ type TrieNodeInfo =
         | Module (segment = segment)
         | Namespace (segment = segment) -> segment
 
-    member x.Files: Files =
+    member x.Files: Set<int> =
         match x with
         | Root -> failwith "Root has no files"
         | Module (file = file) -> Set.singleton file
@@ -66,20 +66,20 @@ type FileContent =
 type FileContentQueryState =
     {
         OpenNamespaces: Set<ModuleSegment list>
-        FoundDependencies: Set<File>
-        CurrentFile: File
-        KnownFiles: Files
+        FoundDependencies: Set<int>
+        CurrentFile: int
+        KnownFiles: Set<int>
     }
 
-    static member Create (file: File) (knownFiles: Files) =
+    static member Create (fileIndex: int) (knownFiles: Set<int>) =
         {
             OpenNamespaces = Set.empty
             FoundDependencies = Set.empty
-            CurrentFile = file
+            CurrentFile = fileIndex
             KnownFiles = knownFiles
         }
 
-    member x.AddDependencies(files: Files) : FileContentQueryState =
+    member x.AddDependencies(files: Set<int>) : FileContentQueryState =
         let files = Set.filter x.KnownFiles.Contains files |> Set.union x.FoundDependencies
         { x with FoundDependencies = files }
 
@@ -88,7 +88,7 @@ type FileContentQueryState =
             OpenNamespaces = Set.add path x.OpenNamespaces
         }
 
-    member x.AddDependenciesAndOpenNamespace(files: Files, path: ModuleSegment list) =
+    member x.AddDependenciesAndOpenNamespace(files: Set<int>, path: ModuleSegment list) =
         let foundDependencies =
             Set.filter x.KnownFiles.Contains files |> Set.union x.FoundDependencies
 
@@ -104,6 +104,6 @@ type QueryTrieNodeResult =
     /// A node was found but it yielded no file links
     | NodeDoesNotExposeData
     /// A node was found with one or more file links
-    | NodeExposesData of Files
+    | NodeExposesData of Set<int>
 
 type QueryTrie = ModuleSegment list -> QueryTrieNodeResult

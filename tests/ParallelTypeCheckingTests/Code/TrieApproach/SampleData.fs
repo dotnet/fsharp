@@ -4,121 +4,6 @@ open System.Collections.Generic
 open NUnit.Framework
 open ParallelTypeCheckingTests.Code.TrieApproach.DependencyResolution
 
-let dictionary<'key, 'value when 'key: equality> (entries: ('key * 'value) seq) =
-    entries |> Seq.map (fun (k, v) -> KeyValuePair(k, v)) |> Dictionary
-
-let noChildren = Dictionary(0)
-let emptyHS () = HashSet(0)
-
-// This should be constructed from the AST
-let fantomasCoreTrie: TrieNode =
-    {
-        Current = TrieNodeInfo.Root
-        Children =
-            dictionary
-                [|
-                    "System",
-                    {
-                        Current = TrieNodeInfo.Namespace("System", emptyHS ())
-                        Children =
-                            dictionary
-                                [|
-                                    "AssemblyVersionInformation",
-                                    {
-                                        Current = TrieNodeInfo.Module("AssemblyVersionInformation", "AssemblyInfo.fs")
-                                        Children = noChildren
-                                    }
-                                |]
-                    }
-                    "Fantomas",
-                    {
-                        Current = TrieNodeInfo.Namespace("Fantomas", emptyHS ())
-                        Children =
-                            dictionary
-                                [|
-                                    "Core",
-                                    {
-                                        Current = TrieNodeInfo.Namespace("Core", emptyHS ())
-                                        Children =
-                                            dictionary
-                                                [|
-                                                    "ISourceTextExtensions",
-                                                    {
-                                                        Current = TrieNodeInfo.Module("ISourceTextExtensions", "ISourceTextExtensions.fs")
-                                                        Children = noChildren
-                                                    }
-                                                    "RangeHelpers",
-                                                    {
-                                                        Current = TrieNodeInfo.Module("RangeHelpers", "RangeHelpers.fs")
-                                                        Children = noChildren
-                                                    }
-                                                    "RangePatterns",
-                                                    {
-                                                        Current = TrieNodeInfo.Module("RangePatterns", "RangeHelpers.fs")
-                                                        Children = noChildren
-                                                    }
-                                                    "AstExtensions",
-                                                    {
-                                                        Current = TrieNodeInfo.Module("AstExtensions", "AstExtensions.fsi")
-                                                        Children = noChildren
-                                                    }
-                                                    "TriviaTypes",
-                                                    {
-                                                        Current = TrieNodeInfo.Module("TriviaTypes", "TriviaTypes.fs")
-                                                        Children = noChildren
-                                                    }
-                                                    "Char",
-                                                    {
-                                                        Current = TrieNodeInfo.Module("Char", "Utils.fs")
-                                                        Children = noChildren
-                                                    }
-                                                    "String",
-                                                    {
-                                                        Current = TrieNodeInfo.Module("String", "Utils.fs")
-                                                        Children = noChildren
-                                                    }
-                                                    "Cache",
-                                                    {
-                                                        Current = TrieNodeInfo.Module("Cache", "Utils.fs")
-                                                        Children = noChildren
-                                                    }
-                                                    "Dict",
-                                                    {
-                                                        Current = TrieNodeInfo.Module("Dict", "Utils.fs")
-                                                        Children = noChildren
-                                                    }
-                                                    "List",
-                                                    {
-                                                        Current = TrieNodeInfo.Module("List", "Utils.fs")
-                                                        Children = noChildren
-                                                    }
-                                                    "Map",
-                                                    {
-                                                        Current = TrieNodeInfo.Module("Map", "Utils.fs")
-                                                        Children = noChildren
-                                                    }
-                                                    "Async",
-                                                    {
-                                                        Current = TrieNodeInfo.Module("Async", "Utils.fs")
-                                                        Children = noChildren
-                                                    }
-                                                    "Continuation",
-                                                    {
-                                                        Current = TrieNodeInfo.Module("Continuation", "Utils.fs")
-                                                        Children = noChildren
-                                                    }
-                                                    "SourceParser",
-                                                    {
-                                                        Current = TrieNodeInfo.Module("SourceParser", "SourceParser.fs")
-                                                        Children = noChildren
-                                                    }
-                                                |]
-                                    }
-                                |]
-                    }
-                |]
-    }
-
 // Some helper DSL functions to construct the FileContentEntry items
 // This should again be mapped from the AST
 
@@ -721,23 +606,144 @@ let files =
         }
     |]
 
+let dictionary<'key, 'value when 'key: equality> (entries: ('key * 'value) seq) =
+    entries |> Seq.map (fun (k, v) -> KeyValuePair(k, v)) |> Dictionary
+
+let noChildren = Dictionary(0)
+let emptyHS () = HashSet(0)
+
+let indexOf name =
+    Array.find (fun (fc: FileContent) -> fc.Name = name) files |> fun fc -> fc.Idx
+
+// This should be constructed from the AST
+let fantomasCoreTrie: TrieNode =
+    {
+        Current = TrieNodeInfo.Root
+        Children =
+            dictionary
+                [|
+                    "System",
+                    {
+                        Current = TrieNodeInfo.Namespace("System", emptyHS ())
+                        Children =
+                            dictionary
+                                [|
+                                    "AssemblyVersionInformation",
+                                    {
+                                        Current = TrieNodeInfo.Module("AssemblyVersionInformation", indexOf "AssemblyInfo.fs")
+                                        Children = noChildren
+                                    }
+                                |]
+                    }
+                    "Fantomas",
+                    {
+                        Current = TrieNodeInfo.Namespace("Fantomas", emptyHS ())
+                        Children =
+                            dictionary
+                                [|
+                                    "Core",
+                                    {
+                                        Current = TrieNodeInfo.Namespace("Core", emptyHS ())
+                                        Children =
+                                            dictionary
+                                                [|
+                                                    "ISourceTextExtensions",
+                                                    {
+                                                        Current =
+                                                            TrieNodeInfo.Module("ISourceTextExtensions", indexOf "ISourceTextExtensions.fs")
+                                                        Children = noChildren
+                                                    }
+                                                    "RangeHelpers",
+                                                    {
+                                                        Current = TrieNodeInfo.Module("RangeHelpers", indexOf "RangeHelpers.fs")
+                                                        Children = noChildren
+                                                    }
+                                                    "RangePatterns",
+                                                    {
+                                                        Current = TrieNodeInfo.Module("RangePatterns", indexOf "RangeHelpers.fs")
+                                                        Children = noChildren
+                                                    }
+                                                    "AstExtensions",
+                                                    {
+                                                        Current = TrieNodeInfo.Module("AstExtensions", indexOf "AstExtensions.fsi")
+                                                        Children = noChildren
+                                                    }
+                                                    "TriviaTypes",
+                                                    {
+                                                        Current = TrieNodeInfo.Module("TriviaTypes", indexOf "TriviaTypes.fs")
+                                                        Children = noChildren
+                                                    }
+                                                    "Char",
+                                                    {
+                                                        Current = TrieNodeInfo.Module("Char", indexOf "Utils.fs")
+                                                        Children = noChildren
+                                                    }
+                                                    "String",
+                                                    {
+                                                        Current = TrieNodeInfo.Module("String", indexOf "Utils.fs")
+                                                        Children = noChildren
+                                                    }
+                                                    "Cache",
+                                                    {
+                                                        Current = TrieNodeInfo.Module("Cache", indexOf "Utils.fs")
+                                                        Children = noChildren
+                                                    }
+                                                    "Dict",
+                                                    {
+                                                        Current = TrieNodeInfo.Module("Dict", indexOf "Utils.fs")
+                                                        Children = noChildren
+                                                    }
+                                                    "List",
+                                                    {
+                                                        Current = TrieNodeInfo.Module("List", indexOf "Utils.fs")
+                                                        Children = noChildren
+                                                    }
+                                                    "Map",
+                                                    {
+                                                        Current = TrieNodeInfo.Module("Map", indexOf "Utils.fs")
+                                                        Children = noChildren
+                                                    }
+                                                    "Async",
+                                                    {
+                                                        Current = TrieNodeInfo.Module("Async", indexOf "Utils.fs")
+                                                        Children = noChildren
+                                                    }
+                                                    "Continuation",
+                                                    {
+                                                        Current = TrieNodeInfo.Module("Continuation", indexOf "Utils.fs")
+                                                        Children = noChildren
+                                                    }
+                                                    "SourceParser",
+                                                    {
+                                                        Current = TrieNodeInfo.Module("SourceParser", indexOf "SourceParser.fs")
+                                                        Children = noChildren
+                                                    }
+                                                |]
+                                    }
+                                |]
+                    }
+                |]
+    }
+
 [<Test>]
 let ``Full project simulation`` () =
     let graph =
         files
         |> Array.map (fun fileContent ->
             let knownFiles =
-                files.[0 .. (fileContent.Idx - 1)] |> Array.map (fun f -> f.Name) |> set
+                files.[0 .. (fileContent.Idx - 1)] |> Array.map (fun f -> f.Idx) |> set
 
             let queryTrie: QueryTrie = queryTrieMemoized fantomasCoreTrie
-            
+
             let result =
-                Seq.fold (processStateEntry queryTrie) (FileContentQueryState.Create fileContent.Name knownFiles) fileContent.Content
+                Seq.fold (processStateEntry queryTrie) (FileContentQueryState.Create fileContent.Idx knownFiles) fileContent.Content
 
             fileContent.Name, Set.toArray result.FoundDependencies)
 
     for fileName, deps in graph do
-        let depString = String.concat ", " deps
+        let depString =
+            deps |> Array.map (fun depIdx -> files.[depIdx].Name) |> String.concat ", "
+
         printfn $"%s{fileName}: [{depString}]"
 
 [<Test>]
@@ -765,7 +771,7 @@ let ``Query module node that exposes one file`` () =
     match result with
     | QueryTrieNodeResult.NodeExposesData file ->
         let file = Seq.exactlyOne file
-        Assert.AreEqual("ISourceTextExtensions.fs", file)
+        Assert.AreEqual(indexOf "ISourceTextExtensions.fs", file)
     | result -> Assert.Fail $"Unexpected result: %A{result}"
 
 [<Test>]
@@ -775,22 +781,22 @@ let ``ProcessOpenStatement full path match`` () =
 
     let state =
         FileContentQueryState.Create
-            sourceParser.Name
+            sourceParser.Idx
             (set
                 [|
-                    "AssemblyInfo.fs"
-                    "ISourceTextExtensions.fs"
-                    "RangeHelpers.fs"
-                    "AstExtensions.fsi"
-                    "TriviaTypes.fs"
-                    "Utils.fs"
+                    indexOf "AssemblyInfo.fs"
+                    indexOf "ISourceTextExtensions.fs"
+                    indexOf "RangeHelpers.fs"
+                    indexOf "AstExtensions.fsi"
+                    indexOf "TriviaTypes.fs"
+                    indexOf "Utils.fs"
                 |])
 
     let result =
         processOpenPath (queryTrie fantomasCoreTrie) [ "Fantomas"; "Core"; "AstExtensions" ] state
 
     let dep = Seq.exactlyOne result.FoundDependencies
-    Assert.AreEqual("AstExtensions.fsi", dep)
+    Assert.AreEqual(indexOf "AstExtensions.fsi", dep)
 
 #if INTERACTIVE
 open System.Text.RegularExpressions

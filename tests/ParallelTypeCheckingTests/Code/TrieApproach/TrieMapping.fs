@@ -77,11 +77,11 @@ let rec mkTrieNodeFor (file: FileWithAST) : TrieNode =
 
                             let current =
                                 if isNamespace then
-                                    TrieNodeInfo.Namespace(name, (if hasTypes then hs file.File else emptyHS ()))
+                                    TrieNodeInfo.Namespace(name, (if hasTypes then hs file.Idx else emptyHS ()))
                                 else
-                                    TrieNodeInfo.Module(name, file.File)
+                                    TrieNodeInfo.Module(name, file.Idx)
 
-                            let children = List.choose (mkTrieForNestedSigModule file.File) decls
+                            let children = List.choose (mkTrieForNestedSigModule file.Idx) decls
 
                             continuation (
                                 Dictionary<_, _>(
@@ -140,11 +140,11 @@ let rec mkTrieNodeFor (file: FileWithAST) : TrieNode =
 
                             let current =
                                 if isNamespace then
-                                    TrieNodeInfo.Namespace(name, (if hasTypes then hs file.File else emptyHS ()))
+                                    TrieNodeInfo.Namespace(name, (if hasTypes then hs file.Idx else emptyHS ()))
                                 else
-                                    TrieNodeInfo.Module(name, file.File)
+                                    TrieNodeInfo.Module(name, file.Idx)
 
-                            let children = List.choose (mkTrieForSynModuleDecl file.File) decls
+                            let children = List.choose (mkTrieForSynModuleDecl file.Idx) decls
 
                             continuation (
                                 Dictionary<_, _>(
@@ -175,37 +175,34 @@ let rec mkTrieNodeFor (file: FileWithAST) : TrieNode =
                 Some { Current = Root; Children = rootNode })
         |> mergeTrieNodes contents.Length
 
-and mkTrieForSynModuleDecl file (decl: SynModuleDecl) : KeyValuePair<string, TrieNode> option =
+and mkTrieForSynModuleDecl (fileIndex: int) (decl: SynModuleDecl) : KeyValuePair<string, TrieNode> option =
     match decl with
     | SynModuleDecl.NestedModule (moduleInfo = SynComponentInfo(longId = [ nestedModuleIdent ]); decls = decls) ->
         let name = nestedModuleIdent.idText
-        let children = List.choose (mkTrieForSynModuleDecl file) decls
+        let children = List.choose (mkTrieForSynModuleDecl fileIndex) decls
 
         Some(
             KeyValuePair(
                 name,
                 {
-                    Current = TrieNodeInfo.Module(name, file)
+                    Current = TrieNodeInfo.Module(name, fileIndex)
                     Children = Dictionary(children)
                 }
             )
         )
-
-    // | SynModuleDecl.ModuleAbbrev(ident = ident) ->
-
     | _ -> None
 
-and mkTrieForNestedSigModule file (decl: SynModuleSigDecl) : KeyValuePair<string, TrieNode> option =
+and mkTrieForNestedSigModule (fileIndex: int) (decl: SynModuleSigDecl) : KeyValuePair<string, TrieNode> option =
     match decl with
     | SynModuleSigDecl.NestedModule (moduleInfo = SynComponentInfo(longId = [ nestedModuleIdent ]); moduleDecls = decls) ->
         let name = nestedModuleIdent.idText
-        let children = List.choose (mkTrieForNestedSigModule file) decls
+        let children = List.choose (mkTrieForNestedSigModule fileIndex) decls
 
         Some(
             KeyValuePair(
                 name,
                 {
-                    Current = TrieNodeInfo.Module(name, file)
+                    Current = TrieNodeInfo.Module(name, fileIndex)
                     Children = Dictionary(children)
                 }
             )

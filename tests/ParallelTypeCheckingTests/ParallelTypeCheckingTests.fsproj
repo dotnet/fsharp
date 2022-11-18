@@ -40,6 +40,7 @@
     <Compile Include="Code\TrieApproach\Types.fs" />
     <Compile Include="Code\TrieApproach\TrieMapping.fs" />
     <Compile Include="Code\TrieApproach\FileContentMapping.fs" />
+    <Compile Include="Code\TrieApproach\AutoOpenDetection.fs" />
     <Compile Include="Code\TrieApproach\DependencyResolution.fs" />
     <Compile Include="Code\TrieApproach\SampleData.fs" />
     <Compile Include="Tests\Utils.fs" />
