@@ -21,14 +21,18 @@ let codebases =
             WorkDir = $@"{__SOURCE_DIRECTORY__}\.fcs_test\src\compiler"
             Path = $@"{__SOURCE_DIRECTORY__}\FCS.args.txt"
         }
-        // {
-        //     WorkDir = $@"{__SOURCE_DIRECTORY__}\.fcs_test\tests\FSharp.Compiler.ComponentTests"
-        //     Path = $@"{__SOURCE_DIRECTORY__}\ComponentTests.args.txt"
-        // }
+        {
+            WorkDir = $@"{__SOURCE_DIRECTORY__}\.fcs_test\tests\FSharp.Compiler.ComponentTests"
+            Path = $@"{__SOURCE_DIRECTORY__}\ComponentTests.args.txt"
+        }
         // Hard coded example ;)
         {
             WorkDir = @"C:\Users\nojaf\Projects\main-fantomas\src\Fantomas.Core"
             Path = @"C:\Users\nojaf\Projects\main-fantomas\src\Fantomas.Core\args.txt"
+        }
+        {
+            WorkDir = @"C:\Users\nojaf\Projects\main-fantomas\src\Fantomas.Core.Tests"
+            Path = @"C:\Users\nojaf\Projects\main-fantomas\src\Fantomas.Core.Tests\args.txt"
         }
     |]
 
@@ -227,6 +231,7 @@ let ``Create Graph from typed tree`` (code: Codebase) =
             let typedTreeMap = collectAllDeps graphFromTypedTree
             let heuristicMap = collectAllDeps graphFromHeuristic.Graph
 
+            /// Compare the found dependencies of a specified heuristic versus the dependencies found in the typed tree
             let compareDeps source fileName idx (depsFromHeuristic: Set<int>) =
                 let depsFromTypedTree = Map.find idx typedTreeMap
 

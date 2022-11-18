@@ -4,6 +4,8 @@ open System.Collections.Generic
 open NUnit.Framework
 open ParallelTypeCheckingTests.Code.TrieApproach.DependencyResolution
 
+// This file contains some hard coded data to easily debug the various aspects of the dependency resolution.
+
 // Some helper DSL functions to construct the FileContentEntry items
 // This should again be mapped from the AST
 
@@ -30,8 +32,7 @@ let prefIdent (lid: string) =
     let parts = lid.Split(".")
     Array.take (parts.Length - 1) parts |> List.ofArray |> PrefixedIdentifier
 
-// Some hardcoded files processing, this was done by the naked eye and some regexes.
-
+// Some hardcoded files that reflect the file content of the first files in the Fantomas.Core project.
 let files =
     [|
         {
@@ -615,7 +616,7 @@ let emptyHS () = HashSet(0)
 let indexOf name =
     Array.find (fun (fc: FileContent) -> fc.Name = name) files |> fun fc -> fc.Idx
 
-// This should be constructed from the AST
+// This should be constructed from the AST, again a hard coded subset of Fantomas.Core
 let fantomasCoreTrie: TrieNode =
     {
         Current = TrieNodeInfo.Root
@@ -797,15 +798,3 @@ let ``ProcessOpenStatement full path match`` () =
 
     let dep = Seq.exactlyOne result.FoundDependencies
     Assert.AreEqual(indexOf "AstExtensions.fsi", dep)
-
-#if INTERACTIVE
-open System.Text.RegularExpressions
-
-let fileContent =
-    System.IO.File.ReadAllText(@"C:\Users\nojaf\Projects\main-fantomas\src\Fantomas.Core\SourceParser.fs")
-
-Regex.Matches(fileContent, "(\\w)+(\\.(\\w)+)+")
-|> Seq.cast<Match>
-|> Seq.distinctBy (fun m -> m.Value)
-|> Seq.iter (fun m -> printfn "prefIdent \"%s\"" m.Value)
-#endif

@@ -59,13 +59,14 @@ let hasAutoOpenAttributeInFile (ast: ParsedInput) : bool =
 // ==============================================================================================================================
 // ==============================================================================================================================
 
+open System.IO
 open NUnit.Framework
 open FSharp.Compiler.Service.Tests.Common
 
 [<Test>]
 let ``detect auto open`` () =
     let file =
-        @"C:\Users\nojaf\Projects\safesparrow-fsharp\src\Compiler\Utilities\ImmutableArray.fsi"
+        Path.Combine(__SOURCE_DIRECTORY__, "..", "..", "..", "..", "src", "Compiler", "Utilities", "ImmutableArray.fsi")
 
-    let ast = parseSourceCode (file, System.IO.File.ReadAllText(file))
+    let ast = parseSourceCode (file, File.ReadAllText(file))
     Assert.True(hasAutoOpenAttributeInFile ast)

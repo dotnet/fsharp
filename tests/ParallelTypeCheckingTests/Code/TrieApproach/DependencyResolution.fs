@@ -124,6 +124,7 @@ let time msg f a =
     result
 
 let mkGraph (files: FileWithAST array) =
+    // Implementation files backed by signatures should be excluded to construct the trie.
     let trieInput =
         files
         |> Array.filter (fun f ->
@@ -150,11 +151,13 @@ let mkGraph (files: FileWithAST array) =
             let fileContent = fileContents.[file.Idx]
             let knownFiles = getFileNameBefore files file.Idx
 
+            // Process all entries of a file and query the trie when required to find the dependent files.
             let result =
                 Seq.fold (processStateEntry queryTrie) (FileContentQueryState.Create file.Idx knownFiles) fileContent
 
             let allDependencies =
                 if filesWithAutoOpen.Length > 0 then
+                    // Automatically add all files that came before the current file that use the [<AutoOpen>] attribute.
                     let autoOpenDependencies =
                         set ([| 0 .. (file.Idx - 1) |].Intersect(filesWithAutoOpen))
 

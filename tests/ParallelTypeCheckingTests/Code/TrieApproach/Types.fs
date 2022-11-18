@@ -4,7 +4,6 @@ open System.Collections.Generic
 open FSharp.Compiler.Syntax
 
 type File = string
-type Files = Set<File>
 type ModuleSegment = string
 
 type FileWithAST =
