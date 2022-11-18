@@ -361,7 +361,14 @@ type WorkflowContext =
 
 type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpChecker) =
 
-    let checker = defaultArg checker (FSharpChecker.Create(enableBackgroundItemKeyStoreAndSemanticClassification=true))
+    let checker =
+        defaultArg
+            checker
+            (FSharpChecker.Create(
+                keepAllBackgroundSymbolUses = false,
+                enableBackgroundItemKeyStoreAndSemanticClassification = true,
+                enablePartialTypeChecking = true
+            ))
 
     let mapProject f workflow =
         async {
