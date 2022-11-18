@@ -78,7 +78,8 @@ module ExceptionDefinition =
     let``PrivateMessagePropertyIsNotReplacingBuiltinMessage`` compilation =
         compilation
         |> asExe
-        |> withOptions ["--warnaserror+"; "--nowarn:988"]
+        |> withOptions ["--nowarn:988"]
+        |> ignoreWarnings
         |> compileExeAndRun
         |> shouldSucceed
 
