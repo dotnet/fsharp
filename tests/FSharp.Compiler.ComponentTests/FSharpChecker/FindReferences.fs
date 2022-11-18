@@ -24,61 +24,8 @@ let a = MyType()
 let b = new MyType()
 a.DoNothing(b)
 """
-let impFile = { sourceFile "First" [] with ExtraSource = reproSourceCode }
-let createProject() = SyntheticProject.Create(impFile)
-
-let plainCreation = sourceFile "First" []
-let creationWithWith = { sourceFile "First" [] with ExtraSource = reproSourceCode }
-let plainCreationChangedLater = { plainCreation with ExtraSource = reproSourceCode }
-let creationviaFunc() = { sourceFile "First" [] with ExtraSource = reproSourceCode }
-
-let sourceFileLocal   =
-    { Id = "xx"
-      PublicVersion = 1
-      InternalVersion = 1
-      DependsOn = []
-      FunctionName = "f"
-      SignatureFile = No
-      HasErrors = false
-      ExtraSource = ""
-      EntryPoint = false }
-
-let plainLocalCreation = sourceFileLocal  
-let localCreationWithWith = { sourceFileLocal   with ExtraSource = reproSourceCode }
-let localCreationChangedLater = { plainCreation with ExtraSource = reproSourceCode }
-
-
-[<Fact>]
-let ``What is happening with static init - plainCreation`` () =  
-    Assert.NotNull(plainCreation)
-
-[<Fact>]
-let ``What is happening with static init - creationWithWith`` () =  
-    Assert.NotNull(creationWithWith)
-
-[<Fact>]
-let ``What is happening with static init - plainCreationChangedLater`` () =  
-    Assert.NotNull(plainCreationChangedLater)
-
-[<Fact>]
-let ``What is happening with static init - impFile`` () = 
-    Assert.NotNull(impFile)
-
-[<Fact>]
-let ``What is happening with static init - creationviaFunc`` () = 
-    Assert.NotNull(creationviaFunc())
-
-[<Fact>]
-let ``What is happening with static init - plainLocalCreation`` () =  
-    Assert.NotNull(plainLocalCreation)
-
-[<Fact>]
-let ``What is happening with static init - localCreationWithWith`` () =  
-    Assert.NotNull(localCreationWithWith)
-
-[<Fact>]
-let ``What is happening with static init - localCreationChangedLater`` () =  
-    Assert.NotNull(localCreationChangedLater)
+let impFile() = { sourceFile "First" [] with ExtraSource = reproSourceCode }
+let createProject() = SyntheticProject.Create(impFile())
 
 [<Fact>]
 let ``Finding usage of type via GetUsesOfSymbolInFile should also find it's constructors`` () =
