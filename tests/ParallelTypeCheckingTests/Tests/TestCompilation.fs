@@ -118,11 +118,24 @@ let b = 1
             "A.fs",
             """
 namespace A
+module A1 =
+module A1 =
+    let x = 3
+    type X = X of int
+    let y = X 5
+    let foo () = 5
+    let inline bar () = 7
+    module B2 =
+        let a = "lalala"
 """
             "B.fs",
             """
 module B
 open A
+let z = A.A1.x
+let y = A.A1.y
+let g = A.A1.x + 2
+let h = A.A1.bar()
 """
         ]
         |> FProject.Make CompileOutput.Library
@@ -221,7 +234,7 @@ let withMethod (method: Method) (cu: CompilationUnit) : CompilationUnit =
     | CompilationUnit.FS cs ->
         FS
             { cs with
-                Options = cs.Options @ (methodOptions method)
+                Options = cs.Options @ (methodOptions method) @ ["--optimize-"]
             }
     | cu -> cu
 

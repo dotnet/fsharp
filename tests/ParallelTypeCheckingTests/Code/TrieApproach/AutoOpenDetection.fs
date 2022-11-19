@@ -16,7 +16,8 @@ let private autoOpenShapes =
 /// This isn't bullet proof but I wonder who would really alias this very core attribute.
 let isAutoOpenAttribute (attribute: SynAttribute) =
     match attribute.ArgExpr with
-    | SynExpr.Const(constant = SynConst.Unit _)
+    | SynExpr.Const(constant = SynConst.Unit)
+    | SynExpr.Const(constant = SynConst.Unit)
     | SynExpr.Const(constant = SynConst.String _)
     | SynExpr.Paren(expr = SynExpr.Const(constant = SynConst.String _)) ->
         let attributeName =
