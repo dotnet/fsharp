@@ -128,12 +128,18 @@ type FileResults =
         mutable Phase2: Phase2Res option
         mutable Phase3: Phase3Res option
     }
-    with static member Empty =
-        {
-            Phase1 = None
-            Phase2 = None
-            Phase3 = None
-        }
+    with
+        member this.HasResult (phase: Phase) =
+            match phase with
+            | Phase.Phase1 -> this.Phase1 |> Option.isSome
+            | Phase.Phase2 -> this.Phase2 |> Option.isSome
+            | Phase.Phase3 -> this.Phase3 |> Option.isSome
+        static member Empty =
+            {
+                Phase1 = None
+                Phase2 = None
+                Phase3 = None
+            }
 
 type WorkItem =
     | Phase1 of Phase1Inputs
@@ -173,6 +179,21 @@ let go (env0: IncrementalOptimizationEnv) ((phase1, phase2, phase3): FilePhaseFu
         |> Array.map (fun _ -> FileResults.Empty)
     
     let _lock = obj()
+    let nodeCanBeProcessed ({Idx = idx; Phase = phase}) : bool =
+        lock (_lock) (fun () ->
+            let previousFileReady =
+                if idx = 0 then true else results[idx-1].HasResult phase
+            let previousPhase =
+                match phase with
+                | Phase.Phase1 -> None
+                | Phase.Phase2 -> Some Phase.Phase1
+                | Phase.Phase3 -> Some Phase.Phase2
+            let previousPhaseReady =
+                match previousPhase with
+                | Some previousPhase -> results[idx].HasResult previousPhase
+                | None -> true
+            previousFileReady && previousPhaseReady
+        )        
     
     let visited = HashSet<Node>()
     
@@ -255,6 +276,9 @@ let go (env0: IncrementalOptimizationEnv) ((phase1, phase2, phase3): FilePhaseFu
                 if idx < files.Length-1 then yield { Idx = idx + 1; Phase = Phase.Phase3 }
             }
             |> Seq.toArray
+        |> fun nodes ->
+            nodes
+            |> Array.filter nodeCanBeProcessed
     
     ParallelTypeCheckingTests.Parallel.processInParallel
         [|firstNode|]

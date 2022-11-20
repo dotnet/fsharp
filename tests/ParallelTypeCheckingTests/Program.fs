@@ -2,7 +2,9 @@
 
 #nowarn "1182"
 
+open FSharp.Compiler
 open FSharp.Compiler.CompilerConfig
+open ParallelTypeCheckingTests.TestCompilation
 open ParallelTypeCheckingTests.TestUtils
 
 let _parse (argv: string[]) : Args =
@@ -27,9 +29,19 @@ let _parse (argv: string[]) : Args =
         WorkingDir = workingDir
     }
 
+open ParallelTypeCheckingTests.TestCompilationFromCmdlineArgs
 [<EntryPoint>]
 let main _argv =
-    let args = _parse _argv
-    let args = { args with LineLimit = None }
-    TestCompilationFromCmdlineArgs.TestCompilerFromArgs args
+    OptimizeInputs.UseParallelOptimizer <- true
+    // let args = _parse _argv
+    // let args = { args with LineLimit = None }
+    let componentTests = codebases[1]
+    let config = codebaseToConfig componentTests Method.ParallelCheckingOfBackedImplFiles
+    TestCompilerFromArgs config
+    compileAValidProject
+        {
+            Method = Method.Sequential
+            Project = Codebases.dependentSignatures
+        }
     0
+
