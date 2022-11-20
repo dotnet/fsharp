@@ -437,7 +437,7 @@ let envVars () =
 let initializeSuite () =
 
 #if DEBUG
-    let configurationName = "Debug"
+    let configurationName = "Release"// TODO "Debug"
 #else
     let configurationName = "Release"
 #endif

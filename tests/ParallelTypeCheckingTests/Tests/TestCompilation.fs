@@ -4,6 +4,7 @@ open FSharp.Test
 open FSharp.Test.Compiler
 open NUnit.Framework
 open ParallelTypeCheckingTests.TestUtils
+open FSharp.Compiler
 
 type FProject =
     {
@@ -119,7 +120,6 @@ let b = 1
             """
 namespace A
 module A1 =
-module A1 =
     let x = 3
     type X = X of int
     let y = X 5
@@ -234,7 +234,7 @@ let withMethod (method: Method) (cu: CompilationUnit) : CompilationUnit =
     | CompilationUnit.FS cs ->
         FS
             { cs with
-                Options = cs.Options @ (methodOptions method) @ ["--optimize-"]
+                Options = cs.Options @ (methodOptions method) @ ["--optimize+"]
             }
     | cu -> cu
 
@@ -253,8 +253,19 @@ let compileAValidProject (x: Case) =
 
 let codebases = Codebases.all
 
+
 [<TestCaseSource(nameof codebases)>]
 let ``Compile a valid project using graph-based type-checking`` (project: FProject) =
+    global.FSharp.Compiler.OptimizeInputs.UseParallelOptimizer <- false
+    compileAValidProject
+        {
+            Method = Method.Graph
+            Project = project
+        }
+        
+[<TestCaseSource(nameof codebases)>]
+let ``Compile a valid project using graph-based type-checking, parallel opt`` (project: FProject) =
+    global.FSharp.Compiler.OptimizeInputs.UseParallelOptimizer <- true
     compileAValidProject
         {
             Method = Method.Graph

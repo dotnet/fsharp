@@ -1,5 +1,4 @@
 ﻿module ParallelTypeCheckingTests.Code.TrieApproach.DependencyResolution
-module ParallelTypeCheckingTests.Code.TrieApproach.DependencyResolution
 
 open System.Linq
 open FSharp.Compiler.Syntax

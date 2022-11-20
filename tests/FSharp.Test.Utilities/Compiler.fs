@@ -404,7 +404,7 @@ module rec Compiler =
         withOptionsHelper [ $"--nowarn:{warning}" ] "withNoWarn is only supported for F#" cUnit
 
     let withNoOptimize (cUnit: CompilationUnit) : CompilationUnit =
-        withOptionsHelper [ "--optimize-" ] "withNoOptimize is only supported for F#" cUnit
+        withOptionsHelper [ "--optimize+" ] "withNoOptimize is only supported for F#" cUnit
 
     let withOptimize (cUnit: CompilationUnit) : CompilationUnit =
         withOptionsHelper [ "--optimize+" ] "withOptimize is only supported for F#" cUnit
