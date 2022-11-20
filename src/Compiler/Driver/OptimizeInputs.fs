@@ -163,7 +163,6 @@ let getPhase1Res (p: FileResults) =
 let getPhase2Res (p: FileResults) =
     p.Phase2
     |> Option.get
-    |> fun (env, _) -> env
 
 let getPhase3Res (p: FileResults) =
     p.Phase3
@@ -212,15 +211,15 @@ let go (env0: IncrementalOptimizationEnv) ((phase1, phase2, phase3): FilePhaseFu
         let getPhase1Res (p: FileResults) =
             p.Phase1
             |> Option.get
-            |> fun ((env, _, _, hidden), _) -> env, hidden
+            |> fun ((env, file, _, hidden), _) -> env, file, hidden
                 
         match phase with
         | Phase.Phase1 ->
             // take env from previous file
-            let env, hidingInfo =
+            let env, _, hidingInfo =
                 previous
                 |> Option.map getPhase1Res
-                |> Option.defaultValue (env0, hidingInfo0)
+                |> Option.defaultValue (env0, file, hidingInfo0)
             let inputs = env, hidingInfo, file
             let phase1Res = phase1 inputs
             res.Phase1 <- Some phase1Res
@@ -235,14 +234,13 @@ let go (env0: IncrementalOptimizationEnv) ((phase1, phase2, phase3): FilePhaseFu
             
         | Phase.Phase2 ->
             // take env from previous file
-            let env =
+            let env, _ =
                 previous
                 |> Option.map getPhase2Res
-                |> Option.defaultValue env0
-            let hidingInfo =
+                |> Option.defaultValue (env0, file)
+            let _optEnv, file, hidingInfo =
                 res
                 |> getPhase1Res
-                |> snd
             let inputs = env, hidingInfo, file
             let phase2Res = phase2 inputs
             res.Phase2 <- Some phase2Res
@@ -262,11 +260,13 @@ let go (env0: IncrementalOptimizationEnv) ((phase1, phase2, phase3): FilePhaseFu
                 previous
                 |> Option.map getPhase3Res
                 |> Option.defaultValue env0
-            let hidingInfo =
-                previous
-                |> Option.map getPhase1Res
-                |> Option.map snd
-                |> Option.defaultValue hidingInfo0
+            // impl file
+            let _, file =
+                res
+                |> getPhase2Res
+            let _phase1Env, _, hidingInfo =
+                res
+                |> getPhase1Res
             let inputs = env, hidingInfo, file
             let phase3Res = phase3 inputs
             res.Phase3 <- Some phase3Res
