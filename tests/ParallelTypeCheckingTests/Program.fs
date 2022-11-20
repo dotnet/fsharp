@@ -32,16 +32,13 @@ let _parse (argv: string[]) : Args =
 open ParallelTypeCheckingTests.TestCompilationFromCmdlineArgs
 [<EntryPoint>]
 let main _argv =
-    OptimizeInputs.UseParallelOptimizer <- true
+    ParseAndCheckInputs.CheckMultipleInputsUsingGraphMode <-
+            ParallelTypeChecking.CheckMultipleInputsInParallel
+    OptimizeInputs.UseParallelOptimizer <- bool.Parse(_argv[0])
     // let args = _parse _argv
     // let args = { args with LineLimit = None }
-    let componentTests = codebases[1]
-    let config = codebaseToConfig componentTests Method.ParallelCheckingOfBackedImplFiles
+    let componentTests = codebases[System.Int32.Parse(_argv[1])]
+    let config = codebaseToConfig componentTests Method.Graph
     TestCompilerFromArgs config
-    compileAValidProject
-        {
-            Method = Method.Sequential
-            Project = Codebases.dependentSignatures
-        }
     0
 

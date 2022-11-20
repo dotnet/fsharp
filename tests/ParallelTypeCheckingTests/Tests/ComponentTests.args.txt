@@ -28,7 +28,7 @@
 --doc:..\..\artifacts\obj\FSharp.Compiler.ComponentTests\Debug\net7.0\FSharp.Compiler.ComponentTests.xml
 --keyfile:$PACKAGES$\microsoft.dotnet.arcade.sdk\8.0.0-beta.22552.1\tools\snk/MSFT.snk
 --publicsign+
---optimize-
+--optimize+
 --tailcalls-
 -r:$PACKAGES$\fluentassertions\5.10.3\lib\netcoreapp2.1\FluentAssertions.dll
 -r:..\..\artifacts\bin\FSharp.Build\Debug\netstandard2.0\FSharp.Build.dll
