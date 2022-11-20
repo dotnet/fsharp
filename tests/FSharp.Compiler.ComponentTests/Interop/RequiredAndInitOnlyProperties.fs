@@ -8,6 +8,14 @@ open System
 
 module ``Required and init-only properties`` =
 
+    let csharpRecord =
+        CSharp """
+    namespace RequiredAndInitOnlyProperties
+    {
+        public record Recd();
+
+    }""" |> withCSharpLanguageVersion CSharpLanguageVersion.Preview |> withName "csLib"
+
     let csharpBaseClass = 
         CSharp """
     namespace RequiredAndInitOnlyProperties
@@ -228,7 +236,7 @@ let main _ =
             Error 810, Line 9, Col 5, Line 9, Col 21, "Cannot call 'set_GetInit' - a setter for init-only property, please use object initialization instead. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
         ]
 
- #if !NETCOREAPP
+#if !NETCOREAPP
     [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]
 #else
     [<Fact>]
@@ -259,6 +267,63 @@ let main _ =
             Error 810, Line 9, Col 38, Line 9, Col 40, "Init-only property 'GetInit' cannot be set outside the initialization code. See https://aka.ms/fsharp-assigning-values-to-properties-at-initialization"
         ]
 
+#if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+#else
+    [<Fact>]
+#endif
+    let ``F# can change init-only property via SRTP`` () =
+
+        let csharpLib = csharpBaseClass
+
+        let fsharpSource =
+            """
+open System
+open RequiredAndInitOnlyProperties
+
+let inline setGetInit<'T when 'T : (member set_GetInit: int -> unit)> (a: 'T) (x: int) = a.set_GetInit(x)
+
+[<EntryPoint>]
+let main _ =
+    let raio = RAIO()
+    setGetInit raio 111
+    0
+"""
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersion70
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
+
+ #if !NETCOREAPP
+    [<Fact(Skip = "IWSAMs are not supported by NET472.")>]
+#else
+    [<Fact>]
+#endif
+    let ``F# can call special-named methods via SRTP`` () =
+
+        let csharpLib = csharpRecord
+
+        let fsharpSource =
+            """
+open System
+open RequiredAndInitOnlyProperties
+
+let inline clone<'T when 'T : (member ``<Clone>$``: unit -> 'T)> (a: 'T) = a.``<Clone>$``()
+
+[<EntryPoint>]
+let main _ =
+    let recd = Recd()
+    let _ = clone recd
+    0
+"""
+        FSharp fsharpSource
+        |> asExe
+        |> withLangVersion70
+        |> withReferences [csharpLib]
+        |> compile
+        |> shouldSucceed
 
 #if !NETCOREAPP
     [<Fact(Skip = "NET472 is unsupported runtime for this kind of test.")>]

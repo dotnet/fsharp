@@ -336,7 +336,7 @@ module NavigationImpl =
                          [
                              createMember (id, NavigationItemKind.Field, FSharpGlyph.Field, id.idRange, enclosingEntityKind, false, access)
                          ]
-                     | SynMemberDefn.AbstractSlot (SynValSig (ident = SynIdent (id, _); synType = ty; accessibility = access), _, _) ->
+                     | SynMemberDefn.AbstractSlot(slotSig = SynValSig (ident = SynIdent (id, _); synType = ty; accessibility = access)) ->
                          [
                              createMember (id, NavigationItemKind.Method, FSharpGlyph.OverridenMethod, ty.Range, enclosingEntityKind, true, access)
                          ]
@@ -557,7 +557,7 @@ module NavigationImpl =
             [
                 for memb in members do
                     match memb with
-                    | SynMemberSig.Member (SynValSig.SynValSig (ident = SynIdent (id, _); accessibility = access; range = m), _, _) ->
+                    | SynMemberSig.Member(memberSig = SynValSig.SynValSig (ident = SynIdent (id, _); accessibility = access; range = m)) ->
                         createMember (id, NavigationItemKind.Method, FSharpGlyph.Method, m, NavigationEntityKind.Class, false, access)
                     | SynMemberSig.ValField (SynField (idOpt = Some rcid; fieldType = ty; accessibility = access), _) ->
                         createMember (rcid, NavigationItemKind.Field, FSharpGlyph.Field, ty.Range, NavigationEntityKind.Class, false, access)
@@ -882,7 +882,7 @@ module NavigateTo =
 
         and walkSynMemberSig (synMemberSig: SynMemberSig) container =
             match synMemberSig with
-            | SynMemberSig.Member (valSig, memberFlags, _) -> addMember valSig memberFlags true container
+            | SynMemberSig.Member (memberSig = valSig; flags = memberFlags) -> addMember valSig memberFlags true container
             | SynMemberSig.ValField (synField, _) -> addField synField true container
             | SynMemberSig.NestedType (synTypeDef, _) -> walkSynTypeDefnSig synTypeDef container
             | SynMemberSig.Inherit _
@@ -980,7 +980,7 @@ module NavigateTo =
 
         and walkSynMemberDefn (memberDefn: SynMemberDefn) container =
             match memberDefn with
-            | SynMemberDefn.AbstractSlot (synValSig, memberFlags, _) -> addMember synValSig memberFlags false container
+            | SynMemberDefn.AbstractSlot (slotSig = synValSig; flags = memberFlags) -> addMember synValSig memberFlags false container
             | SynMemberDefn.AutoProperty (ident = id) -> addIdent NavigableItemKind.Property id false container
             | SynMemberDefn.Interface (members = members) ->
                 match members with

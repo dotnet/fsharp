@@ -15,7 +15,6 @@ scripts/*.patch
 /src/FSharp.Build/*.resx
 /src/fsi/*.resx
 /src/FSharp.Compiler.Interactive.Settings/*.resx
-/src/FSharp.Compiler.Server.Shared/*.resx
 /src/fsi/Fsi.sln
 /src/FSharp.Build/*.resources
 /src/Compiler/*.resx

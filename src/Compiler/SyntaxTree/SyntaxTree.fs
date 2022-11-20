@@ -427,8 +427,6 @@ type SynType =
 
     | HashConstraint of innerType: SynType * range: range
 
-    | MeasureDivide of dividend: SynType * divisor: SynType * range: range
-
     | MeasurePower of baseMeasure: SynType * exponent: SynRationalConst * range: range
 
     | StaticConstant of constant: SynConst * range: range
@@ -458,7 +456,6 @@ type SynType =
         | SynType.StaticConstantExpr (range = m)
         | SynType.StaticConstantNamed (range = m)
         | SynType.HashConstraint (range = m)
-        | SynType.MeasureDivide (range = m)
         | SynType.MeasurePower (range = m)
         | SynType.Paren (range = m)
         | SynType.SignatureParameter (range = m)
@@ -1122,7 +1119,7 @@ type SynMemberKind =
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type SynMemberSig =
 
-    | Member of memberSig: SynValSig * flags: SynMemberFlags * range: range
+    | Member of memberSig: SynValSig * flags: SynMemberFlags * range: range * trivia: SynMemberSigMemberTrivia
 
     | Interface of interfaceType: SynType * range: range
 
@@ -1420,7 +1417,7 @@ type SynMemberDefn =
 
     | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
 
-    | AbstractSlot of slotSig: SynValSig * flags: SynMemberFlags * range: range
+    | AbstractSlot of slotSig: SynValSig * flags: SynMemberFlags * range: range * trivia: SynMemberDefnAbstractSlotTrivia
 
     | Interface of interfaceType: SynType * withKeyword: range option * members: SynMemberDefns option * range: range
 

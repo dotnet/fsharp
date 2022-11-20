@@ -10411,3 +10411,21 @@ let (|EmptyModuleOrNamespaces|_|) (moduleOrNamespaceContents: ModuleOrNamespaceC
         else
             None
     | _ -> None
+
+let tryAddExtensionAttributeIfNotAlreadyPresent
+    (tryFindExtensionAttributeIn: (Attrib list -> Attrib option) -> Attrib option)
+    (entity: Entity)
+    : Entity
+    =
+    let tryFindExtensionAttribute (attribs: Attrib list): Attrib option =
+         List.tryFind
+             (fun (a: Attrib) ->
+                a.TyconRef.CompiledRepresentationForNamedType.BasicQualifiedName = "System.Runtime.CompilerServices.ExtensionAttribute")
+             attribs
+
+    if Option.isSome (tryFindExtensionAttribute entity.Attribs) then
+        entity
+    else
+        match tryFindExtensionAttributeIn tryFindExtensionAttribute with
+        | None -> entity
+        | Some extensionAttrib -> { entity with entity_attribs = extensionAttrib :: entity.Attribs }

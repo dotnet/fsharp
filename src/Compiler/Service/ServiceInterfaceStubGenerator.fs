@@ -144,7 +144,6 @@ type InterfaceData =
                 | SynType.AnonRecd (_, ts, _) -> Some(ts |> Seq.choose (snd >> (|TypeIdent|_|)) |> String.concat "; ")
                 | SynType.Array (dimension, TypeIdent typeName, _) -> Some(sprintf "%s [%s]" typeName (String(',', dimension - 1)))
                 | SynType.MeasurePower (TypeIdent typeName, RationalConst power, _) -> Some(sprintf "%s^%s" typeName power)
-                | SynType.MeasureDivide (TypeIdent numerator, TypeIdent denominator, _) -> Some(sprintf "%s/%s" numerator denominator)
                 | SynType.Paren (TypeIdent typeName, _) -> Some typeName
                 | _ -> None
 
@@ -826,7 +825,7 @@ module InterfaceStubGenerator =
                 None
             else
                 match memberDefn with
-                | SynMemberDefn.AbstractSlot (_synValSig, _memberFlags, _range) -> None
+                | SynMemberDefn.AbstractSlot _ -> None
                 | SynMemberDefn.AutoProperty (synExpr = expr) -> walkExpr expr
                 | SynMemberDefn.Interface (interfaceType = interfaceType; members = members) ->
                     if rangeContainsPos interfaceType.Range pos then

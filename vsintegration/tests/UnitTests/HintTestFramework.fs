@@ -5,9 +5,9 @@ namespace VisualFSharp.UnitTests.Editor.Hints
 open System.Threading
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Hints
-open Microsoft.VisualStudio.FSharp.Editor.Hints.HintService
 open VisualFSharp.UnitTests.Editor
 open Microsoft.CodeAnalysis.Text
+open Hints
 
 module HintTestFramework =
 
@@ -44,9 +44,23 @@ let getFsiAndFsDocuments (fsiCode: string) (fsCode: string) =
         "test.fs",
         SourceText.From fsCode)
 
-let getHints document = 
+let getHints document hintKinds = 
     async {
-        let! hints = HintService.getHintsForDocument document "test" CancellationToken.None
+        let! hints = HintService.getHintsForDocument document hintKinds "test" CancellationToken.None
         return hints |> Seq.map convert
     }
     |> Async.RunSynchronously
+
+let getTypeHints document = 
+    getHints document (Set.empty.Add(HintKind.TypeHint))
+
+let getParameterNameHints document = 
+    getHints document (Set.empty.Add(HintKind.ParameterNameHint))
+
+let getAllHints document = 
+    let hintKinds = 
+        Set.empty
+           .Add(HintKind.TypeHint)
+           .Add(HintKind.ParameterNameHint)
+
+    getHints document hintKinds

@@ -492,9 +492,6 @@ type SynType =
     /// F# syntax: #type
     | HashConstraint of innerType: SynType * range: range
 
-    /// F# syntax: for units of measure e.g. m / s
-    | MeasureDivide of dividend: SynType * divisor: SynType * range: range
-
     /// F# syntax: for units of measure e.g. m^3, kg^1/2
     | MeasurePower of baseMeasure: SynType * exponent: SynRationalConst * range: range
 
@@ -1268,7 +1265,7 @@ type SynMemberKind =
 type SynMemberSig =
 
     /// A member definition in a type in a signature file
-    | Member of memberSig: SynValSig * flags: SynMemberFlags * range: range
+    | Member of memberSig: SynValSig * flags: SynMemberFlags * range: range * trivia: SynMemberSigMemberTrivia
 
     /// An interface definition in a type in a signature file
     | Interface of interfaceType: SynType * range: range
@@ -1601,7 +1598,11 @@ type SynMemberDefn =
     | LetBindings of bindings: SynBinding list * isStatic: bool * isRecursive: bool * range: range
 
     /// An abstract slot definition within a class or interface
-    | AbstractSlot of slotSig: SynValSig * flags: SynMemberFlags * range: range
+    | AbstractSlot of
+        slotSig: SynValSig *
+        flags: SynMemberFlags *
+        range: range *
+        trivia: SynMemberDefnAbstractSlotTrivia
 
     /// An interface implementation definition within a class
     | Interface of interfaceType: SynType * withKeyword: range option * members: SynMemberDefns option * range: range

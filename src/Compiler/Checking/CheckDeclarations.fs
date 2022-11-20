@@ -407,7 +407,7 @@ let private CheckDuplicatesAbstractMethodParmsSig (typeSpecs:  SynTypeDefnSig li
         | SynTypeDefnSigRepr.ObjectModel(_, synMemberSigs, _) ->
          for sms in synMemberSigs do
              match sms with
-             | SynMemberSig.Member(synValSig, _, m) ->
+             | SynMemberSig.Member(memberSig = synValSig; range = m) ->
                 CheckDuplicatesArgNames synValSig m
              | _ -> ()
         | _ -> ()
@@ -602,7 +602,7 @@ let TcAndPublishMemberSpec cenv env containerInfo declKind tpenv memb =
     | SynMemberSig.ValField(_, m) -> error(Error(FSComp.SR.tcFieldValIllegalHere(), m))
     | SynMemberSig.Inherit(_, m) -> error(Error(FSComp.SR.tcInheritIllegalHere(), m))
     | SynMemberSig.NestedType(_, m) -> error(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m))
-    | SynMemberSig.Member(synValSig, memberFlags, _) -> 
+    | SynMemberSig.Member(memberSig = synValSig; flags = memberFlags) -> 
         TcAndPublishValSpec (cenv, env, containerInfo, declKind, Some memberFlags, tpenv, synValSig)
     | SynMemberSig.Interface _ -> 
         // These are done in TcMutRecDefns_Phase1
@@ -970,6 +970,20 @@ module MutRecBindingChecking =
                     | rest -> rest
 
                 let prelimRecValues = [ for x in defnAs do match x with Phase2AMember bind -> yield bind.RecBindingInfo.Val | _ -> () ]
+                
+                let tyconOpt =
+                    if cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
+                        tyconOpt
+                        |> Option.map (fun tycon ->
+                            tryAddExtensionAttributeIfNotAlreadyPresent
+                                (fun tryFindExtensionAttribute ->
+                                    tycon.MembersOfFSharpTyconSorted
+                                    |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
+                                )
+                                tycon
+                        )
+                    else
+                        tyconOpt
                 let defnAs = MutRecShape.Tycon(TyconBindingsPhase2A(tyconOpt, declKind, prelimRecValues, tcref, copyOfTyconTypars, thisTy, defnAs))
                 defnAs, (tpenv, recBindIdx, uncheckedBindsRev))
 
@@ -3162,7 +3176,10 @@ module EstablishTypeDefinitionCores =
                 | None -> ()
                 | Some spats ->
                     let ctorArgNames, _ = TcSimplePatsOfUnknownType cenv true CheckCxs envinner tpenv spats
-                    if not ctorArgNames.IsEmpty then errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), m))
+                    if not ctorArgNames.IsEmpty then
+                        match spats with
+                        | SynSimplePats.SimplePats(_, m) -> errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), m))
+                        | SynSimplePats.Typed(_, _, m) -> errorR (Error(FSComp.SR.parsOnlyClassCanTakeValueArguments(), m))
                 
             let envinner = AddDeclaredTypars CheckForDuplicateTypars (tycon.Typars m) envinner
             let envinner = MakeInnerEnvForTyconRef envinner thisTyconRef false
@@ -3973,7 +3990,7 @@ module TcDeclarations =
             for slot in ds do
                 if isAbstractSlot slot then
                     match slot with
-                    | SynMemberDefn.AbstractSlot (synVal, _, m) ->
+                    | SynMemberDefn.AbstractSlot (slotSig = synVal; range = m) ->
                         CheckDuplicatesArgNames synVal m
                     | _ -> ()
                     
@@ -4014,7 +4031,7 @@ module TcDeclarations =
                     | SynMemberDefn.ImplicitInherit (ty, _, idOpt, m) -> Some(ty, m, idOpt)
                     | _ -> None)
             //let nestedTycons = cspec |> List.choose (function SynMemberDefn.NestedType (x, _, _) -> Some x | _ -> None)
-            let slotsigs = cspec |> List.choose (function SynMemberDefn.AbstractSlot (x, y, _) -> Some(x, y) | _ -> None)
+            let slotsigs = cspec |> List.choose (function SynMemberDefn.AbstractSlot (slotSig = x; flags = y) -> Some(x, y) | _ -> None)
            
             let members = 
                 let membersIncludingAutoProps = 
@@ -4064,7 +4081,7 @@ module TcDeclarations =
                 // Convert auto properties to member bindings in the post-list
                 let rec postAutoProps memb =
                     match memb with 
-                    | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; memberFlagsForSet=memberFlagsForSet; xmlDoc=xmlDoc; accessibility=access; trivia = { GetSetKeyword = mGetSetOpt }) ->
+                    | SynMemberDefn.AutoProperty(attributes=Attributes attribs; isStatic=isStatic; ident=id; typeOpt=tyOpt; propKind=propKind; memberFlags=memberFlags; memberFlagsForSet=memberFlagsForSet; xmlDoc=xmlDoc; accessibility=access; trivia = { GetSetKeywords = mGetSetOpt }) ->
                         let mMemberPortion = id.idRange
                         // Only the keep the non-field-targeted attributes
                         let attribs = attribs |> List.filter (fun a -> match a.Target with Some t when t.idText = "field" -> false | _ -> true)
@@ -4075,7 +4092,7 @@ module TcDeclarations =
                         let memberFlagsForSet = { memberFlagsForSet with GetterOrSetterIsCompilerGenerated = true }
 
                         match propKind, mGetSetOpt with 
-                        | SynMemberKind.PropertySet, Some m -> errorR(Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSetNotJustSet(), m))
+                        | SynMemberKind.PropertySet, Some gs -> errorR(Error(FSComp.SR.parsMutableOnAutoPropertyShouldBeGetSetNotJustSet(), gs.Range))
                         | _ -> ()
        
                         [ 
@@ -4226,6 +4243,50 @@ module TcDeclarations =
         // Check the members and decide on representations for types with implicit constructors.
         let withBindings, envFinal = TcMutRecDefns_Phase2 cenv envInitial m scopem mutRecNSInfo envMutRecPrelimWithReprs withEnvs isMutRec
 
+        let withBindings =
+            if cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
+                // If any of the types has a member with the System.Runtime.CompilerServices.ExtensionAttribute,
+                // or a recursive module has a binding with the System.Runtime.CompilerServices.ExtensionAttribute,
+                // that type/recursive module should also received the ExtensionAttribute if it is not yet present.
+                // Example:
+                // open System.Runtime.CompilerServices
+                //
+                // type Int32Extensions =
+                //      [<Extension>]
+                //      static member PlusOne (a:int) : int = a + 1
+                //
+                // or
+                //
+                // module rec Foo
+                //
+                // [<System.Runtime.CompilerServices.Extension>]
+                // let PlusOne (a:int) = a + 1
+                withBindings
+                |> List.map (function
+                    | MutRecShape.Tycon (Some tycon, bindings) ->
+                        let tycon =
+                            tryAddExtensionAttributeIfNotAlreadyPresent
+                                (fun tryFindExtensionAttribute ->
+                                    tycon.MembersOfFSharpTyconSorted
+                                    |> Seq.tryPick (fun m -> tryFindExtensionAttribute m.Attribs)
+                                )
+                                tycon
+                        MutRecShape.Tycon (Some tycon, bindings)
+                    | MutRecShape.Module ((MutRecDefnsPhase2DataForModule(moduleOrNamespaceType, entity), env), shapes) ->
+                        let entity =
+                            tryAddExtensionAttributeIfNotAlreadyPresent
+                                (fun tryFindExtensionAttribute ->
+                                    moduleOrNamespaceType.Value.AllValsAndMembers
+                                    |> Seq.filter(fun v -> v.IsModuleBinding)
+                                    |> Seq.tryPick (fun v -> tryFindExtensionAttribute v.Attribs)
+                                )
+                                entity
+
+                        MutRecShape.Module ((MutRecDefnsPhase2DataForModule(moduleOrNamespaceType, entity), env), shapes)
+                    | shape -> shape)
+                else
+                    withBindings
+
         // Generate the hash/compare/equality bindings for all tycons.
         //
         // Note: generating these bindings must come after generating the members, since some in the case of structs some fields
@@ -4262,22 +4323,22 @@ module TcDeclarations =
             let implements2 = cspec |> List.choose (function SynMemberSig.Interface (ty, m) -> Some(ty, m) | _ -> None)
             let inherits = cspec |> List.choose (function SynMemberSig.Inherit (ty, _) -> Some(ty, m, None) | _ -> None)
             //let nestedTycons = cspec |> List.choose (function SynMemberSig.NestedType (x, _) -> Some x | _ -> None)
-            let slotsigs = cspec |> List.choose (function SynMemberSig.Member (v, fl, _) when fl.IsDispatchSlot -> Some(v, fl) | _ -> None)
+            let slotsigs = cspec |> List.choose (function SynMemberSig.Member (memberSig = v; flags = fl) when fl.IsDispatchSlot -> Some(v, fl) | _ -> None)
             let members = cspec |> List.filter (function   
                                                           | SynMemberSig.Interface _ -> true
-                                                          | SynMemberSig.Member (_, memberFlags, _) when not memberFlags.IsDispatchSlot -> true
+                                                          | SynMemberSig.Member (flags = memberFlags) when not memberFlags.IsDispatchSlot -> true
                                                           | SynMemberSig.NestedType (_, m) -> error(Error(FSComp.SR.tcTypesCannotContainNestedTypes(), m)); false
                                                           | _ -> false)
             let isConcrete = 
                 members |> List.exists (function 
-                    | SynMemberSig.Member (_, memberFlags, _) -> memberFlags.MemberKind=SynMemberKind.Constructor 
+                    | SynMemberSig.Member (flags = memberFlags) -> memberFlags.MemberKind=SynMemberKind.Constructor 
                     | _ -> false)
 
             // An ugly bit of code to pre-determine if a type has a nullary constructor, prior to establishing the 
             // members of the type
             let preEstablishedHasDefaultCtor = 
                 members |> List.exists (function 
-                    | SynMemberSig.Member (synValSig, memberFlags, _) -> 
+                    | SynMemberSig.Member (memberSig = synValSig; flags = memberFlags) -> 
                         memberFlags.MemberKind=SynMemberKind.Constructor && 
                         // REVIEW: This is a syntactic approximation
                         (match synValSig.SynType, synValSig.SynInfo.CurriedArgInfos with 
@@ -4764,6 +4825,31 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv: cenv) parent typeNames scopem
 
               // Get the inferred type of the decls and record it in the modul. 
               moduleEntity.entity_modul_type <- MaybeLazy.Strict moduleTyAcc.Value
+
+              let moduleEntity =
+                if cenv.g.langVersion.SupportsFeature(LanguageFeature.CSharpExtensionAttributeNotRequired) then
+                    // If any of the let bindings inside the module has the System.Runtime.CompilerServices.ExtensionAttribute,
+                    // that module should also received the ExtensionAttribute if it is not yet present.
+                    // Example:
+                    // module Foo
+                    //
+                    //[<System.Runtime.CompilerServices.Extension>]
+                    //let PlusOne (a:int) = a + 1
+                    tryAddExtensionAttributeIfNotAlreadyPresent
+                        (fun tryFindExtensionAttribute ->
+                            match moduleContents with
+                            | ModuleOrNamespaceContents.TMDefs(defs) ->
+                                defs
+                                |> Seq.tryPick (function
+                                    | ModuleOrNamespaceContents.TMDefLet (Binding.TBind(var = v),_) ->
+                                        tryFindExtensionAttribute v.Attribs
+                                    | _ -> None)
+                            | _ -> None
+                        )
+                        moduleEntity
+                else
+                    moduleEntity
+                    
               let moduleDef = TMDefRec(false, [], [], [ModuleOrNamespaceBinding.Module(moduleEntity, moduleContents)], m)
 
               PublishModuleDefn cenv env moduleEntity 
