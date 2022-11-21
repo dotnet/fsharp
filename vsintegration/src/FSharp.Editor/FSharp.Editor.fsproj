@@ -14,6 +14,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
     <InternalsVisibleTo Include="VisualFSharp.UnitTests" />
+    <InternalsVisibleTo Include="FSharp.Editor.Tests" />
     <InternalsVisibleTo Include="VisualFSharp.Salsa" />
   </ItemGroup>
 
