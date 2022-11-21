@@ -1427,6 +1427,7 @@ type TcGlobals(
   member val attrib_MeasureAttribute                       = mk_MFCore_attrib "MeasureAttribute"
   member val attrib_MeasureableAttribute                   = mk_MFCore_attrib "MeasureAnnotatedAbbreviationAttribute"
   member val attrib_NoDynamicInvocationAttribute           = mk_MFCore_attrib "NoDynamicInvocationAttribute"
+  member val attrib_NoCompilerInliningAttribute            = mk_MFCore_attrib "NoCompilerInliningAttribute"
   member val attrib_SecurityAttribute                      = tryFindSysAttrib "System.Security.Permissions.SecurityAttribute"
   member val attrib_SecurityCriticalAttribute              = findSysAttrib "System.Security.SecurityCriticalAttribute"
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
@@ -1830,12 +1831,12 @@ type TcGlobals(
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "atan2", None, Some "Atan2", [vara; varb], ([[varaTy]; [varaTy]], varbTy))
         let tyargs = [aty;bty]
         Some (info, tyargs, argExprs)
-    | "get_Zero", _, Some aty, [_] ->
+    | "get_Zero", _, Some aty, ([] | [_]) ->
         // Call LanguagePrimitives.GenericZero
         let info = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, "GenericZero", None, None, [vara], ([], varaTy))
         let tyargs = [aty]
         Some (info, tyargs, [])
-    | "get_One", _, Some aty, [_] ->
+    | "get_One", _, Some aty,  ([] | [_])  ->
         // Call LanguagePrimitives.GenericOne
         let info = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, "GenericOne", None, None, [vara], ([], varaTy))
         let tyargs = [aty]
