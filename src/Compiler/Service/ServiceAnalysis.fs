@@ -40,7 +40,8 @@ module UnusedOpens =
                                     // fv.IsExtensionMember is always false for C# extension methods returning by `MembersFunctionsAndValues`,
                                     // so we have to check Extension attribute instead.
                                     // (note: fv.IsExtensionMember has proper value for symbols returning by GetAllUsesOfAllSymbolsInFile though)
-                                    if fv.HasAttribute<ExtensionAttribute>() then fv
+                                    if fv.HasAttribute<ExtensionAttribute>() then
+                                        fv
 
                         for apCase in entity.ActivePatternCases do
                             apCase
@@ -429,11 +430,13 @@ module UnusedDeclarations =
         symbolsUses
         |> Seq.distinctBy (fun su -> su.Range) // Account for "hidden" uses, like a val in a member val definition. These aren't relevant
         |> Seq.choose (fun (su: FSharpSymbolUse) ->
-            if su.IsFromDefinition
-               && su.Symbol.DeclarationLocation.IsSome
-               && (isScript || su.IsPrivateToFile)
-               && not (su.Symbol.DisplayName.StartsWith "_")
-               && isPotentiallyUnusedDeclaration su.Symbol then
+            if
+                su.IsFromDefinition
+                && su.Symbol.DeclarationLocation.IsSome
+                && (isScript || su.IsPrivateToFile)
+                && not (su.Symbol.DisplayName.StartsWith "_")
+                && isPotentiallyUnusedDeclaration su.Symbol
+            then
                 Some(su, usages.Contains su.Symbol.DeclarationLocation.Value)
             else
                 None)

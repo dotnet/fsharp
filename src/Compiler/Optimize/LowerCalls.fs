@@ -17,18 +17,18 @@ let InterceptExpr g cont expr =
     match expr with
     | Expr.Val (vref, flags, m) ->
         match vref.ValReprInfo with
-        | Some arity -> Some (fst (AdjustValForExpectedArity g m vref flags arity))
+        | Some arity -> Some (fst (AdjustValForExpectedValReprInfo g m vref flags arity))
         | None -> None
 
     // App (Val v, tys, args)
     | Expr.App (Expr.Val (vref, flags, _) as f0, f0ty, tyargsl, argsl, m) ->
         // Only transform if necessary, i.e. there are not enough arguments
         match vref.ValReprInfo with
-        | Some(topValInfo) ->
+        | Some(valReprInfo) ->
             let argsl = List.map cont argsl
             let f0 =
-                if topValInfo.AritiesOfArgs.Length > argsl.Length
-                then fst(AdjustValForExpectedArity g m vref flags topValInfo)
+                if valReprInfo.AritiesOfArgs.Length > argsl.Length
+                then fst(AdjustValForExpectedValReprInfo g m vref flags valReprInfo)
                 else f0
 
             Some (MakeApplicationAndBetaReduce g (f0, f0ty, [tyargsl], argsl, m))
@@ -49,5 +49,5 @@ let LowerImplFile g assembly =
           PreInterceptBinding=None
           PostTransform= (fun _ -> None)
           RewriteQuotations=false
-          StackGuard = StackGuard(LowerCallsRewriteStackGuardDepth) }
+          StackGuard = StackGuard(LowerCallsRewriteStackGuardDepth, "LowerCallsRewriteStackGuardDepth") }
     assembly |> RewriteImplFile rwenv

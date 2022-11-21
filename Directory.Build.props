@@ -3,4 +3,18 @@
   <Import Project="FSharpBuild.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' == '' "/>
   <Import Project="FSharpTests.Directory.Build.props" Condition = " '$(FSharpTestCompilerVersion)' != '' "/>
 
+  <!-- 
+   When developers load the FSharp.Compiler.Service solution we set FSHARPCORE_USE_PACKAGE to true if it hasn't already been set to a value.
+   This option ensures that building and testing uses the specified FSharp.Core nuget package instead of the local
+   FSharp.Core project.
+   -->
+  <PropertyGroup Condition="'$(FSHARPCORE_USE_PACKAGE)' == ''">
+    <FSHARPCORE_USE_PACKAGE Condition="'$(SolutionName)' == 'FSharp.Compiler.Service'">true</FSHARPCORE_USE_PACKAGE>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- If there is a README.md next to a project file, include it (for easier access in the IDE) -->
+    <None Include="README.md" Condition="Exists('README.md')" />
+  </ItemGroup>
+
 </Project>

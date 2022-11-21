@@ -3,8 +3,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net472</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net6.0</TargetFrameworks>
+    <TargetFrameworks>net7.0;net472</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Unix'">net7.0</TargetFrameworks>
     <OutputType>Library</OutputType>
 
     <AssemblyName>FSharp.Core.UnitTests</AssemblyName>
@@ -42,6 +42,7 @@
     <Compile Include="FSharp.Core\OperatorsModule1.fs" />
     <Compile Include="FSharp.Core\OperatorsModule2.fs" />
     <Compile Include="FSharp.Core\OperatorsModuleChecked.fs" />
+    <Compile Include="FSharp.Core\OperatorsModuleDynamic.fs" />
     <Compile Include="FSharp.Core\NativeInterop.fs" />
 
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" />

@@ -1499,6 +1499,7 @@ let u_MemberFlags st : SynMemberFlags=
       IsDispatchSlot=x4
       IsOverrideOrExplicitImpl=x5
       IsFinal=x6
+      GetterOrSetterIsCompilerGenerated=false
       MemberKind=x7
       Trivia = SynMemberFlagsTrivia.Zero }
 
@@ -1513,9 +1514,9 @@ let p_anonInfo x st =
 
 let p_trait_sln sln st =
     match sln with
-    | ILMethSln(a, b, c, d) ->
+    | ILMethSln(a, b, c, d, None) ->
          p_byte 0 st; p_tup4 p_ty (p_option p_ILTypeRef) p_ILMethodRef p_tys (a, b, c, d) st
-    | FSMethSln(a, b, c) ->
+    | FSMethSln(a, b, c, None) ->
          p_byte 1 st; p_tup3 p_ty (p_vref "trait") p_tys (a, b, c) st
     | BuiltInSln ->
          p_byte 2 st
@@ -1525,6 +1526,10 @@ let p_trait_sln sln st =
          p_byte 4 st; p_tup3 p_tys p_rfref p_bool (a, b, c) st
     | FSAnonRecdFieldSln(a, b, c) ->
          p_byte 5 st; p_tup3 p_anonInfo p_tys p_int (a, b, c) st
+    | ILMethSln(a, b, c, d, Some e) ->
+         p_byte 6 st; p_tup5 p_ty (p_option p_ILTypeRef) p_ILMethodRef p_tys p_ty (a, b, c, d, e) st
+    | FSMethSln(a, b, c, Some d) ->
+         p_byte 7 st; p_tup4 p_ty (p_vref "trait") p_tys p_ty (a, b, c, d) st
 
 
 let p_trait (TTrait(a, b, c, d, e, f)) st  =
@@ -1543,10 +1548,10 @@ let u_trait_sln st =
     match tag with
     | 0 ->
         let a, b, c, d = u_tup4 u_ty (u_option u_ILTypeRef) u_ILMethodRef u_tys st
-        ILMethSln(a, b, c, d)
+        ILMethSln(a, b, c, d, None)
     | 1 ->
         let a, b, c = u_tup3 u_ty u_vref u_tys st
-        FSMethSln(a, b, c)
+        FSMethSln(a, b, c, None)
     | 2 ->
         BuiltInSln
     | 3 ->
@@ -1557,6 +1562,12 @@ let u_trait_sln st =
     | 5 ->
          let a, b, c = u_tup3 u_anonInfo u_tys u_int st
          FSAnonRecdFieldSln(a, b, c)
+    | 6 ->
+        let a, b, c, d, e = u_tup5 u_ty (u_option u_ILTypeRef) u_ILMethodRef u_tys u_ty st
+        ILMethSln(a, b, c, d, Some e)
+    | 7 ->
+        let a, b, c, d = u_tup4 u_ty u_vref u_tys u_ty st
+        FSMethSln(a, b, c, Some d)
     | _ -> ufailwith st "u_trait_sln"
 
 let u_trait st =
@@ -1575,7 +1586,7 @@ let p_measure_one = p_byte 4
 // Pickle a unit-of-measure variable or constructor
 let p_measure_varcon unt st =
      match unt with
-     | Measure.Con tcref   -> p_measure_con tcref st
+     | Measure.Const tcref   -> p_measure_con tcref st
      | Measure.Var v       -> p_measure_var v st
      | _                  -> pfailwith st "p_measure_varcon: expected measure variable or constructor"
 
@@ -1604,7 +1615,7 @@ let rec p_measure_power unt q st =
 let rec p_normalized_measure unt st =
      let unt = stripUnitEqnsAux false unt
      match unt with
-     | Measure.Con tcref   -> p_measure_con tcref st
+     | Measure.Const tcref   -> p_measure_con tcref st
      | Measure.Inv x       -> p_byte 1 st; p_normalized_measure x st
      | Measure.Prod(x1, x2) -> p_byte 2 st; p_normalized_measure x1 st; p_normalized_measure x2 st
      | Measure.Var v       -> p_measure_var v st
@@ -1625,7 +1636,7 @@ let u_rational st =
 let rec u_measure_expr st =
     let tag = u_byte st
     match tag with
-    | 0 -> let a = u_tcref st in Measure.Con a
+    | 0 -> let a = u_tcref st in Measure.Const a
     | 1 -> let a = u_measure_expr st in Measure.Inv a
     | 2 -> let a, b = u_tup2 u_measure_expr u_measure_expr st in Measure.Prod (a, b)
     | 3 -> let a = u_tpref st in Measure.Var a
@@ -2050,7 +2061,7 @@ and p_ValData x st =
     p_option p_ValReprInfo x.ValReprInfo st
     p_string x.XmlDocSig st
     p_access x.Accessibility st
-    p_parentref x.DeclaringEntity st
+    p_parentref x.TryDeclaringEntity st
     p_option p_const x.LiteralValue st
     if st.oInMem then
         p_used_space1 (p_xmldoc x.XmlDoc) st
@@ -2183,7 +2194,7 @@ and u_recdfield_spec st =
       rfield_xmldoc= defaultArg xmldoc XmlDoc.Empty
       rfield_xmldocsig=f
       rfield_access=g
-      rfield_name_generated = false
+      rfield_name_generated = d.idRange.IsSynthetic
       rfield_other_range = None }
 
 and u_rfield_table st = Construct.MakeRecdFieldsTable (u_list u_recdfield_spec st)
@@ -2353,6 +2364,7 @@ and u_ValData st =
                      val_other_range      = (match x1a with None -> None | Some(_, b) -> Some(b, true))
                      val_defn             = None
                      val_repr_info        = x10
+                     val_repr_info_for_display = None
                      val_const            = x14
                      val_access           = x13
                      val_xmldoc           = defaultArg x15 XmlDoc.Empty
@@ -2436,7 +2448,7 @@ and p_dtree_discrim x st =
     | DecisionTreeTest.UnionCase (ucref, tinst) -> p_byte 0 st; p_tup2 p_ucref p_tys (ucref, tinst) st
     | DecisionTreeTest.Const c                   -> p_byte 1 st; p_const c st
     | DecisionTreeTest.IsNull                    -> p_byte 2 st
-    | DecisionTreeTest.IsInst (srcty, tgty)       -> p_byte 3 st; p_ty srcty st; p_ty tgty st
+    | DecisionTreeTest.IsInst (srcTy, tgtTy)       -> p_byte 3 st; p_ty srcTy st; p_ty tgtTy st
     | DecisionTreeTest.ArrayLength (n, ty)       -> p_byte 4 st; p_tup2 p_int p_ty (n, ty) st
     | DecisionTreeTest.ActivePatternCase _ -> pfailwith st "DecisionTreeTest.ActivePatternCase: only used during pattern match compilation"
     | DecisionTreeTest.Error _ -> pfailwith st "DecisionTreeTest.Error: only used during pattern match compilation"

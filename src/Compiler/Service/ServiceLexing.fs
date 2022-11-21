@@ -683,8 +683,10 @@ module internal LexerStateEncoding =
             let kind2 = ((nestingValue &&& 0b000000000011) >>> 0)
 
             [
-                if tag1 then i1, decodeStringStyle kind1, range0
-                if tag2 then i2, decodeStringStyle kind2, range0
+                if tag1 then
+                    i1, decodeStringStyle kind1, range0
+                if tag2 then
+                    i2, decodeStringStyle kind2, range0
             ]
 
         (colorState, ncomments, pos, ifDefs, hardwhite, stringKind, stringNest)
@@ -1047,8 +1049,8 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf, maxLength: int option, fi
     // Scan a token starting with the given lexer state
     member x.ScanToken(lexState: FSharpTokenizerLexState) : FSharpTokenInfo option * FSharpTokenizerLexState =
 
-        use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        use unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> DiscardErrorsLogger)
+        use _ = UseBuildPhase BuildPhase.Parse
+        use _ = UseDiagnosticsLogger DiscardErrorsLogger
 
         let indentationSyntaxStatus, lexcont = LexerStateEncoding.decodeLexInt lexState
 
@@ -1181,14 +1183,18 @@ type FSharpSourceTokenizer(conditionalDefines: string list, fileName: string opt
 
     let lexResourceManager = LexResourceManager()
 
+    let applyLineDirectives = false
+    let indentationSyntaxStatus = IndentationAwareSyntaxStatus(true, false)
+
     let lexargs =
         mkLexargs (
             conditionalDefines,
-            IndentationAwareSyntaxStatus(true, false),
+            indentationSyntaxStatus,
             lexResourceManager,
             [],
             DiscardErrorsLogger,
-            PathMap.empty
+            PathMap.empty,
+            applyLineDirectives
         )
 
     member _.CreateLineTokenizer(lineText: string) =
@@ -1205,16 +1211,12 @@ type FSharpSourceTokenizer(conditionalDefines: string list, fileName: string opt
 
 module FSharpKeywords =
 
-    let DoesIdentifierNeedBackticks s =
-        PrettyNaming.DoesIdentifierNeedBackticks s
-
-    let AddBackticksToIdentifierIfNeeded s =
-        PrettyNaming.AddBackticksToIdentifierIfNeeded s
-
     let NormalizeIdentifierBackticks s =
         PrettyNaming.NormalizeIdentifierBackticks s
 
     let KeywordsWithDescription = PrettyNaming.keywordsWithDescription
+
+    let KeywordsDescriptionLookup = KeywordsWithDescription |> dict
 
     let KeywordNames = Lexhelp.Keywords.keywordNames
 
@@ -1811,14 +1813,18 @@ module FSharpLexerImpl =
             UnicodeLexing.SourceTextAsLexbuf(reportLibraryOnlyFeatures, langVersion, text)
 
         let indentationSyntaxStatus = IndentationAwareSyntaxStatus(isLightSyntaxOn, true)
+        let applyLineDirectives = isCompiling
 
         let lexargs =
-            mkLexargs (conditionalDefines, indentationSyntaxStatus, LexResourceManager(0), [], diagnosticsLogger, pathMap)
-
-        let lexargs =
-            { lexargs with
-                applyLineDirectives = isCompiling
-            }
+            mkLexargs (
+                conditionalDefines,
+                indentationSyntaxStatus,
+                LexResourceManager(0),
+                [],
+                diagnosticsLogger,
+                pathMap,
+                applyLineDirectives
+            )
 
         let getNextToken =
             let lexer = Lexer.token lexargs canSkipTrivia
@@ -1831,8 +1837,8 @@ module FSharpLexerImpl =
             else
                 lexer
 
-        use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        use _unwindEL = PushDiagnosticsLoggerPhaseUntilUnwind(fun _ -> DiscardErrorsLogger)
+        use _ = UseBuildPhase BuildPhase.Parse
+        use _ = UseDiagnosticsLogger DiscardErrorsLogger
 
         resetLexbufPos "" lexbuf
 

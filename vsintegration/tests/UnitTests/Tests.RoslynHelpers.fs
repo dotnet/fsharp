@@ -1,4 +1,4 @@
-﻿namespace rec Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
+﻿namespace rec VisualFSharp.UnitTests.Editor
 
 open System
 open System.IO
@@ -16,6 +16,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.Shell
+open FSharp.Compiler.CodeAnalysis
 
 [<AutoOpen>]
 module MefHelpers =
@@ -226,7 +227,7 @@ type RoslynTestHelpers private () =
             filePath = projFilePath
         )
 
-    static member CreateDocument (filePath, text: SourceText, ?options: FSharp.Compiler.CodeAnalysis.FSharpProjectOptions) =
+    static member CreateSingleDocumentSolution (filePath, text: SourceText, ?options: FSharpProjectOptions) =
         let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
 
         let workspace = new AdhocWorkspace(TestHostServices())
@@ -272,7 +273,7 @@ type RoslynTestHelpers private () =
 
         document
 
-    static member CreateDocument (filePath, code: string) =
+    static member CreateSingleDocumentSolution (filePath, code: string, ?options) =
         let text = SourceText.From(code)
-        RoslynTestHelpers.CreateDocument(filePath, text), text
+        RoslynTestHelpers.CreateSingleDocumentSolution(filePath, text, ?options = options), text
 

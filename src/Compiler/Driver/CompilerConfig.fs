@@ -388,6 +388,11 @@ type MetadataAssemblyGeneration =
     | ReferenceOut of outputPath: string
     | ReferenceOnly
 
+[<RequireQualifiedAccess>]
+type ParallelReferenceResolution =
+    | On
+    | Off
+
 [<NoEquality; NoComparison>]
 type TcConfigBuilder =
     {
@@ -458,6 +463,7 @@ type TcConfigBuilder =
         mutable metadataVersion: string option
         mutable standalone: bool
         mutable extraStaticLinkRoots: string list
+        mutable compressMetadata: bool
         mutable noSignatureData: bool
         mutable onlyEssentialOptimizationData: bool
         mutable useOptimizationDataFile: bool
@@ -468,7 +474,6 @@ type TcConfigBuilder =
         mutable embedSourceList: string list
         mutable sourceLink: string
 
-        mutable ignoreSymbolStoreSequencePoints: bool
         mutable internConstantStrings: bool
         mutable extraOptimizationIterations: int
 
@@ -502,6 +507,7 @@ type TcConfigBuilder =
         mutable emitTailcalls: bool
         mutable deterministic: bool
         mutable concurrentBuild: bool
+        mutable parallelCheckingWithSignatureFiles: bool
         mutable emitMetadataAssembly: MetadataAssemblyGeneration
         mutable preferredUiLang: string option
         mutable lcid: int option
@@ -528,6 +534,9 @@ type TcConfigBuilder =
         /// If true, strip away data that would not be of use to end users, but is useful to us for debugging
         mutable noDebugAttributes: bool
 
+        /// If true, do not emit ToString implementations for unions, records, structs, exceptions
+        mutable useReflectionFreeCodeGen: bool
+
         /// If true, indicates all type checking and code generation is in the context of fsi.exe
         isInteractive: bool
 
@@ -548,6 +557,8 @@ type TcConfigBuilder =
 
         mutable fxResolver: FxResolver option
 
+        mutable bufferWidth: int option
+
         // Is F# Interactive using multi-assembly emit?
         mutable fsiMultiAssemblyEmit: bool
 
@@ -565,11 +576,17 @@ type TcConfigBuilder =
 
         mutable noConditionalErasure: bool
 
+        mutable applyLineDirectives: bool
+
         mutable pathMap: PathMap
 
         mutable langVersion: LanguageVersion
 
         mutable xmlDocInfoLoader: IXmlDocumentationInfoLoader option
+
+        mutable exiter: Exiter
+
+        mutable parallelReferenceResolution: ParallelReferenceResolution
     }
 
     // Directories to start probing in
@@ -642,7 +659,7 @@ type TcConfigBuilder =
             outputFile = None
             platform = None
             prefer32Bit = false
-            useSimpleResolution = runningOnMono
+            useSimpleResolution = false
             target = CompilerTarget.ConsoleExe
             debuginfo = false
             testFlagEmitFeeFeeAs100001 = false
@@ -678,6 +695,7 @@ type TcConfigBuilder =
             metadataVersion = None
             standalone = false
             extraStaticLinkRoots = []
+            compressMetadata = false
             noSignatureData = false
             onlyEssentialOptimizationData = false
             useOptimizationDataFile = false
@@ -687,7 +705,6 @@ type TcConfigBuilder =
             embedAllSource = false
             embedSourceList = []
             sourceLink = ""
-            ignoreSymbolStoreSequencePoints = false
             internConstantStrings = true
             extraOptimizationIterations = 0
 
@@ -716,6 +733,7 @@ type TcConfigBuilder =
             emitTailcalls = true
             deterministic = false
             concurrentBuild = true
+            parallelCheckingWithSignatureFiles = false
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
             lcid = None
@@ -730,15 +748,18 @@ type TcConfigBuilder =
             pause = false
             alwaysCallVirt = true
             noDebugAttributes = false
+            useReflectionFreeCodeGen = false
             emitDebugInfoInQuotations = false
             exename = None
             shadowCopyReferences = false
             useSdkRefs = true
             fxResolver = None
+            bufferWidth = None
             fsiMultiAssemblyEmit = true
             internalTestSpanStackReferring = false
             noConditionalErasure = false
             pathMap = PathMap.empty
+            applyLineDirectives = true
             langVersion = LanguageVersion.Default
             implicitIncludeDir = implicitIncludeDir
             defaultFSharpBinariesDir = defaultFSharpBinariesDir
@@ -752,6 +773,8 @@ type TcConfigBuilder =
             rangeForErrors = rangeForErrors
             sdkDirOverride = sdkDirOverride
             xmlDocInfoLoader = None
+            exiter = QuitProcessExiter
+            parallelReferenceResolution = ParallelReferenceResolution.Off
         }
 
     member tcConfigB.FxResolver =
@@ -784,7 +807,7 @@ type TcConfigBuilder =
         tcConfigB.fxResolver <- None // this needs to be recreated when the primary assembly changes
 
     member tcConfigB.ResolveSourceFile(m, nm, pathLoadedFrom) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         let paths =
             seq {
@@ -796,7 +819,7 @@ type TcConfigBuilder =
 
     /// Decide names of output file, pdb and assembly
     member tcConfigB.DecideNames sourceFiles =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         if sourceFiles = [] then
             errorR (Error(FSComp.SR.buildNoInputsSpecified (), rangeCmdArgs))
@@ -835,13 +858,7 @@ type TcConfigBuilder =
             if tcConfigB.debuginfo then
                 Some(
                     match tcConfigB.debugSymbolFile with
-                    | None -> getDebugFileName outfile tcConfigB.portablePDB
-#if ENABLE_MONO_SUPPORT
-                    | Some _ when runningOnMono ->
-                        // On Mono, the name of the debug file has to be "<assemblyname>.mdb" so specifying it explicitly is an error
-                        warning (Error(FSComp.SR.ilwriteMDBFileNameCannotBeChangedWarning (), rangeCmdArgs))
-                        getDebugFileName outfile tcConfigB.portablePDB
-#endif
+                    | None -> getDebugFileName outfile
                     | Some f -> f
                 )
             elif (tcConfigB.debugSymbolFile <> None) && (not tcConfigB.debuginfo) then
@@ -853,13 +870,14 @@ type TcConfigBuilder =
         outfile, pdbfile, assemblyName
 
     member tcConfigB.TurnWarningOff(m, s: string) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         match GetWarningNumber(m, s) with
         | None -> ()
         | Some n ->
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
-            if n = 62 then tcConfigB.mlCompatibility <- true
+            if n = 62 then
+                tcConfigB.mlCompatibility <- true
 
             tcConfigB.diagnosticsOptions <-
                 { tcConfigB.diagnosticsOptions with
@@ -867,13 +885,14 @@ type TcConfigBuilder =
                 }
 
     member tcConfigB.TurnWarningOn(m, s: string) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
 
         match GetWarningNumber(m, s) with
         | None -> ()
         | Some n ->
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
-            if n = 62 then tcConfigB.mlCompatibility <- false
+            if n = 62 then
+                tcConfigB.mlCompatibility <- false
 
             tcConfigB.diagnosticsOptions <-
                 { tcConfigB.diagnosticsOptions with
@@ -941,11 +960,10 @@ type TcConfigBuilder =
         if FileSystem.IsInvalidPathShim path then
             warning (Error(FSComp.SR.buildInvalidAssemblyName (path), m))
         elif
-            not
-                (
-                    tcConfigB.referencedDLLs
-                    |> List.exists (fun ar2 -> equals m ar2.Range && path = ar2.Text)
-                )
+            not (
+                tcConfigB.referencedDLLs
+                |> List.exists (fun ar2 -> equals m ar2.Range && path = ar2.Text)
+            )
         then // NOTE: We keep same paths if range is different.
             let projectReference =
                 tcConfigB.projectReferences
@@ -1052,9 +1070,10 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                 else
                     None
 
-        match data.referencedDLLs
-              |> List.filter (fun assemblyReference -> assemblyReference.SimpleAssemblyNameIs libraryName)
-            with
+        match
+            data.referencedDLLs
+            |> List.filter (fun assemblyReference -> assemblyReference.SimpleAssemblyNameIs libraryName)
+        with
         | [] -> defaultCoreLibraryReference, None
         | [ r ]
         | r :: _ -> nameOfDll r
@@ -1091,14 +1110,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             with e ->
                 // We no longer expect the above to fail but leaving this just in case
                 error (Error(FSComp.SR.buildErrorOpeningBinaryFile (fileName, e.Message), rangeStartup))
-        | None ->
-#if !ENABLE_MONO_SUPPORT
-            // TODO: we have to get msbuild out of this
-            if data.useSimpleResolution then
-                None, ""
-            else
-#endif
-            None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
+        | None -> None, data.legacyReferenceResolver.Impl.HighestInstalledNetFrameworkVersion()
 
     let makePathAbsolute path =
         ComputeMakePathAbsolute data.implicitIncludeDir path
@@ -1146,30 +1158,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         | _ -> ()
 
                     | LegacyResolutionEnvironment.EditingOrCompilation _ ->
-#if ENABLE_MONO_SUPPORT
-                        if runningOnMono then
-                            // Default compilation-time references on Mono
-                            //
-                            // On Mono, the default references come from the implementation assemblies.
-                            // This is because we have had trouble reliably using MSBuild APIs to compute DotNetFrameworkReferenceAssembliesRootDirectory on Mono.
-                            yield runtimeRoot
-
-                            if FileSystem.DirectoryExistsShim runtimeRootFacades then
-                                yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
-
-                            if FileSystem.DirectoryExistsShim runtimeRootWPF then
-                                yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
-                            // On Mono we also add a default reference to the 4.5-api and 4.5-api/Facades directories.
-                            let runtimeRootApi = runtimeRootWithoutSlash + "-api"
-                            let runtimeRootApiFacades = Path.Combine(runtimeRootApi, "Facades")
-
-                            if FileSystem.DirectoryExistsShim runtimeRootApi then
-                                yield runtimeRootApi
-
-                            if FileSystem.DirectoryExistsShim runtimeRootApiFacades then
-                                yield runtimeRootApiFacades
-                        else
-#endif
                         // Default compilation-time references on .NET Framework
                         //
                         // This is the normal case for "fsc.exe a.fs". We refer to the reference assemblies folder.
@@ -1179,7 +1167,9 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
                         let frameworkRootVersion = Path.Combine(frameworkRoot, targetFrameworkVersionValue)
                         yield frameworkRootVersion
                         let facades = Path.Combine(frameworkRootVersion, "Facades")
-                        if FileSystem.DirectoryExistsShim facades then yield facades
+
+                        if FileSystem.DirectoryExistsShim facades then
+                            yield facades
 
                         match data.FxResolver.GetFrameworkRefsPackDirectory() with
                         | Some path when FileSystem.DirectoryExistsShim(path) -> yield path
@@ -1189,6 +1179,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             errorRecovery e range0
             []
 
+    member _.bufferWidth = data.bufferWidth
     member _.fsiMultiAssemblyEmit = data.fsiMultiAssemblyEmit
     member _.FxResolver = data.FxResolver
     member _.primaryAssembly = data.primaryAssembly
@@ -1258,6 +1249,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.metadataVersion = data.metadataVersion
     member _.standalone = data.standalone
     member _.extraStaticLinkRoots = data.extraStaticLinkRoots
+    member _.compressMetadata = data.compressMetadata
     member _.noSignatureData = data.noSignatureData
     member _.onlyEssentialOptimizationData = data.onlyEssentialOptimizationData
     member _.useOptimizationDataFile = data.useOptimizationDataFile
@@ -1268,7 +1260,6 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.embedSourceList = data.embedSourceList
     member _.sourceLink = data.sourceLink
     member _.packageManagerLines = data.packageManagerLines
-    member _.ignoreSymbolStoreSequencePoints = data.ignoreSymbolStoreSequencePoints
     member _.internConstantStrings = data.internConstantStrings
     member _.extraOptimizationIterations = data.extraOptimizationIterations
     member _.win32icon = data.win32icon
@@ -1295,6 +1286,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.emitTailcalls = data.emitTailcalls
     member _.deterministic = data.deterministic
     member _.concurrentBuild = data.concurrentBuild
+    member _.parallelCheckingWithSignatureFiles = data.parallelCheckingWithSignatureFiles
     member _.emitMetadataAssembly = data.emitMetadataAssembly
     member _.pathMap = data.pathMap
     member _.langVersion = data.langVersion
@@ -1312,6 +1304,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.pause = data.pause
     member _.alwaysCallVirt = data.alwaysCallVirt
     member _.noDebugAttributes = data.noDebugAttributes
+    member _.useReflectionFreeCodeGen = data.useReflectionFreeCodeGen
     member _.isInteractive = data.isInteractive
     member _.isInvalidationSupported = data.isInvalidationSupported
     member _.emitDebugInfoInQuotations = data.emitDebugInfoInQuotations
@@ -1322,10 +1315,13 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.tryGetMetadataSnapshot = data.tryGetMetadataSnapshot
     member _.internalTestSpanStackReferring = data.internalTestSpanStackReferring
     member _.noConditionalErasure = data.noConditionalErasure
+    member _.applyLineDirectives = data.applyLineDirectives
     member _.xmlDocInfoLoader = data.xmlDocInfoLoader
+    member _.exiter = data.exiter
+    member _.parallelReferenceResolution = data.parallelReferenceResolution
 
     static member Create(builder, validate) =
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _ = UseBuildPhase BuildPhase.Parameter
         TcConfig(builder, validate)
 
     member _.legacyReferenceResolver = data.legacyReferenceResolver
@@ -1342,7 +1338,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
     member _.GetTargetFrameworkDirectories() = targetFrameworkDirectories
 
     member tcConfig.ComputeIndentationAwareSyntaxInitialStatus fileName =
-        use _unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _unwindBuildPhase = UseBuildPhase BuildPhase.Parameter
 
         let indentationAwareSyntaxOnByDefault =
             List.exists (FileSystemUtils.checkSuffix fileName) FSharpIndentationAwareSyntaxFileSuffixes
@@ -1353,7 +1349,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
             (tcConfig.indentationAwareSyntax = Some true)
 
     member tcConfig.GetAvailableLoadedSources() =
-        use _unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
+        use _unwindBuildPhase = UseBuildPhase BuildPhase.Parameter
 
         let resolveLoadedSource (m, originalPath, path) =
             try

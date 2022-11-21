@@ -304,8 +304,10 @@ let FindDependentILModulesForStaticLinking (ctok, tcConfig: TcConfig, tcImports:
             let ilAssemRef = List.head remaining
             remaining <- List.tail remaining
 
-            if assumedIndependentSet.Contains ilAssemRef.Name
-               || (ilAssemRef.PublicKey = Some ecmaPublicKey) then
+            if
+                assumedIndependentSet.Contains ilAssemRef.Name
+                || (ilAssemRef.PublicKey = Some ecmaPublicKey)
+            then
                 depModuleTable[ilAssemRef.Name] <- dummyEntry ilAssemRef.Name
             else if not (depModuleTable.ContainsKey ilAssemRef.Name) then
                 match tcImports.TryFindDllInfo(ctok, rangeStartup, ilAssemRef.Name, lookupOnly = false) with
@@ -502,10 +504,11 @@ let StaticLink (ctok, tcConfig: TcConfig, tcImports: TcImports, ilGlobals: ILGlo
                     | Some provAssemStaticLinkInfo -> (importedBinary, provAssemStaticLinkInfo)
         ]
 #endif
-    if not tcConfig.standalone
-       && tcConfig.extraStaticLinkRoots.IsEmpty
+    if
+        not tcConfig.standalone
+        && tcConfig.extraStaticLinkRoots.IsEmpty
 #if !NO_TYPEPROVIDERS
-       && providerGeneratedAssemblies.IsEmpty
+        && providerGeneratedAssemblies.IsEmpty
 #endif
     then
         id

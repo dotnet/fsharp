@@ -1122,12 +1122,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get { throw new NotImplementedException(); }
         }
-/* @@@@
-        object VSLangProj.ProjectProperties.get_Extender(string name)
-        {
-            return UIThread.DoOnUIThread(() => this.Extender(name));
-        }
-*/
+
         object VSLangProj.ProjectProperties.ExtenderNames
         {
             get { return UIThread.DoOnUIThread(() => this.ExtenderNames()); }

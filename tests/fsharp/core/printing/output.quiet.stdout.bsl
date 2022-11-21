@@ -11,3 +11,6 @@
 [Building 5 3...done]
 Expect ABC = ABC
 Expect ABC = ABC
+{"ImmutableField0":6}
+{"MutableField1":8}
+{"AnonRecordField2":10}

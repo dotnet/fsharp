@@ -4,7 +4,7 @@
 // To run the tests in this file: Compile VisualFSharp.UnitTests.dll and run it as a set of unit tests
 
 [<NUnit.Framework.Category "Roslyn Services">]
-module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.DocumentHighlightsServiceTests
+module VisualFSharp.UnitTests.Editor.DocumentHighlightsServiceTests
 
 open System
 open System.Threading
@@ -36,7 +36,7 @@ let internal projectOptions = {
 }
 
 let private getSpans (sourceText: SourceText) (caretPosition: int) =
-    let document = RoslynTestHelpers.CreateDocument(filePath, sourceText)
+    let document = RoslynTestHelpers.CreateSingleDocumentSolution(filePath, sourceText)
     FSharpDocumentHighlightsService.GetDocumentHighlights(document, caretPosition)
     |> Async.RunSynchronously
     |> Option.defaultValue [||]

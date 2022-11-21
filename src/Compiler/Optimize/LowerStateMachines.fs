@@ -358,7 +358,7 @@ type LowerStateMachine(g: TcGlobals) =
           PostTransform = (fun _ -> None)
           PreInterceptBinding = None
           RewriteQuotations=true 
-          StackGuard = StackGuard(LowerStateMachineStackGuardDepth) }
+          StackGuard = StackGuard(LowerStateMachineStackGuardDepth, "LowerStateMachineStackGuardDepth") }
 
     let ConvertStateMachineLeafExpression (env: env) expr = 
         if sm_verbose then printfn "ConvertStateMachineLeafExpression for %A..." expr

@@ -60,8 +60,8 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 53, Line 9, Col 12, Line 9, Col 13, "Discriminated union cases and exception labels must be uppercase identifiers")
-            (Error 53, Line 10, Col 12, Line 10, Col 13, "Discriminated union cases and exception labels must be uppercase identifiers")
+            (Error 53, Line 9, Col 12, Line 9, Col 13, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute")
+            (Error 53, Line 10, Col 12, Line 10, Col 13, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute")
         ]
 
     //SOURCE=E_BeginWithUppercase02.fsx SCFLAGS="--test:ErrorRanges"                              # E_BeginWithUppercase02.fsx
@@ -102,8 +102,8 @@ module UnionTypes =
         |> shouldFail
         |> withDiagnostics [
             (Error 883, Line 7, Col 8, Line 7, Col 13, "Invalid namespace, module, type or union case name")
-            (Error 53, Line 11, Col 18, Line 11, Col 19, "Discriminated union cases and exception labels must be uppercase identifiers")
-            (Error 53, Line 12, Col 18, Line 12, Col 19, "Discriminated union cases and exception labels must be uppercase identifiers")
+            (Error 53, Line 11, Col 18, Line 11, Col 19, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute")
+            (Error 53, Line 12, Col 18, Line 12, Col 19, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute")
         ]
 
     //SOURCE=E_GenericFunctionValuedStaticProp01.fs SCFLAGS="--test:ErrorRanges --warnaserror-"   # E_GenericFunctionValuedStaticProp01.fs
@@ -205,7 +205,7 @@ module UnionTypes =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 53, Line 7, Col 13, Line 7, Col 17, "Discriminated union cases and exception labels must be uppercase identifiers")
+            (Error 53, Line 7, Col 13, Line 7, Col 17, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute")
         ]
 
     //SOURCE=E_Overload_Equals.fs SCFLAGS="--test:ErrorRanges"                                    # E_Overload_Equals.fs
@@ -261,6 +261,7 @@ module UnionTypes =
             (Error 3174, Line 14, Col 9, Line 14, Col 11, "The union case 'Case1' does not have a field named 'V3'.")
             (Warning 26, Line 15, Col 3, Line 15, Col 10, "This rule will never be matched")
             (Error 3174, Line 17, Col 12, Line 17, Col 14, "The union case 'Case1' does not have a field named 'V4'.")
+            (Error 3174, Line 19, Col 25, Line 19, Col 26, "The union case 'Some' does not have a field named 'a'.")
         ]
 
     //SOURCE=E_UnionFieldConflictingName.fs SCFLAGS="--test:ErrorRanges"                          # E_UnionFieldConflictingName.fs
@@ -471,6 +472,7 @@ module UnionTypes =
     let ``SampleFromSpec01b_fsx`` compilation =
         compilation
         |> withOcamlCompat
+        |> withLangVersion50
         |> verifyCompileAndRun
         |> shouldSucceed
 
@@ -508,6 +510,73 @@ module UnionTypes =
         compilation
         |> verifyCompileAndRun
         |> shouldSucceed
+
+    //SOURCE=LowercaseWhenRequireQualifiedAccess.fsx                                                                 # LowercaseWhenRequireQualifiedAccess.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LowercaseWhenRequireQualifiedAccess.fsx"|])>]
+    let ``LowercaseWhenRequireQualifiedAccess_fs in langversion 6`` compilation =
+        compilation
+        |> withLangVersion60
+        |> verifyCompile
+        |> shouldFail
+
+    //SOURCE=LowercaseWhenRequireQualifiedAccess.fsx                                                                 # LowercaseWhenRequireQualifiedAccess.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"LowercaseWhenRequireQualifiedAccess.fsx"|])>]
+    let ``LowercaseWhenRequireQualifiedAccess_fs in preview`` compilation =
+        compilation
+        |> withLangVersion70
+        |> verifyCompileAndRun
+        |> shouldSucceed
+
+    //SOURCE=E_LowercaseWhenRequireQualifiedAccess.fsx                                                                 # E_LowercaseWhenRequireQualifiedAccess.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_LowercaseWhenRequireQualifiedAccess.fsx"|])>]
+    let ``E_LowercaseWhenRequireQualifiedAccess_fs in preview`` compilation =
+        compilation
+        |> withLangVersion70
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 883, Line 6, Col 14, Line 6, Col 29, "Invalid namespace, module, type or union case name");
+            (Error 53, Line 6, Col 14, Line 6, Col 29, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute");
+            (Error 883, Line 8, Col 12, Line 8, Col 27, "Invalid namespace, module, type or union case name");
+            (Error 53, Line 8, Col 12, Line 8, Col 27, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute");
+            (Error 883, Line 11, Col 14, Line 11, Col 29, "Invalid namespace, module, type or union case name");
+            (Error 883, Line 14, Col 12, Line 14, Col 27, "Invalid namespace, module, type or union case name");
+            (Error 53, Line 16, Col 14, Line 16, Col 15, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute");
+            (Error 53, Line 18, Col 12, Line 18, Col 13, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute");
+            (Error 53, Line 20, Col 12, Line 20, Col 15, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute");
+            (Error 53, Line 22, Col 14, Line 22, Col 17, "Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute")
+            (Error 883, Line 32, Col 7, Line 32, Col 14, "Invalid namespace, module, type or union case name");
+            (Error 883, Line 37, Col 7, Line 37, Col 14, "Invalid namespace, module, type or union case name")
+        ]
+
+    //SOURCE=E_LowercaseWhenRequireQualifiedAccess.fsx                                                                 # E_LowercaseWhenRequireQualifiedAccess.fsx
+    [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"E_LowercaseWhenRequireQualifiedAccess.fsx"|])>]
+    let ``E_LowercaseWhenRequireQualifiedAccess_fs in langversion 6`` compilation =
+        compilation
+        |> withLangVersion60
+        |> verifyCompile
+        |> shouldFail
+        |> withDiagnostics [
+            (Error 883, Line 6, Col 14, Line 6, Col 29, "Invalid namespace, module, type or union case name");
+            (Error 53, Line 6, Col 14, Line 6, Col 29, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 883, Line 8, Col 12, Line 8, Col 27, "Invalid namespace, module, type or union case name");
+            (Error 53, Line 8, Col 12, Line 8, Col 27, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 883, Line 11, Col 14, Line 11, Col 29, "Invalid namespace, module, type or union case name");
+            (Error 53, Line 11, Col 14, Line 11, Col 29, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 883, Line 14, Col 12, Line 14, Col 27, "Invalid namespace, module, type or union case name");
+            (Error 53, Line 14, Col 12, Line 14, Col 27, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 53, Line 16, Col 14, Line 16, Col 15, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 53, Line 18, Col 12, Line 18, Col 13, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 53, Line 20, Col 12, Line 20, Col 15, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 53, Line 22, Col 14, Line 22, Col 17, "Discriminated union cases and exception labels must be uppercase identifiers")
+            (Error 53, Line 26, Col 7, Line 26, Col 8, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 53, Line 27, Col 7, Line 27, Col 12, "Discriminated union cases and exception labels must be uppercase identifiers")
+            (Error 53, Line 31, Col 7, Line 31, Col 8, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 883, Line 32, Col 7, Line 32, Col 14, "Invalid namespace, module, type or union case name");
+            (Error 53, Line 32, Col 7, Line 32, Col 14, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 53, Line 36, Col 7, Line 36, Col 8, "Discriminated union cases and exception labels must be uppercase identifiers");
+            (Error 883, Line 37, Col 7, Line 37, Col 14, "Invalid namespace, module, type or union case name")
+        ]
 
     //SOURCE=W_GenericFunctionValuedStaticProp02.fs SCFLAGS="--test:ErrorRanges --warnaserror-"   # W_GenericFunctionValuedStaticProp02.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"W_GenericFunctionValuedStaticProp02.fs"|])>]

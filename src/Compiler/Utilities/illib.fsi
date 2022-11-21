@@ -50,8 +50,6 @@ module internal PervasiveAutoOpens =
 
     val reportTime: (bool -> string -> unit)
 
-    val runningOnMono: bool
-
     /// Get an initialization hole
     val getHole: r: 'a option ref -> 'a
 
