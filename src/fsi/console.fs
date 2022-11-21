@@ -218,7 +218,7 @@ module internal Utils =
         let n = Array.BinarySearch(fullWidthCharRanges, char)
         (n < 0 && n % 2 = 0) || n >= 0
 
-    // don't write chars to the last 2 column to avoid some bugs that will happen on long lines
+    // don't write chars to the last 2 column to make sure that chars will not be print to wrong line.
     let bufferWidth() = Console.BufferWidth - 2
 
 [<Sealed>]
@@ -229,14 +229,15 @@ type internal Cursor =
             Console.CursorLeft <- left)
 
     static member Move(inset, delta) =
-        ignore inset
+        ignore inset 
+        let width = Utils.bufferWidth()
         let position =
-            Console.CursorTop * Console.BufferWidth
+            Console.CursorTop * width
             + Console.CursorLeft
             + delta
 
-        let top = position / Console.BufferWidth
-        let left = position % Console.BufferWidth
+        let top = position / width
+        let left = position % width
         Cursor.ResetTo(top, left)
 
 type internal Anchor =
@@ -374,7 +375,7 @@ type internal ReadLineConsole() =
             if Console.CursorLeft + charSize > Utils.bufferWidth() then
                 if Console.CursorTop + 1 = Console.BufferHeight then
                     Console.BufferHeight <- Console.BufferHeight + 1
-                Cursor.Move (x.Inset, 2)
+                Cursor.Move (x.Inset, 0)
 
         let writeBlank () =
             moveCursorToNextLine (' ')
