@@ -362,10 +362,10 @@ module ProjectOperations =
 
 type WorkflowContext =
     { Project: SyntheticProject
-      Signatures: Map<string, string> }
+      Signatures: Map<string, string>
+      Cursor : FSharp.Compiler.CodeAnalysis.FSharpSymbolUse option   }
 
-
-let SaveAndCheckProject project checker = 
+let SaveAndCheckProject project checker =
     async {
         validateFileIdsAreUnique project
 
@@ -387,13 +387,20 @@ let SaveAndCheckProject project checker =
 
         return
             { Project = project
-              Signatures = Map signatures }
+              Signatures = Map signatures
+              Cursor = None }
     }
-
 
 type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpChecker) =
 
-    let checker = defaultArg checker (FSharpChecker.Create())
+    let checker =
+        defaultArg
+            checker
+            (FSharpChecker.Create(
+                keepAllBackgroundSymbolUses = false,
+                enableBackgroundItemKeyStoreAndSemanticClassification = true,
+                enablePartialTypeChecking = true
+            ))
 
     let mapProject f workflow =
         async {
@@ -455,6 +462,37 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
             return { ctx with Signatures = ctx.Signatures.Add(fileId, newSignature) }
         }
 
+    /// Find a symbol using the provided range, mimicing placing a cursor on it in IDE scenarios
+    [<CustomOperation "placeCursor">]
+    member this.PlaceCursor(workflow: Async<WorkflowContext>, fileId, line, colAtEndOfNames, fullLine, symbolNames) =
+        async {
+            let! ctx = workflow
+            let! results = checkFile fileId ctx.Project checker
+            let typeCheckResults = getTypeCheckResult results
+
+            let su = typeCheckResults.GetSymbolUseAtLocation(line,colAtEndOfNames,fullLine,symbolNames)
+
+            return {ctx with Cursor = su}
+        }
+
+
+
+    /// Find all references within a single file, results are provided to the 'processResults' function
+    [<CustomOperation "findAllReferences">]
+    member this.FindAllReferences(workflow: Async<WorkflowContext>, fileId: string,  processResults) =
+        async{
+            let! ctx = workflow
+            let po = ctx.Project.GetProjectOptions checker
+            let s = ctx.Cursor |> Option.defaultWith (fun () -> failwith $"Please place cursor at a valid location via {nameof(this.PlaceCursor)} first")
+            let file = ctx.Project.Find fileId
+            let absFileName = ctx.Project.ProjectDir ++ file.FileName
+            let! results = checker.FindBackgroundReferencesInFile(absFileName,po, s.Symbol)
+
+            processResults (results |> Seq.toList)
+
+            return ctx
+        }
+
     /// Parse and type check given file and process the results using `processResults` function.
     [<CustomOperation "checkFile">]
     member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
@@ -499,7 +537,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
             let! results = checkFile fileId ctx.Project checker
             let typeCheckResult = getTypeCheckResult results
             let moduleName = (ctx.Project.Find fileId).ModuleName
-            let symbolUse = typeCheckResult.GetSymbolUseAtLocation(1, moduleName.Length + ctx.Project.Name.Length + 8, $"module {ctx.Project.Name}.{moduleName}", [moduleName]) 
+            let symbolUse = typeCheckResult.GetSymbolUseAtLocation(1, moduleName.Length + ctx.Project.Name.Length + 8, $"module {ctx.Project.Name}.{moduleName}", [moduleName])
                             |> Option.defaultWith (fun () -> failwith "no symbol use found")
             let options = ctx.Project.GetProjectOptions checker
             let! results =

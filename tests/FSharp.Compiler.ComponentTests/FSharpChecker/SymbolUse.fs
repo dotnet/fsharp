@@ -80,7 +80,6 @@ val f: x: 'a -> TFirstV_1<'a>
 
 module FindReferences =
 
-
     [<Fact>]
     let ``Finding references in project`` () =
         let size = 20
