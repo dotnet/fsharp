@@ -1,4 +1,6 @@
-﻿namespace VisualFSharp.UnitTests.Editor
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
+namespace FSharp.Editor.Tests.Helpers
 
 open System
 open System.IO
@@ -9,14 +11,14 @@ module FileSystemHelpers =
     let safeDeleteFile (path: string) =
         try
             File.Delete(path)
-        with
-        | _ -> ()
+        with _ ->
+            ()
 
     let safeDeleteDirectory (path: string) =
         try
             Directory.Delete(path)
-        with
-        | _ -> ()
+        with _ ->
+            ()
 
 type FSharpProject =
     {
@@ -26,24 +28,29 @@ type FSharpProject =
     }
 
     /// Strips cursor information from each file and returns the name and cursor position of the last file to specify it.
-    member this.GetCaretPosition () =
+    member this.GetCaretPosition() =
         let caretSentinel = "$$"
         let mutable cursorInfo: (string * int) = (null, 0)
+
         this.Files
         |> List.iter (fun (name, contents) ->
             // find the '$$' sentinel that represents the cursor location
             let caretPosition = contents.IndexOf(caretSentinel)
+
             if caretPosition >= 0 then
-                let newContents = contents.Substring(0, caretPosition) + contents.Substring(caretPosition + caretSentinel.Length)
+                let newContents =
+                    contents.Substring(0, caretPosition)
+                    + contents.Substring(caretPosition + caretSentinel.Length)
+
                 File.WriteAllText(Path.Combine(this.Directory, name), newContents)
                 cursorInfo <- (name, caretPosition))
+
         cursorInfo
+
     interface IDisposable with
         member this.Dispose() =
             // delete each source file
-            this.Files
-            |> List.map fst
-            |> List.iter FileSystemHelpers.safeDeleteFile
+            this.Files |> List.map fst |> List.iter FileSystemHelpers.safeDeleteFile
             // delete the directory
             FileSystemHelpers.safeDeleteDirectory (this.Directory)
             // project file doesn't really exist, nothing to delete
@@ -56,11 +63,17 @@ module internal ProjectOptionsBuilder =
     let private ProjectName = XName.op_Implicit "Project"
     let private ReferenceName = XName.op_Implicit "Reference"
 
-    let private CreateSingleProjectFromMarkup(markup:XElement) =
-        if markup.Name.LocalName <> "Project" then failwith "Expected root node to be <Project>"
+    let private CreateSingleProjectFromMarkup (markup: XElement) =
+        if markup.Name.LocalName <> "Project" then
+            failwith "Expected root node to be <Project>"
+
         let projectRoot = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())
-        if Directory.Exists(projectRoot) then Directory.Delete(projectRoot, true)
+
+        if Directory.Exists(projectRoot) then
+            Directory.Delete(projectRoot, true)
+
         Directory.CreateDirectory(projectRoot) |> ignore
+
         let files = // filename -> fileContents
             markup.Elements(FileName)
             |> Seq.map (fun file ->
@@ -69,6 +82,7 @@ module internal ProjectOptionsBuilder =
                 File.WriteAllText(fileName, fileContents)
                 (fileName, fileContents))
             |> List.ofSeq
+
         let options =
             {
                 ProjectFileName = Path.Combine(projectRoot, markup.Attribute(NameName).Value)
@@ -83,14 +97,17 @@ module internal ProjectOptionsBuilder =
                 UnresolvedReferences = None
                 Stamp = None
             }
+
         {
             Directory = projectRoot
             Options = options
             Files = files
         }
 
-    let private CreateMultipleProjectsFromMarkup(markup:XElement) =
-        if markup.Name.LocalName <> "Projects" then failwith "Expected root node to be <Projects>"
+    let private CreateMultipleProjectsFromMarkup (markup: XElement) =
+        if markup.Name.LocalName <> "Projects" then
+            failwith "Expected root node to be <Projects>"
+
         let projectsAndXml =
             markup.Elements(ProjectName)
             |> Seq.map (fun xml -> (CreateSingleProjectFromMarkup xml, xml))
@@ -102,9 +119,10 @@ module internal ProjectOptionsBuilder =
                 let normalizedProjectName = Path.GetFileName(projectOptions.Options.ProjectFileName)
                 (normalizedProjectName, projectOptions))
             |> Map.ofList
+
         let projects =
             projectsAndXml
-            |> List.map(fun (projectOptions, xml) ->
+            |> List.map (fun (projectOptions, xml) ->
                 // bind references to their `FSharpProjectOptions` counterpart
                 let referenceList =
                     xml.Elements(ReferenceName)
@@ -117,33 +135,34 @@ module internal ProjectOptionsBuilder =
                         let binaryPath = Path.Combine(project.Directory, "bin", asmName + ".dll")
                         (binaryPath, project.Options))
                     |> Array.ofList
-                let binaryRefs =
-                    referenceList
-                    |> Array.map fst
-                    |> Array.map (fun r -> "-r:" + r)
+
+                let binaryRefs = referenceList |> Array.map fst |> Array.map (fun r -> "-r:" + r)
                 let otherOptions = Array.append projectOptions.Options.OtherOptions binaryRefs
+
                 { projectOptions with
-                    Options = { projectOptions.Options with
-                        ReferencedProjects = referenceList |> Array.map FSharpReferencedProject.CreateFSharp
-                        OtherOptions = otherOptions
-                    }
+                    Options =
+                        { projectOptions.Options with
+                            ReferencedProjects = referenceList |> Array.map FSharpReferencedProject.CreateFSharp
+                            OtherOptions = otherOptions
+                        }
                 })
+
         let rootProject = List.head projects
         rootProject
-    
-    let CreateProjectFromMarkup(markup:XElement) =
+
+    let CreateProjectFromMarkup (markup: XElement) =
         match markup.Name.LocalName with
         | "Project" -> CreateSingleProjectFromMarkup markup
         | "Projects" -> CreateMultipleProjectsFromMarkup markup
         | name -> failwith <| sprintf "Unsupported root node name: %s" name
 
-    let CreateProject(markup:string) =
-        XDocument.Parse(markup).Root
-        |> CreateProjectFromMarkup
+    let CreateProject (markup: string) =
+        XDocument.Parse(markup).Root |> CreateProjectFromMarkup
 
-    let SingleFileProject(code:string) =
+    let SingleFileProject (code: string) =
         code
-        |> sprintf @"
+        |> sprintf
+            @"
 <Project Name=""testProject.fsproj"">
   <File Name=""testFile.fs"">
     <![CDATA[%s]]>
