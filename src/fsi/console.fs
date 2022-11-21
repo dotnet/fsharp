@@ -105,7 +105,7 @@ module internal Utils =
             | _, _ -> nextWordFromIdx line (idx + 1, true)
 
     /// An array stores ranges of full-width chars.
-    /// 
+    ///
     /// Array [| a; b; c; d |] represents range [a, b] or [c, d], means chars in these ranges are full-width.
     let private fullWidthCharRanges =
         [|
@@ -212,14 +212,14 @@ module internal Utils =
         |]
 
     let isFullWidth (char) =
-        // for array [| a; b; c; d |], 
+        // for array [| a; b; c; d |],
         // if a value is in (a, b) or (c, d), the result of Array.BinarySearch will be a negative even number
-        // if a value is a, b, c, d, the result will be a non-positive number 
+        // if a value is a, b, c, d, the result will be a non-positive number
         let n = Array.BinarySearch(fullWidthCharRanges, char)
         (n < 0 && n % 2 = 0) || n >= 0
 
     // don't write chars to the last 2 column to make sure that chars will not be print to wrong line.
-    let bufferWidth() = Console.BufferWidth - 2
+    let bufferWidth () = Console.BufferWidth - 2
 
 [<Sealed>]
 type internal Cursor =
@@ -229,12 +229,9 @@ type internal Cursor =
             Console.CursorLeft <- left)
 
     static member Move(inset, delta) =
-        ignore inset 
-        let width = Utils.bufferWidth()
-        let position =
-            Console.CursorTop * width
-            + Console.CursorLeft
-            + delta
+        ignore inset
+        let width = Utils.bufferWidth ()
+        let position = Console.CursorTop * width + Console.CursorLeft + delta
 
         let top = position / width
         let left = position % width
@@ -260,7 +257,7 @@ type internal Anchor =
         //let top = p.top + ((p.left - inset) + index) / (Console.BufferWidth - inset)
 
         // don't write char to the last 2 column
-        let width = Utils.bufferWidth()
+        let width = Utils.bufferWidth ()
         let index = inset + index
 
         let left = index % width
@@ -335,7 +332,7 @@ type internal ReadLineConsole() =
         | _ -> "^?"
 
     member x.GetCharacterSize(c) =
-        if Char.IsControl(c) then x.MapCharacter(c).Length 
+        if Char.IsControl(c) then x.MapCharacter(c).Length
         elif Utils.isFullWidth c then 2
         else 1
 
@@ -372,15 +369,17 @@ type internal ReadLineConsole() =
 
         let moveCursorToNextLine c =
             let charSize = x.GetCharacterSize(c)
-            if Console.CursorLeft + charSize > Utils.bufferWidth() then
+
+            if Console.CursorLeft + charSize > Utils.bufferWidth () then
                 if Console.CursorTop + 1 = Console.BufferHeight then
                     Console.BufferHeight <- Console.BufferHeight + 1
-                Cursor.Move (x.Inset, 0)
+
+                Cursor.Move(x.Inset, 0)
 
         let writeBlank () =
             moveCursorToNextLine (' ')
             Console.Write(' ')
-            //checkLeftEdge false
+        //checkLeftEdge false
 
         let writeChar (c) =
             //if
@@ -393,6 +392,7 @@ type internal ReadLineConsole() =
             //checkLeftEdge true
 
             moveCursorToNextLine (c)
+
             if Char.IsControl(c) then
                 let s = x.MapCharacter c
                 Console.Write(s)
@@ -401,7 +401,7 @@ type internal ReadLineConsole() =
                 Console.Write(c)
                 rendered <- rendered + x.GetCharacterSize(c)
 
-            //checkLeftEdge true
+        //checkLeftEdge true
 
         /// The console input buffer.
         let input = new StringBuilder()
@@ -432,9 +432,10 @@ type internal ReadLineConsole() =
             //     position <- output.Length
 
             let rec getLineWidth state i =
-                if i = curr || i = input.Length then state
+                if i = curr || i = input.Length then
+                    state
                 else
-                    getLineWidth (state + x.GetCharacterSize (input.Chars i)) (i + 1)
+                    getLineWidth (state + x.GetCharacterSize(input.Chars i)) (i + 1)
 
             let position = getLineWidth 0 0
 
