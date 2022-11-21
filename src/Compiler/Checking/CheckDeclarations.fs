@@ -5,6 +5,7 @@ module internal FSharp.Compiler.CheckDeclarations
 open System
 open System.Collections.Generic
 
+open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Collections
 open Internal.Utilities.Library
 open Internal.Utilities.Library.Extras
@@ -5289,11 +5290,17 @@ let CheckOneImplFile
         env,
         rootSigOpt: ModuleOrNamespaceType option,
         synImplFile) =
-
-    let (ParsedImplFileInput (_, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland, _)) = synImplFile
+    
+    let (ParsedImplFileInput (fileName, isScript, qualNameOfFile, scopedPragmas, _, implFileFrags, isLastCompiland, _)) = synImplFile
     let infoReader = InfoReader(g, amap)
 
     cancellable {
+        use _ = 
+            Activity.start "CheckDeclarations.CheckOneImplFile" 
+                [|
+                    "fileName", fileName
+                    "qualifiedNameOfFile", qualNameOfFile.Text
+                |]
         let cenv = 
             cenv.Create (g, isScript, amap, thisCcu, false, Option.isSome rootSigOpt,
                 conditionalDefines, tcSink, (LightweightTcValForUsingInBuildMethodCall g), isInternalTestSpanStackReferring,
@@ -5421,6 +5428,12 @@ let CheckOneImplFile
 /// Check an entire signature file
 let CheckOneSigFile (g, amap, thisCcu, checkForErrors, conditionalDefines, tcSink, isInternalTestSpanStackReferring) tcEnv (sigFile: ParsedSigFileInput) = 
  cancellable {     
+    use _ =
+        Activity.start "CheckDeclarations.CheckOneSigFile"
+            [|
+                "fileName", sigFile.FileName
+                "qualifiedNameOfFile", sigFile.QualifiedName.Text
+            |]
     let cenv = 
         cenv.Create 
             (g, false, amap, thisCcu, true, false, conditionalDefines, tcSink,

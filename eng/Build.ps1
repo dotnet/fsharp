@@ -592,6 +592,7 @@ try {
 
     if ($testVs -and -not $noVisualStudio) {
         TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\UnitTests\VisualFSharp.UnitTests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\VisualFSharp.UnitTests\"
+        TestUsingNUnit -testProject "$RepoRoot\vsintegration\tests\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj" -targetFramework $desktopTargetFramework -testadapterpath "$ArtifactsDir\bin\FSharp.Editor.Tests\FSharp.Editor.Tests.fsproj"
     }
 
     # verify nupkgs have access to the source code
