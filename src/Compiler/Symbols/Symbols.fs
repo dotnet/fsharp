@@ -2818,6 +2818,19 @@ type FSharpAssemblySignature (cenv, topAttribs: TopAttribs option, optViewedCcu:
              |> Option.map (fun e -> FSharpEntity(cenv, rescopeEntity optViewedCcu e))
         | _ -> None
 
+    member _.FindMemberOrValByPath path =
+        let findNested name entity = 
+            match entity with
+            | Some (e: Entity) -> e.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind name
+            | _ -> None
+
+        match path with
+        | hd :: tl ->
+             (mtyp.AllEntitiesByCompiledAndLogicalMangledNames.TryFind hd, tl) 
+             ||> List.fold (fun a x -> findNested x a)  
+             |> Option.map (fun e -> FSharpEntity(cenv, rescopeEntity optViewedCcu e))
+        | _ -> None
+
     member x.TryGetEntities() = try x.Entities :> _ seq with _ -> Seq.empty
 
     override x.ToString() = "<assembly signature>"

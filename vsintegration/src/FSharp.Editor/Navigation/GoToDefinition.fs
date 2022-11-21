@@ -16,15 +16,18 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Navigation
 
 open Microsoft.VisualStudio
+open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.LanguageServices
 
-open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.EditorServices
 open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Tokenization
+open System.Composition
+open System.Text.RegularExpressions
 
 
 module private Symbol =
@@ -727,3 +730,125 @@ type internal FSharpNavigation
             // Don't show the dialog box as it's most likely that the user cancelled.
             // Don't make them click twice.
             true
+
+type private SymbolPath = { EntityPath: string list; MemberOrValName: string }
+[<RequireQualifiedAccess>]
+type private DocCommentId =
+    | Member of SymbolPath
+    | Type of EntityPath: string list
+    | Other of string
+    | None
+
+[<Struct>]
+type FSharpNavigableLocation(_a: bool) =
+    interface IFSharpNavigableLocation with
+        member _.NavigateToAsync(_options: FSharpNavigationOptions2, cancellationToken: CancellationToken) : Task<bool> =
+            asyncMaybe {
+                //let document = workspace.CurrentSolution.GetDocument(documentId)
+                return true
+            }
+            |> Async.map (Option.defaultValue false)
+            |> RoslynHelpers.StartAsyncAsTask cancellationToken
+
+[<Export(typeof<IFSharpCrossLanguageSymbolNavigationService>)>]
+[<Export(typeof<FSharpCrossLanguageSymbolNavigationService>)>]
+type FSharpCrossLanguageSymbolNavigationService()  =
+    let componentModel = Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
+    let workspace = componentModel.GetService<VisualStudioWorkspace>()
+
+    // So, the groups are following:
+    //   1 - type (see below).
+    //   2 - Path - a dotted path to a symbol.
+    //   3 - parameters, opetional, only for methods and properties.
+    //   4 - return type, optional, only for methods.
+    let docCommentIdRx = Regex(@"^(\w):([\w\d#`.]+)(\(.+\))?(?:~([\w\d.]+))?$", RegexOptions.Compiled)
+
+    let docCommentIdToPath (docId:string) =
+        // docCommentId is in the following format:
+        //
+        // "T:" prefix for types
+        // "T:N.X.Nested" - type
+        // "T:N.X.D" - delegate
+        // 
+        // "M:" prefix is for methods
+        // "M:N.X.#ctor" - constructor
+        // "M:N.X.#ctor(System.Int32)" - constructor with one parameter
+        // "M:N.X.f" - method with unit parameter
+        // "M:N.X.bb(System.String,System.Int32@)" - method with two parameters
+        // "M:N.X.gg(System.Int16[],System.Int32[0:,0:])" - method with two parameters, 1d and 2d array
+        // "M:N.X.op_Addition(N.X,N.X)" - operator
+        // "M:N.X.op_Explicit(N.X)~System.Int32" - operator with return type
+        // "M:N.GenericMethod.WithNestedType``1(N.GenericType{``0}.NestedType)" - generic type with one parameter
+        // "M:N.GenericMethod.WithIntOfNestedType``1(N.GenericType{System.Int32}.NestedType)" - generic type with one parameter
+        // "M:N.X.N#IX{N#KVP{System#String,System#Int32}}#IXA(N.KVP{System.String,System.Int32})" - explicit interface implementation
+        //
+        // "E:" prefix for events
+        //
+        // "E:N.X.d".
+        // 
+        // "F:" prefix for fields
+        // "F:N.X.q" - field
+        //
+        // "P:" prefix for properties
+        // "P:N.X.prop" - property with getter and setter
+
+        let m = docCommentIdRx.Match(docId)
+        match m.Success, m.Groups[1].Value with
+        | true, ("M" | "P" | "F" | "E") ->
+            // TODO: Probably, there's less janky way of dealing with those.
+            let parts = m.Groups[2].Value.Split('.')
+            let entityPath = parts[..(parts.Length - 2)] |> List.ofArray
+            let memberOrVal = parts[parts.Length - 1]
+            DocCommentId.Member { EntityPath = entityPath; MemberOrValName = memberOrVal}
+        | true, "T" ->
+            let entityPath = m.Groups[2].Value.Split('.') |> List.ofArray
+            DocCommentId.Type entityPath
+        | _ -> DocCommentId.None
+            
+
+    interface IFSharpCrossLanguageSymbolNavigationService with
+        member _.TryGetNavigableLocationAsync(assemblyName: string, documentationCommentId: string, cancellationToken: CancellationToken) : Task<IFSharpNavigableLocation> =
+            let result =
+                async {
+                    let projects = workspace.CurrentSolution.Projects |> Seq.filter (fun p -> p.IsFSharp && p.AssemblyName = assemblyName)
+                
+                    let project = projects.First()
+                    let service = project.Solution.GetFSharpWorkspaceService()
+                    let projectOptionsManager = service.FSharpProjectOptionsManager
+                    match! projectOptionsManager.TryGetOptionsByProject(project, cancellationToken) with
+                    | None -> return raise(OperationCanceledException("FSharp project options not found."))
+                    | Some(_, projectOptions) ->
+                        let! result = service.Checker.ParseAndCheckProject(projectOptions)
+                        return result
+                } |> Async.RunSynchronously
+
+            let path = docCommentIdToPath documentationCommentId
+
+            let _entity =
+                match path with
+                | DocCommentId.Member { EntityPath = entityPath; MemberOrValName = _memberOrVal} ->
+                    result.AssemblySignature.FindEntityByPath (entityPath)
+                | _ -> Unchecked.defaultof<_>
+
+            async {
+                let projects = workspace.CurrentSolution.Projects |> Seq.filter (fun p -> p.IsFSharp && p.AssemblyName = assemblyName)
+                
+                let project = projects.First()
+                let service = project.Solution.GetFSharpWorkspaceService()
+                let projectOptionsManager = service.FSharpProjectOptionsManager
+                match! projectOptionsManager.TryGetOptionsByProject(project, cancellationToken) with
+                | None -> return raise(OperationCanceledException("FSharp project options not found."))
+                | Some(_, projectOptions) ->
+                    let! result = service.Checker.ParseAndCheckProject(projectOptions)
+                    let path = documentationCommentId.Split('.') |> List.ofArray
+                    let _entity = result.AssemblySignature.FindEntityByPath(path)
+                    ()
+
+                (*for project in projects do
+                    let! checker, _, _, options = project.GetFSharpCompilationOptionsAsync()
+                    let! result = checker.ParseAndCheckProject(options)
+                    let path = documentationCommentId.Split('.') |> List.ofArray
+                    let _entity = result.AssemblySignature.FindEntityByPath(path)
+                    ()*)
+                return null 
+            } |> RoslynHelpers.StartAsyncAsTask cancellationToken
