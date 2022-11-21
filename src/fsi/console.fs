@@ -104,6 +104,122 @@ module internal Utils =
             | ' ', false -> nextWordFromIdx line (idx + 1, false)
             | _, _ -> nextWordFromIdx line (idx + 1, true)
 
+    /// An array stores ranges of full-width chars.
+    /// 
+    /// Array [| a; b; c; d |] represents range (a, b) or (c, d), means chars in these ranges are full-width.
+    let private fullWidthCharRanges =
+        [|
+            '\u1100'
+            '\u115f'
+            '\u231a'
+            '\u231b'
+            '\u2329'
+            '\u232a'
+            '\u23e9'
+            '\u23ec'
+            '\u23f0'
+            '\u23f0'
+            '\u23f3'
+            '\u23f3'
+            '\u25fd'
+            '\u25fe'
+            '\u2614'
+            '\u2615'
+            '\u2648'
+            '\u2653'
+            '\u267f'
+            '\u267f'
+            '\u2693'
+            '\u2693'
+            '\u26a1'
+            '\u26a1'
+            '\u26aa'
+            '\u26ab'
+            '\u26bd'
+            '\u26be'
+            '\u26c4'
+            '\u26c5'
+            '\u26ce'
+            '\u26ce'
+            '\u26d4'
+            '\u26d4'
+            '\u26ea'
+            '\u26ea'
+            '\u26f2'
+            '\u26f3'
+            '\u26f5'
+            '\u26f5'
+            '\u26fa'
+            '\u26fa'
+            '\u26fd'
+            '\u26fd'
+            '\u2705'
+            '\u2705'
+            '\u270a'
+            '\u270b'
+            '\u2728'
+            '\u2728'
+            '\u274c'
+            '\u274c'
+            '\u274e'
+            '\u274e'
+            '\u2753'
+            '\u2755'
+            '\u2757'
+            '\u2757'
+            '\u2795'
+            '\u2797'
+            '\u27b0'
+            '\u27b0'
+            '\u27bf'
+            '\u27bf'
+            '\u2b1b'
+            '\u2b1c'
+            '\u2b50'
+            '\u2b50'
+            '\u2b55'
+            '\u2b55'
+            '\u2e80'
+            '\u303e'
+            '\u3041'
+            '\u3096'
+            '\u3099'
+            '\u30ff'
+            '\u3105'
+            '\u312f'
+            '\u3131'
+            '\u318e'
+            '\u3190'
+            '\u3247'
+            '\u3250'
+            '\u4dbf'
+            '\u4e00'
+            '\ua4c6'
+            '\ua960'
+            '\ua97c'
+            '\uac00'
+            '\ud7a3'
+            '\uf900'
+            '\ufaff'
+            '\ufe10'
+            '\ufe1f'
+            '\ufe30'
+            '\ufe6b'
+            '\uff01'
+            '\uff60'
+            '\uffe0'
+            '\uffe6'
+        |]
+
+    let isFullWidth (char) =
+        // for array [| a; b; c; d |], if a value is in (a, b) or (c, d), 
+        // the result of Array.BinarySearch will be a negative even number
+        let n = Array.BinarySearch(fullWidthCharRanges, char)
+        n < 0 && n % 2 = 0
+
+    // don't write chars to the last 2 column to avoid some bugs that will happen on long lines
+    let bufferWidth() = Console.BufferWidth - 2
+
 [<Sealed>]
 type internal Cursor =
     static member ResetTo(top, left) =
@@ -112,13 +228,14 @@ type internal Cursor =
             Console.CursorLeft <- left)
 
     static member Move(inset, delta) =
+        ignore inset
         let position =
-            Console.CursorTop * (Console.BufferWidth - inset)
-            + (Console.CursorLeft - inset)
+            Console.CursorTop * Console.BufferWidth
+            + Console.CursorLeft
             + delta
 
-        let top = position / (Console.BufferWidth - inset)
-        let left = inset + position % (Console.BufferWidth - inset)
+        let top = position / Console.BufferWidth
+        let left = position % Console.BufferWidth
         Cursor.ResetTo(top, left)
 
 type internal Anchor =
@@ -137,8 +254,15 @@ type internal Anchor =
 
     member p.PlaceAt(inset, index) =
         //printf "p.top = %d, p.left = %d, inset = %d, index = %d\n" p.top p.left inset index
-        let left = inset + (((p.left - inset) + index) % (Console.BufferWidth - inset))
-        let top = p.top + ((p.left - inset) + index) / (Console.BufferWidth - inset)
+        //let left = inset + (((p.left - inset) + index) % (Console.BufferWidth - inset))
+        //let top = p.top + ((p.left - inset) + index) / (Console.BufferWidth - inset)
+
+        // don't write char to the last 2 column
+        let width = Utils.bufferWidth()
+        let index = inset + index
+
+        let left = index % width
+        let top = p.top + index / width
         Cursor.ResetTo(top, left)
 
 type internal ReadLineConsole() =
@@ -209,7 +333,9 @@ type internal ReadLineConsole() =
         | _ -> "^?"
 
     member x.GetCharacterSize(c) =
-        if Char.IsControl(c) then x.MapCharacter(c).Length else 1
+        if Char.IsControl(c) then x.MapCharacter(c).Length 
+        elif Utils.isFullWidth c then 2
+        else 1
 
     static member TabSize = 4
 
@@ -242,29 +368,38 @@ type internal ReadLineConsole() =
         /// Cache of optionsCache
         let mutable optionsCache = Options()
 
+        let moveCursorToNextLine c =
+            let charSize = x.GetCharacterSize(c)
+            if Console.CursorLeft + charSize > Utils.bufferWidth() then
+                if Console.CursorTop + 1 = Console.BufferHeight then
+                    Console.BufferHeight <- Console.BufferHeight + 1
+                Cursor.Move (x.Inset, 2)
+
         let writeBlank () =
+            moveCursorToNextLine (' ')
             Console.Write(' ')
-            checkLeftEdge false
+            //checkLeftEdge false
 
         let writeChar (c) =
-            if
-                Console.CursorTop = Console.BufferHeight - 1
-                && Console.CursorLeft = Console.BufferWidth - 1
-            then
-                //printf "bottom right!\n"
-                anchor <- { anchor with top = (anchor).top - 1 }
+            //if
+            //    Console.CursorTop = Console.BufferHeight - 1
+            //    && Console.CursorLeft = Console.BufferWidth - 1
+            //then
+            //    //printf "bottom right!\n"
+            //    anchor <- { anchor with top = (anchor).top - 1 }
 
-            checkLeftEdge true
+            //checkLeftEdge true
 
+            moveCursorToNextLine (c)
             if Char.IsControl(c) then
                 let s = x.MapCharacter c
                 Console.Write(s)
                 rendered <- rendered + s.Length
             else
                 Console.Write(c)
-                rendered <- rendered + 1
+                rendered <- rendered + x.GetCharacterSize(c)
 
-            checkLeftEdge true
+            //checkLeftEdge true
 
         /// The console input buffer.
         let input = new StringBuilder()
@@ -276,22 +411,30 @@ type internal ReadLineConsole() =
             //printf "render\n"
             let curr = current
             anchor.PlaceAt(x.Inset, 0)
-            let output = new StringBuilder()
-            let mutable position = -1
 
-            for i = 0 to input.Length - 1 do
-                if (i = curr) then
-                    position <- output.Length
+            // let output = new StringBuilder()
+            // let mutable position = -1
 
-                let c = input.Chars(i)
+            // for i = 0 to input.Length - 1 do
+            //     if (i = curr) then
+            //         position <- output.Length
 
-                if (Char.IsControl c) then
-                    output.Append(x.MapCharacter c) |> ignore
+            //     let c = input.Chars(i)
+
+            //     if (Char.IsControl c) then
+            //         output.Append(x.MapCharacter c) |> ignore
+            //     else
+            //         output.Append(c) |> ignore
+
+            // if (curr = input.Length) then
+            //     position <- output.Length
+
+            let rec getLineWidth state i =
+                if i = curr || i = input.Length then state
                 else
-                    output.Append(c) |> ignore
+                    getLineWidth (state + x.GetCharacterSize (input.Chars i)) (i + 1)
 
-            if (curr = input.Length) then
-                position <- output.Length
+            let position = getLineWidth 0 0
 
             // render the current text, computing a new value for "rendered"
             let old_rendered = rendered
