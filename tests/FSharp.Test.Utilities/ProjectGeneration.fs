@@ -472,7 +472,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
         async{
             let! ctx = workflow
             let po = ctx.Project.GetProjectOptions checker          
-            let s = ctx.Cursor |> Option.defaultWith (fun () -> failwith "Please place cursor at a valid location via placeCursor first")
+            let s = ctx.Cursor |> Option.defaultWith (fun () -> failwith $"Please place cursor at a valid location via {nameof(this.PlaceCursor)} first")
             let file = ctx.Project.Find fileId           
             let absFileName = ctx.Project.ProjectDir ++ file.FileName
             let! results = checker.FindBackgroundReferencesInFile(absFileName,po, s.Symbol)
