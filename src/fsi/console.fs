@@ -106,110 +106,61 @@ module internal Utils =
 
     /// An array stores ranges of full-width chars.
     ///
-    /// Array [| a; b; c; d |] represents range [a, b] or [c, d], means chars in these ranges are full-width.
+    /// Array [| [| a; b |]; [| c; d |] |] represents range [a, b] or [c, d], means chars in these ranges are full-width.
     let private fullWidthCharRanges =
-        [|
-            '\u1100'
-            '\u115f'
-            '\u231a'
-            '\u231b'
-            '\u2329'
-            '\u232a'
-            '\u23e9'
-            '\u23ec'
-            '\u23f0'
-            '\u23f0'
-            '\u23f3'
-            '\u23f3'
-            '\u25fd'
-            '\u25fe'
-            '\u2614'
-            '\u2615'
-            '\u2648'
-            '\u2653'
-            '\u267f'
-            '\u267f'
-            '\u2693'
-            '\u2693'
-            '\u26a1'
-            '\u26a1'
-            '\u26aa'
-            '\u26ab'
-            '\u26bd'
-            '\u26be'
-            '\u26c4'
-            '\u26c5'
-            '\u26ce'
-            '\u26ce'
-            '\u26d4'
-            '\u26d4'
-            '\u26ea'
-            '\u26ea'
-            '\u26f2'
-            '\u26f3'
-            '\u26f5'
-            '\u26f5'
-            '\u26fa'
-            '\u26fa'
-            '\u26fd'
-            '\u26fd'
-            '\u2705'
-            '\u2705'
-            '\u270a'
-            '\u270b'
-            '\u2728'
-            '\u2728'
-            '\u274c'
-            '\u274c'
-            '\u274e'
-            '\u274e'
-            '\u2753'
-            '\u2755'
-            '\u2757'
-            '\u2757'
-            '\u2795'
-            '\u2797'
-            '\u27b0'
-            '\u27b0'
-            '\u27bf'
-            '\u27bf'
-            '\u2b1b'
-            '\u2b1c'
-            '\u2b50'
-            '\u2b50'
-            '\u2b55'
-            '\u2b55'
-            '\u2e80'
-            '\u303e'
-            '\u3041'
-            '\u3096'
-            '\u3099'
-            '\u30ff'
-            '\u3105'
-            '\u312f'
-            '\u3131'
-            '\u318e'
-            '\u3190'
-            '\u3247'
-            '\u3250'
-            '\u4dbf'
-            '\u4e00'
-            '\ua4c6'
-            '\ua960'
-            '\ua97c'
-            '\uac00'
-            '\ud7a3'
-            '\uf900'
-            '\ufaff'
-            '\ufe10'
-            '\ufe1f'
-            '\ufe30'
-            '\ufe6b'
-            '\uff01'
-            '\uff60'
-            '\uffe0'
-            '\uffe6'
-        |]
+        Array.concat
+            [|
+                [| '\u1100'; '\u115f' |]
+                [| '\u231a'; '\u231b' |]
+                [| '\u2329'; '\u232a' |]
+                [| '\u23e9'; '\u23ec' |]
+                [| '\u23f0'; '\u23f0' |]
+                [| '\u23f3'; '\u23f3' |]
+                [| '\u25fd'; '\u25fe' |]
+                [| '\u2614'; '\u2615' |]
+                [| '\u2648'; '\u2653' |]
+                [| '\u267f'; '\u267f' |]
+                [| '\u2693'; '\u2693' |]
+                [| '\u26a1'; '\u26a1' |]
+                [| '\u26aa'; '\u26ab' |]
+                [| '\u26bd'; '\u26be' |]
+                [| '\u26c4'; '\u26c5' |]
+                [| '\u26ce'; '\u26ce' |]
+                [| '\u26d4'; '\u26d4' |]
+                [| '\u26ea'; '\u26ea' |]
+                [| '\u26f2'; '\u26f3' |]
+                [| '\u26f5'; '\u26f5' |]
+                [| '\u26fa'; '\u26fa' |]
+                [| '\u26fd'; '\u26fd' |]
+                [| '\u2705'; '\u2705' |]
+                [| '\u270a'; '\u270b' |]
+                [| '\u2728'; '\u2728' |]
+                [| '\u274c'; '\u274c' |]
+                [| '\u274e'; '\u274e' |]
+                [| '\u2753'; '\u2755' |]
+                [| '\u2757'; '\u2757' |]
+                [| '\u2795'; '\u2797' |]
+                [| '\u27b0'; '\u27b0' |]
+                [| '\u27bf'; '\u27bf' |]
+                [| '\u2b1b'; '\u2b1c' |]
+                [| '\u2b50'; '\u2b50' |]
+                [| '\u2b55'; '\u2b55' |]
+                [| '\u2e80'; '\u303e' |]
+                [| '\u3041'; '\u3096' |]
+                [| '\u3099'; '\u30ff' |]
+                [| '\u3105'; '\u312f' |]
+                [| '\u3131'; '\u318e' |]
+                [| '\u3190'; '\u3247' |]
+                [| '\u3250'; '\u4dbf' |]
+                [| '\u4e00'; '\ua4c6' |]
+                [| '\ua960'; '\ua97c' |]
+                [| '\uac00'; '\ud7a3' |]
+                [| '\uf900'; '\ufaff' |]
+                [| '\ufe10'; '\ufe1f' |]
+                [| '\ufe30'; '\ufe6b' |]
+                [| '\uff01'; '\uff60' |]
+                [| '\uffe0'; '\uffe6' |]
+            |]
 
     let isFullWidth (char) =
         // for array [| a; b; c; d |],
@@ -253,10 +204,6 @@ type internal Anchor =
 
     member p.PlaceAt(inset, index) =
         //printf "p.top = %d, p.left = %d, inset = %d, index = %d\n" p.top p.left inset index
-        //let left = inset + (((p.left - inset) + index) % (Console.BufferWidth - inset))
-        //let top = p.top + ((p.left - inset) + index) / (Console.BufferWidth - inset)
-
-        // don't write char to the last 2 column
         let width = Utils.bufferWidth ()
         let index = inset + index
 
@@ -379,18 +326,8 @@ type internal ReadLineConsole() =
         let writeBlank () =
             moveCursorToNextLine (' ')
             Console.Write(' ')
-        //checkLeftEdge false
 
         let writeChar (c) =
-            //if
-            //    Console.CursorTop = Console.BufferHeight - 1
-            //    && Console.CursorLeft = Console.BufferWidth - 1
-            //then
-            //    //printf "bottom right!\n"
-            //    anchor <- { anchor with top = (anchor).top - 1 }
-
-            //checkLeftEdge true
-
             moveCursorToNextLine (c)
 
             if Char.IsControl(c) then
@@ -401,8 +338,6 @@ type internal ReadLineConsole() =
                 Console.Write(c)
                 rendered <- rendered + x.GetCharacterSize(c)
 
-        //checkLeftEdge true
-
         /// The console input buffer.
         let input = new StringBuilder()
 
@@ -410,26 +345,8 @@ type internal ReadLineConsole() =
         let mutable current = 0
 
         let render () =
-            //printf "render\n"
             let curr = current
             anchor.PlaceAt(x.Inset, 0)
-
-            // let output = new StringBuilder()
-            // let mutable position = -1
-
-            // for i = 0 to input.Length - 1 do
-            //     if (i = curr) then
-            //         position <- output.Length
-
-            //     let c = input.Chars(i)
-
-            //     if (Char.IsControl c) then
-            //         output.Append(x.MapCharacter c) |> ignore
-            //     else
-            //         output.Append(c) |> ignore
-
-            // if (curr = input.Length) then
-            //     position <- output.Length
 
             let rec getLineWidth state i =
                 if i = curr || i = input.Length then
