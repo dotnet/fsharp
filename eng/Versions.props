@@ -31,7 +31,7 @@
     <FSCoreShippedVersion>7.0.0.0</FSCoreShippedVersion>
     <!-- -->
     <!-- FSharp.Compiler.Service version -->
-    <FCSMajorVersion>42</FCSMajorVersion>
+    <FCSMajorVersion>43</FCSMajorVersion>
     <FCSMinorVersion>7</FCSMinorVersion>
     <FCSBuildVersion>200</FCSBuildVersion>
     <FCSRevisionVersion>$(FSRevisionVersion)</FCSRevisionVersion>
