@@ -164,7 +164,7 @@
       .method public strict virtual instance string 
               ToString() cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       22 (0x16)
         .maxstack  8
         IL_0000:  ldstr      "%+A"
@@ -178,7 +178,8 @@
       .method public hidebysig virtual final 
               instance int32  CompareTo(class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> obj) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       101 (0x65)
         .maxstack  5
         .locals init (class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
@@ -261,7 +262,8 @@
       .method public hidebysig virtual final 
               instance int32  CompareTo(object obj) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       15 (0xf)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -276,7 +278,8 @@
               instance int32  CompareTo(object obj,
                                         class [mscorlib]System.Collections.IComparer comp) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       106 (0x6a)
         .maxstack  5
         .locals init (class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
@@ -360,7 +363,8 @@
       .method public hidebysig virtual final 
               instance int32  GetHashCode(class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       73 (0x49)
         .maxstack  7
         .locals init (int32 V_0,
@@ -423,7 +427,8 @@
       .method public hidebysig virtual final 
               instance int32  GetHashCode() cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       12 (0xc)
         .maxstack  8
         IL_0000:  ldarg.0
@@ -436,7 +441,8 @@
               instance bool  Equals(object obj,
                                     class [mscorlib]System.Collections.IEqualityComparer comp) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       84 (0x54)
         .maxstack  5
         .locals init (class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
@@ -505,7 +511,8 @@
       .method public hidebysig virtual final 
               instance bool  Equals(class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> obj) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       71 (0x47)
         .maxstack  4
         .locals init (class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0,
@@ -566,7 +573,8 @@
       .method public hidebysig virtual final 
               instance bool  Equals(object obj) cil managed
       {
-        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+        .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 )
+        .custom instance void [runtime]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 )
         // Code size       22 (0x16)
         .maxstack  4
         .locals init (class Equals06/EqualsMicroPerfAndCodeGenerationTests/GenericKey`1<!a> V_0)

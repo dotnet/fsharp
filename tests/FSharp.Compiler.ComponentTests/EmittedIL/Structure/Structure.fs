@@ -161,7 +161,7 @@ module Structure =
         compilation
         |> verifyExecution
 
-#if !NETCOREAPP && !NETSTANDARD
+#if false && !NETCOREAPP && !NETSTANDARD
     // SOURCE=NativePtr01.fs         PEVER=/Exp_Fail SCFLAGS="-r:CodeGenHelper.dll" # NativePtr01.fs
     [<Theory; Directory(__SOURCE_DIRECTORY__, Includes=[|"NativePtr01.fs"|])>]
     let ``NativePtr01_fs`` compilation =

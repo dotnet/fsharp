@@ -96,8 +96,10 @@ type CvtResFile() =
                     reader.Read(pAdditional.data, 0, pAdditional.data.Length) |> ignore<int>
                     stream.Position <- stream.Position + 3L &&& ~~~ 3L
 
-                    if pAdditional.pstringType.theString = Unchecked.defaultof<_>
-                       && (pAdditional.pstringType.Ordinal = uint16 CvtResFile.RT_DLGINCLUDE) then
+                    if
+                        pAdditional.pstringType.theString = Unchecked.defaultof<_>
+                        && (pAdditional.pstringType.Ordinal = uint16 CvtResFile.RT_DLGINCLUDE)
+                    then
                         () (* ERROR ContinueNotSupported *)
                     else
                         resourceNames.Add pAdditional
@@ -454,7 +456,8 @@ type VersionHelper() =
                                             doBreak <- false
                                             () (* ERROR ContinueNotSupported *)
                         (* ERROR BreakNotSupported *)
-                        if not breakLoop then i <- i + 1
+                        if not breakLoop then
+                            i <- i + 1
 
                 if hasWildcard then
                     let mutable (i: int) = lastExplicitValue
@@ -1149,7 +1152,8 @@ type NativeResourceWriter() =
                 if id >= 0 then
                     writer.WriteInt32 id
                 else
-                    if name = Unchecked.defaultof<_> then name <- String.Empty
+                    if name = Unchecked.defaultof<_> then
+                        name <- String.Empty
 
                     writer.WriteUInt32(nameOffset ||| 0x80000000u)
                     dataWriter.WriteUInt16(uint16 name.Length)

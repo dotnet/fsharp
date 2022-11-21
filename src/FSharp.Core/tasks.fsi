@@ -15,7 +15,6 @@ namespace Microsoft.FSharp.Control
     /// The extra data stored in ResumableStateMachine for tasks
     /// </summary>
     [<Struct; NoComparison; NoEquality>]
-    [<Experimental("Experimental library feature, requires '--langversion:preview'")>]
     [<CompilerMessage("This construct  is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
     type TaskStateMachineData<'T> =
 

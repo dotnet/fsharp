@@ -41,7 +41,7 @@ module Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 841, Line 7, Col 12, Line 7, Col 49, "This attribute is not valid for use on this language element. Assembly attributes should be attached to a 'do ()' declaration, if necessary within an F# module.")
+            (Error 841, Line 7, Col 3, Line 7, Col 111, "This attribute is not valid for use on this language element. Assembly attributes should be attached to a 'do ()' declaration, if necessary within an F# module.")
         ]
 
     // SOURCE=E_AttributeApplication02.fs     SCFLAGS="--test:ErrorRanges"	# E_AttributeApplication02.fs
@@ -103,11 +103,11 @@ module Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 1, Line 10, Col 3, Line 10, Col 59, "This expression was expected to have type\n    'int[]'    \nbut here has type\n    'unit'    ")
+            (Error 1, Line 10, Col 3, Line 10, Col 59, "This expression was expected to have type\n    'int array'    \nbut here has type\n    'unit'    ")
             (Error 267, Line 10, Col 3, Line 10, Col 59, "This is not a valid constant expression or custom attribute value")
             (Error 850, Line 10, Col 3, Line 10, Col 59, "This attribute cannot be used in this version of F#")
-            (Error 850, Line 13, Col 3, Line 13, Col 52, "This attribute cannot be used in this version of F#")
-            (Error 850, Line 16, Col 13, Line 16, Col 37, "This attribute cannot be used in this version of F#")
+            (Error 850, Line 13, Col 3, Line 13, Col 101, "This attribute cannot be used in this version of F#")
+            (Error 850, Line 16, Col 3, Line 16, Col 50, "This attribute cannot be used in this version of F#")
         ]
 
     // SOURCE=E_AttributeTargetSpecifications.fs						# E_AttributeTargetSpecifications.fs
@@ -305,7 +305,7 @@ module Basic =
         |> verifyCompile
         |> shouldFail
         |> withDiagnostics [
-            (Error 429, Line 16, Col 28, Line 16, Col 31, "The attribute type 'CA1' has 'AllowMultiple=false'. Multiple instances of this attribute cannot be attached to a single language element.")
+            (Error 429, Line 16, Col 28, Line 16, Col 37, "The attribute type 'CA1' has 'AllowMultiple=false'. Multiple instances of this attribute cannot be attached to a single language element.")
         ]
 
     // SOURCE=W_StructLayoutExplicit01.fs   SCFLAGS="--test:ErrorRanges" PEVER="/Exp_Fail"	# W_StructLayoutExplicit01.fs

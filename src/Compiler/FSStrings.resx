@@ -573,7 +573,7 @@
   <data name="Parser.TOKEN.AND" xml:space="preserve">
     <value>keyword 'and'</value>
   </data>
-  !<data name="Parser.TOKEN.AND.BANG" xml:space="preserve">
+  <data name="Parser.TOKEN.AND.BANG" xml:space="preserve">
     <value>keyword 'and!'</value>
   </data>
   <data name="Parser.TOKEN.AS" xml:space="preserve">
@@ -907,7 +907,7 @@
     <value>This expression is a function value, i.e. is missing arguments. Its type is {0}.</value>
   </data>
   <data name="UnitTypeExpected" xml:space="preserve">
-    <value>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</value>
+    <value>The result of this expression has type '{0}' and is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</value>
   </data>
   <data name="UnitTypeExpectedWithEquality" xml:space="preserve">
     <value>The result of this equality expression has type '{0}' and is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</value>
@@ -1054,7 +1054,7 @@
     <value>Override implementations should be given as part of the initial declaration of a type.</value>
   </data>
   <data name="IntfImplInIntrinsicAugmentation" xml:space="preserve">
-    <value>Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.</value>
+    <value>Interface implementations should normally be given on the initial declaration of a type. Interface implementations in augmentations may lead to accessing static bindings before they are initialized, though only if the interface implementation is invoked during initialization of the static data, and in turn access the static data. You may remove this warning using #nowarn "69" if you have checked this is not the case.</value>
   </data>
   <data name="IntfImplInExtrinsicAugmentation" xml:space="preserve">
     <value>Interface implementations should be given on the initial declaration of a type.</value>
@@ -1106,5 +1106,11 @@
   </data>
   <data name="TargetInvocationExceptionWrapper" xml:space="preserve">
     <value>internal error: {0}</value>
+  </data>
+  <data name="NotUpperCaseConstructorWithoutRQA" xml:space="preserve">
+    <value>Lowercase discriminated union cases are only allowed when using RequireQualifiedAccess attribute</value>
+  </data>
+  <data name="ErrorFromAddingTypeEquationTuples" xml:space="preserve">
+    <value>Type mismatch. Expecting a tuple of length {0} of type\n    {1}    \nbut given a tuple of length {2} of type\n    {3}    {4}\n</value>
   </data>
 </root>

@@ -247,8 +247,10 @@ type internal ReadLineConsole() =
             checkLeftEdge false
 
         let writeChar (c) =
-            if Console.CursorTop = Console.BufferHeight - 1
-               && Console.CursorLeft = Console.BufferWidth - 1 then
+            if
+                Console.CursorTop = Console.BufferHeight - 1
+                && Console.CursorLeft = Console.BufferWidth - 1
+            then
                 //printf "bottom right!\n"
                 anchor <- { anchor with top = (anchor).top - 1 }
 
@@ -278,7 +280,8 @@ type internal ReadLineConsole() =
             let mutable position = -1
 
             for i = 0 to input.Length - 1 do
-                if (i = curr) then position <- output.Length
+                if (i = curr) then
+                    position <- output.Length
 
                 let c = input.Chars(i)
 
@@ -287,7 +290,8 @@ type internal ReadLineConsole() =
                 else
                     output.Append(c) |> ignore
 
-            if (curr = input.Length) then position <- output.Length
+            if (curr = input.Length) then
+                position <- output.Length
 
             // render the current text, computing a new value for "rendered"
             let old_rendered = rendered
@@ -419,7 +423,8 @@ type internal ReadLineConsole() =
             if (line = "\x1A") then
                 null
             else
-                if (line.Length > 0) then history.AddLast(line)
+                if (line.Length > 0) then
+                    history.AddLast(line)
 
                 line
 

@@ -174,8 +174,8 @@ let rec ImportILType (env: ImportMap) m tinst ty =
 
     | ILType.Array(bounds, ty) -> 
         let n = bounds.Rank
-        let elementType = ImportILType env m tinst ty
-        mkArrayTy env.g n elementType m
+        let elemTy = ImportILType env m tinst ty
+        mkArrayTy env.g n elemTy m
 
     | ILType.Boxed  tspec | ILType.Value tspec ->
         let tcref = ImportILTypeRef env m tspec.TypeRef 
@@ -335,10 +335,10 @@ let rec ImportProvidedType (env: ImportMap) (m: range) (* (tinst: TypeInst) *) (
                 if tp.Kind = TyparKind.Measure then  
                     let rec conv ty = 
                         match ty with 
-                        | TType_app (tcref, [t1;t2], _) when tyconRefEq g tcref g.measureproduct_tcr -> Measure.Prod (conv t1, conv t2)
-                        | TType_app (tcref, [t1], _) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv t1)
+                        | TType_app (tcref, [ty1;ty2], _) when tyconRefEq g tcref g.measureproduct_tcr -> Measure.Prod (conv ty1, conv ty2)
+                        | TType_app (tcref, [ty1], _) when tyconRefEq g tcref g.measureinverse_tcr -> Measure.Inv (conv ty1)
                         | TType_app (tcref, [], _) when tyconRefEq g tcref g.measureone_tcr -> Measure.One 
-                        | TType_app (tcref, [], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Con tcref
+                        | TType_app (tcref, [], _) when tcref.TypeOrMeasureKind = TyparKind.Measure -> Measure.Const tcref
                         | TType_app (tcref, _, _) -> 
                             errorR(Error(FSComp.SR.impInvalidMeasureArgument1(tcref.CompiledName, tp.Name), m))
                             Measure.One
@@ -584,7 +584,7 @@ let ImportILAssemblyTypeDefs (amap, m, auxModLoader, aref, mainmod: ILModuleDef)
     let scoref = ILScopeRef.Assembly aref
     let mtypsForExportedTypes = ImportILAssemblyExportedTypes amap m auxModLoader scoref mainmod.ManifestOfAssembly.ExportedTypes
     let mainmod = ImportILAssemblyMainTypeDefs amap m scoref mainmod
-    CombineCcuContentFragments m (mainmod :: mtypsForExportedTypes)
+    CombineCcuContentFragments (mainmod :: mtypsForExportedTypes)
 
 /// Import the type forwarder table for an IL assembly
 let ImportILAssemblyTypeForwarders (amap, m, exportedTypes: ILExportedTypesAndForwarders): CcuTypeForwarderTable =            

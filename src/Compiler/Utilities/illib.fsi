@@ -50,8 +50,6 @@ module internal PervasiveAutoOpens =
 
     val reportTime: (bool -> string -> unit)
 
-    val runningOnMono: bool
-
     /// Get an initialization hole
     val getHole: r: 'a option ref -> 'a
 
@@ -594,7 +592,7 @@ module internal MapAutoOpens =
 
         static member Empty: Map<'Key, 'Value> when 'Key: comparison
 
-#if USE_SHIPPED_FSCORE
+#if FSHARPCORE_USE_PACKAGE
         member Values: 'Value list
 #endif
 

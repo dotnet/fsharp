@@ -70,6 +70,69 @@ module TcResolutionsExtensions =
     let (|CNR|) (cnr: CapturedNameResolution) =
         (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.NameResolutionEnv, cnr.AccessorDomain, cnr.Range)
 
+    let isDisposableTy g amap (ty: TType) =
+        not (typeEquiv g ty g.system_IDisposable_ty)
+        && protectAssemblyExplorationNoReraise false false (fun () ->
+            ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
+
+    let isDiscard (str: string) = str.StartsWith("_")
+
+    let isValRefDisposable g amap (vref: ValRef) =
+        not (isDiscard vref.DisplayName)
+        &&
+        // For values, we actually do want to color things if they literally are IDisposables
+        protectAssemblyExplorationNoReraise false false (fun () ->
+            ExistsHeadTypeInEntireHierarchy g amap range0 vref.Type g.tcref_System_IDisposable)
+
+    let isStructTyconRef g (tcref: TyconRef) =
+        let ty = generalizedTyconRef g tcref
+        let underlyingTy = stripTyEqnsAndMeasureEqns g ty
+        isStructTy g underlyingTy
+
+    let isValRefMutable g (vref: ValRef) =
+        // Mutable values, ref cells, and non-inref byrefs are mutable.
+        vref.IsMutable
+        || isRefCellTy g vref.Type
+        || (isByrefTy g vref.Type && not (isInByrefTy g vref.Type))
+
+    let isRecdFieldMutable g (rfinfo: RecdFieldInfo) =
+        (rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone)
+        || isRefCellTy g rfinfo.RecdField.FormalType
+
+    let reprToClassificationType g repr tcref =
+        match repr with
+        | TFSharpObjectRepr om ->
+            match om.fsobjmodel_kind with
+            | TFSharpClass -> SemanticClassificationType.ReferenceType
+            | TFSharpInterface -> SemanticClassificationType.Interface
+            | TFSharpStruct -> SemanticClassificationType.ValueType
+            | TFSharpDelegate _ -> SemanticClassificationType.Delegate
+            | TFSharpEnum -> SemanticClassificationType.Enumeration
+        | TFSharpRecdRepr _
+        | TFSharpUnionRepr _ ->
+            if isStructTyconRef g tcref then
+                SemanticClassificationType.ValueType
+            else
+                SemanticClassificationType.Type
+        | TILObjectRepr (TILObjectReprData (_, _, td)) ->
+            if td.IsClass then
+                SemanticClassificationType.ReferenceType
+            elif td.IsStruct then
+                SemanticClassificationType.ValueType
+            elif td.IsInterface then
+                SemanticClassificationType.Interface
+            elif td.IsEnum then
+                SemanticClassificationType.Enumeration
+            else
+                SemanticClassificationType.Delegate
+        | TAsmRepr _ -> SemanticClassificationType.TypeDef
+        | TMeasureableRepr _ -> SemanticClassificationType.TypeDef
+#if !NO_TYPEPROVIDERS
+        | TProvidedTypeRepr _ -> SemanticClassificationType.TypeDef
+        | TProvidedNamespaceRepr _ -> SemanticClassificationType.TypeDef
+#endif
+        | TNoRepr -> SemanticClassificationType.ReferenceType
+
     type TcResolutions with
 
         member sResolutions.GetSemanticClassification
@@ -86,19 +149,21 @@ module TcResolutionsExtensions =
                         match occ with
                         | ItemOccurence.UseInType
                         | ItemOccurence.UseInAttribute
-                        | ItemOccurence.Use _
-                        | ItemOccurence.Binding _
-                        | ItemOccurence.Pattern _
+                        | ItemOccurence.Use
+                        | ItemOccurence.Binding
+                        | ItemOccurence.Pattern
                         | ItemOccurence.Open -> Some()
                         | _ -> None
 
                     let (|KeywordIntrinsicValue|_|) (vref: ValRef) =
-                        if valRefEq g g.raise_vref vref
-                           || valRefEq g g.reraise_vref vref
-                           || valRefEq g g.typeof_vref vref
-                           || valRefEq g g.typedefof_vref vref
-                           || valRefEq g g.sizeof_vref vref
-                           || valRefEq g g.nameof_vref vref then
+                        if
+                            valRefEq g g.raise_vref vref
+                            || valRefEq g g.reraise_vref vref
+                            || valRefEq g g.typeof_vref vref
+                            || valRefEq g g.typedefof_vref vref
+                            || valRefEq g g.sizeof_vref vref
+                            || valRefEq g g.nameof_vref vref
+                        then
                             Some()
                         else
                             None
@@ -136,35 +201,6 @@ module TcResolutionsExtensions =
                             |> Array.concat
                         | None -> sResolutions.CapturedNameResolutions.ToArray()
 
-                    let isDisposableTy (ty: TType) =
-                        not (typeEquiv g ty g.system_IDisposable_ty)
-                        && protectAssemblyExplorationNoReraise false false (fun () ->
-                            ExistsHeadTypeInEntireHierarchy g amap range0 ty g.tcref_System_IDisposable)
-
-                    let isDiscard (str: string) = str.StartsWith("_")
-
-                    let isValRefDisposable (vref: ValRef) =
-                        not (isDiscard vref.DisplayName)
-                        &&
-                        // For values, we actually do want to color things if they literally are IDisposables
-                        protectAssemblyExplorationNoReraise false false (fun () ->
-                            ExistsHeadTypeInEntireHierarchy g amap range0 vref.Type g.tcref_System_IDisposable)
-
-                    let isStructTyconRef (tyconRef: TyconRef) =
-                        let ty = generalizedTyconRef g tyconRef
-                        let underlyingTy = stripTyEqnsAndMeasureEqns g ty
-                        isStructTy g underlyingTy
-
-                    let isValRefMutable (vref: ValRef) =
-                        // Mutable values, ref cells, and non-inref byrefs are mutable.
-                        vref.IsMutable
-                        || isRefCellTy g vref.Type
-                        || (isByrefTy g vref.Type && not (isInByrefTy g vref.Type))
-
-                    let isRecdFieldMutable (rfinfo: RecdFieldInfo) =
-                        (rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone)
-                        || isRefCellTy g rfinfo.RecdField.FormalType
-
                     let duplicates = HashSet<range>(comparer)
 
                     let results = ImmutableArray.CreateBuilder()
@@ -176,12 +212,10 @@ module TcResolutionsExtensions =
                     resolutions
                     |> Array.iter (fun cnr ->
                         match cnr.Item, cnr.ItemOccurence, cnr.Range with
-                        | (Item.CustomBuilder _
-                          | Item.CustomOperation _),
-                          ItemOccurence.Use,
-                          m -> add m SemanticClassificationType.ComputationExpression
+                        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, m ->
+                            add m SemanticClassificationType.ComputationExpression
 
-                        | Item.Value vref, _, m when isValRefMutable vref -> add m SemanticClassificationType.MutableVar
+                        | Item.Value vref, _, m when isValRefMutable g vref -> add m SemanticClassificationType.MutableVar
 
                         | Item.Value KeywordIntrinsicValue, ItemOccurence.Use, m -> add m SemanticClassificationType.IntrinsicFunction
 
@@ -200,7 +234,7 @@ module TcResolutionsExtensions =
                                 add m SemanticClassificationType.Function
 
                         | Item.Value vref, _, m ->
-                            if isValRefDisposable vref then
+                            if isValRefDisposable g amap vref then
                                 if vref.IsCompiledAsTopLevel then
                                     add m SemanticClassificationType.DisposableTopLevelValue
                                 else
@@ -216,7 +250,7 @@ module TcResolutionsExtensions =
                             match rfinfo with
                             | EnumCaseFieldInfo -> add m SemanticClassificationType.Enumeration
                             | _ ->
-                                if isRecdFieldMutable rfinfo then
+                                if isRecdFieldMutable g rfinfo then
                                     add m SemanticClassificationType.MutableRecordField
                                 elif isFunTy g rfinfo.FieldType then
                                     add m SemanticClassificationType.RecordFieldAsFunction
@@ -242,7 +276,10 @@ module TcResolutionsExtensions =
                             match minfos with
                             | [] -> add m SemanticClassificationType.ConstructorForReferenceType
                             | _ ->
-                                if minfos |> List.forall (fun minfo -> isDisposableTy minfo.ApparentEnclosingType) then
+                                if
+                                    minfos
+                                    |> List.forall (fun minfo -> isDisposableTy g amap minfo.ApparentEnclosingType)
+                                then
                                     add m SemanticClassificationType.DisposableType
                                 elif minfos |> List.forall (fun minfo -> isStructTy g minfo.ApparentEnclosingType) then
                                     add m SemanticClassificationType.ConstructorForValueType
@@ -257,60 +294,28 @@ module TcResolutionsExtensions =
                             match minfos with
                             | [] -> add m SemanticClassificationType.Method
                             | _ ->
-                                if minfos
-                                   |> List.forall (fun minfo -> minfo.IsExtensionMember || minfo.IsCSharpStyleExtensionMember) then
+                                if
+                                    minfos
+                                    |> List.forall (fun minfo -> minfo.IsExtensionMember || minfo.IsCSharpStyleExtensionMember)
+                                then
                                     add m SemanticClassificationType.ExtensionMethod
                                 else
                                     add m SemanticClassificationType.Method
 
                         // Special case measures for struct types
                         | Item.Types (_, AppTy g (tyconRef, TType_measure _ :: _) :: _), LegitTypeOccurence, m when
-                            isStructTyconRef tyconRef
+                            isStructTyconRef g tyconRef
                             ->
                             add m SemanticClassificationType.ValueType
 
                         | Item.Types (_, ty :: _), LegitTypeOccurence, m ->
-                            let reprToClassificationType repr tcref =
-                                match repr with
-                                | TFSharpObjectRepr om ->
-                                    match om.fsobjmodel_kind with
-                                    | TFSharpClass -> SemanticClassificationType.ReferenceType
-                                    | TFSharpInterface -> SemanticClassificationType.Interface
-                                    | TFSharpStruct -> SemanticClassificationType.ValueType
-                                    | TFSharpDelegate _ -> SemanticClassificationType.Delegate
-                                    | TFSharpEnum _ -> SemanticClassificationType.Enumeration
-                                | TFSharpRecdRepr _
-                                | TFSharpUnionRepr _ ->
-                                    if isStructTyconRef tcref then
-                                        SemanticClassificationType.ValueType
-                                    else
-                                        SemanticClassificationType.Type
-                                | TILObjectRepr (TILObjectReprData (_, _, td)) ->
-                                    if td.IsClass then
-                                        SemanticClassificationType.ReferenceType
-                                    elif td.IsStruct then
-                                        SemanticClassificationType.ValueType
-                                    elif td.IsInterface then
-                                        SemanticClassificationType.Interface
-                                    elif td.IsEnum then
-                                        SemanticClassificationType.Enumeration
-                                    else
-                                        SemanticClassificationType.Delegate
-                                | TAsmRepr _ -> SemanticClassificationType.TypeDef
-                                | TMeasureableRepr _ -> SemanticClassificationType.TypeDef
-#if !NO_TYPEPROVIDERS
-                                | TProvidedTypeRepr _ -> SemanticClassificationType.TypeDef
-                                | TProvidedNamespaceRepr _ -> SemanticClassificationType.TypeDef
-#endif
-                                | TNoRepr -> SemanticClassificationType.ReferenceType
-
                             let ty = stripTyEqns g ty
 
-                            if isDisposableTy ty then
+                            if isDisposableTy g amap ty then
                                 add m SemanticClassificationType.DisposableType
                             else
                                 match tryTcrefOfAppTy g ty with
-                                | ValueSome tcref -> add m (reprToClassificationType tcref.TypeReprInfo tcref)
+                                | ValueSome tcref -> add m (reprToClassificationType g tcref.TypeReprInfo tcref)
                                 | ValueNone ->
                                     if isStructTupleTy g ty then
                                         add m SemanticClassificationType.ValueType
@@ -336,6 +341,8 @@ module TcResolutionsExtensions =
                         | Item.ActivePatternCase _, _, m -> add m SemanticClassificationType.UnionCase
 
                         | Item.UnionCase _, _, m -> add m SemanticClassificationType.UnionCase
+
+                        | Item.Trait _, _, m -> add m SemanticClassificationType.Method
 
                         | Item.ActivePatternResult _, _, m -> add m SemanticClassificationType.UnionCase
 
@@ -367,7 +374,7 @@ module TcResolutionsExtensions =
                             elif tcref.IsNamespace then
                                 add m SemanticClassificationType.Namespace
                             elif tcref.IsUnionTycon || tcref.IsRecordTycon then
-                                if isStructTyconRef tcref then
+                                if isStructTyconRef g tcref then
                                     add m SemanticClassificationType.ValueType
                                 else
                                     add m SemanticClassificationType.UnionCase

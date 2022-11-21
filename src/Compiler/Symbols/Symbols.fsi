@@ -106,6 +106,8 @@ type FSharpSymbol =
     member DisplayNameCore: string
 
     /// Gets the display name for the symbol. Double backticks are added if the name is not a valid identifier.
+    ///
+    /// For FSharpParameter symbols without a name for the paramater, this returns "````"
     member DisplayName: string
 
     /// Get the implementation location for the symbol if it was declared in a signature that has an implementation
@@ -214,6 +216,9 @@ type FSharpEntity =
 
     /// Get the fully qualified name of the type or module
     member QualifiedName: string
+
+    /// The fully qualified name of the type or module without strong assembly name.
+    member BasicQualifiedName: string
 
     /// Get the full name of the type or module
     member FullName: string
@@ -343,6 +348,9 @@ type FSharpEntity =
 
     /// Get the type abbreviated by an F# type abbreviation
     member AbbreviatedType: FSharpType
+
+    /// Instantiates FSharpType
+    member AsType: unit -> FSharpType
 
     /// Get the cases of a union type
     member UnionCases: IList<FSharpUnionCase>
@@ -635,6 +643,8 @@ type FSharpStaticParameter =
 /// Represents further information about a member constraint on a generic type parameter
 [<Class; NoEquality; NoComparison>]
 type FSharpGenericParameterMemberConstraint =
+
+    inherit FSharpSymbol
 
     /// Get the types that may be used to satisfy the constraint
     member MemberSources: IList<FSharpType>
@@ -929,8 +939,8 @@ type FSharpMemberOrFunctionOrValue =
     /// Indicated if this is a value compiled to a method
     member IsValCompiledAsMethod: bool
 
-    /// Indicates if this is a function
-    member IsFunction: bool
+    /// Indicates if this is a ref cell
+    member IsRefCell: bool
 
     /// Indicated if this is a value
     member IsValue: bool
@@ -1103,6 +1113,12 @@ type FSharpType =
     /// Get the base type, if any, taking into account the instantiation of this type
     /// if it is an instantiation of a generic type.
     member BaseType: FSharpType option
+
+    /// Canonical form of the type with abbreviations, measures, and F# tuples and functions erased.
+    member ErasedType: FSharpType
+
+    /// The fully qualified name of the type or module without strong assembly name.
+    member BasicQualifiedName: string
 
     /// Adjust the type by removing any occurrences of type inference variables, replacing them
     /// systematically with lower-case type inference variables such as <c>'a</c>.

@@ -274,7 +274,6 @@ if "%DEPLOY%" == "yes" if "!ISADMIN!" == "yes" (
     !SN32! -Vr HostedCompilerServer,b03f5f7f11d50a3a 1>NUL 2>NUL
 
     !SN32! -Vr FSharp.Compiler,b03f5f7f11d50a3a 1>NUL 2>NUL
-    !SN32! -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a 1>NUL 2>NUL
     !SN32! -Vr FSharp.Editor,b03f5f7f11d50a3a 1>NUL 2>NUL
     !SN32! -Vr FSharp.LanguageService,b03f5f7f11d50a3a 1>NUL 2>NUL
     !SN32! -Vr FSharp.LanguageService.Base,b03f5f7f11d50a3a 1>NUL 2>NUL
@@ -293,7 +292,6 @@ if "%DEPLOY%" == "yes" if "!ISADMIN!" == "yes" (
         !SN64! -Vr HostedCompilerServer,b03f5f7f11d50a3a 1>NUL 2>NUL
 
         !SN64! -Vr FSharp.Compiler,b03f5f7f11d50a3a 1>NUL 2>NUL
-        !SN64! -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a 1>NUL 2>NUL
         !SN64! -Vr FSharp.Editor,b03f5f7f11d50a3a 1>NUL 2>NUL
         !SN64! -Vr FSharp.LanguageService,b03f5f7f11d50a3a 1>NUL 2>NUL
         !SN64! -Vr FSharp.LanguageService.Base,b03f5f7f11d50a3a 1>NUL 2>NUL
@@ -346,7 +344,6 @@ if "%ACTION%" == "restore" if "!ISADMIN!" == "yes" (
     !SN32! -Vu HostedCompilerServer,b03f5f7f11d50a3a 2>NUL 1>NUL
 
     !SN32! -Vu FSharp.Compiler,b03f5f7f11d50a3a 2>NUL 1>NUL
-    !SN32! -Vu FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a 2>NUL 1>NUL
     !SN32! -Vu FSharp.Editor,b03f5f7f11d50a3a 2>NUL 1>NUL
     !SN32! -Vu FSharp.LanguageService,b03f5f7f11d50a3a 2>NUL 1>NUL
     !SN32! -Vu FSharp.LanguageService.Base,b03f5f7f11d50a3a 2>NUL 1>NUL
@@ -365,7 +362,6 @@ if "%ACTION%" == "restore" if "!ISADMIN!" == "yes" (
         !SN64! -Vu HostedCompilerServer,b03f5f7f11d50a3a 2>NUL 1>NUL
 
         !SN64! -Vu FSharp.Compiler,b03f5f7f11d50a3a 2>NUL 1>NUL
-        !SN64! -Vu FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a 2>NUL 1>NUL
         !SN64! -Vu FSharp.Editor,b03f5f7f11d50a3a 2>NUL 1>NUL
         !SN64! -Vu FSharp.LanguageService,b03f5f7f11d50a3a 2>NUL 1>NUL
         !SN64! -Vu FSharp.LanguageService.Base,b03f5f7f11d50a3a 2>NUL 1>NUL
