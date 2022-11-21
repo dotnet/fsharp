@@ -106,7 +106,7 @@ module internal Utils =
 
     /// An array stores ranges of full-width chars.
     /// 
-    /// Array [| a; b; c; d |] represents range (a, b) or (c, d), means chars in these ranges are full-width.
+    /// Array [| a; b; c; d |] represents range [a, b] or [c, d], means chars in these ranges are full-width.
     let private fullWidthCharRanges =
         [|
             '\u1100'
@@ -212,10 +212,11 @@ module internal Utils =
         |]
 
     let isFullWidth (char) =
-        // for array [| a; b; c; d |], if a value is in (a, b) or (c, d), 
-        // the result of Array.BinarySearch will be a negative even number
+        // for array [| a; b; c; d |], 
+        // if a value is in (a, b) or (c, d), the result of Array.BinarySearch will be a negative even number
+        // if a value is a, b, c, d, the result will be a non-positive number 
         let n = Array.BinarySearch(fullWidthCharRanges, char)
-        n < 0 && n % 2 = 0
+        (n < 0 && n % 2 = 0) || n >= 0
 
     // don't write chars to the last 2 column to avoid some bugs that will happen on long lines
     let bufferWidth() = Console.BufferWidth - 2
