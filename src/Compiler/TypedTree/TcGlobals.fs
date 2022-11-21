@@ -1830,12 +1830,12 @@ type TcGlobals(
         let info = makeOtherIntrinsicValRef (fslib_MFOperators_nleref, "atan2", None, Some "Atan2", [vara; varb], ([[varaTy]; [varaTy]], varbTy))
         let tyargs = [aty;bty]
         Some (info, tyargs, argExprs)
-    | "get_Zero", _, Some aty, [_] ->
+    | "get_Zero", _, Some aty, ([] | [_]) ->
         // Call LanguagePrimitives.GenericZero
         let info = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, "GenericZero", None, None, [vara], ([], varaTy))
         let tyargs = [aty]
         Some (info, tyargs, [])
-    | "get_One", _, Some aty, [_] ->
+    | "get_One", _, Some aty,  ([] | [_])  ->
         // Call LanguagePrimitives.GenericOne
         let info = makeOtherIntrinsicValRef (fslib_MFLanguagePrimitives_nleref, "GenericOne", None, None, [vara], ([], varaTy))
         let tyargs = [aty]
