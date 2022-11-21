@@ -5662,26 +5662,6 @@
         <target state="translated">생성된 형식</target>
         <note />
       </trans-unit>
-      <trans-unit id="assemblyResolutionFoundByAssemblyFoldersKey">
-        <source>Found by AssemblyFolders registry key</source>
-        <target state="translated">AssemblyFolders 레지스트리 키로 찾았습니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionFoundByAssemblyFoldersExKey">
-        <source>Found by AssemblyFoldersEx registry key</source>
-        <target state="translated">AssemblyFoldersEx 레지스트리 키로 찾았습니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionNetFramework">
-        <source>.NET Framework</source>
-        <target state="translated">.NET Framework</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionGAC">
-        <source>Global Assembly Cache</source>
-        <target state="translated">전역 어셈블리 캐시</target>
-        <note />
-      </trans-unit>
       <trans-unit id="recursiveClassHierarchy">
         <source>Recursive class hierarchy in type '{0}'</source>
         <target state="translated">'{0}' 형식에 재귀적 클래스 계층 구조가 있습니다.</target>

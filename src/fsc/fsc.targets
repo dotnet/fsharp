@@ -28,6 +28,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedText Include="$(MSBuildThisFileDirectory)..\LegacyMSBuildResolver\LegacyResolver.txt">
+      <Link>LegacyResolver.txt</Link>
+    </EmbeddedText>
+    <Compile Include="$(MSBuildThisFileDirectory)..\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fsi" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\LegacyMSBuildResolver\LegacyMSBuildReferenceResolver.fs" />
     <Compile Include="$(MSBuildThisFileDirectory)fscmain.fs" />
     <NoneSubstituteText Include="$(MSBuildThisFileDirectory)App.config">
       <Pattern1>{{FSCoreVersion}}</Pattern1>
@@ -43,9 +48,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Tasks.Core" Version="$(MicrosoftBuildVersion)" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="$(MicrosoftBuildVersion)" />
   </ItemGroup>
 
 </Project>
