@@ -177,9 +177,6 @@
   <data name="6012" xml:space="preserve">
     <value>Advanced</value>
   </data>
-  <data name="6013" xml:space="preserve">
-    <value>CodeLens</value>
-  </data>
   <data name="6014" xml:space="preserve">
     <value>Formatting</value>
   </data>
@@ -290,5 +287,8 @@
   </data>
   <data name="UseTripleQuotedInterpolation" xml:space="preserve">
     <value>Use triple quoted string interpolation.</value>
+  </data>
+  <data name="ConvertCSharpUsingToFSharpOpen" xml:space="preserve">
+    <value>Convert C# 'using' to F# 'open'</value>
   </data>
 </root>

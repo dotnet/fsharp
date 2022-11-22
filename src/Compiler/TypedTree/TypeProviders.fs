@@ -34,7 +34,7 @@ type ResolutionEnvironment =
     { ResolutionFolder: string
       OutputFile: string option
       ShowResolutionMessages: bool
-      ReferencedAssemblies: string[]
+      GetReferencedAssemblies: unit -> string[]
       TemporaryFolder: string }
 
 /// Load a the design-time part of a type-provider into the host process, and look for types
@@ -118,19 +118,32 @@ let CreateTypeProvider (
             let e = StripException (StripException err)
             raise (TypeProviderError(FSComp.SR.etTypeProviderConstructorException(e.Message), typeProviderImplementationType.FullName, m))
 
+    let getReferencedAssemblies () =
+        resolutionEnvironment.GetReferencedAssemblies() |> Array.distinct
+
     if typeProviderImplementationType.GetConstructor([| typeof<TypeProviderConfig> |]) <> null then
 
         // Create the TypeProviderConfig to pass to the type provider constructor
         let e =
-            TypeProviderConfig(systemRuntimeContainsType, 
+#if FSHARPCORE_USE_PACKAGE
+            TypeProviderConfig(systemRuntimeContainsType,
+                ReferencedAssemblies=getReferencedAssemblies(),
                 ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
                 RuntimeAssembly=runtimeAssemblyPath, 
-                ReferencedAssemblies=Array.copy resolutionEnvironment.ReferencedAssemblies, 
                 TemporaryFolder=resolutionEnvironment.TemporaryFolder, 
                 IsInvalidationSupported=isInvalidationSupported, 
                 IsHostedExecution= isInteractive, 
                 SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
-
+#else
+            TypeProviderConfig(systemRuntimeContainsType,
+                getReferencedAssemblies,
+                ResolutionFolder=resolutionEnvironment.ResolutionFolder, 
+                RuntimeAssembly=runtimeAssemblyPath, 
+                TemporaryFolder=resolutionEnvironment.TemporaryFolder, 
+                IsInvalidationSupported=isInvalidationSupported, 
+                IsHostedExecution= isInteractive, 
+                SystemRuntimeAssemblyVersion = systemRuntimeAssemblyVersion)
+#endif
         protect (fun () -> Activator.CreateInstance(typeProviderImplementationType, [| box e|]) :?> ITypeProvider )
 
     elif typeProviderImplementationType.GetConstructor [| |] <> null then 
@@ -402,7 +415,7 @@ type ProvidedType (x: Type, ctxt: ProvidedTypeContext) =
     member _.ApplyStaticArguments(provider: ITypeProvider, fullTypePathAfterArguments, staticArgs: obj[]) = 
         provider.ApplyStaticArguments(x, fullTypePathAfterArguments,  staticArgs) |> ProvidedType.Create ctxt
 
-    member _.IsVoid = (typeof<Void>.Equals x || (x.Namespace = "System" && x.Name = "Void"))
+    member _.IsVoid = (Type.op_Equality(x, typeof<Void>) || (x.Namespace = "System" && x.Name = "Void"))
 
     member _.IsGenericParameter = x.IsGenericParameter
 

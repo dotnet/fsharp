@@ -1674,7 +1674,7 @@ module List =
     /// <code lang="fsharp">
     /// let input = [1; 2; 3]
     ///
-    /// input |> List.pick (fun n -> if n > 3 = 0 then Some (string n) else None)
+    /// input |> List.pick (fun n -> if n > 3 then Some (string n) else None)
     /// </code>
     /// Throws <c>KeyNotFoundException</c>.
     /// </example>
@@ -2300,7 +2300,7 @@ module List =
     /// <code lang="fsharp">
     /// let input = [1; 2; 3]
     ///
-    /// input |> List.tryPick (fun n -> if n > 3 = 0 then Some (string n) else None)
+    /// input |> List.tryPick (fun n -> if n > 3 then Some (string n) else None)
     /// </code>
     /// Evaluates to <c>None</c>.
     /// </example>
