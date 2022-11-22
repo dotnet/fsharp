@@ -144,12 +144,6 @@ let [<Literal>] x = 1 + System.DateTime.Now.Hour
         |> compile
         |> shouldFail
         |> withResults [
-            { Error = Warning 52
-              Range = { StartLine = 4
-                        StartColumn = 25
-                        EndLine = 4
-                        EndColumn = 49 }
-              Message = "The value has been copied to ensure the original is not mutated by this operation or because the copy is implicit when returning a struct from a member and another member is then accessed" }
             { Error = Error 267
               Range = { StartLine = 4
                         StartColumn = 25
