@@ -11627,10 +11627,6 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
     | None -> ()
     | Some (firstImplFiles, lastImplFile) ->
 
-        // Generate the assembly sequentially, implementation file by implementation file.
-        //
-        // NOTE: In theory this could be done in parallel, except for the presence of linear
-        // state in the AssemblyBuilder
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
         let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
 
@@ -11710,6 +11706,43 @@ type IlxGenResults =
         quotationResourceInfo: (ILTypeRef list * byte[]) list
     }
 
+let private GenerateResourcesForQuotations reflectedDefinitions cenv = 
+    match reflectedDefinitions with
+    | [] -> []
+    | _ ->
+        let qscope =
+            QuotationTranslator.QuotationGenerationScope.Create(
+                cenv.g,
+                cenv.amap,
+                cenv.viewCcu,
+                cenv.tcVal,
+                QuotationTranslator.IsReflectedDefinition.Yes
+            )
+
+        let defns =
+            reflectedDefinitions
+            |> List.choose (fun ((methName, v), e) ->
+                try
+                    let mbaseR, astExpr =
+                        QuotationTranslator.ConvReflectedDefinition qscope methName v e
+
+                    Some(mbaseR, astExpr)
+                with QuotationTranslator.InvalidQuotedTerm e ->
+                    warning e
+                    None)
+
+        let referencedTypeDefs, typeSplices, exprSplices = qscope.Close()
+
+        for _typeSplice, m in typeSplices do
+            error (InternalError("A free type variable was detected in a reflected definition", m))
+
+        for _exprSplice, m in exprSplices do
+            error (Error(FSComp.SR.ilReflectedDefinitionsCannotUseSliceOperator (), m))
+
+        let defnsResourceBytes = defns |> QuotationPickler.PickleDefns
+
+        [ (referencedTypeDefs, defnsResourceBytes) ]
+
 let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization implFiles, assemAttribs, moduleAttribs) =
 
     use _ = UseBuildPhase BuildPhase.IlxGen
@@ -11743,45 +11776,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
         GenAttrs cenv eenv (assemAttribs |> List.filter (fun a -> not (IsAssemblyVersionAttribute g a)))
 
     let tdefs, reflectedDefinitions = mgbuf.Close()
-
-    // Generate the quotations
-    let quotationResourceInfo =
-        match reflectedDefinitions with
-        | [] -> []
-        | _ ->
-            let qscope =
-                QuotationTranslator.QuotationGenerationScope.Create(
-                    g,
-                    cenv.amap,
-                    cenv.viewCcu,
-                    cenv.tcVal,
-                    QuotationTranslator.IsReflectedDefinition.Yes
-                )
-
-            let defns =
-                reflectedDefinitions
-                |> List.choose (fun ((methName, v), e) ->
-                    try
-                        let mbaseR, astExpr =
-                            QuotationTranslator.ConvReflectedDefinition qscope methName v e
-
-                        Some(mbaseR, astExpr)
-                    with QuotationTranslator.InvalidQuotedTerm e ->
-                        warning e
-                        None)
-
-            let referencedTypeDefs, typeSplices, exprSplices = qscope.Close()
-
-            for _typeSplice, m in typeSplices do
-                error (InternalError("A free type variable was detected in a reflected definition", m))
-
-            for _exprSplice, m in exprSplices do
-                error (Error(FSComp.SR.ilReflectedDefinitionsCannotUseSliceOperator (), m))
-
-            let defnsResourceBytes = defns |> QuotationPickler.PickleDefns
-
-            [ (referencedTypeDefs, defnsResourceBytes) ]
-
+    let quotationResourceInfo = GenerateResourcesForQuotations reflectedDefinitions cenv 
     let ilNetModuleAttrs = GenAttrs cenv eenv moduleAttribs
 
     let casApplied = Dictionary<Stamp, bool>()
