@@ -114,7 +114,7 @@ module private ExternalSymbol =
         | _ -> []
 
 // TODO: Uncomment code when VS has a fix for updating the status bar.
-type internal StatusBar(statusBar: IVsStatusbar) =
+type StatusBar(statusBar: IVsStatusbar) =
     let mutable _searchIcon = int16 Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_Find :> obj
 
     let _clear() =
@@ -158,7 +158,6 @@ type internal FSharpGoToDefinitionResult =
     | ExternalAssembly of FSharpSymbolUse * MetadataReference seq
 
 type internal GoToDefinition(metadataAsSource: FSharpMetadataAsSourceService) =
-
     /// Use an origin document to provide the solution & workspace used to 
     /// find the corresponding textSpan and INavigableItem for the range
     let rangeToNavigableItem (range: range, document: Document) = 
@@ -738,16 +737,27 @@ type private DocCommentId =
     | Type of EntityPath: string list
     | Other of string
     | None
+    
 
-[<Struct>]
-type FSharpNavigableLocation(_a: bool) =
+type FSharpNavigableLocation(statusBar: StatusBar, metadataAsSource: FSharpMetadataAsSourceService, symbolRange: range, project: Project) =
     interface IFSharpNavigableLocation with
         member _.NavigateToAsync(_options: FSharpNavigationOptions2, cancellationToken: CancellationToken) : Task<bool> =
             asyncMaybe {
-                //let document = workspace.CurrentSolution.GetDocument(documentId)
-                return true
+                let targetPath = symbolRange.FileName
+                let! targetDoc = project.Solution.TryGetDocumentFromFSharpRange (symbolRange, project.Id)
+                let! targetSource = targetDoc.GetTextAsync(cancellationToken)
+                let gtd = GoToDefinition(metadataAsSource)
+
+                let (|Signature|Implementation|) filepath =
+                    if isSignatureFile filepath then Signature else Implementation
+                
+                match targetPath with
+                | Signature  ->
+                    return! gtd.NavigateToSymbolDefinitionAsync(targetDoc, targetSource, symbolRange, statusBar, cancellationToken)
+                | Implementation ->
+                    return! gtd.NavigateToSymbolDeclarationAsync(targetDoc, targetSource, symbolRange, statusBar, cancellationToken)
             }
-            |> Async.map (Option.defaultValue false)
+            |> Async.map (fun a -> a.IsSome)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
 [<Export(typeof<IFSharpCrossLanguageSymbolNavigationService>)>]
@@ -755,6 +765,8 @@ type FSharpNavigableLocation(_a: bool) =
 type FSharpCrossLanguageSymbolNavigationService()  =
     let componentModel = Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
     let workspace = componentModel.GetService<VisualStudioWorkspace>()
+    let statusBar = StatusBar(ServiceProvider.GlobalProvider.GetService<SVsStatusbar,IVsStatusbar>())
+    let metadataAsSource = componentModel.DefaultExportProvider.GetExport<FSharpMetadataAsSourceService>().Value
 
     // So, the groups are following:
     //   1 - type (see below).
@@ -799,7 +811,7 @@ type FSharpCrossLanguageSymbolNavigationService()  =
             let parts = m.Groups[2].Value.Split('.')
             let entityPath = parts[..(parts.Length - 2)] |> List.ofArray
             let memberOrVal = parts[parts.Length - 1]
-            DocCommentId.Member { EntityPath = entityPath; MemberOrValName = memberOrVal}
+            DocCommentId.Member { EntityPath = entityPath; MemberOrValName = memberOrVal }
         | true, "T" ->
             let entityPath = m.Groups[2].Value.Split('.') |> List.ofArray
             DocCommentId.Type entityPath
@@ -808,47 +820,32 @@ type FSharpCrossLanguageSymbolNavigationService()  =
 
     interface IFSharpCrossLanguageSymbolNavigationService with
         member _.TryGetNavigableLocationAsync(assemblyName: string, documentationCommentId: string, cancellationToken: CancellationToken) : Task<IFSharpNavigableLocation> =
-            let result =
-                async {
-                    let projects = workspace.CurrentSolution.Projects |> Seq.filter (fun p -> p.IsFSharp && p.AssemblyName = assemblyName)
-                
-                    let project = projects.First()
-                    let service = project.Solution.GetFSharpWorkspaceService()
-                    let projectOptionsManager = service.FSharpProjectOptionsManager
-                    match! projectOptionsManager.TryGetOptionsByProject(project, cancellationToken) with
-                    | None -> return raise(OperationCanceledException("FSharp project options not found."))
-                    | Some(_, projectOptions) ->
-                        let! result = service.Checker.ParseAndCheckProject(projectOptions)
-                        return result
-                } |> Async.RunSynchronously
-
             let path = docCommentIdToPath documentationCommentId
-
-            let _entity =
-                match path with
-                | DocCommentId.Member { EntityPath = entityPath; MemberOrValName = _memberOrVal} ->
-                    result.AssemblySignature.FindEntityByPath (entityPath)
-                | _ -> Unchecked.defaultof<_>
-
             async {
                 let projects = workspace.CurrentSolution.Projects |> Seq.filter (fun p -> p.IsFSharp && p.AssemblyName = assemblyName)
                 
-                let project = projects.First()
-                let service = project.Solution.GetFSharpWorkspaceService()
-                let projectOptionsManager = service.FSharpProjectOptionsManager
-                match! projectOptionsManager.TryGetOptionsByProject(project, cancellationToken) with
-                | None -> return raise(OperationCanceledException("FSharp project options not found."))
-                | Some(_, projectOptions) ->
-                    let! result = service.Checker.ParseAndCheckProject(projectOptions)
-                    let path = documentationCommentId.Split('.') |> List.ofArray
-                    let _entity = result.AssemblySignature.FindEntityByPath(path)
-                    ()
+                let mutable locations = Seq.empty
 
-                (*for project in projects do
+                for project in projects do
                     let! checker, _, _, options = project.GetFSharpCompilationOptionsAsync()
                     let! result = checker.ParseAndCheckProject(options)
-                    let path = documentationCommentId.Split('.') |> List.ofArray
-                    let _entity = result.AssemblySignature.FindEntityByPath(path)
-                    ()*)
-                return null 
+
+                    match path with
+                    | DocCommentId.Member { EntityPath = entityPath; MemberOrValName = memberOrVal} ->
+                        let entity = result.AssemblySignature.FindEntityByPath (entityPath)
+                        match entity with
+                        | Some e ->
+                            locations <- (e.TryFindValByName(memberOrVal)) 
+                                     |> Seq.map (fun e -> (e.DeclarationLocation, project)) 
+                                     |> Seq.append locations
+                        | None -> ()
+                    | _ -> ()
+                
+                // TODO: Figure out the way of giving the user choice where to navigate, if there are more than one result
+                // For now, for testing, we only take 1st one.
+                if locations.Count() > 1 then
+                    let (location, project) = locations.First()
+                    return FSharpNavigableLocation(statusBar, metadataAsSource, location, project) :> IFSharpNavigableLocation
+                else
+                    return Unchecked.defaultof<_> // returning null here, so Roslyn can fallback to default source-as-metadata implementation.
             } |> RoslynHelpers.StartAsyncAsTask cancellationToken

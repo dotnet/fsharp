@@ -7,6 +7,7 @@ open System.Threading
 open Microsoft.CodeAnalysis
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
+open FSharp.Compiler.Symbols
 
 [<AutoOpen>]
 module private CheckerExtensions =
@@ -237,3 +238,16 @@ type Project with
             else
                 return raise(OperationCanceledException("Project is not a FSharp project."))
         }
+
+type FSharpEntity with
+    member this.TryFindValByName(name: string) =
+        match this.TryGetMembersFunctionsAndValues() with
+        | xs when xs.Count > 0 ->
+            xs 
+            |> Seq.filter (
+                fun x ->
+                    not x.IsPropertyGetterMethod 
+                    && not x.IsPropertySetterMethod
+                    && not x.IsCompilerGenerated
+                    && x.CompiledName = name)
+        | _ -> Seq.empty

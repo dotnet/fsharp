@@ -1777,7 +1777,7 @@ type FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         if isUnresolved() then false else 
         match fsharpInfo() with 
         | None -> false
-        | Some v -> 
+        | Some v ->
         v.IsCompilerGenerated
 
     member _.InlineAnnotation = 
@@ -2809,19 +2809,6 @@ type FSharpAssemblySignature (cenv, topAttribs: TopAttribs option, optViewedCcu:
         let findNested name entity = 
             match entity with
             | Some (e: Entity) ->e.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind name
-            | _ -> None
-
-        match path with
-        | hd :: tl ->
-             (mtyp.AllEntitiesByCompiledAndLogicalMangledNames.TryFind hd, tl) 
-             ||> List.fold (fun a x -> findNested x a)  
-             |> Option.map (fun e -> FSharpEntity(cenv, rescopeEntity optViewedCcu e))
-        | _ -> None
-
-    member _.FindMemberOrValByPath path =
-        let findNested name entity = 
-            match entity with
-            | Some (e: Entity) -> e.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind name
             | _ -> None
 
         match path with
