@@ -105,6 +105,16 @@ type NodeCodeBuilder() =
                     (value :> IDisposable).Dispose()
             }
         )
+    
+    [<DebuggerHidden; DebuggerStepThrough>]
+    member _.Using(value: IDisposable, binder: IDisposable -> NodeCode<'U>) =
+        Node(
+            async {
+                use _ = value
+                return! binder value |> Async.AwaitNodeCode
+            }
+        )
+        
 
 let node = NodeCodeBuilder()
 
