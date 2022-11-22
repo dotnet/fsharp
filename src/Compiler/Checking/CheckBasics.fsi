@@ -3,6 +3,7 @@
 module internal FSharp.Compiler.CheckBasics
 
 open System.Collections.Generic
+open FSharp.Compiler.Diagnostics
 open Internal.Utilities.Library
 open FSharp.Compiler.AccessibilityLogic
 open FSharp.Compiler.CompilerGlobalState
@@ -260,6 +261,8 @@ type TcFileState =
 
         isInternalTestSpanStackReferring: bool
 
+        diagnosticOptions: FSharpDiagnosticOptions
+
         // forward call
         TcPat: WarnOnUpperFlag
             -> TcFileState
@@ -319,6 +322,7 @@ type TcFileState =
         tcSink: TcResultsSink *
         tcVal: TcValF *
         isInternalTestSpanStackReferring: bool *
+        diagnosticOptions: FSharpDiagnosticOptions *
         tcPat: (WarnOnUpperFlag -> TcFileState -> TcEnv -> PrelimValReprInfo option -> TcPatValFlags -> TcPatLinearEnv -> TType -> SynPat -> (TcPatPhase2Input -> Pattern) * TcPatLinearEnv) *
         tcSimplePats: (TcFileState -> bool -> CheckConstraints -> TType -> TcEnv -> TcPatLinearEnv -> SynSimplePats -> string list * TcPatLinearEnv) *
         tcSequenceExpressionEntry: (TcFileState -> TcEnv -> OverallTy -> UnscopedTyparEnv -> bool * SynExpr -> range -> Expr * UnscopedTyparEnv) *
