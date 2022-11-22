@@ -7,6 +7,11 @@
         <target state="translated">Open ステートメントを常に最上位に配置する</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enable_Fast_Find_References">
+        <source>Enable parallel find references</source>
+        <target state="new">Enable parallel find references</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Inline_Hints">
         <source>Inline Hints</source>
         <target state="new">Inline Hints</target>

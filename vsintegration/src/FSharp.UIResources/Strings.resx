@@ -234,4 +234,7 @@
   <data name="Show_Inline_Parameter_Name_Hints" xml:space="preserve">
     <value>Display inline parameter name hints (experimental)</value>
   </data>
+  <data name="Enable_Fast_Find_References" xml:space="preserve">
+    <value>Enable parallel find references</value>
+  </data>
 </root>

@@ -124,6 +124,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enable parallel find references.
+        /// </summary>
+        public static string Enable_Fast_Find_References {
+            get {
+                return ResourceManager.GetString("Enable_Fast_Find_References", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to _Enable in-memory cross project references.
         /// </summary>
         public static string Enable_in_memory_cross_project_references {
