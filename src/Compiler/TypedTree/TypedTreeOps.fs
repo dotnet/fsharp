@@ -9769,7 +9769,7 @@ let rec EvalAttribArgExpr g x =
             let ignore (_x: 'a) = Unchecked.defaultof<'a>
             EvalArithUnOp (Checked.(~-), Checked.(~-), Checked.(~-), Checked.(~-), ignore, ignore, ignore, ignore) v1
         | _ ->
-            errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
+            errorR (Error ( FSComp.SR.tastNotAConstantExpression(), v1.Range))
             x
     | SpecificUnopExpr g g.unchecked_unary_plus_vref arg1 ->
         EvalArithUnOp ((~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+)) (EvalAttribArgExpr g arg1)
@@ -9777,8 +9777,8 @@ let rec EvalAttribArgExpr g x =
         match EvalAttribArgExpr g arg1 with
         | Expr.Const (Const.Bool value, m, ty) ->
             Expr.Const (Const.Bool (not value), m, ty)
-        | _ ->
-            errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
+        | expr ->
+            errorR (Error ( FSComp.SR.tastNotAConstantExpression(), expr.Range))
             x
     | _ -> 
         errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
