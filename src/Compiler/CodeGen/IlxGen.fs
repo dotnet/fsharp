@@ -6,7 +6,6 @@ module internal FSharp.Compiler.IlxGen
 open System.IO
 open System.Reflection
 open System.Collections.Generic
-open System.Collections.Immutable
 
 open FSharp.Compiler.IO
 open Internal.Utilities
@@ -1244,7 +1243,7 @@ and IlxGenEnv =
         delayCodeGen: bool
 
         /// Collection of code-gen functions where each function represents a file.
-        delayedFileGen: ImmutableArray<(cenv -> unit)[]>
+        delayedFileGenReverse: list<(cenv -> unit)[]>
     }
 
     override _.ToString() = "<IlxGenEnv>"
@@ -3125,16 +3124,17 @@ and CodeGenMethodForExpr cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUs
 
     code
 
-and DelayCodeGenMethodForExpr cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs, selfArgOpt, expr0, sequel0) =
+and DelayCodeGenMethodForExpr cenv mgbuf ((_, _,eenv,_, _, _,_) as args) =
+
     let ilLazyCode =
         lazy
             CodeGenMethodForExpr
                 { cenv with
-                    stackGuard = getEmptyStackGuard ()
+                    stackGuard = if eenv.delayCodeGen then getEmptyStackGuard() else cenv.stackGuard
                     delayedGenMethods = Queue()
                 }
                 mgbuf
-                (entryPointInfo, methodName, eenv, alreadyUsedArgs, selfArgOpt, expr0, sequel0)
+                args
 
     if (* cenv.exprRecursionDepth > 0 || *) eenv.delayCodeGen then
         cenv.delayedGenMethods.Enqueue(fun _ -> ilLazyCode.Force() |> ignore)
@@ -10341,7 +10341,7 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
 
     let eenvfinal =
         { eenvafter with
-            delayedFileGen = eenvafter.delayedFileGen.Add(cenv.delayedGenMethods |> Array.ofSeq)
+            delayedFileGenReverse = (cenv.delayedGenMethods |> Array.ofSeq) :: eenvafter.delayedFileGenReverse
         }
 
     cenv.delayedGenMethods.Clear()
@@ -11630,10 +11630,12 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
         let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
 
-        let genMeths = eenv.delayedFileGen |> Array.ofSeq
-
-        genMeths
+      
+        eenv.delayedFileGenReverse
+        |> Array.ofList
+        |> Array.rev
         |> ArrayParallel.iter (fun genMeths -> genMeths |> Array.iter (fun gen -> gen cenv))
+        
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
@@ -11693,7 +11695,7 @@ let GetEmptyIlxGenEnv (g: TcGlobals) ccu =
         initLocals = true
         imports = None
         delayCodeGen = true
-        delayedFileGen = ImmutableArray.Empty
+        delayedFileGenReverse = []
     }
 
 type IlxGenResults =
