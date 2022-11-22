@@ -1758,6 +1758,7 @@ type ParsedInput =
         | ParsedInput.SigFile (ParsedSigFileInput(contents = SynModuleOrNamespaceSig (range = m) :: _)) -> m
         | _ -> rangeN inp.FileName 0
 
+    [<Experimental("This FCS API is experimental and subject to change.")>]
     member inp.Identifiers =
         match inp with
         | ParsedInput.ImplFile (ParsedImplFileInput (identifiers = identifiers))
