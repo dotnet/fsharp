@@ -1,9 +1,8 @@
 ﻿module FSharp.Compiler.ComponentTests.FSharpChecker.SymbolUse
 
-open FSharp.Compiler.CodeAnalysis
 open Xunit
+open FSharp.Compiler.CodeAnalysis
 open FSharp.Test.ProjectGeneration
-
 
 module IsPrivateToFile =
 
@@ -76,27 +75,4 @@ val f: x: 'a -> TFirstV_1<'a>
             checkFile "First" (fun (typeCheckResult: FSharpCheckFileResults) ->
                 let symbolUse = typeCheckResult.GetSymbolUseAtLocation(6, 14, "let private f3 x = x + 1", ["f3"]) |> Option.defaultWith (fun () -> failwith "no symbol use found")
                 Assert.False(symbolUse.IsPrivateToFile))
-        }
-
-module FindReferences =
-
-    [<Fact>]
-    let ``Finding references in project`` () =
-        let size = 20
-
-        let project =
-            { SyntheticProject.Create() with
-                SourceFiles = [
-                    sourceFile $"File%03d{0}" [] |> addSignatureFile
-                    for i in 1..size do
-                        sourceFile $"File%03d{i}" [$"File%03d{i-1}"]
-                ]
-            }
-            |> updateFile "File005" (addDependency "File000")
-            |> updateFile "File010" (addDependency "File000")
-
-        let checker = FSharpChecker.Create(enableBackgroundItemKeyStoreAndSemanticClassification = true)
-
-        project.WorkflowWith checker {
-            findAllReferencesToModuleFromFile "File000" (expectNumberOfResults 5)
         }

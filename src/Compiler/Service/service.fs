@@ -81,6 +81,14 @@ module Helpers =
     let AreSubsumable3 ((fileName1: string, _, o1: FSharpProjectOptions), (fileName2: string, _, o2: FSharpProjectOptions)) =
         (fileName1 = fileName2) && FSharpProjectOptions.UseSameProject(o1, o2)
 
+    /// If a symbol is an attribute check if given set of names contains its name without the Attribute suffix
+    let NamesContainAttribute (symbol: FSharpSymbol) names =
+        match symbol with
+        | :? FSharpEntity as entity when entity.IsAttributeType && symbol.DisplayNameCore.EndsWithOrdinal "Attribute" ->
+            let nameWithoutAttribute = String.dropSuffix symbol.DisplayNameCore "Attribute"
+            names |> Set.contains nameWithoutAttribute
+        | _ -> false
+
 module CompileHelpers =
     let mkCompilationDiagnosticsHandlers () =
         let diagnostics = ResizeArray<_>()
@@ -1459,7 +1467,8 @@ type FSharpChecker
             else
                 let! parseResults = backgroundCompiler.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName)
 
-                if parseResults.ParseTree.Identifiers |> Set.contains symbol.DisplayName then
+                if parseResults.ParseTree.Identifiers |> Set.contains symbol.DisplayNameCore
+                   || parseResults.ParseTree.Identifiers |> NamesContainAttribute symbol then
                     return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
                 else
                     return Seq.empty

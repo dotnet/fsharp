@@ -437,7 +437,19 @@ let ParseInput
                 let token = lexer x
 
                 match token with
-                | Parser.token.IDENT ident -> identStore.Add ident |> ignore
+                | Parser.token.PERCENT_OP ident
+                | Parser.token.FUNKY_OPERATOR_NAME ident
+                | Parser.token.ADJACENT_PREFIX_OP ident
+                | Parser.token.PLUS_MINUS_OP ident
+                | Parser.token.INFIX_AMP_OP ident
+                | Parser.token.INFIX_STAR_DIV_MOD_OP ident
+                | Parser.token.PREFIX_OP ident
+                | Parser.token.INFIX_BAR_OP ident
+                | Parser.token.INFIX_AT_HAT_OP ident
+                | Parser.token.INFIX_COMPARE_OP ident
+                | Parser.token.INFIX_STAR_STAR_OP ident
+                | Parser.token.IDENT ident ->
+                    identStore.Add ident |> ignore
                 | _ -> ()
 
                 token
