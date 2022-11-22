@@ -114,7 +114,7 @@ let ``Finding references in project`` () =
     let checker = FSharpChecker.Create(enableBackgroundItemKeyStoreAndSemanticClassification = true)
 
     project.WorkflowWith checker {
-        findAllReferencesToModuleFromFile "File000" (expectNumberOfResults 5)
+        findAllReferencesToModuleFromFile "File000" true (expectNumberOfResults 5)
     }
 
 [<Fact>]

@@ -54,7 +54,7 @@ type BackgroundCompilerBenchmarks () =
     [<Benchmark>]
     member this.FindAllReferences_BestCase() =
         this.Benchmark {
-            findAllReferencesToModuleFromFile "File000" (expectNumberOfResults 3)
+            findAllReferencesToModuleFromFile "File000" this.FastFindReferences (expectNumberOfResults 3)
         }
 
     /// Few files in the middle have the reference
@@ -75,7 +75,7 @@ type BackgroundCompilerBenchmarks () =
     [<Benchmark>]
     member this.FindAllReferences_MediumCase() =
         this.Benchmark {
-            findAllReferencesToModuleFromFile "File000" (expectNumberOfResults 6)
+            findAllReferencesToModuleFromFile "File000" this.FastFindReferences  (expectNumberOfResults 6)
         }
 
     /// All files have the reference, have to check everything
@@ -93,7 +93,7 @@ type BackgroundCompilerBenchmarks () =
     [<Benchmark>]
     member this.FindAllReferences_WorstCase() =
         this.Benchmark {
-            findAllReferencesToModuleFromFile "File000" (expectNumberOfResults (size + 2))
+            findAllReferencesToModuleFromFile "File000" this.FastFindReferences (expectNumberOfResults (size + 2))
         }
 
     [<GlobalCleanup>]

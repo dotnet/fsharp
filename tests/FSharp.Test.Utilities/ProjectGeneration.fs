@@ -570,7 +570,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
     ///
     /// Requires `enableBackgroundItemKeyStoreAndSemanticClassification` to be true in the checker.
     [<CustomOperation "findAllReferencesToModuleFromFile">]
-    member this.FindAllReferencesToModuleFromFile(workflow, fileId, processResults) =
+    member this.FindAllReferencesToModuleFromFile(workflow, fileId, fastCheck, processResults) =
         async {
             let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker
@@ -590,7 +590,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
             let! results =
                 [ for f in options.SourceFiles do
-                      checker.FindBackgroundReferencesInFile(f, options, symbolUse.Symbol, fastCheck = true) ]
+                      checker.FindBackgroundReferencesInFile(f, options, symbolUse.Symbol, fastCheck = fastCheck) ]
                 |> Async.Parallel
 
             results |> Seq.collect id |> Seq.toList |> processResults
