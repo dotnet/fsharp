@@ -4,6 +4,7 @@
 module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System
+open System.Diagnostics
 open System.IO
 open System.Collections.Generic
 
@@ -1175,6 +1176,9 @@ let CheckOneInputAux
 
     cancellable {
         try
+            use _ =
+                Activity.start "ParseAndCheckInputs.CheckOneInput" [| "fileName", inp.FileName |]
+
             CheckSimulateException tcConfig
 
             let m = inp.Range
@@ -1208,7 +1212,8 @@ let CheckOneInputAux
                          checkForErrors,
                          conditionalDefines,
                          tcSink,
-                         tcConfig.internalTestSpanStackReferring)
+                         tcConfig.internalTestSpanStackReferring,
+                         tcConfig.diagnosticsOptions)
                         tcState.tcsTcSigEnv
                         file
 
@@ -1286,7 +1291,8 @@ let CheckOneInputAux
                             tcConfig.internalTestSpanStackReferring,
                             tcState.tcsTcImplEnv,
                             rootSigOpt,
-                            file
+                            file,
+                            tcConfig.diagnosticsOptions
                         )
 
                     let tcState =
@@ -1365,10 +1371,8 @@ let CheckMultipleInputsFinish (results, tcState: TcState) =
 
 let CheckOneInputAndFinish (checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
     cancellable {
-        Logger.LogBlockStart LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
         let! result, tcState = CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input, false)
         let finishedResult = CheckMultipleInputsFinish([ result ], tcState)
-        Logger.LogBlockStop LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
         return finishedResult
     }
 
@@ -1483,7 +1487,8 @@ let CheckMultipleInputsInParallel
                             tcConfig.internalTestSpanStackReferring,
                             tcStateForImplFile.tcsTcImplEnv,
                             Some rootSig,
-                            file
+                            file,
+                            tcConfig.diagnosticsOptions
                         )
                         |> Cancellable.runWithoutCancellation
 

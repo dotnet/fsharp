@@ -390,6 +390,7 @@ and [<Sealed>] ItemKeyStoreBuilder() =
         | Item.MethodGroup (_, [ info ], _)
         | Item.CtorGroup (_, [ info ]) ->
             match info with
+            | FSMeth (_, ty, vref, _) when vref.IsConstructor -> writeType true ty
             | FSMeth (_, _, vref, _) -> writeValRef vref
             | ILMeth (_, info, _) ->
                 info.ILMethodRef.ArgTypes |> List.iter writeILType
