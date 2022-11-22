@@ -1240,7 +1240,8 @@ let CheckOneInputAux
                          checkForErrors,
                          conditionalDefines,
                          tcSink,
-                         tcConfig.internalTestSpanStackReferring)
+                         tcConfig.internalTestSpanStackReferring,
+                         tcConfig.diagnosticsOptions)
                         tcState.tcsTcSigEnv
                         file
 
@@ -1318,7 +1319,8 @@ let CheckOneInputAux
                             tcConfig.internalTestSpanStackReferring,
                             tcState.tcsTcImplEnv,
                             rootSigOpt,
-                            file
+                            file,
+                            tcConfig.diagnosticsOptions
                         )
 
                     let tcState =
@@ -1513,7 +1515,8 @@ let CheckMultipleInputsInParallel
                             tcConfig.internalTestSpanStackReferring,
                             tcStateForImplFile.tcsTcImplEnv,
                             Some rootSig,
-                            file
+                            file,
+                            tcConfig.diagnosticsOptions
                         )
                         |> Cancellable.runWithoutCancellation
 
