@@ -9773,13 +9773,6 @@ let rec EvalAttribArgExpr g x =
             x
     | SpecificUnopExpr g g.unchecked_unary_plus_vref arg1 ->
         EvalArithUnOp ((~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+)) (EvalAttribArgExpr g arg1)
-    | SpecificUnopExpr g g.unchecked_unary_not_vref arg1 ->
-        match EvalAttribArgExpr g arg1 with
-        | Expr.Const (Const.Bool value, m, ty) ->
-            Expr.Const (Const.Bool (not value), m, ty)
-        | expr ->
-            errorR (Error ( FSComp.SR.tastNotAConstantExpression(), expr.Range))
-            x
     | _ -> 
         errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
         x
