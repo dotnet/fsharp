@@ -43,7 +43,8 @@ open FSharp.Compiler.TypeRelations
 
 let IlxGenStackGuardDepth = StackGuard.GetDepthOption "IlxGen"
 
-let getEmptyStackGuard() = StackGuard(IlxGenStackGuardDepth, "IlxAssemblyGenerator")
+let getEmptyStackGuard () =
+    StackGuard(IlxGenStackGuardDepth, "IlxAssemblyGenerator")
 
 let IsNonErasedTypar (tp: Typar) = not tp.IsErased
 
@@ -1242,8 +1243,8 @@ and IlxGenEnv =
         /// Delay code gen for files.
         delayCodeGen: bool
 
-        /// Collection of code-gen functions where each function represents a file. 
-        delayedFileGen: ImmutableArray<(cenv -> unit) []>
+        /// Collection of code-gen functions where each function represents a file.
+        delayedFileGen: ImmutableArray<(cenv -> unit)[]>
     }
 
     override _.ToString() = "<IlxGenEnv>"
@@ -3127,7 +3128,13 @@ and CodeGenMethodForExpr cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUs
 and DelayCodeGenMethodForExpr cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs, selfArgOpt, expr0, sequel0) =
     let ilLazyCode =
         lazy
-            CodeGenMethodForExpr { cenv with stackGuard = getEmptyStackGuard(); delayedGenMethods = Queue() } mgbuf (entryPointInfo, methodName, eenv, alreadyUsedArgs, selfArgOpt, expr0, sequel0)
+            CodeGenMethodForExpr
+                { cenv with
+                    stackGuard = getEmptyStackGuard ()
+                    delayedGenMethods = Queue()
+                }
+                mgbuf
+                (entryPointInfo, methodName, eenv, alreadyUsedArgs, selfArgOpt, expr0, sequel0)
 
     if (* cenv.exprRecursionDepth > 0 || *) eenv.delayCodeGen then
         cenv.delayedGenMethods.Enqueue(fun _ -> ilLazyCode.Force() |> ignore)
@@ -8381,11 +8388,15 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
                 if eenv.delayCodeGen then
                     DelayCodeGenMethodForExpr cenv cgbuf.mgbuf ([], ilGetterMethSpec.Name, eenv, 0, None, rhsExpr, Return)
                 else
-                    let ilCode = CodeGenMethodForExpr cenv cgbuf.mgbuf ([], ilGetterMethSpec.Name, eenv, 0, None, rhsExpr, Return)
+                    let ilCode =
+                        CodeGenMethodForExpr cenv cgbuf.mgbuf ([], ilGetterMethSpec.Name, eenv, 0, None, rhsExpr, Return)
+
                     lazy ilCode
 
             let ilMethodBody = MethodBody.IL(ilLazyCode)
-            (mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkILReturn ilTy, ilMethodBody)).WithSpecialName
+
+            (mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkILReturn ilTy, ilMethodBody))
+                .WithSpecialName
             |> AddNonUserCompilerGeneratedAttribs g
 
         //let ilMethodDef =
@@ -9109,7 +9120,19 @@ and GenMethodForBinding
                 | [ h ] -> Some h
                 | _ -> None
 
-            let ilLazyCode = DelayCodeGenMethodForExpr cenv mgbuf (tailCallInfo, mspec.Name, { eenvForMeth with delayCodeGen = false }, 0, selfValOpt, bodyExpr, sequel)
+            let ilLazyCode =
+                DelayCodeGenMethodForExpr
+                    cenv
+                    mgbuf
+                    (tailCallInfo,
+                     mspec.Name,
+                     { eenvForMeth with
+                         delayCodeGen = false
+                     },
+                     0,
+                     selfValOpt,
+                     bodyExpr,
+                     sequel)
 
             // This is the main code generation for most methods
             false, MethodBody.IL(ilLazyCode), false
@@ -10316,7 +10339,11 @@ and GenImplFile cenv (mgbuf: AssemblyBuilder) mainInfoOpt eenv (implFile: Checke
 
         AddBindingsForLocalModuleOrNamespaceType allocVal clocCcu eenv signature
 
-    let eenvfinal = { eenvafter with delayedFileGen = eenvafter.delayedFileGen.Add(cenv.delayedGenMethods |> Array.ofSeq) }
+    let eenvfinal =
+        { eenvafter with
+            delayedFileGen = eenvafter.delayedFileGen.Add(cenv.delayedGenMethods |> Array.ofSeq)
+        }
+
     cenv.delayedGenMethods.Clear()
     eenvfinal
 
@@ -11599,10 +11626,7 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         let genMeths = eenv.delayedFileGen |> Array.ofSeq
 
         genMeths
-        |> ArrayParallel.iter (fun genMeths ->
-            genMeths
-            |> Array.iter (fun gen -> gen cenv) 
-        )
+        |> ArrayParallel.iter (fun genMeths -> genMeths |> Array.iter (fun gen -> gen cenv))
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
@@ -11633,7 +11657,6 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
                      range0)
             //printfn "#_emptyTopInstrs = %d" _emptyTopInstrs.Length
             ()
-   
 
         mgbuf.AddInitializeScriptsInOrderToEntryPoint(eenv.imports)
 
@@ -11923,8 +11946,8 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
             intraAssemblyInfo = intraAssemblyInfo
             optionsOpt = None
             optimizeDuringCodeGen = (fun _flag expr -> expr)
-            stackGuard = getEmptyStackGuard()
-            delayedGenMethods = Queue ()
+            stackGuard = getEmptyStackGuard ()
+            delayedGenMethods = Queue()
         }
 
     /// Register a set of referenced assemblies with the ILX code generator
