@@ -16,7 +16,6 @@ open FSharp.Compiler.Text
 open FSharp.Compiler.Text.Range
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Diagnostics
-open System.Diagnostics
 
 type RoslynTaggedText = Microsoft.CodeAnalysis.TaggedText
 

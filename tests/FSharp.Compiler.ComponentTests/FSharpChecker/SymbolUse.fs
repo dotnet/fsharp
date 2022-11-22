@@ -1,8 +1,9 @@
 ﻿module FSharp.Compiler.ComponentTests.FSharpChecker.SymbolUse
 
-open Xunit
 open FSharp.Compiler.CodeAnalysis
+open Xunit
 open FSharp.Test.ProjectGeneration
+
 
 module IsPrivateToFile =
 
