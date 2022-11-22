@@ -1467,8 +1467,10 @@ type FSharpChecker
             else
                 let! parseResults = backgroundCompiler.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName)
 
-                if parseResults.ParseTree.Identifiers |> Set.contains symbol.DisplayNameCore
-                   || parseResults.ParseTree.Identifiers |> NamesContainAttribute symbol then
+                if
+                    parseResults.ParseTree.Identifiers |> Set.contains symbol.DisplayNameCore
+                    || parseResults.ParseTree.Identifiers |> NamesContainAttribute symbol
+                then
                     return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
                 else
                     return Seq.empty

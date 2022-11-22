@@ -448,8 +448,7 @@ let ParseInput
                 | Parser.token.INFIX_AT_HAT_OP ident
                 | Parser.token.INFIX_COMPARE_OP ident
                 | Parser.token.INFIX_STAR_STAR_OP ident
-                | Parser.token.IDENT ident ->
-                    identStore.Add ident |> ignore
+                | Parser.token.IDENT ident -> identStore.Add ident |> ignore
                 | _ -> ()
 
                 token
