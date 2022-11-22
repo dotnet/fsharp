@@ -3124,13 +3124,17 @@ and CodeGenMethodForExpr cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUs
 
     code
 
-and DelayCodeGenMethodForExpr cenv mgbuf ((_, _,eenv,_, _, _,_) as args) =
+and DelayCodeGenMethodForExpr cenv mgbuf ((_, _, eenv, _, _, _, _) as args) =
 
     let ilLazyCode =
         lazy
             CodeGenMethodForExpr
                 { cenv with
-                    stackGuard = if eenv.delayCodeGen then getEmptyStackGuard() else cenv.stackGuard
+                    stackGuard =
+                        if eenv.delayCodeGen then
+                            getEmptyStackGuard ()
+                        else
+                            cenv.stackGuard
                     delayedGenMethods = Queue()
                 }
                 mgbuf
@@ -11630,12 +11634,10 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         let eenv = List.fold (GenImplFile cenv mgbuf None) eenv firstImplFiles
         let eenv = GenImplFile cenv mgbuf cenv.options.mainMethodInfo eenv lastImplFile
 
-      
         eenv.delayedFileGenReverse
         |> Array.ofList
         |> Array.rev
         |> ArrayParallel.iter (fun genMeths -> genMeths |> Array.iter (fun gen -> gen cenv))
-        
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
