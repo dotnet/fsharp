@@ -115,7 +115,7 @@ module internal RoslynHelpers =
     let StartAsyncAsTask (cancellationToken: CancellationToken) computation =
         // Protect against blocking the UI thread by switching to thread pool
         let computation =
-            match SynchronizationContext.Current with
+            match SynchronizationContext.Current with 
             | null -> computation
             | _ ->
                 async {
