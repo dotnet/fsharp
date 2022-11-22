@@ -29,7 +29,7 @@
 
   <!--  The FSharp.Compiler.Service dll provides a referencable public interface for tool builders -->
   <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
-      <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
+    <CompressMetadata Condition="'$(CompressAllMetadata)' != 'true'">false</CompressMetadata>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -57,6 +57,7 @@
     <NuspecProperty Include="SystemBuffersPackageVersion=$(SystemBuffersVersion)" />
     <NuspecProperty Include="SystemCollectionsImmutablePackageVersion=$(SystemCollectionsImmutableVersion)" />
     <NuspecProperty Include="SystemMemoryPackageVersion=$(SystemMemoryVersion)" />
+    <NuspecProperty Include="SystemDiagnosticsDiagnosticSourcePackageVersion=$(SystemDiagnosticsDiagnosticSourceVersion)" />
     <NuspecProperty Include="SystemReflectionEmitPackageVersion=$(SystemReflectionEmitVersion)" />
     <NuspecProperty Include="SystemReflectionMetadataPackageVersion=$(SystemReflectionMetadataVersion)" />
     <NuspecProperty Include="SystemRuntimeCompilerServicesUnsafePackageVersion=$(SystemRuntimeCompilerServicesUnsafeVersion)" />
@@ -91,6 +92,8 @@
       <Link>FSStrings.resx</Link>
       <LogicalName>FSStrings.resources</LogicalName>
     </EmbeddedResource>
+    <Compile Include="Utilities\Activity.fsi" />
+    <Compile Include="Utilities\Activity.fs" />
     <Compile Include="Utilities\sformat.fsi" />
     <Compile Include="Utilities\sformat.fs" />
     <Compile Include="Utilities\sr.fsi" />
@@ -131,8 +134,6 @@
     <Compile Include="Utilities\range.fsi" />
     <Compile Include="Utilities\range.fs" />
     <EmbeddedText Include="Facilities\UtilsStrings.txt" />
-    <Compile Include="Facilities\Logger.fsi" />
-    <Compile Include="Facilities\Logger.fs" />
     <Compile Include="Facilities\LanguageFeatures.fsi" />
     <Compile Include="Facilities\LanguageFeatures.fs" />
     <Compile Include="Facilities\DiagnosticOptions.fsi" />
@@ -488,6 +489,7 @@
     <PackageReference Include="System.Reflection.Emit" Version="$(SystemReflectionEmitVersion)" />
     <PackageReference Include="System.Reflection.Metadata" Version="$(SystemReflectionMetadataVersion)" />
     <PackageReference Include="System.Buffers" Version="$(SystemBuffersVersion)" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="$(SystemDiagnosticsDiagnosticSourceVersion)" />
     <PackageReference Include="System.Memory" Version="$(SystemMemoryVersion)" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="$(SystemRuntimeCompilerServicesUnsafeVersion)" />
   </ItemGroup>
