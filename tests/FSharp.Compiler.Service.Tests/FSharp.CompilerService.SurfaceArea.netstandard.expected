@@ -2191,9 +2191,54 @@ FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: Boolean Equals(Syste
 FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: Int32 GetHashCode()
 FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: Int32 GetHashCode(System.Collections.IEqualityComparer)
 FSharp.Compiler.CodeAnalysis.FSharpUnresolvedReferencesSet: System.String ToString()
-FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver
-FSharp.Compiler.CodeAnalysis.LegacyMSBuildReferenceResolver: FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver getResolver()
+FSharp.Compiler.CodeAnalysis.ILegacyReferenceResolver
+FSharp.Compiler.CodeAnalysis.ILegacyReferenceResolver: FSharp.Compiler.CodeAnalysis.LegacyResolvedFile[] Resolve(FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment, System.Tuple`2[System.String,System.String][], System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], System.String, System.String, Microsoft.FSharp.Collections.FSharpList`1[System.String], System.String, Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit], Microsoft.FSharp.Core.FSharpFunc`2[System.Boolean,Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.FSharpFunc`2[System.String,Microsoft.FSharp.Core.Unit]]])
+FSharp.Compiler.CodeAnalysis.ILegacyReferenceResolver: System.String DotNetFrameworkReferenceAssembliesRootDirectory
+FSharp.Compiler.CodeAnalysis.ILegacyReferenceResolver: System.String HighestInstalledNetFrameworkVersion()
+FSharp.Compiler.CodeAnalysis.ILegacyReferenceResolver: System.String get_DotNetFrameworkReferenceAssembliesRootDirectory()
 FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver
+FSharp.Compiler.CodeAnalysis.LegacyReferenceResolver: Void .ctor(FSharp.Compiler.CodeAnalysis.ILegacyReferenceResolver)
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment+EditingOrCompilation: Boolean get_isEditing()
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment+EditingOrCompilation: Boolean isEditing
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment+Tags: Int32 CompilationAndEvaluation
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment+Tags: Int32 EditingOrCompilation
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Boolean Equals(FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment)
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Boolean IsCompilationAndEvaluation
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Boolean IsEditingOrCompilation
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Boolean get_IsCompilationAndEvaluation()
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Boolean get_IsEditingOrCompilation()
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment CompilationAndEvaluation
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment NewEditingOrCompilation(Boolean)
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment get_CompilationAndEvaluation()
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment+EditingOrCompilation
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment+Tags
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Int32 CompareTo(FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment)
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Int32 CompareTo(System.Object)
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Int32 CompareTo(System.Object, System.Collections.IComparer)
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Int32 Tag
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: Int32 get_Tag()
+FSharp.Compiler.CodeAnalysis.LegacyResolutionEnvironment: System.String ToString()
+FSharp.Compiler.CodeAnalysis.LegacyResolutionFailure
+FSharp.Compiler.CodeAnalysis.LegacyResolutionFailure: Boolean Equals(System.Object)
+FSharp.Compiler.CodeAnalysis.LegacyResolutionFailure: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.LegacyResolutionFailure: Int32 GetHashCode()
+FSharp.Compiler.CodeAnalysis.LegacyResolutionFailure: Int32 GetHashCode(System.Collections.IEqualityComparer)
+FSharp.Compiler.CodeAnalysis.LegacyResolutionFailure: System.String get_Message()
+FSharp.Compiler.CodeAnalysis.LegacyResolutionFailure: Void .ctor()
+FSharp.Compiler.CodeAnalysis.LegacyResolvedFile
+FSharp.Compiler.CodeAnalysis.LegacyResolvedFile: Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.String],System.String] get_prepareToolTip()
+FSharp.Compiler.CodeAnalysis.LegacyResolvedFile: Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.String],System.String] prepareToolTip
+FSharp.Compiler.CodeAnalysis.LegacyResolvedFile: System.String ToString()
+FSharp.Compiler.CodeAnalysis.LegacyResolvedFile: System.String baggage
+FSharp.Compiler.CodeAnalysis.LegacyResolvedFile: System.String get_baggage()
+FSharp.Compiler.CodeAnalysis.LegacyResolvedFile: System.String get_itemSpec()
+FSharp.Compiler.CodeAnalysis.LegacyResolvedFile: System.String itemSpec
+FSharp.Compiler.CodeAnalysis.LegacyResolvedFile: Void .ctor(System.String, Microsoft.FSharp.Core.FSharpFunc`2[System.Tuple`2[System.String,System.String],System.String], System.String)
 FSharp.Compiler.CompilerEnvironment
 FSharp.Compiler.CompilerEnvironment: Boolean IsCheckerSupportedSubcategory(System.String)
 FSharp.Compiler.CompilerEnvironment: Boolean IsCompilable(System.String)
