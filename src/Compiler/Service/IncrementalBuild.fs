@@ -116,6 +116,7 @@ module IncrementalBuildSyntaxTree =
         let mutable weakCache: WeakReference<_> option = None
 
         let parse(sigNameOpt: QualifiedNameOfFile option) =
+
             let diagnosticsLogger = CompilationDiagnosticLogger("Parse", tcConfig.diagnosticsOptions)
             // Return the disposable object that cleans up
             use _holder = new CompilationGlobalsScope(diagnosticsLogger, BuildPhase.Parse)
@@ -123,6 +124,13 @@ module IncrementalBuildSyntaxTree =
             try
                 IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed fileName)
                 let canSkip = sigNameOpt.IsSome && FSharpImplFileSuffixes |> List.exists (FileSystemUtils.checkSuffix fileName)
+                use act =
+                    Activity.start "IncrementalBuildSyntaxTree.parse"
+                        [|
+                            "fileName", source.FilePath
+                            "buildPhase", BuildPhase.Parse.ToString()
+                            "canSkip", canSkip.ToString()
+                        |]             
                 let input =
                     if canSkip then
                         ParsedInput.ImplFile(
@@ -465,6 +473,7 @@ type BoundModel private (tcConfig: TcConfig,
                 let! res = defaultTypeCheck ()
                 return res
             | Some syntaxTree ->
+                use _ = Activity.start "BoundModel.TypeCheck" [|"fileName", syntaxTree.FileName|]
                 let sigNameOpt =
                     if partialCheck then
                         this.BackingSignature
@@ -489,8 +498,6 @@ type BoundModel private (tcConfig: TcConfig,
                     let hadParseErrors = not (Array.isEmpty parseErrors)
                     let input, moduleNamesDict = DeduplicateParsedInputModuleName prevModuleNamesDict input
                         
-                    Logger.LogBlockMessageStart fileName LogCompilerFunctionId.IncrementalBuild_TypeCheck
-                        
                     let! (tcEnvAtEndOfFile, topAttribs, implFile, ccuSigForFile), tcState =
                         CheckOneInput
                             ((fun () -> hadParseErrors || diagnosticsLogger.ErrorCount > 0),
@@ -501,8 +508,6 @@ type BoundModel private (tcConfig: TcConfig,
                                 prevTcState, input,
                                 partialCheck)
                         |> NodeCode.FromCancellable
-
-                    Logger.LogBlockMessageStop fileName LogCompilerFunctionId.IncrementalBuild_TypeCheck
 
                     fileChecked.Trigger fileName
                     let newErrors = Array.append parseErrors (capturingDiagnosticsLogger.Diagnostics |> List.toArray)
@@ -531,7 +536,7 @@ type BoundModel private (tcConfig: TcConfig,
                         // Build symbol keys
                         let itemKeyStore, semanticClassification =
                             if enableBackgroundItemKeyStoreAndSemanticClassification then
-                                Logger.LogBlockMessageStart fileName LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
+                                use _ = Activity.start "IncrementalBuild.CreateItemKeyStoreAndSemanticClassification" [|"fileName", fileName|]
                                 let sResolutions = sink.GetResolutions()
                                 let builder = ItemKeyStoreBuilder()
                                 let preventDuplicates = HashSet({ new IEqualityComparer<struct(pos * pos)> with
@@ -549,7 +554,6 @@ type BoundModel private (tcConfig: TcConfig,
                                 sckBuilder.WriteAll semanticClassification
                         
                                 let res = builder.TryBuildAndReset(), sckBuilder.TryBuildAndReset()
-                                Logger.LogBlockMessageStop fileName LogCompilerFunctionId.IncrementalBuild_CreateItemKeyStoreAndSemanticClassification
                                 res
                             else
                                 None, None
@@ -1037,6 +1041,7 @@ module IncrementalBuilderStateHelpers =
 
     let rec createFinalizeBoundModelGraphNode (initialState: IncrementalBuilderInitialState) (boundModels: ImmutableArray<GraphNode<BoundModel>>.Builder) =
         GraphNode(node {
+            use _ = Activity.start "GetCheckResultsAndImplementationsForProject" [|"projectOutFile", initialState.outfile|]
             // Compute last bound model then get all the evaluated models.
             let! _ = boundModels[boundModels.Count - 1].GetOrComputeValue()
             let boundModels =

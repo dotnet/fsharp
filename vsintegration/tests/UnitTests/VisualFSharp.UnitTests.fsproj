@@ -60,60 +60,6 @@
     <Compile Include="UnusedOpensTests.fs">
       <Link>CompilerService\UnusedOpensTests.fs</Link>
     </Compile>
-    <Compile Include="ProjectOptionsBuilder.fs">
-      <Link>Editor\ProjectOptionsBuilder.fs</Link>
-    </Compile>
-    <Compile Include="SyntacticColorizationServiceTests.fs">
-      <Link>Editor\SyntacticColorizationServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="SemanticColorizationServiceTests.fs">
-      <Link>Editor\SemanticColorizationServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="BraceMatchingServiceTests.fs">
-      <Link>Editor\BraceMatchingServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="EditorFormattingServiceTests.fs">
-        <Link>Editor\EditorFormattingServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="RoslynSourceTextTests.fs">
-      <Link>Editor\RoslynSourceTextTests.fs</Link>
-    </Compile>
-    <Compile Include="IndentationServiceTests.fs">
-      <Link>Editor\IndentationServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="BreakpointResolutionService.fs">
-      <Link>Editor\BreakpointResolutionService.fs</Link>
-    </Compile>
-    <Compile Include="LanguageDebugInfoServiceTests.fs">
-      <Link>Editor\LanguageDebugInfoServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="DocumentDiagnosticAnalyzerTests.fs">
-      <Link>Editor\DocumentDiagnosticAnalyzerTests.fs</Link>
-    </Compile>
-    <Compile Include="CompletionProviderTests.fs">
-      <Link>Editor\CompletionProviderTests.fs</Link>
-    </Compile>
-    <Compile Include="FsxCompletionProviderTests.fs">
-      <Link>Editor\FsxCompletionProviderTests.fs</Link>
-    </Compile>
-    <Compile Include="SignatureHelpProviderTests.fs">
-      <Link>Editor\SignatureHelpProviderTests.fs</Link>
-    </Compile>
-    <Compile Include="QuickInfoTests.fs">
-      <Link>Editor\QuickInfoTests.fs</Link>
-    </Compile>
-    <Compile Include="GoToDefinitionServiceTests.fs">
-      <Link>Editor\GoToDefinitionServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="QuickInfoProviderTests.fs">
-      <Link>Editor\QuickInfoProviderTests.fs</Link>
-    </Compile>
-    <Compile Include="HelpContextServiceTests.fs">
-      <Link>Editor\HelpContextServiceTests.fs</Link>
-    </Compile>
-    <Compile Include="DocumentHighlightsServiceTests.fs">
-      <Link>Editor\DocumentHighlightsServiceTests.fs</Link>
-    </Compile>
     <NoneSubstituteText Include="App.config">
       <Pattern1>{{FSCoreVersion}}</Pattern1>
       <Replacement1>$(FSCoreVersion)</Replacement1>

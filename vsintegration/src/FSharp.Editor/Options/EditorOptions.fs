@@ -73,22 +73,16 @@ type LanguageServicePerformanceOptions =
         EnableParallelReferenceResolution = false }
 
 [<CLIMutable>]
-type LensOptions =
-  { Enabled : bool
-    UseColors: bool
-    Prefix : string }
-    static member Default =
-      { Enabled = false
-        UseColors = false
-        Prefix = "// " }
-
-[<CLIMutable>]
 type AdvancedOptions =
     { IsBlockStructureEnabled: bool
-      IsOutliningEnabled: bool }
+      IsOutliningEnabled: bool
+      IsInlineTypeHintsEnabled: bool
+      IsInlineParameterNameHintsEnabled: bool }
     static member Default =
       { IsBlockStructureEnabled = true
-        IsOutliningEnabled = true }
+        IsOutliningEnabled = true
+        IsInlineTypeHintsEnabled = false 
+        IsInlineParameterNameHintsEnabled = false }
 
 [<CLIMutable>]
 type FormattingOptions =
@@ -112,7 +106,6 @@ type EditorOptions
         store.Register LanguageServicePerformanceOptions.Default
         store.Register AdvancedOptions.Default
         store.Register IntelliSenseOptions.Default
-        store.Register LensOptions.Default
         store.Register FormattingOptions.Default
 
     member _.IntelliSense : IntelliSenseOptions = store.Get()
@@ -120,7 +113,6 @@ type EditorOptions
     member _.CodeFixes : CodeFixesOptions = store.Get()
     member _.LanguageServicePerformance : LanguageServicePerformanceOptions = store.Get()
     member _.Advanced: AdvancedOptions = store.Get()
-    member _.Lens: LensOptions = store.Get()
     member _.Formatting : FormattingOptions = store.Get()
 
     interface Microsoft.CodeAnalysis.Host.IWorkspaceService
@@ -170,12 +162,6 @@ module internal OptionsUI =
         inherit AbstractOptionPage<LanguageServicePerformanceOptions>()
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
-
-    [<Guid(Guids.lensOptionPageIdString)>]
-    type internal LensOptionPage() =
-        inherit AbstractOptionPage<LensOptions>()
-        override this.CreateView() =
-            upcast LensOptionControl()
 
     [<Guid(Guids.advancedSettingsPageIdSring)>]
     type internal AdvancedSettingsOptionPage() =

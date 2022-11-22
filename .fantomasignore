@@ -7,7 +7,8 @@ fcs-samples/
 scripts/
 setup/
 tests/
-vsintegration/
+vsintegration/*
+!vsintegration/tests/FSharp.Editor.Tests
 artifacts/
 
 # Explicitly unformatted implementation files

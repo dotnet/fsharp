@@ -493,9 +493,21 @@ module Structure =
                 | x -> x
 
             let synPat = getLastPat synPat
-            // Collapse the scope starting with `->`
-            let collapse = Range.endToEnd synPat.Range clause.Range
-            rcheck Scope.MatchClause Collapse.Same e.Range collapse
+            let synPatRange = synPat.Range
+            let resultExprRange = e.Range
+
+            // Avoid rcheck because we want to be able to collapse resultExpr even if it spans a single line
+            // but is not on the same one as the pattern
+            if synPatRange.EndLine <> resultExprRange.EndLine then
+                acc.Add
+                    {
+                        Scope = Scope.MatchClause
+                        Collapse = Collapse.Same
+                        Range = resultExprRange
+                        // Collapse the scope starting with `->`
+                        CollapseRange = Range.endToEnd synPatRange clause.Range
+                    }
+
             parseExpr e
 
         and parseAttributes (Attributes attrs) =
@@ -611,7 +623,7 @@ module Structure =
 
             | SynMemberDefn.NestedType (td, _, _) -> parseTypeDefn td
 
-            | SynMemberDefn.AbstractSlot (SynValSig (synType = synt), _, r) ->
+            | SynMemberDefn.AbstractSlot (slotSig = SynValSig (synType = synt); range = r) ->
                 rcheck Scope.Member Collapse.Below d.Range (Range.startToEnd synt.Range r)
 
             | SynMemberDefn.AutoProperty (synExpr = e; range = r) ->
@@ -890,7 +902,7 @@ module Structure =
 
         let rec parseSynMemberDefnSig inp =
             match inp with
-            | SynMemberSig.Member (valSigs, _, r) ->
+            | SynMemberSig.Member (memberSig = valSigs; range = r) ->
                 let collapse = Range.endToEnd valSigs.RangeOfId r
                 rcheck Scope.Member Collapse.Below r collapse
             | SynMemberSig.ValField (SynField (attributes = attrs; range = fr), mFull) ->

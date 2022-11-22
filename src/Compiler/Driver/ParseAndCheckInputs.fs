@@ -4,6 +4,7 @@
 module internal FSharp.Compiler.ParseAndCheckInputs
 
 open System
+open System.Diagnostics
 open System.IO
 open System.Collections.Generic
 
@@ -1159,26 +1160,6 @@ let AddCheckResultsToTcState
 
     ccuSigForFile, tcState
 
-let AddDummyCheckResultsToTcState
-    (
-        tcGlobals,
-        amap,
-        qualName: QualifiedNameOfFile,
-        prefixPathOpt,
-        tcSink,
-        tcState: TcState,
-        tcStateForImplFile: TcState,
-        rootSig
-    ) =
-    let hadSig = true
-    let emptyImplFile = CreateEmptyDummyImplFile qualName rootSig
-    let tcEnvAtEnd = tcStateForImplFile.TcEnvFromImpls
-
-    let ccuSigForFile, tcState =
-        AddCheckResultsToTcState (tcGlobals, amap, hadSig, prefixPathOpt, tcSink, tcState.tcsTcImplEnv, qualName, rootSig) tcState
-
-    (tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState
-
 /// Typecheck a single file (or interactive entry into F# Interactive)
 let CheckOneInputAux
     (
@@ -1195,6 +1176,9 @@ let CheckOneInputAux
 
     cancellable {
         try
+            use _ =
+                Activity.start "ParseAndCheckInputs.CheckOneInput" [| "fileName", inp.FileName |]
+
             CheckSimulateException tcConfig
 
             let m = inp.Range
@@ -1349,18 +1333,10 @@ let CheckOneInput
 
         match partialResult with
         | Choice1Of2 result -> return result, tcState
-        | Choice2Of2 (amap, _conditionalDefines, rootSig, _priorErrors, file, tcStateForImplFile, _ccuSigForFile) ->
-            return
-                AddDummyCheckResultsToTcState(
-                    tcGlobals,
-                    amap,
-                    file.QualifiedName,
-                    prefixPathOpt,
-                    tcSink,
-                    tcState,
-                    tcStateForImplFile,
-                    rootSig
-                )
+        | Choice2Of2 (_amap, _conditionalDefines, rootSig, _priorErrors, file, tcStateForImplFile, ccuSigForFile) ->
+            let emptyImplFile = CreateEmptyDummyImplFile file.QualifiedName rootSig
+            let tcEnvAtEnd = tcStateForImplFile.TcEnvFromImpls
+            return (tcEnvAtEnd, EmptyTopAttrs, Some emptyImplFile, ccuSigForFile), tcState
     }
 
 // Within a file, equip loggers to locally filter w.r.t. scope pragmas in each input
@@ -1395,10 +1371,8 @@ let CheckMultipleInputsFinish (results, tcState: TcState) =
 
 let CheckOneInputAndFinish (checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input) =
     cancellable {
-        Logger.LogBlockStart LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
         let! result, tcState = CheckOneInput(checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcSink, tcState, input, false)
         let finishedResult = CheckMultipleInputsFinish([ result ], tcState)
-        Logger.LogBlockStop LogCompilerFunctionId.CompileOps_TypeCheckOneInputAndFinishEventually
         return finishedResult
     }
 

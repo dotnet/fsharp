@@ -7,24 +7,9 @@
         <target state="translated">항상 최상위에 open 문 배치</target>
         <note />
       </trans-unit>
-      <trans-unit id="Lens">
-        <source>Lens</source>
-        <target state="translated">Lens</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Lens_Switch">
-        <source>Enable Lens (Experimental)</source>
-        <target state="translated">Lens 사용(실험적)</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Lens_Prefix">
-        <source>Annotation prefix</source>
-        <target state="translated">주석 접두사</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="Lens_UseColors">
-        <source>Use colors in annotations</source>
-        <target state="translated">주석에서 색 사용</target>
+      <trans-unit id="Inline_Hints">
+        <source>Inline Hints</source>
+        <target state="new">Inline Hints</target>
         <note />
       </trans-unit>
       <trans-unit id="Code_Fixes">
@@ -75,6 +60,16 @@
       <trans-unit id="Parallelization">
         <source>Parallelization (requires restart)</source>
         <target state="new">Parallelization (requires restart)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Inline_Parameter_Name_Hints">
+        <source>Display inline parameter name hints (experimental)</source>
+        <target state="new">Display inline parameter name hints (experimental)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Show_Inline_Type_Hints">
+        <source>Display inline type hints (experimental)</source>
+        <target state="new">Display inline type hints (experimental)</target>
         <note />
       </trans-unit>
       <trans-unit id="Show_all_symbols">
