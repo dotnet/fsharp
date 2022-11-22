@@ -410,8 +410,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
             (FSharpChecker.Create(
                 keepAllBackgroundSymbolUses = false,
                 enableBackgroundItemKeyStoreAndSemanticClassification = true,
-                enablePartialTypeChecking = true,
-                fastFindReferences = true
+                enablePartialTypeChecking = true
             ))
 
     let mapProject f workflow =
@@ -519,7 +518,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
             let file = ctx.Project.Find fileId
             let absFileName = ctx.Project.ProjectDir ++ file.FileName
-            let! results = checker.FindBackgroundReferencesInFile(absFileName, options, symbolUse.Symbol)
+            let! results = checker.FindBackgroundReferencesInFile(absFileName, options, symbolUse.Symbol, fastCheck = true)
 
             processResults (results |> Seq.toList)
 
@@ -540,7 +539,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
             let! results =
                 [ for f in options.SourceFiles do
-                      checker.FindBackgroundReferencesInFile(f, options, symbolUse.Symbol) ]
+                      checker.FindBackgroundReferencesInFile(f, options, symbolUse.Symbol, fastCheck = true) ]
                 |> Async.Parallel
 
             results |> Seq.collect id |> Seq.toList |> processResults
@@ -591,7 +590,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
             let! results =
                 [ for f in options.SourceFiles do
-                      checker.FindBackgroundReferencesInFile(f, options, symbolUse.Symbol) ]
+                      checker.FindBackgroundReferencesInFile(f, options, symbolUse.Symbol, fastCheck = true) ]
                 |> Async.Parallel
 
             results |> Seq.collect id |> Seq.toList |> processResults

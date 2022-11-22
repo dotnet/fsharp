@@ -112,11 +112,6 @@ type internal FSharpWorkspaceServiceFactory
                                 |> Option.map (fun options -> options.LanguageServicePerformance.EnableParallelReferenceResolution)
                                 |> Option.defaultValue false
 
-                            let enableFastFindReferences =
-                                editorOptions
-                                |> Option.map (fun options -> options.LanguageServicePerformance.EnableFastFindReferences)
-                                |> Option.defaultValue false
-
                             let checker =
                                 FSharpChecker.Create(
                                     projectCacheSize = 5000, // We do not care how big the cache is. VS will actually tell FCS to clear caches, so this is fine.
@@ -127,8 +122,7 @@ type internal FSharpWorkspaceServiceFactory
                                     enableBackgroundItemKeyStoreAndSemanticClassification = true,
                                     enablePartialTypeChecking = true,
                                     enableParallelCheckingWithSignatureFiles = enableParallelCheckingWithSignatureFiles,
-                                    parallelReferenceResolution = enableParallelReferenceResolution,
-                                    fastFindReferences = enableFastFindReferences)
+                                    parallelReferenceResolution = enableParallelReferenceResolution)
                             checker
                     checkerSingleton <- Some checker
             )

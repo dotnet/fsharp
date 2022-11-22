@@ -29,8 +29,7 @@ type BackgroundCompilerBenchmarks () =
 
     member this.setup(project) =
         let checker = FSharpChecker.Create(
-            enableBackgroundItemKeyStoreAndSemanticClassification = true,
-            fastFindReferences = this.FastFindReferences
+            enableBackgroundItemKeyStoreAndSemanticClassification = true
         )
         this.Benchmark <- ProjectBenchmarkBuilder.Create(project, checker) |> Async.RunSynchronously
 

@@ -184,7 +184,9 @@ type Document with
     member this.FindFSharpReferencesAsync(symbol, onFound, userOpName) =
         async {
             let! checker, _, _, projectOptions = this.GetFSharpCompilationOptionsAsync(userOpName)
-            let! symbolUses = checker.FindBackgroundReferencesInFile(this.FilePath, projectOptions, symbol, canInvalidateProject = false)
+            let! symbolUses = checker.FindBackgroundReferencesInFile(this.FilePath, projectOptions, symbol,
+                                canInvalidateProject = false,
+                                fastCheck = this.Project.IsFastFindReferencesEnabled)
             let! ct = Async.CancellationToken
             let! sourceText = this.GetTextAsync ct |> Async.AwaitTask
             for symbolUse in symbolUses do 

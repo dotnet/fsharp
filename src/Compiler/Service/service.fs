@@ -1188,8 +1188,7 @@ type FSharpChecker
         enableBackgroundItemKeyStoreAndSemanticClassification,
         enablePartialTypeChecking,
         enableParallelCheckingWithSignatureFiles,
-        parallelReferenceResolution,
-        fastFindReferences
+        parallelReferenceResolution
     ) =
 
     let backgroundCompiler =
@@ -1247,8 +1246,7 @@ type FSharpChecker
             ?enableBackgroundItemKeyStoreAndSemanticClassification,
             ?enablePartialTypeChecking,
             ?enableParallelCheckingWithSignatureFiles,
-            ?parallelReferenceResolution,
-            ?fastFindReferences
+            ?parallelReferenceResolution
         ) =
 
         use _ = Activity.startNoTags "FSharpChecker.Create"
@@ -1287,8 +1285,7 @@ type FSharpChecker
             enableBackgroundItemKeyStoreAndSemanticClassification,
             enablePartialTypeChecking,
             enableParallelCheckingWithSignatureFiles,
-            parallelReferenceResolution,
-            fastFindReferences
+            parallelReferenceResolution
         )
 
     member _.ReferenceResolver = legacyReferenceResolver
@@ -1456,13 +1453,14 @@ type FSharpChecker
             options: FSharpProjectOptions,
             symbol: FSharpSymbol,
             ?canInvalidateProject: bool,
+            ?fastCheck: bool,
             ?userOpName: string
         ) =
         let canInvalidateProject = defaultArg canInvalidateProject true
         let userOpName = defaultArg userOpName "Unknown"
 
         node {
-            if fastFindReferences <> Some true then
+            if fastCheck <> Some true then
                 return! backgroundCompiler.FindReferencesInFile(fileName, options, symbol, canInvalidateProject, userOpName)
             else
                 let! parseResults = backgroundCompiler.GetBackgroundParseResultsForFileInProject(fileName, options, userOpName)

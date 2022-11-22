@@ -62,6 +62,10 @@
                         <CheckBox x:Name="enableParallelReferenceResolution"
                                   IsChecked="{Binding EnableParallelReferenceResolution}"
                                   Content="{x:Static local:Strings.Enable_Parallel_Reference_Resolution}"/>
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Header="{x:Static local:Strings.Find_References_Performance}">
+                    <StackPanel>
                         <CheckBox x:Name="enableFastFindReferences"
                                   IsChecked="{Binding EnableFastFindReferences}"
                                   Content="{x:Static local:Strings.Enable_Fast_Find_References}"/>

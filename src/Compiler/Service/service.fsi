@@ -34,7 +34,6 @@ type public FSharpChecker =
     /// <param name="enablePartialTypeChecking">Indicates whether to perform partial type checking. Cannot be set to true if keepAssmeblyContents is true. If set to true, can cause duplicate type-checks when richer information on a file is needed, but can skip background type-checking entirely on implementation files with signature files.</param>
     /// <param name="enableParallelCheckingWithSignatureFiles">Type check implementation files that are backed by a signature file in parallel.</param>
     /// <param name="parallelReferenceResolution">Indicates whether to resolve references in parallel.</param>
-    /// <param name="fastFindReferences">Use faster reference finding mechanism - option for easier benchmarking.</param>
     static member Create:
         ?projectCacheSize: int *
         ?keepAssemblyContents: bool *
@@ -46,8 +45,7 @@ type public FSharpChecker =
         ?enableBackgroundItemKeyStoreAndSemanticClassification: bool *
         ?enablePartialTypeChecking: bool *
         ?enableParallelCheckingWithSignatureFiles: bool *
-        ?parallelReferenceResolution: bool *
-        ?fastFindReferences: bool ->
+        ?parallelReferenceResolution: bool ->
             FSharpChecker
 
     /// <summary>
@@ -302,12 +300,14 @@ type public FSharpChecker =
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="symbol">The symbol to find all uses in the file.</param>
     /// <param name="canInvalidateProject">Default: true. If true, this call can invalidate the current state of project if the options have changed. If false, the current state of the project will be used.</param>
+    /// <param name="fastCheck">Default: false. Experimental feature that makes the operation faster.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member FindBackgroundReferencesInFile:
         fileName: string *
         options: FSharpProjectOptions *
         symbol: FSharpSymbol *
         ?canInvalidateProject: bool *
+        ?fastCheck: bool *
         ?userOpName: string ->
             Async<range seq>
 
