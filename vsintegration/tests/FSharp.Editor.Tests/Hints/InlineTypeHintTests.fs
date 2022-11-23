@@ -183,3 +183,15 @@ let zip4 (l1: 'a list) (l2: 'b list) (l3: 'c list) (l4: 'd list) =
         let actual = getTypeHints document
 
         CollectionAssert.AreEquivalent(expected, actual)
+
+    [<Test>]
+    let ``Hints are not shown for unfinished expressions`` () =
+        let code =
+            """
+let x
+"""
+        let document = getFsDocument code
+
+        let result = getTypeHints document
+
+        Assert.IsEmpty(result)

@@ -188,7 +188,7 @@ module InterfaceStubGenerator =
             Some(List.rev revd.Tail, revd.Head)
 
     let internal getTypeParameterName (typar: FSharpGenericParameter) =
-        (if typar.IsSolveAtCompileTime then "^" else "'") + typar.Name
+        (if typar.IsSolvedAtCompileTime then "^" else "'") + typar.Name
 
     let internal bracket (str: string) =
         if str.Contains(" ") then "(" + str + ")" else str

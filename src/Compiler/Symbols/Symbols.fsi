@@ -598,7 +598,7 @@ type FSharpGenericParameter =
     member XmlDoc: FSharpXmlDoc
 
     /// Indicates if this is a statically resolved type variable
-    member IsSolveAtCompileTime: bool
+    member IsSolvedAtCompileTime: bool
 
     /// Indicates if this is a compiler generated type parameter
     member IsCompilerGenerated: bool

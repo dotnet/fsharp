@@ -34,7 +34,11 @@ module InlineTypeHints =
         (parseFileResults: FSharpParseFileResults) 
         (symbol: FSharpMemberOrFunctionOrValue)
         (symbolUse: FSharpSymbolUse) =
-        
+
+        let isSolved = 
+            symbol.GenericParameters
+            |> Seq.forall (fun p -> p.IsSolvedAtCompileTime)
+
         let isNotAnnotatedManually = 
             not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start)
 
@@ -46,6 +50,7 @@ module InlineTypeHints =
             not symbol.IsConstructorThisValue
         
         symbol.IsValue // we'll be adding other stuff gradually here
+        && isSolved
         && isNotAnnotatedManually
         && isNotAfterDot
         && isNotTypeAlias
