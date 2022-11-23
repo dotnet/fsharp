@@ -47,6 +47,9 @@ let FSharpScriptFileSuffixes = [ ".fsscript"; ".fsx" ]
 let FSharpIndentationAwareSyntaxFileSuffixes =
     [ ".fs"; ".fsscript"; ".fsx"; ".fsi" ]
 
+let FsharpExperimentalFeaturesEnabledAutomatically =
+    Environment.GetEnvironmentVariable("FSHARP_EXPERIMENTAL_FEATURES") |> isNotNull
+
 //--------------------------------------------------------------------------
 // General file name resolver
 //--------------------------------------------------------------------------
@@ -735,7 +738,7 @@ type TcConfigBuilder =
             deterministic = false
             concurrentBuild = true
             parallelCheckingWithSignatureFiles = false
-            parallelIlxGen = false
+            parallelIlxGen = FsharpExperimentalFeaturesEnabledAutomatically
             emitMetadataAssembly = MetadataAssemblyGeneration.None
             preferredUiLang = None
             lcid = None
