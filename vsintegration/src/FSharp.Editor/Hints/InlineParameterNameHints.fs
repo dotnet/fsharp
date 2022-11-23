@@ -31,9 +31,7 @@ module InlineParameterNameHints =
         not field.IsNameGenerated
 
     let isMemberOrFunctionOrValueValidForHint (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
-        // make sure we're looking at a call site and not the definition
         if symbolUse.IsFromUse then
-            // is there a better way?
             let isNotBuiltInOperator = 
                 symbol.DeclaringEntity 
                 |> Option.exists (fun entity -> entity.CompiledName <> "Operators")
@@ -45,7 +43,6 @@ module InlineParameterNameHints =
             false
 
     let isUnionCaseValidForHint (symbol: FSharpUnionCase) (symbolUse: FSharpSymbolUse) =
-        // is the union case being used as a constructor and is it not Cons
         symbolUse.IsFromUse
         && symbol.DisplayName <> "(::)"
 
