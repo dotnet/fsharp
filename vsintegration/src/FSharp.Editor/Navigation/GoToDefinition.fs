@@ -737,7 +737,7 @@ type internal SymbolMemberType =
         match s with
         | "E" -> Event
         | "P" -> Property
-        | "CTOR" -> Constructor
+        | "CTOR" -> Constructor // That one is "artificial one", so we distinguish constructors.
         | "M" -> Method
         | _ -> Other
 
