@@ -12,6 +12,8 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.Optimizer
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
+open System.Collections.Generic
+open FSharp.Compiler.Service.Driver.OptimizeTypes
 
 val GetGeneratedILModuleName: CompilerTarget -> string -> string
 
@@ -49,3 +51,9 @@ val GenerateIlxCode:
 val NormalizeAssemblyRefs: CompilationThreadToken * ILGlobals * TcImports -> (ILScopeRef -> ILScopeRef)
 
 val GetGeneratedILModuleName: CompilerTarget -> string -> string
+
+type OptimizerMode =
+    | Sequential
+    | PartiallyParallel
+
+val mutable optimizerMode: OptimizerMode
