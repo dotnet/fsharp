@@ -732,11 +732,12 @@ type internal FSharpNavigation
 
 [<RequireQualifiedAccess>]
 type internal SymbolMemberType =
-    Event | Property | Method | Other
+    Event | Property | Method | Constructor | Other
     static member FromString(s: string) =
         match s with
         | "E" -> Event
         | "P" -> Property
+        | "CTOR" -> Constructor
         | "M" -> Method
         | _ -> Other
 
@@ -822,7 +823,12 @@ type FSharpCrossLanguageSymbolNavigationService()  =
             let parts = m.Groups[2].Value.Split('.')
             let entityPath = parts[..(parts.Length - 2)] |> List.ofArray
             let memberOrVal = parts[parts.Length - 1]
-            DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal }, (SymbolMemberType.FromString t))
+
+            // A hack/fixup for the constructor name (#ctor in doccommentid and ``.ctor`` in F#)
+            if memberOrVal = "#ctor" then
+                DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = "``.ctor``" }, (SymbolMemberType.FromString "CTOR"))
+            else
+                DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal }, (SymbolMemberType.FromString t))
         | true, "T" ->
             let entityPath = m.Groups[2].Value.Split('.') |> List.ofArray
             DocCommentId.Type entityPath
@@ -838,15 +844,11 @@ type FSharpCrossLanguageSymbolNavigationService()  =
             match symbolMemberType with
             | SymbolMemberType.Other
             | SymbolMemberType.Method -> fun _ -> true
+            | SymbolMemberType.Constructor -> fun x -> x.IsConstructor
             | SymbolMemberType.Event -> fun x -> x.IsEvent
             | SymbolMemberType.Property -> fun x -> x.IsProperty
 
-        e.TryGetMembersFunctionsAndValues() 
-        |> Seq.filter (
-            fun x ->
-                not x.IsPropertyGetterMethod 
-                && not x.IsPropertySetterMethod
-                && not x.IsCompilerGenerated)
+        e.TryGetMembersFunctionsAndValues()
         |> Seq.filter (fun x -> x.DisplayName = name)
         |> Seq.filter memberTypePred
 
