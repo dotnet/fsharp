@@ -3142,7 +3142,7 @@ and DelayCodeGenMethodForExpr cenv mgbuf ((_, _, eenv, _, _, _, _) as args) =
 
     if eenv.delayCodeGen then
         cenv.delayedGenMethods.Enqueue(fun _ -> ilLazyCode.Force() |> ignore)
-    else      
+    else
         ilLazyCode.Force() |> ignore
 
     ilLazyCode
@@ -8387,7 +8387,9 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
         cgbuf.mgbuf.AddOrMergePropertyDef(ilGetterMethSpec.MethodRef.DeclaringTypeRef, ilPropDef, m)
 
         let ilMethodDef =
-            let ilLazyCode = DelayCodeGenMethodForExpr cenv cgbuf.mgbuf ([], ilGetterMethSpec.Name, eenv, 0, None, rhsExpr, Return)     
+            let ilLazyCode =
+                DelayCodeGenMethodForExpr cenv cgbuf.mgbuf ([], ilGetterMethSpec.Name, eenv, 0, None, rhsExpr, Return)
+
             let ilMethodBody = MethodBody.IL(ilLazyCode)
 
             (mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkILReturn ilTy, ilMethodBody))
@@ -11687,7 +11689,7 @@ type IlxGenResults =
         quotationResourceInfo: (ILTypeRef list * byte[]) list
     }
 
-let private GenerateResourcesForQuotations reflectedDefinitions cenv = 
+let private GenerateResourcesForQuotations reflectedDefinitions cenv =
     match reflectedDefinitions with
     | [] -> []
     | _ ->
@@ -11758,7 +11760,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
         GenAttrs cenv eenv (assemAttribs |> List.filter (fun a -> not (IsAssemblyVersionAttribute g a)))
 
     let tdefs, reflectedDefinitions = mgbuf.Close()
-    let quotationResourceInfo = GenerateResourcesForQuotations reflectedDefinitions cenv 
+    let quotationResourceInfo = GenerateResourcesForQuotations reflectedDefinitions cenv
     let ilNetModuleAttrs = GenAttrs cenv eenv moduleAttribs
 
     let casApplied = Dictionary<Stamp, bool>()
