@@ -843,9 +843,9 @@ type FSharpCrossLanguageSymbolNavigationService()  =
         let memberTypePred: (FSharpMemberOrFunctionOrValue -> bool) = 
             match symbolMemberType with
             | SymbolMemberType.Other
-            | SymbolMemberType.Event
             | SymbolMemberType.Method -> fun _ -> true
             | SymbolMemberType.Constructor -> fun x -> x.IsConstructor
+            | SymbolMemberType.Event // Events are just properties
             | SymbolMemberType.Property -> fun x -> x.IsProperty
 
         e.TryGetMembersFunctionsAndValues()
