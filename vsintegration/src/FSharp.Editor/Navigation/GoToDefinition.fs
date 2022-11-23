@@ -741,7 +741,7 @@ type internal SymbolMemberType =
         | "M" -> Method
         | _ -> Other
 
-type internal SymbolPath = { EntityPath: string list; MemberOrValName: string; }
+type internal SymbolPath = { EntityPath: string list; MemberOrValName: string; GenericParameters: int }
 
 [<RequireQualifiedAccess>]
 type internal DocCommentId =
@@ -829,7 +829,7 @@ type FSharpCrossLanguageSymbolNavigationService()  =
 
             // Try and parse generic params count from the name (e.g. NameOfTheFunction``1, where ``1 is amount of type parameters) 
             let genericM = fnGenericArgsRx.Match(memberOrVal)
-            let (memberOrVal, _genericArgsCount) =
+            let (memberOrVal, genericParametersCount) =
                 if genericM.Success then
                     (genericM.Groups[1].Value, int genericM.Groups[2].Value)
                 else
@@ -837,9 +837,9 @@ type FSharpCrossLanguageSymbolNavigationService()  =
 
             // A hack/fixup for the constructor name (#ctor in doccommentid and ``.ctor`` in F#)
             if memberOrVal = "#ctor" then
-                DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = "``.ctor``" }, (SymbolMemberType.FromString "CTOR"))
+                DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = "``.ctor``"; GenericParameters = 0 }, (SymbolMemberType.FromString "CTOR"))
             else
-                DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal }, (SymbolMemberType.FromString t))
+                DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = genericParametersCount }, (SymbolMemberType.FromString t))
         | true, "T" ->
             let entityPath = m.Groups[2].Value.Split('.') |> List.ofArray
             DocCommentId.Type entityPath
@@ -847,10 +847,10 @@ type FSharpCrossLanguageSymbolNavigationService()  =
             let parts = m.Groups[2].Value.Split('.')
             let entityPath = parts[..(parts.Length - 2)] |> List.ofArray
             let memberOrVal = parts[parts.Length - 1]
-            DocCommentId.Field { EntityPath = entityPath; MemberOrValName = memberOrVal }
+            DocCommentId.Field { EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = 0 }
         | _ -> DocCommentId.None
     
-    let tryFindValByNameAndType (name: string) (symbolMemberType: SymbolMemberType) (e: FSharpEntity) =
+    let tryFindValByNameAndType (name: string) (symbolMemberType: SymbolMemberType) (genericParametersCount: int) (e: FSharpEntity) =
         let memberTypePred: (FSharpMemberOrFunctionOrValue -> bool) = 
             match symbolMemberType with
             | SymbolMemberType.Other
@@ -860,7 +860,10 @@ type FSharpCrossLanguageSymbolNavigationService()  =
             | SymbolMemberType.Property -> fun x -> x.IsProperty
 
         e.TryGetMembersFunctionsAndValues()
-        |> Seq.filter (fun x -> x.DisplayName = name)
+        |> Seq.filter (
+            fun x ->
+                x.DisplayName = name
+                && x.GenericParameters.Count = genericParametersCount)
         |> Seq.filter memberTypePred
 
     let tryFindFieldByName (name: string) (e: FSharpEntity) =
@@ -883,11 +886,11 @@ type FSharpCrossLanguageSymbolNavigationService()  =
                     let! result = checker.ParseAndCheckProject(options)
 
                     match path with
-                    | DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal }, memberType)  ->
+                    | DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = genericParametersCount }, memberType)  ->
                         let entity = result.AssemblySignature.FindEntityByPath (entityPath)
                         match entity with
                         | Some e ->
-                            locations <- e |> tryFindValByNameAndType memberOrVal memberType 
+                            locations <- e |> tryFindValByNameAndType memberOrVal memberType genericParametersCount
                                      |> Seq.map (fun e -> (e.DeclarationLocation, project)) 
                                      |> Seq.append locations
                         | None -> ()
