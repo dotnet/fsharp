@@ -842,8 +842,9 @@ type FSharpCrossLanguageSymbolNavigationService()  =
                     | _ -> ()
                 
                 // TODO: Figure out the way of giving the user choice where to navigate, if there are more than one result
-                // For now, for testing, we only take 1st one.
-                if locations.Count() > 1 then
+                // For now, we only take 1st one, since it's usually going to be only one result (given we process names correctly).
+                // More results can theoretically be returned in case of method overloads, or when we have both signature and implementation files.
+                if locations.Count() >= 1 then
                     let (location, project) = locations.First()
                     return FSharpNavigableLocation(statusBar, metadataAsSource, location, project) :> IFSharpNavigableLocation
                 else
