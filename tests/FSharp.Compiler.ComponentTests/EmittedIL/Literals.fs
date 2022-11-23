@@ -52,6 +52,37 @@ let [<Literal>] bitwise = 1us &&& (3us ||| 4us)
         ]
 
     [<Fact>]
+    let ``Logical operations on booleans are evaluated at compile-time``() =
+        FSharp """
+module LiteralArithmetics
+
+let [<Literal>] flag = true
+
+let [<Literal>] flippedFlag = not flag
+
+let [<Literal>] simple1 = flippedFlag || false
+
+let [<Literal>] simple2 = true && not true
+
+let [<Literal>] complex1 = false || (flag && not flippedFlag)
+
+let [<Literal>] complex2 = false || (flag && flippedFlag)
+
+let [<Literal>] complex3 = true || (flag && not flippedFlag)
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            """.field public static literal bool flag = bool(true)"""
+            """.field public static literal bool flippedFlag = bool(false)"""
+            """.field public static literal bool simple1 = bool(false)"""
+            """.field public static literal bool simple2 = bool(false)"""
+            """.field public static literal bool complex1 = bool(true)"""
+            """.field public static literal bool complex2 = bool(false)"""
+            """.field public static literal bool complex3 = bool(true)"""
+        ]
+
+    [<Fact>]
     let ``Arithmetics can be used for constructing enum literals``() =
         FSharp """
 module LiteralArithmetics

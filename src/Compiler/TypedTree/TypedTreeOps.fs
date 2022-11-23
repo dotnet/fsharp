@@ -9773,6 +9773,30 @@ let rec EvalAttribArgExpr g x =
             x
     | SpecificUnopExpr g g.unchecked_unary_plus_vref arg1 ->
         EvalArithUnOp ((~+), (~+), (~+), (~+), (~+), (~+), (~+), (~+)) (EvalAttribArgExpr g arg1)
+    | SpecificUnopExpr g g.unchecked_unary_not_vref arg1 ->
+        match EvalAttribArgExpr g arg1 with
+        | Expr.Const (Const.Bool value, m, ty) ->
+            Expr.Const (Const.Bool (not value), m, ty)
+        | expr ->
+            errorR (Error ( FSComp.SR.tastNotAConstantExpression(), expr.Range))
+            x
+    // Detect logical operations on booleans, which are represented as a match expression
+    | Expr.Match (decision = TDSwitch (input = input; cases = [ TCase (DecisionTreeTest.Const (Const.Bool test), TDSuccess ([], targetNum)) ]); targets = [| TTarget (_, t0, _); TTarget (_, t1, _) |]) ->
+        match EvalAttribArgExpr g (stripDebugPoints input) with
+        | Expr.Const (Const.Bool value, _, _) ->
+            let pass, fail =
+                if targetNum = 0 then
+                    t0, t1
+                else
+                    t1, t0
+
+            if value = test then
+                EvalAttribArgExpr g (stripDebugPoints pass)
+            else
+                EvalAttribArgExpr g (stripDebugPoints fail)
+        | _ ->
+            errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
+            x
     | _ -> 
         errorR (Error ( FSComp.SR.tastNotAConstantExpression(), x.Range))
         x
