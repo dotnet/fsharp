@@ -336,10 +336,7 @@ type cenv =
         /// Used to apply forced inlining optimizations to witnesses generated late during codegen
         mutable optimizeDuringCodeGen: bool -> Expr -> Expr
 
-        /// What depth are we at when generating an expression?
-        //mutable exprRecursionDepth: int
-
-        /// Delayed Method Generation - prevents stack overflows when we need to generate methods that are split into many methods by the optimizer.
+        /// Delayed Method Generation - which can later be parallelized across multiple files
         delayedGenMethods: Queue<cenv -> unit>
 
         /// Guard the stack and move to a new one if necessary
@@ -3140,10 +3137,9 @@ and DelayCodeGenMethodForExpr cenv mgbuf ((_, _, eenv, _, _, _, _) as args) =
                 mgbuf
                 args
 
-    if (* cenv.exprRecursionDepth > 0 || *) eenv.delayCodeGen then
+    if eenv.delayCodeGen then
         cenv.delayedGenMethods.Enqueue(fun _ -> ilLazyCode.Force() |> ignore)
-    else
-        // Eagerly codegen if we are not in an expression depth.
+    else      
         ilLazyCode.Force() |> ignore
 
     ilLazyCode
@@ -8388,15 +8384,7 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
         cgbuf.mgbuf.AddOrMergePropertyDef(ilGetterMethSpec.MethodRef.DeclaringTypeRef, ilPropDef, m)
 
         let ilMethodDef =
-            let ilLazyCode =
-                if eenv.delayCodeGen then
-                    DelayCodeGenMethodForExpr cenv cgbuf.mgbuf ([], ilGetterMethSpec.Name, eenv, 0, None, rhsExpr, Return)
-                else
-                    let ilCode =
-                        CodeGenMethodForExpr cenv cgbuf.mgbuf ([], ilGetterMethSpec.Name, eenv, 0, None, rhsExpr, Return)
-
-                    lazy ilCode
-
+            let ilLazyCode = DelayCodeGenMethodForExpr cenv cgbuf.mgbuf ([], ilGetterMethSpec.Name, eenv, 0, None, rhsExpr, Return)     
             let ilMethodBody = MethodBody.IL(ilLazyCode)
 
             (mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkILReturn ilTy, ilMethodBody))
