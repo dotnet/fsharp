@@ -786,6 +786,9 @@ type FSharpCrossLanguageSymbolNavigationService()  =
     //   4 - return type, optional, only for methods.
     let docCommentIdRx = Regex(@"^(\w):([\w\d#`.]+)(\(.+\))?(?:~([\w\d.]+))?$", RegexOptions.Compiled)
 
+    // Parse generic args out of the function name
+    let fnGenericArgsRx = Regex(@"^(.+)``(\d+)$", RegexOptions.Compiled)
+
     let docCommentIdToPath (docId:string) =
         // docCommentId is in the following format:
         //
@@ -823,6 +826,14 @@ type FSharpCrossLanguageSymbolNavigationService()  =
             let parts = m.Groups[2].Value.Split('.')
             let entityPath = parts[..(parts.Length - 2)] |> List.ofArray
             let memberOrVal = parts[parts.Length - 1]
+
+            // Try and parse generic params count from the name (e.g. NameOfTheFunction``1, where ``1 is amount of type parameters) 
+            let genericM = fnGenericArgsRx.Match(memberOrVal)
+            let (memberOrVal, _genericArgsCount) =
+                if genericM.Success then
+                    (genericM.Groups[1].Value, int genericM.Groups[2].Value)
+                else
+                    memberOrVal, 0
 
             // A hack/fixup for the constructor name (#ctor in doccommentid and ``.ctor`` in F#)
             if memberOrVal = "#ctor" then
@@ -887,6 +898,12 @@ type FSharpCrossLanguageSymbolNavigationService()  =
                             locations <- e |> tryFindFieldByName memberOrVal 
                                      |> Seq.map (fun e -> (e.DeclarationLocation, project)) 
                                      |> Seq.append locations
+                        | None -> ()
+                    | DocCommentId.Type entityPath ->
+                        let entity = result.AssemblySignature.FindEntityByPath (entityPath)
+                        match entity with
+                        | Some e ->
+                            locations <- Seq.append locations [e.DeclarationLocation, project]
                         | None -> ()
                     | _ -> ()
                 
