@@ -296,6 +296,9 @@ type IlxGenOptions =
 
         /// Whenever possible, use callvirt instead of call
         alwaysCallVirt: bool
+
+        /// When set to true, the IlxGen will delay generation of method bodies and generated them later in parallel (parallelized across files)
+        parallelIlxGenEnabled: bool
     }
 
 /// Compilation environment for compiling a fragment of an assembly
@@ -8391,16 +8394,6 @@ and GenBindingAfterDebugPoint cenv cgbuf eenv bind isStateVar startMarkOpt =
                 .WithSpecialName
             |> AddNonUserCompilerGeneratedAttribs g
 
-        //let ilMethodDef =
-        //    let ilCode =
-        //        CodeGenMethodForExpr cenv cgbuf.mgbuf ([], ilGetterMethSpec.Name, eenv, 0, None, rhsExpr, Return)
-
-        //    let ilMethodBody = MethodBody.IL(lazy ilCode)
-
-        //    (mkILStaticMethod ([], ilGetterMethSpec.Name, access, [], mkILReturn ilTy, ilMethodBody))
-        //        .WithSpecialName
-        //    |> AddNonUserCompilerGeneratedAttribs g
-
         CountMethodDef()
         cgbuf.mgbuf.AddMethodDef(ilGetterMethSpec.MethodRef.DeclaringTypeRef, ilMethodDef)
 
@@ -11742,6 +11735,7 @@ let GenerateCode (cenv, anonTypeTable, eenv, CheckedAssemblyAfterOptimization im
     let eenv =
         { eenv with
             cloc = CompLocForFragment cenv.options.fragName cenv.viewCcu
+            delayCodeGen = cenv.options.parallelIlxGenEnabled
         }
 
     // Generate the PrivateImplementationDetails type
