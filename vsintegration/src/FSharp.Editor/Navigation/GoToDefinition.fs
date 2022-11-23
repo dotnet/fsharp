@@ -730,14 +730,24 @@ type internal FSharpNavigation
             // Don't make them click twice.
             true
 
-type private SymbolPath = { EntityPath: string list; MemberOrValName: string }
 [<RequireQualifiedAccess>]
-type private DocCommentId =
-    | Member of SymbolPath
+type internal SymbolMemberType =
+    Event | Property | Method | Other
+    static member FromString(s: string) =
+        match s with
+        | "E" -> Event
+        | "P" -> Property
+        | "M" -> Method
+        | _ -> Other
+
+type internal SymbolPath = { EntityPath: string list; MemberOrValName: string; }
+
+[<RequireQualifiedAccess>]
+type internal DocCommentId =
+    | Member of SymbolPath * SymbolMemberType: SymbolMemberType
+    | Field of SymbolPath
     | Type of EntityPath: string list
-    | Other of string
     | None
-    
 
 type FSharpNavigableLocation(statusBar: StatusBar, metadataAsSource: FSharpMetadataAsSourceService, symbolRange: range, project: Project) =
     interface IFSharpNavigableLocation with
@@ -805,19 +815,48 @@ type FSharpCrossLanguageSymbolNavigationService()  =
         // "P:N.X.prop" - property with getter and setter
 
         let m = docCommentIdRx.Match(docId)
-        match m.Success, m.Groups[1].Value with
-        | true, ("M" | "P" | "F" | "E") ->
+        let t = m.Groups[1].Value
+        match m.Success, t with
+        | true, ("M" | "P" | "E") ->
             // TODO: Probably, there's less janky way of dealing with those.
             let parts = m.Groups[2].Value.Split('.')
             let entityPath = parts[..(parts.Length - 2)] |> List.ofArray
             let memberOrVal = parts[parts.Length - 1]
-            DocCommentId.Member { EntityPath = entityPath; MemberOrValName = memberOrVal }
+            DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal }, (SymbolMemberType.FromString t))
         | true, "T" ->
             let entityPath = m.Groups[2].Value.Split('.') |> List.ofArray
             DocCommentId.Type entityPath
+        | true, "F" ->
+            let parts = m.Groups[2].Value.Split('.')
+            let entityPath = parts[..(parts.Length - 2)] |> List.ofArray
+            let memberOrVal = parts[parts.Length - 1]
+            DocCommentId.Field { EntityPath = entityPath; MemberOrValName = memberOrVal }
         | _ -> DocCommentId.None
-            
+    
+    let tryFindValByNameAndType (name: string) (symbolMemberType: SymbolMemberType) (e: FSharpEntity) =
+        let memberTypePred: (FSharpMemberOrFunctionOrValue -> bool) = 
+            match symbolMemberType with
+            | SymbolMemberType.Other
+            | SymbolMemberType.Method -> fun _ -> true
+            | SymbolMemberType.Event -> fun x -> x.IsEvent
+            | SymbolMemberType.Property -> fun x -> x.IsProperty
 
+        e.TryGetMembersFunctionsAndValues() 
+        |> Seq.filter (
+            fun x ->
+                not x.IsPropertyGetterMethod 
+                && not x.IsPropertySetterMethod
+                && not x.IsCompilerGenerated)
+        |> Seq.filter (fun x -> x.DisplayName = name)
+        |> Seq.filter memberTypePred
+
+    let tryFindFieldByName (name: string) (e: FSharpEntity) =
+        e.FSharpFields
+        |> Seq.filter (
+            fun x ->
+                x.DisplayName = name
+                && not x.IsCompilerGenerated)
+        
     interface IFSharpCrossLanguageSymbolNavigationService with
         member _.TryGetNavigableLocationAsync(assemblyName: string, documentationCommentId: string, cancellationToken: CancellationToken) : Task<IFSharpNavigableLocation> =
             let path = docCommentIdToPath documentationCommentId
@@ -831,11 +870,19 @@ type FSharpCrossLanguageSymbolNavigationService()  =
                     let! result = checker.ParseAndCheckProject(options)
 
                     match path with
-                    | DocCommentId.Member { EntityPath = entityPath; MemberOrValName = memberOrVal} ->
+                    | DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal }, memberType)  ->
                         let entity = result.AssemblySignature.FindEntityByPath (entityPath)
                         match entity with
                         | Some e ->
-                            locations <- (e.TryFindValByName(memberOrVal)) 
+                            locations <- e |> tryFindValByNameAndType memberOrVal memberType 
+                                     |> Seq.map (fun e -> (e.DeclarationLocation, project)) 
+                                     |> Seq.append locations
+                        | None -> ()
+                    | DocCommentId.Field { EntityPath = entityPath; MemberOrValName = memberOrVal } ->
+                        let entity = result.AssemblySignature.FindEntityByPath (entityPath)
+                        match entity with
+                        | Some e ->
+                            locations <- e |> tryFindFieldByName memberOrVal 
                                      |> Seq.map (fun e -> (e.DeclarationLocation, project)) 
                                      |> Seq.append locations
                         | None -> ()
