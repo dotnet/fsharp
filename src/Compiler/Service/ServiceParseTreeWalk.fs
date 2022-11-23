@@ -260,12 +260,10 @@ module SyntaxTraversal =
             | [ x ] -> x ()
             | _ ->
 #if DEBUG
-                assert false
-                failwithf "multiple disjoint AST node ranges claimed to contain (%A) from %+A" pos debugObj
-#else
+                printf "multiple disjoint AST node ranges claimed to contain (%A) from %+A" pos debugObj
+#endif
                 ignore debugObj
                 None
-#endif
 
     /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
     ///
