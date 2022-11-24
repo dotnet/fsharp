@@ -9,6 +9,11 @@ open FSharp.Compiler.TypedTree
 open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreePickle
 
+[<RequireQualifiedAccess>]
+type OptimizerMode =
+    | Sequential
+    | PartiallyParallel
+
 type OptimizationSettings =
     {
         abstractBigTargets: bool
@@ -40,6 +45,8 @@ type OptimizationSettings =
         reportHasEffect: bool
 
         reportTotalSizes: bool
+        
+        processingMode : OptimizerMode
     }
 
     member JitOptimizationsEnabled: bool
