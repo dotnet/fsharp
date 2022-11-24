@@ -1976,9 +1976,14 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             gmethods.Add(mkILClassCtor body)
 
 and TypeDefsBuilder() =
+    (* TODO Tomas : This is not thread safe. Make it so
+        This builder acts for all types - can be accessed concurrently
+        The internal TypeDefBuilder's will be created from 1 file each, therefore those can remain for sequential usage. (??)    
+    *)
     let tdefs: HashMultiMap<string, int * (TypeDefBuilder * bool)> =
         HashMultiMap(0, HashIdentity.Structural)
 
+    (* TODO Tomas : This is not thread safe. Make it so*)
     let mutable countDown = System.Int32.MaxValue
 
     member b.Close() =
@@ -2001,6 +2006,7 @@ and TypeDefsBuilder() =
                     yield tdef
         ]
 
+    (* TODO Tomas : This is not thread safe. Make it so*)
     member b.FindTypeDefBuilder nm =
         try
             tdefs[nm] |> snd |> fst
@@ -2023,6 +2029,9 @@ and TypeDefsBuilder() =
 
         tdefs.Add(tdef.Name, (idx, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)))
 
+    (* TODO Tomas : Annonymous types are being collected outside of the delayed code path, so this can remain as is.
+        I can move the anontable generation step to be parallel separately, only makes sense in codebases making heavy use of them
+    *)
 type AnonTypeGenerationTable() =
     // Dictionary is safe here as it will only be used during the codegen stage - will happen on a single thread.
     let dict =
@@ -2038,9 +2047,12 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
     // The definitions of top level values, as quotations.
     // Dictionary is safe here as it will only be used during the codegen stage - will happen on a single thread.
+    (* TODO Tomas : This is not thread safe. Make it so *)
     let mutable reflectedDefinitions: Dictionary<Val, string * int * Expr> =
         Dictionary(HashIdentity.Reference)
 
+
+    (* TODO Tomas : This is not thread safe. Make it so *)
     let mutable extraBindingsToGenerate = []
 
     // A memoization table for generating value types for big constant arrays
@@ -2289,9 +2301,11 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
         (ilCtorRef, ilMethodRefs, ilTy)
 
+    (* TODO Tomas : This is not thread safe, but there will be only one entry point*)
     let mutable explicitEntryPointInfo: ILTypeRef option = None
 
     /// static init fields on script modules.
+    (* TODO Tomas : This is not thread safe. Make it so *)
     let mutable scriptInitFspecs: (ILFieldSpec * range) list = []
 
     member _.AddScriptInitFieldSpec(fieldSpec, range) =
