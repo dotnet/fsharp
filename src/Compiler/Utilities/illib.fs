@@ -1040,29 +1040,21 @@ module CancellableAutoOpens =
     let cancellable = CancellableBuilder()
 
 /// Generates unique stamps
-type UniqueStampGenerator<'T when 'T: equality>() =
-    let gate = obj ()
-    let encodeTab = ConcurrentDictionary<'T, int>(HashIdentity.Structural)
-    let mutable nItems = 0
+type UniqueStampGenerator<'T when 'T: equality>() =   
+    let encodeTab = ConcurrentDictionary<'T, Lazy<int>>(HashIdentity.Structural)
+    let mutable nItems = -1
 
-    let encode str =
-        match encodeTab.TryGetValue str with
-        | true, idx -> idx
-        | _ ->
-            lock gate (fun () ->
-                let idx = nItems
-                encodeTab[str] <- idx
-                nItems <- nItems + 1
-                idx)
+    let computeFunc = Func<'T,_>(fun _ -> lazy( Interlocked.Increment(&nItems)))
 
-    member _.Encode str = encode str
+    member _.Encode str = encodeTab.GetOrAdd(str,computeFunc).Value
 
     member _.Table = encodeTab.Keys
 
 /// memoize tables (all entries cached, never collected)
 type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) =
-
-    let table = new ConcurrentDictionary<'T, 'U>(keyComparer)
+    
+    let table = new ConcurrentDictionary<'T, Lazy<'U>>(keyComparer)
+    let computeFunc = Func<_,_>(fun key -> lazy(compute key))
 
     member t.Apply x =
         if
@@ -1070,16 +1062,7 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
              | None -> true
              | Some f -> f x)
         then
-            match table.TryGetValue x with
-            | true, res -> res
-            | _ ->
-                lock table (fun () ->
-                    match table.TryGetValue x with
-                    | true, res -> res
-                    | _ ->
-                        let res = compute x
-                        table[x] <- res
-                        res)
+            table.GetOrAdd(x,computeFunc).Value                   
         else
             compute x
 
