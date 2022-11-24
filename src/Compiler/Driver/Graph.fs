@@ -4,9 +4,6 @@
 #nowarn "40"
 
 open System.Collections.Generic
-open System.IO
-open Newtonsoft.Json
-open ParallelTypeCheckingTests.Utils
 
 /// <summary> DAG of files </summary>
 type Graph<'Node> = IReadOnlyDictionary<'Node, 'Node[]>
@@ -33,8 +30,9 @@ module Graph =
         |> fun missing ->
             let toAdd = missing |> Seq.map (fun n -> KeyValuePair(n, [||])) |> Seq.toArray
 
-            let x = Array.append (graph |> Seq.toArray) toAdd
-            x |> Dictionary<_, _> |> (fun x -> x :> IReadOnlyDictionary<_, _>)
+            Array.append (graph |> Seq.toArray) toAdd
+            |> Array.map (fun (KeyValue(k, v)) -> k, v)
+            |> readOnlyDict
 
     /// Create entries for nodes that don't have any dependencies but are mentioned as dependencies themselves
     let fillEmptyNodes<'Node when 'Node: equality> (graph: Graph<'Node>) : Graph<'Node> =
@@ -59,20 +57,29 @@ module Graph =
         |> Array.Parallel.map (fun node -> node, go node)
         |> readOnlyDict
 
-    /// Create a transitive closure of the graph
+    let private memoize<'a,'b when 'a : equality> (f : 'a -> 'b) : 'a -> 'b =
+        let cache = Dictionary<'a,'b>()
+        fun a ->
+            match cache.TryGetValue a with
+            | true, b -> b
+            | false, _ ->
+                let b = f a
+                cache[a] <- b
+                b
+    
+    /// Create a transitive closure of the graph.
     let transitive<'Node when 'Node: equality> (graph: Graph<'Node>) : Graph<'Node> =
         let rec calcTransitiveEdges =
             fun (node: 'Node) ->
                 let edgeTargets =
                     match graph.TryGetValue node with
                     | true, x -> x
-                    | false, _ -> failwith "FOO"
+                    | false, _ -> [||]
 
                 edgeTargets
                 |> Array.collect calcTransitiveEdges
                 |> Array.append edgeTargets
                 |> Array.distinct
-            // Dispose of memoisation context
             |> memoize
 
         graph.Keys
@@ -100,8 +107,3 @@ module Graph =
 
     let print (graph: Graph<'Node>) : unit =
         printCustom graph (fun node -> node.ToString())
-
-    let serialiseToJson (path: string) (graph: Graph<'Node>) : unit =
-        let json = JsonConvert.SerializeObject(graph, Formatting.Indented)
-        printfn $"Serialising graph as JSON in {path}"
-        File.WriteAllText(path, json)

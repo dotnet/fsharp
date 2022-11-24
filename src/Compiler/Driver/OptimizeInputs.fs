@@ -6,6 +6,7 @@ open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Threading
+open FSharp.Compiler.Optimizer
 open FSharp.Compiler.Service.Driver
 open FSharp.Compiler.Service.Driver.OptimizeTypes
 open Internal.Utilities.Library
@@ -129,7 +130,7 @@ let getPhase3Res (p: FileResults) =
     |> Option.get
     |> fun (env, _) -> env
 
-let go (env0: Optimizer.IncrementalOptimizationEnv) ((phase1, phase2, phase3): FilePhaseFuncs) (files: CheckedImplFile list) : CollectorOutputs =
+let optimizeFilesInParallel (env0: Optimizer.IncrementalOptimizationEnv) ((phase1, phase2, phase3): FilePhaseFuncs) (files: CheckedImplFile list) : CollectorOutputs =
     let files = files |> List.toArray
     // Schedule File1-Phase1
     let firstNode = { Idx = 0; Phase = Phase.Phase1 }
@@ -264,13 +265,6 @@ let go (env0: Optimizer.IncrementalOptimizationEnv) ((phase1, phase2, phase3): F
         )
     let collected = results |> collectResults
     collected
-
-[<RequireQualifiedAccess>]
-type OptimizerMode =
-    | Sequential
-    | PartiallyParallel
-
-let mutable optimizerMode: OptimizerMode = OptimizerMode.Sequential
 
 let ApplyAllOptimizations
     (
@@ -422,10 +416,10 @@ let ApplyAllOptimizations
             env, implFile
     
     let results, optEnvFirstLoop =
-        match optimizerMode with
+        match optSettings.processingMode with
         | OptimizerMode.PartiallyParallel ->
             let a, b =
-                go env0 (phase1, phase2, phase3) implFiles
+                optimizeFilesInParallel env0 (phase1, phase2, phase3) implFiles
             a |> Array.toList, b
         | OptimizerMode.Sequential ->
             let results, (optEnvFirstLoop, _, _, _) =

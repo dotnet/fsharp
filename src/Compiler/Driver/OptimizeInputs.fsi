@@ -51,9 +51,3 @@ val GenerateIlxCode:
 val NormalizeAssemblyRefs: CompilationThreadToken * ILGlobals * TcImports -> (ILScopeRef -> ILScopeRef)
 
 val GetGeneratedILModuleName: CompilerTarget -> string -> string
-
-type OptimizerMode =
-    | Sequential
-    | PartiallyParallel
-
-val mutable optimizerMode: OptimizerMode

@@ -1,7 +1,6 @@
 ﻿/// Parallel processing of graph of work items with dependencies
 module FSharp.Compiler.Service.Driver.GraphProcessing
 
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Threading
 open FSharp.Compiler.Service.Driver.Graph
@@ -44,9 +43,6 @@ type Node<'Item, 'State, 'Result> =
 /// <summary>
 /// Combine results of dependencies needed to type-check a 'higher' node in the graph
 /// </summary>
-/// <param name="deps">Direct dependencies of a node</param>
-/// <param name="transitiveDeps">Transitive dependencies of a node</param>
-/// <param name="folder">A way to fold a single result into existing state</param>
 let combineResultsOld
     (emptyState: 'State)
     (deps: Node<'Item, 'State, 'Result>[])
@@ -98,9 +94,6 @@ let combineResultsOld
 /// <summary>
 /// Combine results of dependencies needed to type-check a 'higher' node in the graph
 /// </summary>
-/// <param name="deps">Direct dependencies of a node</param>
-/// <param name="transitiveDeps">Transitive dependencies of a node</param>
-/// <param name="folder">A way to fold a single result into existing state</param>
 let combineResults
     (emptyState: 'State)
     (deps: Node<'Item, 'State, 'Result>[])
