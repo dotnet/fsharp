@@ -9114,9 +9114,10 @@ and GenMethodForBinding
                     mgbuf
                     (tailCallInfo,
                      mspec.Name,
-                     { eenvForMeth with
-                         delayCodeGen = false
-                     },
+                     eenvForMeth,
+                     //{ eenvForMeth with
+                     //    delayCodeGen = false
+                     //},
                      0,
                      selfValOpt,
                      bodyExpr,
