@@ -1352,7 +1352,7 @@ type FSharpGenericParameter(cenv, v:Typar) =
 
     member _.ElaboratedXmlDoc = v.XmlDoc |> makeElaboratedXmlDoc
 
-    member _.IsSolvedAtCompileTime = (v.StaticReq = TyparStaticReq.HeadType)
+    member _.IsSolveAtCompileTime = (v.StaticReq = TyparStaticReq.HeadType)
 
     override _.Attributes = 
          // INCOMPLETENESS: If the type parameter comes from .NET then the .NET metadata for the type parameter

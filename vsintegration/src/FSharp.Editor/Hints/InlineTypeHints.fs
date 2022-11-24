@@ -37,7 +37,7 @@ module InlineTypeHints =
 
         let isSolved = 
             symbol.GenericParameters
-            |> Seq.forall (fun p -> p.IsSolvedAtCompileTime)
+            |> Seq.forall (fun p -> p.IsSolveAtCompileTime)
 
         let isNotAnnotatedManually = 
             not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start)
