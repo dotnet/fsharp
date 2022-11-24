@@ -263,7 +263,7 @@ module internal Utils =
     let printGenericParameter (p: FSharpGenericParameter) =
         let name =
             if p.Name.StartsWith("?", StringComparison.Ordinal) then "_"
-            elif p.IsSolveAtCompileTime then "^" + p.Name
+            elif p.IsSolvedAtCompileTime then "^" + p.Name
             else "'" + p.Name
         let constraints =
             p.Constraints |> Seq.choose (printGenericConstraint name) |> List.ofSeq

@@ -4734,7 +4734,7 @@ FSharp.Compiler.Symbols.FSharpGenericParameter
 FSharp.Compiler.Symbols.FSharpGenericParameter: Boolean Equals(System.Object)
 FSharp.Compiler.Symbols.FSharpGenericParameter: Boolean IsCompilerGenerated
 FSharp.Compiler.Symbols.FSharpGenericParameter: Boolean IsMeasure
-FSharp.Compiler.Symbols.FSharpGenericParameter: Boolean IsSolveAtCompileTime
+FSharp.Compiler.Symbols.FSharpGenericParameter: Boolean IsSolvedAtCompileTime
 FSharp.Compiler.Symbols.FSharpGenericParameter: Boolean get_IsCompilerGenerated()
 FSharp.Compiler.Symbols.FSharpGenericParameter: Boolean get_IsMeasure()
 FSharp.Compiler.Symbols.FSharpGenericParameter: Boolean get_IsSolveAtCompileTime()
