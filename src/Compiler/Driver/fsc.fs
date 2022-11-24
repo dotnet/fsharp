@@ -820,13 +820,6 @@ let main3
     ReportTime tcConfig "Encode Interface Data"
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
 
-    let sigDataAttributes, sigDataResources =
-        try
-            EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
-        with e ->
-            errorRecoveryNoRange e
-            exiter.Exit 1
-
     let metadataVersion =
         match tcConfig.metadataVersion with
         | Some v -> v
@@ -834,35 +827,61 @@ let main3
             match frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name with
             | Some ib -> ib.RawMetadata.TryGetILModuleDef().Value.MetadataVersion
             | _ -> ""
+            
+    // TODO Use proper async code
+    let (sigDataAttributes, sigDataResources), optimizedImpls, optDataResources =
+        let mutable sigDataAttributes: ILAttribute list = []
+        let mutable sigDataResources : ILResource list = []
+        let a1 =
+            async {
+                try
+                    let sigDataAttributes2, sigDataResources2 = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
+                    sigDataAttributes <- sigDataAttributes2
+                    sigDataResources <- sigDataResources2
+                with e ->
+                    errorRecoveryNoRange e
+                    exiter.Exit 1
+            }
 
-    let optimizedImpls, optDataResources =
-        // Perform optimization
-        use _ = UseBuildPhase BuildPhase.Optimize
+        let mutable optimizedImpls2 : CheckedAssemblyAfterOptimization option = None
+        let mutable optDataResources : ILResource list = []
+        let a2 =
+            async {
+                // Perform optimization
+                use _ = UseBuildPhase BuildPhase.Optimize
 
-        let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
+                let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
 
-        let importMap = tcImports.GetImportMap()
+                let importMap = tcImports.GetImportMap()
 
-        let optimizedImpls, optimizationData, _ =
-            ApplyAllOptimizations(
-                tcConfig,
-                tcGlobals,
-                (LightweightTcValForUsingInBuildMethodCall tcGlobals),
-                outfile,
-                importMap,
-                false,
-                optEnv0,
-                generatedCcu,
-                typedImplFiles
-            )
+                let optimizedImpls, optimizationData, _ =
+                    ApplyAllOptimizations(
+                        tcConfig,
+                        tcGlobals,
+                        (LightweightTcValForUsingInBuildMethodCall tcGlobals),
+                        outfile,
+                        importMap,
+                        false,
+                        optEnv0,
+                        generatedCcu,
+                        typedImplFiles
+                    )
 
-        AbortOnError(diagnosticsLogger, exiter)
+                AbortOnError(diagnosticsLogger, exiter)
 
-        // Encode the optimization data
-        ReportTime tcConfig ("Encoding OptData")
+                // Encode the optimization data
+                ReportTime tcConfig ("Encoding OptData")
 
-        optimizedImpls, EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
-
+                optimizedImpls2 <- Some optimizedImpls
+                optDataResources <- EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
+            }
+        
+        let t1 = a1 |> Async.StartAsTask
+        let t2 = a2 |> Async.StartAsTask
+        t1.Wait()
+        t2.Wait()
+        (sigDataAttributes, sigDataResources), optimizedImpls2.Value, optDataResources
+        
     // Pass on only the minimum information required for the next phase
     Args(
         ctok,

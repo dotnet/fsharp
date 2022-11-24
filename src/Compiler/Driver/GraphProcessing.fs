@@ -287,6 +287,7 @@ let processGraphSimple<'Item, 'Result when 'Item: equality and 'Item: comparison
     let makeNode (item: 'Item) : Node2<'Item, ResultWrapper<'Item, 'Result>> =
         let info =
             let exists = graph.ContainsKey item
+
             if
                 not exists
                 || not (transitiveDeps.ContainsKey item)
@@ -312,26 +313,22 @@ let processGraphSimple<'Item, 'Result when 'Item: equality and 'Item: comparison
     let lookupMany items = items |> Array.map lookup
 
     let leaves =
-        nodes.Values
-        |> Seq.filter (fun n -> n.Info.Deps.Length = 0)
-        |> Seq.toArray
+        nodes.Values |> Seq.filter (fun n -> n.Info.Deps.Length = 0) |> Seq.toArray
 
     printfn $"Node count: {nodes.Count}"
 
-    let work
-        (node: Node2<'Item, ResultWrapper<'Item, 'Result>>)
-        : Node2<'Item, ResultWrapper<'Item, 'Result>>[] =
+    let work (node: Node2<'Item, ResultWrapper<'Item, 'Result>>) : Node2<'Item, ResultWrapper<'Item, 'Result>>[] =
         let _deps = lookupMany node.Info.Deps
         let transitiveDeps = lookupMany node.Info.TransitiveDeps
-        let inputs =
-            transitiveDeps
-            |> Array.map (fun n -> n.Result |> Option.get)
+        let inputs = transitiveDeps |> Array.map (fun n -> n.Result |> Option.get)
         let singleRes = doWork node.Info.Item inputs
+
         let singleRes =
             {
                 Item = node.Info.Item
                 Result = singleRes
             }
+
         node.Result <- Some singleRes
         // Need to double-check that only one dependency schedules this dependant
         let unblocked =
@@ -343,8 +340,9 @@ let processGraphSimple<'Item, 'Result when 'Item: equality and 'Item: comparison
                     lock x (fun () ->
                         x.ProcessedDepsCount <- x.ProcessedDepsCount + 1
                         x.ProcessedDepsCount)
-                pdc = x.Info.Deps.Length
-            )
+
+                pdc = x.Info.Deps.Length)
+
         unblocked
 
     use cts = new CancellationTokenSource()
@@ -359,9 +357,7 @@ let processGraphSimple<'Item, 'Result when 'Item: equality and 'Item: comparison
 
     let nodesArray = nodes.Values |> Seq.toArray
 
-    nodesArray
-    |> Array.map (fun n -> n.Result.Value)
-
+    nodesArray |> Array.map (fun n -> n.Result.Value)
 
 /// Used for processing
 type NodeInfo3<'Item> =
@@ -370,7 +366,7 @@ type NodeInfo3<'Item> =
         Deps: 'Item[]
         Dependants: 'Item[]
     }
-    
+
 type Node3<'Item> =
     {
         Info: NodeInfo3<'Item>
@@ -383,44 +379,34 @@ let processGraphSimpler<'Item when 'Item: equality and 'Item: comparison>
     // Accepts item and a list of item results. Handles combining results.
     (doWork: 'Item -> unit)
     (parallelism: int)
-    : unit
-    =
+    : unit =
     let dependants = graph |> Graph.reverse
 
     let makeNode (item: 'Item) : Node3<'Item> =
         let info =
             let exists = graph.ContainsKey item
-            if
-                not exists
-                || not (dependants.ContainsKey item)
-            then
+
+            if not exists || not (dependants.ContainsKey item) then
                 failwith $"WHAT {item}"
+
             {
                 Item = item
                 Deps = graph[item]
                 Dependants = dependants[item]
             }
 
-        {
-            Info = info
-            ProcessedDepsCount = 0
-        }
+        { Info = info; ProcessedDepsCount = 0 }
 
     let nodes = graph.Keys |> Seq.map (fun item -> item, makeNode item) |> readOnlyDict
     let lookup item = nodes[item]
     let lookupMany items = items |> Array.map lookup
 
     let leaves =
-        nodes.Values
-        |> Seq.filter (fun n -> n.Info.Deps.Length = 0)
-        |> Seq.toArray
+        nodes.Values |> Seq.filter (fun n -> n.Info.Deps.Length = 0) |> Seq.toArray
 
     // printfn $"Node count: {nodes.Count}"
 
-    let work
-        (node: Node3<'Item>)
-        : Node3<'Item>[]
-        =
+    let work (node: Node3<'Item>) : Node3<'Item>[] =
         let _deps = lookupMany node.Info.Deps
         // printfn $"{node.Info.Item} DoWork"
         doWork node.Info.Item
@@ -435,8 +421,8 @@ let processGraphSimpler<'Item when 'Item: equality and 'Item: comparison>
                     lock x (fun () ->
                         x.ProcessedDepsCount <- x.ProcessedDepsCount + 1
                         x.ProcessedDepsCount)
-                pdc = x.Info.Deps.Length
-            )
+
+                pdc = x.Info.Deps.Length)
         // printfn $"{node.Info.Item} unblocked gathered"
         unblocked
 
