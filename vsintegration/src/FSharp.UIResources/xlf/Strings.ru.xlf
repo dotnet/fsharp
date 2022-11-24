@@ -7,6 +7,16 @@
         <target state="translated">Всегда располагайте открытые операторы на верхнем уровне</target>
         <note />
       </trans-unit>
+      <trans-unit id="Enable_Fast_Find_References">
+        <source>Enable fast find references &amp; rename (experimental)</source>
+        <target state="new">Enable fast find references &amp; rename (experimental)</target>
+        <note />
+      </trans-unit>
+      <trans-unit id="Find_References_Performance">
+        <source>Find References Performance Options</source>
+        <target state="new">Find References Performance Options</target>
+        <note />
+      </trans-unit>
       <trans-unit id="Inline_Hints">
         <source>Inline Hints</source>
         <target state="new">Inline Hints</target>
