@@ -3902,7 +3902,7 @@ let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
     // If there is a sequence point as the first instruction then keep it at the front
     | I_seqpoint _ as i0 ->
         let labels =
-            let dict = Dictionary.newWithSize (c2.Labels.Count * 2 )
+            let dict = Dictionary.newWithSize (c2.Labels.Count * 2)
 
             for kvp in c2.Labels do
                 dict.Add(kvp.Key, (if kvp.Value = 0 then 0 else kvp.Value + n))

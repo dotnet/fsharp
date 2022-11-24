@@ -2663,7 +2663,8 @@ type CodeGenBuffer(m: range, mgbuf: AssemblyBuilder, methodName, alreadyUsedArgs
                     i2)
 
         let codeLabels =
-            let dict = Dictionary.newWithSize ((codeLabelToPC.Count + codeLabelToCodeLabel.Count) * 2)
+            let dict =
+                Dictionary.newWithSize ((codeLabelToPC.Count + codeLabelToCodeLabel.Count) * 2)
 
             for kvp in codeLabelToPC do
                 dict.Add(kvp.Key, lab2pc 0 kvp.Key)

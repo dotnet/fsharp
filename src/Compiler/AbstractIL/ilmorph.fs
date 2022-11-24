@@ -37,7 +37,7 @@ let code_instr2instrs f (code: ILCode) =
     adjust[old] <- nw
 
     let labels =
-        let dict = Dictionary.newWithSize (code.Labels.Count*2)
+        let dict = Dictionary.newWithSize (code.Labels.Count * 2)
 
         for kvp in code.Labels do
             dict.Add(kvp.Key, adjust[kvp.Value])
