@@ -6,7 +6,6 @@ open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Threading
-open FSharp.Compiler.Optimizer
 open FSharp.Compiler.Service.Driver
 open FSharp.Compiler.Service.Driver.OptimizeTypes
 open Internal.Utilities.Library
@@ -57,24 +56,30 @@ let GetInitialOptimizationEnv (tcImports: TcImports, tcGlobals: TcGlobals) =
 let collectResults (inputs: CollectorInputs) : CollectorOutputs =
     let files =
         inputs
-        |> Array.map (fun {Phase1 = phase1; Phase2 = _phase2; Phase3 = phase3} ->
-            let (_, _, implFileOptData, _), optimizeDuringCodeGen = phase1
-            let _, implFile = phase3
-            let implFile =
-                {
-                    ImplFile = implFile
-                    OptimizeDuringCodeGen = optimizeDuringCodeGen
-                }
-            implFile, implFileOptData
-        )
-        
+        |> Array.map
+            (fun {
+                     Phase1 = phase1
+                     Phase2 = _phase2
+                     Phase3 = phase3
+                 } ->
+                let (_, _, implFileOptData, _), optimizeDuringCodeGen = phase1
+                let _, implFile = phase3
+
+                let implFile =
+                    {
+                        ImplFile = implFile
+                        OptimizeDuringCodeGen = optimizeDuringCodeGen
+                    }
+
+                implFile, implFileOptData)
+
     let lastFilePhase1Env =
         inputs
         |> Array.last
-        |> fun {Phase1 = phase1} ->
+        |> fun { Phase1 = phase1 } ->
             let (optEnvPhase1, _, _, _), _ = phase1
             optEnvPhase1
-            
+
     files, lastFilePhase1Env
 
 type Phase =
@@ -82,25 +87,27 @@ type Phase =
     | Phase2
     | Phase3
 
-type FilePhaseFuncs = Phase1Fun * Phase2Fun * Phase3Fun   
+type FilePhaseFuncs = Phase1Fun * Phase2Fun * Phase3Fun
+
 type FileResults =
     {
         mutable Phase1: Phase1Res option
         mutable Phase2: Phase2Res option
         mutable Phase3: Phase3Res option
     }
-    with
-        member this.HasResult (phase: Phase) =
-            match phase with
-            | Phase.Phase1 -> this.Phase1 |> Option.isSome
-            | Phase.Phase2 -> this.Phase2 |> Option.isSome
-            | Phase.Phase3 -> this.Phase3 |> Option.isSome
-        static member Empty =
-            {
-                Phase1 = None
-                Phase2 = None
-                Phase3 = None
-            }
+
+    member this.HasResult(phase: Phase) =
+        match phase with
+        | Phase.Phase1 -> this.Phase1 |> Option.isSome
+        | Phase.Phase2 -> this.Phase2 |> Option.isSome
+        | Phase.Phase3 -> this.Phase3 |> Option.isSome
+
+    static member Empty =
+        {
+            Phase1 = None
+            Phase2 = None
+            Phase3 = None
+        }
 
 type WorkItem =
     | Phase1 of Phase1Inputs
@@ -108,161 +115,163 @@ type WorkItem =
     | Phase3 of Phase3Inputs
 
 type Idx = int
+
 type Node =
     {
         Idx: Idx
         Phase: Phase
     }
-    with override this.ToString() = $"[{this.Idx}-{this.Phase}]"
 
+    override this.ToString() = $"[{this.Idx}-{this.Phase}]"
 
 let getPhase1Res (p: FileResults) =
-    p.Phase1
-    |> Option.get
-    |> fun ((env, _, _, hidden), _) -> env, hidden
+    p.Phase1 |> Option.get |> (fun ((env, _, _, hidden), _) -> env, hidden)
 
-let getPhase2Res (p: FileResults) =
-    p.Phase2
-    |> Option.get
+let getPhase2Res (p: FileResults) = p.Phase2 |> Option.get
 
 let getPhase3Res (p: FileResults) =
-    p.Phase3
-    |> Option.get
-    |> fun (env, _) -> env
+    p.Phase3 |> Option.get |> (fun (env, _) -> env)
 
-let optimizeFilesInParallel (env0: Optimizer.IncrementalOptimizationEnv) ((phase1, phase2, phase3): FilePhaseFuncs) (files: CheckedImplFile list) : CollectorOutputs =
+let optimizeFilesInParallel
+    (env0: Optimizer.IncrementalOptimizationEnv)
+    ((phase1, phase2, phase3): FilePhaseFuncs)
+    (files: CheckedImplFile list)
+    : CollectorOutputs =
     let files = files |> List.toArray
     // Schedule File1-Phase1
     let firstNode = { Idx = 0; Phase = Phase.Phase1 }
-    
-    let results =
-        files
-        |> Array.map (fun _ -> FileResults.Empty)
-    
-    let _lock = obj()
-    let nodeCanBeProcessed {Idx = idx; Phase = phase} : bool =
+
+    let results = files |> Array.map (fun _ -> FileResults.Empty)
+
+    let _lock = obj ()
+
+    let nodeCanBeProcessed { Idx = idx; Phase = phase } : bool =
         lock (_lock) (fun () ->
-            let previousFileReady =
-                if idx = 0 then true else results[idx-1].HasResult phase
+            let previousFileReady = if idx = 0 then true else results[ idx - 1 ].HasResult phase
+
             let previousPhase =
                 match phase with
                 | Phase.Phase1 -> None
                 | Phase.Phase2 -> Some Phase.Phase1
                 | Phase.Phase3 -> Some Phase.Phase2
+
             let previousPhaseReady =
                 match previousPhase with
-                | Some previousPhase -> results[idx].HasResult previousPhase
+                | Some previousPhase -> results[ idx ].HasResult previousPhase
                 | None -> true
-            previousFileReady && previousPhaseReady
-        )        
-    
+
+            previousFileReady && previousPhaseReady)
+
     let visited = HashSet<Node>()
-    
-    let worker ({Idx = idx; Phase = phase} as node : Node) : Node[] =
-        let notPreviouslyVisited =
-            lock (_lock) (fun () ->
-                visited.Add node
-            )
-        if notPreviouslyVisited = false then [||]
+
+    let worker ({ Idx = idx; Phase = phase } as node: Node) : Node[] =
+        let notPreviouslyVisited = lock (_lock) (fun () -> visited.Add node)
+
+        if notPreviouslyVisited = false then
+            [||]
         else
-        let res = results[idx]
-        let file = files[idx]
-        let previous = if idx > 0 then Some results[idx-1] else None
-        let hidingInfo0 = SignatureHidingInfo.Empty        
-        
-        let getPhase1Res (p: FileResults) =
-            p.Phase1
-            |> Option.get
-            |> fun ((env, file, info, hidden), _) -> env, file, info, hidden
-                
-        match phase with
-        | Phase.Phase1 ->
-            // take env from previous file
-            let env, hidingInfo =
-                previous
-                |> Option.map getPhase1Res
-                |> Option.map (fun (a, _b, _c, d) -> a, d)
-                |> Option.defaultValue (env0, hidingInfo0)
-            let inputs = env, hidingInfo, file
-            let phase1Res = phase1 inputs
-            res.Phase1 <- Some phase1Res
-            
-            // Schedule Phase2
-            let phase2Node = { Idx = idx; Phase = Phase.Phase2 }
-            seq {
-                yield phase2Node
-                if idx < files.Length-1 then yield { Idx = idx + 1; Phase = Phase.Phase1 }
-            }
-            |> Seq.toArray
-            
-        | Phase.Phase2 ->
-            // take env from previous file
-            let env =
-                previous
-                |> Option.map getPhase2Res
-                |> Option.map fst
-                |> Option.defaultValue env0
-            let file, info, hidingInfo =
-                res
-                |> getPhase1Res
-                |> fun (_a, b, c, d) -> b, c, d
-            let inputs = env, hidingInfo, info, file
-            let phase2Res = phase2 inputs
-            res.Phase2 <- Some phase2Res
-            
-            seq {
-                // Schedule Phase3
-                let phase3Node = { Idx = idx; Phase = Phase.Phase3 }
-                yield phase3Node
-                // Schedule Phase2 for the next file if it exists
-                if idx < files.Length-1 then yield { Idx = idx + 1; Phase = Phase.Phase2 }
-            }
-            |> Seq.toArray
-            
-        | Phase.Phase3 ->
-            // take env from previous file
-            let env =
-                previous
-                |> Option.map getPhase3Res
-                |> Option.defaultValue env0
-            // impl file
-            let _, file =
-                res
-                |> getPhase2Res
-            let hidingInfo =
-                res
-                |> getPhase1Res
-                |> fun (_a,_b,_c,d) -> d
-            let inputs = env, hidingInfo, file
-            let phase3Res = phase3 inputs
-            res.Phase3 <- Some phase3Res
-            
-            seq {
-                // Schedule Phase3 for the next file if it exists
-                if idx < files.Length-1 then yield { Idx = idx + 1; Phase = Phase.Phase3 }
-            }
-            |> Seq.toArray
-        |> fun nodes ->
-            nodes
-            |> Array.filter nodeCanBeProcessed
-    
+            let res = results[idx]
+            let file = files[idx]
+            let previous = if idx > 0 then Some results[idx - 1] else None
+            let hidingInfo0 = SignatureHidingInfo.Empty
+
+            let getPhase1Res (p: FileResults) =
+                p.Phase1
+                |> Option.get
+                |> fun ((env, file, info, hidden), _) -> env, file, info, hidden
+
+            match phase with
+            | Phase.Phase1 ->
+                // take env from previous file
+                let env, hidingInfo =
+                    previous
+                    |> Option.map getPhase1Res
+                    |> Option.map (fun (a, _b, _c, d) -> a, d)
+                    |> Option.defaultValue (env0, hidingInfo0)
+
+                let inputs = env, hidingInfo, file
+                let phase1Res = phase1 inputs
+                res.Phase1 <- Some phase1Res
+
+                // Schedule Phase2
+                let phase2Node = { Idx = idx; Phase = Phase.Phase2 }
+
+                seq {
+                    yield phase2Node
+
+                    if idx < files.Length - 1 then
+                        yield { Idx = idx + 1; Phase = Phase.Phase1 }
+                }
+                |> Seq.toArray
+
+            | Phase.Phase2 ->
+                // take env from previous file
+                let env =
+                    previous
+                    |> Option.map getPhase2Res
+                    |> Option.map fst
+                    |> Option.defaultValue env0
+
+                let file, info, hidingInfo = res |> getPhase1Res |> (fun (_a, b, c, d) -> b, c, d)
+                let inputs = env, hidingInfo, info, file
+                let phase2Res = phase2 inputs
+                res.Phase2 <- Some phase2Res
+
+                seq {
+                    // Schedule Phase3
+                    let phase3Node = { Idx = idx; Phase = Phase.Phase3 }
+                    yield phase3Node
+                    // Schedule Phase2 for the next file if it exists
+                    if idx < files.Length - 1 then
+                        yield { Idx = idx + 1; Phase = Phase.Phase2 }
+                }
+                |> Seq.toArray
+
+            | Phase.Phase3 ->
+                // take env from previous file
+                let env = previous |> Option.map getPhase3Res |> Option.defaultValue env0
+                // impl file
+                let _, file = res |> getPhase2Res
+                let hidingInfo = res |> getPhase1Res |> (fun (_a, _b, _c, d) -> d)
+                let inputs = env, hidingInfo, file
+                let phase3Res = phase3 inputs
+                res.Phase3 <- Some phase3Res
+
+                seq {
+                    // Schedule Phase3 for the next file if it exists
+                    if idx < files.Length - 1 then
+                        yield { Idx = idx + 1; Phase = Phase.Phase3 }
+                }
+                |> Seq.toArray
+            |> fun nodes -> nodes |> Array.filter nodeCanBeProcessed
+
     Parallel.processInParallel
-        [|firstNode|]
+        [| firstNode |]
         worker
         10
         (fun _ -> visited.Count >= files.Length * 3)
         (CancellationToken.None)
         (fun node -> node.ToString())
-        
+
     Debug.Assert(visited.Count = files.Length * 3)
-    
+
     let results =
         results
-        |> Array.mapi (fun i {Phase1 = phase1; Phase2 = phase2; Phase3 = phase3} ->
-            match phase1, phase2, phase3 with
-            | Some phase1, Some phase2, Some phase3 -> {FileResultsComplete.Phase1 = phase1; Phase2 = phase2; Phase3 = phase3}
-            | _ -> failwith $"Unexpected lack of results for file [{i}]"
-        )
+        |> Array.mapi
+            (fun i {
+                       Phase1 = phase1
+                       Phase2 = phase2
+                       Phase3 = phase3
+                   } ->
+                match phase1, phase2, phase3 with
+                | Some phase1, Some phase2, Some phase3 ->
+                    {
+                        FileResultsComplete.Phase1 = phase1
+                        Phase2 = phase2
+                        Phase3 = phase3
+                    }
+                | _ -> failwith $"Unexpected lack of results for file [{i}]")
+
     let collected = results |> collectResults
     collected
 
@@ -308,9 +317,8 @@ let ApplyAllOptimizations
             reportingPhase = true
         }
 
-    
     let env0 = optEnv0
-    
+
     let phase1 (env: Optimizer.IncrementalOptimizationEnv, hidden: SignatureHidingInfo, implFile: CheckedImplFile) : Phase1Res =
         //ReportTime tcConfig ("Initial simplify")
         Optimizer.OptimizeImplFile(
@@ -326,8 +334,14 @@ let ApplyAllOptimizations
             hidden,
             implFile
         )
-    
-    let phase2 (env: Optimizer.IncrementalOptimizationEnv, hidden: SignatureHidingInfo, implFileOptData: Optimizer.ImplFileOptimizationInfo, implFile: CheckedImplFile) : Phase2Res =
+
+    let phase2
+        (
+            env: Optimizer.IncrementalOptimizationEnv,
+            hidden: SignatureHidingInfo,
+            implFileOptData: Optimizer.ImplFileOptimizationInfo,
+            implFile: CheckedImplFile
+        ) : Phase2Res =
         let implFile = LowerLocalMutables.TransformImplFile tcGlobals importMap implFile
 
         // Only do this on the first pass!
@@ -341,6 +355,9 @@ let ApplyAllOptimizations
             dprintf
                 "Optimization implFileOptData:\n%s\n"
                 (LayoutRender.showL (Display.squashTo 192 (Optimizer.moduleInfoL tcGlobals implFileOptData)))
+#else
+        // Satisfy the compiler
+        implFileOptData |> ignore
 #endif
 
         if tcConfig.extraOptimizationIterations > 0 then
@@ -365,7 +382,7 @@ let ApplyAllOptimizations
             optEnvExtraLoop, implFile
         else
             env, implFile
-        
+
     let phase3 (env: Optimizer.IncrementalOptimizationEnv, hidden: SignatureHidingInfo, implFile: CheckedImplFile) : Phase3Res =
         // Only do this on the first pass!
         let optSettings =
@@ -414,28 +431,29 @@ let ApplyAllOptimizations
             optEnvFinalSimplify, implFile
         else
             env, implFile
-    
+
     let results, optEnvFirstLoop =
         match optSettings.processingMode with
-        | OptimizerMode.PartiallyParallel ->
-            let a, b =
-                optimizeFilesInParallel env0 (phase1, phase2, phase3) implFiles
+        | Optimizer.OptimizerMode.PartiallyParallel ->
+            let a, b = optimizeFilesInParallel env0 (phase1, phase2, phase3) implFiles
             a |> Array.toList, b
-        | OptimizerMode.Sequential ->
+        | Optimizer.OptimizerMode.Sequential ->
             let results, (optEnvFirstLoop, _, _, _) =
                 ((optEnv0, optEnv0, optEnv0, SignatureHidingInfo.Empty), implFiles)
 
                 ||> List.mapFold (fun (optEnvFirstLoop, optEnvExtraLoop, optEnvFinalSimplify, hidden) implFile ->
                     // Phase 1
                     //ReportTime tcConfig ("Initial simplify")
-                    let (optEnvFirstLoop, implFile, implFileOptData, hidden), optimizeDuringCodeGen = phase1 (optEnvFirstLoop, hidden, implFile)
+                    let (optEnvFirstLoop, implFile, implFileOptData, hidden), optimizeDuringCodeGen =
+                        phase1 (optEnvFirstLoop, hidden, implFile)
 
                     // Phase 2
-                    let optEnvExtraLoop, implFile = phase2 (optEnvExtraLoop, hidden, implFileOptData, implFile)
+                    let optEnvExtraLoop, implFile =
+                        phase2 (optEnvExtraLoop, hidden, implFileOptData, implFile)
 
                     // Phase 3
                     let optEnvFinalSimplify, implFile = phase3 (optEnvFinalSimplify, hidden, implFile)
-                    
+
                     let implFile =
                         {
                             ImplFile = implFile
@@ -443,6 +461,7 @@ let ApplyAllOptimizations
                         }
 
                     (implFile, implFileOptData), (optEnvFirstLoop, optEnvExtraLoop, optEnvFinalSimplify, hidden))
+
             results, optEnvFirstLoop
 
     let implFiles, implFileOptDatas = List.unzip results

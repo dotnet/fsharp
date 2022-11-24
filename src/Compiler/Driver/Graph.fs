@@ -31,7 +31,7 @@ module Graph =
             let toAdd = missing |> Seq.map (fun n -> KeyValuePair(n, [||])) |> Seq.toArray
 
             Array.append (graph |> Seq.toArray) toAdd
-            |> Array.map (fun (KeyValue(k, v)) -> k, v)
+            |> Array.map (fun (KeyValue (k, v)) -> k, v)
             |> readOnlyDict
 
     /// Create entries for nodes that don't have any dependencies but are mentioned as dependencies themselves
@@ -57,8 +57,9 @@ module Graph =
         |> Array.Parallel.map (fun node -> node, go node)
         |> readOnlyDict
 
-    let private memoize<'a,'b when 'a : equality> (f : 'a -> 'b) : 'a -> 'b =
-        let cache = Dictionary<'a,'b>()
+    let private memoize<'a, 'b when 'a: equality> (f: 'a -> 'b) : 'a -> 'b =
+        let cache = Dictionary<'a, 'b>()
+
         fun a ->
             match cache.TryGetValue a with
             | true, b -> b
@@ -66,7 +67,7 @@ module Graph =
                 let b = f a
                 cache[a] <- b
                 b
-    
+
     /// Create a transitive closure of the graph.
     let transitive<'Node when 'Node: equality> (graph: Graph<'Node>) : Graph<'Node> =
         let rec calcTransitiveEdges =

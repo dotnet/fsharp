@@ -45,8 +45,8 @@ type OptimizationSettings =
         reportHasEffect: bool
 
         reportTotalSizes: bool
-        
-        processingMode : OptimizerMode
+
+        processingMode: OptimizerMode
     }
 
     member JitOptimizationsEnabled: bool

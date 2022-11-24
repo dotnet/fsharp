@@ -24,19 +24,19 @@ let processInParallel
     let mutable processedCount = 0
 
     let processItem item =
-        printfn $"[{Thread.CurrentThread.ManagedThreadId}] Processing {_itemToString item}"
+        // printfn $"[{Thread.CurrentThread.ManagedThreadId}] Processing {_itemToString item}"
         let toSchedule = work item
-        printfn $"[{Thread.CurrentThread.ManagedThreadId}] Finished {_itemToString item}"
+        // printfn $"[{Thread.CurrentThread.ManagedThreadId}] Finished {_itemToString item}"
 
         let processedCount =
             lock processedCountLock (fun () ->
                 processedCount <- processedCount + 1
                 processedCount)
 
-        let toScheduleString =
-            toSchedule |> Array.map _itemToString |> (fun names -> String.Join(", ", names))
+        // let toScheduleString =
+            // toSchedule |> Array.map _itemToString |> (fun names -> String.Join(", ", names))
 
-        printfn $"[{Thread.CurrentThread.ManagedThreadId}] Scheduling {toSchedule.Length} items: {toScheduleString}"
+        // printfn $"[{Thread.CurrentThread.ManagedThreadId}] Scheduling {toSchedule.Length} items: {toScheduleString}"
         toSchedule |> Array.iter bc.Add
         processedCount
 
@@ -51,4 +51,3 @@ let processInParallel
 
     // TODO Do we need to handle cancellation given that workers do it already?
     Array.Parallel.map workerWork (Array.init parallelism (fun _ -> ())) |> ignore
-
