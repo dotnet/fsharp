@@ -2029,7 +2029,7 @@ and TypeDefsBuilder() =
 
         tdefs.Add(tdef.Name, (idx, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)))
 
-    (* TODO Tomas : Annonymous types are being collected outside of the delayed code path, so this can remain as is.
+(* TODO Tomas : Annonymous types are being collected outside of the delayed code path, so this can remain as is.
         I can move the anontable generation step to be parallel separately, only makes sense in codebases making heavy use of them
     *)
 type AnonTypeGenerationTable() =
@@ -2050,7 +2050,6 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
     (* TODO Tomas : This is not thread safe. Make it so *)
     let mutable reflectedDefinitions: Dictionary<Val, string * int * Expr> =
         Dictionary(HashIdentity.Reference)
-
 
     (* TODO Tomas : This is not thread safe. Make it so *)
     let mutable extraBindingsToGenerate = []

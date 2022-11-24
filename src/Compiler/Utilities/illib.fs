@@ -1040,21 +1040,22 @@ module CancellableAutoOpens =
     let cancellable = CancellableBuilder()
 
 /// Generates unique stamps
-type UniqueStampGenerator<'T when 'T: equality>() =   
+type UniqueStampGenerator<'T when 'T: equality>() =
     let encodeTab = ConcurrentDictionary<'T, Lazy<int>>(HashIdentity.Structural)
     let mutable nItems = -1
 
-    let computeFunc = Func<'T,_>(fun _ -> lazy( Interlocked.Increment(&nItems)))
+    let computeFunc = Func<'T, _>(fun _ -> lazy (Interlocked.Increment(&nItems)))
 
-    member _.Encode str = encodeTab.GetOrAdd(str,computeFunc).Value
+    member _.Encode str =
+        encodeTab.GetOrAdd(str, computeFunc).Value
 
     member _.Table = encodeTab.Keys
 
 /// memoize tables (all entries cached, never collected)
 type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) =
-    
+
     let table = new ConcurrentDictionary<'T, Lazy<'U>>(keyComparer)
-    let computeFunc = Func<_,_>(fun key -> lazy(compute key))
+    let computeFunc = Func<_, _>(fun key -> lazy (compute key))
 
     member t.Apply x =
         if
@@ -1062,7 +1063,7 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
              | None -> true
              | Some f -> f x)
         then
-            table.GetOrAdd(x,computeFunc).Value                   
+            table.GetOrAdd(x, computeFunc).Value
         else
             compute x
 
