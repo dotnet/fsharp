@@ -145,18 +145,48 @@ let foo x = x ++ 4""" })
             ])
         }
 
-[<Fact>]
-let ``We find attributes`` () =
-    SyntheticProject.Create(
+module Attributes =
+
+    let project() = SyntheticProject.Create(
         { sourceFile "First" [] with ExtraSource = "type MyAttribute() = inherit System.Attribute()" },
         { sourceFile "Second" [] with ExtraSource = """
 open ModuleFirst
 [<My>]
-let foo x = 4""" })
-        .Workflow {
+let foo x = 4""" },
+        { sourceFile "Third" [] with ExtraSource = """
+open ModuleFirst
+[<MyAttribute>]
+let foo x = 5""" })
+
+    [<Fact>]
+    let ``We find attributes from definition`` () =
+        project().Workflow {
             placeCursor "First" 6 16 "type MyAttribute() = inherit System.Attribute()" ["MyAttribute"]
             findAllReferences (expectToFind [
                 "FileFirst.fs", 6, 5, 16
                 "FileSecond.fs", 8, 2, 4
+                "FileThird.fs", 8, 2, 13
+            ])
+        }
+
+    [<Fact>]
+    let ``We find attributes from usage`` () =
+        project().Workflow {
+            placeCursor "Second" 8 4 "[<My>]" ["My"]
+            findAllReferences (expectToFind [
+                "FileFirst.fs", 6, 5, 16
+                "FileSecond.fs", 8, 2, 4
+                "FileThird.fs", 8, 2, 13
+            ])
+        }
+
+    [<Fact>]
+    let ``We find attributes from usage with Attribute suffix`` () =
+        project().Workflow {
+            placeCursor "Third" 8 13 "[<MyAttribute>]" ["MyAttribute"]
+            findAllReferences (expectToFind [
+                "FileFirst.fs", 6, 5, 16
+                "FileSecond.fs", 8, 2, 4
+                "FileThird.fs", 8, 2, 13
             ])
         }

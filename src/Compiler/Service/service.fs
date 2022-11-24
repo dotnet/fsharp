@@ -82,8 +82,12 @@ module Helpers =
         (fileName1 = fileName2) && FSharpProjectOptions.UseSameProject(o1, o2)
 
     /// If a symbol is an attribute check if given set of names contains its name without the Attribute suffix
-    let NamesContainAttribute (symbol: FSharpSymbol) names =
+    let rec NamesContainAttribute (symbol: FSharpSymbol) names =
         match symbol with
+        | :? FSharpMemberOrFunctionOrValue as mofov ->
+            mofov.DeclaringEntity
+            |> Option.map (fun entity -> NamesContainAttribute entity names)
+            |> Option.defaultValue false
         | :? FSharpEntity as entity when entity.IsAttributeType && symbol.DisplayNameCore.EndsWithOrdinal "Attribute" ->
             let nameWithoutAttribute = String.dropSuffix symbol.DisplayNameCore "Attribute"
             names |> Set.contains nameWithoutAttribute

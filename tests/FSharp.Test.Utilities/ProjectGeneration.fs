@@ -486,6 +486,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
             return { ctx with Signatures = ctx.Signatures.Add(fileId, newSignature) }
         }
+
     /// Find a symbol using the provided range, mimicking placing a cursor on it in IDE scenarios
     [<CustomOperation "placeCursor">]
     member this.PlaceCursor(workflow: Async<WorkflowContext>, fileId, line, colAtEndOfNames, fullLine, symbolNames) =
