@@ -105,11 +105,15 @@ module internal Utils =
             | _, _ -> nextWordFromIdx line (idx + 1, true)
 
     /// An array stores ranges of full-width chars.
-    /// 
-    /// The ranges are sorted by increasing order in the array, and each range are stored in the 2nth and 2n+1th 
+    ///
+    /// The ranges are sorted by increasing order in the array, and each range are stored in the 2nth and 2n+1th
     /// position in the array (n is the ordinal number of the range)
-    /// 
+    ///
     /// Array [| a; b; c; d |] represents range [a, b] or [c, d], means chars in these ranges are full-width.
+    ///
+    /// Definition: https://www.unicode.org/reports/tr11/
+    ///
+    /// Data source: https://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
     let private fullWidthCharRanges =
         Array.concat
             [|
@@ -172,29 +176,28 @@ module internal Utils =
         let n = Array.BinarySearch(fullWidthCharRanges, char)
         n >= 0 || n % 2 = 0
 
-
     /// Limits BufferWidth to make sure that full-width characters will not be print to wrong position.
     ///
-    /// The return value is Console.BufferWidth - 2. 
-    /// 
+    /// The return value is Console.BufferWidth - 2.
+    ///
     /// When printing full-width characters to the screen (such as 一二三四五六七八九零),
-    /// 
+    ///
     /// if BufferWidth = Console.BufferWidth, the output will be
-    /// 
+    ///
     /// #> 一二三四五六七八九零一二三四五六七八九  # (零 is missing)
-    /// 
+    ///
     /// #一二三四五六七八九零                      #
-    /// 
+    ///
     /// if BufferWidth = Console.BufferWidth - 1, the output will be
-    /// 
+    ///
     /// #> 一二三四五六七八九零一二三四五六七八九零# (零 is printed, but will not correctly cauculate cursor position)
-    /// 
+    ///
     /// #一二三四五六七八九零                      # (cursor may appear in the middle of the character)
-    /// 
+    ///
     /// if BufferWidth = Console.BufferWidth - 2, the output will be
-    /// 
+    ///
     /// #> 一二三四五六七八九零一二三四五六七八九  #
-    /// 
+    ///
     /// #零一二三四五六七八九零                    # (work correctly)
     let bufferWidth () = Console.BufferWidth - 2
 
