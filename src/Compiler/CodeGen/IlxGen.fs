@@ -1982,8 +1982,7 @@ and TypeDefsBuilder() =
     *)
     let tdefs: HashMultiMap<string, int * (TypeDefBuilder * bool)> =
         HashMultiMap(0, HashIdentity.Structural)
-
-    (* TODO Tomas : This is not thread safe. Make it so*)
+  
     let mutable countDown = System.Int32.MaxValue
 
     member b.Close() =
@@ -2021,9 +2020,8 @@ and TypeDefsBuilder() =
 
     member b.AddTypeDef(tdef: ILTypeDef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
         let idx =
-            if addAtEnd then
-                (countDown <- countDown - 1
-                 countDown)
+            if addAtEnd then 
+                System.Threading.Interlocked.Decrement(&countDown)             
             else
                 tdefs.Count
 
@@ -2052,7 +2050,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
         Dictionary(HashIdentity.Reference)
 
     (* TODO Tomas : This is not thread safe. Make it so *)
-    let mutable extraBindingsToGenerate = []
+    let extraBindingsToGenerate = System.Collections.Concurrent.ConcurrentStack()
 
     // A memoization table for generating value types for big constant arrays
     let rawDataValueTypeGenerator =
@@ -2283,20 +2281,20 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             mgbuf.AddTypeDef(ilTypeRef, ilTypeDef, false, true, None)
 
             let extraBindings =
-                [
+                [|
                     yield! AugmentWithHashCompare.MakeBindingsForCompareAugmentation g tycon
                     yield! AugmentWithHashCompare.MakeBindingsForCompareWithComparerAugmentation g tycon
                     yield! AugmentWithHashCompare.MakeBindingsForEqualityWithComparerAugmentation g tycon
                     yield! AugmentWithHashCompare.MakeBindingsForEqualsAugmentation g tycon
-                ]
+                |]
 
             let optimizedExtraBindings =
                 extraBindings
-                |> List.map (fun (TBind (a, b, c)) ->
+                |> Array.map (fun (TBind (a, b, c)) ->
                     // Disable method splitting for bindings related to anonymous records
                     TBind(a, cenv.optimizeDuringCodeGen true b, c))
-
-            extraBindingsToGenerate <- optimizedExtraBindings @ extraBindingsToGenerate
+                    
+            extraBindingsToGenerate.PushRange(optimizedExtraBindings)
 
         (ilCtorRef, ilMethodRefs, ilTy)
 
@@ -2360,8 +2358,8 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
             anonTypeTable.Table[anonInfo.Stamp]
 
     member _.GrabExtraBindingsToGenerate() =
-        let result = extraBindingsToGenerate
-        extraBindingsToGenerate <- []
+        let result = extraBindingsToGenerate.ToArray()
+        extraBindingsToGenerate.Clear()
         result
 
     member _.AddTypeDef(tref: ILTypeRef, tdef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
@@ -11637,7 +11635,7 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         // top-level initialization code.
         let extraBindings = mgbuf.GrabExtraBindingsToGenerate()
         //printfn "#extraBindings = %d" extraBindings.Length
-        if not (isNil extraBindings) then
+        if extraBindings.Length > 0 then
             let mexpr = TMDefs [ for b in extraBindings -> TMDefLet(b, range0) ]
 
             let _emptyTopInstrs, _emptyTopCode =
