@@ -195,3 +195,27 @@ let x
         let result = getTypeHints document
 
         Assert.IsEmpty(result)
+
+    [<Test>]
+    let ``Hints are shown for IWSAM`` () =
+        let code =
+            """
+type IAddition<'T when 'T :> IAddition<'T>> =
+    static abstract op_Addition: 'T * 'T -> 'T
+
+type Number<'T when IAddition<'T>>(value: 'T) =
+    member _.Value with get() = value
+    interface IAddition<Number<'T>> with
+        static member op_Addition(a, b) = Number(a.Value + b.Value)
+"""
+        let document = getFsDocument code
+
+        let expected =
+            [
+                { Content = ": Number<'T>"; Location = (7, 36) }
+                { Content = ": Number<'T>"; Location = (7, 39) }
+            ]
+
+        let actual = getTypeHints document
+
+        CollectionAssert.AreEquivalent(expected, actual)
