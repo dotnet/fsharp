@@ -21,7 +21,7 @@ let mutable progress = false
 // Intended to be a general hook to control diagnostic output when tracking down bugs
 let mutable tracking = false
 
-let condition s =
+let isEnvVarSet s =
     try (Environment.GetEnvironmentVariable(s) <> null) with _ -> false
 
 let GetEnvInteger e dflt = match Environment.GetEnvironmentVariable(e) with null -> dflt | t -> try int t with _ -> dflt
@@ -72,37 +72,6 @@ module NameSet =
 module NameMap =
     let domain m = Map.foldBack (fun x _ acc -> Zset.add x acc) m (Zset.empty String.order)
     let domainL m = Zset.elements (domain m)
-
-// Library: Pre\Post checks
-//-------------------------------------------------------------------------
-module Check =
-
-    /// Throw <cref>System.InvalidOperationException</cref> if argument is <c>None</c>.
-    /// If there is a value (e.g. <c>Some(value)</c>) then value is returned.
-    let NotNone argName (arg:'T option) : 'T =
-        match arg with
-        | None -> raise (InvalidOperationException(argName))
-        | Some x -> x
-
-    /// Throw <cref>System.ArgumentNullException</cref> if argument is <c>null</c>.
-    let ArgumentNotNull arg argName =
-        match box(arg) with
-        | null -> raise (ArgumentNullException(argName))
-        | _ -> ()
-
-    /// Throw <cref>System.ArgumentNullException</cref> if array argument is <c>null</c>.
-    /// Throw <cref>System.ArgumentOutOfRangeException</cref> is array argument is empty.
-    let ArrayArgumentNotNullOrEmpty (arr:'T[]) argName =
-        ArgumentNotNull arr argName
-        if (0 = arr.Length) then
-            raise (ArgumentOutOfRangeException(argName))
-
-    /// Throw <cref>System.ArgumentNullException</cref> if string argument is <c>null</c>.
-    /// Throw <cref>System.ArgumentOutOfRangeException</cref> is string argument is empty.
-    let StringArgumentNotNullOrEmpty (s:string) argName =
-        ArgumentNotNull s argName
-        if s.Length = 0 then
-            raise (ArgumentNullException(argName))
 
 //-------------------------------------------------------------------------
 // Library
@@ -285,8 +254,6 @@ let mapTriple (f1, f2, f3) (a1, a2, a3) = (f1 a1, f2 a2, f3 a3)
 
 let mapQuadruple (f1, f2, f3, f4) (a1, a2, a3, a4) = (f1 a1, f2 a2, f3 a3, f4 a4)
 
-let fmap2Of2 f z (a1, a2) = let z, a2 = f z a2 in z, (a1, a2)
-
 //---------------------------------------------------------------------------
 // Zmap rebinds
 //-------------------------------------------------------------------------
@@ -311,8 +278,6 @@ module Zset =
         let s = f s
         if Zset.equal s s0 then s0 (* fixed *)
         else fixpoint f s (* iterate *)
-
-let equalOn f x y = (f x) = (f y)
 
 /// Buffer printing utility
 let buildString f =

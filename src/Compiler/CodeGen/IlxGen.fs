@@ -1510,7 +1510,7 @@ let ComputeFieldSpecForVal
 
     match optIntraAssemblyInfo with
     | None -> generate ()
-    | Some iai -> iai.StaticFieldInfo.GetOrAdd(ilGetterMethRef, fun _ -> generate())
+    | Some iai -> iai.StaticFieldInfo.GetOrAdd(ilGetterMethRef, (fun _ -> generate ()))
 
 /// Compute the representation information for an F#-declared value (not a member nor a function).
 /// Mutable and literal static fields must have stable names and live in the "public" location
@@ -2383,8 +2383,8 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         let instrs =
             [
                 yield!
-                    (if condition "NO_ADD_FEEFEE_TO_CCTORS" then []
-                     elif condition "ADD_SEQPT_TO_CCTORS" then seqpt
+                    (if isEnvVarSet "NO_ADD_FEEFEE_TO_CCTORS" then []
+                     elif isEnvVarSet "ADD_SEQPT_TO_CCTORS" then seqpt
                      else feefee) // mark start of hidden code
                 yield mkLdcInt32 0
                 yield mkNormalStsfld fspec

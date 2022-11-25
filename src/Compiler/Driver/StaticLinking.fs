@@ -98,7 +98,7 @@ type TypeForwarding(tcImports: TcImports) =
 
     member _.TypeForwardILTypeRef tref = typeForwardILTypeRef tref
 
-let debugStaticLinking = condition "FSHARP_DEBUG_STATIC_LINKING"
+let debugStaticLinking = isEnvVarSet "FSHARP_DEBUG_STATIC_LINKING"
 
 let StaticLinkILModules
     (

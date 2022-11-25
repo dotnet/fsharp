@@ -3722,7 +3722,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     /// A background thread is started by this thread to read from the inReader and/or console reader.
 
     member x.Run() =
-        progress <- condition "FSHARP_INTERACTIVE_PROGRESS"
+        progress <- isEnvVarSet "FSHARP_INTERACTIVE_PROGRESS"
 
         // Explanation: When Run is called we do a bunch of processing. For fsi.exe
         // and fsiAnyCpu.exe there are no other active threads at this point, so we can assume this is the
