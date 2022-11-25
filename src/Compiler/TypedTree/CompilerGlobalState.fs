@@ -4,7 +4,9 @@
 
 module FSharp.Compiler.CompilerGlobalState
 
+open System
 open System.Collections.Generic
+open System.Collections.Concurrent
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 
@@ -16,25 +18,17 @@ open FSharp.Compiler.Text
 /// policy to make all globally-allocated objects concurrency safe in case future versions of the compiler
 /// are used to host multiple concurrent instances of compilation.
 type NiceNameGenerator() =
-    (* TODO Tomas lockfree *)
-    let lockObj = obj()
-    let basicNameCounts = Dictionary<string, int>(100)
+   
+    let basicNameCounts = ConcurrentDictionary<string,int>(max Environment.ProcessorCount 1, 127)
+    let incrementCounter = Func<string,int,int>(fun _ oldVal -> oldVal + 1)
 
     member _.FreshCompilerGeneratedName (name, m: range) =
-      lock lockObj (fun () ->
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
-        let n =
-            match basicNameCounts.TryGetValue basicName with
-            | true, count -> count
-            | _ -> 0
-        let nm = CompilerGeneratedNameSuffix basicName (string m.StartLine + (match n with 0 -> "" | n -> "-" + string n))
-        basicNameCounts[basicName] <- n + 1
-        nm)
+        let count = basicNameCounts.AddOrUpdate(basicName, 1, incrementCounter)
+        CompilerGeneratedNameSuffix basicName (string m.StartLine + (match (count-1) with 0 -> "" | n -> "-" + string n))
 
     member _.Reset () =
-      lock lockObj (fun () ->
-        basicNameCounts.Clear()
-      )
+      basicNameCounts.Clear()
 
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
