@@ -2006,8 +2006,7 @@ and TypeDefsBuilder() =
                 then
                     yield tdef
         ]
-
-    (* TODO Tomas : This is not thread safe. Make it so*)
+   
     member b.FindTypeDefBuilder nm =
         try
             tdefs[nm] |> List.head |> snd |> fst
@@ -2264,6 +2263,7 @@ type AnonTypeGenerationTable() =
                 |> Array.map (fun (TBind (a, b, c)) ->
                     // Disable method splitting for bindings related to anonymous records
                     TBind(a, cenv.optimizeDuringCodeGen true b, c))
+                |> Array.rev
 
             extraBindingsToGenerate.PushRange(optimizedExtraBindings)
 
