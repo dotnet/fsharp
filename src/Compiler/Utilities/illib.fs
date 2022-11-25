@@ -1067,6 +1067,27 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
         else
             compute x
 
+type internal StampedDictionairy<'T, 'U>(keyComparer: IEqualityComparer<'T>) =
+    let table = new ConcurrentDictionary<'T, Lazy<int * 'U>>(keyComparer)
+    let mutable count = -1
+
+    member _.Add(key, value) =
+        let entry = table.GetOrAdd(key, lazy (Interlocked.Increment(&count), value))
+        entry.Force() |> ignore
+
+    member _.Update(key, valueReplaceFunc) =
+        match table.TryGetValue key with
+        | true, v ->
+            let (stamp, oldVal) = v.Value
+
+            match valueReplaceFunc oldVal with
+            | None -> ()
+            | Some newVal -> table.TryUpdate(key, lazy (stamp, newVal), v) |> ignore<bool>
+        | _ -> ()
+
+    member _.GetAll() =
+        table |> Seq.map (fun kvp -> kvp.Key, kvp.Value.Value)
+
 exception UndefinedException
 
 type LazyWithContextFailure(exn: exn) =

@@ -6,6 +6,8 @@ module internal FSharp.Compiler.IlxGen
 open System.IO
 open System.Reflection
 open System.Collections.Generic
+open System.Collections.Concurrent
+open System.Threading
 
 open FSharp.Compiler.IO
 open Internal.Utilities
@@ -2021,55 +2023,21 @@ and TypeDefsBuilder() =
     member b.AddTypeDef(tdef: ILTypeDef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
         let idx =
             if addAtEnd then
-                System.Threading.Interlocked.Decrement(&countDown)
+                Interlocked.Decrement(&countDown)
             else
                 tdefs.Count
 
         tdefs.Add(tdef.Name, (idx, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)))
 
-(* TODO Tomas : Annonymous types are being collected outside of the delayed code path, so this can remain as is.
-        I can move the anontable generation step to be parallel separately, only makes sense in codebases making heavy use of them
-    *)
 type AnonTypeGenerationTable() =
-    // Dictionary is safe here as it will only be used during the codegen stage - will happen on a single thread.
     let dict =
-        Dictionary<Stamp, ILMethodRef * ILMethodRef[] * ILType>(HashIdentity.Structural)
+        ConcurrentDictionary<Stamp, Lazy<ILMethodRef * ILMethodRef[] * ILType>>(HashIdentity.Structural)
 
-    member _.Table = dict
+    let extraBindingsToGenerate = ConcurrentStack()
 
-/// Assembly generation buffers
-type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf =
-    let g = cenv.g
-    // The Abstract IL table of types
-    let gtdefs = TypeDefsBuilder()
+    let generateAnonType cenv (mgbuf: AssemblyBuilder) genToStringMethod (isStruct, ilTypeRef, nms) =
 
-    // The definitions of top level values, as quotations.
-    // Dictionary is safe here as it will only be used during the codegen stage - will happen on a single thread.
-    (* TODO Tomas : This is not thread safe. Make it so *)
-    let mutable reflectedDefinitions: Dictionary<Val, string * int * Expr> =
-        Dictionary(HashIdentity.Reference)
-
-    (* TODO Tomas : This is not thread safe. Make it so *)
-    let extraBindingsToGenerate = System.Collections.Concurrent.ConcurrentStack()
-
-    // A memoization table for generating value types for big constant arrays
-    let rawDataValueTypeGenerator =
-        MemoizationTable<CompileLocation * int, ILTypeSpec>(
-            (fun (cloc, size) ->
-                let name =
-                    CompilerGeneratedName("T" + string (newUnique ()) + "_" + string size + "Bytes") // Type names ending ...$T<unique>_37Bytes
-
-                let vtdef = mkRawDataValueTypeDef g.iltyp_ValueType (name, size, 0us)
-                let vtref = NestedTypeRefForCompLoc cloc vtdef.Name
-                let vtspec = mkILTySpec (vtref, [])
-                let vtdef = vtdef.WithAccess(ComputeTypeAccess vtref true)
-                mgbuf.AddTypeDef(vtref, vtdef, false, true, None)
-                vtspec),
-            keyComparer = HashIdentity.Structural
-        )
-
-    let generateAnonType genToStringMethod (isStruct, ilTypeRef, nms) =
-
+        let g = cenv.g
         let propTys = [ for i, nm in Array.indexed nms -> nm, ILType.TypeVar(uint16 i) ]
 
         // Note that this alternative below would give the same names as C#, but the generated
@@ -2298,15 +2266,63 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
 
         (ilCtorRef, ilMethodRefs, ilTy)
 
-    (* TODO Tomas : This is not thread safe, but there will be only one entry point*)
+    member this.GenerateAnonType(cenv, mgbuf, genToStringMethod, anonInfo: AnonRecdTypeInfo) =
+        let isStruct = evalAnonInfoIsStruct anonInfo
+        let key = anonInfo.Stamp
+
+        let at =
+            dict.GetOrAdd(key, lazy (generateAnonType cenv mgbuf genToStringMethod (isStruct, anonInfo.ILTypeRef, anonInfo.SortedNames)))
+
+        at.Force() |> ignore
+
+    member this.LookupAnonType(cenv, mgbuf, genToStringMethod, anonInfo: AnonRecdTypeInfo) =
+        match dict.TryGetValue anonInfo.Stamp with
+        | true, res -> res.Value
+        | _ ->
+            if anonInfo.ILTypeRef.Scope.IsLocalRef then
+                failwithf "the anonymous record %A has not been generated in the pre-phase of generating this module" anonInfo.ILTypeRef
+
+            this.GenerateAnonType(cenv, mgbuf, genToStringMethod, anonInfo)
+            dict[anonInfo.Stamp].Value
+
+    member _.GrabExtraBindingsToGenerate() =
+        let result = extraBindingsToGenerate.ToArray()
+        extraBindingsToGenerate.Clear()
+        result
+
+/// Assembly generation buffers
+and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf =
+    let g = cenv.g
+    // The Abstract IL table of types
+    let gtdefs = TypeDefsBuilder()
+
+    // The definitions of top level values, as quotations
+    let reflectedDefinitions =
+        new StampedDictionairy<Val, string * Expr>(HashIdentity.Reference)
+
+    // A memoization table for generating value types for big constant arrays
+    let rawDataValueTypeGenerator =
+        MemoizationTable<CompileLocation * int, ILTypeSpec>(
+            (fun (cloc, size) ->
+                let name =
+                    CompilerGeneratedName("T" + string (newUnique ()) + "_" + string size + "Bytes") // Type names ending ...$T<unique>_37Bytes
+
+                let vtdef = mkRawDataValueTypeDef g.iltyp_ValueType (name, size, 0us)
+                let vtref = NestedTypeRefForCompLoc cloc vtdef.Name
+                let vtspec = mkILTySpec (vtref, [])
+                let vtdef = vtdef.WithAccess(ComputeTypeAccess vtref true)
+                mgbuf.AddTypeDef(vtref, vtdef, false, true, None)
+                vtspec),
+            keyComparer = HashIdentity.Structural
+        )
+
     let mutable explicitEntryPointInfo: ILTypeRef option = None
 
     /// static init fields on script modules.
-    (* TODO Tomas : This is not thread safe. Make it so *)
-    let mutable scriptInitFspecs: (ILFieldSpec * range) list = []
+    let scriptInitFspecs = new ConcurrentStack<ILFieldSpec * range>()
 
     member _.AddScriptInitFieldSpec(fieldSpec, range) =
-        scriptInitFspecs <- (fieldSpec, range) :: scriptInitFspecs
+        scriptInitFspecs.Push((fieldSpec, range))
 
     /// This initializes the script in #load and fsc command-line order causing their
     /// side effects to be executed.
@@ -2327,7 +2343,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                     []
                 )
 
-            scriptInitFspecs |> List.iter InitializeCompiledScript
+            scriptInitFspecs.ToArray() |> Array.iter InitializeCompiledScript
         | None -> ()
 
     member _.GenerateRawDataValueType(cloc, size) =
@@ -2338,29 +2354,13 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
         rawDataValueTypeGenerator.Apply((cloc, size))
 
     member _.GenerateAnonType(genToStringMethod, anonInfo: AnonRecdTypeInfo) =
-        let isStruct = evalAnonInfoIsStruct anonInfo
-        let key = anonInfo.Stamp
-
-        if not (anonTypeTable.Table.ContainsKey key) then
-            let info =
-                generateAnonType genToStringMethod (isStruct, anonInfo.ILTypeRef, anonInfo.SortedNames)
-
-            anonTypeTable.Table[ key ] <- info
+        anonTypeTable.GenerateAnonType(cenv, mgbuf, genToStringMethod, anonInfo)
 
     member this.LookupAnonType(genToStringMethod, anonInfo: AnonRecdTypeInfo) =
-        match anonTypeTable.Table.TryGetValue anonInfo.Stamp with
-        | true, res -> res
-        | _ ->
-            if anonInfo.ILTypeRef.Scope.IsLocalRef then
-                failwithf "the anonymous record %A has not been generated in the pre-phase of generating this module" anonInfo.ILTypeRef
-
-            this.GenerateAnonType(genToStringMethod, anonInfo)
-            anonTypeTable.Table[anonInfo.Stamp]
+        anonTypeTable.LookupAnonType(cenv, mgbuf, genToStringMethod, anonInfo)
 
     member _.GrabExtraBindingsToGenerate() =
-        let result = extraBindingsToGenerate.ToArray()
-        extraBindingsToGenerate.Clear()
-        result
+        anonTypeTable.GrabExtraBindingsToGenerate()
 
     member _.AddTypeDef(tref: ILTypeRef, tdef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
         gtdefs
@@ -2371,14 +2371,10 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
         gtdefs.FindNestedTypeDefBuilder(tref).GetCurrentFields()
 
     member _.AddReflectedDefinition(vspec: Val, expr) =
-        // preserve order by storing index of item
-        let n = reflectedDefinitions.Count
-        reflectedDefinitions.Add(vspec, (vspec.CompiledName cenv.g.CompilerGlobalState, n, expr))
+        reflectedDefinitions.Add(vspec, (vspec.CompiledName cenv.g.CompilerGlobalState, expr))
 
     member _.ReplaceNameOfReflectedDefinition(vspec, newName) =
-        match reflectedDefinitions.TryGetValue vspec with
-        | true, (name, n, expr) when name <> newName -> reflectedDefinitions[vspec] <- (newName, n, expr)
-        | _ -> ()
+        reflectedDefinitions.Update(vspec, (fun (oldName, expr) -> if newName = oldName then None else Some(newName, expr)))
 
     member _.AddMethodDef(tref: ILTypeRef, ilMethodDef) =
         gtdefs.FindNestedTypeDefBuilder(tref).AddMethodDef(ilMethodDef)
@@ -2418,7 +2414,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
         // old implementation adds new element to the head of list so result was accumulated in reversed order
         let orderedReflectedDefinitions =
             [
-                for KeyValue (vspec, (name, n, expr)) in reflectedDefinitions -> n, ((name, vspec), expr)
+                for (vspec, (n, (name, expr))) in reflectedDefinitions.GetAll() -> n, ((name, vspec), expr)
             ]
             |> List.sortBy (fst >> (~-)) // invert the result to get 'order-by-descending' behavior (items in list are 0..* so we don't need to worry about int.MinValue)
             |> List.map snd

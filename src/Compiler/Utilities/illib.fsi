@@ -438,6 +438,16 @@ type internal MemoizationTable<'T, 'U> =
 
     member Apply: x: 'T -> 'U
 
+type internal StampedDictionairy<'T, 'U> =
+
+    new: keyComparer: IEqualityComparer<'T> -> StampedDictionairy<'T, 'U>
+
+    member Add: key: 'T * value: 'U -> unit
+
+    member Update: key: 'T * valueReplaceFunc: ('U -> 'U option) -> unit
+
+    member GetAll: unit -> seq<'T * (int * 'U)>
+
 exception internal UndefinedException
 
 type internal LazyWithContextFailure =
