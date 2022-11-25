@@ -105,8 +105,11 @@ module internal Utils =
             | _, _ -> nextWordFromIdx line (idx + 1, true)
 
     /// An array stores ranges of full-width chars.
-    ///
-    /// Array [| [| a; b |]; [| c; d |] |] represents range [a, b] or [c, d], means chars in these ranges are full-width.
+    /// 
+    /// The ranges are sorted by increasing order in the array, and each range are stored in the 2nth and 2n+1th 
+    /// position in the array (n is the ordinal number of the range)
+    /// 
+    /// Array [| a; b; c; d |] represents range [a, b] or [c, d], means chars in these ranges are full-width.
     let private fullWidthCharRanges =
         Array.concat
             [|
@@ -165,11 +168,34 @@ module internal Utils =
     let isFullWidth (char) =
         // for array [| a; b; c; d |],
         // if a value is in (a, b) or (c, d), the result of Array.BinarySearch will be a negative even number
-        // if a value is a, b, c, d, the result will be a non-positive number
+        // if a value is a, b, c, d, the result will be a positive number
         let n = Array.BinarySearch(fullWidthCharRanges, char)
-        (n < 0 && n % 2 = 0) || n >= 0
+        n >= 0 || n % 2 = 0
 
-    // don't write chars to the last 2 column to make sure that chars will not be print to wrong line.
+
+    /// Limits BufferWidth to make sure that full-width characters will not be print to wrong position.
+    ///
+    /// The return value is Console.BufferWidth - 2. 
+    /// 
+    /// When printing full-width characters to the screen (such as 一二三四五六七八九零),
+    /// 
+    /// if BufferWidth = Console.BufferWidth, the output will be
+    /// 
+    /// #> 一二三四五六七八九零一二三四五六七八九  # (零 is missing)
+    /// 
+    /// #一二三四五六七八九零                      #
+    /// 
+    /// if BufferWidth = Console.BufferWidth - 1, the output will be
+    /// 
+    /// #> 一二三四五六七八九零一二三四五六七八九零# (零 is printed, but will not correctly cauculate cursor position)
+    /// 
+    /// #一二三四五六七八九零                      # (cursor may appear in the middle of the character)
+    /// 
+    /// if BufferWidth = Console.BufferWidth - 2, the output will be
+    /// 
+    /// #> 一二三四五六七八九零一二三四五六七八九  #
+    /// 
+    /// #零一二三四五六七八九零                    # (work correctly)
     let bufferWidth () = Console.BufferWidth - 2
 
 [<Sealed>]
@@ -179,8 +205,7 @@ type internal Cursor =
             Console.CursorTop <- min top (Console.BufferHeight - 1)
             Console.CursorLeft <- left)
 
-    static member Move(inset, delta) =
-        ignore inset
+    static member Move(delta) =
         let width = Utils.bufferWidth ()
         let position = Console.CursorTop * width + Console.CursorLeft + delta
 
@@ -321,7 +346,7 @@ type internal ReadLineConsole() =
                 if Console.CursorTop + 1 = Console.BufferHeight then
                     Console.BufferHeight <- Console.BufferHeight + 1
 
-                Cursor.Move(x.Inset, 0)
+                Cursor.Move(0)
 
         let writeBlank () =
             moveCursorToNextLine (' ')
@@ -389,13 +414,13 @@ type internal ReadLineConsole() =
             if current > 0 && (current - 1 < input.Length) then
                 current <- current - 1
                 let c = input.Chars(current)
-                Cursor.Move(x.Inset, -x.GetCharacterSize c)
+                Cursor.Move(-x.GetCharacterSize c)
 
         let moveRight () =
             if current < input.Length then
                 let c = input.Chars(current)
                 current <- current + 1
-                Cursor.Move(x.Inset, x.GetCharacterSize c)
+                Cursor.Move(x.GetCharacterSize c)
 
         let moveWordLeft () =
             if current > 0 && (current - 1 < input.Length) then
