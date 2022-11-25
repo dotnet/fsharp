@@ -534,6 +534,7 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (
             | true, c -> c
             | _ ->
                 let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])
+                // TODO TOMAS Concurrency
                 casmap[tcs] <- exists
                 exists
         | ValueNone -> false  

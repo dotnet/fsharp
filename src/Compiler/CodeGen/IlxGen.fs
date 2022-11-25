@@ -2006,7 +2006,7 @@ and TypeDefsBuilder() =
                 then
                     yield tdef
         ]
-   
+
     member b.FindTypeDefBuilder nm =
         try
             tdefs[nm] |> List.head |> snd |> fst
