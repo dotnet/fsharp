@@ -238,6 +238,7 @@ type IlxGenIntraAssemblyInfo =
         /// only accessible intra-assembly. Across assemblies, taking the address of static mutable module-bound values is not permitted.
         /// The key to the table is the method ref for the property getter for the value, which is a stable name for the Val's
         /// that come from both the signature and the implementation.
+        (*TODO Tomas Make thread safe*)
         StaticFieldInfo: Dictionary<ILMethodRef, ILFieldSpec>
     }
 
@@ -336,6 +337,7 @@ type cenv =
         intraAssemblyInfo: IlxGenIntraAssemblyInfo
 
         /// Cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
+        (*TODO Tomas Make thread safe*)
         casApplied: Dictionary<Stamp, bool>
 
         /// Used to apply forced inlining optimizations to witnesses generated late during codegen
@@ -1978,14 +1980,12 @@ type TypeDefBuilder(tdef: ILTypeDef, tdefDiscards) =
             gmethods.Add(mkILClassCtor body)
 
 and TypeDefsBuilder() =
-    (* TODO Tomas : This is not thread safe. Make it so
-        This builder acts for all types - can be accessed concurrently
-        The internal TypeDefBuilder's will be created from 1 file each, therefore those can remain for sequential usage. (??)    
-    *)
-    let tdefs: HashMultiMap<string, int * (TypeDefBuilder * bool)> =
-        HashMultiMap(0, HashIdentity.Structural)
+
+    let tdefs =
+        ConcurrentDictionary<string, list<int * (TypeDefBuilder * bool)>>(HashIdentity.Structural)
 
     let mutable countDown = System.Int32.MaxValue
+    let mutable countUp = -1
 
     member b.Close() =
         //The order we emit type definitions is not deterministic since it is using the reverse of a range from a hash table. We should use an approximation of source order.
@@ -1993,7 +1993,7 @@ and TypeDefsBuilder() =
         // However, for some tests FSI generated code appears sensitive to the order, especially for nested types.
 
         [
-            for b, eliminateIfEmpty in HashRangeSorted tdefs do
+            for _, (b, eliminateIfEmpty) in tdefs.Values |> Seq.collect id |> Seq.sortBy fst do
                 let tdef = b.Close()
                 // Skip the <PrivateImplementationDetails$> type if it is empty
                 if
@@ -2010,7 +2010,7 @@ and TypeDefsBuilder() =
     (* TODO Tomas : This is not thread safe. Make it so*)
     member b.FindTypeDefBuilder nm =
         try
-            tdefs[nm] |> snd |> fst
+            tdefs[nm] |> List.head |> snd |> fst
         with :? KeyNotFoundException ->
             failwith ("FindTypeDefBuilder: " + nm + " not found")
 
@@ -2025,9 +2025,12 @@ and TypeDefsBuilder() =
             if addAtEnd then
                 Interlocked.Decrement(&countDown)
             else
-                tdefs.Count
+                Interlocked.Increment(&countUp)
 
-        tdefs.Add(tdef.Name, (idx, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)))
+        let newVal = idx, (TypeDefBuilder(tdef, tdefDiscards), eliminateIfEmpty)
+
+        tdefs.AddOrUpdate(tdef.Name, [ newVal ], (fun key oldList -> newVal :: oldList))
+        |> ignore
 
 type AnonTypeGenerationTable() =
     let dict =
