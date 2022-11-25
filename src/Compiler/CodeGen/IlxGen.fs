@@ -1982,7 +1982,7 @@ and TypeDefsBuilder() =
     *)
     let tdefs: HashMultiMap<string, int * (TypeDefBuilder * bool)> =
         HashMultiMap(0, HashIdentity.Structural)
-  
+
     let mutable countDown = System.Int32.MaxValue
 
     member b.Close() =
@@ -2020,8 +2020,8 @@ and TypeDefsBuilder() =
 
     member b.AddTypeDef(tdef: ILTypeDef, eliminateIfEmpty, addAtEnd, tdefDiscards) =
         let idx =
-            if addAtEnd then 
-                System.Threading.Interlocked.Decrement(&countDown)             
+            if addAtEnd then
+                System.Threading.Interlocked.Decrement(&countDown)
             else
                 tdefs.Count
 
@@ -2293,7 +2293,7 @@ type AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbu
                 |> Array.map (fun (TBind (a, b, c)) ->
                     // Disable method splitting for bindings related to anonymous records
                     TBind(a, cenv.optimizeDuringCodeGen true b, c))
-                    
+
             extraBindingsToGenerate.PushRange(optimizedExtraBindings)
 
         (ilCtorRef, ilMethodRefs, ilTy)
