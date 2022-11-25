@@ -238,8 +238,7 @@ type IlxGenIntraAssemblyInfo =
         /// only accessible intra-assembly. Across assemblies, taking the address of static mutable module-bound values is not permitted.
         /// The key to the table is the method ref for the property getter for the value, which is a stable name for the Val's
         /// that come from both the signature and the implementation.
-        (*TODO Tomas Make thread safe*)
-        StaticFieldInfo: Dictionary<ILMethodRef, ILFieldSpec>
+        StaticFieldInfo: ConcurrentDictionary<ILMethodRef, ILFieldSpec>
     }
 
 /// Helper to make sure we take tailcalls in some situations
@@ -337,8 +336,7 @@ type cenv =
         intraAssemblyInfo: IlxGenIntraAssemblyInfo
 
         /// Cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
-        (*TODO Tomas Make thread safe*)
-        casApplied: Dictionary<Stamp, bool>
+        casApplied: IDictionary<Stamp, bool>
 
         /// Used to apply forced inlining optimizations to witnesses generated late during codegen
         mutable optimizeDuringCodeGen: bool -> Expr -> Expr
@@ -1512,13 +1510,7 @@ let ComputeFieldSpecForVal
 
     match optIntraAssemblyInfo with
     | None -> generate ()
-    | Some intraAssemblyInfo ->
-        match intraAssemblyInfo.StaticFieldInfo.TryGetValue ilGetterMethRef with
-        | true, res -> res
-        | _ ->
-            let res = generate ()
-            intraAssemblyInfo.StaticFieldInfo[ ilGetterMethRef ] <- res
-            res
+    | Some iai -> iai.StaticFieldInfo.GetOrAdd(ilGetterMethRef, fun _ -> generate())
 
 /// Compute the representation information for an F#-declared value (not a member nor a function).
 /// Mutable and literal static fields must have stable names and live in the "public" location
@@ -11921,13 +11913,11 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
     // The incremental state held by the ILX code generator
     let mutable ilxGenEnv = GetEmptyIlxGenEnv tcGlobals ccu
     let anonTypeTable = AnonTypeGenerationTable()
-    // Dictionaries are safe here as they will only be used during the codegen stage - will happen on a single thread.
+
     let intraAssemblyInfo =
         {
-            StaticFieldInfo = Dictionary<_, _>(HashIdentity.Structural)
+            StaticFieldInfo = ConcurrentDictionary<_, _>(HashIdentity.Structural)
         }
-
-    let casApplied = Dictionary<Stamp, bool>()
 
     let cenv =
         {
@@ -11944,7 +11934,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal: Constrai
             ilUnitTy = None
             namedDebugPointsForInlinedCode = Map.empty
             amap = amap
-            casApplied = casApplied
+            casApplied = ConcurrentDictionary<Stamp, bool>()
             intraAssemblyInfo = intraAssemblyInfo
             optionsOpt = None
             optimizeDuringCodeGen = (fun _flag expr -> expr)

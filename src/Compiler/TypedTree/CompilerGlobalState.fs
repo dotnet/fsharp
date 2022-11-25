@@ -16,7 +16,7 @@ open FSharp.Compiler.Text
 /// policy to make all globally-allocated objects concurrency safe in case future versions of the compiler
 /// are used to host multiple concurrent instances of compilation.
 type NiceNameGenerator() =
-
+    (* TODO Tomas lockfree *)
     let lockObj = obj()
     let basicNameCounts = Dictionary<string, int>(100)
 
@@ -43,7 +43,7 @@ type NiceNameGenerator() =
 /// This type may be accessed concurrently, though in practice it is only used from the compilation thread.
 /// It is made concurrency-safe since a global instance of the type is allocated in tast.fs.
 type StableNiceNameGenerator() =
-
+    (* TODO Tomas lockfree *)
     let lockObj = obj()
 
     let names = Dictionary<string * int64, string>(100)
@@ -92,12 +92,10 @@ type internal CompilerGlobalState () =
 type Unique = int64
 
 //++GLOBAL MUTABLE STATE (concurrency-safe)
-let newUnique =
-    let i = ref 0L
-    fun () -> System.Threading.Interlocked.Increment i
+let mutable private uniqueCount = 0L
+let newUnique() = System.Threading.Interlocked.Increment &uniqueCount
 
 /// Unique name generator for stamps attached to to val_specs, tycon_specs etc.
 //++GLOBAL MUTABLE STATE (concurrency-safe)
-let newStamp =
-    let i = ref 0L
-    fun () -> System.Threading.Interlocked.Increment i
+let mutable private stampCount = 0L
+let newStamp() = System.Threading.Interlocked.Increment &stampCount

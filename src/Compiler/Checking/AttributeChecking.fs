@@ -522,7 +522,7 @@ let CheckRecdFieldInfoAttributes g (x:RecdFieldInfo) m =
     CheckRecdFieldAttributes g x.RecdFieldRef m
 
 // Identify any security attributes
-let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (Attrib(tcref, _, _, _, _, _, _)) m =
+let IsSecurityAttribute (g: TcGlobals) amap (casmap : IDictionary<Stamp, bool>) (Attrib(tcref, _, _, _, _, _, _)) m =
     // There's no CAS on Silverlight, so we have to be careful here
     match g.attrib_SecurityAttribute with
     | None -> false
@@ -533,8 +533,7 @@ let IsSecurityAttribute (g: TcGlobals) amap (casmap : Dictionary<Stamp, bool>) (
             match casmap.TryGetValue tcs with
             | true, c -> c
             | _ ->
-                let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])
-                // TODO TOMAS Concurrency
+                let exists = ExistsInEntireHierarchyOfType (fun t -> typeEquiv g t (mkAppTy attr.TyconRef [])) g amap m AllowMultiIntfInstantiations.Yes (mkAppTy tcref [])          
                 casmap[tcs] <- exists
                 exists
         | ValueNone -> false  

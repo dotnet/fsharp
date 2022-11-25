@@ -267,25 +267,6 @@ val inline cacheOptRef: cache: 'a option ref -> f: (unit -> 'a) -> 'a
 
 val inline tryGetCacheValue: cache: cache<'a> -> NonNullSlot<'a> voption
 
-module AsyncUtil =
-
-    /// Represents the reified result of an asynchronous computation.
-    [<NoEquality; NoComparison>]
-    type AsyncResult<'T> =
-        | AsyncOk of 'T
-        | AsyncException of exn
-        | AsyncCanceled of System.OperationCanceledException
-
-        static member Commit: res: AsyncResult<'T> -> Async<'T>
-
-    /// When using .NET 4.0 you can replace this type by <see cref="Task{T}"/>
-    [<Sealed>]
-    type AsyncResultCell<'T> =
-
-        new: unit -> AsyncResultCell<'T>
-        member RegisterResult: res: AsyncResult<'T> -> unit
-        member AsyncResult: Async<'T>
-
 module UnmanagedProcessExecutionOptions =
     val EnableHeapTerminationOnCorruption: unit -> unit
 
