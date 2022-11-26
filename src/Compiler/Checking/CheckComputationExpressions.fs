@@ -1044,11 +1044,11 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
 
             // todo desugar directly instead of rewriting first
             let rewrittenWhileExpr =
-                let idFirst = mkSynId mGuard "__first"
+                let idFirst = mkSynId mGuard (CompilerGeneratedName "first")
                 let patFirst = mkSynPatVar None idFirst
 
                 let body =
-                    let idCond = mkSynId mGuard "__cond"
+                    let idCond = mkSynId mGuard (CompilerGeneratedName "cond")
                     let patCond = mkSynPatVar None idCond
                     let condBinding = mkSynBinding (Xml.PreXmlDoc.Empty, patCond) (None, false, true, mGuard, DebugPointAtBinding.NoneAtSticky, None, SynExpr.Ident idFirst, mGuard, [], [], None, SynBindingTrivia.Zero)  
                     let setCondExpr = SynExpr.Set (SynExpr.Ident idCond, SynExpr.Ident idFirst, mGuard)
