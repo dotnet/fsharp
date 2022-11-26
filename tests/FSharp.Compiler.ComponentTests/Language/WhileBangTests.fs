@@ -95,3 +95,35 @@ module WhileBangTests =
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "1"
+
+    [<Fact>]
+    let ``Nested while! in task works as expected`` () =
+        FSharp """
+        let mutable total = 0
+        let mutable outerCount = 0
+
+        let outerCondition () = task {
+            outerCount <- outerCount + 1
+            return outerCount <= 10
+        }
+
+        (task {
+            while! outerCondition () do
+                let mutable innerCount = 0
+
+                let innerCondition () = task {
+                    innerCount <- innerCount + 1
+                    return innerCount <= 3
+                }
+
+                while! innerCondition () do
+                    total <- total + 1
+
+            return total
+        }).Result
+        |> printfn "%d"
+        """
+        |> ignoreWarnings
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "30"
