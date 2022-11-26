@@ -453,7 +453,7 @@ let UnifyOverallType (cenv: cenv) (env: TcEnv) m overallTy actualTy =
             | None -> ()
 
             match usesTDC with
-            | TypeDirectedConversionUsed.Yes(warn, _) -> warning(warn env.DisplayEnv)
+            | TypeDirectedConversionUsed.Yes(warn, _, _) -> warning(warn env.DisplayEnv)
             | TypeDirectedConversionUsed.No -> ()
 
             if AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m reqdTy2 actualTy then
@@ -2436,7 +2436,8 @@ module BindingNormalization =
             let (NormalizedBindingPat(pat, rhsExpr, valSynData, typars)) =
                 NormalizeBindingPattern cenv cenv.nameResolver isObjExprBinding env valSynData headPat (NormalizedBindingRhs ([], retInfo, rhsExpr))
             let paramNames = Some valSynData.SynValInfo.ArgNames
-            let xmlDoc = xmlDoc.ToXmlDoc(true, paramNames)
+            let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs
+            let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, paramNames)
             NormalizedBinding(vis, kind, isInline, isMutable, attrs, xmlDoc, typars, valSynData, pat, rhsExpr, mBinding, debugPoint)
 
 //-------------------------------------------------------------------------
@@ -10950,7 +10951,7 @@ and ComputeIsComplete enclosingDeclaredTypars declaredTypars ty =
 /// Determine if a uniquely-identified-abstract-slot exists for an override member (or interface member implementation) based on the information available
 /// at the syntactic definition of the member (i.e. prior to type inference). If so, we know the expected signature of the override, and the full slotsig
 /// it implements. Apply the inferred slotsig.
-and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (argsAndRetTy, m, synTyparDecls, declaredTypars, memberId, tcrefObjTy, renaming, _objTy, intfSlotTyOpt, valSynData, memberFlags: SynMemberFlags, attribs) =
+and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (baseValOpt: Val option) (argsAndRetTy, m, synTyparDecls, declaredTypars, memberId, tcrefObjTy, renaming, intfSlotTyOpt, valSynData, memberFlags: SynMemberFlags, attribs) =
 
     let g = cenv.g
     let ad = envinner.eAccessRights
@@ -10997,7 +10998,21 @@ and ApplyAbstractSlotInference (cenv: cenv) (envinner: TcEnv) (argsAndRetTy, m, 
                      | _ -> [] // check that method to override is sealed is located at CheckOverridesAreAllUsedOnce (typrelns.fs)
                       // We hit this case when it is ambiguous which abstract method is being implemented.
 
-
+             if g.langVersion.SupportsFeature(LanguageFeature.ErrorForNonVirtualMembersOverrides) then
+                 // Checks if the declaring type inherits from a base class and is not FSharpObjModelTy
+                 // Raises an error if we try to override an non virtual member with the same name in both
+                 match baseValOpt with
+                 | Some ttype when not(isFSharpObjModelTy g ttype.Type) ->
+                    match stripTyEqns g ttype.Type with
+                    | TType_app(tyconRef, _, _) ->
+                        let ilMethods = tyconRef.ILTyconRawMetadata.Methods.AsList()
+                        let nameOpt = ilMethods |> List.tryFind(fun id -> id.Name = memberId.idText)
+                        match nameOpt with
+                        | Some name when not name.IsVirtual ->
+                            errorR(Error(FSComp.SR.tcNoMemberFoundForOverride(), memberId.idRange))
+                        | _ -> ()
+                    | _ -> ()
+                 | _ -> ()
 
              // If we determined a unique member then utilize the type information from the slotsig
              let declaredTypars =
@@ -11159,14 +11174,14 @@ and AnalyzeRecursiveStaticMemberOrValDecl
            CheckForNonAbstractInterface declKind tcref memberFlags id.idRange
 
            let isExtrinsic = (declKind = ExtrinsicExtensionBinding)
-           let tcrefObjTy, enclosingDeclaredTypars, renaming, objTy, _ = FreshenObjectArgType cenv mBinding TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
+           let tcrefObjTy, enclosingDeclaredTypars, renaming, _, _ = FreshenObjectArgType cenv mBinding TyparRigidity.WillBeRigid tcref isExtrinsic declaredTyconTypars
            let envinner = AddDeclaredTypars CheckForDuplicateTypars enclosingDeclaredTypars envinner
            let envinner = MakeInnerEnvForTyconRef envinner tcref isExtrinsic
 
            let (ExplicitTyparInfo(_, declaredTypars, infer)) = explicitTyparInfo
 
            let optInferredImplSlotTys, declaredTypars =
-               ApplyAbstractSlotInference cenv envinner (ty, mBinding, synTyparDecls, declaredTypars, id, tcrefObjTy, renaming, objTy, intfSlotTyOpt, valSynInfo, memberFlags, bindingAttribs)
+               ApplyAbstractSlotInference cenv envinner None (ty, mBinding, synTyparDecls, declaredTypars, id, tcrefObjTy, renaming, intfSlotTyOpt, valSynInfo, memberFlags, bindingAttribs)
 
            let explicitTyparInfo = ExplicitTyparInfo(declaredTypars, declaredTypars, infer)
 
@@ -11231,7 +11246,6 @@ and AnalyzeRecursiveStaticMemberOrValDecl
     | _ ->
         envinner, tpenv, id, None, None, vis, vis2, None, [], None, explicitTyparInfo, bindingRhs, declaredTypars
 
-
 and AnalyzeRecursiveInstanceMemberDecl
        (cenv: cenv,
         envinner: TcEnv,
@@ -11290,7 +11304,7 @@ and AnalyzeRecursiveInstanceMemberDecl
          // at the member signature. If so, we know the type of this member, and the full slotsig
          // it implements. Apply the inferred slotsig.
          let optInferredImplSlotTys, declaredTypars =
-             ApplyAbstractSlotInference cenv envinner (argsAndRetTy, mBinding, synTyparDecls, declaredTypars, memberId, tcrefObjTy, renaming, objTy, intfSlotTyOpt, valSynInfo, memberFlags, bindingAttribs)
+             ApplyAbstractSlotInference cenv envinner baseValOpt (argsAndRetTy, mBinding, synTyparDecls, declaredTypars, memberId, tcrefObjTy, renaming, intfSlotTyOpt, valSynInfo, memberFlags, bindingAttribs)
 
          // Update the ExplicitTyparInfo to reflect the declaredTypars inferred from the abstract slot
          let explicitTyparInfo = ExplicitTyparInfo(declaredTypars, declaredTypars, infer)
@@ -12076,7 +12090,8 @@ let TcAndPublishValSpec (cenv: cenv, env, containerInfo: ContainerInfo, declKind
             | None -> None
             | Some valReprInfo -> Some valReprInfo.ArgNames
 
-        let xmlDoc = xmlDoc.ToXmlDoc(true, paramNames)
+        let checkXmlDocs = cenv.diagnosticOptions.CheckXmlDocs 
+        let xmlDoc = xmlDoc.ToXmlDoc(checkXmlDocs, paramNames)
         let vspec = MakeAndPublishVal cenv env (altActualParent, true, declKind, ValNotInRecScope, valscheme, attrs, xmlDoc, literalValue, false)
 
         assert(vspec.InlineInfo = inlineFlag)

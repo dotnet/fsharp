@@ -15,7 +15,6 @@ type Permutation =
     | FSC_NETFX of optimized: bool * buildOnly: bool
     | FSI_NETFX
     | FSI_NETFX_STDIN
-    | FSC_NETFX_TEST_GENERATED_SIGNATURE
     | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL
 #endif
 
@@ -325,25 +324,6 @@ let singleTestBuildAndRunCore cfg copyFiles p languageVersion =
         fsiStdin cfg (sources |> List.rev |> List.head) "" [] //use last file, because `cmd < a.txt b.txt` redirect b.txt only
 
         testOkFile.CheckExists()
-
-    | FSC_NETFX_TEST_GENERATED_SIGNATURE ->
-        use _cleanup = (cleanUpFSharpCore cfg)
-
-        let source1 =
-            ["test.ml"; "test.fs"; "test.fsx"]
-            |> List.rev
-            |> List.tryFind (fileExists cfg)
-
-        source1 |> Option.iter (fun from -> copy cfg from "tmptest.fs")
-
-        log "Generated signature file..."
-        fsc cfg "%s --sig:tmptest.fsi --define:FSC_NETFX_TEST_GENERATED_SIGNATURE" cfg.fsc_flags ["tmptest.fs"]
-
-        log "Compiling against generated signature file..."
-        fsc cfg "%s -o:tmptest1.exe" cfg.fsc_flags ["tmptest.fsi";"tmptest.fs"]
-
-        log "Verifying built .exe..."
-        peverify cfg "tmptest1.exe"
 
     | FSC_NETFX_TEST_ROUNDTRIP_AS_DLL ->
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL

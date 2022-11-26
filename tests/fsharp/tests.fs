@@ -72,7 +72,7 @@ module CoreTests =
     [<Test>]
     let ``array-no-dot-FSC_OPTIMIZED`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSC_OPTIMIZED "preview"
 
-    [<Test; Ignore("Some tests fail on .NET6 preview6, and fixed in preview7, disabling until preview7 gets released.")>]
+    [<Test>]
     let ``array-no-dot-FSI`` () = singleTestBuildAndRunVersion "core/array-no-dot" FSI "preview"
 
     [<Test>]
@@ -3376,57 +3376,6 @@ namespace CST.RI.Anshun
 
         fileVersionInfo.ProductVersion |> Assert.areEqual expected
 
-module GeneratedSignatureTests =
-    [<Test>]
-    let ``libtest-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/libtest" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``members-basics-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``access-FSC_NETFX_TEST_GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``array-FSC_NETFX_TEST_GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/array" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``genericmeasures-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/genericmeasures" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``innerpoly-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/innerpoly" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``measures-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``nestedModule-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/nestedModule" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``recursiveNestedModule-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/recursiveNestedModule" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``nestedModuleInNamespace-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/nestedModuleInNamespace" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``classStructInterface-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/classStructInterface" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``typeAugmentation-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/typeAugmentation" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``typeAliasPrimitives-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/typeAliasPrimitives" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``functionTypes-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/functionTypes" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``unionWithFunctionType-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/unionWithFunctionType" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``mixCurriedTupled-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/mixCurriedTupled" FSC_NETFX_TEST_GENERATED_SIGNATURE
-
-    [<Test>]
-    let ``zeroConstraint-FSC_NETFX_TEST_GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/zeroConstraint" FSC_NETFX_TEST_GENERATED_SIGNATURE
 #endif
 
 #if !NETCOREAPP

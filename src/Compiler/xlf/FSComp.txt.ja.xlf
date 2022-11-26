@@ -177,6 +177,11 @@
         <target state="translated">ドットなしの float32 リテラル</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorForNonVirtualMembersOverrides">
+        <source>Raises errors for non-virtual members overrides</source>
+        <target state="new">Raises errors for non-virtual members overrides</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">RequireQualifiedAccess 属性を持つコンストラクトの非推奨アクセスでエラーが発生しました</target>
@@ -5660,26 +5665,6 @@
       <trans-unit id="typeInfoGeneratedType">
         <source>generated type</source>
         <target state="translated">生成された型</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionFoundByAssemblyFoldersKey">
-        <source>Found by AssemblyFolders registry key</source>
-        <target state="translated">AssemblyFolders レジストリ キーによって検出されました</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionFoundByAssemblyFoldersExKey">
-        <source>Found by AssemblyFoldersEx registry key</source>
-        <target state="translated">AssemblyFoldersEx レジストリ キーによって検出されました</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionNetFramework">
-        <source>.NET Framework</source>
-        <target state="translated">.NET Framework</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionGAC">
-        <source>Global Assembly Cache</source>
-        <target state="translated">グローバル アセンブリ キャッシュ</target>
         <note />
       </trans-unit>
       <trans-unit id="recursiveClassHierarchy">

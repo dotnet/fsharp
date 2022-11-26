@@ -1892,7 +1892,8 @@ type ParsedImplFileInput =
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespace list *
         flags: (bool * bool) *
-        trivia: ParsedImplFileInputTrivia
+        trivia: ParsedImplFileInputTrivia *
+        identifiers: Set<string>
 
     member FileName: string
 
@@ -1921,7 +1922,8 @@ type ParsedSigFileInput =
         scopedPragmas: ScopedPragma list *
         hashDirectives: ParsedHashDirective list *
         contents: SynModuleOrNamespaceSig list *
-        trivia: ParsedSigFileInputTrivia
+        trivia: ParsedSigFileInputTrivia *
+        identifiers: Set<string>
 
     member FileName: string
 
@@ -1955,3 +1957,6 @@ type ParsedInput =
 
     /// Gets the #nowarn and other scoped pragmas
     member ScopedPragmas: ScopedPragma list
+
+    /// Gets a set of all identifiers used in this parsed input
+    member Identifiers: Set<string>

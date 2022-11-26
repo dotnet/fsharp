@@ -699,6 +699,8 @@ type LexFilterImpl (
     let mutable prevWasAtomicEnd = false
     
     let peekInitial() =
+        // Forget the lexbuf state we might have saved from previous input
+        haveLexbufState <- false
         let initialLookaheadTokenTup = popNextTokenTup()
         if debug then dprintf "first token: initialLookaheadTokenLexbufState = %a\n" outputPos (startPosOfTokenTup initialLookaheadTokenTup)
         

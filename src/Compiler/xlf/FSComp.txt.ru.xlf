@@ -177,6 +177,11 @@
         <target state="translated">литерал float32 без точки</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorForNonVirtualMembersOverrides">
+        <source>Raises errors for non-virtual members overrides</source>
+        <target state="new">Raises errors for non-virtual members overrides</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">выдать ошибку при устаревшем доступе к конструкции с атрибутом RequireQualifiedAccess</target>
@@ -5660,26 +5665,6 @@
       <trans-unit id="typeInfoGeneratedType">
         <source>generated type</source>
         <target state="translated">созданный тип</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionFoundByAssemblyFoldersKey">
-        <source>Found by AssemblyFolders registry key</source>
-        <target state="translated">Найдено по разделу реестра AssemblyFolders</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionFoundByAssemblyFoldersExKey">
-        <source>Found by AssemblyFoldersEx registry key</source>
-        <target state="translated">Найдено по разделу реестра AssemblyFoldersEx</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionNetFramework">
-        <source>.NET Framework</source>
-        <target state="translated">.NET Framework</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionGAC">
-        <source>Global Assembly Cache</source>
-        <target state="translated">Глобальный кэш сборок</target>
         <note />
       </trans-unit>
       <trans-unit id="recursiveClassHierarchy">

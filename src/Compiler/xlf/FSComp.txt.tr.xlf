@@ -177,6 +177,11 @@
         <target state="translated">noktasız float32 sabit değeri</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorForNonVirtualMembersOverrides">
+        <source>Raises errors for non-virtual members overrides</source>
+        <target state="new">Raises errors for non-virtual members overrides</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">RequireQualifiedAccess özniteliğine sahip yapının kullanım dışı erişiminde hata</target>
@@ -5660,26 +5665,6 @@
       <trans-unit id="typeInfoGeneratedType">
         <source>generated type</source>
         <target state="translated">oluşturulan tür</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionFoundByAssemblyFoldersKey">
-        <source>Found by AssemblyFolders registry key</source>
-        <target state="translated">AssemblyFolders kayıt defteri anahtarı ile bulunur</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionFoundByAssemblyFoldersExKey">
-        <source>Found by AssemblyFoldersEx registry key</source>
-        <target state="translated">AssemblyFoldersEx kayıt defteri anahtarı ile bulunur</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionNetFramework">
-        <source>.NET Framework</source>
-        <target state="translated">.NET Framework</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionGAC">
-        <source>Global Assembly Cache</source>
-        <target state="translated">Genel Bütünleştirilmiş Kod Önbelleği</target>
         <note />
       </trans-unit>
       <trans-unit id="recursiveClassHierarchy">

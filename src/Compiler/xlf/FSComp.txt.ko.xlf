@@ -177,6 +177,11 @@
         <target state="translated">점이 없는 float32 리터럴</target>
         <note />
       </trans-unit>
+      <trans-unit id="featureErrorForNonVirtualMembersOverrides">
+        <source>Raises errors for non-virtual members overrides</source>
+        <target state="new">Raises errors for non-virtual members overrides</target>
+        <note />
+      </trans-unit>
       <trans-unit id="featureErrorOnDeprecatedRequireQualifiedAccess">
         <source>give error on deprecated access of construct with RequireQualifiedAccess attribute</source>
         <target state="translated">RequireQualifiedAccess 특성을 사용하여 사용되지 않는 구문 액세스에 대한 오류 제공</target>
@@ -5660,26 +5665,6 @@
       <trans-unit id="typeInfoGeneratedType">
         <source>generated type</source>
         <target state="translated">생성된 형식</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionFoundByAssemblyFoldersKey">
-        <source>Found by AssemblyFolders registry key</source>
-        <target state="translated">AssemblyFolders 레지스트리 키로 찾았습니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionFoundByAssemblyFoldersExKey">
-        <source>Found by AssemblyFoldersEx registry key</source>
-        <target state="translated">AssemblyFoldersEx 레지스트리 키로 찾았습니다.</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionNetFramework">
-        <source>.NET Framework</source>
-        <target state="translated">.NET Framework</target>
-        <note />
-      </trans-unit>
-      <trans-unit id="assemblyResolutionGAC">
-        <source>Global Assembly Cache</source>
-        <target state="translated">전역 어셈블리 캐시</target>
         <note />
       </trans-unit>
       <trans-unit id="recursiveClassHierarchy">
