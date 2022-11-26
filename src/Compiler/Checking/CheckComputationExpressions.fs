@@ -1042,7 +1042,6 @@ let TcComputationExpression (cenv: cenv) env (overallTy: OverallTy) tpenv (mWhol
                     SynExpr.DebugPoint(DebugPointAtLeafExpr.Yes mWhile, false, guardExpr)
                 | DebugPointAtWhile.No -> guardExpr
 
-            // todo desugar directly instead of rewriting first
             let rewrittenWhileExpr =
                 let idFirst = mkSynId mGuard (CompilerGeneratedName "first")
                 let patFirst = mkSynPatVar None idFirst
