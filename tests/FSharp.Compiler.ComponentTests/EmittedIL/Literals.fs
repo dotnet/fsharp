@@ -53,23 +53,25 @@ let [<Literal>] bitwise = 1us &&& (3us ||| 4us)
 
     [<Fact>]
     let ``Arithmetic in char and floating point literals is evaluated at compile time``() =
+        // on Linux and Mac floats with no decimal parts are printed without the decimal point (unlike Windows)
+        // let's add some fractions so that the tests are consistent
         FSharp """
 module LiteralArithmetic
 
-let [<Literal>] bytesInMegabyte = 1024. * 1024.
+let [<Literal>] bytesInMegabyte = 1024. * 1024. + 0.1
 
-let [<Literal>] bytesInKilobyte = bytesInMegabyte / 1024.
+let [<Literal>] bytesInKilobyte = bytesInMegabyte / 1024. + 0.1
 
-let [<Literal>] secondsInDayPlusThree = 3f + (60f * 60f * 24f)
+let [<Literal>] secondsInDayPlusThree = 3.1f + (60f * 60f * 24f)
 
 let [<Literal>] chars = 'a' + 'b' - 'a'
         """
         |> compile
         |> shouldSucceed
         |> verifyIL [
-            """.field public static literal float64 bytesInMegabyte = float64(1048576.)"""
-            """.field public static literal float64 bytesInKilobyte = float64(1024.)"""
-            """.field public static literal float32 secondsInDayPlusThree = float32(86403.)"""
+            """.field public static literal float64 bytesInMegabyte = float64(1048576.1000000001)"""
+            """.field public static literal float64 bytesInKilobyte = float64(1024.10009765625)"""
+            """.field public static literal float32 secondsInDayPlusThree = float32(86403.102)"""
             """.field public static literal char chars = char(0x0062)"""
         ]
 
