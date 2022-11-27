@@ -27,9 +27,9 @@ let main _ =
 
 
     [<Fact>]
-    let ``Arithmetics in integer literals is evaluated at compile-time``() =
+    let ``Arithmetic in integer literals is evaluated at compile time``() =
         FSharp """
-module LiteralArithmetics
+module LiteralArithmetic
 
 let [<Literal>] bytesInMegabyte = 1024L * 1024L
 
@@ -52,9 +52,31 @@ let [<Literal>] bitwise = 1us &&& (3us ||| 4us)
         ]
 
     [<Fact>]
-    let ``Logical operations on booleans are evaluated at compile-time``() =
+    let ``Arithmetic in char and floating point literals is evaluated at compile time``() =
         FSharp """
-module LiteralArithmetics
+module LiteralArithmetic
+
+let [<Literal>] bytesInMegabyte = 1024. * 1024.
+
+let [<Literal>] bytesInKilobyte = bytesInMegabyte / 1024.
+
+let [<Literal>] secondsInDayPlusThree = 3f + (60f * 60f * 24f)
+
+let [<Literal>] chars = 'a' + 'b' - 'a'
+        """
+        |> compile
+        |> shouldSucceed
+        |> verifyIL [
+            """.field public static literal float64 bytesInMegabyte = float64(1048576.)"""
+            """.field public static literal float64 bytesInKilobyte = float64(1024.)"""
+            """.field public static literal float32 secondsInDayPlusThree = float32(86403.)"""
+            """.field public static literal char chars = char(0x0062)"""
+        ]
+
+    [<Fact>]
+    let ``Logical operations on booleans are evaluated at compile time``() =
+        FSharp """
+module LiteralArithmetic
 
 let [<Literal>] flag = true
 
@@ -83,9 +105,9 @@ let [<Literal>] complex3 = true || (flag && not flippedFlag)
         ]
 
     [<Fact>]
-    let ``Arithmetics can be used for constructing enum literals``() =
+    let ``Arithmetic can be used for constructing enum literals``() =
         FSharp """
-module LiteralArithmetics
+module LiteralArithmetic
 
 type E =
     | A = 1
@@ -96,13 +118,13 @@ let [<Literal>] x = enum<E> (1 + 1)
         |> compile
         |> shouldSucceed
         |> verifyIL [
-            """.field public static literal valuetype LiteralArithmetics/E x = int32(0x00000002)"""
+            """.field public static literal valuetype LiteralArithmetic/E x = int32(0x00000002)"""
         ]
 
     [<Fact>]
-    let ``Arithmetics can be used for constructing literals in attributes``() =
+    let ``Arithmetic can be used for constructing literals in attributes``() =
         FSharp """
-module LiteralArithmetics
+module LiteralArithmetic
 
 open System.Runtime.CompilerServices
 
@@ -120,7 +142,7 @@ let x () =
     [<Fact>]
     let ``Compilation fails when addition in literal overflows``() =
         FSharp """
-module LiteralArithmetics
+module LiteralArithmetic
 
 let [<Literal>] x = System.Int32.MaxValue + 1
         """
@@ -136,9 +158,9 @@ let [<Literal>] x = System.Int32.MaxValue + 1
         }
 
     [<Fact>]
-    let ``Compilation fails when using decimal arithmetics in literal``() =
+    let ``Compilation fails when using decimal arithmetic in literal``() =
         FSharp """
-module LiteralArithmetics
+module LiteralArithmetic
 
 let [<Literal>] x = 1m + 1m
         """
@@ -166,9 +188,9 @@ let [<Literal>] x = 1m + 1m
         ]
 
     [<Fact>]
-    let ``Compilation fails when using arithmetics with a non-literal in literal``() =
+    let ``Compilation fails when using arithmetic with a non-literal in literal``() =
         FSharp """
-module LiteralArithmetics
+module LiteralArithmetic
 
 let [<Literal>] x = 1 + System.DateTime.Now.Hour
         """
