@@ -540,7 +540,7 @@ type internal FsiToolWindow() as this =
 #silentCd @"{dir}";;
 {if dbgBreak then "#dbgbreak" else ""}
 #{topLine} @"{filename}"
-{text.ToString()};;
+{text.ToString()}
 #1 "stdin"
 #interactiveprompt "show";;
 """
