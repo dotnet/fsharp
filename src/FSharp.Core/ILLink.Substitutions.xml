@@ -1,8 +1,11 @@
 <linker>
   <assembly fullname="FSharp.Core">
+    <!-- TODO: Disabling compressed resources until we produce those for FSharp.Core.
+         Trimming something which does not exist in the DLL causes linker to fail in runtime repo:
+         https://github.com/dotnet/runtime/pull/78034#issuecomment-1328705849
     <resource name="FSharpOptimizationCompressedData.FSharp.Core" action="remove" />
+    <resource name="FSharpSignatureCompressedData.FSharp.Core" action="remove" /> -->
     <resource name="FSharpOptimizationInfo.FSharp.Core" action="remove" />
-    <resource name="FSharpSignatureCompressedData.FSharp.Core" action="remove" />
     <resource name="FSharpSignatureInfo.FSharp.Core" action="remove" />
   </assembly>
 </linker>
