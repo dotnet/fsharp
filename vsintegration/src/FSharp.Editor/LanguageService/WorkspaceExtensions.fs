@@ -247,15 +247,14 @@ type Project with
                     |> RoslynHelpers.StartAsyncAsTask ct
     }
     
-    member this.GetFSharpCompilationOptionsAsync() =
-        async {
+    member this.GetFSharpCompilationOptionsAsync(ct: CancellationToken) =
+        backgroundTask {
             if this.IsFSharp then
                 match ProjectCache.Projects.TryGetValue(this) with
                 | true, result -> return result
                 | _ ->
                     let service = this.Solution.GetFSharpWorkspaceService()
                     let projectOptionsManager = service.FSharpProjectOptionsManager
-                    let! ct = Async.CancellationToken
                     match! projectOptionsManager.TryGetOptionsByProject(this, ct) with
                     | None -> return raise(OperationCanceledException("FSharp project options not found."))
                     | Some(parsingOptions, projectOptions) ->

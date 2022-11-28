@@ -701,7 +701,7 @@ type internal FSharpNavigation
         )
         |> Task.FromResult
 
-    member this.TryGoToDefinition(position, cancellationToken) =
+    member _.TryGoToDefinition(position, cancellationToken) =
         let gtd = GoToDefinition(metadataAsSource)
         let gtdTask = gtd.FindDefinitionTask(initialDoc, position, cancellationToken)
         
@@ -862,7 +862,7 @@ type FSharpCrossLanguageSymbolNavigationService()  =
         e.TryGetMembersFunctionsAndValues()
         |> Seq.filter (
             fun x ->
-                x.DisplayName = name
+                (x.DisplayName = name || x.CompiledName = name)
                 && x.GenericParameters.Count = genericParametersCount)
         |> Seq.filter memberTypePred
 
@@ -876,13 +876,13 @@ type FSharpCrossLanguageSymbolNavigationService()  =
     interface IFSharpCrossLanguageSymbolNavigationService with
         member _.TryGetNavigableLocationAsync(assemblyName: string, documentationCommentId: string, cancellationToken: CancellationToken) : Task<IFSharpNavigableLocation> =
             let path = docCommentIdToPath documentationCommentId
-            async {
+            backgroundTask {
                 let projects = workspace.CurrentSolution.Projects |> Seq.filter (fun p -> p.IsFSharp && p.AssemblyName = assemblyName)
                 
                 let mutable locations = Seq.empty
 
                 for project in projects do
-                    let! checker, _, _, options = project.GetFSharpCompilationOptionsAsync()
+                    let! checker, _, _, options = project.GetFSharpCompilationOptionsAsync(cancellationToken)
                     let! result = checker.ParseAndCheckProject(options)
 
                     match path with
@@ -918,4 +918,4 @@ type FSharpCrossLanguageSymbolNavigationService()  =
                     return FSharpNavigableLocation(statusBar, metadataAsSource, location, project) :> IFSharpNavigableLocation
                 else
                     return Unchecked.defaultof<_> // returning null here, so Roslyn can fallback to default source-as-metadata implementation.
-            } |> RoslynHelpers.StartAsyncAsTask cancellationToken
+            }
