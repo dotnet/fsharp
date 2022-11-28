@@ -2026,7 +2026,7 @@ FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer]] CheckFileInProjectAllowingStaleCachedResults(FSharp.Compiler.CodeAnalysis.FSharpParseFileResults, System.String, Int32, System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.FSharpOption`1[FSharp.Compiler.EditorServices.SemanticClassificationView]] GetBackgroundSemanticClassificationForFile(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[Microsoft.FSharp.Core.Unit] NotifyProjectCleaned(FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
-FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Collections.Generic.IEnumerable`1[FSharp.Compiler.Text.Range]] FindBackgroundReferencesInFile(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
+FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Collections.Generic.IEnumerable`1[FSharp.Compiler.Text.Range]] FindBackgroundReferencesInFile(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, FSharp.Compiler.Symbols.FSharpSymbol, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckFileAnswer]] ParseAndCheckFileInProject(System.String, Int32, FSharp.Compiler.Text.ISourceText, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.CodeAnalysis.FSharpParseFileResults,FSharp.Compiler.CodeAnalysis.FSharpCheckFileResults]] GetBackgroundCheckResultsForFileInProject(System.String, FSharp.Compiler.CodeAnalysis.FSharpProjectOptions, Microsoft.FSharp.Core.FSharpOption`1[System.String])
 FSharp.Compiler.CodeAnalysis.FSharpChecker: Microsoft.FSharp.Control.FSharpAsync`1[System.Tuple`2[FSharp.Compiler.CodeAnalysis.FSharpProjectOptions,Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Diagnostics.FSharpDiagnostic]]] GetProjectOptionsFromScript(System.String, FSharp.Compiler.Text.ISourceText, Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.DateTime], Microsoft.FSharp.Core.FSharpOption`1[System.String[]], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[System.String], Microsoft.FSharp.Core.FSharpOption`1[System.Int64], Microsoft.FSharp.Core.FSharpOption`1[System.String])
@@ -2386,10 +2386,12 @@ FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Int32 Tag
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: Int32 get_Tag()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticKind: System.String ToString()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean CheckXmlDocs
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean Equals(FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean Equals(System.Object)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean Equals(System.Object, System.Collections.IEqualityComparer)
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean GlobalWarnAsError
+FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean get_CheckXmlDocs()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: Boolean get_GlobalWarnAsError()
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions Default
 FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions: FSharp.Compiler.Diagnostics.FSharpDiagnosticOptions get_Default()
@@ -5598,7 +5600,7 @@ FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_IsLastCompiland()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_IsScript()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean get_isScript()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Boolean isScript
-FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.ParsedImplFileInput NewParsedImplFileInput(System.String, Boolean, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace], System.Tuple`2[System.Boolean,System.Boolean], FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia)
+FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.ParsedImplFileInput NewParsedImplFileInput(System.String, Boolean, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace], System.Tuple`2[System.Boolean,System.Boolean], FSharp.Compiler.SyntaxTrivia.ParsedImplFileInputTrivia, Microsoft.FSharp.Collections.FSharpSet`1[System.String])
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile QualifiedName
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_QualifiedName()
 FSharp.Compiler.Syntax.ParsedImplFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_qualifiedNameOfFile()
@@ -5621,6 +5623,8 @@ FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpL
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace] contents
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace] get_Contents()
 FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespace] get_contents()
+FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpSet`1[System.String] get_identifiers()
+FSharp.Compiler.Syntax.ParsedImplFileInput: Microsoft.FSharp.Collections.FSharpSet`1[System.String] identifiers
 FSharp.Compiler.Syntax.ParsedImplFileInput: System.String FileName
 FSharp.Compiler.Syntax.ParsedImplFileInput: System.String ToString()
 FSharp.Compiler.Syntax.ParsedImplFileInput: System.String fileName
@@ -5652,6 +5656,8 @@ FSharp.Compiler.Syntax.ParsedInput: Int32 Tag
 FSharp.Compiler.Syntax.ParsedInput: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] ScopedPragmas
 FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma] get_ScopedPragmas()
+FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpSet`1[System.String] Identifiers
+FSharp.Compiler.Syntax.ParsedInput: Microsoft.FSharp.Collections.FSharpSet`1[System.String] get_Identifiers()
 FSharp.Compiler.Syntax.ParsedInput: System.String FileName
 FSharp.Compiler.Syntax.ParsedInput: System.String ToString()
 FSharp.Compiler.Syntax.ParsedInput: System.String get_FileName()
@@ -5716,7 +5722,7 @@ FSharp.Compiler.Syntax.ParsedSigFileFragment: Int32 Tag
 FSharp.Compiler.Syntax.ParsedSigFileFragment: Int32 get_Tag()
 FSharp.Compiler.Syntax.ParsedSigFileFragment: System.String ToString()
 FSharp.Compiler.Syntax.ParsedSigFileInput
-FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.ParsedSigFileInput NewParsedSigFileInput(System.String, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig], FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia)
+FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.ParsedSigFileInput NewParsedSigFileInput(System.String, FSharp.Compiler.Syntax.QualifiedNameOfFile, Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ScopedPragma], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.ParsedHashDirective], Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig], FSharp.Compiler.SyntaxTrivia.ParsedSigFileInputTrivia, Microsoft.FSharp.Collections.FSharpSet`1[System.String])
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile QualifiedName
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_QualifiedName()
 FSharp.Compiler.Syntax.ParsedSigFileInput: FSharp.Compiler.Syntax.QualifiedNameOfFile get_qualifiedNameOfFile()
@@ -5739,6 +5745,8 @@ FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpLi
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig] contents
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig] get_Contents()
 FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpList`1[FSharp.Compiler.Syntax.SynModuleOrNamespaceSig] get_contents()
+FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpSet`1[System.String] get_identifiers()
+FSharp.Compiler.Syntax.ParsedSigFileInput: Microsoft.FSharp.Collections.FSharpSet`1[System.String] identifiers
 FSharp.Compiler.Syntax.ParsedSigFileInput: System.String FileName
 FSharp.Compiler.Syntax.ParsedSigFileInput: System.String ToString()
 FSharp.Compiler.Syntax.ParsedSigFileInput: System.String fileName
