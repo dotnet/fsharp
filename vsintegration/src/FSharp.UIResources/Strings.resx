@@ -234,4 +234,10 @@
   <data name="Show_Inline_Parameter_Name_Hints" xml:space="preserve">
     <value>Display inline parameter name hints (experimental)</value>
   </data>
+  <data name="Enable_Fast_Find_References" xml:space="preserve">
+    <value>Enable fast find references &amp; rename (experimental)</value>
+  </data>
+  <data name="Find_References_Performance" xml:space="preserve">
+    <value>Find References Performance Options</value>
+  </data>
 </root>

@@ -76,9 +76,8 @@ type internal InlineRenameInfo
         | true, text -> text
         | _ -> document.GetTextAsync(cancellationToken).Result
 
-    let symbolUses =
-        SymbolHelpers.getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, document.Project.Solution)
-        |> Async.cache
+    let symbolUses ct =
+        SymbolHelpers.getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, document.Project.Solution, ct)
 
     override _.CanRename = true
     override _.LocalizedErrorMessage = null
@@ -104,7 +103,7 @@ type internal InlineRenameInfo
         
     override _.FindRenameLocationsAsync(_, _, cancellationToken) =
         async {
-            let! symbolUsesByDocumentId = symbolUses
+            let! symbolUsesByDocumentId = symbolUses cancellationToken
             let! locations =
                 symbolUsesByDocumentId
                 |> Seq.map (fun (KeyValue(documentId, symbolUses)) ->
