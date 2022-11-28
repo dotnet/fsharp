@@ -7,6 +7,7 @@ module FSharp.Compiler.CompilerGlobalState
 open System
 open System.Collections.Generic
 open System.Collections.Concurrent
+open System.Threading
 open FSharp.Compiler.Syntax.PrettyNaming
 open FSharp.Compiler.Text
 
@@ -17,18 +18,15 @@ open FSharp.Compiler.Text
 /// It is made concurrency-safe since a global instance of the type is allocated in tast.fs, and it is good
 /// policy to make all globally-allocated objects concurrency safe in case future versions of the compiler
 /// are used to host multiple concurrent instances of compilation.
-type NiceNameGenerator() =
+type NiceNameGenerator() =    
+    let basicNameCounts = ConcurrentDictionary<string,Ref<int>>(max Environment.ProcessorCount 1, 127)
    
-    let basicNameCounts = ConcurrentDictionary<string,int>(max Environment.ProcessorCount 1, 127)
-    let incrementCounter = Func<string,int,int>(fun _ oldVal -> oldVal + 1)
-
     member _.FreshCompilerGeneratedName (name, m: range) =
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
-        let count = basicNameCounts.AddOrUpdate(basicName, 1, incrementCounter)
+        let countCell = basicNameCounts.GetOrAdd(basicName,fun k -> ref 0)
+        let count = Interlocked.Increment(countCell)
+        
         CompilerGeneratedNameSuffix basicName (string m.StartLine + (match (count-1) with 0 -> "" | n -> "-" + string n))
-
-    member _.Reset () =
-      basicNameCounts.Clear()
 
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
@@ -36,35 +34,15 @@ type NiceNameGenerator() =
 ///
 /// This type may be accessed concurrently, though in practice it is only used from the compilation thread.
 /// It is made concurrency-safe since a global instance of the type is allocated in tast.fs.
-type StableNiceNameGenerator() =
-    (* TODO Tomas lockfree *)
-    let lockObj = obj()
+type StableNiceNameGenerator() = 
 
-    let names = Dictionary<string * int64, string>(100)
-    let basicNameCounts = Dictionary<string, int>(100)
+    let niceNames = ConcurrentDictionary<string * int64, string>(max Environment.ProcessorCount 1, 127)
+    let innerGenerator = new NiceNameGenerator()
 
     member x.GetUniqueCompilerGeneratedName (name, m: range, uniq) =
-        lock lockObj (fun () ->
-            let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
-            let key = basicName, uniq
-            match names.TryGetValue key with
-            | true, nm -> nm
-            | _ ->
-                let n =
-                    match basicNameCounts.TryGetValue basicName with
-                    | true, c -> c
-                    | _ -> 0
-                let nm = CompilerGeneratedNameSuffix basicName (string m.StartLine + (match n with 0 -> "" | n -> "-" + string n))
-                names[key] <- nm
-                basicNameCounts[basicName] <- n + 1
-                nm
-        )
-
-    member x.Reset () =
-      lock lockObj (fun () ->
-        basicNameCounts.Clear()
-        names.Clear()
-      )
+        let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
+        let key = basicName, uniq
+        niceNames.GetOrAdd(key, fun _ -> innerGenerator.FreshCompilerGeneratedName(name, m))
 
 type internal CompilerGlobalState () =
     /// A global generator of compiler generated names
