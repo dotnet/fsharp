@@ -830,57 +830,59 @@ let main3
             
     // TODO Use proper async code
     let (sigDataAttributes, sigDataResources), optimizedImpls, optDataResources =
-        let mutable sigDataAttributes: ILAttribute list = []
-        let mutable sigDataResources : ILResource list = []
-        let a1 =
-            async {
-                try
-                    let sigDataAttributes2, sigDataResources2 = EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
-                    sigDataAttributes <- sigDataAttributes2
-                    sigDataResources <- sigDataResources2
-                with e ->
-                    errorRecoveryNoRange e
-                    exiter.Exit 1
-            }
+        // async {
+            let encode =
+                async {
+                    try
+                        // return EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
+                        return EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
+                    with e ->
+                        errorRecoveryNoRange e
+                        exiter.Exit 1
+                        return raise (InvalidOperationException("Didn't expect to reach this place in code - expected 'exiter.Exit' to fail"))
+                        //raise (InvalidOperationException("Didn't expect to reach this place in code - expected 'exiter.Exit' to fail"))
+                }
 
-        let mutable optimizedImpls2 : CheckedAssemblyAfterOptimization option = None
-        let mutable optDataResources : ILResource list = []
-        let a2 =
-            async {
-                // Perform optimization
-                use _ = UseBuildPhase BuildPhase.Optimize
+            let optimize =
+                async {
+                    // Perform optimization
+                    use _ = UseBuildPhase BuildPhase.Optimize
 
-                let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
+                    let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
 
-                let importMap = tcImports.GetImportMap()
+                    let importMap = tcImports.GetImportMap()
 
-                let optimizedImpls, optimizationData, _ =
-                    ApplyAllOptimizations(
-                        tcConfig,
-                        tcGlobals,
-                        (LightweightTcValForUsingInBuildMethodCall tcGlobals),
-                        outfile,
-                        importMap,
-                        false,
-                        optEnv0,
-                        generatedCcu,
-                        typedImplFiles
-                    )
+                    let optimizedImpls, optimizationData, _ =
+                        ApplyAllOptimizations(
+                            tcConfig,
+                            tcGlobals,
+                            (LightweightTcValForUsingInBuildMethodCall tcGlobals),
+                            outfile,
+                            importMap,
+                            false,
+                            optEnv0,
+                            generatedCcu,
+                            typedImplFiles
+                        )
 
-                AbortOnError(diagnosticsLogger, exiter)
+                    return optimizedImpls, optimizationData
+                    // optimizedImpls, optimizationData
+                }
+            
+            let sigDataAttributes, sigDataResources = encode |> Async.RunSynchronously
+            let optimizedImpls, optimizationData = optimize |> Async.RunSynchronously
+            
+            AbortOnError(diagnosticsLogger, exiter)
+            
+            // Encode the optimization data
+            ReportTime tcConfig ("Encoding OptData")
+            let optDataResources = EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
+            
 
-                // Encode the optimization data
-                ReportTime tcConfig ("Encoding OptData")
-
-                optimizedImpls2 <- Some optimizedImpls
-                optDataResources <- EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
-            }
-        
-        let t1 = a1 |> Async.StartAsTask
-        let t2 = a2 |> Async.StartAsTask
-        t1.Wait()
-        t2.Wait()
-        (sigDataAttributes, sigDataResources), optimizedImpls2.Value, optDataResources
+            (sigDataAttributes, sigDataResources), optimizedImpls, optDataResources
+            // return (sigDataAttributes, sigDataResources), optimizedImpls, optDataResources
+        // }
+        // |> Async.RunSynchronously
         
     // Pass on only the minimum information required for the next phase
     Args(
