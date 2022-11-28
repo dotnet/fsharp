@@ -1850,7 +1850,7 @@ type internal FsiDynamicCompiler(
         let impl = SynModuleOrNamespace(prefix,false, SynModuleOrNamespaceKind.NamedModule,defs,PreXmlDoc.Empty,[],None,m, { LeadingKeyword = SynModuleOrNamespaceLeadingKeyword.None })
         let isLastCompiland = true
         let isExe = false
-        let input = ParsedInput.ImplFile (ParsedImplFileInput (fileName,true, ComputeQualifiedNameOfFileFromUniquePath (m,prefixPath),[],[],[impl],(isLastCompiland, isExe), { ConditionalDirectives = []; CodeComments = [] }))
+        let input = ParsedInput.ImplFile (ParsedImplFileInput (fileName,true, ComputeQualifiedNameOfFileFromUniquePath (m,prefixPath),[],[],[impl],(isLastCompiland, isExe), { ConditionalDirectives = []; CodeComments = [] }, Set.empty))
         let isIncrementalFragment = true
         let istate,tcEnvAtEndOfLastInput,declaredImpls = ProcessInputs (ctok, diagnosticsLogger, istate, [input], showTypes, isIncrementalFragment, isInteractiveItExpr, prefix, m)
         let tcState = istate.tcState

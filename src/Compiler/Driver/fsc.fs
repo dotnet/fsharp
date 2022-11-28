@@ -532,7 +532,6 @@ let main1
 
     // Process command line, flags and collect filenames
     let sourceFiles =
-
         // The ParseCompilerOptions function calls imperative function to process "real" args
         // Rather than start processing, just collect names, then process them.
         try
@@ -710,7 +709,6 @@ let main2
            exiter: Exiter,
            ilSourceDocs))
     =
-
     if tcConfig.typeCheckOnly then
         exiter.Exit 0
 
@@ -818,7 +816,6 @@ let main3
            exiter: Exiter,
            ilSourceDocs))
     =
-
     // Encode the signature data
     ReportTime tcConfig "Encode Interface Data"
     let exportRemapping = MakeExportRemapping generatedCcu generatedCcu.Contents
@@ -914,7 +911,6 @@ let main4
            exiter: Exiter,
            ilSourceDocs))
     =
-
     match tcImportsCapture with
     | None -> ()
     | Some f -> f tcImports
@@ -1049,7 +1045,6 @@ let main6
            exiter: Exiter,
            ilSourceDocs))
     =
-
     ReportTime tcConfig "Write .NET Binary"
 
     use _ = UseBuildPhase BuildPhase.Output
