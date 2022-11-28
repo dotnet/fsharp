@@ -840,37 +840,44 @@ let main3
                         errorRecoveryNoRange e
                         exiter.Exit 1
                         return raise (InvalidOperationException("Didn't expect to reach this place in code - expected 'exiter.Exit' to fail"))
-                        //raise (InvalidOperationException("Didn't expect to reach this place in code - expected 'exiter.Exit' to fail"))
                 }
 
-            let optimize =
+            let optimize () =
+                // Perform optimization
+                use _ = UseBuildPhase BuildPhase.Optimize
+
+                let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
+
+                let importMap = tcImports.GetImportMap()
+
+                let optimizedImpls, optimizationData, _ =
+                    ApplyAllOptimizations(
+                        tcConfig,
+                        tcGlobals,
+                        (LightweightTcValForUsingInBuildMethodCall tcGlobals),
+                        outfile,
+                        importMap,
+                        false,
+                        optEnv0,
+                        generatedCcu,
+                        typedImplFiles
+                    )
+
+                optimizedImpls, optimizationData
+            let optimize2 =
                 async {
-                    // Perform optimization
-                    use _ = UseBuildPhase BuildPhase.Optimize
-
-                    let optEnv0 = GetInitialOptimizationEnv(tcImports, tcGlobals)
-
-                    let importMap = tcImports.GetImportMap()
-
-                    let optimizedImpls, optimizationData, _ =
-                        ApplyAllOptimizations(
-                            tcConfig,
-                            tcGlobals,
-                            (LightweightTcValForUsingInBuildMethodCall tcGlobals),
-                            outfile,
-                            importMap,
-                            false,
-                            optEnv0,
-                            generatedCcu,
-                            typedImplFiles
-                        )
-
-                    return optimizedImpls, optimizationData
-                    // optimizedImpls, optimizationData
+                    return UseMultipleDiagnosticLoggers ([1], diagnosticsLogger, None) (fun sourceFilesWithDelayLoggers ->
+                        match sourceFilesWithDelayLoggers with
+                        | [_, b] ->
+                            DiagnosticsThreadStatics.DiagnosticsLogger <- b
+                            let res = optimize ()
+                            res
+                        | _ -> failwith "blah"
+                    )
                 }
             
             let sigDataAttributes, sigDataResources = encode |> Async.RunSynchronously
-            let optimizedImpls, optimizationData = optimize |> Async.RunSynchronously
+            let optimizedImpls, optimizationData = optimize2 |> Async.RunSynchronously
             
             AbortOnError(diagnosticsLogger, exiter)
             

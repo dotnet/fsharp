@@ -133,6 +133,9 @@ type TcState =
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState: range * string * TcConfig * TcGlobals * TcImports * TcEnv * OpenDeclaration list -> TcState
 
+
+val UseMultipleDiagnosticLoggers : ('a list * DiagnosticsLogger * (PhasedDiagnostic -> PhasedDiagnostic) option) -> (('a * CapturingDiagnosticsLogger) list -> 'b) -> 'b
+
 /// Check one input, returned as an Eventually computation
 val CheckOneInput:
     checkForErrors: (unit -> bool) *

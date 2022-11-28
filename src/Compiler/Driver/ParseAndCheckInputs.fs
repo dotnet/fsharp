@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 /// Contains logic to coordinate the parsing and checking of one or a group of files
 module internal FSharp.Compiler.ParseAndCheckInputs
@@ -765,7 +766,7 @@ let ParseOneInputFile (tcConfig: TcConfig, lexResourceManager, fileName, isLastC
 /// NOTE: this needs to be improved to commit diagnotics as soon as possible
 ///
 /// NOTE: If StopProcessing is raised by any piece of work then the overall function raises StopProcessing.
-let UseMultipleDiagnosticLoggers (inputs, diagnosticsLogger, eagerFormat) f =
+let UseMultipleDiagnosticLoggers ((inputs, diagnosticsLogger, eagerFormat): 'a list * DiagnosticsLogger * (PhasedDiagnostic -> PhasedDiagnostic) option) (f: ('a * CapturingDiagnosticsLogger) list -> 'b): 'b =
 
     // Check input files and create delayed error loggers before we try to parallel parse.
     let delayLoggers =
