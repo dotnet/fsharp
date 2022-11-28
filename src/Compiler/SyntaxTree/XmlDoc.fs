@@ -320,13 +320,23 @@ type XmlDocumentationInfo private (tryGetXmlDocument: unit -> XmlDocument option
             keepMax = cacheMaxSize
         )
 
-    let tryGetSummaryNode xmlDocSig =
-        tryGetXmlDocument ()
-        |> Option.bind (fun doc ->
-            match doc.SelectSingleNode(sprintf "doc/members/member[@name='%s']" xmlDocSig) with
-            | null -> None
-            | node when node.HasChildNodes -> Some node
-            | _ -> None)
+    let tryGetSummaryNode (xmlDocSig: string) =
+        if xmlDocSig.Contains "'" && xmlDocSig.Contains "\"" then
+            // No easy way to find this signature with XPath
+            None
+        else
+            tryGetXmlDocument ()
+            |> Option.bind (fun doc ->
+                let name =
+                    if xmlDocSig.Contains "'" then
+                        $"\"{xmlDocSig}\""
+                    else
+                        $"'{xmlDocSig}'"
+
+                match doc.SelectSingleNode $"doc/members/member[@name={name}]" with
+                | null -> None
+                | node when node.HasChildNodes -> Some node
+                | _ -> None)
 
     member _.TryGetXmlDocBySig(xmlDocSig: string) =
         tryGetSummaryNode xmlDocSig

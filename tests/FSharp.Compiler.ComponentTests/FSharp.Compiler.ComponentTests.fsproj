@@ -202,6 +202,8 @@
     <Compile Include="Globalization\GlobalizationTestCases.fs" />
     <Compile Include="OCamlCompat\OCamlCompat.fs" />
     <Compile Include="Miscellaneous\ListLiterals.fs" />
+    <Compile Include="Miscellaneous\SemanticClassificationKeyBuilder.fs" />
+    <Compile Include="Miscellaneous\XmlDoc.fs" />
     <Compile Include="Signatures\TestHelpers.fs" />
     <Compile Include="Signatures\ModuleOrNamespaceTests.fs" />
     <Compile Include="Signatures\RecordTests.fs" />
@@ -210,8 +212,9 @@
     <Compile Include="Signatures\SigGenerationRoundTripTests.fs" />
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
+    <Compile Include="FSharpChecker\FindReferences.fs" />
     <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-       <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
     </None>
   </ItemGroup>
 

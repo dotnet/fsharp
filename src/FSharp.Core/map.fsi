@@ -256,8 +256,7 @@ module Map =
     ///     match x with
     ///     | Some s -> Some (s + "z")
     ///     | None -> None
-    /// )
-    /// evaluates to map [(1, "az"); (2, "b")]
+    /// ) // evaluates to map [(1, "az"); (2, "b")]
     /// </code>
     /// </example>
     [<CompiledName("Change")>]
