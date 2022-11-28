@@ -36,8 +36,17 @@ module InlineTypeHints =
         (symbolUse: FSharpSymbolUse) =
 
         let isSolved = 
-            symbol.GenericParameters
-            |> Seq.forall (fun p -> p.IsSolveAtCompileTime)
+            let case1 = 
+                if symbol.GenericParameters |> Seq.isEmpty |> not
+                then symbol.GenericParameters |> Seq.forall (fun p -> p.IsSolveAtCompileTime)
+                else true
+
+            let case2 =
+                if symbol.FullType.IsGenericParameter 
+                then symbol.FullType.GenericParameter.DisplayNameCore <> "?"
+                else true
+
+            case1 && case2
 
         let isNotAnnotatedManually = 
             not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start)
