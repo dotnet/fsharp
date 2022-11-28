@@ -850,29 +850,51 @@ type FSharpCrossLanguageSymbolNavigationService()  =
             DocCommentId.Field { EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = 0 }
         | _ -> DocCommentId.None
     
-    let tryFindValByNameAndType (name: string) (symbolMemberType: SymbolMemberType) (genericParametersCount: int) (e: FSharpEntity) =
-        let memberTypePred: (FSharpMemberOrFunctionOrValue -> bool) = 
-            match symbolMemberType with
-            | SymbolMemberType.Other
-            | SymbolMemberType.Method -> fun _ -> true
-            | SymbolMemberType.Constructor -> fun x -> x.IsConstructor
-            | SymbolMemberType.Event // Events are just properties
-            | SymbolMemberType.Property -> fun x -> x.IsProperty
-
-        e.TryGetMembersFunctionsAndValues()
-        |> Seq.filter (
-            fun x ->
-                (x.DisplayName = name || x.CompiledName = name)
-                && x.GenericParameters.Count = genericParametersCount)
-        |> Seq.filter memberTypePred
-
     let tryFindFieldByName (name: string) (e: FSharpEntity) =
         e.FSharpFields
         |> Seq.filter (
             fun x ->
                 x.DisplayName = name
                 && not x.IsCompilerGenerated)
+        |> Seq.map (fun e -> e.DeclarationLocation)
+
+    let tryFindValByNameAndType (name: string) (symbolMemberType: SymbolMemberType) (genericParametersCount: int) (e: FSharpEntity) =
+
+        let entities = e.TryGetMembersFunctionsAndValues()
         
+        let defaultFilter (e: FSharpMemberOrFunctionOrValue) =
+            (e.DisplayName = name || e.CompiledName = name) && e.GenericParameters.Count = genericParametersCount
+
+        let  getLocation (e: FSharpMemberOrFunctionOrValue) = e.DeclarationLocation
+
+        let filteredEntities: range seq = 
+            match symbolMemberType with
+            | SymbolMemberType.Constructor when e.IsFSharpRecord ->
+                Seq.singleton e.DeclarationLocation
+            | SymbolMemberType.Other
+            | SymbolMemberType.Method ->
+                entities
+                |> Seq.filter defaultFilter
+                |> Seq.map getLocation
+            | SymbolMemberType.Constructor ->
+                entities
+                |> Seq.filter (fun x -> defaultFilter x && x.IsConstructor)
+                |> Seq.map getLocation
+            // When navigating to property for the record, it will be in members bag for custom ones, but will be in the fields in fields.
+            | SymbolMemberType.Property when e.IsFSharpRecord ->
+                let properties = 
+                    entities
+                    |> Seq.filter (fun x -> defaultFilter x && x.IsProperty)
+                    |> Seq.map getLocation
+                let fields = tryFindFieldByName name e
+                Seq.append properties fields
+            | SymbolMemberType.Event // Events are just properties
+            | SymbolMemberType.Property ->
+                entities
+                |> Seq.filter (fun x -> defaultFilter x && x.IsProperty)
+                |> Seq.map getLocation
+        filteredEntities
+
     interface IFSharpCrossLanguageSymbolNavigationService with
         member _.TryGetNavigableLocationAsync(assemblyName: string, documentationCommentId: string, cancellationToken: CancellationToken) : Task<IFSharpNavigableLocation> =
             let path = docCommentIdToPath documentationCommentId
@@ -891,7 +913,7 @@ type FSharpCrossLanguageSymbolNavigationService()  =
                         match entity with
                         | Some e ->
                             locations <- e |> tryFindValByNameAndType memberOrVal memberType genericParametersCount
-                                     |> Seq.map (fun e -> (e.DeclarationLocation, project)) 
+                                     |> Seq.map (fun m -> (m, project))
                                      |> Seq.append locations
                         | None -> ()
                     | DocCommentId.Field { EntityPath = entityPath; MemberOrValName = memberOrVal } ->
@@ -899,7 +921,7 @@ type FSharpCrossLanguageSymbolNavigationService()  =
                         match entity with
                         | Some e ->
                             locations <- e |> tryFindFieldByName memberOrVal 
-                                     |> Seq.map (fun e -> (e.DeclarationLocation, project)) 
+                                     |> Seq.map (fun m -> (m, project)) 
                                      |> Seq.append locations
                         | None -> ()
                     | DocCommentId.Type entityPath ->
