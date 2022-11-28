@@ -124,6 +124,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enable fast find references &amp; rename (experimental).
+        /// </summary>
+        public static string Enable_Fast_Find_References {
+            get {
+                return ResourceManager.GetString("Enable_Fast_Find_References", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to _Enable in-memory cross project references.
         /// </summary>
         public static string Enable_in_memory_cross_project_references {
@@ -192,6 +201,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Enter_Key_Rule {
             get {
                 return ResourceManager.GetString("Enter_Key_Rule", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Find References Performance Options.
+        /// </summary>
+        public static string Find_References_Performance {
+            get {
+                return ResourceManager.GetString("Find_References_Performance", resourceCulture);
             }
         }
         
