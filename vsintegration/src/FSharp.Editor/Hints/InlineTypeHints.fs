@@ -30,23 +30,19 @@ module InlineTypeHints =
             Parts = getHintParts symbol symbolUse
         }
 
+    let private isSolved (symbol: FSharpMemberOrFunctionOrValue) = 
+        if symbol.GenericParameters.Count > 0
+        then symbol.GenericParameters |> Seq.forall (fun p -> p.IsSolveAtCompileTime)
+
+        elif symbol.FullType.IsGenericParameter 
+        then symbol.FullType.GenericParameter.DisplayNameCore <> "?"
+
+        else true
+
     let isValidForHint 
         (parseFileResults: FSharpParseFileResults) 
         (symbol: FSharpMemberOrFunctionOrValue)
         (symbolUse: FSharpSymbolUse) =
-
-        let isSolved = 
-            let case1 = 
-                if symbol.GenericParameters |> Seq.isEmpty |> not
-                then symbol.GenericParameters |> Seq.forall (fun p -> p.IsSolveAtCompileTime)
-                else true
-
-            let case2 =
-                if symbol.FullType.IsGenericParameter 
-                then symbol.FullType.GenericParameter.DisplayNameCore <> "?"
-                else true
-
-            case1 && case2
 
         let isNotAnnotatedManually = 
             not (parseFileResults.IsTypeAnnotationGivenAtPosition symbolUse.Range.Start)
@@ -59,7 +55,7 @@ module InlineTypeHints =
             not symbol.IsConstructorThisValue
         
         symbol.IsValue // we'll be adding other stuff gradually here
-        && isSolved
+        && isSolved symbol
         && isNotAnnotatedManually
         && isNotAfterDot
         && isNotTypeAlias

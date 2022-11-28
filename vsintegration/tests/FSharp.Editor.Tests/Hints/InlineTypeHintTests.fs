@@ -197,10 +197,26 @@ let x
         Assert.IsEmpty(result)
 
     [<Test>]
-    let ``Hints are not shown for unsolved types in for expressions`` () = 
+    let ``Hints are not shown for unsolved types in _for_ expressions in collections`` () = 
         let code =
             """
 let _ = [ for x ]
+"""
+        let document = getFsDocument code
+
+        let result = getTypeHints document
+
+        Assert.IsEmpty(result)
+
+    [<Test>]
+    let ``Hints are not shown for unsolved types in _for_ expressions within computational expressions`` () = 
+        let code =
+            """
+do task {
+    for x
+
+    do! Task.Delay 0
+    }
 """
         let document = getFsDocument code
 
