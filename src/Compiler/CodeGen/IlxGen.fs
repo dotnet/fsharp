@@ -342,7 +342,7 @@ type cenv =
         mutable optimizeDuringCodeGen: bool -> Expr -> Expr
 
         /// Delayed Method Generation - which can later be parallelized across multiple files
-        delayedGenMethods: Queue<cenv -> unit>
+        delayedGenMethods: Queue<unit -> unit>
 
         /// Guard the stack and move to a new one if necessary
         mutable stackGuard: StackGuard
@@ -1245,7 +1245,7 @@ and IlxGenEnv =
         delayCodeGen: bool
 
         /// Collection of code-gen functions where each function represents a file.
-        delayedFileGenReverse: list<(cenv -> unit)[]>
+        delayedFileGenReverse: list<(unit -> unit)[]>
     }
 
     override _.ToString() = "<IlxGenEnv>"
@@ -3128,27 +3128,17 @@ and CodeGenMethodForExpr cenv mgbuf (entryPointInfo, methodName, eenv, alreadyUs
     code
 
 and DelayCodeGenMethodForExpr cenv mgbuf ((_, _, eenv, _, _, _, _) as args) =
-
-    let ilLazyCode =
-        lazy
-            CodeGenMethodForExpr
-                { cenv with
-                    stackGuard =
-                        if eenv.delayCodeGen then
-                            getEmptyStackGuard ()
-                        else
-                            cenv.stackGuard
-                    delayedGenMethods = Queue()
-                }
-                mgbuf
-                args
-
     if eenv.delayCodeGen then
-        cenv.delayedGenMethods.Enqueue(fun _ -> ilLazyCode.Force() |> ignore)
-    else
-        ilLazyCode.Force() |> ignore
+        let cenv =
+            { cenv with
+                stackGuard = getEmptyStackGuard ()
+            }
 
-    ilLazyCode
+        let lazyMethodBody = lazy (CodeGenMethodForExpr cenv mgbuf args)
+        cenv.delayedGenMethods.Enqueue(fun () -> lazyMethodBody.Force() |> ignore)
+        lazyMethodBody
+    else
+        notlazy (CodeGenMethodForExpr cenv mgbuf args)
 
 //--------------------------------------------------------------------------
 // Generate sequels
@@ -11620,7 +11610,7 @@ let CodegenAssembly cenv eenv mgbuf implFiles =
         eenv.delayedFileGenReverse
         |> Array.ofList
         |> Array.rev
-        |> ArrayParallel.iter (fun genMeths -> genMeths |> Array.iter (fun gen -> gen cenv))
+        |> ArrayParallel.iter (fun genMeths -> genMeths |> Array.iter (fun gen -> gen ()))
 
         // Some constructs generate residue types and bindings. Generate these now. They don't result in any
         // top-level initialization code.
