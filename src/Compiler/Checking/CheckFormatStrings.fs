@@ -55,7 +55,7 @@ let parseFormatStringInternal
         isInterpolated
         isFormattableString
         (context: FormatStringCheckContext option)
-        fmt
+        (fmt: string)
         printerArgTy
         printerResidueTy = 
 
@@ -86,6 +86,13 @@ let parseFormatStringInternal
     // there are no accurate intra-string ranges available for exact error message locations within the string.
     // The 'm' range passed as an input is however accurate and covers the whole string.
     //
+    let fmt =
+        fmt
+        // Double all curly braces
+        // They were stripped away in lexing, but at this point all {expr} are already replaced by %P()
+        |> Seq.collect (fun x -> if x = '{' || x = '}' then [x;x] else [x])
+        |> System.String.Concat
+
     let fmt, fragments = 
 
         //printfn "--------------------" 

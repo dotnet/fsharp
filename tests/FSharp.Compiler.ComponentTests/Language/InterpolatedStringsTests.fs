@@ -31,3 +31,13 @@ let c: System.IFormattable = $"string"
         """
         |> compile
         |> shouldSucceed
+
+    [<Fact>]
+    let ``Interpolated string literal typed as FormattableString handles double braces correctly`` () =
+        Fsx """
+let a = $"{{hello}} world" : System.FormattableString
+printf $"{a.Format}"
+        """
+        |> compileExeAndRun
+        |> shouldSucceed
+        |> withStdOutContains "{{hello}} world"
