@@ -9101,16 +9101,7 @@ and GenMethodForBinding
                 | _ -> None
 
             let ilLazyCode =
-                DelayCodeGenMethodForExpr
-                    cenv
-                    mgbuf
-                    (tailCallInfo,
-                     mspec.Name,
-                     eenvForMeth,
-                     0,
-                     selfValOpt,
-                     bodyExpr,
-                     sequel)
+                DelayCodeGenMethodForExpr cenv mgbuf (tailCallInfo, mspec.Name, eenvForMeth, 0, selfValOpt, bodyExpr, sequel)
 
             // This is the main code generation for most methods
             false, MethodBody.IL(ilLazyCode), false
