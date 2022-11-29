@@ -439,9 +439,9 @@ type internal MemoizationTable<'T, 'U> =
     member Apply: x: 'T -> 'U
 
 /// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
-type internal StampedDictionairy<'T, 'U> =
+type internal StampedDictionary<'T, 'U> =
 
-    new: keyComparer: IEqualityComparer<'T> -> StampedDictionairy<'T, 'U>
+    new: keyComparer: IEqualityComparer<'T> -> StampedDictionary<'T, 'U>
 
     member Add: key: 'T * value: 'U -> unit
 

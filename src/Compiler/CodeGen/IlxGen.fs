@@ -2293,7 +2293,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
 
     // The definitions of top level values, as quotations
     let reflectedDefinitions =
-        new StampedDictionairy<Val, string * Expr>(HashIdentity.Reference)
+        new StampedDictionary<Val, string * Expr>(HashIdentity.Reference)
 
     // A memoization table for generating value types for big constant arrays
     let rawDataValueTypeGenerator =

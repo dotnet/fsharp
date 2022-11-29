@@ -1068,7 +1068,7 @@ type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<
             compute x
 
 /// A thread-safe lookup table which is assigning an auto-increment stamp with each insert
-type internal StampedDictionairy<'T, 'U>(keyComparer: IEqualityComparer<'T>) =
+type internal StampedDictionary<'T, 'U>(keyComparer: IEqualityComparer<'T>) =
     let table = new ConcurrentDictionary<'T, Lazy<int * 'U>>(keyComparer)
     let mutable count = -1
 
