@@ -1047,9 +1047,9 @@ type UniqueStampGenerator<'T when 'T: equality>() =
     let computeFunc = Func<'T, _>(fun _ -> lazy (Interlocked.Increment(&nItems)))
 
     member _.Encode str =
-        encodeTable .GetOrAdd(str, computeFunc).Value
+        encodeTable.GetOrAdd(str, computeFunc).Value
 
-    member _.Table = encodeTable .Keys
+    member _.Table = encodeTable.Keys
 
 /// memoize tables (all entries cached, never collected)
 type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) =
