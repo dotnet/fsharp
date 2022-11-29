@@ -1244,7 +1244,7 @@ and IlxGenEnv =
         /// Delay code gen for files.
         delayCodeGen: bool
 
-        /// Collection of code-gen functions where each function represents a file.
+        /// Collection of code-gen functions where each inner array represents codegen (method bodies) functions for a single file
         delayedFileGenReverse: list<(unit -> unit)[]>
     }
 
