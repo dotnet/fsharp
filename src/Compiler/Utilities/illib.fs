@@ -1041,15 +1041,15 @@ module CancellableAutoOpens =
 
 /// Generates unique stamps
 type UniqueStampGenerator<'T when 'T: equality>() =
-    let encodeTab = ConcurrentDictionary<'T, Lazy<int>>(HashIdentity.Structural)
+    let encodeTable = ConcurrentDictionary<'T, Lazy<int>>(HashIdentity.Structural)
     let mutable nItems = -1
 
     let computeFunc = Func<'T, _>(fun _ -> lazy (Interlocked.Increment(&nItems)))
 
     member _.Encode str =
-        encodeTab.GetOrAdd(str, computeFunc).Value
+        encodeTable .GetOrAdd(str, computeFunc).Value
 
-    member _.Table = encodeTab.Keys
+    member _.Table = encodeTable .Keys
 
 /// memoize tables (all entries cached, never collected)
 type MemoizationTable<'T, 'U>(compute: 'T -> 'U, keyComparer: IEqualityComparer<'T>, ?canMemoize) =
