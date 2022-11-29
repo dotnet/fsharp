@@ -60,7 +60,7 @@ type internal IlxGenOptions =
         /// Indicates that, whenever possible, use callvirt instead of call
         alwaysCallVirt: bool
 
-        /// When set to true, the IlxGen will delay generation of method bodies and generated them later in parallel (parallelized across files)
+        /// When set to true, the IlxGen will delay generation of method bodies and generate them later in parallel (parallelized across files)
         parallelIlxGenEnabled: bool
     }
 
