@@ -9107,9 +9107,6 @@ and GenMethodForBinding
                     (tailCallInfo,
                      mspec.Name,
                      eenvForMeth,
-                     //{ eenvForMeth with
-                     //    delayCodeGen = false
-                     //},
                      0,
                      selfValOpt,
                      bodyExpr,
