@@ -2314,7 +2314,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
     let mutable explicitEntryPointInfo: ILTypeRef option = None
 
     /// static init fields on script modules.
-    let scriptInitFspecs = new ConcurrentStack<ILFieldSpec * range>()
+    let scriptInitFspecs = ConcurrentStack<ILFieldSpec * range>()
 
     member _.AddScriptInitFieldSpec(fieldSpec, range) =
         scriptInitFspecs.Push((fieldSpec, range))
