@@ -1076,7 +1076,7 @@ type internal StampedDictionairy<'T, 'U>(keyComparer: IEqualityComparer<'T>) =
         let entry = table.GetOrAdd(key, lazy (Interlocked.Increment(&count), value))
         entry.Force() |> ignore
 
-    member _.Update(key, valueReplaceFunc) =
+    member _.UpdateIfExists(key, valueReplaceFunc) =
         match table.TryGetValue key with
         | true, v ->
             let (stamp, oldVal) = v.Value

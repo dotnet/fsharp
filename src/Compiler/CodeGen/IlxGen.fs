@@ -2369,7 +2369,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
         reflectedDefinitions.Add(vspec, (vspec.CompiledName cenv.g.CompilerGlobalState, expr))
 
     member _.ReplaceNameOfReflectedDefinition(vspec, newName) =
-        reflectedDefinitions.Update(vspec, (fun (oldName, expr) -> if newName = oldName then None else Some(newName, expr)))
+        reflectedDefinitions.UpdateIfExists(vspec, (fun (oldName, expr) -> if newName = oldName then None else Some(newName, expr)))
 
     member _.AddMethodDef(tref: ILTypeRef, ilMethodDef) =
         gtdefs.FindNestedTypeDefBuilder(tref).AddMethodDef(ilMethodDef)

@@ -444,7 +444,7 @@ type internal StampedDictionairy<'T, 'U> =
 
     member Add: key: 'T * value: 'U -> unit
 
-    member Update: key: 'T * valueReplaceFunc: ('U -> 'U option) -> unit
+    member UpdateIfExists: key: 'T * valueReplaceFunc: ('U -> 'U option) -> unit
 
     member GetAll: unit -> seq<'T * (int * 'U)>
 
