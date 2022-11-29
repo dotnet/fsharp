@@ -1558,6 +1558,7 @@ featureLowercaseDUWhenRequireQualifiedAccess,"Allow lowercase DU when RequireQua
 featureMatchNotAllowedForUnionCaseWithNoData,"Pattern match discard is not allowed for union case that takes no data."
 featureCSharpExtensionAttributeNotRequired,"Allow implicit Extension attribute on declaring types, modules"
 featureErrorForNonVirtualMembersOverrides,"Raises errors for non-virtual members overrides"
+featureArithmeticInLiterals,"Allow arithmetic and logical operations in literals"
 3353,fsiInvalidDirective,"Invalid directive '#%s %s'"
 3354,tcNotAFunctionButIndexerNamedIndexingNotYetEnabled,"This value supports indexing, e.g. '%s.[index]'. The syntax '%s[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
 3354,tcNotAFunctionButIndexerIndexingNotYetEnabled,"This expression supports indexing, e.g. 'expr.[index]'. The syntax 'expr[index]' requires /langversion:preview. See https://aka.ms/fsharp-index-notation."
