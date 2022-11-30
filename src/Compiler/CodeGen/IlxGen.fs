@@ -2338,7 +2338,7 @@ and AssemblyBuilder(cenv: cenv, anonTypeTable: AnonTypeGenerationTable) as mgbuf
                     []
                 )
 
-            scriptInitFspecs.ToArray() |> Array.iter InitializeCompiledScript
+            scriptInitFspecs |> Seq.iter InitializeCompiledScript
         | None -> ()
 
     member _.GenerateRawDataValueType(cloc, size) =
