@@ -1138,7 +1138,7 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
         else
             "> "
 
-    member _.Print()      =
+    member _.Print() =
         if showPrompt then
             if dropPrompt = 0 then
                 fsiConsoleOutput.uprintf "%s" prompt
@@ -1156,7 +1156,7 @@ type internal FsiConsolePrompt(fsiOptions: FsiCommandLineOptions, fsiConsoleOutp
         with get () = showPrompt
         and set (value) = showPrompt <- value
 
-    member _.SkipNext()   =
+    member _.SkipNext() =
         if showPrompt then
             dropPrompt <- dropPrompt + 1
 
@@ -3104,7 +3104,7 @@ type FsiInteractionProcessor
 
                 // After we've unblocked and got something to run we switch
                 // over to the run-thread (e.g. the GUI thread)
-                let res = istate |> runCodeOnMainThread (fun ctok istate ->ExecuteParsedInteractionOnMainThread (ctok, diagnosticsLogger, action, istate, cancellationToken))
+                let res = istate |> runCodeOnMainThread (fun ctok istate -> ExecuteParsedInteractionOnMainThread (ctok, diagnosticsLogger, action, istate, cancellationToken))
 
                 if progress then fprintfn fsiConsoleOutput.Out "Just called runCodeOnMainThread, res = %O..." res
                 res)
