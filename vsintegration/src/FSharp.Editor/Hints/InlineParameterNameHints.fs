@@ -30,6 +30,61 @@ module InlineParameterNameHints =
     let private doesFieldNameExist (field: FSharpField) = 
         not field.IsNameGenerated
 
+    // copypaste: https://stackoverflow.com/a/15993446/3232646
+    let private allIndexesOf (value: string) (s: string)  =
+        seq {
+            let mutable minIndex = s.IndexOf(value);
+            while (minIndex <> -1) do
+                yield minIndex;
+                minIndex <- s.IndexOf(value, minIndex + value.Length);
+        }
+
+    // Fragile Roslyn arithmetics, don't try this at home.
+    // 
+    // Why the hell is this so complicated? 
+    // There can be (rarely) cases like there can be cases like 
+    // <somecode>.SymbolUse1().SymbolUse2()<morecode>
+    // and we need to locate the last one
+    let getSymbolPosition
+        (symbolUse: FSharpSymbolUse) 
+        (source: Microsoft.CodeAnalysis.Text.SourceText) = 
+
+        let symbolName = symbolUse.Symbol.DisplayNameCore
+        let symbolLine = symbolUse.Range.End.Line - 1
+        let symbolRow = source.Lines.[symbolLine]
+        let symbolColumns = $"{symbolRow}" |> allIndexesOf symbolName
+
+        if symbolColumns |> Seq.isEmpty
+        then None
+        else 
+            let symbolColumn = 
+                symbolColumns
+                |> Seq.where (fun column -> column < symbolUse.Range.EndColumn)
+                |> Seq.last
+
+            let positionLine = symbolLine + 1
+            let positionColumn = symbolColumn + symbolName.Length + 1
+            Some (Position.mkPos positionLine positionColumn)
+
+    let private getTupleRanges
+        (symbolUse: FSharpSymbolUse)
+        (source: Microsoft.CodeAnalysis.Text.SourceText)
+        (parseResults: FSharpParseFileResults) =
+        
+        getSymbolPosition symbolUse source
+        |> Option.bind (parseResults.FindParameterLocations)
+        |> Option.map (fun locations -> locations.ArgumentLocations)
+        |> Option.map (Seq.map (fun location -> location.ArgumentRange))
+        |> Option.defaultValue []
+        |> Seq.toList
+
+    let private getCurryRanges 
+        (symbolUse: FSharpSymbolUse) 
+        (parseResults: FSharpParseFileResults) = 
+
+        parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
+        |> Option.defaultValue []
+
     let isMemberOrFunctionOrValueValidForHint (symbol: FSharpMemberOrFunctionOrValue) (symbolUse: FSharpSymbolUse) =
         if symbolUse.IsFromUse then
             let isNotBuiltInOperator = 
@@ -48,22 +103,21 @@ module InlineParameterNameHints =
 
     let getHintsForMemberOrFunctionOrValue
         (parseResults: FSharpParseFileResults) 
+        (source: Microsoft.CodeAnalysis.Text.SourceText)
         (symbol: FSharpMemberOrFunctionOrValue) 
         (symbolUse: FSharpSymbolUse) =
 
         let parameters = symbol.CurriedParameterGroups |> Seq.concat
-        let ranges = parseResults.GetAllArgumentsForFunctionApplicationAtPosition symbolUse.Range.Start
 
-        match ranges with
-        | Some ranges -> 
-            parameters
-            |> Seq.zip ranges
-            |> Seq.where (snd >> doesParameterNameExist)
-            |> Seq.map getParameterHint
-            |> Seq.toList
-        
-        // this is the case at least for custom operators
-        | None -> []
+        let tupleRanges = parseResults |> getTupleRanges symbolUse source
+        let curryRanges = parseResults |> getCurryRanges symbolUse
+        let ranges = if tupleRanges |> (not << Seq.isEmpty) then tupleRanges else curryRanges
+
+        parameters
+        |> Seq.zip ranges // Seq.zip is important as List.zip requires equal lengths
+        |> Seq.where (snd >> doesParameterNameExist)
+        |> Seq.map getParameterHint
+        |> Seq.toList
 
     let getHintsForUnionCase
         (parseResults: FSharpParseFileResults) 

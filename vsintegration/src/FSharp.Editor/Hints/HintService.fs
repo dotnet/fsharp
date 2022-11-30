@@ -9,7 +9,7 @@ open FSharp.Compiler.Symbols
 open Hints
 
 module HintService =
-    let private getHintsForSymbol parseResults hintKinds (symbolUse: FSharpSymbolUse) =
+    let private getHintsForSymbol source parseResults hintKinds (symbolUse: FSharpSymbolUse) =
         match symbolUse.Symbol with
         | :? FSharpMemberOrFunctionOrValue as symbol 
           when hintKinds |> Set.contains HintKind.TypeHint 
@@ -21,7 +21,11 @@ module HintService =
           when hintKinds |> Set.contains HintKind.ParameterNameHint 
             && InlineParameterNameHints.isMemberOrFunctionOrValueValidForHint symbol symbolUse ->
 
-            InlineParameterNameHints.getHintsForMemberOrFunctionOrValue parseResults symbol symbolUse
+            InlineParameterNameHints.getHintsForMemberOrFunctionOrValue
+                parseResults
+                source
+                symbol
+                symbolUse
 
         | :? FSharpUnionCase as symbol
           when hintKinds |> Set.contains HintKind.ParameterNameHint
@@ -33,7 +37,7 @@ module HintService =
         | _ -> 
             []
 
-    let getHintsForDocument (document: Document) hintKinds userOpName cancellationToken = 
+    let getHintsForDocument (document: Document) source hintKinds userOpName cancellationToken = 
         async {
             if isSignatureFile document.FilePath
             then 
@@ -45,5 +49,5 @@ module HintService =
                 return 
                     checkResults.GetAllUsesOfAllSymbolsInFile cancellationToken
                     |> Seq.toList
-                    |> List.collect (getHintsForSymbol parseResults hintKinds)
+                    |> List.collect (getHintsForSymbol source parseResults hintKinds)
         }
