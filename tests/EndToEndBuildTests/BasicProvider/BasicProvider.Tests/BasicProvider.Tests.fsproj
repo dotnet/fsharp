@@ -7,7 +7,6 @@
     <IsPackable>false</IsPackable>
     <DefineConstants>NO_GENERATIVE</DefineConstants>
     <FSharpCoreImplicitPackageVersion>$(FSharpCoreShippedPackageVersionValue)</FSharpCoreImplicitPackageVersion>
-    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
   </PropertyGroup>
 
   <ItemGroup>
