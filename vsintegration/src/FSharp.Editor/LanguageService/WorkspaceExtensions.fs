@@ -9,6 +9,7 @@ open Microsoft.CodeAnalysis
 open FSharp.Compiler
 open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
+open Microsoft.VisualStudio.FSharp.Editor
 
 [<AutoOpen>]
 module private CheckerExtensions =
@@ -218,32 +219,33 @@ type Document with
 
 type Project with
 
+    /// Create tasks for finding given symbol in all files in this project
+    member this.FindFSharpReferencesTasks(symbol: FSharpSymbol, onFound, userOpName, ct) =
+        backgroundTask {
+
+            let declarationLocation = symbol.SignatureLocation |> Option.map Some |> Option.defaultValue symbol.DeclarationLocation
+            let declarationDocument = declarationLocation |> Option.bind this.Solution.TryGetDocumentFromFSharpRange
+
+            let! canSkipDocuments =
+                match declarationDocument with
+                | Some document when this.IsFastFindReferencesEnabled && document.Project = this ->
+                    backgroundTask {
+                        let! _, _, _, options = document.GetFSharpCompilationOptionsAsync(userOpName) |> RoslynHelpers.StartAsyncAsTask ct
+                        return options.SourceFiles |> Seq.takeWhile ((<>) document.FilePath) |> Set
+                    }
+                | _ -> Task.FromResult Set.empty
+
+            let documents = this.Documents |> Seq.filter (fun document -> not (canSkipDocuments.Contains document.FilePath))
+
+            return seq {
+                for doc in documents ->
+                    doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName) }
+        }
+
     /// Find F# references in the given project.
-    member this.FindFSharpReferencesAsync(symbol: FSharpSymbol, onFound, userOpName, ct) : Task = backgroundTask {
-
-        let declarationLocation = symbol.SignatureLocation |> Option.map Some |> Option.defaultValue symbol.DeclarationLocation
-        let declarationDocument = declarationLocation |> Option.bind this.Solution.TryGetDocumentFromFSharpRange
-
-        let! canSkipDocuments =
-            match declarationDocument with
-            | Some document when this.IsFastFindReferencesEnabled && document.Project = this ->
-                backgroundTask {
-                    let! _, _, _, options = document.GetFSharpCompilationOptionsAsync(userOpName) |> RoslynHelpers.StartAsyncAsTask ct
-                    return options.SourceFiles |> Seq.takeWhile ((<>) document.FilePath) |> Set
-                }
-            | _ -> Task.FromResult Set.empty
-
-        let documents = this.Documents |> Seq.filter (fun document -> not (canSkipDocuments.Contains document.FilePath))
-
-        if this.IsFastFindReferencesEnabled then
-            do! documents
-                |> Seq.map (fun doc ->
-                    Task.Run(fun () ->
-                        doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName)
-                        |> RoslynHelpers.StartAsyncUnitAsTask ct))
-                |> Task.WhenAll
-        else
-            for doc in documents do
-                do! doc.FindFSharpReferencesAsync(symbol, (fun textSpan range -> onFound doc textSpan range), userOpName)
-                    |> RoslynHelpers.StartAsyncAsTask ct
-    }
+    member this.FindFSharpReferencesAsync(symbol: FSharpSymbol, onFound, userOpName, ct) : Task =
+        backgroundTask {
+            let! jobs = this.FindFSharpReferencesTasks(symbol, onFound, userOpName, ct)
+            for job in jobs do
+                do! job |> RoslynHelpers.StartAsyncAsTask ct
+        }

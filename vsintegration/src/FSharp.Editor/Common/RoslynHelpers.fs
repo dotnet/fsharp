@@ -139,7 +139,7 @@ module internal RoslynHelpers =
                       | :? OperationCanceledException -> 
                           tcs.TrySetCanceled(cancellationToken)  |> ignore
                       | exn ->
-                          System.Diagnostics.Trace.WriteLine("Visual F# Tools: exception swallowed and not passed to Roslyn: {0}", exn.Message)
+                          System.Diagnostics.Trace.TraceWarning("Visual F# Tools: exception swallowed and not passed to Roslyn: {0}", exn)
                           let res = Unchecked.defaultof<_>
                           tcs.TrySetResult(res) |> ignore
                   ),
@@ -191,6 +191,30 @@ module internal RoslynHelpers =
                     return Unchecked.defaultof<_>
             }
         Async.Start (computation, cancellationToken)
+
+    /// Execute given tasks on a background thread, running at most Environment.ProcessorCount at the same time
+    let ParallelBackgroundTasks (ct: CancellationToken) (jobs: (unit -> Task<'a>) seq) = backgroundTask {
+
+        use semaphore = new SemaphoreSlim(Environment.ProcessorCount)
+
+        let releaseTasks = ResizeArray()
+        let tasks = ResizeArray()
+
+        for job in jobs do
+            if not ct.IsCancellationRequested then
+                do! semaphore.WaitAsync ct
+                let task = Task.Run<'a>(job, ct)
+                tasks.Add task
+                releaseTasks.Add(task.ContinueWith(fun (_: Task<'a>) -> semaphore.Release() |> ignore))
+
+        do! Task.WhenAll releaseTasks
+        return! Task.WhenAll tasks
+    }
+
+    /// Execute given asyncs on a background thread, running at most Environment.ProcessorCount at the same time
+    let ParallelProcessAsyncs ct =
+        Seq.map (fun job () -> job |> StartAsyncAsTask ct)
+        >> ParallelBackgroundTasks ct
 
 module internal OpenDeclarationHelper =
     /// <summary>

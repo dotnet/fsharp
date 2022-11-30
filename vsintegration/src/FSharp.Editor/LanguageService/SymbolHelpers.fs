@@ -15,6 +15,7 @@ open FSharp.Compiler.CodeAnalysis
 open FSharp.Compiler.Symbols
 open FSharp.Compiler.Text
 open Microsoft.VisualStudio.FSharp.Editor.Symbols 
+open System.Diagnostics
 
 module internal SymbolHelpers =
     /// Used for local code fixes in a document, e.g. to rename local parameters
@@ -37,13 +38,29 @@ module internal SymbolHelpers =
         }
 
     let getSymbolUsesInProjects (symbol: FSharpSymbol, projects: Project list, onFound: Document -> TextSpan -> range -> Async<unit>, ct: CancellationToken) =
-        projects
-        |> Seq.map (fun project ->
-            Task.Run(fun () -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects", ct)))
-        |> Task.WhenAll
+        match projects with 
+        | [] -> Task.CompletedTask
+        | first::_ when first.IsFastFindReferencesEnabled ->
+            backgroundTask {
+                let! projectTasks =
+                    projects
+                    |> Seq.map (fun project () -> project.FindFSharpReferencesTasks(symbol, onFound, "getSymbolUsesInProjects", ct))
+                    |> RoslynHelpers.ParallelBackgroundTasks ct
+
+                // maximum parallelism between projects
+                do! projectTasks
+                    |> interleave
+                    |> RoslynHelpers.ParallelProcessAsyncs ct
+                    |> taskMap ignore
+            }
+        | _ ->
+            projects
+            |> Seq.map (fun project ->
+                Task.Run(fun () -> project.FindFSharpReferencesAsync(symbol, onFound, "getSymbolUsesInProjects", ct)))
+            |> Task.WhenAll
 
     let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults, solution: Solution, ct: CancellationToken) =
-        async {
+        backgroundTask {
             let toDict (symbolUseRanges: range seq) =
                 let groups =
                     symbolUseRanges
@@ -56,7 +73,6 @@ module internal SymbolHelpers =
 
             match declLoc with
             | SymbolDeclarationLocation.CurrentDocument ->
-                let! ct = Async.CancellationToken
                 let symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbol, ct)
                 return toDict (symbolUses |> Seq.map (fun symbolUse -> symbolUse.Range))
             | SymbolDeclarationLocation.Projects (projects, isInternalToProject) -> 
@@ -74,14 +90,14 @@ module internal SymbolHelpers =
                     fun _ _ symbolUseRange ->
                         async { symbolUseRanges.Add symbolUseRange }
 
-                do! getSymbolUsesInProjects (symbol, projects, onFound, ct) |> Async.AwaitTask
+                do! getSymbolUsesInProjects (symbol, projects, onFound, ct)
                     
                 // Distinct these down because each TFM will produce a new 'project'.
                 // Unless guarded by a #if define, symbols with the same range will be added N times
                 let symbolUseRanges = symbolUseRanges |> Seq.distinct
                 return toDict symbolUseRanges
         }
- 
+
     type OriginalText = string
 
     // Note, this function is broken and shouldn't be used because the source text ranges to replace are applied sequentially,
@@ -114,7 +130,7 @@ module internal SymbolHelpers =
             // defer finding all symbol uses throughout the solution
             return 
                 Func<_,_>(fun (cancellationToken: CancellationToken) ->
-                    async {
+                    backgroundTask {
                         let! symbolUsesByDocumentId = 
                             getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, document.Project.Solution, cancellationToken)
                         
@@ -132,6 +148,6 @@ module internal SymbolHelpers =
                                     sourceText <- sourceText.Replace(textSpan, newText)
                                     solution <- solution.WithDocumentText(documentId, sourceText)
                         return solution
-                    } |> RoslynHelpers.StartAsyncAsTask cancellationToken),
+                    }),
                 originalText
         }

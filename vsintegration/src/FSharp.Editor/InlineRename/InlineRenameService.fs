@@ -12,7 +12,6 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.ExternalAccess.FSharp
 open Microsoft.CodeAnalysis.ExternalAccess.FSharp.Editor
 
 open FSharp.Compiler
@@ -102,15 +101,15 @@ type internal InlineRenameInfo
         else Nullable(TextSpan(location.TextSpan.Start + position, replacementText.Length))
         
     override _.FindRenameLocationsAsync(_, _, cancellationToken) =
-        async {
+        backgroundTask {
             let! symbolUsesByDocumentId = symbolUses cancellationToken
             let! locations =
                 symbolUsesByDocumentId
-                |> Seq.map (fun (KeyValue(documentId, symbolUses)) ->
-                    async {
+                |> Seq.map (fun (KeyValue(documentId, symbolUses)) () ->
+                    backgroundTask {
                         let document = document.Project.Solution.GetDocument(documentId)
                         let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-                        return 
+                        return
                             [| for symbolUse in symbolUses do
                                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse) with
                                     | Some span ->
@@ -118,11 +117,10 @@ type internal InlineRenameInfo
                                         yield FSharpInlineRenameLocation(document, textSpan) 
                                     | None -> () |]
                     })
-                |> Async.Parallel
-                |> Async.map Array.concat
-
+                |> RoslynHelpers.ParallelBackgroundTasks cancellationToken
+                |> taskMap Array.concat
             return InlineRenameLocationSet(locations, document.Project.Solution, lexerSymbol.Kind, symbolUse.Symbol) :> FSharpInlineRenameLocationSet
-        } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
+        }
 
 [<Export(typeof<FSharpInlineRenameServiceImplementation>); Shared>]
 type internal InlineRenameService 
