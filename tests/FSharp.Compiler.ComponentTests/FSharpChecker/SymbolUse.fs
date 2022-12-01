@@ -68,6 +68,7 @@ val f: x: 'a -> TFirstV_1<'a>
                 Assert.True(symbolUse.IsPrivateToFile))
         }
 
+    // [<Fact>] This is a bug - https://github.com/dotnet/fsharp/issues/14419
     [<Fact>]
     let ``Private function, with signature file`` () =
         SyntheticProject.Create(
