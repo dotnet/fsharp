@@ -532,6 +532,7 @@ let main1
 
     // Process command line, flags and collect filenames
     let sourceFiles =
+
         // The ParseCompilerOptions function calls imperative function to process "real" args
         // Rather than start processing, just collect names, then process them.
         try
@@ -709,6 +710,7 @@ let main2
            exiter: Exiter,
            ilSourceDocs))
     =
+
     if tcConfig.typeCheckOnly then
         exiter.Exit 0
 
@@ -794,6 +796,21 @@ let main2
         ilSourceDocs
     )
 
+let doInParallelWithSettingThreadStaticLogger (logger: DiagnosticsLogger) (actions: (unit -> unit) list) =
+    UseMultipleDiagnosticLoggers (actions, logger, None) (fun actionsWithLoggers ->
+        let go (action: unit -> unit, logger: DiagnosticsLogger) : unit =
+            let oldLogger = DiagnosticsThreadStatics.DiagnosticsLogger
+            try
+                DiagnosticsThreadStatics.DiagnosticsLogger <- logger
+                action ()
+            finally
+                DiagnosticsThreadStatics.DiagnosticsLogger <- oldLogger
+        
+        actionsWithLoggers
+        |> List.toArray
+        |> ArrayParallel.iter go
+    )
+
 /// Third phase of compilation.
 ///   - encode signature data
 ///   - optimize
@@ -830,19 +847,17 @@ let main3
             
     // TODO Use proper async code
     let (sigDataAttributes, sigDataResources), optimizedImpls, optDataResources =
-        // async {
-            let encode =
-                async {
-                    try
-                        // return EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
-                        return EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
-                    with e ->
-                        errorRecoveryNoRange e
-                        exiter.Exit 1
-                        return raise (InvalidOperationException("Didn't expect to reach this place in code - expected 'exiter.Exit' to fail"))
-                }
-
-            let optimize () =
+            let mutable encodeResult : (ILAttribute list * ILResource list) option = None
+            let encode () =
+                try
+                    EncodeSignatureData(tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, false)
+                with e ->
+                    errorRecoveryNoRange e
+                    exiter.Exit 1
+                    raise (InvalidOperationException("Didn't expect to reach this place in code - expected 'exiter.Exit' to fail"))
+            
+            let mutable optimizeResult : (CheckedAssemblyAfterOptimization * Optimizer.LazyModuleInfo) option = None
+            let optimize (): CheckedAssemblyAfterOptimization * Optimizer.LazyModuleInfo =
                 // Perform optimization
                 use _ = UseBuildPhase BuildPhase.Optimize
 
@@ -862,31 +877,21 @@ let main3
                         generatedCcu,
                         typedImplFiles
                     )
-
                 optimizedImpls, optimizationData
-            let optimize2 =
-                async {
-                    return UseMultipleDiagnosticLoggers ([1], diagnosticsLogger, None) (fun sourceFilesWithDelayLoggers ->
-                        match sourceFilesWithDelayLoggers with
-                        | [_, b] ->
-                            DiagnosticsThreadStatics.DiagnosticsLogger <- b
-                            let res = optimize ()
-                            res
-                        | _ -> failwith "blah"
-                    )
-                }
-            
-            let sigDataAttributes, sigDataResources = encode |> Async.RunSynchronously
-            let optimizedImpls, optimizationData = optimize2 |> Async.RunSynchronously
-            
-            AbortOnError(diagnosticsLogger, exiter)
-            
-            // Encode the optimization data
-            ReportTime tcConfig ("Encoding OptData")
-            let optDataResources = EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
-            
 
-            (sigDataAttributes, sigDataResources), optimizedImpls, optDataResources
+            let encode2 () = encodeResult <- Some (encode())
+            let optimize2 () = optimizeResult <- Some (optimize())
+            doInParallelWithSettingThreadStaticLogger diagnosticsLogger [encode2; optimize2]
+            
+            match encodeResult, optimizeResult with
+            | Some (sigDataAttributes, sigDataResources), Some (optimizedImpls, optimizationData) ->
+                AbortOnError(diagnosticsLogger, exiter)
+                // Encode the optimization data
+                ReportTime tcConfig ("Encoding OptData")
+                let optDataResources = EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
+                (sigDataAttributes, sigDataResources), optimizedImpls, optDataResources
+            | _, _ ->
+                failwith "Expected encode and optimize results to be populated at this point."
             // return (sigDataAttributes, sigDataResources), optimizedImpls, optDataResources
         // }
         // |> Async.RunSynchronously
