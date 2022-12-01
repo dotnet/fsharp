@@ -12,8 +12,6 @@ open FSharp.Compiler.Import
 open FSharp.Compiler.Optimizer
 open FSharp.Compiler.TcGlobals
 open FSharp.Compiler.TypedTree
-open System.Collections.Generic
-open FSharp.Compiler.Service.Driver.OptimizeTypes
 
 val GetGeneratedILModuleName: CompilerTarget -> string -> string
 

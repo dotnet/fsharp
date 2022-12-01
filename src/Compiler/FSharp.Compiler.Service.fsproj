@@ -387,9 +387,6 @@
     <Compile Include="Driver\CompilerOptions.fsi" />
     <Compile Include="Driver\CompilerOptions.fs" />
     <Compile Include="Driver\Parallel.fs" />
-    <Compile Include="Driver\Graph.fs" />
-    <Compile Include="Driver\GraphProcessing.fs" />
-    <Compile Include="Driver\OptimizeTypes.fs" />
     <Compile Include="Driver\OptimizeInputs.fsi" />
     <Compile Include="Driver\OptimizeInputs.fs" />
     <Compile Include="Driver\XmlDocFileWriter.fsi" />
