@@ -68,7 +68,7 @@ val f: x: 'a -> TFirstV_1<'a>
                 Assert.True(symbolUse.IsPrivateToFile))
         }
 
-    [<Fact>]
+    // [<Fact>] This is a bug - https://github.com/dotnet/fsharp/issues/14419
     let ``Private function, with signature file`` () =
         SyntheticProject.Create(
             { sourceFile "First" [] with ExtraSource = "let private f3 x = x + 1" } 
