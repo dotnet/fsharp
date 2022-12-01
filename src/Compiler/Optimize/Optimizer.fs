@@ -301,8 +301,11 @@ let [<Literal>] crossAssemblyOptimizationDefault = true
 let [<Literal>] debugPointsForPipeRightDefault = true
 
 [<RequireQualifiedAccess>]
-type OptimizerMode =
+type OptimizationProcessingMode =
+    /// Process files sequentially, on a single thread, doing all three optimization phases for each file next to each other.
     | Sequential
+    /// Use multiple threads.
+    /// As soon as a given phase for a file has finished, start processing the next phase of the current file and the same phase of the next file.
     | PartiallyParallel
 
 type OptimizationSettings = 
@@ -337,7 +340,7 @@ type OptimizationSettings =
       
       reportTotalSizes : bool
       
-      processingMode : OptimizerMode
+      processingMode : OptimizationProcessingMode
     }
 
     static member Defaults = 
@@ -354,7 +357,7 @@ type OptimizationSettings =
           reportFunctionSizes = false
           reportHasEffect = false
           reportTotalSizes = false
-          processingMode = OptimizerMode.Sequential
+          processingMode = OptimizationProcessingMode.Sequential
         }
 
     /// Determines if JIT optimizations are enabled
@@ -417,7 +420,7 @@ type OptimizationSettings =
     /// Also if we should expand "let x = Some exp1" bindings as prior tmps 
     member x.ExpandStructuralValues() = x.LocalOptimizationsEnabled
     
-    /// Determines how to process optimization of multiple files
+    /// Determines how to process optimization of multiple files and individual optimization phases
     member x.ProcessingMode() = x.processingMode
 
 type cenv =

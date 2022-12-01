@@ -6,7 +6,6 @@ open System.Collections.Generic
 open System.Diagnostics
 open System.IO
 open System.Threading
-open FSharp.Compiler.Service.Driver
 open Internal.Utilities.Library
 open FSharp.Compiler
 open FSharp.Compiler.AbstractIL.IL
@@ -292,7 +291,7 @@ module private ParallelOptimization =
                     |> Seq.toArray
                 |> fun nodes -> nodes |> Array.filter nodeCanBeProcessed
 
-        Parallel.processInParallel
+        FSharp.Compiler.Service.Utilities.ParallelProcessing.processInParallel
             "OptimizeInputs"
             [| firstNode |]
             worker
@@ -457,14 +456,14 @@ let ApplyAllOptimizations
 
     let results, optEnvFirstLoop =
         match tcConfig.optSettings.processingMode with
-        | Optimizer.OptimizerMode.PartiallyParallel ->
+        | Optimizer.OptimizationProcessingMode.PartiallyParallel ->
             let ct = CancellationToken.None
 
             let results, optEnvFirstPhase =
                 ParallelOptimization.optimizeFilesInParallel optEnv (phase1, phase2, phase3) implFiles ct
 
             results |> Array.toList, optEnvFirstPhase
-        | Optimizer.OptimizerMode.Sequential ->
+        | Optimizer.OptimizationProcessingMode.Sequential ->
             let results, (optEnvFirstLoop, _, _, _) =
                 ((optEnv, optEnv, optEnv, SignatureHidingInfo.Empty), implFiles)
 

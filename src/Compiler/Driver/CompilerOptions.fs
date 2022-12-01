@@ -1392,7 +1392,7 @@ let testFlag tcConfigB =
             | "PartiallyParallelOptimization" ->
                 tcConfigB.optSettings <-
                     { tcConfigB.optSettings with
-                        processingMode = OptimizerMode.PartiallyParallel
+                        processingMode = OptimizationProcessingMode.PartiallyParallel
                     }
 #if DEBUG
             | "ShowParserStackOnParseError" -> showParserStackOnParseError <- true

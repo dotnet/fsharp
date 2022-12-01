@@ -134,6 +134,7 @@
     <Compile Include="Utilities\RidHelpers.fs" />
     <Compile Include="Utilities\range.fsi" />
     <Compile Include="Utilities\range.fs" />
+    <Compile Include="Utilities\ParallelProcessing.fs" />
     <EmbeddedText Include="Facilities\UtilsStrings.txt" />
     <Compile Include="Facilities\LanguageFeatures.fsi" />
     <Compile Include="Facilities\LanguageFeatures.fs" />
@@ -386,7 +387,6 @@
     <Compile Include="Driver\ScriptClosure.fs" />
     <Compile Include="Driver\CompilerOptions.fsi" />
     <Compile Include="Driver\CompilerOptions.fs" />
-    <Compile Include="Driver\Parallel.fs" />
     <Compile Include="Driver\OptimizeInputs.fsi" />
     <Compile Include="Driver\OptimizeInputs.fs" />
     <Compile Include="Driver\XmlDocFileWriter.fsi" />

@@ -10,7 +10,7 @@ open FSharp.Compiler.TypedTreeOps
 open FSharp.Compiler.TypedTreePickle
 
 [<RequireQualifiedAccess>]
-type OptimizerMode =
+type OptimizationProcessingMode =
     | Sequential
     | PartiallyParallel
 
@@ -46,7 +46,7 @@ type OptimizationSettings =
 
         reportTotalSizes: bool
 
-        processingMode: OptimizerMode
+        processingMode: OptimizationProcessingMode
     }
 
     member JitOptimizationsEnabled: bool
