@@ -46,9 +46,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\Compiler\FSharp.Compiler.Service.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Interactive.Settings\FSharp.Compiler.Interactive.Settings.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../FSharp.Core/FSharp.Core.fsproj" AdditionalProperties="TargetFramework=netstandard2.0" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../Compiler/FSharp.Compiler.Service.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)../FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net472'">

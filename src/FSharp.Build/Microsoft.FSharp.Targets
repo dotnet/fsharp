@@ -60,11 +60,23 @@ this file.
       <FSharpPreferAnyCpuTools>      boolean: true or false === default value true
       <FSharpPrefer64BitTools>      boolean: true or false === default value true
 
-      These are stupidly complex for performance reasons:
+      These are complex for performance reasons:
         Arm64 is faster than AnyCpu on an Arm64 machine
+        On Windows Arm64 default to Arm64 build, otherwise default to AnyCpu.
 
-      On Windows Arm64 default to Arm64 build, otherwise default to AnyCpu.
+      Additionally
+        The developer is specifying the exact target files and executables to use for F#
+
+            <FSharpCompilerPath>    path to props and target files and also build task and compilers
+            <FSharpCompilerTool>    name of the compiler executable to use for build.
+
+        and so discard any and all automagically computed values
     -->
+    <PropertyGroup Condition="'$(FSharpCompilerPath)' != '' and '$(FSharpCompilerTool)' != ''">
+        <UseFSharpCompilerPath Condition="'$(FSharpPreferNetFrameworkPath)' != '' and '$(FSharpPreferNetFrameworkTools)' != ''">true</UseFSharpCompilerPath>
+        <FSharpCompilerTool Condition="'$(FSharpCompilerTool)'==''">fsc.exe</FSharpCompilerTool>
+        <FSharp_Shim_Present></FSharp_Shim_Present>
+    </PropertyGroup>
 
     <PropertyGroup Condition="'$(FSharp_Shim_Present)' == 'true'">
         <FSharpPreferNetFrameworkTools Condition="'$(FSharpPreferNetFrameworkTools)' == ''">true</FSharpPreferNetFrameworkTools>
@@ -77,7 +89,6 @@ this file.
         <FscToolPath>$(Fsc_NetFramework_ToolPath)</FscToolPath>
         <FscToolExe Condition="'$(FSharpPreferAnyCpuTools)' != 'false'">$(Fsc_NetFramework_AnyCpu_ToolExe)</FscToolExe>
         <FscToolExe Condition="'$(FSharpPreferAnyCpuTools)' == 'false'">$(Fsc_NetFramework_PlatformSpecific_ToolExe)</FscToolExe>
-
         <DotnetFscCompilerPath></DotnetFscCompilerPath>
     </PropertyGroup>
 
