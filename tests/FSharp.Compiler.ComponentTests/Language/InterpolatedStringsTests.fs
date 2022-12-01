@@ -38,6 +38,7 @@ let c: System.IFormattable = $"string"
 let a = $"{{hello}} world" : System.FormattableString
 printf $"{a.Format}"
         """
+        |> withLangVersionPreview
         |> compileExeAndRun
         |> shouldSucceed
         |> withStdOutContains "{{hello}} world"
