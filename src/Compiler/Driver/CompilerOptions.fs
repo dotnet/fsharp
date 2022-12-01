@@ -591,7 +591,7 @@ let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
 
 let SetReferenceAssemblyOutSwitch (tcConfigB: TcConfigBuilder) outputPath =
     match tcConfigB.emitMetadataAssembly with
-    | MetadataAssemblyGeneration.None when tcConfigB.standalone = false &&  tcConfigB.extraStaticLinkRoots.IsEmpty ->
+    | MetadataAssemblyGeneration.None when tcConfigB.standalone = false && tcConfigB.extraStaticLinkRoots.IsEmpty ->
         if FileSystem.IsInvalidPathShim outputPath then
             error (Error(FSComp.SR.optsInvalidRefOut (), rangeCmdArgs))
         else
