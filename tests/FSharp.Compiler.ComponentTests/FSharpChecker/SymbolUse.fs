@@ -69,7 +69,6 @@ val f: x: 'a -> TFirstV_1<'a>
         }
 
     // [<Fact>] This is a bug - https://github.com/dotnet/fsharp/issues/14419
-    [<Fact>]
     let ``Private function, with signature file`` () =
         SyntheticProject.Create(
             { sourceFile "First" [] with ExtraSource = "let private f3 x = x + 1" } 
