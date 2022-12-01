@@ -93,6 +93,8 @@ let parseFormatStringInternal
     // there are no accurate intra-string ranges available for exact error message locations within the string.
     // The 'm' range passed as an input is however accurate and covers the whole string.
     //
+    let escapeFormatStringEnabled = g.langVersion.SupportsFeature Features.LanguageFeature.EscapeDotnetFormattableStrings
+
     let fmt, fragments = 
 
         //printfn "--------------------" 
@@ -182,7 +184,7 @@ let parseFormatStringInternal
         | _ -> 
             // Don't muck with the fmt when there is no source code context to go get the original
             // source code (i.e. when compiling or background checking)
-            escapeDotnetFormatString fmt, [ (0, 1, m) ]
+            (if escapeFormatStringEnabled then escapeDotnetFormatString fmt else fmt), [ (0, 1, m) ]
 
     let len = fmt.Length
 
