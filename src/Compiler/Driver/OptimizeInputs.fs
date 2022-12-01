@@ -55,8 +55,10 @@ let GetInitialOptimizationEnv (tcImports: TcImports, tcGlobals: TcGlobals) =
 module private ParallelOptimization =
     open Optimizer
     type OptimizeDuringCodeGen = bool -> Expr -> Expr
+
     type OptimizeRes =
         (IncrementalOptimizationEnv * CheckedImplFile * ImplFileOptimizationInfo * SignatureHidingInfo) * OptimizeDuringCodeGen
+
     type PhaseInputs = IncrementalOptimizationEnv * SignatureHidingInfo * CheckedImplFile
     type Phase1Inputs = PhaseInputs
     type Phase1Res = OptimizeRes
@@ -67,12 +69,14 @@ module private ParallelOptimization =
     type Phase3Inputs = PhaseInputs
     type Phase3Res = IncrementalOptimizationEnv * CheckedImplFile
     type Phase3Fun = Phase3Inputs -> Phase3Res
+
     type FileResultsComplete =
         {
             Phase1: Phase1Res
             Phase2: Phase2Res
             Phase3: Phase3Res
         }
+
     type FilePhaseFuncs = Phase1Fun * Phase2Fun * Phase3Fun
 
     [<RequireQualifiedAccess>]
@@ -106,9 +110,12 @@ module private ParallelOptimization =
             Idx: int
             Phase: OptimizationPhase
         }
+
         override this.ToString() = $"[{this.Idx}-{this.Phase}]"
 
-    let collectResults (inputs: FileResultsComplete[]) : (CheckedImplFileAfterOptimization * ImplFileOptimizationInfo)[] * IncrementalOptimizationEnv =
+    let collectResults
+        (inputs: FileResultsComplete[])
+        : (CheckedImplFileAfterOptimization * ImplFileOptimizationInfo)[] * IncrementalOptimizationEnv =
         let files =
             inputs
             |> Array.map
@@ -269,8 +276,8 @@ module private ParallelOptimization =
                     let env =
                         match previous with
                         | None -> env0
-                        | Some {Phase3 = Some (env, _)} -> env
-                        | Some {Phase3 = None} -> failwith $"Unexpected lack of results for previous file [{idx-1}], phase 3"
+                        | Some { Phase3 = Some (env, _) } -> env
+                        | Some { Phase3 = None } -> failwith $"Unexpected lack of results for previous file [{idx - 1}], phase 3"
 
                     // Take impl file from Phase2
                     let _, file = res |> getPhase2Res
@@ -301,7 +308,10 @@ module private ParallelOptimization =
             ct
             (fun node -> node.ToString())
 
-        Debug.Assert(visited.Count = files.Length * 3, $"Expected to have visited all {files.Length} * 3 = {files.Length * 3} optimization nodes, but visited {visited.Count}")
+        Debug.Assert(
+            visited.Count = files.Length * 3,
+            $"Expected to have visited all {files.Length} * 3 = {files.Length * 3} optimization nodes, but visited {visited.Count}"
+        )
 
         let results =
             results
