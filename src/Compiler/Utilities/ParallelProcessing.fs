@@ -38,12 +38,7 @@ let processInParallel
     firstItems |> Array.iter toProcess.Add
 
     let processItem item =
-        // printfn $"[{Thread.CurrentThread.ManagedThreadId}] Processing {_itemToString item}"
-        use _ = Activity.start "processItem" [| "item", _itemToString item |]
         let toSchedule = work item
-
-        // printfn $"[{Thread.CurrentThread.ManagedThreadId}] Finished {_itemToString item}"
-        // printfn $"[{Thread.CurrentThread.ManagedThreadId}] Scheduling {toSchedule.Length} items: {toScheduleString}"
         toSchedule |> Array.iter toProcess.Add
 
     let worker () : unit =

@@ -291,6 +291,7 @@ module private ParallelOptimization =
                     |> Seq.toArray
                 |> fun nodes -> nodes |> Array.filter nodeCanBeProcessed
 
+        // TODO Do we need to pass in DiagnosticsLogger, or does optimization not use it?
         FSharp.Compiler.Service.Utilities.ParallelProcessing.processInParallel
             "OptimizeInputs"
             [| firstNode |]
