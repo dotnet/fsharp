@@ -54,39 +54,62 @@ let GetInitialOptimizationEnv (tcImports: TcImports, tcGlobals: TcGlobals) =
 
 [<RequireQualifiedAccess>]
 module private ParallelOptimization =
-
     open Optimizer
-
     type OptimizeDuringCodeGen = bool -> Expr -> Expr
-
     type OptimizeRes =
         (IncrementalOptimizationEnv * CheckedImplFile * ImplFileOptimizationInfo * SignatureHidingInfo) * OptimizeDuringCodeGen
-
     type PhaseInputs = IncrementalOptimizationEnv * SignatureHidingInfo * CheckedImplFile
-
     type Phase1Inputs = PhaseInputs
     type Phase1Res = OptimizeRes
     type Phase1Fun = Phase1Inputs -> Phase1Res
-
     type Phase2Inputs = IncrementalOptimizationEnv * SignatureHidingInfo * ImplFileOptimizationInfo * CheckedImplFile
     type Phase2Res = IncrementalOptimizationEnv * CheckedImplFile
     type Phase2Fun = Phase2Inputs -> Phase2Res
-
     type Phase3Inputs = PhaseInputs
     type Phase3Res = IncrementalOptimizationEnv * CheckedImplFile
     type Phase3Fun = Phase3Inputs -> Phase3Res
-
     type FileResultsComplete =
         {
             Phase1: Phase1Res
             Phase2: Phase2Res
             Phase3: Phase3Res
         }
+    type FilePhaseFuncs = Phase1Fun * Phase2Fun * Phase3Fun
 
-    type CollectorInputs = FileResultsComplete[]
-    type CollectorOutputs = (CheckedImplFileAfterOptimization * Optimizer.ImplFileOptimizationInfo)[] * Optimizer.IncrementalOptimizationEnv
+    [<RequireQualifiedAccess>]
+    type OptimizationPhase =
+        | Phase1
+        | Phase2
+        | Phase3
 
-    let collectResults (inputs: CollectorInputs) : CollectorOutputs =
+    type FileResults =
+        {
+            mutable Phase1: Phase1Res option
+            mutable Phase2: Phase2Res option
+            mutable Phase3: Phase3Res option
+        }
+
+        member this.HasResult(phase: OptimizationPhase) =
+            match phase with
+            | OptimizationPhase.Phase1 -> this.Phase1 |> Option.isSome
+            | OptimizationPhase.Phase2 -> this.Phase2 |> Option.isSome
+            | OptimizationPhase.Phase3 -> this.Phase3 |> Option.isSome
+
+        static member Empty =
+            {
+                Phase1 = None
+                Phase2 = None
+                Phase3 = None
+            }
+
+    type Node =
+        {
+            Idx: int
+            Phase: OptimizationPhase
+        }
+        override this.ToString() = $"[{this.Idx}-{this.Phase}]"
+
+    let collectResults (inputs: FileResultsComplete[]) : (CheckedImplFileAfterOptimization * ImplFileOptimizationInfo)[] * IncrementalOptimizationEnv =
         let files =
             inputs
             |> Array.map
@@ -115,45 +138,6 @@ module private ParallelOptimization =
 
         files, lastFilePhase1Env
 
-    [<RequireQualifiedAccess>]
-    type OptimizationPhase =
-        | Phase1
-        | Phase2
-        | Phase3
-
-    type FilePhaseFuncs = Phase1Fun * Phase2Fun * Phase3Fun
-
-    type FileResults =
-        {
-            mutable Phase1: Phase1Res option
-            mutable Phase2: Phase2Res option
-            mutable Phase3: Phase3Res option
-        }
-
-        member this.HasResult(phase: OptimizationPhase) =
-            match phase with
-            | OptimizationPhase.Phase1 -> this.Phase1 |> Option.isSome
-            | OptimizationPhase.Phase2 -> this.Phase2 |> Option.isSome
-            | OptimizationPhase.Phase3 -> this.Phase3 |> Option.isSome
-
-        static member Empty =
-            {
-                Phase1 = None
-                Phase2 = None
-                Phase3 = None
-            }
-
-    type Node =
-        {
-            Idx: int
-            Phase: OptimizationPhase
-        }
-
-        override this.ToString() = $"[{this.Idx}-{this.Phase}]"
-
-    let getPhase1Res (p: FileResults) =
-        p.Phase1 |> Option.get |> (fun ((env, _, _, hidden), _) -> env, hidden)
-
     let getPhase2Res (p: FileResults) = p.Phase2 |> Option.get
 
     let getPhase3Res (p: FileResults) =
@@ -164,7 +148,7 @@ module private ParallelOptimization =
         ((phase1, phase2, phase3): FilePhaseFuncs)
         (files: CheckedImplFile list)
         (ct: CancellationToken)
-        : CollectorOutputs =
+        : (CheckedImplFileAfterOptimization * ImplFileOptimizationInfo)[] * IncrementalOptimizationEnv =
         let files = files |> List.toArray
 
         let firstNode =
@@ -283,7 +267,11 @@ module private ParallelOptimization =
 
                 | OptimizationPhase.Phase3 ->
                     // Take env from previous file if it exists
-                    let env = previous |> Option.map getPhase3Res |> Option.defaultValue env0
+                    let env =
+                        match previous with
+                        | None -> env0
+                        | Some {Phase3 = Some (env, _)} -> env
+                        | Some {Phase3 = None} -> failwith $"Unexpected lack of results for previous file [{idx-1}], phase 3"
 
                     // Take impl file from Phase2
                     let _, file = res |> getPhase2Res
@@ -313,7 +301,7 @@ module private ParallelOptimization =
             ct
             (fun node -> node.ToString())
 
-        Debug.Assert(visited.Count = files.Length * 3)
+        Debug.Assert(visited.Count = files.Length * 3, $"Expected to have visited all {files.Length} * 3 = {files.Length * 3} optimization nodes, but visited {visited.Count}")
 
         let results =
             results
@@ -330,7 +318,7 @@ module private ParallelOptimization =
                             Phase2 = phase2
                             Phase3 = phase3
                         }
-                    | _ -> failwith $"Unexpected lack of results for file [{i}]")
+                    | _ -> failwith $"Unexpected lack of optimization results for file [{i}]")
 
         let collected = results |> collectResults
         collected
@@ -472,10 +460,10 @@ let ApplyAllOptimizations
         | Optimizer.OptimizerMode.PartiallyParallel ->
             let ct = CancellationToken.None
 
-            let a, b =
+            let results, optEnvFirstPhase =
                 ParallelOptimization.optimizeFilesInParallel optEnv (phase1, phase2, phase3) implFiles ct
 
-            a |> Array.toList, b
+            results |> Array.toList, optEnvFirstPhase
         | Optimizer.OptimizerMode.Sequential ->
             let results, (optEnvFirstLoop, _, _, _) =
                 ((optEnv, optEnv, optEnv, SignatureHidingInfo.Empty), implFiles)
@@ -502,7 +490,8 @@ let ApplyAllOptimizations
 #if DEBUG
     if tcConfig.showOptimizationData then
         results
-        |> List.iter (fun (checkedImplFileAfterOptimization, implFileOptData) ->
+        |> List.map snd
+        |> List.iter (fun implFileOptData ->
             let str =
                 (LayoutRender.showL (Display.squashTo 192 (Optimizer.moduleInfoL tcGlobals implFileOptData)))
 

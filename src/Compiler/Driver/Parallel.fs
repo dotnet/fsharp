@@ -2,6 +2,7 @@
 
 #nowarn "1182"
 
+open System
 open System.Collections.Concurrent
 open System.Threading
 open FSharp.Compiler.Diagnostics
@@ -53,4 +54,5 @@ let processInParallel
                 if shouldStop () then
                     toProcess.CompleteAdding()
 
+    let parallelism = min parallelism Environment.ProcessorCount
     ArrayParallel.iter worker (Array.create parallelism ())
