@@ -4383,8 +4383,6 @@ FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+FsiEvaluati
 FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+FsiEvaluationSessionHostConfig
 FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+FsiValue
 FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+Settings
-FSharp.Compiler.Service.Utilities.ParallelProcessing
-FSharp.Compiler.Service.Utilities.ParallelProcessing: Void processInParallel[Item](System.String, Item[], Microsoft.FSharp.Core.FSharpFunc`2[Item,Item[]], Int32, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Boolean], System.Threading.CancellationToken, Microsoft.FSharp.Core.FSharpFunc`2[Item,System.String])
 FSharp.Compiler.Symbols.FSharpAbstractParameter
 FSharp.Compiler.Symbols.FSharpAbstractParameter: Boolean IsInArg
 FSharp.Compiler.Symbols.FSharpAbstractParameter: Boolean IsOptionalArg
