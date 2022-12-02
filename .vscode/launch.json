@@ -9,7 +9,7 @@
             "type": "promptString",
         },
         {
-            "id": "fssArgsPrompt",
+            "id": "fsiArgsPrompt",
             "description": "Enter arguments for fsi (optional)",
             "default": "",
             "type": "promptString",
