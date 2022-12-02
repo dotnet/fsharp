@@ -178,6 +178,10 @@
     <Compile Include="Language\ExtensionMethodTests.fs" />
     <Compile Include="ConstraintSolver\PrimitiveConstraints.fs" />
     <Compile Include="ConstraintSolver\MemberConstraints.fs" />
+    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
+      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
+    </None>
+    <Compile Include="Interop\DeeplyNestedCSharpClasses.fs" />
     <Compile Include="Interop\SimpleInteropTests.fs" />
     <Compile Include="Interop\RequiredAndInitOnlyProperties.fs" />
     <Compile Include="Interop\StaticsInInterfaces.fs" />
@@ -214,9 +218,6 @@
     <Compile Include="FSharpChecker\CommonWorkflows.fs" />
     <Compile Include="FSharpChecker\SymbolUse.fs" />
     <Compile Include="FSharpChecker\FindReferences.fs" />
-    <None Include="**\*.cs;**\*.fs;**\*.fsx;**\*.fsi" Exclude="@(Compile)">
-      <Link>%(RelativeDir)\TestSource\%(Filename)%(Extension)</Link>
-    </None>
   </ItemGroup>
 
   <ItemGroup>
