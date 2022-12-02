@@ -539,7 +539,7 @@
       </trans-unit>
       <trans-unit id="optsInvalidRefAssembly">
         <source>Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</source>
-        <target state="needs-review-translation">Başvuru bütünleştirilmiş kodunun oluşturulması için geçersiz kullanım: '--staticlink' veya '--refonly' ile '--refout' birlikte kullanılmaz.</target>
+        <target state="new">Invalid use of emitting a reference assembly, do not use '--standalone or --staticlink' with '--refonly or --refout'.</target>
         <note />
       </trans-unit>
       <trans-unit id="optsInvalidRefOut">
