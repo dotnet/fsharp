@@ -2162,8 +2162,8 @@ FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromDispatchSlotImplemen
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromOpenStatement
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromPattern
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromType
-FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsPrivateToFile
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsFromUse
+FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean IsPrivateToFile
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromAttribute()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromComputationExpression()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromDefinition()
@@ -2171,8 +2171,8 @@ FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromDispatchSlotImpl
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromOpenStatement()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromPattern()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromType()
-FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsPrivateToFile()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsFromUse()
+FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: Boolean get_IsPrivateToFile()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: FSharp.Compiler.Symbols.FSharpDisplayContext DisplayContext
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: FSharp.Compiler.Symbols.FSharpDisplayContext get_DisplayContext()
 FSharp.Compiler.CodeAnalysis.FSharpSymbolUse: FSharp.Compiler.Symbols.FSharpSymbol Symbol
@@ -4383,6 +4383,8 @@ FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+FsiEvaluati
 FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+FsiEvaluationSessionHostConfig
 FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+FsiValue
 FSharp.Compiler.Interactive.Shell: FSharp.Compiler.Interactive.Shell+Settings
+FSharp.Compiler.Service.Utilities.ParallelProcessing
+FSharp.Compiler.Service.Utilities.ParallelProcessing: Void processInParallel[Item](System.String, Item[], Microsoft.FSharp.Core.FSharpFunc`2[Item,Item[]], Int32, Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,System.Boolean], System.Threading.CancellationToken, Microsoft.FSharp.Core.FSharpFunc`2[Item,System.String])
 FSharp.Compiler.Symbols.FSharpAbstractParameter
 FSharp.Compiler.Symbols.FSharpAbstractParameter: Boolean IsInArg
 FSharp.Compiler.Symbols.FSharpAbstractParameter: Boolean IsOptionalArg
@@ -5170,10 +5172,10 @@ FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpGenericParamet
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpGenericParameter get_GenericParameter()
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpParameter Prettify(FSharp.Compiler.Symbols.FSharpParameter)
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType AbbreviatedType
+FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType ErasedType
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType Instantiate(Microsoft.FSharp.Collections.FSharpList`1[System.Tuple`2[FSharp.Compiler.Symbols.FSharpGenericParameter,FSharp.Compiler.Symbols.FSharpType]])
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType Prettify(FSharp.Compiler.Symbols.FSharpType)
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType StripAbbreviations()
-FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType ErasedType
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType get_AbbreviatedType()
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Symbols.FSharpType get_ErasedType()
 FSharp.Compiler.Symbols.FSharpType: FSharp.Compiler.Text.TaggedText[] FormatLayout(FSharp.Compiler.Symbols.FSharpDisplayContext)

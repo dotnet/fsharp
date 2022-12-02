@@ -1,4 +1,4 @@
-﻿module FSharp.Compiler.Service.Utilities.ParallelProcessing
+﻿module internal FSharp.Compiler.Service.Utilities.ParallelProcessing
 
 #nowarn "1182"
 
