@@ -582,7 +582,7 @@ let SetDeterministicSwitch (tcConfigB: TcConfigBuilder) switch =
 
 let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
     match tcConfigB.emitMetadataAssembly with
-    | MetadataAssemblyGeneration.None ->
+    | MetadataAssemblyGeneration.None when tcConfigB.standalone = false && tcConfigB.extraStaticLinkRoots.IsEmpty ->
         tcConfigB.emitMetadataAssembly <-
             if (switch = OptionSwitch.On) then
                 MetadataAssemblyGeneration.ReferenceOnly
@@ -592,7 +592,7 @@ let SetReferenceAssemblyOnlySwitch (tcConfigB: TcConfigBuilder) switch =
 
 let SetReferenceAssemblyOutSwitch (tcConfigB: TcConfigBuilder) outputPath =
     match tcConfigB.emitMetadataAssembly with
-    | MetadataAssemblyGeneration.None ->
+    | MetadataAssemblyGeneration.None when tcConfigB.standalone = false && tcConfigB.extraStaticLinkRoots.IsEmpty ->
         if FileSystem.IsInvalidPathShim outputPath then
             error (Error(FSComp.SR.optsInvalidRefOut (), rangeCmdArgs))
         else
@@ -1305,9 +1305,12 @@ let advancedFlagsFsc tcConfigB =
             "standalone",
             tagNone,
             OptionUnit(fun _ ->
-                tcConfigB.openDebugInformationForLaterStaticLinking <- true
-                tcConfigB.standalone <- true
-                tcConfigB.implicitlyResolveAssemblies <- true),
+                match tcConfigB.emitMetadataAssembly with
+                | MetadataAssemblyGeneration.None ->
+                    tcConfigB.openDebugInformationForLaterStaticLinking <- true
+                    tcConfigB.standalone <- true
+                    tcConfigB.implicitlyResolveAssemblies <- true
+                | _ -> error (Error(FSComp.SR.optsInvalidRefAssembly (), rangeCmdArgs))),
             None,
             Some(FSComp.SR.optsStandalone ())
         )
@@ -1316,8 +1319,11 @@ let advancedFlagsFsc tcConfigB =
             "staticlink",
             tagFile,
             OptionString(fun s ->
-                tcConfigB.extraStaticLinkRoots <- tcConfigB.extraStaticLinkRoots @ [ s ]
-                tcConfigB.implicitlyResolveAssemblies <- true),
+                match tcConfigB.emitMetadataAssembly with
+                | MetadataAssemblyGeneration.None ->
+                    tcConfigB.extraStaticLinkRoots <- tcConfigB.extraStaticLinkRoots @ [ s ]
+                    tcConfigB.implicitlyResolveAssemblies <- true
+                | _ -> error (Error(FSComp.SR.optsInvalidRefAssembly (), rangeCmdArgs))),
             None,
             Some(FSComp.SR.optsStaticlink ())
         )
