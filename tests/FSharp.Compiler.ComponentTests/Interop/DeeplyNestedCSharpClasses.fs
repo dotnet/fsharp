@@ -8,9 +8,6 @@ open System
 
 module ``Deeply nested CSharpClasses`` =
 
-//Expect error similar to:
-//(8,29): error FS0039: The value, constructor, namespace or type 'somefunctoin' is not defined. Maybe you want one of the following:   somefunction
-
     let cslib =
         CSharp """
 using System;
