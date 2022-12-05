@@ -784,10 +784,10 @@ type FSharpCrossLanguageSymbolNavigationService()  =
     //   2 - Path - a dotted path to a symbol.
     //   3 - parameters, opetional, only for methods and properties.
     //   4 - return type, optional, only for methods.
-    let docCommentIdRx = Regex(@"^(\w):([\w\d#`.]+)(\(.+\))?(?:~([\w\d.]+))?$", RegexOptions.Compiled)
+    let docCommentIdRx = Regex(@"^(?<kind>\w):(?<entity>[\w\d#`.]+)(?<args>\(.+\))?(?:~([\w\d.]+))?$", RegexOptions.Compiled)
 
     // Parse generic args out of the function name
-    let fnGenericArgsRx = Regex(@"^(.+)``(\d+)$", RegexOptions.Compiled)
+    let fnGenericArgsRx = Regex(@"^(?<entity>.+)``(?<typars>\d+)$", RegexOptions.Compiled)
 
     let docCommentIdToPath (docId:string) =
         // docCommentId is in the following format:
@@ -819,11 +819,11 @@ type FSharpCrossLanguageSymbolNavigationService()  =
         // "P:N.X.prop" - property with getter and setter
 
         let m = docCommentIdRx.Match(docId)
-        let t = m.Groups[1].Value
+        let t = m.Groups["kind"].Value
         match m.Success, t with
         | true, ("M" | "P" | "E") ->
             // TODO: Probably, there's less janky way of dealing with those.
-            let parts = m.Groups[2].Value.Split('.')
+            let parts = m.Groups["entity"].Value.Split('.')
             let entityPath = parts[..(parts.Length - 2)] |> List.ofArray
             let memberOrVal = parts[parts.Length - 1]
 
@@ -831,13 +831,13 @@ type FSharpCrossLanguageSymbolNavigationService()  =
             let genericM = fnGenericArgsRx.Match(memberOrVal)
             let (memberOrVal, genericParametersCount) =
                 if genericM.Success then
-                    (genericM.Groups[1].Value, int genericM.Groups[2].Value)
+                    (genericM.Groups["entity"].Value, int genericM.Groups["typars"].Value)
                 else
                     memberOrVal, 0
 
             // A hack/fixup for the constructor name (#ctor in doccommentid and ``.ctor`` in F#)
             if memberOrVal = "#ctor" then
-                DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = "``.ctor``"; GenericParameters = 0 }, (SymbolMemberType.FromString "CTOR"))
+                DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = "``.ctor``"; GenericParameters = 0 },SymbolMemberType.Constructor)
             else
                 DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = genericParametersCount }, (SymbolMemberType.FromString t))
         | true, "T" ->
@@ -849,19 +849,25 @@ type FSharpCrossLanguageSymbolNavigationService()  =
             let memberOrVal = parts[parts.Length - 1]
             DocCommentId.Field { EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = 0 }
         | _ -> DocCommentId.None
-    
+
     let tryFindFieldByName (name: string) (e: FSharpEntity) =
-        e.FSharpFields
-        |> Seq.filter (
-            fun x ->
-                x.DisplayName = name
-                && not x.IsCompilerGenerated)
-        |> Seq.map (fun e -> e.DeclarationLocation)
+        let fields =
+            e.FSharpFields
+            |> Seq.filter (
+                fun x ->
+                    x.DisplayName = name
+                    && not x.IsCompilerGenerated)
+            |> Seq.map (fun e -> e.DeclarationLocation)
+
+        if fields.Count() <= 0 && (e.IsFSharpUnion || e.IsFSharpRecord) then
+            Seq.singleton e.DeclarationLocation
+        else
+            fields
 
     let tryFindValByNameAndType (name: string) (symbolMemberType: SymbolMemberType) (genericParametersCount: int) (e: FSharpEntity) =
 
         let entities = e.TryGetMembersFunctionsAndValues()
-        
+
         let defaultFilter (e: FSharpMemberOrFunctionOrValue) =
             (e.DisplayName = name || e.CompiledName = name) && e.GenericParameters.Count = genericParametersCount
 
@@ -869,18 +875,15 @@ type FSharpCrossLanguageSymbolNavigationService()  =
 
         let filteredEntities: range seq = 
             match symbolMemberType with
-            | SymbolMemberType.Constructor when e.IsFSharpRecord ->
-                Seq.singleton e.DeclarationLocation
             | SymbolMemberType.Other
             | SymbolMemberType.Method ->
                 entities
                 |> Seq.filter defaultFilter
                 |> Seq.map getLocation
-            | SymbolMemberType.Constructor ->
-                entities
-                |> Seq.filter (fun x -> defaultFilter x && x.IsConstructor)
-                |> Seq.map getLocation
-            // When navigating to property for the record, it will be in members bag for custom ones, but will be in the fields in fields.
+            // F# record-specific logic, if navigating to the record's ctor, then navigate to record declaration.
+            // If we navigating to F# record property, we first check if it's "custom" property, if it's one of the record fields, we search for it in the fields.
+            | SymbolMemberType.Constructor when e.IsFSharpRecord ->
+                Seq.singleton e.DeclarationLocation
             | SymbolMemberType.Property when e.IsFSharpRecord ->
                 let properties = 
                     entities
@@ -888,6 +891,11 @@ type FSharpCrossLanguageSymbolNavigationService()  =
                     |> Seq.map getLocation
                 let fields = tryFindFieldByName name e
                 Seq.append properties fields
+            | SymbolMemberType.Constructor ->
+                entities
+                |> Seq.filter (fun x -> defaultFilter x && x.IsConstructor)
+                |> Seq.map getLocation
+            // When navigating to property for the record, it will be in members bag for custom ones, but will be in the fields in fields.
             | SymbolMemberType.Event // Events are just properties
             | SymbolMemberType.Property ->
                 entities
@@ -910,26 +918,21 @@ type FSharpCrossLanguageSymbolNavigationService()  =
                     match path with
                     | DocCommentId.Member ({ EntityPath = entityPath; MemberOrValName = memberOrVal; GenericParameters = genericParametersCount }, memberType)  ->
                         let entity = result.AssemblySignature.FindEntityByPath (entityPath)
-                        match entity with
-                        | Some e ->
+                        entity |> Option.iter (fun e ->
                             locations <- e |> tryFindValByNameAndType memberOrVal memberType genericParametersCount
                                      |> Seq.map (fun m -> (m, project))
-                                     |> Seq.append locations
-                        | None -> ()
+                                     |> Seq.append locations)
+
                     | DocCommentId.Field { EntityPath = entityPath; MemberOrValName = memberOrVal } ->
                         let entity = result.AssemblySignature.FindEntityByPath (entityPath)
-                        match entity with
-                        | Some e ->
+                        entity |> Option.iter (fun e ->
                             locations <- e |> tryFindFieldByName memberOrVal 
                                      |> Seq.map (fun m -> (m, project)) 
-                                     |> Seq.append locations
-                        | None -> ()
+                                     |> Seq.append locations)
                     | DocCommentId.Type entityPath ->
                         let entity = result.AssemblySignature.FindEntityByPath (entityPath)
-                        match entity with
-                        | Some e ->
-                            locations <- Seq.append locations [e.DeclarationLocation, project]
-                        | None -> ()
+                        entity |> Option.iter (fun e ->
+                            locations <- Seq.append locations [e.DeclarationLocation, project])
                     | _ -> ()
                 
                 // TODO: Figure out the way of giving the user choice where to navigate, if there are more than one result
