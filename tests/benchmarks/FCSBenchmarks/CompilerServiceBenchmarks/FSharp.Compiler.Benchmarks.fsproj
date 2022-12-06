@@ -15,6 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="VsUtils.fs" />
     <Compile Include="BackgroundCompilerBenchmarks.fs" />
     <Compile Include="SourceText.fs" />
     <Compile Include="DecentlySizedStandAloneFileBenchmark.fs" />

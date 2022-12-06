@@ -370,6 +370,10 @@ module ProjectOperations =
             writeFileIfChanged (p.ProjectDir ++ $"{p.Name}.fsproj") (renderFsProj p)
         }
 
+    let deleteProjectDir (project: SyntheticProject) =
+        if Directory.Exists project.ProjectDir then
+            Directory.Delete(project.ProjectDir, true)
+
 
 type WorkflowContext =
     { Project: SyntheticProject
@@ -419,14 +423,12 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
             return { ctx with Project = f ctx.Project }
         }
 
-    member this.Checker = checker
+    member _.Checker = checker
 
-    member this.Yield _ =
+    member _.Yield _ =
         SaveAndCheckProject initialProject checker
 
-    member this.DeleteProjectDir() =
-        if Directory.Exists initialProject.ProjectDir then
-            Directory.Delete(initialProject.ProjectDir, true)
+    member _.DeleteProjectDir() = initialProject |> deleteProjectDir
 
     member this.Run(workflow: Async<WorkflowContext>) =
         try
@@ -437,12 +439,12 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
     /// Change contents of given file using `processFile` function.
     /// Does not save the file to disk.
     [<CustomOperation "updateFile">]
-    member this.UpdateFile(workflow: Async<WorkflowContext>, fileId: string, processFile) =
+    member _.UpdateFile(workflow: Async<WorkflowContext>, fileId: string, processFile) =
         workflow |> mapProject (updateFileInAnyProject fileId processFile)
 
     /// Add a file above given file in the project.
     [<CustomOperation "addFileAbove">]
-    member this.AddFileAbove(workflow: Async<WorkflowContext>, addAboveId: string, newFile) =
+    member _.AddFileAbove(workflow: Async<WorkflowContext>, addAboveId: string, newFile) =
         workflow
         |> mapProject (fun project ->
             let index =
@@ -454,14 +456,14 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
     /// Remove a file from the project. The file is not deleted from disk.
     [<CustomOperation "removeFile">]
-    member this.RemoveFile(workflow: Async<WorkflowContext>, fileId: string) =
+    member _.RemoveFile(workflow: Async<WorkflowContext>, fileId: string) =
         workflow
         |> mapProject (fun project ->
             { project with SourceFiles = project.SourceFiles |> List.filter (fun f -> f.Id <> fileId) })
 
     /// Parse and type check given file and process the results using `processResults` function.
     [<CustomOperation "checkFile">]
-    member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
+    member _.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
         async {
             let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker
@@ -474,7 +476,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
             return { ctx with Signatures = ctx.Signatures.Add(fileId, newSignature) }
         }
 
-    member this.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
+    member _.CheckFile(workflow: Async<WorkflowContext>, fileId: string, processResults) =
         async {
             let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker
@@ -489,7 +491,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
     /// Find a symbol using the provided range, mimicking placing a cursor on it in IDE scenarios
     [<CustomOperation "placeCursor">]
-    member this.PlaceCursor(workflow: Async<WorkflowContext>, fileId, line, colAtEndOfNames, fullLine, symbolNames) =
+    member _.PlaceCursor(workflow: Async<WorkflowContext>, fileId, line, colAtEndOfNames, fullLine, symbolNames) =
         async {
             let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker
@@ -549,7 +551,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
     /// Save given file to disk.
     [<CustomOperation "saveFile">]
-    member this.SaveFile(workflow: Async<WorkflowContext>, fileId: string) =
+    member _.SaveFile(workflow: Async<WorkflowContext>, fileId: string) =
         async {
             let! ctx = workflow
             let project, file = ctx.Project.FindInAllProjects fileId
@@ -559,7 +561,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
 
     /// Save all files to disk.
     [<CustomOperation "saveAll">]
-    member this.SaveAll(workflow: Async<WorkflowContext>) =
+    member _.SaveAll(workflow: Async<WorkflowContext>) =
         async {
             let! ctx = workflow
             do! saveProject ctx.Project false checker
@@ -571,7 +573,7 @@ type ProjectWorkflowBuilder(initialProject: SyntheticProject, ?checker: FSharpCh
     ///
     /// Requires `enableBackgroundItemKeyStoreAndSemanticClassification` to be true in the checker.
     [<CustomOperation "findAllReferencesToModuleFromFile">]
-    member this.FindAllReferencesToModuleFromFile(workflow, fileId, fastCheck, processResults) =
+    member _.FindAllReferencesToModuleFromFile(workflow, fileId, fastCheck, processResults) =
         async {
             let! ctx = workflow
             let! results = checkFile fileId ctx.Project checker
