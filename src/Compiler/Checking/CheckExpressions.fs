@@ -1209,6 +1209,12 @@ let CheckRequiredProperties (g:TcGlobals) (env: TcEnv) (cenv: TcFileState) (minf
                 let details = NicePrint.multiLineStringOfPropInfos g cenv.amap mMethExpr env.DisplayEnv missingProps
                 errorR(Error(FSComp.SR.tcMissingRequiredMembers details, mMethExpr))
 
+let private HasMethodImplNoInliningAttribute g attrs = 
+            match TryFindFSharpAttribute g g.attrib_MethodImplAttribute attrs with
+            // NO_INLINING = 8
+            | Some (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x8) <> 0x0
+            | _ -> false
+
 let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRecInfo, vscheme, attrs, xmlDoc, konst, isGeneratedEventVal) =
 
     let g = cenv.g
@@ -1257,16 +1263,10 @@ let MakeAndPublishVal (cenv: cenv) env (altActualParent, inSig, declKind, valRec
               errorR(Error(FSComp.SR.tcDllImportStubsCannotBeInlined(), m)) 
             ValInline.Never 
         else 
-            let implflags = 
-                match TryFindFSharpAttribute g g.attrib_MethodImplAttribute attrs with
-                | Some (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> flags
-                | _ -> 0x0
-            // MethodImplOptions.NoInlining = 0x8
-            let NO_INLINING = 0x8
-            if (implflags &&& NO_INLINING) <> 0x0 then
-                ValInline.Never
-            else
-                inlineFlag
+            if HasMethodImplNoInliningAttribute g attrs 
+            then ValInline.Never 
+            else inlineFlag             
+        
 
     // CompiledName not allowed on virtual/abstract/override members
     let compiledNameAttrib = TryFindFSharpStringAttribute g g.attrib_CompiledNameAttribute attrs
@@ -2206,13 +2206,7 @@ module GeneralizationHelpers =
 
 let ComputeInlineFlag (memFlagsOption: SynMemberFlags option) isInline isMutable g attrs m =
     let hasNoCompilerInliningAttribute() = HasFSharpAttribute g g.attrib_NoCompilerInliningAttribute attrs
-    let hasMethodImplNoInlining() = 
-            match TryFindFSharpAttribute g g.attrib_MethodImplAttribute attrs with
-            // NO_INLINING = 8
-            | Some (Attrib(_, _, [ AttribInt32Arg flags ], _, _, _, _)) -> (flags &&& 0x8) <> 0x0
-            | _ -> false
-    let enforceNoInlining() = hasNoCompilerInliningAttribute() || hasMethodImplNoInlining()
-
+    let enforceNoInlining() = hasNoCompilerInliningAttribute() || HasMethodImplNoInliningAttribute g attrs
 
     let inlineFlag =
         let isCtorOrAbstractSlot =
