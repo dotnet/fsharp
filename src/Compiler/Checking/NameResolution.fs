@@ -2693,6 +2693,7 @@ let rec ResolveLongIdentInTypePrim (ncenv: NameResolver) nenv lookupKind (resInf
 
     match nestedSearchAccessible with
     | Result res when not (isNil res) -> nestedSearchAccessible
+    | Exception _ -> nestedSearchAccessible
     | _ ->
         let suggestMembers (addToBuffer: string -> unit) =
             for p in ExtensionPropInfosOfTypeInScope ResultCollectionSettings.AllResults ncenv.InfoReader nenv None LookupIsInstance.Ambivalent ad m ty do
