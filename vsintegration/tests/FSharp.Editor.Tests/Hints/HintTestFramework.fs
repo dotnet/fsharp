@@ -22,7 +22,7 @@ module HintTestFramework =
     // like: C:\Program Files\dotnet\packs\Microsoft.NETCore.App.Ref\7.0.0\ref\net7.0\mscorlib.dll
     let locateMscorlib() =
         let programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)
-        let dotnetPacks = $"{programFiles}\dotnet\packs"
+        let dotnetPacks = $"{programFiles}\\dotnet\\packs"
         let mscorlibs = Directory.GetFiles(dotnetPacks, "mscorlib.dll", SearchOption.AllDirectories) 
         mscorlibs |> Seq.last
 
@@ -43,6 +43,7 @@ module HintTestFramework =
     let getFsDocument code =
         use project = SingleFileProject code
         let fileName = fst project.Files.Head
+        // I don't know, without this lib some symbols are just not loaded
         let options = { project.Options with OtherOptions = [|$"-r:{locateMscorlib()}"|] }
         let document, _ = RoslynTestHelpers.CreateSingleDocumentSolution(fileName, code, options)
         document

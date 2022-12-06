@@ -44,7 +44,9 @@ module InlineParameterNameHints =
     // Why the hell is this so complicated? 
     // There can be (rarely) cases like there can be cases like 
     // <somecode>.SymbolUse1().SymbolUse2()<morecode>
-    // and we need to locate the last one
+    // and we need to locate the last one.
+    // Hopefully someone will have a better way to do that one day,
+    // this is quite heavily tested so should be safe to refactor.
     let getSymbolPosition
         (symbolUse: FSharpSymbolUse) 
         (source: Microsoft.CodeAnalysis.Text.SourceText) = 
