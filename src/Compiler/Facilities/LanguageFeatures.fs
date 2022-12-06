@@ -57,6 +57,7 @@ type LanguageFeature =
     | MatchNotAllowedForUnionCaseWithNoData
     | CSharpExtensionAttributeNotRequired
     | ErrorForNonVirtualMembersOverrides
+    | WarningWhenInliningMethodImplNoInlineMarkedFunction
 
 /// LanguageVersion management
 type LanguageVersion(versionText) =
@@ -130,6 +131,7 @@ type LanguageVersion(versionText) =
                 LanguageFeature.MatchNotAllowedForUnionCaseWithNoData, previewVersion
                 LanguageFeature.CSharpExtensionAttributeNotRequired, previewVersion
                 LanguageFeature.ErrorForNonVirtualMembersOverrides, previewVersion
+                LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction, previewVersion
 
             ]
 
@@ -240,6 +242,7 @@ type LanguageVersion(versionText) =
         | LanguageFeature.MatchNotAllowedForUnionCaseWithNoData -> FSComp.SR.featureMatchNotAllowedForUnionCaseWithNoData ()
         | LanguageFeature.CSharpExtensionAttributeNotRequired -> FSComp.SR.featureCSharpExtensionAttributeNotRequired  ()
         | LanguageFeature.ErrorForNonVirtualMembersOverrides -> FSComp.SR.featureErrorForNonVirtualMembersOverrides  ()
+        | LanguageFeature.WarningWhenInliningMethodImplNoInlineMarkedFunction -> FSComp.SR.featureWarningWhenInliningMethodImplNoInlineMarkedFunction ()
 
     /// Get a version string associated with the given feature.
     static member GetFeatureVersionString feature =
