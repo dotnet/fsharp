@@ -2427,6 +2427,9 @@ and [<Sealed>] TcImports
                     if tcConfig.compilingFSharpCore then
                         // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
                         return CcuThunk.CreateDelayed getFSharpCoreLibraryName, ILScopeRef.Local
+                    elif tcConfig.compilingfscorlib then
+                        // When compiling FSharp.Core.dll, the fslibCcu reference to FSharp.Core.dll is a delayed ccu thunk fixed up during type checking
+                        return CcuThunk.CreateDelayed getfscorlibLibraryName, ILScopeRef.Local
                     else
                         let coreLibraryReference = tcConfig.CoreLibraryDllReference()
 
@@ -2475,6 +2478,8 @@ and [<Sealed>] TcImports
             let tcGlobals =
                 TcGlobals(
                     tcConfig.compilingFSharpCore,
+                    tcConfig.compilingfscorlib,
+                    tcConfig.enableInlineIl,
                     ilGlobals,
                     fslibCcu,
                     tcConfig.implicitIncludeDir,

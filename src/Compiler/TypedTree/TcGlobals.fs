@@ -190,6 +190,8 @@ let tname_IsByRefLikeAttribute = "System.Runtime.CompilerServices.IsByRefLikeAtt
 
 type TcGlobals(
     compilingFSharpCore: bool,
+    compilingfscorlib: bool,
+    enableInlineIl: bool,
     ilg: ILGlobals,
     fslibCcu: CcuThunk,
     directoryToResolveRelativePaths,
@@ -591,10 +593,16 @@ type TcGlobals(
       | None -> TType_app(tcref, l, v_knownWithoutNull)
 
   let mk_MFCore_attrib nm : BuiltinAttribInfo =
-      AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, Core + "." + nm), mk_MFCore_tcref fslibCcu nm)
+      if compilingfscorlib then
+          AttribInfo(mkILTyRef(mkDummycorlibScopeRef "fscorlib", "fscorlib" + "." + nm), mk_MFCore_tcref fslibCcu nm)
+      else
+          AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, Core + "." + nm), mk_MFCore_tcref fslibCcu nm)
 
   let mk_MFCompilerServices_attrib nm : BuiltinAttribInfo =
-      AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, Core + "." + nm), mk_MFCompilerServices_tcref fslibCcu nm)
+    if compilingfscorlib then
+        AttribInfo(mkILTyRef(mkDummycorlibScopeRef "fscorlib", "fscorlib" + "." + nm), mk_MFCompilerServices_tcref fslibCcu nm)
+    else
+        AttribInfo(mkILTyRef(ilg.fsharpCoreAssemblyScopeRef, Core + "." + nm), mk_MFCompilerServices_tcref fslibCcu nm)
 
   let mkSourceDoc fileName = ILSourceDocument.Create(language=None, vendor=None, documentType=None, file=fileName)
 
@@ -1008,6 +1016,8 @@ type TcGlobals(
   member _.knownFSharpCoreModules = v_knownFSharpCoreModules
 
   member _.compilingFSharpCore = compilingFSharpCore
+
+  member _.enableInlineIl = enableInlineIl
 
   member _.useReflectionFreeCodeGen = useReflectionFreeCodeGen
 

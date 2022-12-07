@@ -2589,21 +2589,23 @@ type internal MagicAssemblyResolution () =
 
 type FsiStdinLexerProvider
     (
-        tcConfigB, fsiStdinSyphon,
+        tcConfigB:TcConfigBuilder, fsiStdinSyphon,
         fsiConsoleInput: FsiConsoleInput,
         fsiConsoleOutput: FsiConsoleOutput,
         fsiOptions: FsiCommandLineOptions,
         lexResourceManager: LexResourceManager
     ) =
 
+    let tcConfig = tcConfigB.ToTcConfig(false)
+
     // #light is the default for FSI
     let indentationSyntaxStatus =
-        let initialIndentationAwareSyntaxStatus = (tcConfigB.indentationAwareSyntax <> Some false)
+        let initialIndentationAwareSyntaxStatus = (tcConfig.indentationAwareSyntax <> Some false)
         IndentationAwareSyntaxStatus (initialIndentationAwareSyntaxStatus, warn=false)
 
     let LexbufFromLineReader (fsiStdinSyphon: FsiStdinSyphon) readF =
         UnicodeLexing.FunctionAsLexbuf
-          (true, tcConfigB.langVersion, (fun (buf: char[], start, len) ->
+          (true, tcConfig.langVersion, (fun (buf: char[], start, len) ->
             //fprintf fsiConsoleOutput.Out "Calling ReadLine\n"
             let inputOption = try Some(readF()) with :? EndOfStreamException -> None
             inputOption |> Option.iter (fun t -> fsiStdinSyphon.Add (t + "\n"))
@@ -2640,8 +2642,8 @@ type FsiStdinLexerProvider
         resetLexbufPos sourceFileName lexbuf
         let skip = true  // don't report whitespace from lexer
         let applyLineDirectives = true
-        let lexargs = mkLexargs (tcConfigB.conditionalDefines, indentationSyntaxStatus, lexResourceManager, [], diagnosticsLogger, PathMap.empty, applyLineDirectives)
-        let tokenizer = LexFilter.LexFilter(indentationSyntaxStatus, tcConfigB.compilingFSharpCore, Lexer.token lexargs skip, lexbuf)
+        let lexargs = mkLexargs (tcConfig.conditionalDefines, indentationSyntaxStatus, lexResourceManager, [], diagnosticsLogger, PathMap.empty, applyLineDirectives)
+        let tokenizer = LexFilter.LexFilter(indentationSyntaxStatus, tcConfig.compilingFSharpCore, Lexer.token lexargs skip, lexbuf)
         tokenizer
 
     // Create a new lexer to read stdin
@@ -3421,17 +3423,14 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.platform <- if IntPtr.Size = 8 then Some AMD64 else Some X86
 #endif
 
+    do tcConfigB.productNameForBannerText <- FSIstrings.SR.fsiProductName(FSharpBannerVersion)
+
     let fsiStdinSyphon = FsiStdinSyphon(errorWriter)
     let fsiConsoleOutput = FsiConsoleOutput(tcConfigB, outWriter, errorWriter)
 
     let diagnosticsLogger = DiagnosticsLoggerThatStopsOnFirstError(tcConfigB, fsiStdinSyphon, fsiConsoleOutput)
 
     do InstallErrorLoggingOnThisThread diagnosticsLogger // FSI error logging on main thread.
-
-    let updateBannerText() =
-      tcConfigB.productNameForBannerText <- FSIstrings.SR.fsiProductName(FSharpBannerVersion)
-
-    do updateBannerText() // setting the correct banner so that 'fsi -?' display the right thing
 
     let fsiOptions = FsiCommandLineOptions(fsi, argv, tcConfigB, fsiConsoleOutput)
 
@@ -3457,9 +3456,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
           SetServerCodePages fsiOptions
       with e ->
           warning(e)
-
-    do
-      updateBannerText() // resetting banner text after parsing options
 
       if tcConfigB.showBanner then
           fsiOptions.ShowBanner()

@@ -4695,11 +4695,11 @@ let compareILVersions (version1: ILVersionInfo) (version2: ILVersionInfo) =
                 let c = compare version1.Revision version2.Revision
                 if c <> 0 then c else 0
 
-let DummyFSharpCoreScopeRef =
+let mkDummycorlibScopeRef nm =
     let asmRef =
         // The exact public key token and version used here don't actually matter, or shouldn't.
         ILAssemblyRef.Create(
-            "FSharp.Core",
+            nm,
             None,
             Some(PublicKeyToken(Bytes.ofInt32Array [| 0xb0; 0x3f; 0x5f; 0x7f; 0x11; 0xd5; 0x0a; 0x3a |])),
             false,
@@ -4708,6 +4708,10 @@ let DummyFSharpCoreScopeRef =
         )
 
     ILScopeRef.Assembly asmRef
+
+let DummyFSharpCoreScopeRef = mkDummycorlibScopeRef "FSharp.Core"
+
+let DummyfscorlibScopeRef = mkDummycorlibScopeRef "fscorlib"
 
 let PrimaryAssemblyILGlobals =
     mkILGlobals (ILScopeRef.PrimaryAssembly, [], DummyFSharpCoreScopeRef)

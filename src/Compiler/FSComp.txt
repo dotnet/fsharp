@@ -908,6 +908,7 @@ optsSimpleresolution,"Resolve assembly references using directory-based rules ra
 1048,optsUnrecognizedTarget,"Unrecognized target '%s', expected 'exe', 'winexe', 'library' or 'module'"
 1049,optsUnrecognizedDebugType,"Unrecognized debug type '%s', expected 'pdbonly' or 'full'"
 1050,optsInvalidWarningLevel,"Invalid warning level '%d'"
+1051,optsUnrecognizedCompilingCoreLib,"Unrecognized value '%s' for --compiling-corlib: valid values: 'FSharp.Core' and "fscorlib'"
 optsShortFormOf,"Short form of '%s'"
 optsClirootDeprecatedMsg,"The command-line option '--cliroot' has been deprecated. Use an explicit reference to a specific copy of mscorlib.dll instead."
 optsClirootDescription,"Use to override where the compiler looks for mscorlib.dll and framework components"

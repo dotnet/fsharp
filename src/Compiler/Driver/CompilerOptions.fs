@@ -511,6 +511,29 @@ let ParseCompilerOptions (collectOtherArgument: string -> unit, blocks: Compiler
 let lexFilterVerbose = false
 let mutable enableConsoleColoring = true // global state
 
+// option tags
+let tagString = "<string>"
+let tagExe = "exe"
+let tagWinExe = "winexe"
+let tagLibrary = "library"
+let tagModule = "module"
+let tagFile = "<file>"
+let tagFileList = "<file;...>"
+let tagDirList = "<dir;...>"
+let tagPathList = "<path;...>"
+let tagResInfo = "<resinfo>"
+let tagFullPDBOnlyPortable = "{full|pdbonly|portable|embedded}"
+let tagWarnList = "<warn;...>"
+let tagSymbolList = "<symbol;...>"
+let tagAddress = "<address>"
+let tagAlgorithm = "{SHA1|SHA256}"
+let tagInt = "<n>"
+let tagPathMap = "<path=sourcePath;...>"
+let tagCompilingFSharpCore = "fsharp.core"
+let tagCompilingFSCorLib = "fscorlib"
+let tagNone = ""
+let tagLangVersionValues = "{version|latest|preview}"
+
 let setFlag r n =
     match n with
     | 0 -> r false
@@ -655,6 +678,12 @@ let SetUseSdkSwitch (tcConfigB: TcConfigBuilder) switch =
 
 let (++) x s = x @ [ s ]
 
+let setCompilingCoreLib (tcConfigB: TcConfigBuilder) (s: string) =
+    match s.ToLowerInvariant() with
+    | "fsharp.core" -> tcConfigB.compilingCoreLib <- tagCompilingFSharpCore
+    | "fscorlib" ->  tcConfigB.compilingCoreLib <- tagCompilingFSCorLib
+    | _ -> error (Error(FSComp.SR.optsUnrecognizedCompilingCoreLib s, rangeCmdArgs))
+
 let SetTarget (tcConfigB: TcConfigBuilder) (s: string) =
     match s.ToLowerInvariant() with
     | "exe" -> tcConfigB.target <- CompilerTarget.ConsoleExe
@@ -699,27 +728,6 @@ let setSignatureFile tcConfigB s =
 
 let setAllSignatureFiles tcConfigB () =
     tcConfigB.printAllSignatureFiles <- true
-
-// option tags
-let tagString = "<string>"
-let tagExe = "exe"
-let tagWinExe = "winexe"
-let tagLibrary = "library"
-let tagModule = "module"
-let tagFile = "<file>"
-let tagFileList = "<file;...>"
-let tagDirList = "<dir;...>"
-let tagPathList = "<path;...>"
-let tagResInfo = "<resinfo>"
-let tagFullPDBOnlyPortable = "{full|pdbonly|portable|embedded}"
-let tagWarnList = "<warn;...>"
-let tagSymbolList = "<symbol;...>"
-let tagAddress = "<address>"
-let tagAlgorithm = "{SHA1|SHA256}"
-let tagInt = "<n>"
-let tagPathMap = "<path=sourcePath;...>"
-let tagNone = ""
-let tagLangVersionValues = "{version|latest|preview}"
 
 // PrintOptionInfo
 //----------------
@@ -1763,44 +1771,45 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
 
 // OptionBlock: Deprecated flags (fsc, service only)
 //--------------------------------------------------
-
-let compilingFsLibFlag (tcConfigB: TcConfigBuilder) =
-    CompilerOption(
-        "compiling-fslib",
-        tagNone,
-        OptionUnit(fun () ->
-            tcConfigB.compilingFSharpCore <- true
-            tcConfigB.TurnWarningOff(rangeStartup, "42")),
-        Some(InternalCommandLineOption("--compiling-fslib", rangeCmdArgs)),
-        None
-    )
-
-let compilingFsLib20Flag =
-    CompilerOption(
-        "compiling-fslib-20",
-        tagNone,
-        OptionString(fun _ -> ()),
-        Some(DeprecatedCommandLineOptionNoDescription("--compiling-fslib-20", rangeCmdArgs)),
-        None
-    )
-
-let compilingFsLib40Flag =
-    CompilerOption(
-        "compiling-fslib-40",
-        tagNone,
-        OptionUnit(fun () -> ()),
-        Some(DeprecatedCommandLineOptionNoDescription("--compiling-fslib-40", rangeCmdArgs)),
-        None
-    )
-
-let compilingFsLibNoBigIntFlag =
-    CompilerOption(
-        "compiling-fslib-nobigint",
-        tagNone,
-        OptionUnit(fun () -> ()),
-        Some(DeprecatedCommandLineOptionNoDescription("compiling-fslib-nobigint", rangeCmdArgs)),
-        None
-    )
+let compilingCorLibFlags (tcConfigB: TcConfigBuilder) =
+    [|
+        CompilerOption(
+            "compiling-fslib", 
+            tagNone, 
+            OptionUnit(fun () -> setCompilingCoreLib tcConfigB "fsharp.core"),
+            Some(InternalCommandLineOption("--compiling-corlib:fsharp.core", rangeCmdArgs)),
+            None);
+        CompilerOption(
+            "compiling-fslib-20",
+            tagNone,
+            OptionString(fun _ -> ()),
+            Some(DeprecatedCommandLineOptionNoDescription("--compiling-fslib-20", rangeCmdArgs)),
+            None
+        );
+        CompilerOption(
+            "compiling-fslib-40",
+            tagNone,
+            OptionUnit(fun () -> ()),
+            Some(DeprecatedCommandLineOptionNoDescription("--compiling-fslib-40", rangeCmdArgs)),
+            None
+        );
+        CompilerOption(
+            "compiling-fslib-nobigint",
+            tagNone,
+            OptionUnit(fun () -> ()),
+            Some(DeprecatedCommandLineOptionNoDescription("compiling-fslib-nobigint", rangeCmdArgs)),
+            None
+        );
+        CompilerOption(
+            "compiling-fscorlib",
+            tagNone,
+            OptionUnit(fun () -> setCompilingCoreLib tcConfigB "fscorlib"),
+            Some(InternalCommandLineOption("--compiling-corlib:fscorlib", rangeCmdArgs)),
+            None
+        );
+        CompilerOption("compiling-corlib", tagCompilingFSharpCore, OptionString(setCompilingCoreLib tcConfigB), None, None);
+        CompilerOption("compiling-corlib", tagCompilingFSCorLib, OptionString(setCompilingCoreLib tcConfigB), None, None)
+    |]
 
 let mlKeywordsFlag =
     CompilerOption(
@@ -1901,10 +1910,7 @@ let deprecatedFlagsFsc tcConfigB =
             None
         )
 
-        compilingFsLibFlag tcConfigB
-        compilingFsLib20Flag
-        compilingFsLib40Flag
-        compilingFsLibNoBigIntFlag
+        yield! compilingCorLibFlags  tcConfigB
 
         CompilerOption(
             "version",

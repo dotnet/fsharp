@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// The configuration of the compiler (TcConfig and TcConfigBuilder)
-module internal FSharp.Compiler.CompilerConfig
+module internal rec FSharp.Compiler.CompilerConfig
 
 open System
 open FSharp.Compiler.IO
@@ -218,7 +218,7 @@ type TcConfigBuilder =
 
         defaultFSharpBinariesDir: string
 
-        mutable compilingFSharpCore: bool
+        mutable compilingCoreLib: string
 
         mutable useIncrementalBuilder: bool
 
@@ -504,6 +504,8 @@ type TcConfigBuilder =
         rangeForErrors: range ->
             TcConfigBuilder
 
+    member ToTcConfig: bool -> TcConfig
+
     member DecideNames: string list -> string * string option * string
 
     member TurnWarningOff: range * string -> unit
@@ -556,6 +558,10 @@ type TcConfig =
     member fsharpBinariesDir: string
 
     member compilingFSharpCore: bool
+
+    member compilingfscorlib: bool
+
+    member enableInlineIl: bool
 
     member useIncrementalBuilder: bool
 
@@ -853,6 +859,7 @@ type TcConfig =
     member exiter: Exiter
 
     member parallelReferenceResolution: ParallelReferenceResolution
+
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

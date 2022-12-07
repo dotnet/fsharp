@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved. See License.txt in the project root for license information.
 
 /// The configuration of the compiler (TcConfig and TcConfigBuilder)
-module internal FSharp.Compiler.CompilerConfig
+module internal rec FSharp.Compiler.CompilerConfig
 
 open System
 open System.Collections.Concurrent
@@ -402,7 +402,7 @@ type TcConfigBuilder =
         mutable implicitIncludeDir: string (* normally "." *)
         mutable openDebugInformationForLaterStaticLinking: bool (* only for --standalone *)
         defaultFSharpBinariesDir: string
-        mutable compilingFSharpCore: bool
+        mutable compilingCoreLib: string
         mutable useIncrementalBuilder: bool
         mutable includes: string list
         mutable implicitOpens: string list
@@ -633,7 +633,7 @@ type TcConfigBuilder =
             stackReserveSize = None
             conditionalDefines = []
             openDebugInformationForLaterStaticLinking = false
-            compilingFSharpCore = false
+            compilingCoreLib = null
             useIncrementalBuilder = false
             implicitOpens = []
             includes = []
@@ -1033,13 +1033,16 @@ type TcConfigBuilder =
         else
             ri, FileSystemUtils.fileNameOfPath ri, ILResourceAccess.Public
 
+    member tcConfigB.ToTcConfig validate = TcConfig(tcConfigB, validate)
+
+
 //----------------------------------------------------------------------------
 // TcConfig
 //--------------------------------------------------------------------------
 
 /// This type is immutable and must be kept as such. Do not extract or mutate the underlying data except by cloning it.
 [<Sealed>]
-type TcConfig private (data: TcConfigBuilder, validate: bool) =
+type TcConfig internal (data: TcConfigBuilder, validate: bool) =
 
     // Validate the inputs - this helps ensure errors in options are shown in visual studio rather than only when built
     // However we only validate a minimal number of options at the moment
@@ -1191,7 +1194,7 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
         data.openDebugInformationForLaterStaticLinking
 
     member _.fsharpBinariesDir = data.defaultFSharpBinariesDir
-    member _.compilingFSharpCore = data.compilingFSharpCore
+    member _.compilingCoreLib = data.compilingCoreLib
     member _.useIncrementalBuilder = data.useIncrementalBuilder
     member _.includes = data.includes
     member _.implicitOpens = data.implicitOpens
@@ -1422,6 +1425,16 @@ type TcConfig private (data: TcConfigBuilder, validate: bool) =
 
     member tcConfig.assumeDotNetFramework =
         tcConfig.primaryAssembly = PrimaryAssembly.Mscorlib
+
+    member tcConfig.compilingfscorlib =
+        tcConfig.compilingCoreLib = "fscorlib"
+
+    member tcConfig.compilingFSharpCore =
+        tcConfig.compilingCoreLib = "fsharp.core"
+
+    /// InlineIL is supported only in fsharp.core and fscorlib
+    member tcConfig.enableInlineIl =
+        tcConfig.compilingFSharpCore || tcConfig.compilingfscorlib
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
 /// but for F# Interactive it may be based on an underlying mutable TcConfigBuilder.

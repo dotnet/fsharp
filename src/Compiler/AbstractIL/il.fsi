@@ -1852,7 +1852,9 @@ type internal ILGlobals =
 ///   primaryScopeRef is the primary assembly we are emitting
 ///   equivPrimaryAssemblyRefs are ones regarded as equivalent
 val internal mkILGlobals:
-    primaryScopeRef: ILScopeRef * equivPrimaryAssemblyRefs: ILAssemblyRef list * fsharpCoreAssemblyScopeRef: ILScopeRef ->
+    primaryScopeRef: ILScopeRef *
+    equivPrimaryAssemblyRefs: ILAssemblyRef list *
+    fsharpCoreAssemblyScopeRef: ILScopeRef ->
         ILGlobals
 
 val internal PrimaryAssemblyILGlobals: ILGlobals
@@ -2329,6 +2331,8 @@ val internal sha1HashBytes: byte[] -> byte (* SHA1 hash *) []
 val internal parseILVersion: string -> ILVersionInfo
 val internal formatILVersion: ILVersionInfo -> string
 val internal compareILVersions: ILVersionInfo -> ILVersionInfo -> int
+
+val internal mkDummycorlibScopeRef: string -> ILScopeRef
 
 /// Decompose a type definition according to its kind.
 type internal ILEnumInfo =
