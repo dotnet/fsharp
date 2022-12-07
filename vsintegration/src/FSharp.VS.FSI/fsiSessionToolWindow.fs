@@ -542,7 +542,8 @@ type internal FsiToolWindow() as this =
 #{topLine} @"{filename}"
 {text.ToString()}
 #1 "stdin"
-//#interactiveprompt "show";;
+//#interactiveprompt "show"
+;;
 """
         executeTextNoHistory filename interaction
 
