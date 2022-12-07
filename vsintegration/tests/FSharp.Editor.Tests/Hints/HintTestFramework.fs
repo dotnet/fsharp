@@ -45,7 +45,6 @@ module HintTestFramework =
         // I don't know, without this lib some symbols are just not loaded
         let options = { project.Options with OtherOptions = 
                                                 [|
-                                                    "-o:obj\\Debug\\net7.0\\FSharp.dll"
                                                     "-g"
                                                     "--debug:portable"
                                                     "--noframework"
@@ -57,7 +56,6 @@ module HintTestFramework =
                                                     "--warnaserror:3239"
                                                     "--fullpaths"
                                                     "--flaterrors"
-                                                    "--highentropyva+"
                                                     "--targetprofile:netcore"
                                                     "--nocopyfsharpcore"
                                                     "--deterministic+"
