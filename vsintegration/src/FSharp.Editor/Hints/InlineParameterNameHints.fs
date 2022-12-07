@@ -30,15 +30,6 @@ module InlineParameterNameHints =
     let private doesFieldNameExist (field: FSharpField) = 
         not field.IsNameGenerated
 
-    // copypaste: https://stackoverflow.com/a/15993446/3232646
-    let private allIndexesOf (value: string) (s: string)  =
-        seq {
-            let mutable minIndex = s.IndexOf(value);
-            while (minIndex <> -1) do
-                yield minIndex;
-                minIndex <- s.IndexOf(value, minIndex + value.Length);
-        }
-
     let getSymbolPosition (symbolUse: FSharpSymbolUse) = 
         let positionLine = symbolUse.Range.End.Line
         let positionColumn = symbolUse.Range.End.Column + 1
@@ -47,7 +38,7 @@ module InlineParameterNameHints =
     let private getTupleRanges
         (symbolUse: FSharpSymbolUse)
         (parseResults: FSharpParseFileResults) =
-        
+
         getSymbolPosition symbolUse
         |> parseResults.FindParameterLocations
         |> Option.map (fun locations -> locations.ArgumentLocations)

@@ -7,7 +7,6 @@ open System.Threading
 open Microsoft.IO
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.Editor.Hints
-open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Hints
 open FSharp.Compiler.CodeAnalysis

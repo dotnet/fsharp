@@ -21,10 +21,7 @@ module HintService =
           when hintKinds |> Set.contains HintKind.ParameterNameHint 
             && InlineParameterNameHints.isMemberOrFunctionOrValueValidForHint symbol symbolUse ->
 
-            InlineParameterNameHints.getHintsForMemberOrFunctionOrValue
-                parseResults
-                symbol
-                symbolUse
+            InlineParameterNameHints.getHintsForMemberOrFunctionOrValue parseResults symbol symbolUse
 
         | :? FSharpUnionCase as symbol
           when hintKinds |> Set.contains HintKind.ParameterNameHint
