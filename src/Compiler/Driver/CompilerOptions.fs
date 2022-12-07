@@ -1741,6 +1741,15 @@ let internalFlags (tcConfigB: TcConfigBuilder) =
             None
         )
 
+        // "Render timing profiles for compilation to a file"
+        CompilerOption(
+            "reportTimeToFile",
+            tagString,
+            OptionString(fun s -> tcConfigB.reportTimeToFile <- Some s),
+            Some(InternalCommandLineOption("reportTimeToFile", rangeCmdArgs)),
+            None
+        )
+
 #if !NO_TYPEPROVIDERS
         // "Display information about extension type resolution")
         CompilerOption(
@@ -2371,7 +2380,7 @@ let ReportTime (tcConfig: TcConfig) descr =
         | Some ("fsc-fail") -> failwith "simulated"
         | _ -> ()
 
-    if (tcConfig.showTimes || verbose) then
+    if (tcConfig.showTimes || verbose || tcConfig.reportTimeToFile.IsSome) then
         // Note that timing calls are relatively expensive on the startup path so we don't
         // make this call unless showTimes has been turned on.
         let p = Process.GetCurrentProcess()
@@ -2403,6 +2412,13 @@ let ReportTime (tcConfig: TcConfig) descr =
                     spanGC[Operators.min 1 maxGen]
                     spanGC[Operators.min 2 maxGen]
                     prevDescr
+               
+                match tcConfig.reportTimeToFile with
+                | Some f ->
+                    if not (File.Exists(f)) then
+                        File.WriteAllLines(f,["Realdelta,CpuDelta,WorkingSet,GC0,GC1,GC2,Outputfile,PhaseName"])
+                    File.AppendAllLines(f,[$"%f{tDelta.TotalSeconds},%f{utDelta},%i{wsNow},%i{spanGC[Operators.min 0 maxGen]},,%i{spanGC[Operators.min 1 maxGen]},%i{spanGC[Operators.min 2 maxGen]},{tcConfig.outputFile |> Option.defaultValue String.Empty},{prevDescr}"])
+                | None -> ()
 
                 tStart
 
