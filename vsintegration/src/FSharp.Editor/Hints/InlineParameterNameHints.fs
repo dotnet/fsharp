@@ -58,14 +58,9 @@ module InlineParameterNameHints =
 
         if symbolColumns |> Seq.isEmpty
         then None
-        else 
-            let symbolColumn = 
-                symbolColumns
-                |> Seq.where (fun column -> column < symbolUse.Range.EndColumn)
-                |> Seq.last
-
+        else
             let positionLine = symbolLine + 1
-            let positionColumn = symbolColumn + symbolName.Length + 1
+            let positionColumn = symbolUse.Range.End.Column + 1
             Some (Position.mkPos positionLine positionColumn)
 
     let private getTupleRanges
