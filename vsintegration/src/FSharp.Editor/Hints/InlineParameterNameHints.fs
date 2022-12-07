@@ -39,28 +39,17 @@ module InlineParameterNameHints =
                 minIndex <- s.IndexOf(value, minIndex + value.Length);
         }
 
-    // Fragile Roslyn arithmetics, don't try this at home.
-    // 
-    // Why the hell is this so complicated? 
-    // There can be (rarely) cases like there can be cases like 
-    // <somecode>.SymbolUse1().SymbolUse2()<morecode>
-    // and we need to locate the last one.
-    // Hopefully someone will have a better way to do that one day,
-    // this is quite heavily tested so should be safe to refactor.
-    let getSymbolPosition
-        (symbolUse: FSharpSymbolUse) = 
-
-        let symbolLine = symbolUse.Range.End.Line - 1
-        let positionLine = symbolLine + 1
+    let getSymbolPosition (symbolUse: FSharpSymbolUse) = 
+        let positionLine = symbolUse.Range.End.Line
         let positionColumn = symbolUse.Range.End.Column + 1
-        Some (Position.mkPos positionLine positionColumn)
+        Position.mkPos positionLine positionColumn
 
     let private getTupleRanges
         (symbolUse: FSharpSymbolUse)
         (parseResults: FSharpParseFileResults) =
         
         getSymbolPosition symbolUse
-        |> Option.bind (parseResults.FindParameterLocations)
+        |> parseResults.FindParameterLocations
         |> Option.map (fun locations -> locations.ArgumentLocations)
         |> Option.map (Seq.map (fun location -> location.ArgumentRange))
         |> Option.defaultValue []
